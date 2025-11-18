@@ -113,6 +113,15 @@ const isValidStep = (value: string | undefined, stop: number): boolean => {
 	return step > 0 && step <= stop;
 };
 
+// If the caller passes a full cron expression (multiple space-separated fields),
+// extract the single field at `index` (0-based, seconds=0, minutes=1...).
+const extractFieldFromExpression = (value: string, index: number): string => {
+	const parts = value.split(" ").filter((p) => p !== "");
+	if (parts.length === 0) return value;
+	while (parts.length < 7) parts.push("*");
+	return parts[index] ?? "*";
+};
+
 const validateForRange = (
 	value: string,
 	start: number,
@@ -157,8 +166,40 @@ const validateForRange = (
 	});
 };
 
+// Extended per-field regexes for seconds..year (0..6)
+const FIELD_REGEXES: RegExp[] = [
+	/^([*]|(?:\*|(?:[0-9]|(?:[1-5][0-9])))\/(?:[0-9]|(?:[1-5][0-9]))|(?:[0-9]|(?:[1-5][0-9]))(?:(?:-[0-9]|-(?:[1-5][0-9]))?|(?:,(?:[0-9]|(?:[1-5][0-9])))*))$/,
+	/^([*]|(?:\*|(?:[0-9]|(?:[1-5][0-9])))\/(?:[0-9]|(?:[1-5][0-9]))|(?:[0-9]|(?:[1-5][0-9]))(?:(?:-[0-9]|-(?:[1-5][0-9]))?|(?:,(?:[0-9]|(?:[1-5][0-9])))*))$/,
+	/^([*]|(?:\*|(?:\*|(?:[0-9]|1[0-9]|2[0-3])))\/(?:[0-9]|1[0-9]|2[0-3])|(?:[0-9]|1[0-9]|2[0-3])(?:(?:-(?:[0-9]|1[0-9]|2[0-3]))?|(?:,(?:[0-9]|1[0-9]|2[0-3]))*))$/,
+	/^([*]|\?|L(?:W|-(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:[1-9]|(?:[12][0-9])|3[01])(?:W|\/(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:[1-9]|(?:[12][0-9])|3[01])(?:(?:-(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:,(?:[1-9]|(?:[12][0-9])|3[01]))*))$/i,
+	/^([*]|(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(?:(?:-(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))?|(?:,(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))*))$/i,
+	/^([*]|\?|[0-6](?:L|#[1-5])?|(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT)(?:(?:-(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT))?|(?:,(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT))*))$/i,
+	/^([*]|(?:[1-9][0-9]{3})(?:(?:-[1-9][0-9]{3})?|(?:,[1-9][0-9]{3})*))$/,
+];
+
+const isFieldPatternValid = (value: string, index: number): boolean => {
+	if (!value || typeof value !== "string") return false;
+	const v = value.trim();
+	// if value contains commas/lists or slashes we still test the whole token against the pattern
+	const re = FIELD_REGEXES[index];
+	try {
+		return re.test(v);
+	} catch (_e) {
+		return false;
+	}
+};
+
 export const hasValidMinutes = (minutes: string): CronValidation => {
-	const isError = !validateForRange(minutes, ZERO, MAX_MINUTES);
+	const field = minutes.includes(" ")
+		? extractFieldFromExpression(minutes, 1)
+		: minutes;
+
+	// pattern check
+	if (!isFieldPatternValid(field, 1)) {
+		return { error: true, errorMessage: ERROR_MSGES.MINUTE_ERROR_MSG };
+	}
+
+	const isError = !validateForRange(field, ZERO, MAX_MINUTES);
 	return {
 		error: isError,
 		errorMessage: isError ? ERROR_MSGES.MINUTE_ERROR_MSG : null,
@@ -166,7 +207,15 @@ export const hasValidMinutes = (minutes: string): CronValidation => {
 };
 
 export const hasValidHours = (hours: string): CronValidation => {
-	const isError = !validateForRange(hours, ZERO, MAX_HOURS);
+	const field = hours.includes(" ")
+		? extractFieldFromExpression(hours, 2)
+		: hours;
+
+	if (!isFieldPatternValid(field, 2)) {
+		return { error: true, errorMessage: ERROR_MSGES.HOUR_ERROR_MSG };
+	}
+
+	const isError = !validateForRange(field, ZERO, MAX_HOURS);
 	return {
 		error: isError,
 		errorMessage: isError ? ERROR_MSGES.HOUR_ERROR_MSG : null,
@@ -174,11 +223,22 @@ export const hasValidHours = (hours: string): CronValidation => {
 };
 
 export const hasValidDays = (days: string): CronValidation => {
+	const field = days.includes(" ")
+		? extractFieldFromExpression(days, 3)
+		: days;
+
+	if (!isFieldPatternValid(field, 3)) {
+		return {
+			error: true,
+			errorMessage: ERROR_MSGES.DAY_OF_MONTH_ERROR_MSG,
+		};
+	}
+
 	if (
-		isQuestionMark(days) ||
-		isLast(days) ||
-		isLastWeekday(days) ||
-		isWeekdayModifier(days, MAX_DAYS_OF_MONTH)
+		isQuestionMark(field) ||
+		isLast(field) ||
+		isLastWeekday(field) ||
+		isWeekdayModifier(field, MAX_DAYS_OF_MONTH)
 	) {
 		return {
 			error: false,
@@ -186,7 +246,7 @@ export const hasValidDays = (days: string): CronValidation => {
 		};
 	}
 
-	const isError = !validateForRange(days, ONE, MAX_DAYS_OF_MONTH);
+	const isError = !validateForRange(field, ONE, MAX_DAYS_OF_MONTH);
 	return {
 		error: isError,
 		errorMessage: isError ? ERROR_MSGES.DAY_OF_MONTH_ERROR_MSG : null,
@@ -194,15 +254,23 @@ export const hasValidDays = (days: string): CronValidation => {
 };
 
 export const hasValidMonths = (months: string): CronValidation => {
+	const field = months.includes(" ")
+		? extractFieldFromExpression(months, 4)
+		: months;
+
+	if (!isFieldPatternValid(field, 4)) {
+		return { error: true, errorMessage: ERROR_MSGES.MONTH_ERROR_MSG };
+	}
+
 	// Prevents alias to be used as steps
-	if (months.search(/\/[a-zA-Z]/) !== -1) {
+	if (field.search(/\/[a-zA-Z]/) !== -1) {
 		return {
 			error: true,
 			errorMessage: ERROR_MSGES.MONTH_ERROR_MSG,
 		};
 	}
 
-	const remappedMonths = months
+	const remappedMonths = field
 		.toLowerCase()
 		.replace(/[a-z]{3}/g, (match: string): string => {
 			return MonthAlias[match] === undefined ? match : MonthAlias[match];
@@ -217,7 +285,15 @@ export const hasValidMonths = (months: string): CronValidation => {
 };
 
 export const hasValidWeekdays = (weekdays: string): CronValidation => {
-	if (isQuestionMark(weekdays)) {
+	const field = weekdays.includes(" ")
+		? extractFieldFromExpression(weekdays, 5)
+		: weekdays;
+
+	if (!isFieldPatternValid(field, 5)) {
+		return { error: true, errorMessage: ERROR_MSGES.DAY_OF_WEEK_ERROR_MSG };
+	}
+
+	if (isQuestionMark(field)) {
 		return {
 			error: false,
 			errorMessage: null,
@@ -225,14 +301,14 @@ export const hasValidWeekdays = (weekdays: string): CronValidation => {
 	}
 
 	// Prevents alias to be used as steps
-	if (weekdays.search(/\/[a-zA-Z]/) !== -1) {
+	if (field.search(/\/[a-zA-Z]/) !== -1) {
 		return {
 			error: true,
 			errorMessage: ERROR_MSGES.DAY_OF_WEEK_ERROR_MSG,
 		};
 	}
 
-	const remappedWeekdays = weekdays
+	const remappedWeekdays = field
 		.toLowerCase()
 		.replace(/[a-z]{3}/g, (match: string): string => {
 			return WeekdaysAlias[match] === undefined

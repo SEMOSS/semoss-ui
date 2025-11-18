@@ -106,15 +106,22 @@ export const JobStandardFrequencyBuilder = (props: {
 				);
 				break;
 		}
-	}, [time, dayOfWeek.value, dayOfMonth, month.value, setBuilderField]);
+	}, [
+		time,
+		frequency,
+		dayOfWeek.value,
+		dayOfMonth,
+		month.value,
+		setBuilderField,
+	]);
 
-	const daysInMonth: number | null = useMemo(() => {
-		if (month) {
-			return month.days;
-		} else {
-			return 31;
-		}
-	}, [month]);
+	const daysInMonth: number = useMemo(() => month?.days ?? 31, [month]);
+
+	// derived error state for day of month input (kept as a separate var
+	// so we can use `helperText` + `sx` instead of passing an `error` prop)
+	const dayError = dayOfMonth
+		? !(dayOfMonth <= daysInMonth && dayOfMonth > 0)
+		: false;
 
 	return (
 		<Stack spacing={2} width="100%">
@@ -168,13 +175,22 @@ export const JobStandardFrequencyBuilder = (props: {
 			{(frequency === "Monthly" || frequency === "Yearly") && (
 				<TextField
 					size="small"
-					value={isNaN(dayOfMonth) ? "" : dayOfMonth}
+					value={Number.isNaN(dayOfMonth) ? "" : dayOfMonth}
 					type="number"
 					label="Day of Month"
-					error={
-						dayOfMonth
-							? !(dayOfMonth <= daysInMonth && dayOfMonth > 0)
-							: false
+					helperText={dayError ? "Enter a valid day" : undefined}
+					sx={
+						dayError
+							? {
+									"& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline":
+										{
+											borderColor: "error.main",
+										},
+									"& .MuiFormHelperText-root": {
+										color: "error.main",
+									},
+								}
+							: undefined
 					}
 					fullWidth
 					onChange={(e) =>

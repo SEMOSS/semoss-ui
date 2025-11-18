@@ -79,41 +79,114 @@ export const JobCustomFrequencyBuilder = (props: {
 		return hasValidWeekdays(cronDayOfWeek);
 	}, [cronDayOfWeek]);
 
+	// derived error flags (used instead of passing `error` prop to TextField)
+	const minuteError = isMinutesValid.error;
+	const hourError = isHoursValid.error;
+	const dayOfMonthError = isDayOfMonthValid.error;
+	const monthError = isMonthValid.error;
+	const dayOfWeekError = isDayOfWeekValid.error;
+
 	return (
 		<Stack direction="row" spacing={1} width="100%">
 			<TextField
 				label="Minute"
 				value={cronMinute}
-				error={isMinutesValid.error}
-				helperText={isMinutesValid.errorMessage}
+				helperText={
+					minuteError ? isMinutesValid.errorMessage : undefined
+				}
+				sx={
+					minuteError
+						? {
+								"& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline":
+									{
+										borderColor: "error.main",
+									},
+								"& .MuiFormHelperText-root": {
+									color: "error.main",
+								},
+							}
+						: undefined
+				}
 				onChange={(e) => setCronMinute(e.target.value)}
 			/>
 			<TextField
 				label="Hour"
 				value={cronHour}
-				error={isHoursValid.error}
-				helperText={isHoursValid.errorMessage}
+				helperText={hourError ? isHoursValid.errorMessage : undefined}
+				sx={
+					hourError
+						? {
+								"& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline":
+									{
+										borderColor: "error.main",
+									},
+								"& .MuiFormHelperText-root": {
+									color: "error.main",
+								},
+							}
+						: undefined
+				}
 				onChange={(e) => setCronHour(e.target.value)}
 			/>
 			<TextField
 				label="Day of Month"
 				value={cronDayOfMonth}
-				error={isDayOfMonthValid.error}
-				helperText={isDayOfMonthValid.errorMessage}
+				helperText={
+					dayOfMonthError ? isDayOfMonthValid.errorMessage : undefined
+				}
+				sx={
+					dayOfMonthError
+						? {
+								"& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline":
+									{
+										borderColor: "error.main",
+									},
+								"& .MuiFormHelperText-root": {
+									color: "error.main",
+								},
+							}
+						: undefined
+				}
 				onChange={(e) => setCronDayOfMonth(e.target.value)}
 			/>
 			<TextField
 				label="Month"
 				value={cronMonth}
-				error={isMonthValid.error}
-				helperText={isMonthValid.errorMessage}
+				helperText={monthError ? isMonthValid.errorMessage : undefined}
+				sx={
+					monthError
+						? {
+								"& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline":
+									{
+										borderColor: "error.main",
+									},
+								"& .MuiFormHelperText-root": {
+									color: "error.main",
+								},
+							}
+						: undefined
+				}
 				onChange={(e) => setCronMonth(e.target.value)}
 			/>
 			<TextField
 				label="Day of Week"
 				value={cronDayOfWeek}
-				error={isDayOfWeekValid.error}
-				helperText={isDayOfWeekValid.errorMessage}
+				helperText={
+					dayOfWeekError ? isDayOfWeekValid.errorMessage : undefined
+				}
+				sx={
+					dayOfWeekError
+						? {
+								"& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline":
+									{
+										borderColor: "error.main",
+									},
+								"& .MuiFormHelperText-root": {
+									color: "error.main",
+								},
+							}
+						: undefined
+				}
 				onChange={(e) => setCronDayOfWeek(e.target.value)}
 			/>
 		</Stack>
