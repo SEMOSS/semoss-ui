@@ -253,6 +253,7 @@ export interface MCPTool {
 		properties?: { [key: string]: object };
 		required?: string[];
 		type: "object";
+		title: string;
 	};
 	name: string;
 	outputSchema?: {
@@ -261,4 +262,22 @@ export interface MCPTool {
 		type: "object";
 	};
 	title?: string;
+}
+
+export interface ToolStructure {
+	_meta: {
+		SMSS_PROJECT_NAME: string;
+		SMSS_PROJECT_ID: string;
+		SMSS_ENGINE_NAME: string;
+		SMSS_ENGINE_TYPE: string;
+		SMSS_ENGINE_ID: string;
+	};
+	tools: Tool[];
+}
+
+export interface Tool extends MCPTool {
+	name: string;
+	description: string;
+	_meta: { generated_on: string };
+	title: string;
 }
