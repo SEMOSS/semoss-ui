@@ -63,7 +63,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								const component = node.getComponent();
 
 								if (component === "room-tool") {
-									return <RoomTool node={node} />;
+									return <RoomTool node={node} room={room} />;
 								} else if (component === "room-configuration") {
 									return <RoomConfiguration room={room} />;
 								}
