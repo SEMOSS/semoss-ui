@@ -257,10 +257,12 @@ function findElementDependencies(
 		const regex = /\{\{([^}]+)\}\}/g;
 		const matches: string[] = [];
 		let match: RegExpExecArray | null;
+		
+		match = regex.exec(str);
 
-		// Properly declare match variable before loop
-		while ((match = regex.exec(str)) !== null) {
+		while (match !== null) {
 			matches.push(match[1].trim());
+			match = regex.exec(str);
 		}
 
 		return matches;
