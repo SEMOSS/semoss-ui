@@ -28,11 +28,13 @@
 			"persistent": true
 		},
 		"test": {
-			"dependsOn": ["^test"]
+			"dependsOn": ["^test"],
+			"outputs": []
 		},
 		"test:watch": {
 			"cache": false,
-			"persistent": true
+			"persistent": true,
+			"outputs": []
 		}
 	}
 }

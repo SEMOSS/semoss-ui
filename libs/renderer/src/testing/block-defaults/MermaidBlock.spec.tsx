@@ -1,6 +1,4 @@
 import { describe, expect, test } from "vitest";
-import "@testing-library/jest-dom";
-
 import { MermaidBlock } from "../../components/block-defaults/mermaid-block/MermaidBlock.tsx";
 import { render, screen } from "../utils";
 
@@ -87,7 +85,7 @@ describe("Mermaid block", () => {
 		// 		blocks: blocks,
 		// 	},
 		// );
-		// console.log("testing here 2")
+		// console.log("testing here")
 		// const element = container.querySelector("[data-block='invalidHeader']");
 		// expect(element).toBeInTheDocument();
 		// const mermaidElement = screen.queryByText(/graph TD;/);
