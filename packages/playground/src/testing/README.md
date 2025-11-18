@@ -1,6 +1,6 @@
 # Unit Testing with Vitest
 
-Add unit test for the @semoss/client project here. Files can be in .spec or .test file formats.
+Add unit test for the @semoss/playground project here. Files can be in .spec or .test file formats.
 
 ## Running tests:
 

@@ -105,6 +105,7 @@ test("does not call onPrompt when loading or disabled", async () => {
 
 test("shows toast when onPrompt fails or returns false", async () => {
 	const onPrompt = vi.fn(() => Promise.resolve(false));
+	toast.error = vi.fn();
 
 	render(
 		<RoomInput

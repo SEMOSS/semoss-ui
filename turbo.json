@@ -28,8 +28,7 @@
 			"persistent": true
 		},
 		"test": {
-			"dependsOn": ["^test"],
-			"inputs": ["src/**/*.ts", "src/**/*/tsx"]
+			"dependsOn": ["^test"]
 		},
 		"test:watch": {
 			"cache": false,
