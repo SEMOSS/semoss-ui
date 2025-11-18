@@ -222,9 +222,18 @@ importers:
 
   libs/shared:
     dependencies:
+      '@semoss/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+      '@semoss/ui':
+        specifier: workspace:*
+        version: link:../ui
       flexlayout-react:
         specifier: ^0.8.1
         version: 0.8.17(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      lucide-react:
+        specifier: ^0.545.0
+        version: 0.545.0(react@18.3.1)
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -760,10 +769,10 @@ importers:
         version: 1.13.2
       form-data:
         specifier: ^4.0.0
-        version: 4.0.5
+        version: 4.0.4
       js-yaml:
         specifier: ^4.1.0
-        version: 4.1.1
+        version: 4.1.0
       ncp:
         specifier: ^2.0.0
         version: 2.0.0
@@ -4636,8 +4645,8 @@ packages:
     resolution: {integrity: sha512-buewHzMvYL29jdeQTVILecSaZKnt/RJWjoZCF5OW60Z67/GmSLBkOFM7qh1PI3zFNtJbaZL5eQu1vLfazOwj4g==}
     engines: {node: '>=12.20.0'}
 
-  fraction.js@5.3.4:
-    resolution: {integrity: sha512-1X1NTtiJphryn/uLQz3whtY6jK3fTqoE3ohKs0tT+Ujr1W59oopxmoEh7Lu5p6vBaPbgoM0bzveAW4Qi5RyWDQ==}
+  fraction.js@4.3.7:
+    resolution: {integrity: sha512-ZsDfxO51wGAXREY55a7la9LScWpwv9RxIrYABrlvOFBlH/ShPnrtsXeuUIfXKKOVicNxQ+o8JTbJvjS4M89yew==}
 
   fs-extra@10.1.0:
     resolution: {integrity: sha512-oRXApq54ETRj4eMiFzGnHWGy+zo5raudjuxN0b8H7s/RU2oW0Wvsx9O0ACRN/kRq9E8Vu/ReskGB5o3ji+FzHQ==}
@@ -12607,7 +12616,7 @@ snapshots:
     dependencies:
       fetch-blob: 3.2.0
 
-  fraction.js@5.3.4: {}
+  fraction.js@4.3.7: {}
 
   fs-extra@10.1.0:
     dependencies:
