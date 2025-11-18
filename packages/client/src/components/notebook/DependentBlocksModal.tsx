@@ -22,18 +22,13 @@ import {
 	SelectValue,
 } from "@semoss/ui/next";
 
-interface CellReplacement {
-	label: string;
-	options: string[];
-}
-
 interface DependentBlocksModalProps {
 	open: boolean;
 	onClose: () => void;
 	onDelete: () => void;
 	onReplace: (replacements: { [blockId: string]: string }) => void;
 	dependents: string[];
-	replacementOptions?: CellReplacement[];
+	replacementOptions?: string[];
 }
 
 export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
@@ -49,9 +44,6 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 	const [replaceOption, setReplaceOption] = useState("replaceAll");
 	const [selectedReplacement, setSelectedReplacement] = useState("");
 	const [isUsageExpanded, setIsUsageExpanded] = useState(true);
-	const [expandedCategories, setExpandedCategories] = useState<{
-		[key: string]: boolean;
-	}>({});
 	const [individualReplacements, setIndividualReplacements] = useState<{
 		[blockId: string]: string;
 	}>({});
@@ -75,32 +67,23 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 		[dependents, state],
 	);
 
-	const handleReplaceAll = () => {
-		if (selectedReplacement) {
+	const handleReplaceAndDelete = () => {
+		if (replaceOption === "replaceAll" && selectedReplacement) {
 			const replacements: { [blockId: string]: string } = {};
 			dependentBlocks.forEach((block) => {
 				replacements[block.blockId] = selectedReplacement;
 			});
 			onReplace(replacements);
 			onClose();
+		} else if (replaceOption === "replaceIndividual") {
+			onReplace(individualReplacements);
+			onClose();
 		}
-	};
-
-	const handleReplaceIndividual = () => {
-		onReplace(individualReplacements);
-		onClose();
 	};
 
 	const handleDeleteAnyway = () => {
 		onDelete();
 		onClose();
-	};
-
-	const toggleCategory = (label: string) => {
-		setExpandedCategories((prev) => ({
-			...prev,
-			[label]: !prev[label],
-		}));
 	};
 
 	const updateIndividualReplacement = (blockId: string, value: string) => {
@@ -110,7 +93,10 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 		}));
 	};
 
-	const isReplaceIndividualDisabled = () => {
+	const isReplaceAndDeleteDisabled = () => {
+		if (replaceOption === "replaceAll") {
+			return !selectedReplacement;
+		}
 		return dependentBlocks.some(
 			(block) => !individualReplacements[block.blockId],
 		);
@@ -119,7 +105,7 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 	return (
 		<Dialog open={open} onOpenChange={onClose}>
 			<DialogContent
-				className="gap-0 p-0 sm:max-w-3xl"
+				className="gap-0 p-0 sm:max-w-4xl"
 				data-testid="delete-cell-modal"
 			>
 				{/* Header */}
@@ -218,7 +204,7 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 						</RadioGroup>
 					</div>
 
-					{/* Replace All - "Replace With" dropdown is full width */}
+					{/* Replace All - Simple dropdown with flat list */}
 					{replaceOption === "replaceAll" && (
 						<div className="mt-4 space-y-3">
 							<Label
@@ -239,87 +225,29 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 									>
 										<SelectValue placeholder="Select" />
 									</SelectTrigger>
-									{/* Ensure the content panel also fills min width */}
-									<SelectContent className="max-h-[300px] w-full min-w-full">
+									<SelectContent className="max-h-[300px]">
 										{replacementOptions.length === 0 ? (
 											<SelectItem value="none" disabled>
 												No options available
 											</SelectItem>
 										) : (
-											replacementOptions.map(
-												(category) => (
-													<div key={category.label}>
-														<Collapsible
-															open={
-																!!expandedCategories[
-																	category
-																		.label
-																]
-															}
-															onOpenChange={() =>
-																toggleCategory(
-																	category.label,
-																)
-															}
-														>
-															<CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-sm hover:bg-gray-100">
-																<span className="font-medium text-gray-900">
-																	{
-																		category.label
-																	}
-																</span>
-																{expandedCategories[
-																	category
-																		.label
-																] ? (
-																	<ChevronDown className="h-4 w-4 text-gray-500" />
-																) : (
-																	<ChevronDown className="-rotate-90 h-4 w-4 text-gray-500" />
-																)}
-															</CollapsibleTrigger>
-															<CollapsibleContent className="pl-4">
-																{category.options.map(
-																	(
-																		option,
-																	) => (
-																		<SelectItem
-																			key={
-																				option
-																			}
-																			value={
-																				option
-																			}
-																			className="text-gray-700 text-sm"
-																		>
-																			{
-																				option
-																			}
-																		</SelectItem>
-																	),
-																)}
-															</CollapsibleContent>
-														</Collapsible>
-													</div>
-												),
-											)
+											replacementOptions.map((option) => (
+												<SelectItem
+													key={option}
+													value={option}
+													className="text-gray-700 text-sm"
+												>
+													{option}
+												</SelectItem>
+											))
 										)}
 									</SelectContent>
 								</Select>
 							</div>
-							<div className="flex justify-end">
-								<Button
-									onClick={handleReplaceAll}
-									disabled={!selectedReplacement}
-									className="bg-blue-600 text-white hover:bg-blue-700"
-									data-testid="delete-cell-modal-replace-all-button"
-								>
-									Replace
-								</Button>
-							</div>
 						</div>
 					)}
 
-					{/* Replace Individual - Table w/ Replace With column using flex for full width, non-shrinking */}
+					{/* Replace Individual - Table with flat dropdown options */}
 					{replaceOption === "replaceIndividual" && (
 						<div className="mt-4 space-y-3">
 							<div className="overflow-hidden rounded-md border border-gray-200">
@@ -380,7 +308,7 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 																>
 																	<SelectValue placeholder="Select" />
 																</SelectTrigger>
-																<SelectContent className="max-h-[300px] w-full min-w-full">
+																<SelectContent className="max-h-[300px]">
 																	{replacementOptions.length ===
 																	0 ? (
 																		<SelectItem
@@ -394,62 +322,21 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 																	) : (
 																		replacementOptions.map(
 																			(
-																				category,
+																				option,
 																			) => (
-																				<div
+																				<SelectItem
 																					key={
-																						category.label
+																						option
 																					}
+																					value={
+																						option
+																					}
+																					className="text-gray-700 text-sm"
 																				>
-																					<Collapsible
-																						open={
-																							!!expandedCategories[
-																								`${category.label}-${block.blockId}`
-																							]
-																						}
-																						onOpenChange={() =>
-																							toggleCategory(
-																								`${category.label}-${block.blockId}`,
-																							)
-																						}
-																					>
-																						<CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-sm hover:bg-gray-100">
-																							<span className="font-medium text-gray-900">
-																								{
-																									category.label
-																								}
-																							</span>
-																							{expandedCategories[
-																								`${category.label}-${block.blockId}`
-																							] ? (
-																								<ChevronDown className="h-4 w-4 text-gray-500" />
-																							) : (
-																								<ChevronDown className="-rotate-90 h-4 w-4 text-gray-500" />
-																							)}
-																						</CollapsibleTrigger>
-																						<CollapsibleContent className="pl-4">
-																							{category.options.map(
-																								(
-																									option,
-																								) => (
-																									<SelectItem
-																										key={
-																											option
-																										}
-																										value={
-																											option
-																										}
-																										className="text-gray-700 text-sm"
-																									>
-																										{
-																											option
-																										}
-																									</SelectItem>
-																								),
-																							)}
-																						</CollapsibleContent>
-																					</Collapsible>
-																				</div>
+																					{
+																						option
+																					}
+																				</SelectItem>
 																			),
 																		)
 																	)}
@@ -463,21 +350,11 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 									</tbody>
 								</table>
 							</div>
-							<div className="flex justify-end">
-								<Button
-									onClick={handleReplaceIndividual}
-									disabled={isReplaceIndividualDisabled()}
-									className="bg-blue-600 text-white hover:bg-blue-700"
-									data-testid="delete-cell-modal-replace-individual-button"
-								>
-									Replace
-								</Button>
-							</div>
 						</div>
 					)}
 				</div>
 
-				{/* Footer */}
+				{/* Footer with Replace and Delete button in BLUE */}
 				<DialogFooter className="flex flex-row items-center justify-between border-t px-6 py-3 sm:justify-between">
 					<Button
 						variant="ghost"
@@ -487,14 +364,25 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 					>
 						Cancel
 					</Button>
-					<Button
-						variant="destructive"
-						onClick={handleDeleteAnyway}
-						className="bg-red-600 text-white hover:bg-red-700"
-						data-testid="delete-cell-modal-delete-anyway"
-					>
-						Delete Anyway
-					</Button>
+					<div className="flex gap-2">
+						<Button
+							onClick={handleReplaceAndDelete}
+							disabled={isReplaceAndDeleteDisabled()}
+							className="bg-blue-600 text-white hover:bg-blue-700"
+							data-testid="delete-cell-modal-replace-and-delete"
+							title="This will replace the selected instances and delete the cell"
+						>
+							Replace and Delete
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={handleDeleteAnyway}
+							className="bg-red-600 text-white hover:bg-red-700"
+							data-testid="delete-cell-modal-delete-anyway"
+						>
+							Delete Anyway
+						</Button>
+					</div>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

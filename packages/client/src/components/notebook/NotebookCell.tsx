@@ -431,14 +431,6 @@ export const NotebookCell = observer(
 		};
 		const deleteCell = async () => {
 			try {
-				// console.log("Passed args >>", state, queryId, cell);
-				// console.log(`
-				// 	ALL >> ${JSON.stringify(findDependentElements(state, queryId, cellId))}\n
-				// 	BLOCKS >> ${getDependentBlocks(state, queryId, cellId)}\n
-				// 	QUERIES >> ${getDependentQueries(state, queryId, cellId)}\n
-				// 	CELLS >> ${getDependentCells(state, queryId, cellId)}\n
-				// 	VARIABLES >> ${getDependentVariables(state, queryId, cellId)}
-				// `);
 				const dependentBlocks = await getDependentBlocks(
 					state,
 					queryId,
@@ -673,52 +665,35 @@ export const NotebookCell = observer(
 			}
 		};
 
-		const handleDelete = () => {
-			console.log("Deleting without replacement");
-		};
 
 		const handleReplace = async (replacements: {
 			[blockId: string]: string;
 		}) => {
-			// console.log("Replacements >> ", replacements);
-			// console.log(
-			// 	"Replacing with:",
-			// 	replaceDependentReferences(state, replacements, {
-			// 		queryId,
-			// 		cellId,
-			// 	}),
-			// 	replaceInBlocks(state, replacements, {
-			// 		queryId,
-			// 		cellId,
-			// 	}),
-			// 	replaceInQueries(state, replacements, {
-			// 		queryId,
-			// 		cellId,
-			// 	}),
-			// 	replaceInVariables(state, replacements, {
-			// 		queryId,
-			// 		cellId,
-			// 	})
-			// );
-			const updatedStateJson = await replaceInBlocks(
-				state,
-				replacements,
-				{
-					queryId,
-					cellId,
-				},
-			);
-
-			const s = JSON.parse(
-				JSON.stringify(updatedStateJson),
-			) as SerializedState;
-			await state.dispatch({
-				message: ActionMessages.SET_STATE,
-				payload: {
-					state: s,
-				},
-			});
-			await dispatchDeleteCell();
+			try{
+				workspace.setLoading(true);
+				const updatedStateJson = await replaceInBlocks(
+					state,
+					replacements,
+					{
+						queryId,
+						cellId,
+					},
+				);
+				const s = JSON.parse(
+					JSON.stringify(updatedStateJson),
+				) as SerializedState;
+				await state.dispatch({
+					message: ActionMessages.SET_STATE,
+					payload: {
+						state: s,
+					},
+				});
+				await dispatchDeleteCell();
+				workspace.setLoading(false);
+			} catch (e) {
+				console.error(e);
+				workspace.setLoading(false);
+			}
 		};
 
 		const replacementOptions = useMemo(() => {
@@ -726,20 +701,11 @@ export const NotebookCell = observer(
 			const allCellsList = [];
 			Object.keys(state.queries).forEach((queryId) => {
 				state.queries[queryId].list.forEach((cellId) => {
-					if (cellId === cell.id) return;
+					if (cellId === cell.id && queryId === cell.query.id) return;
 					allCellsList.push(`${queryId}--${cellId}`);
 				});
 			});
-			return [
-				{
-					label: "Notebook",
-					options: Object.keys(state.queries),
-				},
-				{
-					label: "Cells",
-					options: allCellsList,
-				},
-			];
+			return allCellsList;
 		}, [state.queries, dependentBlocksModal===true]);
 
 		return (
@@ -1255,7 +1221,7 @@ export const NotebookCell = observer(
 					onClose={() => {
 						setDependentBlocksModal(false);
 					}}
-					onDelete={handleDelete}
+					onDelete={() => dispatchDeleteCell()}
 					onReplace={handleReplace}
 					dependents={dependentBlocks}
 					replacementOptions={replacementOptions}
