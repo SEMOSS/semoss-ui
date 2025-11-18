@@ -20,6 +20,12 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
 } from "@semoss/ui/next";
 
 interface DependentBlocksModalProps {
@@ -129,7 +135,7 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 						</p>
 					</div>
 
-					{/* Cell Usage Collapsible Section */}
+					{/* Cell Usage Collapsible Section with max 3 rows scroll */}
 					<Collapsible
 						open={isUsageExpanded}
 						onOpenChange={setIsUsageExpanded}
@@ -147,7 +153,7 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 						</CollapsibleTrigger>
 						<CollapsibleContent>
 							<div
-								className="mt-2 flex flex-wrap gap-2"
+								className="mt-2 flex max-h-[96px] flex-wrap gap-2 overflow-y-auto"
 								data-testid="delete-cell-modal-usage-list"
 							>
 								{dependents.map((usage) => (
@@ -247,41 +253,44 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 						</div>
 					)}
 
-					{/* Replace Individual - Table with flat dropdown options */}
+					{/* Replace Individual - Table with shadcn Table component and max 4 rows scroll */}
 					{replaceOption === "replaceIndividual" && (
 						<div className="mt-4 space-y-3">
-							<div className="overflow-hidden rounded-md border border-gray-200">
-								<table className="w-full table-fixed">
+							<div className="max-h-[256px] overflow-hidden overflow-y-auto rounded-md border border-gray-200">
+								<Table className="table-fixed">
 									<colgroup>
 										<col style={{ width: "30%" }} />
 										<col style={{ width: "30%" }} />
 										<col style={{ width: "40%" }} />
 									</colgroup>
-									<thead className="border-gray-200 border-b bg-gray-50">
-										<tr>
-											<th className="px-4 py-3 text-left font-medium text-gray-700 text-sm">
+									<TableHeader className="sticky top-0 z-10 bg-gray-50">
+										<TableRow className="border-gray-200 border-b">
+											<TableHead className="px-4 py-3 text-left font-medium text-gray-700 text-sm">
 												Block Type
-											</th>
-											<th className="px-4 py-3 text-left font-medium text-gray-700 text-sm">
+											</TableHead>
+											<TableHead className="px-4 py-3 text-left font-medium text-gray-700 text-sm">
 												Block ID
-											</th>
-											<th className="px-4 py-3 text-left font-medium text-gray-700 text-sm">
+											</TableHead>
+											<TableHead className="px-4 py-3 text-left font-medium text-gray-700 text-sm">
 												Replace With
-											</th>
-										</tr>
-									</thead>
-									<tbody className="divide-y divide-gray-200 bg-white">
+											</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody className="bg-white">
 										{dependentBlocks.map((block) => {
 											const selectId = `${radioGroupId}-select-${block.blockId}`;
 											return (
-												<tr key={block.blockId}>
-													<td className="px-4 py-3 text-gray-900 text-sm">
+												<TableRow
+													key={block.blockId}
+													className="border-gray-200 border-b"
+												>
+													<TableCell className="px-4 py-3 text-gray-900 text-sm">
 														{block.blockType}
-													</td>
-													<td className="px-4 py-3 text-gray-900 text-sm">
+													</TableCell>
+													<TableCell className="px-4 py-3 text-gray-900 text-sm">
 														{block.blockId}
-													</td>
-													<td className="px-4 py-3">
+													</TableCell>
+													<TableCell className="px-4 py-3">
 														<div className="flex w-full">
 															<Select
 																value={
@@ -343,12 +352,12 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 																</SelectContent>
 															</Select>
 														</div>
-													</td>
-												</tr>
+													</TableCell>
+												</TableRow>
 											);
 										})}
-									</tbody>
-								</table>
+									</TableBody>
+								</Table>
 							</div>
 						</div>
 					)}
