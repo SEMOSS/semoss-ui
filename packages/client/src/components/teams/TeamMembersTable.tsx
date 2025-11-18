@@ -12,7 +12,6 @@ import {
 	Checkbox,
 	Chip,
 	IconButton,
-	Link,
 	Modal,
 	Search,
 	Stack,
@@ -681,8 +680,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												}
 											}}
 										/>
+										Name
 									</Table.Cell>
-									<Table.Cell size="small">Name</Table.Cell>
 									<Table.Cell size="small">
 										Added Date
 									</Table.Cell>
@@ -708,7 +707,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 										if (user) {
 											return (
-												<Table.Row key={user.name}>
+												<Table.Row key={user.userid}>
 													<Table.Cell size="small">
 														<Stack
 															direction="row"
@@ -774,9 +773,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 															</Stack>
 														</Stack>
 													</Table.Cell>
-													<Table.Cell size="medium">
-														{user.dateadded}
-													</Table.Cell>
 
 													<DateTableCell size="small">
 														{user.dateadded}
@@ -802,7 +798,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										} else {
 											return (
 												<Table.Row
-													key={`${i}No data available`}
+													key={`No data available`}
 												>
 													<Table.Cell size="small"></Table.Cell>
 													<Table.Cell size="small"></Table.Cell>
@@ -1043,16 +1039,19 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											idx % 2 !== 0
 												? "rgba(0, 0, 0, .03)"
 												: "",
-										paddingBottom: "16px",
+										paddingBottom: "8px",
+										borderRadius: "8px",
+										width: "100%",
+										boxSizing: "border-box",
 									}}
 								>
 									<Box
 										sx={{
-											height: "56px",
 											width: "100%",
 											gap: "8px",
 											position: "relative",
 											border: "5px",
+											display: "flex",
 										}}
 									>
 										<Box
@@ -1096,9 +1095,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												<Typography
 													variant="h6"
 													sx={{
-														maxHeight: "24px",
-														height: "90%",
 														marginTop: "5px",
+														maxWidth: "100%",
+														lineHeight: 1.1,
 													}}
 												>
 													{user.name}
@@ -1106,11 +1105,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											}
 											sx={{
 												color: "#000",
-												maxWidth: "466px",
-												height: "15px",
 												width: "100%",
-												float: "left",
 												gap: "16px",
+												margin: "0",
 											}}
 											subheader={
 												<Box
@@ -1135,12 +1132,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 													{`• `}
 													<span>
 														{`Email: `}
-														<Link
-															href={`mailto:${user.email}`}
-															underline="none"
-														>
-															{user.email}
-														</Link>
+														<Chip
+															label={user.email}
+															size="small"
+														/>
 													</span>
 												</Box>
 											}
