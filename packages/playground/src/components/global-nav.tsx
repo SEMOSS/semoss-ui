@@ -174,7 +174,7 @@ export const GlobalNav = observer(() => {
 												<Link
 													className="inline-block flex-1 truncate"
 													to={`/room/${roomId}`}
-													aria-label={"Select a room"}
+													aria-label={"Select room"}
 												>
 													{name}
 												</Link>

@@ -46,7 +46,9 @@ export const MainLayout = () => {
 				<GlobalNav />
 				<SidebarInset>
 					<GlobalTrigger />
-					<Outlet />
+					<div className="h-[calc(100vh-theme(space.2))] w-full overflow-hidden">
+						<Outlet />
+					</div>
 				</SidebarInset>
 			</SidebarProvider>
 		</ChatContext.Provider>

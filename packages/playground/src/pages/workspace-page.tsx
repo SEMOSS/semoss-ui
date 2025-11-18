@@ -19,7 +19,7 @@ import { useChat } from "@/hooks";
 import type { App } from "@/types";
 
 /**
- * Renders the Discover Page, allowing users to discover and create workspaces
+ * Renders the WorkspacePage, allowing users to access their workspace or discover new ones
  *
  * @component
  */

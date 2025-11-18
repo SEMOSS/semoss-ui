@@ -130,7 +130,7 @@ export const NewRoomPage = observer(() => {
 	}, [getWorkspace.status, getWorkspace.data]);
 
 	return (
-		<div className="h-[calc(100vh-theme(space.2))] w-full overflow-hidden">
+		<div className="h-full w-full overflow-hidden">
 			<ResizablePanelGroup direction="horizontal">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
