@@ -455,7 +455,10 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 						}}
 					>
 						<StyledTableTitleDiv>
-							<Typography variant={"h6"}>
+							<Typography
+								variant={"h6"}
+								data-testid={"pendingMembers-section-title"}
+							>
 								Pending Requests
 							</Typography>
 						</StyledTableTitleDiv>
@@ -468,7 +471,10 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 										justifyContent={"flex-start"}
 										direction={"row"}
 									>
-										<Typography variant={"body1"}>
+										<Typography
+											variant={"body1"}
+											data-testid="pending-requests-count"
+										>
 											{renderedMembers.length === 1
 												? `${renderedMembers.length} pending request`
 												: `${renderedMembers.length} pending requests`}
@@ -482,13 +488,13 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 						</StyledTableTitleMemberContainer>
 
 						<StyledSearchButtonContainer>
-							<IconButton>
+							<IconButton data-testid="pending-members-search-btn">
 								<SearchIcon />
 							</IconButton>
 						</StyledSearchButtonContainer>
 
 						<StyledFilterButtonContainer>
-							<IconButton>
+							<IconButton data-testid="pending-members-filter-btn">
 								<img src={FilteredIcon} alt="Filter" />
 							</IconButton>
 						</StyledFilterButtonContainer>
@@ -508,6 +514,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 
 											denyPendingMembers(members);
 										}}
+										data-testid="deny-selected-btn"
 									>
 										Deny Selected
 									</Button>
@@ -526,6 +533,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 												Object.values(members),
 											);
 										}}
+										data-testid="approve-selected-btn"
 									>
 										Approve Selected
 									</Button>
@@ -536,6 +544,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 							<IconButton
 								onClick={() => setOpenTable(!openTable)}
 								disabled={renderedMembers.length === 0}
+								data-testid="pending-members-expand-collapse-btn"
 							>
 								{openTable ? <ExpandLess /> : <ExpandMore />}
 							</IconButton>
@@ -557,6 +566,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 												<Table.Cell
 													size="small"
 													padding="checkbox"
+													data-testid="pending-members-permission"
 												>
 													<Checkbox
 														checked={
@@ -599,6 +609,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 																);
 															}
 														}}
+														data-testid="select-all-pending-members-checkbox"
 													/>
 												</Table.Cell>
 												<Table.Cell size="small">
@@ -720,14 +731,17 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 																<RadioGroup.Item
 																	value="Author"
 																	label="Author"
+																	data-testid="author-radio"
 																/>
 																<RadioGroup.Item
 																	value="Editor"
 																	label="Editor"
+																	data-testid="editor-radio"
 																/>
 																<RadioGroup.Item
 																	value="Read-Only"
 																	label="Read-Only"
+																	data-testid="read-only-radio"
 																/>
 															</RadioGroup>
 														</Table.Cell>
@@ -741,6 +755,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 																		],
 																	);
 																}}
+																data-testid="approve-pending-member-btn"
 															>
 																<Check
 																	color={
@@ -756,6 +771,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 																		],
 																	);
 																}}
+																data-testid="deny-pending-member-btn"
 															>
 																<Close />
 															</IconButton>

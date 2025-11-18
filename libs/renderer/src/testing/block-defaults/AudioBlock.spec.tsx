@@ -1,4 +1,4 @@
-import { AudioBlock } from "@/components/block-defaults/audio-block/AudioBlock";
+import { AudioBlock } from "../../components/block-defaults/audio-block/AudioBlock";
 import { render, screen } from "../utils";
 
 const blocks = {
@@ -20,14 +20,14 @@ const blocks = {
 
 describe("Audio Block", async () => {
 	it("Should render the audio block", async () => {
-		const { container } = await render(<AudioBlock id="audio-player" />, {
+		await render(<AudioBlock id={blocks["audio-player"].id} />, {
 			blocks: blocks,
 		});
 		const element = screen.getByText("Audio Player");
 		expect(element).toBeInTheDocument();
 	});
 	it("Should hide the audio block", async () => {
-		const { container } = await render(<AudioBlock id="audio-player" />, {
+		await render(<AudioBlock id={blocks["audio-player"].id} />, {
 			blocks: {
 				"audio-player": {
 					...blocks["audio-player"],
@@ -42,25 +42,26 @@ describe("Audio Block", async () => {
 		expect(element).not.toBeInTheDocument();
 	});
 	it("Should have an audio source", async () => {
-		const { container } = await render(<AudioBlock id="audio-player" />, {
-			blocks: {
-				"audio-player": {
-					...blocks["audio-player"],
-					data: {
-						...blocks["audio-player"].data,
-						source: "hello",
+		const { container } = await render(
+			<AudioBlock id={blocks["audio-player"].id} />,
+			{
+				blocks: {
+					"audio-player": {
+						...blocks["audio-player"],
+						data: {
+							...blocks["audio-player"].data,
+							source: "hello",
+						},
 					},
 				},
 			},
-		});
+		);
 		const element = container.querySelector("audio");
-
-		// screen.debug()
 
 		expect(element).toHaveAttribute("src", "hello");
 	});
 	it("Should show 'My Audio Test' as custom label", async () => {
-		const { container } = await render(<AudioBlock id="audio-player" />, {
+		await render(<AudioBlock id={blocks["audio-player"].id} />, {
 			blocks: {
 				"audio-player": {
 					...blocks["audio-player"],
@@ -75,50 +76,59 @@ describe("Audio Block", async () => {
 		expect(element).toBeInTheDocument();
 	});
 	it("Should be on loop", async () => {
-		const { container } = await render(<AudioBlock id="audio-player" />, {
-			blocks: {
-				"audio-player": {
-					...blocks["audio-player"],
-					data: {
-						...blocks["audio-player"].data,
-						label: "My Audio Test",
-						loop: true,
+		const { container } = await render(
+			<AudioBlock id={blocks["audio-player"].id} />,
+			{
+				blocks: {
+					"audio-player": {
+						...blocks["audio-player"],
+						data: {
+							...blocks["audio-player"].data,
+							label: "My Audio Test",
+							loop: true,
+						},
 					},
 				},
 			},
-		});
+		);
 		const element = container.querySelector("audio");
 		expect(element).toHaveAttribute("loop");
 	});
 	it("Should hide controls", async () => {
-		const { container } = await render(<AudioBlock id="audio-player" />, {
-			blocks: {
-				"audio-player": {
-					...blocks["audio-player"],
-					data: {
-						...blocks["audio-player"].data,
-						label: "My Audio Test",
-						controls: false,
+		const { container } = await render(
+			<AudioBlock id={blocks["audio-player"].id} />,
+			{
+				blocks: {
+					"audio-player": {
+						...blocks["audio-player"],
+						data: {
+							...blocks["audio-player"].data,
+							label: "My Audio Test",
+							controls: false,
+						},
 					},
 				},
 			},
-		});
+		);
 		const element = container.querySelector("audio");
 		expect(element).not.toHaveAttribute("controls");
 	});
 	it("Should be on autoplay", async () => {
-		const { container } = await render(<AudioBlock id="audio-player" />, {
-			blocks: {
-				"audio-player": {
-					...blocks["audio-player"],
-					data: {
-						...blocks["audio-player"].data,
-						label: "My Audio Test",
-						autoplay: true,
+		const { container } = await render(
+			<AudioBlock id={blocks["audio-player"].id} />,
+			{
+				blocks: {
+					"audio-player": {
+						...blocks["audio-player"],
+						data: {
+							...blocks["audio-player"].data,
+							label: "My Audio Test",
+							autoplay: true,
+						},
 					},
 				},
 			},
-		});
+		);
 		const element = container.querySelector("audio");
 		expect(element).toHaveAttribute("autoplay");
 	});
