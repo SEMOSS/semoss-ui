@@ -70,7 +70,7 @@ export const GlobalNav = observer(() => {
 			WORKSPACE_ID?: string;
 		}[]
 	>(
-		`GetUserConversationRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>, "` : ""}limit = 25 , offset = 0 , sort = [ "DESC" ] ) ;`,
+		`GetUserConversationRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""}limit = 25 , offset = 0 , sort = [ "DESC" ] ) ;`,
 	);
 	const navigate = useNavigate();
 
