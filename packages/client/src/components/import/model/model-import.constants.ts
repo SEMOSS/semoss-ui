@@ -34,7 +34,7 @@ export interface FieldDefinition {
 	disabled?: boolean;
 	default?: string | number | boolean;
 	rules?: FieldRules;
-	helperText?: string
+	helperText?: string;
 }
 
 export interface ModelTypeDefinition {
@@ -157,7 +157,7 @@ export const IMPORTABLE_MODELS = {
 							type: "password",
 							required: true,
 							category: "Credentials",
-							helperText: "https://platform.openai.com/api-keys"
+							helperText: "https://platform.openai.com/api-keys",
 						},
 						{
 							key: "MODEL",
@@ -244,11 +244,23 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "CATALOG_NAME",
+							key: "NAME",
 							label: "Catalog Name",
 							type: "text",
 							required: true,
 							category: "General",
+							rules: {
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom_rules: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
 						},
 						{
 							key: "TAG",
@@ -466,11 +478,24 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "CATALOG_NAME",
+							key: "NAME",
 							label: "Catalog Name",
 							type: "text",
 							required: true,
 							category: "General",
+							rules: {
+								required: true,
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
 						},
 						{
 							key: "TAG",
@@ -555,11 +580,24 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "CATALOG_NAME",
+							key: "NAME",
 							label: "Catalog Name",
 							type: "text",
 							required: true,
 							category: "General",
+							rules: {
+								required: true,
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
 						},
 						{
 							key: "MODEL_TYPE",
@@ -653,11 +691,24 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "CATALOG_NAME",
+							key: "NAME",
 							label: "Catalog Name",
 							type: "text",
 							required: true,
 							category: "General",
+							rules: {
+								required: true,
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
 						},
 						{
 							key: "TAG",
@@ -766,11 +817,24 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "CATALOG_NAME",
+							key: "NAME",
 							label: "Catalog Name",
 							type: "text",
 							required: true,
 							category: "General",
+							rules: {
+								required: true,
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
 						},
 						{
 							key: "MODEL_TYPE",
@@ -896,11 +960,24 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "CATALOG_NAME",
+							key: "NAME",
 							label: "Catalog Name",
 							type: "text",
 							required: true,
 							category: "General",
+							rules: {
+								required: true,
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
 						},
 						{
 							key: "MODEL_TYPE",
@@ -956,11 +1033,24 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "CATALOG_NAME",
+							key: "NAME",
 							label: "Catalog Name",
 							type: "text",
 							required: true,
 							category: "General",
+							rules: {
+								required: true,
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
 						},
 						{
 							key: "MODEL_TYPE",
@@ -1056,11 +1146,24 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "CATALOG_NAME",
+							key: "NAME",
 							label: "Catalog Name",
 							type: "text",
 							required: true,
 							category: "General",
+							rules: {
+								required: true,
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
 						},
 						{
 							key: "MODEL_TYPE",
@@ -1109,11 +1212,24 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "CATALOG_NAME",
+							key: "NAME",
 							label: "Catalog Name",
 							type: "text",
 							required: true,
 							category: "General",
+							rules: {
+								required: true,
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
 						},
 						{
 							key: "MODEL_TYPE",
@@ -1225,11 +1341,24 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "CATALOG_NAME",
+							key: "NAME",
 							label: "Catalog Name",
 							type: "text",
 							required: true,
 							category: "General",
+							rules: {
+								required: true,
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
 						},
 						{
 							key: "MODEL_TYPE",
@@ -1387,11 +1516,24 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "CATALOG_NAME",
+							key: "NAME",
 							label: "Catalog Name",
 							type: "text",
 							required: true,
 							category: "General",
+							rules: {
+								required: true,
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
 						},
 						{
 							key: "MODEL_TYPE",
@@ -1446,13 +1588,15 @@ export const MODEL_VERSIONS = {
 			name: "gpt-5",
 			display: "GPT-5",
 			icon: "/src/assets/img/OPEN_AI.png",
-			description: "Previous intelligent reasoning model for coding and agentic tasks with configurable reasoning effort."
+			description:
+				"Previous intelligent reasoning model for coding and agentic tasks with configurable reasoning effort.",
 		},
 		{
 			name: "gpt-5.1",
 			display: "GPT-5.1",
 			icon: "/src/assets/img/OPEN_AI.png",
-			description: "The best model for coding and agentic tasks with configurable reasoning effort."
+			description:
+				"The best model for coding and agentic tasks with configurable reasoning effort.",
 		},
 		{
 			name: "gpt-5-mini",
@@ -1478,7 +1622,7 @@ export const MODEL_VERSIONS = {
 			name: "gpt-4o",
 			display: "GPT-4o",
 			icon: "/src/assets/img/OPEN_AI.png",
-			description: "Fast, intelligent, flexible GPT model"
+			description: "Fast, intelligent, flexible GPT model",
 		},
 		{
 			name: "dall-e-3",
@@ -1563,7 +1707,6 @@ export const MODEL_VERSIONS = {
 			embedding: false,
 		},
 
-		
 		{
 			name: "ai21.j2-ultra-v1",
 			display: "Jurassic-2 Ultra",
