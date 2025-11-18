@@ -28,7 +28,8 @@
 			"**/*.min.js",
 			"**/*.d.ts",
 			"**/.DS_Store",
-			"**/*.local"
+			"**/*.local",
+			".history/**"
 		]
 	},
 	"linter": {
