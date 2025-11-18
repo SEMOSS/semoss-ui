@@ -47,7 +47,7 @@ export const WorkspaceMCPList = ({
 
 	return (
 		<ScrollArea className="h-full w-full">
-			<div className="grid grid-cols-3 gap-4 p-4">
+			<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
 				{searchedMCP.map((m) => (
 					<Card key={m.id} className="col-span-1">
 						<CardContent>

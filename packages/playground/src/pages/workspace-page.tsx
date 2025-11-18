@@ -1,7 +1,7 @@
 import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	InputGroup,
@@ -11,6 +11,7 @@ import {
 	ScrollArea,
 	Spinner,
 	toast,
+	useDebouncedValue,
 } from "@semoss/ui/next";
 import workspaceGraphic from "@/assets/img/workspace-graphic.png";
 import { WorkspaceCard, WorkspaceOverlay } from "@/components";

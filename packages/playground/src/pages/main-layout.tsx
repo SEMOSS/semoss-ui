@@ -40,6 +40,7 @@ export const MainLayout = () => {
 				style={
 					{
 						"--sidebar-width": "19rem",
+						"--sidebar-width-mobile": "19rem",
 					} as React.CSSProperties
 				}
 			>
