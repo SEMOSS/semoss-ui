@@ -1,3 +1,5 @@
+// Removed unused import (was: import { link } from "fs");
+
 export type FieldType =
 	| "text"
 	| "hidden"
@@ -1590,6 +1592,7 @@ export const MODEL_VERSIONS = {
 			icon: "/src/assets/img/OPEN_AI.png",
 			description:
 				"Previous intelligent reasoning model for coding and agentic tasks with configurable reasoning effort.",
+			link: "https://platform.openai.com/docs/models/gpt-5",
 		},
 		{
 			name: "gpt-5.1",
@@ -1597,42 +1600,62 @@ export const MODEL_VERSIONS = {
 			icon: "/src/assets/img/OPEN_AI.png",
 			description:
 				"The best model for coding and agentic tasks with configurable reasoning effort.",
+			link: "https://platform.openai.com/docs/models/gpt-5.1",
 		},
 		{
 			name: "gpt-5-mini",
 			display: "GPT-5 Mini",
 			icon: "/src/assets/img/OPEN_AI.png",
+			description:
+				"A faster, cost-efficient GPT-5 variant optimized for well-defined tasks and precise prompts.",
+			link: "https://platform.openai.com/docs/models/gpt-5-mini",
 		},
 		{
 			name: "gpt-5-nano",
 			display: "GPT-5 nano",
 			icon: "/src/assets/img/OPEN_AI.png",
+			description:
+				"Fastest, most cost-efficient GPT-5 variant ideal for high-volume summarization and classification.",
+			link: "https://platform.openai.com/docs/models/gpt-5-nano",
 		},
 		{
 			name: "gpt-4",
 			display: "GPT 4",
 			icon: "/src/assets/img/OPEN_AI.png",
+			description:
+				"Older high-intelligence GPT model still available for Chat Completions.",
+			link: "https://platform.openai.com/docs/models/gpt-4",
 		},
 		{
 			name: "gpt-3.5-Turbo",
 			display: "GPT 3.5 Turbo",
 			icon: "/src/assets/img/OPEN_AI.png",
+			description:
+				"Legacy GPT model for economical natural language and code generation across chat and non-chat tasks.",
+			link: "https://platform.openai.com/docs/models/gpt-3.5-turbo",
 		},
 		{
 			name: "gpt-4o",
 			display: "GPT-4o",
 			icon: "/src/assets/img/OPEN_AI.png",
 			description: "Fast, intelligent, flexible GPT model",
+			link: "https://platform.openai.com/docs/models/gpt-4o",
 		},
 		{
 			name: "dall-e-3",
 			display: "DALL E 3",
 			icon: "/src/assets/img/OPEN_AI.png",
+			description:
+				"Previous generation image model that creates new images from natural language prompts in specified sizes.",
+			link: "https://platform.openai.com/docs/models/dall-e-3",
 		},
 		{
 			name: "dall-e-2",
 			display: "DALL E 2",
 			icon: "/src/assets/img/OPEN_AI.png",
+			description:
+				"Earlier image generation model offering more granular prompt control and higher parallel request throughput.",
+			link: "https://platform.openai.com/docs/models/dall-e-2",
 		},
 		{
 			name: "gpt-audio",
@@ -1640,6 +1663,9 @@ export const MODEL_VERSIONS = {
 			icon: "/src/assets/img/OPEN_AI.png",
 			audio: true,
 			disable: true,
+			description:
+				"First generally available GPT audio model supporting audio input and output via Chat Completions.",
+			link: "https://platform.openai.com/docs/models/gpt-audio",
 		},
 		{
 			name: "gpt-image-1",
@@ -1647,24 +1673,36 @@ export const MODEL_VERSIONS = {
 			icon: "/src/assets/img/OPEN_AI.png",
 			image: true,
 			disable: true,
+			description:
+				"State-of-the-art multimodal image generation model accepting text and image inputs to produce images.",
+			link: "https://platform.openai.com/docs/models/gpt-image-1",
 		},
 		{
 			name: "text-davinci",
 			display: "Text Davinci",
 			icon: "/src/assets/img/OPEN_AI.png",
 			embedding: true,
+			description:
+				"Deprecated high-capacity GPT-3 family text model retained for compatibility with older completions workflows.",
+			link: "https://platform.openai.com/docs/models/text-davinci",
 		},
 		{
 			name: "text-embedding-3-large",
 			display: "text-embedding-3-large",
 			icon: "/src/assets/img/OPEN_AI.png",
 			embedding: true,
+			description:
+				"Most capable multilingual embedding model for semantic search, clustering, recommendations, anomaly detection, and classification.",
+			link: "https://platform.openai.com/docs/models/text-embedding-3-large",
 		},
 		{
 			name: "text-embedding-3-small",
-			display: "text-embedding-3-large",
+			display: "text-embedding-3-small",
 			icon: "/src/assets/img/OPEN_AI.png",
 			embedding: true,
+			description:
+				"Smaller, cost-efficient embedding model for semantic similarity, search, and lightweight classification tasks.",
+			link: "https://platform.openai.com/docs/models/text-embedding-3-small",
 		},
 	],
 	"Azure OpenAI": [
@@ -1673,12 +1711,14 @@ export const MODEL_VERSIONS = {
 			display: "Azure Open AI",
 			icon: "/src/assets/img/OPEN_AI.png",
 			embedding: false,
+			link: "https://learn.microsoft.com/azure/ai-services/openai/concepts/models",
 		},
 		{
 			name: "azure-open-ai-ada-embedder",
 			display: "Azure Open AI ADA Embedding",
 			icon: "/src/assets/img/OPEN_AI.png",
 			embedding: true,
+			link: "https://learn.microsoft.com/azure/ai-services/openai/concepts/models#embeddings",
 		},
 	],
 	"AWS Bedrock": [
@@ -1687,6 +1727,7 @@ export const MODEL_VERSIONS = {
 			display: "Claude 3 Opus",
 			icon: "/src/assets/img/CLAUDE_AI.png",
 			embedding: false,
+			link: "https://docs.anthropic.com/en/docs/models-overview",
 		},
 		{
 			name: "anthropic.claude-3-sonnet-20240229-v1:0",
