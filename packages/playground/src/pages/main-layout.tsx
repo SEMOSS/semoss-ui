@@ -40,13 +40,16 @@ export const MainLayout = () => {
 				style={
 					{
 						"--sidebar-width": "19rem",
+						"--sidebar-width-mobile": "19rem",
 					} as React.CSSProperties
 				}
 			>
 				<GlobalNav />
 				<SidebarInset>
 					<GlobalTrigger />
-					<Outlet />
+					<div className="h-[calc(100vh-theme(space.2))] w-full overflow-hidden">
+						<Outlet />
+					</div>
 				</SidebarInset>
 			</SidebarProvider>
 		</ChatContext.Provider>
