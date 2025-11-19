@@ -1,7 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { formatPostcssSourceMap } from "vite";
 import { debounced } from "@semoss/sdk/react";
 import {
 	Button,
@@ -17,8 +16,7 @@ import { EngineLandscapeCard } from "@/components/engine";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { usePixel, useRootStore } from "@/hooks";
-import { ENGINE_TYPES } from "@/types";
-import { formatToDataTestId, removeUnderscores } from "@/utility";
+import { formatToDataTestId } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
 const StyledContainer = styled("div")(({ theme }) => ({
@@ -603,8 +601,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 									return (
 										<Grid item key={db.database_id} sm={12}>
 											<EngineLandscapeCard
-												name={removeUnderscores(
-													db.database_name,
+												name={(
+													db.database_name
 												)}
 												type={db.database_type}
 												id={db.database_id}
@@ -678,8 +676,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 												sm={12}
 											>
 												<EngineLandscapeCard
-													name={removeUnderscores(
-														db.database_name,
+													name={(
+														db.database_name
 													)}
 													type={db.database_type}
 													id={db.database_id}
