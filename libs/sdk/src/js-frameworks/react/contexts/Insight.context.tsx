@@ -5,7 +5,7 @@ import {
 	useMemo,
 	useState,
 } from "react";
-import { Insight, type MCPToolRequest } from "../../..";
+import { Env, Insight, type MCPToolRequest } from "../../..";
 
 /**
  * Context of the react data
@@ -52,7 +52,6 @@ export const InsightProvider = (props: InsightProviderProps) => {
 	const [error, setError] = useState<Insight["error"]>(null);
 	const [system, setSystem] = useState<Insight["system"]>(null);
 	const [insightId, setInsightId] = useState<Insight["insightId"]>("");
-	const [tool, setTool] = useState<MCPToolRequest | null>(null);
 
 	/**
 	 * Sync the insight with react
@@ -64,7 +63,6 @@ export const InsightProvider = (props: InsightProviderProps) => {
 		setIsInitialized(insight.isInitialized);
 		setIsReady(insight.isReady);
 		setInsightId(insight.insightId);
-		setTool(insight.tool);
 	}, [insight]);
 
 	const wrappedActions = useMemo(() => {
@@ -116,7 +114,8 @@ export const InsightProvider = (props: InsightProviderProps) => {
 				system: system,
 				actions: wrappedActions,
 				insightId: insightId,
-				tool: tool,
+				// ENV.TOOL should not change once the insight is ready
+				tool: Env.TOOL ?? null,
 			}}
 		>
 			{children}

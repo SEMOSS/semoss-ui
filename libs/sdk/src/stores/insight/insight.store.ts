@@ -8,8 +8,7 @@ import {
 	upload,
 } from "../../api";
 import { Env } from "../../env";
-import { addToolListener } from "../../listener";
-import type { MCPToolRequest, MCPToolResponse, Script } from "../../types";
+import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
 
 interface InsightStoreInterface {
@@ -59,9 +58,6 @@ interface InsightStoreInterface {
 
 		/** Python code associated with the insight */
 		python: Script | null;
-
-		/** Tool that has been requested */
-		tool: MCPToolRequest | null;
 	};
 }
 
@@ -76,7 +72,6 @@ export class InsightStore {
 		options: {
 			appId: "",
 			python: null,
-			tool: null,
 		},
 	};
 
@@ -119,13 +114,6 @@ export class InsightStore {
 	 */
 	get system() {
 		return this._store.system;
-	}
-
-	/**
-	 * Tool that has been requested
-	 */
-	get tool() {
-		return this._store.options.tool;
 	}
 
 	/** Methods */
@@ -191,11 +179,6 @@ export class InsightStore {
 				};
 			}
 		}
-
-		// add a listener for tool messages
-		addToolListener((tool) => {
-			this._store.options.tool = tool;
-		});
 
 		// load the environment from the document (production)
 		try {
@@ -352,11 +335,6 @@ export class InsightStore {
 			pixel += `SetContext("${this._store.options.appId}");`;
 		}
 
-		// set the room ID if it exists
-		if (Env.TOOL?.roomId) {
-			pixel += `SetRoomForInsight(${JSON.stringify(Env.TOOL.roomId)}");`;
-		}
-
 		// load the python code int
 		if (this._store.options.python?.script) {
 			// validate the alias
@@ -390,6 +368,14 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		// set the insight ID
 		this._store.insightId = insightId;
+
+		// point the insight space toward the room
+		if (Env.TOOL.roomId) {
+			await runPixel<[boolean]>(
+				`SetRoomForInsight(roomId=${JSON.stringify(Env.TOOL.roomId)});`,
+				insightId,
+			);
+		}
 
 		// set as ready
 		this._store.isReady = true;
