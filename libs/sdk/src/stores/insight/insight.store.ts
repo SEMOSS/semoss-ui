@@ -370,7 +370,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		this._store.insightId = insightId;
 
 		// point the insight space toward the room
-		if (Env.TOOL.roomId) {
+		if (Env?.TOOL?.roomId) {
 			await runPixel<[boolean]>(
 				`SetRoomForInsight(roomId=${JSON.stringify(Env.TOOL.roomId)});`,
 				insightId,
