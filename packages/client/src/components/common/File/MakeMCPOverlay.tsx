@@ -5,6 +5,9 @@ import {
 	UnfoldLess,
 	UnfoldMore,
 } from "@mui/icons-material";
+import CancelOutlined from "@mui/icons-material/CancelOutlined";
+import EditOutlined from "@mui/icons-material/EditOutlined";
+import SaveOutlined from "@mui/icons-material/SaveOutlined";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	Accordion,
@@ -209,6 +212,13 @@ const StyledFunctionItemContent = styled(Box)(() => ({
 	gap: "8px",
 }));
 
+const StyledDescriptionBox = styled(Box)(({ theme }) => ({
+	display: "flex",
+	alignItems: "flex-start",
+	marginBottom: theme.spacing(1.5),
+	minHeight: "40px",
+}));
+
 // ==================== UTILITY FUNCTIONS ====================
 
 function isTool(obj: unknown): obj is Tool {
@@ -331,6 +341,12 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 	const [jsonErrors, setJsonErrors] = useState<
 		Record<string, Record<string, boolean>>
 	>({});
+	const [editingDescription, setEditingDescription] = useState<{
+		[toolName: string]: boolean;
+	}>({});
+	const [editedDescription, setEditedDescription] = useState<{
+		[toolName: string]: string;
+	}>({});
 
 	// ==================== CONSTANTS ====================
 
@@ -537,6 +553,22 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 		[tools, handleToolsUpdate],
 	);
 
+	const updateToolDescription = useCallback(
+		(toolName: string, newDescription: string) => {
+			const updated = tools.map((tool) => {
+				if (isTool(tool) && tool.name === toolName) {
+					return {
+						...tool,
+						description: newDescription,
+					};
+				}
+				return tool;
+			});
+			handleToolsUpdate(updated);
+		},
+		[tools, handleToolsUpdate],
+	);
+
 	const updateToolTypeAndDefault = useCallback(
 		(
 			toolName: string,
@@ -576,6 +608,31 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 	);
 
 	// ==================== EVENT HANDLERS ====================
+
+	const handleBeginEditDescription = (
+		toolName: string,
+		currDescription: string,
+	) => {
+		setEditingDescription((prev) => ({ ...prev, [toolName]: true }));
+		setEditedDescription((prev) => ({
+			...prev,
+			[toolName]: currDescription,
+		}));
+	};
+
+	const handleChangeEditDescription = (toolName: string, value: string) => {
+		setEditedDescription((prev) => ({ ...prev, [toolName]: value }));
+	};
+
+	const handleSaveEditDescription = (toolName: string) => {
+		updateToolDescription(toolName, editedDescription[toolName]);
+		setEditingDescription((prev) => ({ ...prev, [toolName]: false }));
+	};
+
+	const handleCancelEditDescription = (toolName: string) => {
+		setEditingDescription((prev) => ({ ...prev, [toolName]: false }));
+		setEditedDescription((prev) => ({ ...prev, [toolName]: "" }));
+	};
 
 	const handleSelectAllFunctions = useCallback(() => {
 		const availableFunctions = filteredFunctions.filter(
@@ -1302,6 +1359,8 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			).filter((key) => getSelectedForTool(tool.name)[key]).length;
 			const isExpanded = (expanded[activeStep] || []).includes(tool.name);
 			const isDeleted = deletedFunctions.includes(tool.name);
+			const toolName = tool.name;
+			const description = tool.description ?? "No description available.";
 
 			const accordionContent = (
 				<Accordion
@@ -1384,12 +1443,80 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 					<Accordion.Content
 						data-testid={`accordion-content-${tool.name}`}
 					>
-						<Typography
-							variant="body2"
-							data-testid={`accordion-description-${tool.name}`}
-						>
-							{tool.description ?? "No description available."}
-						</Typography>
+						<StyledDescriptionBox>
+							{editingDescription[toolName] ? (
+								<>
+									<TextField
+										fullWidth
+										variant="outlined"
+										size="small"
+										multiline
+										maxRows={6}
+										value={editedDescription[toolName]}
+										onChange={(e) =>
+											handleChangeEditDescription(
+												toolName,
+												e.target.value,
+											)
+										}
+										sx={{ flex: 1 }}
+									/>
+									<Box
+										sx={{
+											display: "flex",
+											flexDirection: "column",
+											marginLeft: 1,
+											gap: 0.5,
+										}}
+									>
+										<IconButton
+											aria-label="Save description"
+											onClick={() =>
+												handleSaveEditDescription(
+													toolName,
+												)
+											}
+											size="small"
+										>
+											<SaveOutlined fontSize="small" />
+										</IconButton>
+										<IconButton
+											aria-label="Cancel description edit"
+											onClick={() =>
+												handleCancelEditDescription(
+													toolName,
+												)
+											}
+											size="small"
+										>
+											<CancelOutlined fontSize="small" />
+										</IconButton>
+									</Box>
+								</>
+							) : (
+								<>
+									<Typography
+										variant="body2"
+										sx={{ flex: 1 }}
+									>
+										{description}
+									</Typography>
+									<IconButton
+										aria-label="Edit description"
+										onClick={() =>
+											handleBeginEditDescription(
+												toolName,
+												description,
+											)
+										}
+										sx={{ marginLeft: 1 }}
+										size="small"
+									>
+										<EditOutlined fontSize="small" />
+									</IconButton>
+								</>
+							)}
+						</StyledDescriptionBox>
 						{renderParameterTable(tool, showParameterSelection)}
 					</Accordion.Content>
 				</Accordion>
@@ -1413,6 +1540,8 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			handleAccordionExpand,
 			renderParameterTable,
 			deletedFunctions,
+			editingDescription,
+			editedDescription,
 		],
 	);
 
@@ -1477,15 +1606,16 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 								>
 									<StyledFunctionItemContent
 										data-testid={`function-content-${tool.name}`}
+										onClick={(e) => {
+											e.stopPropagation();
+											handleFunctionToggle(tool);
+										}}
 									>
 										<Checkbox
 											data-testid={`function-checkbox-${tool.name}`}
 											checked={selectedFunctions.includes(
 												tool.name,
 											)}
-											onChange={() =>
-												handleFunctionToggle(tool)
-											}
 											disabled={isDeleted}
 										/>
 										<List.ItemText
@@ -1504,12 +1634,13 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 												/>
 												<StyledDeleteIcon
 													data-testid={`restore-icon-${tool.name}`}
-													onClick={(e) =>
+													onClick={(e) =>{
+														e.stopPropagation();
 														handleFunctionRestore(
 															e,
 															tool,
 														)
-													}
+													}}
 													size="small"
 												>
 													<RestoreFromTrash
