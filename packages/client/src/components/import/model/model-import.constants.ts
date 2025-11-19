@@ -304,16 +304,6 @@ export const IMPORTABLE_MODELS = {
 							category: "General",
 						},
 						{
-							key: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							type: "text",
-							required: true,
-							disabled: true,
-							default:
-								"from genai_client import OpenAiEmbedder;${VAR_NAME} = OpenAiEmbedder(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}')",
-							category: "Settings",
-						},
-						{
 							key: "KEEP_INPUT_OUTPUT",
 							label: "Record Questions and Responses",
 							type: "select",
@@ -336,6 +326,16 @@ export const IMPORTABLE_MODELS = {
 							required: false,
 							category: "Settings",
 						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							required: true,
+							disabled: true,
+							default:
+								"from genai_client import OpenAiEmbedder;${VAR_NAME} = OpenAiEmbedder(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}')",
+							category: "Settings",
+						},
 					],
 				},
 			],
@@ -353,13 +353,12 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							category: "General",
 							rules: {
-								required: true,
 								pattern: {
 									value: /^[\w\-\s]+$/,
 									message:
 										"Catalog names can only contain alphanumeric characters and dashes.",
 								},
-								custom: {
+								custom_rules: {
 									value: 'CheckEngineName ( "[VALUE]") ;',
 									message:
 										"This Catalog name has already been used, please try another.",
@@ -427,15 +426,6 @@ export const IMPORTABLE_MODELS = {
 							category: "Settings",
 						},
 						{
-							key: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							type: "text",
-							required: true,
-							default:
-								"import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}', project='${PROJECT}')",
-							category: "Settings",
-						},
-						{
 							key: "KEEP_INPUT_OUTPUT",
 							label: "Record Questions and Responses",
 							type: "select",
@@ -474,6 +464,16 @@ export const IMPORTABLE_MODELS = {
 							required: false,
 							category: "Settings",
 						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							required: true,
+							disabled: true,
+							default:
+								"import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}', project='${PROJECT}')",
+							category: "Settings",
+						},
 					],
 				},
 				{
@@ -486,13 +486,12 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							category: "General",
 							rules: {
-								required: true,
 								pattern: {
 									value: /^[\w\-\s]+$/,
 									message:
 										"Catalog names can only contain alphanumeric characters and dashes.",
 								},
-								custom: {
+								custom_rules: {
 									value: 'CheckEngineName ( "[VALUE]") ;',
 									message:
 										"This Catalog name has already been used, please try another.",
@@ -641,15 +640,6 @@ export const IMPORTABLE_MODELS = {
 							category: "General",
 						},
 						{
-							key: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							type: "text",
-							required: false,
-							default:
-								"import genai_client;${VAR_NAME} = genai_client.AzureOpenAiClient(api_key = '${OPEN_AI_KEY}', endpoint = '${ENDPOINT}', model_name = '${MODEL}', chat_type = '${CHAT_TYPE}', api_version = '${API_VERSION}')",
-							category: "Settings",
-						},
-						{
 							key: "KEEP_INPUT_OUTPUT",
 							label: "Record Questions and Responses",
 							type: "select",
@@ -688,6 +678,16 @@ export const IMPORTABLE_MODELS = {
 							required: false,
 							category: "Settings",
 						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							required: false,
+							disabled: true,
+							default:
+								"import genai_client;${VAR_NAME} = genai_client.AzureOpenAiClient(api_key = '${OPEN_AI_KEY}', endpoint = '${ENDPOINT}', model_name = '${MODEL}', chat_type = '${CHAT_TYPE}', api_version = '${API_VERSION}')",
+							category: "Settings",
+						},
 					],
 				},
 				{
@@ -700,13 +700,12 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							category: "General",
 							rules: {
-								required: true,
 								pattern: {
 									value: /^[\w\-\s]+$/,
 									message:
 										"Catalog names can only contain alphanumeric characters and dashes.",
 								},
-								custom: {
+								custom_rules: {
 									value: 'CheckEngineName ( "[VALUE]") ;',
 									message:
 										"This Catalog name has already been used, please try another.",
@@ -770,19 +769,20 @@ export const IMPORTABLE_MODELS = {
 							category: "General",
 						},
 						{
-							key: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							type: "text",
-							required: true,
-							default:
-								"from genai_client import AzureOpenAiEmbedder;${VAR_NAME} = AzureOpenAiEmbedder(model_name = '${MODEL}', endpoint = '${ENDPOINT}', api_key = '${OPEN_AI_KEY}', api_version = '${API_VERSION}')",
-							category: "Settings",
-						},
-						{
 							key: "MAX_TOKENS",
 							label: "Max Tokens",
 							type: "number",
 							required: true,
+							category: "Settings",
+						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							required: true,
+							disabled: true,
+							default:
+								"from genai_client import AzureOpenAiEmbedder;${VAR_NAME} = AzureOpenAiEmbedder(model_name = '${MODEL}', endpoint = '${ENDPOINT}', api_key = '${OPEN_AI_KEY}', api_version = '${API_VERSION}')",
 							category: "Settings",
 						},
 					],
@@ -802,13 +802,12 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							category: "General",
 							rules: {
-								required: true,
 								pattern: {
 									value: /^[\w\-\s]+$/,
 									message:
 										"Catalog names can only contain alphanumeric characters and dashes.",
 								},
-								custom: {
+								custom_rules: {
 									value: 'CheckEngineName ( "[VALUE]") ;',
 									message:
 										"This Catalog name has already been used, please try another.",
@@ -897,6 +896,7 @@ export const IMPORTABLE_MODELS = {
 							label: "Init Script",
 							type: "text",
 							required: true,
+							disabled: true,
 							default:
 								"import genai_client;${VAR_NAME} = genai_client.BedrockClient(modelId = '${MODEL}', secret_key = '${AWS_SECRET_KEY}', access_key = '${AWS_ACCESS_KEY}', region='${AWS_REGION}')",
 							category: "Settings",
@@ -914,13 +914,12 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							category: "General",
 							rules: {
-								required: true,
 								pattern: {
 									value: /^[\w\-\s]+$/,
 									message:
 										"Catalog names can only contain alphanumeric characters and dashes.",
 								},
-								custom: {
+								custom_rules: {
 									value: 'CheckEngineName ( "[VALUE]") ;',
 									message:
 										"This Catalog name has already been used, please try another.",
@@ -983,15 +982,6 @@ export const IMPORTABLE_MODELS = {
 							category: "General",
 						},
 						{
-							key: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							type: "text",
-							required: true,
-							default:
-								"import genai_client;${VAR_NAME} = genai_client.BedrockClient(modelId = '${MODEL}', secret_key = '${AWS_SECRET_KEY}', access_key = '${AWS_ACCESS_KEY}', region='${AWS_REGION}')",
-							category: "Settings",
-						},
-						{
 							key: "KEEP_INPUT_OUTPUT",
 							label: "Record Questions and Responses",
 							type: "select",
@@ -1023,6 +1013,16 @@ export const IMPORTABLE_MODELS = {
 							required: false,
 							category: "Settings",
 						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							required: true,
+							disabled: true,
+							default:
+								"import genai_client;${VAR_NAME} = genai_client.BedrockClient(modelId = '${MODEL}', secret_key = '${AWS_SECRET_KEY}', access_key = '${AWS_ACCESS_KEY}', region='${AWS_REGION}')",
+							category: "Settings",
+						},
 					],
 				},
 			],
@@ -1040,13 +1040,12 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							category: "General",
 							rules: {
-								required: true,
 								pattern: {
 									value: /^[\w\-\s]+$/,
 									message:
 										"Catalog names can only contain alphanumeric characters and dashes.",
 								},
-								custom: {
+								custom_rules: {
 									value: 'CheckEngineName ( "[VALUE]") ;',
 									message:
 										"This Catalog name has already been used, please try another.",
@@ -1095,15 +1094,6 @@ export const IMPORTABLE_MODELS = {
 							category: "General",
 						},
 						{
-							key: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							type: "text",
-							category: "Settings",
-							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
-							required: false,
-						},
-						{
 							key: "MAX_TOKENS",
 							label: "Max Completion Tokens",
 							type: "number",
@@ -1142,6 +1132,16 @@ export const IMPORTABLE_MODELS = {
 							required: false,
 							category: "Settings",
 						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							category: "Settings",
+							default:
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
+							required: false,
+							disabled: true,
+						},
 					],
 				},
 				{
@@ -1154,13 +1154,12 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							category: "General",
 							rules: {
-								required: true,
 								pattern: {
 									value: /^[\w\-\s]+$/,
 									message:
 										"Catalog names can only contain alphanumeric characters and dashes.",
 								},
-								custom: {
+								custom_rules: {
 									value: 'CheckEngineName ( "[VALUE]") ;',
 									message:
 										"This Catalog name has already been used, please try another.",
@@ -1221,13 +1220,12 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							category: "General",
 							rules: {
-								required: true,
 								pattern: {
 									value: /^[\w\-\s]+$/,
 									message:
 										"Catalog names can only contain alphanumeric characters and dashes.",
 								},
-								custom: {
+								custom_rules: {
 									value: 'CheckEngineName ( "[VALUE]") ;',
 									message:
 										"This Catalog name has already been used, please try another.",
@@ -1284,14 +1282,6 @@ export const IMPORTABLE_MODELS = {
 							category: "General",
 						},
 						{
-							key: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							type: "text",
-							required: false,
-							default: "",
-							category: "Settings",
-						},
-						{
 							key: "MAX_TOKENS",
 							label: "Max Completion Tokens",
 							type: "number",
@@ -1335,6 +1325,7 @@ export const IMPORTABLE_MODELS = {
 							label: "Init Script",
 							type: "text",
 							required: false,
+							disabled: true,
 							default:
 								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', deployment_type = '${DEPLOYMENT_TYPE}')",
 							category: "Settings",
@@ -1351,13 +1342,12 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							category: "General",
 							rules: {
-								required: true,
 								pattern: {
 									value: /^[\w\-\s]+$/,
 									message:
 										"Catalog names can only contain alphanumeric characters and dashes.",
 								},
-								custom: {
+								custom_rules: {
 									value: 'CheckEngineName ( "[VALUE]") ;',
 									message:
 										"This Catalog name has already been used, please try another.",
@@ -1469,15 +1459,6 @@ export const IMPORTABLE_MODELS = {
 							category: "General",
 						},
 						{
-							key: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							type: "text",
-							category: "Settings",
-							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
-							required: false,
-						},
-						{
 							key: "MAX_TOKENS",
 							label: "Max Completion Tokens",
 							type: "number",
@@ -1515,6 +1496,16 @@ export const IMPORTABLE_MODELS = {
 							type: "number",
 							required: false,
 							category: "Settings",
+						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							category: "Settings",
+							default:
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
+							required: false,
+							disabled: true,
 						},
 					],
 				},
