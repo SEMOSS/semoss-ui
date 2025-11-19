@@ -5,7 +5,7 @@ import { Env, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
-import type { MCPTool, Tool } from "@/types";
+import type { MCPTool, MCPToolRequest, Tool } from "@/types";
 import { DynamicForm } from "../tools/tools-default-view";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
@@ -114,11 +114,11 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 				tool: {
 					type: "MCP",
 					message: config?.tool?.message || "",
-					app: config?.app || "",
 					id: config?.tool?.id || "",
 					name: config?.tool?.name || "",
 					parameters: toJS(config?.tool?.parameters || {}),
-				},
+					roomId: room.roomId,
+				} satisfies MCPToolRequest,
 			},
 			"*",
 		);

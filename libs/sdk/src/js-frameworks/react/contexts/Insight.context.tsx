@@ -1,5 +1,11 @@
-import { createContext, useEffect, useMemo, useState } from "react";
-import { Insight } from "../../..";
+import {
+	createContext,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
+import { Insight, type MCPToolRequest } from "../../..";
 
 /**
  * Context of the react data
@@ -13,6 +19,7 @@ export const InsightContext = createContext<
 			system: Insight["system"];
 			actions: Insight["actions"];
 			insightId: Insight["insightId"];
+			tool: MCPToolRequest | null;
 	  }
 	| undefined
 >(undefined);
@@ -45,18 +52,20 @@ export const InsightProvider = (props: InsightProviderProps) => {
 	const [error, setError] = useState<Insight["error"]>(null);
 	const [system, setSystem] = useState<Insight["system"]>(null);
 	const [insightId, setInsightId] = useState<Insight["insightId"]>("");
+	const [tool, setTool] = useState<MCPToolRequest | null>(null);
 
 	/**
 	 * Sync the insight with react
 	 */
-	const syncInsight = async () => {
+	const syncInsight = useCallback(() => {
 		setError(insight.error);
 		setSystem(insight.system);
 		setIsAuthorized(insight.isAuthorized);
 		setIsInitialized(insight.isInitialized);
 		setIsReady(insight.isReady);
 		setInsightId(insight.insightId);
-	};
+		setTool(insight.tool);
+	}, [insight]);
 
 	const wrappedActions = useMemo(() => {
 		return Object.keys(insight.actions).reduce(
@@ -78,15 +87,15 @@ export const InsightProvider = (props: InsightProviderProps) => {
 			},
 			{} as Insight["actions"],
 		);
-	}, [insight, insight.actions]);
+	}, [insight, insight.actions, syncInsight]);
 
 	// initialize the insight / destroy
 	useEffect(() => {
 		// initialize the insight
-		insight.initialize(options).finally(() => {
-			// update the state
+		(async () => {
+			await insight.initialize(options);
 			syncInsight();
-		});
+		})();
 
 		return () => {
 			// destroy the insight
@@ -95,7 +104,7 @@ export const InsightProvider = (props: InsightProviderProps) => {
 				syncInsight();
 			});
 		};
-	}, [insight, options]);
+	}, [insight, options, syncInsight]);
 
 	return (
 		<InsightContext.Provider
@@ -107,6 +116,7 @@ export const InsightProvider = (props: InsightProviderProps) => {
 				system: system,
 				actions: wrappedActions,
 				insightId: insightId,
+				tool: tool,
 			}}
 		>
 			{children}

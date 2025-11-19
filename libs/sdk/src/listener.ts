@@ -2,9 +2,11 @@ import { Env } from "./env";
 import type { MCPToolRequest } from "./types";
 
 /**
- * Listener to messages on the window
+ * Method to add the listener for tool initialization
  */
-(() => {
+export const addToolListener = (
+	onRecieve: (toolRequest: MCPToolRequest) => void,
+): void => {
 	// only works in browser
 	if (typeof window !== "undefined") {
 		// add the listener
@@ -21,16 +23,7 @@ import type { MCPToolRequest } from "./types";
 						tool: MCPToolRequest;
 					};
 
-					Env.update({
-						TOOL: {
-							type: eventData.tool.type,
-							message: eventData.tool.message || "",
-							id: eventData.tool.id || "",
-							name: eventData.tool.name || "",
-							parameters: eventData.tool.parameters || {},
-							roomId: eventData.tool.roomId || "",
-						},
-					});
+					onRecieve(eventData.tool);
 				} catch {
 					// noop
 				}
@@ -38,4 +31,10 @@ import type { MCPToolRequest } from "./types";
 			false,
 		);
 	}
-})();
+};
+
+addToolListener((tool) => {
+	Env.update({
+		TOOL: tool,
+	});
+});

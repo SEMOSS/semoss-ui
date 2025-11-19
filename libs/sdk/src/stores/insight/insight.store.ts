@@ -8,7 +8,8 @@ import {
 	upload,
 } from "../../api";
 import { Env } from "../../env";
-import type { MCPToolResponse, Script } from "../../types";
+import { addToolListener } from "../../listener";
+import type { MCPToolRequest, MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
 
 interface InsightStoreInterface {
@@ -58,6 +59,9 @@ interface InsightStoreInterface {
 
 		/** Python code associated with the insight */
 		python: Script | null;
+
+		/** Tool that has been requested */
+		tool: MCPToolRequest | null;
 	};
 }
 
@@ -72,6 +76,7 @@ export class InsightStore {
 		options: {
 			appId: "",
 			python: null,
+			tool: null,
 		},
 	};
 
@@ -114,6 +119,13 @@ export class InsightStore {
 	 */
 	get system() {
 		return this._store.system;
+	}
+
+	/**
+	 * Tool that has been requested
+	 */
+	get tool() {
+		return this._store.options.tool;
 	}
 
 	/** Methods */
@@ -179,6 +191,11 @@ export class InsightStore {
 				};
 			}
 		}
+
+		// add a listener for tool messages
+		addToolListener((tool) => {
+			this._store.options.tool = tool;
+		});
 
 		// load the environment from the document (production)
 		try {
