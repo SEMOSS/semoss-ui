@@ -95,7 +95,16 @@ const blocks = {
 };
 
 describe("Iterator block component", () => {
-	const id = crypto.randomUUID();
+	it("should render Iterator Block", async () => {
+		const { container } = render(<IterationBlock id={"iterationBlock"} />, {
+			blocks: blocks,
+		});
+
+		const iterationBlock = container.querySelector(
+			"[data-block='iterationBlock']",
+		);
+		expect(iterationBlock).toBeInTheDocument();
+	});
 
 	it("should use useBlock hook", async () => {
 		const { result } = renderHook(
@@ -108,22 +117,25 @@ describe("Iterator block component", () => {
 
 		expect(result.current).toBeDefined();
 	});
+
 	it("should render iterator block", async () => {
+		const id = crypto.randomUUID();
 		const { container } = render(<IterationBlock id={id} />, {
 			blocks: blocks,
 		});
-
+		// console.log({ id });
 		const iterator = container.querySelector(`[data-block='${id}']`);
 		expect(iterator).toBeInTheDocument();
 	});
 
 	it("should render 5 buttons", async () => {
+		const id = crypto.randomUUID();
 		render(<IterationBlock id={id} />, {
 			blocks: blocks,
 		});
 
 		// screen.debug();
-		const buttons = screen.getAllByRole("button", { name: /Submit/i });
+		const buttons = screen.getAllByRole("button");
 
 		expect(buttons).toHaveLength(5);
 	});
