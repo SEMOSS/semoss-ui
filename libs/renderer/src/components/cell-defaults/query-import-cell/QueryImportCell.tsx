@@ -63,7 +63,6 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 		display: "flex",
 		gap: theme.spacing(1),
 		height: "30px",
-		width: "200px",
 	},
 }));
 
@@ -398,104 +397,13 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 							/>
 						</Suspense>
 					</StyledContainer>
-					<Stack
-						direction="row"
-						alignItems={"center"}
-						justifyContent={"flex-end"}
-						spacing={1}
-					>
-						<FormControlLabel
-							control={
-								<Checkbox
-									checked={
-										cell.parameters.enableBatching ?? false
-									}
-									disabled={cell.isLoading}
-									onChange={(
-										e: React.ChangeEvent<HTMLInputElement>,
-									) => {
-										const isEnabling = e.target.checked;
-
-										state.dispatch({
-											message: ActionMessages.UPDATE_CELL,
-											payload: {
-												queryId: cell.query.id,
-												cellId: cell.id,
-												path: "parameters.enableBatching",
-												value: isEnabling,
-											},
-										});
-
-										// ALWAYS reset offset to 0 when toggling batching
-										state.dispatch({
-											message: ActionMessages.UPDATE_CELL,
-											payload: {
-												queryId: cell.query.id,
-												cellId: cell.id,
-												path: "parameters.currentOffset",
-												value: 0,
-											},
-										});
-
-										if (isEnabling) {
-											// Set initial batch size when enabling batching
-											state.dispatch({
-												message:
-													ActionMessages.UPDATE_CELL,
-												payload: {
-													queryId: cell.query.id,
-													cellId: cell.id,
-													path: "parameters.batchSize",
-													value: 100,
-												},
-											});
-										}
-									}}
-									sx={{ color: "text.secondary" }}
-								/>
-							}
-							label="Batch"
-							sx={{
-								color: "text.secondary",
-								"& .MuiFormControlLabel-label": {
-									fontSize: "14px",
-								},
-							}}
-						/>
-						<StyledTextField
-							title="Batch Size"
-							type="number"
-							value={cell.parameters.batchSize ?? 100}
-							disabled={
-								cell.isLoading ||
-								!cell.parameters.enableBatching
-							}
-							onChange={(e) => {
-								const value = Number.parseInt(
-									e.target.value,
-									10,
-								);
-								if (!Number.isNaN(value) && value >= 0) {
-									state.dispatch({
-										message: ActionMessages.UPDATE_CELL,
-										payload: {
-											queryId: cell.query.id,
-											cellId: cell.id,
-											path: "parameters.batchSize",
-											value: value,
-										},
-									});
-								}
-							}}
-							sx={{ width: "100px" }}
-						/>
-					</Stack>
 					{isExpanded && (
 						<Stack
 							direction="row"
 							alignItems={"center"}
 							justifyContent={"flex-end"}
-							spacing={1}
+							spacing={2}
+							sx={{ flexWrap: "nowrap" }}
 						>
 							<StyledSelect
 								size={"small"}
@@ -506,7 +414,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 									IconComponent: KeyboardArrowDown,
 									style: {
 										height: "30px",
-										width: "140px",
+										width: "120px",
 									},
 									startAdornment: (
 										<InputAdornment position="start">
@@ -558,7 +466,138 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 										},
 									});
 								}}
+								sx={{ width: "150px" }}
 							/>
+							<FormControlLabel
+								control={
+									<Checkbox
+										checked={
+											cell.parameters.enableBatching ??
+											false
+										}
+										disabled={cell.isLoading}
+										label="Enable Batching"
+										onChange={(
+											e: React.ChangeEvent<HTMLInputElement>,
+										) => {
+											const isEnabling = e.target.checked;
+
+											state.dispatch({
+												message:
+													ActionMessages.UPDATE_CELL,
+												payload: {
+													queryId: cell.query.id,
+													cellId: cell.id,
+													path: "parameters.enableBatching",
+													value: isEnabling,
+												},
+											});
+
+											// ALWAYS reset offset to 0 when toggling batching
+											state.dispatch({
+												message:
+													ActionMessages.UPDATE_CELL,
+												payload: {
+													queryId: cell.query.id,
+													cellId: cell.id,
+													path: "parameters.currentOffset",
+													value: 0,
+												},
+											});
+
+											if (isEnabling) {
+												// Set initial batch size when enabling batching
+												state.dispatch({
+													message:
+														ActionMessages.UPDATE_CELL,
+													payload: {
+														queryId: cell.query.id,
+														cellId: cell.id,
+														path: "parameters.batchSize",
+														value: 100,
+													},
+												});
+											}
+										}}
+										sx={{
+											color: "text.secondary",
+											paddingLeft: "4px",
+										}}
+									/>
+								}
+								label=""
+								sx={{
+									color: "text.secondary",
+									marginRight: 0,
+									marginLeft: 0,
+									gap: 0,
+									"& .MuiFormControlLabel-label": {
+										fontSize: "14px",
+									},
+								}}
+							/>
+							{cell.parameters.enableBatching && (
+								<>
+									<StyledTextField
+										title="Batch Size"
+										type="number"
+										placeholder="Batch Amount..."
+										value={cell.parameters.batchSize ?? 100}
+										disabled={cell.isLoading}
+										onChange={(e) => {
+											const value = Number.parseInt(
+												e.target.value,
+												10,
+											);
+											if (
+												!Number.isNaN(value) &&
+												value >= 0
+											) {
+												state.dispatch({
+													message:
+														ActionMessages.UPDATE_CELL,
+													payload: {
+														queryId: cell.query.id,
+														cellId: cell.id,
+														path: "parameters.batchSize",
+														value: value,
+													},
+												});
+											}
+										}}
+										sx={{ width: "120px" }}
+									/>
+									<StyledTextField
+										title="Current Offset"
+										type="number"
+										value={
+											cell.parameters.currentOffset ?? 0
+										}
+										disabled
+										sx={{ width: "80px" }}
+									/>
+									<Button
+										variant="outlined"
+										size="small"
+										onClick={() => {
+											state.dispatch({
+												message:
+													ActionMessages.UPDATE_CELL,
+												payload: {
+													queryId: cell.query.id,
+													cellId: cell.id,
+													path: "parameters.currentOffset",
+													value: 0,
+												},
+											});
+										}}
+										disabled={cell.isLoading}
+										sx={{ minWidth: "60px" }}
+									>
+										Reset
+									</Button>
+								</>
+							)}
 						</Stack>
 					)}
 				</Stack>

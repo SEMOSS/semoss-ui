@@ -141,6 +141,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	const accumulatedDataRef = useRef<unknown[][]>([]);
 	const lastProcessedOffsetRef = useRef<number>(-1);
 	const lastFrameDataRef = useRef<unknown[][]>([]);
+	const lastSyncedColumnCountRef = useRef<number>(0);
 
 	const [contextMenu, setContextMenu] = useState<{
 		mouseX: number;
@@ -189,27 +190,19 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	const frameHeaders = useFrameHeaders(data.frame.name);
 
 	/**
-	 * Sync columns when batching is enabled to ensure all columns are visible
-	 */
-	useEffect(() => {
-		if (
-			isBatchingEnabled &&
-			data.columns.length > 0 &&
-			data.columns.length < 10
-		) {
-			console.log(
-				"[GridBlock] Batching enabled with partial columns - clearing to force re-sync",
-			);
-			setData("columns", []);
-		}
-	}, [isBatchingEnabled, data.columns.length]);
-
-	/**
 	 * Anytime our Frame Headers change, we need to sync our column block data with our source of truth
 	 * This ensures all columns are present, especially important for batching scenarios
 	 */
 	useEffect(() => {
 		if (!frameHeaders.isLoading && frameHeaders.data.list.length > 0) {
+			// Check if we've already synced this exact column count
+			if (
+				lastSyncedColumnCountRef.current ===
+				frameHeaders.data.list.length
+			) {
+				return;
+			}
+
 			// When batching is enabled, always sync to get all columns
 			// When batching is disabled, only sync if columns are empty
 			const shouldSync = isBatchingEnabled
@@ -220,15 +213,12 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 				console.log(
 					`[GridBlock SYNC] Syncing columns: ${data.columns.length} → ${frameHeaders.data.list.length}`,
 				);
+				lastSyncedColumnCountRef.current =
+					frameHeaders.data.list.length;
 				syncBlockDataColumns(frameHeaders);
 			}
 		}
-	}, [
-		frameHeaders.data.list,
-		frameHeaders.isLoading,
-		data.columns.length,
-		isBatchingEnabled,
-	]);
+	}, [frameHeaders.data.list, frameHeaders.isLoading, isBatchingEnabled]);
 
 	/**
 	 * Handle data accumulation when batching is enabled
@@ -250,23 +240,8 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		const isCurrentlyLoading = sourceCell?.isLoading ?? false;
 		if (isCurrentlyLoading) return;
 
-		console.log(
-			"[GridBlock Accumulation] currentOffset:",
-			currentOffset,
-			"lastProcessed:",
-			lastProcessedOffsetRef.current,
-			"frameDataLength:",
-			frame.data.values.length,
-			"accumulatedLength:",
-			accumulatedDataRef.current.length,
-		);
-
 		// Check if we've already processed this offset
 		if (currentOffset === lastProcessedOffsetRef.current) {
-			console.log(
-				"[GridBlock Accumulation] SKIPPING - already processed offset",
-				currentOffset,
-			);
 			return; // Already processed this batch
 		}
 
@@ -275,19 +250,11 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			lastFrameDataRef.current.length > 0 &&
 			frame.data.values === lastFrameDataRef.current
 		) {
-			console.log(
-				"[GridBlock Accumulation] SKIPPING - frame data reference unchanged",
-			);
 			return;
 		}
 
 		// For offset 0: reset and start fresh
 		if (currentOffset === 0) {
-			console.log(
-				"[GridBlock Accumulation] RESET - offset 0, setting data to",
-				frame.data.values.length,
-				"rows",
-			);
 			accumulatedDataRef.current = frame.data.values;
 			lastProcessedOffsetRef.current = 0;
 			lastFrameDataRef.current = frame.data.values;
@@ -295,12 +262,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			if (loadingMore) setLoadingMore(false);
 		} else if (currentOffset > lastProcessedOffsetRef.current) {
 			// Loading more - append new data to ref
-			console.log(
-				"[GridBlock Accumulation] APPEND - adding",
-				frame.data.values.length,
-				"rows to existing",
-				accumulatedDataRef.current.length,
-			);
 			accumulatedDataRef.current = [
 				...accumulatedDataRef.current,
 				...frame.data.values,
@@ -310,13 +271,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			setAccumulatedData([...accumulatedDataRef.current]);
 			if (loadingMore) setLoadingMore(false);
 		}
-	}, [
-		isBatchingEnabled,
-		sourceCell?.isLoading,
-		loadingMore,
-		currentOffset,
-		frame.data.values,
-	]);
+	}, [isBatchingEnabled, currentOffset, frame.data.values.length]);
 
 	/**
 	 * Updates data.columns
@@ -640,49 +595,56 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		);
 	};
 
+	const GridFooter = () => {
+		if (!isBatchingEnabled) return null;
+
+		return (
+			<div
+				style={{
+					padding: "8px",
+					display: "flex",
+					justifyContent: "center",
+					borderTop: "1px solid rgba(224, 224, 224, 1)",
+				}}
+			>
+				<Button
+					variant="outlined"
+					size="small"
+					onClick={handleLoadMore}
+					disabled={shouldDisableLoadMore}
+					startIcon={
+						loadingMore ? <CircularProgress size={16} /> : null
+					}
+					sx={{ width: "100%" }}
+				>
+					{loadingMore ? "Loading..." : "Load More"}
+				</Button>
+			</div>
+		);
+	};
+
 	// Disable Load More button if:
 	// 1. Currently loading more data
 	// 2. Source cell is currently running
 	// 3. Last batch returned fewer rows than batchSize (no more data available)
-	// 4. Last batch returned 0 rows
+	// 4. Last batch returned 0 rows (no data in grid)
 	// Disable Load More if currently loading, or if last batch was partial (less than batchSize rows)
 	const lastBatchWasPartial =
 		frame.data.values.length > 0 && frame.data.values.length < batchSize;
+	const hasNoRows = rows.length === 0;
 	const shouldDisableLoadMore =
-		loadingMore || sourceCell?.isLoading || lastBatchWasPartial;
+		loadingMore ||
+		sourceCell?.isLoading ||
+		lastBatchWasPartial ||
+		hasNoRows;
 
 	return (
 		<StyledBlock sx={data.style} {...attrs}>
-			{isBatchingEnabled && (
-				<div
-					style={{
-						padding: "8px",
-						display: "flex",
-						justifyContent: "flex-start",
-					}}
-				>
-					<Button
-						variant="outlined"
-						size="small"
-						onClick={handleLoadMore}
-						disabled={shouldDisableLoadMore}
-						startIcon={
-							loadingMore ? <CircularProgress size={16} /> : null
-						}
-					>
-						{loadingMore ? "Loading..." : "Load More"}
-					</Button>
-				</div>
-			)}
-			<StyledDataGridContainer
-				style={{
-					maxHeight: isBatchingEnabled ? "calc(100% - 50px)" : "100%",
-				}}
-			>
+			<StyledDataGridContainer>
 				<DataGrid
 					rows={rows}
 					columns={columns}
-					pagination
+					pagination={!isBatchingEnabled}
 					density="compact"
 					paginationMode="server"
 					rowCount={frame.count}
@@ -696,6 +658,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 					disableColumnSorting
 					slots={{
 						toolbar: titleSettings.chartTitle && GridToolbar,
+						footer: isBatchingEnabled ? GridFooter : undefined,
 					}}
 					showCellVerticalBorder={
 						data.option?.rowSpanning ? true : false
