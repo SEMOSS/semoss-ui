@@ -20,7 +20,7 @@ export interface UseIteratorPixelReturn<T> {
 	data: T[];
 
 	/** Current loading status */
-	status: "LOADING" | "SUCCESS" | "ERROR";
+	status: "INITIAL" | "LOADING" | "SUCCESS" | "ERROR";
 
 	/** Error if status is ERROR */
 	error: Error | null;
