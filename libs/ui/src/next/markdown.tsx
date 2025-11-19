@@ -91,7 +91,9 @@ function Markdown({
 					{children}
 				</Quote>
 			),
-			hr: ({ ...props }) => <Separator {...props} />,
+			hr: ({ ...props }) => (
+				<Separator className="mt-6 mb-4" {...props} />
+			),
 			table: ({ ...props }) => <Table {...props} />,
 			thead: ({ ...props }) => <TableHeader {...props} />,
 			tbody: ({ ...props }) => <TableBody {...props} />,
