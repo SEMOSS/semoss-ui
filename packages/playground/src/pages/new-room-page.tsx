@@ -8,6 +8,7 @@ import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
+	SidebarTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -130,7 +131,10 @@ export const NewRoomPage = observer(() => {
 	}, [getWorkspace.status, getWorkspace.data]);
 
 	return (
-		<div className="h-full w-full overflow-hidden">
+		<div className="relative h-full w-full overflow-hidden">
+			<div className="absolute top-0 left-0 z-10 flex h-12.5 items-center px-4">
+				<SidebarTrigger />
+			</div>
 			<ResizablePanelGroup direction="horizontal">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img

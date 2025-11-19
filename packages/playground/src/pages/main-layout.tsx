@@ -3,7 +3,6 @@ import { Outlet } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { SidebarInset, SidebarProvider } from "@semoss/ui/next";
 import { GlobalNav } from "@/components/global-nav";
-import { GlobalTrigger } from "@/components/global-trigger";
 import { ChatContext } from "@/contexts";
 import { useCacheState } from "@/hooks";
 import { ChatStore } from "@/stores";
@@ -46,7 +45,6 @@ export const MainLayout = () => {
 			>
 				<GlobalNav />
 				<SidebarInset>
-					<GlobalTrigger />
 					<div className="h-[calc(100vh-theme(space.2))] w-full overflow-hidden">
 						<Outlet />
 					</div>
