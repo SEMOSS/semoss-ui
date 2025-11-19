@@ -178,6 +178,7 @@ export const ModelImport: React.FC = () => {
 	/**
 	 * Determines view
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: dependent values intentionally omitted for stability
 	const view = useMemo(() => {
 		switch (selectedModel) {
 			case null:
@@ -217,13 +218,56 @@ export const ModelImport: React.FC = () => {
 									variant="scrollable"
 									sx={{
 										borderBottom: "2px solid #E0E0E0",
+										mb: 1,
 									}}
 								>
 									{importableModels.providers.map(
 										(provider) => (
 											<StyledTab
 												key={provider.name}
-												label={provider.name}
+												label={(() => {
+													const providerImage =
+														Custom_Model_Image.find(
+															(img) =>
+																img.name ===
+																provider.name,
+														)?.imgURL;
+													return (
+														<Box
+															sx={{
+																display: "flex",
+																alignItems:
+																	"center",
+																gap: 0.75,
+															}}
+														>
+															{providerImage && (
+																<img
+																	src={
+																		providerImage
+																	}
+																	alt={`${provider.name} logo`}
+																	style={{
+																		width: 20,
+																		height: 20,
+																		objectFit:
+																			"contain",
+																		borderRadius: 4,
+																	}}
+																/>
+															)}
+															<Typography
+																component="span"
+																variant="body2"
+																sx={{
+																	lineHeight: 1,
+																}}
+															>
+																{provider.name}
+															</Typography>
+														</Box>
+													);
+												})()}
 												value={provider.name}
 												data-tesId={formatToDataTestId(
 													`connect-to-${provider.name}-tab`,
@@ -234,15 +278,37 @@ export const ModelImport: React.FC = () => {
 								</StyledTabs>
 
 								{/* Models Grid */}
-								<Box>
-									<StyledModelGrid
-										container
-										columns={6}
-										columnSpacing={1}
-										rowSpacing={2}
+								<StyledModelGrid
+									container
+									columns={6}
+									columnSpacing={1}
+									rowSpacing={2}
+								>
+									<Grid
+										key={""}
+										item
+										lg={1}
+										md={1}
+										xs={1}
+										xl={1}
+										sm={1}
 									>
+										<ModelTileCard
+											model={{
+												name: "Others",
+												display: "Others",
+												icon: selectedImage,
+												embedding: false,
+												disable: false,
+											}}
+											onModelSelect={() => {
+												setSelectedModel("");
+											}}
+										/>
+									</Grid>
+									{models.map((model) => (
 										<Grid
-											key={""}
+											key={model.name}
 											item
 											lg={1}
 											md={1}
@@ -251,40 +317,16 @@ export const ModelImport: React.FC = () => {
 											sm={1}
 										>
 											<ModelTileCard
-												model={{
-													name: "Others",
-													display: "Others",
-													icon: selectedImage,
-													embedding: false,
-													disable: false,
-												}}
-												onModelSelect={(m) => {
-													setSelectedModel("");
+												model={model}
+												onModelSelect={(selected) => {
+													setSelectedModel(
+														selected.display,
+													);
 												}}
 											/>
 										</Grid>
-										{models.map((model) => (
-											<Grid
-												key={model.name}
-												item
-												lg={1}
-												md={1}
-												xs={1}
-												xl={1}
-												sm={1}
-											>
-												<ModelTileCard
-													model={model}
-													onModelSelect={(m) => {
-														setSelectedModel(
-															m.display,
-														);
-													}}
-												/>
-											</Grid>
-										))}
-									</StyledModelGrid>
-								</Box>
+									))}
+								</StyledModelGrid>
 							</Stack>
 						) : null}
 					</Stack>
