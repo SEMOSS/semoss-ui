@@ -43,8 +43,8 @@ logs/**
 
 # Source files since we're bundling
 src/**
-# But keep the Chatbot-ui files
-!src/components/Chatbot-ui/**
+# But keep the built React chatbot app
+!src/webviews/chatbot-react/dist/**
 # Only include bundled files from out directory
 !out/main.js
 .yarn/**
