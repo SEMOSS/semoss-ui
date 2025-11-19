@@ -153,9 +153,11 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 						<TooltipTrigger asChild>
 							<span className="absolute right-4 bottom-4 z-50">
 								<Button
-									size="sm"
+									size="icon-sm"
+									variant={"outline"}
 									onClick={() => scrollToBottom()}
 									aria-label="Scroll to bottom"
+									className="shadow-lg"
 								>
 									<MoveDownIcon />
 								</Button>
