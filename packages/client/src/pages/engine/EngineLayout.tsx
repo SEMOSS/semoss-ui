@@ -19,7 +19,7 @@ import type { ENGINE_ROUTES } from "./engine.constants";
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
 	alignItems: "center",
 	padding: "0px 3px",
-	height: "42px",
+	height: "420px",
 	width: "100%",
 	borderTopLeftRadius: theme.shape.borderRadiusLg,
 	borderTopRightRadius: theme.shape.borderRadiusLg,
