@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 
 export interface UseInfiniteScrollOptions {
 	/** Callback to trigger when reaching the bottom */
@@ -22,16 +22,17 @@ export interface UseInfiniteScrollOptions {
  */
 export function useInfiniteScroll({ onNext }: UseInfiniteScrollOptions) {
 	const threshold = 100; // pixels from bottom to trigger load more
-	const containerRef = useRef<HTMLDivElement>(null);
+	const [containerEle, setContainerEle] = useState<HTMLDivElement | null>(
+		null,
+	);
 
 	useEffect(() => {
-		const container = containerRef.current;
-		if (!container) {
+		if (!containerEle) {
 			return;
 		}
 
 		const handleScroll = () => {
-			const { scrollTop, scrollHeight, clientHeight } = container;
+			const { scrollTop, scrollHeight, clientHeight } = containerEle;
 			const distanceFromBottom =
 				scrollHeight - (scrollTop + clientHeight);
 
@@ -42,15 +43,15 @@ export function useInfiniteScroll({ onNext }: UseInfiniteScrollOptions) {
 		};
 
 		// Add scroll listener
-		container.addEventListener("scroll", handleScroll);
+		containerEle.addEventListener("scroll", handleScroll);
 
 		// Check on mount in case content is already short
 		handleScroll();
 
 		return () => {
-			container.removeEventListener("scroll", handleScroll);
+			containerEle.removeEventListener("scroll", handleScroll);
 		};
-	}, [onNext]);
+	}, [containerEle, onNext]);
 
-	return containerRef;
+	return setContainerEle;
 }

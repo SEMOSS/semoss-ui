@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Command,
@@ -14,6 +14,7 @@ import {
 	PopoverTrigger,
 	Spinner,
 	useDebouncedValue,
+	useInfiniteScroll,
 } from "@semoss/ui/next";
 import type { Engine } from "@/types";
 
@@ -53,16 +54,43 @@ export const EngineSelect = ({
 	const debouncedSearch = useDebouncedValue(search);
 
 	/**
-	 * Get all of the engines
+	 * Get all of the engines with lazy loading
 	 */
-	const getEngines = usePixel<Engine[]>(
-		open
-			? `MyEngines(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} ${engineTypes ? `engineTypes=${JSON.stringify(engineTypes)},` : ""} ${metaFilters ? `metaFilters=${JSON.stringify(metaFilters)},` : ""} limit=[${10}], offset=[${0}]);`
-			: "",
+	const getEngines = useIteratorPixel<Engine[], Engine>(
+		(limit, offset) =>
+			open
+				? `MyEngines(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} ${engineTypes ? `engineTypes=${JSON.stringify(engineTypes)},` : ""} ${metaFilters ? `metaFilters=${JSON.stringify(metaFilters)},` : ""} limit=[${limit}], offset=[${offset}]);`
+				: "",
+		(response) => {
+			// if its less than the limit, we know its the end
+			if (response.length < 25) {
+				return -1;
+			}
+
+			return Infinity;
+		},
+		(response) => {
+			return response;
+		},
+		[debouncedSearch, engineTypes, metaFilters, open],
 		{
-			data: [],
+			limit: 25,
 		},
 	);
+
+	/**
+	 * Setup infinite scroll for the command list
+	 */
+	const setScroll = useInfiniteScroll({
+		onNext: () => {
+			console.log(getEngines.isLoading, !getEngines.hasMore, !open);
+			if (getEngines.isLoading || !getEngines.hasMore || !open) {
+				console.log("here");
+				return;
+			}
+			getEngines.next();
+		},
+	});
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
@@ -84,9 +112,10 @@ export const EngineSelect = ({
 						value={search}
 						onValueChange={setSearch}
 					/>
-					<CommandList>
+					<CommandList ref={(ele) => setScroll(ele)}>
 						<CommandEmpty>
-							{getEngines.status === "LOADING" ? (
+							{getEngines.status === "LOADING" &&
+							getEngines.data.length === 0 ? (
 								<div className="flex items-center justify-center py-4">
 									<Spinner className="size-4" />
 								</div>
@@ -117,6 +146,12 @@ export const EngineSelect = ({
 									</div>
 								</CommandItem>
 							))}
+							{getEngines.isLoading &&
+								getEngines.data.length > 0 && (
+									<div className="flex items-center justify-center py-2">
+										<Spinner className="size-4" />
+									</div>
+								)}
 						</CommandGroup>
 					</CommandList>
 				</Command>

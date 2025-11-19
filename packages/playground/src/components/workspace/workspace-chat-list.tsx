@@ -48,7 +48,7 @@ export const WorkspaceChatList = ({
 	);
 
 	// Attach infinite scroll
-	const scrollRef = useInfiniteScroll({
+	const setScroll = useInfiniteScroll({
 		onNext: () => {
 			if (getWorkspaceRooms.isLoading) {
 				return;
@@ -94,12 +94,7 @@ export const WorkspaceChatList = ({
 	}
 
 	return (
-		<ScrollArea
-			className="h-full w-full"
-			viewportRef={(e) => {
-				scrollRef.current = e;
-			}}
-		>
+		<ScrollArea className="h-full w-full" viewportRef={(e) => setScroll(e)}>
 			<div className="flex flex-col gap-2 p-4">
 				{getWorkspaceRooms.data.map((r) => (
 					<Link
