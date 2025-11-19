@@ -25,7 +25,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 				}`}
 			/>
 			<div
-				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
+				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
 				<div className="flow-row flex items-center justify-between overflow-hidden px-2 pt-2">
 					<div className="flex-1 truncate font-medium text-base">
