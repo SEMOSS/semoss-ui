@@ -72,7 +72,6 @@ export const EngineSelect = ({
 		(response) => {
 			return response;
 		},
-		[debouncedSearch, engineTypes, metaFilters, open],
 		{
 			limit: 25,
 		},
@@ -83,9 +82,7 @@ export const EngineSelect = ({
 	 */
 	const setScroll = useInfiniteScroll({
 		onNext: () => {
-			console.log(getEngines.isLoading, !getEngines.hasMore, !open);
 			if (getEngines.isLoading || !getEngines.hasMore || !open) {
-				console.log("here");
 				return;
 			}
 			getEngines.next();

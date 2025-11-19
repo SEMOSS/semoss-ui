@@ -43,7 +43,6 @@ export const WorkspaceChatList = ({
 			`GetWorkspaceRooms(workspaceId=["${workspaceId}"], ${search ? `filters=[Filter(room_name ?like "${search}")],` : ""} limit=[${limit}], offset=[${offset}]);`,
 		(response) => response.total_count,
 		(response) => response.rooms,
-		[workspaceId, search],
 		{ limit: 25 },
 	);
 
