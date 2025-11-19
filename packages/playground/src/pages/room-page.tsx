@@ -144,7 +144,7 @@ export const RoomPage = observer(() => {
 	}
 
 	return (
-		<div className="flex h-[calc(100vh-theme(space.2))] w-full flex-col overflow-hidden">
+		<div className="flex h-full w-full flex-col overflow-hidden">
 			<div className="flex h-12.5 w-full flex-row items-center px-6">
 				<div className="flex flex-row items-center justify-center gap-2">
 					{!open && (
@@ -253,6 +253,7 @@ export const RoomPage = observer(() => {
 
 									return true;
 								}}
+								clearInputOnPrompt
 							/>
 						</div>
 					</ResizablePanel>

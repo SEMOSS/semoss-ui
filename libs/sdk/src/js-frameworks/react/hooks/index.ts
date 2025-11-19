@@ -9,4 +9,5 @@ export {
 	useDebouncedValue,
 } from "./useDebouncedValue";
 export { useInsight } from "./useInsight";
+export { useIteratorPixel } from "./useIteratorPixel";
 export { usePixel } from "./usePixel";

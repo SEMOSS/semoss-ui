@@ -128,7 +128,10 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 		const offsetRef = useRef(0);
 		offsetRef.current = offset;
-		let scrollEle :HTMLDivElement, scrollTimeout : ReturnType<typeof setTimeout>, currentScroll :number, previousScroll :number;
+		let scrollEle: HTMLElement | null,
+			scrollTimeout: ReturnType<typeof setTimeout> | undefined,
+			currentScroll: number | undefined,
+			previousScroll: number | undefined;
 
 		const [inputValue, setInputValue] = useState("");
 		const [search, setSearch] = useState("");
@@ -203,8 +206,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				: "",
 		);
 
-		const debouncedSet = debounced((newInputValue: string) => {
-			setSearch(newInputValue);
+		const debouncedSet = debounced((newInputValue) => {
+			setSearch(newInputValue as string);
 		}, 300);
 
 		const handleInputChange = (newInputValue: string) => {
@@ -463,7 +466,22 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			getDatabases.status === "ERROR" ||
 			getCatalogFilters.status === "ERROR"
 		) {
-			return "ERROR";
+			return <Typography variant="body1">ERROR</Typography>;
+		}
+
+		// to limit the catalogs that are sent to filterbox for performance
+		let renderedEngineIds = [];
+		if (inputValue) {
+			renderedEngineIds.push(
+				...databases.map((engine) => engine.database_id),
+			);
+			renderedEngineIds.push(
+				...favoritedDbs.map((engine) => engine.database_id),
+			);
+			if (renderedEngineIds.length === 0)
+				renderedEngineIds = ["dummy-id"]; //dummy id to avoid empty array in query
+		} else {
+			renderedEngineIds = [];
 		}
 
 		// filter out the bookmarked models for All Models section, it is used not to show StyledSectionLabel for All Models section when there is no (nonBookmarked) model to show
@@ -545,6 +563,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							setMetaFilters(filters);
 							setOffset(0);
 						}}
+						filteredCatalogIds={renderedEngineIds}
 					/>
 					<StyledContent>
 						<Stack
@@ -554,7 +573,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						>
 							<StyledToggleTabsGroup
 								value={mode}
-								onChange={(_e: React.SyntheticEvent, val) => {
+								// biome-ignore lint/correctness/noUnusedFunctionParameters: Event handler needs both parameters even if we don't use the event
+								onChange={(e: React.SyntheticEvent, val) => {
 									dispatch({
 										type: "field",
 										field: "databases",
