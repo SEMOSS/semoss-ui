@@ -281,3 +281,21 @@ export interface Tool extends MCPTool {
 	_meta: { generated_on: string };
 	title: string;
 }
+
+export interface MCPToolRequest {
+	type: "MCP";
+	message: string;
+	id: string;
+	name: string;
+	parameters: Record<string, unknown>;
+	roomId: string;
+}
+
+export interface MCPToolResponse {
+	type: "MCP";
+	message: string;
+	id: string;
+	name: string;
+	response: string;
+	roomId: string;
+}

@@ -8,7 +8,7 @@ import {
 	upload,
 } from "../../api";
 import { Env } from "../../env";
-import type { Script } from "../../types";
+import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
 
 interface InsightStoreInterface {
@@ -152,7 +152,7 @@ export class InsightStore {
 		this._store.isReady = false;
 
 		const merged: NonNullable<typeof options> = {
-			app: options?.app ? options.app : "",
+			app: options?.app || "",
 			python:
 				options && typeof options.python !== "undefined"
 					? options.python
@@ -333,6 +333,11 @@ export class InsightStore {
 		let pixel = "";
 		if (this._store.options.appId) {
 			pixel += `SetContext("${this._store.options.appId}");`;
+		}
+
+		// set the room ID if it exists
+		if (Env.TOOL?.roomId) {
+			pixel += `SetRoomForInsight(${JSON.stringify(Env.TOOL.roomId)}");`;
 		}
 
 		// load the python code int
@@ -593,10 +598,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			name: string,
 			parameters: Record<string, unknown>,
 		) => {
-			const { pixelReturn } = await this.actions.run<
-				[{ response: string }]
-			>(
-				`RunMCPTool(project = [ "${Env.APP}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ]);`,
+			const { pixelReturn } = await this.actions.run<[string]>(
+				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ]);`,
 			);
 
 			const { output, operationType } = pixelReturn[0];
@@ -615,7 +618,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 								id: Env.TOOL.id,
 								name: Env.TOOL.name,
 								response: output,
-							},
+								roomId: Env.TOOL.roomId,
+							} satisfies MCPToolResponse,
 						},
 						"*",
 					);

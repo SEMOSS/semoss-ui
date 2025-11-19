@@ -30,6 +30,7 @@ import {
 } from "@/components";
 import { useAutoScroll, useChat } from "@/hooks";
 import { RoomStore } from "@/stores";
+import type { MCPToolResponse } from "@/types";
 
 // Styled components removed - using Tailwind CSS classes directly
 
@@ -89,17 +90,15 @@ export const RoomPage = observer(() => {
 		const handleMessage = async (
 			event: MessageEvent<{
 				type: "SMSS_EXEC_TOOL";
-				tool: {
-					type: "MCP";
-					message: string;
-					id: string;
-					name: string;
-					response: string;
-				};
+				tool: MCPToolResponse;
 			}>,
 		) => {
 			try {
-				if (!event.data || event.data.type !== "SMSS_EXEC_TOOL") {
+				if (
+					!event.data ||
+					event.data.type !== "SMSS_EXEC_TOOL" ||
+					room.roomId !== event.data.tool.roomId
+				) {
 					return;
 				}
 
