@@ -625,7 +625,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 	};
 
 	const handleSaveEditDescription = (toolName: string) => {
-		updateToolDescription(toolName, editedDescription[toolName]);
+		updateToolDescription(toolName, editedDescription[toolName]?.trim());
 		setEditingDescription((prev) => ({ ...prev, [toolName]: false }));
 	};
 
