@@ -107,7 +107,7 @@ export const WorkspacePage = observer(() => {
 				</div>
 
 				<div className="flex flex-col gap-4 overflow-auto">
-					<InputGroup>
+					<InputGroup className="bg-background">
 						<InputGroupInput
 							placeholder="Search Workspaces"
 							value={search}

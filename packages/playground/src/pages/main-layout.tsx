@@ -4,13 +4,14 @@ import { useInsight } from "@semoss/sdk/react";
 import { SidebarInset, SidebarProvider } from "@semoss/ui/next";
 import { GlobalNav } from "@/components/global-nav";
 import { ChatContext } from "@/contexts";
-import { useCacheState } from "@/hooks";
+import { useCacheState, useRoot } from "@/hooks";
 import { ChatStore } from "@/stores";
 
 // Styled component replaced with Tailwind classes inline
 
 export const MainLayout = () => {
 	const { actions } = useInsight();
+	const { root } = useRoot();
 
 	const [isSidebarOpen, setIsSidebarOpen] = useCacheState(
 		false,
@@ -45,7 +46,15 @@ export const MainLayout = () => {
 			>
 				<GlobalNav />
 				<SidebarInset>
-					<div className="h-[calc(100vh-theme(space.2))] w-full overflow-hidden">
+					<div
+						data-testId="main-layout"
+						className="h-[calc(100vh-theme(space.2))] w-full overflow-hidden"
+						style={{
+							background:
+								"linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--base-secondary-background, #FFF)",
+							...root.theme.overrides["main-layout"],
+						}}
+					>
 						<Outlet />
 					</div>
 				</SidebarInset>
