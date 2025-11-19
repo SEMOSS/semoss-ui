@@ -13,12 +13,12 @@ import {
 	ResizablePanelGroup,
 	ScrollArea,
 	Separator,
+	SidebarTrigger,
 	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
-	useSidebar,
 } from "@semoss/ui/next";
 import {
 	InputMessage,
@@ -43,7 +43,6 @@ export const RoomPage = observer(() => {
 	const { chat } = useChat();
 
 	const navigate = useNavigate();
-	const { open } = useSidebar();
 
 	// set the get the room based on the params
 	const { roomId } = useParams();
@@ -143,18 +142,14 @@ export const RoomPage = observer(() => {
 	}
 
 	return (
-		<div className="flex h-[calc(100vh-theme(space.2))] w-full flex-col overflow-hidden">
-			<div className="flex h-12.5 w-full flex-row items-center px-6">
+		<div className="flex h-full w-full flex-col overflow-hidden">
+			<div className="flex h-12.5 w-full flex-row items-center px-4">
 				<div className="flex flex-row items-center justify-center gap-2">
-					{!open && (
-						<>
-							<div className="w-5"> &nbsp;</div>
-							<Separator
-								orientation="vertical"
-								style={{ height: "15px" }}
-							/>
-						</>
-					)}
+					<SidebarTrigger />
+					<Separator
+						orientation="vertical"
+						style={{ height: "15px" }}
+					/>
 					<Breadcrumb>
 						<BreadcrumbList>
 							<BreadcrumbItem>

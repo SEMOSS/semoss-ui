@@ -15,6 +15,13 @@ export interface Theme {
 	images: {
 		logo: string;
 	};
+
+	/**
+	 * Custom CSS to override default styles
+	 */
+	overrides: {
+		"main-layout": React.CSSProperties;
+	};
 }
 
 export interface Engine {
