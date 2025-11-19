@@ -93,11 +93,11 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out">
 			<div className="flex h-12.5 w-full flex-row items-center px-4">
-				<div className="flex flex-row items-center justify-center gap-2">
+				<div className="flex flex-row items-center justify-center gap-1.5">
 					<SidebarTrigger />
 					<Separator
 						orientation="vertical"
-						style={{ height: "15px" }}
+						style={{ height: "17px" }}
 					/>
 					<Breadcrumb>
 						<BreadcrumbList>

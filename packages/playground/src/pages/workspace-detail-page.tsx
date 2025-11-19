@@ -91,11 +91,11 @@ export const WorkspaceDetailPage = observer(() => {
 			<div className="flex h-full w-full flex-col overflow-hidden">
 				{/* Header */}
 				<div className="flex h-12.5 w-full flex-row items-center px-4">
-					<div className="flex flex-row items-center justify-center gap-2">
+					<div className="flex flex-row items-center justify-center gap-1.5">
 						<SidebarTrigger />
 						<Separator
 							orientation="vertical"
-							style={{ height: "15px" }}
+							style={{ height: "17px" }}
 						/>
 
 						<Breadcrumb>

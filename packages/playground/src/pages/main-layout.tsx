@@ -45,12 +45,9 @@ export const MainLayout = () => {
 				}
 			>
 				<GlobalNav />
-				<SidebarInset
-					data-testId="main-layout"
-					className="m-0! shadow-none"
-				>
+				<SidebarInset className="m-0! shadow-none">
 					<div
-						data-testId="main-layout"
+						data-testid="main-layout"
 						className="h-screen w-full overflow-hidden"
 						style={{
 							background:
