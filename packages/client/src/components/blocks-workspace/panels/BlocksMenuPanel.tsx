@@ -2,6 +2,7 @@ import { Search, Tune } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
+import { getJSON, setJSON } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -272,7 +273,10 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 
 		// room to improve this logic in the future, but for now just keep 6 most used blocks
 		const localStorageMap: Record<string, BlockLocalStorageData> =
-			JSON.parse(localStorage.getItem("blocks--frequently-used")) ?? {};
+			getJSON<Record<string, BlockLocalStorageData>>(
+				"blocks--frequently-used",
+				{ defaultValue: {} }
+			);
 		const mostUsedSet = Object.values(localStorageMap)
 			.filter((item) => item.use_count)
 			.sort((a, b) => a.use_count - b.use_count)

@@ -1,5 +1,6 @@
 import { autorun, makeAutoObservable } from "mobx";
 import type { PageCache } from "./page.types";
+import { getJSON, setJSON } from "@semoss/sdk/react";
 
 const CACHE_KEY = `PAGE_STORE_CACHE--1`;
 
@@ -59,15 +60,26 @@ export class PageStore {
 	constructor() {
 		// set from the catch
 		try {
-			const cached = JSON.parse(
-				localStorage.getItem(CACHE_KEY),
-			) as PageCache;
-
-			if (cached) {
+			const cached = getJSON<PageCache>(CACHE_KEY, { defaultValue: null });
+				// Extra validation: ensure expected shape before applying
+				if (cached && cached.sidebar && typeof cached.sidebar.pinned === "boolean") {
 				this._store.sidebar.pinned = cached.sidebar.pinned;
+				} else {
+				// Keep defaults; optionally clear corrupted key for safety
+				// getJSON already clears on parse error; if shape is wrong we can remove it too:
+				if (cached !== null) {
+					// invalid shape - remove
+					localStorage.removeItem(CACHE_KEY);
+				}
 			}
 		} catch (e) {
-			console.error(e);
+			console.error(e);	
+		}
+
+		// set from the cache
+		const settings = getJSON<{ theme: string }>('settings', { defaultValue: null });
+		if (settings) {
+			console.log('Dark theme loaded from settings', settings);
 		}
 
 		// make it observable
