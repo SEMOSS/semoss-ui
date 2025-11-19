@@ -44,7 +44,7 @@ const ModalWrapper = styled(Box)<{ $visible: boolean }>(({ $visible }) => ({
 	minHeight: $visible ? "auto" : "1px",
 }));
 
-const ModalOverlay = styled(Box)(({ theme }) => ({
+const ModalOverlay = styled(Box)(() => ({
 	position: "absolute",
 	top: 0,
 	left: 0,
@@ -55,7 +55,7 @@ const ModalOverlay = styled(Box)(({ theme }) => ({
 	pointerEvents: "none",
 }));
 
-const ModalContainer = styled(Box)(({ theme }) => ({
+const ModalContainer = styled(Box)(() => ({
 	position: "relative",
 	zIndex: 2,
 	width: "fit-content",
@@ -111,6 +111,7 @@ const StyledFooterArea = styled(Box)(({ theme }) => ({
 
 const ModalContent: FC<{
 	data: ModalBlockDef["data"];
+	//biome-ignore lint/suspicious/noExplicitAny: slots's value can't be predicted
 	slots: Record<string, any>;
 	onClose?: () => void;
 	isStatic: boolean;
@@ -235,14 +236,20 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 				<MuiModal
 					open={shouldShowModal}
 					onClose={handleClose}
-					// TODO: Switch to parent page
-					container={() => document.getElementById("page-1")}
+					container={() => {
+						const elements = Array.from(document.querySelectorAll('[id="page-1"]'));
+						return elements.at(-1) || elements[elements.length - 1];
+					}}
 					sx={{
+						position: "absolute",
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
 						zIndex: 1500,
-						"& .MuiBackdrop-root": {
+					}}
+					BackdropProps={{
+						style: {
+							position: "absolute",
 							backgroundColor: "rgba(0, 0, 0, 0.5)",
 						},
 					}}

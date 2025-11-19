@@ -432,6 +432,11 @@ export class RoomStore {
 				// mark as initialized
 				this._store.isInitialized = true;
 			});
+
+			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
+			if (this.tail.type === "RESPONSE") {
+				this.tail.startToolExecution();
+			}
 		} catch (e) {
 			console.error(e);
 			throw new Error(e.message || "Error initializing room");
