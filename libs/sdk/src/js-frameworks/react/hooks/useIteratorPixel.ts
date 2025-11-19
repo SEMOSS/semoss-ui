@@ -34,8 +34,8 @@ export interface UseIteratorPixelReturn<T> {
 	/** Total count of items available */
 	totalCount: number;
 
-	/** Load more items */
-	loadMore: () => void;
+	/** Load the next set of items */
+	next: () => void;
 
 	/** Reset to initial state */
 	reset: () => void;
@@ -52,7 +52,7 @@ export interface UseIteratorPixelReturn<T> {
  *
  * @example
  * ```tsx
- * const { data, hasMore, loadMore, isLoading } = useIteratorPixel(
+ * const { data, hasMore, next, isLoading } = useIteratorPixel(
  *   (limit, offset) => `GetWorkspaceRooms(workspaceId=["${id}"], limit=[${limit}], offset=[${offset}]);`,
  *   (response) => response.total_count,
  *   (response) => response.rooms,
@@ -109,8 +109,10 @@ export function useIteratorPixel<TResponse, TItem>(
 		},
 	});
 
-	// Load more function
-	const loadMore = useCallback(() => {
+	/**
+	 * Get the next set of items
+	 */
+	const next = useCallback(() => {
 		if (
 			!isLoadingMoreRef.current &&
 			pixel.status !== "LOADING" &&
@@ -121,7 +123,9 @@ export function useIteratorPixel<TResponse, TItem>(
 		}
 	}, [pixel.status, allData.length, totalCount, limit]);
 
-	// Reset function
+	/**
+	 * Reset to initial state
+	 */
 	const reset = useCallback(() => {
 		setOffset(0);
 		setAllData(initialData);
@@ -141,8 +145,8 @@ export function useIteratorPixel<TResponse, TItem>(
 		error: pixel.error,
 		isLoading: pixel.status === "LOADING" || isLoadingMoreRef.current,
 		hasMore: allData.length < totalCount,
-		totalCount,
-		loadMore,
-		reset,
+		totalCount: totalCount,
+		next: next,
+		reset: reset,
 	};
 }

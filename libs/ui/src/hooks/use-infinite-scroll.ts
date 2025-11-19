@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 
 export interface UseInfiniteScrollOptions {
 	/** Callback to trigger when reaching the bottom */
-	onLoadMore: () => void;
+	onNext: () => void;
 }
 
 /**
@@ -14,13 +14,13 @@ export interface UseInfiniteScrollOptions {
  * @example
  * ```tsx
  * const scrollRef = useInfiniteScroll({
- *   onLoadMore
+ *   onLoad
  * });
  *
  * return <ScrollArea ref={scrollRef}>...</ScrollArea>;
  * ```
  */
-export function useInfiniteScroll({ onLoadMore }: UseInfiniteScrollOptions) {
+export function useInfiniteScroll({ onNext }: UseInfiniteScrollOptions) {
 	const threshold = 100; // pixels from bottom to trigger load more
 	const containerRef = useRef<HTMLDivElement>(null);
 
@@ -37,7 +37,7 @@ export function useInfiniteScroll({ onLoadMore }: UseInfiniteScrollOptions) {
 
 			// Trigger load more when within threshold of bottom
 			if (distanceFromBottom < threshold) {
-				onLoadMore();
+				onNext();
 			}
 		};
 
@@ -50,7 +50,7 @@ export function useInfiniteScroll({ onLoadMore }: UseInfiniteScrollOptions) {
 		return () => {
 			container.removeEventListener("scroll", handleScroll);
 		};
-	}, [onLoadMore]);
+	}, [onNext]);
 
 	return containerRef;
 }

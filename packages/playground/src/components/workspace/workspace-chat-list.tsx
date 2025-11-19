@@ -25,8 +25,19 @@ export const WorkspaceChatList = ({
 }: WorkspaceChatListProps) => {
 	// get the data
 	const getWorkspaceRooms = useIteratorPixel<
-		GetWorkspaceRoomsResponse,
-		WorkspaceRoom
+		{
+			total_count: number;
+			rooms: {
+				room_id: string;
+				room_name: string;
+				date_updated: string;
+			}[];
+		},
+		{
+			room_id: string;
+			room_name: string;
+			date_updated: string;
+		}
 	>(
 		(limit, offset) =>
 			`GetWorkspaceRooms(workspaceId=["${workspaceId}"], ${search ? `filters=[Filter(room_name ?like "${search}")],` : ""} limit=[${limit}], offset=[${offset}]);`,
@@ -38,7 +49,7 @@ export const WorkspaceChatList = ({
 
 	// Attach infinite scroll
 	const scrollRef = useInfiniteScroll({
-		onLoadMore: () => {
+		onNext: () => {
 			if (getWorkspaceRooms.isLoading) {
 				return;
 			}
@@ -47,7 +58,7 @@ export const WorkspaceChatList = ({
 				return;
 			}
 			// get more
-			getWorkspaceRooms.loadMore();
+			getWorkspaceRooms.next();
 		},
 	});
 
@@ -64,9 +75,11 @@ export const WorkspaceChatList = ({
 	}
 
 	if (getWorkspaceRooms.status === "ERROR") {
-		<div className="px-2 py-4 text-center text-destructive text-sm">
-			Error: ${getWorkspaceRooms.error?.message}
-		</div>;
+		return (
+			<div className="px-2 py-4 text-center text-destructive text-sm">
+				Error: ${getWorkspaceRooms.error?.message}
+			</div>
+		);
 	}
 
 	if (
@@ -81,7 +94,12 @@ export const WorkspaceChatList = ({
 	}
 
 	return (
-		<ScrollArea className="h-full w-full" viewportRef={scrollRef}>
+		<ScrollArea
+			className="h-full w-full"
+			viewportRef={(e) => {
+				scrollRef.current = e;
+			}}
+		>
 			<div className="flex flex-col gap-2 p-4">
 				{getWorkspaceRooms.data.map((r) => (
 					<Link
