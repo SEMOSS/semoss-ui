@@ -162,8 +162,11 @@ export const EngineHeader: React.FC = () => {
 									variant="outlined"
 									onClick={() => {
 										const engineType =
-											active.metadata.database_subtype;
-										if (engineType === "H2_DB") {
+											active.database_subtype;
+										if (
+											engineType === "H2_DB" ||
+											engineType === "SQLITE"
+										) {
 											setOpenExportModal(true);
 										} else {
 											exportDB(false);
