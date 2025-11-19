@@ -8,7 +8,7 @@ import {
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Command,
@@ -25,7 +25,6 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
-	useDebouncedValue,
 } from "@semoss/ui/next";
 import type { App } from "@/types";
 
