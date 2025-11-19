@@ -178,7 +178,6 @@ export const ModelImport: React.FC = () => {
 	/**
 	 * Determines view
 	 */
-	// biome-ignore lint/correctness/useExhaustiveDependencies: dependent values intentionally omitted for stability
 	const view = useMemo(() => {
 		switch (selectedModel) {
 			case null:
@@ -293,18 +292,46 @@ export const ModelImport: React.FC = () => {
 										xl={1}
 										sm={1}
 									>
-										<ModelTileCard
-											model={{
+										{(() => {
+											const providerDocsLinkMap: Record<
+												string,
+												string
+											> = {
+												OpenAI: "https://platform.openai.com/docs/models",
+												"Azure OpenAI":
+													"https://learn.microsoft.com/azure/ai-services/openai/concepts/models",
+												"AWS Bedrock":
+													"https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html",
+												"Google Vertex AI":
+													"https://cloud.google.com/vertex-ai/docs/model-garden",
+												"NVIDIA NIM":
+													"https://build.nvidia.com/models",
+												"OpenAI-Compatible":
+													"https://platform.openai.com/docs/models",
+											};
+
+											const othersModel = {
 												name: "Others",
-												display: "Others",
+												display: `Other ${selectedProvider} models`,
 												icon: selectedImage,
+												description: `Connect to any current or legacy ${selectedProvider} model not listed above by entering its name and credentials.`,
 												embedding: false,
 												disable: false,
-											}}
-											onModelSelect={() => {
-												setSelectedModel("");
-											}}
-										/>
+												link:
+													providerDocsLinkMap[
+														selectedProvider
+													] || undefined,
+											};
+
+											return (
+												<ModelTileCard
+													model={othersModel}
+													onModelSelect={() => {
+														setSelectedModel("");
+													}}
+												/>
+											);
+										})()}
 									</Grid>
 									{models.map((model) => (
 										<Grid
@@ -320,7 +347,7 @@ export const ModelImport: React.FC = () => {
 												model={model}
 												onModelSelect={(selected) => {
 													setSelectedModel(
-														selected.display,
+														selected.name,
 													);
 												}}
 											/>

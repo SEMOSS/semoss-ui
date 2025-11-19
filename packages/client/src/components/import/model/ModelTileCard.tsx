@@ -39,19 +39,29 @@ const StyledInnerBox = styled("div")<{ isModel?: boolean }>(
 );
 
 // Replaces image with a colored avatar containing initials
-const StyledModelAvatar = styled("div")<{ bg: string }>(({ bg }) => ({
-	display: "flex",
-	height: "40px",
-	width: "40px",
-	alignItems: "center",
-	justifyContent: "center",
-	fontWeight: 600,
-	fontSize: "14px",
-	color: "#212121",
-	borderRadius: "8px",
-	textTransform: "uppercase",
-	backgroundColor: bg,
-}));
+const StyledModelAvatar = styled("div")<{ gradientBg: string }>(
+	({ gradientBg }) => ({
+		display: "flex",
+		height: "40px",
+		width: "40px",
+		alignItems: "center",
+		justifyContent: "center",
+		fontWeight: 600,
+		fontSize: "14px",
+		color: "#212121",
+		borderRadius: "8px",
+		textTransform: "uppercase",
+		background: gradientBg,
+		boxShadow:
+			"0 0 0 1px rgba(0,0,0,0.08) inset, 0 2px 4px -1px rgba(0,0,0,0.12)",
+		transition: "filter 0.25s ease",
+		userSelect: "none",
+		WebkitFontSmoothing: "antialiased",
+		"&:hover": {
+			filter: "brightness(1.03)",
+		},
+	}),
+);
 
 const StyledCardModelText = styled("p")({
 	overflow: "hidden",
@@ -131,16 +141,6 @@ const DescriptionText = styled(Typography)(() => ({
 	WebkitBoxOrient: "vertical",
 }));
 
-const COLOR_PALETTE = [
-	"#E8F4FF",
-	"#FDEBD2",
-	"#E6F7E9",
-	"#F5E8FF",
-	"#FFF4E6",
-	"#E8F9F9",
-	"#F9E6EB",
-];
-
 function hashString(str: string): number {
 	let h = 0;
 	for (let i = 0; i < str.length; i++) {
@@ -150,8 +150,12 @@ function hashString(str: string): number {
 	return Math.abs(h);
 }
 
-function pickColor(name: string): string {
-	return COLOR_PALETTE[hashString(name) % COLOR_PALETTE.length];
+function pickGradient(name: string): string {
+	// Subtle pastel gradient derived from hash: lower saturation + higher lightness.
+	const base = hashString(name) % 360;
+	const hue2 = (base + 35) % 360;
+	const hue3 = (base + 70) % 360;
+	return `linear-gradient(135deg, hsl(${base} 45% 88%), hsl(${hue2} 40% 84%), hsl(${hue3} 35% 80%))`;
 }
 
 function buildInitials(label: string): string {
@@ -203,8 +207,11 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 		};
 	}, []);
 
-	const initials = buildInitials(label);
-	const avatarColor = pickColor(model.name);
+	// Special case: "Others" tile should always show a single 'O'
+	const isOthers = model.name === "Others";
+	const initials = isOthers ? "O" : buildInitials(label);
+	// Dynamic gradient based on model name for visual distinction
+	const avatarGradient = pickGradient(model.name);
 
 	const cardContent = (
 		<StyledFormTypeModelBox
@@ -236,7 +243,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 			)}
 			<StyledInnerBox isModel={true}>
 				<Stack direction="row" width={"100%"} spacing={1}>
-					<StyledModelAvatar bg={avatarColor}>
+					<StyledModelAvatar gradientBg={avatarGradient}>
 						{initials}
 					</StyledModelAvatar>
 					{model.disable && (

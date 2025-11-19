@@ -75,6 +75,14 @@ export const IMPORTABLE_MODELS = {
 			Credentials:
 				"Enter your OpenAI API key to securely authenticate and enable access to the OpenAI endpoints.",
 		},
+		"Google Vertex AI": {
+			General:
+				"Integrate with Google Vertex AI for scalable, production-ready machine learning workflows with Google Cloud infrastructure.",
+			Settings:
+				"Set your project ID, model name, and region to correctly route API calls within your Vertex AI environment.",
+			Credentials:
+				"Upload or reference your Google service account key to securely authenticate with Vertex AI endpoints.",
+		},
 		"Azure OpenAI": {
 			General:
 				"Connect your Azure OpenAI instance for enterprise-grade security, scalability, and integration within the Azure ecosystem.",
@@ -90,14 +98,6 @@ export const IMPORTABLE_MODELS = {
 				"Specify your AWS region, model ID, and inference configuration parameters to customize model behavior and performance.",
 			Credentials:
 				"Enter your AWS access key, secret key, and session token (if required) to securely authenticate with AWS Bedrock.",
-		},
-		"Google Vertex AI": {
-			General:
-				"Integrate with Google Vertex AI for scalable, production-ready machine learning workflows with Google Cloud infrastructure.",
-			Settings:
-				"Set your project ID, model name, and region to correctly route API calls within your Vertex AI environment.",
-			Credentials:
-				"Upload or reference your Google service account key to securely authenticate with Vertex AI endpoints.",
 		},
 		"NVIDIA NIM": {
 			General:
@@ -146,11 +146,10 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "MODEL_TYPE",
 							label: "Model Type",
-							type: "select",
-							options: ["Open_AI"],
+							type: "hidden",
 							disabled: true,
 							required: true,
-							default: "Open_AI",
+							default: "OPEN_AI",
 							category: "General",
 						},
 						{
@@ -276,10 +275,10 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "MODEL_TYPE",
 							label: "Model Type",
-							type: "select",
-							options: ["Open_AI"],
+							type: "hidden",
+							disabled: true,
 							required: true,
-							default: "Open_AI",
+							default: "OPEN_AI",
 							category: "General",
 						},
 						{
@@ -299,7 +298,7 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "VAR_NAME",
 							label: "Variable Name",
-							type: "text",
+							type: "hidden",
 							required: true,
 							value: "openAIEmbedderModel",
 							category: "General",
@@ -342,6 +341,221 @@ export const IMPORTABLE_MODELS = {
 			],
 		},
 		{
+			name: "Google Vertex AI",
+			types: [
+				{
+					model_types: ["llm"],
+					fields: [
+						{
+							key: "NAME",
+							label: "Catalog Name",
+							type: "text",
+							required: true,
+							category: "General",
+							rules: {
+								required: true,
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
+						},
+						{
+							key: "MODEL_TYPE",
+							label: "Model Type",
+							type: "hidden",
+							disabled: true,
+							required: true,
+							default: "VERTEX",
+							category: "General",
+						},
+						{
+							key: "MODEL",
+							label: "Model",
+							type: "text",
+							required: true,
+							category: "General",
+						},
+						{
+							key: "PROJECT",
+							label: "Project",
+							type: "text",
+							required: true,
+							category: "Credentials",
+						},
+						{
+							key: "GCP_REGION",
+							label: "GCP Region",
+							type: "text",
+							required: true,
+							category: "Credentials",
+						},
+						{
+							key: "VAR_NAME",
+							label: "Variable Name",
+							type: "hidden",
+							required: true,
+							value: "googleVertexAIModel",
+							category: "General",
+						},
+						{
+							key: "CHAT_TYPE",
+							label: "Chat Type",
+							type: "select",
+							options: [
+								"chat",
+								"code",
+								"codechat",
+								"generative",
+								"text",
+							],
+							required: true,
+							default: "text",
+							category: "General",
+						},
+						{
+							key: "SERVICE_ACCOUNT_CREDENTIALS",
+							label: "Service Account Credentials",
+							type: "text",
+							required: false,
+							category: "Settings",
+						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							required: true,
+							default:
+								"import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}', project='${PROJECT}')",
+							category: "Settings",
+						},
+						{
+							key: "KEEP_INPUT_OUTPUT",
+							label: "Record Questions and Responses",
+							type: "select",
+							options: ["true", "false"],
+							required: true,
+							default: "true",
+							category: "Settings",
+						},
+						{
+							key: "KEEP_CONVERSATION_HISTORY",
+							label: "Keep Conversation History",
+							type: "select",
+							options: ["true", "false"],
+							required: true,
+							default: "true",
+							category: "Settings",
+						},
+						{
+							key: "MAX_TOKENS",
+							label: "Max Completion Tokens",
+							type: "number",
+							required: false,
+							category: "Settings",
+						},
+						{
+							key: "MAX_INPUT_TOKENS",
+							label: "Max Input Tokens",
+							type: "number",
+							required: false,
+							category: "Settings",
+						},
+						{
+							key: "CONTEXT_WINDOW",
+							label: "Context Window",
+							type: "number",
+							required: false,
+							category: "Settings",
+						},
+					],
+				},
+				{
+					model_types: ["embedding"],
+					fields: [
+						{
+							key: "NAME",
+							label: "Catalog Name",
+							type: "text",
+							required: true,
+							category: "General",
+							rules: {
+								required: true,
+								pattern: {
+									value: /^[\w\-\s]+$/,
+									message:
+										"Catalog names can only contain alphanumeric characters and dashes.",
+								},
+								custom: {
+									value: 'CheckEngineName ( "[VALUE]") ;',
+									message:
+										"This Catalog name has already been used, please try another.",
+								},
+							},
+						},
+						{
+							key: "MODEL_TYPE",
+							label: "Model Type",
+							type: "hidden",
+							disabled: true,
+							required: true,
+							default: "VERTEX",
+							category: "General",
+						},
+						{
+							key: "PROJECT",
+							label: "Project",
+							type: "text",
+							required: true,
+							category: "Credentials",
+						},
+						{
+							key: "GCP_REGION",
+							label: "GCP Region",
+							type: "text",
+							required: true,
+							category: "Credentials",
+						},
+						{
+							key: "SERVICE_ACCOUNT_CREDENTIALS",
+							label: "Service Account (JSON)",
+							type: "textarea",
+							required: true,
+							category: "Credentials",
+						},
+						{
+							key: "MODEL",
+							label: "Model Name",
+							type: "text",
+							required: true,
+							category: "General",
+						},
+						{
+							key: "VAR_NAME",
+							label: "Variable Name",
+							type: "hidden",
+							required: true,
+							value: "googleVertexAIEmbedderModel",
+							category: "General",
+						},
+						{
+							key: "KEEP_INPUT_OUTPUT",
+							label: "Record Text to Embed",
+							type: "boolean",
+							required: false,
+							category: "Settings",
+						},
+					],
+				},
+			],
+		},
+		{
 			name: "Azure OpenAI",
 			types: [
 				{
@@ -370,10 +584,10 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "MODEL_TYPE",
 							label: "Model Type",
-							type: "select",
-							options: ["Open_AI"],
+							type: "hidden",
+							disabled: true,
 							required: true,
-							default: "Open_AI",
+							default: "AZURE_OPEN_AI",
 							category: "General",
 						},
 						{
@@ -511,10 +725,10 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "MODEL_TYPE",
 							label: "Model Type",
-							type: "select",
-							options: ["Open_AI"],
+							type: "hidden",
+							disabled: true,
 							required: true,
-							default: "Open_AI",
+							default: "AZURE_OPEN_AI",
 							category: "General",
 						},
 						{
@@ -605,8 +819,9 @@ export const IMPORTABLE_MODELS = {
 							key: "MODEL_TYPE",
 							label: "Model Type",
 							type: "hidden",
+							disabled: true,
 							required: true,
-							value: "BEDROCK",
+							default: "BEDROCK",
 							category: "General",
 						},
 						{
@@ -724,10 +939,10 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "MODEL_TYPE",
 							label: "Model Type",
-							type: "select",
-							options: ["Bedrock"],
+							type: "hidden",
+							disabled: true,
 							required: true,
-							default: "Bedrock",
+							default: "BEDROCK",
 							category: "General",
 						},
 						{
@@ -813,222 +1028,6 @@ export const IMPORTABLE_MODELS = {
 			],
 		},
 		{
-			name: "Google Vertex AI",
-			types: [
-				{
-					model_types: ["llm"],
-					fields: [
-						{
-							key: "NAME",
-							label: "Catalog Name",
-							type: "text",
-							required: true,
-							category: "General",
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: 'CheckEngineName ( "[VALUE]") ;',
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							key: "MODEL_TYPE",
-							label: "Type",
-							type: "select",
-							options: ["VERTEX"],
-							required: true,
-							disabled: true,
-							default: "VERTEX",
-							category: "General",
-						},
-						{
-							key: "MODEL",
-							label: "Model",
-							type: "text",
-							required: true,
-							category: "General",
-						},
-						{
-							key: "MODEL_TYPE",
-							label: "Model Type",
-							type: "select",
-							options: ["Open_AI"],
-							required: true,
-							default: "Open_AI",
-							category: "General",
-						},
-						{
-							key: "PROJECT",
-							label: "Project",
-							type: "text",
-							required: true,
-							category: "Credentials",
-						},
-						{
-							key: "GCP_REGION",
-							label: "GCP Region",
-							type: "text",
-							required: true,
-							category: "Credentials",
-						},
-						{
-							key: "VAR_NAME",
-							label: "Variable Name",
-							type: "hidden",
-							required: true,
-							value: "googleVertexAIModel",
-							category: "General",
-						},
-						{
-							key: "CHAT_TYPE",
-							label: "Chat Type",
-							type: "select",
-							options: [
-								"chat",
-								"code",
-								"codechat",
-								"generative",
-								"text",
-							],
-							required: true,
-							default: "text",
-							category: "General",
-						},
-						{
-							key: "SERVICE_ACCOUNT_CREDENTIALS",
-							label: "Service Account Credentials",
-							type: "text",
-							required: false,
-							category: "Settings",
-						},
-						{
-							key: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							type: "text",
-							required: true,
-							default:
-								"import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}', project='${PROJECT}')",
-							category: "Settings",
-						},
-						{
-							key: "KEEP_INPUT_OUTPUT",
-							label: "Record Questions and Responses",
-							type: "select",
-							options: ["true", "false"],
-							required: true,
-							default: "true",
-							category: "Settings",
-						},
-						{
-							key: "KEEP_CONVERSATION_HISTORY",
-							label: "Keep Conversation History",
-							type: "select",
-							options: ["true", "false"],
-							required: true,
-							default: "true",
-							category: "Settings",
-						},
-						{
-							key: "MAX_TOKENS",
-							label: "Max Completion Tokens",
-							type: "number",
-							required: false,
-							category: "Settings",
-						},
-						{
-							key: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							type: "number",
-							required: false,
-							category: "Settings",
-						},
-						{
-							key: "CONTEXT_WINDOW",
-							label: "Context Window",
-							type: "number",
-							required: false,
-							category: "Settings",
-						},
-					],
-				},
-				{
-					model_types: ["embedding"],
-					fields: [
-						{
-							key: "NAME",
-							label: "Catalog Name",
-							type: "text",
-							required: true,
-							category: "General",
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: 'CheckEngineName ( "[VALUE]") ;',
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							key: "MODEL_TYPE",
-							label: "Model Type",
-							type: "hidden",
-							required: true,
-							value: "VERTEX",
-							category: "General",
-						},
-						{
-							key: "PROJECT_ID",
-							label: "Project ID",
-							type: "text",
-							required: true,
-							category: "Credentials",
-						},
-						{
-							key: "GCP_REGION",
-							label: "GCP Region",
-							type: "text",
-							required: true,
-							category: "Credentials",
-						},
-						{
-							key: "SERVICE_ACCOUNT_JSON",
-							label: "Service Account (JSON)",
-							type: "textarea",
-							required: true,
-							category: "Credentials",
-						},
-						{
-							key: "MODEL",
-							label: "Model Name",
-							type: "text",
-							required: true,
-							category: "General",
-						},
-						{
-							key: "KEEP_INPUT_OUTPUT",
-							label: "Record Text to Embed",
-							type: "boolean",
-							required: false,
-							category: "Settings",
-						},
-					],
-				},
-			],
-		},
-		{
 			name: "NVIDIA NIM",
 			types: [
 				{
@@ -1058,8 +1057,9 @@ export const IMPORTABLE_MODELS = {
 							key: "MODEL_TYPE",
 							label: "Model Type",
 							type: "hidden",
+							disabled: true,
 							required: true,
-							value: "OPEN_AI",
+							default: "OPEN_AI",
 							category: "General",
 						},
 						{
@@ -1171,8 +1171,9 @@ export const IMPORTABLE_MODELS = {
 							key: "MODEL_TYPE",
 							label: "Model Type",
 							type: "hidden",
+							disabled: true,
 							required: true,
-							value: "OPEN_AI",
+							default: "OPEN_AI",
 							category: "General",
 						},
 						{
@@ -1236,9 +1237,10 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "MODEL_TYPE",
 							label: "Model Type",
-							type: "select",
+							type: "hidden",
+							disabled: true,
 							required: true,
-							options: ["TEXT_GENERATION", "FAST_CHAT"],
+							default: "TEXT_GENERATION",
 							category: "General",
 						},
 						{
@@ -1366,8 +1368,9 @@ export const IMPORTABLE_MODELS = {
 							key: "MODEL_TYPE",
 							label: "Model Type",
 							type: "hidden",
+							disabled: true,
 							required: true,
-							value: "OPEN_AI",
+							default: "OPEN_AI",
 							category: "General",
 						},
 						{
@@ -1419,8 +1422,9 @@ export const IMPORTABLE_MODELS = {
 							key: "MODEL_TYPE",
 							label: "Model Type",
 							type: "hidden",
+							disabled: true,
 							required: true,
-							value: "EMBEDDED",
+							default: "EMBEDDED",
 							category: "General",
 						},
 						{
@@ -1541,8 +1545,9 @@ export const IMPORTABLE_MODELS = {
 							key: "MODEL_TYPE",
 							label: "Model Type",
 							type: "hidden",
+							disabled: true,
 							required: true,
-							value: "OPEN_AI",
+							default: "OPEN_AI",
 							category: "General",
 						},
 						{
@@ -1627,7 +1632,7 @@ export const MODEL_VERSIONS = {
 			link: "https://platform.openai.com/docs/models/gpt-4",
 		},
 		{
-			name: "gpt-3.5-Turbo",
+			name: "gpt-3.5-turbo",
 			display: "GPT 3.5 Turbo",
 			icon: "/src/assets/img/OPEN_AI.png",
 			description:
@@ -1658,6 +1663,24 @@ export const MODEL_VERSIONS = {
 			link: "https://platform.openai.com/docs/models/dall-e-2",
 		},
 		{
+			name: "text-embedding-3-large",
+			display: "text-embedding-3-large",
+			icon: "/src/assets/img/OPEN_AI.png",
+			embedding: true,
+			description:
+				"Most capable multilingual embedding model for semantic search, clustering, recommendations, anomaly detection, and classification.",
+			link: "https://platform.openai.com/docs/models/text-embedding-3-large",
+		},
+		{
+			name: "text-embedding-3-small",
+			display: "text-embedding-3-small",
+			icon: "/src/assets/img/OPEN_AI.png",
+			embedding: true,
+			description:
+				"Smaller, cost-efficient embedding model for semantic similarity, search, and lightweight classification tasks.",
+			link: "https://platform.openai.com/docs/models/text-embedding-3-small",
+		},
+		{
 			name: "gpt-audio",
 			display: "gpt-audio",
 			icon: "/src/assets/img/OPEN_AI.png",
@@ -1677,32 +1700,94 @@ export const MODEL_VERSIONS = {
 				"State-of-the-art multimodal image generation model accepting text and image inputs to produce images.",
 			link: "https://platform.openai.com/docs/models/gpt-image-1",
 		},
+	],
+	"Google Vertex AI": [
 		{
-			name: "text-davinci",
-			display: "Text Davinci",
-			icon: "/src/assets/img/OPEN_AI.png",
-			embedding: true,
+			name: "gemini-2.5-pro",
+			display: "Gemini 2.5 Pro",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+			link: "https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-2.5-pro",
 			description:
-				"Deprecated high-capacity GPT-3 family text model retained for compatibility with older completions workflows.",
-			link: "https://platform.openai.com/docs/models/text-davinci",
+				"Advanced multimodal model for text, image, and code tasks with high accuracy and reasoning capabilities.",
 		},
 		{
-			name: "text-embedding-3-large",
-			display: "text-embedding-3-large",
-			icon: "/src/assets/img/OPEN_AI.png",
-			embedding: true,
+			name: "gemini-pro",
+			display: "Gemini Pro",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+			link: "https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-3-pro-preview",
 			description:
-				"Most capable multilingual embedding model for semantic search, clustering, recommendations, anomaly detection, and classification.",
-			link: "https://platform.openai.com/docs/models/text-embedding-3-large",
+				"Versatile Gemini model for text and code generation, supporting a wide range of generative AI use cases.",
 		},
 		{
-			name: "text-embedding-3-small",
-			display: "text-embedding-3-small",
-			icon: "/src/assets/img/OPEN_AI.png",
-			embedding: true,
+			name: "gemini-ultra",
+			display: "Gemini Ultra",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+			link: "https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-3-pro-preview",
 			description:
-				"Smaller, cost-efficient embedding model for semantic similarity, search, and lightweight classification tasks.",
-			link: "https://platform.openai.com/docs/models/text-embedding-3-small",
+				"Most capable Gemini model for complex reasoning, multimodal understanding, and enterprise-grade tasks.",
+		},
+		{
+			name: "gemma-2b",
+			display: "Gemma 2b",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+			link: "https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemma",
+			description:
+				"Lightweight open model for efficient text generation and summarization with low resource requirements.",
+		},
+		{
+			name: "llama-2-7b",
+			display: "Llama 2-7b",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+			link: "https://console.cloud.google.com/vertex-ai/publishers/meta/model-garden/llama2",
+			description:
+				"Meta's Llama 2 model for high-quality text generation and conversational AI applications.",
+		},
+		{
+			name: "llama-2-70b",
+			display: "Llama 2-70b",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+			link: "https://console.cloud.google.com/vertex-ai/publishers/meta/model-garden/llama2",
+			description:
+				"Large-scale Llama 2 model for advanced text generation and reasoning at enterprise scale.",
+		},
+		{
+			name: "text-bison",
+			display: "PaLM 2 Bison",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+			description:
+				"PaLM 2-based model for high-quality text generation, summarization, and content creation.",
+		},
+		{
+			name: "text-bison-32k",
+			display: "PaLM 2 Bison (32k)",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+			description:
+				"PaLM 2 Bison variant with extended 32k context window for long-form content and document processing.",
+		},
+		{
+			name: "code-bison",
+			display: "Code Generation Bison",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+			description:
+				"PaLM 2-based model specialized for code generation, completion, and code understanding tasks.",
+		},
+		{
+			name: "mistral-7b",
+			display: "Mistral",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+			link: "https://console.cloud.google.com/vertex-ai/publishers/mistral-ai/model-garden/mistral",
+			description:
+				"Open-weight Mistral model for efficient, high-quality text generation and summarization.",
 		},
 	],
 	"Azure OpenAI": [
@@ -1712,6 +1797,8 @@ export const MODEL_VERSIONS = {
 			icon: "/src/assets/img/OPEN_AI.png",
 			embedding: false,
 			link: "https://learn.microsoft.com/azure/ai-services/openai/concepts/models",
+			description:
+				"Enterprise-grade OpenAI models deployed on Azure with enhanced security, compliance, and regional availability for production workloads.",
 		},
 		{
 			name: "azure-open-ai-ada-embedder",
@@ -1719,6 +1806,8 @@ export const MODEL_VERSIONS = {
 			icon: "/src/assets/img/OPEN_AI.png",
 			embedding: true,
 			link: "https://learn.microsoft.com/azure/ai-services/openai/concepts/models#embeddings",
+			description:
+				"Azure-hosted text embedding model for semantic search, similarity matching, and content recommendations with enterprise security.",
 		},
 	],
 	"AWS Bedrock": [
@@ -1728,24 +1817,35 @@ export const MODEL_VERSIONS = {
 			icon: "/src/assets/img/CLAUDE_AI.png",
 			embedding: false,
 			link: "https://docs.anthropic.com/en/docs/models-overview",
+			description:
+				"Most capable Claude model for complex reasoning, research, and enterprise tasks requiring deep analysis and nuanced understanding.",
 		},
 		{
 			name: "anthropic.claude-3-sonnet-20240229-v1:0",
 			display: "Claude 3 Sonnet",
 			icon: "/src/assets/img/CLAUDE_AI.png",
 			embedding: false,
+			link: "https://docs.anthropic.com/en/docs/models-overview",
+			description:
+				"Balanced Claude model offering strong performance and speed for everyday tasks like content generation and conversational AI.",
 		},
 		{
 			name: "anthropic.claude-3-haiku-20240307-v1:0",
 			display: "Claude 3 Haiku",
 			icon: "/src/assets/img/CLAUDE_AI.png",
 			embedding: false,
+			link: "https://docs.anthropic.com/en/docs/models-overview",
+			description:
+				"Fastest, most cost-efficient Claude model for high-volume classification, summarization, and real-time applications.",
 		},
 		{
 			name: "anthropic.claude-v2",
 			display: "Claude 2.0",
 			icon: "/src/assets/img/CLAUDE_AI.png",
 			embedding: false,
+			link: "https://docs.anthropic.com/en/docs/models-overview",
+			description:
+				"Previous generation Claude model with strong conversational abilities and extended context window support.",
 		},
 
 		{
@@ -1753,12 +1853,18 @@ export const MODEL_VERSIONS = {
 			display: "Jurassic-2 Ultra",
 			icon: "/src/assets/img/CLAUDE_AI.png",
 			embedding: false,
+			link: "https://docs.ai21.com/docs/jurassic-2-models",
+			description:
+				"AI21's most capable Jurassic-2 model for advanced text generation, creative writing, and complex language tasks.",
 		},
 		{
 			name: "ai21.j2-mid-v1",
 			display: "Jurassic-2 Mid",
 			icon: "/src/assets/img/CLAUDE_AI.png",
 			embedding: false,
+			link: "https://docs.ai21.com/docs/jurassic-2-models",
+			description:
+				"Cost-efficient Jurassic-2 model balancing performance and price for general-purpose text generation.",
 		},
 
 		{
@@ -1766,80 +1872,27 @@ export const MODEL_VERSIONS = {
 			display: "Titan Text G1 Express",
 			icon: "/src/assets/img/CLAUDE_AI.png",
 			embedding: false,
+			link: "https://docs.aws.amazon.com/bedrock/latest/userguide/titan-models.html",
+			description:
+				"Amazon's high-performance text model for summarization, content generation, and conversational applications.",
 		},
 		{
 			name: "amazon.titan-text-lite-v1",
 			display: "Titan Text Lite",
 			icon: "/src/assets/img/CLAUDE_AI.png",
 			embedding: false,
+			link: "https://docs.aws.amazon.com/bedrock/latest/userguide/titan-models.html",
+			description:
+				"Lightweight Amazon Titan model optimized for fast, cost-effective text generation and classification tasks.",
 		},
 		{
 			name: "amazon.titan-embed-text-v1",
 			display: "Titan Embeddings (text)",
 			icon: "/src/assets/img/CLAUDE_AI.png",
 			embedding: true,
-		},
-	],
-	"Google Vertex AI": [
-		{
-			name: "gemini-2.5-pro",
-			display: "Gemini 2.5 Pro",
-			icon: "/src/assets/img/VERTEX_AI.png",
-			embedding: false,
-		},
-		{
-			name: "gemini-pro",
-			display: "Gemini Pro",
-			icon: "/src/assets/img/VERTEX_AI.png",
-			embedding: false,
-		},
-		{
-			name: "gemini-ultra",
-			display: "Gemini Ultra",
-			icon: "/src/assets/img/VERTEX_AI.png",
-			embedding: false,
-		},
-		{
-			name: "gemma-2b",
-			display: "Gemma 2b",
-			icon: "/src/assets/img/VERTEX_AI.png",
-			embedding: false,
-		},
-		{
-			name: "llama-2-7b",
-			display: "Llama 2-7b",
-			icon: "/src/assets/img/VERTEX_AI.png",
-			embedding: false,
-		},
-		{
-			name: "llama-2-70b",
-			display: "Llama 2-70b",
-			icon: "/src/assets/img/VERTEX_AI.png",
-			embedding: false,
-		},
-		{
-			name: "text-bison",
-			display: "PaLM 2 Bison",
-			icon: "/src/assets/img/VERTEX_AI.png",
-			embedding: false,
-		},
-		{
-			name: "text-bison-32k",
-			display: "PaLM 2 Bison (32k)",
-			icon: "/src/assets/img/VERTEX_AI.png",
-			embedding: false,
-		},
-		{
-			name: "code-bison",
-			display: "Code Generation Bison",
-			icon: "/src/assets/img/VERTEX_AI.png",
-			embedding: false,
-		},
-		{
-			name: "mistral-7b",
-			display: "Mistral",
-			icon: "/src/assets/img/VERTEX_AI.png",
-			embedding: false,
+			link: "https://docs.aws.amazon.com/bedrock/latest/userguide/titan-embedding-models.html",
+			description:
+				"Amazon's text embedding model for semantic search, similarity matching, and retrieval-augmented generation workflows.",
 		},
 	],
 	"NVIDIA NIM": [
@@ -1847,13 +1900,19 @@ export const MODEL_VERSIONS = {
 			name: "embed-qa-4",
 			display: "EMBED QA 4",
 			icon: "/src/assets/img/NEMO.png",
-			embedding: false,
+			embedding: true,
+			link: "https://build.nvidia.com/nvidia/embed-qa-4",
+			description:
+				"NVIDIA's question-answering embedding model optimized for semantic search and information retrieval tasks.",
 		},
 		{
 			name: "rerank-qa-mistral-4b",
 			display: "Rerank QA Mistral 4B",
 			icon: "/src/assets/img/NEMO.png",
 			embedding: false,
+			link: "https://build.nvidia.com/nvidia/rerank-qa-mistral-4b",
+			description:
+				"NVIDIA's reranking model for improving search result relevance and document retrieval accuracy.",
 		},
 	],
 	"OpenAI-Compatible": [
@@ -1861,97 +1920,145 @@ export const MODEL_VERSIONS = {
 			name: "bert",
 			display: "Bert",
 			icon: "/src/assets/img/BERT.png",
-			embedding: false,
+			embedding: true,
+			link: "https://huggingface.co/bert-base-uncased",
+			description:
+				"Google's bidirectional transformer model for text embeddings, classification, and language understanding tasks.",
 		},
 		{
 			name: "dolly",
 			display: "Dolly",
 			icon: "/src/assets/img/DOLLY_AI.jpg",
 			embedding: false,
+			link: "https://huggingface.co/databricks/dolly-v2-12b",
+			description:
+				"Databricks' open-source instruction-following model for conversational AI and task completion.",
 		},
 		{
 			name: "Eleuther GPTJ",
 			display: "Eleuther GPTJ",
 			icon: "/src/assets/img/ELEUTHER_AI.png",
 			embedding: false,
+			link: "https://huggingface.co/EleutherAI/gpt-j-6b",
+			description:
+				"EleutherAI's 6B parameter open-source language model for text generation and completion.",
 		},
 		{
 			name: "Falcon",
 			display: "Falcon",
 			icon: "/src/assets/img/FALCON_AI.png",
 			embedding: false,
+			link: "https://huggingface.co/tiiuae/falcon-40b",
+			description:
+				"TII's high-performance open-source model for general-purpose text generation and reasoning.",
 		},
 		{
 			name: "Flan T5 Large",
 			display: "Flan T5 Large",
 			icon: "/src/assets/img/FLAN.jpg",
 			embedding: false,
+			link: "https://huggingface.co/google/flan-t5-large",
+			description:
+				"Google's instruction-tuned T5 variant for multi-task language understanding and generation.",
 		},
 		{
 			name: "Flan T5 XXL",
 			display: "Flan T5 XXL",
 			icon: "/src/assets/img/FLAN.jpg",
 			embedding: false,
+			link: "https://huggingface.co/google/flan-t5-xxl",
+			description:
+				"Largest Flan-T5 model offering superior performance on complex reasoning and instruction-following tasks.",
 		},
 		{
 			name: "Guanaco",
 			display: "Guanaco",
 			icon: "/src/assets/img/BRAIN.png",
 			embedding: false,
+			link: "https://huggingface.co/timdettmers/guanaco-65b-merged",
+			description:
+				"QLoRA-finetuned LLaMA model optimized for instruction-following and conversational interactions.",
 		},
 		{
 			name: "Llama2 7B",
 			display: "Llama2 7B",
 			icon: "/src/assets/img/META.png",
 			embedding: false,
+			link: "https://huggingface.co/meta-llama/Llama-2-7b-hf",
+			description:
+				"Meta's efficient 7B parameter model for general text generation and chat applications.",
 		},
 		{
 			name: "Llama2 13B",
 			display: "Llama2 13B",
 			icon: "/src/assets/img/META.png",
 			embedding: false,
+			link: "https://huggingface.co/meta-llama/Llama-2-13b-hf",
+			description:
+				"Mid-size Llama 2 model balancing performance and computational efficiency for diverse tasks.",
 		},
 		{
 			name: "Llama2 70B",
 			display: "Llama2 70B",
 			icon: "/src/assets/img/META.png",
 			embedding: false,
+			link: "https://huggingface.co/meta-llama/Llama-2-70b-hf",
+			description:
+				"Meta's largest Llama 2 model for advanced reasoning, complex tasks, and enterprise applications.",
 		},
 		{
 			name: "Mosaic ML",
 			display: "Mosaic ML",
 			icon: "/src/assets/img/MOSAIC.png",
 			embedding: false,
+			link: "https://huggingface.co/mosaicml/mpt-7b",
+			description:
+				"MosaicML's open-source MPT model for efficient training and deployment of language tasks.",
 		},
 		{
 			name: "Replit code model – 3b",
 			display: "Replit code model – 3b",
 			icon: "/src/assets/img/REPLIT_CODE.png",
 			embedding: false,
+			link: "https://huggingface.co/replit/replit-code-v1-3b",
+			description:
+				"Replit's code-specialized model for code completion, generation, and programming assistance.",
 		},
 		{
 			name: "StableBeluga2",
 			display: "StableBeluga2",
 			icon: "/src/assets/img/BRAIN.png",
 			embedding: false,
+			link: "https://huggingface.co/stabilityai/StableBeluga2",
+			description:
+				"Stability AI's LLaMA 2-based model finetuned for improved instruction-following and reasoning.",
 		},
 		{
 			name: "Vicuna",
 			display: "Vicuna",
 			icon: "/src/assets/img/VICUNA.jpg",
 			embedding: false,
+			link: "https://huggingface.co/lmsys/vicuna-13b-v1.5",
+			description:
+				"LMSYS's chatbot model trained via conversations, excelling at natural dialogue and helpfulness.",
 		},
 		{
 			name: "Wizard 13B",
 			display: "Wizard 13B",
 			icon: "/src/assets/img/BRAIN.png",
 			embedding: false,
+			link: "https://huggingface.co/WizardLM/WizardLM-13B-V1.2",
+			description:
+				"WizardLM's instruction-tuned model for complex reasoning and multi-step problem solving.",
 		},
 		{
 			name: "Wizard Coder",
 			display: "Wizard Coder",
 			icon: "/src/assets/img/BRAIN.png",
 			embedding: false,
+			link: "https://huggingface.co/WizardLM/WizardCoder-15B-V1.0",
+			description:
+				"WizardLM's code-specialized model for advanced programming tasks and code generation.",
 		},
 	],
 	Embedded: [
@@ -1994,9 +2101,9 @@ export const MODEL_VERSIONS = {
 
 export const Custom_Model_Image = [
 	{ name: "OpenAI", imgURL: "/src/assets/img/OPEN_AI.png" },
+	{ name: "Google Vertex AI", imgURL: "/src/assets/img/VERTEX_AI.png" },
 	{ name: "Azure OpenAI", imgURL: "/src/assets/img/OPEN_AI.png" },
 	{ name: "AWS Bedrock", imgURL: "/src/assets/img/CLAUDE_AI.png" },
-	{ name: "Google Vertex AI", imgURL: "/src/assets/img/VERTEX_AI.png" },
 	{ name: "NVIDIA NIM", imgURL: "/src/assets/img/NEMO.png" },
 	{ name: "OpenAI-Compatible", imgURL: "/src/assets/img/OPEN_AI.png" },
 	{ name: "Embedded", imgURL: "/src/assets/img/OPEN_AI.png" },
