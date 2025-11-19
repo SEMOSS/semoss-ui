@@ -41,22 +41,11 @@ import { useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from "@/utility";
-import {
-	replaceDependentReferences,
-	replaceInBlocks,
-	replaceInQueries,
-	replaceInVariables,
-} from "@/utility/dependencyReplacer";
-import {
-	findDependentElements,
-	getDependentBlocks,
-	getDependentCells,
-	getDependentQueries,
-	getDependentVariables,
-} from "@/utility/dependencyScanner";
+import { replaceInBlocks } from "@/utility/dependencyReplacer";
+import { getDependentBlocks } from "@/utility/dependencyScanner";
 import DuplicateIcon from "../../assets/img/Duplicate.svg";
+import { DependencyPromptModal } from "../blocks-workspace";
 import { AddVariableModal } from "./AddVariableModal";
-import { DependentBlocksModal } from "./DependentBlocksModal";
 import { NotebookAddCell } from "./NotebookAddCell";
 import { NotebookCellConsole } from "./NotebookCellConsole";
 import { Operation } from "./operations";
@@ -336,7 +325,7 @@ export const NotebookCell = observer(
 				});
 			});
 			return allCellsList;
-		}, [state.queries, dependentBlocksModal===true]);
+		}, [state.queries, dependentBlocksModal === true]);
 
 		useEffect(() => {
 			if (cardContentRef.current) {
@@ -427,7 +416,7 @@ export const NotebookCell = observer(
 		const handleReplaceCells = async (replacements: {
 			[blockId: string]: string;
 		}) => {
-			try{
+			try {
 				workspace.setLoading(true);
 				const updatedStateJson = await replaceInBlocks(
 					state,
@@ -450,7 +439,7 @@ export const NotebookCell = observer(
 				notification.add({
 					color: "success",
 					message: "Successfully replaced cells",
-				})
+				});
 				workspace.setLoading(false);
 			} catch (e) {
 				console.error(e);
@@ -1220,7 +1209,7 @@ export const NotebookCell = observer(
 					}}
 				/>
 
-				<DependentBlocksModal
+				<DependencyPromptModal
 					open={dependentBlocksModal}
 					onClose={() => {
 						setDependentBlocksModal(false);

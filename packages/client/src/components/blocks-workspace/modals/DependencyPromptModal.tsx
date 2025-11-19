@@ -28,7 +28,7 @@ import {
 	TableRow,
 } from "@semoss/ui/next";
 
-interface DependentBlocksModalProps {
+interface DependencyPromptModalProps {
 	open: boolean;
 	onClose: () => void;
 	onDelete: () => void;
@@ -42,7 +42,7 @@ interface DependentBlocksModalProps {
 	}
 }
 
-export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
+export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 	const {
 		open,
 		onClose,
@@ -125,7 +125,7 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 	return (
 		<Dialog open={open} onOpenChange={onClose}>
 			<DialogContent
-				className="gap-0 p-0 sm:max-w-4xl"
+				className={`gap-0 p-0 sm:${showReplaceOptions? "max-w-4xl" : "max-w-2xl"}`}
 				data-testid={`delete-${type.toLowerCase()}-modal`}
 			>
 				<DialogHeader className="space-y-0 border-b px-6 py-4">
