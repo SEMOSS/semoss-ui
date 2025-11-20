@@ -81,7 +81,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		};
 
 		return (
-			<div className="group mb-0 flex w-full flex-col gap-2 overflow-hidden">
+			<div className="group mb-0 flex w-full flex-col gap-4 overflow-hidden">
 				<div className="group flex flex-row items-center gap-2">
 					<MessageCircleIcon className="size-4" />
 					<span className="mr-0.5 font-medium text-base">
