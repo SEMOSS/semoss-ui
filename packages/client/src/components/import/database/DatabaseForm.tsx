@@ -415,24 +415,18 @@ export const DatabaseForm = ({
 
 				pixelCommands.push(command);
 			});
+
 			const meta = {
 				description: formValuesLocal.DATABASE_DESCRIPTION,
 				tag: formValuesLocal.DATABASE_TAG,
 			};
 
-			const pixel = `${pixelCommands.join("")}ExtractDatabaseMeta(database=[databaseVar]);SetDatabaseMetadata(database=[${JSON.stringify(formValuesLocal.DATABASE_NAME)}], meta=[${JSON.stringify(meta)}]);`;
-
-			const response = await monolithStore.runQuery(pixel);
-			const pixelReturn = Array.isArray(response?.pixelReturn)
-				? response.pixelReturn[0]
-				: null;
-			const output = pixelReturn?.output;
-
-			const hasError = response.pixelReturn.some((res) =>
-				res.operationType.includes("ERROR"),
+			const createDatabaseResponse = await monolithStore.runQuery(
+				pixelCommands.join(""),
 			);
-			if (hasError) {
-				response.pixelReturn.forEach((res) => {
+
+			if (createDatabaseResponse.errors.length > 0) {
+				createDatabaseResponse.pixelReturn.forEach((res) => {
 					if (res.operationType.includes("ERROR")) {
 						notification.add({
 							color: "error",
@@ -443,12 +437,20 @@ export const DatabaseForm = ({
 				return;
 			}
 
+			const databaseId =
+				createDatabaseResponse.pixelReturn[0].output.database_id;
+
+			// silently fail... DB still gets created
+			await monolithStore.runQuery(
+				`ExtractDatabaseMeta(database=[databaseVar]);SetDatabaseMetadata(database=[${JSON.stringify(formValuesLocal.DATABASE_NAME)}], meta=[${JSON.stringify(meta)}]);`,
+			);
+
 			notification.add({
 				color: "success",
 				message: "Successfully created database",
 			});
 
-			navigate(`/engine/database/${output.database_id}`);
+			navigate(`/engine/database/${databaseId}`);
 		} catch {
 			notification.add({
 				color: "error",
