@@ -237,7 +237,9 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 					open={shouldShowModal}
 					onClose={handleClose}
 					container={() => {
-						const elements = Array.from(document.querySelectorAll('[id="page-1"]'));
+						const elements = Array.from(
+							document.querySelectorAll('[id="page-1"]'),
+						);
 						return elements.at(-1) || elements[elements.length - 1];
 					}}
 					sx={{
