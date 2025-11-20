@@ -209,6 +209,10 @@ const StyledFunctionItemContent = styled(Box)(() => ({
 	gap: "8px",
 }));
 
+const StyledDescriptionBox = styled(Box)(({ theme }) => ({
+	marginBottom: theme.spacing(1.5),
+}));
+
 // ==================== UTILITY FUNCTIONS ====================
 
 function isTool(obj: unknown): obj is Tool {
@@ -528,6 +532,22 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 							...tool.inputSchema,
 							properties: updatedProperties,
 						},
+					};
+				}
+				return tool;
+			});
+			handleToolsUpdate(updated);
+		},
+		[tools, handleToolsUpdate],
+	);
+
+	const updateToolDescription = useCallback(
+		(toolName: string, newDescription: string) => {
+			const updated = tools.map((tool) => {
+				if (isTool(tool) && tool.name === toolName) {
+					return {
+						...tool,
+						description: newDescription,
 					};
 				}
 				return tool;
@@ -933,7 +953,6 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 											type,
 										);
 									} catch {
-										// Invalid JSON, don't update
 									}
 								}
 							}}
@@ -1263,7 +1282,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 									<Table.Cell
 										data-testid={`parameter-header-type-${tool.name}`}
 									>
-										Return Type
+										Input Type
 									</Table.Cell>
 									<Table.Cell
 										data-testid={`parameter-header-default-${tool.name}`}
@@ -1302,6 +1321,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			).filter((key) => getSelectedForTool(tool.name)[key]).length;
 			const isExpanded = (expanded[activeStep] || []).includes(tool.name);
 			const isDeleted = deletedFunctions.includes(tool.name);
+			const description = tool.description ?? "No description available.";
 
 			const accordionContent = (
 				<Accordion
@@ -1384,12 +1404,24 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 					<Accordion.Content
 						data-testid={`accordion-content-${tool.name}`}
 					>
-						<Typography
-							variant="body2"
-							data-testid={`accordion-description-${tool.name}`}
-						>
-							{tool.description ?? "No description available."}
-						</Typography>
+						<StyledDescriptionBox>
+							<TextField
+								fullWidth
+								variant="outlined"
+								size="small"
+								multiline
+								maxRows={6}
+								defaultValue={description}
+								onChange={(e) =>
+									updateToolDescription(
+										tool.name,
+										e.target.value,
+									)
+								}
+								placeholder="Enter function description"
+								label="Description"
+							/>
+						</StyledDescriptionBox>
 						{renderParameterTable(tool, showParameterSelection)}
 					</Accordion.Content>
 				</Accordion>
@@ -1413,6 +1445,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			handleAccordionExpand,
 			renderParameterTable,
 			deletedFunctions,
+			updateToolDescription,
 		],
 	);
 
@@ -1477,15 +1510,16 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 								>
 									<StyledFunctionItemContent
 										data-testid={`function-content-${tool.name}`}
+										onClick={(e) => {
+											e.stopPropagation();
+											handleFunctionToggle(tool);
+										}}
 									>
 										<Checkbox
 											data-testid={`function-checkbox-${tool.name}`}
 											checked={selectedFunctions.includes(
 												tool.name,
 											)}
-											onChange={() =>
-												handleFunctionToggle(tool)
-											}
 											disabled={isDeleted}
 										/>
 										<List.ItemText
@@ -1504,12 +1538,13 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 												/>
 												<StyledDeleteIcon
 													data-testid={`restore-icon-${tool.name}`}
-													onClick={(e) =>
+													onClick={(e) =>{
+														e.stopPropagation();
 														handleFunctionRestore(
 															e,
 															tool,
 														)
-													}
+													}}
 													size="small"
 												>
 													<RestoreFromTrash
@@ -1592,7 +1627,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 		<Modal
 			open
 			onClose={() => onClose(false)}
-			maxWidth="md"
+			maxWidth="lg"
 			fullWidth
 			data-testid="mcp-overlay-modal"
 		>
