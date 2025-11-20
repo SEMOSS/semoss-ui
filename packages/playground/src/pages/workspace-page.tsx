@@ -1,7 +1,7 @@
 import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	InputGroup,
@@ -9,8 +9,10 @@ import {
 	InputGroupInput,
 	Muted,
 	ScrollArea,
+	SidebarTrigger,
 	Spinner,
 	toast,
+	useDebouncedValue,
 } from "@semoss/ui/next";
 import workspaceGraphic from "@/assets/img/workspace-graphic.png";
 import { WorkspaceCard, WorkspaceOverlay } from "@/components";
@@ -18,7 +20,7 @@ import { useChat } from "@/hooks";
 import type { App } from "@/types";
 
 /**
- * Renders the Discover Page, allowing users to discover and create workspaces
+ * Renders the WorkspacePage, allowing users to access their workspace or discover new ones
  *
  * @component
  */
@@ -70,7 +72,10 @@ export const WorkspacePage = observer(() => {
 
 	return (
 		<div className="flex w-full flex-col px-2">
-			<div className="mx-auto flex h-screen w-full max-w-[950px] flex-col gap-12 px-4 pt-8 pb-4">
+			<div className="absolute top-2 left-2 z-10 flex h-12.5 items-center px-4">
+				<SidebarTrigger />
+			</div>
+			<div className="mx-auto flex h-screen w-full max-w-[950px] flex-col gap-12 px-12 pt-8 pb-4">
 				<div className="flex w-full rounded-lg bg-sky-100">
 					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
 						<div className="font-medium text-primary text-xl leading-normal">
@@ -102,7 +107,7 @@ export const WorkspacePage = observer(() => {
 				</div>
 
 				<div className="flex flex-col gap-4 overflow-auto">
-					<InputGroup>
+					<InputGroup className="bg-background">
 						<InputGroupInput
 							placeholder="Search Workspaces"
 							value={search}
