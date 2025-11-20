@@ -125,7 +125,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 	return (
 		<Dialog open={open} onOpenChange={onClose}>
 			<DialogContent
-				className={`gap-0 p-0 sm:${showReplaceOptions? "max-w-4xl" : "max-w-2xl"}`}
+				className={`gap-0 p-0 ${showReplaceOptions? "sm:max-w-3xl" : "sm:max-w-2xl"}`}
 				data-testid={`delete-${type.toLowerCase()}-modal`}
 			>
 				<DialogHeader className="space-y-0 border-b px-6 py-4">
