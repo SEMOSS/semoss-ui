@@ -604,7 +604,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			mcpToolResult?: string,
 		) => {
 			const { pixelReturn } = await this.actions.run<[string]>(
-				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ] ${mcpToolResult !== undefined ? `, mcpToolResponse=[${JSON.stringify(mcpToolResult)}]` : ""} );`,
+				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ] ${mcpToolResult !== undefined ? `, mcpToolResult=${JSON.stringify(String(mcpToolResult))}` : ""} );`,
 			);
 
 			const { output, operationType } = pixelReturn[0];
