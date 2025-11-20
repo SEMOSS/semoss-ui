@@ -426,14 +426,11 @@ export const DatabaseForm = ({
 			);
 
 			if (response.errors.length > 0) {
-				response.pixelReturn.forEach((res) => {
-					if (res.operationType.includes("ERROR")) {
-						notification.add({
-							color: "error",
-							message: res.output,
-						});
-					}
+				notification.add({
+					color: "error",
+					message: response.errors.join(""),
 				});
+
 				return;
 			}
 
