@@ -496,6 +496,51 @@ export const AppTileCard = (props: AppTileCardProps) => {
 		? (Array.isArray(app.tag) ? app.tag : [app.tag]).filter(Boolean)
 		: [];
 
+	// --- Gradient avatar logic (from ModelTileCard) ---
+	function hashString(str: string): number {
+		let h = 0;
+		for (let i = 0; i < str.length; i++) {
+			h = (h << 5) - h + str.charCodeAt(i);
+			h |= 0;
+		}
+		return Math.abs(h);
+	}
+
+	function pickGradient(name: string): string {
+		// Subtle pastel gradient derived from hash: lower saturation + higher lightness.
+		const base = hashString(name) % 360;
+		const hue2 = (base + 35) % 360;
+		const hue3 = (base + 70) % 360;
+		return `linear-gradient(135deg, hsl(${base} 45% 88%), hsl(${hue2} 40% 84%), hsl(${hue3} 35% 80%))`;
+	}
+
+	function buildInitials(label: string): string {
+		const tokens = label.split(/[^A-Za-z0-9]+/).filter((t) => t.length > 0);
+		const chars = tokens.map((t) => t[0]);
+		return chars.slice(0, 3).join("");
+	}
+
+	const StyledAppAvatar = styled("div")<{ gradientBg: string }>(
+		({ gradientBg }) => ({
+			display: "flex",
+			height: "77px",
+			width: "100%",
+			alignItems: "center",
+			justifyContent: "center",
+			fontWeight: 600,
+			fontSize: "32px",
+			color: "#fff",
+			borderRadius: "4px",
+			textTransform: "uppercase",
+			background: gradientBg,
+			boxShadow:
+				"0 0 0 1px rgba(0,0,0,0.08) inset, 0 2px 4px -1px rgba(0,0,0,0.12)",
+			transition: "filter 0.25s ease",
+			userSelect: "none",
+			WebkitFontSmoothing: "antialiased",
+		}),
+	);
+
 	// Intersection Observer to detect if card is in viewport
 	useEffect(() => {
 		const observer = new window.IntersectionObserver(
@@ -800,20 +845,15 @@ export const AppTileCard = (props: AppTileCardProps) => {
 							/>
 						</StyledSkeletonImage>
 					) : (
-						<StyledTileCardMedia
-							src="img"
-							image={
-								base64Image ? base64Image : image ? image : ""
-							}
-							sx={StyledCardImage}
-							onError={(e) => {
-								// Fallback to default image if base64 image fails to load
-								const target = e.target as HTMLImageElement;
-								if (base64Image && image) {
-									target.src = image;
-								}
-							}}
-						/>
+						<StyledAppAvatar
+							gradientBg={pickGradient(
+								app.project_name || appType || "App",
+							)}
+						>
+							{buildInitials(
+								app.project_name || appType || "App",
+							)}
+						</StyledAppAvatar>
 					)}
 					<StyledCardContentSection>&nbsp;</StyledCardContentSection>
 					<StyledContent>

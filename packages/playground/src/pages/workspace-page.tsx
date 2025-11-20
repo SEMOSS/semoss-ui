@@ -72,7 +72,7 @@ export const WorkspacePage = observer(() => {
 
 	return (
 		<div className="flex w-full flex-col px-2">
-			<div className="absolute top-0 left-0 z-10 flex h-12.5 items-center px-4">
+			<div className="absolute top-2 left-2 z-10 flex h-12.5 items-center px-4">
 				<SidebarTrigger />
 			</div>
 			<div className="mx-auto flex h-screen w-full max-w-[950px] flex-col gap-12 px-12 pt-8 pb-4">

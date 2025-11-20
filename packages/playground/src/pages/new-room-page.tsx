@@ -132,7 +132,7 @@ export const NewRoomPage = observer(() => {
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
-			<div className="absolute top-0 left-0 z-10 flex h-12.5 items-center px-4">
+			<div className="absolute top-2 left-2 z-10 flex h-12.5 items-center px-4">
 				<SidebarTrigger />
 			</div>
 			<ResizablePanelGroup direction="horizontal">
