@@ -39,26 +39,49 @@ export const WorkspaceCard = ({
 	/**
 	 * Functions
 	 */
-	const createRoom = () =>
+	const createRoom = () => {
 		navigate(`/new?workspaceId=${workspace.workspace_id}`);
+	};
 
+	/**
+	 * View Workspace Details
+	 */
+	const viewDetails = () => {
+		navigate(`/workspace/${workspace.workspace_id}`);
+	};
 	return (
-		<Card className="gap-0 p-0">
+		<Card
+			className="cursor-pointer gap-0 bg-background p-0"
+			onClick={() => viewDetails()}
+		>
 			<CardContent className="flex flex-col gap-4 p-6">
 				<div className="flex justify-between">
 					<div className="text-4xl">🌴</div>
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button variant="ghost">
+							<Button
+								variant="ghost"
+								onClick={(e) => e.stopPropagation()}
+							>
 								<Ellipsis />
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
 							<DropdownMenuGroup>
-								<DropdownMenuItem onClick={onEditClick}>
+								<DropdownMenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										onEditClick();
+									}}
+								>
 									Edit
 								</DropdownMenuItem>
-								<DropdownMenuItem onClick={onDeleteClick}>
+								<DropdownMenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										onDeleteClick();
+									}}
+								>
 									Delete
 								</DropdownMenuItem>
 							</DropdownMenuGroup>
