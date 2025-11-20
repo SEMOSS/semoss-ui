@@ -1,13 +1,13 @@
-import {
-	ComputerIcon,
-	Search,
-	SquarePenIcon,
-	TrashIcon,
-	XIcon,
-} from "lucide-react";
+import { ComputerIcon, Search, SquarePenIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { Link, matchPath, useLocation, useParams } from "react-router-dom";
+import {
+	Link,
+	matchPath,
+	useLocation,
+	useNavigate,
+	useParams,
+} from "react-router-dom";
 import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -29,7 +29,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
-	useSidebar,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
 import { AppLogo } from "./app-logo";
@@ -37,17 +36,24 @@ import { NavUser } from "./nav-user";
 
 const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
 
+/**
+ * Renders a sidebar allowing users to navigate between pages
+ *
+ * @component
+ */
 export const GlobalNav = observer(() => {
-	const { chat } = useChat();
-	const { setOpen } = useSidebar();
-
-	const { pathname } = useLocation();
-	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
-
+	/**
+	 * State
+	 */
 	const [search, setSearch] = useState("");
 
+	/**
+	 * Library hooks
+	 */
+	const { chat } = useChat();
+	const { pathname } = useLocation();
+	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
 	const debouncedSearch = useDebouncedValue(search);
-
 	const getRooms = usePixel<
 		{
 			ROOM_ID: string;
@@ -56,9 +62,14 @@ export const GlobalNav = observer(() => {
 			WORKSPACE_ID?: string;
 		}[]
 	>(
-		`GetUserConversationRooms ( ${search ? `search = "<encode>${debouncedSearch}</encode>"` : ""}, limit = 25 , offset = 0 , sort = [ "DESC" ] ) ;`,
+		`GetUserConversationRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""}limit = 25 , offset = 0 , sort = [ "DESC" ] ) ;`,
 	);
+	const navigate = useNavigate();
 
+	/**
+	 * Effects
+	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: chat.keys.roomCounter triggers refresh
 	useEffect(() => {
 		getRooms.refresh();
 	}, [getRooms.refresh, chat.keys.roomCounter]);
@@ -67,7 +78,7 @@ export const GlobalNav = observer(() => {
 		<Sidebar variant="inset" className="p-0">
 			<SidebarHeader>
 				<SidebarMenu>
-					<SidebarMenuItem className="group/logo flex items-center overflow-hidden">
+					<SidebarMenuItem className="flex items-center overflow-hidden">
 						<SidebarMenuButton size="lg" asChild>
 							<Link
 								to={"/"}
@@ -77,19 +88,6 @@ export const GlobalNav = observer(() => {
 								<AppLogo />
 							</Link>
 						</SidebarMenuButton>
-
-						<Button
-							className="invisible group-hover/logo:visible"
-							variant="ghost"
-							size="icon"
-							onClick={(event) => {
-								event.stopPropagation();
-								setOpen(false);
-							}}
-						>
-							<XIcon />
-							<span className="sr-only">Close Sidebar</span>
-						</Button>
 					</SidebarMenuItem>
 				</SidebarMenu>
 
@@ -173,7 +171,7 @@ export const GlobalNav = observer(() => {
 												<Link
 													className="inline-block flex-1 truncate"
 													to={`/room/${roomId}`}
-													aria-label={"Select a room"}
+													aria-label={"Select room"}
 												>
 													{name}
 												</Link>
@@ -195,6 +193,14 @@ export const GlobalNav = observer(() => {
 																toast.success(
 																	"Room deleted successfully",
 																);
+																if (
+																	activeRoomId ===
+																	roomId
+																) {
+																	navigate(
+																		"/",
+																	);
+																}
 
 																// Refetch rooms after deletion
 																getRooms.refresh();

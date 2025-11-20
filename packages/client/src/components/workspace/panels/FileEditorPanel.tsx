@@ -1,9 +1,9 @@
 import { ContentCopyOutlined, SaveOutlined } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
-import { FlexLayout } from "@semoss/shared";
 import { IconButton, Stack, useNotification } from "@semoss/ui";
 import { FileEditor, type FileEditorRefDef } from "@/components/common";
+import { FlexLayout } from "@/components/flex-layout";
 import { useWorkspace } from "@/hooks";
 import { Panel } from "./Panel";
 

@@ -1,7 +1,7 @@
 import { makeAutoObservable } from "mobx";
 import { runPixel } from "@semoss/sdk/react";
-import { FlexLayout } from "@semoss/shared";
 import type { AppMetadata } from "@/components/app";
+import { FlexLayout } from "@/components/flex-layout";
 import type { RootStore, WorkspaceOptions } from "@/stores";
 import type { Role } from "@/types";
 
