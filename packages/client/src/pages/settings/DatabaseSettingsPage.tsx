@@ -21,7 +21,6 @@ import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard, EngineTileCard } from "@/components/engine";
 import { useAPI, usePixel, useRootStore } from "@/hooks";
 import { useSettings } from "@/hooks/useSettings";
-import { removeUnderscores } from "@/utility";
 
 export interface DBMember {
 	ID: string;
@@ -486,8 +485,8 @@ export const DatabaseSettingsPage = () => {
 														`${db.database_id}`,
 														{
 															state: {
-																name: removeUnderscores(
-																	db.database_name,
+																name: (
+																	db.database_name
 																),
 																global: db.database_global,
 																permission:
@@ -526,8 +525,8 @@ export const DatabaseSettingsPage = () => {
 														`${db.database_id}`,
 														{
 															state: {
-																name: removeUnderscores(
-																	db.database_name,
+																name: (
+																	db.database_name
 																),
 																global: db.database_global,
 																permission:
