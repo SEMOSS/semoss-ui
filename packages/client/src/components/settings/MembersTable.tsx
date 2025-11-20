@@ -19,6 +19,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { editEngineUserPermissions, editProjectUserPermissions } from "@/api";
 import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
@@ -258,7 +259,7 @@ interface JsonType {
 export const MembersTable = (props: MembersTableProps) => {
 	const { id, type, onChange = () => null } = props;
 
-	const { monolithStore, configStore } = useRootStore();
+	const { configStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -486,7 +487,15 @@ export const MembersTable = (props: MembersTableProps) => {
 				return;
 			}
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -494,13 +503,13 @@ export const MembersTable = (props: MembersTableProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await monolithStore.editEngineUserPermissions(
+				response = await editEngineUserPermissions(
 					adminMode,
 					id,
 					requests,
 				);
 			} else if (type === "APP") {
-				response = await monolithStore.editProjectUserPermissions(
+				response = await editProjectUserPermissions(
 					adminMode,
 					id,
 					requests,
@@ -702,7 +711,12 @@ export const MembersTable = (props: MembersTableProps) => {
 				<StyledTableContainer>
 					<StyledTableTitleContainer>
 						<StyledTableTitleDiv>
-							<Typography variant={"h6"}>Permissions</Typography>
+							<Typography
+								variant={"h6"}
+								data-testid="permissions-title"
+							>
+								Permissions
+							</Typography>
 						</StyledTableTitleDiv>
 						<StyledTableTitleMemberContainer>
 							{Avatars.length > 0 ? (
@@ -712,6 +726,7 @@ export const MembersTable = (props: MembersTableProps) => {
 										variant={"circular"}
 										max={4}
 										total={totalMembers}
+										data-testid="membersTable-avatarGroup"
 									>
 										{Avatars.map((el) => {
 											return el;
@@ -721,7 +736,10 @@ export const MembersTable = (props: MembersTableProps) => {
 							) : null}
 							<StyledTableTitleMemberCountContainer>
 								<StyledTableTitleMemberCount>
-									<Typography variant={"caption"}>
+									<Typography
+										variant={"caption"}
+										data-testid="membersTable-memberCount"
+									>
 										{totalMembers} member
 									</Typography>
 								</StyledTableTitleMemberCount>
@@ -731,6 +749,7 @@ export const MembersTable = (props: MembersTableProps) => {
 							onClick={() => {
 								//setIsSearch(!isSearch);
 							}}
+							data-testid="membersTable-filterIcon"
 						>
 							<img src={FilteredIcon} alt="Filter" />
 						</IconButton>
@@ -752,6 +771,7 @@ export const MembersTable = (props: MembersTableProps) => {
 									onClick={() => {
 										setIsSearch(!isSearch);
 									}}
+									data-testid="membersTable-searchIcon"
 								>
 									<SearchIcon />
 								</IconButton>
@@ -773,6 +793,7 @@ export const MembersTable = (props: MembersTableProps) => {
 													selectedMembers,
 												)
 											}
+											data-testid="membersTable-deleteSelected-btn"
 										>
 											Delete Selected
 										</Button>
@@ -891,7 +912,9 @@ export const MembersTable = (props: MembersTableProps) => {
 													<StyledCell size="small">
 														<Table.Sort
 															active={true} // sort icon is always visible
-															direction={nameOrder} // direction of the icon, up is asc
+															direction={
+																nameOrder
+															} // direction of the icon, up is asc
 															onClick={() =>
 																handleNameSort()
 															}
@@ -935,7 +958,8 @@ export const MembersTable = (props: MembersTableProps) => {
 											</Table.Head>
 											<Table.Body>
 												{sortedMembers.map((_x, i) => {
-													const user = sortedMembers[i];
+													const user =
+														sortedMembers[i];
 
 													let isSelected = false;
 
@@ -1076,6 +1100,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																						1) &&
 																				!adminMode
 																			}
+																			data-testid="author"
 																		/>
 																		<RadioGroup.Item
 																			value="Editor"
@@ -1099,6 +1124,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																						2) &&
 																					!adminMode)
 																			}
+																			data-testid="editor"
 																		/>
 																		<RadioGroup.Item
 																			value="Read-Only"
@@ -1125,6 +1151,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																					)) &&
 																					!adminMode)
 																			}
+																			data-testid="readOnly"
 																		/>
 																	</StyledRadioGroup>
 																</StyledCell>
@@ -1240,12 +1267,8 @@ export const MembersTable = (props: MembersTableProps) => {
 												}}
 												page={page}
 												rowsPerPage={rowsPerPage}
-												rowsPerPageOptions={[
-													5, 10, 20,
-												]}
-												onRowsPerPageChange={(
-													e,
-												) => {
+												rowsPerPageOptions={[5, 10, 20]}
+												onRowsPerPageChange={(e) => {
 													// set the new limit
 													setRowsPerPage(
 														parseInt(

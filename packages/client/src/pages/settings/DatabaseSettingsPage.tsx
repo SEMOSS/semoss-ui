@@ -17,10 +17,10 @@ import {
 	ToggleButtonGroup,
 	Typography,
 } from "@semoss/ui";
+import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard, EngineTileCard } from "@/components/engine";
 import { useAPI, usePixel, useRootStore } from "@/hooks";
 import { useSettings } from "@/hooks/useSettings";
-import { removeUnderscores } from "@/utility";
 
 export interface DBMember {
 	ID: string;
@@ -227,8 +227,7 @@ export const DatabaseSettingsPage = () => {
 	 */
 	const favoriteDb = (db) => {
 		const favorite = !isFavorited(db.database_id);
-		monolithStore
-			.setEngineFavorite(db.database_id, favorite)
+		setEngineFavorite(db.database_id, favorite)
 			.then(() => {
 				if (!favorite) {
 					const newFavorites = favoritedDbs;
@@ -293,7 +292,7 @@ export const DatabaseSettingsPage = () => {
 						newCopy.upvotes = !db.hasUpvoted
 							? newCopy.upvotes + 1
 							: newCopy.upvotes - 1;
-						newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
+						newCopy.hasUpvoted = !db.hasUpvoted;
 
 						newDatabases.push(newCopy);
 					} else {
@@ -317,8 +316,7 @@ export const DatabaseSettingsPage = () => {
 	 * @param db
 	 */
 	const setDbGlobal = (db) => {
-		monolithStore
-			.setEngineGlobal(adminMode, db.database_id, !db.database_global)
+		setEngineGlobal(adminMode, db.database_id, !db.database_global)
 			.then((response) => {
 				if (response.data.success) {
 					const newDatabases = [];
@@ -346,7 +344,7 @@ export const DatabaseSettingsPage = () => {
 	};
 
 	//** infinite sroll variables */
-	let scrollEle, scrollTimeout, currentScroll, previousScroll;
+	let scrollEle :HTMLDivElement, scrollTimeout : ReturnType<typeof setTimeout>, currentScroll :number, previousScroll :number;
 	const offsetRef = useRef(0);
 	offsetRef.current = offset;
 	const canCollectRef = useRef(true);
@@ -426,13 +424,13 @@ export const DatabaseSettingsPage = () => {
 
 					<ToggleButtonGroup size={"small"} value={view}>
 						<ToggleButton
-							onClick={(e, v) => setView(v)}
+							onClick={(_e, v) => setView(v)}
 							value={"tile"}
 						>
 							<SpaceDashboardOutlined />
 						</ToggleButton>
 						<ToggleButton
-							onClick={(e, v) => setView(v)}
+							onClick={(_e, v) => setView(v)}
 							value={"list"}
 						>
 							<FormatListBulletedOutlined />
@@ -454,11 +452,11 @@ export const DatabaseSettingsPage = () => {
 						</Grid>
 					) : null}
 					{databases.length
-						? databases.map((db, i) => {
+						? databases.map((db, _i) => {
 								return (
 									<Grid
 										item
-										key={i}
+										key={`${db.database_name}`}
 										sm={view === "list" ? 12 : 12}
 										md={view === "list" ? 12 : 6}
 										lg={view === "list" ? 12 : 4}
@@ -487,8 +485,8 @@ export const DatabaseSettingsPage = () => {
 														`${db.database_id}`,
 														{
 															state: {
-																name: removeUnderscores(
-																	db.database_name,
+																name: (
+																	db.database_name
 																),
 																global: db.database_global,
 																permission:
@@ -527,8 +525,8 @@ export const DatabaseSettingsPage = () => {
 														`${db.database_id}`,
 														{
 															state: {
-																name: removeUnderscores(
-																	db.database_name,
+																name: (
+																	db.database_name
 																),
 																global: db.database_global,
 																permission:

@@ -4,8 +4,8 @@ import {
 	DvrOutlined,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { FlexLayout } from "@semoss/shared";
 import { List, styled } from "@semoss/ui";
+import { FlexLayout } from "@/components/flex-layout";
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
 

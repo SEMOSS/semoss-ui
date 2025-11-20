@@ -13,7 +13,7 @@ import { LoadingScreen, Stack, styled, ToggleTabsGroup } from "@semoss/ui";
 import { EngineHeader } from "@/components/engine";
 import { EngineContext } from "@/contexts";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
-import { metaKeysRestrictionByEngineDefault, removeUnderscores } from "@/utility";
+import { metaKeysRestrictionByEngineDefault } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
@@ -245,8 +245,8 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 				active: {
 					id: engineId,
 					role: getUserEnginePermission.data.permission,
-					name: removeUnderscores(
-						(getEngineMetadata.data?.database_name as string) || "",
+					name: (
+						(getEngineMetadata.data?.database_name as string) || ""
 					),
 					metadata: values,
 					database_subtype: getEngineMetadata.data?.database_subtype,

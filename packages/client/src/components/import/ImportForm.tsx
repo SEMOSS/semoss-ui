@@ -18,6 +18,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { uploadFile } from "@/api";
 import { useRootStore, useStepper } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 
@@ -131,7 +132,7 @@ export const ImportForm = (props) => {
 					});
 				}
 			}
-			if (f.options.pixel) {
+			if (f.options?.pixel) {
 				const pixelParams = f.options.pixel.match(/<([^>]+)>/g);
 				if (pixelParams) {
 					pixelParams.forEach((p) => {
@@ -486,7 +487,7 @@ export const ImportForm = (props) => {
 		// If it's a File Upload
 		if (steps[1].id.includes("File Uploads")) {
 			if (steps[1].title === "ZIP") {
-				const upload = await monolithStore.uploadFile(
+				const upload = await uploadFile(
 					[data.ZIP],
 					configStore.store.insightID,
 				);
@@ -737,7 +738,7 @@ export const ImportForm = (props) => {
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<Stack rowGap={2}>
-				{defaultFields.map((val, i) => {
+				{defaultFields?.map((val, i) => {
 					if (!val.hidden) {
 						return (
 							<StyledKeyValue
@@ -1035,7 +1036,7 @@ export const ImportForm = (props) => {
 													<Typography
 														variant={"body1"}
 													>
-														{val.label}
+														{val.label}{val.rules.required ? " *" : ""}
 													</Typography>
 													<FileDropzone
 														multiple={false}
