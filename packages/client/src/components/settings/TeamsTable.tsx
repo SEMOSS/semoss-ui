@@ -31,13 +31,11 @@ const StyledTableTitleDiv = styled("div")({
 });
 
 export const TeamsTable = ({ type, id }) => {
-	// biome-ignore lint/suspicious/noExplicitAny: React Hook Form needs flexible types
 	const [teams, setTeams] = useState<any[]>([]);
 	useEffect(() => {
 		if (!type || !id) return;
 		const fetchTeams = async () => {
 			try {
-				// biome-ignore lint/suspicious/noExplicitAny: React Hook Form needs flexible types
 				let data: any[] = [];
 				if (type === "ENGINE") {
 					const result = await getGroupsWithAccessToEngine(
