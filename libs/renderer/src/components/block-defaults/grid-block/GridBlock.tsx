@@ -1,5 +1,11 @@
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { styled } from "@mui/material";
-import { DataGrid, GridToolbarContainer } from "@mui/x-data-grid";
+import Tooltip from "@mui/material/Tooltip";
+import {
+	DataGrid,
+	GridToolbarContainer,
+	useGridApiRef,
+} from "@mui/x-data-grid";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { Button, CircularProgress } from "@semoss/ui";
@@ -28,12 +34,6 @@ const StyledBlock = styled("div")(() => ({
 	flexDirection: "column",
 	minHeight: DEFAULT_HEIGHT,
 	width: DEFAULT_WIDTH,
-}));
-
-const StyledTitle = styled("div")(() => ({
-	width: "100%",
-	display: "flex",
-	justifyContent: "center",
 }));
 
 const StyledDataGridContainer = styled("div")(() => ({
@@ -107,6 +107,7 @@ export interface GridBlockDef extends BlockDef<"grid"> {
 			wrapTextSettings?: WrapTextSettings;
 			rowSpanning?: boolean;
 			colorByValue?: ColorRule[];
+			enableExport?: boolean;
 		};
 		variation: undefined | string;
 		show: boolean;
@@ -132,6 +133,7 @@ export interface GridBlockDef extends BlockDef<"grid"> {
 export const GridBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData } = useBlock<GridBlockDef>(id);
 	const { state } = useBlocks();
+	const apiRef = useGridApiRef();
 	const [paginationModel, setPaginationModel] = useState({
 		page: 0,
 		pageSize: 50,
@@ -559,12 +561,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		...data.option?.cellBackgroundSettings,
 	};
 
-	const titleSettings = data.option?.chartTitleSettings || {
-		chartTitle: "",
-		fontSize: "16",
-		fontColor: "#000000",
-	};
-
 	const wrapTextSettings = {
 		selectedColumn: [],
 		textWrap: false,
@@ -580,17 +576,35 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		return "auto";
 	};
 
-	const GridToolbar = () => {
+	const CustomToolbar = () => {
+		const handleExportClick = () => {
+			if (apiRef.current) {
+				apiRef.current.exportDataAsCsv({
+					fileName: data.frame?.name || "grid-export",
+				});
+			}
+		};
+
 		return (
-			<GridToolbarContainer sx={{ justifyContent: "center" }}>
-				<StyledTitle
-					sx={{
-						fontSize: `${titleSettings.fontSize}px`,
-						color: titleSettings.fontColor,
-					}}
-				>
-					{titleSettings.chartTitle}
-				</StyledTitle>
+			<GridToolbarContainer
+				sx={{
+					padding: "8px",
+					borderBottom: "1px solid rgba(224, 224, 224, 1)",
+					display: "flex",
+					alignItems: "center",
+				}}
+			>
+				<div style={{ flex: 1 }} />
+				<Tooltip title="Export CSV">
+					<Button
+						variant="text"
+						size="small"
+						startIcon={<FileDownloadIcon fontSize="small" />}
+						onClick={handleExportClick}
+					>
+						Export
+					</Button>
+				</Tooltip>
 			</GridToolbarContainer>
 		);
 	};
@@ -642,9 +656,10 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		<StyledBlock sx={data.style} {...attrs}>
 			<StyledDataGridContainer>
 				<DataGrid
+					apiRef={apiRef}
 					rows={rows}
 					columns={columns}
-					pagination={!isBatchingEnabled}
+					pagination
 					density="compact"
 					paginationMode="server"
 					rowCount={frame.count}
@@ -657,7 +672,10 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 					disableRowSelectionOnClick
 					disableColumnSorting
 					slots={{
-						toolbar: titleSettings.chartTitle && GridToolbar,
+						toolbar:
+							isBatchingEnabled && data.option?.enableExport
+								? CustomToolbar
+								: undefined,
 						footer: isBatchingEnabled ? GridFooter : undefined,
 					}}
 					showCellVerticalBorder={
