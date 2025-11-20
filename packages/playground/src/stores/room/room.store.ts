@@ -10,7 +10,7 @@ import {
 	ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { Agent, PixelMessage, Toolbox } from "@/types";
+import type { MCPConfig, PixelMessage } from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -53,11 +53,6 @@ interface RoomStoreInterface {
 	 */
 	modelId: string;
 
-	/*
-	 * Id of the agent linked to the room
-	 */
-	agentId?: string;
-
 	/**
 	 * Root message
 	 */
@@ -73,9 +68,9 @@ interface RoomStoreInterface {
 		instructions: string;
 
 		/*
-		 * Tools loaded into the room
+		 * MCPs loaded into the room
 		 */
-		tools: Toolbox[];
+		mcp: MCPConfig[];
 
 		/*
 		 * Length of the token
@@ -86,6 +81,13 @@ interface RoomStoreInterface {
 		 * Temperature of the model
 		 */
 		temperature: number;
+
+		/*
+		 * Workspace associated with the room
+		 */
+		workspace?: {
+			workspace_id: string;
+		};
 	};
 
 	/**
@@ -95,18 +97,15 @@ interface RoomStoreInterface {
 		/** Track if the sidebar is open */
 		isOpen: boolean;
 
-		/** type of sidebar to open */
-		type: "CONFIGURATION" | "ARTIFACTS";
-	};
-
-	/**
-	 * Artifact information
-	 **/
-	artifact: {
 		/**
 		 * FlexLayout model
 		 */
-		model: FlexLayout.Model | null;
+		model: FlexLayout.Model;
+
+		/**
+		 * Count of the model;
+		 */
+		counter: number;
 	};
 }
 
@@ -125,19 +124,15 @@ export class RoomStore {
 			dateCreated: "",
 		},
 		modelId: "",
-		agentId: undefined,
 		root: new RootMessageStore(this),
 		options: {
 			instructions: "",
-			tools: [],
+			mcp: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
 		},
 		sidebar: {
 			isOpen: false,
-			type: "CONFIGURATION",
-		},
-		artifact: {
 			model: FlexLayout.Model.fromJson({
 				global: {},
 				borders: [],
@@ -147,6 +142,7 @@ export class RoomStore {
 					children: [],
 				},
 			}),
+			counter: 0,
 		},
 	};
 
@@ -156,6 +152,11 @@ export class RoomStore {
 
 		// make it observable
 		makeAutoObservable(this);
+
+		// increment the counter whenever the model changes
+		this._store.sidebar.model.addChangeListener(() => {
+			this.tickSidebar();
+		});
 	}
 
 	/**
@@ -201,13 +202,6 @@ export class RoomStore {
 	 */
 	get modelId() {
 		return this._store.modelId;
-	}
-
-	/**
-	 * Agent that the user is interacting with
-	 */
-	getAgentId() {
-		return this._store.agentId;
 	}
 
 	/**
@@ -305,13 +299,6 @@ export class RoomStore {
 		return this._store.sidebar;
 	}
 
-	/**
-	 * Get the artifact information
-	 */
-	get artifact() {
-		return this._store.artifact;
-	}
-
 	/** Setters */
 	/**
 	 * Set the mode
@@ -330,14 +317,6 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set the agentId
-	 * @param agentId - agent to use in the room
-	 */
-	setAgentId = (agentId: string) => {
-		this._store.agentId = agentId;
-	};
-
-	/**
 	 * Set options
 	 * @param options - options
 	 */
@@ -349,32 +328,7 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set Agent
-	 * @param options - options
-	 */
-	linkAgent = async (agent: Agent) => {
-		try {
-			const { errors } = await this.runRoomPixel<
-				[
-					{
-						roomId: string;
-					},
-				]
-			>(
-				`SetRoomWorkspace(roomId=${JSON.stringify(this._store.roomId)}, workspaceId=${JSON.stringify(agent.workspace_id)});`,
-			);
-
-			if (errors?.length > 0) {
-				throw new Error(errors?.join(", ") || undefined);
-			}
-			this.setAgentId(agent.workspace_id);
-		} catch (e) {
-			throw new Error(e.message || "Error linking agent");
-		}
-	};
-
-	/**
-	 * Set the mdetadata
+	 * Set the metadata
 	 * @param metadata - metadata
 	 */
 	setMetadata = (metadata: Partial<RoomStoreInterface["metadata"]>) => {
@@ -385,7 +339,7 @@ export class RoomStore {
 	};
 	/** Actions */
 	/**
-	 * Initialize the room and load messages if they are there
+	 * Initialize the room and load messages and options if they are there
 	 */
 	initialize = async () => {
 		try {
@@ -397,12 +351,21 @@ export class RoomStore {
 			// turn on the loading screen
 			this.setIsLoading(true);
 
-			// get all of the messages in historical order (sorted)
-			const response = await this.runRoomPixel<[PixelMessage[]]>(
-				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]);`,
+			// get all of the messages, get all the options
+			const response = await this.runRoomPixel<
+				[
+					PixelMessage[],
+					{ OPTIONS?: RoomStoreInterface["options"] }, // partial because this doesn't work for old rooms
+				]
+			>(
+				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`,
 			);
 
-			const { output } = response.pixelReturn[0];
+			const messageOutput = response.pixelReturn[0]
+				.output as PixelMessage[];
+			const optionsOutput = response.pixelReturn[1].output as {
+				OPTIONS?: RoomStoreInterface["options"];
+			};
 
 			const root = new RootMessageStore(this);
 			const messages: Record<
@@ -418,22 +381,14 @@ export class RoomStore {
 
 			// store the last model
 			let activeModelId = this._store.modelId;
-			let activeOptions: Pick<
-				RoomStoreInterface["options"],
-				"tokenLength" | "temperature"
-			> = {
-				...this._store.options,
-			};
 
 			// This is done as seperate loops because of INPUT_TOOL_EXEC
-			for (const pixelMessage of output) {
-				if (pixelMessage.type === "INPUT_TEXT") {
+			for (const pixelMessage of messageOutput) {
+				if (
+					pixelMessage.type === "INPUT_TEXT" ||
+					pixelMessage.type === "INPUT_MEDIA"
+				) {
 					activeModelId = pixelMessage.modelId;
-					activeOptions = {
-						...activeOptions,
-						temperature: pixelMessage.paramMap.temperature,
-						tokenLength: pixelMessage.paramMap.max_new_tokens,
-					};
 				}
 
 				// create the message
@@ -458,10 +413,18 @@ export class RoomStore {
 				}
 			}
 
+			// options
+			const newOptions = { ...optionsOutput.OPTIONS };
+			if (!newOptions.workspace?.workspace_id) {
+				delete newOptions.workspace;
+			}
+
 			runInAction(() => {
-				// set the model + options based on the history
+				// set the model based on the history
 				this.setModel(activeModelId);
-				this.setOptions(activeOptions);
+
+				// set the options based on the history
+				this.setOptions(newOptions);
 
 				// store it
 				this._store.root = root;
@@ -469,9 +432,34 @@ export class RoomStore {
 				// mark as initialized
 				this._store.isInitialized = true;
 			});
+
+			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
+			if (this.tail.type === "RESPONSE") {
+				this.tail.startToolExecution();
+			}
+		} catch (e) {
+			console.error(e);
+			throw new Error(e.message || "Error initializing room");
 		} finally {
-			// turn off the loading screen
 			this.setIsLoading(false);
+		}
+	};
+
+	/**
+	 * UpdateRoomOptions
+	 * @param options - full set of new options
+	 */
+	updateRoomOptions = async (options: RoomStore["options"]) => {
+		try {
+			await this.runRoomPixel(
+				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
+					options,
+				)}]);`,
+			);
+
+			this.setOptions(options);
+		} catch (e) {
+			throw new Error(e.message || "Error updating room options");
 		}
 	};
 
@@ -515,14 +503,81 @@ export class RoomStore {
 	 * Sidebar
 	 */
 	/**
-	 * Open the sidebar
-	 * @param options - options to pass in
+	 * Check if a sidebar node is selected
+	 * @param nodeId - node id to check
 	 */
-	openSidebar = async (
-		type: RoomStoreInterface["sidebar"]["type"],
-	): Promise<void> => {
+	isSidebarNodeSelected = (nodeId: string): boolean => {
+		if (!this._store.sidebar.isOpen) {
+			return false;
+		}
+
+		let isSelected = false;
+		this._store.sidebar.model.visitNodes((node) => {
+			if (node.getType() === "tabset") {
+				const tabset = node as FlexLayout.TabSetNode;
+				if (tabset.getSelectedNode()?.getId() === nodeId) {
+					isSelected = true;
+					return;
+				}
+			}
+		});
+
+		return isSelected;
+	};
+
+	/**
+	 * Add a sidebar node and open it
+	 * @param node - node to open. This will select and/or create the node
+	 */
+	addSidebarNode = (
+		nodeId: string,
+		options: {
+			[key: string]: unknown;
+		},
+	): void => {
+		// mark as open
 		this._store.sidebar.isOpen = true;
-		this._store.sidebar.type = type;
+
+		// select the node if there
+		const selectedNode = this._store.sidebar.model.getNodeById(nodeId);
+		if (selectedNode) {
+			this._store.sidebar.model.doAction(
+				FlexLayout.Actions.selectTab(selectedNode.getId()),
+			);
+			return;
+		}
+
+		// create the node if it is not there
+		// where to add the node
+		const addId =
+			this._store.sidebar.model.getActiveTabset()?.getId() ||
+			this._store.sidebar.model.getRoot().getChildren()[0]?.getId() ||
+			"";
+
+		// create and select the panel
+		this._store.sidebar.model.doAction(
+			FlexLayout.Actions.addNode(
+				{
+					...options,
+					id: nodeId,
+				},
+				addId,
+				FlexLayout.DockLocation.CENTER,
+				-1,
+				true,
+			),
+		);
+	};
+
+	/**
+	 * Remove a sidebar node and close if last one
+	 * @param node - node to remove
+	 */
+	removeSidebarNode = (nodeId: string): void => {
+		// trigger the action to remove it
+		this._store.sidebar.model.doAction(
+			FlexLayout.Actions.deleteTab(nodeId),
+		);
 	};
 
 	/**
@@ -533,6 +588,26 @@ export class RoomStore {
 	};
 
 	/**
+	 * Increment the counter and close if there are no nodes
+	 */
+	tickSidebar = async (): Promise<void> => {
+		this._store.sidebar.counter += 1;
+
+		// check if there are any tabs left
+		let hasTabs = false;
+		this._store.sidebar.model.visitNodes((node) => {
+			if (node.getType() === "tab") {
+				hasTabs = true;
+				return;
+			}
+		});
+
+		if (!hasTabs) {
+			this.closeSidebar();
+		}
+	};
+
+	/**f
 	 * Helpers
 	 */
 	/**
@@ -541,6 +616,13 @@ export class RoomStore {
 	 */
 	private setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
+	};
+
+	/**
+	 * Mark a room as initialized
+	 */
+	setInitialized = (): void => {
+		this._store.isInitialized = true;
 	};
 
 	/**
@@ -569,7 +651,7 @@ export class RoomStore {
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: prompt,
-			files: uploaded,
+			imageInfos: uploaded,
 			modelId: this.modelId,
 			paramMap: {
 				max_new_tokens: this.options.tokenLength,

@@ -1,4 +1,9 @@
-import type { DayOfWeek, Frequencies, JobTypes, Month } from "./job.types";
+import type {
+	DayOfWeekDef,
+	Frequencies,
+	JobTypes,
+	MonthsDef,
+} from "./job.types";
 
 export const timezones = [
 	"Africa/Abidjan",
@@ -634,10 +639,7 @@ export const timezones = [
 	"VST",
 ];
 
-export const DaysOfWeek: Array<{
-	day: DayOfWeek;
-	value: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-}> = [
+export const DaysOfWeek: Array<DayOfWeekDef> = [
 	{
 		day: "Sunday",
 		value: 0,
@@ -668,11 +670,7 @@ export const DaysOfWeek: Array<{
 	},
 ];
 
-export const Months: Array<{
-	month: Month;
-	value: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
-	days: 28 | 29 | 30 | 31;
-}> = [
+export const Months: Array<MonthsDef> = [
 	{
 		month: "January",
 		value: 1,
@@ -751,3 +749,44 @@ export const JobTypeCustomJob = "Custom Job";
 export const JobTypeSendEmail = "Send Email";
 
 export const JobTypeOptions: JobTypes[] = [JobTypeCustomJob, JobTypeSendEmail];
+
+export const ERROR_MSGES = {
+	MINUTE_ERROR_MSG:
+		"Must be 0–59, or use allowed symbols: '*', ',', '-', '/'.",
+	HOUR_ERROR_MSG: "Must be 0–23, or use allowed symbols: '*', ',', '-', '/'.",
+	DAY_OF_MONTH_ERROR_MSG:
+		"Must be 1–31, '*', ',', '-', '/', 'L', 'L-N' (e.g., 'L-3'), or 'W' (e.g., '15W').",
+	MONTH_ERROR_MSG:
+		"Must be 1–12, 3-letter abbreviation (JAN–DEC), or use '*', ',', '-', '/'.",
+	DAY_OF_WEEK_ERROR_MSG:
+		"Must be 1–7, or used allowed symbols '*', ',', '-', '/', 'L', or '#' (e.g., '3#2' for the second Tuesday)",
+	DAY_OF_WEEK_OCCURENCE_ERROR_MSG:
+		"A numeric value between 1-5 must follow the # option",
+	DAY_OF_WEEK_WEEKDAY_ERROR_MSG:
+		"Numeric values before # option must be between 1-7",
+};
+
+export const MonthAlias: { [key: string]: string } = {
+	jan: "1",
+	feb: "2",
+	mar: "3",
+	apr: "4",
+	may: "5",
+	jun: "6",
+	jul: "7",
+	aug: "8",
+	sep: "9",
+	oct: "10",
+	nov: "11",
+	dec: "12",
+};
+
+export const WeekdaysAlias: { [key: string]: string } = {
+	sun: "1",
+	mon: "2",
+	tue: "3",
+	wed: "4",
+	thu: "5",
+	fri: "6",
+	sat: "7",
+};

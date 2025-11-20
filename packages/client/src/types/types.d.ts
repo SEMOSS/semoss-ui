@@ -62,7 +62,7 @@ export type Role =
 
 export interface PixelCommand {
 	type: string;
-	components: any[];
+	components: unknown[];
 	terminal?: boolean;
 	meta?: boolean;
 }
@@ -173,4 +173,19 @@ export interface CreateProjectOutput {
 	project_id: string;
 	portal_id?: string;
 	[key: string]: unknown; // allow backend-extensible fields
+}
+export interface EventData {
+	startTime: string;
+	endTime: string;
+	logTimestamp: string;
+	request: string;
+	response: string;
+	tokens: string | null;
+	latency: number;
+	status: string | null;
+	engineName: string;
+	engineType: string;
+	userId: string;
+	sessionId: string;
+	spanId:string
 }

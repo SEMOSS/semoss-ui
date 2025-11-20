@@ -28,7 +28,8 @@
 			"**/*.min.js",
 			"**/*.d.ts",
 			"**/.DS_Store",
-			"**/*.local"
+			"**/*.local",
+			".history/**"
 		]
 	},
 	"linter": {
@@ -58,6 +59,13 @@
 			},
 			"a11y": {
 				"useAltText": "error"
+			},
+			"nursery": {
+				"useSortedClasses": {
+					"level": "warn",
+					"fix": "safe",
+					"options": {}
+				}
 			}
 		}
 	},

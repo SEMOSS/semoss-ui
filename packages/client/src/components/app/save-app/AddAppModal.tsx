@@ -8,6 +8,7 @@ import type React from "react";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import type { Control } from "react-hook-form";
 import { useNotification } from "@semoss/ui";
+import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import {
 	createProjectPixel,
@@ -170,11 +171,12 @@ export const AddAppModal = (props: AddAppProps) => {
 		const insightId = configStore.store.insightID;
 		try {
 			if (data[ADD_APP_FORM_FIELD_TYPE] === "App Zip") {
-				const upload = await monolithStore.uploadFile(
+				const upload = await uploadFile(
 					[data[ADD_APP_FORM_FIELD_UPLOAD]],
 					insightId,
 				);
 
+				// *** Waiting on the ImportApp reactor to be ready so that we can hook up the metadata ****.
 				const uploadOutput = await uploadProjectAppPixel(
 					upload[0].fileLocation,
 					data[ADD_APP_FORM_FIELD_IS_GLOBAL],
@@ -195,7 +197,6 @@ export const AddAppModal = (props: AddAppProps) => {
 						insightId,
 					);
 				}
-
 				setShowEngineModal(true);
 			} else {
 				const createOutput = await createProjectPixel(
@@ -217,9 +218,9 @@ export const AddAppModal = (props: AddAppProps) => {
 					insightId,
 				);
 
-				const upload = await monolithStore.uploadFile(
+				const upload = await uploadFile(
 					[data[ADD_APP_FORM_FIELD_UPLOAD]],
-					insightId,
+					configStore.store.insightID,
 					createOutput.project_id,
 					"version",
 				);
@@ -229,6 +230,7 @@ export const AddAppModal = (props: AddAppProps) => {
 					createOutput.project_id,
 					insightId,
 				);
+				// close it
 
 				handleClose(createOutput.project_id);
 			}
@@ -240,6 +242,7 @@ export const AddAppModal = (props: AddAppProps) => {
 			handleClose();
 		}
 	};
+
 	const handleEngineModalClose = () => {
 		setShowEngineModal(false);
 		handleClose(pendingProjectId);

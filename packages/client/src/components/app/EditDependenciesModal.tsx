@@ -13,9 +13,12 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { usePixel } from "@/hooks";
 import { setProjectDependenciesPixel } from "@/pixel/projects";
-import type { engine, modelledDependency } from "./app-details.utility";
+import { usePixel } from "@/hooks";
+import {
+	type engine,
+	type modelledDependency,
+} from "./app-details.utility";
 
 const StyledModalHeading = styled(Modal.Title)({
 	display: "flex",

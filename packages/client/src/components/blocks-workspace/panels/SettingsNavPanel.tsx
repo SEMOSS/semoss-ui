@@ -134,7 +134,7 @@ export const SettingsNavPanel = observer(() => {
 							aria-label={item.label}
 							dense={true}
 						>
-							<List.Icon>{item.icon}</List.Icon>
+							<List.ItemIcon>{item.icon}</List.ItemIcon>
 							<List.ItemText primary={item.label} />
 						</StyledListItemBtn>
 					);
