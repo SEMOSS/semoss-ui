@@ -45,10 +45,10 @@ export const MainLayout = () => {
 				}
 			>
 				<GlobalNav />
-				<SidebarInset>
+				<SidebarInset className="m-0! shadow-none">
 					<div
-						data-testId="main-layout"
-						className="h-[calc(100vh-theme(space.2))] w-full overflow-hidden"
+						data-testid="main-layout"
+						className="h-screen w-full overflow-hidden"
 						style={{
 							background:
 								"linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--base-secondary-background, #FFF)",
