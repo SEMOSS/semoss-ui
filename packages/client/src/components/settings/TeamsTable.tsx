@@ -60,12 +60,12 @@ export const TeamsTable = ({ type, id }) => {
 					3: "Read-Only",
 				};
 				const mappedTeams = data.map((team, idx) => ({
-					id: team.id || idx,
-					name: team.id,
-					type: team.type,
+					id: team.ID || idx,
+					name: team.ID,
+					type: team.TYPE,
 					permission:
-						permissionMap[team.permission] || team.permission,
-					dateAdded: team.dateadded,
+						permissionMap[team.PERMISSION] || team.PERMISSION,
+					dateAdded: team.DATEADDED,
 				}));
 				setTeams(mappedTeams);
 			} catch (e) {
