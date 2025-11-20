@@ -181,8 +181,6 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 		return <div>No Tool</div>;
 	}
 
-	console.log({ isLoading, url, selectedTool });
-
 	return (
 		<div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
 			{isLoading && <Skeleton className="h-full w-full" />}
