@@ -21,7 +21,6 @@ import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard, EngineTileCard } from "@/components/engine";
 import { useAPI, usePixel, useRootStore } from "@/hooks";
 import { useSettings } from "@/hooks/useSettings";
-import { removeUnderscores } from "@/utility";
 
 export interface DBMember {
 	ID: string;
@@ -345,7 +344,10 @@ export const DatabaseSettingsPage = () => {
 	};
 
 	//** infinite sroll variables */
-	let scrollEle :HTMLDivElement, scrollTimeout : ReturnType<typeof setTimeout>, currentScroll :number, previousScroll :number;
+	let scrollEle: HTMLDivElement,
+		scrollTimeout: ReturnType<typeof setTimeout>,
+		currentScroll: number,
+		previousScroll: number;
 	const offsetRef = useRef(0);
 	offsetRef.current = offset;
 	const canCollectRef = useRef(true);
@@ -386,7 +388,9 @@ export const DatabaseSettingsPage = () => {
 
 	return (
 		<>
-			<StyledBackdrop open={getEngines.status === "LOADING" || isSearching}>
+			<StyledBackdrop
+				open={getEngines.status === "LOADING" || isSearching}
+			>
 				<Stack
 					direction={"column"}
 					alignItems={"center"}
@@ -447,7 +451,8 @@ export const DatabaseSettingsPage = () => {
 								variant="body1"
 								sx={{ textAlign: "center", py: 4 }}
 							>
-								No databases found matching &quot;{debouncedSearch}
+								No databases found matching &quot;
+								{debouncedSearch}
 								&quot;
 							</Typography>
 						</Grid>
@@ -486,9 +491,7 @@ export const DatabaseSettingsPage = () => {
 														`${db.database_id}`,
 														{
 															state: {
-																name: removeUnderscores(
-																	db.database_name,
-																),
+																name: db.database_name,
 																global: db.database_global,
 																permission:
 																	db.permission,
@@ -526,9 +529,7 @@ export const DatabaseSettingsPage = () => {
 														`${db.database_id}`,
 														{
 															state: {
-																name: removeUnderscores(
-																	db.database_name,
-																),
+																name: db.database_name,
 																global: db.database_global,
 																permission:
 																	db.permission,

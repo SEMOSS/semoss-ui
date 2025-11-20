@@ -1,7 +1,7 @@
 import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	InputGroup,
@@ -9,9 +9,11 @@ import {
 	InputGroupInput,
 	Muted,
 	ScrollArea,
+	SidebarTrigger,
 	Spinner,
 	toast,
 	useDebouncedValue,
+	useInfiniteScroll,
 } from "@semoss/ui/next";
 import workspaceGraphic from "@/assets/img/workspace-graphic.png";
 import { WorkspaceCard, WorkspaceOverlay } from "@/components";
@@ -19,7 +21,7 @@ import { useChat } from "@/hooks";
 import type { App } from "@/types";
 
 /**
- * Renders the Discover Page, allowing users to discover and create workspaces
+ * Renders the WorkspacePage, allowing users to access their workspace or discover new ones
  *
  * @component
  */
@@ -31,47 +33,67 @@ export const WorkspacePage = observer(() => {
 	const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] =
 		useState<boolean>(false);
 	const [workspaceId, setWorkspaceId] = useState<string | null>(null);
-	const [isLoadingDelete, setIsLoadingDelete] = useState<boolean>(false);
+	const debouncedSearch = useDebouncedValue(search);
+
+	const { chat } = useChat();
 
 	/**
-	 * Library Hooks
+	 * Get all of the workspaces with lazy loading
 	 */
-	const debouncedSearch = useDebouncedValue(search);
-	const listWorkspaces = usePixel<App[]>(
-		`MyProjects ( type = "WORKSPACE" , filterWord = "${debouncedSearch}", limit = 10 ) ;`,
-		{ data: [] },
+	const getWorkspaces = useIteratorPixel<App[], App>(
+		(limit, offset) =>
+			`MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} type = "WORKSPACE", limit=[${limit}], offset=[${offset}]);`,
+		(response) => {
+			// if its less than the limit, we know its the end
+			if (response.length < 25) {
+				return -1;
+			}
+
+			return Infinity;
+		},
+		(response) => {
+			return response;
+		},
+		{
+			limit: 25,
+		},
+		[debouncedSearch],
 	);
-	const { chat } = useChat();
 
 	/**
 	 * Delete Workspace
 	 */
 	const handleDeleteWorkspace = async (workspaceId: string) => {
-		setIsLoadingDelete(true);
 		try {
 			await chat.deleteWorkspace(workspaceId);
-			listWorkspaces.refresh();
+
+			getWorkspaces.reset();
 		} catch (e) {
 			toast.error(
 				e instanceof Error ? e.message : "Failed to delete workspace",
 			);
-			setIsLoadingDelete(false);
 			return;
 		}
-		setIsLoadingDelete(false);
 	};
 
 	/**
-	 * Constants
+	 * Setup infinite scroll for the command list
 	 */
-	const isLoading =
-		listWorkspaces.status !== "SUCCESS" ||
-		search !== debouncedSearch ||
-		isLoadingDelete;
+	const setScroll = useInfiniteScroll({
+		onNext: () => {
+			if (getWorkspaces.isLoading || !getWorkspaces.hasMore) {
+				return;
+			}
+			getWorkspaces.next();
+		},
+	});
 
 	return (
 		<div className="flex w-full flex-col px-2">
-			<div className="mx-auto flex h-screen w-full max-w-[950px] flex-col gap-12 px-4 pt-8 pb-4">
+			<div className="absolute top-2 left-2 z-10 flex h-12.5 items-center px-4">
+				<SidebarTrigger />
+			</div>
+			<div className="mx-auto flex h-screen w-full max-w-[950px] flex-col gap-12 px-12 pt-8 pb-4">
 				<div className="flex w-full rounded-lg bg-sky-100">
 					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
 						<div className="font-medium text-primary text-xl leading-normal">
@@ -103,32 +125,28 @@ export const WorkspacePage = observer(() => {
 				</div>
 
 				<div className="flex flex-col gap-4 overflow-auto">
-					<InputGroup>
+					<InputGroup className="bg-background">
 						<InputGroupInput
-							placeholder="Search Workspaces"
+							placeholder="Search"
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 						/>
 						<InputGroupAddon>
 							<SearchIcon />
 						</InputGroupAddon>
-						<InputGroupAddon align="inline-end">
-							{isLoading ? (
-								<Spinner />
-							) : (
-								`${listWorkspaces.data.length} results`
-							)}
-						</InputGroupAddon>
 					</InputGroup>
 
-					<ScrollArea className="flex-1 overflow-auto">
-						{isLoading ? (
+					<ScrollArea
+						className="flex-1 overflow-auto"
+						viewportRef={(ele) => setScroll(ele)}
+					>
+						{getWorkspaces.data.length === 0 ? (
 							<div className="flex items-center justify-center py-12">
-								<Spinner />
+								<Muted>No results found</Muted>
 							</div>
-						) : listWorkspaces.data.length > 0 ? (
+						) : (
 							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
-								{listWorkspaces.data.map((w) => (
+								{getWorkspaces.data.map((w) => (
 									<WorkspaceCard
 										key={w.project_id}
 										workspace={{
@@ -146,11 +164,15 @@ export const WorkspacePage = observer(() => {
 									/>
 								))}
 							</div>
-						) : (
-							<div className="flex items-center justify-center py-12">
-								<Muted>No results found</Muted>
-							</div>
 						)}
+
+						{/* Loading more indicator */}
+						{getWorkspaces.isLoading &&
+							getWorkspaces.data.length > 0 && (
+								<div className="flex items-center justify-center p-4">
+									<Spinner className="size-4" />
+								</div>
+							)}
 					</ScrollArea>
 				</div>
 			</div>
@@ -162,7 +184,7 @@ export const WorkspacePage = observer(() => {
 					onClose={(newWorkspaceId) => {
 						setIsWorkspaceModalOpen(false);
 						if (newWorkspaceId) {
-							listWorkspaces.refresh();
+							getWorkspaces.reset();
 						}
 					}}
 				/>

@@ -1,7 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { formatPostcssSourceMap } from "vite";
 import { debounced } from "@semoss/sdk/react";
 import {
 	Button,
@@ -17,8 +16,7 @@ import { EngineLandscapeCard } from "@/components/engine";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { usePixel, useRootStore } from "@/hooks";
-import { ENGINE_TYPES } from "@/types";
-import { formatToDataTestId, removeUnderscores } from "@/utility";
+import { formatToDataTestId } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
 const StyledContainer = styled("div")(({ theme }) => ({
@@ -130,7 +128,10 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 		const offsetRef = useRef(0);
 		offsetRef.current = offset;
-		let scrollEle :HTMLDivElement, scrollTimeout : ReturnType<typeof setTimeout>, currentScroll :number, previousScroll :number;
+		let scrollEle: HTMLElement | null,
+			scrollTimeout: ReturnType<typeof setTimeout> | undefined,
+			currentScroll: number | undefined,
+			previousScroll: number | undefined;
 
 		const [inputValue, setInputValue] = useState("");
 		const [search, setSearch] = useState("");
@@ -205,8 +206,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				: "",
 		);
 
-		const debouncedSet = debounced((newInputValue: string) => {
-			setSearch(newInputValue);
+		const debouncedSet = debounced((newInputValue) => {
+			setSearch(newInputValue as string);
 		}, 300);
 
 		const handleInputChange = (newInputValue: string) => {
@@ -403,7 +404,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				}
 			}
 
-			const mutateListWithVotes = databases;
+			const mutateListWithVotes = [];
 
 			getDatabases.data.forEach((db) => {
 				mutateListWithVotes.push({
@@ -465,7 +466,22 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			getDatabases.status === "ERROR" ||
 			getCatalogFilters.status === "ERROR"
 		) {
-			return "ERROR";
+			return <Typography variant="body1">ERROR</Typography>;
+		}
+
+		// to limit the catalogs that are sent to filterbox for performance
+		let renderedEngineIds = [];
+		if (inputValue) {
+			renderedEngineIds.push(
+				...databases.map((engine) => engine.database_id),
+			);
+			renderedEngineIds.push(
+				...favoritedDbs.map((engine) => engine.database_id),
+			);
+			if (renderedEngineIds.length === 0)
+				renderedEngineIds = ["dummy-id"]; //dummy id to avoid empty array in query
+		} else {
+			renderedEngineIds = [];
 		}
 
 		// filter out the bookmarked models for All Models section, it is used not to show StyledSectionLabel for All Models section when there is no (nonBookmarked) model to show
@@ -547,6 +563,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							setMetaFilters(filters);
 							setOffset(0);
 						}}
+						filteredCatalogIds={renderedEngineIds}
 					/>
 					<StyledContent>
 						<Stack
@@ -556,7 +573,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						>
 							<StyledToggleTabsGroup
 								value={mode}
-								onChange={(_e: React.SyntheticEvent, val) => {
+								// biome-ignore lint/correctness/noUnusedFunctionParameters: Event handler needs both parameters even if we don't use the event
+								onChange={(e: React.SyntheticEvent, val) => {
 									dispatch({
 										type: "field",
 										field: "databases",
@@ -603,9 +621,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 									return (
 										<Grid item key={db.database_id} sm={12}>
 											<EngineLandscapeCard
-												name={removeUnderscores(
-													db.database_name,
-												)}
+												name={db.database_name}
 												type={db.database_type}
 												id={db.database_id}
 												tag={db.tag}
@@ -678,9 +694,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 												sm={12}
 											>
 												<EngineLandscapeCard
-													name={removeUnderscores(
-														db.database_name,
-													)}
+													name={db.database_name}
 													type={db.database_type}
 													id={db.database_id}
 													tag={db.tag}
