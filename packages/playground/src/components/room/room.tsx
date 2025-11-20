@@ -55,11 +55,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 			}>,
 		) => {
 			try {
-				if (
-					!event.data ||
-					event.data.type !== "SMSS_EXEC_TOOL" ||
-					event.data.tool?.roomId !== room.roomId
-				) {
+				if (!event.data || event.data.type !== "SMSS_EXEC_TOOL") {
 					return;
 				}
 
