@@ -79,10 +79,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					{icon}
 				</div>
 				<div className="flex-1">
-					<div
-						className="truncate text-base"
-						title={tool.title}
-					>
+					<div className="truncate text-base" title={tool.title}>
 						{tool.title}
 					</div>
 					<div
