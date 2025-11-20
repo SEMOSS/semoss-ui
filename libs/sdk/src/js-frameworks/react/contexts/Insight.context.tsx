@@ -90,10 +90,7 @@ export const InsightProvider = (props: InsightProviderProps) => {
 	// initialize the insight / destroy
 	useEffect(() => {
 		// initialize the insight
-		(async () => {
-			await insight.initialize(options);
-			syncInsight();
-		})();
+		insight.initialize(options).finally(() => syncInsight());
 
 		return () => {
 			// destroy the insight
