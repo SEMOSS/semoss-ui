@@ -596,13 +596,15 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 * Run a MCP tool
 		 * @param name - name of the tool
 		 * @param parameters - parameters to pass to the tool
+		 * @param mcpToolResult - optional forced result, if the user has specified a response already
 		 */
 		runMCPTool: async (
 			name: string,
 			parameters: Record<string, unknown>,
+			mcpToolResult?: string,
 		) => {
 			const { pixelReturn } = await this.actions.run<[string]>(
-				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ]);`,
+				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)}${mcpToolResult !== undefined ? `, mcpToolResponse=${JSON.stringify(mcpToolResult)}` : ""} ]);`,
 			);
 
 			const { output, operationType } = pixelReturn[0];
