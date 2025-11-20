@@ -1,11 +1,11 @@
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Env, usePixel } from "@semoss/sdk/react";
+import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
-import type { MCPTool, MCPToolRequest, Tool } from "@/types";
+import type { MCPTool, Tool } from "@/types";
 import { DynamicForm } from "../tools/tools-default-view";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL

@@ -8,7 +8,6 @@ import {
 } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk";
-import { FlexLayout } from "@semoss/shared";
 import {
 	IconButton,
 	Stack,
@@ -23,6 +22,7 @@ import {
 	FileExplorer,
 } from "@/components/common";
 import { MakeMCPOverlay } from "@/components/common/File/MakeMCPOverlay";
+import { FlexLayout } from "@/components/flex-layout";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { Panel } from "./Panel";
 
