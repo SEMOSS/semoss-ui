@@ -404,7 +404,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				}
 			}
 
-			const mutateListWithVotes = databases;
+			const mutateListWithVotes = [];
 
 			getDatabases.data.forEach((db) => {
 				mutateListWithVotes.push({

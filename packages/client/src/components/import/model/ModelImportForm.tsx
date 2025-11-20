@@ -125,7 +125,6 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	}, [fields, advanced, reset, name]);
 
 	const onSubmit = (data: Record<string, unknown>) => {
-		
 		const pixel = `CreateModelEngine(model=["${
 			data.NAME
 		}"],modelDetails=[${JSON.stringify(data)}])`;
@@ -303,7 +302,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									disabled={f.disabled || isLockedModel}
 									helperText={
 										errors?.[f.label]?.message.toString() ||
-										f.helperText || 
+										f.helperText ||
 										""
 									}
 									data-testId={formatToDataTestId(
@@ -385,10 +384,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									required={f.required}
 									value={field.value ?? ""}
 									onChange={(v) => field.onChange(v)}
-									helperText={
-										f.helperText || 
-										""
-									}
+									helperText={f.helperText || ""}
 									disabled={f.disabled || isLockedModel}
 									data-testId={formatToDataTestId(
 										`model-importForm-${f.label}-password`,

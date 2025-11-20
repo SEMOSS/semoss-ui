@@ -251,11 +251,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							value={input}
 							disabled={isDisabled}
 							rows={minRows}
-							className={`w-full resize-none px-3 pt-3 pb-14 ${
+							className={
+								`w-full resize-none px-3 pt-3 pb-14${
 								isDragging
 									? "border-primary border-dashed"
 									: "hover:border-primary"
-							} rounded-md bg-background shadow-lg transition-colors`}
+						c	}rounded-md bg-background shadow-lg transition-colors`
+							}
 							autoFocus={true}
 							style={{
 								minHeight: `${minRows * 3}rem`,
