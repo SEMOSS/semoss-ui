@@ -126,7 +126,6 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 
 	useEffect(() => {
 		const checkPortal = async () => {
-			console.log({ config });
 			// Finish loading
 			if (
 				getAppInfo.status === "INITIAL" ||
