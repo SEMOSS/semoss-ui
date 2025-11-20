@@ -43,12 +43,11 @@ export const WorkspaceChatList = ({
 			`GetWorkspaceRooms(workspaceId=["${workspaceId}"], ${search ? `filters=[Filter(room_name ?like "${search}")],` : ""} limit=[${limit}], offset=[${offset}]);`,
 		(response) => response.total_count,
 		(response) => response.rooms,
-		[workspaceId, search],
 		{ limit: 25 },
 	);
 
 	// Attach infinite scroll
-	const scrollRef = useInfiniteScroll({
+	const setScroll = useInfiniteScroll({
 		onNext: () => {
 			if (getWorkspaceRooms.isLoading) {
 				return;
@@ -94,12 +93,7 @@ export const WorkspaceChatList = ({
 	}
 
 	return (
-		<ScrollArea
-			className="h-full w-full"
-			viewportRef={(e) => {
-				scrollRef.current = e;
-			}}
-		>
+		<ScrollArea className="h-full w-full" viewportRef={(e) => setScroll(e)}>
 			<div className="flex flex-col gap-2 p-4">
 				{getWorkspaceRooms.data.map((r) => (
 					<Link

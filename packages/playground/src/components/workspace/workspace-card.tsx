@@ -51,7 +51,7 @@ export const WorkspaceCard = ({
 	};
 	return (
 		<Card
-			className="cursor-pointer gap-0 p-0"
+			className="cursor-pointer gap-0 bg-background p-0"
 			onClick={() => viewDetails()}
 		>
 			<CardContent className="flex flex-col gap-4 p-6">

@@ -1,10 +1,4 @@
-import {
-	ComputerIcon,
-	Search,
-	SquarePenIcon,
-	TrashIcon,
-	XIcon,
-} from "lucide-react";
+import { ComputerIcon, Search, SquarePenIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import {
@@ -35,7 +29,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
-	useSidebar,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
 import { AppLogo } from "./app-logo";
@@ -58,7 +51,6 @@ export const GlobalNav = observer(() => {
 	 * Library hooks
 	 */
 	const { chat } = useChat();
-	const { setOpen } = useSidebar();
 	const { pathname } = useLocation();
 	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
 	const debouncedSearch = useDebouncedValue(search);
@@ -86,7 +78,7 @@ export const GlobalNav = observer(() => {
 		<Sidebar variant="inset" className="p-0">
 			<SidebarHeader>
 				<SidebarMenu>
-					<SidebarMenuItem className="group/logo flex items-center overflow-hidden">
+					<SidebarMenuItem className="flex items-center overflow-hidden">
 						<SidebarMenuButton size="lg" asChild>
 							<Link
 								to={"/"}
@@ -96,19 +88,6 @@ export const GlobalNav = observer(() => {
 								<AppLogo />
 							</Link>
 						</SidebarMenuButton>
-
-						<Button
-							className="invisible group-hover/logo:visible"
-							variant="ghost"
-							size="icon"
-							onClick={(event) => {
-								event.stopPropagation();
-								setOpen(false);
-							}}
-						>
-							<XIcon />
-							<span className="sr-only">Close Sidebar</span>
-						</Button>
 					</SidebarMenuItem>
 				</SidebarMenu>
 

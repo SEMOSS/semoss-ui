@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { usePixel } from "./usePixel";
 
 export interface UseIteratorPixelOptions<T> {
@@ -65,7 +65,6 @@ export function useIteratorPixel<TResponse, TItem>(
 	pixelQuery: (limit: number, offset: number) => string,
 	getTotalCount: (response: TResponse) => number,
 	getData: (response: TResponse) => TItem[],
-	dependencies: unknown[] = [],
 	options: UseIteratorPixelOptions<TItem> = {},
 ): UseIteratorPixelReturn<TItem> {
 	const { data: initialData = [], limit = 25, onSuccess, onError } = options;
@@ -131,13 +130,10 @@ export function useIteratorPixel<TResponse, TItem>(
 		setAllData(initialData);
 		setTotalCount(0);
 		isLoadingMoreRef.current = false;
-	}, [initialData]);
 
-	// reset when dependencies change
-	useEffect(() => {
-		console.log("resetting");
-		reset();
-	}, dependencies);
+		// refresh the data
+		pixel.refresh();
+	}, [initialData, pixel.refresh]);
 
 	return {
 		data: allData,

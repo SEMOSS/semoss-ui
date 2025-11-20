@@ -25,14 +25,7 @@ export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
 			case "DATABASE":
 				return <DatabasePageContent name={name} />;
 			case "MODEL":
-				return (
-					<Stack>
-						{/* <ModelImport />
-						<br></br>
-						<br></br> */}
-						<ImportPageContent name={name} type={type} />
-					</Stack>
-				);
+				return <ModelImport />;
 			case "VECTOR":
 				return <ImportPageContent name={name} type={type} />;
 			case "FUNCTION":
