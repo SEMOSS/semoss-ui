@@ -93,16 +93,16 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 				replacements[block.blockId] = selectedReplacement;
 			});
 			onReplace(replacements);
-			onClose();
+			handleClose();
 		} else if (replaceOption === "replaceIndividual") {
 			onReplace(individualReplacements);
-			onClose();
+			handleClose();
 		}
 	};
 
 	const handleDeleteAnyway = () => {
 		onDelete();
-		onClose();
+		handleClose();
 	};
 
 	const updateIndividualReplacement = (blockId: string, value: string) => {
@@ -122,8 +122,15 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 		);
 	};
 
+	const handleClose = () => {
+		onClose();
+		setReplaceOption("replaceAll");
+		setSelectedReplacement("");
+		setIndividualReplacements({});
+	};
+	
 	return (
-		<Dialog open={open} onOpenChange={onClose}>
+		<Dialog open={open} onOpenChange={handleClose}>
 			<DialogContent
 				className={`gap-0 p-0 ${showReplaceOptions? "sm:max-w-3xl" : "sm:max-w-2xl"}`}
 				data-testid={`delete-${type.toLowerCase()}-modal`}
@@ -387,7 +394,7 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 				<DialogFooter className="flex flex-row items-center justify-between border-t px-6 py-3 sm:justify-between">
 					<Button
 						variant="ghost"
-						onClick={onClose}
+						onClick={handleClose}
 						className="text-gray-700 hover:bg-gray-100 hover:text-gray-900"
 						data-testid={`delete-${type.toLocaleLowerCase()}-modal-cancel`}
 					>
