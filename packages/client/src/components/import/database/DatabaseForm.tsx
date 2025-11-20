@@ -421,12 +421,12 @@ export const DatabaseForm = ({
 				tag: formValuesLocal.DATABASE_TAG,
 			};
 
-			const createDatabaseResponse = await monolithStore.runQuery(
-				pixelCommands.join(""),
+			const response = await monolithStore.runQuery(
+				`${pixelCommands.join("")}SetDatabaseMetadata(database=[${JSON.stringify(formValuesLocal.DATABASE_NAME)}], meta=[${JSON.stringify(meta)}]);`,
 			);
 
-			if (createDatabaseResponse.errors.length > 0) {
-				createDatabaseResponse.pixelReturn.forEach((res) => {
+			if (response.errors.length > 0) {
+				response.pixelReturn.forEach((res) => {
 					if (res.operationType.includes("ERROR")) {
 						notification.add({
 							color: "error",
@@ -437,13 +437,7 @@ export const DatabaseForm = ({
 				return;
 			}
 
-			const databaseId =
-				createDatabaseResponse.pixelReturn[0].output.database_id;
-
-			// silently fail... DB still gets created
-			await monolithStore.runQuery(
-				`ExtractDatabaseMeta(database=[databaseVar]);SetDatabaseMetadata(database=[${JSON.stringify(formValuesLocal.DATABASE_NAME)}], meta=[${JSON.stringify(meta)}]);`,
-			);
+			const databaseId = response.pixelReturn[0].output.database_id;
 
 			notification.add({
 				color: "success",
