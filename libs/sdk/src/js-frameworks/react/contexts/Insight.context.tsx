@@ -19,7 +19,7 @@ export const InsightContext = createContext<
 			system: Insight["system"];
 			actions: Insight["actions"];
 			insightId: Insight["insightId"];
-			tool: MCPToolRequest | null;
+			tool?: MCPToolRequest;
 	  }
 	| undefined
 >(undefined);
