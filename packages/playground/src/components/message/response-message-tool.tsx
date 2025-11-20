@@ -45,7 +45,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			<button
 				type="button"
 				disabled={isDisabled}
-				className={`group flex w-full flex-row items-center gap-3 rounded-lg border border-border p-2 text-left ${
+				className={`group flex w-full flex-row items-center gap-5 rounded-lg border border-border bg-primary-foreground p-4 text-left shadow-sm ${
 					isDisabled
 						? "cursor-not-allowed opacity-50"
 						: `cursor-pointer hover:bg-accent ${isActive ? "border-primary" : ""}`
@@ -74,19 +74,19 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				}}
 			>
 				<div
-					className={`mr-1 flex size-9 flex-col items-center justify-center overflow-hidden rounded bg-primary p-2 text-primary-foreground`}
+					className={`mr-1 flex size-9 flex-col items-center justify-center overflow-hidden rounded bg-primary/10 p-2 text-primary`}
 				>
 					{icon}
 				</div>
 				<div className="flex-1">
 					<div
-						className="truncate font-semibold text-base"
+						className="truncate text-base"
 						title={tool.title}
 					>
 						{tool.title}
 					</div>
 					<div
-						className="truncate text-secondary-foreground text-sm"
+						className="truncate text-muted-foreground text-sm"
 						title={tool.title}
 					>
 						{tool.title}
