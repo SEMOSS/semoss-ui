@@ -16,7 +16,7 @@ import { EngineLandscapeCard } from "@/components/engine";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { usePixel, useRootStore } from "@/hooks";
-import { formatToDataTestId, removeUnderscores } from "@/utility";
+import { formatToDataTestId } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
 const StyledContainer = styled("div")(({ theme }) => ({
@@ -404,7 +404,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				}
 			}
 
-			const mutateListWithVotes = databases;
+			const mutateListWithVotes = [];
 
 			getDatabases.data.forEach((db) => {
 				mutateListWithVotes.push({
@@ -621,8 +621,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 									return (
 										<Grid item key={db.database_id} sm={12}>
 											<EngineLandscapeCard
-												name={removeUnderscores(
-													db.database_name,
+												name={(
+													db.database_name
 												)}
 												type={db.database_type}
 												id={db.database_id}
@@ -696,8 +696,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 												sm={12}
 											>
 												<EngineLandscapeCard
-													name={removeUnderscores(
-														db.database_name,
+													name={(
+														db.database_name
 													)}
 													type={db.database_type}
 													id={db.database_id}
