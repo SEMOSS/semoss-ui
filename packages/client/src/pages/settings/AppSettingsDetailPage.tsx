@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { styled, ToggleTabsGroup } from "@semoss/ui";
-import { AppSettings } from "@/components/app";
+import { AppSpecificSettingsForm } from "@/components/app";
 import {
 	MembersTable,
 	PendingMembersTable,
@@ -105,7 +105,7 @@ export const AppSettingsUserDetailPage = () => {
 				{view === "PENDING" && (
 					<PendingMembersTable id={id} type={"APP"} />
 				)}
-				{view === "APP" && <AppSettings id={id} />}
+				{view === "APP" && <AppSpecificSettingsForm id={id} />}
 			</StyledContent>
 		</StyledContainer>
 	);
@@ -144,7 +144,7 @@ export const AppSettingsAdminDetailPage = () => {
 				{view === "PENDING" && (
 					<PendingMembersTable id={id} type={"APP"} />
 				)}
-				{view === "APP" && <AppSettings id={id} />}
+				{view === "APP" && <AppSpecificSettingsForm id={id} />}
 			</StyledContent>
 		</StyledContainer>
 	);

@@ -28,7 +28,7 @@ interface usePixel<D> extends PixelState<D> {
 	/** Refresh and reexecute the pixel */
 	refresh: () => void;
 	/** Update the data with new information */
-	update: (data: D) => void;
+	update: (data: Partial<D>, error?: Error) => void;
 }
 
 /**
@@ -85,10 +85,13 @@ export function usePixel<D>(
 	/**
 	 * Update the state with new data
 	 */
-	const update = useCallback((data: D, error?: Error) => {
+	const update = useCallback((data: Partial<D>, error?: Error) => {
 		setState((prev) => ({
 			...prev,
-			data: data,
+			data: {
+				...prev.data,
+				...data,
+			},
 			error: error,
 		}));
 	}, []);

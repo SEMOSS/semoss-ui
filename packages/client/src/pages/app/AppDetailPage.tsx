@@ -30,6 +30,7 @@ import { getUserProjectPermission, uploadImage } from "@/api";
 import {
 	type AppDetailsFormTypes,
 	AppDetailsFormValues,
+	AppSpecificSettingsForm,
 	type appDependency,
 	ChangeAccessModal,
 	type DetailsForm,
@@ -42,15 +43,14 @@ import {
 	type modelledDependency,
 } from "@/components/app";
 import { UpdateSMSS } from "@/components/settings";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import type { Role } from "@/types";
-import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { AccessControl } from "./AppDetailTabs/AccessControl";
 import { Dependencies } from "./AppDetailTabs/Dependencies";
 import { Overview } from "./AppDetailTabs/Overview";
-import { SettingsTab } from "./AppDetailTabs/Settings";
 
 const OuterContainer = styled("div")({
 	height: "100%",
@@ -847,7 +847,7 @@ export const AppDetailPage = () => {
 											adminMode: false,
 										}}
 									>
-										<SettingsTab id={appId} />
+										<AppSpecificSettingsForm id={appId} />
 									</SettingsContext.Provider>
 								)}
 								{selectedTab === "SMSS" && (

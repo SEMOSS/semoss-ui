@@ -3,6 +3,8 @@ import "../styles/globals.css";
 
 // export the hooks
 export * from "../hooks";
+// export the libs
+export * from "../lib";
 // Re-export all components (only export what exists)
 export * from "./alert";
 export * from "./avatar";
@@ -17,6 +19,7 @@ export * from "./command";
 export * from "./dialog";
 export * from "./dropdown-menu";
 export * from "./field";
+export * from "./file-upload";
 export * from "./input";
 export * from "./input-group";
 export * from "./item";
@@ -35,6 +38,7 @@ export * from "./slider";
 export * from "./sonner";
 export * from "./spinner";
 export * from "./stepper";
+export * from "./switch";
 export * from "./table";
 export * from "./tabs";
 export * from "./textarea";

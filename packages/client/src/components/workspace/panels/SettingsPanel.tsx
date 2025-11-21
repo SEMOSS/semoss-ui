@@ -10,7 +10,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { AppSettings } from "@/components/app";
+import { AppSpecificSettingsForm } from "@/components/app";
 import {
 	MembersTable,
 	PendingMembersTable,
@@ -140,7 +140,7 @@ export const SettingsPanel = observer(({ value }: { value: string }) => {
 								</>
 							)}
 							{view === "APP" && (
-								<AppSettings id={workspace.appId} />
+								<AppSpecificSettingsForm id={workspace.appId} />
 							)}
 							{view === "GENERAL" && (
 								<>
