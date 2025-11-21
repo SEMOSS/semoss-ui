@@ -43,7 +43,10 @@ export const WorkspaceChatList = ({
 			`GetWorkspaceRooms(workspaceId=["${workspaceId}"], ${search ? `filters=[Filter(room_name ?like "${search}")],` : ""} limit=[${limit}], offset=[${offset}]);`,
 		(response) => response.total_count,
 		(response) => response.rooms,
-		{ limit: 25 },
+		{
+			limit: 25,
+		},
+		[search, workspaceId],
 	);
 
 	// Attach infinite scroll
@@ -62,10 +65,7 @@ export const WorkspaceChatList = ({
 	});
 
 	// initial loading
-	if (
-		getWorkspaceRooms.status === "LOADING" &&
-		getWorkspaceRooms.data.length === 0
-	) {
+	if (getWorkspaceRooms.isLoading && getWorkspaceRooms.data.length === 0) {
 		return (
 			<div className="flex h-full w-full items-center justify-center px-2 py-4">
 				<Spinner />
@@ -73,7 +73,7 @@ export const WorkspaceChatList = ({
 		);
 	}
 
-	if (getWorkspaceRooms.status === "ERROR") {
+	if (getWorkspaceRooms.isError) {
 		return (
 			<div className="px-2 py-4 text-center text-destructive text-sm">
 				Error: ${getWorkspaceRooms.error?.message}
@@ -81,10 +81,7 @@ export const WorkspaceChatList = ({
 		);
 	}
 
-	if (
-		getWorkspaceRooms.status === "SUCCESS" &&
-		getWorkspaceRooms.data.length === 0
-	) {
+	if (getWorkspaceRooms.data.length === 0) {
 		return (
 			<div className="px-2 py-4 text-center text-muted-foreground text-sm">
 				No chats
@@ -115,7 +112,7 @@ export const WorkspaceChatList = ({
 				))}
 
 				{/* Loading more indicator */}
-				{getWorkspaceRooms.status === "LOADING" &&
+				{getWorkspaceRooms.isLoading &&
 					getWorkspaceRooms.data.length > 0 && (
 						<div className="flex items-center justify-center p-4">
 							<Spinner className="size-4" />
