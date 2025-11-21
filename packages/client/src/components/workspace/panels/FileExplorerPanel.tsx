@@ -9,7 +9,6 @@ import {
 import {Typography} from "@semoss/ui";
 import { useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk";
-import { FlexLayout } from "@semoss/shared";
 import {
 	IconButton,
 	Stack,
@@ -24,6 +23,7 @@ import {
 } from "@/components/common";
 import type { FileExplorerItemHandle } from "@/components/common/File/FileExplorerItem";
 import { MakeMCPOverlay } from "@/components/common/File/MakeMCPOverlay";
+import { FlexLayout } from "@/components/flex-layout";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { Panel } from "./Panel";
 
