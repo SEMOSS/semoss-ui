@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getJSON } from "@semoss/sdk/react";
 
 type CacheState<T> = {
 	state: T;
@@ -13,10 +14,10 @@ export const useCacheState = <T>(initialState: T, name: string) => {
 	// set the data
 	const [state, setState] = useState<T>(() => {
 		try {
-			const item = localStorage.getItem(key);
+			const item = getJSON(key);
 			if (item) {
 				// try to get the state
-				const data = JSON.parse(item) as CacheState<T>;
+				const data = item as CacheState<T>;
 				return data.state;
 			}
 		} catch (e) {

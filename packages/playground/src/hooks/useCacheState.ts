@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { getJSON } from "@semoss/sdk/react";
+import { get } from "mobx";
 
 /**
  * Access state from the cache
@@ -12,10 +14,10 @@ export const useCacheState = <T>(initialState: T, name: string) => {
 	// load from cache whenever the key changes
 	useEffect(() => {
 		try {
-			const item = localStorage.getItem(key);
+			const item = getJSON(key);
 			if (item) {
 				// try to get the state
-				const data = JSON.parse(item);
+				const data = item;
 				setState(data.state);
 			}
 		} catch (e) {

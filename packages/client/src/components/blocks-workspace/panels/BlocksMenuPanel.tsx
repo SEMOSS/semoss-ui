@@ -2,7 +2,7 @@ import { Search, Tune } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
-import { getJSON, setJSON } from "@semoss/sdk/react";
+import { getJSON } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -275,7 +275,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 		const localStorageMap: Record<string, BlockLocalStorageData> =
 			getJSON<Record<string, BlockLocalStorageData>>(
 				"blocks--frequently-used",
-				{ defaultValue: {} }
+				{ defaultValue: {} },
 			);
 		const mostUsedSet = Object.values(localStorageMap)
 			.filter((item) => item.use_count)

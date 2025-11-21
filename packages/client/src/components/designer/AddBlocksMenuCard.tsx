@@ -25,6 +25,7 @@ import type {
 	DesignerMenuItem,
 } from "../blocks-workspace/menus/menu-types";
 import { BlockCardContent, blockCardWidth } from "./BlockMenuCardContent";
+import { getJSON } from "@semoss/sdk/react";
 
 const StyledCard = styled(Card)({
 	cursor: "grab",
@@ -162,9 +163,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 			"blocks--frequently-used",
 			(() => {
 				const map: Record<string, BlockLocalStorageData> =
-					JSON.parse(
-						localStorage.getItem("blocks--frequently-used"),
-					) ?? {};
+					getJSON<Record<string, BlockLocalStorageData>>(
+					"blocks--frequently-used",
+					{ defaultValue: {} }
+					);
 				map[item.json.widget] = {
 					widget: item.json.widget,
 					name: item.name,

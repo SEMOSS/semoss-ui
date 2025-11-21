@@ -3,6 +3,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { Button, Modal } from "@semoss/ui";
 import { useRootStore } from "@/hooks/";
+import { getJSON } from "@semoss/sdk/react";
 
 export const PlatformMessages: React.FC = observer(() => {
 	const { configStore } = useRootStore();
@@ -16,9 +17,9 @@ export const PlatformMessages: React.FC = observer(() => {
 	useEffect(() => {
 		if (configStore.store.userEpoch) {
 			const key = `smss--terms--${configStore.store.userEpoch}`;
-			const item = localStorage.getItem(key);
+			const item = getJSON(key);
 			if (item) {
-				const d = JSON.parse(item);
+				const d = item;
 				setAcceptedTerms(d.state);
 			} else {
 				setAcceptedTerms(false);

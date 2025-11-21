@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Box, Button, IconButton, Stack, styled, Typography } from "@semoss/ui";
 import { useRootStore } from "@/hooks";
 import { PrivacyPreferenceCenterModal } from "./PrivacyPreferenceCenterModal";
+import { getJSON } from "@semoss/sdk/react";
 
 const CustomBackdrop = styled(Box)(({ theme }) => ({
 	position: "fixed",
@@ -48,7 +49,7 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
 	const [cookieBanner, setCookieBanner] = useState("");
 
 	useEffect(() => {
-		const permissionGranted = localStorage.getItem(cookieName);
+		const permissionGranted = getJSON(cookieName);
 
 		if (!permissionGranted) {
 			try {

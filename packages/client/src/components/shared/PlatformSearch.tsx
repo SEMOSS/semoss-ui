@@ -2,7 +2,7 @@ import NorthEastIcon from "@mui/icons-material/NorthEast";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { debounced, Env, usePixel } from "@semoss/sdk/react";
+import { debounced, Env, usePixel, getJSON } from "@semoss/sdk/react";
 import {
 	Autocomplete,
 	Box,
@@ -226,8 +226,8 @@ export const PlatformSearch = observer(
 			debouncedSet(event, newInputValue);
 		};
 
-		const recentSearchItem = localStorage.getItem(
-			`recent-searches--${configStore.store.userEpoch}`,
+		const recentSearchItem = getJSON(
+			`recent-searches--${configStore.store.userEpoch}`
 		);
 
 		const highlightMatch = (label: string, search: string) => {

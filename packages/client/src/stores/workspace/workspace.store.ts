@@ -1,5 +1,5 @@
 import { makeAutoObservable } from "mobx";
-import { runPixel } from "@semoss/sdk/react";
+import { runPixel, getJSON } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import type { AppMetadata } from "@/components/app";
 import type { RootStore, WorkspaceOptions } from "@/stores";
@@ -256,9 +256,9 @@ export class WorkspaceStore {
 
 		let isLoaded = false;
 		try {
-			const item = localStorage.getItem(this.cacheKey);
+			const item = getJSON(this.cacheKey);
 			if (item) {
-				const options = JSON.parse(item) as WorkspaceOptions;
+				const options = item as WorkspaceOptions;
 				isLoaded = this.load(options);
 			}
 		} catch (e) {

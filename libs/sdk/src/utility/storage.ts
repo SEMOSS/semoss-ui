@@ -1,4 +1,3 @@
-// src/utility/storage.ts
 export type GetJsonOptions = {
   defaultValue?: any;
   clearOnError?: boolean; // remove the corrupted key if parse fails
@@ -32,7 +31,7 @@ export function getJSON<T = any>(
     console.error(`[storage] failed to parse localStorage key="${key}"`, err);
     if (clearOnError) {
       try {
-        localStorage.removeItem(key);
+        clearStorage();
         console.warn(`[storage] removed corrupted key="${key}" from localStorage`);
       } catch (e) {
         console.error(`[storage] failed to remove corrupted key="${key}"`, e);
@@ -42,21 +41,10 @@ export function getJSON<T = any>(
   }
 }
 
-export function setJSON(key: string, value: unknown): boolean {
+export function clearStorage() {
   try {
-    const str = JSON.stringify(value);
-    localStorage.setItem(key, str);
-    return true;
+    localStorage.clear();
   } catch (err) {
-    console.error(`[storage] failed to set key="${key}"`, err);
-    return false;
-  }
-}
-
-export function removeKey(key: string) {
-  try {
-    localStorage.removeItem(key);
-  } catch (err) {
-    console.error(`[storage] removeKey failed for key="${key}"`, err);
+    console.error(`[storage] failed to clear localStorage"`, err);
   }
 }

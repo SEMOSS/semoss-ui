@@ -13,6 +13,7 @@ import {
 	WorkspaceStore,
 } from "@/stores";
 import type { ALL_TYPES } from "@/types";
+import { getJSON } from "@semoss/sdk/react";
 
 interface ConfigStoreInterface {
 	/** Status of the application */
@@ -511,10 +512,10 @@ export class ConfigStore {
 		let recent: Array<{ label: string; id: string; type: string }> = [];
 
 		// Get existing searches
-		const item = localStorage.getItem(key);
+		const item = getJSON(key);
 		if (item) {
 			try {
-				recent = JSON.parse(item);
+				recent = item;
 				// Remove if id already exists
 				recent = recent.filter((s) => s.id !== recentSearch.id);
 			} catch {
@@ -538,11 +539,11 @@ export class ConfigStore {
 	 */
 	getRecentSearches(): Array<{ label: string; id: string; type: string }> {
 		const key = `recent-searches--${this._store.userEpoch}`;
-		const item = localStorage.getItem(key);
+		const item = getJSON(key);
 
 		if (item) {
 			try {
-				return JSON.parse(item);
+				return item;
 			} catch {
 				return [];
 			}

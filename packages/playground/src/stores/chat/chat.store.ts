@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { type Insight, runPixel, upload } from "@semoss/sdk/react";
+import { type Insight, runPixel, upload, getJSON } from "@semoss/sdk/react";
 import { MODEL_KEY } from "@/constants";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import type { RoomStore } from "../room";
@@ -351,9 +351,9 @@ paramValues=[${JSON.stringify({
 			try {
 				if (!isSelected) {
 					if (localStorage) {
-						const storedItem = localStorage.getItem(MODEL_KEY);
+						const storedItem = getJSON(MODEL_KEY);
 						if (storedItem) {
-							const storedModel = JSON.parse(storedItem);
+							const storedModel = storedItem;
 							for (const m of output) {
 								if (storedModel === m.app_id) {
 									this.setSelectedModel(m);
