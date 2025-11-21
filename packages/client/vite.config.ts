@@ -23,7 +23,15 @@ export default defineConfig(({ mode }) => {
 			react({ include: /\.(js|jsx|ts|tsx)$/ }),
 		],
 		resolve: {
-			alias: [{ find: "@", replacement: resolve(__dirname, "./src") }],
+			alias: {
+				"@": resolve(__dirname, "./src"),
+				"@semoss/ui": resolve(__dirname, "../../libs/ui/src"),
+				"@semoss/sdk": resolve(__dirname, "../../libs/sdk/src"),
+				"@semoss/renderer": resolve(
+					__dirname,
+					"../../libs/renderer/src",
+				),
+			},
 		},
 		define: {
 			"import.meta.env.MODULE": JSON.stringify(MODULE),
@@ -66,6 +74,7 @@ export default defineConfig(({ mode }) => {
 						include: ["vitest-canvas-mock"],
 					},
 				},
+				external: ["@semoss/ui", "@semoss/sdk"],
 			},
 			browser: {
 				enabled: false,
