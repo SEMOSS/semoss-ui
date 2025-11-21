@@ -63,7 +63,7 @@ export const EngineSelect = ({
 				: "",
 		(response) => {
 			// if its less than the limit, we know its the end
-			if (response.length < 25) {
+			if (response.length < 15) {
 				return -1;
 			}
 
@@ -73,8 +73,14 @@ export const EngineSelect = ({
 			return response;
 		},
 		{
-			limit: 25,
+			limit: 15,
 		},
+		[
+			open,
+			debouncedSearch,
+			JSON.stringify(engineTypes),
+			JSON.stringify(metaFilters),
+		],
 	);
 
 	/**
@@ -111,7 +117,7 @@ export const EngineSelect = ({
 					/>
 					<CommandList ref={(ele) => setScroll(ele)}>
 						<CommandEmpty>
-							{getEngines.status === "LOADING" &&
+							{getEngines.isLoading &&
 							getEngines.data.length === 0 ? (
 								<div className="flex items-center justify-center py-4">
 									<Spinner className="size-4" />
