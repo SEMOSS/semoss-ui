@@ -12,8 +12,8 @@ const MermaidContainer = styled("div")(() => ({
 }));
 
 // Styled Alert for Error Display
-const ErrorAlert = styled(Alert)(() => ({
-	borderRadius: "4px",
+const ErrorAlert = styled(Alert)(({ theme }) => ({
+	borderRadius: theme.shape.borderRadiusSm,
 }));
 
 // Interface for Mermaid Block Definition
@@ -48,7 +48,7 @@ export const MermaidBlock: BlockComponent = observer(({ id }) => {
 		try {
 			await mermaid.parse(text);
 			return true;
-		} catch (error) {
+		} catch {
 			return false;
 		}
 	};

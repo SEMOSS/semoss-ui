@@ -2,10 +2,7 @@ import ReactECharts from "echarts-for-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-	styled,
-	Table,
-} from "@semoss/ui";
+import { styled, Table } from "@semoss/ui";
 import { useBlock, useFrame } from "../../../../../hooks";
 import type { BlockDef } from "../../../../../store";
 import { getValueByPath } from "../../../../../utility";
@@ -415,7 +412,10 @@ export const Gantt = observer(
 					lineData = [];
 				}
 			}
-			//final data option to set to chart
+			//truncate char count for y axis
+			const truncateCharCount = option.yAxis?.axisLabel?.truncateCharCount
+				? parseInt(option.yAxis?.axisLabel?.truncateCharCount, 10)
+				: 0;
 			option = {
 				...option,
 				tooltip: {
@@ -429,10 +429,14 @@ export const Gantt = observer(
 							frame.data.values,
 						),
 				},
+				grid: {
+					...option.grid,
+				},
 				xAxis: {
 					type: "time",
 					// name: 'Date',
 					axisLabel: {
+						...option.xAxis?.axisLabel,
 						formatter: (value) =>
 							new Date(value).toLocaleDateString(),
 					},
@@ -448,6 +452,16 @@ export const Gantt = observer(
 					type: "category",
 					data: resourceRows,
 					inverse: true,
+					axisLabel: {
+						...option.yAxis?.axisLabel,
+						// margin: resourceRows.length > 1 ? 0 : 12,
+						formatter: (value) =>
+							value &&
+							truncateCharCount &&
+							value.length > truncateCharCount
+								? `${value.slice(0, truncateCharCount)}...`
+								: value,
+					},
 				},
 				legend: {
 					show: legendShow,
@@ -792,103 +806,101 @@ export const Gantt = observer(
 			},
 		};
 		return (
-			<>
-				<StyledMainContainer id={id}>
-					{enableFiscalAxis && (
-						<StyledContainer>
-							<StyledDataSpan
-								style={{
-									backgroundColor: fiscalAxisBackgroundColor,
-									height: seriesNameCol + "px",
-									width: "50px",
-									textAlign: "center",
-									display: "flex",
-									margin: "auto",
-									alignContent: "space-around",
-									flexWrap: "wrap",
-									borderRadius: "5px",
-									justifyContent: "center",
-								}}
-							>
-								{seriesName}
-							</StyledDataSpan>
-							<Table
-								aria-label="simple table"
-								ref={(e) => (tableRef.current = e)}
-							>
-								<Table.Head>
-									<Table.Row>
-										{quarterAndMonth.length &&
-											quarterAndMonth.map((item, i) => (
+			<StyledMainContainer id={id}>
+				{enableFiscalAxis && (
+					<StyledContainer>
+						<StyledDataSpan
+							style={{
+								backgroundColor: fiscalAxisBackgroundColor,
+								height: `${seriesNameCol}px`,
+								width: "50px",
+								textAlign: "center",
+								display: "flex",
+								margin: "auto",
+								alignContent: "space-around",
+								flexWrap: "wrap",
+								borderRadius: "5px",
+								justifyContent: "center",
+							}}
+						>
+							{seriesName}
+						</StyledDataSpan>
+						<Table
+							aria-label="simple table"
+							ref={(e) => {
+								tableRef.current = e;
+							}}
+						>
+							<Table.Head>
+								<Table.Row>
+									{quarterAndMonth.length &&
+										quarterAndMonth.map((item, i) => (
+											<StyledTableCell
+												key={i}
+												backgroundColor={
+													fiscalAxisBackgroundColor
+												}
+												size="small"
+												colSpan={item?.colSpan}
+												align="center"
+											>
+												{item.name}{" "}
+												{Object.hasOwn(
+													item,
+													"fiscalYear",
+												) && item["fiscalYear"] !== ""
+													? `(${item["fiscalYear"]})`
+													: ""}
+											</StyledTableCell>
+										))}
+								</Table.Row>
+							</Table.Head>
+							<Table.Body>
+								<Table.Row
+									sx={{
+										"&:last-child td, &:last-child th": {
+											border: "1px solid grey",
+										},
+									}}
+								>
+									{quarterAndMonth.length &&
+										quarterAndMonth.map((item, i) =>
+											item["month"].map((monthItem) => (
 												<StyledTableCell
 													key={i}
-													backgroundColor={
-														fiscalAxisBackgroundColor
-													}
+													component={"td"}
+													scope="row"
 													size="small"
-													colSpan={item?.colSpan}
-													align="center"
 												>
-													{item.name}{" "}
-													{Object.hasOwn(
-														item,
-														"fiscalYear",
-													) &&
-													item["fiscalYear"] != ""
-														? `(${item["fiscalYear"]})`
-														: ""}
+													{monthItem}
 												</StyledTableCell>
-											))}
-									</Table.Row>
-								</Table.Head>
-								<Table.Body>
-									<Table.Row
-										sx={{
-											"&:last-child td, &:last-child th":
-												{
-													border: "1px solid grey",
-												},
-										}}
-									>
-										{quarterAndMonth.length &&
-											quarterAndMonth.map((item, i) =>
-												item["month"].map(
-													(monthItem) => (
-														<StyledTableCell
-															key={i}
-															component={"td"}
-															scope="row"
-															size="small"
-														>
-															{monthItem}
-														</StyledTableCell>
-													),
-												),
-											)}
-									</Table.Row>
-								</Table.Body>
-							</Table>
-						</StyledContainer>
-					)}
+											)),
+										)}
+								</Table.Row>
+							</Table.Body>
+						</Table>
+					</StyledContainer>
+				)}
 
-					<ReactECharts
-						option={dataOption}
-						onEvents={onClickChart}
-						ref={(e) => (chartRef.current = e)}
-						style={{
-							width: "inherit",
-							height: enableFiscalAxis ? "75%" : "100%",
-							maxHeight: enableFiscalAxis ? "75%" : "100%",
-						}}
-					/>
-					<VizBlockContextMenu
-						id={id}
-						frame={frame}
-						contextMenu={contextMenu}
-						onClose={() => setContextMenu(null)}
-					/>
-				</StyledMainContainer>
-			</>
+				<ReactECharts
+					option={dataOption}
+					onEvents={onClickChart}
+					ref={(e) => {
+						chartRef.current = e;
+					}}
+					style={{
+						width: "inherit",
+						height: enableFiscalAxis ? "75%" : "100%",
+						maxHeight: enableFiscalAxis ? "75%" : "100%",
+					}}
+				/>
+				<VizBlockContextMenu
+					id={id}
+					frame={frame}
+					contextMenu={contextMenu}
+					onClose={() => setContextMenu(null)}
+				/>
+			</StyledMainContainer>
 		);
 	},
 );

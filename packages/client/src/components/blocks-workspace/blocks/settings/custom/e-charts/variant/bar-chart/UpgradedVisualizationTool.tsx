@@ -15,6 +15,7 @@ import { CustomizeDendrogramSymbol } from "../dendrogram/CustomizeDendrogramSymb
 import { LabelsDendrogram } from "../dendrogram/LabelsDendrogram";
 import { LegendDendrogram } from "../dendrogram/LegendDendrogram";
 import { CustomizeSymbol } from "../Gantt/CustomizeSymbol";
+import { EditAxis as EditGanttAxis } from "../Gantt/EditAxis";
 import { GanttDisplayValueLabels } from "../Gantt/GanttDisplayValueLabels";
 //upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../scatter-plot/EditXAxisScatterPlot';
 import { GanttFiscal } from "../Gantt/GanttFiscal";
@@ -46,6 +47,7 @@ import { LegendStackChart } from "../stack-chart/LegendStackChart";
 import { StackChartBarStyle } from "../stack-chart/StackChartBarStyle";
 import { ValueLabelStackChart } from "../stack-chart/ValueLabelStackChart";
 import { TitleTool } from "../TitleTool";
+import CloudSettings from "../world-cloud-chart/CloudSettings";
 import ColourByValue from "./ColourByValue";
 import { CustomizeValueLabels } from "./CustomizeValueLabels";
 import { EditXAxis } from "./Edit-X-Axis";
@@ -87,7 +89,7 @@ const DendrogramToolsList = ({ id }) => {
 						dendrogramSelection === "customizeDendrogramSymbol"
 					}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -97,7 +99,7 @@ const DendrogramToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Customize Symbol" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -116,7 +118,7 @@ const DendrogramToolsList = ({ id }) => {
 					}
 					selected={dendrogramSelection === "changeOrientation"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -125,7 +127,7 @@ const DendrogramToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Change Orientation" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -144,7 +146,7 @@ const DendrogramToolsList = ({ id }) => {
 					}
 					selected={dendrogramSelection === "legendDendrogram"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -153,7 +155,7 @@ const DendrogramToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Legend" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -172,7 +174,7 @@ const DendrogramToolsList = ({ id }) => {
 					}
 					selected={dendrogramSelection === "showLabelsDendrogram"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -181,7 +183,7 @@ const DendrogramToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Labels" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -198,7 +200,7 @@ const DendrogramToolsList = ({ id }) => {
 					}
 					selected={dendrogramSelection === "title"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -207,7 +209,7 @@ const DendrogramToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Chart Title" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -231,7 +233,7 @@ const ResizingTool = ({ id }) => {
 				}
 				selected={resizeSelection === "resizing"}
 			>
-				<List.Icon>
+				<List.ItemIcon>
 					<ImageIcon
 						fontSize="large"
 						color={
@@ -240,7 +242,7 @@ const ResizingTool = ({ id }) => {
 								: "disabled"
 						}
 					/>
-				</List.Icon>
+				</List.ItemIcon>
 				<List.ItemText primary="Resizing" />
 				<InfoOutlined />
 			</List.ItemButton>
@@ -277,7 +279,7 @@ const ColorpalatteTool = ({ id }) => {
 					}
 					selected={colorPalatteSelection === "colourpalette"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -286,7 +288,7 @@ const ColorpalatteTool = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Color Palette" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -329,7 +331,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "fiscalaxis"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -338,7 +340,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Fiscal Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -350,12 +352,112 @@ const GanttToolsList = ({ id }) => {
 				<List.ItemButton
 					onClick={() =>
 						setGanttSelection((prevList) =>
+							prevList === "xaxis" ? "" : "xaxis",
+						)
+					}
+					selected={ganttSelection === "xaxis"}
+				>
+					<List.ItemIcon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								ganttSelection === "xaxis"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.ItemIcon>
+					<List.ItemText primary="Edit X Axis" />
+					<InfoOutlined />
+				</List.ItemButton>
+			</StyledListItem>
+			{ganttSelection === "xaxis" && (
+				<EditGanttAxis id={id} path={"option"} axis="x" />
+			)}
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setGanttSelection((prevList) =>
+							prevList === "yaxis" ? "" : "yaxis",
+						)
+					}
+					selected={ganttSelection === "yaxis"}
+				>
+					<List.ItemIcon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								ganttSelection === "yaxis"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.ItemIcon>
+					<List.ItemText primary="Edit Y Axis" />
+					<InfoOutlined />
+				</List.ItemButton>
+			</StyledListItem>
+			{ganttSelection === "yaxis" && (
+				<EditGanttAxis id={id} path={"option"} axis="y" />
+			)}
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setGanttSelection((prevList) =>
+							prevList === "chartposition" ? "" : "chartposition",
+						)
+					}
+					selected={ganttSelection === "chartposition"}
+				>
+					<List.ItemIcon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								ganttSelection === "chartposition"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.ItemIcon>
+					<List.ItemText primary="Chart Position" />
+					<InfoOutlined />
+				</List.ItemButton>
+			</StyledListItem>
+			{ganttSelection === "chartposition" && (
+				<>
+					<ResizeSetting
+						id={id}
+						label={"Left"}
+						path={"option.grid.left"}
+					/>
+					<ResizeSetting
+						id={id}
+						label={"Right"}
+						path={"option.grid.right"}
+					/>
+					<ResizeSetting
+						id={id}
+						label={"Top"}
+						path={"option.grid.top"}
+					/>
+					<ResizeSetting
+						id={id}
+						label={"Bottom"}
+						path={"option.grid.bottom"}
+					/>
+				</>
+			)}
+
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setGanttSelection((prevList) =>
 							prevList === "targetdate" ? "" : "targetdate",
 						)
 					}
 					selected={ganttSelection === "targetdate"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -364,7 +466,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Target Date" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -383,7 +485,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "customizesymbol"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -392,7 +494,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Customize Symbol" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -411,7 +513,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "togglelegendgantt"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -420,7 +522,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Legend" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -439,7 +541,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "togglegroupview"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -448,7 +550,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Group View" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -468,7 +570,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "displayvaluelabels"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -477,7 +579,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Display Value Labels" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -495,7 +597,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "title"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -504,7 +606,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Chart Title" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -530,7 +632,7 @@ const StackChartTool = ({ id }) => {
 					}
 					selected={stackChartSelection === "editxaxis"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -539,7 +641,7 @@ const StackChartTool = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Edit X Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -559,7 +661,7 @@ const StackChartTool = ({ id }) => {
 					}
 					selected={stackChartSelection === "edityaxis"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -568,7 +670,7 @@ const StackChartTool = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Edit Y Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -588,7 +690,7 @@ const StackChartTool = ({ id }) => {
 					}
 					selected={stackChartSelection === "valuelabel"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -597,7 +699,7 @@ const StackChartTool = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Value Label" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -617,7 +719,7 @@ const StackChartTool = ({ id }) => {
 					}
 					selected={stackChartSelection === "tooltips"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -626,7 +728,7 @@ const StackChartTool = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Tooltips" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -644,7 +746,7 @@ const StackChartTool = ({ id }) => {
 					}
 					selected={stackChartSelection === "barstyle"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -653,7 +755,7 @@ const StackChartTool = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Bar Style" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -670,7 +772,7 @@ const StackChartTool = ({ id }) => {
 					}
 					selected={stackChartSelection === "legend"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -679,7 +781,7 @@ const StackChartTool = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Legend" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -696,7 +798,7 @@ const StackChartTool = ({ id }) => {
 					}
 					selected={stackChartSelection === "title"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -705,7 +807,7 @@ const StackChartTool = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Chart Title" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -733,7 +835,7 @@ const BarToolsList = ({ id }) => {
 					}
 					selected={barSelection === "colourbyvalue"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -742,7 +844,7 @@ const BarToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Colour By Value" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -763,7 +865,7 @@ const BarToolsList = ({ id }) => {
 					}
 					selected={barSelection === "editxaxis"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -772,7 +874,7 @@ const BarToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Edit X Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -789,7 +891,7 @@ const BarToolsList = ({ id }) => {
 					}
 					selected={barSelection === "edityaxis"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -798,7 +900,7 @@ const BarToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Edit Y Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -815,7 +917,7 @@ const BarToolsList = ({ id }) => {
 					}
 					selected={barSelection === "valuelabel"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -824,7 +926,7 @@ const BarToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Value Label" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -846,7 +948,7 @@ const BarToolsList = ({ id }) => {
 					}
 					selected={barSelection === "barstyle"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -855,7 +957,7 @@ const BarToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Bar Style" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -878,7 +980,7 @@ const BarToolsList = ({ id }) => {
 					}
 					selected={barSelection === "chartstyle"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -887,7 +989,7 @@ const BarToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Chart Title" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -905,7 +1007,7 @@ const BarToolsList = ({ id }) => {
 					}
 					selected={barSelection === "trendlines"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -914,7 +1016,7 @@ const BarToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Trendlines" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -938,7 +1040,7 @@ const BarToolsList = ({ id }) => {
 						}
 						selected={barSelection === "barlegend"}
 					>
-						<List.Icon>
+						<List.ItemIcon>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -947,7 +1049,7 @@ const BarToolsList = ({ id }) => {
 										: "disabled"
 								}
 							/>
-						</List.Icon>
+						</List.ItemIcon>
 						<List.ItemText primary="Legend" />
 						<InfoOutlined />
 					</List.ItemButton>
@@ -975,7 +1077,7 @@ const ScatterToolsList = ({ id }) => {
 					}
 					selected={scatterSelection === "editxaxis"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -984,7 +1086,7 @@ const ScatterToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Edit X Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1004,7 +1106,7 @@ const ScatterToolsList = ({ id }) => {
 					}
 					selected={scatterSelection === "edityaxis"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1013,7 +1115,7 @@ const ScatterToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Edit Y Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1033,7 +1135,7 @@ const ScatterToolsList = ({ id }) => {
 					}
 					selected={scatterSelection === "valuelabel"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1042,7 +1144,7 @@ const ScatterToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Value Label" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1063,7 +1165,7 @@ const ScatterToolsList = ({ id }) => {
 					}
 					selected={scatterSelection === "tooltips"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1072,7 +1174,7 @@ const ScatterToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Tooltips" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1092,7 +1194,7 @@ const ScatterToolsList = ({ id }) => {
 					}
 					selected={scatterSelection === "symbol"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1101,7 +1203,7 @@ const ScatterToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Symbol" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1123,7 +1225,7 @@ const ScatterToolsList = ({ id }) => {
 					}
 					selected={scatterSelection === "scatter-plots-title"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1132,7 +1234,7 @@ const ScatterToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Chart Title" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1159,7 +1261,7 @@ const LineChartTools = ({ id }) => {
 					}
 					selected={lineSelection === "lineTitle"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1168,7 +1270,7 @@ const LineChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Chart Title" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1186,7 +1288,7 @@ const LineChartTools = ({ id }) => {
 					}
 					selected={lineSelection === "lineLegend"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1195,7 +1297,7 @@ const LineChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Line Legend" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1212,7 +1314,7 @@ const LineChartTools = ({ id }) => {
 					}
 					selected={lineSelection === "lineTooltip"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1221,7 +1323,7 @@ const LineChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Line Tooltip" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1240,7 +1342,7 @@ const LineChartTools = ({ id }) => {
 					}
 					selected={lineSelection === "lineValueLabel"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1249,7 +1351,7 @@ const LineChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Value Labels" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1273,7 +1375,7 @@ const LineChartTools = ({ id }) => {
 					}
 					selected={lineSelection === "lineXAixsStyling"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1282,7 +1384,7 @@ const LineChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="X Axis Styling" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1301,7 +1403,7 @@ const LineChartTools = ({ id }) => {
 					}
 					selected={lineSelection === "lineYAixsStyling"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1310,7 +1412,7 @@ const LineChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Y Axis Styling" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1327,7 +1429,7 @@ const LineChartTools = ({ id }) => {
 					}
 					selected={lineSelection === "lineStyling"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1336,12 +1438,75 @@ const LineChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Line Styling" />
 					<InfoOutlined />
 				</List.ItemButton>
 				{lineSelection === "lineStyling" && (
 					<LineStyling id={id} path="option" />
+				)}
+			</StyledListItem>
+		</>
+	);
+};
+
+const CloudChartTools = ({ id }) => {
+	const [CloudSelection, setCloudSelection] = useState("");
+
+	return (
+		<>
+			<ResizingTool id={id} />
+			<ColorpalatteTool id={id} />
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setCloudSelection((prevList) =>
+							prevList === "title" ? "" : "title",
+						)
+					}
+					selected={CloudSelection === "title"}
+				>
+					<List.ItemIcon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								CloudSelection === "title"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.ItemIcon>
+					<List.ItemText primary="Chart Title" />
+					<InfoOutlined />
+				</List.ItemButton>
+				{CloudSelection === "title" && (
+					<TitleTool id={id} path={"option"} />
+				)}
+			</StyledListItem>
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setCloudSelection((prevList) =>
+							prevList === "shape" ? "" : "shape",
+						)
+					}
+					selected={CloudSelection === "shape"}
+				>
+					<List.ItemIcon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								CloudSelection === "shape"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.ItemIcon>
+					<List.ItemText primary="Cloud Settings" />
+					<InfoOutlined />
+				</List.ItemButton>
+				{CloudSelection === "shape" && (
+					<CloudSettings id={id} path={"option"} />
 				)}
 			</StyledListItem>
 		</>
@@ -1362,7 +1527,7 @@ const MapChartTools = ({ id }) => {
 					}
 					selected={mapSelection === "tooltips"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1371,7 +1536,7 @@ const MapChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Tooltips" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1389,7 +1554,7 @@ const MapChartTools = ({ id }) => {
 					}
 					selected={mapSelection === "legend"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1398,7 +1563,7 @@ const MapChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Legend" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1415,7 +1580,7 @@ const MapChartTools = ({ id }) => {
 					}
 					selected={mapSelection === "symbol"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1424,7 +1589,7 @@ const MapChartTools = ({ id }) => {
 									: "disabled"
 							}
 						></ImageIcon>
-					</List.Icon>
+					</List.ItemIcon>
 
 					<List.ItemText primary="Map Marker Size" />
 					<InfoOutlined />
@@ -1442,7 +1607,7 @@ const MapChartTools = ({ id }) => {
 					}
 					selected={mapSelection === "title"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1451,7 +1616,7 @@ const MapChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Chart Title" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1478,7 +1643,7 @@ const PieChartTools = ({ id }) => {
 					}
 					selected={pieSelection === "tooltip"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1487,7 +1652,7 @@ const PieChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Tooltip" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1505,7 +1670,7 @@ const PieChartTools = ({ id }) => {
 					}
 					selected={pieSelection === "legend"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1514,7 +1679,7 @@ const PieChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Legend" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1531,7 +1696,7 @@ const PieChartTools = ({ id }) => {
 					}
 					selected={pieSelection === "donutToggle"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1540,7 +1705,7 @@ const PieChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Donut - Toggle" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1557,7 +1722,7 @@ const PieChartTools = ({ id }) => {
 					}
 					selected={pieSelection === "title"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1566,7 +1731,7 @@ const PieChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Chart Title" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1583,7 +1748,7 @@ const PieChartTools = ({ id }) => {
 					}
 					selected={pieSelection === "valueLabel"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1592,7 +1757,7 @@ const PieChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Value Label" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1609,12 +1774,12 @@ export const UpgradedVisualizationTool =
 		const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
 		const [selectedList, setSelectedList] = useState(""); // maintain the current selected list, for expansion and collapsing
 		return (
-			<List style={{ width: "100%" }}>
+			<List sx={{ width: "100%" }}>
 				{/* 
                         Custom section to handle bar chart components for respective menu section 
                         BAR Chart Menu for tools start here
                         */}
-				<List.Item disablePadding style={{ display: "block" }}>
+				<List.Item disablePadding sx={{ display: "block" }}>
 					<List.ItemButton
 						onClick={() =>
 							setSelectedList((prevList) =>
@@ -1625,7 +1790,7 @@ export const UpgradedVisualizationTool =
 						}
 						selected={selectedList === "generalchartsettings"}
 					>
-						<List.Icon>
+						<List.ItemIcon>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -1634,7 +1799,7 @@ export const UpgradedVisualizationTool =
 										: "disabled"
 								}
 							/>
-						</List.Icon>
+						</List.ItemIcon>
 						<List.ItemText primary="Conditional" />
 						<InfoOutlined />
 					</List.ItemButton>
@@ -1672,6 +1837,9 @@ export const UpgradedVisualizationTool =
 				)}
 				{data.variation === "echart-dendrogram-chart" && (
 					<DendrogramToolsList id={id} />
+				)}
+				{data.variation === "echart-word-cloud" && (
+					<CloudChartTools id={id} />
 				)}
 			</List>
 		);

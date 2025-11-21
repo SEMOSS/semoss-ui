@@ -1,7 +1,6 @@
 import { ChevronRight, ExpandMore } from "@mui/icons-material";
 import React from "react";
-import { Icon, styled, TreeView } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
+import { Icon, LoadingScreen, styled, TreeView } from "@semoss/ui";
 import { usePixel } from "@/hooks";
 import { FileExplorerItem } from "./FileExplorerItem";
 
@@ -41,6 +40,16 @@ interface FileExplorerProps {
 		event: React.MouseEvent<HTMLButtonElement>,
 		path: string,
 	) => void;
+	/** Triggered when the Make MCP Icon is clicked */
+	onMakeMCPClick?: (
+		event: React.MouseEvent<HTMLButtonElement>,
+		path: string,
+	) => void;
+	/** Triggered when the Edit MCP Icon is clicked */
+	onMCPEditClick?: (
+		event: React.MouseEvent<HTMLButtonElement>,
+		path: string,
+	) => void;
 }
 
 export const FileExplorer = (props: FileExplorerProps) => {
@@ -52,6 +61,8 @@ export const FileExplorer = (props: FileExplorerProps) => {
 		onDragStart = () => null,
 		onDragEnd = () => null,
 		onTrashClick = () => null,
+		onMakeMCPClick = () => null,
+		onMCPEditClick = () => null,
 		expandedPaths,
 		onToggleExpand,
 	} = props;
@@ -149,6 +160,12 @@ export const FileExplorer = (props: FileExplorerProps) => {
 								}}
 								onTrashClick={(e, path) => {
 									onTrashClick(e, path);
+								}}
+								onMakeMCPClick={(e, path) => {
+									onMakeMCPClick(e, path);
+								}}
+								onMCPEditClick={(e, path) => {
+									onMCPEditClick(e, path);
 								}}
 							/>
 						);

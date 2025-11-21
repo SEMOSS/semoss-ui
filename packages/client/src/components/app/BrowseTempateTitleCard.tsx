@@ -1,9 +1,7 @@
-import { AccessTime } from "@mui/icons-material";
 import React from "react";
 import {
 	Card,
 	type CardProps,
-	Chip,
 	IconButton,
 	Link,
 	styled,
@@ -15,18 +13,30 @@ import DragAndDrop from "@/assets/img/DragAndDrop.svg";
 import DragAndDropImage from "@/assets/img/DragDrop.png";
 import Pro_Code from "@/assets/img/Pro_Code.svg";
 import ProCodeImage from "@/assets/img/ProCode.png";
-import RemoveRedEyeFilled from "@/assets/img/RemoveRedEyeFilled.svg";
 import { removeUnderscores } from "@/utility";
 import type { AppMetadata } from "./app.types";
 
-const StyledName = styled(Typography)(() => ({
+const StyledName = styled(Typography)(({ theme }) => ({
 	fontWeight: 400,
-	color: "#212121",
+	color: theme.palette.text.primary,
 	fontFamily: "Inter",
-	fontSize: "14px",
+	fontSize: theme.typography.body2.fontSize,
 	fontStyle: "normal",
 	lineHeight: "143%",
 	letterSpacing: "0.17px",
+	overflow: "hidden",
+	textOverflow: "ellipsis",
+	whiteSpace: "nowrap",
+}));
+
+const StyledProjectType = styled("div")(({ theme }) => ({
+	color: theme.palette.text.disabled,
+	fontFamily: "Inter",
+	fontWeight: "400",
+	lineHeight: "19.92px",
+	letterSpacing: "0.4px",
+	fontStyle: "normal",
+	fontSize: theme.typography.body3.fontSize,
 }));
 
 const StyledTileCard = styled(
@@ -46,36 +56,20 @@ const StyledTileCard = styled(
 	borderRadius: theme.shape.borderRadius,
 }));
 
-const StyledContainer = styled("div")({
-	position: "relative",
-});
-
-const StyledOverlayContent = styled("div")(() => ({
-	// width: '100%',
-	// height: '134px',
-	position: "absolute",
-	top: "0",
-	right: "0",
-	display: "flex",
-	justifyContent: "flex-end",
-	paddingTop: "8px",
-	paddingRight: "10px",
-}));
-
-const StyledTileCardMedia = styled(Card.Media)({
+const StyledTileCardMedia = styled(Card.Media)(({ theme }) => ({
 	display: "flex",
 	alignItems: "flex-start",
-	gap: "10px",
+	gap: theme.spacing(1.25),
 	alignSelf: "stretch",
 	overflowClipMargin: "content-box",
 	overflow: "clip",
 	objectFit: "cover",
 	width: "283px",
 	height: "123px",
-});
+}));
 const StyledCardDescription = styled(Typography)(({ theme }) => ({
 	margin: 0,
-	fontSize: "12px",
+	fontSize: theme.typography.body3.fontSize,
 	fontStyle: "normal",
 	fontWeight: 400,
 	lineHeight: "19.92px",
@@ -87,28 +81,28 @@ const StyledCardDescription = styled(Typography)(({ theme }) => ({
 	overflow: "hidden",
 	textOverflow: "ellipsis",
 	wordWrap: "break-word",
-	color: "#666",
+	color: theme.palette.text.secondary,
 	height: "40px",
 }));
 
-const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
+const StyledCardHeader = styled(Card.Header)({
 	"&.MuiCardHeader-root": {
-		padding: "0px",
-		margin: "0px",
+		padding: 0,
+		margin: 0,
 		height: "20px",
 	},
 	".MuiCardHeader-title": {
-		width: "200px",
+		width: "250px",
 	},
 	display: "flex",
 	flexDirection: "column",
 	alignItems: "flex-start",
 	alignSelf: "stretch",
-}));
+});
 
 const ButtonName = styled("p")(({ theme }) => ({
 	fontSize: "13px",
-	color: "#fff",
+	color: theme.palette.secondary.light,
 	fontFamily: "Inter",
 	fontStyle: "normal",
 	fontWeight: "500",
@@ -116,15 +110,15 @@ const ButtonName = styled("p")(({ theme }) => ({
 	letterSpacing: "0.46px",
 }));
 
-const StyledCardContent = styled(Card.Content)(({ theme }) => ({
+const StyledCardContent = styled(Card.Content)({
 	"&.MuiCardContent-root": {
-		padding: "0px",
-		margin: "0px",
-		gap: "0px",
+		padding: 0,
+		margin: 0,
+		gap: 0,
 	},
-}));
+});
 
-const StyledCardActions = styled(Card.Actions)({
+const StyledCardActions = styled(Card.Actions)(({ theme }) => ({
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "space-between",
@@ -135,40 +129,60 @@ const StyledCardActions = styled(Card.Actions)({
 	},
 	height: "30px",
 	width: "284px",
-	gap: "40px",
+	gap: theme.spacing(5),
+}));
+
+const StyledCardActionsWrapper = styled("div")({
+	display: "flex",
 });
 
-const StyledIconButton = styled(IconButton)({
-	backgroundColor: "#EBEBEB",
-	height: "28px",
-	width: "28px",
-	radius: "24px",
-	"&:hover": {
-		backgroundColor: "#EBEBEB",
-		$icon: {
-			color: "red",
-		},
-	},
+const StyledCardActionsOuterContainer = styled("div")(({ theme }) => ({
+	width: "161px",
+	height: "30px",
+	display: "flex",
+	alignItems: "flex-start",
+	borderRadius: theme.spacing(0.5),
+}));
+
+const StyledCardActionsImageAndTextContainer = styled("div")(({ theme }) => ({
+	display: "flex",
+	height: "30px",
+	padding: theme.spacing(0.5, 0.625),
+	gap: theme.spacing(1),
+}));
+
+const StyledCardActionsImageContainer = styled("div")({
+	display: "flex",
+	alignItems: "center",
+	height: "18px",
+	flexDirection: "column",
+	position: "relative",
+	top: "2px",
 });
 
-const StyledOpenButton = styled(IconButton)(({ theme }) => ({
+const StyledOpenButton = styled(IconButton)({
 	display: "flex",
 	alignItems: "center",
 	"&.MuiIconButton-root": {
-		padding: "0px",
+		padding: 0,
 	},
-}));
+});
 
-const StyledMainDiv = styled("div")(({ theme }) => ({
+const StyledActionImage = styled("img")({
+	width: "16px",
+	height: "16px",
+});
+
+const StyledMainDiv = styled("div")({
 	width: "307px",
 	height: "292px",
-}));
+});
 
 const StyledContent = styled("div")(({ theme }) => ({
 	display: "flex",
-	padding: "8px 16px",
+	padding: theme.spacing(1, 2),
 	flexDirection: "column",
-	gap: "8px",
+	gap: theme.spacing(1),
 	alignItems: "flex-start",
 	height: "80px",
 }));
@@ -178,39 +192,49 @@ const StyledFooterDiv = styled("div")(({ theme }) => ({
 	alignItems: "center",
 	height: "30px",
 	width: "123px",
-	gap: "8px",
+	gap: theme.spacing(1),
 	justifyContent: "center",
 	// flex: '1 0 0',
 	borderRadius: "12px",
-	background: "#0471F0",
+	background: theme.palette.primary.main,
 }));
 
-const StyledParentImageDiv = styled("div")(({ theme }) => ({
+const StyledParentImageDiv = styled("div", {
+	shouldForwardProp: (prop) => prop !== "projectType",
+})<{ projectType: string }>(({ theme, projectType }) => ({
 	display: "flex",
-	padding: "16px 16.79px 0px 16px",
+
+	padding: theme.spacing(2, 2.098, 0, 2),
+
 	justifyContent: "center",
 	alignItems: "center",
 	alignSelf: "stretch",
 	height: "138px",
 	width: "100%",
+	background:
+		projectType === "BLOCKS"
+			? theme.palette.purple["200"]
+			: projectType === "CODE"
+				? theme.palette.lightGreen["200"]
+				: theme.palette.primaryContrast["200"],
 }));
 
 const StyledCardContentDiv = styled("div")(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
 	alignItems: "flex-start",
-	gap: "8px",
+	gap: theme.spacing(1),
 	alignself: "stretch",
 }));
 
 const StyledFooter1Div = styled("div")(({ theme }) => ({
 	display: "flex",
-	padding: "8px 16px",
+	padding: theme.spacing(1, 2),
 	alignItems: "center",
-	gap: "40px",
+	gap: theme.spacing(5),
 	alignSelf: "stretch",
-	borderTop: "1px solid var(--Secondary-Divider, #E6E6E6)",
-	background: "#fff",
+	borderTop: `1px solid var(--Secondary-Divider, ${theme.palette.secondary.divider})`,
+	background: theme.palette.background.paper,
 	height: "30px",
 	width: "100%",
 }));
@@ -245,16 +269,7 @@ export const BrowseTemplateTileCard = (props: BrowseTemplateTileCardProps) => {
 					color="inherit"
 					underline="none"
 				>
-					<StyledParentImageDiv
-						style={{
-							background:
-								app.project_type === "BLOCKS"
-									? "#BAB5F4"
-									: app.project_type === "CODE"
-										? "#8CD98D"
-										: "#93CEF8",
-						}}
-					>
+					<StyledParentImageDiv projectType={app.project_type}>
 						<StyledTileCardMedia
 							src="img"
 							image={
@@ -270,13 +285,19 @@ export const BrowseTemplateTileCard = (props: BrowseTemplateTileCardProps) => {
 						<StyledCardContentDiv>
 							<StyledCardHeader
 								title={
-									<StyledName variant={"body2"}>
+									<StyledName
+										variant={"body2"}
+										title={app.project_name}
+									>
 										{removeUnderscores(app.project_name)}
 									</StyledName>
 								}
 							/>
 							<StyledCardContent>
-								<StyledCardDescription variant={"caption"}>
+								<StyledCardDescription
+									variant={"caption"}
+									title={app.description}
+								>
 									{app.description
 										? app.description
 										: "No description available"}
@@ -286,35 +307,11 @@ export const BrowseTemplateTileCard = (props: BrowseTemplateTileCardProps) => {
 					</StyledContent>
 					<StyledFooter1Div>
 						<StyledCardActions>
-							<div style={{ display: "flex" }}>
-								<div
-									style={{
-										width: "161px",
-										height: "30px",
-										display: "flex",
-										alignItems: "flex-start",
-										borderRadius: "4px",
-									}}
-								>
-									<div
-										style={{
-											display: "flex",
-											height: "30px",
-											padding: "4px 5px",
-											gap: "8px",
-										}}
-									>
-										<div
-											style={{
-												display: "flex",
-												alignItems: "center",
-												height: "18px",
-												flexDirection: "column",
-												position: "relative",
-												top: "2px",
-											}}
-										>
-											<img
+							<StyledCardActionsWrapper>
+								<StyledCardActionsOuterContainer>
+									<StyledCardActionsImageAndTextContainer>
+										<StyledCardActionsImageContainer>
+											<StyledActionImage
 												src={
 													app.project_type ===
 													"BLOCKS"
@@ -333,37 +330,23 @@ export const BrowseTemplateTileCard = (props: BrowseTemplateTileCardProps) => {
 															? "Pro Code"
 															: "Agent Builder"
 												}
-												style={{
-													height: "16px",
-													width: "16px",
-												}}
 											/>
-										</div>
-										<div
-											style={{
-												color: "#9E9E9E",
-												fontFamily: "Inter",
-												fontSize: "12px",
-												fontWeight: "400",
-												lineHeight: "19.92px",
-												letterSpacing: "0.4px",
-												fontStyle: "normal",
-											}}
-										>
+										</StyledCardActionsImageContainer>
+										<StyledProjectType>
 											{app.project_type === "BLOCKS"
 												? "Drag and Drop"
 												: app.project_type === "CODE"
 													? "Pro Code"
 													: "Agent Builder"}
-										</div>
-									</div>
-								</div>
+										</StyledProjectType>
+									</StyledCardActionsImageAndTextContainer>
+								</StyledCardActionsOuterContainer>
 								<StyledOpenButton onClick={onAction}>
 									<StyledFooterDiv>
 										<ButtonName>Use Template</ButtonName>
 									</StyledFooterDiv>
 								</StyledOpenButton>
-							</div>
+							</StyledCardActionsWrapper>
 						</StyledCardActions>
 					</StyledFooter1Div>
 				</Link>

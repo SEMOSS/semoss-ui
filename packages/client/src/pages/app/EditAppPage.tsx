@@ -1,10 +1,9 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { styled, useNotification } from "@semoss/ui";
+import { LoadingScreen, styled, useNotification } from "@semoss/ui";
 import { BlocksWorkspace } from "@/components/blocks-workspace";
 import { CodeWorkspace } from "@/components/code-workspace";
-import { LoadingScreen } from "@/components/ui";
 import { usePage, usePixel, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 

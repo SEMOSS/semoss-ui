@@ -1,6 +1,7 @@
 import axios, { isAxiosError } from "axios";
 import { useEffect } from "react";
-import { Env } from "@semoss/sdk/react";
+import { CSRF, Env } from "@semoss/sdk/react";
+import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { RootStoreContext } from "@/contexts";
 import { RootStore } from "@/stores";
 import { AppWrapper } from "./AppWrapper";
@@ -9,11 +10,6 @@ import { AppWrapper } from "./AppWrapper";
 Env.update({
 	MODULE: import.meta.env.MODULE || "/Monolith",
 });
-
-const CSRF = {
-	isEnabled: false,
-	token: "",
-};
 
 /**
  * Get the CSRF Token
@@ -163,7 +159,10 @@ export const App = () => {
 
 	return (
 		<RootStoreContext.Provider value={_store}>
-			<AppWrapper />
+			<ThemeProvider defaultTheme="light">
+				<AppWrapper />
+				<Toaster />
+			</ThemeProvider>
 		</RootStoreContext.Provider>
 	);
 };

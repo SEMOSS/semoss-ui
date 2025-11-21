@@ -8,14 +8,13 @@ import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { ENGINE_TYPES, Role } from "@/types";
 import { EngineFilePage } from "./EngineFilePage";
 import { EngineMetadataPage } from "./EngineMetadataPage";
+import { EngineModelChatPage } from "./EngineModelChatPage";
 import { EngineOverviewPage } from "./EngineOverviewPage";
 import { EngineQAPage } from "./EngineQAPage";
+import { EngineQueryDataPage } from "./EngineQueryDataPage";
 import { EngineSettingsPage } from "./EngineSettingsPage";
-// import { EngineQueryDataPage } from './EngineQueryDataPage';
-// import { EngineReplaceDataPage } from './EngineReplaceDataPage';
-import { EngineUsagePage } from './EngineUsagePage';
-import { EngineSmssPage } from './EngineSmssPage';
-import { EngineModelChatPage } from './EngineModelChatPage';
+import { EngineSmssPage } from "./EngineSmssPage";
+import { EngineUsagePage } from "./EngineUsagePage";
 
 export const ENGINE_ROUTES: {
 	/** Name of the route */
@@ -53,7 +52,7 @@ export const ENGINE_ROUTES: {
 		path: "function",
 		type: "FUNCTION",
 		description:
-			"Expose and reuse LLM functionality in the form of functions to promote efficiency across app development. These functions include LLM Guard scanners to ensure the secure use of LLMs. ",
+			"Expose and reuse LLM functionality in the form of functions to promote efficiency across app development. These functions include LLM Guard scanners to ensure the secure use of LLMs. ",
 		icon: SwitchAccessShortcutOutlined,
 		specific: [
 			{
@@ -97,11 +96,11 @@ export const ENGINE_ROUTES: {
 				restrict: false,
 			},
 			{
-                name: 'Chat',
-                path: 'chat',
-                component: EngineModelChatPage,
-                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
-            },
+				name: "Chat",
+				path: "chat",
+				component: EngineModelChatPage,
+				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+			},
 			{
 				name: "Usage",
 				path: "usage",
@@ -148,18 +147,12 @@ export const ENGINE_ROUTES: {
 				component: EngineUsagePage,
 				restrict: ["EDIT", "OWNER", "READ_ONLY"],
 			},
-			// {
-			//     name: 'Query',
-			//     path: 'query',
-			//     component: EngineQueryDataPage,
-			//     restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
-			// },
-			// {
-			//     name: 'Replace',
-			//     path: 'replace',
-			//     component: EngineReplaceDataPage,
-			//     restrict: ['EDIT', 'OWNER'],
-			// },
+			{
+				name: "Query",
+				path: "query",
+				component: EngineQueryDataPage,
+				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+			},
 			{
 				name: "Access Control",
 				path: "access-control",
@@ -179,7 +172,7 @@ export const ENGINE_ROUTES: {
 		path: "vector",
 		type: "VECTOR",
 		description:
-			"Knowledge repositories, also known as vector databases, enable fast retrieval of information and semantic search. Create knowledge repositories on the fly and connect them for simplified reuse across apps.  ",
+			"Knowledge repositories, also known as vector databases, enable fast retrieval of information and semantic search. Create knowledge repositories on the fly and connect them for simplified reuse across apps.  ",
 		icon: TokenOutlined,
 		specific: [
 			{
@@ -225,7 +218,7 @@ export const ENGINE_ROUTES: {
 		path: "storage",
 		type: "STORAGE",
 		description:
-			"Tapping into unstructured data (e.g., audio, video, images, code) is critical when training and using AI solutions. Our storage catalog enables integration with many industry-leading cloud storage solutions to effortlessly access a project’s unstructured data.",
+			"Tapping into unstructured data (e.g., audio, video, images, code) is critical when training and using AI solutions. Our storage catalog enables integration with many industry-leading cloud storage solutions to effortlessly access a project's unstructured data.",
 		icon: Inventory2Outlined,
 		specific: [
 			{
@@ -241,8 +234,8 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER", "READ_ONLY"],
 			},
 			{
-				name: "Settings",
-				path: "settings",
+				name: "Access Control",
+				path: "access-control",
 				component: EngineSettingsPage,
 				restrict: ["EDIT", "OWNER"],
 			},

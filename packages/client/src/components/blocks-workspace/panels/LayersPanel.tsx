@@ -33,7 +33,6 @@ import {
 	INPUT_BLOCK_TYPES,
 	useBlocks,
 } from "@semoss/renderer";
-import { FlexLayout } from "@semoss/shared";
 import {
 	Divider,
 	Grid,
@@ -48,6 +47,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useDesigner, useWorkspace } from "@/hooks";
@@ -704,7 +704,7 @@ export const LayersPanel = observer(
 				handleMenuClose();
 			};
 
-			const handleDuplicate = (
+			const handleDuplicate = async (
 				event: React.MouseEvent<HTMLElement>,
 				duplicateId: string,
 			) => {
@@ -753,7 +753,7 @@ export const LayersPanel = observer(
 						}
 					: undefined;
 
-				const id = state.dispatch({
+				const id = await state.dispatch({
 					message: ActionMessages.ADD_BLOCK,
 					payload: {
 						json: getJsonForBlock(duplicateId) as BlockJSON,

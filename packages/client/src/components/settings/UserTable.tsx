@@ -1,7 +1,6 @@
 import { Add, Delete, Edit } from "@mui/icons-material";
-import CopyAllIcon from "@mui/icons-material/CopyAll";
 import SearchIcon from "@mui/icons-material/Search";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Avatar,
@@ -9,8 +8,8 @@ import {
 	Box,
 	Button,
 	Checkbox,
-	Grid,
 	IconButton,
+	LoadingScreen,
 	Popover,
 	Search,
 	Stack,
@@ -19,8 +18,8 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
-import { useAPI, useRootStore, useSettings } from "@/hooks";
+import { deleteMember, editMemberInfo } from "@/api";
+import { useAPI, useSettings } from "@/hooks";
 import { UserAddOverlay } from "./UserAddOverlay";
 import { UserPopover } from "./UserPopover";
 
@@ -51,7 +50,7 @@ const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
 	border: `1px solid ${theme.palette.secondary.border}`,
 }));
 
-const StyledMemberLoading = styled("div")(({ theme }) => ({
+const StyledMemberLoading = styled("div")(() => ({
 	position: "relative",
 	display: "flex",
 	alignItems: "center",
@@ -99,7 +98,7 @@ const StyledPrimaryText = styled(Typography)(({ theme }) => ({
 	color: theme.palette.text.primary,
 }));
 
-const StyledSecondaryText = styled(Typography)(({ theme }) => ({
+const _StyledSecondaryText = styled(Typography)(({ theme }) => ({
 	color: theme.palette.text.secondary,
 }));
 
@@ -167,6 +166,8 @@ const StyledNoUsersDiv = styled("div")(({ theme }) => ({
 	alignItems: "center",
 }));
 
+const StyledTableDiv = styled("div")({});
+
 const formatValue = (input: string) => {
 	if (input !== undefined) {
 		const mappings: Record<string, string> = {
@@ -214,7 +215,6 @@ export const UserTable = (props: UserTableProps) => {
 	const { onChange = () => null } = props;
 
 	const { adminMode } = useSettings();
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 
 	const [page, setPage] = useState<number>(0);
@@ -232,11 +232,11 @@ export const UserTable = (props: UserTableProps) => {
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 	const [hoveredUser, setHoveredUser] = useState<User | null>(null);
 	const isPopoverOpen = Boolean(anchorEl);
-	/** Add User State */
+	/** Add User State*/
 	const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
 	const [addModalUser, setAddModalUser] = useState<User | null>(null);
 
-	const userSearchRef = useRef(undefined);
+	const userSearchRef = useRef(null);
 
 	const getUsers = useAPI([
 		"getAllUsers",
@@ -250,11 +250,11 @@ export const UserTable = (props: UserTableProps) => {
 	const isLoading =
 		getUsers.status === "INITIAL" || getUsers.status === "LOADING";
 	const renderedMembers =
-		getUsers.status === "SUCCESS" ? getUsers.data["users"] : [];
+		getUsers.status === "SUCCESS" ? getUsers.data?.users : [];
 	const totalUsers =
-		getUsers.status === "SUCCESS" ? getUsers.data["totalUsers"] : 0;
+		getUsers.status === "SUCCESS" ? getUsers.data?.totalUsers : 0;
 	const hasUsers =
-		getUsers.status === "SUCCESS" && getUsers.data["totalUsers"] > 0;
+		getUsers.status === "SUCCESS" && getUsers.data?.totalUsers > 0;
 
 	/**
 	 * Update a user
@@ -272,10 +272,7 @@ export const UserTable = (props: UserTableProps) => {
 					user.exporter = false;
 				}
 			}
-			const response = await monolithStore.editMemberInfo(
-				adminMode,
-				user,
-			);
+			const response = await editMemberInfo(adminMode, user);
 
 			if (!response) {
 				return;
@@ -311,11 +308,7 @@ export const UserTable = (props: UserTableProps) => {
 	 */
 	const deleteUser = async (user: User) => {
 		try {
-			const response = await monolithStore.deleteMember(
-				adminMode,
-				user.id,
-				user.type,
-			);
+			const response = await deleteMember(adminMode, user.id, user.type);
 
 			if (!response) {
 				return;
@@ -353,7 +346,7 @@ export const UserTable = (props: UserTableProps) => {
 		try {
 			for (let i = 0; i < selectedMembers.length; i++) {
 				try {
-					const response = await monolithStore.deleteMember(
+					const response = await deleteMember(
 						adminMode,
 						selectedMembers[i].id,
 						selectedMembers[i].type,
@@ -371,8 +364,6 @@ export const UserTable = (props: UserTableProps) => {
 						});
 
 						onChange();
-						// refresh the users
-						getUsers.refresh();
 					} else {
 						notification.add({
 							color: "error",
@@ -388,6 +379,8 @@ export const UserTable = (props: UserTableProps) => {
 			}
 		} finally {
 			setSelectedMembers([]);
+			// refresh the users
+			getUsers.refresh();
 		}
 	};
 	/**
@@ -455,7 +448,9 @@ export const UserTable = (props: UserTableProps) => {
 									placeholder="Search Users"
 									size="small"
 									value={search}
-									onChange={(e) => {
+									onChange={(
+										e: React.ChangeEvent<HTMLInputElement>,
+									) => {
 										setSearch(e.target.value);
 									}}
 								/>
@@ -503,7 +498,7 @@ export const UserTable = (props: UserTableProps) => {
 							</LoadingScreen>
 						</StyledMemberLoading>
 					) : (
-						<>
+						<StyledTableDiv>
 							{hasUsers ? (
 								<StyledMemberTable>
 									<Table.Head>
@@ -643,125 +638,113 @@ export const UserTable = (props: UserTableProps) => {
 																		</Avatar>
 																	</AvatarWrapper>
 
-																	<StyledPrimaryText
-																		variant="body1"
-																		noWrap={
-																			true
-																		}
-																		title={`Name: ${user.name}`}
-																	>
-																		{user.name || (
-																			<>
-																				&nbsp;
-																			</>
-																		)}
-																	</StyledPrimaryText>
-																</StyledNameStack>
-															</StyledCenteredBox>
-														</Table.Cell>
-														<Table.Cell>
-															{user.type}
-														</Table.Cell>
-														<Table.Cell>
-															{formatValue(
-																user?.model_usage_restriction,
-															)}
-														</Table.Cell>
-														<Table.Cell>
-															{user?.model_usage_restriction ===
-																"compute" &&
-																`${user?.model_max_response_time?.toLocaleString()} ms`}
+															<StyledPrimaryText
+																variant="body1"
+																noWrap={true}
+																title={`Name: ${user.name}`}
+															>
+																{user.name || (
+																	<>&nbsp;</>
+																)}
+															</StyledPrimaryText>
+														</StyledNameStack>
+													</StyledCenteredBox>
+												</Table.Cell>
+												<Table.Cell>
+													{user.type}
+												</Table.Cell>
+												<Table.Cell>
+													{formatValue(
+														user?.model_usage_restriction,
+													)}
+												</Table.Cell>
+												<Table.Cell>
+													{user?.model_usage_restriction ===
+														"compute" &&
+														`${user?.model_max_response_time?.toLocaleString()} ms`}
 
-															{user?.model_usage_restriction ===
-																"token" &&
-																`${user?.model_max_tokens?.toLocaleString()}`}
-														</Table.Cell>
-														<Table.Cell>
-															{formatValue(
-																user?.model_usage_frequency,
-															)}
-														</Table.Cell>
-														<Table.Cell>
-															<StyledCenteredBox>
-																<Checkbox
-																	label="Publisher"
-																	checked={
-																		user.publisher
-																	}
-																	onChange={() => {
-																		updateUser(
-																			{
-																				...user,
-																				publisher:
-																					!user.publisher,
-																			},
-																		);
-																	}}
-																/>
-																<Checkbox
-																	label="Exporter"
-																	checked={
-																		user.exporter
-																	}
-																	onChange={() => {
-																		updateUser(
-																			{
-																				...user,
-																				exporter:
-																					!user.exporter,
-																			},
-																		);
-																	}}
-																/>
-																<Checkbox
-																	label="Admin"
-																	checked={
-																		user.admin
-																	}
-																	onChange={() => {
-																		updateUser(
-																			{
-																				...user,
-																				admin:
-																					!user.admin,
-																			},
-																		);
-																	}}
-																/>
-															</StyledCenteredBox>
-														</Table.Cell>
-														<Table.Cell>
-															<StyledCenteredBox>
-																<IconButton
-																	onClick={() => {
-																		setAddModalOpen(
-																			true,
-																		);
+													{user?.model_usage_restriction ===
+														"token" &&
+														`${user?.model_max_tokens?.toLocaleString()}`}
+												</Table.Cell>
+												<Table.Cell>
+													{formatValue(
+														user?.model_usage_frequency,
+													)}
+												</Table.Cell>
+												<Table.Cell>
+													<StyledCenteredBox>
+														<Checkbox
+															label="Publisher"
+															checked={
+																user.publisher
+															}
+															onChange={() => {
+																updateUser({
+																	...user,
+																	publisher:
+																		!user.publisher,
+																});
+															}}
+														/>
+														<Checkbox
+															label="Exporter"
+															checked={
+																user.exporter
+															}
+															onChange={() => {
+																updateUser({
+																	...user,
+																	exporter:
+																		!user.exporter,
+																});
+															}}
+														/>
+														<Checkbox
+															label="Admin"
+															checked={user.admin}
+															onChange={() => {
+																updateUser({
+																	...user,
+																	admin:
+																		!user.admin,
+																});
+															}}
+														/>
+													</StyledCenteredBox>
+												</Table.Cell>
+												<Table.Cell>
+													<StyledCenteredBox>
+														<IconButton
+															onClick={() => {
+																setAddModalOpen(
+																	true,
+																);
 
-																		setAddModalUser(
-																			user,
-																		);
-																	}}
-																>
-																	<Edit />
-																</IconButton>
-																<IconButton
-																	onClick={() => {
-																		deleteUser(
-																			user,
-																		);
-																	}}
-																>
-																	<Delete />
-																</IconButton>
-															</StyledCenteredBox>
-														</Table.Cell>
-													</Table.Row>
-												);
-											}
-											return null;
-										})}
-									</Table.Body>
+																setAddModalUser(
+																	user,
+																);
+															}}
+														>
+															<Edit />
+														</IconButton>
+														<IconButton
+															onClick={() => {
+																deleteUser(
+																	user,
+																);
+															}}
+														>
+															<Delete />
+														</IconButton>
+													</StyledCenteredBox>
+												</Table.Cell>
+											</Table.Row>
+										);
+									}
+									return null;
+								})}
+							</Table.Body>
 
 									<Table.Footer>
 										<Table.Row>
@@ -825,7 +808,7 @@ export const UserTable = (props: UserTableProps) => {
 									</Button>
 								</StyledNoUsersDiv>
 							)}
-						</>
+						</StyledTableDiv>
 					)}
 				</StyledTableContainer>
 			</StyledMemberInnerContent>
@@ -833,15 +816,14 @@ export const UserTable = (props: UserTableProps) => {
 			<UserAddOverlay
 				user={addModalUser}
 				open={addModalOpen}
-				onClose={(success) => {
-					// close it
+				onClose={(_success) => {
+					// close
 					setAddModalOpen(false);
-
 					// de-select the user
 					setAddModalUser(null);
 
 					// refresh if successful
-					if (success) {
+					if (_success) {
 						// trigger the update
 						onChange();
 

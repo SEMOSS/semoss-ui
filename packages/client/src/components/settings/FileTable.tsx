@@ -1,5 +1,5 @@
 import { Add, Delete, SimCardDownload } from "@mui/icons-material";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
 	Button,
@@ -15,6 +15,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { uploadFile } from "@/api";
 import { usePixel, useRootStore } from "@/hooks";
 
 const StyledTableContainer = styled(Table.Container)({
@@ -209,12 +210,12 @@ export const FileTable = (props: FileTableProps) => {
 
 		try {
 			//upload the file
-			const upload = await monolithStore.uploadFile(
+			const upload = await uploadFile(
 				data.PROJECT_UPLOAD,
 				configStore.store.insightID,
 			);
 
-			upload.map((file, index) => {
+			upload.forEach((file, index) => {
 				const { fileLocation } = file;
 				if (index + 1 === upload.length) {
 					//last member
@@ -294,14 +295,14 @@ export const FileTable = (props: FileTableProps) => {
 		// construct the string of files
 		setIsLoading(true);
 		let fileArray = "";
-		files.map((file, index) => {
+		files.forEach((file, index) => {
 			const { fileName } = file;
 			if (index + 1 === files.length) {
 				//structuring the last element
-				fileArray = fileArray + `"${fileName}"`;
+				fileArray = `${fileArray}"${fileName}"`;
 			} else {
 				// all but the last element
-				fileArray = fileArray + `"${fileName}", `;
+				fileArray = `${fileArray}"${fileName}", `;
 			}
 		});
 
@@ -345,10 +346,10 @@ export const FileTable = (props: FileTableProps) => {
 			const { fileName } = file;
 			if (index + 1 === files.length) {
 				//structuring the last element
-				fileArray = fileArray + `"${fileName}"`;
+				fileArray = `${fileArray}"${fileName}"`;
 			} else {
 				// all but the last element
-				fileArray = fileArray + `"${fileName}", `;
+				fileArray = `${fileArray}"${fileName}", `;
 			}
 		});
 
@@ -363,7 +364,7 @@ export const FileTable = (props: FileTableProps) => {
 		setExportLoading(false);
 	};
 
-	const createSortHandler = (property) => (event) => {
+	const createSortHandler = (property) => (_event) => {
 		const isAsc = order === "asc";
 		const newOrder = isAsc ? "desc" : "asc";
 		setOrder(newOrder);
@@ -400,6 +401,7 @@ export const FileTable = (props: FileTableProps) => {
 
 					<div>
 						<Search
+							//@ts-expect-error: TODO: Fix ref type
 							ref={fileSearchRef}
 							placeholder={"Search Files"}
 							size="small"
@@ -408,6 +410,7 @@ export const FileTable = (props: FileTableProps) => {
 							onChange={(e) => {
 								setValue("SEARCH_FILTER", e.target.value);
 							}}
+							data-testid="file-search"
 						/>
 						{selectedFiles.length > 0 && (
 							<Button
@@ -415,6 +418,7 @@ export const FileTable = (props: FileTableProps) => {
 								color="error"
 								sx={{ marginRight: "10px" }}
 								onClick={() => setDeleteFilesModal(true)}
+								data-testid="delete-files-btn"
 							>
 								Delete Selected
 							</Button>
@@ -434,6 +438,7 @@ export const FileTable = (props: FileTableProps) => {
 									downloadSelectedFiles(selectedFiles)
 								}
 								style={{ marginRight: "10px" }}
+								data-testid="download-files-btn"
 							>
 								Download
 							</Button>
@@ -442,6 +447,7 @@ export const FileTable = (props: FileTableProps) => {
 							startIcon={<StyledIcon fontSize="small" />}
 							onClick={() => setOpen(true)}
 							variant="contained"
+							data-testid="embed-new-document-btn"
 						>
 							Embed New Document
 						</Button>
@@ -467,6 +473,7 @@ export const FileTable = (props: FileTableProps) => {
 										setSelectedFiles([]);
 									}
 								}}
+								data-testid="files-checkbox"
 							/>
 						</Table.Cell>
 						<Table.Cell size="small">
@@ -505,7 +512,7 @@ export const FileTable = (props: FileTableProps) => {
 						<Table.Cell size="small">Action</Table.Cell>
 					</Table.Head>
 					<Table.Body>
-						{verifiedFiles.map((x, i) => {
+						{verifiedFiles.map((_x, i) => {
 							if (
 								i >=
 									filePage * NUM_RESULTS_PER_PAGE -
@@ -523,7 +530,9 @@ export const FileTable = (props: FileTableProps) => {
 								}
 								if (file) {
 									return (
-										<Table.Row key={i}>
+										<Table.Row
+											key={`${file.fileName}-${i}`}
+										>
 											<Table.Cell size="medium">
 												<Checkbox
 													checked={isSelected}
@@ -552,6 +561,7 @@ export const FileTable = (props: FileTableProps) => {
 															]);
 														}
 													}}
+													data-testid={`file-checkbox-${file.fileName}`}
 												/>
 											</Table.Cell>
 											<Table.Cell
@@ -594,13 +604,15 @@ export const FileTable = (props: FileTableProps) => {
 									);
 								}
 							}
+
+							return null;
 						})}
 					</Table.Body>
 					<Table.Footer>
 						<Table.Row>
 							<Table.Pagination
 								rowsPerPageOptions={[]}
-								onPageChange={(e, v) => {
+								onPageChange={(_e, v) => {
 									setFilePage(v + 1);
 									setSelectedFiles([]);
 								}}
@@ -654,13 +666,14 @@ export const FileTable = (props: FileTableProps) => {
 						<Button
 							type="submit"
 							variant={"contained"}
-							disabled={isLoading}
+							disabled={
+								isLoading ||
+								watch("PROJECT_UPLOAD").length === 0
+							}
 							startIcon={
 								isLoading ? (
 									<CircularProgress size="1em" />
-								) : (
-									<></>
-								)
+								) : null
 							}
 						>
 							Embed
@@ -699,7 +712,7 @@ export const FileTable = (props: FileTableProps) => {
 							deleteFile(fileToDelete);
 						}}
 						startIcon={
-							isLoading ? <CircularProgress size="1em" /> : <></>
+							isLoading ? <CircularProgress size="1em" /> : null
 						}
 					>
 						Confirm
@@ -726,7 +739,7 @@ export const FileTable = (props: FileTableProps) => {
 							deleteSelectedFiles(selectedFiles);
 						}}
 						startIcon={
-							isLoading ? <CircularProgress size="1em" /> : <></>
+							isLoading ? <CircularProgress size="1em" /> : null
 						}
 					>
 						Confirm
