@@ -42,103 +42,6 @@ importers:
         specifier: ~5.5.2
         version: 5.5.4
 
-  libs/auditlog:
-    dependencies:
-      '@emotion/react':
-        specifier: 11.11.1
-        version: 11.11.1(@types/react@18.3.1)(react@18.3.1)
-      '@emotion/styled':
-        specifier: 11.11.0
-        version: 11.11.0(@emotion/react@11.11.1(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react@18.3.1)
-      '@mui/icons-material':
-        specifier: 6.0.0
-        version: 6.0.0(@mui/material@6.0.0(@emotion/react@11.11.1(@types/react@18.3.1)(react@18.3.1))(@emotion/styled@11.11.0(@emotion/react@11.11.1(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.1)(react@18.3.1)
-      '@mui/material':
-        specifier: 6.0.0
-        version: 6.0.0(@emotion/react@11.11.1(@types/react@18.3.1)(react@18.3.1))(@emotion/styled@11.11.0(@emotion/react@11.11.1(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@semoss/sdk':
-        specifier: workspace:*
-        version: link:../sdk
-      '@semoss/ui':
-        specifier: workspace:*
-        version: link:../ui
-      mobx:
-        specifier: 6.3.7
-        version: 6.3.7
-      mobx-react-lite:
-        specifier: ^3.4.0
-        version: 3.4.3(mobx@6.3.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react:
-        specifier: 18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: 18.3.1
-        version: 18.3.1(react@18.3.1)
-      react-router-dom:
-        specifier: ^6.3.0
-        version: 6.30.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-    devDependencies:
-      '@rollup/plugin-commonjs':
-        specifier: 28.0.6
-        version: 28.0.6(rollup@4.44.2)
-      '@rollup/plugin-image':
-        specifier: ^3.0.3
-        version: 3.0.3(rollup@4.44.2)
-      '@rollup/plugin-json':
-        specifier: ^6.1.0
-        version: 6.1.0(rollup@4.44.2)
-      '@rollup/plugin-node-resolve':
-        specifier: 16.0.1
-        version: 16.0.1(rollup@4.44.2)
-      '@rollup/plugin-terser':
-        specifier: ^0.4.4
-        version: 0.4.4(rollup@4.44.2)
-      '@rollup/plugin-typescript':
-        specifier: 12.1.4
-        version: 12.1.4(rollup@4.44.2)(tslib@2.8.1)(typescript@5.5.4)
-      '@testing-library/jest-dom':
-        specifier: ^6.6.3
-        version: 6.9.1
-      '@testing-library/react':
-        specifier: ^16.2.0
-        version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@types/jest':
-        specifier: ^29.5.14
-        version: 29.5.14
-      '@types/react':
-        specifier: 18.3.1
-        version: 18.3.1
-      '@types/react-dom':
-        specifier: 18.3.0
-        version: 18.3.0
-      '@vitejs/plugin-react':
-        specifier: ^4.6.0
-        version: 4.7.0(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))
-      '@vitest/browser-playwright':
-        specifier: ^4.0.0
-        version: 4.0.7(playwright@1.56.1)(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))(vitest@4.0.7)
-      '@vitest/coverage-v8':
-        specifier: ^4.0.0
-        version: 4.0.7(@vitest/browser@4.0.7(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0))(vitest@4.0.7))(vitest@4.0.7)
-      dompurify:
-        specifier: ^2.3.10
-        version: 2.5.8
-      echarts:
-        specifier: ^5.5.1
-        version: 5.6.0
-      echarts-for-react:
-        specifier: ^3.0.2
-        version: 3.0.2(echarts@5.6.0)(react@18.3.1)
-      rollup:
-        specifier: 4.44.2
-        version: 4.44.2
-      rollup-plugin-delete:
-        specifier: 3.0.1
-        version: 3.0.1(rollup@4.44.2)
-      vitest:
-        specifier: ^4.0.0
-        version: 4.0.7(@types/debug@4.1.12)(@types/node@24.10.1)(@vitest/browser-playwright@4.0.7)(jiti@2.6.1)(jsdom@22.1.0)(lightningcss@1.30.2)(terser@5.44.0)
-
   libs/renderer:
     dependencies:
       '@emotion/react':
@@ -313,12 +216,21 @@ importers:
 
   libs/shared:
     dependencies:
+      '@mui/icons-material':
+        specifier: 6.0.0
+        version: 6.0.0(@mui/material@6.0.0(@emotion/react@11.14.0(@types/react@18.3.1)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.1)(react@18.3.1)
       '@semoss/sdk':
         specifier: workspace:*
         version: link:../sdk
       '@semoss/ui':
         specifier: workspace:*
         version: link:../ui
+      echarts:
+        specifier: ^5.5.1
+        version: 5.6.0
+      echarts-for-react:
+        specifier: ^3.0.2
+        version: 3.0.2(echarts@5.6.0)(react@18.3.1)
       flexlayout-react:
         specifier: ^0.8.1
         version: 0.8.17(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -655,9 +567,6 @@ importers:
       '@mui/x-data-grid':
         specifier: ^7.1.0
         version: 7.29.9(@emotion/react@11.14.0(@types/react@18.3.1)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react@18.3.1))(@mui/material@6.0.0(@emotion/react@11.14.0(@types/react@18.3.1)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@mui/system@6.5.0(@emotion/react@11.14.0(@types/react@18.3.1)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@semoss/auditlog':
-        specifier: workspace:*
-        version: link:../../libs/auditlog
       '@semoss/renderer':
         specifier: workspace:*
         version: link:../../libs/renderer
@@ -4084,6 +3993,9 @@ packages:
 
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
+
+  csstype@3.2.3:
+    resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
   cytoscape-cose-bilkent@4.1.0:
     resolution: {integrity: sha512-wgQlVIUJF13Quxiv5e1gstZ08rnZj2XaLHGoFMYXz7SkNfCDOOteKBE6SYRfA9WxxI/iBc3ajfDoc6hb/MRAHQ==}
@@ -9421,7 +9333,7 @@ snapshots:
       '@emotion/cache': 11.14.0
       '@emotion/serialize': 1.3.3
       '@emotion/sheet': 1.4.0
-      csstype: 3.1.3
+      csstype: 3.2.3
       prop-types: 15.8.1
       react: 18.3.1
     optionalDependencies:
@@ -9434,7 +9346,7 @@ snapshots:
       '@emotion/cache': 11.14.0
       '@emotion/serialize': 1.3.3
       '@emotion/sheet': 1.4.0
-      csstype: 3.1.3
+      csstype: 3.2.3
       prop-types: 15.8.1
       react: 18.3.1
     optionalDependencies:
@@ -9449,7 +9361,7 @@ snapshots:
       '@mui/types': 7.2.24(@types/react@18.3.1)
       '@mui/utils': 6.4.9(@types/react@18.3.1)(react@18.3.1)
       clsx: 2.1.1
-      csstype: 3.1.3
+      csstype: 3.2.3
       prop-types: 15.8.1
       react: 18.3.1
     optionalDependencies:
@@ -9465,7 +9377,7 @@ snapshots:
       '@mui/types': 7.2.24(@types/react@18.3.1)
       '@mui/utils': 6.4.9(@types/react@18.3.1)(react@18.3.1)
       clsx: 2.1.1
-      csstype: 3.1.3
+      csstype: 3.2.3
       prop-types: 15.8.1
       react: 18.3.1
     optionalDependencies:
@@ -10298,15 +10210,6 @@ snapshots:
       rollup: 4.44.2
       tslib: 2.5.3
 
-  '@rollup/plugin-typescript@12.1.4(rollup@4.44.2)(tslib@2.8.1)(typescript@5.5.4)':
-    dependencies:
-      '@rollup/pluginutils': 5.3.0(rollup@4.44.2)
-      resolve: 1.22.11
-      typescript: 5.5.4
-    optionalDependencies:
-      rollup: 4.44.2
-      tslib: 2.8.1
-
   '@rollup/pluginutils@5.3.0(rollup@4.44.2)':
     dependencies:
       '@types/estree': 1.0.8
@@ -11027,7 +10930,7 @@ snapshots:
   '@types/react@18.3.1':
     dependencies:
       '@types/prop-types': 15.7.15
-      csstype: 3.1.3
+      csstype: 3.2.3
 
   '@types/resolve@1.20.2': {}
 
@@ -12127,6 +12030,8 @@ snapshots:
 
   csstype@3.1.3: {}
 
+  csstype@3.2.3: {}
+
   cytoscape-cose-bilkent@4.1.0(cytoscape@3.33.1):
     dependencies:
       cose-base: 1.0.3
@@ -12435,7 +12340,7 @@ snapshots:
   dom-helpers@5.2.1:
     dependencies:
       '@babel/runtime': 7.28.4
-      csstype: 3.1.3
+      csstype: 3.2.3
 
   dom-serializer@1.4.1:
     dependencies:
