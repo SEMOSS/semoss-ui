@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
 	return {
 		base: "./",
 		plugins: [
-			tailwindcss(),
+			tailwindcss({ optimize: false }),
 			svgr(),
 			react({ include: /\.(js|jsx|ts|tsx)$/ }),
 		],
