@@ -3,156 +3,57 @@
 */
 .flexlayout__layout {
     --color-background: transparent;
+    --color-tabset-background: transparent;
+    --color-tabset-background-selected: transparent;
     --font-family: 'Inter', sans-serif;
     --font-size: 0.875rem;
     --smss-tab-border-radius: 4px;
 }
-.flexlayout__border_left {
-    width: 46px;
-    margin-right: 10px;
-    border-radius: 12px;
-    background: var(--Background-Paper1, #fff);
-    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.08);
-    border-right: none;
-}
-.flexlayout__border_button--unselected {
-    background-color: #fff;
-}
-/*Should take another look into this*/
-.flexlayout__border_inner_tab_container.flexlayout__border_inner_tab_container_right{
-    top: 6px !important;
-    left: 84% !important;
-}
-.flexlayout__border.flexlayout__border_right{
-    width: 40px;
-    border-radius: var(--Shape-borderRadiusLg, 12px);
-    background: var(--Background-Paper1, #FFF);
-    margin-left: 8px;
-    border-left: none;
-}
 
-.flexlayout__border_inner_tab_container {
-    padding-left: 0px;
-    padding-right: 0px;
-}
-
-.flexlayout__border_left .flexlayout__border_button {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    align-self: stretch;
-    transform: rotate(90deg);
-    padding: 0;
-}
-
-.flexlayout__border_button_right {
-    padding: 3px 0.5em;
-    border-radius: 16px;
-    background: var(--Primary-Selected, #ebf4fe);
-    color: var(--Primary-Dark, #1260dd);
-    font-size: 13px;
-    line-height: 18px; /* 138.462% */
-}
-
-.flexlayout__border_left .flexlayout__border_button--selected {
-    background-color: rgb(255, 255, 255);
-    color: rgb(4, 113, 240);
-}
-
-.flexlayout__border_bottom {
-    border-top: none;
-    padding-left: 34px;
-}
-
-.workspace_layout .flexlayout__border_bottom {
-    padding-left: 0;
-    position: absolute;
-    bottom: 0;
-    min-width: 90px;
-}
-
-.workspace_layout .flexlayout__border_bottom .flexlayout__border_button_bottom {
-   background: transparent;
-}
-
-/* 
-Main Content tabs
-*/
-
-.flexlayout__tabset_tabbar_inner_tab_container_top {
-    border: none;
-}
-
-.flexlayout__tabset_tab_divider {
-    width: 0px;
-}
-.flexlayout__tab_moveable {
-    margin-left: 5px;
-}
-.flexlayout__tab.flexlayout__tab_border.flexlayout__tab_border_right {
-    border-radius: var(--Shape-borderRadiusLg, 12px);
-    background: var(--Background-Paper1, #FFF);
-}
-.flexlayout__tab {
-    background: transparent;
-    border-radius: var(--smss-tab-border-radius);
-    border-top-left-radius: 0;
-}
-.selected_block.flexlayout__border_bottom {
-    border-top: 1px solid rgba(0, 0, 0, 0.12);
-    background: var(--Background-Paper1, #fff);
-    box-shadow: 0px 1px 2px rgba(212, 12, 12, 0.76);
+.flexlayout__tabset_tabbar_outer {
+    padding: var(--spacing-2, 8px);
 }
 
 .flexlayout__tabset_tabbar_outer_top {
-    border: none;
+    padding-right: 85px;
 }
 
-.flexlayout__tabset_tabbar_inner_tab_container {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex: 1 0 0;
-}
-.flexlayout__tabset_container{
-    border-radius: var(--Shape-borderRadiusLg, 12px);
-    background: var(--Background-Paper1, #fff);
-}
-.flexlayout__tabset-selected {
-    background-color: transparent;
-}
-.flexlayout__tabset {
-    margin-top: 8px;
-    margin-left: 4px;
-}
-.flexlayout__tab.flexlayout__tab_border.flexlayout__tab_border_left {
-    margin-left: 0px;
-    border-radius: var(--Shape-borderRadiusLg, 12px);
-    background: var(--Background-Paper1, #FFF);
-    /* Elevation - SEMOSS/1 */
-    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.08);
-}
 .flexlayout__tab_button {
     display: flex;
+    height: var(--height-h-8, 32px);
+    padding: var(--spacing-2, 8px) var(--spacing-3, 12px);
+    justify-content: center;
     align-items: center;
-    border-radius: 16px;
-    background: var(--Secondary-Selected, #ebebeb);
-    font-size: 13px;
-    line-height: 18px; /* 138.462% */
-}
-
-.flexlayout__tab_button:hover {
-    background-color: rgba(0, 0, 0, 0.04);
-    background-color: var(--Secondary-Selected, #ebf4fe);
-}
-
-.flexlayout__tab_button_trailing svg {
-    width: 1rem;
-    height: 1rem;
-    fill: var(--color-icon, #000);
+    gap: var(--spacing-2, 8px);
+    border-radius: var(--border-radius-rounded-md, 8px);
+    background: var(--base-secondary, #F5F5F5);
 }
 
 .flexlayout__tab_button--selected {
-    color: var(--Primary-Dark, #1260dd);
-    background-color: #ebf4fe;
+    border: var(--border-width-border, 1px) solid var(--base-input, #E5E5E5);
+    background: var(--custom-background-dark-input-30, #FFF);
+
+    /* shadow/xs */
+    box-shadow: var(--shadow-xs-offset-x, 0) var(--shadow-xs-offset-y, 1px) var(--shadow-xs-blur-radius, 2px) var(--shadow-xs-spread-radius, 0) var(--shadow-xs-color, rgba(0, 0, 0, 0.05));
+}
+
+.flexlayout__tab_button__content {
+    overflow: hidden;
+    color: var(--base-foreground, #0A0A0A);
+    text-overflow: ellipsis;
+
+    /* text-xs/leading-normal/medium */
+    font-family: var(--font-font-sans, Geist);
+    font-size: var(--text-xs-font-size, 12px);
+    font-style: normal;
+    font-weight: var(--font-weight-medium, 500);
+    line-height: var(--text-xs-line-height, 16px); /* 133.333% */
+}
+
+.flexlayout__tab_button--selected .flexlayout__tab_button_leading {
+    color: var(--base-primary, #0471F0);
+}
+
+.flexlayout__tabset_tab_divider {
+    width: var(--spacing-2, 8px);
 }
