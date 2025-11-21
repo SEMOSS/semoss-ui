@@ -16,7 +16,7 @@ import {
 	Typography,
 	useTheme,
 } from "@semoss/ui";
-import { TimeDateFormatter } from "../common";
+import { TimeDateFormatter } from "./common";
 
 const DrawerContainer = styled(Box)(({ theme }) => ({
 	position: "relative",

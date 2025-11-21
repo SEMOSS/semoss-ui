@@ -13,8 +13,8 @@ import {
 	styled,
 	Typography,
 } from "@semoss/ui";
-import type { EventData } from "../common";
-import { TimeDateFormatter } from "../common";
+import type { EventData } from "./common";
+import { TimeDateFormatter } from "./common";
 
 // Type definitions
 interface ProcessedEventData {

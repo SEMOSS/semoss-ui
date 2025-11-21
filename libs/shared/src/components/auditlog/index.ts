@@ -1,4 +1,4 @@
-import { AuditLogsDataTable } from "./logs/AuditLogsDataTable";
-import { AuditLogsTimeline } from "./logs/AuditLogsTimeline";
+import { AuditLogsDataTable } from "./AuditLogsDataTable";
+import { AuditLogsTimeline } from "./AuditLogsTimeline";
 
 export { AuditLogsDataTable, AuditLogsTimeline };

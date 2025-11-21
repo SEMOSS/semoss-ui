@@ -25,9 +25,9 @@ import {
 	Typography,
 	useTheme,
 } from "@semoss/ui";
-import type { EventData } from "../common";
-import { TimeDateFormatter } from "../common";
 import { AuditLogsDetailDrawer } from "./AuditLogsDetailDrawer";
+import type { EventData } from "./common";
+import { TimeDateFormatter } from "./common";
 
 // Styled Components
 const Container = styled(Paper)(({ theme }) => ({
