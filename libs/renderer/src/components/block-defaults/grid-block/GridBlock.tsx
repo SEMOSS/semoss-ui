@@ -1,22 +1,16 @@
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { styled } from "@mui/material";
-import Tooltip from "@mui/material/Tooltip";
-import {
-	DataGrid,
-	GridToolbarContainer,
-	GridToolbarFilterButton,
-	useGridApiRef,
-} from "@mui/x-data-grid";
+import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
-import { Button, CircularProgress } from "@semoss/ui";
 import { useBlock, useBlocks, useFrame, useFrameHeaders } from "../../../hooks";
 import {
 	ActionMessages,
 	type BlockComponent,
 	type BlockDef,
 } from "../../../store";
+import { CustomToolbar } from "./CustomToolbar";
 import { GridBlockContextMenu } from "./GridBlockContextMenu";
+import { GridFooter } from "./GridFooter";
 import type { GridBlockColumn } from "./grid-block.types";
 
 // Type for query import cell parameters
@@ -578,69 +572,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		return "auto";
 	};
 
-	const CustomToolbar = () => {
-		const handleExportClick = () => {
-			if (apiRef.current) {
-				apiRef.current.exportDataAsCsv({
-					fileName: data.frame?.name || "grid-export",
-				});
-			}
-		};
-
-		return (
-			<GridToolbarContainer
-				sx={{
-					padding: "8px",
-					borderBottom: "1px solid rgba(224, 224, 224, 1)",
-					display: "flex",
-					alignItems: "center",
-					gap: "8px",
-				}}
-			>
-				{isBatchingEnabled && <GridToolbarFilterButton />}
-				<div style={{ flex: 1 }} />
-				<Tooltip title="Export CSV">
-					<Button
-						variant="text"
-						size="small"
-						startIcon={<FileDownloadIcon fontSize="small" />}
-						onClick={handleExportClick}
-					>
-						Export
-					</Button>
-				</Tooltip>
-			</GridToolbarContainer>
-		);
-	};
-
-	const GridFooter = () => {
-		if (!isBatchingEnabled) return null;
-
-		return (
-			<div
-				style={{
-					padding: "8px",
-					display: "flex",
-					justifyContent: "center",
-					borderTop: "1px solid rgba(224, 224, 224, 1)",
-				}}
-			>
-				<Button
-					variant="outlined"
-					size="small"
-					onClick={handleLoadMore}
-					disabled={shouldDisableLoadMore}
-					startIcon={
-						loadingMore ? <CircularProgress size={16} /> : null
-					}
-					sx={{ width: "100%" }}
-				>
-					{loadingMore ? "Loading..." : "Load More"}
-				</Button>
-			</div>
-		);
-	};
-
 	// Disable Load More button if:
 	// 1. Currently loading more data
 	// 2. Source cell is currently running
@@ -677,9 +608,26 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 					disableRowSelectionOnClick
 					slots={{
 						toolbar: data.option?.enableExport
-							? CustomToolbar
+							? () => (
+									<CustomToolbar
+										apiRef={apiRef}
+										frameName={data.frame?.name}
+										isBatchingEnabled={isBatchingEnabled}
+									/>
+								)
 							: undefined,
-						footer: isBatchingEnabled ? GridFooter : undefined,
+						footer: isBatchingEnabled
+							? () => (
+									<GridFooter
+										isBatchingEnabled={isBatchingEnabled}
+										loadingMore={loadingMore}
+										shouldDisableLoadMore={
+											shouldDisableLoadMore
+										}
+										onLoadMore={handleLoadMore}
+									/>
+								)
+							: undefined,
 					}}
 					showCellVerticalBorder={
 						data.option?.rowSpanning ? true : false
