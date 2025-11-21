@@ -98,7 +98,10 @@ const StyledTableContainer = styled(Table.Container)({
 	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
 });
 
-const StyledProjectTable = styled(Table)({ backgroundColor: "white" });
+const StyledProjectTable = styled(Table)({
+	backgroundColor: "white",
+	tableLayout: "fixed",
+});
 
 const StyledTableTitleContainer = styled("div")({
 	display: "flex",
@@ -212,7 +215,7 @@ interface ProjectsTableProps {
 	name: string;
 }
 
-interface TeamProjects { 
+interface TeamProjects {
 	low_project_name: string;
 	project_cost: string;
 	project_created_by: string;
@@ -226,7 +229,6 @@ interface TeamProjects {
 	project_portal_name: string;
 	project_type: string;
 }
-
 
 export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const { groupId, groupType } = props;
@@ -309,7 +311,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	 */
 	useEffect(() => {
 		filterProjects();
-	}, [groupId, groupType, count, projectsPage, searchFilter,rowsPerPage]);
+	}, [groupId, groupType, count, projectsPage, searchFilter, rowsPerPage]);
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
@@ -519,14 +521,16 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedProjects;
-				const projects = (response as unknown as TeamProjects[])?.map((val) => {
-					return {
-						...val,
-						color: colors[
-							Math.floor(Math.random() * colors.length)
-						],
-					};
-				});
+				const projects = (response as unknown as TeamProjects[])?.map(
+					(val) => {
+						return {
+							...val,
+							color: colors[
+								Math.floor(Math.random() * colors.length)
+							],
+						};
+					},
+				);
 
 				requests = requests.concat(projects);
 				setNonCredentialedProjects(requests);
@@ -622,7 +626,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			searchFilter,
 			false,
 		).then((data: unknown[]) => setProjectCount(data.length));
-	}, [count, projectsPage, searchFilter,rowsPerPage]);
+	}, [count, projectsPage, searchFilter, rowsPerPage]);
 
 	const debouncedFilterProjects = debounced(filterProjects, 400);
 
@@ -659,7 +663,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			<StyledProjectInnerContent>
 				{(projects && projects.length > 0) ||
 				projectCount > 0 ||
-				hasProjects ? (
+				hasProjects ||
+				searchFilter ? (
 					<StyledTableContainer>
 						<StyledTableTitleContainer>
 							<StyledTableTitleDiv>Apps</StyledTableTitleDiv>
@@ -733,158 +738,193 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 										/>
 										Name
 									</NameTableCell>
-									<Table.Cell size="small">Access</Table.Cell>
-									<Table.Cell size="small">
+									<Table.Cell
+										size="small"
+										sx={{ width: "320px" }}
+									>
+										Access
+									</Table.Cell>
+									<Table.Cell
+										size="small"
+										sx={{
+											width: "200px",
+											textAlign: "left",
+											paddingLeft: "20px",
+										}}
+									>
 										Added Date
 									</Table.Cell>
-									<Table.Cell size="small">Action</Table.Cell>
+									<Table.Cell
+										size="small"
+										sx={{
+											width: "75px",
+											textAlign: "center",
+										}}
+									>
+										Action
+									</Table.Cell>
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{projects?.map((project, i) => {
-									let isSelected = false;
+								{Array.isArray(projects) &&
+								projects.length > 0 ? (
+									projects.map((project, i) => {
+										let isSelected = false;
 
-									if (project) {
-										isSelected = selectedProjects.some(
-											(value) => {
-												return (
-													value.projectid ===
-													project.projectid
-												);
-											},
-										);
-									}
-									if (project) {
-										return (
-											<Table.Row
-												key={`project-${project.projectid}-${i}`}
-											>
-												<Table.Cell size="small">
-													<Stack
-														direction="row"
-														spacing={0}
-													>
-														<StyledCheckbox
-															checked={isSelected}
-															onChange={() => {
-																if (
+										if (project) {
+											isSelected = selectedProjects.some(
+												(value) => {
+													return (
+														value.projectid ===
+														project.projectid
+													);
+												},
+											);
+										}
+										if (project) {
+											return (
+												<Table.Row
+													key={`project-${project.projectid}-${i}`}
+												>
+													<Table.Cell size="small">
+														<Stack
+															direction="row"
+															spacing={0}
+														>
+															<StyledCheckbox
+																checked={
 																	isSelected
-																) {
-																	const selProjects =
-																		[];
-																	selectedProjects.forEach(
-																		(p) => {
-																			if (
-																				p.projectid !==
-																				project.projectid
-																			)
-																				selProjects.push(
-																					p,
-																				);
-																		},
-																	);
-																	setSelectedProojects(
-																		selProjects,
-																	);
-																} else {
-																	setSelectedProojects(
-																		[
-																			...selectedProjects,
-																			project,
-																		],
-																	);
 																}
-															}}
-														/>
+																onChange={() => {
+																	if (
+																		isSelected
+																	) {
+																		const selProjects =
+																			[];
+																		selectedProjects.forEach(
+																			(
+																				p,
+																			) => {
+																				if (
+																					p.projectid !==
+																					project.projectid
+																				)
+																					selProjects.push(
+																						p,
+																					);
+																			},
+																		);
+																		setSelectedProojects(
+																			selProjects,
+																		);
+																	} else {
+																		setSelectedProojects(
+																			[
+																				...selectedProjects,
+																				project,
+																			],
+																		);
+																	}
+																}}
+															/>
 
-														<NameIDWrapper>
-															<Typography variant="body2">
-																{
-																	project.project_name
-																}
-															</Typography>
-															<Typography
-																variant="body2"
-																color="secondary"
-															>
-																{`App ID: ${project.projectid}`}
-															</Typography>
-														</NameIDWrapper>
-													</Stack>
-												</Table.Cell>
-												<Table.Cell size="small">
-													<StyledRadioGroup
-														row
-														defaultValue={
-															project.permission
+															<NameIDWrapper>
+																<Typography variant="body2">
+																	{
+																		project.project_name
+																	}
+																</Typography>
+																<Typography
+																	variant="body2"
+																	color="secondary"
+																>
+																	{`App ID: ${project.projectid}`}
+																</Typography>
+															</NameIDWrapper>
+														</Stack>
+													</Table.Cell>
+													<Table.Cell size="small">
+														<StyledRadioGroup
+															row
+															defaultValue={
+																project.permission
+															}
+															onChange={(e) => {
+																console.log(
+																	"Hit Update Permission fn and fix in state",
+																);
+																updateSelectedProjects(
+																	{
+																		projectid:
+																			project.projectid,
+																		type: project.type,
+																		project_type:
+																			project.type,
+																		permission:
+																			e
+																				.target
+																				.value,
+																	},
+																);
+															}}
+														>
+															<RadioGroup.Item
+																value="1"
+																label="Author"
+															/>
+															<RadioGroup.Item
+																value="2"
+																label="Editor"
+															/>
+															<RadioGroup.Item
+																value="3"
+																label="Read-Only"
+															/>
+														</StyledRadioGroup>
+													</Table.Cell>
+													<DateTableCell size="small">
+														{
+															project.project_date_created
 														}
-														onChange={(e) => {
-															console.log(
-																"Hit Update Permission fn and fix in state",
-															);
-															updateSelectedProjects(
-																{
-																	projectid:
-																		project.projectid,
-																	type: project.type,
-																	project_type: project.type,
-																	permission:
-																		e.target
-																			.value,
-																},
-															);
-														}}
-													>
-														<RadioGroup.Item
-															value="1"
-															label="Author"
-														/>
-														<RadioGroup.Item
-															value="2"
-															label="Editor"
-														/>
-														<RadioGroup.Item
-															value="3"
-															label="Read-Only"
-														/>
-													</StyledRadioGroup>
-												</Table.Cell>
-												<DateTableCell size="small">
-													{
-														project.project_date_created
-													}
-												</DateTableCell>
-												<Table.Cell size="small">
-													<IconButton
-														onClick={() => {
-															// set project
-															setProjectToDelete(
-																project,
-															);
-															// open modal
-															setDeleteProjectModal(
-																true,
-															);
-														}}
-													>
-														<Delete></Delete>
-													</IconButton>
-												</Table.Cell>
-											</Table.Row>
-										);
-									} else {
-										return (
-											<Table.Row
-												key={`No data available`}
-											>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-											</Table.Row>
-										);
-									}
-								})}
+													</DateTableCell>
+													<Table.Cell size="small">
+														<IconButton
+															onClick={() => {
+																// set project
+																setProjectToDelete(
+																	project,
+																);
+																// open modal
+																setDeleteProjectModal(
+																	true,
+																);
+															}}
+														>
+															<Delete></Delete>
+														</IconButton>
+													</Table.Cell>
+												</Table.Row>
+											);
+										} else {
+											return (
+												<Table.Row
+													key={`No data available`}
+												>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+												</Table.Row>
+											);
+										}
+									})
+								) : (
+									<Table.Row key="no-apps-found">
+										<Table.Cell colSpan={4} align="center">
+											No Apps found.
+										</Table.Cell>
+									</Table.Row>
+								)}
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
@@ -897,7 +937,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 											setSelectedProojects([]);
 										}}
 										onRowsPerPageChange={(e) => {
-											setRowsPerPage(parseInt(e.target.value, 10));
+											setRowsPerPage(
+												parseInt(e.target.value, 10),
+											);
 											setProjectsPage(1);
 										}}
 										page={projectsPage - 1}

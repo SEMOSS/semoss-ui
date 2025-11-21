@@ -26,6 +26,7 @@ const StyledNoDataContainer = styled("div", {
 
 const StyledDataContainer = styled("div")(() => ({
 	minWidth: "50%",
+	minHeight: "350px",
 }));
 
 export interface VisualizationColumns {

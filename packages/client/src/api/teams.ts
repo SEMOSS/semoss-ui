@@ -304,12 +304,12 @@ export const getUnassignedTeamEngines = async (
 	return response.data;
 };
 // Get teams by engineId
-export const getTeamsByEngineId = async (
+export const getGroupsWithAccessToEngine = async (
 	engineId: string,
 	limit?: number,
 	offset?: number,
 ) => {
-	let url = `${Env.MODULE}/api/auth/admin/group/getGroupsByEngineId?`;
+	let url = `${Env.MODULE}/api/auth/group/engine/getGroupsWithAccessToEngine?`;
 	const params = [];
 	if (engineId) params.push(`engineId=${engineId}`);
 	if (typeof limit === "number") params.push(`limit=${limit}`);
@@ -325,12 +325,12 @@ export const getTeamsByEngineId = async (
 };
 
 // Get teams by projectId (for apps)
-export const getTeamsByProjectId = async (
+export const getGroupsWithAccessToProject = async (
 	projectId: string,
 	limit?: number,
 	offset?: number,
 ) => {
-	let url = `${Env.MODULE}/api/auth/admin/group/getGroupsByProjectId?`;
+	let url = `${Env.MODULE}/api/auth/group/project/getGroupsWithAccessToProject?`;
 	const params = [];
 	if (projectId) params.push(`projectId=${projectId}`);
 	if (typeof limit === "number") params.push(`limit=${limit}`);
