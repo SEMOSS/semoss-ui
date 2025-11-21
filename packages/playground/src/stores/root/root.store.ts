@@ -47,6 +47,9 @@ export class RootStore {
 			images: {
 				logo: "",
 			},
+			overrides: {
+				"main-layout": {},
+			},
 		},
 	};
 
@@ -126,6 +129,10 @@ export class RootStore {
 			images: {
 				...this._store.theme.images,
 				...(theme?.images || {}),
+			},
+			overrides: {
+				...this._store.theme.overrides,
+				...(theme?.overrides || {}),
 			},
 		};
 
