@@ -154,8 +154,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	} | null>(null);
 
 	// Find the source QueryImportCell that created this frame
-	// The GridBlock is bound to data.frame.name (e.g., "FRAME_80690")
-	// When batching is enabled, actual frames are named "FRAME_80690_BATCH_0", etc.
 	// We need to find the cell whose frameVariableName matches our base name
 	const sourceCell = Object.values(state.queries)
 		.flatMap((q) => Object.values(q.cells))
