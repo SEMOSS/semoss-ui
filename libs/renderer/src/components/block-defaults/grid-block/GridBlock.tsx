@@ -172,12 +172,12 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	const batchSize =
 		(sourceCell?.parameters as QueryImportCellParams)?.batchSize ?? 100;
 
-	// Always fetch from the original frame (merging happens on backend)
+	// Always fetch from the original frame
 	const currentOffset =
 		(sourceCell?.parameters as QueryImportCellParams)?.currentOffset ?? 0;
 	const frameName = data.frame.name;
 
-	// get the frame - when batching is enabled, don't apply pagination (SQL query handles it)
+	// get the frame - when batching is enabled, don't apply pagination
 	const frame = useFrame(frameName, {
 		selector: undefined,
 		offset: isBatchingEnabled
@@ -199,9 +199,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			// Only sync if columns are empty (initial load)
 			// Don't override user's column selections
 			if (data.columns.length === 0) {
-				console.log(
-					`[GridBlock SYNC] Initial column sync: 0 → ${frameHeaders.data.list.length}`,
-				);
 				syncBlockDataColumns(frameHeaders);
 			}
 		}
@@ -247,7 +244,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			currentFrameKey !== lastFrameKeyRef.current && currentOffset === 0;
 
 		if (isFilterChange) {
-			console.log("[GridBlock] Filter change detected - replacing data");
 			lastFrameKeyRef.current = currentFrameKey;
 			accumulatedDataRef.current = frame.data.values;
 			lastFrameDataRef.current = frame.data.values;
@@ -264,7 +260,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 
 		// For offset 0: reset and start fresh (non-filter case)
 		if (currentOffset === 0) {
-			console.log("[GridBlock] Resetting data (offset 0)");
 			accumulatedDataRef.current = frame.data.values;
 			lastProcessedOffsetRef.current = 0;
 			lastFrameDataRef.current = frame.data.values;
@@ -272,9 +267,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			if (loadingMore) setLoadingMore(false);
 		} else if (currentOffset > lastProcessedOffsetRef.current) {
 			// Loading more - append new data to ref
-			console.log(
-				`[GridBlock] Appending data (offset ${currentOffset}, adding ${frame.data.values.length} rows)`,
-			);
 			const newData = [
 				...accumulatedDataRef.current,
 				...frame.data.values,
