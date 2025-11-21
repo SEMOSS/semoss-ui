@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { expect, test, vi } from "vitest";
 import type { RoomStore } from "@/stores";
-import { RoomSidebar } from "../../components/room/room-sidebar";
+import { RoomSidebar } from "./room-sidebar";
 
 // Mock shared FlexLayout to avoid heavy implementation in tests
 vi.mock("@semoss/shared", () => {

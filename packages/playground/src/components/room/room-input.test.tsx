@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
-import { RoomInput } from "../../components/room/room-input";
+import { RoomInput } from "./room-input";
 
 test("pressing Enter calls onPrompt with textarea content", async () => {
 	const onPrompt = vi.fn(() => Promise.resolve(true));
