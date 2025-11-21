@@ -5,7 +5,7 @@ import {
 	MembersTable,
 	PendingMembersTable,
 	SettingsTiles,
-	UpdateSMSS,
+	UpdateSmssForm,
 } from "@/components/settings";
 import { useAPI, useSettings } from "@/hooks";
 import type { ALL_TYPES, Role } from "@/types";
@@ -112,7 +112,7 @@ export const EngineSettingsUserDetailPage = (
 					<PendingMembersTable type={type} id={id} />
 				)}
 			</StyledContent>
-			{permission === "OWNER" ? <UpdateSMSS type={type} id={id} /> : null}
+			{permission === "OWNER" ? <UpdateSmssForm type={type} id={id} /> : null}
 		</StyledContainer>
 	);
 };
@@ -153,7 +153,7 @@ export const EngineSettingsAdminDetailPage = (
 					<PendingMembersTable type={type} id={id} />
 				)}
 			</StyledContent>
-			<UpdateSMSS type={type} id={id} />
+			<UpdateSmssForm type={type} id={id} />
 		</StyledContainer>
 	);
 };

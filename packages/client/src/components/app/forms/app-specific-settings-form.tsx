@@ -213,7 +213,7 @@ export const AppSpecificSettingsForm = ({
 	return (
 		<form
 			className={cn(
-				"mx-auto my-0 flex w-full max-w-2xl flex-1 flex-col items-start gap-6 px-12 py-6",
+				"mx-auto my-0 flex w-full max-w-3xl flex-1 flex-col items-start gap-6 px-12 py-6",
 				className,
 			)}
 		>

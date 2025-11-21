@@ -42,7 +42,7 @@ import {
 	fetchMainUses,
 	type modelledDependency,
 } from "@/components/app";
-import { UpdateSMSS } from "@/components/settings";
+import { UpdateSmssForm } from "@/components/settings";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
@@ -856,7 +856,7 @@ export const AppDetailPage = () => {
 											adminMode: false,
 										}}
 									>
-										<UpdateSMSS type={"APP"} id={appId} />
+										<UpdateSmssForm type={"APP"} id={appId} />
 									</SettingsContext.Provider>
 								)}
 							</StyledTabsSection>

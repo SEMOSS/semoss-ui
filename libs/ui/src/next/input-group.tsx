@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from "class-variance-authority";
-import type * as React from "react";
+import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/next/button";
 import { Input } from "@/next/input";
@@ -94,24 +94,35 @@ const inputGroupButtonVariants = cva(
 	},
 );
 
-function InputGroupButton({
-	className,
-	type = "button",
-	variant = "ghost",
-	size = "xs",
-	...props
-}: Omit<React.ComponentProps<typeof Button>, "size"> &
-	VariantProps<typeof inputGroupButtonVariants>) {
-	return (
-		<Button
-			type={type}
-			data-size={size}
-			variant={variant}
-			className={cn(inputGroupButtonVariants({ size }), className)}
-			{...props}
-		/>
-	);
-}
+const InputGroupButton = React.forwardRef<
+	HTMLButtonElement,
+	Omit<React.ComponentProps<typeof Button>, "size"> &
+		VariantProps<typeof inputGroupButtonVariants>
+>(
+	(
+		{
+			className,
+			type = "button",
+			variant = "ghost",
+			size = "xs",
+			...props
+		},
+		ref,
+	) => {
+		return (
+			<Button
+				ref={ref}
+				type={type}
+				data-size={size}
+				variant={variant}
+				className={cn(inputGroupButtonVariants({ size }), className)}
+				{...props}
+			/>
+		);
+	},
+);
+
+InputGroupButton.displayName = "InputGroupButton";
 
 function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
 	return (

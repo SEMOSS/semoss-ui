@@ -1,5 +1,5 @@
 import { styled } from "@semoss/ui";
-import { UpdateSMSS } from "@/components/settings";
+import { UpdateSmssForm } from "@/components/settings";
 import { SettingsContext } from "@/contexts";
 import { useEngine } from "@/hooks";
 
@@ -22,7 +22,7 @@ export const EngineSmssPage = () => {
 			}}
 		>
 			<StyledContainer>
-				<UpdateSMSS type={type} id={active.id} />
+				<UpdateSmssForm type={type} id={active.id} />
 			</StyledContainer>
 		</SettingsContext.Provider>
 	);
