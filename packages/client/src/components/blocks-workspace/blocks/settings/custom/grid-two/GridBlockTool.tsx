@@ -367,7 +367,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 							/>
 						</List.ItemIcon>
 						<StyledBox>
-							<List.ItemText primary="Export" />
+							<List.ItemText primary="Export from Data Grid" />
 							<InfoOutlined color="disabled" />
 						</StyledBox>
 					</List.ItemButton>

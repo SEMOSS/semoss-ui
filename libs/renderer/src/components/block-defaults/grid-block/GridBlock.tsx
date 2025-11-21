@@ -143,7 +143,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	const accumulatedDataRef = useRef<unknown[][]>([]);
 	const lastProcessedOffsetRef = useRef<number>(-1);
 	const lastFrameDataRef = useRef<unknown[][]>([]);
-	const lastSyncedColumnCountRef = useRef<number>(0);
+	const lastFrameKeyRef = useRef<number | null>(null);
 
 	const [contextMenu, setContextMenu] = useState<{
 		mouseX: number;
@@ -197,41 +197,30 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	 */
 	useEffect(() => {
 		if (!frameHeaders.isLoading && frameHeaders.data.list.length > 0) {
-			// Check if we've already synced this exact column count
-			if (
-				lastSyncedColumnCountRef.current ===
-				frameHeaders.data.list.length
-			) {
-				return;
-			}
-
-			// When batching is enabled, always sync to get all columns
-			// When batching is disabled, only sync if columns are empty
-			const shouldSync = isBatchingEnabled
-				? data.columns.length !== frameHeaders.data.list.length
-				: data.columns.length === 0;
-
-			if (shouldSync) {
+			// Only sync if columns are empty (initial load)
+			// Don't override user's column selections
+			if (data.columns.length === 0) {
 				console.log(
-					`[GridBlock SYNC] Syncing columns: ${data.columns.length} → ${frameHeaders.data.list.length}`,
+					`[GridBlock SYNC] Initial column sync: 0 → ${frameHeaders.data.list.length}`,
 				);
-				lastSyncedColumnCountRef.current =
-					frameHeaders.data.list.length;
 				syncBlockDataColumns(frameHeaders);
 			}
 		}
-	}, [frameHeaders.data.list, frameHeaders.isLoading, isBatchingEnabled]);
+	}, [frameHeaders.data.list, frameHeaders.isLoading]);
 
 	/**
 	 * Handle data accumulation when batching is enabled
-	 * Use ref to store actual data and prevent duplicate processing
+	 * Also handles filter detection - when filters change, frame key changes and offset resets to 0
 	 */
 	useEffect(() => {
 		if (!isBatchingEnabled) {
-			accumulatedDataRef.current = [];
-			lastProcessedOffsetRef.current = -1;
-			lastFrameDataRef.current = [];
-			setAccumulatedData([]);
+			if (accumulatedDataRef.current.length > 0) {
+				accumulatedDataRef.current = [];
+				lastProcessedOffsetRef.current = -1;
+				lastFrameDataRef.current = [];
+				setAccumulatedData([]);
+				lastFrameKeyRef.current = null;
+			}
 			return;
 		}
 
@@ -242,21 +231,41 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		const isCurrentlyLoading = sourceCell?.isLoading ?? false;
 		if (isCurrentlyLoading) return;
 
+		// Check if frame data has actually changed (prevent processing stale data)
+		if (frame.data.values === lastFrameDataRef.current) {
+			return;
+		}
+
+		const currentFrameKey = state.getFrameKey(frameName);
+
+		// Initialize frame key on first render
+		if (lastFrameKeyRef.current === null) {
+			lastFrameKeyRef.current = currentFrameKey;
+		}
+
+		// Detect filter changes: frame key changed AND offset reset to 0
+		const isFilterChange =
+			currentFrameKey !== lastFrameKeyRef.current && currentOffset === 0;
+
+		if (isFilterChange) {
+			console.log("[GridBlock] Filter change detected - replacing data");
+			lastFrameKeyRef.current = currentFrameKey;
+			accumulatedDataRef.current = frame.data.values;
+			lastFrameDataRef.current = frame.data.values;
+			setAccumulatedData([...frame.data.values]);
+			lastProcessedOffsetRef.current = 0;
+			if (loadingMore) setLoadingMore(false);
+			return; // Exit early to prevent further processing
+		}
+
 		// Check if we've already processed this offset
 		if (currentOffset === lastProcessedOffsetRef.current) {
 			return; // Already processed this batch
 		}
 
-		// Check if frame data has actually changed (prevent appending stale data)
-		if (
-			lastFrameDataRef.current.length > 0 &&
-			frame.data.values === lastFrameDataRef.current
-		) {
-			return;
-		}
-
-		// For offset 0: reset and start fresh
+		// For offset 0: reset and start fresh (non-filter case)
 		if (currentOffset === 0) {
+			console.log("[GridBlock] Resetting data (offset 0)");
 			accumulatedDataRef.current = frame.data.values;
 			lastProcessedOffsetRef.current = 0;
 			lastFrameDataRef.current = frame.data.values;
@@ -264,16 +273,27 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			if (loadingMore) setLoadingMore(false);
 		} else if (currentOffset > lastProcessedOffsetRef.current) {
 			// Loading more - append new data to ref
-			accumulatedDataRef.current = [
+			console.log(
+				`[GridBlock] Appending data (offset ${currentOffset}, adding ${frame.data.values.length} rows)`,
+			);
+			const newData = [
 				...accumulatedDataRef.current,
 				...frame.data.values,
 			];
+			accumulatedDataRef.current = newData;
 			lastProcessedOffsetRef.current = currentOffset;
 			lastFrameDataRef.current = frame.data.values;
-			setAccumulatedData([...accumulatedDataRef.current]);
-			if (loadingMore) setLoadingMore(false);
+			setAccumulatedData(newData);
+			setLoadingMore(false);
 		}
-	}, [isBatchingEnabled, currentOffset, frame.data.values.length]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [
+		isBatchingEnabled,
+		currentOffset,
+		frame.data.values.length,
+		sourceCell?.isLoading,
+		loadingMore,
+	]);
 
 	/**
 	 * Updates data.columns
@@ -291,18 +311,8 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		setData("columns", columns);
 	};
 
-	// When batching is enabled and columns don't match frame headers, use frame headers directly for rendering
-	// This ensures we always show all columns even if the state update hasn't propagated yet
-	const columnsToDisplay =
-		isBatchingEnabled &&
-		frameHeaders.data.list.length > 0 &&
-		data.columns.length !== frameHeaders.data.list.length
-			? frameHeaders.data.list.map((h) => ({
-					name: h.alias,
-					width: undefined,
-					selector: h.header,
-				}))
-			: data.columns;
+	// Always use data.columns - user's column selections are respected
+	const columnsToDisplay = data.columns;
 
 	/**
 	 * Handle Load More button click
@@ -672,10 +682,9 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 					disableRowSelectionOnClick
 					disableColumnSorting
 					slots={{
-						toolbar:
-							isBatchingEnabled && data.option?.enableExport
-								? CustomToolbar
-								: undefined,
+						toolbar: data.option?.enableExport
+							? CustomToolbar
+							: undefined,
 						footer: isBatchingEnabled ? GridFooter : undefined,
 					}}
 					showCellVerticalBorder={
