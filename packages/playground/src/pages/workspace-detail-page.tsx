@@ -26,6 +26,7 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 	Separator,
+	SidebarTrigger,
 	Spinner,
 	Tabs,
 	TabsContent,
@@ -33,7 +34,6 @@ import {
 	TabsTrigger,
 	toast,
 	useDebouncedValue,
-	useSidebar,
 } from "@semoss/ui/next";
 import {
 	WorkspaceChatList,
@@ -51,7 +51,6 @@ import type { Workspace } from "@/types";
 export const WorkspaceDetailPage = observer(() => {
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
-	const { open } = useSidebar();
 	const { chat } = useChat();
 
 	const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
@@ -91,17 +90,14 @@ export const WorkspaceDetailPage = observer(() => {
 		<>
 			<div className="flex h-full w-full flex-col overflow-hidden">
 				{/* Header */}
-				<div className="flex h-12.5 w-full flex-row items-center px-6">
-					<div className="flex flex-row items-center justify-center gap-2">
-						{!open && (
-							<>
-								<div className="w-5"> &nbsp;</div>
-								<Separator
-									orientation="vertical"
-									style={{ height: "15px" }}
-								/>
-							</>
-						)}
+				<div className="flex h-12.5 w-full flex-row items-center px-4">
+					<div className="flex flex-row items-center justify-center gap-1.5">
+						<SidebarTrigger />
+						<Separator
+							orientation="vertical"
+							style={{ height: "17px" }}
+						/>
+
 						<Breadcrumb>
 							<BreadcrumbList>
 								<BreadcrumbItem>

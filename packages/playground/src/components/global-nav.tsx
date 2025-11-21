@@ -1,10 +1,4 @@
-import {
-	ComputerIcon,
-	Search,
-	SquarePenIcon,
-	TrashIcon,
-	XIcon,
-} from "lucide-react";
+import { ComputerIcon, Search, SquarePenIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import {
@@ -14,7 +8,7 @@ import {
 	useNavigate,
 	useParams,
 } from "react-router-dom";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	InputGroup,
@@ -31,11 +25,13 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarRail,
+	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
-	useSidebar,
+	useDebouncedValue,
+	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
 import { AppLogo } from "./app-logo";
@@ -49,44 +45,75 @@ const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
  * @component
  */
 export const GlobalNav = observer(() => {
-	/**
-	 * State
-	 */
 	const [search, setSearch] = useState("");
 
-	/**
-	 * Library hooks
-	 */
 	const { chat } = useChat();
-	const { setOpen } = useSidebar();
 	const { pathname } = useLocation();
 	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
 	const debouncedSearch = useDebouncedValue(search);
-	const getRooms = usePixel<
+
+	const navigate = useNavigate();
+
+	const getRooms = useIteratorPixel<
 		{
 			ROOM_ID: string;
 			ROOM_NAME: string;
 			DATE_CREATED: string;
 			WORKSPACE_ID?: string;
-		}[]
+		}[],
+		{
+			ROOM_ID: string;
+			ROOM_NAME: string;
+			DATE_CREATED: string;
+			WORKSPACE_ID?: string;
+		}
 	>(
-		`GetUserConversationRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""}limit = 25 , offset = 0 , sort = [ "DESC" ] ) ;`,
+		(limit, offset) =>
+			`GetUserConversationRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""} limit = ${limit} , offset = ${offset} , sort = [ "DESC" ] ) ;`,
+
+		(response) => {
+			// if its less than the limit, we know its the end
+			if (response.length < 15) {
+				return -1;
+			}
+
+			return Infinity;
+		},
+		(response) => {
+			return response;
+		},
+		{
+			limit: 25,
+		},
+		[debouncedSearch],
 	);
-	const navigate = useNavigate();
+
+	/**
+	 * Setup infinite scroll for the command list
+	 */
+	const setScroll = useInfiniteScroll({
+		onNext: () => {
+			if (getRooms.isLoading || !getRooms.hasMore) {
+				return;
+			}
+			getRooms.next();
+		},
+	});
 
 	/**
 	 * Effects
 	 */
-	// biome-ignore lint/correctness/useExhaustiveDependencies: chat.keys.roomCounter triggers refresh
 	useEffect(() => {
-		getRooms.refresh();
-	}, [getRooms.refresh, chat.keys.roomCounter]);
+		// keep this counter
+		chat.keys.roomCounter;
+		getRooms.reset();
+	}, [getRooms.reset, chat.keys.roomCounter]);
 
 	return (
 		<Sidebar variant="inset" className="p-0">
 			<SidebarHeader>
 				<SidebarMenu>
-					<SidebarMenuItem className="group/logo flex items-center overflow-hidden">
+					<SidebarMenuItem className="flex items-center overflow-hidden">
 						<SidebarMenuButton size="lg" asChild>
 							<Link
 								to={"/"}
@@ -96,19 +123,6 @@ export const GlobalNav = observer(() => {
 								<AppLogo />
 							</Link>
 						</SidebarMenuButton>
-
-						<Button
-							className="invisible group-hover/logo:visible"
-							variant="ghost"
-							size="icon"
-							onClick={(event) => {
-								event.stopPropagation();
-								setOpen(false);
-							}}
-						>
-							<XIcon />
-							<span className="sr-only">Close Sidebar</span>
-						</Button>
 					</SidebarMenuItem>
 				</SidebarMenu>
 
@@ -155,100 +169,93 @@ export const GlobalNav = observer(() => {
 					<SidebarMenuItem>&nbsp;</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarHeader>
-			<SidebarContent>
+			<SidebarContent ref={(ele) => setScroll(ele)}>
 				<SidebarGroup>
 					<SidebarGroupLabel className="truncate font-medium text-muted-foreground text-xs leading-normal">
 						Recents
 					</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarMenu>
-							{getRooms.status === "LOADING" && (
-								<div className="px-2 py-4 text-center text-muted-foreground text-xs">
-									Loading
-								</div>
-							)}
-							{getRooms.status === "ERROR" && (
+							{getRooms.isError && (
 								<div className="px-2 py-4 text-center text-destructive text-sm">
 									Error loading rooms
 								</div>
 							)}
-							{getRooms.status === "SUCCESS" &&
-								getRooms.data &&
-								getRooms.data.map((room) => {
-									const roomId = room.ROOM_ID;
-									const name = room.ROOM_NAME || "Untitled";
+							{getRooms.data.map((room) => {
+								const roomId = room.ROOM_ID;
+								const name = room.ROOM_NAME || "Untitled";
 
-									return (
-										<SidebarMenuItem
-											key={roomId}
-											className="group/room flex"
+								return (
+									<SidebarMenuItem
+										key={roomId}
+										className="group/room flex"
+									>
+										<SidebarMenuButton
+											asChild
+											isActive={activeRoomId === roomId}
 										>
-											<SidebarMenuButton
-												asChild
-												isActive={
-													activeRoomId === roomId
-												}
+											<Link
+												className="inline-block flex-1 truncate"
+												to={`/room/${roomId}`}
+												aria-label={"Select room"}
 											>
-												<Link
-													className="inline-block flex-1 truncate"
-													to={`/room/${roomId}`}
-													aria-label={"Select room"}
-												>
-													{name}
-												</Link>
-											</SidebarMenuButton>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														className="hidden group-hover/room:inline-flex"
-														variant="ghost"
-														size="icon-sm"
-														onClick={async (e) => {
-															e.stopPropagation();
+												{name}
+											</Link>
+										</SidebarMenuButton>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													className="hidden group-hover/room:inline-flex"
+													variant="ghost"
+													size="icon-sm"
+													onClick={async (e) => {
+														e.stopPropagation();
 
-															try {
-																await chat.closeRoom(
-																	roomId,
-																);
+														try {
+															await chat.closeRoom(
+																roomId,
+															);
 
-																toast.success(
-																	"Room deleted successfully",
-																);
-																if (
-																	activeRoomId ===
-																	roomId
-																) {
-																	navigate(
-																		"/",
-																	);
-																}
-
-																// Refetch rooms after deletion
-																getRooms.refresh();
-															} catch (e) {
-																toast.error(
-																	e.message,
-																);
+															toast.success(
+																"Room deleted successfully",
+															);
+															if (
+																activeRoomId ===
+																roomId
+															) {
+																navigate("/");
 															}
-														}}
-													>
-														<TrashIcon className="text-destructive" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													Delete Room
-												</TooltipContent>
-											</Tooltip>
-										</SidebarMenuItem>
-									);
-								})}
-							{getRooms.status === "SUCCESS" &&
-								(!getRooms.data ||
-									getRooms.data.length === 0) && (
+
+															// Refetch rooms after deletion
+															getRooms.reset();
+														} catch (e) {
+															toast.error(
+																e.message,
+															);
+														}
+													}}
+												>
+													<TrashIcon className="text-destructive" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												Delete Room
+											</TooltipContent>
+										</Tooltip>
+									</SidebarMenuItem>
+								);
+							})}
+							{!getRooms.isLoading &&
+								getRooms.data.length === 0 && (
 									<div className="px-2 py-4 text-center text-muted-foreground text-xs">
 										No rooms found
 									</div>
 								)}
+							{getRooms.isLoading && (
+								<div className="flex items-center justify-center py-4">
+									<Spinner className="size-4" />
+								</div>
+							)}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
