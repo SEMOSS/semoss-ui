@@ -4,6 +4,7 @@ import Tooltip from "@mui/material/Tooltip";
 import {
 	DataGrid,
 	GridToolbarContainer,
+	GridToolbarFilterButton,
 	useGridApiRef,
 } from "@mui/x-data-grid";
 import { observer } from "mobx-react-lite";
@@ -408,7 +409,8 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	const columns = columnsToDisplay.map((col) => ({
 		field: col.name,
 		headerName: col.name,
-		sortable: false,
+		sortable: true,
+		filterable: true,
 		renderHeader: () => (
 			<div
 				style={{
@@ -602,8 +604,10 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 					borderBottom: "1px solid rgba(224, 224, 224, 1)",
 					display: "flex",
 					alignItems: "center",
+					gap: "8px",
 				}}
 			>
+				{isBatchingEnabled && <GridToolbarFilterButton />}
 				<div style={{ flex: 1 }} />
 				<Tooltip title="Export CSV">
 					<Button
@@ -678,9 +682,9 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 					pageSizeOptions={[10, 50, 100]}
 					getRowHeight={getRowHeight}
 					columnHeaderHeight={50}
-					disableColumnMenu
+					disableColumnMenu={!data.option?.enableExport}
+					disableColumnSorting={!data.option?.enableExport}
 					disableRowSelectionOnClick
-					disableColumnSorting
 					slots={{
 						toolbar: data.option?.enableExport
 							? CustomToolbar
