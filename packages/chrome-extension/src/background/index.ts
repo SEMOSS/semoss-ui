@@ -97,14 +97,26 @@ async function executeAction(
 
 	switch (action) {
 		case "click":
+			if (typeof payload.elementId !== "number") {
+				throw new Error("elementId must be a number");
+			}
 			return await enhancedClick(tabId, payload.elementId);
 		case "setValue":
+			if (typeof payload.elementId !== "number") {
+				throw new Error("elementId must be a number");
+			}
+			if (typeof payload.value !== "string") {
+				throw new Error("value must be a string");
+			}
 			return await enhancedSetValue(
 				tabId,
 				payload.elementId,
 				payload.value,
 			);
 		case "wait":
+			if (typeof payload.ms !== "number") {
+				throw new Error("ms must be a number");
+			}
 			return await wait(payload.ms);
 		default:
 			throw new Error(`Unknown action: ${action}`);

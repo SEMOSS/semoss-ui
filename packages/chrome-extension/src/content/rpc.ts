@@ -75,9 +75,9 @@ export const callRPC = async <T extends MethodName>(
 		}
 	}
 
-	throw new Error(
-		`RPC call failed after ${maxTries} attempts: ${lastError?.message || lastError}`,
-	);
+	const errorMsg =
+		lastError instanceof Error ? lastError.message : String(lastError);
+	throw new Error(`RPC call failed after ${maxTries} attempts: ${errorMsg}`);
 };
 
 const isKnownMethodName = (type: string): type is MethodName => {
@@ -90,7 +90,8 @@ function isPromise(value: unknown): value is Promise<unknown> {
 		value !== null &&
 		value !== undefined &&
 		typeof value === "object" &&
-		typeof value.then === "function"
+		"then" in value &&
+		typeof (value as { then?: unknown }).then === "function"
 	);
 }
 
