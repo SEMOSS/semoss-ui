@@ -1,5 +1,3 @@
-/// <reference types="vitest" />
-
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
@@ -23,10 +21,7 @@ export default defineConfig(({ mode }) => {
 			react({ include: /\.(js|jsx|ts|tsx)$/ }),
 		],
 		resolve: {
-			alias: {
-				"@": resolve(__dirname, "./src"),
-				"@semoss/renderer": resolve(__dirname, "./src"),
-			},
+			alias: [{ find: "@", replacement: resolve(__dirname, "./src") }],
 		},
 		define: {
 			"import.meta.env.MODULE": JSON.stringify(MODULE),
