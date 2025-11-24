@@ -1,0 +1,32 @@
+{
+	"manifest_version": 3,
+	"name": "Workshop Automation Assistant",
+	"description": "Browser automation using Workshop AI platform",
+	"version": "1.0.0",
+	"permissions": ["tabs", "activeTab", "storage", "debugger", "scripting"],
+	"host_permissions": ["http://*/*", "https://*/*"],
+	"background": {
+		"service_worker": "background.bundle.js"
+	},
+	"action": {
+		"default_popup": "popup.html"
+	},
+	"options_page": "options/index.html",
+	"content_scripts": [
+		{
+			"matches": ["<all_urls>"],
+			"js": ["content.bundle.js"],
+			"run_at": "document_idle"
+		}
+	],
+	"devtools_page": "devtools.html",
+	"commands": {
+		"_execute_action": {
+			"suggested_key": {
+				"default": "Ctrl+Shift+W",
+				"mac": "Command+Shift+W"
+			},
+			"description": "Open Workshop Automation Assistant"
+		}
+	}
+}
