@@ -86,11 +86,9 @@ export const EngineSelect = ({
 	/**
 	 * Setup infinite scroll for the command list
 	 */
-	const setScroll = useInfiniteScroll({
+	const { setScroll } = useInfiniteScroll({
+		disabled: getEngines.isLoading || !getEngines.hasMore || !open,
 		onNext: () => {
-			if (getEngines.isLoading || !getEngines.hasMore || !open) {
-				return;
-			}
 			getEngines.next();
 		},
 	});

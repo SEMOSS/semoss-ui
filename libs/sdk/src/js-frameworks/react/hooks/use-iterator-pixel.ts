@@ -53,8 +53,8 @@ export interface UseIteratorPixelReturn<T> {
  *   (limit, offset) => `GetWorkspaceRooms(workspaceId=["${id}"], limit=[${limit}], offset=[${offset}]);`,
  *   (response) => response.total_count,
  *   (response) => response.rooms,
- *   [id],
- *   { limit: 25 }
+ *   { limit: 25 },
+ *   [id]
  * );
  * ```
  */
