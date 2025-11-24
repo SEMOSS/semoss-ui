@@ -6,7 +6,6 @@
 export interface WorkshopConfig {
 	endpoint: string;
 	module: string;
-	appId: string; // Insight/App ID for session
 	modelId?: string; // LLM Model/Engine ID (e.g., "GPT4", "Claude", etc.)
 	accessKey: string;
 	secretKey: string;
@@ -386,7 +385,6 @@ export async function createDirectWorkshopService(): Promise<DirectWorkshopServi
 		const settings = await chrome.storage.local.get([
 			"workshop_endpoint",
 			"workshop_module",
-			"workshop_app_id",
 			"workshop_model_id",
 			"workshop_access_key",
 			"workshop_secret_key",
@@ -404,7 +402,6 @@ export async function createDirectWorkshopService(): Promise<DirectWorkshopServi
 		const config: WorkshopConfig = {
 			endpoint: settings.workshop_endpoint,
 			module: settings.workshop_module || "/Monolith",
-			appId: settings.workshop_app_id,
 			modelId: settings.workshop_model_id,
 			accessKey: settings.workshop_access_key,
 			secretKey: settings.workshop_secret_key,

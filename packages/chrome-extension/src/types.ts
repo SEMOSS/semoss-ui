@@ -2,9 +2,6 @@
 
 export interface WorkshopConfig {
 	endpoint: string;
-	appId: string;
-	userId?: string;
-	userName?: string;
 }
 
 export interface ActionHistory {

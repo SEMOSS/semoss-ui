@@ -12,11 +12,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 		const result = await chrome.storage.local.get([
 			"workshop_endpoint",
 			"workshop_module",
-			"workshop_app_id",
 			"workshop_model_id",
 			"workshop_access_key",
 			"workshop_secret_key",
-			"workshop_user_id",
 		]);
 
 		console.log("Loaded settings:", result);
@@ -28,9 +26,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 		if (result.workshop_module) {
 			document.getElementById("module").value = result.workshop_module;
 		}
-		if (result.workshop_app_id) {
-			document.getElementById("appId").value = result.workshop_app_id;
-		}
 		if (result.workshop_model_id) {
 			document.getElementById("modelId").value = result.workshop_model_id;
 		}
@@ -41,9 +36,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 		if (result.workshop_secret_key) {
 			document.getElementById("secretKey").value =
 				result.workshop_secret_key;
-		}
-		if (result.workshop_user_id) {
-			document.getElementById("userId").value = result.workshop_user_id;
 		}
 	} catch (error) {
 		console.error("Error loading settings:", error);
@@ -67,11 +59,9 @@ document
 			const settings = {
 				workshop_endpoint: document.getElementById("endpoint").value,
 				workshop_module: document.getElementById("module").value,
-				workshop_app_id: document.getElementById("appId").value,
 				workshop_model_id: document.getElementById("modelId").value,
 				workshop_access_key: document.getElementById("accessKey").value,
 				workshop_secret_key: document.getElementById("secretKey").value,
-				workshop_user_id: document.getElementById("userId").value,
 			};
 
 			console.log("Saving settings:", settings);
@@ -87,9 +77,98 @@ document
 	});
 
 // Test connection (placeholder)
-document.getElementById("test-btn").addEventListener("click", () => {
+document.getElementById("test-btn").addEventListener("click", async () => {
 	console.log("Test button clicked");
-	showStatus("Connection test not implemented yet (Phase 3)", "error");
+	showStatus("Testing connection...", "info");
+
+	try {
+		// Get current form values
+		const settings = {
+			workshop_endpoint: document.getElementById("endpoint").value,
+			workshop_module: document.getElementById("module").value,
+			workshop_model_id: document.getElementById("modelId").value,
+			workshop_access_key: document.getElementById("accessKey").value,
+			workshop_secret_key: document.getElementById("secretKey").value,
+		};
+
+		// Validate required fields
+		if (
+			!settings.workshop_endpoint ||
+			!settings.workshop_access_key ||
+			!settings.workshop_secret_key
+		) {
+			showStatus(
+				"Please fill in Endpoint, Access Key, and Secret Key",
+				"error",
+			);
+			return;
+		}
+
+		// Build test URL
+		const url = `${settings.workshop_endpoint}${settings.workshop_module}/api/engine/runPixel`;
+
+		// Simple test command - just ask LLM to respond
+		const testPrompt = "Respond with: Connection successful";
+		const escapedPrompt = testPrompt.replace(/"/g, '\\"');
+
+		let pixelString;
+		if (settings.workshop_model_id) {
+			pixelString = `LLM(engine=["${settings.workshop_model_id}"], command=["${escapedPrompt}"], temperature=0.2, maxTokens=50);`;
+		} else {
+			pixelString = `LLM(command=["${escapedPrompt}"], temperature=0.2, maxTokens=50);`;
+		}
+
+		const response = await fetch(url, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Basic ${btoa(`${settings.workshop_access_key}:${settings.workshop_secret_key}`)}`,
+			},
+			body: JSON.stringify({ expression: pixelString }),
+		});
+
+		const responseText = await response.text();
+		console.log("Test response:", responseText);
+
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+
+		const data = JSON.parse(responseText);
+
+		// Check for errors
+		if (data.pixelReturn && data.pixelReturn[0]) {
+			const result = data.pixelReturn[0];
+
+			if (
+				result.operationType &&
+				result.operationType.includes("ERROR")
+			) {
+				const errorMsg = result.output || "Unknown error";
+
+				// Provide helpful messages
+				if (errorMsg.includes("Model null does not exist")) {
+					throw new Error(
+						"Invalid Model ID. Please enter a valid Workshop LLM Engine ID (UUID format).",
+					);
+				}
+
+				throw new Error(errorMsg);
+			}
+
+			// Success!
+			showStatus(
+				"✓ Connection successful! Workshop API is working.",
+				"success",
+			);
+			return;
+		}
+
+		throw new Error("Unexpected response format");
+	} catch (error) {
+		console.error("Connection test failed:", error);
+		showStatus("✗ Connection failed: " + error.message, "error");
+	}
 });
 
 function showStatus(message, type) {
@@ -99,7 +178,10 @@ function showStatus(message, type) {
 	statusEl.className = `status ${type}`;
 	statusEl.style.display = "block";
 
-	setTimeout(() => {
-		statusEl.style.display = "none";
-	}, 3000);
+	// Don't auto-hide for test results - let user read them
+	if (type !== "info") {
+		setTimeout(() => {
+			statusEl.style.display = "none";
+		}, 5000);
+	}
 }

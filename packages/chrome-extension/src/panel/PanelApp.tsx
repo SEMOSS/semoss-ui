@@ -18,14 +18,12 @@ const PanelApp: React.FC = () => {
 		try {
 			const result = await chrome.storage.local.get([
 				"workshop_endpoint",
-				"workshop_app_id",
 				"workshop_access_key",
 				"workshop_secret_key",
-				"workshop_user_id",
 			]);
 
 			if (
-				result.workshop_app_id &&
+				result.workshop_endpoint &&
 				result.workshop_access_key &&
 				result.workshop_secret_key
 			) {
