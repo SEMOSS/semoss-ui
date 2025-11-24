@@ -70,6 +70,7 @@ const NameTableCell = styled(Table.Cell)({
 
 const DateTableCell = styled(Table.Cell)({
 	whiteSpace: "nowrap",
+	paddingLeft: "20px",
 	"@media (max-width: 768px)": {
 		whiteSpace: "normal",
 	},
@@ -101,7 +102,10 @@ const StyledTableContainer = styled(Table.Container)({
 	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
 });
 
-const StyledEngineTable = styled(Table)({ backgroundColor: "white" });
+const StyledEngineTable = styled(Table)({
+	backgroundColor: "white",
+	tableLayout: "fixed",
+});
 
 const StyledTableTitleContainer = styled("div")({
 	display: "flex",
@@ -671,7 +675,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			<StyledEngineInnerContent>
 				{(engines && engines.length > 0) ||
 				enginesCount > 0 ||
-				hasEngines ? (
+				hasEngines ||
+				searchFilter ? (
 					<StyledTableContainer>
 						<StyledTableTitleContainer>
 							<StyledTableTitleEngineContainer>
@@ -747,82 +752,108 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 										/>
 										Name
 									</NameTableCell>
-									<Table.Cell size="small">Access</Table.Cell>
-									<Table.Cell size="small">
+									<Table.Cell
+										size="small"
+										sx={{ width: "320px" }}
+									>
+										Access
+									</Table.Cell>
+									<Table.Cell
+										size="small"
+										sx={{
+											width: "200px",
+											textAlign: "left",
+											paddingLeft: "20px",
+										}}
+									>
 										Added Date
 									</Table.Cell>
-									<Table.Cell size="small">Action</Table.Cell>
+									<Table.Cell
+										size="small"
+										sx={{
+											width: "75px",
+											textAlign: "center",
+										}}
+									>
+										Action
+									</Table.Cell>
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{engines?.map((engine, i) => {
-									let isSelected = false;
+								{Array.isArray(engines) &&
+								engines.length > 0 ? (
+									engines.map((engine, i) => {
+										let isSelected = false;
 
-									if (engine) {
-										isSelected = selectedEngines.some(
-											(value) => {
-												return (
-													value.engineid ===
-													engine.engineid
-												);
-											},
-										);
-									}
-									if (engine) {
-										return (
-											<Table.Row
-												key={`${engine.engineid} + ${i}`}
-											>
-												<Table.Cell size="small">
-													<Stack
-														direction="row"
-														spacing={0}
-													>
-														<StyledCheckbox
-															checked={isSelected}
-															onChange={() => {
-																if (
+										if (engine) {
+											isSelected = selectedEngines.some(
+												(value) => {
+													return (
+														value.engineid ===
+														engine.engineid
+													);
+												},
+											);
+										}
+										if (engine) {
+											return (
+												<Table.Row
+													key={`${engine.engineid} + ${i}`}
+												>
+													<Table.Cell size="small">
+														<Stack
+															direction="row"
+															spacing={0}
+														>
+															<StyledCheckbox
+																checked={
 																	isSelected
-																) {
-																	const selEngines =
-																		[];
-																	selectedEngines.forEach(
-																		(p) => {
-																			if (
-																				p.engineid !==
-																				engine.engineid
-																			)
-																				selEngines.push(
-																					p,
-																				);
-																		},
-																	);
-																	setSelectedEngines(
-																		selEngines,
-																	);
-																} else {
-																	setSelectedEngines(
-																		[
-																			...selectedEngines,
-																			engine,
-																		],
-																	);
 																}
-															}}
-														/>
-														<NameIDWrapper>
-															<Typography variant="body2">
-																{
-																	engine.engine_name
-																}
-															</Typography>
-															<Typography
-																variant="body2"
-																color="secondary"
-															>
-																{`Engine ID: ${engine.engineid}`}
-															</Typography>
-															<Typography
+																onChange={() => {
+																	if (
+																		isSelected
+																	) {
+																		const selEngines =
+																			[];
+																		selectedEngines.forEach(
+																			(
+																				p,
+																			) => {
+																				if (
+																					p.engineid !==
+																					engine.engineid
+																				)
+																					selEngines.push(
+																						p,
+																					);
+																			},
+																		);
+																		setSelectedEngines(
+																			selEngines,
+																		);
+																	} else {
+																		setSelectedEngines(
+																			[
+																				...selectedEngines,
+																				engine,
+																			],
+																		);
+																	}
+																}}
+															/>
+															<NameIDWrapper>
+																<Typography variant="body2">
+																	{
+																		engine.engine_name
+																	}
+																</Typography>
+																<Typography
+																	variant="body2"
+																	color="secondary"
+																>
+																	{`Engine ID: ${engine.engineid}`}
+																</Typography>
+                                <Typography
 																variant="body2"
 																color="secondary"
 															>
@@ -830,87 +861,97 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 																	engine.engine_type
 																}
 															</Typography>
-														</NameIDWrapper>
-													</Stack>
-												</Table.Cell>
-												<Table.Cell size="small">
-													<StyledRadioGroup
-														row
-														defaultValue={
-															engine.permission
+															</NameIDWrapper>
+														</Stack>
+													</Table.Cell>
+													<Table.Cell size="small">
+														<StyledRadioGroup
+															row
+															defaultValue={
+																engine.permission
+															}
+															onChange={(e) => {
+																console.log(
+																	"Hit Update Permission fn and fix in state",
+																);
+																updateSelectedEngines(
+																	{
+																		engineid:
+																			engine.engineid,
+																		type: engine.type,
+																		permission:
+																			e
+																				.target
+																				.value,
+																		engine_name:
+																			engine.engine_name,
+																		engine_id:
+																			engine.engine_id,
+																		engine_type:
+																			engine.engine_type,
+																		engine_date_created:
+																			engine.engine_date_created,
+																	},
+																);
+															}}
+														>
+															<RadioGroup.Item
+																value="1"
+																label="Author"
+															/>
+															<RadioGroup.Item
+																value="2"
+																label="Editor"
+															/>
+															<RadioGroup.Item
+																value="3"
+																label="Read-Only"
+															/>
+														</StyledRadioGroup>
+													</Table.Cell>
+													<DateTableCell size="small">
+														{
+															engine.engine_date_created
 														}
-														onChange={(e) => {
-															console.log(
-																"Hit Update Permission fn and fix in state",
-															);
-															updateSelectedEngines(
-																{
-																	engineid:
-																		engine.engineid,
-																	type: engine.type,
-																	permission:
-																		e.target
-																			.value,
-																	engine_name:
-																		engine.engine_name,
-																	engine_id:
-																		engine.engine_id,
-																	engine_type:
-																		engine.engine_type,
-																	engine_date_created:
-																		engine.engine_date_created,
-																},
-															);
-														}}
-													>
-														<RadioGroup.Item
-															value="1"
-															label="Author"
-														/>
-														<RadioGroup.Item
-															value="2"
-															label="Editor"
-														/>
-														<RadioGroup.Item
-															value="3"
-															label="Read-Only"
-														/>
-													</StyledRadioGroup>
-												</Table.Cell>
-												<DateTableCell size="small">
-													{engine.engine_date_created}
-												</DateTableCell>
-												<Table.Cell size="small">
-													<IconButton
-														onClick={() => {
-															// set engine
-															setEngineToDelete(
-																engine,
-															);
-															// open modal
-															setDeleteEngineModal(
-																true,
-															);
-														}}
-													>
-														<Delete></Delete>
-													</IconButton>
-												</Table.Cell>
-											</Table.Row>
-										);
-									} else {
-										return (
-											<Table.Row
-												key={`No data available`}
-											>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-											</Table.Row>
-										);
-									}
-								})}
+													</DateTableCell>
+													<Table.Cell size="small">
+														<IconButton
+															onClick={() => {
+																// set engine
+																setEngineToDelete(
+																	engine,
+																);
+																// open modal
+																setDeleteEngineModal(
+																	true,
+																);
+															}}
+														>
+															<Delete></Delete>
+														</IconButton>
+													</Table.Cell>
+												</Table.Row>
+											);
+										} else {
+											return (
+												<Table.Row
+													key={`No data available`}
+												>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+												</Table.Row>
+											);
+										}
+									})
+								) : (
+									<Table.Row key="no-engines-found">
+										<Table.Cell colSpan={4} align="center">
+											No Engines found.
+										</Table.Cell>
+									</Table.Row>
+								)}
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
