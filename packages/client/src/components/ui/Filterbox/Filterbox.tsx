@@ -609,7 +609,6 @@ export const Filterbox = (props: FilterboxProps) => {
 															? "Less"
 															: "More"}
 													</StyledShowMore>
-												</button>
 											</List.Item>
 										)}
 									</Collapse>
