@@ -196,16 +196,10 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		/**
 		 * Setup infinite scroll for the command list
 		 */
-		const setScroll = useInfiniteScroll({
+		const { setScroll, resetScroll } = useInfiniteScroll({
+			disabled:
+				getEngines.isLoading || !getEngines.hasMore || !route.type,
 			onNext: () => {
-				if (
-					getEngines.isLoading ||
-					!getEngines.hasMore ||
-					!route.type
-				) {
-					return;
-				}
-
 				getEngines.next();
 			},
 		});
@@ -254,7 +248,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			try {
 				await setEngineFavorite(engine.database_id, updatedFavorite);
 
-				// refresh it
+				// reset and refresh it
+				resetScroll();
 				getFavoritedEngines.refresh();
 				getEngines.reset();
 			} catch (error) {
@@ -289,7 +284,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 				await runPixel(pixel);
 
-				// refresh it
+				// reset and refresh it
+				resetScroll();
 				getEngines.reset();
 			} catch (error) {
 				toast.error("Error updating upvoting", error);
