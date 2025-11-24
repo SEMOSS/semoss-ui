@@ -25,12 +25,7 @@ export default defineConfig(({ mode }) => {
 		resolve: {
 			alias: {
 				"@": resolve(__dirname, "./src"),
-				"@semoss/ui": resolve(__dirname, "../../libs/ui/src"),
-				"@semoss/sdk": resolve(__dirname, "../../libs/sdk/src"),
-				"@semoss/renderer": resolve(
-					__dirname,
-					"../../libs/renderer/src",
-				),
+				"@semoss/renderer": resolve(__dirname, "./src"),
 			},
 		},
 		define: {
