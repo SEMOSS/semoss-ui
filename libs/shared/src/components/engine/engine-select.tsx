@@ -59,7 +59,7 @@ export const EngineSelect = ({
 	const getEngines = useIteratorPixel<Engine[], Engine>(
 		(limit, offset) =>
 			open
-				? `MyEngines(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} ${engineTypes ? `engineTypes=${JSON.stringify(engineTypes)},` : ""} ${metaFilters ? `metaFilters=${JSON.stringify(metaFilters)},` : ""} limit=[${limit}], offset=[${offset}]);`
+				? `MyEngines(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} ${engineTypes ? `engineTypes=${JSON.stringify(engineTypes)},` : ""} ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} limit=[${limit}], offset=[${offset}]);`
 				: "",
 		(response) => {
 			// if its less than the limit, we know its the end
