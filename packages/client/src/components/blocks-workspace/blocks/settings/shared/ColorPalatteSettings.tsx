@@ -849,13 +849,13 @@ export const ColorPalatteSettings = observer(
 						placeholder="Enter Palette Name"
 					></StyledTextField>
 				</StyledRowSection>
-				{/* colours section */}
+				{/* Colors section */}
 				<StyledRowSection>
 					<Typography variant="body2" color="secondary">
-						Colours
+						Colors
 					</Typography>
 					<StyledOutlinedInput
-						id="outlined-adornment-colours"
+						id="outlined-adornment-Colors"
 						placeholder="Enter Hex code or Pick Color"
 						aria-label="Select Colour"
 						type={"text"}
@@ -902,7 +902,7 @@ export const ColorPalatteSettings = observer(
 						</StyledButtonContainer>
 					</StyledPaletteContainer>
 				)}
-				{/* selected colours section */}
+				{/* selected Colors section */}
 				<StyledEmptyContainer>
 					{(
 						colors ||
