@@ -7,6 +7,7 @@ import { MainLayout } from "./main-layout";
 import { NewRoomPage } from "./new-room-page";
 import { RoomPage } from "./room-page";
 import { RootLayout } from "./root-layout";
+import { WorkspaceDetailPage } from "./workspace-detail-page";
 import { WorkspacePage } from "./workspace-page";
 
 /**
@@ -44,6 +45,10 @@ export const Router = () => {
 							<Route
 								path="workspace"
 								element={<WorkspacePage />}
+							/>
+							<Route
+								path="workspace/:workspaceId"
+								element={<WorkspaceDetailPage />}
 							/>
 							<Route
 								path="*"
