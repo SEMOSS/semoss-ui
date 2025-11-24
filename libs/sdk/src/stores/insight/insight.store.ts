@@ -626,6 +626,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		/**
 		 * Run a MCP tool
+		 * @deprecated use runPixel and sendMCPResponseToPlayground instead
 		 * @param name - name of the tool
 		 * @param parameters - parameters to pass to the tool
 		 */
@@ -636,6 +637,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			const { pixelReturn } = await this.actions.run<[string]>(
 				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ] );`,
 			);
+
+			this.actions.sendMCPResponseToPlayground(pixelReturn[0].output);
 
 			return {
 				output: pixelReturn[0].output,
