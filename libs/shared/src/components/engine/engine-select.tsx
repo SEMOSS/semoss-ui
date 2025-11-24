@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { useState } from "react";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Command,
@@ -13,14 +13,17 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 	Spinner,
+	useDebouncedValue,
+	useInfiniteScroll,
 } from "@semoss/ui/next";
 import type { Engine } from "@/types";
 
-/** TODO: Move to @semoss/shared */
-
 interface EngineSelectProps {
-	/** Id of the engine to select */
-	value: Engine | null;
+	/** Name of the selected engine */
+	name: string;
+
+	/** Id of the selected engine */
+	value: string;
 
 	/** Update options on change */
 	onChange: (value: Engine | null) => void;
@@ -38,6 +41,7 @@ interface EngineSelectProps {
 }
 
 export const EngineSelect = ({
+	name,
 	value,
 	onChange,
 	engineTypes,
@@ -50,16 +54,46 @@ export const EngineSelect = ({
 	const debouncedSearch = useDebouncedValue(search);
 
 	/**
-	 * Get all of the engines
+	 * Get all of the engines with lazy loading
 	 */
-	const getEngines = usePixel<Engine[]>(
-		open
-			? `MyEngines(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} ${engineTypes ? `engineTypes=${JSON.stringify(engineTypes)},` : ""} ${metaFilters ? `metaFilters=${JSON.stringify(metaFilters)},` : ""} limit=[${10}], offset=[${0}]);`
-			: "",
-		{
-			data: [],
+	const getEngines = useIteratorPixel<Engine[], Engine>(
+		(limit, offset) =>
+			open
+				? `MyEngines(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} ${engineTypes ? `engineTypes=${JSON.stringify(engineTypes)},` : ""} ${metaFilters ? `metaFilters=${JSON.stringify(metaFilters)},` : ""} limit=[${limit}], offset=[${offset}]);`
+				: "",
+		(response) => {
+			// if its less than the limit, we know its the end
+			if (response.length < 15) {
+				return -1;
+			}
+
+			return Infinity;
 		},
+		(response) => {
+			return response;
+		},
+		{
+			limit: 15,
+		},
+		[
+			open,
+			debouncedSearch,
+			JSON.stringify(engineTypes),
+			JSON.stringify(metaFilters),
+		],
 	);
+
+	/**
+	 * Setup infinite scroll for the command list
+	 */
+	const setScroll = useInfiniteScroll({
+		onNext: () => {
+			if (getEngines.isLoading || !getEngines.hasMore || !open) {
+				return;
+			}
+			getEngines.next();
+		},
+	});
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
@@ -70,9 +104,7 @@ export const EngineSelect = ({
 					aria-expanded={open}
 					className="w-full justify-between overflow-hidden"
 				>
-					<span className="truncate">
-						{value ? value.app_name : "Select"}
-					</span>
+					<span className="truncate">{name || "Select"}</span>
 					<ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
@@ -83,9 +115,10 @@ export const EngineSelect = ({
 						value={search}
 						onValueChange={setSearch}
 					/>
-					<CommandList>
+					<CommandList ref={(ele) => setScroll(ele)}>
 						<CommandEmpty>
-							{getEngines.status === "LOADING" ? (
+							{getEngines.isLoading &&
+							getEngines.data.length === 0 ? (
 								<div className="flex items-center justify-center py-4">
 									<Spinner className="size-4" />
 								</div>
@@ -104,7 +137,7 @@ export const EngineSelect = ({
 									}}
 								>
 									<CheckIcon
-										className={`mr-2 size-4 ${value?.app_id === engine.app_id ? "opacity-100" : "opacity-0"}`}
+										className={`mr-2 size-4 ${value === engine.app_id ? "opacity-100" : "opacity-0"}`}
 									/>
 									<div className="flex flex-1 flex-col truncate">
 										<span>{engine.app_name}</span>
@@ -116,6 +149,12 @@ export const EngineSelect = ({
 									</div>
 								</CommandItem>
 							))}
+							{getEngines.isLoading &&
+								getEngines.data.length > 0 && (
+									<div className="flex items-center justify-center py-2">
+										<Spinner className="size-4" />
+									</div>
+								)}
 						</CommandGroup>
 					</CommandList>
 				</Command>
