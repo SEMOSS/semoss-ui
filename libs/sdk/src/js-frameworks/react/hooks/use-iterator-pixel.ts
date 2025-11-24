@@ -36,9 +36,6 @@ export interface UseIteratorPixelReturn<T> {
 
 	/** Reset the state */
 	reset: () => void;
-
-	/** Refresh the full state */
-	refresh: () => void;
 }
 
 /**
@@ -137,19 +134,6 @@ export function useIteratorPixel<TResponse, TItem>(
 	}, [pixel.refresh]);
 
 	/**
-	 * Refresh the state
-	 */
-	const refresh = useCallback(() => {
-		setOffset(0);
-		setAllData([]);
-		setTotalCount(0);
-		isLoadingMoreRef.current = false;
-
-		// get the data
-		pixel.refresh();
-	}, [pixel.refresh]);
-
-	/**
 	 * Reset when dependencies change
 	 */
 	useEffect(
@@ -171,6 +155,5 @@ export function useIteratorPixel<TResponse, TItem>(
 		hasMore: allData.length < totalCount,
 		next: next,
 		reset: reset,
-		refresh: refresh,
 	};
 }
