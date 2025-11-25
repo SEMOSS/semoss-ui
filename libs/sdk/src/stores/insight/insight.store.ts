@@ -58,6 +58,9 @@ interface InsightStoreInterface {
 
 		/** Python code associated with the insight */
 		python: Script | null;
+
+		/** Whether to disable connecting the insight to a room */
+		disableRoom: boolean;
 	};
 }
 
@@ -72,6 +75,7 @@ export class InsightStore {
 		options: {
 			appId: "",
 			python: null,
+			disableRoom: false,
 		},
 	};
 
@@ -143,6 +147,12 @@ export class InsightStore {
 					alias: string;
 			  }
 			| false;
+
+		/**
+		 * Whether to disable connecting the insight to a room
+		 * Defaults to false
+		 */
+		disableRoom?: boolean;
 	}): Promise<{
 		tool: (typeof Env)["TOOL"] | null;
 	}> => {
@@ -157,6 +167,7 @@ export class InsightStore {
 				options && typeof options.python !== "undefined"
 					? options.python
 					: false,
+			disableRoom: options?.disableRoom || false,
 		};
 
 		// save the initial appId
@@ -179,6 +190,9 @@ export class InsightStore {
 				};
 			}
 		}
+
+		// save the disable room option
+		this._store.options.disableRoom = merged.disableRoom || false;
 
 		// load the environment from the document (production)
 		try {
@@ -370,7 +384,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		this._store.insightId = insightId;
 
 		// point the insight space toward the room
-		if (Env?.TOOL?.roomId) {
+		if (Env?.TOOL?.roomId && !this._store.options.disableRoom) {
 			await runPixel<[boolean]>(
 				`SetRoomForInsight(roomId=${JSON.stringify(Env.TOOL.roomId)});`,
 				insightId,
