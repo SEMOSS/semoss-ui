@@ -60,6 +60,9 @@ export const VECTOR_CONNECTIONS = {
 			name: "Azure AI Search",
 			disable: false,
 			icon: MICROSOFT,
+			description:
+				"A cloud-based search service that provides full-text search, vector search, and AI-powered ranking.",
+			link: "https://learn.microsoft.com/en-us/azure/search/",
 			fields: [
 				{
 					key: "NAME",
@@ -367,6 +370,9 @@ export const VECTOR_CONNECTIONS = {
 			name: "Chroma",
 			disable: false,
 			icon: CHROMADB,
+			link: "https://docs.trychroma.com/docs/overview/introduction",
+			description:
+				"An open-source vector database designed for building and querying AI/LLM embeddings.",
 			fields: [
 				{
 					key: "NAME",
@@ -594,6 +600,9 @@ export const VECTOR_CONNECTIONS = {
 			name: "Elastic Search",
 			disable: false,
 			icon: ELASTIC_SEARCH,
+			description:
+				"A distributed search and analytics engine for full-text search, logging, and real-time data analysis.",
+			link: "https://www.elastic.co/docs/solutions/search",
 			fields: [
 				{
 					key: "NAME",
@@ -906,6 +915,9 @@ export const VECTOR_CONNECTIONS = {
 			name: "FAISS",
 			disable: false,
 			icon: META,
+			description:
+				"A high-performance library by Meta for fast similarity search and clustering of dense vectors.",
+			link: "https://faiss.ai/",
 			fields: [
 				{
 					key: "NAME",
@@ -1106,6 +1118,9 @@ export const VECTOR_CONNECTIONS = {
 			name: "Milvus",
 			disable: false,
 			icon: MILVUS,
+			description:
+				"A cloud-native vector database optimized for large-scale vector search with high performance.",
+			link: "https://milvus.io/docs",
 			fields: [
 				{
 					key: "NAME",
@@ -1383,6 +1398,9 @@ export const VECTOR_CONNECTIONS = {
 			name: "Open Search",
 			disable: false,
 			icon: OPEN_SEARCH,
+			description:
+				"An open-source search and analytics suite derived from Elasticsearch, supporting text and vector search.",
+			link: "https://docs.opensearch.org/latest/about/",
 			fields: [
 				{
 					key: "NAME",
@@ -1667,6 +1685,9 @@ export const VECTOR_CONNECTIONS = {
 			name: "PGVector",
 			disable: false,
 			icon: POSTGRES,
+			description:
+				"A PostgreSQL extension that adds native vector storage and similarity search to Postgres databases.",
+			link: "https://www.postgresql.org/docs",
 			fields: [
 				{
 					key: "VECTOR_TYPE",
@@ -1993,6 +2014,9 @@ export const VECTOR_CONNECTIONS = {
 			name: "Pinecone",
 			disable: false,
 			icon: PINECONE,
+			description:
+				"A fully managed vector database for scalable and low-latency semantic and embedding search.",
+			link: "https://docs.pinecone.io/guides/get-started/overview",
 			fields: [
 				{
 					key: "NAME",
@@ -2224,6 +2248,9 @@ export const VECTOR_CONNECTIONS = {
 			name: "Weaviate",
 			disable: false,
 			icon: WEVIATE,
+			description:
+				"An open-source, modular vector database with hybrid (text + vector) search and built-in ML capabilities.",
+			link: "https://docs.weaviate.io/weaviate",
 			fields: [
 				{
 					key: "NAME",

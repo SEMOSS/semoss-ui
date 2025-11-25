@@ -1,6 +1,6 @@
 import { FileUploadOutlined } from "@mui/icons-material";
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	Box,
@@ -15,14 +15,13 @@ import {
 	Stack,
 	styled,
 	Tabs,
-	Tooltip,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { VectorForm } from "./VectorImportForm";
-//import { DatabaseForm } from "./DatabaseForm";
+import { VectorTitleCard } from "./VectorTitleCard";
 import { VECTOR_CONNECTIONS } from "./vector-import.constants";
 
 const StyledContainer = styled("div")({
@@ -43,53 +42,6 @@ const StyledStack = styled("div")(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
 	gap: theme.spacing(1),
-}));
-
-const StyledCardImage = styled("img")<{ isDatabase?: boolean }>(
-	({ isDatabase }) => ({
-		display: "flex",
-		height: "30px",
-		width: "30px",
-		objectFit: "cover",
-		borderRadius: isDatabase ? "8px" : "inherit",
-	}),
-);
-
-const StyledCardText = styled("p")({
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	whiteSpace: "nowrap",
-	margin: 0,
-});
-
-const StyledTypographyText = styled(Typography)(() => ({
-	display: "flex",
-	alignItems: "center",
-	padding: "0 10px",
-	backgroundColor: "#EBEBEB",
-	borderRadius: "16px",
-	marginLeft: "auto !important",
-	fontSize: "13px",
-	color: "#212121",
-}));
-
-const StyledFormTypeBox = styled(Box, {
-	shouldForwardProp: (prop) => prop !== "disabled",
-})<{ disabled: boolean }>(({ disabled }) => ({
-	maxWidth: "215px",
-	borderRadius: "8px",
-	display: "block",
-	justifyContent: "center",
-	alignItems: "center",
-	border: "1px solid #C4C4C4",
-	padding: "16px",
-	backgroundColor: "#fff",
-	opacity: disabled ? 0.6 : 1,
-	cursor: disabled ? "auto" : "pointer",
-	"&:hover": {
-		border: disabled ? "1px solid #C4C4C4" : "1.5px solid #0471F0",
-		backgroundColor: disabled ? "white" : "#F5F9FE",
-	},
 }));
 
 const StyledTab = styled(Tabs.Item)(() => ({
@@ -136,58 +88,6 @@ interface vector {
 	icon: string;
 	disable: boolean;
 }
-
-const VectorCard = ({
-	vector,
-	onSelect,
-}: {
-	vector: vector;
-	onSelect: () => void;
-}) => {
-	const textRef = useRef<HTMLParagraphElement>(null);
-	const [isTruncated, setIsTruncated] = useState(false);
-
-	useEffect(() => {
-		if (textRef.current) {
-			setIsTruncated(
-				textRef.current.scrollWidth > textRef.current.clientWidth,
-			);
-		}
-	}, []);
-
-	const cardContent = (
-		<StyledFormTypeBox
-			data-testid={`vector-card-${vector.id}`}
-			disabled={vector.disable}
-			onClick={!vector.disable ? onSelect : undefined}
-		>
-			{vector.disable ? (
-				<Stack direction="row" width="100%" spacing={1}>
-					<StyledCardImage isDatabase src={vector.icon} />
-					<StyledTypographyText variant="body1">
-						Coming Soon
-					</StyledTypographyText>
-				</Stack>
-			) : (
-				<StyledCardImage isDatabase src={vector.icon} />
-			)}
-			<StyledCardText
-				ref={textRef}
-				data-testid={`vector-name-${vector.id}`}
-			>
-				{vector.name}
-			</StyledCardText>
-		</StyledFormTypeBox>
-	);
-
-	return isTruncated ? (
-		<Tooltip title={vector.name} placement="bottom" arrow>
-			<span style={{ display: "block" }}>{cardContent}</span>
-		</Tooltip>
-	) : (
-		cardContent
-	);
-};
 
 export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 	const navigate = useNavigate();
@@ -332,9 +232,14 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 				v.name.toLowerCase().includes(search.toLowerCase()),
 			).map((v) => (
 				<Grid key={v.id} item lg={1} md={1} xs={1} xl={1} sm={1}>
-					<VectorCard
-						vector={v}
-						onSelect={() => setSelectedDatabase(v)}
+					<VectorTitleCard
+						vector={{
+							...v,
+							display: v.name,
+						}}
+						onModelSelect={() => {
+							setSelectedDatabase(v);
+						}}
 					/>
 				</Grid>
 			))}
