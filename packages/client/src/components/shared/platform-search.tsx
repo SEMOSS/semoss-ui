@@ -88,7 +88,14 @@ export const PlatformSearch = ({ className }: PromptSearchProps) => {
 									<button
 										type="button"
 										onClick={() => {
-											setIsAll(!isAll);
+											const updated = !isAll;
+
+											// if selected, clear existing categories
+											if (updated) {
+												setSelectedCategories({});
+											}
+
+											setIsAll(updated);
 										}}
 									>
 										All
