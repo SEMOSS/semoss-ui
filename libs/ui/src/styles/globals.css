@@ -140,12 +140,6 @@
     @apply bg-background text-foreground;
   }
 
-  /** tailwindcss sets these to inherit. This resets it back to use the user agent style **/
-  h1, h2, h3, h4, h5, h6 {
-    font-size: revert;
-    font-weight: revert;
-  }
-
   button:not([disabled]), [role="button"]:not([disabled]) {
     cursor: pointer;
   }
