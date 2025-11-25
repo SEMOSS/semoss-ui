@@ -100,9 +100,8 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embedder",
 					value: "",
 					component: "select",
-					options: {
-						component: "select",
-						options: [],
+					options: [],
+					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
 						optionDisplay: "database_name",
 						optionValue: "database_id",
@@ -128,23 +127,20 @@ export const VECTOR_CONNECTIONS = {
 					label: "Chunking Strategy",
 					value: "ALL",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Token",
-								value: "ALL",
-							},
-							{
-								display: "Page by page",
-								value: "PAGE_BY_PAGE",
-							},
-							{
-								display: "Markdown",
-								value: "MARKDOWN",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Token",
+							value: "ALL",
+						},
+						{
+							display: "Page by page",
+							value: "PAGE_BY_PAGE",
+						},
+						{
+							display: "Markdown",
+							value: "MARKDOWN",
+						},
+					],
 					disabled: false,
 					hidden: false,
 					required: true,
@@ -302,19 +298,16 @@ export const VECTOR_CONNECTIONS = {
 					key: "KEEP_INPUT_OUTPUT",
 					label: "Record Questions and Responses",
 					value: "false",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "true",
-								value: "true",
-							},
-							{
-								display: "false",
-								value: "false",
-							},
-						],
-					},
+					options: [
+						{
+							display: "true",
+							value: "true",
+						},
+						{
+							display: "false",
+							value: "false",
+						},
+					],
 					component: "select",
 					disabled: false,
 					required: true,
@@ -323,46 +316,38 @@ export const VECTOR_CONNECTIONS = {
 					key: "DISTANCE_METHOD",
 					label: "Distance Method",
 					value: "euclidean",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Cosine similarity",
-								value: "cosine",
-							},
-							{
-								display: "Squared Euclidean (L2) distance",
-								value: "euclidean",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Cosine similarity",
+							value: "cosine",
+						},
+						{
+							display: "Squared Euclidean (L2) distance",
+							value: "euclidean",
+						},
+					],
 					component: "select",
 					disabled: false,
 					required: false,
-					//
 					helperText: "",
 				},
 				{
 					key: "RETAIN_EXTRACTED_TEXT",
 					label: "Retain Extracted Text",
 					value: "false",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "False",
-								value: "false",
-							},
-							{
-								display: "True",
-								value: "true",
-							},
-						],
-					},
 					component: "select",
+					options: [
+						{
+							display: "False",
+							value: "false",
+						},
+						{
+							display: "True",
+							value: "true",
+						},
+					],
 					disabled: false,
 					required: false,
-					//
 				},
 			],
 		},
@@ -428,9 +413,8 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embedder",
 					value: "",
 					component: "select",
-					options: {
-						component: "select",
-						options: [],
+					options: [],
+					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
 						optionDisplay: "database_name",
 						optionValue: "database_id",
@@ -456,22 +440,20 @@ export const VECTOR_CONNECTIONS = {
 					label: "Chunking Strategy",
 					value: "ALL",
 					component: "select",
-					options: {
-						options: [
-							{
-								display: "Token",
-								value: "ALL",
-							},
-							{
-								display: "Page by page",
-								value: "PAGE_BY_PAGE",
-							},
-							{
-								display: "Markdown",
-								value: "MARKDOWN",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Token",
+							value: "ALL",
+						},
+						{
+							display: "Page by page",
+							value: "PAGE_BY_PAGE",
+						},
+						{
+							display: "Markdown",
+							value: "MARKDOWN",
+						},
+					],
 					disabled: false,
 					hidden: false,
 					required: true,
@@ -541,18 +523,16 @@ export const VECTOR_CONNECTIONS = {
 					label: "Record Questions and Responses",
 					value: "true",
 					component: "select",
-					options: {
-						options: [
-							{
-								display: "true",
-								value: "true",
-							},
-							{
-								display: "false",
-								value: "false",
-							},
-						],
-					},
+					options: [
+						{
+							display: "true",
+							value: "true",
+						},
+						{
+							display: "false",
+							value: "false",
+						},
+					],
 					disabled: false,
 					required: true,
 					category: "Settings",
@@ -562,7 +542,7 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embeddings",
 					value: null,
 					component: "file-upload",
-					disabled: true,
+					disabled: false,
 					secondary: true,
 					category: "Settings",
 				},
@@ -573,22 +553,20 @@ export const VECTOR_CONNECTIONS = {
 					label: "Distance Method",
 					value: "cosine",
 					component: "select",
-					options: {
-						options: [
-							{
-								display: "Cosine Similarity",
-								value: "cosine",
-							},
-							{
-								display: "Euclidean Distance",
-								value: "l2",
-							},
-							{
-								display: "Inner Product",
-								value: "ip",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Cosine Similarity",
+							value: "cosine",
+						},
+						{
+							display: "Euclidean Distance",
+							value: "l2",
+						},
+						{
+							display: "Inner Product",
+							value: "ip",
+						},
+					],
 					disabled: false,
 					required: false,
 
@@ -658,9 +636,8 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embedder",
 					value: "",
 					component: "select",
-					options: {
-						component: "select",
-						options: [],
+					options: [],
+					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
 						optionDisplay: "database_name",
 						optionValue: "database_id",
@@ -686,22 +663,20 @@ export const VECTOR_CONNECTIONS = {
 					label: "Chunking Strategy",
 					value: "ALL",
 					component: "select",
-					options: {
-						options: [
-							{
-								display: "Token",
-								value: "ALL",
-							},
-							{
-								display: "Page by page",
-								value: "PAGE_BY_PAGE",
-							},
-							{
-								display: "Markdown",
-								value: "MARKDOWN",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Token",
+							value: "ALL",
+						},
+						{
+							display: "Page by page",
+							value: "PAGE_BY_PAGE",
+						},
+						{
+							display: "Markdown",
+							value: "MARKDOWN",
+						},
+					],
 					disabled: false,
 					hidden: false,
 					required: true,
@@ -798,19 +773,16 @@ export const VECTOR_CONNECTIONS = {
 					label: "Record Questions and Responses",
 					value: "true",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "true",
-								value: "true",
-							},
-							{
-								display: "false",
-								value: "false",
-							},
-						],
-					},
+					options: [
+						{
+							display: "true",
+							value: "true",
+						},
+						{
+							display: "false",
+							value: "false",
+						},
+					],
 					disabled: false,
 					required: true,
 					category: "Settings",
@@ -820,7 +792,7 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embeddings",
 					value: null,
 					component: "file-upload",
-					disabled: true,
+					disabled: false,
 					secondary: true,
 					rules: {},
 					category: "Settings",
@@ -841,30 +813,26 @@ export const VECTOR_CONNECTIONS = {
 					label: "Distance Method",
 					value: "cosine",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Cosine Similarity",
-								value: "cosine",
-							},
-							{
-								display: "Euclidean Distance",
-								value: "l2_norm",
-							},
-							{
-								display: "Dot Product",
-								value: "dot_product",
-							},
-							{
-								display: "Max Inner  Product",
-								value: "max_inner_product",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Cosine Similarity",
+							value: "cosine",
+						},
+						{
+							display: "Euclidean Distance",
+							value: "l2_norm",
+						},
+						{
+							display: "Dot Product",
+							value: "dot_product",
+						},
+						{
+							display: "Max Inner  Product",
+							value: "max_inner_product",
+						},
+					],
 					disabled: false,
 					required: false,
-
 					helperText: "",
 				},
 				{
@@ -972,10 +940,9 @@ export const VECTOR_CONNECTIONS = {
 					key: "EMBEDDER_ENGINE_ID",
 					label: "Embedder",
 					value: "",
+					options: [],
 					component: "select",
-					options: {
-						component: "select",
-						options: [],
+					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
 						optionDisplay: "database_name",
 						optionValue: "database_id",
@@ -1001,23 +968,20 @@ export const VECTOR_CONNECTIONS = {
 					label: "Chunking Strategy",
 					component: "select",
 					value: "ALL",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Token",
-								value: "ALL",
-							},
-							{
-								display: "Page by page",
-								value: "PAGE_BY_PAGE",
-							},
-							{
-								display: "Markdown",
-								value: "MARKDOWN",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Token",
+							value: "ALL",
+						},
+						{
+							display: "Page by page",
+							value: "PAGE_BY_PAGE",
+						},
+						{
+							display: "Markdown",
+							value: "MARKDOWN",
+						},
+					],
 					disabled: false,
 					hidden: false,
 					required: true,
@@ -1060,19 +1024,16 @@ export const VECTOR_CONNECTIONS = {
 					label: "Record Questions and Responses",
 					value: "true",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "true",
-								value: "true",
-							},
-							{
-								display: "false",
-								value: "false",
-							},
-						],
-					},
+					options: [
+						{
+							display: "true",
+							value: "true",
+						},
+						{
+							display: "false",
+							value: "false",
+						},
+					],
 					disabled: false,
 					required: true,
 					category: "Settings",
@@ -1082,7 +1043,7 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embeddings",
 					value: null,
 					component: "file-upload",
-					disabled: true,
+					disabled: false,
 					secondary: true,
 					rules: {},
 					category: "Settings",
@@ -1094,19 +1055,16 @@ export const VECTOR_CONNECTIONS = {
 					label: "Distance Method",
 					value: "Squared Euclidean (L2) distance",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Squared Euclidean (L2) distance",
-								value: "Squared Euclidean (L2) distance",
-							},
-							{
-								display: "cosine similarity",
-								value: "cosine similarity",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Squared Euclidean (L2) distance",
+							value: "Squared Euclidean (L2) distance",
+						},
+						{
+							display: "cosine similarity",
+							value: "cosine similarity",
+						},
+					],
 					disabled: false,
 					required: false,
 
@@ -1176,9 +1134,8 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embedder",
 					value: "",
 					component: "select",
-					options: {
-						component: "select",
-						options: [],
+					options: [],
+					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
 						optionDisplay: "database_name",
 						optionValue: "database_id",
@@ -1204,23 +1161,20 @@ export const VECTOR_CONNECTIONS = {
 					label: "Chunking Strategy",
 					value: "ALL",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Token",
-								value: "ALL",
-							},
-							{
-								display: "Page by page",
-								value: "PAGE_BY_PAGE",
-							},
-							{
-								display: "Markdown",
-								value: "MARKDOWN",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Token",
+							value: "ALL",
+						},
+						{
+							display: "Page by page",
+							value: "PAGE_BY_PAGE",
+						},
+						{
+							display: "Markdown",
+							value: "MARKDOWN",
+						},
+					],
 					disabled: false,
 					hidden: false,
 					required: true,
@@ -1301,7 +1255,7 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embeddings",
 					value: null,
 					component: "file-upload",
-					disabled: true,
+					disabled: false,
 					secondary: true,
 					rules: {},
 					category: "Settings",
@@ -1323,19 +1277,16 @@ export const VECTOR_CONNECTIONS = {
 					label: "Record Questions and Responses",
 					value: "true",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "true",
-								value: "true",
-							},
-							{
-								display: "false",
-								value: "false",
-							},
-						],
-					},
+					options: [
+						{
+							display: "true",
+							value: "true",
+						},
+						{
+							display: "false",
+							value: "false",
+						},
+					],
 					disabled: false,
 					required: true,
 				},
@@ -1344,23 +1295,20 @@ export const VECTOR_CONNECTIONS = {
 					label: "Distance Method",
 					value: "COSINE",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Cosine Similarity",
-								value: "COSINE",
-							},
-							{
-								display: "Euclidean Distance",
-								value: "L2",
-							},
-							{
-								display: "Inner Product",
-								value: "ip ",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Cosine Similarity",
+							value: "COSINE",
+						},
+						{
+							display: "Euclidean Distance",
+							value: "L2",
+						},
+						{
+							display: "Inner Product",
+							value: "ip ",
+						},
+					],
 					disabled: false,
 					required: false,
 
@@ -1456,9 +1404,8 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embedder",
 					value: "",
 					component: "select",
-					options: {
-						component: "select",
-						options: [],
+					options: [],
+					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
 						optionDisplay: "database_name",
 						optionValue: "database_id",
@@ -1484,23 +1431,20 @@ export const VECTOR_CONNECTIONS = {
 					label: "Chunking Strategy",
 					value: "ALL",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Token",
-								value: "ALL",
-							},
-							{
-								display: "Page by page",
-								value: "PAGE_BY_PAGE",
-							},
-							{
-								display: "Markdown",
-								value: "MARKDOWN",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Token",
+							value: "ALL",
+						},
+						{
+							display: "Page by page",
+							value: "PAGE_BY_PAGE",
+						},
+						{
+							display: "Markdown",
+							value: "MARKDOWN",
+						},
+					],
 					disabled: false,
 					hidden: false,
 					required: true,
@@ -1579,7 +1523,7 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embeddings",
 					value: null,
 					component: "file-upload",
-					disabled: true,
+					disabled: false,
 					secondary: true,
 					category: "Settings",
 					rules: {},
@@ -1599,19 +1543,16 @@ export const VECTOR_CONNECTIONS = {
 					label: "Record Questions and Responses",
 					value: "true",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "true",
-								value: "true",
-							},
-							{
-								display: "false",
-								value: "false",
-							},
-						],
-					},
+					options: [
+						{
+							display: "true",
+							value: "true",
+						},
+						{
+							display: "false",
+							value: "false",
+						},
+					],
 					disabled: false,
 					required: true,
 					category: "Settings",
@@ -1623,23 +1564,20 @@ export const VECTOR_CONNECTIONS = {
 					label: "Distance Method",
 					value: "cosinesimil",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Cosine Similarity",
-								value: "cosinesimil",
-							},
-							{
-								display: "Euclidean Distance",
-								value: "l2",
-							},
-							{
-								display: "Inner Product",
-								value: "innerproduct ",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Cosine Similarity",
+							value: "cosinesimil",
+						},
+						{
+							display: "Euclidean Distance",
+							value: "l2",
+						},
+						{
+							display: "Inner Product",
+							value: "innerproduct ",
+						},
+					],
 					disabled: false,
 					required: false,
 
@@ -1816,10 +1754,9 @@ export const VECTOR_CONNECTIONS = {
 					key: "EMBEDDER_ENGINE_ID",
 					label: "Embedder",
 					value: "",
-					component: "text",
-					options: {
-						component: "select",
-						options: [],
+					component: "select",
+					options: [],
+					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
 						optionDisplay: "database_name",
 						optionValue: "database_id",
@@ -1844,23 +1781,20 @@ export const VECTOR_CONNECTIONS = {
 					label: "Chunking Strategy",
 					value: "ALL",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Token",
-								value: "ALL",
-							},
-							{
-								display: "Page by page",
-								value: "PAGE_BY_PAGE",
-							},
-							{
-								display: "Markdown",
-								value: "MARKDOWN",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Token",
+							value: "ALL",
+						},
+						{
+							display: "Page by page",
+							value: "PAGE_BY_PAGE",
+						},
+						{
+							display: "Markdown",
+							value: "MARKDOWN",
+						},
+					],
 					disabled: false,
 					hidden: false,
 					required: true,
@@ -1903,19 +1837,16 @@ export const VECTOR_CONNECTIONS = {
 					label: "Record Questions and Responses",
 					value: "true",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "true",
-								value: "true",
-							},
-							{
-								display: "false",
-								value: "false",
-							},
-						],
-					},
+					options: [
+						{
+							display: "true",
+							value: "true",
+						},
+						{
+							display: "false",
+							value: "false",
+						},
+					],
 					disabled: false,
 					required: true,
 					category: "Settings",
@@ -1925,7 +1856,7 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embeddings",
 					value: null,
 					component: "file-upload",
-					disabled: true,
+					disabled: false,
 					secondary: true,
 					rules: {},
 					category: "Settings",
@@ -1946,19 +1877,16 @@ export const VECTOR_CONNECTIONS = {
 					label: "Distance Method",
 					value: "Squared Euclidean (L2) distance",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Squared Euclidean (L2) distance",
-								value: "Squared Euclidean (L2) distance",
-							},
-							{
-								display: "cosine similarity",
-								value: "cosine similarity",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Squared Euclidean (L2) distance",
+							value: "Squared Euclidean (L2) distance",
+						},
+						{
+							display: "cosine similarity",
+							value: "cosine similarity",
+						},
+					],
 					disabled: false,
 					required: false,
 
@@ -2072,9 +2000,8 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embedder",
 					component: "select",
 					value: "",
-					options: {
-						component: "select",
-						options: [],
+					options: [],
+					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
 						optionDisplay: "database_name",
 						optionValue: "database_id",
@@ -2100,23 +2027,20 @@ export const VECTOR_CONNECTIONS = {
 					label: "Chunking Strategy",
 					value: "ALL",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Token",
-								value: "ALL",
-							},
-							{
-								display: "Page by page",
-								value: "PAGE_BY_PAGE",
-							},
-							{
-								display: "Markdown",
-								value: "MARKDOWN",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Token",
+							value: "ALL",
+						},
+						{
+							display: "Page by page",
+							value: "PAGE_BY_PAGE",
+						},
+						{
+							display: "Markdown",
+							value: "MARKDOWN",
+						},
+					],
 					disabled: false,
 					hidden: false,
 					required: true,
@@ -2186,19 +2110,16 @@ export const VECTOR_CONNECTIONS = {
 					label: "Record Questions and Responses",
 					value: "true",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "true",
-								value: "true",
-							},
-							{
-								display: "false",
-								value: "false",
-							},
-						],
-					},
+					options: [
+						{
+							display: "true",
+							value: "true",
+						},
+						{
+							display: "false",
+							value: "false",
+						},
+					],
 					disabled: false,
 					required: true,
 					category: "Settings",
@@ -2208,7 +2129,7 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embeddings",
 					value: null,
 					component: "file-upload",
-					disabled: true,
+					disabled: false,
 					secondary: true,
 					rules: {},
 					category: "Settings",
@@ -2306,9 +2227,8 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embedder",
 					value: "",
 					component: "select",
-					options: {
-						component: "select",
-						options: [],
+					options: [],
+					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
 						optionDisplay: "database_name",
 						optionValue: "database_id",
@@ -2334,23 +2254,20 @@ export const VECTOR_CONNECTIONS = {
 					label: "Chunking Strategy",
 					value: "ALL",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Token",
-								value: "ALL",
-							},
-							{
-								display: "Page by page",
-								value: "PAGE_BY_PAGE",
-							},
-							{
-								display: "Markdown",
-								value: "MARKDOWN",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Token",
+							value: "ALL",
+						},
+						{
+							display: "Page by page",
+							value: "PAGE_BY_PAGE",
+						},
+						{
+							display: "Markdown",
+							value: "MARKDOWN",
+						},
+					],
 					disabled: false,
 					hidden: false,
 					required: true,
@@ -2429,19 +2346,16 @@ export const VECTOR_CONNECTIONS = {
 					label: "Record Questions and Responses",
 					value: "true",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "true",
-								value: "true",
-							},
-							{
-								display: "false",
-								value: "false",
-							},
-						],
-					},
+					options: [
+						{
+							display: "true",
+							value: "true",
+						},
+						{
+							display: "false",
+							value: "false",
+						},
+					],
 					disabled: false,
 					required: true,
 					category: "Settings",
@@ -2451,7 +2365,7 @@ export const VECTOR_CONNECTIONS = {
 					label: "Embeddings",
 					value: null,
 					component: "file-upload",
-					disabled: true,
+					disabled: false,
 					secondary: true,
 					rules: {},
 					category: "Settings",
@@ -2463,19 +2377,16 @@ export const VECTOR_CONNECTIONS = {
 					label: "Distance Method",
 					value: "Squared Euclidean (L2) distance",
 					component: "select",
-					options: {
-						component: "select",
-						options: [
-							{
-								display: "Squared Euclidean (L2) distance",
-								value: "Squared Euclidean (L2) distance",
-							},
-							{
-								display: "cosine similarity",
-								value: "cosine similarity",
-							},
-						],
-					},
+					options: [
+						{
+							display: "Squared Euclidean (L2) distance",
+							value: "Squared Euclidean (L2) distance",
+						},
+						{
+							display: "cosine similarity",
+							value: "cosine similarity",
+						},
+					],
 					disabled: false,
 					required: false,
 

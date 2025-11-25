@@ -21,6 +21,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 
 const StyledBox = styled(Box)({
@@ -73,12 +74,6 @@ export const VectorForm = ({
 	const [resolvedFields, setResolvedFields] = useState(fields);
 	const [isValidDatabaseName, setIsValidDatabaseName] =
 		useState<boolean>(false);
-	const [dropzoneKey, setDropzoneKey] = useState(Date.now());
-
-	const onFileUpload = (files: File | File[]) => {
-		const fileArray = Array.isArray(files) ? files : [files];
-		setValue("FILE_UPLOAD", fileArray);
-	};
 
 	const {
 		control,
@@ -99,7 +94,7 @@ export const VectorForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
-	const { monolithStore } = useRootStore();
+	const { monolithStore, configStore } = useRootStore();
 	const notification = useNotification();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
@@ -140,37 +135,68 @@ export const VectorForm = ({
 	};
 
 	const onFormSubmit = async (formData) => {
-		console.log("formValues", formData);
+		const { EMBEDDINGS, ...newFormData } = formData;
+		setLoading(true);
 		const pixel = `CreateVectorDatabaseEngine(database=["${
 			formData.NAME
-		}"],conDetails=[${JSON.stringify(formData)}])`;
+		}"],conDetails=[${JSON.stringify(newFormData)}])`;
 
 		monolithStore.runQuery(pixel).then(async (response) => {
-			const output = response.pixelReturn[0].output,
+			const pixelOutput = response.pixelReturn[0].output,
 				operationType = response.pixelReturn[0].operationType;
-
-			setLoading(false);
 
 			if (operationType.indexOf("ERROR") > -1) {
 				notification.add({
 					color: "error",
-					message: output,
+					message: pixelOutput,
 				});
+				setLoading(false);
 				return;
 			}
-
 			notification.add({
 				color: "success",
-				message: `Successfully created vector model`,
+				message: `Successfully added vector database to catalog`,
 			});
-			navigate(`/engine/vector/${output.database_id}`);
+
+			if (EMBEDDINGS !== "") {
+				try {
+					const uploadedFiles = await uploadFile(
+						[EMBEDDINGS.NAME],
+						configStore.store.insightID,
+					);
+
+					if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
+						notification.add({
+							color: "error",
+							message:
+								"Upload failed or returned invalid response.",
+						});
+						setLoading(false);
+						return;
+					}
+					const pixelExpressions = `CreateEmbeddingsFromDocuments(filePaths=["${uploadedFiles[0].fileLocation}"], engine=["${pixelOutput.database_id}"])`;
+					const response =
+						await monolithStore.runQuery(pixelExpressions);
+					const { output, operationType } = response.pixelReturn[0];
+					if (operationType.includes("ERROR")) {
+						notification.add({ color: "error", message: output });
+					}
+				} catch {
+					notification.add({
+						color: "error",
+						message: "Upload failed or returned invalid response.",
+					});
+				}
+			}
+			navigate(`/engine/vector/${pixelOutput.database_id}`);
+			setLoading(false);
 		});
 	};
 
 	useEffect(() => {
 		resolvedFields.forEach((f) => {
 			let pixel = f.pixel;
-			let optionsPixel = f.options?.pixel;
+			let optionsPixel = f.optionRule?.pixel;
 
 			fieldsToWatch.forEach((name: keyof typeof watch) => {
 				const val = watch(name);
@@ -232,13 +258,10 @@ export const VectorForm = ({
 					f.key === key
 						? {
 								...f,
-								options: {
-									...f.options,
-									options: output.map((opt) => ({
-										display: opt[f.options.optionDisplay],
-										value: opt[f.options.optionValue],
-									})),
-								},
+								options: output.map((opt) => ({
+									display: opt[f.optionRule.optionDisplay],
+									value: opt[f.optionRule.optionValue],
+								})),
 							}
 						: f,
 				),
@@ -385,7 +408,12 @@ export const VectorForm = ({
 								}}
 								data-testid={`vector-form-input-${val.key}`}
 							>
-								{val?.options?.options?.map((opt) => (
+								{(Array.isArray(val?.options)
+									? val && Array.isArray(val.options)
+										? val.options
+										: []
+									: []
+								).map((opt) => (
 									<Menu.Item
 										key={opt.value}
 										value={opt.value}
@@ -437,15 +465,15 @@ export const VectorForm = ({
 									{val.label}
 								</Typography>
 								<FileDropzone
-									multiple
-									key={dropzoneKey}
-									value={field.value || []}
+									multiple={false}
+									value={field.value as File | File[]}
 									disabled={val.disabled}
 									extensions={val.options?.extensions || []}
-									onChange={(files) => {
+									onChange={(newValues) => {
+										const files = newValues as
+											| File
+											| File[];
 										field.onChange(files);
-										onFileUpload(files);
-										setDropzoneKey(Date.now()); // Reset dropzone
 									}}
 									data-testid={`vector-form-input-${val.key}`}
 								/>
@@ -460,31 +488,6 @@ export const VectorForm = ({
 								)}
 							</>
 						);
-
-					case "zip-upload":
-						return (
-							<>
-								<FileDropzone
-									multiple
-									value={field.value || []}
-									disabled={val.disabled}
-									onChange={(newValues) =>
-										field.onChange(newValues)
-									}
-									data-testid={`vector-form-input-${val.key}`}
-								/>
-								{error && (
-									<Typography
-										variant="caption"
-										color="error"
-										data-testid={`vector-form-error-${val.key}`}
-									>
-										{getHelperText(error, val)}
-									</Typography>
-								)}
-							</>
-						);
-
 					case "checkbox":
 						return (
 							<>
