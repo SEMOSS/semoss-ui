@@ -597,11 +597,15 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 								<Editor
 									// value is appended to make pixel valid for copy / paste to other pixel cell
 									defaultValue={
-										cell.parameters.selectQuery.slice(
-											0,
-											-1,
-										) +
-										` | Import ( frame = [ CreateFrame ( frameType = [ "${cell.parameters.frameType}" ] , override = [ true ] ) .as ( [ "${cell.parameters.frameVariableName}" ] ) ] ) ; Frame ( frame = [ "${cell.parameters.frameVariableName}" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`
+										cell.parameters.selectQuery
+											.slice(0, -1)
+											.replace(
+												/\s*\|\s*Limit\s*\(\s*[^)]*\s*\)/,
+												"",
+											) +
+										(cell.parameters.enableBatching
+											? ` | Offset ( ${cell.parameters.currentOffset ?? 0} ) | Limit ( ${cell.parameters.batchSize ?? 100} ) | Import ( frame = [ CreateFrame ( frameType = [ "${cell.parameters.frameType}" ] , override = [ true ] ) .as ( [ "${cell.parameters.frameVariableName}" ] ) ] ) ; Frame ( frame = [ "${cell.parameters.frameVariableName}" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`
+											: ` | Import ( frame = [ CreateFrame ( frameType = [ "${cell.parameters.frameType}" ] , override = [ true ] ) .as ( [ "${cell.parameters.frameVariableName}" ] ) ] ) ; Frame ( frame = [ "${cell.parameters.frameVariableName}" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`)
 									}
 									language="pixel"
 									options={{
@@ -639,6 +643,9 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 								label="Data Limit"
 								value={dataLimit}
 								onChange={handleDataLimitUpdate}
+								disabled={
+									cell.parameters.enableBatching ?? false
+								}
 								key={`data-limit-number`}
 							/>
 							<Button
