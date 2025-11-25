@@ -397,6 +397,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 									/>
 								}
 								label="Enable CSV Export"
+								sx={{ paddingLeft: 3 }}
 							/>
 						</StyledItem>
 					)}
