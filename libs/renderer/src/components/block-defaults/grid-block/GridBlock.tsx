@@ -21,6 +21,14 @@ interface QueryImportCellParams {
 	currentOffset?: number;
 }
 
+// Type for data import cell parameters
+interface DataImportCellParams {
+	frameVariableName?: string;
+	enableBatching?: boolean;
+	batchSize?: number;
+	currentOffset?: number;
+}
+
 const DEFAULT_HEIGHT = "300px";
 const DEFAULT_WIDTH = "500px";
 
@@ -147,28 +155,50 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		value: unknown;
 	} | null>(null);
 
-	// Find the source QueryImportCell that created this frame
+	// Find the source QueryImportCell or DataImportCell that created this frame
 	// We need to find the cell whose frameVariableName matches our base name
 	const sourceCell = Object.values(state.queries)
 		.flatMap((q) => Object.values(q.cells))
 		.find((cell) => {
-			if (cell.widget !== "query-import") return false;
-			const frameVar = (cell.parameters as QueryImportCellParams)
-				.frameVariableName;
-			// Match if frameVar equals the GridBlock's frame name exactly
-			return frameVar === data.frame.name;
+			if (cell.widget === "query-import") {
+				const frameVar = (cell.parameters as QueryImportCellParams)
+					.frameVariableName;
+				return frameVar === data.frame.name;
+			}
+			if (cell.widget === "data-import") {
+				const frameVar = (cell.parameters as DataImportCellParams)
+					.frameVariableName;
+				return frameVar === data.frame.name;
+			}
+			return false;
 		});
 
-	// Check if batching is enabled
-	const isBatchingEnabled =
-		(sourceCell?.parameters as QueryImportCellParams)?.enableBatching ??
-		false;
-	const batchSize =
-		(sourceCell?.parameters as QueryImportCellParams)?.batchSize ?? 100;
+	// Check if batching is enabled (works for both QueryImportCell and DataImportCell)
+	// Only enable batching if we found a matching source cell
+	const isBatchingEnabled = sourceCell
+		? ((
+				sourceCell?.parameters as
+					| QueryImportCellParams
+					| DataImportCellParams
+			)?.enableBatching ?? false)
+		: false;
+
+	const batchSize = sourceCell
+		? ((
+				sourceCell?.parameters as
+					| QueryImportCellParams
+					| DataImportCellParams
+			)?.batchSize ?? 100)
+		: 100;
 
 	// Always fetch from the original frame
-	const currentOffset =
-		(sourceCell?.parameters as QueryImportCellParams)?.currentOffset ?? 0;
+	const currentOffset = sourceCell
+		? ((
+				sourceCell?.parameters as
+					| QueryImportCellParams
+					| DataImportCellParams
+			)?.currentOffset ?? 0)
+		: 0;
 	const frameName = data.frame.name;
 
 	// get the frame - when batching is enabled, don't apply pagination
@@ -308,10 +338,13 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 
 		setLoadingMore(true);
 
-		// Update the offset in the source cell
+		// Update the offset in the source cell (works for both QueryImportCell and DataImportCell)
 		const newOffset =
-			((sourceCell.parameters as QueryImportCellParams).currentOffset ??
-				0) + batchSize;
+			((
+				sourceCell.parameters as
+					| QueryImportCellParams
+					| DataImportCellParams
+			).currentOffset ?? 0) + batchSize;
 		state.dispatch({
 			message: ActionMessages.UPDATE_CELL,
 			payload: {
