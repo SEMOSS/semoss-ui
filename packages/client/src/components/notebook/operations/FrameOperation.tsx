@@ -5,6 +5,7 @@ import { LinearProgress, styled, Table, Typography } from "@semoss/ui";
 
 const StyledTableContainer = styled(Table.Container)(() => ({
 	height: "200px",
+	maxWidth: "calc(100vw - 640px)",
 }));
 
 const StyledLoadingTableCell = styled(Table.Cell)(() => ({
