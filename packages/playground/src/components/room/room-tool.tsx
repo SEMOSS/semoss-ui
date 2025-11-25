@@ -156,7 +156,7 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 			try {
 				const response = await fetch(
 					`${Env.MODULE}/public_home/${config.app}/portals/`,
-					{ method: "HEAD" },
+					{ method: "GET" },
 				);
 				const text = await response.text();
 				//FixMe: Always returns a 200 so currently checking against default text returned
