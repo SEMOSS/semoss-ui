@@ -593,40 +593,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
-		 * Send a MCP tool response to the playground
-		 * @param mcpToolResponse - response to send
-		 */
-		sendMCPResponseToPlayground: (mcpToolResponse: string) => {
-			if (!Env.TOOL) {
-				throw new Error("No MCP tool execution context found");
-			} else if (
-				typeof window === "undefined" ||
-				typeof window.parent === "undefined"
-			) {
-				throw new Error(
-					"Cannot send MCP tool response outside of embedded browser",
-				);
-			}
-
-			window.parent.postMessage(
-				{
-					type: "SMSS_EXEC_TOOL",
-					tool: {
-						type: "MCP",
-						message: Env.TOOL.message,
-						id: Env.TOOL.id,
-						name: Env.TOOL.name,
-						response: mcpToolResponse,
-						roomId: Env.TOOL.roomId,
-					} satisfies MCPToolResponse,
-				},
-				"*",
-			);
-		},
-
-		/**
 		 * Run a MCP tool
-		 * @deprecated use runPixel and sendMCPResponseToPlayground instead
 		 * @param name - name of the tool
 		 * @param parameters - parameters to pass to the tool
 		 */
@@ -638,10 +605,32 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ] );`,
 			);
 
-			this.actions.sendMCPResponseToPlayground(pixelReturn[0].output);
+			const { output, operationType } = pixelReturn[0];
+			if (Env.TOOL && operationType.indexOf("MCP_TOOL_EXECUTION") > -1) {
+				// only works in embedded browser
+				if (
+					typeof window !== "undefined" &&
+					typeof window.parent !== "undefined"
+				) {
+					window.parent.postMessage(
+						{
+							type: "SMSS_EXEC_TOOL",
+							tool: {
+								type: "MCP",
+								message: Env.TOOL.message,
+								id: Env.TOOL.id,
+								name: Env.TOOL.name,
+								response: output,
+								roomId: Env.TOOL.roomId,
+							} satisfies MCPToolResponse,
+						},
+						"*",
+					);
+				}
+			}
 
 			return {
-				output: pixelReturn[0].output,
+				output,
 			};
 		},
 
