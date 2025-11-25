@@ -28,21 +28,43 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 	const [popoverAnchorEle, setPopoverAnchorEl] = useState<HTMLElement | null>(
 		null,
 	);
+
 	const [loggedInProviders, setLoggedInProviders] = useState<Set<string>>(
 		() => {
+			const loggedInFromConfig = new Set<string>();
+			const logins = configStore.store.config.logins || {};
+
+			// Add each provider that exists in logins (excluding NATIVE)
+			Object.keys(logins).forEach((provider) => {
+				if (
+					logins[provider] !== undefined &&
+					provider.toUpperCase() !== "NATIVE"
+				) {
+					loggedInFromConfig.add(provider.toLowerCase());
+				}
+			});
+
+			// Also check localStorage for any additional state
 			try {
 				const stored = localStorage.getItem("loggedInProviders");
-				const providers = stored
-					? new Set<string>(JSON.parse(stored))
-					: new Set<string>();
-				console.log(
-					"Initial loggedInProviders from localStorage:",
-					Array.from(providers),
-				);
-				return providers;
-			} catch {
-				return new Set<string>();
+				if (stored) {
+					const storedProviders = JSON.parse(stored);
+					storedProviders.forEach((provider: string) =>
+						loggedInFromConfig.add(provider),
+					);
+				}
+			} catch (error) {
+				console.error("Error reading from localStorage:", error);
 			}
+
+			// Save the combined state back to localStorage
+			if (loggedInFromConfig.size > 0) {
+				localStorage.setItem(
+					"loggedInProviders",
+					JSON.stringify(Array.from(loggedInFromConfig)),
+				);
+			}
+			return loggedInFromConfig;
 		},
 	);
 
@@ -53,7 +75,6 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 		setLoggedInProviders((prev) => {
 			const newSet = updater(prev);
 			const providersArray = Array.from(newSet);
-			console.log("Saving to localStorage:", providersArray);
 			localStorage.setItem(
 				"loggedInProviders",
 				JSON.stringify(providersArray),
@@ -62,11 +83,6 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 		});
 	};
 
-	console.log(
-		"Rendering LogoutPopover component",
-		"loggedInProviders:",
-		Array.from(loggedInProviders),
-	);
 	const notification = useNotification();
 
 	const allowedLogins = Object.keys(
@@ -95,37 +111,17 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 	};
 
 	const oauth = async (provider: string) => {
-		console.log("OAuth login started for provider:", provider);
 		try {
 			const success = await configStore.oauth(provider);
-			console.log(
-				"OAuth login completed for provider:",
-				provider,
-				"success:",
-				success,
-			);
-
 			if (success) {
 				// Use wrapper function that saves to localStorage
 				updateLoggedInProviders((prev) => {
-					const currentProviders = Array.from(prev);
-					console.log(
-						"Current loggedInProviders before update:",
-						currentProviders,
-					);
-
 					if (prev.has(provider)) {
-						console.log(
-							`Provider ${provider} already in set, skipping`,
-						);
 						return prev;
 					}
 
 					const newSet = new Set(prev);
 					newSet.add(provider);
-					const newProviders = Array.from(newSet);
-					console.log("Updated loggedInProviders:", newProviders);
-
 					return newSet;
 				});
 
@@ -135,7 +131,6 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 				});
 			}
 		} catch (error) {
-			console.error("OAuth login failed for provider:", provider, error);
 			notification.add({
 				color: "error",
 				message: error.message || `Failed to login to ${provider}`,
@@ -145,18 +140,11 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 
 	const handleProviderLogout = async (provider: string) => {
 		try {
-			console.log("Logging out from provider:", provider);
 			await configStore.logoutProvider(provider);
-			console.log("Successfully logged out from provider:", provider);
-
 			// Remove provider from logged-in providers using wrapper
 			updateLoggedInProviders((prev) => {
 				const newSet = new Set(prev);
 				newSet.delete(provider);
-				console.log(
-					"Removed provider from loggedInProviders:",
-					provider,
-				);
 				return newSet;
 			});
 
@@ -239,12 +227,6 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 
 					{allowedLogins.map((provider) => {
 						const isLoggedIn = loggedInProviders.has(provider);
-						console.log(
-							`Provider: ${provider}, isLoggedIn:`,
-							isLoggedIn,
-							"loggedInProviders:",
-							Array.from(loggedInProviders),
-						);
 						return (
 							<List.Item key={provider} sx={{ px: 3, py: 1 }}>
 								<Stack
@@ -278,11 +260,38 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 											textTransform: "none",
 											fontWeight: 500,
 										}}
-										onClick={() =>
-											isLoggedIn
-												? handleProviderLogout(provider)
-												: oauth(provider)
-										}
+										onClick={() => {
+											if (isLoggedIn) {
+												// Check if this is the first/primary login provider
+												const firstLoginKey =
+													Object.keys(
+														configStore.store.config
+															.logins,
+													)[0];
+												if (
+													firstLoginKey ===
+													provider.toUpperCase()
+												) {
+													updateLoggedInProviders(
+														(prev) => {
+															const newSet =
+																new Set(prev);
+															newSet.delete(
+																provider,
+															);
+															return newSet;
+														},
+													);
+													handleLogout();
+												} else {
+													handleProviderLogout(
+														provider,
+													);
+												}
+											} else {
+												oauth(provider);
+											}
+										}}
 										disabled={false}
 									>
 										{isLoggedIn ? "Logout" : "Login"}
