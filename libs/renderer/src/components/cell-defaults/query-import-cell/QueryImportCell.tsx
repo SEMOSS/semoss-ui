@@ -545,8 +545,25 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 										value={cell.parameters.batchSize ?? 100}
 										disabled={cell.isLoading}
 										onChange={(e) => {
+											const inputValue = e.target.value;
+
+											// Allow empty string for deletion
+											if (inputValue === "") {
+												state.dispatch({
+													message:
+														ActionMessages.UPDATE_CELL,
+													payload: {
+														queryId: cell.query.id,
+														cellId: cell.id,
+														path: "parameters.batchSize",
+														value: "",
+													},
+												});
+												return;
+											}
+
 											const value = Number.parseInt(
-												e.target.value,
+												inputValue,
 												10,
 											);
 											if (
