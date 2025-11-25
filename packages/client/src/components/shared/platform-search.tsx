@@ -9,6 +9,7 @@ import {
 	CommandInput,
 	CommandList,
 	CommandSeparator,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -29,7 +30,12 @@ const CATEGORIES = [
 	{ name: "Storage", type: "STORAGE" },
 ] as const;
 
-export const PlatformSearch = () => {
+interface PromptSearchProps {
+	/** Css to pass to the toggle */
+	className?: string;
+}
+
+export const PlatformSearch = ({ className }: PromptSearchProps) => {
 	const navigate = useNavigate();
 	const [search, setSearch] = useState("");
 	const [open, setOpen] = useState(false);
@@ -49,23 +55,26 @@ export const PlatformSearch = () => {
 		<>
 			<Button
 				variant="outline"
-				className="w-full justify-between overflow-hidden"
+				className={cn(
+					"w-full justify-start overflow-hidden",
+					className,
+				)}
 				onClick={() => setOpen(true)}
 			>
-				&nbsp;
-				<SearchIcon className="ml-2 size-4 shrink-0 opacity-50" />
+				<SearchIcon className="size-4 shrink-0 opacity-50" />
+				Search
 			</Button>
 			<Dialog open={open} onOpenChange={setOpen}>
-				<DialogHeader className="sr-only">
-					<DialogTitle>Command</DialogTitle>
-					<DialogDescription>
-						Run a platform command
-					</DialogDescription>
-				</DialogHeader>
 				<DialogContent
 					className="overflow-hidden p-0"
 					showCloseButton={true}
 				>
+					<DialogHeader className="sr-only">
+						<DialogTitle>Command</DialogTitle>
+						<DialogDescription>
+							Run a platform command
+						</DialogDescription>
+					</DialogHeader>
 					<Command
 						className="**:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5"
 						shouldFilter={false}

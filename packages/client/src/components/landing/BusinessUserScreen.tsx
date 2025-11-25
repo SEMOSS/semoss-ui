@@ -88,7 +88,7 @@ export const BusinessUserScreen: React.FC = observer(() => {
 				</SliderTexts>
 			</ContentContainer>
 			<Box sx={{ width: "100%", maxWidth: "60%", overflow: "auto" }}>
-				<PlatformSearch />
+				<PlatformSearch className="h-15 rounded-3xl border-[rgb(198,191,252)]" />
 			</Box>
 		</StyledContainer>
 	);
