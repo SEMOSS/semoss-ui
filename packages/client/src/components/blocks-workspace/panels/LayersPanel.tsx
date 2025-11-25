@@ -254,7 +254,7 @@ type TreeNode = {
 };
 
 const findNode = (
-	root: any,
+	root,
 	id: UniqueIdentifier,
 ): { node: TreeNode; parent: TreeNode | null; slot: string | null } | null => {
 	const stack: {
@@ -291,6 +291,13 @@ export interface AddBlocksLayersProps {
 	title: string;
 }
 
+const DroppableContainer = React.forwardRef<
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement>
+>(function DroppableContainer(props, ref) {
+	return <div ref={ref} {...props} />;
+});
+
 /**
  * Render the Layers
  */
@@ -298,7 +305,7 @@ export const LayersPanel = observer(
 	(props: AddBlocksLayersProps): JSX.Element => {
 		const { title } = props;
 		// get the store
-		const { registry, state } = useBlocks();
+		const { state } = useBlocks();
 		const { designer } = useDesigner();
 		const notification = useNotification();
 		const { workspace } = useWorkspace();
@@ -483,13 +490,7 @@ export const LayersPanel = observer(
 			selectLayer(selectedPages);
 		};
 
-		const DraggableTreeItem = ({
-			node,
-			children,
-		}: {
-			node: any;
-			children: any;
-		}) => {
+		const DraggableTreeItem = ({ node, children }: { node; children }) => {
 			const { attributes, listeners, setNodeRef, transform } =
 				useDraggable({
 					id: node.id,
@@ -516,8 +517,8 @@ export const LayersPanel = observer(
 			children,
 			onDropPositionChange,
 		}: {
-			node: any;
-			children: any;
+			node;
+			children;
 			onDropPositionChange: (
 				position: "top" | "bottom" | "inside",
 			) => void;
@@ -563,7 +564,7 @@ export const LayersPanel = observer(
 			};
 
 			return (
-				<div
+				<DroppableContainer
 					ref={setNodeRef}
 					data-id={node.id}
 					style={{ position: "relative" }}
@@ -627,7 +628,7 @@ export const LayersPanel = observer(
 						</>
 					)}
 					{children}
-				</div>
+				</DroppableContainer>
 			);
 		};
 
@@ -651,9 +652,9 @@ export const LayersPanel = observer(
 			WidgetIcon,
 			canVariabilize,
 		}: {
-			block: any;
+			block;
 			variableName: string;
-			WidgetIcon: any;
+			WidgetIcon;
 			canVariabilize: boolean;
 		}) => {
 			const [menuAnchorEl, setMenuAnchorEl] =
@@ -968,6 +969,9 @@ export const LayersPanel = observer(
 
 		const renderPage = (id: string) => {
 			const block = state.blocks[id];
+			const route =
+				(block.data.route as string) ||
+				block.id.replace(/^page-(\d+)$/, "page--$1");
 			return (
 				<StyledPageItem
 					key={block.id}
@@ -994,9 +998,7 @@ export const LayersPanel = observer(
 								</StyledTreeItemIcon>
 							)}
 						</StyledHomePageChildDiv>
-						<Typography variant="subtitle1">
-							/{block.data.route as string}
-						</Typography>
+						<Typography variant="subtitle1">/{route}</Typography>
 					</StyledHomePageDiv>
 					{id !== "page-1" && pageHovered === block.id && (
 						<StyledTreeItemIcon>
