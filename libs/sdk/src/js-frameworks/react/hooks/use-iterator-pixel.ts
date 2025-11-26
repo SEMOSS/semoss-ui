@@ -139,6 +139,8 @@ export function useIteratorPixel<TResponse, TItem>(
 	useEffect(
 		() => {
 			setOffset(0);
+			setAllData([]);
+			setTotalCount(0);
 			isLoadingMoreRef.current = false;
 		},
 
