@@ -1286,6 +1286,12 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				onExpand={(path, childrenPaths) => {
 					handleExpandPath(path, childrenPaths);
 				}}
+				onMakeMCPClick={(e, path) => {
+						handleMakeMCPClick(e, path);
+				}}
+				onMCPEditClick={(e, path) => {
+						handleMCPEditClick(e, path);
+				}}
 			/>
 		</Panel>
     {mcpOverlayOpen && (

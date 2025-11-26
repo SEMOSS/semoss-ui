@@ -135,6 +135,18 @@ interface FileExplorerItemProps {
 	endIcon?: React.ReactNode;
 	expandIcon?: React.ReactNode;
 	collapseIcon?: React.ReactNode;
+
+	/** Triggered when the Make MCP Icon is clicked */
+	onMakeMCPClick?: (
+		event: React.MouseEvent<HTMLButtonElement>,
+		path: string,
+	) => boolean | void;
+
+	/** Triggered when the Edit MCP Icon is clicked */
+	onMCPEditClick?: (
+		event: React.MouseEvent<HTMLButtonElement>,
+		path: string,
+	) => boolean | void;
 }
 
 interface FolderContextMenuProps {
@@ -261,18 +273,6 @@ const FolderContextMenu = ({
 
 export interface FileExplorerItemHandle {
 	expandAndLoad: () => Promise<void>;
-
-	/** Triggered when the Make MCP Icon is clicked */
-	onMakeMCPClick?: (
-		event: React.MouseEvent<HTMLButtonElement>,
-		path: string,
-	) => boolean | void;
-
-	/** Triggered when the Edit MCP Icon is clicked */
-	onMCPEditClick?: (
-		event: React.MouseEvent<HTMLButtonElement>,
-		path: string,
-	) => boolean | void;
 }
 
 export const FileExplorerItem = forwardRef<
@@ -615,7 +615,7 @@ export const FileExplorerItem = forwardRef<
 							)}
 						</>
 					)}
-					<StyledTypography variant="body2">{name}</StyledTypography>
+
 					{isHovered ? (
 						<Box>
 							{makeMCPCandidate && (
@@ -648,20 +648,6 @@ export const FileExplorerItem = forwardRef<
 									<EditOutlined fontSize="inherit" />
 								</IconButton>
 							)}
-							<IconButton
-								title={`Delete ${name}`}
-								onClick={(e) => {
-									// don't allow it to propagate
-									e.stopPropagation();
-
-									// trigger
-									onTrashClick(e, path);
-								}}
-								size="small"
-								color={"default"}
-							>
-								<DeleteOutline fontSize="inherit" />
-							</IconButton>
 						</Box>
 					) : null}
 				</StyledLabel>
