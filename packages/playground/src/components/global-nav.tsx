@@ -91,11 +91,9 @@ export const GlobalNav = observer(() => {
 	/**
 	 * Setup infinite scroll for the command list
 	 */
-	const setScroll = useInfiniteScroll({
+	const { setScroll } = useInfiniteScroll({
+		disabled: getRooms.isLoading || !getRooms.hasMore,
 		onNext: () => {
-			if (getRooms.isLoading || !getRooms.hasMore) {
-				return;
-			}
 			getRooms.next();
 		},
 	});
