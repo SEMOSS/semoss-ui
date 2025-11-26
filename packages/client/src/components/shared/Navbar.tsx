@@ -13,7 +13,7 @@ import {
 } from "@semoss/ui";
 import { usePage } from "@/hooks";
 import { NotificationDrawer } from "../notifications/NotificationDrawer";
-import { PlatformSearch } from "./PlatformSearch";
+import { PlatformSearch } from "./platform-search";
 
 const StyledNavbar = styled("div")(({ theme }) => ({
 	position: "absolute",
