@@ -50,16 +50,9 @@ export const WorkspaceChatList = ({
 	);
 
 	// Attach infinite scroll
-	const setScroll = useInfiniteScroll({
+	const { setScroll } = useInfiniteScroll({
+		disabled: getWorkspaceRooms.isLoading || !getWorkspaceRooms.hasMore,
 		onNext: () => {
-			if (getWorkspaceRooms.isLoading) {
-				return;
-			}
-
-			if (!getWorkspaceRooms.hasMore) {
-				return;
-			}
-			// get more
 			getWorkspaceRooms.next();
 		},
 	});
