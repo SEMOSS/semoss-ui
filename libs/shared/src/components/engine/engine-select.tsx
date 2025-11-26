@@ -59,7 +59,7 @@ export const EngineSelect = ({
 	const getEngines = useIteratorPixel<Engine[], Engine>(
 		(limit, offset) =>
 			open
-				? `MyEngines(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} ${engineTypes ? `engineTypes=${JSON.stringify(engineTypes)},` : ""} ${metaFilters ? `metaFilters=${JSON.stringify(metaFilters)},` : ""} limit=[${limit}], offset=[${offset}]);`
+				? `MyEngines(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} ${engineTypes ? `engineTypes=${JSON.stringify(engineTypes)},` : ""} ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} limit=[${limit}], offset=[${offset}]);`
 				: "",
 		(response) => {
 			// if its less than the limit, we know its the end
@@ -86,11 +86,9 @@ export const EngineSelect = ({
 	/**
 	 * Setup infinite scroll for the command list
 	 */
-	const setScroll = useInfiniteScroll({
+	const { setScroll } = useInfiniteScroll({
+		disabled: getEngines.isLoading || !getEngines.hasMore || !open,
 		onNext: () => {
-			if (getEngines.isLoading || !getEngines.hasMore || !open) {
-				return;
-			}
 			getEngines.next();
 		},
 	});
