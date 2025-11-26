@@ -1,7 +1,11 @@
 // Import global styles for Next components
 import "../styles/globals.css";
 
+// export the lib
+export * from "../lib";
+
 // export the hooks
+
 export * from "../hooks";
 // Re-export all components (only export what exists)
 export * from "./alert";
