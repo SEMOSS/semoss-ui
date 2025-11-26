@@ -79,11 +79,9 @@ export const WorkspacePage = observer(() => {
 	/**
 	 * Setup infinite scroll for the command list
 	 */
-	const setScroll = useInfiniteScroll({
+	const { setScroll } = useInfiniteScroll({
+		disabled: getWorkspaces.isLoading || !getWorkspaces.hasMore,
 		onNext: () => {
-			if (getWorkspaces.isLoading || !getWorkspaces.hasMore) {
-				return;
-			}
 			getWorkspaces.next();
 		},
 	});
