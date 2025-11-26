@@ -373,7 +373,22 @@ export const LayersPanel = observer(
 
 		useEffect(() => {
 			const block = state.blocks[selectedPages];
-			handlePageSelection(block);
+
+			const page1 = state.blocks["page-1"];
+			if (page1 && (!page1.data?.route || page1.data.route === "")) {
+				state.dispatch({
+					message: ActionMessages.SET_BLOCK_DATA,
+					payload: {
+						id: "page-1",
+						path: "route",
+						value: "page--1",
+					},
+				});
+			}
+
+			if (block) {
+				handlePageSelection(block);
+			}
 		}, []);
 
 		const handleDragStart = (event: DragStartEvent) => {
@@ -969,9 +984,6 @@ export const LayersPanel = observer(
 
 		const renderPage = (id: string) => {
 			const block = state.blocks[id];
-			const route =
-				(block.data.route as string) ||
-				block.id.replace(/^page-(\d+)$/, "page--$1");
 			return (
 				<StyledPageItem
 					key={block.id}
@@ -998,7 +1010,9 @@ export const LayersPanel = observer(
 								</StyledTreeItemIcon>
 							)}
 						</StyledHomePageChildDiv>
-						<Typography variant="subtitle1">/{route}</Typography>
+						<Typography variant="subtitle1">
+							/{block.data.route as string}
+						</Typography>
 					</StyledHomePageDiv>
 					{id !== "page-1" && pageHovered === block.id && (
 						<StyledTreeItemIcon>
