@@ -107,6 +107,7 @@ export const AddAppModal = (props: AddAppProps) => {
 			title: "Details",
 			component: AppDetailsStep,
 			requiredFields: [
+				ADD_APP_FORM_FIELD_NAME,
 				ADD_APP_FORM_FIELD_DESCRIPTION,
 			],
 		},

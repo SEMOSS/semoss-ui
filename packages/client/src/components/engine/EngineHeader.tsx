@@ -277,23 +277,20 @@ export const EngineHeader: React.FC = () => {
 							""}
 					</StyledInfoDescription>
 
-					<Stack direction="row" spacing={1}>
+					<Stack direction="row" spacing={1} flexWrap={"wrap"}>
 						{active.metadata.tag &&
 							(active.metadata.tag as string[]).map((tag, i) => {
-								if (i < 2) {
-									return (
-										<Chip
-											key={tag}
-											label={tag}
-											color="default"
-											size="small"
-											variant="outlined"
-											data-testid="tag-chip"
-										/>
-									);
-								} else {
-									return null;
-								}
+								if (tag === "") return null;
+								return (
+									<Chip
+										key={tag}
+										label={tag}
+										color="default"
+										size="small"
+										variant="outlined"
+										data-testid="tag-chip"
+									/>
+								);
 							})}
 					</Stack>
 				</StyledInfoLeft>

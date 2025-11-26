@@ -33,6 +33,7 @@ import {
 	config as FlipCardBlockConfig,
 	type FlipCardBlockDef,
 } from "./flip-card-block";
+import { config as FormBlockConfig, type FormBlockDef } from "./form-block";
 import { config as GridBlockConfig, type GridBlockDef } from "./grid-block";
 import {
 	config as GridDynamicFrameBlockConfig,
@@ -161,7 +162,8 @@ export type DefaultBlockDefinitions =
 	| TimePickerBlockDef
 	| VisualizationFilterBlockDef
 	| GridDynamicFrameBlockDef
-	| TabBlockDef;
+	| TabBlockDef
+	| FormBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 	[AccordionBlockConfig.widget]: AccordionBlockConfig,
@@ -172,6 +174,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 	[CheckboxBlockConfig.widget]: CheckboxBlockConfig,
 	[ChipBlockConfig.widget]: ChipBlockConfig,
 	[ContainerBlockConfig.widget]: ContainerBlockConfig,
+	[FormBlockConfig.widget]: FormBlockConfig,
 	[DividerBlockConfig.widget]: DividerBlockConfig,
 	[EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
 	[FlipCardBlockConfig.widget]: FlipCardBlockConfig,
@@ -247,4 +250,5 @@ export {
 	VisualizationFilterBlockConfig,
 	GridDynamicFrameBlockConfig,
 	TabBlockConfig,
+	FormBlockConfig,
 };
