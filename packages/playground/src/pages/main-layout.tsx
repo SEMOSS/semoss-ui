@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { Outlet } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
-import { SidebarInset, SidebarProvider } from "@semoss/ui/next";
+import { SidebarInset, SidebarProvider, useCacheState } from "@semoss/ui/next";
 import { GlobalNav } from "@/components/global-nav";
 import { ChatContext } from "@/contexts";
-import { useCacheState, useRoot } from "@/hooks";
+import { useRoot } from "@/hooks";
 import { ChatStore } from "@/stores";
 
 // Styled component replaced with Tailwind classes inline
