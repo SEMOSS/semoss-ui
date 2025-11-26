@@ -5,7 +5,6 @@ const Dotenv = require("dotenv-webpack");
 
 module.exports = {
 	entry: {
-		popup: "./src/popup/index.tsx",
 		background: "./src/background/index.ts",
 		content: "./src/content/index.ts",
 		panel: "./src/panel/index.tsx",
@@ -47,11 +46,6 @@ module.exports = {
 				{ from: "src/assets", to: "assets", noErrorOnMissing: true },
 				{ from: "src/devtools/devtools.js", to: "devtools.js" },
 			],
-		}),
-		new HtmlWebpackPlugin({
-			template: "./src/popup/index.html",
-			filename: "popup.html",
-			chunks: ["popup"],
 		}),
 		new HtmlWebpackPlugin({
 			template: "./src/panel/index.html",

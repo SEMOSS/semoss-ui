@@ -9,34 +9,6 @@ console.log("Extension ID:", chrome.runtime.id);
 console.log("Document ready state:", document.readyState);
 console.log("Document body exists:", !!document.body);
 
-// Visual confirmation that script loaded
-function showLoadNotification() {
-	const loadNotification = document.createElement("div");
-	loadNotification.style.cssText = `
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background: #4CAF50;
-    color: white;
-    padding: 15px;
-    border-radius: 5px;
-    z-index: 999999;
-    font-family: Arial, sans-serif;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-  `;
-	loadNotification.textContent =
-		"✓ Workshop Automation - Content script loaded";
-	document.body.appendChild(loadNotification);
-	setTimeout(() => loadNotification.remove(), 3000);
-}
-
-// Wait for body to be available
-if (document.body) {
-	showLoadNotification();
-} else {
-	window.addEventListener("DOMContentLoaded", showLoadNotification);
-}
-
 let annotatedElements: HTMLElement[] = [];
 const elementIdToUniqueId: Map<number, string> = new Map();
 
