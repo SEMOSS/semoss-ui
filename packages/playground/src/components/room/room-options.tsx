@@ -114,7 +114,7 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 								<FieldLabel>Instructions</FieldLabel>
 								<Textarea
 									placeholder="Update Instructions"
-									className="min-h-[220px] resize-none"
+									className="max-h-[220px] min-h-[220px] resize-none overflow-y-auto"
 									value={options.instructions}
 									onChange={(e) => {
 										setOptions({

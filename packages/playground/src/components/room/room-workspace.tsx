@@ -84,15 +84,10 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 		/**
 		 * Setup infinite scroll for the command list
 		 */
-		const setScroll = useInfiniteScroll({
+		const { setScroll } = useInfiniteScroll({
+			disabled:
+				getWorkspaces.isLoading || !getWorkspaces.hasMore || !open,
 			onNext: () => {
-				if (
-					getWorkspaces.isLoading ||
-					!getWorkspaces.hasMore ||
-					!open
-				) {
-					return;
-				}
 				getWorkspaces.next();
 			},
 		});
