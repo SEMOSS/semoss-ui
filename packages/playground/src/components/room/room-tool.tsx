@@ -126,7 +126,6 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 
 	useEffect(() => {
 		const checkPortal = async () => {
-			console.log({ config });
 			// Finish loading
 			if (
 				getAppInfo.status === "INITIAL" ||
@@ -157,7 +156,7 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 			try {
 				const response = await fetch(
 					`${Env.MODULE}/public_home/${config.app}/portals/`,
-					{ method: "HEAD" },
+					{ method: "GET" },
 				);
 				const text = await response.text();
 				//FixMe: Always returns a 200 so currently checking against default text returned
@@ -180,8 +179,6 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 	if (!config) {
 		return <div>No Tool</div>;
 	}
-
-	console.log({ isLoading, url, selectedTool });
 
 	return (
 		<div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
