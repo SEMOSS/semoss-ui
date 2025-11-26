@@ -46,7 +46,7 @@ type MCPJsonData = {
 type MCPJsonEditorProps = {
 	dataMap: {
 		initialData: MCPJsonData;
-		onSave?: (data: MCPJsonData, path:string) => void;
+		onSave?: (data: MCPJsonData, path: string) => void;
 		path: string;
 	};
 };
@@ -115,24 +115,31 @@ const FunctionCard = memo<{
 		getJsonTextValue,
 		jsonErrors,
 	}) => {
+		const handleHeaderClick = (e: React.MouseEvent) => {
+			// Prevent toggle when clicking on delete/restore buttons
+			if (
+				(e.target as HTMLElement).closest(
+					'button[data-action="delete"], button[data-action="restore"]',
+				)
+			) {
+				return;
+			}
+			onToggleExpand(tool.name);
+		};
+
 		return (
 			<Card
 				className={`mb-5 w-full gap-0 rounded-lg py-0 transition-all ${
 					isDeleted ? "border-2 border-red-400" : ""
 				}`}
 			>
-				<div
-					className={`flex items-center justify-between p-2 ${isDeleted ? "bg-zinc-100" : "bg-slate-100"} ${isExpanded ? "rounded-t-lg" : "rounded-lg"}`}
+				<button
+					type="button"
+					onClick={handleHeaderClick}
+					className={`flex w-full cursor-pointer items-center justify-between p-2 text-left ${isDeleted ? "bg-zinc-100" : "bg-slate-100"} ${isExpanded ? "rounded-t-lg" : "rounded-lg"} transition-colors hover:bg-slate-200`}
 				>
 					<div className="flex items-center gap-2">
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => onToggleExpand(tool.name)}
-							disabled={isDeleted}
-							className={`rounded p-1 transition-colors ${isDeleted ? "cursor-not-allowed opacity-50" : "hover:bg-gray-100"}`}
-							aria-label={isExpanded ? "Collapse" : "Expand"}
-						>
+						<div className="rounded p-1">
 							{isExpanded ? (
 								<ChevronUp
 									size={18}
@@ -144,7 +151,7 @@ const FunctionCard = memo<{
 									className="text-gray-600"
 								/>
 							)}
-						</Button>
+						</div>
 						<span
 							className={`font-bold text-base ${isDeleted ? "text-gray-500 line-through" : ""}`}
 						>
@@ -157,7 +164,11 @@ const FunctionCard = memo<{
 								variant="ghost"
 								size="sm"
 								color="error"
-								onClick={() => onDelete(actualIdx)}
+								onClick={(e) => {
+									e.stopPropagation();
+									onDelete(actualIdx);
+								}}
+								data-action="delete"
 								className="flex items-center gap-1 text-red-600 hover:bg-transparent"
 							>
 								<Trash2 size={14} />
@@ -167,7 +178,11 @@ const FunctionCard = memo<{
 							<Button
 								variant="outline"
 								size="sm"
-								onClick={() => onRestore(actualIdx)}
+								onClick={(e) => {
+									e.stopPropagation();
+									onRestore(actualIdx);
+								}}
+								data-action="restore"
 								className="flex items-center gap-1 border-green-500 text-green-600 hover:bg-green-50"
 							>
 								<RotateCcw size={14} />
@@ -177,7 +192,7 @@ const FunctionCard = memo<{
 							</Button>
 						)}
 					</div>
-				</div>
+				</button>
 
 				{isExpanded && (
 					<div className="p-4">
@@ -792,25 +807,17 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		setDebouncedSearch("");
 	}, []);
 
-	const toggleCardExpand = useCallback(
-		(toolName: string) => {
-			// Don't allow toggling expand state for deleted cards
-			if (deletedTools.includes(toolName)) {
-				return;
+	const toggleCardExpand = useCallback((toolName: string) => {
+		setExpandedCards((prev) => {
+			const newSet = new Set(prev);
+			if (newSet.has(toolName)) {
+				newSet.delete(toolName);
+			} else {
+				newSet.add(toolName);
 			}
-
-			setExpandedCards((prev) => {
-				const newSet = new Set(prev);
-				if (newSet.has(toolName)) {
-					newSet.delete(toolName);
-				} else {
-					newSet.add(toolName);
-				}
-				return newSet;
-			});
-		},
-		[deletedTools],
-	);
+			return newSet;
+		});
+	}, []);
 
 	const handleExpandAll = useCallback(() => {
 		if (expandAll) {
@@ -871,7 +878,15 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		// Disable save button and remove asterisk from tab
 		setHasChanges(false);
 		updatePanels(false);
-	}, [hasChanges, data, deletedTools, onSave, removedJsonTabs, updatePanels]);
+	}, [
+		hasChanges,
+		data,
+		deletedTools,
+		onSave,
+		path,
+		removedJsonTabs,
+		updatePanels,
+	]);
 
 	// Filter and search logic - Show all tools including deleted ones
 	const visibleTools = useMemo(() => data.tools, [data.tools]);
