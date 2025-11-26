@@ -135,11 +135,18 @@ export const VectorForm = ({
 	};
 
 	const onFormSubmit = async (formData) => {
-		const { EMBEDDINGS, ...newFormData } = formData;
+		const {
+			EMBEDDINGS,
+			DESCRIPTION: description,
+			TAGS: tag,
+			...newFormData
+		} = formData;
+		const metaData = JSON.stringify({ description, tag });
+
 		setLoading(true);
 		const pixel = `CreateVectorDatabaseEngine(database=["${
 			formData.NAME
-		}"],conDetails=[${JSON.stringify(newFormData)}])`;
+		}"],conDetails=[${JSON.stringify(newFormData)}]);SetDatabaseMetadata(database=["${formData.NAME}"],meta=[${metaData}])`;
 
 		monolithStore.runQuery(pixel).then(async (response) => {
 			const pixelOutput = response.pixelReturn[0].output,
