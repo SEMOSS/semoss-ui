@@ -576,6 +576,35 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	},
 	{
 		section: SECTION_LAYOUT,
+		name: "Form",
+		helperText: "Create a layout element for custom design",
+		activeImage: BLOCK_IMAGES["CONTAINER_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["CONTAINER_HOVER"],
+		json: {
+			widget: "form",
+			data: {
+				style: {
+					display: "flex",
+					flexDirection: "column",
+					padding: "4px",
+					gap: "8px",
+					flexWrap: "wrap",
+				},
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+				onSubmit: { type: "sync", order: [] },
+			},
+			slots: {
+				children: [],
+			},
+		},
+	},
+	{
+		section: SECTION_LAYOUT,
 		name: "Flip Card",
 		helperText: "Flip content on hover or click to reveal more information",
 		activeImage: BLOCK_IMAGES["FLIP_CARD_ACTIVE"],
@@ -2000,7 +2029,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 					flexWrap: "wrap",
 					width: "450px",
 					height: "350px",
-				}, 
+				},
 				option: {
 					title: {
 						text: "Word Cloud",
