@@ -44,6 +44,9 @@ interface RoomInputProps {
 
 	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
+
+	/** Optionally clear the input when the user asks a question */
+	clearInputOnPrompt?: boolean;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
@@ -55,6 +58,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		workspace = null,
 		configuration = null,
 		onPrompt = () => null,
+		clearInputOnPrompt = false,
 	}) => {
 		const [input, setInput] = useState("");
 		const isEmpty = input.trim().length === 0;
@@ -145,25 +149,38 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		 *
 		 * @param - input
 		 */
-		const promptModel = async (input: string) => {
+		const promptModel = async () => {
+			let success = false;
+			// store old options
+			const userInput = input;
+			const userFiles = files;
 			try {
 				// ignore if loading
 				if (isDisabled || isLoading) {
 					return;
 				}
 
-				// clear the input
-				setInput("");
-
-				// ask the room
-				const success = await onPrompt(input, files);
-				if (success) {
-					// noop
-				} else {
+				// clear out the input components
+				if (clearInputOnPrompt) {
+					setInput("");
+					setFiles([]);
+				}
+				success = await onPrompt(userInput, userFiles);
+				if (!success) {
 					throw new Error(`Error processing chat`);
 				}
 			} catch (e) {
 				toast.error(e.message);
+			} finally {
+				if (success) {
+					// clear the input + files
+					setInput("");
+					setFiles([]);
+				} else {
+					// restore to original
+					setInput(userInput);
+					setFiles(userFiles);
+				}
 			}
 		};
 
@@ -216,100 +233,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		return (
 			<>
 				<div className="relative w-full">
-					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
-						{workspace}
-					</div>
-					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
-						<div className="flex flex-row items-center">
-							{ENABLE_ATTACHMENT && (
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<span>
-											<Button
-												aria-label="Attach Documents"
-												disabled={
-													isDisabled || isLoading
-												}
-												variant="ghost"
-												size="icon-sm"
-												onClick={() => {
-													fileRef.current?.click();
-												}}
-											>
-												<PaperclipIcon />
-											</Button>
-										</span>
-									</TooltipTrigger>
-									<TooltipContent>
-										Attach Document
-									</TooltipContent>
-								</Tooltip>
-							)}
-
-							{configuration}
-
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<span>
-										<Button
-											variant={"ghost"}
-											aria-label="Record the Model"
-											size="icon-sm"
-											disabled={
-												!canListen ||
-												isDisabled ||
-												isLoading
-											}
-											onClick={() => {
-												if (isListening) {
-													stopListening();
-												} else {
-													startListening();
-												}
-											}}
-										>
-											<MicIcon
-												className={`${isListening ? "animate-pulse text-error" : ""}`}
-											/>
-										</Button>
-									</span>
-								</TooltipTrigger>
-								<TooltipContent>
-									{isListening ? "Stop Recording" : "Record"}
-								</TooltipContent>
-							</Tooltip>
-						</div>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span>
-									<Button
-										variant="default"
-										aria-label="Prompt the Model"
-										disabled={
-											isDisabled || isLoading || isEmpty
-										}
-										onClick={() => {
-											promptModel(input);
-										}}
-									>
-										{isLoading ? <Spinner /> : <SendIcon />}
-									</Button>
-								</span>
-							</TooltipTrigger>
-							<TooltipContent>
-								{(() => {
-									if (isLoading) {
-										return "Processing prompt";
-									} else if (isEmpty) {
-										return "Please enter a prompt";
-									} else if (isDisabled) {
-										return "";
-									}
-									return "Prompt";
-								})()}
-							</TooltipContent>
-						</Tooltip>
-					</div>
 					<input
 						ref={fileRef}
 						type="file"
@@ -328,11 +251,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							value={input}
 							disabled={isDisabled}
 							rows={minRows}
-							className={`w-full resize-none px-3 pt-3 pb-14 ${
+							className={`w-full resize-none px-3 pt-3 pb-14${
 								isDragging
 									? "border-primary border-dashed"
 									: "hover:border-primary"
-							} rounded-md bg-background shadow-lg transition-colors`}
+							}rounded-md bg-background shadow-lg transition-colors`}
 							autoFocus={true}
 							style={{
 								minHeight: `${minRows * 3}rem`,
@@ -390,10 +313,96 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 									// prompt the model
 									e.preventDefault();
-									promptModel(input);
+									promptModel();
 								}
 							}}
 						/>
+					</div>
+					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
+						{workspace}
+					</div>
+					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
+						<div className="flex flex-row items-center">
+							{ENABLE_ATTACHMENT && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											aria-label="Attach Documents"
+											disabled={isDisabled || isLoading}
+											variant="ghost"
+											size="icon-sm"
+											onClick={() => {
+												fileRef.current?.click();
+											}}
+										>
+											<PaperclipIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										Attach Document
+									</TooltipContent>
+								</Tooltip>
+							)}
+
+							{configuration}
+
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant={"ghost"}
+										aria-label="Record the Model"
+										size="icon-sm"
+										disabled={
+											!canListen ||
+											isDisabled ||
+											isLoading
+										}
+										onClick={() => {
+											if (isListening) {
+												stopListening();
+											} else {
+												startListening();
+											}
+										}}
+									>
+										<MicIcon
+											className={`${isListening ? "animate-pulse text-error" : ""}`}
+										/>
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{isListening ? "Stop Recording" : "Record"}
+								</TooltipContent>
+							</Tooltip>
+						</div>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="default"
+									aria-label="Prompt the Model"
+									disabled={
+										isDisabled || isLoading || isEmpty
+									}
+									onClick={() => {
+										promptModel();
+									}}
+								>
+									{isLoading ? <Spinner /> : <SendIcon />}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								{(() => {
+									if (isLoading) {
+										return "Processing prompt";
+									} else if (isEmpty) {
+										return "Please enter a prompt";
+									} else if (isDisabled) {
+										return "";
+									}
+									return "Prompt";
+								})()}
+							</TooltipContent>
+						</Tooltip>
 					</div>
 				</div>
 				{files.length > 0 ? (

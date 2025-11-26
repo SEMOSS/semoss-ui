@@ -886,7 +886,7 @@ export const CONNECTION_OPTIONS = {
 							rules: { required: true },
 						},
 						{
-							fieldName: "MODEL",
+							fieldName: "DEPLOYMENT_NAME",
 							label: "Deployment Name",
 							defaultValue: "",
 							options: {

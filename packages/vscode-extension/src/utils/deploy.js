@@ -1,5 +1,5 @@
 const vscode = require("vscode");
-const fs = require("fs");
+const fs = require("node:fs");
 const axios = require("axios");
 const FormData = require("form-data");
 
@@ -46,7 +46,7 @@ function setDeployConfig(config) {
  * @param {string} projectId - The project ID
  * @returns {Promise<void>}
  */
-async function deployProject(projectId) {
+async function deployProject(projectId, progressCallback) {
 	await vscode.window.withProgress(
 		{
 			location: vscode.ProgressLocation.Notification,
@@ -55,6 +55,7 @@ async function deployProject(projectId) {
 		},
 		async (progress) => {
 			progress.report({ increment: 10 });
+			progressCallback?.("Creating new insight...");
 
 			let response,
 				params,
@@ -76,6 +77,9 @@ async function deployProject(projectId) {
 				vscode.window.showErrorMessage(
 					`Failed to create new insight: ${getErrorMessage(error)}`,
 				);
+				progressCallback?.(
+					`Failed to create new insight: ${getErrorMessage(error)}`,
+				);
 				return;
 			}
 
@@ -83,10 +87,12 @@ async function deployProject(projectId) {
 				vscode.window.showErrorMessage(
 					"Empty insight ID returned created",
 				);
+				progressCallback?.("Empty insight ID returned created");
 				return;
 			}
 
 			progress.report({ increment: 15 });
+			progressCallback?.("Deleting existing assets (if any)...");
 
 			// Delete existing assets
 			try {
@@ -108,6 +114,9 @@ async function deployProject(projectId) {
 				vscode.window.showErrorMessage(
 					`Failed to delete assets: ${getErrorMessage(error)}`,
 				);
+				progressCallback?.(
+					`Failed to delete assets: ${getErrorMessage(error)}`,
+				);
 				return;
 			}
 
@@ -118,8 +127,8 @@ async function deployProject(projectId) {
 
 				// If the error is just that the folder doesn't exist, that's fine - continue
 				if (
-					(errorOutput && errorOutput.includes("does not exist")) ||
-					errorOutput.includes("not found")
+					errorOutput?.includes("does not exist") ||
+					errorOutput?.includes("not found")
 				) {
 					console.log(
 						"Assets folder does not exist, continuing with upload...",
@@ -128,13 +137,18 @@ async function deployProject(projectId) {
 					vscode.window.showErrorMessage(
 						`Failed to delete assets: ${errorOutput}`,
 					);
+					progressCallback?.(
+						`Failed to delete assets: ${errorOutput}`,
+					);
 					return;
 				}
 			} else {
 				console.log("Assets deleted successfully");
+				progressCallback?.("Assets deleted successfully");
 			}
 
 			progress.report({ increment: 20 });
+			progressCallback?.("Uploading new assets...");
 
 			// Upload new assets
 			try {
@@ -143,12 +157,18 @@ async function deployProject(projectId) {
 					vscode.window.showErrorMessage(
 						`Upload file does not exist: ${outputFilePath}`,
 					);
+					progressCallback?.(
+						`Upload file does not exist: ${outputFilePath}`,
+					);
 					return;
 				}
 
 				const stats = fs.statSync(outputFilePath);
 				if (stats.size === 0) {
 					vscode.window.showErrorMessage(
+						`Upload file is empty: ${outputFilePath}`,
+					);
+					progressCallback?.(
 						`Upload file is empty: ${outputFilePath}`,
 					);
 					return;
@@ -166,7 +186,7 @@ async function deployProject(projectId) {
 					{
 						headers: {
 							...formData.getHeaders(),
-							Authorization: "Basic " + encoded,
+							Authorization: `Basic ${encoded}`,
 						},
 						timeout: 60000, // 60 second timeout for large files
 					},
@@ -174,6 +194,9 @@ async function deployProject(projectId) {
 			} catch (error) {
 				console.error("Upload assets error:", error);
 				vscode.window.showErrorMessage(
+					`Failed to upload assets: ${getErrorMessage(error)}`,
+				);
+				progressCallback?.(
 					`Failed to upload assets: ${getErrorMessage(error)}`,
 				);
 				return;
@@ -188,6 +211,9 @@ async function deployProject(projectId) {
 				vscode.window.showErrorMessage(
 					"Failed to upload assets: Invalid response from server",
 				);
+				progressCallback?.(
+					"Failed to upload assets: Invalid response from server",
+				);
 				return;
 			}
 
@@ -197,6 +223,7 @@ async function deployProject(projectId) {
 			);
 
 			progress.report({ increment: 50 });
+			progressCallback?.("Unzipping assets on server...");
 
 			// Unzip the uploaded file
 			const fileLocation = response.data[0].fileLocation;
@@ -217,6 +244,9 @@ async function deployProject(projectId) {
 				vscode.window.showErrorMessage(
 					`Failed to unzip file: ${getErrorMessage(error)}`,
 				);
+				progressCallback?.(
+					`Failed to unzip file: ${getErrorMessage(error)}`,
+				);
 				return;
 			}
 
@@ -225,10 +255,14 @@ async function deployProject(projectId) {
 				vscode.window.showErrorMessage(
 					`Failed to unzip the uploaded file on the server. API response: ${apiError}`,
 				);
+				progressCallback?.(
+					`Failed to unzip the uploaded file on the server. API response: ${apiError}`,
+				);
 				return;
 			}
 
 			progress.report({ increment: 70 });
+			progressCallback?.("Reloading insight classes...");
 
 			// Reload insight classes
 			try {
@@ -248,6 +282,9 @@ async function deployProject(projectId) {
 				vscode.window.showErrorMessage(
 					`Failed to reload insight classes: ${getErrorMessage(error)}`,
 				);
+				progressCallback?.(
+					`Failed to reload insight classes: ${getErrorMessage(error)}`,
+				);
 				return;
 			}
 
@@ -255,10 +292,12 @@ async function deployProject(projectId) {
 				vscode.window.showErrorMessage(
 					"Failed to reload insight classes",
 				);
+				progressCallback?.("Failed to reload insight classes");
 				return;
 			}
 
 			progress.report({ increment: 80 });
+			progressCallback?.("Setting project portal...");
 
 			// Set project portal
 			try {
@@ -275,15 +314,20 @@ async function deployProject(projectId) {
 				vscode.window.showErrorMessage(
 					`Failed to set project portal: ${getErrorMessage(error)}`,
 				);
+				progressCallback?.(
+					`Failed to set project portal: ${getErrorMessage(error)}`,
+				);
 				return;
 			}
 
 			if (!response.data) {
 				vscode.window.showErrorMessage("Failed to set project portal");
+				progressCallback?.("Failed to set project portal");
 				return;
 			}
 
 			progress.report({ increment: 90 });
+			progressCallback?.("Publishing project...");
 
 			// Publish project
 			try {
@@ -303,6 +347,9 @@ async function deployProject(projectId) {
 				vscode.window.showErrorMessage(
 					`Failed to publish project: ${getErrorMessage(error)}`,
 				);
+				progressCallback?.(
+					`Failed to publish project: ${getErrorMessage(error)}`,
+				);
 				return;
 			}
 
@@ -313,12 +360,14 @@ async function deployProject(projectId) {
 					.operationType[0] !== "SUCCESS"
 			) {
 				vscode.window.showErrorMessage("Failed to publish project");
+				progressCallback?.("Failed to publish project");
 				return;
 			}
 
 			vscode.window.showInformationMessage(
 				"Project deployed successfully!",
 			);
+			progressCallback?.("Project deployed successfully!");
 		},
 	);
 }

@@ -1,4 +1,6 @@
-// CommonJS imports
+// Entry point for the Semoss VS Code extension. Provides commands for instance
+// management (authorize/select/remove), project packaging (zip/deploy), and a
+// chatbot webview interface used for progress + response messaging.
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
@@ -20,33 +22,127 @@ const {
 } = require("./src/components/ChatbotWebview/ChatbotSeparateManager.js");
 const {
 	registerChatbotWebview,
+	getCurrentChatbotProvider,
 } = require("./src/components/ChatbotWebview/ChatbotWebview.js");
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+/**
+ * Send an incremental progress update to the chatbot webview (non-blocking).
+ * Silently ignores errors so build / command flow is never interrupted.
+ * @param {string} text Human‑readable progress detail.
+ */
+function postProgress(text) {
+	try {
+		const provider = getCurrentChatbotProvider?.();
+		provider?._view?.webview?.postMessage?.({ type: "progress", text });
+	} catch (_) {
+		/* best effort only */
+	}
+}
 
 /**
- * @param {vscode.ExtensionContext} context
+ * Send a final response / outcome message to the chatbot webview.
+ * @param {string} text Summary message.
+ * @param {('ok'|'error')} [status='ok'] Optional status indicator.
+ */
+function postResponse(text, status = "ok") {
+	try {
+		const provider = getCurrentChatbotProvider?.();
+		provider?._view?.webview?.postMessage?.({
+			type: "response",
+			text,
+			status,
+		});
+	} catch (_) {
+		/* best effort only */
+	}
+}
+
+/**
+ * Detect whether any .smss file exists in the current workspace folders.
+ * @returns {Promise<boolean>}
+ */
+async function detectSmss() {
+	if (!vscode.workspace.workspaceFolders) return false;
+	try {
+		for (const folder of vscode.workspace.workspaceFolders) {
+			const files = await vscode.workspace.findFiles(
+				new vscode.RelativePattern(folder, "**/*.smss"),
+				"**/node_modules/**",
+				1,
+			);
+			if (files && files.length > 0) return true;
+		}
+		return false;
+	} catch (e) {
+		console.warn("Failed scanning for .smss files:", e.message);
+		return false;
+	}
+}
+
+/**
+ * Extension activation hook. Registers all commands, initializes status bar & chatbot
+ * webview, watches for .smss project files, and exposes zip/deploy workflows.
+ * Only called once per VS Code session (on first command invocation / activation event).
+ * @param {vscode.ExtensionContext} context VS Code extension lifecycle context.
  */
 async function activate(context) {
 	// Initialize the status bar
 	initStatusBar(context);
 	await updateStatusBar(context);
 
-	// Register the chatbot webview
+	// Initialize MCP service
+	try {
+		const mcpService = require("./src/utils/mcpService.js");
+		await mcpService.initialize();
+	} catch (error) {
+		console.error("Extension: Failed to initialize MCP service:", error);
+	}
+
+	// Register chatbot webview (keep provider reference for later messaging)
 	registerChatbotWebview(context);
 
-	// Register authorize command (add new instance)
+	// Initial .smss detection & context key, also push directly to webview if loaded
+	const pushSmssStateToWebview = (hasSmss) => {
+		const provider = getCurrentChatbotProvider?.();
+		try {
+			provider?._view?.webview?.postMessage?.({
+				type: "smssFileCheckResult",
+				hasSmss,
+			});
+		} catch (e) {
+			console.warn("Unable to push smss state to webview:", e.message);
+		}
+	};
+
+	const setSmssContext = async () => {
+		const hasSmss = await detectSmss();
+		await vscode.commands.executeCommand(
+			"setContext",
+			"semoss.hasSmss",
+			hasSmss,
+		);
+		pushSmssStateToWebview(hasSmss);
+	};
+
+	await setSmssContext();
+
+	// Watch for file create/delete/rename to refresh .smss presence
+	context.subscriptions.push(
+		vscode.workspace.onDidCreateFiles(setSmssContext),
+		vscode.workspace.onDidDeleteFiles(setSmssContext),
+		vscode.workspace.onDidRenameFiles(setSmssContext),
+	);
+
+	// Register: authorize (create / persist a new Semoss instance definition)
 	const disposableAuthorize = vscode.commands.registerCommand(
 		"semoss.authorize",
 		async (args) => {
 			// If called from chatbot, use args; otherwise, prompt
 			if (
-				args &&
-				args.alias &&
-				args.url &&
-				args.accessKey &&
-				args.privateKey
+				args?.alias &&
+				args?.url &&
+				args?.accessKey &&
+				args?.privateKey
 			) {
 				await storeInstance(context, args.alias, {
 					semossUrl: args.url,
@@ -69,11 +165,11 @@ async function activate(context) {
 		},
 	);
 
-	// Register select instance command
+	// Register: switch the active Semoss instance alias
 	const disposableSelectInstance = vscode.commands.registerCommand(
 		"semoss.selectInstance",
 		async (args) => {
-			if (args && args.alias) {
+			if (args?.alias) {
 				await context.secrets.store(
 					"CURRENT_INSTANCE_ALIAS",
 					args.alias,
@@ -95,11 +191,11 @@ async function activate(context) {
 		},
 	);
 
-	// Register remove instance command
+	// Register: remove a stored Semoss instance (and clear if active)
 	const disposableRemoveInstance = vscode.commands.registerCommand(
 		"semoss.removeInstance",
 		async (args) => {
-			if (args && args.alias) {
+			if (args?.alias) {
 				const instances = await getStoredInstances(context);
 				if (instances[args.alias]) {
 					delete instances[args.alias];
@@ -128,7 +224,9 @@ async function activate(context) {
 				await updateStatusBar(context);
 			}
 		},
-	); // Helper function to get secrets with error handling
+	);
+
+	// Helper: fetch credentials; surface a user error if not configured
 	const getSecretsWithValidation = async (context) => {
 		const secrets = await getSecrets(context);
 		if (
@@ -150,7 +248,7 @@ async function activate(context) {
 		"semoss.createNewApp",
 		async (args) => {
 			try {
-				if (args && args.appName) {
+				if (args?.appName) {
 					await createNewApp(context, getSecretsWithValidation, args);
 				} else {
 					await createNewApp(context, getSecretsWithValidation);
@@ -165,11 +263,16 @@ async function activate(context) {
 	);
 	context.subscriptions.push(disposableCreateApp);
 
-	// Register zip and deploy command
+	// Combined workflow: zip current project (json, smss, assets) then deploy archive
 	const disposableZipDeploy = vscode.commands.registerCommand(
 		"semoss.zipanddeploy",
 		async (uri) => {
-			// If called from Chatbot UI, uri may be undefined. Use first workspace folder.
+			const startTime = Date.now();
+			// Normalize: if command executed on a single .smss file, operate from containing folder
+			if (uri?.fsPath?.endsWith(".smss")) {
+				uri = vscode.Uri.file(path.dirname(uri.fsPath));
+			}
+			// Fallback: default to first workspace folder when no explicit resource given
 			if (!uri || !uri.fsPath) {
 				if (
 					vscode.workspace.workspaceFolders &&
@@ -184,13 +287,15 @@ async function activate(context) {
 				}
 			}
 			try {
+				postProgress("Preparing zip and deploy...");
 				const secrets = await getSecretsWithValidation(context);
 				if (!secrets) return;
 
 				setFolderPaths(uri);
 
 				// Zip the project (json, smss, assets as assets.zip)
-				await zipProject();
+				postProgress("Zipping project...");
+				await zipProject(undefined, (m) => postProgress(m));
 
 				// Find the zip file that was created (should be assets.zip, but let's be flexible)
 				const zipFiles = fs
@@ -231,9 +336,9 @@ async function activate(context) {
 					return;
 				}
 
-				vscode.window.showInformationMessage(
-					`Created and ready to deploy: ${path.basename(outputZip)} (${Math.round(stats.size / 1024)} KB)`,
-				);
+				const zipMsg = `Created archive: ${path.basename(outputZip)} (${Math.round(stats.size / 1024)} KB)`;
+				vscode.window.showInformationMessage(zipMsg);
+				postProgress(zipMsg);
 
 				// Configure deployment to use the found zip file
 				const encoded = Buffer.from(
@@ -256,49 +361,32 @@ async function activate(context) {
 					);
 					return;
 				}
-				await deployProject(projectId);
+				postProgress("Deploying project...");
+				await deployProject(projectId, (m) => postProgress(m));
+				const totalMs = Date.now() - startTime;
+				postResponse(
+					`Zip and deploy completed in ${Math.round(totalMs / 1000)}s.`,
+				);
 			} catch (error) {
 				vscode.window.showErrorMessage(
 					`Error in zip and deploy: ${error.message}`,
 				);
-			}
-		},
-	);
-
-	// Register zip only command
-	const disposableZip = vscode.commands.registerCommand(
-		"semoss.ziponly",
-		async (uri) => {
-			// If called from Chatbot UI, uri may be undefined. Use first workspace folder.
-			if (!uri || !uri.fsPath) {
-				if (
-					vscode.workspace.workspaceFolders &&
-					vscode.workspace.workspaceFolders.length > 0
-				) {
-					uri = vscode.workspace.workspaceFolders[0].uri;
-				} else {
-					vscode.window.showErrorMessage(
-						"No workspace folder found.",
-					);
-					return;
-				}
-			}
-			try {
-				setFolderPaths(uri);
-				await zipProject();
-			} catch (error) {
-				vscode.window.showErrorMessage(
-					`Error in zip: ${error.message}`,
+				postResponse(
+					`Zip and deploy failed: ${error.message}`,
+					"error",
 				);
 			}
 		},
 	);
 
-	// Register deploy only command
-	const disposableDeploy = vscode.commands.registerCommand(
-		"semoss.deployonly",
+	// Zip only: create assets archive without deploying
+	const disposableZip = vscode.commands.registerCommand(
+		"semoss.ziponly",
 		async (uri) => {
-			// Always deploy assets.zip from the selected or first workspace folder
+			const startTime = Date.now();
+			if (uri?.fsPath?.endsWith(".smss")) {
+				uri = vscode.Uri.file(path.dirname(uri.fsPath));
+			}
 			if (!uri || !uri.fsPath) {
 				if (
 					vscode.workspace.workspaceFolders &&
@@ -313,6 +401,46 @@ async function activate(context) {
 				}
 			}
 			try {
+				postProgress("Zipping project...");
+				setFolderPaths(uri);
+				await zipProject(undefined, (m) => postProgress(m));
+				postProgress("Zip archive created.");
+				const totalMs = Date.now() - startTime;
+				postResponse(
+					`Zip completed in ${Math.round(totalMs / 1000)}s.`,
+				);
+			} catch (error) {
+				vscode.window.showErrorMessage(
+					`Error in zip: ${error.message}`,
+				);
+				postResponse(`Zip failed: ${error.message}`, "error");
+			}
+		},
+	);
+
+	// Deploy only: deploy an existing zip (prefers assets.zip, otherwise user selection)
+	const disposableDeploy = vscode.commands.registerCommand(
+		"semoss.deployonly",
+		async (uri) => {
+			const startTime = Date.now();
+			if (uri?.fsPath?.endsWith(".smss")) {
+				uri = vscode.Uri.file(path.dirname(uri.fsPath));
+			}
+			if (!uri || !uri.fsPath) {
+				if (
+					vscode.workspace.workspaceFolders &&
+					vscode.workspace.workspaceFolders.length > 0
+				) {
+					uri = vscode.workspace.workspaceFolders[0].uri;
+				} else {
+					vscode.window.showErrorMessage(
+						"No workspace folder found.",
+					);
+					return;
+				}
+			}
+			try {
+				postProgress("Preparing deployment...");
 				// Find zip files in the directory
 				const zipFiles = fs
 					.readdirSync(uri.fsPath)
@@ -406,16 +534,22 @@ async function activate(context) {
 					outputPath: outputZip,
 				});
 
-				await deployProject(projectId);
+				postProgress("Deploying project...");
+				await deployProject(projectId, (m) => postProgress(m));
+				const totalMs = Date.now() - startTime;
+				postResponse(
+					`Deploy completed in ${Math.round(totalMs / 1000)}s.`,
+				);
 			} catch (error) {
 				vscode.window.showErrorMessage(
 					`Error in deploy: ${error.message}`,
 				);
+				postResponse(`Deploy failed: ${error.message}`, "error");
 			}
 		},
 	);
 
-	// Register chatbot action command for programmatic use
+	// Chatbot action bridge: exposes instance removal + delegated actions to webview manager
 	const disposableChatbot = vscode.commands.registerCommand(
 		"semoss.chatbotAction",
 		async (action, options = {}) => {
@@ -472,7 +606,7 @@ async function activate(context) {
 	);
 	context.subscriptions.push(disposableChatbot);
 
-	// Register command to open the chatbot sidebar
+	// Command: focus/open the Semoss chatbot view container
 	const disposableOpenChatbot = vscode.commands.registerCommand(
 		"semoss.openChatbot",
 		() => {
@@ -488,15 +622,10 @@ async function activate(context) {
 	);
 	context.subscriptions.push(disposableOpenChatbot);
 
-	// Check if credentials are available and show status
+	// Post‑activation: show connection status & register command set per auth state
 	const secrets = await getSecrets(context);
 
-	if (
-		secrets &&
-		secrets.semossUrl &&
-		secrets.accessKey &&
-		secrets.privateKey
-	) {
+	if (secrets?.semossUrl && secrets?.accessKey && secrets?.privateKey) {
 		vscode.window.showInformationMessage(
 			`Semoss: Connected to "${secrets.alias || "Default"}" (${secrets.semossUrl})`,
 		);
@@ -520,7 +649,18 @@ async function activate(context) {
 	}
 }
 
-// This method is called when your extension is deactivated
-function deactivate() {}
+/**
+ * Extension deactivation hook. Currently no teardown needed because
+ * VS Code disposables are managed via context.subscriptions.
+ */
+function deactivate() {
+	// Cleanup MCP service
+	try {
+		const mcpService = require("./src/utils/mcpService.js");
+		mcpService.shutdown();
+	} catch (error) {
+		console.error("Error shutting down MCP service:", error);
+	}
+}
 
 module.exports = { activate, deactivate };

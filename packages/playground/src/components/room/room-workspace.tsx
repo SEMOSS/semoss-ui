@@ -8,7 +8,7 @@ import {
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Command,
@@ -25,10 +25,10 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	useDebouncedValue,
+	useInfiniteScroll,
 } from "@semoss/ui/next";
-import type { Workspace } from "@/types";
-
-const IS_PRODUCTION = !import.meta.env.DEV;
+import type { App } from "@/types";
 
 type RoomWorkspaceProps = {
 	/**
@@ -36,7 +36,7 @@ type RoomWorkspaceProps = {
 	 */
 	mode: {
 		type: "chat" | "plan" | "workspace";
-		workspace: Workspace | null;
+		workspace: App | null;
 	};
 
 	/**
@@ -44,7 +44,7 @@ type RoomWorkspaceProps = {
 	 */
 	onModeChange: (mode: {
 		type: "chat" | "plan" | "workspace";
-		workspace: Workspace | null;
+		workspace: App | null;
 	}) => void;
 };
 
@@ -57,16 +57,40 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 		const debouncedSearch = useDebouncedValue(search);
 
 		/**
-		 * Library Hooks
+		 * Get all of the workspaces with lazy loading
 		 */
-		const listWorkspaces = usePixel<{
-			workspaces: Workspace[];
-		}>(
-			open
-				? `ListWorkspaces(${debouncedSearch ? `filters=[Filter(NAME ?like "${debouncedSearch}")],` : ""} limit=[5]);`
-				: null,
-			{ data: { workspaces: [] } },
+		const getWorkspaces = useIteratorPixel<App[], App>(
+			(limit, offset) =>
+				open
+					? `MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} type = "WORKSPACE", limit=[${limit}], offset=[${offset}]);`
+					: "",
+			(response) => {
+				// if its less than the limit, we know its the end
+				if (response.length < 15) {
+					return -1;
+				}
+
+				return Infinity;
+			},
+			(response) => {
+				return response;
+			},
+			{
+				limit: 15,
+			},
+			[open, debouncedSearch],
 		);
+
+		/**
+		 * Setup infinite scroll for the command list
+		 */
+		const { setScroll } = useInfiniteScroll({
+			disabled:
+				getWorkspaces.isLoading || !getWorkspaces.hasMore || !open,
+			onNext: () => {
+				getWorkspaces.next();
+			},
+		});
 
 		return (
 			<Tooltip>
@@ -74,53 +98,61 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 					<span>
 						<Popover open={open} onOpenChange={setOpen}>
 							<PopoverTrigger asChild>
-								<span>
-									<Button
-										className="w-36 text-left text-muted-foreground"
-										variant="outline"
-										role="combobox"
-										aria-expanded={open}
-									>
-										{mode.type === "chat" && (
-											<>
-												<MessageCircle />
-												<span className="flex-1 truncate">
-													Ask
-												</span>
-											</>
-										)}
-										{mode.type === "plan" && (
-											<>
-												<ListTodoIcon />
-												<span className="flex-1 truncate">
-													Plan
-												</span>
-											</>
-										)}
-										{mode.type === "workspace" && (
-											<>
-												<ComputerIcon />
-												<span className="flex-1 truncate">
-													{mode.workspace?.name}
-												</span>
-											</>
-										)}
-										<ChevronsUpDown className="opacity-50" />
-									</Button>
-								</span>
+								<Button
+									className="w-36 text-left text-muted-foreground"
+									variant="outline"
+									role="combobox"
+									aria-expanded={open}
+								>
+									{mode.type === "chat" && (
+										<>
+											<MessageCircle />
+											<span className="flex-1 truncate">
+												Ask
+											</span>
+										</>
+									)}
+									{mode.type === "plan" && (
+										<>
+											<ListTodoIcon />
+											<span className="flex-1 truncate">
+												Plan
+											</span>
+										</>
+									)}
+									{mode.type === "workspace" && (
+										<>
+											<ComputerIcon />
+											<span className="flex-1 truncate">
+												{mode.workspace?.project_name ||
+													""}
+											</span>
+										</>
+									)}
+									<ChevronsUpDown className="opacity-50" />
+								</Button>
 							</PopoverTrigger>
 							<PopoverContent className="p-0">
-								<Command>
+								<Command shouldFilter={false}>
 									<CommandInput
 										placeholder="Search"
 										value={search}
 										onValueChange={setSearch}
 									/>
-									<CommandList>
+									<CommandList
+										className="max-h-[200px]"
+										ref={(ele) => setScroll(ele)}
+									>
 										<CommandEmpty>
-											No results found.
+											{getWorkspaces.isLoading &&
+											getWorkspaces.data.length === 0 ? (
+												<div className="flex items-center justify-center py-4">
+													<Spinner className="size-4" />
+												</div>
+											) : (
+												"Not Found"
+											)}
 										</CommandEmpty>
-
 										<CommandGroup>
 											<CommandItem
 												value="chat"
@@ -135,51 +167,60 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 												<MessageCircle />
 												Ask
 											</CommandItem>
-											{!IS_PRODUCTION && (
+
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<span>
+														<CommandItem
+															value="plan"
+															onSelect={() => {
+																onModeChange({
+																	type: "plan",
+																	workspace:
+																		null,
+																});
+																setOpen(false);
+															}}
+														>
+															<ListTodoIcon />
+															Plan
+														</CommandItem>
+													</span>
+												</TooltipTrigger>
+												<TooltipContent>
+													Note: This is an
+													experimental feature.
+												</TooltipContent>
+											</Tooltip>
+										</CommandGroup>
+										<CommandSeparator />
+										<CommandGroup heading="Workspaces">
+											{getWorkspaces.data.map((w) => (
 												<CommandItem
-													value="plan"
+													key={w.project_id}
+													value={w.project_id}
 													onSelect={() => {
 														onModeChange({
-															type: "plan",
-															workspace: null,
+															type: "workspace",
+															workspace: w,
 														});
 														setOpen(false);
 													}}
 												>
-													<ListTodoIcon />
-													Plan
+													{w.project_name}
+													<CheckIcon
+														className={`ml-auto ${mode.type === "workspace" && mode.workspace.project_id === w.project_id ? "opacity-100" : "opacity-0"}`}
+													/>
 												</CommandItem>
-											)}
-										</CommandGroup>
-										<CommandSeparator />
-										<CommandGroup heading="Workspaces">
-											{listWorkspaces.status ===
-												"LOADING" && (
-												<div className="flex w-full flex-row items-center">
-													<Spinner />
-												</div>
-											)}
+											))}
 
-											{listWorkspaces.data.workspaces.map(
-												(w) => (
-													<CommandItem
-														key={w.workspace_id}
-														value={w.workspace_id}
-														onSelect={() => {
-															onModeChange({
-																type: "workspace",
-																workspace: w,
-															});
-															setOpen(false);
-														}}
-													>
-														{w.name}
-														<CheckIcon
-															className={`ml-auto ${mode.type === "workspace" && mode.workspace.workspace_id === w.workspace_id ? "opacity-100" : "opacity-0"}`}
-														/>
-													</CommandItem>
-												),
-											)}
+											{getWorkspaces.isLoading &&
+												getWorkspaces.data.length >
+													0 && (
+													<div className="flex items-center justify-center py-2">
+														<Spinner className="size-4" />
+													</div>
+												)}
 										</CommandGroup>
 									</CommandList>
 								</Command>

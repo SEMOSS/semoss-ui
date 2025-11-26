@@ -1,7 +1,7 @@
 import { XIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -21,9 +21,10 @@ import {
 	Label,
 	ScrollArea,
 	Spinner,
+	useDebouncedValue,
 } from "@semoss/ui/next";
 import type { App, Engine, MCP, MCPConfig } from "@/types";
-import { engineProjectToToolbox } from "./utility";
+import { engineProjectToMCP } from "./utility";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -75,12 +76,14 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 	 * Get all of the available MCPs
 	 */
 	const getApps = usePixel<(Engine | App)[]>(
-		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=["${debouncedSearch}"])`,
+		open
+			? `MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=["${debouncedSearch}"])`
+			: null,
 		{
 			data: [],
 		},
 	);
-	const availableMCPs = getApps.data.map(engineProjectToToolbox);
+	const availableMCPs = getApps.data.map(engineProjectToMCP);
 
 	/**
 	 * Track if the MCP is selected
@@ -166,7 +169,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 											{availableMCPs.map((mcp) => (
 												<Label
 													key={mcp.id}
-													className="flex w-full items-start gap-3 rounded-lg border p-3 hover:bg-accent/50 has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-primary dark:has-[[aria-checked=true]]:bg-secondary"
+													className="flex w-full items-start gap-3 rounded-lg border p-3 hover:bg-accent/50 has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-secondary"
 												>
 													<Checkbox
 														checked={isMCPSelected(
@@ -175,7 +178,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 														onCheckedChange={() => {
 															onMCPSelect(mcp);
 														}}
-														className="data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white dark:data-[state=checked]:border-primary dark:data-[state=checked]:bg-primary"
+														className="data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white"
 													/>
 													<div className="grid gap-1.5 font-normal">
 														<p className="font-medium text-sm leading-none">

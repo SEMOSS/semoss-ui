@@ -12,7 +12,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { engineProjectToToolbox } from "@/components";
+import { engineProjectToMCP } from "@/components";
 import type { App, Engine, MCP, MCPTool, PlanStep } from "@/types";
 
 type ToolCallDetails = Extract<PlanStep["details"], { stepType: "tool_call" }>;
@@ -54,12 +54,12 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 		},
 	});
 
-	const toolboxOptions = getApps.data.map(engineProjectToToolbox);
+	const toolboxOptions = getApps.data.map(engineProjectToMCP);
 
 	return (
 		<>
 			<Field>
-				<FieldLabel htmlFor={toolboxId}>Toolbox</FieldLabel>
+				<FieldLabel htmlFor={toolboxId}>MCP</FieldLabel>
 				<Select
 					value={toolbox?.id || ""}
 					onValueChange={(value) => {
@@ -70,18 +70,12 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 					}}
 				>
 					<SelectTrigger id={toolboxId}>
-						<SelectValue placeholder="Select Toolbox" />
+						<SelectValue placeholder="Select MCP" />
 					</SelectTrigger>
 					<SelectContent>
 						<SelectGroup>
-							<SelectLabel>Toolbox</SelectLabel>
-							{/* {getApps.status === "LOADING" ? (
-								<SelectItem value="" disabled>
-									Loading...
-								</SelectItem>
-							) : (
-								
-							)} */}
+							<SelectLabel>MCP</SelectLabel>
+
 							{toolboxOptions.map((option) => (
 								<SelectItem key={option.id} value={option.id}>
 									{option.name}
@@ -110,7 +104,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 					}}
 				>
 					<SelectTrigger id={toolId}>
-						<SelectValue placeholder="Tool" />
+						<SelectValue placeholder="Select Tool" />
 					</SelectTrigger>
 					<SelectContent>
 						<SelectGroup>

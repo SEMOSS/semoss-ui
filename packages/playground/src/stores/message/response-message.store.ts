@@ -68,6 +68,20 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		comment: string;
 	} | null = null;
 
+	/**
+	 * Model information associated with the message
+	 */
+	model: {
+		/** Id of the model */
+		id: string;
+
+		/** Name of the model */
+		name: string;
+	} = {
+		id: "",
+		name: "",
+	};
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message:
@@ -96,6 +110,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				response: "",
 			}));
 		}
+
+		// set the model
+		this.model = {
+			id: message.modelId,
+			name: message.ornaments?.modelName || "AI",
+		};
 
 		makeObservable(this, {
 			text: observable,
@@ -134,7 +154,7 @@ engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${inputMessage.files.length ? `image=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "image=[],"}
+${inputMessage.imageInfos.length ? `image=${JSON.stringify(inputMessage.imageInfos.map((info) => info.fileLocation))},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
 			max_new_tokens: room.options.tokenLength,
@@ -212,7 +232,7 @@ paramValues=[${JSON.stringify({
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: parentMessage.text,
-			files: parentMessage.files,
+			imageInfos: parentMessage.imageInfos,
 			modelId: room.modelId,
 			paramMap: {
 				max_new_tokens: room.options.tokenLength,

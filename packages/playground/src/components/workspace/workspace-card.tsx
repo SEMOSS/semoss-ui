@@ -1,11 +1,24 @@
-import { ArrowRight } from "lucide-react";
-import { Button } from "@semoss/ui/next";
+import { Ellipsis, SquarePen } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+	Button,
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@semoss/ui/next";
 import type { Workspace } from "@/types";
 
 export interface WorkspaceCardProps {
-	workspace: Workspace;
-	onPrimaryClick?: () => void;
-	onSecondaryClick?: () => void;
+	workspace: Pick<Workspace, "workspace_id" | "name" | "description">;
+	onEditClick: () => void;
+	onDeleteClick: () => void;
 }
 
 /**
@@ -14,47 +27,95 @@ export interface WorkspaceCardProps {
  * @component
  */
 export const WorkspaceCard = ({
-	onPrimaryClick,
-	onSecondaryClick,
+	onEditClick,
 	workspace,
+	onDeleteClick,
 }: WorkspaceCardProps) => {
 	/**
-	 * Constants
+	 * Library Hooks
 	 */
-	const isWorkspaceValid = workspace !== null;
+	const navigate = useNavigate();
 
+	/**
+	 * Functions
+	 */
+	const createRoom = () => {
+		navigate(`/new?workspaceId=${workspace.workspace_id}`);
+	};
+
+	/**
+	 * View Workspace Details
+	 */
+	const viewDetails = () => {
+		navigate(`/workspace/${workspace.workspace_id}`);
+	};
 	return (
-		<button
-			type="button"
-			onClick={onPrimaryClick}
-			className="flex w-full items-start gap-3 rounded-lg border p-3 hover:bg-accent/50"
+		<Card
+			className="cursor-pointer gap-0 bg-background p-0"
+			onClick={() => viewDetails()}
 		>
-			<div className="grid flex-1 gap-1.5 font-normal">
-				<p className="font-medium text-sm leading-none">
-					{isWorkspaceValid ? workspace.name : "Unknown Workspace"}
-				</p>
-				<p className="min-h-8 text-muted-foreground text-sm">
-					{isWorkspaceValid
-						? workspace.description
-						: "No description available"}
-				</p>
+			<CardContent className="flex flex-col gap-4 p-6">
+				<div className="flex justify-between">
+					<div className="text-4xl">🌴</div>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								onClick={(e) => e.stopPropagation()}
+							>
+								<Ellipsis />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuGroup>
+								<DropdownMenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										onEditClick();
+									}}
+								>
+									Edit
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										onDeleteClick();
+									}}
+								>
+									Delete
+								</DropdownMenuItem>
+							</DropdownMenuGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+				<CardHeader className="gap-1.5 p-0">
+					<CardTitle className="truncate leading-normal">
+						{workspace.name}
+					</CardTitle>
+					<CardDescription className="truncate">
+						{workspace.description ?? "No description available"}
+					</CardDescription>
+				</CardHeader>
+			</CardContent>
+
+			<hr
+				className="w-full"
+				style={{ borderTop: "1px solid var(--base-border, #E5E5E5)" }}
+			/>
+
+			<CardContent className="px-6 py-4">
 				<Button
-					onClick={
-						onSecondaryClick
-							? (e) => {
-									e.stopPropagation();
-									onSecondaryClick?.();
-								}
-							: onPrimaryClick
-					}
 					size="sm"
-					variant="secondary"
-					disabled={!isWorkspaceValid}
+					onClick={(e) => {
+						e.stopPropagation();
+						createRoom();
+					}}
+					variant="outline"
 				>
-					View Details
-					<ArrowRight />
+					<SquarePen />
+					New Chat
 				</Button>
-			</div>
-		</button>
+			</CardContent>
+		</Card>
 	);
 };
