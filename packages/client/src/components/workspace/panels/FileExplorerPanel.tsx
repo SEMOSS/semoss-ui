@@ -87,6 +87,9 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 	// temporary fix for dead refresh button should be removed
 	const [counter, setCounter] = useState(0);
 
+	// Track deselection to force FileExplorer remount
+	const [deselectCounter, setDeselectCounter] = useState(0);
+
 	const [mcpOverlayOpen, setMCPOverlayOpen] = useState(false);
 	const [mcpTools, setMCPTools] = useState<Record<string, unknown>>({
 		tools: [],
@@ -265,6 +268,14 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 	 * path - path to file
 	 */
 	const handleOnSelect = (path: string) => {
+		// If clicking on the same folder again, deselect it
+		if (selectedPath === path && path.slice(-1) === "/") {
+			setSelectedPath("");
+			// Increment deselect counter to force FileExplorer remount and clear selection
+			setDeselectCounter((prev) => prev + 1);
+			return;
+		}
+
 		// try to select a panel, if it doesn't exist create it. Save the path
 		const IsSelected = selectPanel(path);
 		if (!IsSelected) {
@@ -796,7 +807,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				}
 			>
 				<FileExplorer
-					key={counter}
+					key={`${counter}-${deselectCounter}`}
 					type={EXPLORER_TYPE}
 					space={workspace.appId}
 					insightId={workspace.insightId}
