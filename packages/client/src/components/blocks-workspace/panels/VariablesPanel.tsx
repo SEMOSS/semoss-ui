@@ -1,18 +1,23 @@
 import {
 	Add,
+	ArrowDownward,
+	ArrowUpward,
 	AutoFixHighOutlined,
-	FilterListRounded,
+	Close,
+	Tune,
 } from "@mui/icons-material";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useBlocks, VARIABLE_TYPES, type Variable } from "@semoss/renderer";
-import { runPixel } from "@semoss/sdk/react";
 import {
+	Accordion,
+	Badge,
 	Box,
 	Button,
 	Checkbox,
-	Checklist,
 	CircularProgress,
+	Divider,
 	IconButton,
 	List,
 	Modal,
@@ -20,23 +25,17 @@ import {
 	Search,
 	Stack,
 	styled,
+	Tooltip,
 	Typography,
 } from "@semoss/ui";
 import { AddVariablePopover, NotebookVariable } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { usePixel, useWorkspace } from "@/hooks";
+import ExpandCollapseIcon from "../../../assets/img/ExpandCollapseIcon.png";
 import { suggestVariableRenames } from "../utils";
-
-interface LLMResponse {
-	response: string;
-}
 
 const StyledStack = styled(Stack)(() => ({
 	maxHeight: "100%",
-}));
-
-const StyledButton = styled(Button)(() => ({
-	width: "100px",
 }));
 
 const StyledMenu = styled("div")(({ theme }) => ({
@@ -49,7 +48,14 @@ const StyledMenu = styled("div")(({ theme }) => ({
 	overflowY: "scroll",
 }));
 
-const StyledMenuTitle = styled(Typography)(() => ({}));
+const StyledMenuTitle = styled(Typography)(() => ({
+	color: "#212121",
+	fontFamily: "Inter",
+	fontSize: "16px",
+	fontWeight: "500",
+	lineHeight: "150%",
+	letterSpacing: "0.15px",
+}));
 
 const StyledTitleSpan = styled("span")(() => ({
 	color: "var(--Primary-Dark, #1260DD)",
@@ -73,12 +79,15 @@ const StyledMenuScroll = styled("div")(({ theme }) => ({
 }));
 
 const StyledBox = styled(Box)(({ theme }) => ({
-	height: "300px",
-	overflow: "scroll",
-	marginLeft: theme.spacing(2),
-	marginTop: theme.spacing(2),
-	marginBottom: theme.spacing(2),
-	paddingRight: theme.spacing(2),
+	height: "752px",
+	width: "344px",
+	display: "inline-flex",
+	flexDirection: "column",
+	borderRadius: "8px",
+	borderRight: "1px solid var(--Secondary-Divider, #E6E6E6)",
+	background: "var(--Background-Paper-1, #FFF)",
+	boxShadow: "0 5px 8px 0 rgba(0, 0, 0, 0.08)",
+	gap: "8px",
 }));
 
 const StyledTitle = styled("div")(({ theme }) => ({
@@ -91,6 +100,92 @@ const StyledTitle = styled("div")(({ theme }) => ({
 	marginBottom: "8px",
 	backgroundColor: theme.palette.primary.selected,
 	color: theme.palette.info.dark,
+}));
+
+const StyledStackFilter = styled(Stack)(() => ({
+	display: "flex",
+	padding: "4px 16px",
+	height: "40px",
+	alignSelf: "stretch",
+	borderRadius: "6px 6px 0 0",
+}));
+
+const StyledTypography = styled(Typography)(() => ({
+	display: "flex",
+	padding: "4px 0",
+	flexDirection: "column",
+	alignItems: "flex-start",
+	flex: "1 0 0",
+	height: "21px",
+	color: "#0471F0",
+	fontSize: "14px",
+	fontWeight: "400",
+	lineHeigh: "150%",
+	letterSpacing: "0.17px",
+	position: "relative",
+	top: "3px",
+}));
+
+const StyledList = styled(List)(() => ({
+	height: "464px",
+	overflowY: "auto",
+}));
+
+const StyledListContent = styled(Stack)(() => ({
+	display: "flex",
+	paddingTop: "8px",
+	flexDirection: "row",
+	marginLeft: "15px",
+}));
+const StyledSelectAllListContent = styled(Stack)(() => ({
+	display: "flex",
+	flexDirection: "row",
+	marginLeft: "15px",
+}));
+
+const StyledTypographyContent = styled(Typography)(() => ({
+	color: "#212121",
+	fontSize: "16px",
+	fontWeight: "400",
+	lineHeight: "150%",
+	letterSpacing: "0.15px",
+}));
+
+const StyledBoxSort = styled(Stack)(() => ({
+	display: "flex",
+	height: "138px",
+	padding: "8px 0",
+}));
+
+const StyledTypographySort = styled(Typography)(() => ({
+	display: "flex",
+	padding: "4px 16px",
+	color: "#212121",
+	fontSize: "14px",
+	fontWeight: "500",
+	lineHeight: "150%",
+	letterSpacing: "0.17px",
+	height: "21px",
+}));
+
+const FlexButton = styled(Button)({
+	flex: 1,
+	textWrap: "nowrap",
+});
+
+const StyledStackFilterBy = styled(Stack)({
+	padding: "4px 0",
+});
+
+const StyledTypographyAsc = styled(Typography)(() => ({
+	display: "flex",
+	padding: "4px 0px",
+	color: "#212121",
+	fontSize: "14px",
+	fontWeight: "400",
+	lineHeight: "150%",
+	letterSpacing: "0.17px",
+	height: "21px",
 }));
 
 interface VariablePanelProps {
@@ -154,6 +249,31 @@ export const VariablesPanel = observer(
 		});
 		const [filterWord, setFilterWord] = useState("");
 		const [selectedFilter, setSelectedFilter] = useState(VARIABLE_TYPES);
+		const [tempFilter, setTempFilter] = useState<string[]>(VARIABLE_TYPES);
+		const [expandedItems, setExpandedItems] = useState<
+			Record<string, boolean>
+		>(() => {
+			// Initialize with all types set to false (collapsed)
+			const groupedVariables = Object.entries(state.variables).reduce(
+				(acc, [id, variable]) => {
+					if (!acc[variable.type]) acc[variable.type] = [];
+					acc[variable.type].push({ id, variable });
+					return acc;
+				},
+				{} as Record<string, { id: string; variable: Variable }[]>,
+			);
+
+			const initial: Record<string, boolean> = {};
+			Object.keys(groupedVariables).forEach((type) => {
+				initial[type] = false; // or true if you want them expanded by default
+			});
+			return initial;
+		});
+		const [expandAll, setExpandAll] = useState(false);
+		const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc"); // Default to ascending
+		const [tempSortOrder, setTempSortOrder] = useState<"asc" | "desc">(
+			"asc",
+		);
 
 		// New state for the rename modal
 		const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
@@ -217,20 +337,42 @@ export const VariablesPanel = observer(
 			setEngines(newEngines);
 		}, [getEngines.status, getEngines.data]);
 
+		useEffect(() => {
+			if (filterAnchorEl) {
+				setTempFilter(selectedFilter);
+				setTempSortOrder(sortOrder); // Sync temp sort order
+			}
+		}, [filterAnchorEl]);
+
+		useEffect(() => {
+			if (filterAnchorEl) {
+				setTempFilter(selectedFilter);
+			}
+		}, [filterAnchorEl]);
+
 		const variables = useMemo(() => {
 			return Object.entries(state.variables)
 				.filter(
 					([id, val]) =>
 						id.includes(filterWord) &&
-						selectedFilter.indexOf(val.type) > -1,
+						selectedFilter.includes(val.type),
 				)
-				.sort((a, b) => a[0].localeCompare(b[0]));
+				.sort((a, b) => {
+					// First sort by type
+					const typeCompare = a[1].type.localeCompare(b[1].type);
+					if (typeCompare !== 0) {
+						return sortOrder === "asc" ? typeCompare : -typeCompare;
+					}
+					// Then sort by id within same type
+					return sortOrder === "asc"
+						? a[0].localeCompare(b[0])
+						: b[0].localeCompare(a[0]);
+				});
 		}, [
 			filterWord,
-			selectedFilter.length,
+			JSON.stringify(selectedFilter),
+			sortOrder, // Add sortOrder as dependency
 			Object.values(state.variables),
-			Object.entries(state.variables).length,
-			Object.keys(state.variables).join(""),
 		]);
 
 		/**
@@ -308,6 +450,96 @@ export const VariablesPanel = observer(
 			}));
 		};
 
+		const allSelected = tempFilter.length === VARIABLE_TYPES.length;
+
+		function capitalizeFirstLetter(str) {
+			if (!str) return ""; // handle empty or null strings
+			return str.charAt(0).toUpperCase() + str.slice(1);
+		}
+
+		const groupedVariables = useMemo(() => {
+			return variables.reduce(
+				(acc, [id, variable]) => {
+					if (!acc[variable.type]) acc[variable.type] = [];
+					acc[variable.type].push({ id, variable });
+					return acc;
+				},
+				{} as Record<string, { id: string; variable: Variable }[]>,
+			);
+		}, [variables]);
+
+		const tooltipText = useMemo(() => {
+			const groupedVariables = variables.reduce(
+				(acc, [id, variable]) => {
+					if (!acc[variable.type]) acc[variable.type] = [];
+					acc[variable.type].push({ id, variable });
+					return acc;
+				},
+				{} as Record<string, { id: string; variable: Variable }[]>,
+			);
+
+			const types = Object.keys(groupedVariables);
+			const expandedCount = types.filter(
+				(type) => expandedItems[type] === true,
+			).length;
+
+			if (expandedCount === 0) {
+				return "Expand Variables";
+			} else if (expandedCount === types.length) {
+				return "Collapse Variables";
+			} else {
+				return "Collapse All";
+			}
+		}, [variables, expandedItems]);
+
+		// Track previous variable types to detect new additions
+		const prevTypesRef = useRef<string[]>([]);
+
+		useEffect(() => {
+			const currentTypes = Object.keys(groupedVariables);
+			const prevTypes = prevTypesRef.current;
+
+			const newTypes = currentTypes.filter(
+				(type) => !prevTypes.includes(type),
+			);
+
+			if (newTypes.length > 0) {
+				// Use setTimeout to ensure state update happens after render
+				setTimeout(() => {
+					setExpandedItems((prev) => {
+						const updated = { ...prev };
+
+						const existingTypes = Object.keys(prev);
+						let defaultStateForNewTypes = false;
+
+						if (existingTypes.length > 0) {
+							const allExpanded = existingTypes.every(
+								(type) => prev[type] === true,
+							);
+							const allCollapsed = existingTypes.every(
+								(type) => prev[type] === false,
+							);
+
+							if (allExpanded) {
+								defaultStateForNewTypes = true;
+							} else if (allCollapsed) {
+								defaultStateForNewTypes = false;
+							} else {
+								defaultStateForNewTypes = false;
+							}
+						}
+
+						newTypes.forEach((type) => {
+							updated[type] = defaultStateForNewTypes;
+						});
+						return updated;
+					});
+				}, 0);
+			}
+
+			prevTypesRef.current = currentTypes;
+		}, [groupedVariables]);
+
 		return (
 			<Panel>
 				<StyledStack
@@ -324,6 +556,9 @@ export const VariablesPanel = observer(
 							paddingLeft={2}
 							paddingBottom={1}
 							paddingRight={2}
+							direction="row"
+							justifyContent={"space-between"}
+							alignItems={"center"}
 						>
 							<Search
 								size={"small"}
@@ -332,19 +567,26 @@ export const VariablesPanel = observer(
 									setFilterWord(e.target.value);
 								}}
 							/>
-						</Stack>
-						<Stack spacing={2} paddingLeft={2}>
-							<StyledButton
-								color={"secondary"}
+							<IconButton
+								size="small"
 								onClick={(e) => {
 									setFilterAnchorEl(e.currentTarget);
 								}}
 							>
-								<Stack direction={"row"} gap={1}>
-									<FilterListRounded />
-									Types
-								</Stack>
-							</StyledButton>
+								<Badge
+									variant="dot"
+									color="primary"
+									invisible={
+										selectedFilter.length ===
+											VARIABLE_TYPES.length &&
+										sortOrder === "asc"
+									}
+								>
+									<Tune />
+								</Badge>
+							</IconButton>
+						</Stack>
+						<Stack spacing={2} paddingLeft={2}>
 							<Popover
 								id={"filter-variable-popover"}
 								open={isFilterPopoverOpen}
@@ -353,23 +595,331 @@ export const VariablesPanel = observer(
 									setFilterAnchorEl(null);
 								}}
 								anchorOrigin={{
-									vertical: "bottom",
-									horizontal: "center",
+									vertical: "top",
+									horizontal: "right",
+								}}
+								sx={{
+									"& .MuiPopover-paper": {
+										overflowY: "hidden",
+									},
 								}}
 							>
 								<StyledBox>
-									<Checklist
-										direction={"column"}
-										options={VARIABLE_TYPES}
-										checked={selectedFilter}
-										onChange={(selected) => {
-											setSelectedFilter(selected);
-										}}
-									/>
+									<StyledStackFilter>
+										<StyledStackFilterBy direction="row">
+											<StyledTypography variant="body2">
+												Filter By
+											</StyledTypography>
+											<IconButton
+												size="small"
+												onClick={() => {
+													setFilterAnchorEl(null);
+												}}
+											>
+												<Close />
+											</IconButton>
+										</StyledStackFilterBy>
+									</StyledStackFilter>
+
+									<Divider />
+									<StyledList>
+										{/* SELECT ALL CHECKBOX */}
+										<List.Item
+											onClick={(e) => {
+												e.stopPropagation();
+												if (allSelected) {
+													setTempFilter([]);
+												} else {
+													setTempFilter([
+														...VARIABLE_TYPES,
+													]);
+												}
+											}}
+											sx={{
+												cursor: "pointer",
+												"&:hover": {
+													backgroundColor: "#f5f5f5",
+												},
+												"&:active": {
+													backgroundColor: "#e0e0e0",
+												},
+												transition:
+													"background-color 0.15s ease-in-out",
+											}}
+										>
+											<StyledSelectAllListContent>
+												<Box
+													onClick={(e) =>
+														e.stopPropagation()
+													}
+												>
+													<Checkbox
+														checked={allSelected}
+														indeterminate={
+															tempFilter.length >
+																0 &&
+															tempFilter.length <
+																VARIABLE_TYPES.length
+														}
+														onChange={(e) => {
+															e.stopPropagation();
+															if (allSelected) {
+																// Unselect all
+																setTempFilter(
+																	[],
+																);
+															} else {
+																// Select all
+																setTempFilter([
+																	...VARIABLE_TYPES,
+																]);
+															}
+														}}
+														sx={{
+															width: "56px",
+															marginRight: "0px",
+														}}
+													/>
+												</Box>
+												<StyledTypographyContent variant="body1">
+													Select All
+												</StyledTypographyContent>
+											</StyledSelectAllListContent>
+										</List.Item>
+										<Stack direction="column" spacing={0}>
+											{VARIABLE_TYPES.map((type) => (
+												<List.Item
+													key={type}
+													onClick={() => {
+														setTempFilter((prev) =>
+															prev.includes(type)
+																? prev.filter(
+																		(t) =>
+																			t !==
+																			type,
+																	)
+																: [
+																		...prev,
+																		type,
+																	],
+														);
+													}}
+													sx={{
+														"& .MuiStack-root > :not(style) ~ :not(style)":
+															{
+																marginTop:
+																	"0 !important",
+															},
+														cursor: "pointer",
+														"&:hover": {
+															backgroundColor:
+																"#f5f5f5",
+														},
+														"&:active": {
+															backgroundColor:
+																"#e0e0e0",
+														},
+														transition:
+															"background-color 0.15s ease-in-out",
+													}}
+												>
+													<StyledListContent>
+														<Box
+															onClick={(e) =>
+																e.stopPropagation()
+															}
+														>
+															<Checkbox
+																checked={tempFilter.includes(
+																	type,
+																)}
+																sx={{
+																	width: "56px",
+																	position:
+																		"relative",
+																	bottom: "8px",
+																	marginRight:
+																		"0px",
+																}}
+																onChange={(
+																	e,
+																) => {
+																	e.stopPropagation();
+																	setTempFilter(
+																		(
+																			prev,
+																		) => {
+																			if (
+																				prev.includes(
+																					type,
+																				)
+																			) {
+																				return prev.filter(
+																					(
+																						t,
+																					) =>
+																						t !==
+																						type,
+																				);
+																			}
+																			return [
+																				...prev,
+																				type,
+																			];
+																		},
+																	);
+																}}
+															/>
+														</Box>
+														<StyledTypographyContent variant="body1">
+															{capitalizeFirstLetter(type)}
+														</StyledTypographyContent>
+													</StyledListContent>
+												</List.Item>
+											))}
+										</Stack>
+									</StyledList>
+									<Divider />
+									<StyledBoxSort direction="column">
+										<StyledTypographySort variant="subtitle1">
+											Sort By:
+										</StyledTypographySort>
+
+										{/* ASC */}
+										<List.Item
+											onClick={() =>
+												setTempSortOrder("asc")
+											}
+											sx={{
+												"& .MuiStack-root > :not(style) ~ :not(style)":
+													{
+														marginTop:
+															"0 !important",
+													},
+												backgroundColor:
+													tempSortOrder === "asc"
+														? "#E3F2FD"
+														: "transparent", // Highlight if selected
+												cursor: "pointer",
+												"&:hover": {
+													backgroundColor:
+														tempSortOrder === "asc"
+															? "#BBDEFB"
+															: "#f5f5f5",
+												},
+											}}
+										>
+											<StyledTypographyAsc variant="body2">
+												<StyledTypographySort
+													variant="body2"
+													sx={{
+														fontWeight: 400,
+														position: "relative",
+														bottom: "8px",
+													}}
+												>
+													Asc
+												</StyledTypographySort>
+												<ArrowUpward
+													fontSize="small"
+													sx={{
+														position: "relative",
+														left: "7px",
+														color: "#757575",
+														bottom:"4px"
+													}}
+												/>
+											</StyledTypographyAsc>
+										</List.Item>
+
+										{/* DESC */}
+										<List.Item
+											onClick={() =>
+												setTempSortOrder("desc")
+											}
+											sx={{
+												"& .MuiStack-root > :not(style) ~ :not(style)":
+													{
+														marginTop:
+															"0 !important",
+													},
+												backgroundColor:
+													tempSortOrder === "desc"
+														? "#E3F2FD"
+														: "transparent", // Highlight if selected
+												cursor: "pointer",
+												height: "40px",
+												alignItems: "center",
+												"&:hover": {
+													backgroundColor:
+														tempSortOrder === "desc"
+															? "#BBDEFB"
+															: "#f5f5f5",
+												},
+											}}
+										>
+											<StyledTypographyAsc variant="body2">
+												<StyledTypographySort
+													variant="body2"
+													sx={{
+														fontWeight: 400,
+														position: "relative",
+														bottom: "8px",
+													}}
+												>
+													Desc
+												</StyledTypographySort>
+												<ArrowDownward
+													fontSize="small"
+													sx={{
+														position: "relative",
+														color: "#757575",
+														bottom:"4px"
+													}}
+												/>
+											</StyledTypographyAsc>
+										</List.Item>
+									</StyledBoxSort>
+									<Divider />
+									<Stack
+										direction="row"
+										paddingX={4}
+										paddingY={2}
+										spacing={2}
+									>
+										<FlexButton
+											variant="outlined"
+											color="secondary"
+											onClick={() => {
+												setTempFilter(VARIABLE_TYPES); // reset checkboxes
+												setSelectedFilter(
+													VARIABLE_TYPES,
+												); // reset applied filter
+												setTempSortOrder("asc"); // reset to default asc
+												setSortOrder("asc"); // reset applied sort
+												setFilterAnchorEl(null); // Close popover
+											}}
+										>
+											Clear All
+										</FlexButton>
+										<FlexButton
+											variant="contained"
+											onClick={() => {
+												setSelectedFilter(tempFilter); // Apply filter
+												setSortOrder(tempSortOrder); // Apply sort order
+												setFilterAnchorEl(null); // Close popover
+											}}
+										>
+											Apply
+										</FlexButton>
+									</Stack>
 								</StyledBox>
 							</Popover>
 						</Stack>
-						<Stack spacing={2} padding={2}>
+						<Stack
+							spacing={2}
+							sx={{ paddingLeft: "16px", paddingTop: "16px" }}
+						>
 							<Stack
 								direction="row"
 								justifyContent="space-between"
@@ -396,37 +946,244 @@ export const VariablesPanel = observer(
 											<AutoFixHighOutlined />
 										)}
 									</IconButton>
-									<IconButton
-										className="notebook-variable-menu__add-variable-button"
-										onClick={(e) => {
-											setPopoverAnchorEl(e.currentTarget);
+									<Tooltip
+										title="Create New Variable"
+										arrow
+										sx={{
+											"& .MuiTooltip-tooltip": {
+												bgcolor: "#757575",
+												color: "#FFFFFF",
+												fontSize: "12px",
+												fontWeight: 400,
+												padding: "6px 12px",
+												borderRadius: "4px",
+												boxShadow:
+													"0px 2px 8px rgba(0, 0, 0, 0.15)",
+											},
+											"& .MuiTooltip-arrow": {
+												color: "#424242",
+											},
 										}}
 									>
-										<Add />
-									</IconButton>
+										<IconButton
+											className="notebook-variable-menu__add-variable-button"
+											onClick={(e) => {
+												setPopoverAnchorEl(
+													e.currentTarget,
+												);
+											}}
+										>
+											<Add />
+										</IconButton>
+									</Tooltip>
+									<Tooltip
+										title={tooltipText}
+										placement="bottom"
+										arrow
+										sx={{
+											"& .MuiTooltip-tooltip": {
+												bgcolor: "#757575",
+												color: "#FFFFFF",
+												fontSize: "12px",
+												fontWeight: 400,
+												padding: "6px 12px",
+												borderRadius: "4px",
+												boxShadow:
+													"0px 2px 8px rgba(0, 0, 0, 0.15)",
+											},
+											"& .MuiTooltip-arrow": {
+												color: "#424242",
+											},
+										}}
+									>
+										<IconButton
+											onClick={() => {
+												const newState = {};
+												const types =
+													Object.keys(
+														groupedVariables,
+													);
+												const hasAnyExpanded =
+													types.some(
+														(type) =>
+															expandedItems[
+																type
+															] === true,
+													);
+												types.forEach((type) => {
+													newState[type] =
+														!hasAnyExpanded; // Collapse if any expanded, expand if all collapsed
+												});
+												setExpandedItems(newState);
+												setExpandAll(!hasAnyExpanded);
+											}}
+										>
+											<img
+												src={ExpandCollapseIcon}
+												alt="Expand/Collapse"
+												style={{
+													width: 20,
+													height: 20,
+												}}
+											/>
+										</IconButton>
+									</Tooltip>
 								</Stack>
 							</Stack>
 						</Stack>
 
 						<StyledMenuScroll>
-							<List disablePadding>
-								{variables.map((keyValue, index) => {
-									const id = keyValue[0];
-									const variable = keyValue[1];
+							{Object.entries(groupedVariables).map(
+								([type, vars]) => {
+									// Only render if we have state for this type
+									if (expandedItems[type] === undefined) {
+										return null;
+									}
 									return (
-										<NotebookVariable
-											key={id}
-											id={id}
-											variable={variable}
-											engines={engines}
-											suggestVariableRenames={
-												suggestVariableRenames
-											}
-										/>
+										<Accordion
+											key={type}
+											expanded={expandedItems[type]}
+											onChange={(_, isExpanded) => {
+												setExpandedItems((prev) => ({
+													...prev,
+													[type]: isExpanded,
+												}));
+											}}
+											sx={{
+												boxShadow: "none",
+												//borderBottom: "1px solid #e0e0e0",
+												"&:before": { display: "none" },
+												"&.Mui-expanded": {
+													margin: 0, // Remove extra margin when expanded
+												},
+												"&:not(:last-child)": {
+													marginBottom: 0, // Remove margin between accordions
+												},
+											}}
+										>
+											<Stack
+												sx={{
+													padding: "2px 0px",
+													height: "40px",
+												}}
+											>
+												<Accordion.Trigger
+													expandIcon={
+														<ChevronRightIcon />
+													}
+													sx={{
+														minHeight: "48px",
+														flexDirection:
+															"row-reverse",
+														"& .MuiAccordionSummary-expandIconWrapper":
+															{
+																marginRight:
+																	"2px",
+																marginLeft: 0,
+																transform:
+																	"rotate(0deg)", // Start pointing right
+																transition:
+																	"transform 0.2s",
+																"&.Mui-expanded":
+																	{
+																		transform:
+																			"rotate(90deg)", // Rotate to point down when expanded
+																	},
+															},
+														"&.Mui-expanded": {
+															minHeight: "48px",
+														},
+														"& .MuiAccordionSummary-content":
+															{
+																margin: 0,
+																"&.Mui-expanded":
+																	{
+																		margin: 0,
+																	},
+															},
+													}}
+												>
+													<Typography
+														variant="body1"
+														sx={{
+															fontWeight: 400,
+															fontSize: "16px",
+															color: "#212121",
+														}}
+													>
+														{capitalizeFirstLetter(
+															type,
+														)}
+													</Typography>
+												</Accordion.Trigger>
+											</Stack>
+											<Accordion.Content
+												sx={{
+													padding: 0,
+													"& .MuiAccordionDetails-root":
+														{
+															padding: 0,
+														},
+												}}
+											>
+												<List
+													sx={{
+														padding: 0,
+														"& .MuiStack-root > :not(style):not(style)":
+															{
+																marginTop: 0, // Remove Stack spacing
+															},
+													}}
+												>
+													{vars.map(
+														({ id, variable }) => (
+															<List.Item
+																key={id}
+																sx={{
+																	borderBottom:
+																		"1px solid #f0f0f0",
+																	paddingY: 1,
+																	paddingX: 2,
+																	display:
+																		"flex",
+																	alignItems:
+																		"center",
+																	gap: 1.5,
+																	"&:hover": {
+																		backgroundColor:
+																			"#f9f9f9",
+																		cursor: "pointer",
+																	},
+																	"&:last-child":
+																		{
+																			borderBottom:
+																				"none", // Remove border from last item
+																		},
+																}}
+															>
+																<NotebookVariable
+																	id={id}
+																	variable={
+																		variable
+																	}
+																	engines={
+																		engines
+																	}
+																	suggestVariableRenames={
+																		suggestVariableRenames
+																	}
+																/>
+															</List.Item>
+														),
+													)}
+												</List>
+											</Accordion.Content>
+										</Accordion>
 									);
-								})}
-							</List>
+								},
+							)}
 						</StyledMenuScroll>
+
 						{isPopoverOpen && (
 							<AddVariablePopover
 								open={isPopoverOpen}
