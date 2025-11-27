@@ -236,10 +236,9 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 			)}
 			<StyledInnerBox isVector={true}>
 				<Stack direction="row" width={"100%"} spacing={1}>
-					{vector.icon && (
+					{vector.icon ? (
 						<StyledCardImage src={vector.icon} alt={initials} />
-					)}
-					{!vector.icon && (
+					) : (
 						<StyledVectorAvatar gradientBg={avatarGradient}>
 							{initials}
 						</StyledVectorAvatar>

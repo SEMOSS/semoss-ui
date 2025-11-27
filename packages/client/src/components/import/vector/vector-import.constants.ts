@@ -49,11 +49,11 @@ export interface ImportableModels {
 export const VECTOR_CONNECTIONS = {
 	description: {
 		General:
-			"Choose between hosted OpenAI services for managed reliability, or custom-deployed environments for greater control over API usage and performance.",
+			"Store and retrieve high-dimensional embeddings for semantic search, personalization, and intelligent content matching.",
 		Settings:
-			"Configure your model type, deployment parameters, and response behavior to align with your specific OpenAI integration.",
+			"Configure your vector store provider, index structure, dimensionality, and similarity metric to optimize retrieval accuracy and performance.",
 		Credentials:
-			"Enter your OpenAI API key to securely authenticate and enable access to the OpenAI endpoints.",
+			"Provide your vector database API key or connection details to securely enable indexing and search operations.",
 	},
 	Connections: [
 		{
