@@ -321,6 +321,7 @@ export interface MakeCellMCPAction extends Action {
 			params: {};
 			// What if you want to go back and see code you originally made, meaning you dont want to write out a new cell you just want to go back and edit
 			originalParams: Record<string, unknown>;
+			paramType: string;
 		};
 	};
 }

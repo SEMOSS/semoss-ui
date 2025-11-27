@@ -14,6 +14,8 @@ export interface MCPToolCellDef extends CellDef<"mcp-tool"> {
 		name: string;
 		/** Params to execute tool */
 		params: Record<string, unknown>;
+		/** Param type */
+		paramType: 'python' | 'pixel';
 	};
 }
 
@@ -32,8 +34,8 @@ export const MCPToolCell: CellComponent<MCPToolCellDef> = observer((props) => {
 		const fetchParams = async () => {
 			try {
 				setLoading(true);
-				const { errors, pixelReturn } = await runPixel(
-					`GetAppAssets(project="${cell.parameters.projectId}", filePath="/mcp/py_mcp.json")`,
+				const { pixelReturn } = await runPixel(
+					`GetAppAssets(project="${cell.parameters.projectId}", filePath="${cell.parameters.paramType === "python" ? "/mcp/py_mcp.json" : "/mcp/pixel_mcp.json"}")`,
 				);
 				const mcpJson = JSON.parse(pixelReturn[0].output as string);
 				const tool = mcpJson.tools.find(
