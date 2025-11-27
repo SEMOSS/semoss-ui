@@ -8,7 +8,7 @@ import {
 	upload,
 } from "../../api";
 import { Env } from "../../env";
-import type { Script } from "../../types";
+import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
 
 interface InsightStoreInterface {
@@ -58,6 +58,9 @@ interface InsightStoreInterface {
 
 		/** Python code associated with the insight */
 		python: Script | null;
+
+		/** Whether to disable connecting the insight to a room */
+		disableRoom: boolean;
 	};
 }
 
@@ -72,6 +75,7 @@ export class InsightStore {
 		options: {
 			appId: "",
 			python: null,
+			disableRoom: false,
 		},
 	};
 
@@ -143,6 +147,12 @@ export class InsightStore {
 					alias: string;
 			  }
 			| false;
+
+		/**
+		 * Whether to disable connecting the insight to a room
+		 * Defaults to false
+		 */
+		disableRoom?: boolean;
 	}): Promise<{
 		tool: (typeof Env)["TOOL"] | null;
 	}> => {
@@ -152,11 +162,12 @@ export class InsightStore {
 		this._store.isReady = false;
 
 		const merged: NonNullable<typeof options> = {
-			app: options?.app ? options.app : "",
+			app: options?.app || "",
 			python:
 				options && typeof options.python !== "undefined"
 					? options.python
 					: false,
+			disableRoom: options?.disableRoom || false,
 		};
 
 		// save the initial appId
@@ -179,6 +190,9 @@ export class InsightStore {
 				};
 			}
 		}
+
+		// save the disable room option
+		this._store.options.disableRoom = merged.disableRoom || false;
 
 		// load the environment from the document (production)
 		try {
@@ -368,6 +382,14 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		// set the insight ID
 		this._store.insightId = insightId;
+
+		// point the insight space toward the room
+		if (Env?.TOOL?.roomId && !this._store.options.disableRoom) {
+			await runPixel<[boolean]>(
+				`SetRoomForInsight(roomId=${JSON.stringify(Env.TOOL.roomId)});`,
+				insightId,
+			);
+		}
 
 		// set as ready
 		this._store.isReady = true;
@@ -593,10 +615,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			name: string,
 			parameters: Record<string, unknown>,
 		) => {
-			const { pixelReturn } = await this.actions.run<
-				[{ response: string }]
-			>(
-				`RunMCPTool(project = [ "${Env.APP}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ]);`,
+			const { pixelReturn } = await this.actions.run<[string]>(
+				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ] );`,
 			);
 
 			const { output, operationType } = pixelReturn[0];
@@ -615,7 +635,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 								id: Env.TOOL.id,
 								name: Env.TOOL.name,
 								response: output,
-							},
+								roomId: Env.TOOL.roomId,
+							} satisfies MCPToolResponse,
 						},
 						"*",
 					);
@@ -623,7 +644,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			}
 
 			return {
-				output: output,
+				output,
 			};
 		},
 
