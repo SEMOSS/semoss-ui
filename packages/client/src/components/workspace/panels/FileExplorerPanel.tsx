@@ -411,7 +411,8 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			// check if it is a tabNode and it needs to be a settingsPanel
 			if (
 				node instanceof TabNode &&
-				node.getComponent() === "mcpJsonEditor"
+				node.getComponent() === "mcpJsonEditor" &&
+				node.getAttr("name") === `${fileName} (UI Editor)`
 			) {
 				selectedNode = node;
 			}
