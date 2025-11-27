@@ -1,6 +1,7 @@
 import { MoveDownIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import React, { useEffect } from "react";
+import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -50,13 +51,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 		const handleMessage = async (
 			event: MessageEvent<{
 				type: "SMSS_EXEC_TOOL";
-				tool: {
-					type: "MCP";
-					message: string;
-					id: string;
-					name: string;
-					response: string;
-				};
+				tool: MCPToolResponse;
 			}>,
 		) => {
 			try {
