@@ -209,7 +209,8 @@ const FunctionCard = memo<{
 								}
 								disabled={isDeleted}
 								rows={2}
-								className={`w-full px-2 py-1 text-sm ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+								style={{ height: "4rem" }}
+								className={`w-full resize-y overflow-y-auto px-2 py-1 text-sm ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
 								placeholder="Describe function purpose and parameters..."
 							/>
 						</div>
@@ -257,8 +258,15 @@ const FunctionCard = memo<{
 
 									return (
 										<React.Fragment key={k}>
-											<div className="flex items-center border-gray-200 border-r border-b bg-white px-2 py-2 text-sm">
-												{k}
+											<div className="flex w-full items-center border-gray-200 border-r border-b bg-white px-2 py-2">
+												<div className="min-w-0 flex-1">
+													<span
+														className="block truncate"
+														title={k}
+													>
+														{k}
+													</span>
+												</div>
 											</div>
 											<div className="flex items-center border-gray-200 border-r border-b bg-white px-2 py-2">
 												<Input
@@ -293,7 +301,8 @@ const FunctionCard = memo<{
 													}
 													disabled={isDeleted}
 													rows={2}
-													className={`w-full resize-y px-1.5 py-1 text-xs ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+													style={{ height: "3rem" }}
+													className={`w-full resize-y overflow-y-auto px-1.5 py-1 text-xs ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
 													placeholder="Parameter description..."
 												/>
 											</div>
@@ -363,7 +372,10 @@ const FunctionCard = memo<{
 														}
 														disabled={isDeleted}
 														rows={3}
-														className={`w-full resize-y px-1.5 py-1 font-mono text-xs ${hasError ? "border-red-500 focus:border-red-500" : ""} ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+														style={{
+															height: "4.5rem",
+														}}
+														className={`w-full resize-y overflow-y-auto px-1.5 py-1 font-mono text-xs ${hasError ? "border-red-500 focus:border-red-500" : ""} ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
 														placeholder={
 															p.type === "array"
 																? '["item1", "item2"]'
