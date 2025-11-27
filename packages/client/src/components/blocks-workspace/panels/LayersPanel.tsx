@@ -120,6 +120,14 @@ const StyledLabelSubtitleText = styled("div")(({ theme }) => ({
 
 const StyledTreeItemIcon = styled(Icon)(() => ({
 	color: "#757575",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	height: "100%",
+}));
+
+const StyledRouteText = styled(Typography)(() => ({
+	lineHeight: "normal",
 }));
 
 const StyledTreeItemIconButton = styled(IconButton)(() => ({
@@ -1011,9 +1019,9 @@ export const LayersPanel = observer(
 								</StyledTreeItemIcon>
 							)}
 						</StyledHomePageChildDiv>
-						<Typography variant="subtitle1">
+						<StyledRouteText variant="subtitle1">
 							/{block.data.route as string}
-						</Typography>
+						</StyledRouteText>
 					</StyledHomePageDiv>
 					{id !== "page-1" && pageHovered === block.id && (
 						<StyledTreeItemIcon>
