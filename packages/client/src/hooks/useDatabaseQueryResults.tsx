@@ -40,9 +40,15 @@ const StyledTableContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2)
 }));
 
+const StyledTableHorizontalScroll = styled('div')(() => ({
+  overflowX: 'auto',
+  width: '100%'
+}));
+
 const StyledTable = styled(Box)(() => ({
   border: 'none',
-  overflow: 'hidden'
+  display: 'inline-block',
+  minWidth: 'max-content'
 }));
 
 const StyledTableHeader = styled(Box)(() => ({
@@ -66,7 +72,8 @@ const StyledHeaderCell = styled(Box)(() => ({
 
 const StyledTableBody = styled(Box)<{ isExpanded: boolean }>(({ isExpanded }) => ({
   maxHeight: isExpanded ? 'calc(100vh - 200px)' : '180px',
-  overflow: 'auto'
+  overflowY: 'auto',
+  overflowX: 'hidden'
 }));
 
 const StyledEmptyDataContainer = styled(Box)(({ theme }) => ({
@@ -241,39 +248,41 @@ export function useQueryResults() {
     if (hasTabularData(previewData)) {
       return (
         <StyledTableContainer>
-          <StyledTable>
-            {previewData.output.data.headers && (
-              <StyledTableHeader>
-                {previewData.output.data.headers.map((header: string, index: number) => (
-                  <StyledHeaderCell key={index}>
-                    {header}
-                  </StyledHeaderCell>
-                ))}
-              </StyledTableHeader>
-            )}
-            
-            {previewData.output.data.values && (
-              <StyledTableBody isExpanded={isExpanded}>
-                {previewData.output.data.values.length === 0 ? (
-                  <StyledEmptyDataContainer>
-                    <Typography variant="body2">
-                      No data returned
-                    </Typography>
-                  </StyledEmptyDataContainer>
-                ) : (
-                  previewData.output.data.values.map((row: any[], rowIndex: number) => (
-                    <StyledTableRow key={rowIndex}>
-                      {row.map((cell: any, cellIndex: number) => (
-                        <StyledDataCell key={cellIndex}>
-                          {cell !== null && cell !== undefined ? String(cell) : '(null)'}
-                        </StyledDataCell>
-                      ))}
-                    </StyledTableRow>
-                  ))
-                )}
-              </StyledTableBody>
-            )}
-          </StyledTable>
+          <StyledTableHorizontalScroll>
+            <StyledTable>
+              {previewData.output.data.headers && (
+                <StyledTableHeader>
+                 {previewData.output.data.headers.map((header: string, index: number) => (
+                    <StyledHeaderCell key={index}>
+                      {header}
+                    </StyledHeaderCell>
+                  ))}
+                </StyledTableHeader>
+              )}
+              
+              {previewData.output.data.values && (
+                <StyledTableBody isExpanded={isExpanded}>
+                  {previewData.output.data.values.length === 0 ? (
+                    <StyledEmptyDataContainer>
+                      <Typography variant="body2">
+                        No data returned
+                      </Typography>
+                    </StyledEmptyDataContainer>
+                  ) : (
+                    previewData.output.data.values.map((row: any[], rowIndex: number) => (
+                      <StyledTableRow key={rowIndex}>
+                        {row.map((cell: any, cellIndex: number) => (
+                          <StyledDataCell key={cellIndex}>
+                            {cell !== null && cell !== undefined ? String(cell) : '(null)'}
+                          </StyledDataCell>
+                        ))}
+                      </StyledTableRow>
+                    ))
+                  )}
+                </StyledTableBody>
+              )}
+            </StyledTable>
+          </StyledTableHorizontalScroll>
         </StyledTableContainer>
       );
     }
