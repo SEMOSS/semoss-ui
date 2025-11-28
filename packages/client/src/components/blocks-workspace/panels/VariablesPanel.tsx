@@ -149,6 +149,8 @@ const StyledTypographyContent = styled(Typography)(() => ({
 	fontWeight: "400",
 	lineHeight: "150%",
 	letterSpacing: "0.15px",
+	position: "relative",
+	top: "1px",
 }));
 
 const StyledBoxSort = styled(Stack)(() => ({
@@ -162,10 +164,12 @@ const StyledTypographySort = styled(Typography)(() => ({
 	padding: "4px 16px",
 	color: "#212121",
 	fontSize: "14px",
-	fontWeight: "500",
 	lineHeight: "150%",
 	letterSpacing: "0.17px",
 	height: "21px",
+	fontWeight: 400,
+	position: "relative",
+	bottom: "8px",
 }));
 
 const FlexButton = styled(Button)({
@@ -187,6 +191,142 @@ const StyledTypographyAsc = styled(Typography)(() => ({
 	letterSpacing: "0.17px",
 	height: "21px",
 }));
+
+const StyledListItem = styled(List.Item)(() => ({
+	cursor: "pointer",
+	"&:hover": {
+		backgroundColor: "#f5f5f5",
+	},
+	"&:active": {
+		backgroundColor: "#e0e0e0",
+	},
+	transition: "background-color 0.15s ease-in-out",
+}));
+
+const StyledCheckbox = styled(Checkbox)(() => ({
+	width: "56px",
+	marginRight: "0px",
+}));
+
+const StyledCheckboxFilter = styled(Checkbox)(() => ({
+	width: "56px",
+	position: "relative",
+	bottom: "8px",
+	marginRight: "0px",
+}));
+
+const StyledIconButtonAsc = styled(IconButton)(() => ({
+	position: "relative",
+	right: "2px",
+	color: "#757575",
+	bottom: "2px",
+}));
+
+const StyledIconButtonDesc = styled(IconButton)(() => ({
+	position: "relative",
+	color: "#757575",
+	bottom: "1px",
+	right: "9px",
+}));
+
+const StyledStackVariable = styled(Stack)(() => ({
+	paddingLeft: "16px",
+	paddingTop: "16px",
+}));
+
+const StyledTooltip = styled(Tooltip)(() => ({
+	"& .MuiTooltip-tooltip": {
+		bgcolor: "#757575",
+		color: "#FFFFFF",
+		fontSize: "12px",
+		fontWeight: 400,
+		padding: "6px 12px",
+		borderRadius: "4px",
+		boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.15)",
+	},
+	"& .MuiTooltip-arrow": {
+		color: "#424242",
+	},
+}));
+
+const StyledAccordion = styled(Accordion)(() => ({
+	boxShadow: "none",
+	"&:before": { display: "none" },
+	"&.Mui-expanded": {
+		margin: 0,
+	},
+	"&:not(:last-child)": {
+		marginBottom: 0,
+	},
+}));
+
+const StyledStackAccordion = styled(Stack)(() => ({
+	padding: "2px 0px",
+	height: "40px",
+}));
+
+const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
+	minHeight: "48px",
+	flexDirection: "row-reverse",
+	"& .MuiAccordionSummary-expandIconWrapper": {
+		marginRight: "2px",
+		marginLeft: 0,
+		transform: "rotate(0deg)", // Start pointing right
+		transition: "transform 0.2s",
+		"&.Mui-expanded": {
+			transform: "rotate(90deg)", // Rotate to point down when expanded
+		},
+	},
+	"&.Mui-expanded": {
+		minHeight: "48px",
+	},
+	"& .MuiAccordionSummary-content": {
+		margin: 0,
+		"&.Mui-expanded": {
+			margin: 0,
+		},
+	},
+}));
+
+const StyledTypographyType = styled(Typography)(() => ({
+	fontWeight: 400,
+	fontSize: "16px",
+	color: "#212121",
+}));
+
+const StyledAccordionContent = styled(Accordion.Content)(() => ({
+	padding: 0,
+	"& .MuiAccordionDetails-root": {
+		padding: 0,
+	},
+}));
+
+const StyledListVariableContent = styled(List)(() => ({
+	padding: 0,
+	"& .MuiStack-root > :not(style):not(style)": {
+		marginTop: 0, // Remove Stack spacing
+	},
+}));
+
+const StyledListItemContent = styled(List.Item)(() => ({
+	paddingY: 1,
+	paddingX: 2,
+	display: "flex",
+	alignItems: "center",
+	gap: 1.5,
+	"&:hover": {
+		backgroundColor: "#f9f9f9",
+		cursor: "pointer",
+	},
+	"&:last-child": {
+		borderBottom: "none", // Remove border from last item
+	},
+}));
+
+const StyledExpandIcon = styled("img")(()=>({
+width: 20,
+													height: 20,
+}))
 
 interface VariablePanelProps {
 	title: string;
@@ -624,7 +764,7 @@ export const VariablesPanel = observer(
 									<Divider />
 									<StyledList>
 										{/* SELECT ALL CHECKBOX */}
-										<List.Item
+										<StyledListItem
 											onClick={(e) => {
 												e.stopPropagation();
 												if (allSelected) {
@@ -635,17 +775,6 @@ export const VariablesPanel = observer(
 													]);
 												}
 											}}
-											sx={{
-												cursor: "pointer",
-												"&:hover": {
-													backgroundColor: "#f5f5f5",
-												},
-												"&:active": {
-													backgroundColor: "#e0e0e0",
-												},
-												transition:
-													"background-color 0.15s ease-in-out",
-											}}
 										>
 											<StyledSelectAllListContent>
 												<Box
@@ -653,7 +782,7 @@ export const VariablesPanel = observer(
 														e.stopPropagation()
 													}
 												>
-													<Checkbox
+													<StyledCheckbox
 														checked={allSelected}
 														indeterminate={
 															tempFilter.length >
@@ -675,17 +804,13 @@ export const VariablesPanel = observer(
 																]);
 															}
 														}}
-														sx={{
-															width: "56px",
-															marginRight: "0px",
-														}}
 													/>
 												</Box>
 												<StyledTypographyContent variant="body1">
 													Select All
 												</StyledTypographyContent>
 											</StyledSelectAllListContent>
-										</List.Item>
+										</StyledListItem>
 										<Stack direction="column" spacing={0}>
 											{VARIABLE_TYPES.map((type) => (
 												<List.Item
@@ -729,18 +854,10 @@ export const VariablesPanel = observer(
 																e.stopPropagation()
 															}
 														>
-															<Checkbox
+															<StyledCheckboxFilter
 																checked={tempFilter.includes(
 																	type,
 																)}
-																sx={{
-																	width: "56px",
-																	position:
-																		"relative",
-																	bottom: "8px",
-																	marginRight:
-																		"0px",
-																}}
 																onChange={(
 																	e,
 																) => {
@@ -772,7 +889,9 @@ export const VariablesPanel = observer(
 															/>
 														</Box>
 														<StyledTypographyContent variant="body1">
-															{capitalizeFirstLetter(type)}
+															{capitalizeFirstLetter(
+																type,
+															)}
 														</StyledTypographyContent>
 													</StyledListContent>
 												</List.Item>
@@ -810,25 +929,12 @@ export const VariablesPanel = observer(
 											}}
 										>
 											<StyledTypographyAsc variant="body2">
-												<StyledTypographySort
-													variant="body2"
-													sx={{
-														fontWeight: 400,
-														position: "relative",
-														bottom: "8px",
-													}}
-												>
+												<StyledTypographySort variant="body2">
 													Asc
 												</StyledTypographySort>
-												<ArrowUpward
-													fontSize="small"
-													sx={{
-														position: "relative",
-														left: "7px",
-														color: "#757575",
-														bottom:"4px"
-													}}
-												/>
+												<StyledIconButtonAsc>
+													<ArrowUpward fontSize="small" />
+												</StyledIconButtonAsc>
 											</StyledTypographyAsc>
 										</List.Item>
 
@@ -859,24 +965,12 @@ export const VariablesPanel = observer(
 											}}
 										>
 											<StyledTypographyAsc variant="body2">
-												<StyledTypographySort
-													variant="body2"
-													sx={{
-														fontWeight: 400,
-														position: "relative",
-														bottom: "8px",
-													}}
-												>
+												<StyledTypographySort variant="body2">
 													Desc
 												</StyledTypographySort>
-												<ArrowDownward
-													fontSize="small"
-													sx={{
-														position: "relative",
-														color: "#757575",
-														bottom:"4px"
-													}}
-												/>
+												<StyledIconButtonDesc>
+													<ArrowDownward fontSize="small" />
+												</StyledIconButtonDesc>
 											</StyledTypographyAsc>
 										</List.Item>
 									</StyledBoxSort>
@@ -916,10 +1010,7 @@ export const VariablesPanel = observer(
 								</StyledBox>
 							</Popover>
 						</Stack>
-						<Stack
-							spacing={2}
-							sx={{ paddingLeft: "16px", paddingTop: "16px" }}
-						>
+						<StyledStackVariable spacing={2}>
 							<Stack
 								direction="row"
 								justifyContent="space-between"
@@ -946,24 +1037,9 @@ export const VariablesPanel = observer(
 											<AutoFixHighOutlined />
 										)}
 									</IconButton>
-									<Tooltip
+									<StyledTooltip
 										title="Create New Variable"
 										arrow
-										sx={{
-											"& .MuiTooltip-tooltip": {
-												bgcolor: "#757575",
-												color: "#FFFFFF",
-												fontSize: "12px",
-												fontWeight: 400,
-												padding: "6px 12px",
-												borderRadius: "4px",
-												boxShadow:
-													"0px 2px 8px rgba(0, 0, 0, 0.15)",
-											},
-											"& .MuiTooltip-arrow": {
-												color: "#424242",
-											},
-										}}
 									>
 										<IconButton
 											className="notebook-variable-menu__add-variable-button"
@@ -975,26 +1051,11 @@ export const VariablesPanel = observer(
 										>
 											<Add />
 										</IconButton>
-									</Tooltip>
-									<Tooltip
+									</StyledTooltip>
+									<StyledTooltip
 										title={tooltipText}
 										placement="bottom"
 										arrow
-										sx={{
-											"& .MuiTooltip-tooltip": {
-												bgcolor: "#757575",
-												color: "#FFFFFF",
-												fontSize: "12px",
-												fontWeight: 400,
-												padding: "6px 12px",
-												borderRadius: "4px",
-												boxShadow:
-													"0px 2px 8px rgba(0, 0, 0, 0.15)",
-											},
-											"& .MuiTooltip-arrow": {
-												color: "#424242",
-											},
-										}}
 									>
 										<IconButton
 											onClick={() => {
@@ -1018,19 +1079,15 @@ export const VariablesPanel = observer(
 												setExpandAll(!hasAnyExpanded);
 											}}
 										>
-											<img
+											<StyledExpandIcon
 												src={ExpandCollapseIcon}
 												alt="Expand/Collapse"
-												style={{
-													width: 20,
-													height: 20,
-												}}
 											/>
 										</IconButton>
-									</Tooltip>
+									</StyledTooltip>
 								</Stack>
 							</Stack>
-						</Stack>
+						</StyledStackVariable>
 
 						<StyledMenuScroll>
 							{Object.entries(groupedVariables).map(
@@ -1040,7 +1097,7 @@ export const VariablesPanel = observer(
 										return null;
 									}
 									return (
-										<Accordion
+										<StyledAccordion
 											key={type}
 											expanded={expandedItems[type]}
 											onChange={(_, isExpanded) => {
@@ -1049,117 +1106,26 @@ export const VariablesPanel = observer(
 													[type]: isExpanded,
 												}));
 											}}
-											sx={{
-												boxShadow: "none",
-												//borderBottom: "1px solid #e0e0e0",
-												"&:before": { display: "none" },
-												"&.Mui-expanded": {
-													margin: 0, // Remove extra margin when expanded
-												},
-												"&:not(:last-child)": {
-													marginBottom: 0, // Remove margin between accordions
-												},
-											}}
 										>
-											<Stack
-												sx={{
-													padding: "2px 0px",
-													height: "40px",
-												}}
-											>
-												<Accordion.Trigger
+											<StyledStackAccordion>
+												<StyledAccordionTrigger
 													expandIcon={
 														<ChevronRightIcon />
 													}
-													sx={{
-														minHeight: "48px",
-														flexDirection:
-															"row-reverse",
-														"& .MuiAccordionSummary-expandIconWrapper":
-															{
-																marginRight:
-																	"2px",
-																marginLeft: 0,
-																transform:
-																	"rotate(0deg)", // Start pointing right
-																transition:
-																	"transform 0.2s",
-																"&.Mui-expanded":
-																	{
-																		transform:
-																			"rotate(90deg)", // Rotate to point down when expanded
-																	},
-															},
-														"&.Mui-expanded": {
-															minHeight: "48px",
-														},
-														"& .MuiAccordionSummary-content":
-															{
-																margin: 0,
-																"&.Mui-expanded":
-																	{
-																		margin: 0,
-																	},
-															},
-													}}
 												>
-													<Typography
-														variant="body1"
-														sx={{
-															fontWeight: 400,
-															fontSize: "16px",
-															color: "#212121",
-														}}
-													>
+													<StyledTypographyType variant="body1">
 														{capitalizeFirstLetter(
 															type,
 														)}
-													</Typography>
-												</Accordion.Trigger>
-											</Stack>
-											<Accordion.Content
-												sx={{
-													padding: 0,
-													"& .MuiAccordionDetails-root":
-														{
-															padding: 0,
-														},
-												}}
-											>
-												<List
-													sx={{
-														padding: 0,
-														"& .MuiStack-root > :not(style):not(style)":
-															{
-																marginTop: 0, // Remove Stack spacing
-															},
-													}}
-												>
+													</StyledTypographyType>
+												</StyledAccordionTrigger>
+											</StyledStackAccordion>
+											<StyledAccordionContent>
+												<StyledListVariableContent>
 													{vars.map(
 														({ id, variable }) => (
-															<List.Item
+															<StyledListItemContent
 																key={id}
-																sx={{
-																	borderBottom:
-																		"1px solid #f0f0f0",
-																	paddingY: 1,
-																	paddingX: 2,
-																	display:
-																		"flex",
-																	alignItems:
-																		"center",
-																	gap: 1.5,
-																	"&:hover": {
-																		backgroundColor:
-																			"#f9f9f9",
-																		cursor: "pointer",
-																	},
-																	"&:last-child":
-																		{
-																			borderBottom:
-																				"none", // Remove border from last item
-																		},
-																}}
 															>
 																<NotebookVariable
 																	id={id}
@@ -1173,12 +1139,12 @@ export const VariablesPanel = observer(
 																		suggestVariableRenames
 																	}
 																/>
-															</List.Item>
+															</StyledListItemContent>
 														),
 													)}
-												</List>
-											</Accordion.Content>
-										</Accordion>
+												</StyledListVariableContent>
+											</StyledAccordionContent>
+										</StyledAccordion>
 									);
 								},
 							)}

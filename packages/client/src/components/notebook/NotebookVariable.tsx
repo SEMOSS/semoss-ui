@@ -109,6 +109,7 @@ const StyledAnchorSpan = styled("span")(({ theme }) => ({
 
 const StyledStack = styled(Stack)(({ theme }) => ({
 	paddingLeft: "20px",
+	width:"128px"
 }));
 
 const StyledTextField = styled(TextField)(() => ({
@@ -128,6 +129,118 @@ const StyledTypography = styled(Typography)(() => ({
 	letterSpacing: "0.17px",
 }));
 
+const StyledStackVariable = styled(Stack)(()=>({
+height: "40px", width: "80px"
+}))
+
+const StyledIconButton = styled(IconButton)(()=>({
+width: "40px",
+								gap: "10px",
+								color: "#757575",
+}))
+
+const StyledMenu = styled(Menu)(()=>({
+".MuiPopover-paper": {
+									borderRadius: "4px",
+									padding: "8px 0px",
+									boxShadow:
+										"0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
+								},
+}))
+
+const StyledMenuItem = styled(Menu.Item)(()=>({
+padding: "6px 16px", height: "36px"
+}))
+
+const StyledEditIconButton = styled(IconButton)(()=>({
+color: "#757575",
+											fontSize: "small",
+											height: "20px",
+											width: "20px",
+}))
+
+const StyledEditTypography = styled(Typography)(()=>({
+height: "24px",
+											color: "#212121",
+											fontSize: "16px",
+											fontWeight: "400",
+											lineHeight: "150%",
+											letterSpacing: "0.15px",
+}))
+
+const StyledAutoFixIconButton	 = styled(IconButton)(()=>({
+fontSize: "small",
+											height: "20px",
+											width: "20px",
+}))
+const StyledDeleteIconButton	 = styled(IconButton)(()=>({
+color: "#757575",
+											fontSize: "small",
+											height: "20px",
+											width: "20px",
+}))
+
+const StyledModal	 = styled(Modal)(()=>({
+display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+}))
+
+const StyledModalBox	 = styled(Box)(()=>({
+width: "600px",
+							minHeight: "156px",
+							borderRadius: "12px",
+							background: "var(--Background-Paper-1, #FFF)",
+							boxShadow: "0 9px 46px 0 rgba(0, 0, 0, 0.08)",
+							padding: "8px 16px",
+							display: "flex",
+							flexDirection: "column",
+							gap: "16px",
+							position: "relative",
+}))
+
+const StyledCloseBox	 = styled(Box)(()=>({
+height: "32px", padding: "8px 0px"
+}))
+
+const StyledCloseIconButton	 = styled(IconButton)(()=>({
+position: "absolute",
+									right: 8,
+									top: 11,
+}))
+
+const StyledTitleTypography	 = styled(Typography)(()=>({
+fontSize: "20px",
+									fontWeight: 500,
+									color: "#212121",
+									lineHeight: "160%",
+									letterSpacing: "0.15px",
+}))
+
+const StyledContentBox	 = styled(Box)(()=>({
+paddingTop: "8px",
+								paddingBottom: "8px",
+}))
+const StyledContentTypography	 = styled(Typography)(()=>({
+fontSize: "16px",
+									fontWeight: 400,
+									color: "#212121",
+									lineHeight: "150%",
+									letterSpacing: "0.15px",
+}))
+
+const StyledCancelButton	 = styled(Button)(()=>({
+textTransform: "none",
+									fontSize: "14px",
+									color: "#212121",
+									fontWeight: "500",
+}))
+
+const StyledDeleteButton	 = styled(Button)(()=>({
+textTransform: "none",
+									fontSize: "14px",
+									color: "#FFF",
+}))
 interface NotebookTokenProps {
 	/** Id of the variable */
 	id: string;
@@ -446,42 +559,31 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 			<StyledListItem
 				key={id}
 				secondaryAction={
-					<Stack
+					<StyledStackVariable
 						direction="row"
 						spacing={1}
 						alignItems="center"
 						paddingY="8px"
-						sx={{ height: "40px", width: "80px" }}
 					>
-						<IconButton
+						<StyledIconButton
 							onClick={() => {
 								copyAlias(id);
 								setAnchorEl(null);
 							}}
-							sx={{
-								width: "40px",
-								gap: "10px",
-								color: "#757575",
-							}}
 						>
 							<ContentCopy />
-						</IconButton>
-						<IconButton
+						</StyledIconButton>
+						<StyledIconButton
 							title="Open Menu"
 							onClick={(e) => {
 								e.preventDefault();
 								setAnchorEl(e.currentTarget);
 							}}
-							sx={{
-								width: "40px",
-								gap: "10px",
-								color: "#757575",
-							}}
 						>
 							<MoreVert />
-						</IconButton>
+						</StyledIconButton>
 						<StyledAnchorSpan ref={spanRef} />
-						<Menu
+						<StyledMenu
 							anchorEl={anchorEl}
 							open={Boolean(anchorEl)}
 							onClose={() => {
@@ -495,49 +597,26 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 								vertical: "top",
 								horizontal: "right",
 							}}
-							sx={{
-								".MuiPopover-paper": {
-									borderRadius: "4px",
-									padding: "8px 0px",
-									boxShadow:
-										"0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
-								},
-							}}
 						>
-							<Menu.Item
+							<StyledMenuItem
 								value="Edit"
 								onClick={(e) => {
 									setPopoverAnchorEl(spanRef.current);
 									setAnchorEl(null);
 								}}
-								sx={{ padding: "6px 16px", height: "36px" }}
 							>
 								<Stack direction="row" alignItems="center">
-									<IconButton
-										sx={{
-											color: "#757575",
-											fontSize: "small",
-											height: "20px",
-											width: "20px",
-										}}
+									<StyledEditIconButton
 									>
 										<EditOutlinedIcon />
-									</IconButton>
-									<Typography
+									</StyledEditIconButton>
+									<StyledEditTypography
 										variant="body2"
-										sx={{
-											height: "24px",
-											color: "#212121",
-											fontSize: "16px",
-											fontWeight: "400",
-											lineHeight: "150%",
-											letterSpacing: "0.15px",
-										}}
 									>
 										Edit
-									</Typography>
+									</StyledEditTypography>
 								</Stack>
-							</Menu.Item>
+							</StyledMenuItem>
 							<Menu.Item
 								value="AutoRename"
 								onClick={() => {
@@ -549,31 +628,18 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 								}
 							>
 								<Stack direction="row" alignItems="center">
-									<IconButton
+									<StyledAutoFixIconButton
 										color="primary"
-										sx={{
-											fontSize: "small",
-											height: "20px",
-											width: "20px",
-										}}
 									>
 										<AutoFixHighOutlined />
-									</IconButton>
-									<Typography
+									</StyledAutoFixIconButton>
+									<StyledEditTypography
 										variant="body2"
-										sx={{
-											height: "24px",
-											color: "#212121",
-											fontSize: "16px",
-											fontWeight: "400",
-											lineHeight: "150%",
-											letterSpacing: "0.15px",
-										}}
 									>
 										{isProcessing
 											? "Processing..."
 											: "Auto Rename"}
-									</Typography>
+									</StyledEditTypography>
 								</Stack>
 							</Menu.Item>
 							<Menu.Item
@@ -584,128 +650,67 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 								}}
 							>
 								<Stack direction="row" alignItems="center">
-									<IconButton
-										sx={{
-											color: "#757575",
-											fontSize: "small",
-											height: "20px",
-											width: "20px",
-										}}
+									<StyledDeleteIconButton
 									>
 										<DeleteOutlineOutlinedIcon />
-									</IconButton>
-									<Typography
+									</StyledDeleteIconButton>
+									<StyledEditTypography
 										variant="body2"
-										sx={{
-											height: "24px",
-											color: "#212121",
-											fontSize: "16px",
-											fontWeight: "400",
-											lineHeight: "150%",
-											letterSpacing: "0.15px",
-										}}
 									>
 										Delete
-									</Typography>
+									</StyledEditTypography>
 								</Stack>
 							</Menu.Item>
-						</Menu>
-					</Stack>
+						</StyledMenu>
+					</StyledStackVariable>
 				}
 			>
-				<Modal
+				<StyledModal
 					open={isOpen}
 					onClose={() => setIsOpen(false)}
-					sx={{
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-					}}
 				>
-					<Box
-						sx={{
-							width: "600px",
-							minHeight: "156px",
-							borderRadius: "12px",
-							background: "var(--Background-Paper-1, #FFF)",
-							boxShadow: "0 9px 46px 0 rgba(0, 0, 0, 0.08)",
-							padding: "8px 16px",
-							display: "flex",
-							flexDirection: "column",
-							gap: "16px",
-							position: "relative",
-						}}
+					<StyledModalBox
 					>
 						{/* Close button */}
-						<Box sx={{ height: "32px", padding: "8px 0px" }}>
-							<IconButton
+						<StyledCloseBox>
+							<StyledCloseIconButton
 								onClick={() => setIsOpen(false)}
-								sx={{
-									position: "absolute",
-									right: 8,
-									top: 11,
-								}}
 							>
 								<Close />
-							</IconButton>
+							</StyledCloseIconButton>
 
 							{/* Title */}
-							<Typography
+							<StyledTitleTypography
 								variant="h6"
-								sx={{
-									fontSize: "20px",
-									fontWeight: 500,
-									color: "#212121",
-									lineHeight: "160%",
-									letterSpacing: "0.15px",
-								}}
 							>
 								Delete Selected Item?
-							</Typography>
-						</Box>
+							</StyledTitleTypography>
+						</StyledCloseBox>
 
 						{/* Content with striped background */}
-						<Box
-							sx={{
-								paddingTop: "8px",
-								paddingBottom: "8px",
-							}}
+						<StyledContentBox
 						>
-							<Typography
+							<StyledContentTypography
 								variant="body1"
-								sx={{
-									fontSize: "16px",
-									fontWeight: 400,
-									color: "#212121",
-									lineHeight: "150%",
-									letterSpacing: "0.15px",
-								}}
 							>
 								You will permanently remove the item from your
 								workspace.
-							</Typography>
-						</Box>
+							</StyledContentTypography>
+						</StyledContentBox>
 
 						{/* Actions */}
 						<Stack
 							direction="row"
 							spacing={2}
 							justifyContent="flex-end"
-							sx={{ height: "36px" }}
 						>
-							<Button
+							<StyledCancelButton
 								variant="text"
 								onClick={() => setIsOpen(false)}
-								sx={{
-									textTransform: "none",
-									fontSize: "14px",
-									color: "#212121",
-									fontWeight: "500",
-								}}
 							>
 								Cancel
-							</Button>
-							<Button
+							</StyledCancelButton>
+							<StyledDeleteButton
 								color="error"
 								variant="contained"
 								onClick={() => {
@@ -721,17 +726,12 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 									});
 									setIsOpen(false);
 								}}
-								sx={{
-									textTransform: "none",
-									fontSize: "14px",
-									color: "#FFF",
-								}}
 							>
 								Delete
-							</Button>
+							</StyledDeleteButton>
 						</Stack>
-					</Box>
-				</Modal>
+					</StyledModalBox>
+				</StyledModal>
 				<StyledListItemText
 					disableTypography
 					primary={
@@ -807,7 +807,6 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 										<StyledStack
 											spacing={1}
 											direction="column"
-											sx={{ width: "128px" }}
 										>
 											<StyledTextField
 												className="notebook-variable__alias-name-text-field"
