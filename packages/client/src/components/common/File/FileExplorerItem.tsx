@@ -675,6 +675,9 @@ export const FileExplorerItem = forwardRef<
 										lastModified={n.lastModified}
 										expanded={expanded}
 										selected={selected}
+										expandIcon={n.type === "directory" ? expandIcon : null}
+										collapseIcon={n.type === "directory" ? collapseIcon : null}
+										endIcon={n.type !== "directory" ? endIcon : null}
 										onTrashClick={(e, paths) => {
 											onTrashClick(e, paths);
 										}}
