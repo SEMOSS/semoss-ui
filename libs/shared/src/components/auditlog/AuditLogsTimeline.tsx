@@ -1,18 +1,8 @@
-import {
-	ZoomIn as ZoomInIcon,
-	ZoomOut as ZoomOutIcon,
-} from "@mui/icons-material";
 import * as echarts from "echarts";
+import { ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import {
-	Box,
-	ButtonGroup,
-	IconButton,
-	Paper,
-	styled,
-	Typography,
-} from "@semoss/ui";
+import { ButtonGroup, IconButton, styled } from "@semoss/ui";
 import type { EventData } from "./common";
 import { TimeDateFormatter } from "./common";
 
@@ -90,35 +80,6 @@ interface RenderItemResult {
 	};
 }
 
-// MUI Styled Components
-const Container = styled(Paper)({
-	padding: 0,
-	paddingBottom: 8,
-	backgroundColor: "#ffffff",
-	borderRadius: 8,
-});
-
-const Header = styled(Box)({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-	padding: 16,
-});
-
-const ChartWrapper = styled("div")(({ theme }) => ({
-	width: "100%",
-	height: "295px",
-	backgroundColor: theme.palette.background.paper,
-	margin: 0,
-	paddingBottom: "10px",
-}));
-
-const StyledTitle = styled(Typography)({
-	fontWeight: 600,
-	color: "#333",
-	fontSize: "18px",
-});
-
 const ZoomButtonGroup = styled(ButtonGroup)({
 	backgroundColor: "#fff",
 	boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
@@ -185,12 +146,11 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 		const eventData: ProcessedEventData[] = [];
 
 		logs.forEach((event) => {
-			const startPos = timeToPosition.get(
-				TimeDateFormatter(event.startTime).time,
-			)!;
-			const endPos = timeToPosition.get(
-				TimeDateFormatter(event.endTime).time,
-			)!;
+			const startPos =
+				timeToPosition.get(TimeDateFormatter(event.startTime).time) ??
+				-1; //need testing with -1 position
+			const endPos =
+				timeToPosition.get(TimeDateFormatter(event.endTime).time) ?? -1; //need testing with -1 position
 
 			const dataPoint: ProcessedEventData = {
 				value: [startPos, event.latency, endPos],
@@ -292,7 +252,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 			end: newEnd,
 		});
 	};
-
+	//biome-ignore lint/correctness/useExhaustiveDependencies: chart needs to be re-rendered on logs change
 	useEffect(() => {
 		if (chartRef.current && logs.length > 0) {
 			const chart = echarts.init(chartRef.current);
@@ -703,27 +663,31 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				chart.dispose();
 			};
 		}
-	}, [logs, calculateXAxisLabelConfig, processApiData]);
+	}, [logs]);
 
 	if (logs.length === 0) {
 		return (
-			<Container elevation={1}>
-				<Header>
-					<StyledTitle variant="h6">Event History</StyledTitle>
-				</Header>
-				<Box sx={{ padding: 2, textAlign: "center" }}>
-					<Typography variant="body2" color="textSecondary">
+			<div className="rounded-[8px] bg-white p-0 pb-2 shadow-lg">
+				<div className="flex items-center justify-between p-4">
+					<span className="font-semibold text-[#333] text-[18px]">
+						Event History
+					</span>
+				</div>
+				<div className="p-4 text-center">
+					<span className="font-normal text-[14px] text-gray-500">
 						No logs available.
-					</Typography>
-				</Box>
-			</Container>
+					</span>
+				</div>
+			</div>
 		);
 	}
 
 	return (
-		<Container elevation={1}>
-			<Header>
-				<StyledTitle variant="h6">Event History</StyledTitle>
+		<div className="rounded-[8px] bg-white p-0 pb-2 shadow-lg">
+			<div className="flex items-center justify-between p-4">
+				<span className="font-semibold text-[#333] text-[18px]">
+					Event History
+				</span>
 
 				<ZoomButtonGroup variant="outlined" size="small">
 					<ZoomIconButton
@@ -731,7 +695,10 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						onClick={handleZoomIn}
 						disabled={zoomState.end - zoomState.start <= 15}
 					>
-						<ZoomInIcon fontSize="small" sx={{ color: "#666" }} />
+						<ZoomInIcon
+							fontSize="small"
+							style={{ color: "#666" }}
+						/>
 					</ZoomIconButton>
 					<ZoomIconButton
 						position="right"
@@ -740,12 +707,20 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 							zoomState.start === 0 && zoomState.end === 100
 						}
 					>
-						<ZoomOutIcon fontSize="small" sx={{ color: "#666" }} />
+						<ZoomOutIcon
+							fontSize="small"
+							style={{ color: "#666" }}
+						/>
 					</ZoomIconButton>
 				</ZoomButtonGroup>
-			</Header>
+			</div>
 
-			<ChartWrapper ref={chartRef} />
-		</Container>
+			<div
+				className="m-0 h-[295px] w-full bg-[#FFFFFF] pb-[10px]"
+				ref={chartRef}
+			>
+				&nbsp;
+			</div>
+		</div>
 	);
 };

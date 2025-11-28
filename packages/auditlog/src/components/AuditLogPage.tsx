@@ -1,18 +1,11 @@
-import { Refresh } from "@mui/icons-material";
+import { RotateCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import { AuditLogsDataTable, AuditLogsTimeline } from "@semoss/shared";
-import { Button, Skeleton, Stack, styled, Typography } from "@semoss/ui";
+import { Button, Skeleton } from "@semoss/ui/next";
 import { useUserRootStore } from "@/hooks/useUserRootStore";
 import type { EventData } from "./common/utility";
-
-const DashboardHeader = styled("div")(({ theme }) => ({
-	width: "100%",
-	paddingY: theme.spacing(2),
-	display: "flex",
-	alignItems: "center",
-}));
 
 export const AuditLogPage = ({ catalogName }) => {
 	const { insightId } = useInsight();
@@ -22,6 +15,15 @@ export const AuditLogPage = ({ catalogName }) => {
 	const [totalCount, setTotalCount] = useState(0);
 	const [loading, setLoading] = useState<boolean>(true);
 	const rootStore = useUserRootStore(insightId);
+
+	useEffect(() => {
+		// async function getMyEngines() {
+		// 	if (insightId) {
+		// 		const response = await runPixel(`MyEngines();`, insightId);
+		// 	}
+		// }
+		// getMyEngines();
+	}, []);
 
 	// const notification = useNotification();
 
@@ -103,12 +105,12 @@ export const AuditLogPage = ({ catalogName }) => {
 	}, [catalogName, rowsPerPage, page, rootStore?.user?.id]);
 
 	return (
-		<Stack gap={2}>
-			<DashboardHeader>
-				<Typography variant="h6">
+		<div className="flex flex-col gap-4">
+			<div className="flex w-full items-center py-4">
+				<h6 className="font-medium text-xl leading-[1.6] tracking-normal">
 					{catalogName} Insight Dashboard
-				</Typography>
-				<Stack direction="row" spacing={2} sx={{ marginLeft: "auto" }}>
+				</h6>
+				<div className="ml-auto flex flex-row gap-4">
 					{/* Disabled for now */}
 					{/* <Select
 							variant="outlined"
@@ -126,30 +128,21 @@ export const AuditLogPage = ({ catalogName }) => {
 							<Menu.Item value="Last Year">Last Year</Menu.Item>
 						</Select> */}
 					<Button
-						variant="contained"
-						color="primary"
-						startIcon={<Refresh />}
+						variant="default"
 						onClick={() =>
 							fetchLogs(rowsPerPage, page * rowsPerPage)
 						}
 					>
+						<RotateCw className="mr-2 h-4 w-4" />
 						Refresh
 					</Button>
-				</Stack>
-			</DashboardHeader>
+				</div>
+			</div>
 			{loading ? (
-				<Stack gap={2}>
-					<Skeleton
-						variant="rectangular"
-						height={400}
-						width={"100%"}
-					/>{" "}
-					<Skeleton
-						variant="rectangular"
-						height={400}
-						width={"100%"}
-					/>
-				</Stack>
+				<div className="flex flex-col gap-4">
+					<Skeleton className="h-[400px] w-full rounded-md" />{" "}
+					<Skeleton className="h-[400px] w-full rounded-md" />
+				</div>
 			) : (
 				<>
 					<AuditLogsTimeline logs={logs} />
@@ -162,6 +155,6 @@ export const AuditLogPage = ({ catalogName }) => {
 					/>
 				</>
 			)}
-		</Stack>
+		</div>
 	);
 };
