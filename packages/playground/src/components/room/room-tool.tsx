@@ -1,7 +1,7 @@
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Env, usePixel } from "@semoss/sdk/react";
+import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
@@ -114,11 +114,11 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 				tool: {
 					type: "MCP",
 					message: config?.tool?.message || "",
-					app: config?.app || "",
 					id: config?.tool?.id || "",
 					name: config?.tool?.name || "",
 					parameters: toJS(config?.tool?.parameters || {}),
-				},
+					roomId: room.roomId,
+				} satisfies MCPToolRequest,
 			},
 			"*",
 		);
