@@ -110,11 +110,6 @@ const TagsBodyWrapper = styled("div")({
 	gap: "0.6rem",
 });
 
-const Title = styled(Typography)({
-	fontSize: "34px",
-	fontWeight: "400",
-});
-
 const TagsDescription = styled(Typography)(({ theme }) => ({
 	paddingBottom: theme.spacing(2),
 }));
@@ -610,7 +605,12 @@ export const AppDetailPage = () => {
 							color="text.disabled"
 							variant="body1"
 						>
-							{appInfo?.project_name}
+							<div
+								title={appInfo?.project_name}
+								className="w-[10ch] truncate text-ellipsis"
+							>
+								{appInfo?.project_name}
+							</div>
 						</Breadcrumbs.Item>
 					</Breadcrumbs>
 
@@ -623,9 +623,12 @@ export const AppDetailPage = () => {
 										alt="App Image"
 									/>
 									<TitleSectionBodyWrapper>
-										<Title variant="h6">
+										<div
+											title={appInfo?.project_name}
+											className="w-[10ch] truncate text-ellipsis font-normal text-[34px] leading-[150%]"
+										>
 											{appInfo?.project_name}
-										</Title>
+										</div>
 									</TitleSectionBodyWrapper>
 								</Box>
 
