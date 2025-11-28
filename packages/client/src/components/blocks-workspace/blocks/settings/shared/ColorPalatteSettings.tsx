@@ -849,33 +849,31 @@ export const ColorPalatteSettings = observer(
 						placeholder="Enter Palette Name"
 					></StyledTextField>
 				</StyledRowSection>
-				{/* colours section */}
-				{toggleAddEdit !== "edit" && (
-					<StyledRowSection>
-						<Typography variant="body2" color="secondary">
-							Colours
-						</Typography>
-						<StyledOutlinedInput
-							id="outlined-adornment-colours"
-							placeholder="Enter Hex code or Pick Color"
-							aria-label="Select Colour"
-							type={"text"}
-							endAdornment={
-								<InputAdornment position="end">
-									<IconButton
-										aria-label={"select colour"}
-										edge="end"
-									>
-										<StyledFormatColorFill
-											onClick={handleColorPicker}
-										></StyledFormatColorFill>
-									</IconButton>
-								</InputAdornment>
-							}
-							label="Select Colour"
-						/>
-					</StyledRowSection>
-				)}
+				{/* Colors section */}
+				<StyledRowSection>
+					<Typography variant="body2" color="secondary">
+						Colors
+					</Typography>
+					<StyledOutlinedInput
+						id="outlined-adornment-Colors"
+						placeholder="Enter Hex code or Pick Color"
+						aria-label="Select Colour"
+						type={"text"}
+						endAdornment={
+							<InputAdornment position="end">
+								<IconButton
+									aria-label={"select colour"}
+									edge="end"
+								>
+									<StyledFormatColorFill
+										onClick={handleColorPicker}
+									></StyledFormatColorFill>
+								</IconButton>
+							</InputAdornment>
+						}
+						label="Select Colour"
+					/>
+				</StyledRowSection>
 				{/* show color palette when color palate button is pressed */}
 				{colorPalatteFlag && (
 					<StyledPaletteContainer>
@@ -892,43 +890,19 @@ export const ColorPalatteSettings = observer(
 									setColorPalatteFlag(false);
 								}}
 							>
-								<Icon
-									sx={{
-										width: "20px",
-										height: "20px",
-										mt: "6px",
-										marginRight: "12px",
-										fontSize: "12px",
-										fontWeight: "bold",
-										color: "rgba(0, 0, 0, .5)",
-									}}
-								>
-									<Close />
-								</Icon>
+								<Close />
 							</StyledButtonClose>
 							<StyledCheck
 								onClick={() => {
 									addColorRow(color);
 								}}
 							>
-								<Icon
-									sx={{
-										width: "20px",
-										height: "20px",
-										mt: "6px",
-										marginRight: "12px",
-										fontSize: "20px",
-										fontWeight: "bold",
-										color: "rgba(0, 81, 255, 0.5)",
-									}}
-								>
-									<Check />
-								</Icon>
+								<Check />
 							</StyledCheck>
 						</StyledButtonContainer>
 					</StyledPaletteContainer>
 				)}
-				{/* selected colours section */}
+				{/* selected Colors section */}
 				<StyledEmptyContainer>
 					{(
 						colors ||
@@ -994,19 +968,7 @@ export const ColorPalatteSettings = observer(
 												setEditIndex(-1);
 											}}
 										>
-											<Icon
-												sx={{
-													width: "20px",
-													height: "20px",
-													mt: "6px",
-													marginRight: "12px",
-													fontSize: "12px",
-													fontWeight: "bold",
-													color: "rgba(0, 0, 0, .5)",
-												}}
-											>
-												<Close />
-											</Icon>
+											<Close />
 										</StyledButtonClose>
 										{/* select the color from colour picker */}
 										<StyledCheck
@@ -1015,19 +977,7 @@ export const ColorPalatteSettings = observer(
 												setEditIndex(-1);
 											}}
 										>
-											<Icon
-												sx={{
-													width: "20px",
-													height: "20px",
-													mt: "6px",
-													marginRight: "12px",
-													fontSize: "20px",
-													fontWeight: "bold",
-													color: "rgba(0, 81, 255, 0.5)",
-												}}
-											>
-												<Check />
-											</Icon>
+											<Check />
 										</StyledCheck>
 									</StyledButtonContainer>
 								</StyledPaletteContainer>

@@ -53,8 +53,8 @@ export interface UseIteratorPixelReturn<T> {
  *   (limit, offset) => `GetWorkspaceRooms(workspaceId=["${id}"], limit=[${limit}], offset=[${offset}]);`,
  *   (response) => response.total_count,
  *   (response) => response.rooms,
- *   [id],
- *   { limit: 25 }
+ *   { limit: 25 },
+ *   [id]
  * );
  * ```
  */
@@ -139,6 +139,8 @@ export function useIteratorPixel<TResponse, TItem>(
 	useEffect(
 		() => {
 			setOffset(0);
+			setAllData([]);
+			setTotalCount(0);
 			isLoadingMoreRef.current = false;
 		},
 

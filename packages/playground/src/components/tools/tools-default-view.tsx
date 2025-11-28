@@ -2,8 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	Badge,
 	Button,
@@ -23,6 +22,76 @@ import {
 	Textarea,
 } from "@semoss/ui/next";
 import { ResponseMessageStore, type RoomStore } from "@/stores";
+
+interface JSONEditorProps {
+	value: unknown;
+	onChange: (v: unknown) => void;
+}
+
+const JSONEditor = ({ value, onChange }: JSONEditorProps) => {
+	const [text, setText] = useState(() => {
+		try {
+			return JSON.stringify(value ?? {}, null, 2);
+		} catch (_) {
+			return "";
+		}
+	});
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		try {
+			setText(JSON.stringify(value ?? {}, null, 2));
+			setError(null);
+		} catch (_) {
+			setText("");
+		}
+	}, [value]);
+
+	return (
+		<div className="space-y-2">
+			<Textarea
+				value={text}
+				onChange={(e) => setText(e.target.value)}
+				rows={8}
+				className="w-full font-mono text-sm"
+			/>
+			{error && <p className="text-red-500 text-sm">{error}</p>}
+			<div className="flex gap-2">
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() => {
+						try {
+							const parsed = text.trim() ? JSON.parse(text) : {};
+							onChange(parsed);
+							setError(null);
+						} catch (err) {
+							setError((err as Error).message);
+						}
+					}}
+				>
+					Apply
+				</Button>
+				<Button
+					type="button"
+					variant="ghost"
+					size="sm"
+					onClick={() => {
+						try {
+							setText(JSON.stringify(value ?? {}, null, 2));
+							setError(null);
+						} catch (_) {
+							setText("");
+						}
+					}}
+				>
+					Reset
+				</Button>
+			</div>
+		</div>
+	);
+};
 
 export interface MCPTool {
 	name: string;
@@ -82,7 +151,6 @@ export const DynamicForm = observer(
 		// Tool Execution
 		const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
-			setData(data);
 			setIsSubmitting(true);
 			const response = await room.runRoomPixel<[string]>(
 				`RunMCPTool(project = [ "${config.app}" ], function=[ "${
@@ -93,23 +161,28 @@ export const DynamicForm = observer(
 
 			const message = room.getMessage(config.tool.message);
 			if (!message || message instanceof ResponseMessageStore !== true) {
+				setIsSubmitting(false);
 				return;
 			}
-			room.processTool(message.id, config.tool.id, tool.name, output);
-			setIsSubmitting(true);
+			room.processTool(
+				message.id,
+				config.tool.id,
+				config.tool.name,
+				output,
+			);
+			setIsSubmitting(false);
 		};
 
-		const capitalizeWords = (str: string) => {
-			return str
+		const capitalizeWords = (str: string) =>
+			str
 				.split(/[_\s]+/) // Split by underscores or spaces
 				.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
 				.join(" "); // Join with spaces for better readability
-		};
 
 		const renderField = (fieldName: string, fieldSchema: any) => {
 			const isRequired = required.includes(fieldName);
-			const value = data[fieldName] ?? "";
-			const displayName = capitalizeWords(fieldName); // Capitalize fieldName
+			const value = (data[fieldName] ?? "") as any;
+			const displayName = capitalizeWords(fieldName);
 
 			switch (fieldSchema.type) {
 				case "string":
@@ -138,8 +211,8 @@ export const DynamicForm = observer(
 								</div>
 								<Select
 									value={value as string}
-									onValueChange={(value) =>
-										handleChange(fieldName, value)
+									onValueChange={(val) =>
+										handleChange(fieldName, val)
 									}
 								>
 									<SelectTrigger className="w-full">
@@ -369,6 +442,41 @@ export const DynamicForm = observer(
 							)}
 						</div>
 					);
+
+				case "object": {
+					// treat object as arbitrary JSON (may be nested) — use JSONEditor for full flexibility
+					const obj =
+						value && typeof value === "object"
+							? (value as Record<string, unknown>)
+							: {};
+					return (
+						<div key={fieldName} className="space-y-2">
+							<div className="mb-2 flex items-center gap-2">
+								<Label
+									htmlFor={fieldName}
+									className="font-semibold"
+								>
+									{displayName}
+									{isRequired && (
+										<span className="text-red-500"> *</span>
+									)}
+								</Label>
+								<Badge variant="outline" className="text-xs">
+									object
+								</Badge>
+							</div>
+							<JSONEditor
+								value={obj}
+								onChange={(v) => handleChange(fieldName, v)}
+							/>
+							{fieldSchema.description && (
+								<p className="text-muted-foreground text-sm">
+									{fieldSchema.description}
+								</p>
+							)}
+						</div>
+					);
+				}
 
 				default:
 					return (
