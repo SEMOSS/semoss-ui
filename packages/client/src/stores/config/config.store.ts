@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
-import { Env, logout, runPixel } from "@semoss/sdk/react";
+import { Env, getJSON, logout, runPixel } from "@semoss/sdk/react";
 import {
 	getUserProjectPermission as getUserProjectLevelPermission,
 	registerUser,
@@ -13,7 +13,6 @@ import {
 	WorkspaceStore,
 } from "@/stores";
 import type { ALL_TYPES } from "@/types";
-import { getJSON } from "@semoss/sdk/react";
 
 interface ConfigStoreInterface {
 	/** Status of the application */
