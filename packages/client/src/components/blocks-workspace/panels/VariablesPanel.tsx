@@ -323,10 +323,10 @@ const StyledListItemContent = styled(List.Item)(() => ({
 	},
 }));
 
-const StyledExpandIcon = styled("img")(()=>({
-width: 20,
-													height: 20,
-}))
+const StyledExpandIcon = styled("img")(() => ({
+	width: 20,
+	height: 20,
+}));
 
 interface VariablePanelProps {
 	title: string;

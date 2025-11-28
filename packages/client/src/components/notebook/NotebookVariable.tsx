@@ -2,8 +2,6 @@ import {
 	AutoFixHighOutlined,
 	Close,
 	ContentCopy,
-	Delete,
-	Edit,
 	MoreVert,
 } from "@mui/icons-material";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
@@ -14,7 +12,6 @@ import { ActionMessages, useBlocks, type Variable } from "@semoss/renderer";
 import {
 	Box,
 	Button,
-	Icon,
 	IconButton,
 	List,
 	Menu,
@@ -84,14 +81,6 @@ const StyledListItemText = styled(List.ItemText)(({ theme }) => ({
 	},
 }));
 
-const StyledIcon = styled(Icon)(({ theme }) => ({
-	color: "#757575S",
-}));
-
-const StyledErrorTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.error.main,
-}));
-
 const StyledCapitalizedTypography = styled(Typography)(() => ({
 	textTransform: "capitalize",
 	color: "#666",
@@ -109,7 +98,7 @@ const StyledAnchorSpan = styled("span")(({ theme }) => ({
 
 const StyledStack = styled(Stack)(({ theme }) => ({
 	paddingLeft: "20px",
-	width:"128px"
+	width: "128px",
 }));
 
 const StyledTextField = styled(TextField)(() => ({
@@ -129,118 +118,120 @@ const StyledTypography = styled(Typography)(() => ({
 	letterSpacing: "0.17px",
 }));
 
-const StyledStackVariable = styled(Stack)(()=>({
-height: "40px", width: "80px"
-}))
+const StyledStackVariable = styled(Stack)(() => ({
+	height: "40px",
+	width: "80px",
+}));
 
-const StyledIconButton = styled(IconButton)(()=>({
-width: "40px",
-								gap: "10px",
-								color: "#757575",
-}))
+const StyledIconButton = styled(IconButton)(() => ({
+	width: "40px",
+	gap: "10px",
+	color: "#757575",
+}));
 
-const StyledMenu = styled(Menu)(()=>({
-".MuiPopover-paper": {
-									borderRadius: "4px",
-									padding: "8px 0px",
-									boxShadow:
-										"0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
-								},
-}))
+const StyledMenu = styled(Menu)(() => ({
+	".MuiPopover-paper": {
+		borderRadius: "4px",
+		padding: "8px 0px",
+		boxShadow: "0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
+	},
+}));
 
-const StyledMenuItem = styled(Menu.Item)(()=>({
-padding: "6px 16px", height: "36px"
-}))
+const StyledMenuItem = styled(Menu.Item)(() => ({
+	padding: "6px 16px",
+	height: "36px",
+}));
 
-const StyledEditIconButton = styled(IconButton)(()=>({
-color: "#757575",
-											fontSize: "small",
-											height: "20px",
-											width: "20px",
-}))
+const StyledEditIconButton = styled(IconButton)(() => ({
+	color: "#757575",
+	fontSize: "small",
+	height: "20px",
+	width: "20px",
+}));
 
-const StyledEditTypography = styled(Typography)(()=>({
-height: "24px",
-											color: "#212121",
-											fontSize: "16px",
-											fontWeight: "400",
-											lineHeight: "150%",
-											letterSpacing: "0.15px",
-}))
+const StyledEditTypography = styled(Typography)(() => ({
+	height: "24px",
+	color: "#212121",
+	fontSize: "16px",
+	fontWeight: "400",
+	lineHeight: "150%",
+	letterSpacing: "0.15px",
+}));
 
-const StyledAutoFixIconButton	 = styled(IconButton)(()=>({
-fontSize: "small",
-											height: "20px",
-											width: "20px",
-}))
-const StyledDeleteIconButton	 = styled(IconButton)(()=>({
-color: "#757575",
-											fontSize: "small",
-											height: "20px",
-											width: "20px",
-}))
+const StyledAutoFixIconButton = styled(IconButton)(() => ({
+	fontSize: "small",
+	height: "20px",
+	width: "20px",
+}));
+const StyledDeleteIconButton = styled(IconButton)(() => ({
+	color: "#757575",
+	fontSize: "small",
+	height: "20px",
+	width: "20px",
+}));
 
-const StyledModal	 = styled(Modal)(()=>({
-display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-}))
+const StyledModal = styled(Modal)(() => ({
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+}));
 
-const StyledModalBox	 = styled(Box)(()=>({
-width: "600px",
-							minHeight: "156px",
-							borderRadius: "12px",
-							background: "var(--Background-Paper-1, #FFF)",
-							boxShadow: "0 9px 46px 0 rgba(0, 0, 0, 0.08)",
-							padding: "8px 16px",
-							display: "flex",
-							flexDirection: "column",
-							gap: "16px",
-							position: "relative",
-}))
+const StyledModalBox = styled(Box)(() => ({
+	width: "600px",
+	minHeight: "156px",
+	borderRadius: "12px",
+	background: "var(--Background-Paper-1, #FFF)",
+	boxShadow: "0 9px 46px 0 rgba(0, 0, 0, 0.08)",
+	padding: "8px 16px",
+	display: "flex",
+	flexDirection: "column",
+	gap: "16px",
+	position: "relative",
+}));
 
-const StyledCloseBox	 = styled(Box)(()=>({
-height: "32px", padding: "8px 0px"
-}))
+const StyledCloseBox = styled(Box)(() => ({
+	height: "32px",
+	padding: "8px 0px",
+}));
 
-const StyledCloseIconButton	 = styled(IconButton)(()=>({
-position: "absolute",
-									right: 8,
-									top: 11,
-}))
+const StyledCloseIconButton = styled(IconButton)(() => ({
+	position: "absolute",
+	right: 8,
+	top: 11,
+}));
 
-const StyledTitleTypography	 = styled(Typography)(()=>({
-fontSize: "20px",
-									fontWeight: 500,
-									color: "#212121",
-									lineHeight: "160%",
-									letterSpacing: "0.15px",
-}))
+const StyledTitleTypography = styled(Typography)(() => ({
+	fontSize: "20px",
+	fontWeight: 500,
+	color: "#212121",
+	lineHeight: "160%",
+	letterSpacing: "0.15px",
+}));
 
-const StyledContentBox	 = styled(Box)(()=>({
-paddingTop: "8px",
-								paddingBottom: "8px",
-}))
-const StyledContentTypography	 = styled(Typography)(()=>({
-fontSize: "16px",
-									fontWeight: 400,
-									color: "#212121",
-									lineHeight: "150%",
-									letterSpacing: "0.15px",
-}))
+const StyledContentBox = styled(Box)(() => ({
+	paddingTop: "8px",
+	paddingBottom: "8px",
+}));
+const StyledContentTypography = styled(Typography)(() => ({
+	fontSize: "16px",
+	fontWeight: 400,
+	color: "#212121",
+	lineHeight: "150%",
+	letterSpacing: "0.15px",
+}));
 
-const StyledCancelButton	 = styled(Button)(()=>({
-textTransform: "none",
-									fontSize: "14px",
-									color: "#212121",
-									fontWeight: "500",
-}))
+const StyledCancelButton = styled(Button)(() => ({
+	textTransform: "none",
+	fontSize: "14px",
+	color: "#212121",
+	fontWeight: "500",
+}));
 
-const StyledDeleteButton	 = styled(Button)(()=>({
-textTransform: "none",
-									fontSize: "14px",
-									color: "#FFF",
-}))
+const StyledDeleteButton = styled(Button)(() => ({
+	textTransform: "none",
+	fontSize: "14px",
+	color: "#FFF",
+}));
 interface NotebookTokenProps {
 	/** Id of the variable */
 	id: string;
@@ -606,13 +597,10 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 								}}
 							>
 								<Stack direction="row" alignItems="center">
-									<StyledEditIconButton
-									>
+									<StyledEditIconButton>
 										<EditOutlinedIcon />
 									</StyledEditIconButton>
-									<StyledEditTypography
-										variant="body2"
-									>
+									<StyledEditTypography variant="body2">
 										Edit
 									</StyledEditTypography>
 								</Stack>
@@ -628,14 +616,10 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 								}
 							>
 								<Stack direction="row" alignItems="center">
-									<StyledAutoFixIconButton
-										color="primary"
-									>
+									<StyledAutoFixIconButton color="primary">
 										<AutoFixHighOutlined />
 									</StyledAutoFixIconButton>
-									<StyledEditTypography
-										variant="body2"
-									>
+									<StyledEditTypography variant="body2">
 										{isProcessing
 											? "Processing..."
 											: "Auto Rename"}
@@ -650,13 +634,10 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 								}}
 							>
 								<Stack direction="row" alignItems="center">
-									<StyledDeleteIconButton
-									>
+									<StyledDeleteIconButton>
 										<DeleteOutlineOutlinedIcon />
 									</StyledDeleteIconButton>
-									<StyledEditTypography
-										variant="body2"
-									>
+									<StyledEditTypography variant="body2">
 										Delete
 									</StyledEditTypography>
 								</Stack>
@@ -665,12 +646,8 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 					</StyledStackVariable>
 				}
 			>
-				<StyledModal
-					open={isOpen}
-					onClose={() => setIsOpen(false)}
-				>
-					<StyledModalBox
-					>
+				<StyledModal open={isOpen} onClose={() => setIsOpen(false)}>
+					<StyledModalBox>
 						{/* Close button */}
 						<StyledCloseBox>
 							<StyledCloseIconButton
@@ -680,19 +657,14 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 							</StyledCloseIconButton>
 
 							{/* Title */}
-							<StyledTitleTypography
-								variant="h6"
-							>
+							<StyledTitleTypography variant="h6">
 								Delete Selected Item?
 							</StyledTitleTypography>
 						</StyledCloseBox>
 
 						{/* Content with striped background */}
-						<StyledContentBox
-						>
-							<StyledContentTypography
-								variant="body1"
-							>
+						<StyledContentBox>
+							<StyledContentTypography variant="body1">
 								You will permanently remove the item from your
 								workspace.
 							</StyledContentTypography>
