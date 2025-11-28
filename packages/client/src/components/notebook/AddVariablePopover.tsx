@@ -55,7 +55,6 @@ const StyledStack = styled(Stack)(() => ({
 const StyledPopover = styled(Popover)(({ theme }) => ({
 	padding: theme.spacing(2),
 	marginLeft: theme.spacing(2),
-	maxHeight: "80vh",
 	"& .MuiPopover-paper": {
 		maxWidth: "none",
 		borderRadius: "12px",
@@ -63,6 +62,8 @@ const StyledPopover = styled(Popover)(({ theme }) => ({
 	},
 	width: "444px",
 	height: "396px",
+	left: "10px",
+	position: "absolute",
 }));
 
 const QueryPreviewContainer = styled(Stack)(() => ({
@@ -713,6 +714,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 
 	return (
 		<StyledPopover
+			marginThreshold={60}
 			id={"variable-popover"}
 			open={open}
 			onClose={() => {
@@ -723,11 +725,19 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 
 				onClose();
 			}}
+			anchorOrigin={{
+				vertical: "center",
+				horizontal: "right",
+			}}
+			transformOrigin={{
+				vertical: "bottom",
+				horizontal: "left",
+			}}
 			anchorEl={anchorEl}
 		>
 			<StyledStack
 				direction={"column"}
-				className="add-variable-popover__content"
+				className="add-variable-popover__content max-h-[90vh] overflow-hidden"
 			>
 				<StyledStackVariable
 					direction="row"
@@ -746,97 +756,102 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 						<Close />
 					</IconButton>
 				</StyledStackVariable>
-				{variable && (
-					<Alert icon={<WarningRounded />} severity={"warning"}>
-						<Alert.Title>
-							If this variable is actively being used, editing it
-							may result in errors throughout your sheets.
-						</Alert.Title>
-					</Alert>
-				)}
-
-				<Stack direction="column" mt={1} gap={1}>
-					<StyledStackVariable direction="column">
-						<StyledTypographyVariable variant={"body2"}>
-							Variable Name
-						</StyledTypographyVariable>
-						<TextField
-							placeholder={"Name"}
-							value={variableName}
-							error={alreadyAliased}
-							onChange={(e) => {
-								setVariableName(e.target.value);
-							}}
-							size="small"
-							helperText={
-								alreadyAliased ? (
-									<Typography
-										variant={"caption"}
-										color={"error"}
-									>
-										This is not a unique alias
-									</Typography>
-								) : (
-									""
-								)
-							}
-						/>
-					</StyledStackVariable>
-					<StyledStackVariable direction="column">
-						<StyledTypographyVariable variant={"body2"}>
-							Type
-						</StyledTypographyVariable>
-						<Select
-							value={variableType}
-							label={"Select Type"}
-							onChange={(e) => {
-								const val = e.target.value as VariableType;
-								setEngine(null);
-								setVariableInputValue(null);
-								setVariablePointer("");
-								setVariableType(val);
-							}}
-							size="small"
-						>
-							{VARIABLE_TYPES.map((val) => {
-								return (
-									<Select.Item key={val} value={val}>
-										{capitalizeFirstLetter(val)}
-									</Select.Item>
-								);
-							})}
-						</Select>
-					</StyledStackVariable>
-					<StyledStackVariable direction="column">
-						<StyledTypographyVariable variant={"body2"}>
-							Value
-						</StyledTypographyVariable>
-						{input}
-					</StyledStackVariable>
-					<StyledStackVariable
-						direction="column"
-						sx={{ background: showPreview ? "#F5F9FE" : "none" }}
-					>
-						<StyledButtonPreview
-							onClick={() => setShowPreview(!showPreview)}
-						>
-							<img
-								src={PreviewButton}
-								alt="Expand/Collapse"
-								style={{
-									width: 20,
-									height: 20,
+				<div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto pr-1">
+					{variable && (
+						<Alert icon={<WarningRounded />} severity={"warning"}>
+							<Alert.Title>
+								If this variable is actively being used, editing
+								it may result in errors throughout your sheets.
+							</Alert.Title>
+						</Alert>
+					)}
+					<Stack direction="column" mt={1} gap={1}>
+						<StyledStackVariable direction="column">
+							<StyledTypographyVariable variant={"body2"}>
+								Variable Name
+							</StyledTypographyVariable>
+							<TextField
+								placeholder={"Name"}
+								value={variableName}
+								error={alreadyAliased}
+								onChange={(e) => {
+									setVariableName(e.target.value);
 								}}
+								size="small"
+								helperText={
+									alreadyAliased ? (
+										<Typography
+											variant={"caption"}
+											color={"error"}
+										>
+											This is not a unique alias
+										</Typography>
+									) : (
+										""
+									)
+								}
 							/>
-							<span style={{ position: "relative", top: "1px" }}>
-								Preview
-							</span>
-						</StyledButtonPreview>
-					</StyledStackVariable>
-					<StyledStackVariable>
-						{showPreview && preview}
-					</StyledStackVariable>
-				</Stack>
+						</StyledStackVariable>
+						<StyledStackVariable direction="column">
+							<StyledTypographyVariable variant={"body2"}>
+								Type
+							</StyledTypographyVariable>
+							<Select
+								value={variableType}
+								label={"Select Type"}
+								onChange={(e) => {
+									const val = e.target.value as VariableType;
+									setEngine(null);
+									setVariableInputValue(null);
+									setVariablePointer("");
+									setVariableType(val);
+								}}
+								size="small"
+							>
+								{VARIABLE_TYPES.map((val) => {
+									return (
+										<Select.Item key={val} value={val}>
+											{capitalizeFirstLetter(val)}
+										</Select.Item>
+									);
+								})}
+							</Select>
+						</StyledStackVariable>
+						<StyledStackVariable direction="column">
+							<StyledTypographyVariable variant={"body2"}>
+								Value
+							</StyledTypographyVariable>
+							{input}
+						</StyledStackVariable>
+						<StyledStackVariable
+							direction="column"
+							sx={{
+								background: showPreview ? "#F5F9FE" : "none",
+							}}
+						>
+							<StyledButtonPreview
+								onClick={() => setShowPreview(!showPreview)}
+							>
+								<img
+									src={PreviewButton}
+									alt="Expand/Collapse"
+									style={{
+										width: 20,
+										height: 20,
+									}}
+								/>
+								<span
+									style={{ position: "relative", top: "1px" }}
+								>
+									Preview
+								</span>
+							</StyledButtonPreview>
+						</StyledStackVariable>
+						<StyledStackVariable>
+							{showPreview && preview}
+						</StyledStackVariable>
+					</Stack>
+				</div>
 				<StyledStackFooter
 					direction={"row"}
 					justifyContent={"flex-end"}

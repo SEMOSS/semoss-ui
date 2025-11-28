@@ -738,11 +738,16 @@ export const VariablesPanel = observer(
 									vertical: "top",
 									horizontal: "right",
 								}}
+								transformOrigin={{
+									vertical: "bottom",
+									horizontal: "left",
+								}}
 								sx={{
 									"& .MuiPopover-paper": {
-										overflowY: "hidden",
+										overflowY: "auto",
 									},
 								}}
+								marginThreshold={60}
 							>
 								<StyledBox>
 									<StyledStackFilter>
@@ -784,12 +789,6 @@ export const VariablesPanel = observer(
 												>
 													<StyledCheckbox
 														checked={allSelected}
-														indeterminate={
-															tempFilter.length >
-																0 &&
-															tempFilter.length <
-																VARIABLE_TYPES.length
-														}
 														onChange={(e) => {
 															e.stopPropagation();
 															if (allSelected) {

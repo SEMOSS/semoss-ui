@@ -140,6 +140,9 @@ const StyledMenu = styled(Menu)(() => ({
 const StyledMenuItem = styled(Menu.Item)(() => ({
 	padding: "6px 16px",
 	height: "36px",
+	"&:hover": {
+		backgroundColor: "#EBF4FE",
+	},
 }));
 
 const StyledEditIconButton = styled(IconButton)(() => ({
@@ -605,7 +608,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 									</StyledEditTypography>
 								</Stack>
 							</StyledMenuItem>
-							<Menu.Item
+							<StyledMenuItem
 								value="AutoRename"
 								onClick={() => {
 									handleAutoRename();
@@ -625,8 +628,8 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 											: "Auto Rename"}
 									</StyledEditTypography>
 								</Stack>
-							</Menu.Item>
-							<Menu.Item
+							</StyledMenuItem>
+							<StyledMenuItem
 								value="Delete"
 								onClick={() => {
 									setIsOpen(true);
@@ -641,7 +644,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 										Delete
 									</StyledEditTypography>
 								</Stack>
-							</Menu.Item>
+							</StyledMenuItem>
 						</StyledMenu>
 					</StyledStackVariable>
 				}
