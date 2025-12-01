@@ -353,13 +353,19 @@ export class RoomStore {
 
 			// get all of the messages, get all the options
 			const response = await this.runRoomPixel<
-				(PixelMessage[] | { OPTIONS: RoomStoreInterface["options"] })[]
+				[
+					PixelMessage[],
+					{ OPTIONS?: RoomStoreInterface["options"] }, // partial because this doesn't work for old rooms
+				]
 			>(
-				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`,
+				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)}); SetRoomForInsight(roomId=${JSON.stringify(this._store.roomId)});`,
 			);
 
-			const { output: messageOutput } = response.pixelReturn[0];
-			const { output: optionsOutput } = response.pixelReturn[1];
+			const messageOutput = response.pixelReturn[0]
+				.output as PixelMessage[];
+			const optionsOutput = response.pixelReturn[1].output as {
+				OPTIONS?: RoomStoreInterface["options"];
+			};
 
 			const root = new RootMessageStore(this);
 			const messages: Record<
@@ -377,8 +383,11 @@ export class RoomStore {
 			let activeModelId = this._store.modelId;
 
 			// This is done as seperate loops because of INPUT_TOOL_EXEC
-			for (const pixelMessage of messageOutput as PixelMessage[]) {
-				if (pixelMessage.type === "INPUT_TEXT") {
+			for (const pixelMessage of messageOutput) {
+				if (
+					pixelMessage.type === "INPUT_TEXT" ||
+					pixelMessage.type === "INPUT_MEDIA"
+				) {
 					activeModelId = pixelMessage.modelId;
 				}
 
@@ -405,11 +414,7 @@ export class RoomStore {
 			}
 
 			// options
-			const newOptions = (
-				optionsOutput as {
-					OPTIONS: RoomStoreInterface["options"];
-				}
-			).OPTIONS;
+			const newOptions = { ...optionsOutput.OPTIONS };
 			if (!newOptions.workspace?.workspace_id) {
 				delete newOptions.workspace;
 			}
@@ -427,34 +432,16 @@ export class RoomStore {
 				// mark as initialized
 				this._store.isInitialized = true;
 			});
+
+			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
+			if (this.tail.type === "RESPONSE") {
+				this.tail.startToolExecution();
+			}
 		} catch (e) {
+			console.error(e);
 			throw new Error(e.message || "Error initializing room");
 		} finally {
 			this.setIsLoading(false);
-		}
-	};
-
-	/**
-	 * Link Workspace
-	 * @param workspaceId - Workspace id to link to the room
-	 */
-	legacyLinkWorkspace = async (workspaceId: string) => {
-		try {
-			const { errors } = await this.runRoomPixel<
-				[
-					{
-						roomId: string;
-					},
-				]
-			>(
-				`SetRoomWorkspace(roomId=${JSON.stringify(this._store.roomId)}, workspaceId=${JSON.stringify(workspaceId)});`,
-			);
-
-			if (errors?.length > 0) {
-				throw new Error(errors?.join(", ") || undefined);
-			}
-		} catch (e) {
-			throw new Error(e.message || "Error linking workspace");
 		}
 	};
 
@@ -664,7 +651,7 @@ export class RoomStore {
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: prompt,
-			files: uploaded,
+			imageInfos: uploaded,
 			modelId: this.modelId,
 			paramMap: {
 				max_new_tokens: this.options.tokenLength,

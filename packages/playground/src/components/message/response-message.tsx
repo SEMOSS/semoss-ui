@@ -16,7 +16,11 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { InputMessageStore, type ResponseMessageStore } from "@/stores";
+import {
+	InputMessageStore,
+	type ResponseMessageStore,
+	RootMessageStore,
+} from "@/stores";
 import { ResponseMessageTool } from "./response-message-tool";
 
 // Styled components replaced with Tailwind classes inline
@@ -77,10 +81,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		};
 
 		return (
-			<div className="group mb-0 flex w-full flex-col gap-2 overflow-hidden">
+			<div className="group mb-0 flex w-full flex-col gap-4 overflow-hidden">
 				<div className="group flex flex-row items-center gap-2">
 					<MessageCircleIcon className="size-4" />
-					<span className="mr-0.5 font-medium text-base">Ask</span>
+					<span className="mr-0.5 font-medium text-base">
+						{message.model.name}
+					</span>
 				</div>
 				{message.text ? <Markdown>{message.text}</Markdown> : null}
 				{message.tools.map((t) => (
@@ -96,26 +102,20 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						<>
 							<Tooltip>
 								<TooltipTrigger asChild>
-									<span>
-										<Button
-											variant="ghost"
-											size="icon"
-											disabled={
-												!inputMessage.previousSibling
+									<Button
+										variant="ghost"
+										size="icon"
+										disabled={!inputMessage.previousSibling}
+										onClick={() => {
+											if (!inputMessage.previousSibling) {
+												return;
 											}
-											onClick={() => {
-												if (
-													!inputMessage.previousSibling
-												) {
-													return;
-												}
 
-												inputMessage.previousSibling.activateMessage();
-											}}
-										>
-											<ArrowLeftIcon />
-										</Button>
-									</span>
+											inputMessage.previousSibling.activateMessage();
+										}}
+									>
+										<ArrowLeftIcon />
+									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
 									Previous Message
@@ -128,22 +128,20 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 							<Tooltip>
 								<TooltipTrigger asChild>
-									<span>
-										<Button
-											variant="ghost"
-											size="icon"
-											disabled={!inputMessage.nextSibling}
-											onClick={() => {
-												if (!inputMessage.nextSibling) {
-													return;
-												}
+									<Button
+										variant="ghost"
+										size="icon"
+										disabled={!inputMessage.nextSibling}
+										onClick={() => {
+											if (!inputMessage.nextSibling) {
+												return;
+											}
 
-												inputMessage.nextSibling.activateMessage();
-											}}
-										>
-											<ArrowRightIcon />
-										</Button>
-									</span>
+											inputMessage.nextSibling.activateMessage();
+										}}
+									>
+										<ArrowRightIcon />
+									</Button>
 								</TooltipTrigger>
 								<TooltipContent>Next Message</TooltipContent>
 							</Tooltip>
@@ -153,18 +151,19 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					{inputMessage && (
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<span>
-									{" "}
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => {
-											rewriteMessage();
-										}}
-									>
-										<RefreshCwIcon />
-									</Button>
-								</span>
+								<Button
+									disabled={
+										inputMessage.parent instanceof
+										RootMessageStore
+									}
+									variant="ghost"
+									size="icon"
+									onClick={() => {
+										rewriteMessage();
+									}}
+								>
+									<RefreshCwIcon />
+								</Button>
 							</TooltipTrigger>
 							<TooltipContent>Rewrite Message</TooltipContent>
 						</Tooltip>
@@ -172,56 +171,50 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span>
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={() => {
-										recordFeedback(true);
-									}}
-								>
-									<ThumbsUpIcon />
-								</Button>
-							</span>
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={() => {
+									recordFeedback(true);
+								}}
+							>
+								<ThumbsUpIcon />
+							</Button>
 						</TooltipTrigger>
 						<TooltipContent>Share Positive Feedback</TooltipContent>
 					</Tooltip>
 
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span>
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={() => {
-										recordFeedback(false);
-									}}
-								>
-									<ThumbsDownIcon />
-								</Button>
-							</span>
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={() => {
+									recordFeedback(false);
+								}}
+							>
+								<ThumbsDownIcon />
+							</Button>
 						</TooltipTrigger>
 						<TooltipContent>Share Negative Feedback</TooltipContent>
 					</Tooltip>
 
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span>
-								<Button
-									variant="ghost"
-									size="icon"
-									disabled={!message.text}
-									onClick={() => {
-										if (!message.text) {
-											return;
-										}
+							<Button
+								variant="ghost"
+								size="icon"
+								disabled={!message.text}
+								onClick={() => {
+									if (!message.text) {
+										return;
+									}
 
-										copyMessage(message.text);
-									}}
-								>
-									<CopyIcon />
-								</Button>
-							</span>
+									copyMessage(message.text);
+								}}
+							>
+								<CopyIcon />
+							</Button>
 						</TooltipTrigger>
 						<TooltipContent>Copy Response</TooltipContent>
 					</Tooltip>
