@@ -147,6 +147,19 @@ const StyledTypographyId = styled(Typography)(() => ({
 	letterSpacing: "0.17px",
 }));
 
+const StyledStackModel = styled(Stack)(() => ({
+	position: "relative",
+	left: "6px",
+}));
+
+const StyledSpan = styled("span")(() => ({
+	color: "#999",
+}));
+
+const StyledPreviewSpan = styled("span")(() => ({
+	position: "relative", top: "1px"
+}));
+
 interface AddVariablePopoverProps {
 	/**
 	 * modal open
@@ -436,15 +449,24 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 				<Select
 					disabled={!variableType}
 					size="small"
-					label="Add Value"
+					placeholder="Add Value"
 					value={
 						(variableType === "cell" ||
-						variableType === "query" ||
-						variableType === "block" ||
-						variableType === "LLM Comparison"
+							variableType === "query" ||
+							variableType === "block" ||
+							variableType === "LLM Comparison"
 							? variablePointer
 							: engine) ?? ""
 					}
+					SelectProps={{
+						displayEmpty: true,
+						renderValue: (value) => {
+							if (!value || value === "") {
+								return <StyledSpan>Add Value</StyledSpan>;
+							}
+							return capitalizeFirstLetter(value as string);
+						},
+					}}
 					onChange={(e) => {
 						const val = e.target.value as unknown;
 						if (
@@ -595,7 +617,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 					);
 				} else {
 					return (
-						<Stack direction="row" alignItems="center">
+						<StyledStackModel direction="row" alignItems="center">
 							<Icon>
 								<MoreSharp />
 							</Icon>
@@ -607,7 +629,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 									{engine.app_id}
 								</StyledTypographyId>
 							</Stack>
-						</Stack>
+						</StyledStackModel>
 					);
 				}
 			} else if (
@@ -651,9 +673,9 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 
 		const hasChanges = variable
 			? variable.id !== variableName ||
-				variable.to !== variablePointer ||
-				variable.type !== variableType ||
-				variableInputValue !== v
+			variable.to !== variablePointer ||
+			variable.type !== variableType ||
+			variableInputValue !== v
 			: true;
 
 		return !isValid || !hasChanges || alreadyAliased;
@@ -695,8 +717,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 				} else {
 					const variableEngine = engines[`${variable.type}s`]
 						? engines[`${variable.type}s`].find(
-								(engineValue) => engineValue.app_id === val,
-							)
+							(engineValue) => engineValue.app_id === val,
+						)
 						: null;
 					if (variableEngine) {
 						setEngine(variableEngine);
@@ -798,7 +820,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 							</StyledTypographyVariable>
 							<Select
 								value={variableType}
-								label={"Select Type"}
+								placeholder="Select Type"
 								onChange={(e) => {
 									const val = e.target.value as VariableType;
 									setEngine(null);
@@ -807,6 +829,15 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 									setVariableType(val);
 								}}
 								size="small"
+								SelectProps={{
+									displayEmpty: true,
+									renderValue: (value) => {
+										if (!value || value === "") {
+											return <StyledSpan>Select Type</StyledSpan>;
+										}
+										return capitalizeFirstLetter(value as string);
+									},
+								}}
 							>
 								{VARIABLE_TYPES.map((val) => {
 									return (
@@ -840,11 +871,10 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 										height: 20,
 									}}
 								/>
-								<span
-									style={{ position: "relative", top: "1px" }}
+								<StyledPreviewSpan
 								>
 									Preview
-								</span>
+								</StyledPreviewSpan>
 							</StyledButtonPreview>
 						</StyledStackVariable>
 						<StyledStackVariable>
@@ -881,30 +911,30 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 											to:
 												variableType === "cell"
 													? {
-															to: splitAtPeriod(
-																variablePointer,
-																"left",
-															),
-															type: variableType,
-															cellId: splitAtPeriod(
-																variablePointer,
-																"right",
-															),
-														}
+														to: splitAtPeriod(
+															variablePointer,
+															"left",
+														),
+														type: variableType,
+														cellId: splitAtPeriod(
+															variablePointer,
+															"right",
+														),
+													}
 													: {
-															to: variablePointer,
-															type: variableType,
-															value: engine
-																? engine.app_id
-																: variableType ===
-																			"array" ||
-																		variableType ===
-																			"JSON"
-																	? JSON.parse(
-																			variableInputValue,
-																		)
-																	: variableInputValue,
-														},
+														to: variablePointer,
+														type: variableType,
+														value: engine
+															? engine.app_id
+															: variableType ===
+																"array" ||
+																variableType ===
+																"JSON"
+																? JSON.parse(
+																	variableInputValue,
+																)
+																: variableInputValue,
+													},
 										},
 									});
 
@@ -955,32 +985,32 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 										payload:
 											variableType === "cell"
 												? {
-														id: variableName,
-														to: splitAtPeriod(
-															variablePointer,
-															"left",
-														),
-														type: variableType,
-														cellId: splitAtPeriod(
-															variablePointer,
-															"right",
-														),
-													}
+													id: variableName,
+													to: splitAtPeriod(
+														variablePointer,
+														"left",
+													),
+													type: variableType,
+													cellId: splitAtPeriod(
+														variablePointer,
+														"right",
+													),
+												}
 												: {
-														id: variableName,
-														to: variablePointer,
-														type: variableType,
-														value: engine
-															? engine.app_id
-															: variableType ===
-																		"array" ||
-																	variableType ===
-																		"JSON"
-																? JSON.parse(
-																		variableInputValue,
-																	)
-																: variableInputValue,
-													},
+													id: variableName,
+													to: variablePointer,
+													type: variableType,
+													value: engine
+														? engine.app_id
+														: variableType ===
+															"array" ||
+															variableType ===
+															"JSON"
+															? JSON.parse(
+																variableInputValue,
+															)
+															: variableInputValue,
+												},
 									});
 									// else {
 									//     // Add dependency to reference

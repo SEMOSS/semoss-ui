@@ -706,12 +706,14 @@ export const VariablesPanel = observer(
 								onChange={(e) => {
 									setFilterWord(e.target.value);
 								}}
+								data-testid={"variable-panel-search-txt"}
 							/>
 							<IconButton
 								size="small"
 								onClick={(e) => {
 									setFilterAnchorEl(e.currentTarget);
 								}}
+								data-testid={"variable-panel-filter-btn"}
 							>
 								<Badge
 									variant="dot"
@@ -747,7 +749,7 @@ export const VariablesPanel = observer(
 										overflowY: "auto",
 									},
 								}}
-								marginThreshold={60}
+								marginThreshold={45}
 							>
 								<StyledBox>
 									<StyledStackFilter>
@@ -760,6 +762,7 @@ export const VariablesPanel = observer(
 												onClick={() => {
 													setFilterAnchorEl(null);
 												}}
+												data-testid={"variable-filter-popover-close-btn"}
 											>
 												<Close />
 											</IconButton>
@@ -780,6 +783,7 @@ export const VariablesPanel = observer(
 													]);
 												}
 											}}
+											data-testid={"variable-filter-select-all-item"}
 										>
 											<StyledSelectAllListContent>
 												<Box
@@ -803,6 +807,7 @@ export const VariablesPanel = observer(
 																]);
 															}
 														}}
+														data-testid={"variable-filter-select-all-chk"}
 													/>
 												</Box>
 												<StyledTypographyContent variant="body1">
@@ -814,6 +819,7 @@ export const VariablesPanel = observer(
 											{VARIABLE_TYPES.map((type) => (
 												<List.Item
 													key={type}
+													data-testid={`variable-filter-${type}-item`}
 													onClick={() => {
 														setTempFilter((prev) =>
 															prev.includes(type)
@@ -857,6 +863,7 @@ export const VariablesPanel = observer(
 																checked={tempFilter.includes(
 																	type,
 																)}
+																data-testid={`variable-filter-${type}-chk`}
 																onChange={(
 																	e,
 																) => {
@@ -908,6 +915,7 @@ export const VariablesPanel = observer(
 											onClick={() =>
 												setTempSortOrder("asc")
 											}
+											data-testid={"variable-filter-sort-asc-item"}
 											sx={{
 												"& .MuiStack-root > :not(style) ~ :not(style)":
 													{
@@ -942,6 +950,7 @@ export const VariablesPanel = observer(
 											onClick={() =>
 												setTempSortOrder("desc")
 											}
+											data-testid={"variable-filter-sort-desc-item"}
 											sx={{
 												"& .MuiStack-root > :not(style) ~ :not(style)":
 													{
@@ -992,6 +1001,7 @@ export const VariablesPanel = observer(
 												setSortOrder("asc"); // reset applied sort
 												setFilterAnchorEl(null); // Close popover
 											}}
+											data-testid={"variable-filter-clear-all-btn"}
 										>
 											Clear All
 										</FlexButton>
@@ -1002,6 +1012,7 @@ export const VariablesPanel = observer(
 												setSortOrder(tempSortOrder); // Apply sort order
 												setFilterAnchorEl(null); // Close popover
 											}}
+											data-testid={"variable-filter-apply-btn"}
 										>
 											Apply
 										</FlexButton>
@@ -1026,6 +1037,7 @@ export const VariablesPanel = observer(
 											isProcessing
 										}
 										onClick={handleOpenRenameModal}
+										data-testid={"variable-panel-rename-suggest-btn"}
 									>
 										{llmLoad ? (
 											<CircularProgress
@@ -1047,6 +1059,7 @@ export const VariablesPanel = observer(
 													e.currentTarget,
 												);
 											}}
+											data-testid={"variable-panel-add-variable-btn"}
 										>
 											<Add />
 										</IconButton>
@@ -1073,10 +1086,11 @@ export const VariablesPanel = observer(
 												types.forEach((type) => {
 													newState[type] =
 														!hasAnyExpanded; // Collapse if any expanded, expand if all collapsed
-												});
+												})
 												setExpandedItems(newState);
 												setExpandAll(!hasAnyExpanded);
 											}}
+											data-testid={"variable-panel-expand-collapse-btn"}
 										>
 											<StyledExpandIcon
 												src={ExpandCollapseIcon}
@@ -1105,6 +1119,7 @@ export const VariablesPanel = observer(
 													[type]: isExpanded,
 												}));
 											}}
+											data-testid={`variable-panel-type-${type}-accordion`}
 										>
 											<StyledStackAccordion>
 												<StyledAccordionTrigger
