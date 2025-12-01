@@ -268,8 +268,8 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 	 * path - path to file
 	 */
 	const handleOnSelect = (path: string) => {
-		// If clicking on the same folder again, deselect it
-		if (selectedPath === path && path.slice(-1) === "/") {
+		// If path is empty (clicked on empty space) or clicking on same folder, deselect
+		if (!path || (selectedPath === path && path.slice(-1) === "/")) {
 			setSelectedPath("");
 			// Increment deselect counter to force FileExplorer remount and clear selection
 			setDeselectCounter((prev) => prev + 1);
