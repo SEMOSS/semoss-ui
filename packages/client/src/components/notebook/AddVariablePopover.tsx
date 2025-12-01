@@ -449,15 +449,34 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 				<Select
 					disabled={!variableType}
 					size="small"
-					label="Add Value"
+					//label="Add Value"
+					// keep value as string for pointers, object for engines
 					value={
-						(variableType === "cell" ||
-							variableType === "query" ||
-							variableType === "block" ||
-							variableType === "LLM Comparison"
+						variableType === "cell" ||
+						variableType === "query" ||
+						variableType === "block" ||
+						variableType === "LLM Comparison"
 							? variablePointer
-							: engine) ?? ""
+							: engine ?? ""
 					}
+					SelectProps={{
+						displayEmpty: true,
+						renderValue: (value) => {
+							if (!value || value === "") {
+								return <StyledSpan>Add Value</StyledSpan>;
+							}
+							if (
+								variableType === "cell" ||
+								variableType === "query" ||
+								variableType === "block" ||
+								variableType === "LLM Comparison"
+							) {
+								return String(value);
+							}
+							const eng = (value as { app_name?: string }) || engine;
+							return eng?.app_name ?? String(eng);
+						},
+					}}
 					onChange={(e) => {
 						const val = e.target.value as unknown;
 						if (
@@ -466,16 +485,14 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 							variableType === "block" ||
 							variableType === "LLM Comparison"
 						) {
-							const p = val as string;
-							setVariablePointer(p);
+							setVariablePointer(val as string);
 						} else {
-							const p = val as {
+							setEngine(val as {
 								app_id: string;
 								app_name: string;
 								app_type: string;
 								app_subtype: string;
-							};
-							setEngine(p);
+							});
 						}
 					}}
 				>
@@ -811,7 +828,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 							</StyledTypographyVariable>
 							<Select
 								value={variableType}
-								label="Select Type"
+								//label="Select Type"
 								onChange={(e) => {
 									const val = e.target.value as VariableType;
 									setEngine(null);
@@ -819,6 +836,16 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 									setVariablePointer("");
 									setVariableType(val);
 								}}
+								SelectProps={{
+                        displayEmpty: true,
+                        renderValue: (value) => {
+                            console.log(value,"value");
+                            if (!value || value === "") {
+                                return <StyledSpan>Select Type</StyledSpan>;
+                            }
+                            return capitalizeFirstLetter(value as string);
+                        },
+                    }}
 								size="small"
 							>
 								{VARIABLE_TYPES.map((val) => {
