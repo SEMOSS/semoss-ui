@@ -12,6 +12,7 @@ import {
 	TextField,
 	useNotification,
 } from "@semoss/ui";
+import { uploadImage } from "@/api";
 import { useRootStore } from "@/hooks";
 import type { AppMetadata } from "./app.types";
 
@@ -43,7 +44,7 @@ interface NewAppModalProps {
 export const NewAppModal = (props: NewAppModalProps) => {
 	const { open, options, onClose = () => null } = props;
 
-	const { monolithStore } = useRootStore();
+	const { monolithStore, configStore } = useRootStore();
 	const notification = useNotification();
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -97,16 +98,20 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 				// upload the image
 				if (data.APP_IMG && appId) {
-					await monolithStore.uploadImage(data.APP_IMG, appId);
+					await uploadImage(
+						data.APP_IMG,
+						appId,
+						configStore.store.insightID,
+					);
 				}
 				// after the project is created check for metadata. If true, run SetProjectMeta
-				if (data["APP_TAGS"].length || data["APP_DESCRIPTION"]) {
+				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
 					const setProjectMetadataResponse =
 						await monolithStore.runQuery(
 							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
 								{
-									tag: data["APP_TAGS"],
-									description: data["APP_DESCRIPTION"],
+									tag: data.APP_TAGS,
+									description: data.APP_DESCRIPTION,
 								},
 							)}])`,
 						);
@@ -142,7 +147,11 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 				// upload the image
 				if (data.APP_IMG && appId) {
-					await monolithStore.uploadImage(data.APP_IMG, appId);
+					await uploadImage(
+						data.APP_IMG,
+						appId,
+						configStore.store.insightID,
+					);
 				}
 
 				// after the project is created run a pixel to create a new portals/index.html file
@@ -159,11 +168,8 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				const response =
 					await monolithStore.runQuery(saveIndexFilePixel);
 
-				let output;
-				let operationType;
-
-				output = response.pixelReturn[0].output;
-				operationType = response.pixelReturn[0].operationType;
+				let output = response.pixelReturn[0].output;
+				let operationType = response.pixelReturn[0].operationType;
 
 				if (operationType.indexOf("ERROR") > -1) {
 					notification.add({
@@ -184,13 +190,13 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				}
 
 				// after the project is created check for metadata. If true, run SetProjectMeta
-				if (data["APP_TAGS"].length || data["APP_DESCRIPTION"]) {
+				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
 					const setProjectMetadataResponse =
 						await monolithStore.runQuery(
 							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
 								{
-									tag: data["APP_TAGS"],
-									description: data["APP_DESCRIPTION"],
+									tag: data.APP_TAGS,
+									description: data.APP_DESCRIPTION,
 								},
 							)}])`,
 						);
@@ -270,6 +276,9 @@ export const NewAppModal = (props: NewAppModalProps) => {
 											field.onChange(value)
 										}
 										rows={3}
+										data-testid={
+											"newAppModal-description-txt"
+										}
 									/>
 								);
 							}}
@@ -294,6 +303,9 @@ export const NewAppModal = (props: NewAppModalProps) => {
 												{...params}
 												variant="outlined"
 												placeholder='Press "Enter" to add tag'
+												data-testid={
+													"newAppModal-tag-txt"
+												}
 											/>
 										)}
 									/>
@@ -325,6 +337,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 												field.onChange(value[0]);
 											}
 										}}
+										data-testid={"newAppModal-file-txt"}
 									/>
 								);
 							}}
@@ -342,6 +355,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 							type="button"
 							disabled={isLoading}
 							onClick={() => onClose()}
+							data-testid={"newAppModal-cancel-btn"}
 						>
 							Cancel
 						</Button>
@@ -349,6 +363,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 							type="submit"
 							variant={"contained"}
 							disabled={isLoading || !isFormValid}
+							data-testid={"newAppModal-create-btn"}
 						>
 							Create
 						</Button>

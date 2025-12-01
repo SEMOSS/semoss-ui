@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noExplicitAny: TODO
 import {
 	closestCenter,
 	DndContext,
@@ -24,7 +25,6 @@ import {
 	Search,
 } from "@mui/icons-material/";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import { Actions, DockLocation, TabNode } from "flexlayout-react";
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useRef, useState } from "react";
@@ -48,6 +48,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useDesigner, useWorkspace } from "@/hooks";
@@ -161,9 +162,9 @@ const StyledPageItem = styled("div", {
 	width: "100%",
 	alignItems: "center",
 	justifyContent: "space-between",
-	padding: theme.spacing(1) + " " + theme.spacing(2),
+	padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
 	color: search ? theme.palette.primary.main : "",
-	backgroundColor: isselected == "true" ? "#EBF4FE" : "",
+	backgroundColor: isselected === "true" ? "#EBF4FE" : "",
 }));
 
 const StyledTitle = styled("div")(({ theme }) => ({
@@ -298,7 +299,7 @@ export const LayersPanel = observer(
 	(props: AddBlocksLayersProps): JSX.Element => {
 		const { title } = props;
 		// get the store
-		const { registry, state } = useBlocks();
+		const { state } = useBlocks();
 		const { designer } = useDesigner();
 		const notification = useNotification();
 		const { workspace } = useWorkspace();
@@ -315,7 +316,7 @@ export const LayersPanel = observer(
 		>(null);
 		const accordionRefs = useRef({});
 
-		const [activeNode, setActiveNode] = useState<TreeNode | null>(null);
+		const [_activeNode, setActiveNode] = useState<TreeNode | null>(null);
 
 		const sensors = useSensors(
 			useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -529,9 +530,7 @@ export const LayersPanel = observer(
 			const overBlock = state.getBlock(over?.id as string);
 
 			const isContainer =
-				overBlock &&
-				overBlock.slots &&
-				Object.keys(overBlock.slots).length > 0;
+				overBlock?.slots && Object.keys(overBlock.slots).length > 0;
 			const [dropPosition, setDropPosition] = useState<
 				"top" | "bottom" | "inside"
 			>("inside");
@@ -565,6 +564,7 @@ export const LayersPanel = observer(
 			};
 
 			return (
+				// biome-ignore lint/a11y/noStaticElementInteractions: TODO
 				<div
 					ref={setNodeRef}
 					data-id={node.id}
@@ -662,7 +662,7 @@ export const LayersPanel = observer(
 				React.useState<null | HTMLElement>(null);
 			const handleMenuOpen = (
 				event: React.MouseEvent<HTMLElement>,
-				id: string,
+				_id: string,
 			) => {
 				event.preventDefault();
 				event.stopPropagation();
@@ -706,7 +706,7 @@ export const LayersPanel = observer(
 				handleMenuClose();
 			};
 
-			const handleDuplicate = (
+			const handleDuplicate = async (
 				event: React.MouseEvent<HTMLElement>,
 				duplicateId: string,
 			) => {
@@ -755,7 +755,7 @@ export const LayersPanel = observer(
 						}
 					: undefined;
 
-				const id = state.dispatch({
+				const id = await state.dispatch({
 					message: ActionMessages.ADD_BLOCK,
 					payload: {
 						json: getJsonForBlock(duplicateId) as BlockJSON,
@@ -903,72 +903,68 @@ export const LayersPanel = observer(
 			}
 
 			return (
-				<>
-					<DroppableTreeItem
-						node={block}
-						key={block.id}
-						onDropPositionChange={setGlobalDropPositions}
-					>
-						<DraggableTreeItem key={block.id} node={block}>
-							<TreeView.Item
-								key={block.id}
-								nodeId={block.id}
-								ref={(node) =>
-									(accordionRefs.current[block.id] =
-										node instanceof HTMLElement
-											? node
-											: null)
-								}
-								expandIcon={
-									<StyledTreeItemIcon>
-										<ChevronRight
-											name="expand"
-											data-expand-id={block.id}
-											onClick={handleAccordionToggle}
-										/>
-									</StyledTreeItemIcon>
-								}
-								collapseIcon={
-									<StyledTreeItemIcon>
-										<ExpandMore
-											name="collapse"
-											data-expand-id={block.id}
-											onClick={handleAccordionToggle}
-										/>
-									</StyledTreeItemIcon>
-								}
-								label={
-									<TreeViewComponent
-										block={block}
-										variableName={variableName}
-										WidgetIcon={WidgetIcon}
-										canVariabilize={canVariabilize}
+				<DroppableTreeItem
+					node={block}
+					key={block.id}
+					onDropPositionChange={setGlobalDropPositions}
+				>
+					<DraggableTreeItem key={block.id} node={block}>
+						<TreeView.Item
+							key={block.id}
+							nodeId={block.id}
+							ref={(node) => {
+								accordionRefs.current[block.id] =
+									node instanceof HTMLElement ? node : null;
+							}}
+							expandIcon={
+								<StyledTreeItemIcon>
+									<ChevronRight
+										name="expand"
+										data-expand-id={block.id}
+										onClick={handleAccordionToggle}
 									/>
-								}
-								onClick={(e: React.SyntheticEvent) => {
-									e.stopPropagation();
-									designer.setSelected(block.id);
-									handleOnSelect(block);
-								}}
-								onMouseOver={(e: React.SyntheticEvent) => {
-									e.stopPropagation();
-									designer.setHovered(block.id);
-								}}
-								onMouseLeave={(e: React.SyntheticEvent) => {
-									e.stopPropagation();
-									designer.setHovered("");
-								}}
-								sx={{
-									minWidth: 0,
-								}}
-							>
-								{children.map((c) => {
-									return renderBlock(c);
-								})}
-							</TreeView.Item>
-						</DraggableTreeItem>
-					</DroppableTreeItem>
-				</>
+								</StyledTreeItemIcon>
+							}
+							collapseIcon={
+								<StyledTreeItemIcon>
+									<ExpandMore
+										name="collapse"
+										data-expand-id={block.id}
+										onClick={handleAccordionToggle}
+									/>
+								</StyledTreeItemIcon>
+							}
+							label={
+								<TreeViewComponent
+									block={block}
+									variableName={variableName}
+									WidgetIcon={WidgetIcon}
+									canVariabilize={canVariabilize}
+								/>
+							}
+							onClick={(e: React.SyntheticEvent) => {
+								e.stopPropagation();
+								designer.setSelected(block.id);
+								handleOnSelect(block);
+							}}
+							onMouseOver={(e: React.SyntheticEvent) => {
+								e.stopPropagation();
+								designer.setHovered(block.id);
+							}}
+							onMouseLeave={(e: React.SyntheticEvent) => {
+								e.stopPropagation();
+								designer.setHovered("");
+							}}
+							sx={{
+								minWidth: 0,
+							}}
+						>
+							{children.map((c) => {
+								return renderBlock(c);
+							})}
+						</TreeView.Item>
+					</DraggableTreeItem>
+				</DroppableTreeItem>
 			);
 		};
 
@@ -977,7 +973,7 @@ export const LayersPanel = observer(
 			return (
 				<StyledPageItem
 					key={block.id}
-					onClick={(e) => {
+					onClick={(_e) => {
 						handlePageSelection(block);
 					}}
 					isselected={(selectedPages === block.id).toString()}
@@ -989,12 +985,12 @@ export const LayersPanel = observer(
 									.indexOf(search.toLowerCase()) > -1
 							: false
 					}
-					onMouseOver={(e) => setPageHovered(block.id)}
-					onMouseLeave={(e) => setPageHovered("")}
+					onMouseOver={(_e) => setPageHovered(block.id)}
+					onMouseLeave={(_e) => setPageHovered("")}
 				>
 					<StyledHomePageDiv>
 						<StyledHomePageChildDiv>
-							{id == "page-1" && (
+							{id === "page-1" && (
 								<StyledTreeItemIcon>
 									<HomeOutlined />
 								</StyledTreeItemIcon>
@@ -1073,7 +1069,7 @@ export const LayersPanel = observer(
 
 				// create and select the panel
 				model.doAction(
-					Actions.addNode(
+					FlexLayout.Actions.addNode(
 						{
 							type: "tab",
 							name: name,
@@ -1084,7 +1080,7 @@ export const LayersPanel = observer(
 							enableClose: true,
 						},
 						addId,
-						DockLocation.CENTER,
+						FlexLayout.DockLocation.CENTER,
 						-1,
 						true,
 					),
@@ -1114,7 +1110,7 @@ export const LayersPanel = observer(
 					color: "success",
 					message: "Successfully copied ID",
 				});
-			} catch (e) {
+			} catch (_e) {
 				notification.add({
 					color: "error",
 					message: "Unable to copy ID",
@@ -1168,7 +1164,7 @@ export const LayersPanel = observer(
 					return false;
 				}
 
-				let selectedNode: TabNode | null = null;
+				let selectedNode: FlexLayout.TabNode | null = null;
 
 				// get the model
 				const model = workspace.model;
@@ -1184,7 +1180,7 @@ export const LayersPanel = observer(
 				}
 
 				const selectedNodeId = selectedNode.getId();
-				model.doAction(Actions.selectTab(selectedNodeId));
+				model.doAction(FlexLayout.Actions.selectTab(selectedNodeId));
 			} catch (e) {
 				notification.add({
 					color: "error",
@@ -1198,11 +1194,11 @@ export const LayersPanel = observer(
 		};
 
 		const getNodeInfo = (id, model) => {
-			let returnedNode: TabNode | null = null;
+			let returnedNode: FlexLayout.TabNode | null = null;
 			// visit the notes, and see if it exists
 			model.visitNodes((node) => {
 				// check if it is a tabNode
-				if (node instanceof TabNode) {
+				if (node instanceof FlexLayout.TabNode) {
 					// it needs to be a notebook-viewer
 					const component = node.getComponent();
 					if (component !== "designer") {
@@ -1233,7 +1229,7 @@ export const LayersPanel = observer(
 					return false;
 				}
 
-				let selectedNode: TabNode | null = null;
+				let selectedNode: FlexLayout.TabNode | null = null;
 
 				// get the model
 				const model = workspace.model;
@@ -1249,7 +1245,7 @@ export const LayersPanel = observer(
 				}
 
 				const selectedNodeId = selectedNode.getId();
-				model.doAction(Actions.deleteTab(selectedNodeId));
+				model.doAction(FlexLayout.Actions.deleteTab(selectedNodeId));
 			} catch (e) {
 				notification.add({
 					color: "error",
@@ -1339,7 +1335,7 @@ export const LayersPanel = observer(
 											</StyledTypography>
 											<IconButton
 												className="layers-menu__add-layer-button"
-												onClick={async (e) => {
+												onClick={async (_e) => {
 													await handlePageAdd();
 												}}
 											>

@@ -211,6 +211,14 @@ export class CellState<D extends CellDef = CellDef> {
 	}
 
 	/**
+	 * Bind the MCP Tool to the cell for execution
+	 */
+	makeCellMCP = (params): void => {
+		this._store.widget = "mcp-tool";
+		this._store.parameters = params;
+	};
+
+	/**
 	 * Actions
 	 */
 	/**
@@ -426,7 +434,10 @@ export class CellState<D extends CellDef = CellDef> {
 	_update(path: string | null, value: unknown) {
 		if (!path) {
 			// set the value
-			this._store = value as CellStateStoreInterface<D>;
+			this._store = {
+				...this._store,
+				...(value as CellStateStoreInterface<D>),
+			};
 			return;
 		}
 

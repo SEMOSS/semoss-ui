@@ -14,8 +14,12 @@ import {
 	useState,
 } from "react";
 import { runPixel } from "@semoss/sdk/react";
-import { styled, useNotification } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
+import {
+	LoadingScreen,
+	styled,
+	useNotification,
+} from "@semoss/ui";
+import { languageConfigs } from "./FileEditorLanguageConfig";
 
 const Editor = lazy(() => import("@monaco-editor/react"));
 
@@ -358,15 +362,67 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 			onChange(value, isModified);
 		};
 
+		let syntaxSetupDone = false;
+
+		const setupSyntax = (monaco, language: string) => {
+			if (syntaxSetupDone) return;
+			syntaxSetupDone = true;
+
+			const config = languageConfigs[language];
+			if (!config) return;
+
+			// Setup Monarch tokens
+			if (config.monarchTokensProvider) {
+				monaco.languages.setMonarchTokensProvider(
+					language,
+					config.monarchTokensProvider,
+				);
+			}
+
+			// IntelliSense
+			if (typeof config.completionItems === "function") {
+				monaco.languages.registerCompletionItemProvider(language, {
+					triggerCharacters: [".", "("],
+					provideCompletionItems: (model, position) => {
+						const word = model.getWordUntilPosition(position);
+						const range = {
+							startLineNumber: position.lineNumber,
+							endLineNumber: position.lineNumber,
+							startColumn: word.startColumn,
+							endColumn: word.endColumn,
+						};
+
+						return {
+							suggestions: config
+								.completionItems(monaco)
+								.map((s) => ({
+									...s,
+									range,
+								})),
+						};
+					},
+				});
+			}
+
+			// Custom Theme
+			if (config.theme) {
+				monaco.editor.defineTheme(
+					`${language}-playground`,
+					config.theme,
+				);
+				monaco.editor.setTheme(`${language}-playground`);
+			}
+		};
+
 		/**
 		 * Handler called when the editor is mounted
 		 */
 		const onEditorMount: OnMount = (editor, monaco) => {
 			editorRef.current = editor;
-			if (IS_PRODUCTION) {
-				return;
-			}
+			if (IS_PRODUCTION) return;
 
+			setupSyntax(monaco, fileLanguage);
+			monaco.editor.setTheme(`${fileLanguage}-playground` || "vs");
 			// prevents redundant additions of new dropdown action
 			if (LLMActionAdded === false) {
 				setLLMActionAdded(true);
@@ -437,6 +493,9 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 				});
 			}
 		};
+		const beforeMount = (monaco) => {
+			setupSyntax(monaco, fileLanguage);
+		};
 
 		return (
 			<StyledContainer>
@@ -458,6 +517,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 							}}
 							onChange={handleEditorOnChange}
 							onMount={onEditorMount}
+							beforeMount={beforeMount}
 						/>
 					)}
 				</Suspense>

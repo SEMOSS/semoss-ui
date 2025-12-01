@@ -1,13 +1,9 @@
 export * from "./theme";
 
-// import "@fontsource/inter/300.css";
-// import "@fontsource/inter/400.css";
-// import "@fontsource/inter/500.css";
-// import "@fontsource/inter/700.css";
+// components
 
 export * from "./components/Accordion";
 export * from "./components/Alert";
-export * from "./components/AppBar";
 export * from "./components/Autocomplete";
 export * from "./components/Avatar";
 export * from "./components/AvatarGroup";
@@ -24,7 +20,6 @@ export * from "./components/Chip";
 export * from "./components/CircularProgress";
 export * from "./components/Code";
 export * from "./components/Collapse";
-// export * from "./components/Colorpicker";
 export * from "./components/Container";
 export * from "./components/Divider";
 export * from "./components/Drawer";
@@ -49,23 +44,21 @@ export * from "./components/Popover";
 export * from "./components/RadioGroup";
 export * from "./components/Search";
 export * from "./components/Select";
-export * from "./components/SelectStack";
 export * from "./components/Skeleton";
 export * from "./components/Slider";
 export * from "./components/Snackbar";
 export * from "./components/Stack";
+export * from "./components/Stepper";
 export * from "./components/Switch";
 export * from "./components/Table";
 export * from "./components/Tabs";
 export * from "./components/Terminal";
 export * from "./components/TextArea";
 export * from "./components/TextField";
-export * from "./components/TextFieldStack";
 export * from "./components/ThemeProvider";
 export * from "./components/ToggleButton";
 export * from "./components/ToggleButtonGroup";
 export * from "./components/ToggleTabsGroup";
-export * from "./components/Toolbar";
 export * from "./components/Tooltip";
 export * from "./components/TreeView";
 export * from "./components/Typography";
@@ -73,34 +66,13 @@ export * from "./components/Typography";
 import type { SvgIconProps } from "@mui/material";
 // TODO: fix miscellaneous mui components/functions
 import {
-	Autocomplete,
-	Box,
-	Checkbox,
-	Chip,
 	ClickAwayListener,
 	Fade,
 	FormHelperText,
 	Input,
-	ListItem,
-	ListItemButton,
-	ListItemIcon,
-	ListItemText,
-	Menu,
-	MenuItem,
-	MenuList,
 	OutlinedInput,
-	Popover,
 	Popper,
-	Select,
 	SvgIcon,
-	Switch,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
-	Tooltip,
-	type TooltipProps,
 } from "@mui/material";
 export type { SvgIconProps };
 
@@ -109,9 +81,6 @@ export {
 	OutlinedInput,
 	SvgIcon,
 	Fade,
-	ListItemIcon,
-	ListItemText,
-	MenuList,
 	Popper,
 	ClickAwayListener,
 	FormHelperText,

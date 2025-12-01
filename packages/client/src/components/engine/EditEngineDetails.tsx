@@ -16,6 +16,7 @@ import {
 } from "@semoss/ui";
 import { MarkdownEditor } from "@/components/common";
 import { useEngine, usePixel, useRootStore } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 
 const StyledEditorContainer = styled("div")(({ theme }) => ({
 	marginBottom: theme.spacing(1),
@@ -227,6 +228,9 @@ export const EditEngineDetails = observer(() => {
 				startIcon={<EditRounded />}
 				variant="contained"
 				onClick={() => setOpen(true)}
+				data-testid={formatToDataTestId(
+					`editEngineDetails-${name}-edit-btn`,
+				)}
 			>
 				Edit
 			</Button>
@@ -407,6 +411,9 @@ export const EditEngineDetails = observer(() => {
 															? `Please provide a description for this ${type.toLocaleLowerCase()} to help others find it and understand how to use it.`
 															: undefined
 													}
+													data-testid={formatToDataTestId(
+														`editEngineDetails-${label}-txtArea`,
+													)}
 												/>
 											);
 										}}
@@ -441,6 +448,9 @@ export const EditEngineDetails = observer(() => {
 															newValue,
 														);
 													}}
+													data-testid={formatToDataTestId(
+														`editEngineDetails-${label}-autocomplete`,
+													)}
 												/>
 											);
 										}}
@@ -477,17 +487,36 @@ export const EditEngineDetails = observer(() => {
 															: []
 													}
 													value={
-														(field.value as string[]) ||
-														[]
+														field.value &&
+														Array.isArray(
+															field.value,
+														)
+															? field.value.filter(
+																	(tag) =>
+																		typeof tag ===
+																			"string" &&
+																		tag.trim() !==
+																			"",
+																)
+															: []
 													}
-													onChange={(
-														event,
-														newValue,
-													) => {
+													onChange={(_, newValue) => {
+														// Filter out empty or whitespace-only tags
+														const filteredValue =
+															newValue.filter(
+																(tag) =>
+																	typeof tag ===
+																		"string" &&
+																	tag.trim() !==
+																		"",
+															);
 														field.onChange(
-															newValue,
+															filteredValue,
 														);
 													}}
+													data-testid={formatToDataTestId(
+														`editEngineDetails-${label}-autocomplete`,
+													)}
 												/>
 											);
 										}}
@@ -533,6 +562,9 @@ export const EditEngineDetails = observer(() => {
 															newValue,
 														);
 													}}
+													data-testid={formatToDataTestId(
+														`editEngineDetails-${label}-autocomplete`,
+													)}
 												/>
 											);
 										}}
@@ -551,10 +583,15 @@ export const EditEngineDetails = observer(() => {
 							// close it
 							setOpen(false);
 						}}
+						data-testid={`editEngineDetails-close-btn`}
 					>
 						Close
 					</Button>
-					<Button variant="contained" onClick={() => onSubmit()}>
+					<Button
+						variant="contained"
+						onClick={() => onSubmit()}
+						data-testid={`editEngineDetails-submit-btn`}
+					>
 						Submit
 					</Button>
 				</Modal.Actions>

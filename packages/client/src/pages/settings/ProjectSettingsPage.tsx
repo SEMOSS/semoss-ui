@@ -108,10 +108,12 @@ export const ProjectSettingsPage = () => {
 
 	const [view, setView] = useState("tile");
 	const [search, setSearch] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [sort, setSort] = useState("Name");
 	const [sortOrder, setSortOrder] = useState("ASC");
 	const [canCollect, setCanCollect] = useState(true);
 	const [offset, setOffset] = useState(0);
+	const [isSearching, setIsSearching] = useState(false);
 
 	//** amount of items to be loaded */
 	const limit = 30;
@@ -119,10 +121,22 @@ export const ProjectSettingsPage = () => {
 	// To focus when getting new results
 	const searchbarRef = useRef(null);
 
+	useEffect(() => {
+		setIsSearching(true);
+		const timer = setTimeout(() => {
+			setDebouncedSearch(search);
+			setIsSearching(false);
+		}, 400);
+
+		return () => {
+			clearTimeout(timer);
+		};
+	}, [search]);
+
 	const getProjects = useAPI([
 		"getProjects",
 		adminMode,
-		search,
+		debouncedSearch,
 		offset,
 		limit,
 	]);
@@ -144,7 +158,7 @@ export const ProjectSettingsPage = () => {
 			field: "projects",
 			value: [],
 		});
-	}, [adminMode, search]);
+	}, [adminMode, debouncedSearch]);
 
 	//** append data through infinite scroll */
 	useEffect(() => {
@@ -225,7 +239,7 @@ export const ProjectSettingsPage = () => {
 
 	return (
 		<>
-			<StyledBackdrop open={getProjects.status !== "SUCCESS"}>
+			<StyledBackdrop open={getProjects.status === "LOADING" || isSearching}>
 				<Stack
 					direction={"column"}
 					alignItems={"center"}
@@ -233,7 +247,9 @@ export const ProjectSettingsPage = () => {
 					spacing={1}
 				>
 					<CircularProgress />
-					<Typography variant="body2">Loading</Typography>
+					<Typography variant="body2">
+						{isSearching ? "Searching" : "Loading"}
+					</Typography>
 					<Typography variant="caption">Projects</Typography>
 				</Stack>
 			</StyledBackdrop>
@@ -277,7 +293,7 @@ export const ProjectSettingsPage = () => {
 							}}
 							value={"DESC"}
 							aria-label={"Descending Order"}
-							data-testid={"project-settings-desc-btn"}
+							data-testid={"projectSettingsPage-desc-btn"}
 						>
 							<Tooltip title={"Descending Order"}>
 								<ArrowDownward />
@@ -294,7 +310,7 @@ export const ProjectSettingsPage = () => {
 							}}
 							value={"ASC"}
 							aria-label={"Ascending Order"}
-							data-testid={"project-settings-asc-btn"}
+							data-testid={"projectSettingsPage-asc-btn"}
 						>
 							<Tooltip title={"Ascending Order"}>
 								<ArrowUpward />
@@ -310,7 +326,7 @@ export const ProjectSettingsPage = () => {
 						<ToggleButton
 							onClick={(e, v) => setView(v)}
 							value={"tile"}
-							data-testid={"project-settings-tile-btn"}
+							data-testid={"projectSettingsPage-tile-btn"}
 						>
 							<Tooltip title={"Tile View"}>
 								<SpaceDashboardOutlined />
@@ -319,7 +335,7 @@ export const ProjectSettingsPage = () => {
 						<ToggleButton
 							onClick={(e, v) => setView(v)}
 							value={"list"}
-							data-testid={"project-settings-list-btn"}
+							data-testid={"projectSettingsPage-list-btn"}
 						>
 							<Tooltip title={"List View"}>
 								<FormatListBulletedOutlined />
@@ -328,6 +344,19 @@ export const ProjectSettingsPage = () => {
 					</ToggleButtonGroup>
 				</StyledSearchbarContainer>
 				<Grid container spacing={3}>
+					{projects.length === 0 &&
+					getProjects.status === "SUCCESS" &&
+					debouncedSearch ? (
+						<Grid item xs={12}>
+							<Typography
+								variant="body1"
+								sx={{ textAlign: "center", py: 4 }}
+							>
+								No projects found matching &quot;{debouncedSearch}
+								&quot;
+							</Typography>
+						</Grid>
+					) : null}
 					{projects.length
 						? projects.map((project, i) => {
 								return (

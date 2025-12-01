@@ -1,8 +1,7 @@
 import { Add, ClearRounded, DeleteRounded } from "@mui/icons-material";
-import { AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { debounced } from "@semoss/sdk/react";
 import {
 	Autocomplete,
 	Avatar,
@@ -13,7 +12,6 @@ import {
 	Checkbox,
 	Chip,
 	IconButton,
-	Link,
 	Modal,
 	Search,
 	Stack,
@@ -22,7 +20,12 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { useRootStore } from "@/hooks";
+import {
+	addTeamUser,
+	deleteTeamUser,
+	getNonTeamUsers,
+	getTeamUsers,
+} from "@/api/teams";
 
 const colors = [
 	"#22A4FF",
@@ -38,7 +41,7 @@ const NameIDWrapper = styled("div")({
 	display: "inline-block",
 });
 
-const NameTableCell = styled(Table.Cell)({
+const _NameTableCell = styled(Table.Cell)({
 	width: "100%",
 	maxWidth: "1px",
 });
@@ -188,10 +191,23 @@ interface MembersTableProps {
 	name: string;
 }
 
+interface TeamMember {
+	admin: boolean;
+	countrycode: string;
+	email: string;
+	exporter: boolean;
+	id: string;
+	name: string;
+	phone: string;
+	phoneextension: string;
+	publisher: boolean;
+	type: string;
+	username: string;
+}
+
 export const TeamMembersTable = (props: MembersTableProps) => {
 	const { groupId } = props;
 
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const AUTOCOMPLETE_LIMIT = 10;
 	const AUTOCOMPLETE_OFFSET = 0;
@@ -213,11 +229,12 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const [selectedNonCredentialedUsers, setSelectedNonCredentialedUsers] =
 		useState([]);
 
-	const [teamMembers, setTeamMembers] = useState(null);
-	const [memberCount, setMemberCount] = useState(null);
+	const [teamMembers, setTeamMembers] = useState([]);
+	const [memberCount, setMemberCount] = useState(0);
+	const [rowsPerPage, setRowsPerPage] = useState(5);
+	const [allTeamMembers, setAllTeamMembers] = useState([]);
 	const [hasMembers, setHasMembers] = useState(false);
 
-	const limit = 5;
 	const [searchMemberInput, setSearchMemberInput] = useState<string>("");
 	const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
 	const [isScrollBottom, setIsScrollBottom] = useState(false);
@@ -244,6 +261,18 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	};
 
 	const memberSearchRef = useRef(undefined);
+	const filteredNonCredentialedUsers = Array.from(
+		new Map(
+			nonCredentialedUsers
+				.filter(
+					(user) =>
+						!allTeamMembers.some(
+							(member) => member.userid === user.id,
+						),
+				)
+				.map((user) => [user.id, user]),
+		).values(),
+	);
 
 	const { watch, setValue } = useForm<{
 		SEARCH_FILTER: string;
@@ -261,26 +290,15 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	 * @desc - sets members in react hook form
 	 */
 	useEffect(() => {
-		monolithStore
-			.getTeamUsers(
-				groupId,
-				limit,
-				membersPage * limit - limit, // offset
-				searchFilter,
-			)
-			.then((data) => {
-				setTeamMembers(data);
-				setHasMembers(data?.length > 0);
-			});
-	}, []);
-
+		filter();
+	}, [groupId, count, membersPage, searchFilter, rowsPerPage]);
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
 				getAdditionalUsersNonGroup();
 			}
 		}
-	}, [isScrollBottom]);
+	}, [isScrollBottom, canCollect, getAdditionalUsersNonGroup]);
 
 	useEffect(() => {
 		if (addMembersModal) {
@@ -325,8 +343,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			}
 
 			for (let i = 0; i < requests.length; i++) {
-				let response: AxiosResponse<{ success: boolean }> | null = null;
-				response = await monolithStore.addTeamUser(
+				let response:
+					| AxiosResponse<{ success: boolean }>
+					| {
+							response: Response;
+							data: {
+								success: boolean;
+							};
+					  }
+					| null = null;
+				response = await addTeamUser(
 					groupId,
 					requests[i].type,
 					requests[i].userid,
@@ -374,8 +400,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	 */
 	const deleteUser = async (user) => {
 		try {
-			let response: AxiosResponse<{ success: boolean }> | null = null;
-			response = await monolithStore.deleteTeamUser(user);
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
+			response = await deleteTeamUser(user);
 
 			if (!response) {
 				return;
@@ -405,11 +439,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		try {
 			for (let i = 0; i < selectedMembers.length; i++) {
 				try {
-					let response: AxiosResponse<{ success: boolean }> | null =
-						null;
-					response = await monolithStore.deleteTeamUser(
-						selectedMembers[i],
-					);
+					let response:
+						| AxiosResponse<{ success: boolean }>
+						| {
+								response: Response;
+								data: {
+									success: boolean;
+								};
+						  }
+						| null = null;
+					response = await deleteTeamUser(selectedMembers[i]);
 
 					if (!response) {
 						return;
@@ -428,7 +467,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 				color: "success",
 				message: `Successfully removed users`,
 			});
-			setCount(count + 1);
+			setCount((prevCount) => {
+				return prevCount + 1;
+			});
 			setDeleteMembersModal(false);
 			setSelectedMembers([]);
 		}
@@ -445,10 +486,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		}
 		setIsLoading(true);
 		try {
-			let response;
 			// possibly add more db table columns / keys here to get id type for display under username
 			// eslint-disable-next-line prefer-const
-			response = await monolithStore.getNonTeamUsers(
+			const response = await getNonTeamUsers(
 				groupId,
 				AUTOCOMPLETE_LIMIT,
 				offset,
@@ -458,14 +498,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedUsers;
-				const users = response.map((val) => {
-					return {
-						...val,
-						color: colors[
-							Math.floor(Math.random() * colors.length)
-						],
-					};
-				});
+				const users = (response as unknown as TeamMember[]).map(
+					(val) => {
+						return {
+							...val,
+							color: colors[
+								Math.floor(Math.random() * colors.length)
+							],
+						};
+					},
+				);
 				requests = requests.concat(users);
 				setNonCredentialedUsers(requests);
 				setCanCollect(users.length === AUTOCOMPLETE_LIMIT);
@@ -484,14 +526,14 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 	/** HELPERS */
 	const Avatars = useMemo(() => {
-		if (!teamMembers) return [];
+		if (!allTeamMembers) return [];
 
 		let i = 0;
 		const avatarList = [];
-		while (i < 5 && i < teamMembers.length) {
+		while (i < 5 && i < allTeamMembers.length) {
 			avatarList.push(
 				<Avatar key={i}>
-					{teamMembers[i].name.charAt(0).toUpperCase()}
+					{allTeamMembers[i].name.charAt(0).toUpperCase()}
 				</Avatar>,
 			);
 
@@ -499,50 +541,48 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		}
 
 		return avatarList;
-	}, [teamMembers]);
+	}, [allTeamMembers]);
 
 	const paginationOptions = {
 		membersPageCounts: [5],
 	};
 
-	teamMembers > 9 && paginationOptions.membersPageCounts.push(10);
-	teamMembers > 19 && paginationOptions.membersPageCounts.push(20);
+	memberCount > 9 && paginationOptions.membersPageCounts.push(10);
+	memberCount > 19 && paginationOptions.membersPageCounts.push(20);
 
 	const filterUsers = useCallback(() => {
-		monolithStore
-			.getTeamUsers(
-				groupId,
-				limit,
-				membersPage * limit - limit, // offset
-				searchFilter,
-			)
-			.then((data) => {
-				setTeamMembers(data);
-				setHasMembers(data?.length > 0);
-			});
-	}, [count, membersPage, searchFilter]);
+		getTeamUsers(
+			groupId,
+			rowsPerPage,
+			membersPage * rowsPerPage - rowsPerPage, // offset
+			searchFilter,
+		).then((data: unknown[]) => {
+			setTeamMembers(data);
+			setHasMembers(data?.length > 0);
+		});
+	}, [groupId, membersPage, searchFilter, rowsPerPage]);
 
 	const filterUsersTwo = useCallback(() => {
-		monolithStore
-			.getTeamUsers(
-				groupId,
-				100,
-				0, // offset
-				searchFilter,
-			)
-			.then((data) => setMemberCount(data.length));
-	}, [count, membersPage, searchFilter]);
+		getTeamUsers(
+			groupId,
+			100,
+			0, // offset
+			searchFilter,
+		).then((data: unknown[]) => {
+			setMemberCount(data.length);
+			setAllTeamMembers(data);
+		});
+	}, [groupId, membersPage, searchFilter]);
 
 	const filter = () => {
 		filterUsers();
 		filterUsersTwo();
 	};
 
-	const debouncedFilterTeams = debounced(filter, 400);
+	// const debouncedFilterTeams = debounced(filter, 400);
 
 	const handleInputChange = (newInputValue) => {
 		setValue("SEARCH_FILTER", newInputValue);
-		debouncedFilterTeams();
 	};
 
 	return (
@@ -550,7 +590,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			<StyledMemberInnerContent>
 				{(teamMembers && teamMembers.length > 0) ||
 				memberCount > 0 ||
-				hasMembers ? (
+				hasMembers ||
+				searchFilter ? (
 					<StyledTableContainer>
 						<StyledTableTitleContainer>
 							<StyledTableTitleDiv>Members</StyledTableTitleDiv>
@@ -561,10 +602,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											spacing={"small"}
 											variant={"circular"}
 											max={5}
-											total={
-												teamMembers &&
-												teamMembers.length
-											}
+											total={teamMembers?.length}
 										>
 											{Avatars.map((el) => {
 												return el;
@@ -575,7 +613,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								<StyledTableTitleMemberCountContainer>
 									<StyledTableTitleMemberCount>
 										<Typography variant={"body1"}>
-											{teamMembers.length} Members
+											{memberCount} Members
 										</Typography>
 									</StyledTableTitleMemberCount>
 								</StyledTableTitleMemberCountContainer>
@@ -597,11 +635,12 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								{selectedMembers.length > 0 && (
 									<Button
 										variant={"outlined"}
+										color="error"
 										onClick={() =>
 											setDeleteMembersModal(true)
 										}
 									>
-										Delete
+										Delete Selected
 									</Button>
 								)}
 							</StyledDeleteSelectedContainer>
@@ -621,7 +660,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 						<StyledMemberTable>
 							<Table.Head>
 								<Table.Row>
-									<NameTableCell size="small">
+									<Table.Cell size="small">
 										<Checkbox
 											checked={
 												selectedMembers.length ===
@@ -642,7 +681,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											}}
 										/>
 										Name
-									</NameTableCell>
+									</Table.Cell>
 									<Table.Cell size="small">
 										Added Date
 									</Table.Cell>
@@ -650,8 +689,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{teamMembers &&
-									teamMembers.map((user, i) => {
+								{Array.isArray(teamMembers) &&
+								teamMembers.length > 0 ? (
+									teamMembers?.map((user) => {
 										let isSelected = false;
 
 										if (user) {
@@ -667,7 +707,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 										if (user) {
 											return (
-												<Table.Row key={user.name + i}>
+												<Table.Row key={user.userid}>
 													<Table.Cell size="small">
 														<Stack
 															direction="row"
@@ -758,9 +798,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										} else {
 											return (
 												<Table.Row
-													key={
-														i + "No data available"
-													}
+													key={`No data available`}
 												>
 													<Table.Cell size="small"></Table.Cell>
 													<Table.Cell size="small"></Table.Cell>
@@ -768,7 +806,14 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												</Table.Row>
 											);
 										}
-									})}
+									})
+								) : (
+									<Table.Row key={"no-members-found"}>
+										<Table.Cell colSpan={5} align="center">
+											No Members found.
+										</Table.Cell>
+									</Table.Row>
+								)}
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
@@ -776,15 +821,19 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										rowsPerPageOptions={
 											paginationOptions.membersPageCounts
 										}
-										onPageChange={(e, v) => {
-											setMembersPage(v + 1);
+										onPageChange={(_e, _v) => {
+											setMembersPage(_v + 1);
 											setSelectedMembers([]);
 										}}
+										onRowsPerPageChange={(e) => {
+											setRowsPerPage(
+												parseInt(e.target.value, 10),
+											);
+											setMembersPage(1);
+										}}
 										page={membersPage - 1}
-										rowsPerPage={5}
-										count={
-											teamMembers ? teamMembers.length : 0
-										}
+										rowsPerPage={rowsPerPage}
+										count={memberCount}
 									/>
 								</Table.Row>
 							</Table.Footer>
@@ -825,7 +874,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							multiple={true}
 							freeSolo={false}
 							filterOptions={(x) => x}
-							options={nonCredentialedUsers}
+							options={filteredNonCredentialedUsers}
 							includeInputInList={true}
 							limitTags={2}
 							getLimitTagsText={() =>
@@ -833,13 +882,118 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							}
 							value={selectedNonCredentialedUsers}
 							inputValue={searchMemberInput}
-							getOptionLabel={(option) => {
-								return `${option.name}`;
+							getOptionLabel={(option: unknown) => {
+								return `${(option as { name: string }).name}`;
 							}}
+							renderOption={(props, option: TeamMember) => (
+								<li
+									{...props}
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										alignItems: "flex-start",
+										padding: "8px 16px",
+									}}
+								>
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											width: "100%",
+											gap: "8px",
+										}}
+									>
+										<Avatar sx={{ width: 32, height: 32 }}>
+											{option.name
+												? option.name
+														.split(" ")
+														.map((n) => n[0])
+														.join("")
+														.toUpperCase()
+												: option.id[0].toUpperCase()}
+										</Avatar>
+										<Typography variant="body1">
+											{option.name}
+										</Typography>
+									</Box>
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											gap: "16px",
+											whiteSpace: "nowrap",
+											fontSize: "14px",
+											width: "100%",
+											marginLeft: "40px",
+										}}
+									>
+										<span
+											style={{ color: "rgba(0,0,0,0.7)" }}
+										>
+											User ID:{" "}
+										</span>
+										<span
+											title={option.id}
+											style={{
+												color: "#000",
+												fontWeight: 500,
+												width: "180px",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												display: "inline-block",
+												verticalAlign: "bottom",
+											}}
+										>
+											{option.id}
+										</span>
+										<span
+											style={{ color: "rgba(0,0,0,0.7)" }}
+										>
+											Email:{" "}
+										</span>
+										<span
+											title={option.email}
+											style={{
+												color: "#000",
+												fontWeight: 500,
+												width: "220px",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												display: "inline-block",
+												verticalAlign: "bottom",
+											}}
+										>
+											{option.email}
+										</span>
+										<span
+											style={{ color: "rgba(0,0,0,0.7)" }}
+										>
+											Type:{" "}
+										</span>
+										<span
+											title={option.type}
+											style={{
+												color: "#000",
+												fontWeight: 500,
+												width: "180px",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												display: "inline-block",
+												verticalAlign: "bottom",
+											}}
+										>
+											{option.type}
+										</span>
+									</Box>
+								</li>
+							)}
 							isOptionEqualToValue={(option, value) => {
-								return option.name === value.name;
+								return (
+									(option as { name: string }).name ===
+									(value as { name: string }).name
+								);
 							}}
-							onChange={(event, newValue) => {
+							onChange={(_event, newValue: unknown[]) => {
 								setSelectedNonCredentialedUsers([...newValue]);
 							}}
 							ListboxProps={{
@@ -853,171 +1007,172 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											},
 										),
 									),
+								style: {
+									paddingLeft: "16px",
+									paddingRight: "30px",
+									paddingBottom: "16px",
+								},
 							}}
-							onInputChange={(event, newValue) => {
+							onInputChange={(_event, newValue) => {
 								setSearchMemberInput(newValue);
 								setOffset(0);
 							}}
 						/>
 
-						{selectedNonCredentialedUsers &&
-							selectedNonCredentialedUsers.map((user, idx) => {
-								const space = user.name.indexOf(" ");
-								const initial = user.name
-									? space > -1
-										? `${user.name[0].toUpperCase()}${user.name[
-												space + 1
-											].toUpperCase()}`
-										: user.name[0].toUpperCase()
-									: user.id[0].toUpperCase();
-								return (
+						{selectedNonCredentialedUsers?.map((user, idx) => {
+							const space = user.name.indexOf(" ");
+							const initial = user.name
+								? space > -1
+									? `${user.name[0].toUpperCase()}${user.name[
+											space + 1
+										].toUpperCase()}`
+									: user.name[0].toUpperCase()
+								: user.id[0].toUpperCase();
+							return (
+								<Box
+									key={`${user.name} - ${idx}`}
+									sx={{
+										display: "flex",
+										justifyContent: "left",
+										align: "center",
+										backgroundColor:
+											idx % 2 !== 0
+												? "rgba(0, 0, 0, .03)"
+												: "",
+										paddingBottom: "8px",
+										borderRadius: "8px",
+										width: "100%",
+										boxSizing: "border-box",
+									}}
+								>
 									<Box
-										key={idx}
 										sx={{
+											width: "100%",
+											gap: "8px",
+											position: "relative",
+											border: "5px",
 											display: "flex",
-											justifyContent: "left",
-											align: "center",
-											backgroundColor:
-												idx % 2 !== 0
-													? "rgba(0, 0, 0, .03)"
-													: "",
 										}}
 									>
 										<Box
 											sx={{
-												height: "56px",
-												width: "100%",
-												gap: "8px",
-												position: "relative",
-												border: "5px",
+												display: "flex",
+												justifyContent: "left",
+												marginTop: "6px",
+												marginLeft: "8px",
+												marginRight: "8px",
+												float: "left",
 											}}
 										>
 											<Box
 												sx={{
 													display: "flex",
-													justifyContent: "left",
-													marginTop: "6px",
-													marginLeft: "8px",
-													marginRight: "8px",
-													float: "left",
+													height: "32px",
+													width: "32px",
+													justifyContent: "center",
+													alignItems: "center",
+													border: "0.5px solid rgba(0, 0, 0, .05)",
+													borderRadius: "50%",
 												}}
 											>
+												<Avatar
+													aria-label="avatar"
+													sx={{
+														display: "flex",
+														width: "32px",
+														height: "32px",
+														fontSize: "24px",
+														backgroundColor:
+															user.color,
+													}}
+												>
+													{initial}
+												</Avatar>
+											</Box>
+										</Box>
+										<Card.Header
+											title={
+												<Typography
+													variant="h6"
+													sx={{
+														marginTop: "5px",
+														maxWidth: "100%",
+														lineHeight: 1.1,
+													}}
+												>
+													{user.name}
+												</Typography>
+											}
+											sx={{
+												color: "#000",
+												width: "100%",
+												gap: "16px",
+												margin: "0",
+											}}
+											subheader={
 												<Box
 													sx={{
 														display: "flex",
-														height: "32px",
-														width: "32px",
-														justifyContent:
-															"center",
-														alignItems: "center",
-														border: "0.5px solid rgba(0, 0, 0, .05)",
-														borderRadius: "50%",
+														gap: "2px",
+														marginTop: "2px",
 													}}
 												>
-													<Avatar
-														aria-label="avatar"
-														sx={{
-															display: "flex",
-															width: "32px",
-															height: "32px",
-															fontSize: "24px",
-															backgroundColor:
-																user.color,
+													<span
+														style={{
+															opacity: 0.9,
+															fontSize: "11px",
 														}}
 													>
-														{initial}
-													</Avatar>
+														{`User ID: `}
+														<Chip
+															label={user.id}
+															size="small"
+														/>
+													</span>
+													{`• `}
+													<span>
+														{`Email: `}
+														<Chip
+															label={user.email}
+															size="small"
+														/>
+													</span>
 												</Box>
-											</Box>
-											<Card.Header
-												title={
-													<Typography
-														variant="h6"
-														sx={{
-															maxHeight: "24px",
-															height: "90%",
-															marginTop: "5px",
-														}}
-													>
-														{user.name}
-													</Typography>
-												}
-												sx={{
-													color: "#000",
-													maxWidth: "466px",
-													height: "15px",
-													width: "100%",
-													float: "left",
-													gap: "16px",
-												}}
-												subheader={
-													<Box
-														sx={{
-															display: "flex",
-															gap: "2px",
-															marginTop: "2px",
-														}}
-													>
-														<span
-															style={{
-																opacity: 0.9,
-																fontSize:
-																	"11px",
-															}}
-														>
-															{`User ID: `}
-															<Chip
-																label={user.id}
-																size="small"
-															/>
-														</span>
-														{`• `}
-														<span>
-															{`Email: `}
-															<Link
-																href={`mailto:${user.email}`}
-																underline="none"
-															>
-																{user.email}
-															</Link>
-														</span>
-													</Box>
-												}
-												action={
-													<IconButton
-														sx={{
-															height: "28px",
-															width: "28px",
-															gap: "30px",
-															fontSize: "small",
-															mt: "16px",
-															color: "rgba( 0, 0, 0, .7)",
-															mr: "2px",
-															top: "0px",
-															position:
-																"absolute",
-															padding: "10px",
-														}}
-														onClick={() => {
-															const filtered =
-																selectedNonCredentialedUsers.filter(
-																	(val) =>
-																		val.id !==
-																		user.id,
-																);
-															setSelectedNonCredentialedUsers(
-																filtered,
+											}
+											action={
+												<IconButton
+													sx={{
+														height: "28px",
+														width: "28px",
+														gap: "30px",
+														fontSize: "small",
+														mt: "16px",
+														color: "rgba( 0, 0, 0, .7)",
+														mr: "2px",
+														top: "0px",
+														position: "absolute",
+														padding: "10px",
+													}}
+													onClick={() => {
+														const filtered =
+															selectedNonCredentialedUsers.filter(
+																(val) =>
+																	val.id !==
+																	user.id,
 															);
-														}}
-													>
-														<ClearRounded />
-													</IconButton>
-												}
-											/>
-										</Box>
+														setSelectedNonCredentialedUsers(
+															filtered,
+														);
+													}}
+												>
+													<ClearRounded />
+												</IconButton>
+											}
+										/>
 									</Box>
-								);
-							})}
+								</Box>
+							);
+						})}
 					</StyledModalContentText>
 				</Modal.Content>
 				<Modal.Actions>

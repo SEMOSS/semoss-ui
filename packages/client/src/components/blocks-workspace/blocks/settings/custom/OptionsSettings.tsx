@@ -348,17 +348,17 @@ const SortableItems = ({
 		<Box
 			ref={setNodeRef}
 			sx={{
-                ...style,
-                display: 'flex',
-                gap: 1,
-                alignItems: 'center',
-            }}
+				...style,
+				display: "flex",
+				gap: 1,
+				alignItems: "center",
+			}}
 		>
 			{children}
 			<Box
 				{...attributes}
 				{...listeners}
-				sx={{ display: 'flex', alignItems: 'center' }}
+				sx={{ display: "flex", alignItems: "center" }}
 			>
 				<DragIndicator />
 			</Box>

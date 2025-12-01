@@ -16,6 +16,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { addTeam, editTeam } from "@/api/teams";
 import AMAZON_S3 from "@/assets/loginProviders/Amazon_S3.png";
 import ADFS from "@/assets/loginProviders/adfs_microsoft_1.png";
 import Dropbox from "@/assets/loginProviders/dropbox.png";
@@ -34,7 +35,7 @@ import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
 import Twitter from "@/assets/loginProviders/x_twitter.png";
 import { useRootStore } from "@/hooks";
 
-const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
+const StyledModalTitle = styled(Modal.Title)(() => ({
 	width: "100%",
 	display: "flex",
 	justifyContent: "space-between",
@@ -68,7 +69,7 @@ const StyledSelectItem = styled(Select.Item, {
 })<{
 	/** Track if the page header is stuck */
 	type: string;
-}>(({ theme, type }) => ({
+}>(({ type }) => ({
 	borderBottom:
 		type === "CUSTOM"
 			? "1px solid var(--Secondary-Border, #C4C4C4)"
@@ -131,13 +132,13 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 
 	const navigate = useNavigate();
 	const notification = useNotification();
-	const { monolithStore, configStore } = useRootStore();
+	const { configStore } = useRootStore();
 
 	// State to track the previous team name, type
 	const [previousTeamName, setPreviousTeamName] = React.useState<
 		string | undefined
 	>(id);
-	const [previousType, setPreviousType] = React.useState<string | undefined>(
+	const [_previousType, setPreviousType] = React.useState<string | undefined>(
 		id,
 	);
 	const {
@@ -191,14 +192,14 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 		if (isEdit) {
 			// Logic for editing the team
 			try {
-				const response = await monolithStore.editTeam(
+				const response = await editTeam(
 					data.TEAM_NAME,
 					data.TEAM_DESCRIPTION,
 					data.TEAM_TYPE,
 					previousTeamName,
-					previousType,
+					data.TEAM_TYPE,
 				);
-				if (response.status === 200 && response.data) {
+				if (response.data) {
 					onClose({
 						id: data.TEAM_NAME,
 						type: data.TEAM_TYPE,
@@ -223,12 +224,13 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 		} else {
 			// Logic for creating a new team
 			try {
-				const response = await monolithStore.addTeam(
+				const response = await addTeam(
 					data.TEAM_NAME,
 					data.TEAM_DESCRIPTION,
+					false,
 					data.TEAM_TYPE,
 				);
-				if (response.status === 200 && !response.data) {
+				if (response.data) {
 					onClose({
 						id: data.TEAM_NAME,
 						type: data.TEAM_TYPE,
@@ -240,15 +242,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 						message: "Successfully added group",
 					});
 					navigate(
-						`${data.TEAM_NAME.toLowerCase()
-							.replace(/['"]+/g, "")
-							.replace(/\s/g, "-")}`,
-						{
-							state: {
-								name: data.TEAM_NAME,
-								type: data.TEAM_TYPE,
-							},
-						},
+						`${encodeURIComponent(data.TEAM_TYPE)}/${encodeURIComponent(data.TEAM_NAME)}`,
 					);
 				} else {
 					throw new Error("Failed to add team");
@@ -271,7 +265,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 						Edit Team
 					</Typography>
 				) : (
-					<>Create New Team</>
+					"Create New Team"
 				)}
 				<IconButton
 					onClick={() => {
@@ -303,6 +297,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 											onChange={(value) =>
 												field.onChange(value)
 											}
+											disabled={isEdit}
 										>
 											{loginTypes
 												.sort()
@@ -313,10 +308,10 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 															"registration",
 														].includes(p.provider),
 												)
-												.map((p, idx) => {
+												.map((p, _idx) => {
 													return (
 														<StyledSelectItem
-															key={idx}
+															key={`logintype-${p.provider}`}
 															value={p.provider}
 															type={p.provider}
 														>
@@ -345,11 +340,14 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 																			height: "24px",
 																			width: "24px",
 																		}}
+																		alt={
+																			"login provider icon"
+																		}
 																	/>
 																) : (
 																	<StyledIcon />
 																)}
-																<>{p.name}</>
+																{p.name}
 																{p.description && (
 																	<StyledMenuItemDesc
 																		variant={
@@ -391,6 +389,11 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 													field.onChange(value)
 												}
 												fullWidth={true}
+												disabled={
+													isEdit &&
+													selectedTeamType !==
+														"CUSTOM"
+												}
 											/>
 											{selectedTeamType !== "CUSTOM" &&
 											selectedTeamType !== "" ? (
@@ -423,6 +426,9 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 												field.onChange(value)
 											}
 											fullWidth={true}
+											multiline
+											minRows={2}
+											maxRows={6}
 										/>
 									);
 								}}

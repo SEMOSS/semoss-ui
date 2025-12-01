@@ -348,6 +348,9 @@ export const DataImportFormModal = observer(
 		const [rootTable, setRootTable] = useState(
 			cell ? cell.parameters.rootTable : null,
 		);
+		const [dataLimit, setDataLimit] = useState(
+			cell ? cell.parameters.dataLimit : -1,
+		);
 
 		const [checkedColumnsCount, setCheckedColumnsCount] = useState(0);
 		const [selectedTableNames, setSelectedTableNames] = useState(new Set());
@@ -463,7 +466,7 @@ export const DataImportFormModal = observer(
 		};
 
 		/** Create a New Cell and Add to Notebook */
-		const appendCell = (widget: string) => {
+		const appendCell = async (widget: string) => {
 			try {
 				const config: NewCellAction["payload"]["config"] = {
 					widget: DefaultCells[widget].widget,
@@ -502,14 +505,14 @@ export const DataImportFormModal = observer(
 					};
 				}
 
-				const newCellId = state.dispatch({
+				const newCellId = (await state.dispatch({
 					message: ActionMessages.NEW_CELL,
 					payload: {
 						queryId: query.id,
 						previousCellId: previousCellId,
 						config: config as Omit<CellStateConfig, "id">,
 					},
-				}) as string;
+				})) as string;
 
 				state.dispatch({
 					message: ActionMessages.ADD_VARIABLE,
@@ -930,7 +933,7 @@ export const DataImportFormModal = observer(
 						" , ",
 					)} ) `;
 				}
-				pixelStringPart1 += ` | Distinct ( false ) | Limit ( 20 )`;
+				pixelStringPart1 += ` | Distinct ( false ) | Limit ( ${dataLimit} )`;
 
 				const combinedJoinString =
 					pixelJoins.length > 0
@@ -941,7 +944,7 @@ export const DataImportFormModal = observer(
 					" , ",
 				)} ) .as ( [ ${pixelColumnAliases.join(
 					" , ",
-				)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( 20 ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
+				)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( ${dataLimit} ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
 
 				pixelStringRef.current = reactorPixel;
 				pixelPartialRef.current = pixelStringPart1 + ";";
@@ -1022,7 +1025,6 @@ export const DataImportFormModal = observer(
 
 		const retrievePreviewData = async () => {
 			setIsDatabaseLoading(true);
-
 			const databaseId = selectedDatabaseId;
 			const pixelTables = new Set();
 			const pixelColumnNames = [];
@@ -1061,7 +1063,7 @@ export const DataImportFormModal = observer(
 						" , ",
 					)} ) `;
 				}
-				pixelStringPart1 += ` | Distinct ( false ) | Limit ( 20 )`;
+				pixelStringPart1 += ` | Distinct ( false ) | Limit ( ${dataLimit} )`;
 
 				const combinedJoinString =
 					pixelJoins.length > 0
@@ -1072,7 +1074,7 @@ export const DataImportFormModal = observer(
 					" , ",
 				)} ) .as ( [ ${pixelColumnAliases.join(
 					" , ",
-				)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( 20 ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
+				)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( ${dataLimit} ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
 
 				pixelStringRef.current = reactorPixel;
 				pixelPartialRef.current = pixelStringPart1 + ";";

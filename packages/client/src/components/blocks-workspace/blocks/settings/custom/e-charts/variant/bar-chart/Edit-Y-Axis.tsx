@@ -77,7 +77,7 @@ const INITIAL_YAXIS_STATE = {
 	showAxis: true, //yaxis show/hide
 	yaxistitle: "", //y axis title value
 	showAxisTitle: true, // yaxis title hide/show
-	yaxisTitleFontSize: 18, // yaxis title fontsize
+	yaxisTitleFontSize: 12, // yaxis title fontsize
 	showYAxisLineTicks: false, // show/hide y axis ticks
 	showYAxisLabels: true, // show/hide y axis labels
 	labelFontSize: 12, // to change label font size
@@ -85,6 +85,8 @@ const INITIAL_YAXIS_STATE = {
 	rotateLabelMinValue: 0, // rotating degree min value
 	rotateLabelMaxValue: 360, // rotating degree max value
 	showYAxisZoom: true, // show y axis zoom slider
+	truncateCharCount: 0, // truncate character count for y axis title
+	axisGap: 25, // gap between axis and axis title
 };
 //Changing the Y axis styling like title, rotate and changing the labels
 export const EditYAxis = observer(
@@ -95,7 +97,6 @@ export const EditYAxis = observer(
 		const [yAxisDataUpdated, setYAxisDataUpdated] = useState<
 			"initial" | "updated"
 		>("initial");
-		const axisValue = "yAxis";
 		const [value, setValue] = useState(data.option);
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 		// get the value of the input (wrapped in usememo because of path prop)
@@ -115,7 +116,15 @@ export const EditYAxis = observer(
 		}, [data, path]).get();
 		//update the value when computed value is updated
 		useEffect(() => {
-			setValue(computedValue);
+			try {
+				setValue(
+					typeof computedValue === "string"
+						? JSON.parse(computedValue)
+						: computedValue,
+				);
+			} catch {
+				setValue({});
+			}
 		}, [computedValue]);
 		//updating initial state of y axis fields, when the component is mounted
 		useEffect(() => {
@@ -124,7 +133,7 @@ export const EditYAxis = observer(
 				showAxis: true,
 				showAxisTitle: true,
 				yaxistitle: "",
-				yaxisTitleFontSize: 18,
+				yaxisTitleFontSize: 12,
 				showYAxisLineTicks: false,
 				showYAxisLabels: true,
 				labelFontSize: 12,
@@ -132,6 +141,8 @@ export const EditYAxis = observer(
 				rotateLabelMinValue: 0,
 				rotateLabelMaxValue: 360,
 				showYAxisZoom: true,
+				truncateCharCount: 0,
+				axisGap: 25,
 			};
 			if (Object.hasOwn(option, axis) && option[axis]) {
 				yAxisStateData.yaxistitle = Object.hasOwn(option[axis], "name")
@@ -212,6 +223,8 @@ export const EditYAxis = observer(
 				rotate: yaxisState.rotate,
 				showYAxisLineTicks: yaxisState.showYAxisLineTicks,
 				showYAxisZoom: yaxisState.showYAxisZoom,
+				truncateCharCount: yaxisState.truncateCharCount,
+				axisGap: yaxisState.axisGap,
 			};
 			let option = typeof value === "string" ? JSON.parse(value) : value;
 			let optionUpdated = option;
@@ -233,6 +246,23 @@ export const EditYAxis = observer(
 									Number(axisData.yaxisTitleFontSize) ||
 									undefined,
 							},
+						};
+					}
+					if (Object.hasOwn(axisData, "truncateCharCount")) {
+						option[axis] = {
+							...option[axis],
+							nameTruncate: {
+								...option[axis]?.nameTruncate,
+								maxWidth:
+									Number(axisData.truncateCharCount) ||
+									undefined,
+							},
+						};
+					}
+					if (Object.hasOwn(axisData, "axisGap")) {
+						option[axis] = {
+							...option[axis],
+							["nameGap"]: Number(axisData.axisGap) || undefined,
 						};
 					}
 				} else {
@@ -343,7 +373,7 @@ export const EditYAxis = observer(
 		//updating y axis state, when y axis fields are changed
 		function handleInputChange(e, title, directVal = undefined) {
 			if (yAxisDataUpdated === "initial") setYAxisDataUpdated("updated");
-			if (directVal != undefined) {
+			if (directVal !== undefined) {
 				setYaxisState((prevXaxisState) => {
 					return {
 						...prevXaxisState,
@@ -393,7 +423,6 @@ export const EditYAxis = observer(
 						</Typography>
 						<StyledTextField
 							size="small"
-							id="yaxis-title"
 							value={yaxisState.yaxistitle}
 							onChange={(e) => handleInputChange(e, "yaxistitle")}
 						/>
@@ -409,12 +438,45 @@ export const EditYAxis = observer(
 						</Typography>
 						<TextField
 							size="small"
-							id="xaxis-edit-title-font-size"
 							type="number"
 							value={yaxisState.yaxisTitleFontSize}
 							onChange={(e) =>
 								handleInputChange(e, "yaxisTitleFontSize")
 							}
+						/>
+					</StyledAxisColDiv>
+				)}
+				{yaxisState.showAxisTitle && (
+					<StyledAxisColDiv
+						display="flex"
+						justifyContent="space-around"
+					>
+						<Typography variant="body2" color="secondary">
+							Truncate Characters Length(Pixel):
+						</Typography>
+						<TextField
+							size="small"
+							type="number"
+							value={yaxisState.truncateCharCount}
+							onChange={(e) =>
+								handleInputChange(e, "truncateCharCount")
+							}
+						/>
+					</StyledAxisColDiv>
+				)}
+				{yaxisState.showAxisTitle && (
+					<StyledAxisColDiv
+						display="flex"
+						justifyContent="space-around"
+					>
+						<Typography variant="body2" color="secondary">
+							Axis Gap
+						</Typography>
+						<TextField
+							size="small"
+							type="number"
+							value={yaxisState.axisGap}
+							onChange={(e) => handleInputChange(e, "axisGap")}
 						/>
 					</StyledAxisColDiv>
 				)}
@@ -450,7 +512,6 @@ export const EditYAxis = observer(
 						</Typography>
 						<StyledTextField
 							size="small"
-							id="set-font-size"
 							value={yaxisState.labelFontSize}
 							type="number"
 							onChange={(e) =>
@@ -465,7 +526,7 @@ export const EditYAxis = observer(
 						justifyContent="space-between"
 					>
 						<Typography variant="body2">
-							Rotate X-Axis Values:
+							Rotate Y-Axis Values:
 						</Typography>
 						<Slider
 							size="small"

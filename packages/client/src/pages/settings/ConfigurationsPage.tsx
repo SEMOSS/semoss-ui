@@ -15,6 +15,7 @@ import {
 	Box,
 	Button,
 	Divider,
+	LoadingScreen,
 	Search,
 	styled,
 	TextField,
@@ -22,8 +23,8 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 import dropbox from "../../assets/img/dropbox.png";
 import github from "../../assets/img/github.png";
 import google from "../../assets/img/google.png";
@@ -294,7 +295,9 @@ export const ConfigurationsPage = () => {
 										onClick={() => {
 											setAccordionValue(value);
 										}}
-										data-testid={`configuration-page-auth-${value}-btn`}
+										data-testid={formatToDataTestId(
+											`configurationPage-auth-${value}-btn`,
+										)}
 									>
 										<StyledImage
 											src={
@@ -337,14 +340,16 @@ export const ConfigurationsPage = () => {
 						<StyledButton
 							variant="outlined"
 							data-testid={
-								"configuration-page-social-prop-reset-btn"
+								"configurationPage-social-prop-reset-btn"
 							}
 						>
 							Reset
 						</StyledButton>
 						<StyledButton
 							variant="contained"
-							data-testid={"configuration-social-prop-save-btn"}
+							data-testid={
+								"configurationPage-social-prop-save-btn"
+							}
 						>
 							Save
 						</StyledButton>
@@ -443,14 +448,14 @@ const SocialProperty = (props) => {
 						onClick={() => {
 							resetLoginProperties(fieldName);
 						}}
-						data-testid={"configuration-page-reset-btn"}
+						data-testid={"configurationPage-reset-btn"}
 					>
 						Reset
 					</StyledButton>
 					<StyledButton
 						variant="contained"
 						onClick={() => onSubmit()}
-						data-testid={"configuration-page-save-btn"}
+						data-testid={"configurationPage-save-btn"}
 					>
 						Save
 					</StyledButton>

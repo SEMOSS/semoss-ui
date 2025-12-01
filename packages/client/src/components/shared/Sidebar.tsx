@@ -23,6 +23,7 @@ import {
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import { usePage, useRootStore } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 import { LogoutPopover } from "./LogoutPopover";
 
 const DRAWER_OPEN_WIDTH = 288;
@@ -116,7 +117,7 @@ const StyledListItemButton = styled(List.ItemButton, {
 	backgroundColor: selected ? theme.palette.primary.selected : undefined,
 })) as unknown as typeof List.ItemButton;
 
-const StyledListItemIcon = styled(List.Icon)(() => ({
+const StyledListItemIcon = styled(List.ItemIcon)(() => ({
 	width: "28px",
 	minWidth: "auto",
 }));
@@ -182,7 +183,7 @@ export const Sidebar: React.FC = observer(() => {
 			anchor="left"
 			open={page.sidebar.open}
 			onClose={() => {
-				closeSidebar
+				closeSidebar;
 			}}
 			PaperProps={{
 				onMouseLeave: () => {
@@ -205,17 +206,16 @@ export const Sidebar: React.FC = observer(() => {
 					</Typography>
 				</StyledNavHeaderLink>
 
-				
-				<StyledCloseIconButton 
-					size="small" 
+				<StyledCloseIconButton
+					size="small"
 					onClick={() => {
-						if(page.sidebar.pinned){
+						if (page.sidebar.pinned) {
 							page.unpinSidebar();
 						} else {
-							page.pinSidebar()
-							return
+							page.pinSidebar();
+							return;
 						}
-						closeSidebar()
+						closeSidebar();
 					}}
 				>
 					<MenuOpenRounded fontSize="medium" />
@@ -265,6 +265,9 @@ export const Sidebar: React.FC = observer(() => {
 										}
 										aria-label={r.text}
 										dense={true}
+										data-testid={formatToDataTestId(
+											`sidebar-${r.text}-btn`,
+										)}
 									>
 										<StyledListItemIcon>
 											{r.icon}

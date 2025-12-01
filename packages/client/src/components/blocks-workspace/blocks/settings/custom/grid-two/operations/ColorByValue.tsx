@@ -232,7 +232,7 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
 					<Autocomplete
 						fullWidth
 						size="small"
-                        multiple={false}
+						multiple={false}
 						value={editingRule?.column}
 						onChange={(_, newValue) => {
 							updateFields("column", newValue || "");
@@ -284,7 +284,7 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
 					<Autocomplete
 						fullWidth
 						size="small"
-                        multiple={false}
+						multiple={false}
 						value={editingRule?.valueColumn}
 						onChange={(_, newValue) => {
 							updateFields("valueColumn", newValue || "");
@@ -311,7 +311,7 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
 					<Autocomplete
 						fullWidth
 						size="small"
-                        multiple={false}
+						multiple={false}
 						value={
 							columnComparision.find(
 								(c) => c.value === editingRule?.comparator,
@@ -319,14 +319,17 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
 						}
 						onChange={(_, newValue) => {
 							updateFields(
-                                "comparator",
-                                typeof newValue === 'object' && newValue !== null ? newValue.value : ""
-                            );
+								"comparator",
+								typeof newValue === "object" &&
+									newValue !== null
+									? newValue.value
+									: "",
+							);
 						}}
 						options={columnComparision}
 						getOptionLabel={(option) =>
-                            typeof option === 'string' ? option : option.name
-                        }
+							typeof option === "string" ? option : option.name
+						}
 						renderInput={(params) => (
 							<TextField
 								{...params}
@@ -348,7 +351,7 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
 					<Autocomplete
 						fullWidth
 						size="small"
-                        multiple={false}
+						multiple={false}
 						value={editingRule?.value}
 						onChange={(_, newValue) => {
 							updateFields("value", newValue || "");

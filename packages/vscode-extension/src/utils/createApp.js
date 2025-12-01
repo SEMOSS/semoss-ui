@@ -7,16 +7,16 @@
  * @module createApp
  */
 
-import axios from "axios";
-import fs from "fs";
-import http from "http";
-import https from "https";
-import StreamZip from "node-stream-zip";
-import path from "path";
-import * as vscode from "vscode";
-import { deployProject, setDeployConfig } from "./deploy.js";
-import { processGithubAssets } from "./githubAssets.js";
-import { zipProject } from "./zip.js";
+const axios = require("axios");
+const fs = require("fs");
+const http = require("http");
+const https = require("https");
+const StreamZip = require("node-stream-zip");
+const path = require("path");
+const vscode = require("vscode");
+const { deployProject, setDeployConfig } = require("./deploy.js");
+const { processGithubAssets } = require("./githubAssets.js");
+const { zipProject } = require("./zip.js");
 
 // Helper for error reporting
 function logError(context, err) {
@@ -51,7 +51,7 @@ const APP_CONFIG = {
  * @returns {Promise<boolean>} - Whether app creation was successful
  * @throws {Error} - If app creation fails
  */
-export async function createNewApp(context, getSecretsWithValidation, args) {
+async function createNewApp(context, getSecretsWithValidation, args) {
 	try {
 		// 1. Collect all required inputs
 		const appDetails = await collectAppDetails(args);
@@ -602,7 +602,7 @@ async function zipAndDeployProject(
 	headers,
 	encoded,
 ) {
-	await zipProject(unzipDir);
+	await zipProject(unzipDir, (m) => console.log("[zip]", m));
 	const zipOutputPath = path.join(unzipDir, "assets.zip");
 	vscode.window.showInformationMessage(`App zipped to ${zipOutputPath}`);
 
@@ -614,6 +614,8 @@ async function zipAndDeployProject(
 		outputPath: zipOutputPath,
 	});
 
-	await deployProject(projectId);
+	await deployProject(projectId, (m) => console.log("[deploy]", m));
 	return zipOutputPath;
 }
+
+module.exports = { createNewApp };

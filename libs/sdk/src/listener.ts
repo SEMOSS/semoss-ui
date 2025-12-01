@@ -1,0 +1,41 @@
+import { Env } from "./env";
+import type { MCPToolRequest } from "./types";
+
+/**
+ * Listener to MCP tool messages on the window
+ */
+(() => {
+	// only works in browser
+	if (typeof window !== "undefined") {
+		// add the listener
+		window?.addEventListener(
+			"message",
+			(event) => {
+				try {
+					if (!event.data || event.data.type !== "SMSS_INIT_TOOL") {
+						return;
+					}
+
+					const eventData = event.data as {
+						type: "SMSS_INIT_TOOL";
+						tool: MCPToolRequest;
+					};
+
+					Env.update({
+						TOOL: {
+							type: eventData.tool.type,
+							message: eventData.tool.message || "",
+							id: eventData.tool.id || "",
+							name: eventData.tool.name || "",
+							parameters: eventData.tool.parameters || {},
+							roomId: eventData.tool.roomId || "",
+						},
+					});
+				} catch {
+					// noop
+				}
+			},
+			false,
+		);
+	}
+})();

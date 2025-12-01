@@ -1,9 +1,9 @@
 import { ContentCopyOutlined, SaveOutlined } from "@mui/icons-material";
-import { Actions, TabNode } from "flexlayout-react";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
 import { IconButton, Stack, useNotification } from "@semoss/ui";
 import { FileEditor, type FileEditorRefDef } from "@/components/common";
+import { FlexLayout } from "@/components/flex-layout";
 import { useWorkspace } from "@/hooks";
 import { Panel } from "./Panel";
 
@@ -58,7 +58,7 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 			// visit the notes, and see if it exists
 			model.visitNodes((node) => {
 				// check if it is a tabNode
-				if (node instanceof TabNode) {
+				if (node instanceof FlexLayout.TabNode) {
 					// it needs to be a file-editor
 					const component = node.getComponent();
 					if (component !== "file-editor") {
@@ -73,9 +73,13 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 
 					const id = node.getId();
 					if (isModified) {
-						model.doAction(Actions.renameTab(id, `${name}*`));
+						model.doAction(
+							FlexLayout.Actions.renameTab(id, `${name}*`),
+						);
 					} else {
-						model.doAction(Actions.renameTab(id, `${name}`));
+						model.doAction(
+							FlexLayout.Actions.renameTab(id, `${name}`),
+						);
 					}
 				}
 			});
@@ -98,7 +102,7 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 				color: "success",
 				message: "Successfully copied path",
 			});
-		} catch (e) {
+		} catch {
 			notification.add({
 				color: "error",
 				message: "Unable to copy path",
@@ -148,7 +152,7 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 				insightId={workspace.insightId}
 				path={path}
 				agentModelEngine={workspace.agentModelEngine}
-				onChange={(content, isModified) => {
+				onChange={(_content, isModified) => {
 					onFileEditorChange(isModified);
 				}}
 			/>

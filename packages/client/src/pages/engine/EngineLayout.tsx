@@ -9,12 +9,10 @@ import {
 	useResolvedPath,
 } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
-import { Stack, styled, ToggleTabsGroup } from "@semoss/ui";
+import { LoadingScreen, Stack, styled, ToggleTabsGroup } from "@semoss/ui";
 import { EngineHeader } from "@/components/engine";
-import { LoadingScreen } from "@/components/ui";
 import { EngineContext } from "@/contexts";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
-import { removeUnderscores } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
@@ -86,6 +84,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		last_updated?: string;
 		description?: string;
 		database_type?: string;
+		database_subtype?: string;
 		DATEADDED?: string;
 		PERMISSIONGRANTEDBY?: string;
 		markdown?: string;
@@ -98,6 +97,16 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 			: "",
 		{
 			data: {},
+		},
+	);
+
+	// get the database category to check if it's SQL (only for DATABASE type engines)
+	const getDatabaseCategory = usePixel<string>(
+		engineId && route.type === "DATABASE"
+			? `GetDatabaseCategory(engine=["${engineId}"]);`
+			: "",
+		{
+			data: "",
 		},
 	);
 
@@ -137,10 +146,11 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	]);
 
 	// get the user's role
-	const getUserEnginePermission =
-		!adminMode && engineId && useAPI(["getUserEnginePermission", engineId]);
+	const getUserEnginePermission = useAPI(
+		!adminMode && engineId ? ["getUserEnginePermission", engineId] : null,
+	);
 
-	// get the tabs based on permission
+	// get the tabs based on permission and database type
 	const tabs = useMemo(() => {
 		// must be valid
 		if (
@@ -155,15 +165,30 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		const permission = getUserEnginePermission.data.permission;
 
 		// get the routes based on permission
-		return route.specific.filter((t) =>
+		let filteredTabs = route.specific.filter((t) =>
 			t.restrict ? t.restrict.indexOf(permission) > -1 : true,
 		);
+
+		// additional filtering for DATABASE type engines - hide Query tab unless database is SQL
+		if (route.type === "DATABASE") {
+			const databaseCategory = getDatabaseCategory.data;
+			filteredTabs = filteredTabs.filter((t) => {
+				// if it's the Query tab (path === 'query'), only show it if database is SQL
+				if (t.path === "query") {
+					return databaseCategory === "SQL";
+				}
+				return true;
+			});
+		}
+
+		return filteredTabs;
 	}, [
 		route,
 		getUserEnginePermission.status,
 		getUserEnginePermission.data
 			? getUserEnginePermission.data.permission
 			: "",
+		getDatabaseCategory.data,
 	]);
 
 	/**
@@ -204,6 +229,11 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		return <LoadingScreen.Trigger description="Opening Engine" />;
 	}
 
+	// show a loading screen when checking database category for DATABASE engines
+	if (route.type === "DATABASE" && getDatabaseCategory.status !== "SUCCESS") {
+		return <LoadingScreen.Trigger description="Loading Database Info" />;
+	}
+
 	return (
 		<EngineContext.Provider
 			value={{
@@ -213,10 +243,16 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 				active: {
 					id: engineId,
 					role: getUserEnginePermission.data.permission,
-					name: removeUnderscores(
-						(getEngineMetadata.data?.database_name as string) || "",
+					name: (
+						(getEngineMetadata.data?.database_name as string) || ""
 					),
 					metadata: values,
+					database_subtype: getEngineMetadata.data?.database_subtype,
+					database_created_by:
+						getEngineMetadata.data?.database_created_by,
+					PERMISSIONGRANTEDBY:
+						getEngineMetadata.data?.PERMISSIONGRANTEDBY,
+					DATEADDED: getEngineMetadata.data?.DATEADDED,
 					refresh: getEngineMetadata.refresh,
 				},
 			}}
@@ -230,7 +266,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 								width: "100%",
 							}}
 							value={activeTabIdx}
-							onChange={(e: SyntheticEvent, idx: number) => {
+							onChange={(_e: SyntheticEvent, idx: number) => {
 								// get the specific route
 								const r = tabs[idx];
 
@@ -238,11 +274,12 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 								navigate(`${r.path}`);
 							}}
 						>
-							{tabs.map((t, tIdx) => {
+							{tabs.map((t, _tIdx) => {
 								return (
 									<StyledToggleTabsGroupItem
 										key={t.path}
 										label={t.name}
+										data-testid={`engineLayout-${t.name}-tab`}
 									/>
 								);
 							})}

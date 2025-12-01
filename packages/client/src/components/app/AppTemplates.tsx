@@ -1,3 +1,4 @@
+import type { Variable } from "@semoss/renderer";
 import { Stack, styled } from "@semoss/ui";
 import type { AppMetadata } from "./app.types";
 import { BrowseTemplateTileCard } from "./BrowseTempateTitleCard";
@@ -7,9 +8,12 @@ import {
 	CreateDiabetesRecordTemplate,
 	CustomFrameToVisualizationTemplate,
 	DeleteDiabetesRecordTemplate,
+	GmailTemplate,
 	LandingPageTemplate,
 	MultiPageTemplate,
+	NLPToGridTemplate,
 	ReadDiabetesRecordTemplate,
+	RowToNotebookTemplate,
 	type Template,
 	UpdateDiabetesRecordTemplate,
 	VisualizeCSVTemplate,
@@ -17,15 +21,18 @@ import {
 
 const DEFAULT_TEMPLATE = [
 	LandingPageTemplate,
+	RowToNotebookTemplate,
 	AskLLMTemplate,
 	CustomFrameToVisualizationTemplate,
 	VisualizeCSVTemplate,
+	NLPToGridTemplate,
 	BlocksGuideTemplate,
 	MultiPageTemplate,
 	CreateDiabetesRecordTemplate,
 	ReadDiabetesRecordTemplate,
 	UpdateDiabetesRecordTemplate,
 	DeleteDiabetesRecordTemplate,
+	GmailTemplate,
 	// AskCSVTemplate,
 ];
 
@@ -68,6 +75,53 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 		};
 	};
 
+	const includeMCPDriverToTemplateState = (template: Template): Template => {
+		if (
+			template.state.queries &&
+			!template.state.queries?.["mcp_driver"] &&
+			template.state.variables &&
+			!template.state.variables?.["mcp_driver"] &&
+			!template.state.variables?.["mcp_driver--1"]
+		) {
+			return {
+				...template,
+				state: {
+					...template.state,
+					queries: {
+						...template.state.queries,
+						mcp_driver: {
+							id: "mcp_driver",
+							cells: [
+								{
+									id: "1",
+									widget: "code",
+									parameters: {
+										code: "",
+										type: "py",
+									},
+								},
+							],
+						},
+					},
+					variables: {
+						...template.state.variables,
+						mcp_driver: {
+							type: "query",
+							to: "mcp_driver",
+							cellId: "1",
+						} as Variable,
+						"mcp_driver--1": {
+							type: "cell",
+							to: "mcp_driver",
+							cellId: "1",
+						},
+					},
+				},
+			};
+		}
+		return template;
+	};
+
 	return (
 		<Stack
 			direction={"row"}
@@ -85,13 +139,11 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 					const app = getAppMetadataFromTemplate(t);
 					return (
 						<BrowseTemplateTileCard
-							key={`default-template-${idx}`}
+							key={`default-template-${app.project_name}`}
 							app={getAppMetadataFromTemplate(t)}
-							systemApp={true}
-							appType={app.project_type}
-							onAction={() => onUse(t)}
-							isLoading={false}
-							showSkeleton={false}
+							onAction={() =>
+								onUse(includeMCPDriverToTemplateState(t))
+							}
 						/>
 					);
 				})}

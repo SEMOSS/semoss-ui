@@ -1,5 +1,4 @@
 import { Add, Search } from "@mui/icons-material";
-import { Actions, DockLocation, type Layout, TabNode } from "flexlayout-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useMemo, useState } from "react";
@@ -13,6 +12,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { FlexLayout } from "@/components/flex-layout";
 import { DeleteNotebookOverlay, NewQueryOverlay } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
@@ -21,7 +21,7 @@ import { NotebookExplorerItem } from "./NotebookExplorerPanelItem";
 interface NotebookExplorerPanelProps {
 	title: string;
 	/** Current layoutobject */
-	layout: Layout;
+	layout: FlexLayout.Layout;
 }
 const StyledTitle = styled("div")(({ theme }) => ({
 	borderRadius: "16px",
@@ -298,7 +298,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 
 				// create and select the panel
 				model.doAction(
-					Actions.addNode(
+					FlexLayout.Actions.addNode(
 						{
 							type: "tab",
 							name: name,
@@ -309,7 +309,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 							enableClose: true,
 						},
 						addId,
-						DockLocation.CENTER,
+						FlexLayout.DockLocation.CENTER,
 						-1,
 						true,
 					),
@@ -337,7 +337,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 					return false;
 				}
 
-				let selectedNode: TabNode | null = null;
+				let selectedNode: FlexLayout.TabNode | null = null;
 
 				// get the model
 				const model = workspace.model;
@@ -348,7 +348,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 				// visit the notes, and see if it exists
 				model.visitNodes((node) => {
 					// check if it is a tabNode
-					if (node instanceof TabNode) {
+					if (node instanceof FlexLayout.TabNode) {
 						// it needs to be a notebook-viewer
 						const component = node.getComponent();
 						if (component !== "notebook-viewer") {
@@ -371,7 +371,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 				}
 
 				const selectedNodeId = selectedNode.getId();
-				model.doAction(Actions.selectTab(selectedNodeId));
+				model.doAction(FlexLayout.Actions.selectTab(selectedNodeId));
 			} catch (e) {
 				notification.add({
 					color: "error",
@@ -395,7 +395,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 					return false;
 				}
 
-				const nodesToBeRemoved: TabNode[] = [];
+				const nodesToBeRemoved: FlexLayout.TabNode[] = [];
 
 				// get the model
 				const model = workspace.model;
@@ -406,7 +406,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 				// visit the notes, and see if it exists
 				model.visitNodes((node) => {
 					// check if it is a tabNode
-					if (node instanceof TabNode) {
+					if (node instanceof FlexLayout.TabNode) {
 						// it needs to be a notebook-viewer
 						const component = node.getComponent();
 						if (component !== "notebook-viewer") {
@@ -426,7 +426,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 				// delete the tabs
 				for (const n of nodesToBeRemoved) {
 					const id = n.getId();
-					model.doAction(Actions.deleteTab(id));
+					model.doAction(FlexLayout.Actions.deleteTab(id));
 				}
 			} catch (e) {
 				notification.add({

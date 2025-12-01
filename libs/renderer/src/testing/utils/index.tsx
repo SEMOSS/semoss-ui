@@ -18,7 +18,6 @@ interface MockProviderProps {
 }
 
 const MockProvider: React.FC<MockProviderProps> = ({
-	children,
 	blocks,
 	renderEngineId,
 	queryConfig,
@@ -34,7 +33,6 @@ const MockProvider: React.FC<MockProviderProps> = ({
 			blocks: blocks,
 		},
 		cellRegistry: {},
-		initialParams: {},
 	});
 
 	return (
@@ -62,7 +60,6 @@ const MockHookProvider: React.FC<MockProviderProps> = ({
 			blocks: blocks,
 		},
 		cellRegistry: {},
-		initialParams: {},
 	});
 
 	return (
@@ -85,19 +82,20 @@ const customRender = (
 	ui: React.ReactElement,
 	options?: CustomRenderOptions,
 ): ReturnType<typeof render> => {
-    const { blocks } = options || {}; // Destructure parameters from options
-    const { queryConfig } = options || {};
-    const {id : renderEngineId} = ui.props // Destructure ui block props and get its id prop to be used in renderEngine
-    return render(ui, {
-        wrapper: (props) => (
-            <MockProvider
-                {...props}
-                blocks={blocks}
-                queryConfig={queryConfig}
-            	renderEngineId={renderEngineId} />
-        ),
-        ...options,
-    });
+	const { blocks } = options || {}; // Destructure parameters from options
+	const { queryConfig } = options || {};
+	const { id: renderEngineId } = ui.props; // Destructure ui block props and get its id prop to be used in renderEngine
+	return render(ui, {
+		wrapper: (props) => (
+			<MockProvider
+				{...props}
+				blocks={blocks}
+				queryConfig={queryConfig}
+				renderEngineId={renderEngineId}
+			/>
+		),
+		...options,
+	});
 };
 
 interface CustomHookRenderOptions<TProps> extends RenderHookOptions<TProps> {
@@ -139,10 +137,25 @@ const customRenderHook = <TProps, TResult>(
 	});
 };
 
-// Automatically clean up after each test
-// afterEach(() => {
-//     cleanup();
-// });
+beforeAll(() => {
+	vi.stubGlobal("jest", {
+		advanceTimersByTime: vi.advanceTimersByTime.bind(vi),
+	});
+});
+
+beforeEach(() => {
+	vi.useFakeTimers();
+});
+
+afterEach(() => {
+	vi.runOnlyPendingTimers();
+	vi.useRealTimers();
+	vi.clearAllTimers();
+});
+
+afterAll(() => {
+	vi.unstubAllGlobals();
+});
 
 // Re-export everything from React Testing Library
 export * from "@testing-library/react";

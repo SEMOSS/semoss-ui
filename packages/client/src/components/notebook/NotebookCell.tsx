@@ -11,10 +11,13 @@ import {
 	Pending,
 	PlayArrowRounded,
 	PlayCircle,
+	SmartToy,
+	SwapHoriz,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
+import { runPixel } from "@semoss/sdk";
 import {
 	ButtonGroup,
 	Card,
@@ -31,6 +34,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useWorkspace } from "@/hooks";
+import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from "@/utility";
 import DuplicateIcon from "../../assets/img/Duplicate.svg";
@@ -112,7 +116,7 @@ const StyledCard = styled(Card, {
 	const shape = theme.shape as CustomShapeOptions;
 
 	return {
-		overflow: "hidden",
+		overflow: "visible", // Changed from hidden to visible for display (Pixel) reactor methods auto-complete suggestions
 		flexGrow: 1,
 		cursor: isCardCellSelected ? "inherit" : "pointer",
 		border: isCardCellSelected
@@ -340,40 +344,37 @@ export const NotebookCell = observer(
 			}
 		}, [cellPlayCounter]);
 
-		// const cellOrderNumber = useMemo(() => {
-		// 	const nbCellList = state.queries[cell.query.id].cellList;
-
-		// 	let matchIndex = 0;
-		// 	nbCellList.forEach((c, i) => {
-		// 		if (c.id === cell.id) matchIndex = i;
-		// 	});
-
-		// 	return matchIndex + 1;
-		// }, [
-		// 	cell.id,
-		// 	cell.query.list.indexOf(cell.id),
-		// 	cell.query.cellList.length,
-		// ]);
-
 		/**
 		 * Create a duplicate cell
 		 */
-		const duplicateCell = () => {
+		console.log(cell, "important");
+		const duplicateCell = async () => {
 			try {
+				let parameters = { ...cell.parameters };
+
+				if (
+					cell.widget === "query-import" ||
+					cell.widget === "data-import" ||
+					cell.widget === "text-to-sql"
+				) {
+					parameters = {
+						...parameters,
+						frameVariableName: `FRAME_${Math.floor(Math.random() * 100000)}`,
+					};
+				}
+
 				// copy and add the step to the end
-				const newCellId = state.dispatch({
+				const newCellId = (await state.dispatch({
 					message: ActionMessages.NEW_CELL,
 					payload: {
 						queryId: queryId,
 						previousCellId: cellId,
 						config: {
 							widget: cell.widget,
-							parameters: {
-								...cell.parameters,
-							},
+							parameters,
 						},
 					},
-				}) as string;
+				})) as string;
 
 				state.dispatch({
 					message: ActionMessages.ADD_VARIABLE,
@@ -512,8 +513,122 @@ export const NotebookCell = observer(
 			}
 		};
 
-		const generateWithAIHandler = () => {
-			console.log("generateWithAIHandler");
+		/**
+		 * @description
+		 * Revert MCP cell back to original code cell
+		 */
+		const revertMCPToCell = async () => {
+			try {
+				workspace.setLoading(true);
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						queryId: cell.query.id,
+						cellId: cell.id,
+						path: "",
+						value: cell.parameters["originalParams"],
+					},
+				});
+				workspace.setLoading(false);
+			} catch (e) {
+				console.error(e);
+			}
+		};
+
+		/**
+		 * @description
+		 * 1. make pixel call to generate python tool for cell
+		 * 2. Swap cell config in place for mcp config
+		 */
+		const makeCellMCP = async () => {
+			try {
+				workspace.setLoading(true);
+				// Save current app state before making MCP tool
+				await runPixel(
+					`SaveAppBlocksJson(project=["${workspace.appId}"], json=["<encode>${JSON.stringify(state.toJSON())}</encode>"]);`,
+				);
+				// Make pixel call to generate MCP tool
+				const { errors, pixelReturn } = await runPixel(
+					`MakeNotebookCellMCP(project="${workspace.appId}", model="${workspace.agentModelEngine}", cellId="${cell.id}")`,
+				);
+
+				workspace.setLoading(false);
+
+				// Handle pixel call errors
+				if (errors?.length) {
+					notification.add({
+						message: errors[0],
+						color: "error",
+					});
+					return;
+				}
+
+				// Validate pixel return
+				if (!pixelReturn?.[0]?.output) {
+					throw new Error("Invalid response from pixel call");
+				}
+
+				const output = pixelReturn[0].output as {
+					tools: {
+						name: string;
+						title: string;
+						description: string;
+						inputSchema: {
+							properties: {
+								[key: string]: {
+									title: string;
+									description: string;
+									type: string;
+								};
+							};
+							required: string[];
+							title: string;
+							type: string;
+						};
+					}[];
+				};
+
+				// Validate output structure
+				if (!output.tools?.[0]) {
+					throw new Error("No tools found in pixel response");
+				}
+
+				const tool = output.tools[0];
+				const toolName = tool.name;
+				const properties = tool.inputSchema?.properties || {};
+
+				// Build parameters object from schema properties
+				const params = Object.keys(properties).reduce((acc, key) => {
+					acc[key] = null;
+					return acc;
+				}, {});
+
+				// Dispatch action to update cell configuration
+				state.dispatch({
+					message: ActionMessages.MAKE_CELL_MCP,
+					payload: {
+						queryId: cell.query.id,
+						cellId: cell.id,
+						parameters: {
+							name: toolName,
+							projectId: workspace.appId,
+							originalParams: {
+								widget: cell.widget,
+								parameters: cell.parameters,
+							},
+							params,
+						},
+					},
+				});
+			} catch (error) {
+				console.error("Error in makeCellMCP:", error);
+				workspace.setLoading(false);
+
+				notification.add({
+					message: error.message || "Failed to create MCP cell",
+					color: "error",
+				});
+			}
 		};
 
 		return (
@@ -554,6 +669,41 @@ export const NotebookCell = observer(
 					<StyledCellActions in={showCellActions}>
 						<Stack gap={1} direction={"row"} alignItems={"center"}>
 							<StyledButtonGroup variant="outlined">
+								{cell.query.id === MCP_NOTEBOOK_NAME && (
+									<StyledButtonGroupButton
+										title={
+											cell.widget === "mcp-tool"
+												? "Revert to Code"
+												: "Make Available through MCP"
+										}
+										size="small"
+										disabled={
+											cell.isLoading ||
+											cell.widget === "mcp-tool"
+												? false
+												: !workspace.agentModelEngine
+										}
+										onClick={(e) => {
+											// stop propogation to card parent so newly created cell will be selected
+											e.stopPropagation();
+											if (cell.widget !== "mcp-tool") {
+												// helper fn to make the cell mcp
+												makeCellMCP();
+											} else {
+												// helper fn to revert the cell to code
+												revertMCPToCell();
+											}
+										}}
+									>
+										<StyledButtonLabel>
+											{cell.widget === "mcp-tool" ? (
+												<SwapHoriz />
+											) : (
+												<SmartToy />
+											)}
+										</StyledButtonLabel>
+									</StyledButtonGroupButton>
+								)}
 								<StyledButtonGroupButton
 									title="Run this cell and below"
 									size="small"
@@ -664,11 +814,6 @@ export const NotebookCell = observer(
 									</StyledButtonLabel>
 								</StyledButtonGroupButton>
 							</StyledButtonGroup>
-
-							{/**
-							 * more options menu
-							 * only showing one option currently with no attached function
-							 **/}
 							<StyledMenu
 								anchorEl={anchorEl}
 								open={open}
@@ -681,7 +826,6 @@ export const NotebookCell = observer(
 									value={"generate-with-ai"}
 									onClick={() => {
 										setAnchorEl(null);
-										generateWithAIHandler();
 									}}
 								>
 									Generate with AI
@@ -934,6 +1078,11 @@ export const NotebookCell = observer(
 																						output={
 																							cell.output
 																						}
+																						cellData={{
+																							cellId: cell.id.toString(),
+																							queryId:
+																								queryId.toString(),
+																						}}
 																					/>
 																				);
 																			},

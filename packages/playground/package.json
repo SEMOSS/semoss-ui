@@ -2,28 +2,32 @@
     "name": "@semoss/playground",
     "private": true,
     "scripts": {
-       "dev": "vite --mode development",
+        "dev": "vite --mode development",
         "build": "vite build --mode production",
         "build:dev": "vite build --mode development",
         "type-check": "tsc --pretty --noEmit"
     },
     "dependencies": {
-        "@mui/icons-material": "^5.14.1",
         "@semoss/sdk": "workspace:*",
+        "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",
+        "@tailwindcss/vite": "^4.1.14",
+        "lucide-react": "^0.545.0",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",
         "re-resizable": "^6.11.2",
         "react": "18.3.1",
         "react-dom": "18.3.1",
         "react-hook-form": "^7.34.2",
-        "react-router-dom": "^6.3.0"
+        "react-router-dom": "^6.3.0",
+        "tailwindcss": "^4.1.14"
     },
     "devDependencies": {
         "@types/react": "18.3.1",
         "@types/react-dom": "18.3.0",
         "@vitejs/plugin-react": "^4.6.0",
         "typescript": "~5.5.2",
-        "vite": "^7.0.0"
+        "vite": "^7.0.0",
+        "vite-plugin-svgr": "^4.5.0"
     }
 }

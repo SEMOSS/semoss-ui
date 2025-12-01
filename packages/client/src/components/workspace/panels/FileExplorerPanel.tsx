@@ -4,10 +4,11 @@ import {
 	FileUpload,
 	NoteAddOutlined,
 	PublishedWithChangesOutlined,
+	RefreshOutlined,
 	Search,
 } from "@mui/icons-material";
-import { Actions, DockLocation, type Layout, TabNode } from "flexlayout-react";
 import { useEffect, useState } from "react";
+import { runPixel } from "@semoss/sdk";
 import {
 	IconButton,
 	InputAdornment,
@@ -23,6 +24,8 @@ import {
 	DeleteFileOverlay,
 	FileExplorer,
 } from "@/components/common";
+import { MakeMCPOverlay } from "@/components/common/File/MakeMCPOverlay";
+import { FlexLayout } from "@/components/flex-layout";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { Panel } from "./Panel";
 
@@ -31,7 +34,7 @@ const EXPLORER_TYPE = "app";
 interface FileExplorerPanelProps {
 	title: string;
 	/** Current layoutobject */
-	layout: Layout;
+	layout: FlexLayout.Layout;
 }
 
 const StyledTitle = styled("div")(({ theme }) => ({
@@ -95,6 +98,13 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 
 	// temporary fix for dead refresh button should be removed
 	const [counter, setCounter] = useState(0);
+
+	const [mcpOverlayOpen, setMCPOverlayOpen] = useState(false);
+	const [mcpTools, setMCPTools] = useState<Record<string, unknown>>({
+		tools: [],
+		_meta: {},
+	});
+	const [currentFilePath, setCurrentFilePath] = useState("");
 
 	// set the uploadPath based on the selected item
 	useEffect(() => {
@@ -352,6 +362,139 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 		}
 	};
 
+	const handleMakeMCPClick = async (
+		event: React.MouseEvent<HTMLButtonElement>,
+		path: string,
+	) => {
+		workspace.setLoading(true);
+		try {
+			// Make pixel call to generate MCP tool
+			const { errors, pixelReturn } = await runPixel(
+				`MakePythonMCP(project="${workspace.appId}")`,
+			);
+			workspace.setLoading(false);
+			// Handle pixel call errors
+			if (errors?.length) {
+				notification.add({
+					message: errors[0],
+					color: "error",
+				});
+				return;
+			}
+			if (workspace.model) {
+				const tabset = workspace.model
+					.getActiveTabset()
+					.getChildren()
+					.find((tabset) => tabset.getAttr("name") === "py_mcp.json");
+				if (tabset) {
+					await workspace.model.doAction(
+						FlexLayout.Actions.deleteTab(tabset.getId()),
+					);
+				}
+			}
+			// refresh the content
+			refreshFiles();
+			// Handle pixel call response
+			if (pixelReturn[0].output) {
+				notification.add({
+					message: "Successfully generated MCP tools",
+					color: "success",
+				});
+			}
+			// Validate pixel return
+			if (!pixelReturn?.[0]?.output) {
+				throw new Error("Invalid response from pixel call");
+			}
+		} catch (e) {
+			workspace.setLoading(false);
+			notification.add({
+				message: e.message,
+				color: "error",
+			});
+		}
+	};
+
+	const handleMCPEditClick = async (
+		event: React.MouseEvent<HTMLButtonElement>,
+		path: string,
+	) => {
+		workspace.setLoading(true);
+		try {
+			// Make pixel call to generate MCP tool
+			const { errors, pixelReturn } = await runPixel(
+				`GetAsset(filePath=["${path}"], space=["${workspace.appId}"]);`,
+			);
+			workspace.setLoading(false);
+			// Handle pixel call errors
+			if (errors?.length) {
+				throw new Error(errors[0]);
+			}
+			const output = JSON.parse(pixelReturn[0]?.output as string);
+			setMCPTools(output);
+			setCurrentFilePath(path);
+			setMCPOverlayOpen(true);
+		} catch (e) {
+			workspace.setLoading(false);
+			notification.add({
+				message: e.message,
+				color: "error",
+			});
+		}
+	};
+
+	const handleMCPEditSave = async (finalTools: Record<string, unknown>[]) => {
+		try {
+			workspace.setLoading(true);
+			let pixel = "";
+			const tools = { ...mcpTools, tools: finalTools };
+			if (mcpTools) {
+				pixel = `SaveAsset(fileName=["${currentFilePath}"], content=["<encode>${JSON.stringify(tools, null, 2)}</encode>"], space=["${workspace.appId}"]);CommitAsset(filePath=["${currentFilePath}"], comment=["Save from editor"], space=["${workspace.appId}"])`;
+			}
+
+			if (!pixel) {
+				throw new Error("Error missing pixel to get file");
+			}
+
+			const { errors, pixelReturn } = await runPixel(
+				pixel,
+				workspace.insightId,
+			);
+
+			if (pixelReturn[0].output) {
+				if (workspace.model) {
+					const tabset = workspace.model
+						.getActiveTabset()
+						.getChildren()
+						.find(
+							(tabset) =>
+								tabset.getAttr("name") === "py_mcp.json",
+						);
+					if (tabset) {
+						await workspace.model.doAction(
+							FlexLayout.Actions.deleteTab(tabset.getId()),
+						);
+					}
+				}
+				notification.add({
+					message: "Successfully saved MCP tools",
+					color: "success",
+				});
+			}
+
+			// bubble up the errors
+			for (const e of errors) {
+				throw new Error(e);
+			}
+		} catch (e) {
+			notification.add({
+				color: "error",
+				message: e.message,
+			});
+		} finally {
+			workspace.setLoading(false);
+		}
+	};
+
 	/** Helpers */
 	/**
 	 * Create a new panel and highlight it
@@ -386,7 +529,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 
 			// create and select the panel
 			model.doAction(
-				Actions.addNode(
+				FlexLayout.Actions.addNode(
 					{
 						type: "tab",
 						name: name,
@@ -397,7 +540,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 						enableClose: true,
 					},
 					addId,
-					DockLocation.CENTER,
+					FlexLayout.DockLocation.CENTER,
 					-1,
 					true,
 				),
@@ -430,7 +573,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				return false;
 			}
 
-			let selectedNode: TabNode | null = null;
+			let selectedNode: FlexLayout.TabNode | null = null;
 
 			// get the model
 			const model = workspace.model;
@@ -441,7 +584,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			// visit the notes, and see if it exists
 			model.visitNodes((node) => {
 				// check if it is a tabNode
-				if (node instanceof TabNode) {
+				if (node instanceof FlexLayout.TabNode) {
 					// it needs to be a file-editor
 					const component = node.getComponent();
 					if (component !== "file-editor") {
@@ -464,7 +607,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			}
 
 			const selectedNodeId = selectedNode.getId();
-			model.doAction(Actions.selectTab(selectedNodeId));
+			model.doAction(FlexLayout.Actions.selectTab(selectedNodeId));
 		} catch (e) {
 			notification.add({
 				color: "error",
@@ -486,7 +629,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				return;
 			}
 
-			const nodesToBeRemoved: TabNode[] = [];
+			const nodesToBeRemoved: FlexLayout.TabNode[] = [];
 
 			// get the model
 			const model = workspace.model;
@@ -497,7 +640,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			// visit the notes, and see if it exists
 			model.visitNodes((node) => {
 				// check if it is a tabNode
-				if (node instanceof TabNode) {
+				if (node instanceof FlexLayout.TabNode) {
 					// it needs to be a file-editor
 					const component = node.getComponent();
 					if (component !== "file-editor") {
@@ -517,7 +660,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			// delete the tabs
 			for (const n of nodesToBeRemoved) {
 				const id = n.getId();
-				model.doAction(Actions.deleteTab(id));
+				model.doAction(FlexLayout.Actions.deleteTab(id));
 			}
 		} catch (e) {
 			notification.add({
@@ -528,8 +671,10 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 	};
 
 	return (
-		<Panel
-			actions={<Stack
+		<>
+			<Panel
+				actions={
+					<Stack
 						direction={"column"}
 						spacing={0}
 						className="notebook-variables-menu"
@@ -563,6 +708,18 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 						>
 							<StyledFileSpan>Files</StyledFileSpan>
 							<Stack direction={"row"} spacing={0.5}>
+								<Tooltip title={`Refresh files`}>
+									<IconButton
+										size={"small"}
+										color={"default"}
+										onClick={(e) => {
+											e.stopPropagation();
+											refreshFiles();
+										}}
+									>
+										<RefreshOutlined fontSize="inherit" />
+									</IconButton>
+								</Tooltip>
 								<Tooltip title={`Publish files`}>
 									<IconButton
 										size={"small"}
@@ -632,7 +789,9 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 								</Tooltip>
 							</Stack>
 						</Stack>
-					</Stack>}
+					</Stack>
+				
+			}
 		>
 			<FileExplorer
 				key={counter}
@@ -642,16 +801,33 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				onSelect={(path) => {
 					handleOnSelect(path);
 				}}
-				onTrashClick={(_e, path) => {
+				onTrashClick={(e, path) => {
 					handleOnTrashClick(path);
 				}}
 				onDragStart={(e, path) => {
 					handleOnItemDragStart(e, path);
 				}}
+				onMakeMCPClick={(e, path) => {
+						handleMakeMCPClick(e, path);
+					}}
+					onMCPEditClick={(e, path) => {
+						handleMCPEditClick(e, path);
+					}}
 				expandedPaths={expandedPaths}
 				onToggleExpand={handleToggleExpand}
 				searchText={searchText}
 			/>
 		</Panel>
+		{mcpOverlayOpen && (
+				<MakeMCPOverlay
+					tools={mcpTools.tools as Record<string, unknown>[]}
+					onClose={() => setMCPOverlayOpen(false)}
+					handleToolsUpdate={(tools) =>
+						setMCPTools({ ...mcpTools, tools })
+					}
+					handleMCPEditSave={handleMCPEditSave}
+				/>
+			)}
+		</>
 	);
 };

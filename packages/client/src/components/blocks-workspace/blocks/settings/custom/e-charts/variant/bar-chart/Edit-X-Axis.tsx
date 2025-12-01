@@ -75,7 +75,7 @@ const INITIAL_XAXIS_STATE = {
 	showAxis: true,
 	showAxisTitle: true,
 	xaxistitle: "",
-	xaxisTitleFontSize: 18,
+	xaxisTitleFontSize: 12,
 	showXAxisLineTicks: false,
 	showXAxisLabels: true,
 	labelFontSize: 12,
@@ -83,6 +83,7 @@ const INITIAL_XAXIS_STATE = {
 	rotateLabelMinValue: 0,
 	rotateLabelMaxValue: 360,
 	showxAxisZoom: false,
+	axisGap: 25, // gap between axis and axis title
 };
 //Changing the X axis styling like title, rotate and changing the labels
 export const EditXAxis = observer(
@@ -112,7 +113,15 @@ export const EditXAxis = observer(
 		}, [data, path]).get();
 		//when the computed value is changed, local state is updated
 		useEffect(() => {
-			setValue(computedValue);
+			try {
+				setValue(
+					typeof computedValue === "string"
+						? JSON.parse(computedValue)
+						: computedValue,
+				);
+			} catch {
+				setValue({});
+			}
 		}, [computedValue]);
 		//updating the initial local state, based on the existing state store
 		useEffect(() => {
@@ -121,7 +130,7 @@ export const EditXAxis = observer(
 				showAxis: true,
 				showAxisTitle: true,
 				xaxistitle: "",
-				xaxisTitleFontSize: 18,
+				xaxisTitleFontSize: 12,
 				showXAxisLineTicks: false,
 				showXAxisLabels: true,
 				labelFontSize: 12,
@@ -129,6 +138,7 @@ export const EditXAxis = observer(
 				rotateLabelMinValue: 0,
 				rotateLabelMaxValue: 360,
 				showxAxisZoom: false,
+				axisGap: 25, // gap between axis and axis title
 			};
 			if (Object.hasOwn(option, axis) && option[axis]) {
 				xAxisStateData.xaxistitle = Object.hasOwn(option[axis], "name")
@@ -174,7 +184,7 @@ export const EditXAxis = observer(
 		//when y axis fields are updated, then respective state is updated to trigger the update to store
 		function handleInputChange(e, title, directVal = undefined) {
 			if (xAxisDataUpdated === "initial") setXAxisDataUpdated("updated");
-			if (directVal != undefined) {
+			if (directVal !== undefined) {
 				setXaxisState((prevXaxisState) => {
 					return {
 						...prevXaxisState,
@@ -202,6 +212,7 @@ export const EditXAxis = observer(
 				rotate: xaxisState.rotate,
 				showXAxisLineTicks: xaxisState.showXAxisLineTicks,
 				showxAxisZoom: xaxisState.showxAxisZoom,
+				axisGap: xaxisState.axisGap,
 			};
 			let option = typeof value === "string" ? JSON.parse(value) : value;
 			//update the chart data based on the changes in the x axis fields
@@ -289,6 +300,12 @@ export const EditXAxis = observer(
 								show: axisData.showxAxisZoom,
 							});
 						}
+					}
+					if (Object.hasOwn(axisData, "axisGap")) {
+						option["xAxis"] = {
+							...option["xAxis"],
+							["nameGap"]: Number(axisData.axisGap) || undefined,
+						};
 					} else {
 						option = {
 							...option,
@@ -368,7 +385,6 @@ export const EditXAxis = observer(
 						</Typography>
 						<StyledTextField
 							size="small"
-							id="xaxis-title"
 							value={xaxisState.xaxistitle}
 							onChange={(e) => handleInputChange(e, "xaxistitle")}
 						/>
@@ -384,12 +400,27 @@ export const EditXAxis = observer(
 						</Typography>
 						<TextField
 							size="small"
-							id="xaxis-edit-title-font-size"
 							type="number"
 							value={xaxisState.xaxisTitleFontSize}
 							onChange={(e) =>
 								handleInputChange(e, "xaxisTitleFontSize")
 							}
+						/>
+					</StyledAxisColDiv>
+				)}
+				{xaxisState.showAxisTitle && (
+					<StyledAxisColDiv
+						display="flex"
+						justifyContent="space-around"
+					>
+						<Typography variant="body2" color="secondary">
+							Axis Gap
+						</Typography>
+						<TextField
+							size="small"
+							type="number"
+							value={xaxisState.axisGap}
+							onChange={(e) => handleInputChange(e, "axisGap")}
 						/>
 					</StyledAxisColDiv>
 				)}
@@ -420,7 +451,6 @@ export const EditXAxis = observer(
 						</Typography>
 						<StyledTextField
 							size="small"
-							id="set-font-size"
 							value={xaxisState.labelFontSize}
 							type="number"
 							onChange={(e) =>

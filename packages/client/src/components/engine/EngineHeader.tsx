@@ -8,6 +8,7 @@ import {
 	Chip,
 	CircularProgress,
 	IconButton,
+	Modal,
 	Stack,
 	styled,
 	Tooltip,
@@ -15,6 +16,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useEngine, useRootStore } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 import { EditEngineDetails, EngineAccessButton } from ".";
 
 const StyledName = styled(Stack)(({ theme }) => ({
@@ -67,6 +69,7 @@ export const EngineHeader: React.FC = () => {
 
 	// notification
 	const notification = useNotification();
+	const [openExportModal, setOpenExportModal] = useState(false);
 
 	// export loading state
 	const [exportLoading, setExportLoading] = useState(false);
@@ -75,9 +78,11 @@ export const EngineHeader: React.FC = () => {
 	 * @name exportDB
 	 * @desc export DB pixel
 	 */
-	const exportDB = () => {
+	const exportDB = (includeData: boolean) => {
 		setExportLoading(true);
-		const pixel = `META | ExportEngine(engine=["${active.id}"] );`;
+		const pixel = `META | ExportEngine(engine=["${
+			active.id
+		}"], includeData="${includeData ? "true" : "false"}" );`;
 
 		monolithStore.runQuery(pixel).then((response) => {
 			const output = response.pixelReturn[0].output,
@@ -135,7 +140,9 @@ export const EngineHeader: React.FC = () => {
 				</Breadcrumbs>
 				<StyledName direction="column" spacing={0}>
 					<Stack direction="row" alignItems={"center"}>
-						<Typography variant="h4">{active.name}</Typography>
+						<Typography variant="h4" data-testid="Title">
+							{active.name}
+						</Typography>
 						<Stack flex={1}> &nbsp;</Stack>
 						<Stack direction="row" spacing={2}>
 							<EngineAccessButton />
@@ -149,8 +156,19 @@ export const EngineHeader: React.FC = () => {
 											<SimCardDownload />
 										)
 									}
+									data-testid={formatToDataTestId(
+										`engineHeader-${name}-export-btn`,
+									)}
 									variant="outlined"
-									onClick={() => exportDB()}
+									onClick={() => {
+										const engineType =
+											active.metadata.database_subtype;
+										if (engineType === "H2_DB") {
+											setOpenExportModal(true);
+										} else {
+											exportDB(false);
+										}
+									}}
 								>
 									Export
 								</Button>
@@ -158,16 +176,68 @@ export const EngineHeader: React.FC = () => {
 							<EditEngineDetails />
 						</Stack>
 					</Stack>
+					<Modal
+						open={openExportModal}
+						maxWidth="sm"
+						fullWidth
+						onClose={() => setOpenExportModal(false)}
+						aria-labelledby="export-modal-title"
+						aria-describedby="export-modal-description"
+					>
+						<Modal.Title>
+							<Typography id={"export-modal-title"} variant="h6">
+								Export Engine
+							</Typography>
+						</Modal.Title>
+						<Modal.Content>
+							<Typography
+								id={"export-modal-description"}
+								variant="body1"
+								sx={{ mb: 2 }}
+							>
+								Do you want to export data along with the
+								database?
+							</Typography>
+						</Modal.Content>
+						<Modal.Actions>
+							<Button
+								variant="contained"
+								color="primary"
+								onClick={() => {
+									setOpenExportModal(false);
+									exportDB(true);
+								}}
+							>
+								Yes
+							</Button>
+							<Button
+								variant="outlined"
+								color="secondary"
+								onClick={() => {
+									setOpenExportModal(false);
+									exportDB(false);
+								}}
+							>
+								No
+							</Button>
+						</Modal.Actions>
+					</Modal>
 					<Stack
 						flex={1}
 						direction="row"
 						alignItems={"center"}
 						spacing={0.5}
 					>
-						<Typography variant="body2">{active.id}</Typography>
+						<Typography
+							variant="body2"
+							data-testid={`engineHeader-${name}-id`}
+						>
+							{active.id}
+						</Typography>
 						<IconButton
 							aria-label={`copy ${name} ID`}
 							size="small"
+							data-testid={`engineHeader-copy-${name}-id-btn`}
 							onClick={(e) => {
 								// prevent the default action
 								e.preventDefault();
@@ -199,54 +269,58 @@ export const EngineHeader: React.FC = () => {
 			</Stack>
 			<StyledInfo>
 				<StyledInfoLeft>
-					<StyledInfoDescription variant={"subtitle1"}>
+					<StyledInfoDescription
+						variant={"subtitle1"}
+						data-testid="Description"
+					>
 						{(active.metadata.description as unknown as string) ||
 							""}
 					</StyledInfoDescription>
 
-					<Stack direction="row" spacing={1}>
+					<Stack direction="row" spacing={1} flexWrap={"wrap"}>
 						{active.metadata.tag &&
 							(active.metadata.tag as string[]).map((tag, i) => {
-								if (i < 2)
-									return (
-										<Chip
-											key={i}
-											label={tag}
-											color="default"
-											size="small"
-											variant="outlined"
-										/>
-									);
+								if (tag === "") return null;
+								return (
+									<Chip
+										key={tag}
+										label={tag}
+										color="default"
+										size="small"
+										variant="outlined"
+										data-testid="tag-chip"
+									/>
+								);
 							})}
 					</Stack>
 				</StyledInfoLeft>
 				<StyledInfoRight>
 					<Stack alignItems={"flex-end"} spacing={1}>
-						{active.metadata?.DATEADDED &&
-						active.metadata?.PERMISSIONGRANTEDBY ? (
-							<>
-								<Typography
-									variant={"caption"}
-									color="disabled"
-								>
-									{`Updated by ${active.metadata.PERMISSIONGRANTEDBY}`}
-								</Typography>
-								<Typography
-									variant={"caption"}
-									color="disabled"
-								>
-									{`at ${active.metadata.DATEADDED}`}
-								</Typography>
-							</>
+						{active?.PERMISSIONGRANTEDBY ? (
+							<Typography
+								variant={"caption"}
+								color="disabled"
+								data-testid="PublishedBy"
+							>
+								{`Published by ${active.PERMISSIONGRANTEDBY}`}
+							</Typography>
 						) : (
-							<>
-								<Typography
-									variant={"caption"}
-									color="disabled"
-								>
-									No updates since creation
-								</Typography>
-							</>
+							<Typography
+								variant={"caption"}
+								color="disabled"
+								data-testid="CreatedBy"
+							>
+								{`Created by ${active.database_created_by}`}
+							</Typography>
+						)}
+						{active?.DATEADDED && (
+							<Typography
+								variant={"caption"}
+								color="disabled"
+								data-testid="DateAdded"
+							>
+								{`on ${active.DATEADDED}`}
+							</Typography>
 						)}
 					</Stack>
 				</StyledInfoRight>

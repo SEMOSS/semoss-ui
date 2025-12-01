@@ -6,7 +6,6 @@ import {
 	SimCardDownload,
 } from "@mui/icons-material";
 import UpdateIcon from "@mui/icons-material/Update";
-import { IconButton, Tooltip } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
@@ -18,13 +17,16 @@ import {
 	Chip,
 	CircularProgress,
 	Grid,
+	IconButton,
 	Modal,
 	Stack,
 	styled,
 	ToggleTabsGroup,
+	Tooltip,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { getUserProjectPermission, uploadImage } from "@/api";
 import {
 	type AppDetailsFormTypes,
 	AppDetailsFormValues,
@@ -39,6 +41,7 @@ import {
 	fetchMainUses,
 	type modelledDependency,
 } from "@/components/app";
+import { UpdateSMSS } from "@/components/settings";
 import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
@@ -245,8 +248,6 @@ export const AppDetailPage = () => {
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
 
-	console.log(appInfo, "appInfo");
-
 	useEffect(() => {
 		setValue("appId", appId);
 		fetchUserSpecificData();
@@ -284,8 +285,7 @@ export const AppDetailPage = () => {
 	}, [appId]);
 
 	async function getPermission() {
-		const { permission: role } =
-			await monolithStore.getUserProjectPermission(appId);
+		const { permission: role } = await getUserProjectPermission(appId);
 
 		setValue("userRole", role);
 		const permission = determineUserPermission(role);
@@ -544,7 +544,11 @@ export const AppDetailPage = () => {
 					const filesToUpload = Array.isArray(imageMeta)
 						? imageMeta
 						: [imageMeta];
-					await monolithStore.uploadImage(filesToUpload, appId);
+					await uploadImage(
+						filesToUpload,
+						appId,
+						configStore.store.insightID,
+					);
 				}
 
 				// close it, refresh and succesfully message
@@ -570,7 +574,13 @@ export const AppDetailPage = () => {
 	const [selectedTab, setSelectedTab] = useState("Overview");
 
 	const TABS_BY_PERMISSION: Record<string, string[]> = {
-		author: ["Overview", "Access Control", "Dependencies", "Settings"],
+		author: [
+			"Overview",
+			"Access Control",
+			"Dependencies",
+			"Settings",
+			"SMSS",
+		],
 		editor: ["Overview", "Access Control"],
 		readOnly: ["Overview"],
 		discoverable: ["Overview"],
@@ -587,7 +597,7 @@ export const AppDetailPage = () => {
 				<InnerContainer>
 					<Breadcrumbs separator="/">
 						<Breadcrumbs.Item
-							href={`../../..`}
+							href="#/app"
 							underline="none"
 							color="inherit"
 							variant="body1"
@@ -632,9 +642,7 @@ export const AppDetailPage = () => {
 											}
 											variant="outlined"
 											onClick={() => exportApp()}
-											data-testid={
-												"app-detail-export-btn"
-											}
+											data-testid={"appDetail-export-btn"}
 										>
 											Export
 										</Button>
@@ -662,9 +670,7 @@ export const AppDetailPage = () => {
 											onClick={() =>
 												setIsChangeAccessModalOpen(true)
 											}
-											data-testid={
-												"app-detail-access-btn"
-											}
+											data-testid={"appDetail-access-btn"}
 										>
 											{responseStatus || pendingRequest
 												? "Pending Access"
@@ -685,7 +691,7 @@ export const AppDetailPage = () => {
 														true,
 													);
 												}}
-												data-testid="app-detail-open-btn"
+												data-testid="appDetail-edit-btn"
 											>
 												Edit
 											</Button>
@@ -774,6 +780,13 @@ export const AppDetailPage = () => {
 											value="Settings"
 										/>
 									)}
+									{visibleTabs.includes("SMSS") && (
+										<StyledToggleTabsGroupItem
+											label="SMSS"
+											value="SMSS"
+										/>
+									)}
+									Hi
 								</StyledToggleTabsGroup>
 							</StyledContentContainer>
 							<StyledTabsSection>
@@ -816,7 +829,7 @@ export const AppDetailPage = () => {
 																true,
 															)
 														}
-														data-testid="app-detail-edit-btn"
+														data-testid="appDetail-edit-btn"
 													>
 														<Edit />
 													</IconButton>
@@ -835,6 +848,15 @@ export const AppDetailPage = () => {
 										}}
 									>
 										<SettingsTab id={appId} />
+									</SettingsContext.Provider>
+								)}
+								{selectedTab === "SMSS" && (
+									<SettingsContext.Provider
+										value={{
+											adminMode: false,
+										}}
+									>
+										<UpdateSMSS type={"APP"} id={appId} />
 									</SettingsContext.Provider>
 								)}
 							</StyledTabsSection>
