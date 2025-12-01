@@ -193,7 +193,7 @@ export const QueryInputSettings = observer(
     const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
     // get the value of the input (wrapped in usememo because of path prop)
-    const computedValue = useMemo(() => {
+    const computedValue = useMemo(() => {  
       return computed(() => {
         if (!data) {
           return "";
@@ -206,13 +206,25 @@ export const QueryInputSettings = observer(
             ?.split(" ")
             .map((val) => val.replace(/{{|}}/g, "").trim());
           const match = Object.values(state.variables);
-          const matchedVariable = match.find(
+          const newSanitizedValue = sanitizedValues.filter((val) => val !== "");
+          let matchedVariable : any
+          if(newSanitizedValue.length >1){
+            matchedVariable =  v
+          }
+          else{
+            matchedVariable = match.find(
             (variable) =>
-              variable?.type === "block" && variable?.to === sanitizedValues[0]
+              variable?.type === "block" && (variable.rename ? variable?.rename === newSanitizedValue[0] : variable?.to === newSanitizedValue[0])
           );
+          }
           const blockData = state.getBlock(
             sanitizedValues[1] ? sanitizedValues[1] : sanitizedValues[0]
           );
+          let newBlock : any
+          if(!blockData){
+            const match = Object.values(state.blocks);
+            newBlock = match.find((block)=> block?.data?.id === sanitizedValues[0]);
+          }
           const trimmedValue = v.toString()?.trim();
           if (
             !(
@@ -222,13 +234,21 @@ export const QueryInputSettings = observer(
           ) {
             value = v.toString();
           } else if (matchedVariable) {
-            let matched =
-              matchedVariable?.type === "block" && matchedVariable?.rename
+            let matched : any
+            if(newSanitizedValue.length >1){
+              matched = v
+              value = v.toString();
+            }
+            else{
+            matched =  matchedVariable?.type === "block" && matchedVariable?.rename
                 ? matchedVariable?.rename
                 : matchedVariable?.to;
-            value = " {{" + matched + "}} ".toString();
+            value = " {{" + matched + "}} ".toString();}
           } else if (blockData && blockData.data && blockData.data.id) {
             value = " {{" + blockData.data.id + "}} ".toString();
+          }
+          else if( newBlock && newBlock?.data && newBlock?.data.id){
+            value = " {{" + newBlock?.data.id + "}} ".toString();
           }
         }
         if (typeof v === "undefined") {
@@ -263,6 +283,7 @@ export const QueryInputSettings = observer(
       let updatedValue = value;
       let filteredValue = sanitizedValues.filter((val) => val !== "");
       const match = Object.values(state.variables);
+      const trimmedValue = value.toString()?.trim();
         const matchBlock = Object.values(state.blocks);
         const matchedVariable = match.find(
           (variable) =>
@@ -276,7 +297,7 @@ export const QueryInputSettings = observer(
       } 
       else if (fromType === true || fromSuggestion === true) {
 
-        if (fromType && !(value.startsWith("{{") && value.endsWith("}}"))) {
+        if (fromType && !(trimmedValue.startsWith("{{") && trimmedValue.endsWith("}}"))) {
           updatedValue = value;
         } 
         else if (state.variables.hasOwnProperty(matchedVariable?.to)) {
