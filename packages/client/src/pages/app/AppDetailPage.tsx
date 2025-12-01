@@ -26,6 +26,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { getUserProjectPermission, uploadImage } from "@/api";
 import {
 	type AppDetailsFormTypes,
 	AppDetailsFormValues,
@@ -40,6 +41,7 @@ import {
 	fetchMainUses,
 	type modelledDependency,
 } from "@/components/app";
+import { UpdateSMSS } from "@/components/settings";
 import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
@@ -246,8 +248,6 @@ export const AppDetailPage = () => {
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
 
-	console.log(appInfo, "appInfo");
-
 	useEffect(() => {
 		setValue("appId", appId);
 		fetchUserSpecificData();
@@ -285,8 +285,7 @@ export const AppDetailPage = () => {
 	}, [appId]);
 
 	async function getPermission() {
-		const { permission: role } =
-			await monolithStore.getUserProjectPermission(appId);
+		const { permission: role } = await getUserProjectPermission(appId);
 
 		setValue("userRole", role);
 		const permission = determineUserPermission(role);
@@ -545,7 +544,11 @@ export const AppDetailPage = () => {
 					const filesToUpload = Array.isArray(imageMeta)
 						? imageMeta
 						: [imageMeta];
-					await monolithStore.uploadImage(filesToUpload, appId);
+					await uploadImage(
+						filesToUpload,
+						appId,
+						configStore.store.insightID,
+					);
 				}
 
 				// close it, refresh and succesfully message
@@ -571,7 +574,13 @@ export const AppDetailPage = () => {
 	const [selectedTab, setSelectedTab] = useState("Overview");
 
 	const TABS_BY_PERMISSION: Record<string, string[]> = {
-		author: ["Overview", "Access Control", "Dependencies", "Settings"],
+		author: [
+			"Overview",
+			"Access Control",
+			"Dependencies",
+			"Settings",
+			"SMSS",
+		],
 		editor: ["Overview", "Access Control"],
 		readOnly: ["Overview"],
 		discoverable: ["Overview"],
@@ -771,6 +780,13 @@ export const AppDetailPage = () => {
 											value="Settings"
 										/>
 									)}
+									{visibleTabs.includes("SMSS") && (
+										<StyledToggleTabsGroupItem
+											label="SMSS"
+											value="SMSS"
+										/>
+									)}
+									Hi
 								</StyledToggleTabsGroup>
 							</StyledContentContainer>
 							<StyledTabsSection>
@@ -832,6 +848,15 @@ export const AppDetailPage = () => {
 										}}
 									>
 										<SettingsTab id={appId} />
+									</SettingsContext.Provider>
+								)}
+								{selectedTab === "SMSS" && (
+									<SettingsContext.Provider
+										value={{
+											adminMode: false,
+										}}
+									>
+										<UpdateSMSS type={"APP"} id={appId} />
 									</SettingsContext.Provider>
 								)}
 							</StyledTabsSection>

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noExplicitAny: TODO
 import {
 	closestCenter,
 	DndContext,
@@ -33,7 +34,6 @@ import {
 	INPUT_BLOCK_TYPES,
 	useBlocks,
 } from "@semoss/renderer";
-import { FlexLayout } from "@semoss/shared";
 import {
 	Divider,
 	Grid,
@@ -48,6 +48,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useDesigner, useWorkspace } from "@/hooks";
@@ -298,7 +299,7 @@ export const LayersPanel = observer(
 	(props: AddBlocksLayersProps): JSX.Element => {
 		const { title } = props;
 		// get the store
-		const { registry, state } = useBlocks();
+		const { state } = useBlocks();
 		const { designer } = useDesigner();
 		const notification = useNotification();
 		const { workspace } = useWorkspace();
@@ -563,6 +564,7 @@ export const LayersPanel = observer(
 			};
 
 			return (
+				// biome-ignore lint/a11y/noStaticElementInteractions: TODO
 				<div
 					ref={setNodeRef}
 					data-id={node.id}

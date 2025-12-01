@@ -4,8 +4,8 @@ import {
 	DvrOutlined,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { FlexLayout } from "@semoss/shared";
 import { List, styled } from "@semoss/ui";
+import { FlexLayout } from "@/components/flex-layout";
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
 
@@ -129,7 +129,7 @@ export const SettingsNavPanel = observer(() => {
 							aria-label={item.label}
 							dense={true}
 						>
-							<List.Icon>{item.icon}</List.Icon>
+							<List.ItemIcon>{item.icon}</List.ItemIcon>
 							<List.ItemText primary={item.label} />
 						</StyledListItemBtn>
 					);
