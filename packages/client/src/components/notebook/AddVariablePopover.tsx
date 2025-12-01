@@ -449,7 +449,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 				<Select
 					disabled={!variableType}
 					size="small"
-					placeholder="Add Value"
+					label="Add Value"
 					value={
 						(variableType === "cell" ||
 							variableType === "query" ||
@@ -458,15 +458,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 							? variablePointer
 							: engine) ?? ""
 					}
-					SelectProps={{
-						displayEmpty: true,
-						renderValue: (value) => {
-							if (!value || value === "") {
-								return <StyledSpan>Add Value</StyledSpan>;
-							}
-							return capitalizeFirstLetter(value as string);
-						},
-					}}
 					onChange={(e) => {
 						const val = e.target.value as unknown;
 						if (
@@ -820,7 +811,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 							</StyledTypographyVariable>
 							<Select
 								value={variableType}
-								placeholder="Select Type"
+								label="Select Type"
 								onChange={(e) => {
 									const val = e.target.value as VariableType;
 									setEngine(null);
@@ -829,15 +820,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 									setVariableType(val);
 								}}
 								size="small"
-								SelectProps={{
-									displayEmpty: true,
-									renderValue: (value) => {
-										if (!value || value === "") {
-											return <StyledSpan>Select Type</StyledSpan>;
-										}
-										return capitalizeFirstLetter(value as string);
-									},
-								}}
 							>
 								{VARIABLE_TYPES.map((val) => {
 									return (
