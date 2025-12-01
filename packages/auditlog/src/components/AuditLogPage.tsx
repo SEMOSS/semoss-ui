@@ -39,8 +39,9 @@ export const AuditLogPage = ({ catalogName }) => {
 			const ss = String(date.getSeconds()).padStart(2, "0");
 
 			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-			const catalogId =
-				window.location.hash.split("/")[catalogName === "Apps" ? 2 : 3];
+			const catalogId = "4801422a-5c62-421e-a00c-05c6a9e15de8";
+			// window.location.hash.split("/")[catalogName === "Apps" ? 2 : 3];
+			catalogName = "Models";
 			const response = await runPixel(
 				`AuditLogReport(paramValues=[{"userId": "${rootStore?.user?.id}", "${catalogName === "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}"}]);`,
 				insightId,
@@ -105,7 +106,7 @@ export const AuditLogPage = ({ catalogName }) => {
 	}, [catalogName, rowsPerPage, page, rootStore?.user?.id]);
 
 	return (
-		<div className="flex flex-col gap-4">
+		<div className="flex flex-col gap-4 px-8 py-8">
 			<div className="flex w-full items-center py-4">
 				<h6 className="font-medium text-xl leading-[1.6] tracking-normal">
 					{catalogName} Insight Dashboard

@@ -2,7 +2,7 @@ import * as echarts from "echarts";
 import { ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { ButtonGroup, IconButton, styled } from "@semoss/ui";
+import { Button } from "@semoss/ui/next";
 import type { EventData } from "./common";
 import { TimeDateFormatter } from "./common";
 
@@ -80,7 +80,7 @@ interface RenderItemResult {
 	};
 }
 
-const ZoomButtonGroup = styled(ButtonGroup)({
+/*const ZoomButtonGroup = styled(ButtonGroup)({
 	backgroundColor: "#fff",
 	boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
 
@@ -109,7 +109,7 @@ const ZoomIconButton = styled(IconButton)<{ position: "left" | "right" }>(
 		padding: "4px",
 		borderRadius: position === "left" ? "4px 0 0 4px" : "0 4px 4px 0",
 	}),
-);
+);*/
 
 interface AuditLogsTimelineProps {
 	logs: EventData[];
@@ -688,10 +688,13 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				<span className="font-semibold text-[#333] text-[18px]">
 					Event History
 				</span>
-
-				<ZoomButtonGroup variant="outlined" size="small">
-					<ZoomIconButton
-						position="left"
+				{/** changing from div role="group", to fieldset */}
+				<fieldset
+					className="inline-flex rounded-md bg-white shadow-sm"
+					style={{ boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)" }}
+				>
+					<Button
+						className="rounded-[4px_0_0_4px] px-[4px] py-[4px]"
 						onClick={handleZoomIn}
 						disabled={zoomState.end - zoomState.start <= 15}
 					>
@@ -699,9 +702,9 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 							fontSize="small"
 							style={{ color: "#666" }}
 						/>
-					</ZoomIconButton>
-					<ZoomIconButton
-						position="right"
+					</Button>
+					<Button
+						className="rounded-[0_4px_4px_0] px-[4px] py-[4px]"
 						onClick={handleZoomOut}
 						disabled={
 							zoomState.start === 0 && zoomState.end === 100
@@ -711,8 +714,8 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 							fontSize="small"
 							style={{ color: "#666" }}
 						/>
-					</ZoomIconButton>
-				</ZoomButtonGroup>
+					</Button>
+				</fieldset>
 			</div>
 
 			<div

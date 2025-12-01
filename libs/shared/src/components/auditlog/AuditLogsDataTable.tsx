@@ -5,19 +5,29 @@ import {
 	Search,
 	X,
 } from "lucide-react"; // Example icons
-import { type ChangeEvent, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
 	Badge,
 	Button,
-	Input,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Sheet,
+	SheetClose,
+	SheetContent,
 	Table,
 	TableBody,
 	TableCell,
 	TableHead,
+	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
 import { AuditLogsDetailDrawer } from "./AuditLogsDetailDrawer";
@@ -78,7 +88,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	const [popoverOpen, setPopoverOpen] = useState(false);
 
 	// Generate Filter Options (same logic as before)
-	/*const filterOptions = useMemo(() => {
+	const filterOptions = useMemo(() => {
 		return {
 			engineType: [
 				...new Set(logs.map((log) => log.engineType).filter(Boolean)),
@@ -100,7 +110,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				{ label: "Long (> 500)", value: "500-999999" },
 			],
 		};
-	}, [logs]);*/
+	}, [logs]);
 
 	// Filter Logs (same logic as before)
 	const filteredLogs = useMemo(() => {
@@ -214,8 +224,8 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	);*/
 
 	const handleChangeRowsPerPage = useCallback(
-		(event: React.ChangeEvent<HTMLSelectElement>) => {
-			const newRowsPerPage = parseInt(event.target.value, 10);
+		(value: string) => {
+			const newRowsPerPage = parseInt(value, 10);
 			onPaginationChange(0, newRowsPerPage);
 		},
 		[onPaginationChange],
@@ -273,53 +283,61 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							</Button>
 						)}
 						<div className="relative">
-							<Input
-								placeholder="Search logs..."
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-								className="w-96 pl-10"
-							/>
-							<Search className="absolute top-2.5 left-3 h-5 w-5 text-gray-400" />
-							{searchQuery && (
-								<Button
-									variant="ghost"
-									size="icon"
-									className="absolute top-2 right-2"
-									onClick={() => setSearchQuery("")}
-								>
-									<X className="h-4 w-4" />
-								</Button>
-							)}
+							<InputGroup>
+								<InputGroupInput
+									placeholder="Search logs..."
+									value={searchQuery}
+									onChange={(e) =>
+										setSearchQuery(e.target.value)
+									}
+									className="w-96 pl-10"
+								/>
+								<InputGroupAddon>
+									<Search />
+								</InputGroupAddon>
+								<InputGroupAddon align="inline-end">
+									{searchQuery && (
+										<Button
+											variant="ghost"
+											size="icon"
+											className="absolute top-2 right-2"
+											onClick={() => setSearchQuery("")}
+										>
+											<X className="h-4 w-4" />
+										</Button>
+									)}
+								</InputGroupAddon>
+							</InputGroup>
 						</div>
 					</div>
 				</div>
 				<div className="p-4">
 					<Table>
-						<TableHead>
-							<TableRow>
+						<TableHeader>
+							<TableRow style={{ backgroundColor: "#F5F9FE" }}>
 								<TableHead>
-									<span className="font-medium text-sm leading-6 tracking-normal">
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 										User Id
 									</span>
 								</TableHead>
 								<TableHead>
-									<span className="font-medium text-sm leading-6 tracking-normal">
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 										Session Id
 									</span>
 								</TableHead>
 								<TableHead>
-									<span className="font-medium text-sm leading-6 tracking-normal">
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 										Request
 									</span>
 								</TableHead>
 								<TableHead>
-									<span className="font-medium text-sm leading-6 tracking-normal">
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 										Response
 									</span>
 								</TableHead>
 								<TableHead>
 									<div className="flex items-center gap-1">
-										<span className="font-medium text-sm leading-6 tracking-normal">
+										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Engine Type
 										</span>
 										<Popover
@@ -350,13 +368,24 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<PopoverContent className="w-64">
 												{/* Render filter options for engineType */}
 												{/* ...custom filter UI... */}
+												<div>
+													{filterOptions?.engineType?.map(
+														(filtered) => (
+															<span
+																key={`${filtered}`}
+															>
+																{filtered}
+															</span>
+														),
+													)}
+												</div>
 											</PopoverContent>
 										</Popover>
 									</div>
 								</TableHead>
 								<TableHead>
 									<div className="flex items-center gap-1">
-										<span className="font-medium text-sm leading-6 tracking-normal">
+										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Engine Name
 										</span>
 										<Popover
@@ -392,7 +421,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 								</TableHead>
 								<TableHead>
 									<div className="flex items-center gap-1">
-										<span className="font-medium text-sm leading-6 tracking-normal">
+										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Latency
 										</span>
 										<Popover
@@ -428,7 +457,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 								</TableHead>
 								<TableHead>
 									<div className="flex items-center gap-1">
-										<span className="font-medium text-sm leading-6 tracking-normal">
+										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Tokens
 										</span>
 										<Popover
@@ -463,13 +492,13 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 									</div>
 								</TableHead>
 								<TableHead>
-									<span className="font-medium text-sm leading-6 tracking-normal">
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 										Timestamp
 									</span>
 								</TableHead>
 								<TableHead>
 									<div className="flex items-center gap-1">
-										<span className="font-medium text-sm leading-6 tracking-normal">
+										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Status
 										</span>
 										<Popover
@@ -504,7 +533,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 									</div>
 								</TableHead>
 							</TableRow>
-						</TableHead>
+						</TableHeader>
 						<TableBody>
 							{filteredLogs.map((event, index) => (
 								<TableRow
@@ -569,9 +598,15 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 									</TableCell>
 									<TableCell className="text-center">
 										{event.status ? (
-											<CircleCheckIcon className="inline-block h-4 w-4 text-green-600" />
+											<CircleCheckIcon
+												className="inline-block h-4 w-4"
+												color="#2e7d32"
+											/>
 										) : (
-											<Cancel className="inline-block h-4 w-4 text-red-600" />
+											<Cancel
+												className="inline-block h-4 w-4"
+												color="#da291c"
+											/>
 										)}
 									</TableCell>
 								</TableRow>
@@ -582,8 +617,41 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				{/* Pagination: You may need to implement your own or use shadcn/ui's Table.Pagination if available */}
 				<div className="flex items-center justify-end border-t bg-white p-2">
 					{/* Simple pagination example */}
+					<label
+						htmlFor="rows-per-page"
+						className="font-medium text-gray-700 text-sm"
+					>
+						Rows per page:
+					</label>
+					<Select
+						// className="ml-4 rounded border px-2 py-1 text-sm"
+						value={rowsPerPage.toString()}
+						onValueChange={(value: string) => {
+							handleChangeRowsPerPage(value);
+							return;
+						}}
+					>
+						<SelectTrigger
+							id={"rows-per-page"}
+							className="w-[80px]"
+						>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{["5", "10", "25", "50"].map((opt) => (
+								<SelectItem key={opt} value={opt}>
+									{opt}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					<span className="mx-2 text-sm">
+						{page + 1} - {Math.ceil(totalCount / rowsPerPage)} of{" "}
+						{Math.ceil(totalCount / rowsPerPage)}
+					</span>
 					<Button
-						variant="ghost"
+						variant="outline"
+						className="border-b"
 						disabled={page === 0}
 						onClick={() =>
 							onPaginationChange(page - 1, rowsPerPage)
@@ -591,11 +659,9 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					>
 						Prev
 					</Button>
-					<span className="mx-2 text-sm">
-						Page {page + 1} of {Math.ceil(totalCount / rowsPerPage)}
-					</span>
 					<Button
-						variant="ghost"
+						variant="outline"
+						className="border-b"
 						disabled={
 							page + 1 >= Math.ceil(totalCount / rowsPerPage)
 						}
@@ -605,19 +671,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					>
 						Next
 					</Button>
-					<select
-						className="ml-4 rounded border px-2 py-1 text-sm"
-						value={rowsPerPage}
-						onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-							handleChangeRowsPerPage(e)
-						}
-					>
-						{[5, 10, 25, 50].map((opt) => (
-							<option key={opt} value={opt}>
-								{opt}
-							</option>
-						))}
-					</select>
 				</div>
 			</div>
 
@@ -638,11 +691,20 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 
 			{/* Filter Popover content should be implemented inside PopoverContent above */}
 
-			<Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+			{/* <SheetContent open={drawerOpen} onOpenChange={setDrawerOpen}>
 				<AuditLogsDetailDrawer
 					logDetails={selectedEvent}
 					handleDrawerClose={handleDrawerClose}
 				/>
+			</SheetContent> */}
+			<Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+				<SheetContent side="right">
+					<AuditLogsDetailDrawer
+						logDetails={selectedEvent}
+						handleDrawerClose={handleDrawerClose}
+					/>
+				</SheetContent>
+				<SheetClose />
 			</Sheet>
 		</>
 	);
