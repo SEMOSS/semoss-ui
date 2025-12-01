@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noExplicitAny: TODO
 import {
 	closestCenter,
 	DndContext,
@@ -298,7 +299,7 @@ export const LayersPanel = observer(
 	(props: AddBlocksLayersProps): JSX.Element => {
 		const { title } = props;
 		// get the store
-		const { registry, state } = useBlocks();
+		const { state } = useBlocks();
 		const { designer } = useDesigner();
 		const notification = useNotification();
 		const { workspace } = useWorkspace();
@@ -563,6 +564,7 @@ export const LayersPanel = observer(
 			};
 
 			return (
+				// biome-ignore lint/a11y/noStaticElementInteractions: TODO
 				<div
 					ref={setNodeRef}
 					data-id={node.id}
