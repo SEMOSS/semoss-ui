@@ -12,7 +12,6 @@ import {
 	Checkbox,
 	Chip,
 	IconButton,
-	Link,
 	Modal,
 	Search,
 	Stack,
@@ -21,7 +20,12 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { useRootStore } from "@/hooks";
+import {
+	addTeamUser,
+	deleteTeamUser,
+	getNonTeamUsers,
+	getTeamUsers,
+} from "@/api/teams";
 
 const colors = [
 	"#22A4FF",
@@ -37,7 +41,7 @@ const NameIDWrapper = styled("div")({
 	display: "inline-block",
 });
 
-const NameTableCell = styled(Table.Cell)({
+const _NameTableCell = styled(Table.Cell)({
 	width: "100%",
 	maxWidth: "1px",
 });
@@ -187,10 +191,23 @@ interface MembersTableProps {
 	name: string;
 }
 
+interface TeamMember {
+	admin: boolean;
+	countrycode: string;
+	email: string;
+	exporter: boolean;
+	id: string;
+	name: string;
+	phone: string;
+	phoneextension: string;
+	publisher: boolean;
+	type: string;
+	username: string;
+}
+
 export const TeamMembersTable = (props: MembersTableProps) => {
 	const { groupId } = props;
 
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const AUTOCOMPLETE_LIMIT = 10;
 	const AUTOCOMPLETE_OFFSET = 0;
@@ -281,7 +298,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 				getAdditionalUsersNonGroup();
 			}
 		}
-	}, [isScrollBottom]);
+	}, [isScrollBottom, canCollect, getAdditionalUsersNonGroup]);
 
 	useEffect(() => {
 		if (addMembersModal) {
@@ -326,8 +343,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			}
 
 			for (let i = 0; i < requests.length; i++) {
-				let response: AxiosResponse<{ success: boolean }> | null = null;
-				response = await monolithStore.addTeamUser(
+				let response:
+					| AxiosResponse<{ success: boolean }>
+					| {
+							response: Response;
+							data: {
+								success: boolean;
+							};
+					  }
+					| null = null;
+				response = await addTeamUser(
 					groupId,
 					requests[i].type,
 					requests[i].userid,
@@ -375,8 +400,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	 */
 	const deleteUser = async (user) => {
 		try {
-			let response: AxiosResponse<{ success: boolean }> | null = null;
-			response = await monolithStore.deleteTeamUser(user);
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
+			response = await deleteTeamUser(user);
 
 			if (!response) {
 				return;
@@ -406,11 +439,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		try {
 			for (let i = 0; i < selectedMembers.length; i++) {
 				try {
-					let response: AxiosResponse<{ success: boolean }> | null =
-						null;
-					response = await monolithStore.deleteTeamUser(
-						selectedMembers[i],
-					);
+					let response:
+						| AxiosResponse<{ success: boolean }>
+						| {
+								response: Response;
+								data: {
+									success: boolean;
+								};
+						  }
+						| null = null;
+					response = await deleteTeamUser(selectedMembers[i]);
 
 					if (!response) {
 						return;
@@ -448,10 +486,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		}
 		setIsLoading(true);
 		try {
-			let response;
 			// possibly add more db table columns / keys here to get id type for display under username
 			// eslint-disable-next-line prefer-const
-			response = await monolithStore.getNonTeamUsers(
+			const response = await getNonTeamUsers(
 				groupId,
 				AUTOCOMPLETE_LIMIT,
 				offset,
@@ -461,14 +498,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedUsers;
-				const users = response.map((val) => {
-					return {
-						...val,
-						color: colors[
-							Math.floor(Math.random() * colors.length)
-						],
-					};
-				});
+				const users = (response as unknown as TeamMember[]).map(
+					(val) => {
+						return {
+							...val,
+							color: colors[
+								Math.floor(Math.random() * colors.length)
+							],
+						};
+					},
+				);
 				requests = requests.concat(users);
 				setNonCredentialedUsers(requests);
 				setCanCollect(users.length === AUTOCOMPLETE_LIMIT);
@@ -512,32 +551,28 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	memberCount > 19 && paginationOptions.membersPageCounts.push(20);
 
 	const filterUsers = useCallback(() => {
-		monolithStore
-			.getTeamUsers(
-				groupId,
-				rowsPerPage,
-				membersPage * rowsPerPage - rowsPerPage, // offset
-				searchFilter,
-			)
-			.then((data) => {
-				setTeamMembers(data);
-				setHasMembers(data?.length > 0);
-			});
-	}, [count, membersPage, searchFilter, rowsPerPage]);
+		getTeamUsers(
+			groupId,
+			rowsPerPage,
+			membersPage * rowsPerPage - rowsPerPage, // offset
+			searchFilter,
+		).then((data: unknown[]) => {
+			setTeamMembers(data);
+			setHasMembers(data?.length > 0);
+		});
+	}, [groupId, membersPage, searchFilter, rowsPerPage]);
 
 	const filterUsersTwo = useCallback(() => {
-		monolithStore
-			.getTeamUsers(
-				groupId,
-				100,
-				0, // offset
-				searchFilter,
-			)
-			.then((data) => {
-				setMemberCount(data.length);
-				setAllTeamMembers(data);
-			});
-	}, [count, membersPage, searchFilter]);
+		getTeamUsers(
+			groupId,
+			100,
+			0, // offset
+			searchFilter,
+		).then((data: unknown[]) => {
+			setMemberCount(data.length);
+			setAllTeamMembers(data);
+		});
+	}, [groupId, membersPage, searchFilter]);
 
 	const filter = () => {
 		filterUsers();
@@ -645,8 +680,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												}
 											}}
 										/>
+										Name
 									</Table.Cell>
-									<Table.Cell size="small">Name</Table.Cell>
 									<Table.Cell size="small">
 										Added Date
 									</Table.Cell>
@@ -656,7 +691,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							<Table.Body>
 								{Array.isArray(teamMembers) &&
 								teamMembers.length > 0 ? (
-									teamMembers?.map((user, i) => {
+									teamMembers?.map((user) => {
 										let isSelected = false;
 
 										if (user) {
@@ -672,7 +707,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 										if (user) {
 											return (
-												<Table.Row key={user.name + i}>
+												<Table.Row key={user.userid}>
 													<Table.Cell size="small">
 														<Stack
 															direction="row"
@@ -738,9 +773,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 															</Stack>
 														</Stack>
 													</Table.Cell>
-													<Table.Cell size="medium">
-														{user.dateadded}
-													</Table.Cell>
 
 													<DateTableCell size="small">
 														{user.dateadded}
@@ -766,9 +798,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										} else {
 											return (
 												<Table.Row
-													key={
-														i + "No data available"
-													}
+													key={`No data available`}
 												>
 													<Table.Cell size="small"></Table.Cell>
 													<Table.Cell size="small"></Table.Cell>
@@ -791,8 +821,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										rowsPerPageOptions={
 											paginationOptions.membersPageCounts
 										}
-										onPageChange={(e, v) => {
-											setMembersPage(v + 1);
+										onPageChange={(_e, _v) => {
+											setMembersPage(_v + 1);
 											setSelectedMembers([]);
 										}}
 										onRowsPerPageChange={(e) => {
@@ -852,13 +882,118 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							}
 							value={selectedNonCredentialedUsers}
 							inputValue={searchMemberInput}
-							getOptionLabel={(option) => {
-								return `${option.name}`;
+							getOptionLabel={(option: unknown) => {
+								return `${(option as { name: string }).name}`;
 							}}
+							renderOption={(props, option: TeamMember) => (
+								<li
+									{...props}
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										alignItems: "flex-start",
+										padding: "8px 16px",
+									}}
+								>
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											width: "100%",
+											gap: "8px",
+										}}
+									>
+										<Avatar sx={{ width: 32, height: 32 }}>
+											{option.name
+												? option.name
+														.split(" ")
+														.map((n) => n[0])
+														.join("")
+														.toUpperCase()
+												: option.id[0].toUpperCase()}
+										</Avatar>
+										<Typography variant="body1">
+											{option.name}
+										</Typography>
+									</Box>
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											gap: "16px",
+											whiteSpace: "nowrap",
+											fontSize: "14px",
+											width: "100%",
+											marginLeft: "40px",
+										}}
+									>
+										<span
+											style={{ color: "rgba(0,0,0,0.7)" }}
+										>
+											User ID:{" "}
+										</span>
+										<span
+											title={option.id}
+											style={{
+												color: "#000",
+												fontWeight: 500,
+												width: "180px",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												display: "inline-block",
+												verticalAlign: "bottom",
+											}}
+										>
+											{option.id}
+										</span>
+										<span
+											style={{ color: "rgba(0,0,0,0.7)" }}
+										>
+											Email:{" "}
+										</span>
+										<span
+											title={option.email}
+											style={{
+												color: "#000",
+												fontWeight: 500,
+												width: "220px",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												display: "inline-block",
+												verticalAlign: "bottom",
+											}}
+										>
+											{option.email}
+										</span>
+										<span
+											style={{ color: "rgba(0,0,0,0.7)" }}
+										>
+											Type:{" "}
+										</span>
+										<span
+											title={option.type}
+											style={{
+												color: "#000",
+												fontWeight: 500,
+												width: "180px",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												display: "inline-block",
+												verticalAlign: "bottom",
+											}}
+										>
+											{option.type}
+										</span>
+									</Box>
+								</li>
+							)}
 							isOptionEqualToValue={(option, value) => {
-								return option.name === value.name;
+								return (
+									(option as { name: string }).name ===
+									(value as { name: string }).name
+								);
 							}}
-							onChange={(event, newValue) => {
+							onChange={(_event, newValue: unknown[]) => {
 								setSelectedNonCredentialedUsers([...newValue]);
 							}}
 							ListboxProps={{
@@ -872,8 +1007,13 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											},
 										),
 									),
+								style: {
+									paddingLeft: "16px",
+									paddingRight: "30px",
+									paddingBottom: "16px",
+								},
 							}}
-							onInputChange={(event, newValue) => {
+							onInputChange={(_event, newValue) => {
 								setSearchMemberInput(newValue);
 								setOffset(0);
 							}}
@@ -899,15 +1039,19 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											idx % 2 !== 0
 												? "rgba(0, 0, 0, .03)"
 												: "",
+										paddingBottom: "8px",
+										borderRadius: "8px",
+										width: "100%",
+										boxSizing: "border-box",
 									}}
 								>
 									<Box
 										sx={{
-											height: "56px",
 											width: "100%",
 											gap: "8px",
 											position: "relative",
 											border: "5px",
+											display: "flex",
 										}}
 									>
 										<Box
@@ -951,9 +1095,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												<Typography
 													variant="h6"
 													sx={{
-														maxHeight: "24px",
-														height: "90%",
 														marginTop: "5px",
+														maxWidth: "100%",
+														lineHeight: 1.1,
 													}}
 												>
 													{user.name}
@@ -961,11 +1105,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											}
 											sx={{
 												color: "#000",
-												maxWidth: "466px",
-												height: "15px",
 												width: "100%",
-												float: "left",
 												gap: "16px",
+												margin: "0",
 											}}
 											subheader={
 												<Box
@@ -990,12 +1132,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 													{`• `}
 													<span>
 														{`Email: `}
-														<Link
-															href={`mailto:${user.email}`}
-															underline="none"
-														>
-															{user.email}
-														</Link>
+														<Chip
+															label={user.email}
+															size="small"
+														/>
 													</span>
 												</Box>
 											}

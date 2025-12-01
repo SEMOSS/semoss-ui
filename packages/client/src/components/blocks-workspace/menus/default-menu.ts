@@ -576,6 +576,35 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	},
 	{
 		section: SECTION_LAYOUT,
+		name: "Form",
+		helperText: "Create a layout element for custom design",
+		activeImage: BLOCK_IMAGES["CONTAINER_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["CONTAINER_HOVER"],
+		json: {
+			widget: "form",
+			data: {
+				style: {
+					display: "flex",
+					flexDirection: "column",
+					padding: "4px",
+					gap: "8px",
+					flexWrap: "wrap",
+				},
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+				onSubmit: { type: "sync", order: [] },
+			},
+			slots: {
+				children: [],
+			},
+		},
+	},
+	{
+		section: SECTION_LAYOUT,
 		name: "Flip Card",
 		helperText: "Flip content on hover or click to reveal more information",
 		activeImage: BLOCK_IMAGES["FLIP_CARD_ACTIVE"],
@@ -1972,6 +2001,276 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 					name: "",
 				},
 				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Word Cloud",
+		helperText: "Display text data in a visually engaging way",
+		activeImage: BLOCK_IMAGES["WORD_CLOUD_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["WORD_CLOUD_HOVER"],
+		json: {
+			widget: "e-chart",
+			data: {
+				variation: "echart-word-cloud",
+				frame: {
+					name: "",
+				},
+				style: {
+					display: "flex",
+					flexDirection: "column",
+					padding: "4px",
+					gap: "8px",
+					flexWrap: "wrap",
+					width: "450px",
+					height: "350px",
+				},
+				option: {
+					title: {
+						text: "Word Cloud",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					series: [
+						{
+							type: "wordCloud",
+							gridSize: 2,
+							sizeRange: [12, 60],
+							rotationRange: [-90, 90],
+							rotationStep: 45,
+							shape: "pentagon",
+							width: "100%",
+							height: "100%",
+							drawOutOfBound: false,
+							layoutAnimation: true,
+							textStyle: {
+								fontFamily: "sans-serif",
+								fontWeight: "bold",
+							},
+							emphasis: {
+								focus: "self",
+								textStyle: {
+									shadowBlur: 10,
+									shadowColor: "#333",
+								},
+							},
+							data: [
+								{
+									name: "A",
+									value: 26,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "B",
+									value: 25,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "C",
+									value: 24,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "D",
+									value: 23,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "E",
+									value: 22,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "F",
+									value: 21,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "G",
+									value: 20,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "H",
+									value: 19,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "I",
+									value: 18,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "J",
+									value: 17,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "K",
+									value: 16,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "L",
+									value: 15,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "M",
+									value: 14,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "N",
+									value: 13,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "O",
+									value: 12,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "P",
+									value: 11,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "Q",
+									value: 10,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "R",
+									value: 9,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "S",
+									value: 8,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "T",
+									value: 7,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "U",
+									value: 6,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "V",
+									value: 5,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "W",
+									value: 4,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "X",
+									value: 3,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "Y",
+									value: 2,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "Z",
+									value: 1,
+									// Style of single text
+									textStyle: {},
+								},
+							],
+						},
+					],
+					tooltip: {
+						show: true,
+						trigger: "item",
+					},
+					color: [
+						"#5470c6",
+						"#91cc75",
+						"#fac858",
+						"#ee6666",
+						"#73c0de",
+						"#3ba272",
+						"#fc8452",
+						"#9a60b4",
+						"#ea7ccc",
+						"#45b7d1",
+					],
+					reset: {
+						title: {
+							text: "Word Cloud",
+							left: "left",
+							top: "top",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
+						series: {
+							gridSize: 2,
+							sizeRange: [12, 60],
+							rotationRange: [-90, 90],
+							rotationStep: 45,
+							shape: "pentagon",
+							textStyle: {
+								fontFamily: "sans-serif",
+								fontWeight: "bold",
+							},
+						},
+					},
+				},
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },

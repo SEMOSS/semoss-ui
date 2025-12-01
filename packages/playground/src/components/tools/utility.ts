@@ -1,31 +1,46 @@
-import type { App, Engine, Toolbox } from "@/types";
+import type { App, Engine, MCP, Workspace } from "@/types";
 
 /**
- * Get a unique key for a tool
- * @param tool The tool to get the key for
- * @returns The unique key for the tool
+ * MyEngineProjects returns responses in a strange foramt where Engines and Apps have different structures.
+ * This function normalizes them into a common Toolbox format.
+ * @param tool The engine or app to convert
+ * @returns The normalized MCP object
  */
-export const getToolbox = (item: Engine | App): Toolbox => {
-	let id = "";
-	let name = "";
-	let type: Toolbox["type"] = "DATABASE";
-
-	// Type guard to check if item is App
-	if ("project_id" in item && "project_name" in item) {
-		id = item.project_id;
-		type = "APP";
-		name = item.project_name;
-	} else if ("app_id" in item && "app_name" in item) {
-		id = item.app_id;
-		name = item.app_name;
-		type = item.app_type;
+export const engineProjectToMCP = (tool: Engine | App): MCP => {
+	if ("app_type" in tool) {
+		// It's an Engine
+		return {
+			type: tool.app_type,
+			id: tool.app_id,
+			name: tool.app_name,
+			description: tool.description || "",
+			tags: [], // Tags are not provided in the current response
+		};
+	} else {
+		// It's an App
+		return {
+			type: "PROJECT",
+			id: tool.project_id,
+			name: tool.project_name,
+			description: tool.description || "",
+			tags: [], // Tags are not provided in the current response
+		};
 	}
-
-	return {
-		id: id,
-		type: type,
-		name: name,
-		description: "",
-		tags: [],
-	};
 };
+
+/**
+ * Occasionally it may be useful to return the return of GetWorkspace into an App format.
+ * @param workspace The workspace to convert
+ * @returns The app
+ */
+export const workspaceToApp = (
+	workspace: Workspace,
+): App & {
+	project_type: "WORKSPACE";
+} => ({
+	project_id: workspace.workspace_id,
+	project_name: workspace.name,
+	description: workspace.description,
+	project_date_created: workspace.date_created,
+	project_type: "WORKSPACE",
+});

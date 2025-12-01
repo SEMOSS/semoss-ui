@@ -1,6 +1,8 @@
 import { makeObservable, observable, runInAction } from "mobx";
+import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "@/constants";
 import type {
 	InputToolExecPixelMessage,
+	McpExecution,
 	PixelMessage,
 	ResponseTextPixelMessage,
 	ResponseToolPixelMessage,
@@ -34,7 +36,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		/** meta data from the tool */
 		_meta: {
 			map: {
-				autoExecute: boolean;
+				SMSS_MCP_EXECUTION: McpExecution;
 				SMSS_PROJECT_NAME: string;
 				SMSS_PROJECT_ID: string;
 			};
@@ -66,6 +68,20 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		comment: string;
 	} | null = null;
 
+	/**
+	 * Model information associated with the message
+	 */
+	model: {
+		/** Id of the model */
+		id: string;
+
+		/** Name of the model */
+		name: string;
+	} = {
+		id: "",
+		name: "",
+	};
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message:
@@ -84,8 +100,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				id: t.id,
 				_meta: {
 					map: {
+						SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
 						...t._meta.map,
-						autoExecute: false,
 					},
 				},
 				title: t.title,
@@ -94,6 +110,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				response: "",
 			}));
 		}
+
+		// set the model
+		this.model = {
+			id: message.modelId,
+			name: message.ornaments?.modelName || "AI",
+		};
 
 		makeObservable(this, {
 			text: observable,
@@ -119,9 +141,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			context = room.options?.instructions;
 		}
 
-		// get a list of tool ids
-		const tools: string[] = room.options.tools.map((t) => t.id, []);
-
 		// wait for the pixel to run
 		const response = await room.runRoomPixel<
 			[
@@ -135,8 +154,7 @@ engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${inputMessage.files.length ? `image=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "image=[],"}
-${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
+${inputMessage.imageInfos.length ? `image=${JSON.stringify(inputMessage.imageInfos.map((info) => info.fileLocation))},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
 			max_new_tokens: room.options.tokenLength,
@@ -157,7 +175,7 @@ paramValues=[${JSON.stringify({
 		inputMessage.addChild(responseMessage);
 
 		// start running tools if there are any
-		this.startToolExecution();
+		responseMessage.startToolExecution();
 	};
 
 	/**
@@ -214,7 +232,7 @@ paramValues=[${JSON.stringify({
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: parentMessage.text,
-			files: parentMessage.files,
+			imageInfos: parentMessage.imageInfos,
 			modelId: room.modelId,
 			paramMap: {
 				max_new_tokens: room.options.tokenLength,
@@ -292,7 +310,7 @@ paramValues=[${JSON.stringify({
 		}
 
 		// only run if it is set to auto execute
-		if (!tool._meta.map.autoExecute) {
+		if (tool._meta.map.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
 			return;
 		}
 
@@ -353,19 +371,20 @@ paramValues=[${JSON.stringify(paramValues)}]
 
 		const { output } = response.pixelReturn[0];
 
-		// don't create a new message if it is a string. More tools need to be executed
-		if (typeof output.responseMessage === "string") {
-			return;
+		// If the output is a string (as opposed to a tool response message), continue tool execution. Otherwise, create the response message
+		if (
+			typeof output === "string" ||
+			typeof output.responseMessage === "string"
+		) {
+			// Keep executing tools
+			await this.continueToolExecution(tool);
+		} else {
+			// create the response and link to the message
+			const responseMessage = createMessageStore(
+				room,
+				output.responseMessage,
+			);
+			this.addChild(responseMessage);
 		}
-
-		// create the response and link to the message
-		const responseMessage = createMessageStore(
-			room,
-			output.responseMessage,
-		);
-		this.addChild(responseMessage);
-
-		// keep going
-		await this.continueToolExecution(tool);
 	};
 }

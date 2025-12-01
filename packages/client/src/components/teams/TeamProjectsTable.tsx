@@ -27,12 +27,18 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import {
+	addProject,
+	deleteProjectPermission,
+	editProjectPermisison,
+	getTeamProjects,
+	getUnassignedTeamProjects,
+} from "@/api";
 import codeApp2 from "@/assets/img/code_app_2.png";
 import codeApp3 from "@/assets/img/code_app_3.png";
 import codeApp4 from "@/assets/img/code_app_4.png";
 import codeApp5 from "@/assets/img/code_app_5.png";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
-import { useRootStore } from "@/hooks";
 
 const colors = [
 	"#22A4FF",
@@ -45,7 +51,11 @@ const colors = [
 ];
 
 const projectImages = [codeApp2, codeApp3, codeApp4, codeApp5];
-
+const _UserInfoTableCell = styled(Table.Cell)({
+	display: "flex",
+	alignItems: "center",
+	height: "84px",
+});
 const NameIDWrapper = styled("div")({
 	display: "inline-block",
 });
@@ -57,7 +67,7 @@ const NameTableCell = styled(Table.Cell)({
 
 const DateTableCell = styled(Table.Cell)({
 	whiteSpace: "nowrap",
-	"@media (max-width: 768px)": {
+	"@med_DateTableCell: 768px)": {
 		whiteSpace: "normal",
 	},
 });
@@ -88,7 +98,10 @@ const StyledTableContainer = styled(Table.Container)({
 	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
 });
 
-const StyledProjectTable = styled(Table)({ backgroundColor: "white" });
+const StyledProjectTable = styled(Table)({
+	backgroundColor: "white",
+	tableLayout: "fixed",
+});
 
 const StyledTableTitleContainer = styled("div")({
 	display: "flex",
@@ -112,6 +125,12 @@ const StyledTableTitleProjectCountContainer = styled("div")({
 	alignItems: "center",
 	gap: "10px",
 	flex: "1 0 0",
+});
+
+const _StyledTableTitleProjectCount = styled("div")({
+	display: "flex",
+	flexDirection: "column",
+	alignItems: "flex-start",
 });
 
 const StyledSearchButtonContainer = styled("div")({
@@ -196,10 +215,24 @@ interface ProjectsTableProps {
 	name: string;
 }
 
+interface TeamProjects {
+	low_project_name: string;
+	project_cost: string;
+	project_created_by: string;
+	project_created_by_type: string;
+	project_date_created: string;
+	project_discoverable: boolean;
+	project_global: boolean;
+	project_has_portal: boolean;
+	project_id: string;
+	project_name: string;
+	project_portal_name: string;
+	project_type: string;
+}
+
 export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const { groupId, groupType } = props;
 
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const AUTOCOMPLETE_LIMIT = 10;
 	const AUTOCOMPLETE_OFFSET = 0;
@@ -278,7 +311,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	 */
 	useEffect(() => {
 		filterProjects();
-	}, [groupId, groupType, count, projectsPage, searchFilter,rowsPerPage]);
+	}, [groupId, groupType, count, projectsPage, searchFilter, rowsPerPage]);
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
@@ -328,8 +361,16 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			}
 
 			for (let i = 0; i < requests.length; i++) {
-				let response: AxiosResponse<{ success: boolean }> | null = null;
-				response = await monolithStore.addProject(
+				let response:
+					| AxiosResponse<{ success: boolean }>
+					| {
+							response: Response;
+							data: {
+								success: boolean;
+							};
+					  }
+					| null = null;
+				response = await addProject(
 					groupId,
 					requests[i].project_id,
 					permissionMapper[addProjectRole],
@@ -377,8 +418,16 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	 */
 	const deleteProject = async (project) => {
 		try {
-			let response: AxiosResponse<{ success: boolean }> | null = null;
-			response = await monolithStore.deleteProjectPermission(
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
+			response = await deleteProjectPermission(
 				groupId,
 				groupType,
 				project,
@@ -411,9 +460,16 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 		try {
 			for (let i = 0; i < selectedProjects.length; i++) {
 				try {
-					let response: AxiosResponse<{ success: boolean }> | null =
-						null;
-					response = await monolithStore.deleteProjectPermission(
+					let response:
+						| AxiosResponse<{ success: boolean }>
+						| {
+								response: Response;
+								data: {
+									success: boolean;
+								};
+						  }
+						| null = null;
+					response = await deleteProjectPermission(
 						groupId,
 						groupType,
 						selectedProjects[i],
@@ -452,10 +508,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 		}
 		setIsLoading(true);
 		try {
-			let response;
 			// possibly add more db table columns / keys here to get id type for display under projects
 			// eslint-disable-next-line prefer-const
-			response = await monolithStore.getUnassignedTeamProjects(
+			const response = await getUnassignedTeamProjects(
 				groupId,
 				groupType,
 				AUTOCOMPLETE_LIMIT,
@@ -466,14 +521,16 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedProjects;
-				const projects = response.map((val) => {
-					return {
-						...val,
-						color: colors[
-							Math.floor(Math.random() * colors.length)
-						],
-					};
-				});
+				const projects = (response as unknown as TeamProjects[])?.map(
+					(val) => {
+						return {
+							...val,
+							color: colors[
+								Math.floor(Math.random() * colors.length)
+							],
+						};
+					},
+				);
 
 				requests = requests.concat(projects);
 				setNonCredentialedProjects(requests);
@@ -503,12 +560,16 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 				return;
 			}
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
-			response = await monolithStore.editProjectPermisison(
-				groupId,
-				groupType,
-				project,
-			);
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
+			response = await editProjectPermisison(groupId, groupType, project);
 
 			if (!response) {
 				return;
@@ -546,30 +607,26 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	projectCount > 19 && paginationOptions.projectsPageCounts.push(20);
 
 	const filterProjects = useCallback(() => {
-		monolithStore
-			.getTeamProjects(
-				groupId,
-				groupType,
-				rowsPerPage,
-				projectsPage * rowsPerPage - rowsPerPage, // offset
-				searchFilter,
-				false,
-			)
-			.then((data) => {
-				setProjects(data);
-				setHasProject(data.length > 0);
-			});
-		monolithStore
-			.getTeamProjects(
-				groupId,
-				groupType,
-				100,
-				0, // offset
-				searchFilter,
-				false,
-			)
-			.then((data) => setProjectCount(data.length));
-	}, [count, projectsPage, searchFilter,rowsPerPage]);
+		getTeamProjects(
+			groupId,
+			groupType,
+			rowsPerPage,
+			projectsPage * rowsPerPage - rowsPerPage, // offset
+			searchFilter,
+			false,
+		).then((data: unknown[]) => {
+			setProjects(data);
+			setHasProject(data.length > 0);
+		});
+		getTeamProjects(
+			groupId,
+			groupType,
+			100,
+			0, // offset
+			searchFilter,
+			false,
+		).then((data: unknown[]) => setProjectCount(data.length));
+	}, [count, projectsPage, searchFilter, rowsPerPage]);
 
 	const debouncedFilterProjects = debounced(filterProjects, 400);
 
@@ -606,7 +663,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			<StyledProjectInnerContent>
 				{(projects && projects.length > 0) ||
 				projectCount > 0 ||
-				hasProjects ? (
+				hasProjects ||
+				searchFilter ? (
 					<StyledTableContainer>
 						<StyledTableTitleContainer>
 							<StyledTableTitleDiv>Apps</StyledTableTitleDiv>
@@ -680,15 +738,36 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 										/>
 										Name
 									</NameTableCell>
-									<Table.Cell size="small">Access</Table.Cell>
-									<Table.Cell size="small">
+									<Table.Cell
+										size="small"
+										sx={{ width: "320px" }}
+									>
+										Access
+									</Table.Cell>
+									<Table.Cell
+										size="small"
+										sx={{
+											width: "200px",
+											textAlign: "left",
+											paddingLeft: "20px",
+										}}
+									>
 										Added Date
 									</Table.Cell>
-									<Table.Cell size="small">Action</Table.Cell>
+									<Table.Cell
+										size="small"
+										sx={{
+											width: "75px",
+											textAlign: "center",
+										}}
+									>
+										Action
+									</Table.Cell>
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{projects &&
+								{Array.isArray(projects) &&
+								projects.length > 0 ? (
 									projects.map((project, i) => {
 										let isSelected = false;
 
@@ -705,7 +784,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 										if (project) {
 											return (
 												<Table.Row
-													key={project.projectid + i}
+													key={`project-${project.projectid}-${i}`}
 												>
 													<Table.Cell size="small">
 														<Stack
@@ -779,6 +858,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 																		projectid:
 																			project.projectid,
 																		type: project.type,
+																		project_type:
+																			project.type,
 																		permission:
 																			e
 																				.target
@@ -827,9 +908,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 										} else {
 											return (
 												<Table.Row
-													key={
-														i + "No data available"
-													}
+													key={`No data available`}
 												>
 													<Table.Cell size="small"></Table.Cell>
 													<Table.Cell size="small"></Table.Cell>
@@ -838,7 +917,14 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 												</Table.Row>
 											);
 										}
-									})}
+									})
+								) : (
+									<Table.Row key="no-apps-found">
+										<Table.Cell colSpan={4} align="center">
+											No Apps found.
+										</Table.Cell>
+									</Table.Row>
+								)}
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
@@ -846,12 +932,14 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 										rowsPerPageOptions={
 											paginationOptions.projectsPageCounts
 										}
-										onPageChange={(e, v) => {
+										onPageChange={(_e, v) => {
 											setProjectsPage(v + 1);
 											setSelectedProojects([]);
 										}}
 										onRowsPerPageChange={(e) => {
-											setRowsPerPage(parseInt(e.target.value, 10));
+											setRowsPerPage(
+												parseInt(e.target.value, 10),
+											);
 											setProjectsPage(1);
 										}}
 										page={projectsPage - 1}
@@ -916,7 +1004,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									option.project_name === value.project_name
 								);
 							}}
-							onChange={(event, newValue) => {
+							onChange={(_event, newValue) => {
 								setSelectedNonCredentialedProjects([
 									...newValue,
 								]);
@@ -933,164 +1021,150 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 										),
 									),
 							}}
-							onInputChange={(event, newValue) => {
+							onInputChange={(_event, newValue) => {
 								setSearchProjectInput(newValue);
 								setOffset(0);
 							}}
 						/>
 
-						{selectedNonCredentialedProjects &&
-							selectedNonCredentialedProjects.map(
-								(project, idx) => {
-									return (
+						{selectedNonCredentialedProjects.map((project, idx) => {
+							return (
+								<Box
+									key={`non-credentialed-${project.project_id}`}
+									sx={{
+										display: "flex",
+										justifyContent: "left",
+										align: "center",
+										backgroundColor:
+											idx % 2 !== 0
+												? "rgba(0, 0, 0, .03)"
+												: "",
+									}}
+								>
+									<Box
+										sx={{
+											width: "100%",
+											gap: "8px",
+											position: "relative",
+											paddingBottom: "7px",
+											border: "0px",
+											display: "flex",
+											alignItems: "center",
+										}}
+									>
 										<Box
-											key={idx}
 											sx={{
 												display: "flex",
-												justifyContent: "left",
-												align: "center",
-												backgroundColor:
-													idx % 2 !== 0
-														? "rgba(0, 0, 0, .03)"
-														: "",
+												justifyContent: "center",
+												marginTop: "6px",
+												marginLeft: "8px",
+												marginRight: "8px",
+												float: "left",
 											}}
 										>
 											<Box
 												sx={{
-													width: "100%",
-													gap: "8px",
-													position: "relative",
-													paddingBottom: "7px",
-													border: "0px",
 													display: "flex",
+													height: "32px",
+													width: "32px",
+													justifyContent: "center",
 													alignItems: "center",
+													border: "0.5px solid rgba(0, 0, 0, .05)",
+													borderRadius: "50%",
 												}}
 											>
-												<Box
+												<Avatar
+													aria-label="avatar"
 													sx={{
 														display: "flex",
-														justifyContent:
-															"center",
-														marginTop: "6px",
-														marginLeft: "8px",
-														marginRight: "8px",
-														float: "left",
+														width: "50px",
+														height: "50px",
+														"& img": {
+															width: "100%",
+															height: "100%",
+															objectFit: "cover",
+														},
 													}}
-												>
-													<Box
-														sx={{
-															display: "flex",
-															height: "32px",
-															width: "32px",
-															justifyContent:
-																"center",
-															alignItems:
-																"center",
-															border: "0.5px solid rgba(0, 0, 0, .05)",
-															borderRadius: "50%",
-														}}
-													>
-														<Avatar
-															aria-label="avatar"
-															sx={{
-																display: "flex",
-																width: "50px",
-																height: "50px",
-																"& img": {
-																	width: "100%",
-																	height: "100%",
-																	objectFit:
-																		"cover",
-																},
-															}}
-															src={getRandomImageForProject(
-																project.project_id,
-															)}
-														/>
-													</Box>
-												</Box>
-												<Card.Header
-													title={
-														<Typography variant="h6">
-															{
-																project.project_name
-															}
-														</Typography>
-													}
-													sx={{
-														color: "#000",
-														maxWidth: "85%",
-														width: "100%",
-														float: "left",
-														gap: "16px",
-														display: "inline-flex",
-														alignItems: "center",
-														paddingBottom: "7px",
-														margin: "0px 0px 0px 0px",
-													}}
-													subheader={
-														<Box
-															sx={{
-																display: "flex",
-																gap: 2,
-															}}
-														>
-															<span
-																style={{
-																	opacity: 0.9,
-																	fontSize:
-																		"11px",
-																	width: "70%",
-																	gap: "4px",
-																}}
-															>
-																{`App ID: `}
-																<Typography
-																	variant="body2"
-																	component="span"
-																>
-																	{
-																		project.project_id
-																	}
-																</Typography>
-															</span>
-														</Box>
-													}
-													action={
-														<IconButton
-															sx={{
-																height: "48px",
-																width: "48px",
-																fontSize:
-																	"small",
-																color: "rgba( 0, 0, 0, .7)",
-																mr: "2px",
-																top: "20%",
-																position:
-																	"absolute",
-																padding: "10px",
-															}}
-															onClick={() => {
-																const filtered =
-																	selectedNonCredentialedProjects.filter(
-																		(val) =>
-																			val.project_id !==
-																			project.project_id,
-																	);
-																setSelectedNonCredentialedProjects(
-																	filtered,
-																);
-															}}
-														>
-															<ClearRounded />
-														</IconButton>
-													}
+													src={getRandomImageForProject(
+														project.project_id,
+													)}
 												/>
 											</Box>
 										</Box>
-									);
-								},
-							)}
+										<Card.Header
+											title={
+												<Typography variant="h6">
+													{project.project_name}
+												</Typography>
+											}
+											sx={{
+												color: "#000",
+												maxWidth: "85%",
+												width: "100%",
+												float: "left",
+												gap: "16px",
+												display: "inline-flex",
+												alignItems: "center",
+												paddingBottom: "7px",
+												margin: "0px 0px 0px 0px",
+											}}
+											subheader={
+												<Box
+													sx={{
+														display: "flex",
+														gap: 2,
+													}}
+												>
+													<span
+														style={{
+															opacity: 0.9,
+															fontSize: "11px",
+															width: "70%",
+															gap: "4px",
+														}}
+													>
+														{`App ID: `}
+														<Typography
+															variant="body2"
+															component="span"
+														>
+															{project.project_id}
+														</Typography>
+													</span>
+												</Box>
+											}
+											action={
+												<IconButton
+													sx={{
+														height: "48px",
+														width: "48px",
+														fontSize: "small",
+														color: "rgba( 0, 0, 0, .7)",
+														mr: "2px",
+														top: "20%",
+														position: "absolute",
+														padding: "10px",
+													}}
+													onClick={() => {
+														const filtered =
+															selectedNonCredentialedProjects.filter(
+																(val) =>
+																	val.project_id !==
+																	project.project_id,
+															);
+														setSelectedNonCredentialedProjects(
+															filtered,
+														);
+													}}
+												>
+													<ClearRounded />
+												</IconButton>
+											}
+										/>
+									</Box>
+								</Box>
+							);
+						})}
 
 						<Typography
 							variant="subtitle1"
