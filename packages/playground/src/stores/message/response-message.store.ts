@@ -371,19 +371,20 @@ paramValues=[${JSON.stringify(paramValues)}]
 
 		const { output } = response.pixelReturn[0];
 
-		// don't create a new message if it is a string. More tools need to be executed
-		if (typeof output.responseMessage === "string") {
-			return;
+		// If the output is a string (as opposed to a tool response message), continue tool execution. Otherwise, create the response message
+		if (
+			typeof output === "string" ||
+			typeof output.responseMessage === "string"
+		) {
+			// Keep executing tools
+			await this.continueToolExecution(tool);
+		} else {
+			// create the response and link to the message
+			const responseMessage = createMessageStore(
+				room,
+				output.responseMessage,
+			);
+			this.addChild(responseMessage);
 		}
-
-		// create the response and link to the message
-		const responseMessage = createMessageStore(
-			room,
-			output.responseMessage,
-		);
-		this.addChild(responseMessage);
-
-		// keep going
-		await this.continueToolExecution(tool);
 	};
 }
