@@ -11,8 +11,15 @@ const PanelApp: React.FC = () => {
 	const [command, setCommand] = useState("");
 	const [isRunning, setIsRunning] = useState(false);
 	const [actionHistory, setActionHistory] = useState<string[]>([]);
+	const [waitingForUserInput, setWaitingForUserInput] = useState(false);
+	const [userInputPrompt, setUserInputPrompt] = useState("");
+	const [userInputValue, setUserInputValue] = useState("");
+	const [userInputCallback, setUserInputCallback] = useState<
+		((value: string) => void) | null
+	>(null);
 	const commandInputRef = React.useRef<HTMLTextAreaElement>(null);
 	const historyEndRef = React.useRef<HTMLDivElement>(null);
+	const userInputRef = React.useRef<HTMLInputElement>(null);
 
 	const loadSettings = React.useCallback(async () => {
 		try {
@@ -128,6 +135,8 @@ const PanelApp: React.FC = () => {
 				elementId?: number;
 				value?: string;
 				reason?: string;
+				fieldName?: string;
+				question?: string;
 			}> = [];
 
 			while (!isDone && stepCount < MAX_STEPS) {
@@ -270,6 +279,12 @@ const PanelApp: React.FC = () => {
 							thoughtText ||
 							`I should type "${act.value}" into element ${act.elementId}`;
 						actionText = `setValue(${act.elementId}, "${act.value}")`;
+					} else if (act.type === "askUser") {
+						thoughtText =
+							thoughtText ||
+							`I need to ask the user for ${act.fieldName}`;
+						// Include the user's response in the action history
+						actionText = `askUser("${act.fieldName}", "${act.question}") -> User provided: "${act.value}"`;
 					} else if (act.type === "done") {
 						thoughtText = thoughtText || "The task is complete";
 						actionText = "done()";
@@ -313,27 +328,76 @@ const PanelApp: React.FC = () => {
 					continue; // Skip to next iteration
 				}
 
+				// Handle askUser - prompt user for input
+				if (action.type === "askUser") {
+					addToHistory(
+						`❓ ${action.question || "Please provide input"}`,
+					);
+
+					// Wait for user input
+					const userValue = await new Promise<string>((resolve) => {
+						setUserInputPrompt(
+							action.question || "Please provide input",
+						);
+						setWaitingForUserInput(true);
+						setUserInputCallback(() => (value: string) => {
+							setWaitingForUserInput(false);
+							setUserInputPrompt("");
+							setUserInputValue("");
+							setUserInputCallback(null);
+							resolve(value);
+						});
+					});
+
+					addToHistory(`✓ User provided: ${userValue}`);
+
+					// Track this action
+					executedActions.push({
+						type: action.type,
+						fieldName: action.fieldName,
+						question: action.question,
+						value: userValue, // Store the user's response
+						reason: action.reason,
+					});
+
+					continue; // Skip to next iteration
+				}
+
 				// IMPROVED loop detection: Stop if repeating same action on same element
 				// Check ALL previous actions (not just last 4) to catch patterns
 
-				// Check for repeated setValue on same element - STOP IMMEDIATELY if already done once
+				// Check for repeated setValue on same element with SAME value
 				if (action.type === "setValue") {
 					const previousSetValueOnSameElement =
 						executedActions.filter(
 							(a) =>
 								a.type === "setValue" &&
-								a.elementId === action.elementId,
+								a.elementId === action.elementId &&
+								a.value === action.value, // Same element AND same value
 						).length;
 
 					if (previousSetValueOnSameElement >= 1) {
 						addToHistory(
-							"❌ Stopped: Already typed into this element. The text has been entered.",
+							"❌ Stopped: Already typed this exact value into this element.",
 						);
 						addToHistory(
 							"💡 Next step: Click the search/submit button, or call done() if task complete.",
 						);
 						isDone = true; // Mark as done to exit loop
 						break;
+					}
+
+					// Warn if setting value on same element multiple times (but with different values)
+					const allSetValuesOnElement = executedActions.filter(
+						(a) =>
+							a.type === "setValue" &&
+							a.elementId === action.elementId,
+					).length;
+
+					if (allSetValuesOnElement >= 2) {
+						addToHistory(
+							"⚠️ Warning: Setting value on this element multiple times. This may indicate an issue.",
+						);
 					}
 				}
 
@@ -605,6 +669,53 @@ const PanelApp: React.FC = () => {
 								</div>
 							))}
 							<div ref={historyEndRef} />
+						</div>
+					</div>
+				)}
+
+				{/* User Input Dialog */}
+				{waitingForUserInput && (
+					<div className="user-input-overlay">
+						<div className="user-input-dialog">
+							<h3>Input Required</h3>
+							<p>{userInputPrompt}</p>
+							<input
+								ref={userInputRef}
+								type="text"
+								value={userInputValue}
+								onChange={(e) =>
+									setUserInputValue(e.target.value)
+								}
+								placeholder="Enter value..."
+								onKeyDown={(e) => {
+									if (
+										e.key === "Enter" &&
+										userInputValue.trim()
+									) {
+										e.preventDefault();
+										if (userInputCallback) {
+											userInputCallback(userInputValue);
+										}
+									}
+								}}
+							/>
+							<div className="user-input-buttons">
+								<button
+									type="button"
+									onClick={() => {
+										if (
+											userInputCallback &&
+											userInputValue.trim()
+										) {
+											userInputCallback(userInputValue);
+										}
+									}}
+									disabled={!userInputValue.trim()}
+									className="submit-btn"
+								>
+									Submit
+								</button>
+							</div>
 						</div>
 					</div>
 				)}

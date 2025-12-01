@@ -12,11 +12,20 @@ export interface WorkshopConfig {
 }
 
 export interface LLMAction {
-	type: "click" | "setValue" | "scroll" | "wait" | "done" | "error";
+	type:
+		| "click"
+		| "setValue"
+		| "scroll"
+		| "wait"
+		| "done"
+		| "error"
+		| "askUser";
 	elementId?: number;
 	value?: string;
 	reason?: string;
 	message?: string;
+	question?: string; // For askUser action
+	fieldName?: string; // For askUser action - what field needs input
 }
 
 export class DirectWorkshopService {
@@ -197,7 +206,8 @@ export class DirectWorkshopService {
 		// Build clean, generic system message (like browser-extension)
 		const formattedActions = `1. click(elementId: number): Clicks on an element
 2. setValue(elementId: number, value: string): Focuses on and sets the value of an input element
-3. done(): Indicates the task is finished`;
+3. askUser(fieldName: string, question: string): Pause and ask the user for information (use this for sensitive fields like passwords or when you need specific user input)
+4. done(): Indicates the task is finished`;
 
 		const systemMessage = `You are a browser automation assistant.
 
@@ -207,10 +217,19 @@ ${formattedActions}
 
 You will be given a task to perform and the current state of the DOM. You will also be given previous actions that you have taken. You may retry a failed action up to one time.
 
+IMPORTANT: When you encounter sensitive fields (like password, username, API keys) or fields that require specific user information that you cannot guess, use the askUser() action to request this information from the user instead of making up values.
+
+When you see a previous askUser() action in the history, the user has already provided the value. You can use that value in subsequent setValue() actions. The value will be shown in the action history after the askUser action.
+
 This is an example of an action:
 
 <Thought>I should click the add to cart button</Thought>
 <Action>click(223)</Action>
+
+Example of asking user for input:
+
+<Thought>I need the user's password to fill in this field</Thought>
+<Action>askUser("password", "Please enter the password for this database")</Action>
 
 You must always include the <Thought> and <Action> open/close tags or else your response will be marked as invalid.`;
 
@@ -356,6 +375,24 @@ ${simplifiedHTML}`;
 			case "done": {
 				return {
 					type: "done",
+					reason: thought,
+				};
+			}
+
+			case "askuser": {
+				// Parse askUser("fieldName", "question")
+				const argsMatch = argsStr.match(
+					/^\s*["']([^"']*)["']\s*,\s*["'](.*)["']\s*$/,
+				);
+				if (!argsMatch) {
+					throw new Error(`Invalid askUser format: ${argsStr}`);
+				}
+				const fieldName = argsMatch[1];
+				const question = argsMatch[2];
+				return {
+					type: "askUser",
+					fieldName,
+					question,
 					reason: thought,
 				};
 			}
