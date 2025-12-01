@@ -1,10 +1,10 @@
 import { useMemo } from "react";
-import { Stack } from "@semoss/ui";
+import { DatabasePageContent } from "@/components/import/database/DatabasePageContent";
+import { FunctionImport } from "@/components/import/function/FunctionImport";
 import type { ENGINE_TYPES } from "@/types";
 import { ModelImport } from "../../components/import/model/ModelImport";
 import { ImportLayout } from "./ImportLayout";
 import { ImportPageContent } from "./ImportPageContent";
-import { DatabasePageContent } from "@/components/import/database/DatabasePageContent";
 
 /** TODO: Refactor */
 interface ImportPageProps {
@@ -29,7 +29,7 @@ export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
 			case "VECTOR":
 				return <ImportPageContent name={name} type={type} />;
 			case "FUNCTION":
-				return <ImportPageContent name={name} type={type} />;
+				return <FunctionImport name={name} />;
 			case "STORAGE":
 				return <ImportPageContent name={name} type={type} />;
 			default:
