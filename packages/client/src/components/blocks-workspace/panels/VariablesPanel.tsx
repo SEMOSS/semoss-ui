@@ -226,7 +226,7 @@ const StyledIconButtonDesc = styled(IconButton)(() => ({
 	position: "relative",
 	color: "#757575",
 	bottom: "1px",
-	right: "9px",
+	right: "10px",
 }));
 
 const StyledStackVariable = styled(Stack)(() => ({
