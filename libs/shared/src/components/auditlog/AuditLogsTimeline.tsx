@@ -690,10 +690,11 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				</span>
 				{/** changing from div role="group", to fieldset */}
 				<fieldset
-					className="inline-flex rounded-md bg-white shadow-sm"
+					className="inline-flex gap-1 rounded-md bg-white shadow-sm"
 					style={{ boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)" }}
 				>
 					<Button
+						variant="ghost"
 						className="rounded-[4px_0_0_4px] px-[4px] py-[4px]"
 						onClick={handleZoomIn}
 						disabled={zoomState.end - zoomState.start <= 15}
@@ -704,6 +705,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						/>
 					</Button>
 					<Button
+						variant="ghost"
 						className="rounded-[0_4px_4px_0] px-[4px] py-[4px]"
 						onClick={handleZoomOut}
 						disabled={

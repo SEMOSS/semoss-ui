@@ -298,7 +298,7 @@ export const AuditLogsDetailDrawer = (props) => {
 								);
 							})()}
 						</div>
-						<div className="mt-8 flex items-center justify-between">
+						<div className="mt-4 flex items-center justify-between">
 							<span className="flex items-center gap-2 font-semibold text-gray-900">
 								Response
 							</span>
@@ -318,7 +318,7 @@ export const AuditLogsDetailDrawer = (props) => {
 								</Button>
 							)}
 						</div>
-						<div className="mb-4 rounded-[6px] border border-black bg-[#FAFAFA] p-1">
+						<div className="mt-4 rounded-[6px] border border-black bg-[#FAFAFA] p-1">
 							{(() => {
 								if (responseData) {
 									return (

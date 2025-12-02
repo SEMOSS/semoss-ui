@@ -9,6 +9,7 @@ import { useCallback, useMemo, useState } from "react";
 import {
 	Badge,
 	Button,
+	Checkbox,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -75,7 +76,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		latencyRange: [],
 		tokenRange: [],
 	});
-	const [_tempFilters, setTempFilters] = useState<FilterState>({
+	const [tempFilters, setTempFilters] = useState<FilterState>({
 		engineType: [],
 		engineName: [],
 		status: [],
@@ -112,6 +113,14 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		};
 	}, [logs]);
 
+	//Check condition for if any filters are applied
+	const filtersApplied = useMemo(
+		() =>
+			Object.values(appliedFilters).some((filter) => filter.length > 0) ||
+			false,
+		[appliedFilters],
+	);
+
 	// Filter Logs (same logic as before)
 	const filteredLogs = useMemo(() => {
 		// ...existing filteredLogs logic...
@@ -131,9 +140,61 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					log.tokens?.toString().toLowerCase().includes(query),
 			);
 		}
+		// Apply engine type filter
+		if (appliedFilters.engineType.length > 0) {
+			filtered = filtered.filter((log) =>
+				log.engineType.includes(log.engineType),
+			);
+		}
+
+		// Apply engine name filter
+		if (appliedFilters.engineName.length > 0) {
+			filtered = filtered.filter((log) =>
+				log.engineName.includes(log.engineName),
+			);
+		}
+
+		// Apply status filter
+		if (appliedFilters.status.length > 0) {
+			filtered = filtered.filter((log) =>
+				log.status.includes(String(log.status)),
+			);
+		}
+
+		// Apply latency range filter
+		if (appliedFilters.latencyRange.length > 0) {
+			filtered = filtered.filter((log) => {
+				const logLatency = Number(log.latency);
+				if (Number.isNaN(logLatency)) return false;
+
+				return appliedFilters.latencyRange.some((range) => {
+					const [min, max] = range.split("-").map(Number);
+					return logLatency >= min && logLatency <= max;
+				});
+			});
+		}
+
+		// Apply token range filter
+		if (appliedFilters.tokenRange.length > 0) {
+			filtered = filtered.filter((log) => {
+				const logTokens = parseInt(log.tokens, 10);
+				if (Number.isNaN(logTokens)) return false;
+
+				return appliedFilters.tokenRange.some((range) => {
+					const [min, max] = range.split("-").map(Number);
+					return logTokens >= min && logTokens <= max;
+				});
+			});
+		}
 		// ...apply filters...
 		return filtered;
-	}, [logs, searchQuery]);
+	}, [logs, searchQuery, appliedFilters]);
+
+	const filteredTotalCount = useMemo(() => {
+		return filtersApplied || searchQuery.trim().length > 0
+			? filteredLogs.length
+			: totalCount;
+	}, [filteredLogs, filtersApplied, totalCount, searchQuery]);
 
 	// Event Handlers (same logic as before)
 	const handleFilterClick = useCallback(
@@ -145,7 +206,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		[appliedFilters],
 	);
 
-	/*const handlePopoverClose = useCallback(() => {
+	const handlePopoverClose = useCallback(() => {
 		setPopoverOpen(false);
 		setPopoverColumn(null);
 		setTempFilters({ ...appliedFilters });
@@ -177,7 +238,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		[],
 	);
 
-	const handleSelectAll = useCallback(
+	const _handleSelectAll = useCallback(
 		(filterType: keyof FilterState, allOptions: string[]) => {
 			setTempFilters((prev) => {
 				const isAllSelected =
@@ -189,7 +250,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			});
 		},
 		[],
-	);*/
+	);
 
 	const handleClearAllFilters = useCallback(() => {
 		setSearchQuery("");
@@ -279,7 +340,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 								onClick={handleClearAllFilters}
 							>
 								<X className="mr-2 h-4 w-4" />
-								Clear Filters
+								Clear All Filters
 							</Button>
 						)}
 						<div className="relative">
@@ -311,7 +372,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						</div>
 					</div>
 				</div>
-				<div className="p-4">
+				<div className="border-b p-4">
 					<Table>
 						<TableHeader>
 							<TableRow style={{ backgroundColor: "#F5F9FE" }}>
@@ -340,6 +401,11 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Engine Type
 										</span>
+										<Badge variant="outline">
+											{getActiveFiltersCount(
+												"engineType",
+											)}
+										</Badge>
 										<Popover
 											open={
 												popoverOpen &&
@@ -357,27 +423,57 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 														)
 													}
 												>
-													<Badge>
-														{getActiveFiltersCount(
-															"engineType",
-														)}
-													</Badge>
 													<Filter className="h-4 w-4" />
 												</Button>
 											</PopoverTrigger>
-											<PopoverContent className="w-64">
+											<PopoverContent className="w-128">
 												{/* Render filter options for engineType */}
 												{/* ...custom filter UI... */}
-												<div>
+												<div className="flex flex-col gap-2">
 													{filterOptions?.engineType?.map(
 														(filtered) => (
-															<span
+															<div
 																key={`${filtered}`}
+																className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
 															>
-																{filtered}
-															</span>
+																<Checkbox
+																	checked={tempFilters.engineType.includes(
+																		filtered,
+																	)}
+																	onCheckedChange={() => {
+																		handleMultiSelectFilter(
+																			"engineType",
+																			filtered,
+																		);
+																		return;
+																	}}
+																/>
+																<span
+																	key={`${filtered}`}
+																>
+																	{filtered}
+																</span>
+															</div>
 														),
 													)}
+													<div className="flex flex-row items-center justify-between gap-2 border-t py-2">
+														<Button
+															variant="ghost"
+															onClick={() =>
+																handleClearFilterPopover()
+															}
+														>
+															Clear
+														</Button>
+														<Button
+															variant="default"
+															onClick={
+																handleApplyFilters
+															}
+														>
+															Apply
+														</Button>
+													</div>
 												</div>
 											</PopoverContent>
 										</Popover>
@@ -388,6 +484,11 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Engine Name
 										</span>
+										<Badge variant="outline">
+											{getActiveFiltersCount(
+												"engineName",
+											)}
+										</Badge>
 										<Popover
 											open={
 												popoverOpen &&
@@ -405,16 +506,45 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 														)
 													}
 												>
-													<Badge>
-														{getActiveFiltersCount(
-															"engineName",
-														)}
-													</Badge>
 													<Filter className="h-4 w-4" />
 												</Button>
 											</PopoverTrigger>
-											<PopoverContent className="w-64">
-												{/* Render filter options for engineName */}
+											<PopoverContent className="w-128">
+												<div className="flex flex-col gap-2">
+													{filterOptions?.engineName?.map(
+														(filtered) => (
+															<div
+																key={`${filtered}`}
+																className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+															>
+																<Checkbox />
+																<span
+																	key={`${filtered}`}
+																>
+																	{filtered}
+																</span>
+															</div>
+														),
+													)}
+													<div className="flex flex-row items-center justify-between gap-2 border-t py-2">
+														<Button
+															variant="ghost"
+															onClick={() =>
+																handleClearFilterPopover()
+															}
+														>
+															Clear
+														</Button>
+														<Button
+															variant="default"
+															onClick={
+																handleApplyFilters
+															}
+														>
+															Apply
+														</Button>
+													</div>
+												</div>
 											</PopoverContent>
 										</Popover>
 									</div>
@@ -424,6 +554,11 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Latency
 										</span>
+										<Badge variant="outline">
+											{getActiveFiltersCount(
+												"latencyRange",
+											)}
+										</Badge>
 										<Popover
 											open={
 												popoverOpen &&
@@ -441,16 +576,57 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 														)
 													}
 												>
-													<Badge>
-														{getActiveFiltersCount(
-															"latencyRange",
-														)}
-													</Badge>
 													<Filter className="h-4 w-4" />
 												</Button>
 											</PopoverTrigger>
-											<PopoverContent className="w-64">
-												{/* Render filter options for latencyRange */}
+											<PopoverContent className="w-128">
+												<div className="flex flex-col gap-2">
+													{filterOptions?.latencyRange?.map(
+														(filtered) => (
+															<div
+																key={`${filtered.value}`}
+																className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+															>
+																<Checkbox
+																	checked={tempFilters.latencyRange.includes(
+																		filtered.value,
+																	)}
+																	onCheckedChange={() => {
+																		handleMultiSelectFilter(
+																			"latencyRange",
+																			filtered.value,
+																		);
+																	}}
+																/>
+																<span
+																	key={`${filtered}`}
+																>
+																	{
+																		filtered.label
+																	}
+																</span>
+															</div>
+														),
+													)}
+													<div className="flex flex-row items-center justify-between gap-2 border-t py-2">
+														<Button
+															variant="ghost"
+															onClick={
+																handleClearFilterPopover
+															}
+														>
+															Clear
+														</Button>
+														<Button
+															variant="default"
+															onClick={
+																handleApplyFilters
+															}
+														>
+															Apply
+														</Button>
+													</div>
+												</div>
 											</PopoverContent>
 										</Popover>
 									</div>
@@ -460,6 +636,11 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Tokens
 										</span>
+										<Badge variant="outline">
+											{getActiveFiltersCount(
+												"tokenRange",
+											)}
+										</Badge>
 										<Popover
 											open={
 												popoverOpen &&
@@ -477,16 +658,57 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 														)
 													}
 												>
-													<Badge>
-														{getActiveFiltersCount(
-															"tokenRange",
-														)}
-													</Badge>
 													<Filter className="h-4 w-4" />
 												</Button>
 											</PopoverTrigger>
 											<PopoverContent className="w-64">
-												{/* Render filter options for tokenRange */}
+												<div className="flex flex-col gap-2">
+													{filterOptions?.tokenRange?.map(
+														(filtered) => (
+															<div
+																key={`${filtered.value}`}
+																className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+															>
+																<Checkbox
+																	checked={tempFilters?.tokenRange?.includes(
+																		filtered.value,
+																	)}
+																	onCheckedChange={() => {
+																		handleMultiSelectFilter(
+																			"tokenRange",
+																			filtered.value,
+																		);
+																	}}
+																/>
+																<span
+																	key={`${filtered}`}
+																>
+																	{
+																		filtered.label
+																	}
+																</span>
+															</div>
+														),
+													)}
+													<div className="flex flex-row items-center justify-between gap-2 border-t py-2">
+														<Button
+															variant="ghost"
+															onClick={
+																handleClearFilterPopover
+															}
+														>
+															Clear
+														</Button>
+														<Button
+															variant="default"
+															onClick={() =>
+																handleApplyFilters()
+															}
+														>
+															Apply
+														</Button>
+													</div>
+												</div>
 											</PopoverContent>
 										</Popover>
 									</div>
@@ -501,6 +723,9 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Status
 										</span>
+										<Badge variant="outline">
+											{getActiveFiltersCount("status")}
+										</Badge>
 										<Popover
 											open={
 												popoverOpen &&
@@ -518,16 +743,55 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 														)
 													}
 												>
-													<Badge>
-														{getActiveFiltersCount(
-															"status",
-														)}
-													</Badge>
 													<Filter className="h-4 w-4" />
 												</Button>
 											</PopoverTrigger>
 											<PopoverContent className="w-64">
-												{/* Render filter options for status */}
+												<div className="flex flex-col gap-2">
+													{filterOptions?.status?.map(
+														(filtered) => (
+															<div
+																key={`${filtered}`}
+																className="flex flex-row items-center justify-between gap-2"
+															>
+																<Checkbox
+																	checked={tempFilters?.status?.includes(
+																		filtered,
+																	)}
+																	onCheckedChange={() =>
+																		handleMultiSelectFilter(
+																			"status",
+																			filtered,
+																		)
+																	}
+																/>
+																<span
+																	key={`${filtered}`}
+																>
+																	{filtered}
+																</span>
+															</div>
+														),
+													)}
+													<div className="flex flex-row items-center justify-between gap-2 border-t py-2">
+														<Button
+															variant="ghost"
+															onClick={
+																handleClearFilterPopover
+															}
+														>
+															Clear
+														</Button>
+														<Button
+															variant="default"
+															onClick={
+																handleApplyFilters
+															}
+														>
+															Apply
+														</Button>
+													</div>
+												</div>
 											</PopoverContent>
 										</Popover>
 									</div>
@@ -538,7 +802,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							{filteredLogs.map((event, index) => (
 								<TableRow
 									key={`Log-${event.endTime}-${index}`}
-									className="cursor-pointer hover:bg-gray-50"
+									className="cursor-pointer hover:[background-color:rgb(245,249,254)!important] [a&]:hover:bg-primary"
 									onClick={() => handleRowClick(event)}
 								>
 									<TableCell>
@@ -615,7 +879,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					</Table>
 				</div>
 				{/* Pagination: You may need to implement your own or use shadcn/ui's Table.Pagination if available */}
-				<div className="flex items-center justify-end border-t bg-white p-2">
+				<div className="flex items-center gap-2 justify-self-end bg-white p-2">
 					{/* Simple pagination example */}
 					<label
 						htmlFor="rows-per-page"
@@ -645,9 +909,17 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							))}
 						</SelectContent>
 					</Select>
+					{filteredTotalCount}
 					<span className="mx-2 text-sm">
-						{page + 1} - {Math.ceil(totalCount / rowsPerPage)} of{" "}
-						{Math.ceil(totalCount / rowsPerPage)}
+						{/**
+							Checking for the case like , if a user searches on 2 or 3rd pages, then the filtered records might not have much records, so 
+							checking and resetting page to 1
+						*/}
+						{page + 1 > Math.ceil(filteredTotalCount / rowsPerPage)
+							? Math.ceil(filteredTotalCount / rowsPerPage)
+							: page + 1}{" "}
+						- {Math.ceil(filteredTotalCount / rowsPerPage)} of{" "}
+						{Math.ceil(filteredTotalCount / rowsPerPage)}
 					</span>
 					<Button
 						variant="outline"
@@ -663,7 +935,8 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						variant="outline"
 						className="border-b"
 						disabled={
-							page + 1 >= Math.ceil(totalCount / rowsPerPage)
+							page + 1 >=
+							Math.ceil(filteredTotalCount / rowsPerPage)
 						}
 						onClick={() =>
 							onPaginationChange(page + 1, rowsPerPage)
@@ -698,7 +971,10 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				/>
 			</SheetContent> */}
 			<Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-				<SheetContent side="right">
+				<SheetContent
+					side="right"
+					className="transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
+				>
 					<AuditLogsDetailDrawer
 						logDetails={selectedEvent}
 						handleDrawerClose={handleDrawerClose}
