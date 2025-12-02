@@ -46,11 +46,23 @@ export const FUNCTION_CONNECTIONS = {
 				},
 				{
 					key: "NAME",
-					label: "Name",
+					label: "Catalog Name",
 					value: "",
 					type: "text",
 					disabled: false,
 					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
 					category: "General",
 				},
 				{
@@ -137,7 +149,19 @@ export const FUNCTION_CONNECTIONS = {
 				},
 				{
 					key: "NAME",
-					label: "Name",
+					label: "Catalog Name",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
 					value: "",
 					type: "text",
 					disabled: false,
@@ -219,11 +243,23 @@ export const FUNCTION_CONNECTIONS = {
 				},
 				{
 					key: "NAME",
-					label: "Name",
+					label: "Catalog Name",
 					value: "",
 					type: "text",
 					disabled: false,
 					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
 					category: "General",
 				},
 				{
@@ -309,11 +345,23 @@ export const FUNCTION_CONNECTIONS = {
 				},
 				{
 					key: "NAME",
-					label: "Name",
+					label: "Catalog Name",
 					value: "",
 					type: "text",
 					disabled: false,
 					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
 					category: "General",
 				},
 				{
@@ -391,11 +439,23 @@ export const FUNCTION_CONNECTIONS = {
 				},
 				{
 					key: "NAME",
-					label: "Name",
+					label: "Catalog Name",
 					value: "",
 					type: "text",
 					disabled: false,
 					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
 					category: "General",
 				},
 				{
@@ -436,11 +496,23 @@ export const FUNCTION_CONNECTIONS = {
 				},
 				{
 					key: "NAME",
-					label: "Name",
+					label: "Catalog Name",
 					value: "",
 					type: "text",
 					disabled: false,
 					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
 					category: "General",
 				},
 				{
@@ -509,11 +581,23 @@ export const FUNCTION_CONNECTIONS = {
 				},
 				{
 					key: "NAME",
-					label: "Name",
+					label: "Catalog Name",
 					value: "",
 					type: "text",
 					disabled: false,
 					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
 					category: "General",
 				},
 				{
@@ -584,11 +668,23 @@ export const FUNCTION_CONNECTIONS = {
 				},
 				{
 					key: "NAME",
-					label: "Name",
+					label: "Catalog Name",
 					value: "",
 					type: "text",
 					disabled: false,
 					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
 					category: "General",
 				},
 				{
@@ -688,8 +784,8 @@ export const FUNCTION_CONNECTIONS = {
 					value: "",
 					type: "text",
 					disabled: false,
+					required: true,
 					rules: {
-						required: true,
 						pattern: {
 							value: /^[\w\-\s]+$/,
 							message:
