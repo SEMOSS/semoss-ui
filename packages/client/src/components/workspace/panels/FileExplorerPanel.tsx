@@ -23,6 +23,7 @@ import {
 } from "@/components/common";
 import { FlexLayout } from "@/components/flex-layout";
 import { useRootStore, useWorkspace } from "@/hooks";
+import { MCP_JSON_FILE_NAMES } from "@/pages/app/app.constants";
 import { Panel } from "./Panel";
 
 const EXPLORER_TYPE = "app";
@@ -359,7 +360,10 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			}
 			// remove the mcp json and UI tab on mcp generation
 			if (workspace.model) {
-				const toBeRemoved = ["py_mcp.json", "py_mcp.json (UI Editor)"];
+				const toBeRemoved = [
+					...MCP_JSON_FILE_NAMES,
+					...MCP_JSON_FILE_NAMES.map((fileName) => `${fileName} (UI Editor)`),
+				];
 				toBeRemoved.forEach((file) => {
 					const tabset = workspace.model
 						.getActiveTabset()
@@ -369,6 +373,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 						workspace.model.doAction(
 							FlexLayout.Actions.deleteTab(tabset.getId()),
 						);
+						
 					}
 				});
 			}
@@ -376,6 +381,16 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			refreshFiles();
 			// Handle pixel call response
 			if (pixelReturn[0].output) {
+				// open the relevant newly generated json editor
+				const sourceFileExtension = path.split('.')[1];
+				const targetFileName = MCP_JSON_FILE_NAMES.find((fileName) => fileName.includes(sourceFileExtension));
+				if (!targetFileName) {
+					throw new Error("Could not find target file");
+				}
+				const targetFilePath = `version/assets/mcp/${targetFileName}`;
+				
+				addMCPEditorTab(pixelReturn[0].output, targetFilePath);
+
 				notification.add({
 					message: "Successfully generated MCP tools",
 					color: "success",
