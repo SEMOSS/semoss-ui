@@ -57,6 +57,13 @@ const ellipsed = (text: string | null, maxLength = 50) => {
 		? `${text.substring(0, maxLength - 3)}...`
 		: text;
 };
+//to convert between true/false to success/failed or viceversa
+const STATUS_LABEL_CONVERSION = {
+	Success: true,
+	Failed: false,
+	true: "Success",
+	false: "Failed",
+};
 
 export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	logs = [],
@@ -97,9 +104,14 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			engineName: [
 				...new Set(logs.map((log) => log.engineName).filter(Boolean)),
 			],
-			status: [...new Set(logs.map((log) => log.status))].filter(
-				(status) => status !== undefined && status !== null,
-			),
+			status: [
+				...new Set(
+					logs.map((log) => STATUS_LABEL_CONVERSION[log.status]),
+				),
+			].filter((status) => status !== undefined && status !== null) ?? [
+				"Success",
+				"Failed",
+			],
 			latencyRange: [
 				{ label: "Fast (≤ 5ms)", value: "0-5" },
 				{ label: "Medium (5-50ms)", value: "6-50" },
@@ -123,8 +135,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 
 	// Filter Logs (same logic as before)
 	const filteredLogs = useMemo(() => {
-		// ...existing filteredLogs logic...
-		// (copy from your original code)
 		let filtered = [...logs];
 		if (searchQuery.trim()) {
 			const query = searchQuery.toLowerCase().trim();
@@ -143,21 +153,23 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		// Apply engine type filter
 		if (appliedFilters.engineType.length > 0) {
 			filtered = filtered.filter((log) =>
-				log.engineType.includes(log.engineType),
+				appliedFilters.engineType.includes(log.engineType),
 			);
 		}
 
 		// Apply engine name filter
 		if (appliedFilters.engineName.length > 0) {
 			filtered = filtered.filter((log) =>
-				log.engineName.includes(log.engineName),
+				appliedFilters.engineName.includes(log.engineName),
 			);
 		}
 
 		// Apply status filter
 		if (appliedFilters.status.length > 0) {
 			filtered = filtered.filter((log) =>
-				log.status.includes(String(log.status)),
+				appliedFilters.status.includes(
+					STATUS_LABEL_CONVERSION[log.status],
+				),
 			);
 		}
 
@@ -238,7 +250,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		[],
 	);
 
-	const _handleSelectAll = useCallback(
+	const handleSelectAll = useCallback(
 		(filterType: keyof FilterState, allOptions: string[]) => {
 			setTempFilters((prev) => {
 				const isAllSelected =
@@ -517,7 +529,18 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 																key={`${filtered}`}
 																className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
 															>
-																<Checkbox />
+																<Checkbox
+																	checked={tempFilters.engineName.includes(
+																		filtered,
+																	)}
+																	onCheckedChange={() => {
+																		handleMultiSelectFilter(
+																			"engineName",
+																			filtered,
+																		);
+																		return;
+																	}}
+																/>
 																<span
 																	key={`${filtered}`}
 																>
@@ -581,6 +604,48 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											</PopoverTrigger>
 											<PopoverContent className="w-128">
 												<div className="flex flex-col gap-2">
+													<div
+														key={
+															"latencyRangeSelectAll"
+														}
+														className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+													>
+														<Checkbox
+															checked={
+																tempFilters
+																	.latencyRange
+																	.length ===
+																filterOptions
+																	?.latencyRange
+																	?.length
+																	? true
+																	: tempFilters
+																				.latencyRange
+																				.length >
+																			0
+																		? "indeterminate"
+																		: false
+															}
+															onCheckedChange={() => {
+																handleSelectAll(
+																	"latencyRange",
+																	filterOptions?.latencyRange.map(
+																		(
+																			filtered,
+																		) =>
+																			filtered.value,
+																	),
+																);
+															}}
+														/>
+														<span
+															key={
+																"latencyRangeSelectAll"
+															}
+														>
+															Select All
+														</span>
+													</div>
 													{filterOptions?.latencyRange?.map(
 														(filtered) => (
 															<div
@@ -663,6 +728,48 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											</PopoverTrigger>
 											<PopoverContent className="w-64">
 												<div className="flex flex-col gap-2">
+													<div
+														key={
+															"tokenRangeSelectAll"
+														}
+														className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+													>
+														<Checkbox
+															checked={
+																tempFilters
+																	.tokenRange
+																	.length ===
+																filterOptions
+																	?.tokenRange
+																	?.length
+																	? true
+																	: tempFilters
+																				.tokenRange
+																				.length >
+																			0
+																		? "indeterminate"
+																		: false
+															}
+															onCheckedChange={() => {
+																handleSelectAll(
+																	"tokenRange",
+																	filterOptions?.tokenRange.map(
+																		(
+																			filtered,
+																		) =>
+																			filtered.value,
+																	),
+																);
+															}}
+														/>
+														<span
+															key={
+																"tokenRangeSelectAll"
+															}
+														>
+															Select All
+														</span>
+													</div>
 													{filterOptions?.tokenRange?.map(
 														(filtered) => (
 															<div
