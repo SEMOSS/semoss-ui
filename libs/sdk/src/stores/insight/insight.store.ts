@@ -656,12 +656,14 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				throw new Error("Error running MCP tool");
 			}
 
-			try {
-				this.actions.sendMCPResponseToPlayground(output);
-			} catch (e) {
-				console.warn(
-					`Failed to send MCP response to playground${e.message ? `: ${e.message}` : ""}`,
-				);
+			if (Env.TOOL) {
+				try {
+					this.actions.sendMCPResponseToPlayground(output);
+				} catch (e) {
+					console.warn(
+						`Failed to send MCP response to playground${e.message ? `: ${e.message}` : ""}`,
+					);
+				}
 			}
 
 			return {
