@@ -11,7 +11,7 @@ function App() {
 	return (
 		<InsightProvider>
 			<ThemeProvider defaultTheme="light">
-				<div className="absolute inset-0 h-screen w-screen overflow-hidden">
+				<div className="absolute inset-0 h-screen w-screen overflow-auto">
 					<Router />
 				</div>
 				<Toaster />

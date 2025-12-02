@@ -649,7 +649,10 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 			});
 
 			setTimeout(() => {
-				chart.resize();
+				chart.resize({
+					width: "auto",
+					height: 350,
+				});
 			}, 100);
 
 			const handleResize = () => {
@@ -683,7 +686,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	}
 
 	return (
-		<div className="rounded-[8px] bg-white p-0 pb-2 shadow-lg">
+		<div className="h-auto rounded-[8px] bg-white p-0 pb-4 shadow-lg">
 			<div className="flex items-center justify-between p-4">
 				<span className="font-semibold text-[#333] text-[18px]">
 					Event History
