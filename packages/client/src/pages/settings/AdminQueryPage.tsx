@@ -241,7 +241,7 @@ export const AdminQueryPage = () => {
 		hasRealContent &&
 		isValidSelect &&
 		isRowsValid;
-
+	console.log({ disableButton });
 	useEffect(() => {
 		setPage(0);
 		setRowsPerPage(10);
@@ -585,7 +585,7 @@ export const AdminQueryPage = () => {
 						size="large"
 						variant={"contained"}
 						onClick={() => submitQuery()}
-						disabled={!disableButton}
+						//disabled={!disableButton}
 						data-testid={"adminQueryPage-run-btn"}
 						endIcon={<ArrowForward />}
 					>
