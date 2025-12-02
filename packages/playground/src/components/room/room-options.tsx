@@ -1,6 +1,7 @@
 import { HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { EngineSelect } from "@semoss/shared";
 import {
 	Button,
 	Field,
@@ -16,7 +17,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { EngineSelect, ToolboxOverlay } from "@/components";
+import { ToolboxOverlay } from "@/components";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCP, MCPConfig } from "@/types";
@@ -89,7 +90,12 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 								<Field>
 									<FieldLabel>Model</FieldLabel>
 									<EngineSelect
-										value={chat.models.selected}
+										name={
+											chat.models.selected?.app_name || ""
+										}
+										value={
+											chat.models.selected?.app_id || ""
+										}
 										engineTypes={["MODEL"]}
 										metaFilters={[
 											{ tag: "text-generation" },
@@ -98,7 +104,7 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 											chat.setSelectedModel(v)
 										}
 										popoverContentProps={{
-											align: "end",
+											align: "start",
 										}}
 									/>
 								</Field>
@@ -108,7 +114,7 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 								<FieldLabel>Instructions</FieldLabel>
 								<Textarea
 									placeholder="Update Instructions"
-									className="min-h-[220px] resize-none"
+									className="max-h-[220px] min-h-[220px] resize-none overflow-y-auto"
 									value={options.instructions}
 									onChange={(e) => {
 										setOptions({
