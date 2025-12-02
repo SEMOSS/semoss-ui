@@ -21,7 +21,7 @@ const StyledJsonSection = styled("div")(() => ({
 }));
 const StyledToolsSection = styled("div")(() => ({
 	display: "flex",
-	justifyContent: "space-around",
+	justifyContent: "flex-start",
 	width: "100%",
 }));
 const StyledStack = styled(Stack)(() => ({
