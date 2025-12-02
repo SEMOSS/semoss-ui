@@ -639,8 +639,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
-		 * Run a MCP tool
-		 * @deprecated use runPixel and sendMCPResponseToPlayground instead
+		 * Run a MCP tool and send the response to the playground
 		 * @param name - name of the tool
 		 * @param parameters - parameters to pass to the tool
 		 */
@@ -652,10 +651,21 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ] );`,
 			);
 
-			this.actions.sendMCPResponseToPlayground(pixelReturn[0].output);
+			const { output, operationType } = pixelReturn[0];
+			if (!output || !operationType.indexOf("MCP_TOOL_EXECUTION")) {
+				throw new Error("Error running MCP tool");
+			}
+
+			try {
+				this.actions.sendMCPResponseToPlayground(output);
+			} catch (e) {
+				console.warn(
+					`Failed to send MCP response to playground${e.message ? `: ${e.message}` : ""}`,
+				);
+			}
 
 			return {
-				output: pixelReturn[0].output,
+				output,
 			};
 		},
 
