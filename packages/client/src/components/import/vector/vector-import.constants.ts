@@ -1948,7 +1948,7 @@ export const VECTOR_CONNECTIONS = {
 			fields: [
 				{
 					key: "NAME",
-					label: "Name",
+					label: "Catalog Name",
 					value: "",
 					component: "text",
 					disabled: false,
