@@ -367,11 +367,13 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 												].includes(filterName)
 													? filterOptions?.[
 															filterName
+														]
+													: filterOptions?.[
+															filterName
 														].map(
 															(filtered) =>
-																filtered,
-														)
-													: [],
+																filtered.value,
+														),
 											);
 										}}
 									/>
