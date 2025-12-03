@@ -52,3 +52,12 @@ export const TimeDateFormatter = (
 		return { date: "", time: "" };
 	}
 };
+
+export const ENGINE_TYPES = [
+	"APP",
+	"MODEL",
+	"DATABASE",
+	"VECTOR",
+	"FUNCTION",
+	"STORAGE",
+];

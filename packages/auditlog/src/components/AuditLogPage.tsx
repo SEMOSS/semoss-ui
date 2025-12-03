@@ -1,11 +1,28 @@
 import { RotateCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import { AuditLogsDataTable, AuditLogsTimeline } from "@semoss/shared";
-import { Button, Skeleton } from "@semoss/ui/next";
+import {
+	Button,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Skeleton,
+} from "@semoss/ui/next";
 import { useUserRootStore } from "@/hooks/useUserRootStore";
-import type { EventData } from "./common/utility";
+import { ENGINE_TYPES, type EventData } from "./common/utility";
+
+const initialAcc = {
+	APP: [],
+	MODEL: [],
+	DATABASE: [],
+	VECTOR: [],
+	FUNCTION: [],
+	STORAGE: [],
+};
 
 export const AuditLogPage = ({ catalogName }) => {
 	const { insightId } = useInsight();
@@ -15,15 +32,44 @@ export const AuditLogPage = ({ catalogName }) => {
 	const [totalCount, setTotalCount] = useState(0);
 	const [loading, setLoading] = useState<boolean>(true);
 	const rootStore = useUserRootStore(insightId);
+	const [engineDetails, setEngineDetails] = useState({ ...initialAcc });
+	const [engineSelectionDetails, setEngineSelectionDetails] = useState({
+		engineType: "",
+		engineId: "",
+	});
 
 	useEffect(() => {
-		// async function getMyEngines() {
-		// 	if (insightId) {
-		// 		const response = await runPixel(`MyEngines();`, insightId);
-		// 	}
-		// }
-		// getMyEngines();
-	}, []);
+		async function getMyEngines() {
+			if (insightId) {
+				const response = await runPixel(`MyEngines();`, insightId);
+				const responseData = response.pixelReturn[0].output;
+				const enginesDropdown = (
+					responseData as Array<{
+						database_id: string;
+						app_type: string;
+						app_name: string;
+					}>
+				).reduce(
+					(acc, engine) => {
+						// Only accept known app_types
+						if (Object.hasOwn(acc, engine.app_type)) {
+							acc[engine.app_type] = [
+								...acc[engine.app_type],
+								{
+									value: engine.database_id,
+									label: engine.app_name,
+								},
+							];
+						}
+						return acc;
+					},
+					{ ...initialAcc },
+				);
+				setEngineDetails(enginesDropdown);
+			}
+		}
+		getMyEngines();
+	}, [insightId]);
 
 	// const notification = useNotification();
 
@@ -39,18 +85,17 @@ export const AuditLogPage = ({ catalogName }) => {
 			const ss = String(date.getSeconds()).padStart(2, "0");
 
 			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-			const catalogId = "4801422a-5c62-421e-a00c-05c6a9e15de8";
+			const catalogId = engineSelectionDetails.engineId ?? null;
 			// window.location.hash.split("/")[catalogName === "Apps" ? 2 : 3];
-			catalogName = "Models";
+			catalogName = engineSelectionDetails.engineType;
 			const response = await runPixel(
-				`AuditLogReport(paramValues=[{"userId": "${rootStore?.user?.id}", "${catalogName === "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}"}]);`,
+				`AuditLogReport(paramValues=[{"userId": "${rootStore?.user?.id}", "${catalogName === "APP" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}"}]);`,
 				insightId,
 			);
 			const responseData = response.pixelReturn[0].output as {
 				logs: EventData[];
 				totalCount: number;
 			};
-			console.log(response, "response");
 			if (responseData?.logs) {
 				const responseLogs =
 					responseData?.logs as unknown as EventData[];
@@ -103,7 +148,76 @@ export const AuditLogPage = ({ catalogName }) => {
 				contentElement.style.maxWidth = "";
 			}
 		};
-	}, [catalogName, rowsPerPage, page, rootStore?.user?.id]);
+	}, [
+		catalogName,
+		rowsPerPage,
+		page,
+		rootStore?.user?.id,
+		engineSelectionDetails.engineId,
+	]);
+
+	const renderFilterSection = useCallback(() => {
+		return (
+			<div className="flex gap-2">
+				<div className="min-w-[100px]">
+					<Select
+						value={engineSelectionDetails.engineType}
+						onValueChange={(value) =>
+							setEngineSelectionDetails({
+								...engineSelectionDetails,
+								engineType: value,
+							})
+						}
+					>
+						<SelectTrigger className="min-w-[180px]">
+							<SelectValue placeholder="Select Engine Type" />
+						</SelectTrigger>
+						<SelectContent>
+							{ENGINE_TYPES.map((engineType) => (
+								<SelectItem
+									value={engineType}
+									key={`${engineType}Selection`}
+								>
+									{engineType}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="min-w-[100px]">
+					<Select
+						value={engineSelectionDetails.engineId}
+						onValueChange={(value) => {
+							setEngineSelectionDetails({
+								...engineSelectionDetails,
+								engineId: value,
+							});
+						}}
+					>
+						<SelectTrigger className="min-w-[180px]">
+							<SelectValue placeholder={`Select Engine`} />
+						</SelectTrigger>
+						<SelectContent>
+							{engineSelectionDetails.engineType &&
+							engineDetails[engineSelectionDetails.engineType]
+								.length > 0
+								? engineDetails[
+										engineSelectionDetails.engineType
+									].map((engine) => (
+										<SelectItem
+											value={engine.value}
+											key={engine.value}
+										>
+											{engine.label}
+										</SelectItem>
+									))
+								: null}
+						</SelectContent>
+					</Select>
+				</div>
+			</div>
+		);
+	}, [engineSelectionDetails, engineDetails]);
 
 	return (
 		<div className="flex flex-col gap-4 px-8 py-8">
@@ -128,6 +242,7 @@ export const AuditLogPage = ({ catalogName }) => {
 							</Menu.Item>
 							<Menu.Item value="Last Year">Last Year</Menu.Item>
 						</Select> */}
+					{renderFilterSection()}
 					<Button
 						variant="default"
 						onClick={() =>

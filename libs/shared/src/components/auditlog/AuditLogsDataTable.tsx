@@ -321,6 +321,133 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	);
 
 	const totalActiveFilters = getActiveFiltersCount() + (searchQuery ? 1 : 0);
+	//biome-ignore lint/correctness/useExhaustiveDependencies : not adding functions as dependencies
+	const renderPopoverContent = useCallback(
+		(filterName: keyof FilterState) => {
+			return (
+				<Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+					<PopoverTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() =>
+								handleFilterClick(
+									filterName as keyof FilterState,
+								)
+							}
+						>
+							<Filter className="h-4 w-4" />
+						</Button>
+					</PopoverTrigger>
+					{popoverColumn === filterName ? (
+						<PopoverContent className="w-128">
+							{/* Render filter options for filterType */}
+							{/* ...custom filter UI... */}
+							<div className="flex flex-col gap-2">
+								<div
+									key={`${filterName}SelectAll`}
+									className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+								>
+									<Checkbox
+										checked={
+											tempFilters?.[filterName].length ===
+											filterOptions?.[filterName]?.length
+												? true
+												: tempFilters?.[filterName]
+															?.length > 0
+													? "indeterminate"
+													: false
+										}
+										onCheckedChange={() => {
+											handleSelectAll(
+												filterName,
+												![
+													"latencyRange",
+													"tokenRange",
+												].includes(filterName)
+													? filterOptions?.[
+															filterName
+														].map(
+															(filtered) =>
+																filtered,
+														)
+													: [],
+											);
+										}}
+									/>
+									<span key={`${filterName}SelectAll`}>
+										Select All
+									</span>
+								</div>
+								{filterOptions?.[filterName]?.map((filtered) =>
+									Object.hasOwn(filtered, "value") ? (
+										<div
+											key={`${filtered.value}`}
+											className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+										>
+											<Checkbox
+												checked={tempFilters?.[
+													filterName
+												]?.includes(filtered.value)}
+												onCheckedChange={() => {
+													handleMultiSelectFilter(
+														filterName,
+														filtered.value,
+													);
+													return;
+												}}
+											/>
+											<span key={`${filtered.value}`}>
+												{filtered.label}
+											</span>
+										</div>
+									) : (
+										<div
+											key={`${filtered}`}
+											className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+										>
+											<Checkbox
+												checked={tempFilters?.[
+													filterName
+												]?.includes(filtered)}
+												onCheckedChange={() => {
+													handleMultiSelectFilter(
+														filterName,
+														filtered,
+													);
+													return;
+												}}
+											/>
+											<span key={`${filtered}`}>
+												{filtered}
+											</span>
+										</div>
+									),
+								)}
+								<div className="flex flex-row items-center justify-between gap-2 border-t py-2">
+									<Button
+										variant="ghost"
+										onClick={() =>
+											handleClearFilterPopover()
+										}
+									>
+										Clear
+									</Button>
+									<Button
+										variant="default"
+										onClick={handleApplyFilters}
+									>
+										Apply
+									</Button>
+								</div>
+							</div>
+						</PopoverContent>
+					) : null}
+				</Popover>
+			);
+		},
+		[popoverOpen, popoverColumn, tempFilters, filterOptions],
+	);
 
 	// Empty State
 	if (!logs || logs.length === 0) {
@@ -413,82 +540,15 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Engine Type
 										</span>
-										<Badge variant="outline">
-											{getActiveFiltersCount(
-												"engineType",
-											)}
-										</Badge>
-										<Popover
-											open={
-												popoverOpen &&
-												popoverColumn === "engineType"
-											}
-											onOpenChange={setPopoverOpen}
-										>
-											<PopoverTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() =>
-														handleFilterClick(
-															"engineType",
-														)
-													}
-												>
-													<Filter className="h-4 w-4" />
-												</Button>
-											</PopoverTrigger>
-											<PopoverContent className="w-128">
-												{/* Render filter options for engineType */}
-												{/* ...custom filter UI... */}
-												<div className="flex flex-col gap-2">
-													{filterOptions?.engineType?.map(
-														(filtered) => (
-															<div
-																key={`${filtered}`}
-																className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
-															>
-																<Checkbox
-																	checked={tempFilters.engineType.includes(
-																		filtered,
-																	)}
-																	onCheckedChange={() => {
-																		handleMultiSelectFilter(
-																			"engineType",
-																			filtered,
-																		);
-																		return;
-																	}}
-																/>
-																<span
-																	key={`${filtered}`}
-																>
-																	{filtered}
-																</span>
-															</div>
-														),
-													)}
-													<div className="flex flex-row items-center justify-between gap-2 border-t py-2">
-														<Button
-															variant="ghost"
-															onClick={() =>
-																handleClearFilterPopover()
-															}
-														>
-															Clear
-														</Button>
-														<Button
-															variant="default"
-															onClick={
-																handleApplyFilters
-															}
-														>
-															Apply
-														</Button>
-													</div>
-												</div>
-											</PopoverContent>
-										</Popover>
+										{appliedFilters.engineType.length >
+										0 ? (
+											<Badge variant="outline">
+												{getActiveFiltersCount(
+													"engineType",
+												)}
+											</Badge>
+										) : null}
+										{renderPopoverContent("engineType")}
 									</div>
 								</TableHead>
 								<TableHead>
@@ -496,80 +556,15 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Engine Name
 										</span>
-										<Badge variant="outline">
-											{getActiveFiltersCount(
-												"engineName",
-											)}
-										</Badge>
-										<Popover
-											open={
-												popoverOpen &&
-												popoverColumn === "engineName"
-											}
-											onOpenChange={setPopoverOpen}
-										>
-											<PopoverTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() =>
-														handleFilterClick(
-															"engineName",
-														)
-													}
-												>
-													<Filter className="h-4 w-4" />
-												</Button>
-											</PopoverTrigger>
-											<PopoverContent className="w-128">
-												<div className="flex flex-col gap-2">
-													{filterOptions?.engineName?.map(
-														(filtered) => (
-															<div
-																key={`${filtered}`}
-																className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
-															>
-																<Checkbox
-																	checked={tempFilters.engineName.includes(
-																		filtered,
-																	)}
-																	onCheckedChange={() => {
-																		handleMultiSelectFilter(
-																			"engineName",
-																			filtered,
-																		);
-																		return;
-																	}}
-																/>
-																<span
-																	key={`${filtered}`}
-																>
-																	{filtered}
-																</span>
-															</div>
-														),
-													)}
-													<div className="flex flex-row items-center justify-between gap-2 border-t py-2">
-														<Button
-															variant="ghost"
-															onClick={() =>
-																handleClearFilterPopover()
-															}
-														>
-															Clear
-														</Button>
-														<Button
-															variant="default"
-															onClick={
-																handleApplyFilters
-															}
-														>
-															Apply
-														</Button>
-													</div>
-												</div>
-											</PopoverContent>
-										</Popover>
+										{appliedFilters.engineName.length >
+										0 ? (
+											<Badge variant="outline">
+												{getActiveFiltersCount(
+													"engineName",
+												)}
+											</Badge>
+										) : null}
+										{renderPopoverContent("engineName")}
 									</div>
 								</TableHead>
 								<TableHead>
@@ -577,123 +572,15 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Latency
 										</span>
-										<Badge variant="outline">
-											{getActiveFiltersCount(
-												"latencyRange",
-											)}
-										</Badge>
-										<Popover
-											open={
-												popoverOpen &&
-												popoverColumn === "latencyRange"
-											}
-											onOpenChange={setPopoverOpen}
-										>
-											<PopoverTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() =>
-														handleFilterClick(
-															"latencyRange",
-														)
-													}
-												>
-													<Filter className="h-4 w-4" />
-												</Button>
-											</PopoverTrigger>
-											<PopoverContent className="w-128">
-												<div className="flex flex-col gap-2">
-													<div
-														key={
-															"latencyRangeSelectAll"
-														}
-														className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
-													>
-														<Checkbox
-															checked={
-																tempFilters
-																	.latencyRange
-																	.length ===
-																filterOptions
-																	?.latencyRange
-																	?.length
-																	? true
-																	: tempFilters
-																				.latencyRange
-																				.length >
-																			0
-																		? "indeterminate"
-																		: false
-															}
-															onCheckedChange={() => {
-																handleSelectAll(
-																	"latencyRange",
-																	filterOptions?.latencyRange.map(
-																		(
-																			filtered,
-																		) =>
-																			filtered.value,
-																	),
-																);
-															}}
-														/>
-														<span
-															key={
-																"latencyRangeSelectAll"
-															}
-														>
-															Select All
-														</span>
-													</div>
-													{filterOptions?.latencyRange?.map(
-														(filtered) => (
-															<div
-																key={`${filtered.value}`}
-																className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
-															>
-																<Checkbox
-																	checked={tempFilters.latencyRange.includes(
-																		filtered.value,
-																	)}
-																	onCheckedChange={() => {
-																		handleMultiSelectFilter(
-																			"latencyRange",
-																			filtered.value,
-																		);
-																	}}
-																/>
-																<span
-																	key={`${filtered}`}
-																>
-																	{
-																		filtered.label
-																	}
-																</span>
-															</div>
-														),
-													)}
-													<div className="flex flex-row items-center justify-between gap-2 border-t py-2">
-														<Button
-															variant="ghost"
-															onClick={
-																handleClearFilterPopover
-															}
-														>
-															Clear
-														</Button>
-														<Button
-															variant="default"
-															onClick={
-																handleApplyFilters
-															}
-														>
-															Apply
-														</Button>
-													</div>
-												</div>
-											</PopoverContent>
-										</Popover>
+										{appliedFilters.latencyRange.length >
+										0 ? (
+											<Badge variant="outline">
+												{getActiveFiltersCount(
+													"latencyRange",
+												)}
+											</Badge>
+										) : null}
+										{renderPopoverContent("latencyRange")}
 									</div>
 								</TableHead>
 								<TableHead>
@@ -701,123 +588,15 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Tokens
 										</span>
-										<Badge variant="outline">
-											{getActiveFiltersCount(
-												"tokenRange",
-											)}
-										</Badge>
-										<Popover
-											open={
-												popoverOpen &&
-												popoverColumn === "tokenRange"
-											}
-											onOpenChange={setPopoverOpen}
-										>
-											<PopoverTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() =>
-														handleFilterClick(
-															"tokenRange",
-														)
-													}
-												>
-													<Filter className="h-4 w-4" />
-												</Button>
-											</PopoverTrigger>
-											<PopoverContent className="w-64">
-												<div className="flex flex-col gap-2">
-													<div
-														key={
-															"tokenRangeSelectAll"
-														}
-														className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
-													>
-														<Checkbox
-															checked={
-																tempFilters
-																	.tokenRange
-																	.length ===
-																filterOptions
-																	?.tokenRange
-																	?.length
-																	? true
-																	: tempFilters
-																				.tokenRange
-																				.length >
-																			0
-																		? "indeterminate"
-																		: false
-															}
-															onCheckedChange={() => {
-																handleSelectAll(
-																	"tokenRange",
-																	filterOptions?.tokenRange.map(
-																		(
-																			filtered,
-																		) =>
-																			filtered.value,
-																	),
-																);
-															}}
-														/>
-														<span
-															key={
-																"tokenRangeSelectAll"
-															}
-														>
-															Select All
-														</span>
-													</div>
-													{filterOptions?.tokenRange?.map(
-														(filtered) => (
-															<div
-																key={`${filtered.value}`}
-																className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
-															>
-																<Checkbox
-																	checked={tempFilters?.tokenRange?.includes(
-																		filtered.value,
-																	)}
-																	onCheckedChange={() => {
-																		handleMultiSelectFilter(
-																			"tokenRange",
-																			filtered.value,
-																		);
-																	}}
-																/>
-																<span
-																	key={`${filtered}`}
-																>
-																	{
-																		filtered.label
-																	}
-																</span>
-															</div>
-														),
-													)}
-													<div className="flex flex-row items-center justify-between gap-2 border-t py-2">
-														<Button
-															variant="ghost"
-															onClick={
-																handleClearFilterPopover
-															}
-														>
-															Clear
-														</Button>
-														<Button
-															variant="default"
-															onClick={() =>
-																handleApplyFilters()
-															}
-														>
-															Apply
-														</Button>
-													</div>
-												</div>
-											</PopoverContent>
-										</Popover>
+										{appliedFilters.tokenRange.length >
+										0 ? (
+											<Badge variant="outline">
+												{getActiveFiltersCount(
+													"tokenRange",
+												)}
+											</Badge>
+										) : null}
+										{renderPopoverContent("tokenRange")}
 									</div>
 								</TableHead>
 								<TableHead>
@@ -830,77 +609,14 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 											Status
 										</span>
-										<Badge variant="outline">
-											{getActiveFiltersCount("status")}
-										</Badge>
-										<Popover
-											open={
-												popoverOpen &&
-												popoverColumn === "status"
-											}
-											onOpenChange={setPopoverOpen}
-										>
-											<PopoverTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() =>
-														handleFilterClick(
-															"status",
-														)
-													}
-												>
-													<Filter className="h-4 w-4" />
-												</Button>
-											</PopoverTrigger>
-											<PopoverContent className="w-64">
-												<div className="flex flex-col gap-2">
-													{filterOptions?.status?.map(
-														(filtered) => (
-															<div
-																key={`${filtered}`}
-																className="flex flex-row items-center justify-between gap-2"
-															>
-																<Checkbox
-																	checked={tempFilters?.status?.includes(
-																		filtered,
-																	)}
-																	onCheckedChange={() =>
-																		handleMultiSelectFilter(
-																			"status",
-																			filtered,
-																		)
-																	}
-																/>
-																<span
-																	key={`${filtered}`}
-																>
-																	{filtered}
-																</span>
-															</div>
-														),
-													)}
-													<div className="flex flex-row items-center justify-between gap-2 border-t py-2">
-														<Button
-															variant="ghost"
-															onClick={
-																handleClearFilterPopover
-															}
-														>
-															Clear
-														</Button>
-														<Button
-															variant="default"
-															onClick={
-																handleApplyFilters
-															}
-														>
-															Apply
-														</Button>
-													</div>
-												</div>
-											</PopoverContent>
-										</Popover>
+										{appliedFilters.status.length > 0 ? (
+											<Badge variant="outline">
+												{getActiveFiltersCount(
+													"status",
+												)}
+											</Badge>
+										) : null}
+										{renderPopoverContent("status")}
 									</div>
 								</TableHead>
 							</TableRow>
@@ -1069,14 +785,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				)}
 			</div>
 
-			{/* Filter Popover content should be implemented inside PopoverContent above */}
-
-			{/* <SheetContent open={drawerOpen} onOpenChange={setDrawerOpen}>
-				<AuditLogsDetailDrawer
-					logDetails={selectedEvent}
-					handleDrawerClose={handleDrawerClose}
-				/>
-			</SheetContent> */}
 			<Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
 				<SheetContent
 					side="right"
