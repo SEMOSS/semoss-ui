@@ -385,6 +385,16 @@ paramValues=[${JSON.stringify(paramValues)}]
 				output.responseMessage,
 			);
 			this.addChild(responseMessage);
+			if (responseMessage instanceof ResponseMessageStore) {
+				for (const tool of responseMessage.tools) {
+					if (
+						tool._meta.map.SMSS_MCP_EXECUTION === MCP_EXECUTION_AUTO
+					) {
+						// start running tools if there are any set to auto
+						await responseMessage.startToolExecution();
+					}
+				}
+			}
 		}
 	};
 }
