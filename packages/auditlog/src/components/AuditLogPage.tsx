@@ -166,6 +166,7 @@ export const AuditLogPage = ({ catalogName }) => {
 							setEngineSelectionDetails({
 								...engineSelectionDetails,
 								engineType: value,
+								engineId: "null",
 							})
 						}
 					>
