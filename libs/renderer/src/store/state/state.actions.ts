@@ -106,7 +106,6 @@ export interface AddVariableAction extends Action {
 		value?: string;
 		isInput?: boolean;
 		isOutput?: boolean;
-		rename?: string;
 	};
 }
 
@@ -122,7 +121,6 @@ export interface EditVariableAction extends Action {
 			value?: string;
 			isInput?: boolean;
 			isOutput?: boolean;
-			rename?: string;
 		};
 	};
 }
@@ -132,7 +130,6 @@ export interface RenameVariableAction extends Action {
 	payload: {
 		id: string;
 		alias: string;
-		rename?: string;
 	};
 }
 

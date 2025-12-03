@@ -395,7 +395,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 							<StyledTitle onMouseDown={handleMouseDown}>
 								<Stack direction={"row"}>
 									<Typography variant={"body2"}>
-										 {String(handleRename(designer.selected))}
+										{variableName ? variableName :String(handleRename(designer.selected))}
 									</Typography>
 								</Stack>
 								{areAllBlocksDraggable() && (
@@ -424,7 +424,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 				<StyledTitle onMouseDown={handleMouseDown}>
 					<Stack direction={"row"}>
 						<Typography variant={"body2"}>
-							 {String(handleRename(designer.selected))}
+							 {variableName? variableName:String(handleRename(designer.selected))}
 						</Typography>
 					</Stack>
 					{isDraggable && (

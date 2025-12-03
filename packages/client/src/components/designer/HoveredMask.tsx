@@ -135,7 +135,7 @@ export const HoveredMask = observer((props: HoveredMaskProps) => {
 		>
 			<StyledTitle>
 				<Typography variant={"body2"}>
-					{handleRename(designer.hovered)}
+					{variableName ? variableName:handleRename(designer.hovered)}
 				</Typography>
 			</StyledTitle>
 		</StyledContainer>

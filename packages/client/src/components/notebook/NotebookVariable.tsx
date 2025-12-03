@@ -145,7 +145,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 
 	const [openRenameAlias, setOpenRenameAlias] = useState(false);
 	const [anchorEl, setAnchorEl] = useState(null);
-	const [newTokenAlias, setNewTokenAlias] = useState(variable.rename ? variable.rename : id);
+	const [newTokenAlias, setNewTokenAlias] = useState(id);
 	const [popoverAnchorEle, setPopoverAnchorEl] = useState<HTMLElement | null>(
 		null,
 	);
@@ -377,7 +377,6 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 		}
 	}, [variable.type, engines, id]);
 
-
 	return (
 		<>
 			<StyledListItem
@@ -521,12 +520,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 												variant="body1"
 												fontWeight="medium"
 											>
-												{variable.type === 'block'
-                                                ? variable.rename &&
-                                                  variable.rename !== ''
-                                                    ? variable.rename
-                                                    : id
-                                                : id}
+												{id}
 											</Typography>
 											<StyledCapitalizedTypography variant="body2">
 												{getVariableTypeDisplay}
@@ -540,7 +534,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 											<StyledTextField
 												className="notebook-variable__alias-name-text-field"
 												inputRef={(input) =>
-													input?.focus()
+													input && input.focus()
 												}
 												focused={true}
 												fullWidth
@@ -554,7 +548,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 													</em>
 												}
 												onChange={(e) => {
-													setNewTokenAlias(													
+													setNewTokenAlias(
 														e.target.value,
 													);
 												}}
@@ -577,16 +571,17 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 															return;
 														}
 
-													const success =
-														await state.dispatch({
-															message:
-																ActionMessages.RENAME_VARIABLE,
-															payload: {
-																id: id,
-																alias: newTokenAlias,
-																rename: newTokenAlias,
-															},
-														});
+														const success =
+															await state.dispatch(
+																{
+																	message:
+																		ActionMessages.RENAME_VARIABLE,
+																	payload: {
+																		id: id,
+																		alias: newTokenAlias,
+																	},
+																},
+															);
 
 														notification.add({
 															color: success
@@ -600,14 +595,13 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 														setNewTokenAlias(
 															success
 																? newTokenAlias
-																: variable.rename
-															? variable.rename: id,
+																: id,
 														);
 													}
 												}}
 												onBlur={() => {
 													setOpenRenameAlias(false);
-													setNewTokenAlias(variable.rename? variable.rename : id);
+													setNewTokenAlias(id);
 												}}
 												InputProps={{
 													disableUnderline: true,

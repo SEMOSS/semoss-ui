@@ -26,7 +26,7 @@ import {
 	Search,
 } from "@mui/icons-material/";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import { toJS } from "mobx";
+import { set, toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -445,7 +445,7 @@ export const LayersPanel = observer(
 				payload: {
 					id: id,
 					path: "id",
-					value: editBlockId,
+					value: editBlockId.trim(),
 				},
 			});
 		};
@@ -884,7 +884,11 @@ export const LayersPanel = observer(
 					} else if (block.id === id) {
 						setRename(true);
 						break;
-					} else {
+					} else if(id.length ===0  ){
+						setRename(true);
+						break;
+					}
+					 else {
 						setRename(false);
 					}
 				}
@@ -899,7 +903,7 @@ export const LayersPanel = observer(
 						<StyledLabelContainer
 							search={
 								search
-									? [block.widget, block.id]
+									? [block.widget, block.id, block.data.id]
 											.join("")
 											.toLowerCase()
 											.indexOf(search.toLowerCase()) > -1
@@ -952,9 +956,7 @@ export const LayersPanel = observer(
 									</StyledRenameStack>
 								) : (
 									<StyledLabelSubtitleText>
-										{block.data.id
-											? block.data.id
-											: block.id}
+										{variableName || block.data.id || block.id}
 									</StyledLabelSubtitleText>
 								)}
 							</div>
@@ -1019,36 +1021,34 @@ export const LayersPanel = observer(
 							},
 						}}
 					>
-						<Menu.Item
-							value="rename"
-							sx={{ display: "flex" }}
-							onClick={() => handleBlockName(block.id)}
-						>
-							<img
-								src={RenameIcon}
-								alt="Rename Icon"
-								style={{
-									marginRight: "12px",
-									position: "relative",
-									left: "4px",
-								}}
-							/>
-							Rename
-						</Menu.Item>
-						<Menu.Item
-							value="duplicate"
-							sx={{ display: "flex" }}
-							onClick={(e: React.MouseEvent<HTMLElement>) =>
-								handleDuplicate(e, block.id)
-							}
-						>
-							<img
-								src={DuplicateIcon}
-								alt="Duplicate Icon"
-								style={{ marginRight: "8px" }}
-							/>{" "}
-							Duplicate
-						</Menu.Item>
+						{!(INPUT_BLOCK_TYPES.includes(block.widget)) && (
+						<><Menu.Item
+								value="rename"
+								sx={{ display: "flex" }}
+								onClick={() => handleBlockName(block.id)}
+							>
+								<img
+									src={RenameIcon}
+									alt="Rename Icon"
+									style={{
+										marginRight: "12px",
+										position: "relative",
+										left: "4px",
+									}} />
+								Rename
+							</Menu.Item>
+							</>)}
+							<Menu.Item
+								value="duplicate"
+								sx={{ display: "flex" }}
+								onClick={(e: React.MouseEvent<HTMLElement>) => handleDuplicate(e, block.id)}
+							>
+									<img
+										src={DuplicateIcon}
+										alt="Duplicate Icon"
+										style={{ marginRight: "8px" }} />{" "}
+									Duplicate
+								</Menu.Item>
 						<Menu.Item
 							value="delete"
 							sx={{ display: "flex" }}

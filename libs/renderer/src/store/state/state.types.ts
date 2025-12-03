@@ -54,14 +54,12 @@ export type Variable =
 			to?: string;
 			cellId?: never; // Explicitly setting it as never when 'type' is not 'cell'
 			value?: any;
-			rename?: string; // Optional rename field for variables
 	  }
 	| {
 			to: string;
 			type: "cell"; // Specific case when type is 'cell'
 			cellId: string;
 			value?: any;
-			rename?: string;
 	  };
 
 export type VariableWithId =
@@ -70,13 +68,11 @@ export type VariableWithId =
 			to?: string;
 			value?: any;
 			cellId?: string;
-			rename?: string; // Optional rename field for variables
 	  } & { id: string })
 	| ({
 			type: "cell";
 			to: string;
 			cellId: string;
-			rename?: string; // Optional rename field for variables
 	  } & { id: string });
 
 /**
