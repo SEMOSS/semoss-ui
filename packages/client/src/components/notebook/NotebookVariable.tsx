@@ -715,5 +715,4 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 			</Modal>
 		</>
 	);
-
-										 
+								
