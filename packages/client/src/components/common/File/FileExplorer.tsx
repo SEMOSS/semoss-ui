@@ -18,7 +18,7 @@ interface FileExplorerProps {
 	expandedPaths: string[];
 	onToggleExpand: (path: string) => void;
 	/** Type of file opened */
-	type: "app" | "insight";
+	type: "app" | "insight" | "engine";
 
 	/** Space where the file is located */
 	space: string;
@@ -77,7 +77,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 	>(
 		type === "app"
 			? `BrowseAsset(filePath=["version/assets"], space=["${space}"]);`
-			: "",
+			: `BrowseEngineAssets(filePath=["version/assets"], engine=["${space}"]);`,
 		{},
 		insightId,
 	);
@@ -115,11 +115,11 @@ export const FileExplorer = (props: FileExplorerProps) => {
 	 * @param expanded - newly expanded values
 	 */
 
-	if (!initLoadComplete) {
-		return (
-			<LoadingScreen.Trigger description="Retrieving files from application..." />
-		);
-	}
+	// if (!initLoadComplete) {
+	// 	return (
+	// 		<LoadingScreen.Trigger description="Retrieving files from application..." />
+	// 	);
+	// }
 
 	return (
 		<div

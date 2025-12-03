@@ -11,7 +11,7 @@ import { useRootStore } from "@/hooks";
 
 interface CreateFileOverlayProps {
 	/** Type of file opened */
-	type: "app" | "insight";
+	type: "app" | "insight" | "engine";
 
 	/** Space where the file will be create */
 	space: string;

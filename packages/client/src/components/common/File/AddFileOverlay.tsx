@@ -13,7 +13,7 @@ import { useRootStore } from "@/hooks";
 
 interface AddFileOverlayProps {
 	/** Type of file opened */
-	type: "app" | "insight";
+	type: "app" | "insight" | "engine";
 
 	/** Space where the file is located */
 	space: string;
