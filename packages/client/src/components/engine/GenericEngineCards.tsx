@@ -203,18 +203,6 @@ const StyledCardIconsDiv = styled("div")({
 	gap: "8px",
 });
 
-/**
- * @name formatDBName
- * @param str
- * @returns formatted db name
- */
-const formatDBName = (str: string) => {
-	const frags = str.split("_");
-	for (let i = 0; i < frags.length; i++) {
-		frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
-	}
-	return frags.join(" ");
-};
 
 /**
  * @name findDBImage
@@ -347,7 +335,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 					<Typography variant={"body1"}>
 						<Typography variant={"body1"}>
 							<Typography variant="body1" noWrap={true}>
-								{formatDBName(name)}
+								{name}
 							</Typography>
 							{/* {formatDBName(name)} */}
 						</Typography>
@@ -366,7 +354,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 								<>
 									{/** biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation> */}
 									{tag.map((t, i) => {
-										if (i <= 2) {
+										if (i <= 2 && t!=="") {
 											return (
 												<StyledTagChip
 													maxWidth={
@@ -394,7 +382,8 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 									) : null}
 								</>
 							) : (
-								<StyledTagChip key={`${id}0`} label={tag} />
+								tag !== '' ?
+                                <StyledTagChip key={`${id}0`} label={tag} /> : null
 							))}
 					</Stack>
 				</StyledLandscapeCardHeaderDiv>
@@ -507,7 +496,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 							}}
 						>
 							<Typography variant={"body1"}>
-								{formatDBName(name)}
+								{name}
 							</Typography>
 							{sub_type === "VERTEX" ? (
 								<StyledCardImg src={GOOGLE}></StyledCardImg>
@@ -563,7 +552,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 							<>
 								{/** biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation> */}
 								{tag.map((t, i) => {
-									if (i <= 2) {
+									if (i <= 2 && t !=="") {
 										return (
 											<StyledTagChip
 												maxWidth={
@@ -591,7 +580,8 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 								) : null}
 							</>
 						) : (
-							<StyledTagChip key={`${id}0`} label={tag} />
+							tag !== '' ?
+                                <StyledTagChip key={`${id}0`} label={tag} /> : null
 						))}
 				</Stack>
 			</Card.Content>
@@ -679,7 +669,7 @@ export const PlainEngineCard = (props) => {
 			/>
 			<StyledTileCardContent sx={{ marginTop: "8px" }}>
 				<StyledDbName variant={"body1"}>
-					{name ? formatDBName(name) : id}
+					{name ? name : id}
 				</StyledDbName>
 			</StyledTileCardContent>
 		</StyledPlainTileCard>

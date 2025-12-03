@@ -1,5 +1,11 @@
-import { createContext, useEffect, useMemo, useState } from "react";
-import { Insight } from "../../..";
+import {
+	createContext,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
+import { Env, Insight, type MCPToolRequest } from "../../..";
 
 /**
  * Context of the react data
@@ -13,6 +19,7 @@ export const InsightContext = createContext<
 			system: Insight["system"];
 			actions: Insight["actions"];
 			insightId: Insight["insightId"];
+			tool?: MCPToolRequest;
 	  }
 	| undefined
 >(undefined);
@@ -49,14 +56,14 @@ export const InsightProvider = (props: InsightProviderProps) => {
 	/**
 	 * Sync the insight with react
 	 */
-	const syncInsight = async () => {
+	const syncInsight = useCallback(() => {
 		setError(insight.error);
 		setSystem(insight.system);
 		setIsAuthorized(insight.isAuthorized);
 		setIsInitialized(insight.isInitialized);
 		setIsReady(insight.isReady);
 		setInsightId(insight.insightId);
-	};
+	}, [insight]);
 
 	const wrappedActions = useMemo(() => {
 		return Object.keys(insight.actions).reduce(
@@ -78,15 +85,12 @@ export const InsightProvider = (props: InsightProviderProps) => {
 			},
 			{} as Insight["actions"],
 		);
-	}, [insight, insight.actions]);
+	}, [insight, insight.actions, syncInsight]);
 
 	// initialize the insight / destroy
 	useEffect(() => {
 		// initialize the insight
-		insight.initialize(options).finally(() => {
-			// update the state
-			syncInsight();
-		});
+		insight.initialize(options).finally(() => syncInsight());
 
 		return () => {
 			// destroy the insight
@@ -95,7 +99,7 @@ export const InsightProvider = (props: InsightProviderProps) => {
 				syncInsight();
 			});
 		};
-	}, [insight, options]);
+	}, [insight, options, syncInsight]);
 
 	return (
 		<InsightContext.Provider
@@ -107,6 +111,8 @@ export const InsightProvider = (props: InsightProviderProps) => {
 				system: system,
 				actions: wrappedActions,
 				insightId: insightId,
+				// ENV.TOOL should not change once the insight is ready
+				tool: Env.TOOL ?? null,
 			}}
 		>
 			{children}

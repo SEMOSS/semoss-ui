@@ -98,12 +98,18 @@ export const DeleteDuplicateMask = observer(
 		const isIterationOrContainer =
 			block == null
 				? false
-				: block.widget === "iteration" || block.widget === "container";
-		const isChangeable = hasChildren && block.widget !== "container";
+				: block.widget === "iteration" ||
+					block.widget === "container" ||
+					block.widget === "form";
+		const isForm = block?.widget === "form";
+		const isChangeable =
+			hasChildren && block?.widget !== "container" && !isForm;
+		const showQuickMenu = isIterationOrContainer && !isForm;
 		// check if it is visible
 		const isVisible =
 			block && registry[block.widget] && block.widget !== "page";
-		const [anchorEl, setAnchorEl] = useState(null);
+
+		const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
 		// get the root, watch changes, and reposition the mask
 		useLayoutEffect(() => {
@@ -138,7 +144,7 @@ export const DeleteDuplicateMask = observer(
 			repositionMask();
 
 			return () => observer.disconnect();
-		}, [designer.selected, isVisible]);
+		}, [designer.selected, isVisible, screenEle]);
 
 		if (!size || !isVisible) {
 			return null;
@@ -220,7 +226,6 @@ export const DeleteDuplicateMask = observer(
 					const children = block.slots[slot].children;
 					if (children?.length) {
 						children.forEach((childId) => {
-							//   const childBlock = state.getBlock(childId);
 							addVariable(childId);
 						});
 					}
@@ -391,9 +396,8 @@ export const DeleteDuplicateMask = observer(
 				}
 			: null;
 
-		// TODO: revisit these actions for the base page once multiple pages/routing is enabled
 		return (
-			<StyledContainer id="delete-duplicate-mask" style={getStyle()}>
+			<StyledContainer style={getStyle()}>
 				<StyledButtonGroup>
 					{isIterationOrContainer && (
 						<>
@@ -406,14 +410,30 @@ export const DeleteDuplicateMask = observer(
 							>
 								<StyledButtonGroupIconButton
 									sx={{ color: "#757575" }}
-									onClick={(e) =>
-										setAnchorEl(e.currentTarget)
-									}
+									onClick={(e) => {
+										if (isForm) {
+											window.dispatchEvent(
+												new CustomEvent(
+													"FORM_MENU_OPEN",
+													{
+														detail: {
+															formId: block.id,
+														},
+													},
+												),
+											);
+										} else {
+											setAnchorEl(
+												e.currentTarget as HTMLElement,
+											);
+										}
+									}}
 								>
 									{isChangeable ? <SwapHoriz /> : <Add />}
 								</StyledButtonGroupIconButton>
 							</Tooltip>
-							{anchorEl && (
+
+							{anchorEl && showQuickMenu && (
 								<QuickMenu
 									parentId={block.id}
 									anchorEl={anchorEl}
