@@ -1,6 +1,12 @@
 import { Close } from "@mui/icons-material";
 import { useEffect } from "react";
-import { Controller } from "react-hook-form";
+import {
+	type Control,
+	Controller,
+	type UseFormGetValues,
+	type UseFormSetValue,
+	type UseFormWatch,
+} from "react-hook-form";
 import { Env } from "@semoss/sdk/react";
 import {
 	Autocomplete,
@@ -15,6 +21,7 @@ import {
 } from "@semoss/ui";
 import { usePixel, useRootStore } from "@/hooks";
 import {
+	type AppDetailsFormTypes,
 	type engine,
 	type modelledDependency,
 	SetProjectDependencies,
@@ -61,47 +68,41 @@ const StyledCardImage = styled("img")({
 interface EditDependenciesModalProps {
 	isOpen: boolean;
 	onClose: (refresh: boolean) => void;
-	control;
-	getValues;
-	setValue;
-	watch;
+	control: Control<AppDetailsFormTypes>;
+	getValues: UseFormGetValues<AppDetailsFormTypes>;
+	setValue: UseFormSetValue<AppDetailsFormTypes>;
+	watch: UseFormWatch<AppDetailsFormTypes>;
 }
 
-export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
-	const { isOpen, onClose, control, getValues, setValue, watch } = props;
+/**
+ * Renders a modal to edit dependencies for an application.
+ *
+ * @component
+ */
+export const EditDependenciesModal = ({
+	isOpen,
+	onClose,
+	control,
+	getValues,
+	setValue,
+	watch,
+}: EditDependenciesModalProps) => {
+	/**
+	 * Library Hooks
+	 */
 	const { monolithStore } = useRootStore();
 	const notification = useNotification();
+	const getEngines = usePixel<engine[]>("MyEngines();");
+
+	/**
+	 * Form State
+	 */
 	const allDeps = watch("allDependencies");
 	const selectedDeps = watch("selectedDependencies");
 
-	const getEngines = usePixel<engine[]>("MyEngines();");
-
-	useEffect(() => {
-		if (getEngines.status !== "SUCCESS") {
-			return;
-		}
-
-		const dependencies = modelDependencies(getEngines.data);
-
-		setValue("allDependencies", dependencies);
-	}, [getEngines.status, getEngines.data]);
-
-	const modelDependencies = (
-		dependencies: engine[],
-	): modelledDependency[] => {
-		const modelled = dependencies.map((d) => ({
-			name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
-			id: d.app_id,
-			type: d.app_type,
-			userPermission: d.user_permission,
-			isPublic: !!d.database_global,
-			isDiscoverable: !!d.database_discoverable,
-			description: d.description,
-			access_permission: d.access_permission,
-		}));
-		return modelled;
-	};
-
+	/**
+	 * Functions
+	 */
 	const handleUpdateDependencies = async () => {
 		const appId = getValues("appId");
 		const res = await SetProjectDependencies(
@@ -130,6 +131,35 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
 		);
 		setValue("selectedDependencies", newDependencies);
 	};
+
+	/**
+	 * Effects
+	 */
+	useEffect(() => {
+		if (getEngines.status !== "SUCCESS") {
+			return;
+		}
+
+		const modelDependencies = (
+			dependencies: engine[],
+		): modelledDependency[] => {
+			const modelled = dependencies.map((d) => ({
+				name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
+				id: d.app_id,
+				type: d.app_type,
+				userPermission: d.user_permission,
+				isPublic: !!d.database_global,
+				isDiscoverable: !!d.database_discoverable,
+				description: d.description,
+				access_permission: d.access_permission,
+			}));
+			return modelled;
+		};
+
+		const dependencies = modelDependencies(getEngines.data);
+
+		setValue("allDependencies", dependencies);
+	}, [getEngines.status, getEngines.data, setValue]);
 
 	return (
 		<Modal open={isOpen} fullWidth onClose={() => onClose(false)}>
@@ -162,13 +192,13 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
 								renderInput={(params) => (
 									<TextField {...params} label="Searching" />
 								)}
-								renderOption={(props, option) => (
-									<li {...props}>{option.name}</li>
-								)}
 								getOptionLabel={(option: modelledDependency) =>
 									option.name
 								}
-								isOptionEqualToValue={(option, value) => {
+								isOptionEqualToValue={(
+									option: modelledDependency,
+									value: modelledDependency,
+								) => {
 									return option.id === value.id;
 								}}
 							/>
