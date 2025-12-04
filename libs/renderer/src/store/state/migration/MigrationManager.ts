@@ -15,6 +15,7 @@ import migrate__1_0_0_alpha_13__to_1_0_0_alpha_14 from "./migrate__1_0_0_alpha_1
 import migrate__1_0_0_alpha_14__to_1_0_0_alpha_15 from "./migrate__1_0_0_alpha_14__to___1_0_0_alpha_15";
 import migrate__1_0_0_alpha_15__to_1_0_0_alpha_16 from "./migrate__1_0_0_alpha_15__to___1_0_0_alpha_16";
 import migrate__1_0_0_alpha_16__to_1_0_0_alpha_17 from "./migrate__1_0_0_alpha_16__to___1_0_0_alpha_17";
+import migrate__1_0_0_alpha_17__to___1_0_0_alpha_18 from "./migrate__1_0_0_alpha_17__to___1_0_0_alpha_18";
 import type { Migration, MigrationState } from "./migration.types";
 
 // TODO: ANYTIME VERSION CHANGES
@@ -67,6 +68,8 @@ export class MigrationManager {
 			migrate__1_0_0_alpha_15__to_1_0_0_alpha_16,
 		[migrate__1_0_0_alpha_16__to_1_0_0_alpha_17.versionFrom]:
 			migrate__1_0_0_alpha_16__to_1_0_0_alpha_17,
+		[migrate__1_0_0_alpha_17__to___1_0_0_alpha_18.versionFrom]:
+			migrate__1_0_0_alpha_17__to___1_0_0_alpha_18,
 	};
 
 	/**
