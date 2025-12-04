@@ -246,10 +246,11 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 		const response = await room.runRoomPixel<
 			[
 				{
+					inputMessage: PixelMessage;
 					responseMessage: PixelMessage;
 				},
 			]
-		>(`ExecuteRoomMessages(
+		>(`COTRoomResult(
 engine=["${room.modelId}"],
 roomId=["${room.roomId}"]
 );`);
@@ -258,19 +259,23 @@ roomId=["${room.roomId}"]
 
 		// get the parent
 		const parentMessage = room.getMessage(
-			output.responseMessage.parentMessageId,
+			output.inputMessage.parentMessageId,
 		);
 
 		if (!parentMessage) {
 			throw new Error("Parent message not found for LLM reasoning step");
 		}
 
+		// add the input
+		const inputMessage = createMessageStore(room, output.inputMessage);
+		parentMessage.addChild(inputMessage);
+
 		// add the response
 		const responseMessage = createMessageStore(
 			room,
 			output.responseMessage,
 		);
-		parentMessage.addChild(responseMessage);
+		inputMessage.addChild(responseMessage);
 
 		// set mode to chat
 		room.setMode("chat");
