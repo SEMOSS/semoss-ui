@@ -200,11 +200,15 @@ export const EditDependenciesModal = ({
 					}}
 				/>
 
-				{selectedDeps.map((dep: modelledDependency, idx: number) => {
+				{selectedDeps.map((dep, idx: number) => {
 					return (
 						<StyledDependencyListItem key={`${dep.id}-${idx}`}>
 							<StyledCardImage
-								src={`${Env.MODULE}/api/e-${dep.id}/image/download`}
+								src={
+									dep.type === "PROJECT"
+										? `${Env.MODULE}/api/project-${dep.id}/projectImage/download`
+										: `${Env.MODULE}/api/e-${dep.id}/image/download`
+								}
 							/>
 							<div>
 								<Typography variant="h6">{dep.name}</Typography>
