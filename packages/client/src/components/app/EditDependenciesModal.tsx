@@ -7,7 +7,7 @@ import {
 	type UseFormSetValue,
 	type UseFormWatch,
 } from "react-hook-form";
-import { Env } from "@semoss/sdk/react";
+import { Env, usePixel } from "@semoss/sdk/react";
 import {
 	Autocomplete,
 	Button,
@@ -19,7 +19,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { usePixel, useRootStore } from "@/hooks";
+import { useRootStore } from "@/hooks";
 import {
 	type AppDetailsFormTypes,
 	type engine,
@@ -90,7 +90,7 @@ export const EditDependenciesModal = ({
 	/**
 	 * Library Hooks
 	 */
-	const { monolithStore } = useRootStore();
+	const { configStore } = useRootStore();
 	const notification = useNotification();
 	const getEngines = usePixel<engine[]>("MyEngines();");
 
@@ -106,7 +106,7 @@ export const EditDependenciesModal = ({
 	const handleUpdateDependencies = async () => {
 		const appId = getValues("appId");
 		const res = await SetProjectDependencies(
-			monolithStore,
+			configStore,
 			appId,
 			selectedDeps.map((dep: modelledDependency) => dep.id),
 		);
@@ -190,7 +190,10 @@ export const EditDependenciesModal = ({
 								multiple
 								onChange={(_, val) => field.onChange(val)}
 								renderInput={(params) => (
-									<TextField {...params} label="Searching" />
+									<TextField
+										{...params}
+										placeholder="Search..."
+									/>
 								)}
 								getOptionLabel={(option: modelledDependency) =>
 									option.name

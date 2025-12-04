@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { ConfigStore } from "@/stores";
 import type { Role } from "@/types";
 
 /**
@@ -225,11 +226,11 @@ export const updateProjectDetails = async (
 };
 
 export const SetProjectDependencies = async (
-	monolithStore,
+	configStore: ConfigStore,
 	appId: string,
 	dependencies: string[],
 ) => {
-	const res = await monolithStore.runQuery(
+	const res = await configStore.runPixel(
 		`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(
 			dependencies.length > 0 ? dependencies : null,
 		)})`,
