@@ -93,8 +93,6 @@ export interface AppDetailsFormTypes {
 	tag: string[];
 	detailsForm: DetailsForm;
 	dependencies: modelledDependency[];
-	allDependencies: modelledDependency[];
-	selectedDependencies: modelledDependency[];
 
 	requestedPermission: "OWNER" | "EDIT" | "READ_ONLY" | "";
 	roleChangeComment: string | ReactNode;
@@ -115,8 +113,6 @@ export const AppDetailsFormValues: AppDetailsFormTypes = {
 	},
 
 	dependencies: [],
-	allDependencies: [],
-	selectedDependencies: [],
 
 	requestedPermission: "",
 	roleChangeComment: "",
@@ -230,7 +226,7 @@ export const SetProjectDependencies = async (
 	appId: string,
 	dependencies: string[],
 ) => {
-	const res = await configStore.runPixel(
+	const res = await configStore.runPixel<string[]>(
 		`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(
 			dependencies.length > 0 ? dependencies : null,
 		)})`,

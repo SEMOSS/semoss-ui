@@ -386,7 +386,6 @@ export const AppDetailPage = () => {
 					} else {
 						const modelled = modelDependencies(res.value.output);
 						setValue("dependencies", modelled);
-						setValue("selectedDependencies", modelled);
 					}
 				}
 			}
@@ -461,24 +460,18 @@ export const AppDetailPage = () => {
 	};
 
 	const handleCloseDependenciesModal = async (refreshData: boolean) => {
-		const currDependencies = getValues("dependencies");
-
 		if (refreshData) {
 			const appId = getValues("appId");
 			const res = await fetchDependencies(monolithStore, appId);
 			if (res.type === "success") {
 				const modelled = modelDependencies(res.output);
 				setValue("dependencies", modelled);
-				setValue("selectedDependencies", modelled);
 			} else {
-				setValue("selectedDependencies", currDependencies);
 				notification.add({
 					color: "error",
 					message: res.output,
 				});
 			}
-		} else {
-			setValue("selectedDependencies", currDependencies);
 		}
 		setIsEditDependenciesModalOpen(false);
 	};
@@ -895,10 +888,7 @@ export const AppDetailPage = () => {
 				<EditDependenciesModal
 					isOpen={isEditDependenciesModalOpen}
 					onClose={handleCloseDependenciesModal}
-					control={control}
-					getValues={getValues}
-					setValue={setValue}
-					watch={watch}
+					appId={appId}
 				/>
 			</OuterContainer>
 		</div>

@@ -1,12 +1,5 @@
 import { Close } from "@mui/icons-material";
-import { useEffect } from "react";
-import {
-	type Control,
-	Controller,
-	type UseFormGetValues,
-	type UseFormSetValue,
-	type UseFormWatch,
-} from "react-hook-form";
+import { useEffect, useState } from "react";
 import { Env, usePixel } from "@semoss/sdk/react";
 import {
 	Autocomplete,
@@ -21,11 +14,32 @@ import {
 } from "@semoss/ui";
 import { useRootStore } from "@/hooks";
 import {
-	type AppDetailsFormTypes,
-	type engine,
 	type modelledDependency,
 	SetProjectDependencies,
 } from "./app-details.utility";
+
+interface EditDependenciesModalProps {
+	isOpen: boolean;
+	onClose: (refresh: boolean) => void;
+	appId: string;
+}
+
+interface MyEngineProjectEngine {
+	app_id: string;
+	app_name: string;
+	app_type: string;
+}
+
+interface MyEngineProjectProject {
+	project_id: string;
+	project_name: string;
+}
+
+interface Dependency {
+	id: string;
+	name: string;
+	type: string;
+}
 
 const StyledModalHeading = styled(Modal.Title)({
 	display: "flex",
@@ -65,15 +79,6 @@ const StyledCardImage = styled("img")({
 	objectFit: "cover",
 });
 
-interface EditDependenciesModalProps {
-	isOpen: boolean;
-	onClose: (refresh: boolean) => void;
-	control: Control<AppDetailsFormTypes>;
-	getValues: UseFormGetValues<AppDetailsFormTypes>;
-	setValue: UseFormSetValue<AppDetailsFormTypes>;
-	watch: UseFormWatch<AppDetailsFormTypes>;
-}
-
 /**
  * Renders a modal to edit dependencies for an application.
  *
@@ -82,29 +87,27 @@ interface EditDependenciesModalProps {
 export const EditDependenciesModal = ({
 	isOpen,
 	onClose,
-	control,
-	getValues,
-	setValue,
-	watch,
+	appId,
 }: EditDependenciesModalProps) => {
 	/**
 	 * Library Hooks
 	 */
 	const { configStore } = useRootStore();
 	const notification = useNotification();
-	const getEngines = usePixel<engine[]>("MyEngines();");
+	const getEngines = usePixel<
+		(MyEngineProjectEngine | MyEngineProjectProject)[]
+	>("MyEngineProject();", undefined, configStore.store.insightID);
 
 	/**
-	 * Form State
+	 * State
 	 */
-	const allDeps = watch("allDependencies");
-	const selectedDeps = watch("selectedDependencies");
+	const [allDeps, setAllDeps] = useState<Dependency[]>([]);
+	const [selectedDeps, setSelectedDeps] = useState<Dependency[]>([]);
 
 	/**
 	 * Functions
 	 */
 	const handleUpdateDependencies = async () => {
-		const appId = getValues("appId");
 		const res = await SetProjectDependencies(
 			configStore,
 			appId,
@@ -129,7 +132,7 @@ export const EditDependenciesModal = ({
 		const newDependencies = selectedDeps.filter(
 			(dep: modelledDependency) => dep.id !== id,
 		);
-		setValue("selectedDependencies", newDependencies);
+		setSelectedDeps(newDependencies);
 	};
 
 	/**
@@ -140,26 +143,27 @@ export const EditDependenciesModal = ({
 			return;
 		}
 
-		const modelDependencies = (
-			dependencies: engine[],
-		): modelledDependency[] => {
-			const modelled = dependencies.map((d) => ({
-				name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
-				id: d.app_id,
-				type: d.app_type,
-				userPermission: d.user_permission,
-				isPublic: !!d.database_global,
-				isDiscoverable: !!d.database_discoverable,
-				description: d.description,
-				access_permission: d.access_permission,
-			}));
-			return modelled;
-		};
-
-		const dependencies = modelDependencies(getEngines.data);
-
-		setValue("allDependencies", dependencies);
-	}, [getEngines.status, getEngines.data, setValue]);
+		setAllDeps(
+			getEngines.data.map((engineProject) => {
+				const eng = engineProject as MyEngineProjectEngine;
+				const proj = engineProject as MyEngineProjectProject;
+				if (eng.app_id) {
+					return {
+						id: eng.app_id,
+						name: eng.app_name,
+						type: eng.app_type,
+					};
+				} else if (proj.project_id) {
+					return {
+						id: proj.project_id,
+						name: proj.project_name,
+						type: "PROJECT",
+					};
+				}
+				return null;
+			}),
+		);
+	}, [getEngines.status, getEngines.data]);
 
 	return (
 		<Modal open={isOpen} fullWidth onClose={() => onClose(false)}>
@@ -178,34 +182,21 @@ export const EditDependenciesModal = ({
 					Linked Dependencies
 				</StyledModalSubHeading>
 
-				<Controller
-					name="selectedDependencies"
-					control={control}
-					render={({ field }) => {
-						return (
-							<Autocomplete
-								options={allDeps}
-								value={field.value}
-								fullWidth
-								multiple
-								onChange={(_, val) => field.onChange(val)}
-								renderInput={(params) => (
-									<TextField
-										{...params}
-										placeholder="Search..."
-									/>
-								)}
-								getOptionLabel={(option: modelledDependency) =>
-									option.name
-								}
-								isOptionEqualToValue={(
-									option: modelledDependency,
-									value: modelledDependency,
-								) => {
-									return option.id === value.id;
-								}}
-							/>
-						);
+				<Autocomplete
+					options={allDeps}
+					value={selectedDeps}
+					fullWidth
+					multiple
+					onChange={(_, val: Dependency[]) => setSelectedDeps(val)}
+					renderInput={(params) => (
+						<TextField {...params} placeholder="Search..." />
+					)}
+					getOptionLabel={(option: modelledDependency) => option.name}
+					isOptionEqualToValue={(
+						option: modelledDependency,
+						value: modelledDependency,
+					) => {
+						return option.id === value.id;
 					}}
 				/>
 
