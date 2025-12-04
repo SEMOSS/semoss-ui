@@ -358,7 +358,7 @@ export class RoomStore {
 					{ OPTIONS?: RoomStoreInterface["options"] }, // partial because this doesn't work for old rooms
 				]
 			>(
-				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`,
+				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)}); SetRoomForInsight(roomId=${JSON.stringify(this._store.roomId)});`,
 			);
 
 			const messageOutput = response.pixelReturn[0]
@@ -651,7 +651,7 @@ export class RoomStore {
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: prompt,
-			imageInfos: uploaded,
+			mediaInputs: uploaded,
 			modelId: this.modelId,
 			paramMap: {
 				max_new_tokens: this.options.tokenLength,
