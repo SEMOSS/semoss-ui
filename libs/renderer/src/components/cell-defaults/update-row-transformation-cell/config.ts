@@ -34,6 +34,5 @@ export const UpdateRowTransformationCellConfig: CellConfig<UpdateRowTransformati
 
 		toPixel: ({ transformation, targetCell }) => {
 			return `${targetCell.frameVariableName} | UpdateRowValues (${transformation.parameters.targetColumn?.name}, ${transformation.parameters.targetValue}, Filter (${transformation.parameters.compareColumn?.name} ${transformation.parameters.compareOperation} ${transformation.parameters.compareValue}))`;
-
 		},
 	};
