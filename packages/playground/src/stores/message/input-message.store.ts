@@ -20,7 +20,6 @@ export class InputMessageStore extends AbstractMessageStore {
 		fileName: string;
 		fileLocation?: string;
 		base64Data?: string;
-		fileFormat?: "png";
 		mimeType?: string;
 		imageType?: "FILE";
 	}[];

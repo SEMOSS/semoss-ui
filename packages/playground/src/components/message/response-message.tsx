@@ -46,7 +46,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			try {
 				navigator.clipboard.writeText(text);
 
-				toast.success("Successfully copied to clipboar");
+				toast.success("Successfully copied to clipboard");
 			} catch (e) {
 				toast.error(e.message);
 			}

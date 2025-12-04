@@ -121,7 +121,6 @@ export interface InputTextPixelMessage extends AbstractPixelMessage {
 		fileName: string;
 		fileLocation?: string;
 		base64Data?: string;
-		fileFormat?: "png";
 		mimeType?: string;
 		imageType?: "FILE";
 	}[];
@@ -139,7 +138,6 @@ export interface InputMediaPixelMessage extends AbstractPixelMessage {
 		fileName: string;
 		fileLocation?: string;
 		base64Data?: string;
-		fileFormat?: "png";
 		mimeType?: string;
 		imageType?: "FILE";
 	}[];

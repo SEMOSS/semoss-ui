@@ -1,3 +1,4 @@
+import { FileIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import {
@@ -33,15 +34,19 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 								<button
 									type="button"
 									key={`${info.fileName}`}
-									className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border"
+									className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted"
 									onClick={() => setSelectedImage(info)}
 									aria-label={`View ${info.fileName}`}
 								>
-									<img
-										className="width-100"
-										src={`data:image/png;base64,${info.base64Data}`}
-										alt={info.fileName}
-									/>
+									{info.mimeType.startsWith("image/") ? (
+										<img
+											className="w-full"
+											src={`data:image/png;base64,${info.base64Data}`}
+											alt={info.fileName}
+										/>
+									) : (
+										<FileIcon className="size-6 text-muted-foreground" />
+									)}
 								</button>
 							);
 						})}
@@ -63,12 +68,16 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 							</DialogTitle>
 						</DialogHeader>
 						<div className="flex items-center justify-center">
-							{selectedImage?.base64Data && (
+							{selectedImage?.mimeType.startsWith("image/") ? (
 								<img
 									src={`data:image/png;base64,${selectedImage.base64Data}`}
 									alt={selectedImage.fileName || "Image"}
 									className="max-h-[70vh] max-w-full object-contain"
 								/>
+							) : (
+								<div className="px-2 py-4 text-center text-muted-foreground text-xs">
+									No preview available
+								</div>
 							)}
 						</div>
 					</DialogContent>
