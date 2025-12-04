@@ -2,14 +2,15 @@ import {
 	ChevronRightIcon,
 	Ellipsis,
 	HammerIcon,
-	LinkIcon,
 	ListEndIcon,
 	PlusIcon,
+	ShieldXIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import {
 	Button,
+	ButtonGroup,
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
@@ -20,6 +21,9 @@ import {
 	DropdownMenuTrigger,
 	Muted,
 	Separator,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { EditStepOverlay } from "@/components";
@@ -98,6 +102,10 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 							Plan
 						</div>
 						{message.plan.steps.map((s) => {
+							const needsResolution =
+								s.details.stepType === "no_tool_available" ||
+								s.details.stepType === "human_intervention";
+
 							return (
 								<Collapsible
 									key={s.step_number}
@@ -120,49 +128,78 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 											</div>
 
 											{isLast && (
-												<DropdownMenu>
-													<DropdownMenuTrigger
-														asChild
-													>
-														<Button
-															className="size-4 p-0"
-															variant="ghost"
-															onClick={(e) =>
-																e.stopPropagation()
-															}
+												<ButtonGroup>
+													{needsResolution && (
+														<Tooltip>
+															<TooltipTrigger
+																asChild
+															>
+																<Button
+																	size="icon-sm"
+																	variant="ghost"
+																	onClick={(
+																		e,
+																	) => {
+																		e.stopPropagation();
+
+																		setEditStep(
+																			s,
+																		);
+																	}}
+																>
+																	<ShieldXIcon className="text-destructive" />
+																</Button>
+															</TooltipTrigger>
+															<TooltipContent>
+																Fix Step
+															</TooltipContent>
+														</Tooltip>
+													)}
+													<DropdownMenu>
+														<DropdownMenuTrigger
+															asChild
 														>
-															<Ellipsis />
-														</Button>
-													</DropdownMenuTrigger>
-													<DropdownMenuContent align="end">
-														<DropdownMenuGroup>
-															<DropdownMenuItem
-																onClick={(
-																	e,
-																) => {
-																	e.stopPropagation();
-																	setEditStep(
-																		s,
-																	);
-																}}
+															<Button
+																className=""
+																size="icon-sm"
+																variant="ghost"
+																onClick={(e) =>
+																	e.stopPropagation()
+																}
 															>
-																Edit
-															</DropdownMenuItem>
-															<DropdownMenuItem
-																onClick={(
-																	e,
-																) => {
-																	e.stopPropagation();
-																	removeStep(
-																		s.step_number,
-																	);
-																}}
-															>
-																Delete
-															</DropdownMenuItem>
-														</DropdownMenuGroup>
-													</DropdownMenuContent>
-												</DropdownMenu>
+																<Ellipsis />
+															</Button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent align="end">
+															<DropdownMenuGroup>
+																<DropdownMenuItem
+																	onClick={(
+																		e,
+																	) => {
+																		e.stopPropagation();
+																		setEditStep(
+																			s,
+																		);
+																	}}
+																>
+																	Edit
+																</DropdownMenuItem>
+																<DropdownMenuItem
+																	onClick={(
+																		e,
+																	) => {
+																		e.stopPropagation();
+																		removeStep(
+																			s.step_number,
+																		);
+																	}}
+																>
+																	Delete
+																</DropdownMenuItem>
+															</DropdownMenuGroup>
+														</DropdownMenuContent>
+													</DropdownMenu>
+												</ButtonGroup>
 											)}
 										</div>
 									</CollapsibleTrigger>
@@ -177,10 +214,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 												{s.details.rationaleForStep}
 											</Muted>
 
-											{(s.details.stepType ===
-												"no_tool_available" ||
-												s.details.stepType ===
-													"human_intervention") && (
+											{needsResolution && (
 												<div className="flex flex-row justify-center">
 													<Button
 														size="sm"
@@ -189,7 +223,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 															setEditStep(s);
 														}}
 													>
-														<LinkIcon />
+														<ShieldXIcon />
 														Fix Step
 													</Button>
 												</div>
