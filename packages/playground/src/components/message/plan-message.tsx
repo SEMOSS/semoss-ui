@@ -71,7 +71,10 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 		// only accept if all tools are there
 		let canAccept = true;
 		for (const step of message.plan.steps) {
-			if (step.details.stepType === "no_tool_available") {
+			if (
+				step.details.stepType === "no_tool_available" ||
+				step.details.stepType === "human_intervention"
+			) {
 				canAccept = false;
 				break;
 			}
@@ -174,8 +177,10 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 												{s.details.rationaleForStep}
 											</Muted>
 
-											{s.details.stepType ===
-												"no_tool_available" && (
+											{(s.details.stepType ===
+												"no_tool_available" ||
+												s.details.stepType ===
+													"human_intervention") && (
 												<div className="flex flex-row justify-center">
 													<Button
 														size="sm"
@@ -189,6 +194,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 													</Button>
 												</div>
 											)}
+
 											{s.details.stepType ===
 												"tool_call" && (
 												<div className="flex flex-row justify-between">

@@ -669,9 +669,6 @@ export class RoomStore {
 		// run the message
 		try {
 			await parentMessage.runMessage(inputMessage);
-
-			// if it is executing continue the execution
-			this.plan?.verifyHumanInterventionStepExecution();
 		} catch (e) {
 			this.plan?.failStepExecution();
 

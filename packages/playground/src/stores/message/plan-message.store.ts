@@ -93,8 +93,17 @@ export class PlanMessageStore extends AbstractMessageStore {
 	 * @param step
 	 */
 	updateStep(stepNumber: number, step: Partial<PlanStep>) {
-		this.plan.steps[stepNumber] = {
-			...this.plan.steps[stepNumber],
+		const stepIdx = this.plan.steps.findIndex(
+			(s) => s.step_number === stepNumber,
+		);
+
+		// ignore if not found
+		if (stepIdx === -1) {
+			return;
+		}
+
+		this.plan.steps[stepIdx] = {
+			...this.plan.steps[stepIdx],
 			...step,
 		};
 	}
@@ -521,31 +530,6 @@ ${message.id ? `parentMessageId=["${message.id}"]` : ""}
 			output.toolResponse,
 		);
 		toolExecution.addChild(toolResponseMessage);
-
-		// TODO: check success criteria
-
-		runInAction(() => {
-			step.status = "completed";
-		});
-
-		this.executeNextStep();
-	};
-
-	/**
-	 * Verify the execution of human intervention. Throw an error if it fails.
-	 */
-	verifyHumanInterventionStepExecution = () => {
-		const step = this.step;
-		if (!step) {
-			return;
-		}
-
-		if (
-			step.details.stepType !== "llm_reasoning" &&
-			step.details.stepType !== "human_intervention"
-		) {
-			return;
-		}
 
 		// TODO: check success criteria
 
