@@ -16,7 +16,7 @@ interface InputMessageProps {
 export const InputMessage: React.FC<InputMessageProps> = observer(
 	({ message }) => {
 		const [selectedImage, setSelectedImage] = useState<
-			InputMessageStore["imageInfos"][number] | null
+			InputMessageStore["mediaInputs"][number] | null
 		>(null);
 
 		return (
@@ -26,9 +26,9 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 						{message.text}
 					</span>
 				</div>
-				{message.imageInfos.length > 0 ? (
+				{message.mediaInputs.length > 0 ? (
 					<div className="ml-auto flex max-w-[600px] flex-row items-center gap-2 pt-2">
-						{message.imageInfos.map((info) => {
+						{message.mediaInputs.map((info) => {
 							return (
 								<button
 									type="button"
