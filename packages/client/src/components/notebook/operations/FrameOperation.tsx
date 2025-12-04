@@ -35,14 +35,25 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 		cellDetail = queryDetail.getCell(props.cellData.cellId.toString());
 	}
 
-	const addLimit = cellDetail?.parameters?.dataLimit
+	const getCount = useBlocksPixel<number>(
+		`Frame(frame=[${output.name}] )|QueryAll()|QueryRowCount();`,
+	);
+
+	// Determine the limit to use
+	const rowCount = getCount.status === "SUCCESS" ? getCount.data : 0;
+	const hasDataLimit = cellDetail?.parameters?.dataLimit;
+	const addLimit = hasDataLimit
 		? (Number(cellDetail.parameters.dataLimit) ?? -1)
-		: -1;
+		: rowCount > 500
+			? 20
+			: -1;
+
 	const queryToRun = useMemo(
 		() =>
 			`Frame(frame=[${output.name}] )|QueryAll()|Limit(${addLimit})|CollectAll();`,
-		[output],
+		[output, addLimit],
 	);
+
 	// get the data from the frame
 	const getData = useBlocksPixel<{
 		data: {
@@ -50,11 +61,6 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 			headers: string[];
 		};
 	}>(queryToRun);
-
-	// get the count of data in the frame
-	const getCount = useBlocksPixel<number>(
-		`Frame(frame=[${output.name}] )|QueryAll()|QueryRowCount();`,
-	);
 
 	// get the statuses
 	const isLoading =
