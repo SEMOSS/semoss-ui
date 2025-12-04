@@ -86,9 +86,9 @@ const StyledStack = styled(Stack)({
 	width: "100%",
 });
 
-const RootStack = styled(Stack)(({ theme }) => ({
+const RootStack = styled(Stack)({
 	width: "100%",
-}));
+});
 
 const StyledBox = styled(Box)({
 	flex: 1,
@@ -117,11 +117,10 @@ export const Dependencies = ({
 		if (!word) return "";
 		return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 	};
-	console.log(dependencies, "test");
 	return (
 		<RootStack spacing={2}>
 			{dependencies.length === 0 ? (
-				<StyledTypographyPrimary variant="body1" color="text.secondary">
+				<StyledTypographyPrimary variant="body1" color="textSecondary">
 					No Dependencies Found
 				</StyledTypographyPrimary>
 			) : (
