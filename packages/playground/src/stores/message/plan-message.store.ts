@@ -1,12 +1,15 @@
 import { makeObservable, observable, runInAction } from "mobx";
 import type {
+	InputToolExecPixelMessage,
 	PixelMessage,
 	Plan,
 	PlanStep,
 	ResponseTextPixelMessage,
+	ResponseToolPixelMessage,
 } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 import type { InputMessageStore } from "./input-message.store";
+import type { ResponseMessageStore } from "./response-message.store";
 import { createMessageStore } from "./utility";
 
 /**
@@ -27,7 +30,7 @@ export class PlanMessageStore extends AbstractMessageStore {
 	/**
 	 * Current execution index of the plan
 	 */
-	executionIdx: number = 0;
+	executionIdx: number = -1;
 
 	/**
 	 * Model information associated with the message
@@ -90,8 +93,17 @@ export class PlanMessageStore extends AbstractMessageStore {
 	 * @param step
 	 */
 	updateStep(stepNumber: number, step: Partial<PlanStep>) {
-		this.plan.steps[stepNumber] = {
-			...this.plan.steps[stepNumber],
+		const stepIdx = this.plan.steps.findIndex(
+			(s) => s.step_number === stepNumber,
+		);
+
+		// ignore if not found
+		if (stepIdx === -1) {
+			return;
+		}
+
+		this.plan.steps[stepIdx] = {
+			...this.plan.steps[stepIdx],
 			...step,
 		};
 	}
@@ -176,7 +188,7 @@ paramValues=[${JSON.stringify({
 			]
 		>(
 			`
-ConfirmCOT(
+COTConfirmation(
 engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
@@ -219,9 +231,54 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 			}
 		});
 
-		// start executing the first step
-		this.executionIdx = 0;
-		this.executeStep();
+		// reset execution index and start
+		this.executionIdx = -1;
+		this.executeNextStep();
+	};
+
+	/**
+	 * Complete execution of the steps
+	 */
+	private completeExecution = async (): Promise<void> => {
+		const room = this.room;
+
+		// wait for the pixel to run
+		const response = await room.runRoomPixel<
+			[
+				{
+					inputMessage: PixelMessage;
+					responseMessage: PixelMessage;
+				},
+			]
+		>(`COTRoomResult(
+engine=["${room.modelId}"],
+roomId=["${room.roomId}"]
+);`);
+
+		const { output } = response.pixelReturn[0];
+
+		// get the parent
+		const parentMessage = room.getMessage(
+			output.inputMessage.parentMessageId,
+		);
+
+		if (!parentMessage) {
+			throw new Error("Parent message not found for LLM reasoning step");
+		}
+
+		// add the input
+		const inputMessage = createMessageStore(room, output.inputMessage);
+		parentMessage.addChild(inputMessage);
+
+		// add the response
+		const responseMessage = createMessageStore(
+			room,
+			output.responseMessage,
+		);
+		inputMessage.addChild(responseMessage);
+
+		// set mode to chat
+		room.setMode("chat");
 	};
 
 	/**
@@ -231,22 +288,24 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 	private executeNextStep = async (): Promise<void> => {
 		// move forward and execute the next one
 		this.executionIdx++;
-		await this.executeStep();
+
+		// get the new step
+		const step = this.step;
+
+		// if there is a step execute it. Otherwise assume it is the last one
+		if (step) {
+			await this.executeStep();
+		} else {
+			await this.completeExecution();
+		}
 	};
 
 	/**
 	 * Execute a specific step by step number
-	 * @param stepNumber - Step number to execute
 	 * @returns Promise that resolves to true if step executed successfully
 	 */
 	private executeStep = async (): Promise<void> => {
 		const step = this.step;
-
-		// No more pending steps, switch back to chat mode
-		if (!step) {
-			this.room.setMode("chat");
-			return;
-		}
 
 		if (step.status === "completed") {
 			console.warn(`Step ${step.step_number} is already completed`);
@@ -278,6 +337,9 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 				runInAction(() => {
 					step.status = "completed";
 				});
+
+				// go to the next one
+				this.executeNextStep();
 			}
 		} catch (error) {
 			// Mark step as failed
@@ -309,7 +371,7 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 				},
 			]
 		>(
-			`GetCOTToolResponse(
+			`COTToolPrediction(
                 engine=["${room.modelId}"],
                 roomId=["${room.roomId}"],
                 stepNumber=["${step.step_number}"],
@@ -319,18 +381,36 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 
 		const { output } = response.pixelReturn[0];
 
-		console.error("TODO: Refactor to search by messageId");
+		// get the parent
+		const parentMessage = room.getMessage(
+			output.inputMessage.parentMessageId,
+		);
 
-		// Get the input from COT
+		if (!parentMessage) {
+			throw new Error("Parent message not found for LLM reasoning step");
+		}
+
+		// add the input
 		const inputMessage = createMessageStore(room, output.inputMessage);
-		room.tail.addChild(inputMessage);
+		parentMessage.addChild(inputMessage);
 
-		// Add the response
+		// add the response
 		const responseMessage = createMessageStore(
 			room,
 			output.responseMessage,
 		);
 		inputMessage.addChild(responseMessage);
+
+		// // Get the input from COT
+		// const inputMessage = createMessageStore(room, output.inputMessage);
+		// room.tail.addChild(inputMessage);
+
+		// // Add the response
+		// const responseMessage = createMessageStore(
+		// 	room,
+		// 	output.responseMessage,
+		// );
+		// inputMessage.addChild(responseMessage);
 
 		return false;
 	};
@@ -344,8 +424,43 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 			throw new Error("Invalid step type for LLM reasoning");
 		}
 
-		// Execute the reasoning as a regular message
-		await this.room.askMessage(step.details.prompt, []);
+		const room = this.room;
+
+		// wait for the pixel to run
+		const response = await room.runRoomPixel<
+			[
+				{
+					inputMessage: PixelMessage;
+					responseMessage: PixelMessage;
+				},
+			]
+		>(`AddCOTLLMReasoning(
+engine=["${room.modelId}"],
+roomId=["${room.roomId}"],
+stepNumber=["${step.step_number}"]
+);`);
+
+		const { output } = response.pixelReturn[0];
+
+		// get the parent
+		const parentMessage = room.getMessage(
+			output.inputMessage.parentMessageId,
+		);
+
+		if (!parentMessage) {
+			throw new Error("Parent message not found for LLM reasoning step");
+		}
+
+		// add the input
+		const inputMessage = createMessageStore(room, output.inputMessage);
+		parentMessage.addChild(inputMessage);
+
+		// add the response
+		const responseMessage = createMessageStore(
+			room,
+			output.responseMessage,
+		);
+		inputMessage.addChild(responseMessage);
 
 		return true;
 	};
@@ -366,12 +481,15 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 	};
 
 	/**
-	 * TODO: Fix. This is brittle and will break if we go out of order
 	 * Verify the execution of a tool step. Throw an error if it fails.
 	 * @param toolName - name of the tool
 	 * @param toolId - id of the app
 	 */
-	verifyToolStepExecution = (appId: string, toolName: string) => {
+	saveToolExecution = async (
+		message: ResponseMessageStore,
+		tool: ResponseMessageStore["tools"][number],
+		toolResponse: string,
+	) => {
 		const step = this.step;
 		if (!step) {
 			return;
@@ -382,36 +500,52 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 		}
 
 		if (
-			step.details._meta.map.SMSS_PROJECT_ID !== appId ||
-			step.details.tool_name !== toolName
+			step.details._meta.map.SMSS_PROJECT_ID !==
+				tool._meta.map.SMSS_PROJECT_ID ||
+			step.details.tool_name !== tool.name
 		) {
 			return;
 		}
 
-		// TODO: check success criteria
+		const room = this.room;
 
+		// save the response
 		runInAction(() => {
-			step.status = "completed";
+			tool.response = toolResponse;
 		});
 
-		this.executeNextStep();
-	};
+		// wait for the pixel to run
+		const response = await room.runRoomPixel<
+			[
+				{
+					toolExecution: InputToolExecPixelMessage;
+					toolResponse: ResponseToolPixelMessage;
+				},
+			]
+		>(
+			`AddCOTToolExecution(
+engine=["${room.modelId}"],
+roomId = ["${room.roomId}"],
+toolId = ["${tool.id}"],
+toolName=["${tool.name}"],
+toolPredictedArguments=["<encode>${JSON.stringify(tool.parameters)}</encode>"],
+toolExecutionResponse=["<encode>${toolResponse}</encode>"],
+paramValues=[${JSON.stringify({})}],
+${message.id ? `parentMessageId=["${message.id}"]` : ""}
+);`,
+		);
 
-	/**
-	 * Verify the execution of human intervention. Throw an error if it fails.
-	 */
-	verifyHumanInterventionStepExecution = () => {
-		const step = this.step;
-		if (!step) {
-			return;
-		}
+		const { output } = response.pixelReturn[0];
 
-		if (
-			step.details.stepType !== "llm_reasoning" &&
-			step.details.stepType !== "human_intervention"
-		) {
-			return;
-		}
+		const toolExecution = createMessageStore(room, output.toolExecution);
+		message.addChild(toolExecution);
+
+		// create the response and link to the message
+		const toolResponseMessage = createMessageStore(
+			room,
+			output.toolResponse,
+		);
+		toolExecution.addChild(toolResponseMessage);
 
 		// TODO: check success criteria
 

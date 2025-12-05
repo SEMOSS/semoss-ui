@@ -28,10 +28,10 @@ import { usePage, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
-const StyledContent = styled("div")(({
+const StyledContent = styled("div")({
 	position: "absolute",
 	inset: 0,
-}));
+});
 
 export const ViewAppPage = observer(() => {
 	// App ID Needed for pixel calls

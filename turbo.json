@@ -29,11 +29,12 @@
 		},
 		"test": {
 			"dependsOn": ["^test"],
-			"inputs": ["src/**/*.ts", "src/**/*/tsx"]
+			"outputs": []
 		},
 		"test:watch": {
 			"cache": false,
-			"persistent": true
+			"persistent": true,
+			"outputs": []
 		}
 	}
 }
