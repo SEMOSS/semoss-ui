@@ -1,5 +1,5 @@
-// src/test-setup.ts
 import { vi } from "vitest";
+import "@testing-library/jest-dom";
 
 // Mock canvas getContext
 HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
@@ -29,4 +29,5 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
 	transform: vi.fn(),
 	rect: vi.fn(),
 	clip: vi.fn(),
+	// biome-ignore lint/suspicious/noExplicitAny: <needed for testing>
 })) as any;
