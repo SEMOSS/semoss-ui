@@ -1,6 +1,6 @@
 import { Env, InsightProvider } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
-import { Router } from "@/pages";
+import { Router } from "./pages";
 
 // use the environment variable to set the module
 Env.update({

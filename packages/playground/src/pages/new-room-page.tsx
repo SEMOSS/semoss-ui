@@ -8,7 +8,6 @@ import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
-	SidebarTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -132,9 +131,6 @@ export const NewRoomPage = observer(() => {
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
-			<div className="absolute top-2 left-2 z-10 flex h-12.5 items-center px-4">
-				<SidebarTrigger />
-			</div>
 			<ResizablePanelGroup direction="horizontal">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
@@ -143,6 +139,15 @@ export const NewRoomPage = observer(() => {
 						className="absolute inset-0 h-full w-full object-cover"
 					/>
 					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
+						{/* Announcement banner (from theme) */}
+						{root.theme.playground.playgroundBanner ? (
+							<div className="w-full rounded-md bg-secondary px-4 py-2 text-center text-white">
+								<span className="text-sm">
+									{root.theme.playground.playgroundBanner}
+								</span>
+							</div>
+						) : null}
+
 						<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
 							<div className="text-center font-semibold text-4xl text-foreground leading-normal">
 								Welcome

@@ -40,15 +40,33 @@ export class RootStore {
 		theme: {
 			name: "",
 			description: "",
-			styles: {
+			variables: {
 				backgroundColor: "",
 				primaryColor: "",
+				secondaryColor: "",
 			},
 			images: {
 				logo: "",
+				defaultWorkspace: "",
+				appName: "",
 			},
 			overrides: {
 				"main-layout": {},
+			},
+			playground: {
+				playgroundSidebar: [],
+				playgroundSecondarySidebar: [],
+				playgroundModelRequest: {
+					label: "",
+					url: "",
+				},
+				playgroundBanner: "",
+				playgroundHeader: "",
+				playgroundFooter: "",
+				playgroundModal: {
+					header: "",
+					message: "",
+				},
 			},
 		},
 	};
@@ -118,13 +136,14 @@ export class RootStore {
 	 * @param theme Theme
 	 */
 	private updateTheme = (theme: Partial<Theme> | undefined) => {
-		// deep merge from the environmentf
+		// deep merge from the environment
 		this._store.theme = {
+			...this._store.theme,
 			name: theme?.name || this._store.theme.name,
 			description: theme?.description || this._store.theme.description,
-			styles: {
-				...this._store.theme.styles,
-				...(theme?.styles || {}),
+			variables: {
+				...this._store.theme.variables,
+				...(theme?.variables || {}),
 			},
 			images: {
 				...this._store.theme.images,
@@ -134,21 +153,104 @@ export class RootStore {
 				...this._store.theme.overrides,
 				...(theme?.overrides || {}),
 			},
+			// additional playground fields
+			elsaSidebar: theme?.elsaSidebar || this._store.theme.elsaSidebar,
+			playground: {
+				images: {
+					...this._store.theme?.playground?.images,
+					...(theme?.playground?.images || {}),
+				},
+				playgroundSidebar: Array.isArray(
+					theme?.playground?.playgroundSidebar,
+				)
+					? theme.playground?.playgroundSidebar
+					: Array.isArray(this._store.theme.playgroundSidebar)
+						? this._store.theme.playgroundSidebar
+						: [],
+				playgroundSecondarySidebar: Array.isArray(
+					theme?.playground?.playgroundSecondarySidebar,
+				)
+					? theme.playground?.playgroundSecondarySidebar
+					: Array.isArray(
+								this._store.theme.playground
+									.playgroundSecondarySidebar,
+							)
+						? this._store.theme.playground
+								.playgroundSecondarySidebar
+						: [],
+				playgroundModelRequest: {
+					...this._store.theme.playground.playgroundModelRequest,
+					...(theme?.playground?.playgroundModelRequest || {}),
+				},
+				playgroundBanner:
+					typeof theme?.playground?.playgroundBanner === "string"
+						? theme.playground?.playgroundBanner
+						: typeof this._store.theme.playgroundBanner === "string"
+							? this._store.theme.playgroundBanner
+							: "",
+
+				playgroundHeader:
+					typeof theme?.playground?.playgroundHeader === "string"
+						? theme.playground?.playgroundHeader
+						: typeof this._store.theme.playgroundHeader === "string"
+							? this._store.theme.playgroundHeader
+							: "",
+				playgroundFooter:
+					typeof theme?.playground?.playgroundFooter === "string"
+						? theme.playground?.playgroundFooter
+						: typeof this._store.theme.playgroundFooter === "string"
+							? this._store.theme.playgroundFooter
+							: "",
+				playgroundModal:
+					theme?.playground?.playgroundModal &&
+					typeof theme.playground.playgroundModal === "object" &&
+					typeof theme.playground.playgroundModal.message ===
+						"string" &&
+					typeof theme.playground.playgroundModal.header === "string"
+						? {
+								message:
+									theme.playground.playgroundModal.message,
+								header: theme.playground.playgroundModal.header,
+							}
+						: this._store.theme.playground.playgroundModal &&
+								typeof this._store.theme.playground
+									.playgroundModal.message === "string" &&
+								typeof this._store.theme.playground
+									.playgroundModal.header === "string"
+							? {
+									message:
+										this._store.theme.playground
+											.playgroundModal.message,
+									header: this._store.theme.playground
+										.playgroundModal.header,
+								}
+							: {
+									message: "",
+									header: "",
+								},
+			},
 		};
 
 		// apply the theme to document root
 		const root = document.documentElement;
-		if (this._store.theme.styles.backgroundColor) {
+		if (this._store.theme.variables.backgroundColor) {
 			root.style.setProperty(
 				"--background",
-				this._store.theme.styles.backgroundColor,
+				this._store.theme.variables.backgroundColor,
 			);
 		}
 
-		if (this._store.theme.styles.primaryColor) {
+		if (this._store.theme.variables.primaryColor) {
 			root.style.setProperty(
 				"--primary",
-				this._store.theme.styles.primaryColor,
+				this._store.theme.variables.primaryColor,
+			);
+		}
+
+		if (this._store.theme.variables.secondaryColor) {
+			root.style.setProperty(
+				"--secondary",
+				this._store.theme.variables.secondaryColor,
 			);
 		}
 	};

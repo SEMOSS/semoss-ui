@@ -1,4 +1,6 @@
 import { Ellipsis, SquarePen } from "lucide-react";
+import { observer } from "mobx-react-lite";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	Button,
@@ -13,6 +15,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@semoss/ui/next";
+import { useRoot } from "@/hooks";
 import type { Workspace } from "@/types";
 
 export interface WorkspaceCardProps {
@@ -26,96 +29,136 @@ export interface WorkspaceCardProps {
  *
  * @component
  */
-export const WorkspaceCard = ({
-	onEditClick,
-	workspace,
-	onDeleteClick,
-}: WorkspaceCardProps) => {
-	/**
-	 * Library Hooks
-	 */
-	const navigate = useNavigate();
+export const WorkspaceCard = observer(
+	({ onEditClick, workspace, onDeleteClick }: WorkspaceCardProps) => {
+		/**
+		 * Library Hooks
+		 */
+		const navigate = useNavigate();
+		const { root } = useRoot();
+		const [logo, setLogo] = useState(null);
 
-	/**
-	 * Functions
-	 */
-	const createRoom = () => {
-		navigate(`/new?workspaceId=${workspace.workspace_id}`);
-	};
+		useEffect(() => {
+			const loadLogo = async () => {
+				if (root.theme?.playground?.images?.logo) {
+					const base64data = btoa(
+						unescape(
+							encodeURIComponent(
+								root.theme.playground.images.logo,
+							),
+						),
+					);
+					setLogo(base64data);
+				} else if (root.theme.images.logo) {
+					try {
+						const res = await fetch(root.theme.images.logo);
+						const svg = await res.text();
+						const base64data = btoa(
+							unescape(encodeURIComponent(String(svg))),
+						);
+						setLogo(base64data);
+					} catch (err) {
+						console.error("Failed to load logo:", err);
+						setLogo(null);
+					}
+				}
+			};
 
-	/**
-	 * View Workspace Details
-	 */
-	const viewDetails = () => {
-		navigate(`/workspace/${workspace.workspace_id}`);
-	};
-	return (
-		<Card
-			className="cursor-pointer gap-0 bg-background p-0"
-			onClick={() => viewDetails()}
-		>
-			<CardContent className="flex flex-col gap-4 p-6">
-				<div className="flex justify-between">
-					<div className="text-4xl">🌴</div>
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								onClick={(e) => e.stopPropagation()}
-							>
-								<Ellipsis />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuGroup>
-								<DropdownMenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										onEditClick();
-									}}
+			loadLogo();
+		}, [root.theme.images.logo, root.theme?.playground?.images?.logo]);
+
+		/**
+		 * Functions
+		 */
+		const createRoom = () => {
+			navigate(`/new?workspaceId=${workspace.workspace_id}`);
+		};
+
+		/**
+		 * View Workspace Details
+		 */
+		const viewDetails = () => {
+			navigate(`/workspace/${workspace.workspace_id}`);
+		};
+		return (
+			<Card
+				className="cursor-pointer gap-0 bg-background p-0"
+				onClick={() => viewDetails()}
+			>
+				<CardContent className="flex flex-col gap-4 p-6">
+					<div className="flex justify-between">
+						<div className="text-4xl">
+							{logo ? (
+								<img
+									className="flex h-10 flex-row items-center"
+									alt="logo"
+									src={`data:image/svg+xml;base64,${logo}`}
+								/>
+							) : null}
+						</div>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="ghost"
+									onClick={(e) => e.stopPropagation()}
 								>
-									Edit
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										onDeleteClick();
-									}}
-								>
-									Delete
-								</DropdownMenuItem>
-							</DropdownMenuGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-				<CardHeader className="gap-1.5 p-0">
-					<CardTitle className="truncate leading-normal">
-						{workspace.name}
-					</CardTitle>
-					<CardDescription className="truncate">
-						{workspace.description ?? "No description available"}
-					</CardDescription>
-				</CardHeader>
-			</CardContent>
+									<Ellipsis />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuGroup>
+									<DropdownMenuItem
+										onClick={(e) => {
+											e.stopPropagation();
+											onEditClick();
+										}}
+									>
+										Edit
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={(e) => {
+											e.stopPropagation();
+											onDeleteClick();
+										}}
+									>
+										Delete
+									</DropdownMenuItem>
+								</DropdownMenuGroup>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+					<CardHeader className="gap-1.5 p-0">
+						<CardTitle className="truncate leading-normal">
+							{workspace.name}
+						</CardTitle>
+						<CardDescription className="truncate">
+							{workspace.description ??
+								"No description available"}
+						</CardDescription>
+					</CardHeader>
+				</CardContent>
 
-			<hr
-				className="w-full"
-				style={{ borderTop: "1px solid var(--base-border, #E5E5E5)" }}
-			/>
-
-			<CardContent className="px-6 py-4">
-				<Button
-					size="sm"
-					onClick={(e) => {
-						e.stopPropagation();
-						createRoom();
+				<hr
+					className="w-full"
+					style={{
+						borderTop: "1px solid var(--base-border, #E5E5E5)",
 					}}
-					variant="outline"
-				>
-					<SquarePen />
-					New Chat
-				</Button>
-			</CardContent>
-		</Card>
-	);
-};
+				/>
+
+				<CardContent className="px-6 py-4">
+					<Button
+						size="sm"
+						onClick={(e) => {
+							e.stopPropagation();
+							createRoom();
+						}}
+						variant="outline"
+					>
+						<SquarePen />
+						New Chat
+					</Button>
+				</CardContent>
+			</Card>
+		);
+	},
+);

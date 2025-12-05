@@ -9,7 +9,6 @@ import {
 	InputGroupInput,
 	Muted,
 	ScrollArea,
-	SidebarTrigger,
 	Spinner,
 	toast,
 	useDebouncedValue,
@@ -34,7 +33,6 @@ export const WorkspacePage = observer(() => {
 		useState<boolean>(false);
 	const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 	const debouncedSearch = useDebouncedValue(search);
-
 	const { chat } = useChat();
 
 	/**
@@ -87,11 +85,8 @@ export const WorkspacePage = observer(() => {
 	});
 
 	return (
-		<div className="flex w-full flex-col px-2">
-			<div className="absolute top-2 left-2 z-10 flex h-12.5 items-center px-4">
-				<SidebarTrigger />
-			</div>
-			<div className="mx-auto flex h-screen w-full max-w-[950px] flex-col gap-12 px-12 pt-8 pb-4">
+		<div className="relative h-full w-full overflow-hidden">
+			<div className="mx-auto flex h-full w-full max-w-[950px] flex-col gap-12 px-12 pt-8 pb-4">
 				<div className="flex w-full rounded-lg bg-sky-100">
 					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
 						<div className="font-medium text-primary text-xl leading-normal">

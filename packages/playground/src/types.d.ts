@@ -6,14 +6,17 @@ export interface Theme {
 	description: string;
 
 	/** Styles of the app */
-	styles: {
+	variables: {
 		backgroundColor: string;
 		primaryColor: string;
+		secondaryColor: string;
 	};
 
 	/** Images throughout app */
 	images: {
-		logo: string;
+		appName?: string;
+		logo?: string;
+		defaultWorkspace?: string;
 	};
 
 	/**
@@ -22,6 +25,74 @@ export interface Theme {
 	overrides: {
 		"main-layout": React.CSSProperties;
 	};
+
+	playground: {
+		/**
+		 * Custom sidebar routes. url should point to a project
+		 */
+		playgroundSidebar?: {
+			pathName: string;
+			name: string;
+			icon: IconNode;
+		}[];
+
+		/**
+		 * Playground Banner
+		 */
+		playgroundBanner?: string;
+
+		/**
+		 * Playground Header
+		 */
+		playgroundHeader?: string;
+
+		/**
+		 * Playground Footer
+		 */
+		playgroundFooter?: string;
+
+		/**
+		 * Playground Secondary sidebar for support operations
+		 */
+		playgroundSecondarySidebar?: {
+			url: string;
+			pathName: string;
+			name: string;
+			icon: IconNode;
+		}[];
+
+		/**
+		 * Optional display in model dropdown to request a new model
+		 */
+		playgroundModelRequest?: {
+			label: string;
+			url: string;
+		};
+
+		/**
+		 * Playground Modal displayed on startup
+		 */
+		playgroundModal?: {
+			message: string;
+			header: string;
+		};
+
+		/**
+		 * Font settings for the app
+		 */
+		font?: {
+			family: string;
+		};
+
+		/** Images throughout app */
+		images: {
+			appName?: string;
+			logo?: string;
+			defaultWorkspace?: string;
+		};
+	};
+
+	[key: string]: unknown;
 }
 
 export interface Engine {

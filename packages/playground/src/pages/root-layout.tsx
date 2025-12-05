@@ -9,13 +9,19 @@ export const RootLayout = ({ children }) => {
 
 	// set up the store
 	const rootStore = useMemo(() => {
-		const store = new RootStore();
+		if (system.config.theme) {
+			const store = new RootStore();
+			try {
+				// initialize it with the new theme
+				store.initialize(
+					JSON.parse(String(system?.config?.theme?.THEME_MAP)),
+				);
+			} catch (_e) {}
 
-		// initialize it with the new theme
-		store.initialize(system.config.theme?.playground);
-
-		return store;
-	}, [system.config.theme?.playground]);
+			return store;
+		}
+		return null;
+	}, [system.config.theme]);
 
 	if (!rootStore.isInitialized) {
 		return (

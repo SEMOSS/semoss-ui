@@ -18,7 +18,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { ToolboxOverlay } from "@/components";
-import { useChat } from "@/hooks";
+import { useChat, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCP, MCPConfig } from "@/types";
 
@@ -40,6 +40,7 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 	 * Library hooks
 	 */
 	const { chat } = useChat();
+	const { root } = useRoot();
 
 	/**
 	 * State
@@ -106,6 +107,16 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 										popoverContentProps={{
 											align: "start",
 										}}
+										requestNewOption={
+											root?.theme?.playground
+												?.playgroundModelRequest
+												?.label &&
+											root?.theme?.playground
+												?.playgroundModelRequest?.url
+												? root.theme.playground
+														.playgroundModelRequest
+												: undefined
+										}
 									/>
 								</Field>
 							)}
