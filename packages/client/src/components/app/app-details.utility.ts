@@ -236,12 +236,13 @@ export const updateProjectDetails = async (
 export const SetProjectDependencies = async (
 	configStore: ConfigStore,
 	appId: string,
-	dependencies: string[],
+	dependencies: {
+		id: string;
+		type: string;
+	}[],
 ) => {
 	const res = await configStore.runPixel<string[]>(
-		`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(
-			dependencies.length > 0 ? dependencies : null,
-		)})`,
+		`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(dependencies)})`,
 	);
 
 	const type = res.pixelReturn[0].operationType;

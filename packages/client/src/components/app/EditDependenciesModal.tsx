@@ -111,7 +111,10 @@ export const EditDependenciesModal = ({
 		const res = await SetProjectDependencies(
 			configStore,
 			appId,
-			selectedDeps.map((dep: modelledDependency) => dep.id),
+			selectedDeps.map((dep: modelledDependency) => ({
+				id: dep.id,
+				type: dep.type,
+			})),
 		);
 
 		if (res.type === "success") {
