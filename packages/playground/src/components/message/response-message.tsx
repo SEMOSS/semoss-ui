@@ -46,7 +46,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			try {
 				navigator.clipboard.writeText(text);
 
-				toast.success("Successfully copied to clipboar");
+				toast.success("Successfully copied to clipboard");
 			} catch (e) {
 				toast.error(e.message);
 			}
@@ -154,7 +154,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<Button
 									disabled={
 										inputMessage.parent instanceof
-										RootMessageStore
+											RootMessageStore ||
+										message.room.mode === "executing"
 									}
 									variant="ghost"
 									size="icon"

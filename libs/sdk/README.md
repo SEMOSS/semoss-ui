@@ -162,6 +162,17 @@ const download = (path) => {
 };
 ```
 
+-   Run an MCP tool and send the response to the playground
+
+```js
+const runMCPTool = (name, parameters,)  => {
+    const { output } = await insight.actions.runMCPTool(name, parameters);
+
+    // log the output
+    console.log(output);
+};
+```
+
 ## 🔄 Migration Guide
 
 ### For Users Migrating from @semoss/sdk-react
