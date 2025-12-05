@@ -716,7 +716,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 				</Typography>
 				<Typography
 					variant="body1"
-					color={isModelPage ? "inherit" : "secondary"}
+					color="inherit"
 				>
 					{steps.length && steps[steps.length - 1].description}
 				</Typography>
