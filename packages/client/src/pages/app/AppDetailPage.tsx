@@ -309,7 +309,7 @@ export const AppDetailPage = () => {
 			fetchMainUses(monolithStore, id),
 		];
 		if (permission !== "discoverable") {
-			promises.push(fetchDependencies(monolithStore, id));
+			promises.push(fetchDependencies(configStore, id));
 		}
 		const results = await Promise.allSettled(promises);
 		results.forEach((res, idx) => {
@@ -462,7 +462,7 @@ export const AppDetailPage = () => {
 	const handleCloseDependenciesModal = async (refreshData: boolean) => {
 		if (refreshData) {
 			const appId = getValues("appId");
-			const res = await fetchDependencies(monolithStore, appId);
+			const res = await fetchDependencies(configStore, appId);
 			if (res.type === "success") {
 				const modelled = modelDependencies(res.output);
 				setValue("dependencies", modelled);

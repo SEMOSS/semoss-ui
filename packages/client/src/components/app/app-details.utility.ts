@@ -171,8 +171,20 @@ export const fetchMainUses = async (monolithStore, appId: string) => {
 	}
 };
 
-export const fetchDependencies = async (monolithStore, appId: string) => {
-	const res = await monolithStore.runQuery(
+export const fetchDependencies = async (
+	configStore: ConfigStore,
+	appId: string,
+): Promise<
+	| {
+			type: "success";
+			output: appDependency[];
+	  }
+	| {
+			type: "error";
+			output: string;
+	  }
+> => {
+	const res = await configStore.runPixel<(appDependency[] | string)[]>(
 		`GetProjectDependencies(project="${appId}")`,
 	);
 
@@ -182,12 +194,12 @@ export const fetchDependencies = async (monolithStore, appId: string) => {
 	if (type.indexOf("ERROR") === -1) {
 		return {
 			type: "success",
-			output,
+			output: output as appDependency[],
 		};
 	} else {
 		return {
 			type: "error",
-			output,
+			output: output as string,
 		};
 	}
 };
