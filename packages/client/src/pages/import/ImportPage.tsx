@@ -31,12 +31,7 @@ export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
 			case "FUNCTION":
 				return <ImportPageContent name={name} type={type} />;
 			case "STORAGE":
-				return (
-					<>
-						<StorageImport name={name} />{" "}
-						<ImportPageContent name={name} type={type} />
-					</>
-				);
+				return <StorageImport name={name} />;
 			default:
 				return <ImportPageContent name={name} type={type} />;
 		}

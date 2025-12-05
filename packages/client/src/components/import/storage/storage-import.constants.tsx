@@ -63,6 +63,8 @@ export const STORAGE_CONNECTIONS = {
 			name: "Amazon S3",
 			disable: false,
 			icon: AMAZON_S3,
+			description:
+				"Amazon S3 (Simple Storage Service) is a scalable object storage service that provides secure, durable, and highly available storage for a wide range of data types and applications.",
 			fields: [
 				{
 					key: "STORAGE_TYPE",
@@ -131,6 +133,8 @@ export const STORAGE_CONNECTIONS = {
 			name: "CEPH",
 			disable: false,
 			icon: CEPH,
+			description:
+				"Ceph is an open-source distributed storage system that provides object, block, and file storage in a unified platform, designed for scalability, reliability, and performance.",
 			fields: [
 				{
 					key: "STORAGE_TYPE",
@@ -199,6 +203,8 @@ export const STORAGE_CONNECTIONS = {
 			name: "Dreamhost",
 			disable: true,
 			icon: DREAMHOST,
+			description:
+				"DreamHost is a web hosting service that also offers cloud storage solutions for developers and businesses.",
 			fields: [
 				{
 					key: "STORAGE_TYPE",
@@ -267,6 +273,8 @@ export const STORAGE_CONNECTIONS = {
 			name: "Dropbox",
 			disable: false,
 			icon: DROPBOX,
+			description:
+				"Dropbox is a cloud storage service that allows you to save files online and sync them to your devices, making file sharing and collaboration easy.",
 			fields: [
 				{
 					key: "STORAGE_TYPE",
@@ -335,6 +343,8 @@ export const STORAGE_CONNECTIONS = {
 			name: "Google Cloud",
 			disable: false,
 			icon: GOOGLE_CLOUD,
+			description:
+				"Google Cloud Storage is a scalable and secure object storage service for unstructured data, ideal for building data lakes, websites, and applications.",
 			fields: [
 				{
 					key: "STORAGE_TYPE",
@@ -401,6 +411,8 @@ export const STORAGE_CONNECTIONS = {
 			name: "Local File System",
 			disable: false,
 			icon: LOCAL_FILE_SYSTEM,
+			description:
+				"Use this option if you want to import data from a local file system.",
 			fields: [
 				{
 					key: "STORAGE_TYPE",
@@ -445,6 +457,8 @@ export const STORAGE_CONNECTIONS = {
 			name: "Microsoft Azure Blob Storage",
 			disable: false,
 			icon: AZURE_BLOB,
+			description:
+				"Microsoft Azure Blob Storage is a scalable object storage solution for unstructured data, ideal for building cloud-native applications and data lakes.",
 			fields: [
 				{
 					key: "STORAGE_TYPE",
@@ -513,6 +527,8 @@ export const STORAGE_CONNECTIONS = {
 			name: "Microsoft OneDrive",
 			disable: true,
 			icon: ONEDRIVE,
+			description:
+				"Cloud file storage and synchronization service from Microsoft.",
 			fields: [
 				{
 					key: "STORAGE_TYPE",
@@ -580,6 +596,8 @@ export const STORAGE_CONNECTIONS = {
 			name: "MinIO",
 			disable: false,
 			icon: MINIO,
+			description:
+				"MinIO is a high-performance, distributed object storage system compatible with Amazon S3 APIs, designed for large-scale data infrastructure and cloud-native applications.",
 			fields: [
 				{
 					key: "STORAGE_TYPE",
@@ -656,6 +674,8 @@ export const STORAGE_CONNECTIONS = {
 			name: "Network File System",
 			disable: false,
 			icon: NETWORK_FILE_SYSTEM,
+			description:
+				"Network File System (NFS) is a distributed file system protocol that allows users to access files over a network as if they were on their local storage.",
 			fields: [
 				{
 					key: "STORAGE_TYPE",
@@ -720,11 +740,12 @@ export const STORAGE_CONNECTIONS = {
 				},
 			],
 		},
-
 		{
 			name: "SFTP",
 			disable: false,
 			icon: SFTP,
+			description:
+				"SFTP (SSH File Transfer Protocol) is a secure file transfer protocol that operates over SSH to provide encrypted file access, transfer, and management.",
 			fields: [
 				{
 					key: "STORAGE_TYPE",
