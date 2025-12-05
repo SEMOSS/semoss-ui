@@ -74,6 +74,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: true,
 					required: true,
+					category: "General",
 				},
 				{
 					key: "NAME",
@@ -94,6 +95,7 @@ export const STORAGE_CONNECTIONS = {
 								"This Catalog name has already been used, please try another.",
 						},
 					},
+					category: "General",
 				},
 				{
 					key: "S3_REGION",
@@ -102,6 +104,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 				{
 					key: "S3_BUCKET",
@@ -110,6 +113,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 				{
 					key: "S3_ACCESS_KEY",
@@ -118,6 +122,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: false,
+					category: "Credentials",
 				},
 				{
 					key: "S3_SECRET_KEY",
@@ -126,6 +131,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "password",
 					disabled: false,
 					required: false,
+					category: "Credentials",
 				},
 			],
 		},
@@ -144,6 +150,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: true,
 					required: true,
+					category: "General",
 				},
 				{
 					key: "NAME",
@@ -164,6 +171,7 @@ export const STORAGE_CONNECTIONS = {
 								"This Catalog name has already been used, please try another.",
 						},
 					},
+					category: "General",
 				},
 				{
 					key: "CEPH_ACCESS_KEY",
@@ -172,6 +180,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "CEPH_SECRET_KEY",
@@ -180,6 +189,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "password",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "CEPH_ENDPOINT",
@@ -188,6 +198,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 				{
 					key: "CEPH_BUCKET",
@@ -196,6 +207,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: false,
+					category: "Settings",
 				},
 			],
 		},
@@ -214,6 +226,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: true,
 					required: true,
+					category: "General",
 				},
 				{
 					key: "NAME",
@@ -234,6 +247,7 @@ export const STORAGE_CONNECTIONS = {
 								"This Catalog name has already been used, please try another.",
 						},
 					},
+					category: "General",
 				},
 				{
 					key: "S3_REGION",
@@ -242,6 +256,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 				{
 					key: "S3_ACCESS_KEY",
@@ -250,6 +265,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "S3_SECRET_KEY",
@@ -258,6 +274,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "password",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "S3_ENDPOINT",
@@ -266,6 +283,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 			],
 		},
@@ -284,6 +302,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: true,
 					required: true,
+					category: "General",
 				},
 				{
 					key: "NAME",
@@ -304,6 +323,7 @@ export const STORAGE_CONNECTIONS = {
 								"This Catalog name has already been used, please try another.",
 						},
 					},
+					category: "General",
 				},
 				{
 					key: "S3_REGION",
@@ -312,6 +332,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 				{
 					key: "S3_ACCESS_KEY",
@@ -320,6 +341,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "S3_SECRET_KEY",
@@ -328,6 +350,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "password",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "S3_ENDPOINT",
@@ -336,6 +359,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 			],
 		},
@@ -354,6 +378,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: true,
 					required: true,
+					category: "General",
 				},
 				{
 					key: "NAME",
@@ -374,6 +399,7 @@ export const STORAGE_CONNECTIONS = {
 								"This Catalog name has already been used, please try another.",
 						},
 					},
+					category: "General",
 				},
 				{
 					key: "GCS_REGION",
@@ -382,6 +408,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 				{
 					key: "GCS_SERVICE_ACCOUNT_FILE",
@@ -390,6 +417,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "GCS_BUCKET",
@@ -398,6 +426,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: false,
+					category: "Settings",
 				},
 			],
 		},
@@ -422,6 +451,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: true,
 					required: true,
+					category: "General",
 				},
 				{
 					key: "NAME",
@@ -442,6 +472,7 @@ export const STORAGE_CONNECTIONS = {
 								"This Catalog name has already been used, please try another.",
 						},
 					},
+					category: "General",
 				},
 				{
 					key: "PATH_PREFIX",
@@ -450,6 +481,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 			],
 		},
@@ -468,6 +500,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: true,
 					required: true,
+					category: "General",
 				},
 				{
 					key: "NAME",
@@ -488,6 +521,7 @@ export const STORAGE_CONNECTIONS = {
 								"This Catalog name has already been used, please try another.",
 						},
 					},
+					category: "General",
 				},
 				{
 					key: "AZ_ACCOUNT_NAME",
@@ -496,6 +530,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 				{
 					key: "AZ_PRIMARY_KEY",
@@ -504,6 +539,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "AZ_CONN_STRING",
@@ -512,6 +548,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "AZ_GENERATE_DYNAMIC_SAS",
@@ -520,6 +557,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 			],
 		},
@@ -537,6 +575,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: true,
 					required: true,
+					category: "General",
 				},
 				{
 					key: "NAME",
@@ -557,6 +596,7 @@ export const STORAGE_CONNECTIONS = {
 								"This Catalog name has already been used, please try another.",
 						},
 					},
+					category: "General",
 				},
 				{
 					key: "S3_REGION",
@@ -565,6 +605,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 				{
 					key: "S3_ACCESS_KEY",
@@ -573,6 +614,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "S3_SECRET_KEY",
@@ -581,6 +623,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "password",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "S3_ENDPOINT",
@@ -589,6 +632,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 			],
 		},
@@ -607,6 +651,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: true,
 					required: true,
+					category: "General",
 				},
 				{
 					key: "NAME",
@@ -627,6 +672,7 @@ export const STORAGE_CONNECTIONS = {
 								"This Catalog name has already been used, please try another.",
 						},
 					},
+					category: "General",
 				},
 				{
 					key: "MINIO_REGION",
@@ -635,6 +681,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 				{
 					key: "MINIO_ACCESS_KEY",
@@ -643,6 +690,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "MINIO_SECRET_KEY",
@@ -651,6 +699,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "password",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "MINIO_ENDPOINT",
@@ -659,6 +708,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 				{
 					key: "MINIO_BUCKET",
@@ -667,6 +717,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: false,
+					category: "Settings",
 				},
 			],
 		},
@@ -685,6 +736,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: true,
 					required: true,
+					category: "General",
 				},
 				{
 					key: "NAME",
@@ -705,6 +757,7 @@ export const STORAGE_CONNECTIONS = {
 								"This Catalog name has already been used, please try another.",
 						},
 					},
+					category: "General",
 				},
 				{
 					key: "NETWORK_DOMAIN",
@@ -713,6 +766,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 				{
 					key: "USERNAME",
@@ -721,6 +775,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "PASSWORD",
@@ -729,6 +784,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "password",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "PATH_PREFIX",
@@ -737,6 +793,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: false,
+					category: "Settings",
 				},
 			],
 		},
@@ -755,6 +812,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: true,
 					required: true,
+					category: "General",
 				},
 				{
 					key: "NAME",
@@ -775,6 +833,7 @@ export const STORAGE_CONNECTIONS = {
 								"This Catalog name has already been used, please try another.",
 						},
 					},
+					category: "General",
 				},
 				{
 					key: "HOSTNAME",
@@ -783,6 +842,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
 				},
 				{
 					key: "PORT",
@@ -792,6 +852,7 @@ export const STORAGE_CONNECTIONS = {
 					disabled: false,
 					required: true,
 					rules: { min: 0 },
+					category: "Settings",
 				},
 				{
 					key: "USERNAME",
@@ -800,6 +861,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "text",
 					disabled: false,
 					required: true,
+					category: "Credentials",
 				},
 				{
 					key: "PASSWORD",
@@ -808,6 +870,7 @@ export const STORAGE_CONNECTIONS = {
 					component: "password",
 					disabled: false,
 					required: false,
+					category: "Credentials",
 				},
 			],
 		},
