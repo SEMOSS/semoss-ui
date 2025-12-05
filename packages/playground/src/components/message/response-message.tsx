@@ -154,7 +154,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<Button
 									disabled={
 										inputMessage.parent instanceof
-										RootMessageStore
+											RootMessageStore ||
+										message.room.mode === "executing"
 									}
 									variant="ghost"
 									size="icon"

@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { expect, test } from "vitest";
 import "@testing-library/jest-dom";
 
-import { ProjectTileCard } from "../components/app/AppCards";
+import { ProjectTileCard } from "./AppCards";
 
 test("app card display", async () => {
 	render(<ProjectTileCard name="app-card-title" />);
