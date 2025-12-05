@@ -1,6 +1,7 @@
 import { MoveDownIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import React, { useEffect } from "react";
+import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -50,13 +51,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 		const handleMessage = async (
 			event: MessageEvent<{
 				type: "SMSS_EXEC_TOOL";
-				tool: {
-					type: "MCP";
-					message: string;
-					id: string;
-					name: string;
-					response: string;
-				};
+				tool: MCPToolResponse;
 			}>,
 		) => {
 			try {
@@ -84,11 +79,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
-	let isDisabled = false;
-	// If the plan is executing, only the execution step is enabled
-	if (room.mode === "executing") {
-		isDisabled = room.plan?.step?.details.stepType !== "human_intervention";
-	}
+	const isDisabled = room.mode === "executing";
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out">
