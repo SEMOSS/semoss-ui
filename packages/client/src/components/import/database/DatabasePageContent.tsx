@@ -257,9 +257,9 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					return;
 				}
 				notification.add({
-					color:"success",
-					message: "Successfully Created Database"
-				})
+					color: "success",
+					message: "Successfully Created Database",
+				});
 				navigate(`/engine/database/${output.database_id}`);
 			}
 		} catch {
