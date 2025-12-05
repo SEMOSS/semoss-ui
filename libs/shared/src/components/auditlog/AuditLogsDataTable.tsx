@@ -110,9 +110,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			],
 			status: [
 				...new Set(
-					logs?.map(
-						(log) => STATUS_LABEL_CONVERSION[log.status] || [],
-					),
+					logs?.map((log) => STATUS_LABEL_CONVERSION[log.status]),
 				),
 			].filter((status) => status !== undefined && status !== null) ?? [
 				"Success",
