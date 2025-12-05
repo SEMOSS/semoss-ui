@@ -50,7 +50,6 @@ interface DataImportCellParams {
 }
 
 const DEFAULT_HEIGHT = "300px";
-const DEFAULT_WIDTH = "500px";
 
 export interface HeaderBackgroundSettings {
 	backgroundColor: string;
@@ -166,6 +165,16 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		direction: "asc" | "desc";
 	} | null>(null);
 
+	// Track column widths across renders
+	const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
+		{},
+	);
+	
+	// Track which column is being resized
+	const [resizingColumn, setResizingColumn] = useState<string | null>(null);
+	const resizeStartX = useRef<number>(0);
+	const resizeStartWidth = useRef<number>(0);
+
 	// Find the source QueryImportCell or DataImportCell that created this frame
 	// We need to find the cell whose frameVariableName matches our base name
 	const sourceCell = Object.values(state.queries)
@@ -239,6 +248,25 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			}
 		}
 	}, [frameHeaders.data.list, frameHeaders.isLoading]);
+
+	/**
+	 * Load persisted column widths from block data on mount
+	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only on mount
+	useEffect(() => {
+		const widths: Record<string, number> = {};
+		data.columns.forEach((col) => {
+			if (col.width) {
+				const numWidth = typeof col.width === 'string' ? Number.parseFloat(col.width) : col.width;
+				if (!Number.isNaN(numWidth)) {
+					widths[col.name] = numWidth;
+				}
+			}
+		});
+		if (Object.keys(widths).length > 0) {
+			setColumnWidths(widths);
+		}
+	}, []);
 
 	/**
 	 * Handle data accumulation when batching is enabled
@@ -325,9 +353,9 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 
 	/**
 	 * Updates data.columns
-	 * @param synData
+	 * @param cols - frame headers data
 	 */
-	const syncBlockDataColumns = (cols) => {
+	const syncBlockDataColumns = (cols: typeof frameHeaders) => {
 		const columns: GridBlockColumn[] = cols.data.list.map((h) => {
 			return {
 				name: h.alias,
@@ -438,6 +466,70 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 				return false;
 		}
 	}
+
+	// Calculate minimum width for column based on header text
+	const calculateMinWidth = (columnName: string) => {
+		const estimatedWidth = columnName.length * 8;
+		return Math.max(estimatedWidth, 50);
+	};
+	
+	/**
+	 * Start column resize
+	 */
+	const handleResizeStart = (e: React.MouseEvent, columnName: string) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setResizingColumn(columnName);
+		resizeStartX.current = e.clientX;
+		resizeStartWidth.current = columnWidths[columnName] || calculateMinWidth(columnName);
+	};
+
+	/**
+	 * Handle mouse move during resize
+	 */
+	const handleResizeMove = (e: MouseEvent) => {
+		if (!resizingColumn) return;
+		
+		const delta = e.clientX - resizeStartX.current;
+		const newWidth = Math.max(50, resizeStartWidth.current + delta);
+		
+		setColumnWidths(prev => ({
+			...prev,
+			[resizingColumn]: newWidth,
+		}));
+	};
+
+	/**
+	 * End column resize
+	 */
+	const handleResizeEnd = () => {
+		if (resizingColumn) {
+			// Persist the width to block data
+			const colIndex = columnsToDisplay.findIndex(c => c.name === resizingColumn);
+			if (colIndex !== -1) {
+				const updatedColumns = [...columnsToDisplay];
+				updatedColumns[colIndex] = {
+					...updatedColumns[colIndex],
+					width: columnWidths[resizingColumn]?.toString(),
+				};
+				setData("columns", updatedColumns);
+			}
+		}
+		setResizingColumn(null);
+	};
+
+	// Add/remove resize event listeners
+	// biome-ignore lint/correctness/useExhaustiveDependencies: handleResizeMove and handleResizeEnd are stable
+	useEffect(() => {
+		if (resizingColumn) {
+			document.addEventListener('mousemove', handleResizeMove);
+			document.addEventListener('mouseup', handleResizeEnd);
+			return () => {
+				document.removeEventListener('mousemove', handleResizeMove);
+				document.removeEventListener('mouseup', handleResizeEnd);
+			};
+		}
+	}, [resizingColumn]);
 
 	const headerSettings = {
 		fontSize: "16",
@@ -600,11 +692,10 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	return (
 		<div
 			style={{
-				display: "flex",
-				flexDirection: "column",
 				minHeight: DEFAULT_HEIGHT,
-				width: DEFAULT_WIDTH,
-				...data.style,
+				...(data.style as React.CSSProperties),
+				cursor: resizingColumn ? 'col-resize' : undefined,
+				userSelect: resizingColumn ? 'none' : undefined,
 			}}
 			{...attrs}
 		>
@@ -636,13 +727,16 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 										wrapTextSettings.selectedColumn.includes(
 											col.name,
 										);
+									const colWidth = columnWidths[col.name] || col.width;
 									return (
 										<TableHead
 											key={col.name}
-											className="sticky top-0 z-10 cursor-pointer select-none bg-background"
+											className="relative sticky top-0 z-10 cursor-pointer select-none bg-background"
 											style={{
 												height: 50,
 												padding: 0,
+												width: colWidth ? `${colWidth}px` : undefined,
+												minWidth: calculateMinWidth(col.name),
 												...(showVerticalBorders
 													? {
 															borderRight:
@@ -688,6 +782,20 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 													<ArrowUpDown className="size-3.5 shrink-0 opacity-30" />
 												)}
 											</div>
+											{/* Resize Handle */}
+											{/* biome-ignore lint/a11y/useKeyWithClickEvents: resize handle is mouse-only */}
+											{/* biome-ignore lint/a11y/noStaticElementInteractions: resize handle requires mouse events */}
+											<div
+												className="absolute top-0 right-0 h-full w-1 cursor-col-resize hover:bg-primary/50 active:bg-primary"
+												style={{
+													zIndex: 20,
+												}}
+												onMouseDown={(e) => handleResizeStart(e, col.name)}
+												onClick={(e) => {
+													e.stopPropagation();
+													e.preventDefault();
+												}}
+											/>
 										</TableHead>
 									);
 								})}
@@ -704,6 +812,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 												wrapTextSettings.selectedColumn.includes(
 													col.name,
 												);
+											const colWidth = columnWidths[col.name] || col.width;
 
 											const baseStyle: React.CSSProperties =
 												{
@@ -774,6 +883,8 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 													key={col.name}
 													className="p-0"
 													style={{
+														width: colWidth ? `${colWidth}px` : undefined,
+														minWidth: calculateMinWidth(col.name),
 														...(rowHeight
 															? {
 																	height: rowHeight,

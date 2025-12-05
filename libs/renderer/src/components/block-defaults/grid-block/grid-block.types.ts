@@ -7,5 +7,5 @@ export type GridBlockColumn = {
 	selector: string;
 
 	/** Width of the column */
-	width: string;
+	width?: string | number;
 };
