@@ -322,19 +322,17 @@ paramValues=[${JSON.stringify({
 		const { output } = response.pixelReturn[0];
 
 		// save the response
-		await this.saveToolExecution(tool, output, false);
+		await this.saveToolExecution(tool, output);
 	};
 
 	/**
-	 * Save a tool execution response
+	 * Save a tool execution responsex
 	 * @param tool - tool to save
 	 * @param toolResponse - response of the tool
-	 * @param disableToolChoice - if true, turn off tool choice
 	 */
 	saveToolExecution = async (
 		tool: ResponseMessageStore["tools"][number],
 		toolResponse: string,
-		disableToolChoice: boolean,
 	): Promise<void> => {
 		const room = this.room;
 
@@ -342,13 +340,6 @@ paramValues=[${JSON.stringify({
 		runInAction(() => {
 			tool.response = toolResponse;
 		});
-
-		const paramValues: Record<string, unknown> = {};
-
-		// turn off tool_choice
-		if (disableToolChoice) {
-			paramValues.tool_choice = { type: "none" };
-		}
 
 		// wait for the pixel to run
 		const response = await room.runRoomPixel<
@@ -365,7 +356,7 @@ ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 toolId = ["${tool.id}"],
 toolName=["${tool.name}"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
-paramValues=[${JSON.stringify(paramValues)}]
+paramValues=[${JSON.stringify({})}]
 );`,
 		);
 
