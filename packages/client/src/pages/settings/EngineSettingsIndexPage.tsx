@@ -357,7 +357,10 @@ export const EngineSettingsIndexPage = (
 	};
 
 	//** infinite sroll variables */
-	let scrollEle :HTMLDivElement, scrollTimeout : ReturnType<typeof setTimeout>, currentScroll :number, previousScroll :number;
+	let scrollEle: HTMLDivElement,
+		scrollTimeout: ReturnType<typeof setTimeout>,
+		currentScroll: number,
+		previousScroll: number;
 	const offsetRef = useRef(0);
 	offsetRef.current = offset;
 	const canCollectRef = useRef(true);
@@ -553,9 +556,7 @@ export const EngineSettingsIndexPage = (
 														`${db.database_id}`,
 														{
 															state: {
-																name: (
-																	db.database_name
-																),
+																name: db.database_name,
 																global: db.database_global,
 																permission:
 																	db.permission,
@@ -593,9 +594,7 @@ export const EngineSettingsIndexPage = (
 														`${db.database_id}`,
 														{
 															state: {
-																name: (
-																	db.database_name
-																),
+																name: db.database_name,
 																global: db.database_global,
 																permission:
 																	db.permission,
