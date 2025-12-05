@@ -173,12 +173,12 @@ interface Storage {
 
 interface StorageTileCardProps {
 	storage: Storage;
-	onModelSelect?: (storage: Storage) => void;
+	onStorageSelect?: (storage: Storage) => void;
 }
 
 export const StorageTitleCard: React.FC<StorageTileCardProps> = ({
 	storage,
-	onModelSelect,
+	onStorageSelect,
 }) => {
 	const textRef = useRef<HTMLParagraphElement>(null);
 	const [isTruncated, setIsTruncated] = useState(false);
@@ -210,8 +210,8 @@ export const StorageTitleCard: React.FC<StorageTileCardProps> = ({
 		<StyledFormTypeStorageBox
 			disabled={storage.disable || false}
 			onClick={() => {
-				if (!storage.disable && onModelSelect) {
-					onModelSelect(storage);
+				if (!storage.disable && onStorageSelect) {
+					onStorageSelect(storage);
 				}
 			}}
 			data-testId={formatToDataTestId(

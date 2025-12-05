@@ -134,12 +134,10 @@ export const StorageForm = ({
 	};
 
 	const onFormSubmit = async (formData) => {
-		const { NAME, ...newFormData } = formData;
-
 		setLoading(true);
-		const pixel = `CreateStorageEngine(database=["${
-			NAME
-		}"],storageDetails=[${JSON.stringify(newFormData)}])`;
+		const pixel = `CreateStorageEngine(storage=["${
+			formData.NAME
+		}"],storageDetails=[${JSON.stringify(formData)}])`;
 
 		monolithStore.runQuery(pixel).then(async (response) => {
 			const pixelOutput = response.pixelReturn[0].output,

@@ -237,7 +237,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 							...v,
 							display: v.name,
 						}}
-						onModelSelect={() => {
+						onStorageSelect={() => {
 							setSelectedDatabase(v);
 						}}
 					/>
