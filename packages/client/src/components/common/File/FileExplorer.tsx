@@ -77,7 +77,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 	>(
 		type === "app"
 			? `BrowseAsset(filePath=["version/assets"], space=["${space}"]);`
-			: `BrowseEngineAssets(filePath=["version/assets"], engine=["${space}"]);`,
+			: `BrowseEngineAssets(filePath=[], engine=["${space}"]);`,
 		{},
 		insightId,
 	);
@@ -91,7 +91,14 @@ export const FileExplorer = (props: FileExplorerProps) => {
 	 */
 	const handleOnNodeSelect = (selected: string[]) => {
 		// trigger the callback on the first one
-		onSelect(selected[0] || "");
+		const item = getAssets.data.find((n) => n.path === selected[0]);
+		let selectedPath = selected[0] || "";
+		if (item && item.type === "directory" && selectedPath !== "") {
+			selectedPath = selected[0].endsWith("/")
+				? selected[0]
+				: selected[0] + "/";
+		}
+		onSelect(selectedPath);
 
 		// set the selected values
 		setSelected(selected);
@@ -115,11 +122,11 @@ export const FileExplorer = (props: FileExplorerProps) => {
 	 * @param expanded - newly expanded values
 	 */
 
-	// if (!initLoadComplete) {
-	// 	return (
-	// 		<LoadingScreen.Trigger description="Retrieving files from application..." />
-	// 	);
-	// }
+	if (!initLoadComplete) {
+		return (
+			<LoadingScreen.Trigger description="Retrieving files from application..." />
+		);
+	}
 
 	return (
 		<div

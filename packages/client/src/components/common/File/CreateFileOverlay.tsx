@@ -68,6 +68,27 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 
 					pixel = `MakeDirectory(filePath=["${path}"], space=["${space}"]);`;
 				}
+			} else if (type === "engine") {
+				path = uploadPath;
+
+				// add a slash if there is none
+				if (path.slice(-1) !== "/") {
+					path = `${path}/`;
+				}
+
+				// append the name
+				path = `${path}${name}`;
+
+				if (mode === "file") {
+					pixel = `SaveEngineAssets(filePath=["/${name}"], content=["<encode></encode>"], engine=["${space}"]);CommitAsset(filePath=["/${name}"], comment=["Creating file"], engine=["${space}"]);`;
+				} else if (mode === "directory") {
+					// add in the / to make it a directory
+					if (path.slice(-1) !== "/") {
+						path = `${path}/`;
+					}
+
+					pixel = `NewEngineAssetsDirectory(filePath=["${name}"], engine=["${space}"]);`;
+				}
 			} else {
 				throw new Error("TODO");
 			}

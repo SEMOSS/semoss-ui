@@ -5,7 +5,6 @@ import { IconButton, Stack, useNotification } from "@semoss/ui";
 import { FileEditor, type FileEditorRefDef } from "@/components/common";
 import { Panel } from "@/components/workspace/panels";
 
-
 interface FileEditorPanelProps {
 	path: string;
 	appId: string;
@@ -73,7 +72,7 @@ export const FileEditorTab = observer((props: FileEditorPanelProps) => {
 		>
 			<FileEditor
 				ref={fileEditorRef}
-				type={"app"}
+				type={"engine"}
 				space={appId}
 				insightId={insightId}
 				path={path}

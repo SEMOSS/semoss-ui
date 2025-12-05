@@ -51,7 +51,7 @@ const StyledTypography = styled(Typography)(() => ({
 
 interface FileExplorerItemProps {
 	/** Type of file opened */
-	type: "app" | "insight";
+	type: "app" | "insight" | "engine";
 
 	/** Space where the file is located */
 	space: string;
@@ -113,7 +113,7 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 	const [isDragging, setIsDragging] = useState(false);
 
 	const isOpen = expanded.indexOf(path) > -1;
-
+	const file = path.split("assets\\")[1];
 	const getAssets = usePixel<
 		{
 			lastModified: string;
@@ -125,7 +125,7 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 		isDirectory && isOpen
 			? type === "app"
 				? `BrowseAsset(filePath=["${path}"], space=["${space}"]);`
-				: ""
+				: `BrowseEngineAssets(filePath=["${file}"], engine=["${space}"]);`
 			: "",
 	);
 
