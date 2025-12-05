@@ -640,7 +640,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 							<StyledTab
 								key={i}
 								label={label}
-								data-tesId={formatToDataTestId(
+								data-testid={formatToDataTestId(
 									`connect-to-${label}-tab`,
 								)}
 							/>
