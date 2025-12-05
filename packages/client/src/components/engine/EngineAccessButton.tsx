@@ -181,8 +181,10 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 									}
 									subheader={
 										<SubheaderOffset>
-											{PERMISSION_DESCRIPTION_MAP[type]
-												?.author ?? "HERE IS THE ISSUE"}
+											{
+												PERMISSION_DESCRIPTION_MAP[type]
+													.author
+											}
 										</SubheaderOffset>
 									}
 									action={
@@ -205,8 +207,10 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 									}
 									subheader={
 										<SubheaderOffset>
-											{PERMISSION_DESCRIPTION_MAP[type]
-												?.editor ?? "HERE IS THE ISSUE"}
+											{
+												PERMISSION_DESCRIPTION_MAP[type]
+													.editor
+											}
 										</SubheaderOffset>
 									}
 									action={
@@ -229,9 +233,10 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 									}
 									subheader={
 										<SubheaderOffset>
-											{PERMISSION_DESCRIPTION_MAP[type]
-												?.readonly ??
-												"HERE IS THE ISSUE"}
+											{
+												PERMISSION_DESCRIPTION_MAP[type]
+													.readonly
+											}
 										</SubheaderOffset>
 									}
 									action={
