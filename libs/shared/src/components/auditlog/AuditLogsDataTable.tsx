@@ -99,14 +99,20 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	const filterOptions = useMemo(() => {
 		return {
 			engineType: [
-				...new Set(logs.map((log) => log.engineType).filter(Boolean)),
+				...new Set(
+					logs?.map((log) => log.engineType).filter(Boolean) || [],
+				),
 			],
 			engineName: [
-				...new Set(logs.map((log) => log.engineName).filter(Boolean)),
+				...new Set(
+					logs?.map((log) => log.engineName).filter(Boolean) || [],
+				),
 			],
 			status: [
 				...new Set(
-					logs.map((log) => STATUS_LABEL_CONVERSION[log.status]),
+					logs?.map(
+						(log) => STATUS_LABEL_CONVERSION[log.status] || [],
+					),
 				),
 			].filter((status) => status !== undefined && status !== null) ?? [
 				"Success",

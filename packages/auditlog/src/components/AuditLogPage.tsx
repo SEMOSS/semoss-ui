@@ -130,7 +130,21 @@ export const AuditLogPage = ({ catalogName }) => {
 	};
 	// biome-ignore lint/correctness/useExhaustiveDependencies: adding fetchLogs causes infinite rerender and based on rootStore user id, data has to be fetched
 	useEffect(() => {
-		if (catalogName) {
+		//By default engine type and id is required to show the logs
+		if (
+			!catalogName ||
+			!rootStore?.user?.id ||
+			!engineSelectionDetails.engineId
+		) {
+			setLogs([]);
+			setLoading(false);
+			return;
+		}
+		if (
+			catalogName &&
+			rootStore?.user?.id &&
+			engineSelectionDetails.engineId
+		) {
 			setLogs([]);
 			fetchLogs(rowsPerPage, page * rowsPerPage);
 		}
@@ -166,7 +180,7 @@ export const AuditLogPage = ({ catalogName }) => {
 							setEngineSelectionDetails({
 								...engineSelectionDetails,
 								engineType: value,
-								engineId: "null",
+								engineId: "",
 							})
 						}
 					>
