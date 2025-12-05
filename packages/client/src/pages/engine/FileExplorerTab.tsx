@@ -1,9 +1,7 @@
 import {
-	CoffeeOutlined,
 	CreateNewFolderOutlined,
 	FileUpload,
 	NoteAddOutlined,
-	PublishedWithChangesOutlined,
 	RefreshOutlined,
 } from "@mui/icons-material";
 import { useEffect, useState } from "react";
@@ -23,7 +21,6 @@ import {
 } from "@/components/common";
 import { MakeMCPOverlay } from "@/components/common/File/MakeMCPOverlay";
 import { Panel } from "@/components/workspace/panels";
-import { useRootStore } from "@/hooks";
 
 const EXPLORER_TYPE = "engine";
 
@@ -84,7 +81,6 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 		onFileSelect,
 	} = props;
 
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 
 	const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
@@ -100,13 +96,23 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 	const [currentFilePath, setCurrentFilePath] = useState("");
 
 	useEffect(() => {
-		let path = "version/assets/";
+		let path = "app_root/version/assets/";
 
 		if (selectedPath) {
 			if (selectedPath.slice(-1) === "/") {
 				path = selectedPath;
 			} else {
-				path = selectedPath.split("/").slice(0, -1).join("/");
+				const pathParts = selectedPath.split("/");
+				pathParts.pop();
+				path = pathParts.join("/");
+				
+				if (path && path.slice(-1) !== "/") {
+					path = path + "/";
+				}
+				
+				if (!path) {
+					path = "app_root/version/assets/";
+				}
 			}
 		}
 
@@ -123,75 +129,6 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 				? prev.filter((p) => p !== path)
 				: [...prev, path],
 		);
-	};
-
-	const publishApp = async () => {
-		try {
-			setLoading(true);
-
-			const response = await monolithStore.runQuery(
-				`PublishProject(project='${appId}', release=true);`,
-			);
-
-			const output = response.pixelReturn[0].output,
-				type = response.pixelReturn[0].operationType[0];
-
-			if (type.indexOf("ERROR") > -1) {
-				notification.add({
-					color: "error",
-					message: output,
-				});
-
-				throw new Error(output.join(""));
-			}
-
-			notification.add({
-				color: "success",
-				message: "Successfully published",
-			});
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const recompileApp = async () => {
-		try {
-			setLoading(true);
-
-			const response = await monolithStore.runQuery(
-				`ReloadInsightClasses(project='${appId}', release=false);`,
-			);
-
-			const output = response.pixelReturn[0].output,
-				type = response.pixelReturn[0].operationType[0];
-
-			if (type.indexOf("ERROR") > -1) {
-				notification.add({
-					color: "error",
-					message: output,
-				});
-
-				throw new Error(output.join(""));
-			}
-
-			notification.add({
-				color: "success",
-				message:
-					"Successfully recompiled reactors. Remember to publish changes.",
-			});
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
-		} finally {
-			setLoading(false);
-		}
 	};
 
 	const handleOpenAddFile = () => {
@@ -390,30 +327,6 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 										}}
 									>
 										<RefreshOutlined fontSize="inherit" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip title={`Publish files`}>
-									<IconButton
-										size={"small"}
-										color={"default"}
-										onClick={(e) => {
-											e.stopPropagation();
-											publishApp();
-										}}
-									>
-										<PublishedWithChangesOutlined fontSize="inherit" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip title={`Recompile reactors`}>
-									<IconButton
-										size={"small"}
-										color={"default"}
-										onClick={(e) => {
-											e.stopPropagation();
-											recompileApp();
-										}}
-									>
-										<CoffeeOutlined fontSize="inherit" />
 									</IconButton>
 								</Tooltip>
 								<Tooltip

@@ -78,16 +78,16 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 
 				// append the name
 				path = `${path}${name}`;
-
+				const file = path?.split(/assets[\\/]/)[1];
 				if (mode === "file") {
-					pixel = `SaveEngineAssets(filePath=["/${name}"], content=["<encode></encode>"], engine=["${space}"]);CommitAsset(filePath=["/${name}"], comment=["Creating file"], engine=["${space}"]);`;
+					pixel = `SaveEngineAssets(filePath=["/${file}"], content=["<encode></encode>"], engine=["${space}"]);CommitAsset(filePath=["/${file}"], comment=["Creating file"], engine=["${space}"]);`;
 				} else if (mode === "directory") {
 					// add in the / to make it a directory
 					if (path.slice(-1) !== "/") {
 						path = `${path}/`;
 					}
 
-					pixel = `NewEngineAssetsDirectory(filePath=["${name}"], engine=["${space}"]);`;
+					pixel = `NewEngineAssetsDirectory(filePath=["${file}"], engine=["${space}"]);`;
 				}
 			} else {
 				throw new Error("TODO");

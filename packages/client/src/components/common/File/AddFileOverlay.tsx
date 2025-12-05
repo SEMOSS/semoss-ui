@@ -49,7 +49,17 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 					space,
 					uploadPath,
 				);
-			} else {
+			}
+				else if (type === "engine") {
+				upload = await uploadFileAPI(
+					[uploadFile],
+					configStore.store.insightID,
+					space,
+					uploadPath,
+					"engine",
+				);
+			}
+			else {
 				throw new Error("TODO");
 			}
 
@@ -58,13 +68,20 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 			}
 
 			const path = `${uploadPath}${upload[0].fileName}`;
-
+			console.log("Uploaded:", upload);
 			if (unzipFile) {
-				if (type === "app") {
+				if ( type === "app") {
 					await monolithStore.runQuery(
 						`UnzipFile(filePath=["${path}"], space=["${space}"])`,
 					);
-				} else {
+				} 
+				else if ( type === "engine") {
+					const file = path?.split(/assets[\\/]/)[1];
+					await monolithStore.runQuery(
+						`UnzipFile(filePath=["/${file}"], engine=["${space}"])`,
+					);
+				}
+				else {
 					throw new Error("TODO");
 				}
 			}
