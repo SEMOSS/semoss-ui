@@ -324,7 +324,7 @@ export const Filterbox = (props: FilterboxProps) => {
 			opt
 				.split("")
 				.map((x) => x.charCodeAt(0))
-				.reduce((a, b) => a + b,0) % 8
+				.reduce((a, b) => a + b, 0) % 8
 		];
 	};
 
