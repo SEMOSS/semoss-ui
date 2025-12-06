@@ -952,8 +952,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 											propName,
 											type,
 										);
-									} catch {
-									}
+									} catch {}
 								}
 							}}
 							placeholder='{"key": "value"}'
@@ -1538,12 +1537,12 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 												/>
 												<StyledDeleteIcon
 													data-testid={`restore-icon-${tool.name}`}
-													onClick={(e) =>{
+													onClick={(e) => {
 														e.stopPropagation();
 														handleFunctionRestore(
 															e,
 															tool,
-														)
+														);
 													}}
 													size="small"
 												>
