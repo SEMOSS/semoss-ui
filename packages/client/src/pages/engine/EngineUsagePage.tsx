@@ -1,5 +1,12 @@
-import { Code, Markdown, Stack, Typography, useNotification } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
+import {
+	Code,
+	Link,
+	LoadingScreen,
+	Markdown,
+	Stack,
+	Typography,
+	useNotification,
+} from "@semoss/ui";
 import { useEngine, usePixel } from "@/hooks";
 
 /**
@@ -21,7 +28,7 @@ export const EngineUsagePage = () => {
 	 * Copy text and add it to the clipboard
 	 * @param text - text to copy
 	 */
-	const copy = async (text: string) => {
+	const _copy = async (text: string) => {
 		try {
 			await navigator.clipboard.writeText(text);
 
@@ -29,7 +36,7 @@ export const EngineUsagePage = () => {
 				color: "success",
 				message: "Successfully copied code",
 			});
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
 				message: "Unable to copy code",
@@ -44,6 +51,21 @@ export const EngineUsagePage = () => {
 
 	return (
 		<Stack spacing={2}>
+			<Typography variant={"h6"} fontWeight="regular">
+				Test in the terminal
+			</Typography>
+			<Typography variant="body1">
+				Click{" "}
+				<Link
+					href="../../legacy/dist/#!/embed-terminal"
+					rel="noopener noreferrer"
+					target="_blank"
+				>
+					here
+				</Link>{" "}
+				to go to the terminal and test the commands
+			</Typography>
+
 			<Typography variant={"h6"} fontWeight="regular">
 				Use in Code
 			</Typography>

@@ -14,13 +14,15 @@ export const getEngines = async (
 	}
 	url += "engine/getEngines?";
 	url += `engineTypes=${engineType}`;
-	search ? (url += `&filterWord=${search}`) : "";
-	offset ? (url += `&offset=${offset}`) : "";
-	limit ? (url += `&limit=${limit}`) : "";
+	url += search ? `&filterWord=${search}` : "";
+	url += offset ? `&offset=${offset}` : "";
+	url += limit ? `&limit=${limit}` : "";
 	// get the response
-	const response = await get<Record<string, any>[]>(url).catch((error) => {
-		throw Error(error);
-	});
+	const response = await get<Record<string, unknown>[]>(url).catch(
+		(error) => {
+			throw Error(error);
+		},
+	);
 	// there was no response, that is an error
 	if (!response) {
 		throw Error("No Response to get Apps");
@@ -59,10 +61,10 @@ export const getEngineUsers = async (
 
 	url += "engine/getEngineUsers?";
 	url += `engineId=${databaseId}`;
-	user ? (url += `&searchTerm=${user}`) : "";
-	permission ? (url += `&permission=${permission}`) : "";
-	offset ? (url += `&offset=${offset}`) : "";
-	limit ? (url += `&limit=${limit}`) : "";
+	url += user ? `&searchTerm=${user}` : "";
+	url += permission ? `&permission=${permission}` : "";
+	url += offset ? `&offset=${offset}` : "";
+	url += limit ? `&limit=${limit}` : "";
 
 	// get the response
 	const response = await get<{
@@ -121,7 +123,7 @@ export const getEngineUsersNoCredentials = async (
 export const addEngineUserPermissions = async (
 	admin: boolean,
 	appId: string,
-	users: any[],
+	users: unknown[],
 ) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	// No Admin endpoint currently
@@ -129,18 +131,14 @@ export const addEngineUserPermissions = async (
 		url += "admin/";
 	}
 	url += "engine/addEngineUserPermissions";
-	const postData = {
+	const postData: Record<string, unknown> = {
 		engineId: appId,
 		userpermissions: users,
 	};
 
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, processPostData(postData), {});
 	return response;
 	// figure out whether we want to do .catch here
 };
@@ -148,25 +146,21 @@ export const addEngineUserPermissions = async (
 export const removeEngineUserPermissions = async (
 	admin: boolean,
 	appId: string,
-	users: any[],
+	users: unknown[],
 ) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
 		url += "admin/";
 	}
 	url += "engine/removeEngineUserPermissions";
-	const postData = {
+	const postData: Record<string, unknown> = {
 		engineId: appId,
-		userpermissions: users,
+		ids: users,
 	};
 
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, processPostData(postData), {});
 	return response;
 };
 
@@ -181,20 +175,19 @@ export const setEngineGlobal = async (
 	}
 	// change to database
 	url += "engine/setEngineGlobal";
-	const postData = {
-		engineId: engineId,
-		global: global,
-	};
-	const response = await post<{
+
+	return await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
+	}>(
+		url,
+		{
+			engineId: encodeURIComponent(engineId),
+			public: encodeURIComponent(global),
 		},
-	}).catch((error) => {
+		{},
+	).catch((error) => {
 		throw Error(error);
 	});
-	return response;
 };
 
 export const setEngineVisiblity = async (
@@ -207,18 +200,14 @@ export const setEngineVisiblity = async (
 		url += "admin/";
 	}
 	url += "engine/setEngineDiscoverable";
-	const postData = {
+	const postData: Record<string, unknown> = {
 		engineId: engineId,
 		discoverable: visible,
 	};
 
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, processPostData(postData), {});
 	return response;
 };
 
@@ -226,44 +215,35 @@ export const setEngineFavorite = async (
 	engineId: string,
 	favorite: boolean,
 ) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	url += "engine/setEngineFavorite";
-	const postData = {
-		engineId: engineId,
-		isFavorite: favorite,
-	};
-
-	const response = await post<{
+	return await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
+	}>(
+		`${Env.MODULE}/api/auth/engine/setEngineFavorite`,
+		{
+			engineId: engineId,
+			isFavorite: favorite,
 		},
-	});
-	return response;
+		{},
+	);
 };
 
 export const approveEngineUserAccessRequest = async (
 	admin: boolean,
 	engineId: string,
-	requests: any[],
+	requests: unknown[],
 ) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
 		url += "admin/";
 	}
 	url += "engine/approveEngineUserAccessRequest";
-	const postData = {
+	const postData: Record<string, unknown> = {
 		engineId: engineId,
 		requests: requests,
 	};
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, processPostData(postData), {});
 	return response;
 };
 
@@ -277,17 +257,13 @@ export const denyEngineUserAccessRequest = async (
 		url += "admin/";
 	}
 	url += "engine/denyEngineUserAccessRequest";
-	const postData = {
+	const postData: Record<string, unknown> = {
 		engineId: engineId,
 		requestIds: userIds,
 	};
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, processPostData(postData), {});
 	return response;
 };
 
@@ -300,25 +276,21 @@ export const addEnginePermission = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/addGroupEnginePermission";
-	const postData = {
+	let postData: Record<string, unknown> = {
 		groupId: groupId,
 		engineId: engineId,
 		permission: permission,
 	};
 	if (type) {
-		postData["type"] = type;
+		postData = { ...postData, type: type };
 	}
 	if (endDate) {
-		postData["endDate"] = endDate;
+		postData = { ...postData, endDate: endDate };
 	}
 
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, processPostData(postData), {});
 	return response;
 };
 
@@ -333,25 +305,21 @@ export const editEnginePermission = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/editGroupEnginePermission";
-	const postData = {
+	let postData: Record<string, unknown> = {
 		groupId: groupId,
 		engineId: engine.engineid,
 		permission: engine.permission,
 	};
 	if (engine.type) {
-		postData["type"] = engine.type;
+		postData = { ...postData, type: engine.type };
 	}
 	if (engine.endDate) {
-		postData["endDate"] = engine.endDate;
+		postData = { ...postData, endDate: engine.endDate };
 	}
 
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, processPostData(postData), {});
 	return response;
 };
 
@@ -365,20 +333,66 @@ export const deleteEnginePermission = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/removeGroupEnginePermission";
-	const postData = {
+	let postData: Record<string, unknown> = {
 		groupId: groupId,
 		engineId: engine.engineid,
 	};
 	if (groupType) {
-		postData["type"] = engine.type;
+		postData = {
+			...postData,
+			type: engine.type,
+		};
 	}
 
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, processPostData(postData), {});
 	return response;
+};
+
+/**
+ * @name editEngineUserPermissions
+ * @param admin
+ * @param appId
+ * @param users
+ * @returns
+ */
+
+export const editEngineUserPermissions = async (
+	admin: boolean,
+	appId: string,
+	// biome-ignore lint/suspicious/noExplicitAny: TODO: type
+	users: any[],
+) => {
+	let url = `${Env.MODULE}/api/auth/`,
+		postData: Record<string, unknown> = {};
+
+	if (admin) {
+		url += "admin/";
+	}
+
+	url += "engine/editEngineUserPermissions";
+
+	postData = {
+		engineId: appId,
+		userpermissions: users,
+	};
+
+	const response = await post<{ success: boolean }>(
+		url,
+		processPostData(postData),
+		{},
+	);
+
+	return response;
+
+	// figure out whether we want to do .catch here
+};
+
+const processPostData = (data: Record<string, unknown>) => {
+	const postRecordData: Record<string, unknown> = {};
+	Object.keys(data).forEach((item) => {
+		postRecordData[item] = data[item];
+	});
+	return postRecordData;
 };

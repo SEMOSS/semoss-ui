@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { FlexLayout } from "@semoss/shared";
 import {
 	Breadcrumbs,
 	IconButton,
@@ -14,6 +13,7 @@ import {
 } from "@semoss/ui";
 import { ClosePage } from "@/assets/img/ClosePage";
 import SEMOSS_BLACK_LOGO from "@/assets/img/SEMOSS_BLACK_LOGO.png";
+import { FlexLayout } from "@/components/flex-layout";
 import { WorkspaceContext } from "@/contexts";
 import { SIDEBAR_MENU } from "@/pages/import/import.constants";
 import type { WorkspaceOptions, WorkspaceStore } from "@/stores";
@@ -65,6 +65,7 @@ const StyledLetTabImage = styled("img")(() => ({
 	display: "block",
 	margin: "auto",
 	transition: "all 0.2s ease",
+	maxWidth: "none",
 }));
 
 const StyledHeaderLogo = styled(Link)(({ theme }) => ({
@@ -78,8 +79,8 @@ const StyledHeaderLogo = styled(Link)(({ theme }) => ({
 
 const StyledActions = styled(Stack)(({ theme }) => ({
 	position: "absolute",
-	bottom: "8px",
-	left: "8px",
+	bottom: "36px",
+	left: "5px",
 	width: "32px", // from flexlayout
 	zIndex: 1,
 }));
@@ -234,7 +235,13 @@ export const Workspace = observer((props: WorkspaceProps) => {
 			.getBorderSet()
 			.getBorders()
 			.forEach((border) => {
-				border.setSelected(isSettingsTab ? -1 : border.getSelected());
+				// border.setSelected(isSettingsTab ? -1 : border.getSelected());
+				border.setSelected(
+					action.data.tabNode === "block-settings" &&
+						mainTabsetWeight === 0
+						? 1
+						: border.getSelected(),
+				);
 			});
 
 		if (isSettingsTab || mainTabsetWeight === 0) {
@@ -310,6 +317,9 @@ export const Workspace = observer((props: WorkspaceProps) => {
 								<FlexLayout.Layout
 									ref={layoutRef}
 									model={workspace.model}
+									classNameMapper={(defaultClassName) =>
+										`${defaultClassName} workspace_layout`
+									}
 									factory={(node) => {
 										return factory(node, layoutRef.current);
 									}}
@@ -331,7 +341,32 @@ export const Workspace = observer((props: WorkspaceProps) => {
 												tabNode.getName(),
 										);
 										const isSelected = tabNode.isSelected();
-										if (item?.icon) {
+										if (item?.icon?.component) {
+											const Icon = item.icon.component;
+
+											renderValues.content = (
+												<Tooltip
+													title={item.icon.tooltip}
+												>
+													<IconButton
+														size={"small"}
+														color="default"
+														data-testId={formatToDataTestId(
+															`workspace-${tabNode.getName()}`,
+														)}
+													>
+														<Icon
+															color={
+																isSelected
+																	? "primary"
+																	: "inherit"
+															}
+															fontSize="inherit"
+														/>
+													</IconButton>
+												</Tooltip>
+											);
+										} else if (item?.icon) {
 											const iconSrc = isSelected
 												? item.icon.active
 												: item.icon.default;

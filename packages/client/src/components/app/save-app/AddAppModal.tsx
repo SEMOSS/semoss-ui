@@ -8,6 +8,7 @@ import type React from "react";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import type { Control } from "react-hook-form";
 import { useNotification } from "@semoss/ui";
+import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { AppAccessStep } from "./AppAccessStep";
 import { AppDetailsStep } from "./AppDetailsStep";
@@ -106,7 +107,6 @@ export const AddAppModal = (props: AddAppProps) => {
 			title: "Details",
 			component: AppDetailsStep,
 			requiredFields: [
-				ADD_APP_FORM_FIELD_NAME,
 				ADD_APP_FORM_FIELD_DESCRIPTION,
 			],
 		},
@@ -151,7 +151,7 @@ export const AddAppModal = (props: AddAppProps) => {
 		// upload the file
 
 		if (data[ADD_APP_FORM_FIELD_TYPE] === "App Zip") {
-			const upload = await monolithStore.uploadFile(
+			const upload = await uploadFile(
 				[data[ADD_APP_FORM_FIELD_UPLOAD]],
 				configStore.store.insightID,
 			);
@@ -160,11 +160,8 @@ export const AddAppModal = (props: AddAppProps) => {
 				`UploadProjectApp(filePath=["${upload[0].fileLocation}"], global=[${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}]);`,
 			);
 
-			let output;
-			let type;
-
-			output = resp.pixelReturn[0].output;
-			type = resp.pixelReturn[0].operationType[0];
+			const output = resp.pixelReturn[0].output;
+			const type = resp.pixelReturn[0].operationType[0];
 
 			if (type.indexOf("ERROR") > -1) {
 				notification.add({
@@ -180,11 +177,9 @@ export const AddAppModal = (props: AddAppProps) => {
 				`CreateProject(project=["${data[ADD_APP_FORM_FIELD_NAME]}"], global=["${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}"], projectType=["${data[ADD_APP_FORM_FIELD_APP_TYPE]}"], portal=["true"])`,
 			);
 
-			let createProjectOutput;
-			let type;
-
-			createProjectOutput = createProjectResponse.pixelReturn[0].output;
-			type = createProjectResponse.pixelReturn[0].operationType[0];
+			const createProjectOutput =
+				createProjectResponse.pixelReturn[0].output;
+			const type = createProjectResponse.pixelReturn[0].operationType[0];
 
 			if (type.indexOf("ERROR") > -1) {
 				notification.add({
@@ -198,21 +193,20 @@ export const AddAppModal = (props: AddAppProps) => {
 				`SetProjectMetadata(project=["${
 					createProjectOutput.project_id
 				}"], meta=[${JSON.stringify({
-					tag: data["tags"],
-					description: data["description"],
+					tag: data.tags,
+					description: data.description,
 				})}])`,
 			);
 
-			let output;
-			type = undefined;
+			const projectOutput =
+				setProjectMetadataResponse.pixelReturn[0].output;
+			const projectType =
+				setProjectMetadataResponse.pixelReturn[0].operationType[0];
 
-			output = setProjectMetadataResponse.pixelReturn[0].output;
-			type = setProjectMetadataResponse.pixelReturn[0].operationType[0];
-
-			if (type.indexOf("ERROR") > -1) {
+			if (projectType.indexOf("ERROR") > -1) {
 				notification.add({
 					color: "error",
-					message: output,
+					message: projectOutput,
 				});
 
 				return;
@@ -221,22 +215,20 @@ export const AddAppModal = (props: AddAppProps) => {
 			const deleteAssetResponse = await monolithStore.runQuery(
 				`DeleteAsset(filePath=["version/assets/"], space=["${createProjectOutput.project_id}"]);`,
 			);
-			output = undefined;
-			type = undefined;
+			const deleteAssetOutput = deleteAssetResponse.pixelReturn[0].output;
+			const deleteAssetType =
+				deleteAssetResponse.pixelReturn[0].operationType[0];
 
-			output = deleteAssetResponse.pixelReturn[0].output;
-			type = deleteAssetResponse.pixelReturn[0].operationType[0];
-
-			if (type.indexOf("ERROR") > -1) {
+			if (deleteAssetType.indexOf("ERROR") > -1) {
 				notification.add({
 					color: "error",
-					message: output,
+					message: deleteAssetOutput,
 				});
 
 				return;
 			}
 
-			const upload = await monolithStore.uploadFile(
+			const upload = await uploadFile(
 				[data[ADD_APP_FORM_FIELD_UPLOAD]],
 				configStore.store.insightID,
 				createProjectOutput.project_id,
@@ -246,16 +238,14 @@ export const AddAppModal = (props: AddAppProps) => {
 			const unzipFileResponse = await monolithStore.runQuery(
 				`UnzipFile(filePath=["${upload[0].fileLocation}"], space=["${createProjectOutput.project_id}"]);`,
 			);
-			output = undefined;
-			type = undefined;
 
-			output = unzipFileResponse.pixelReturn[0].output;
-			type = unzipFileResponse.pixelReturn[0].operationType[0];
+			const unzipOutput = unzipFileResponse.pixelReturn[0].output;
+			const unzipType = unzipFileResponse.pixelReturn[0].operationType[0];
 
-			if (type.indexOf("ERROR") > -1) {
+			if (unzipType.indexOf("ERROR") > -1) {
 				notification.add({
 					color: "error",
-					message: output,
+					message: unzipOutput,
 				});
 
 				return;

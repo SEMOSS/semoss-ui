@@ -12,6 +12,7 @@ import {
 } from "@mui/icons-material";
 import type React from "react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import {
 	Avatar,
@@ -29,7 +30,6 @@ import BRAIN from "@/assets/img/BRAIN.png";
 import GOOGLE from "@/assets/img/google.png";
 import { ENGINE_IMAGES } from "@/pages/import";
 import { formatToDataTestId } from "@/utility";
-import { TruncatedText } from "../../../../../libs/ui/src/components/TruncatedText";
 
 const StyledCardImg = styled("img")({
 	display: "flex",
@@ -83,46 +83,6 @@ const StyledLandscapeCardHeaderDiv = styled("div")({
 	justifyContent: "space-between",
 	gap: "6px",
 });
-
-const StyledLandscapeCardDescriptionContainer = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	alignSelf: "stretch",
-});
-
-const StyledLandscapeCardRow = styled("div")({
-	display: "flex",
-	alignItems: "center",
-	alignSelf: "stretch",
-});
-
-const StyledLandscapeCardRowContainer = styled("div")({
-	display: "flex",
-	alignItems: "center",
-	gap: "8px",
-	flex: "1 0 0",
-});
-
-const StyledLandscapeCardRowDiv = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: "8px",
-	flex: "1 0 0",
-});
-
-const StyledLandscapeCardDescription = styled(Typography)(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	alignSelf: "stretch",
-	minHeight: "24px",
-	maxHeight: "24px",
-	overflow: "hidden",
-	whiteSpace: "pre-wrap",
-	textOverflow: "ellipsis",
-	color: theme.palette.text.secondary,
-}));
 
 const StyledAvatar = styled(Avatar)({
 	display: "flex",
@@ -244,29 +204,14 @@ const StyledCardIconsDiv = styled("div")({
 });
 
 /**
- * @name formatDBName
- * @param str
- * @returns formatted db name
- */
-const formatDBName = (str: string) => {
-	let i;
-	const frags = str.split("_");
-	for (i = 0; i < frags.length; i++) {
-		frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
-	}
-	return frags.join(" ");
-};
-
-/**
  * @name findDBImage
  * @params appType & appSubType
  * @returns image link for associated engine
  */
 const findDBImage = (appType: string, appSubType: string) => {
-	const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
+	const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name === appSubType);
 
 	if (!obj) {
-		console.warn("No image found:", appType, appSubType);
 		return BRAIN;
 	}
 
@@ -325,23 +270,23 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 	const {
 		name,
 		id,
-		description,
 		tag,
-		isGlobal,
 		isFavorite,
 		isDiscoverable = false,
-		isUpvoted,
 		type,
 		sub_type,
-		owner = "N/A",
-		votes = "0",
-		// views = 'N/A',
-		// trending = 'N/A',
 		date,
 		onClick,
 		favorite,
-		upvote,
-		global,
+		// isUpvoted,
+		// isGlobal,
+		// description,
+		// owner = "N/A",
+		// votes = "0",
+		// views = 'N/A',
+		// trending = 'N/A',
+		// upvote,
+		// global,
 	} = props;
 
 	/** Menu toggle state */
@@ -356,11 +301,11 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		.replace(",", "");
 
 	const notification = useNotification();
+	const navigate = useNavigate();
 
 	const copyId = (id: string) => {
 		try {
 			navigator.clipboard.writeText(id);
-
 			notification.add({
 				color: "success",
 				message: "Successfully copied to clipboard",
@@ -388,9 +333,9 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 				<StyledLandscapeCardHeaderDiv>
 					<Typography variant={"body1"}>
 						<Typography variant={"body1"}>
-							<TruncatedText variant="body1">
-								{formatDBName(name)}
-							</TruncatedText>
+							<Typography variant="body1" noWrap={true}>
+								{name}
+							</Typography>
 							{/* {formatDBName(name)} */}
 						</Typography>
 						{sub_type === "EMBEDDED" ? (
@@ -406,8 +351,9 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 						{tag !== undefined &&
 							(Array.isArray(tag) ? (
 								<>
+									{/** biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation> */}
 									{tag.map((t, i) => {
-										if (i <= 2) {
+										if (i <= 2 && t !== "") {
 											return (
 												<StyledTagChip
 													maxWidth={
@@ -417,23 +363,26 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 																? "200px"
 																: "75px"
 													}
-													key={`${id}${i}`}
+													key={`${id}${
+														// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+														i
+													}`}
 													label={t}
 												/>
 											);
 										}
+
+										return null;
 									})}
 									{tag.length > 3 ? (
 										<Typography variant="caption">
 											+{tag.length - 3}
 										</Typography>
-									) : (
-										<></>
-									)}
+									) : null}
 								</>
-							) : (
+							) : tag !== "" ? (
 								<StyledTagChip key={`${id}0`} label={tag} />
-							))}
+							) : null)}
 					</Stack>
 				</StyledLandscapeCardHeaderDiv>
 				<StyledCardIconsDiv>
@@ -485,23 +434,20 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							>
 								Copy ID
 							</Menu.Item>
+							<Menu.Item
+								value="dashboard"
+								onClick={(event: React.MouseEvent) => {
+									navigate(`${id}/dashboard`);
+									setAnchorEl(null);
+									event.stopPropagation();
+								}}
+							>
+								View Dashboard
+							</Menu.Item>
 						</Menu>
 					</Stack>
 				</StyledCardIconsDiv>
 			</StyledLandscapeCardHeader>
-			{/* <StyledLandscapeCardDescriptionContainer>
-                <StyledLandscapeCardRow>
-                    <StyledLandscapeCardRowContainer>
-                        <StyledLandscapeCardRowDiv>
-                            <StyledLandscapeCardDescription variant={'body2'}>
-                                {description
-                                    ? description
-                                    : 'No description available'}
-                            </StyledLandscapeCardDescription>
-                        </StyledLandscapeCardRowDiv>
-                    </StyledLandscapeCardRowContainer>
-                </StyledLandscapeCardRow>
-            </StyledLandscapeCardDescriptionContainer> */}
 		</StyledLandscapeCard>
 	);
 };
@@ -547,9 +493,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 								gap: "8px",
 							}}
 						>
-							<Typography variant={"body1"}>
-								{formatDBName(name)}
-							</Typography>
+							<Typography variant={"body1"}>{name}</Typography>
 							{sub_type === "VERTEX" ? (
 								<StyledCardImg src={GOOGLE}></StyledCardImg>
 							) : null}
@@ -602,8 +546,9 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 					{tag !== undefined &&
 						(Array.isArray(tag) ? (
 							<>
+								{/** biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation> */}
 								{tag.map((t, i) => {
-									if (i <= 2) {
+									if (i <= 2 && t !== "") {
 										return (
 											<StyledTagChip
 												maxWidth={
@@ -613,23 +558,26 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 															? "200px"
 															: "75px"
 												}
-												key={`${id}${i}`}
+												key={`${id}${
+													// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+													i
+												}`}
 												label={t}
 											/>
 										);
 									}
+
+									return null;
 								})}
 								{tag.length > 3 ? (
 									<Typography variant="caption">
 										+{tag.length - 3}
 									</Typography>
-								) : (
-									<></>
-								)}
+								) : null}
 							</>
-						) : (
+						) : tag !== "" ? (
 							<StyledTagChip key={`${id}0`} label={tag} />
-						))}
+						) : null)}
 				</Stack>
 			</Card.Content>
 			<Card.Actions>
@@ -670,18 +618,6 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 							{votes}
 						</UnstyledVoteCount>
 					</StyledButtonGroup>
-					{/* <StyledViewsTrendingDiv>
-                        <StyledEyeIcon />
-                        <StyledStatisticCaption variant="caption">
-                            {views}
-                        </StyledStatisticCaption>
-                    </StyledViewsTrendingDiv>
-                    <StyledViewsTrendingDiv>
-                        <StyledTrendingIcon />
-                        <StyledStatisticCaption variant="caption">
-                            {trending}
-                        </StyledStatisticCaption>
-                    </StyledViewsTrendingDiv> */}
 				</StyledLeftActions>
 				<StyledLockButton
 					title={
@@ -728,7 +664,7 @@ export const PlainEngineCard = (props) => {
 			/>
 			<StyledTileCardContent sx={{ marginTop: "8px" }}>
 				<StyledDbName variant={"body1"}>
-					{name ? formatDBName(name) : id}
+					{name ? name : id}
 				</StyledDbName>
 			</StyledTileCardContent>
 		</StyledPlainTileCard>

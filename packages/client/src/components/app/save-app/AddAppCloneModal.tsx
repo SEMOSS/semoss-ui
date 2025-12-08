@@ -49,7 +49,9 @@ export const AddAppCloneModal = (props: AddAppProps) => {
 			name: "Details",
 			icon: <Edit />,
 			title: "Details",
-			component: AppDetailsStep,
+			component: (props) => (
+				<AppDetailsStep {...props} showNameField={true} />
+			),
 			requiredFields: [ADD_APP_FORM_FIELD_NAME],
 		},
 		{

@@ -14,6 +14,7 @@ import {
 	Collapse,
 	Grid,
 	IconButton,
+	LoadingScreen,
 	Modal,
 	Paper,
 	Stack,
@@ -23,45 +24,50 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
+import {
+	createUserAccessKey,
+	deleteUserAccessKeys,
+	editMemberInfo,
+} from "@/api/auth";
 import { useAPI, useRootStore } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
+import { ChangePasswordModal } from "./ChangePasswordModal";
 
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
+const StyledAvatar = styled(Avatar)({
 	display: "flex",
 	alignContent: "center",
 	justifyContent: "center",
 	backgroundColor: "#975FE4",
-}));
+});
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
+const StyledPaper = styled(Paper)({
 	padding: "40px 30px 20px 50px",
-}));
+});
 
-const StyledAccessTokensPaper = styled(Paper)(({ theme }) => ({
+const StyledAccessTokensPaper = styled(Paper)({
 	padding: "40px 30px 20px 28px",
-}));
+});
 
-const HeaderCell = styled(Table.Cell)(({ theme }) => ({
+const HeaderCell = styled(Table.Cell)({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
-}));
+});
 
-const LeftHeaderCell = styled(Table.Cell)(({ theme }) => ({
+const LeftHeaderCell = styled(Table.Cell)({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
 	borderRadius: "20px 0 0 0",
 	textAlign: "center",
-}));
+});
 
-const RightHeaderCell = styled(Table.Cell)(({ theme }) => ({
+const RightHeaderCell = styled(Table.Cell)({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
 	borderRadius: "0 20px 0 0",
 	textAlign: "center",
-}));
+});
 
-const MessageDiv = styled("div")(({ theme }) => ({
+const MessageDiv = styled("div")({
 	textAlign: "center",
 	marginTop: "100px",
 	fontSize: "13px",
@@ -69,50 +75,50 @@ const MessageDiv = styled("div")(({ theme }) => ({
 	color: "#666",
 	width: "100%",
 	margin: "75px auto 85px",
-}));
+});
 
-const AvatarForm = styled("form")(({ theme }) => ({
+const AvatarForm = styled("form")({
 	paddingTop: "15px",
 	width: "750px",
-}));
+});
 
-const CurrentAvatarStack = styled(Stack)(({ theme }) => ({
+const CurrentAvatarStack = styled(Stack)({
 	alignItems: "center",
-}));
+});
 
-const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
+const StyledTableContainer = styled(Table.Container)({
 	marginTop: "20px",
-}));
+});
 
-const StyledGrid = styled(Grid)(({ theme }) => ({
+const StyledGrid = styled(Grid)({
 	marginBottom: "40px",
-}));
+});
 
-const MonolithGrid = styled(Grid)(({ theme }) => ({
+const MonolithGrid = styled(Grid)({
 	display: "flex",
 	alignItems: "center",
-}));
+});
 
-const StyledStack = styled(Stack)(({ theme }) => ({
+const StyledStack = styled(Stack)({
 	marginBottom: "15px",
-}));
+});
 
-const CopyGridItem = styled(Grid)(({ theme }) => ({
+const CopyGridItem = styled(Grid)({
 	padding: 0,
 	display: "flex",
 	justifyContent: "right",
-}));
+});
 
-const GridItem = styled(Grid)(({ theme }) => ({
+const GridItem = styled(Grid)({
 	padding: 0,
-}));
+});
 
-const CustomGridItem = styled(GridItem)(({ theme }) => ({
+const CustomGridItem = styled(GridItem)({
 	padding: 0,
 	zIndex: 8,
-}));
+});
 
-const StyledCodeBlock = styled("pre")(({ theme }) => ({
+const _StyledCodeBlock = styled("pre")(({ theme }) => ({
 	display: "flex",
 	alignItems: "center",
 	gap: theme.spacing(5),
@@ -149,6 +155,18 @@ const StyledCreatedKeyContainer = styled(Stack)(({ theme }) => ({
 	padding: theme.spacing(1),
 }));
 
+const StyledLink = styled("a")(({ theme }) => ({
+	textDecoration: "underline",
+	cursor: "pointer",
+	color: "#0471F0",
+	fontFamily: "Inter",
+	fontStyle: "normal",
+	fontWeight: 500,
+	fontSize: "16px",
+	lineHeight: "24px",
+	letterSpacing: "0.15px",
+}));
+
 interface CreateAccessKeyForm {
 	TOKENNAME: string;
 	TOKENDESCRIPTION?: string;
@@ -166,19 +184,23 @@ interface EditUserInfoForm {
 
 export const MyProfilePage = () => {
 	const notification = useNotification();
-	const { configStore, monolithStore } = useRootStore();
-	const { email, id, name, admin, loggedIn } = configStore.store.user;
+	const { configStore } = useRootStore();
+	const { email, id, name} = configStore.store.user;
+	const { isNative } = configStore.store;
 
 	// track the models
 	const [addModal, setAddModal] = useState(false);
 	const [profileImgModal, setProfileImgModal] = useState(false);
+	const [passwordModal, setPasswordModal] = useState(false);
+	const [editName, setEditName] = useState(name);
+	const [editEmail, setEditEmail] = useState(email);
 
 	// get the keys
 	const getUserAccessKeys = useAPI(["getUserAccessKeys"]);
 
 	// NATIVE Login USERID must match Username
 	const logins = configStore.store.config.logins;
-	const nativeLogin = logins["NATIVE"];
+	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
 
 	const { control, reset, setValue, handleSubmit, watch } =
 		useForm<CreateAccessKeyForm>({
@@ -194,7 +216,6 @@ export const MyProfilePage = () => {
 	const {
 		control: userInfoControl,
 		reset: userInfoReset,
-		setValue: userInfoSetValue,
 		handleSubmit: userInfoHandleSubmit,
 		watch: userInfoWatch,
 	} = useForm<EditUserInfoForm>({
@@ -210,7 +231,7 @@ export const MyProfilePage = () => {
 	const SECRETKEY = watch("SECRETKEY");
 
 	// track if we can create a key
-	const isCreated = ACCESSKEY && SECRETKEY ? true : false;
+	const isCreated = !!(ACCESSKEY && SECRETKEY);
 
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
 	const [isPySdkOpen, setIsPySdkOpen] = useState(false);
@@ -223,19 +244,26 @@ export const MyProfilePage = () => {
 			// need to confirm reactor for runQuery or monolithStore method for editing profile
 			console.log(data);
 
-			const userObj = {
+			const userObj: Record<string, unknown> = {
 				password: "",
 				id: nativeLogin,
 				email: email,
 				username: id,
 				name: data.NAME,
+				type: configStore.store.config.nativeRegistration
+					? "NATIVE"
+					: "CUSTOM",
+				admin: configStore.store.user?.admin || false,
 			};
 
-			data.USERID !== nativeLogin && (userObj["newId"] = data.USERID);
-			data.USERNAME !== id && (userObj["newUsername"] = data.USERNAME);
-			data.EMAIL !== email && (userObj["newEmail"] = data.EMAIL);
+			userObj.id =
+				data.USERID !== nativeLogin ? data.USERID : nativeLogin;
+			userObj.newUsername = data.USERNAME !== id ? data.USERNAME : null;
+			userObj.newEmail = data.EMAIL;
 
-			const response = await monolithStore.editMemberInfo(true, userObj);
+			const response = await editMemberInfo(false, userObj);
+			setEditName(data.NAME);
+			setEditEmail(data.EMAIL);
 
 			if (response.data) {
 				notification.add({
@@ -248,10 +276,10 @@ export const MyProfilePage = () => {
 					message: "Error editing profile information",
 				});
 			}
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
-				message: String(e),
+				message: "Error editing profile information",
 			});
 		}
 	};
@@ -262,7 +290,7 @@ export const MyProfilePage = () => {
 	 */
 	const createAccessKey = async (data: CreateAccessKeyForm) => {
 		try {
-			const output = await monolithStore.createUserAccessKey(
+			const output = await createUserAccessKey(
 				data.TOKENNAME,
 				data.TOKENDESCRIPTION || "",
 			);
@@ -292,8 +320,7 @@ export const MyProfilePage = () => {
 	 */
 	const deleteAccessKey = async (accessKey: string) => {
 		try {
-			const response =
-				await monolithStore.deleteUserAccessKeys(accessKey);
+			const response = await deleteUserAccessKeys(accessKey);
 
 			if (!response) {
 				throw new Error("Error deleting key");
@@ -349,7 +376,7 @@ export const MyProfilePage = () => {
 				color: "success",
 				message: "Successfully copied code",
 			});
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
 				message: "Unable to copy code",
@@ -366,15 +393,21 @@ export const MyProfilePage = () => {
 	const pySnippet = getSDKSnippet("py", ACCESSKEY, SECRETKEY);
 	const jsSnippet = getSDKSnippet("js", ACCESSKEY, SECRETKEY);
 
+	const watchedName = userInfoWatch("NAME");
+	const watchedEmail = userInfoWatch("EMAIL");
+
+	// Check if either Name or Email is changed
+	const isChanged = watchedName !== editName || watchedEmail !== editEmail;
+
 	return (
 		<Stack gap={3} className="my-profile-page">
 			<StyledPaper>
 				<StyledGrid container spacing={3}>
 					<GridItem sm={4}>
 						<Typography variant="h6">
-							{nativeLogin
-								? "Edit profile information Alan"
-								: "Profile Info ALan"}
+							{isNative
+								? "Edit profile information"
+								: "Profile Info"}
 						</Typography>
 					</GridItem>
 
@@ -398,7 +431,7 @@ export const MyProfilePage = () => {
 				<Grid container spacing={3}>
 					<GridItem sm={4}>{/* spacer */}</GridItem>
 					<GridItem sm={8}>
-						{nativeLogin ? (
+						{isNative ? (
 							<form
 								onSubmit={userInfoHandleSubmit(
 									profileEditSubmit,
@@ -425,7 +458,6 @@ export const MyProfilePage = () => {
 														maxLength: 255,
 													}}
 													fullWidth={true}
-													disabled={!admin}
 												></TextField>
 											);
 										}}
@@ -453,7 +485,7 @@ export const MyProfilePage = () => {
 														maxLength: 500,
 													}}
 													fullWidth={true}
-													disabled={!admin}
+													disabled
 												></TextField>
 											);
 										}}
@@ -480,7 +512,7 @@ export const MyProfilePage = () => {
 														maxLength: 500,
 													}}
 													fullWidth={true}
-													disabled={!admin}
+													disabled
 												></TextField>
 											);
 										}}
@@ -508,19 +540,38 @@ export const MyProfilePage = () => {
 														maxLength: 500,
 													}}
 													fullWidth={true}
-													disabled={!admin}
 												></TextField>
 											);
 										}}
 									/>
 								</StyledStack>
-
 								<Stack direction="row">
+									<StyledLink
+										onClick={() => setPasswordModal(true)}
+									>
+										Change Password
+									</StyledLink>
+								</Stack>
+
+								<Stack
+									direction="row"
+									sx={{ marginTop: "6px" }}
+								>
 									<Button
 										variant="contained"
 										color="primary"
 										type="submit"
-										disabled={!admin}
+										disabled={
+											!isChanged ||
+											!(
+												(watchedName ?? "")
+													.toString()
+													.trim().length > 0 &&
+												(watchedEmail ?? "")
+													.toString()
+													.trim().length > 0
+											)
+										}
 										data-testid={"myProfilePage-save-btn"}
 									>
 										Save
@@ -532,7 +583,7 @@ export const MyProfilePage = () => {
 										onClick={() => {
 											userInfoReset();
 										}}
-										disabled={!admin}
+										disabled={!isChanged}
 										data-testid={"myProfilePage-reset-btn"}
 									>
 										Reset
@@ -585,6 +636,7 @@ export const MyProfilePage = () => {
 												</StyledStack>
 											);
 										}
+										return null;
 									},
 								)}
 							</>
@@ -689,7 +741,9 @@ export const MyProfilePage = () => {
 							getUserAccessKeys.data.length !== 0
 								? getUserAccessKeys.data.map((k, idx) => {
 										return (
-											<Table.Row key={idx}>
+											<Table.Row
+												key={`${k.TOKENNAME}-${idx}`}
+											>
 												<Table.Cell align={"left"}>
 													{k.TOKENNAME}
 												</Table.Cell>
@@ -1073,6 +1127,11 @@ export const MyProfilePage = () => {
 					</Stack>
 				</Modal.Content>
 			</Modal>
+
+			<ChangePasswordModal
+				open={passwordModal}
+				onClose={() => setPasswordModal(false)}
+			/>
 		</Stack>
 	);
 };

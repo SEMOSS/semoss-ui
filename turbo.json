@@ -2,6 +2,7 @@
 	"$schema": "https://turborepo.com/schema.json",
 	"tasks": {
 		"build": {
+			"cache": false,
 			"dependsOn": ["^build"],
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
 			"outputs": ["dist/**"]
@@ -28,11 +29,12 @@
 		},
 		"test": {
 			"dependsOn": ["^test"],
-			"inputs": ["src/**/*.ts", "src/**/*/tsx"]
+			"outputs": []
 		},
 		"test:watch": {
 			"cache": false,
-			"persistent": true
+			"persistent": true,
+			"outputs": []
 		}
 	}
 }

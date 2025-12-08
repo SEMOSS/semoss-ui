@@ -57,10 +57,15 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
 			{!logo ? (
 				<StyledNavbarHeaderLink to={"/"} aria-label={"Go Home"}>
 					{configStore.theme.logo ? (
-						<img src={configStore.theme.logo} />
+						<img alt="logo" src={configStore.theme.logo} />
 					) : null}
-					<Typography variant="h6" sx={{ fontWeight: 700 }}>
-						{configStore.theme.name}
+					<Typography
+						variant="subtitle1"
+						sx={{ fontWeight: 700 }}
+						noWrap
+					>
+						{configStore.theme.landingPageName ||
+							configStore.theme.name}
 					</Typography>
 				</StyledNavbarHeaderLink>
 			) : (

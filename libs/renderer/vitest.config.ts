@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 
 import react from "@vitejs/plugin-react";
+import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 import { resolve } from "node:path";
 
@@ -10,7 +11,10 @@ export default defineConfig({
 	base: "./",
 	plugins: [react({ include: /\.(js|jsx|ts|tsx)$/ })],
 	resolve: {
-		alias: [{ find: "@", replacement: resolve(__dirname, "./src") }],
+		alias: {
+			"@": resolve(__dirname, "./src"),
+			"@semoss/ui": resolve(__dirname, "../ui/src"),
+		},
 	},
 	build: {
 		minify: isProduction,
@@ -24,18 +28,43 @@ export default defineConfig({
 		},
 	},
 	test: {
+		name: "renderer",
 		environment: "jsdom",
 		globals: true,
 		setupFiles: ["./vitest.setup.ts"],
+		reporters: ["default"],
+		pool: "vmForks",
+		testTimeout: 10000, // Set global timeout to 10 seconds
+		hookTimeout: 10000,
+		coverage: {
+			enabled: false,
+			provider: "v8",
+			reporter: ["text"],
+			reportOnFailure: true,
+			reportsDirectory: "./coverage/packages/renderer",
+			include: ["**/src/components"],
+			exclude: ["**/node_modules", "**/dist"],
+		},
 		deps: {
 			// Force these packages to be processed by Vite instead of Node
-			inline: [
-				"vega",
-				"vega-lite",
-				"vega-embed",
-				"react-vega",
-				/^vega-/, // This catches any vega-* packages
-			],
+			optimizer: {
+				web: {
+					include: [
+						"vitest-canvas-mock",
+						"vega",
+						"vega-lite",
+						"vega-embed",
+						"react-vega",
+						/^vega-/, // This catches any vega-* packages
+					],
+				},
+			},
+			external: ["@semoss/ui", "@semoss/sdk"],
+		},
+		browser: {
+			enabled: false,
+			instances: [{ browser: "chromium" }],
+			provider: playwright(),
 		},
 	},
 });

@@ -17,7 +17,9 @@
         "build": "rollup -c --environment NODE_ENV:production",
         "build:dev": "rollup -c",
         "test": "vitest run",
-        "test:watch": "vitest --watch"
+        "test:ui": "vitest --ui",
+        "test:watch": "vitest --watch",
+        "test:coverage": "vitest --coverage --watch=false"
     },
     "keywords": [],
     "author": "",
@@ -26,6 +28,7 @@
         "@mui/x-data-grid": "^7.28.3",
         "@mui/x-date-pickers": "6.8.0",
         "dayjs": "1.11.8",
+        "echarts-wordcloud": "^2.1.0",
         "mermaid": "^10.9.1"
     },
     "devDependencies": {
@@ -55,7 +58,11 @@
         "typescript": "~5.5.2",
         "vega": "^6.1.2",
         "vega-lite": "^6.2.0",
-        "vitest": "^3.2.4",
+        "vitest": "^4.0.0",
+        "@vitest/ui": "^4.0.0",
+        "@vitest/coverage-v8": "^4.0.0",
+        "@vitest/browser-playwright": "^4.0.0",
+        "@testing-library/user-event": "^14.4.3",
         "@vitejs/plugin-react": "^4.6.0"
     },
     "peerDependencies": {
