@@ -849,7 +849,10 @@ export const AppDetailPage = () => {
 											adminMode: false,
 										}}
 									>
-										<UpdateSMSS type={"APP"} id={appId} />
+										<UpdateSMSS
+											type={"PROJECT"}
+											id={appId}
+										/>
 									</SettingsContext.Provider>
 								)}
 							</StyledTabsSection>

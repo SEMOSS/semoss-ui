@@ -1,5 +1,5 @@
 import Logo from "@/assets/logo.svg";
-import type { ALL_TYPES_WITH_PROJECT } from "./types";
+import type { ALL_TYPES } from "./types";
 
 export const THEME_TITLE = import.meta.env.VITE_THEME_TITLE;
 export const DOCUMENTATION_URL = import.meta.env.VITE_DOCUMENTATION_URL;
@@ -10,7 +10,7 @@ export const THEME = {
 };
 
 export const PERMISSION_DESCRIPTION_MAP: Record<
-	ALL_TYPES_WITH_PROJECT,
+	ALL_TYPES,
 	Record<string, string>
 > = {
 	PROJECT: {

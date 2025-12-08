@@ -448,7 +448,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							Apps
 						</Typography>
 						{configStore.isEngineOperationAvailable(
-							"APP",
+							"PROJECT",
 							"add",
 						) && (
 							<Button
@@ -476,12 +476,12 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				<StyledContainer>
 					{!configStore.store.config.adminOnlyViewMenuBarFlag &&
 						configStore.isEngineOperationAvailable(
-							"APP",
+							"PROJECT",
 							"add",
 						) && (
 							<div style={{ width: "355px" }}>
 								<Filterbox
-									type={"APP"}
+									type={"PROJECT"}
 									onChange={(
 										filters: Record<string, unknown>,
 									) => {
