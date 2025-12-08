@@ -177,21 +177,18 @@ export const Dependencies = ({
 											/>
 										</Stack>
 										<EngineContext.Provider
-											value={(() => {
-												console.log(dep);
-												return {
-													type: dep.type as ENGINE_TYPES,
+											value={{
+												type: dep.type as ENGINE_TYPES,
+												name: dep.name,
+												path: "",
+												active: {
+													id: dep.id,
+													role: dep.userPermission as Role,
 													name: dep.name,
-													path: "",
-													active: {
-														id: dep.id,
-														role: dep.userPermission as Role,
-														name: dep.name,
-														metadata: {},
-														refresh: () => {},
-													},
-												};
-											})()}
+													metadata: {},
+													refresh: () => {},
+												},
+											}}
 										>
 											<EngineAccessButton
 												fromApp={true}

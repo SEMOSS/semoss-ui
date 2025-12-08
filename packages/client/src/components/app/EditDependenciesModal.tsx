@@ -1,9 +1,10 @@
 import { Close } from "@mui/icons-material";
 import { useEffect, useState } from "react";
-import { Env, usePixel } from "@semoss/sdk/react";
+import { Env, useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Autocomplete,
 	Button,
+	CircularProgress,
 	IconButton,
 	Modal,
 	Stack,
@@ -90,19 +91,25 @@ export const EditDependenciesModal = ({
 	appId,
 }: EditDependenciesModalProps) => {
 	/**
-	 * Library Hooks
-	 */
-	const { configStore } = useRootStore();
-	const notification = useNotification();
-	const getEngines = usePixel<
-		(MyEngineProjectEngine | MyEngineProjectProject)[]
-	>("MyEngineProject();", undefined, configStore.store.insightID);
-
-	/**
 	 * State
 	 */
 	const [allDeps, setAllDeps] = useState<Dependency[]>([]);
 	const [selectedDeps, setSelectedDeps] = useState<Dependency[]>([]);
+	const [search, setSearch] = useState<string>("");
+
+	/**
+	 * Library Hooks
+	 */
+	const { configStore } = useRootStore();
+	const notification = useNotification();
+	const debouncedSearch = useDebouncedValue(search);
+	const getEngines = usePixel<
+		(MyEngineProjectEngine | MyEngineProjectProject)[]
+	>(
+		`MyEngineProject(filterWord=${JSON.stringify(debouncedSearch ?? "")});`,
+		undefined,
+		configStore.store.insightID,
+	);
 
 	/**
 	 * Functions
@@ -192,7 +199,37 @@ export const EditDependenciesModal = ({
 					multiple
 					onChange={(_, val: Dependency[]) => setSelectedDeps(val)}
 					renderInput={(params) => (
-						<TextField {...params} placeholder="Search..." />
+						<TextField
+							{...params}
+							placeholder="Search..."
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							slotProps={{
+								input: {
+									...params.InputProps,
+									endAdornment: (
+										<>
+											{search !== debouncedSearch ||
+											getEngines.status !== "SUCCESS" ? (
+												<CircularProgress size={24} />
+											) : null}
+											{params.InputProps.endAdornment}
+										</>
+									),
+								},
+							}}
+							onKeyDown={() => {
+								if (
+									!(
+										params.inputProps.ref as {
+											current: { value: string };
+										}
+									)?.current?.value
+								) {
+									setSearch("");
+								}
+							}}
+						/>
 					)}
 					getOptionLabel={(option: modelledDependency) => option.name}
 					isOptionEqualToValue={(
@@ -201,6 +238,8 @@ export const EditDependenciesModal = ({
 					) => {
 						return option.id === value.id;
 					}}
+					filterOptions={(x) => x}
+					disableCloseOnSelect
 				/>
 
 				{selectedDeps.map((dep, idx: number) => {
