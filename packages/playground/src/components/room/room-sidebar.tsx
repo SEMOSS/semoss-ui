@@ -1,8 +1,14 @@
-import { Maximize2Icon, Minimize2Icon, XIcon } from "lucide-react";
+import {
+	HammerIcon,
+	MonitorXIcon,
+	Settings2Icon,
+	TvMinimalIcon,
+	XIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { FlexLayout } from "@semoss/shared";
-import { Button } from "@semoss/ui/next";
+import { Button, Separator } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 import { RoomConfiguration } from "./room-configuration";
 import { RoomTool } from "./room-tool";
@@ -25,13 +31,9 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 				}`}
 			/>
 			<div
-				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
+				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
-				<div className="flow-row flex items-center justify-between overflow-hidden px-2 pt-2">
-					<div className="flex-1 truncate font-medium text-base">
-						&nbsp;
-					</div>
-
+				<div className="absolute top-0 right-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pr-2">
 					<Button
 						variant="ghost"
 						size="icon-sm"
@@ -39,9 +41,12 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 							setIsMaximized(!isMaximized);
 						}}
 					>
-						{isMaximized ? <Minimize2Icon /> : <Maximize2Icon />}
+						{isMaximized ? <MonitorXIcon /> : <TvMinimalIcon />}
 					</Button>
-
+					<Separator
+						orientation="vertical"
+						style={{ height: "17px" }}
+					/>
 					<Button
 						variant="ghost"
 						size="icon-sm"
@@ -59,11 +64,23 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 					<div className="relative h-full w-full overflow-hidden">
 						<FlexLayout.Layout
 							model={room.sidebar.model}
+							onRenderTab={(node, renderValues) => {
+								const component = node.getComponent();
+								if (component === "room-tool") {
+									renderValues.leading = (
+										<HammerIcon className="size-4" />
+									);
+								} else if (component === "room-configuration") {
+									renderValues.leading = (
+										<Settings2Icon className="size-4" />
+									);
+								}
+							}}
 							factory={(node) => {
 								const component = node.getComponent();
 
 								if (component === "room-tool") {
-									return <RoomTool node={node} />;
+									return <RoomTool node={node} room={room} />;
 								} else if (component === "room-configuration") {
 									return <RoomConfiguration room={room} />;
 								}
@@ -71,7 +88,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								return null;
 							}}
 							icons={{
-								close: <XIcon />,
+								close: <XIcon className="size-4" />,
 							}}
 						/>
 					</div>

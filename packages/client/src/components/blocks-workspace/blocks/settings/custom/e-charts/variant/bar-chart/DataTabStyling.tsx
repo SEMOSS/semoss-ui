@@ -378,7 +378,7 @@ export const DataTabStyling = observer(
 					<Autocomplete
 						fullWidth
 						id={"Echart-Frame"}
-						key={`selected-frame-${data.frame.name || "0"}`} // Key to force remount on frame change
+						key={`selected-frame-${data.frame?.name || "0"}`} // Key to force remount on frame change
 						multiple={false}
 						disabled={getFrames.status !== "SUCCESS"}
 						value={data.frame?.name}
@@ -547,20 +547,14 @@ export const DataTabStyling = observer(
 											col: string,
 										) => {
 											if (!item.aggregate) return col;
-											if (
-												columns["dataType"][
-													colIndex
-												] === "NUMBER"
-											)
+											const dataType = columns["dataType"]?.[colIndex];
+											if (!dataType) return col;
+											if (dataType === "NUMBER")
 												return `Average of ${col}`;
-											if (
-												columns["dataType"][
-													colIndex
-												] === "STRING"
-											)
+											if (dataType === "STRING")
 												return `Count of ${col}`;
 											return (
-												columns["dataType"][colIndex] +
+												dataType +
 												" of " +
 												col
 											);

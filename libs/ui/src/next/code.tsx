@@ -6,6 +6,7 @@ import shikiLangJava from "@shikijs/langs/java";
 import shikiLangJavascript from "@shikijs/langs/javascript";
 import shikiLangJSON from "@shikijs/langs/json";
 import shikiLangJSX from "@shikijs/langs/jsx";
+import shikiLangMarkdown from "@shikijs/langs/markdown";
 import shikiLangPython from "@shikijs/langs/python";
 import shikiLangTSX from "@shikijs/langs/tsx";
 import shikiLangTypescript from "@shikijs/langs/typescript";
@@ -20,7 +21,6 @@ function CodeContainer({
 	className,
 	...props
 }: React.ComponentProps<"pre">): JSX.Element {
-	console.log(props);
 	return (
 		<pre
 			className={cn(
@@ -38,6 +38,8 @@ interface CodeProps extends Omit<React.ComponentProps<"code">, "children"> {
 
 	/** Content to render as code */
 	language?:
+		| "text"
+		| "txt"
 		| "jsx"
 		| "tsx"
 		| "javascript"
@@ -50,7 +52,8 @@ interface CodeProps extends Omit<React.ComponentProps<"code">, "children"> {
 		| "py"
 		| "json"
 		| "java"
-		| "txt"
+		| "markdown"
+		| "md"
 		| null;
 }
 
@@ -82,6 +85,7 @@ function Code({ code, language, className, ...props }: CodeProps): JSX.Element {
 					shikiLangJava,
 					shikiLangJSX,
 					shikiLangTSX,
+					shikiLangMarkdown,
 				],
 				engine: createJavaScriptRegexEngine(),
 			});
