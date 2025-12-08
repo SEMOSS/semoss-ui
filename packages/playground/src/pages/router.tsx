@@ -1,7 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
-import { AppView } from "@/pages/app-view";
 import { AuthenticatedLayout } from "./authenticated-layout";
 import { LoginPage } from "./login-page";
 import { MainLayout } from "./main-layout";
@@ -51,7 +50,6 @@ export const Router = () => {
 								path="workspace/:workspaceId"
 								element={<WorkspaceDetailPage />}
 							/>
-							<Route path="app/:appId" element={<AppView />} />
 							<Route
 								path="*"
 								element={<Navigate to="/new" replace />}
