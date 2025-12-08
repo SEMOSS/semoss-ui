@@ -14,7 +14,6 @@ const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
 const APP_LOGO_PATH = import.meta.env.VITE_APP_LOGO_PATH
 	? import.meta.env.VITE_APP_LOGO_PATH
 	: "";
-
 const APP_THEME = import.meta.env.VITE_APP_THEME
 	? import.meta.env.VITE_APP_THEME
 	: "{}";
@@ -66,6 +65,11 @@ export class RootStore {
 				playgroundModal: {
 					header: "",
 					message: "",
+				},
+				images: {
+					appName: "",
+					logo: "",
+					defaultWorkspace: "",
 				},
 			},
 		},
@@ -154,7 +158,6 @@ export class RootStore {
 				...(theme?.overrides || {}),
 			},
 			// additional playground fields
-			elsaSidebar: theme?.elsaSidebar || this._store.theme.elsaSidebar,
 			playground: {
 				images: {
 					...this._store.theme?.playground?.images,
