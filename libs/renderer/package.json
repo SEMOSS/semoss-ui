@@ -17,6 +17,7 @@
         "build": "rollup -c --environment NODE_ENV:production",
         "build:dev": "rollup -c",
         "test": "vitest run",
+        "test:ui": "vitest --ui",
         "test:watch": "vitest --watch",
         "test:coverage": "vitest --coverage --watch=false"
     },
@@ -58,9 +59,11 @@
         "vega": "^6.1.2",
         "vega-lite": "^6.2.0",
         "vitest": "^4.0.0",
+        "@vitest/ui": "^4.0.0",
         "@vitest/coverage-v8": "^4.0.0",
-        "@vitejs/plugin-react": "^4.6.0",
-        "@vitest/browser-playwright": "^4.0.0"
+        "@vitest/browser-playwright": "^4.0.0",
+        "@testing-library/user-event": "^14.4.3",
+        "@vitejs/plugin-react": "^4.6.0"
     },
     "peerDependencies": {
         "@emotion/react": "11.11.1",
