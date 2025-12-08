@@ -60,15 +60,15 @@ export const PlatformSearchEngine = ({
 	return (
 		<CommandGroup heading={name}>
 			{getEngines.data.map((engine) => {
-				const url = `/engine/${type.toLowerCase()}/${engine.app_id}`;
-
 				return (
 					<CommandItem
 						key={engine.app_id}
 						value={engine.app_id}
 						onSelect={() => {
 							// manually navigate since it doesn't propagate with a link
-							navigate(url);
+							navigate(
+								`/engine/${type.toLowerCase()}/${engine.app_id}`,
+							);
 
 							// close it
 							onSelect(engine);
@@ -90,7 +90,7 @@ export const PlatformSearchEngine = ({
 						<a
 							className=""
 							target="_blank"
-							href={url}
+							href={`./#/engine/${type.toLowerCase()}/${engine.app_id}`}
 							onClick={(e) => {
 								e.stopPropagation();
 							}}
