@@ -194,6 +194,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Completion Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Token must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -201,6 +207,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Input Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Input Tokens must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -209,6 +221,12 @@ export const IMPORTABLE_MODELS = {
 							type: "number",
 							required: true,
 							default: 2048,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Context Window must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -317,6 +335,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Token must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -324,6 +348,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Input Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Input Tokens must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -448,6 +478,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Completion Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Token must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -455,6 +491,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Input Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Input Tokens must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -462,6 +504,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Context Window",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Context Window must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -662,6 +710,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Completion Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/, 
+									message: "Max Token must be a positive integer"
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -669,6 +723,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Input Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: { 
+									value: /^[1-9]\d*$/,
+									message: "Max Input Tokens must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -676,6 +736,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Context Window",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: { 
+									value: /^[1-9]\d*$/,
+									message: "Context Window must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -773,6 +839,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Tokens",
 							type: "number",
 							required: true,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Token must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -856,6 +928,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Context Window",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Context Window must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -863,6 +941,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Completion Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Token must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -1004,6 +1088,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Completion Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Token must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -1011,6 +1101,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Input Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Input Tokens must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -1098,6 +1194,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Completion Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Token must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -1105,6 +1207,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Input Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Input Tokens must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -1130,6 +1238,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Context Window",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Context Window must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -1286,6 +1400,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Completion Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Token must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -1293,6 +1413,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Input Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Input Tokens must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -1318,6 +1444,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Context Window",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Context Window must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -1463,6 +1595,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Completion Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Token must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -1470,6 +1608,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Input Tokens",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Input Tokens must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -1495,6 +1639,12 @@ export const IMPORTABLE_MODELS = {
 							label: "Context Window",
 							type: "number",
 							required: false,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Context Window must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
