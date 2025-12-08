@@ -607,7 +607,7 @@ export const AppDetailPage = () => {
 						>
 							<div
 								title={appInfo?.project_name}
-								className="w-[10ch] truncate text-ellipsis"
+								className={appInfo?.project_name.length > 10 ? "w-[10ch] truncate text-ellipsis" : ""}
 							>
 								{appInfo?.project_name}
 							</div>
@@ -624,8 +624,8 @@ export const AppDetailPage = () => {
 									/>
 									<TitleSectionBodyWrapper>
 										<div
-											title={appInfo?.project_name}
-											className="w-[10ch] truncate text-ellipsis font-normal text-[34px] leading-[150%]"
+											title={appInfo?.project_name?.length > 10 ? appInfo?.project_name : ""}
+											className={appInfo?.project_name.length > 10 ? "w-[10ch] truncate text-ellipsis font-normal text-[34px] leading-[150%]" : "font-normal text-[34px] leading-[150%"}
 										>
 											{appInfo?.project_name}
 										</div>

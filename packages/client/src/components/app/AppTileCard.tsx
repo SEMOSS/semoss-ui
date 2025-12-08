@@ -813,8 +813,12 @@ export const AppTileCard = (props: AppTileCardProps) => {
 						<StyledCardHeader
 							title={
 								<div
-									title={removeUnderscores(app.project_name)}
-									className="w-[10ch] truncate text-ellipsis font-normal text-[14px] leading-[143%]"
+									title={removeUnderscores(app?.project_name)?.length > 10 ? removeUnderscores(app.project_name) : ""}
+									className={
+									removeUnderscores(app.project_name).length > 10
+										? "w-[10ch] truncate text-ellipsis font-normal text-[14px] leading-[143%]"
+										: "font-normal text-[14px] leading-[143%]"
+									}
 								>
 									{removeUnderscores(app.project_name)}
 								</div>

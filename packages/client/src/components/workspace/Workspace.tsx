@@ -295,8 +295,12 @@ export const Workspace = observer((props: WorkspaceProps) => {
 							to={`/app/${workspace.metadata.project_id}/view`}
 						>
 							<div
-								title={workspace.metadata.project_name}
-								className="w-[10ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
+								title={workspace?.metadata?.project_name?.length > 10 ? workspace.metadata.project_name : ""}
+								className={
+									workspace.metadata.project_name.length > 10
+										? "w-[10ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
+										: "font-normal text-[16px] leading-[175%]"
+								}
 							>
 								{workspace.metadata.project_name}
 							</div>
@@ -304,12 +308,16 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
 						<StyledHeaderLogo to="">
 							<div
-								title={workspace.metadata.project_name}
-								className="w-[10ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
+								title={workspace?.metadata?.project_name?.length > 10 ? workspace.metadata.project_name : ""}
+								className={
+									workspace.metadata.project_name.length > 10
+										? "w-[10ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
+										: "font-normal text-[16px] leading-[175%]"
+								}
 							>
 								{workspace.metadata.project_name}
 							</div>
-							<span> - Editor</span>
+							<span className="w-[10ch]"> - Editor</span>
 						</StyledHeaderLogo>
 					</StyledBreadcrumbs>
 				</StyledNavLeft>

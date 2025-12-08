@@ -109,8 +109,10 @@ export const ViewAppPage = observer(() => {
 								src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
 							/>
 							<div
-								title={workspace.metadata.project_name}
-								className="w-[10ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
+								title={workspace.metadata?.project_name?.length > 10 ? workspace.metadata.project_name : ""}
+								className={workspace.metadata.project_name.length > 10
+									? "w-[10ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
+									: "font-normal text-[16px]"}
 							>
 								{workspace.metadata.project_name}
 							</div>
