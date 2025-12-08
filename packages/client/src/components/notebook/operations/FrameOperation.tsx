@@ -1,11 +1,14 @@
 import { observer } from "mobx-react-lite";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useBlocks, useBlocksPixel } from "@semoss/renderer";
 import { LinearProgress, styled, Table, Typography } from "@semoss/ui";
 
-const StyledTableContainer = styled(Table.Container)(() => ({
-	height: "200px",
-}));
+const StyledTableContainer = styled(Table.Container)<{ $width?: number }>(
+	({ $width }) => ({
+		height: "200px",
+		width: $width ? `${$width}px` : "auto",
+	}),
+);
 
 const StyledLoadingTableCell = styled(Table.Cell)(() => ({
 	padding: "0!important",
@@ -25,10 +28,10 @@ export interface FrameOperationProps {
 		queryId: string;
 	};
 }
-
 export const FrameOperation = observer((props: FrameOperationProps) => {
 	const { output } = props;
 	const { state } = useBlocks();
+
 	let cellDetail = null;
 	if (props?.cellData) {
 		const queryDetail = state.getQuery(props.cellData.queryId.toString());
@@ -69,10 +72,17 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 	const isSuccess =
 		getData.status === "SUCCESS" && getCount.status === "SUCCESS";
 
+	const tableRef = useRef<HTMLTableElement | null>(null);
+
+	const parent = tableRef?.current?.parentElement;
+	const parentParent = parent?.parentElement as HTMLElement | null;
+
 	return (
 		<>
-			<StyledTableContainer>
-				<Table stickyHeader size="small">
+			<StyledTableContainer
+				$width={parentParent?.getBoundingClientRect().width}
+			>
+				<Table ref={tableRef} stickyHeader size="small">
 					<Table.Head>
 						<Table.Row>
 							{getData.status === "SUCCESS" &&
