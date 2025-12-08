@@ -323,7 +323,9 @@ export const DatabaseForm = ({
 					navigate(`/engine/database/${output.database_id}`);
 				}
 			}
-			const tableName = fileNames.map((name)=>name.replace(/\.[^.]+$/, ''));
+			const tableName = fileNames.map((name) =>
+				name.replace(/\.[^.]+$/, ""),
+			);
 			setTableName(tableName);
 			setExcelFileName(fileNames);
 			setParsedData(parsedResults);
