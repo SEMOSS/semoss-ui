@@ -16,3 +16,31 @@ export type Role =
 	| "READ_ONLY"
 	| "DISCOVERABLE"
 	| "EDITOR";
+
+export interface ColumnInterface {
+	column: string;
+	type: string;
+}
+
+export interface TableInterface {
+	table: string;
+	columns: ColumnInterface[];
+}
+
+export interface MCPToolRequest {
+	type: "MCP";
+	message: string;
+	id: string;
+	name: string;
+	parameters: Record<string, unknown>;
+	roomId: string;
+}
+
+export interface MCPToolResponse {
+	type: "MCP";
+	message: string;
+	id: string;
+	name: string;
+	response: string;
+	roomId: string;
+}

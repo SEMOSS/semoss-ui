@@ -63,6 +63,7 @@ const interceptors: {
 		return options;
 	},
 	response: async ({ response }) => {
+		// TODO: maybe we shouldn't just throw unauthorized error for 302 and actually honor the redirect?
 		if (response.status === 302) {
 			throw new UnauthorizedError("Unauthorized");
 		}
@@ -101,6 +102,7 @@ export const get = async <O>(path: string, options: RequestInit = {}) => {
 		const errorMessage =
 			errorData.message ||
 			errorData.error ||
+			errorData.errorMessage ||
 			`Request failed with status ${response.status}`;
 		throw new Error(errorMessage);
 	}
@@ -180,6 +182,7 @@ export const post = async <O>(
 		const errorMessage =
 			errorData.message ||
 			errorData.error ||
+			errorData.errorMessage ||
 			`Request failed with status ${response.status}`;
 		throw new Error(errorMessage);
 	}

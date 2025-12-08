@@ -43,6 +43,17 @@ export const config: BlockSettingsConfig = {
 						/>
 					),
 				},
+				{
+					description: "Show Placeholder When Empty",
+					render: ({ id }) => (
+						<SwitchSettings
+							id={id}
+							label="Enable Loading Placeholder"
+							path="showPlaceholder"
+							description='If enabled, displays "Waiting for value..." when no text value is set.'
+						/>
+					),
+				},
 			],
 		},
 		{

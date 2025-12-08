@@ -1,5 +1,6 @@
 import {
 	DeleteOutline,
+	EditOutlined,
 	InfoOutlined,
 	ReportRounded,
 } from "@mui/icons-material";
@@ -375,7 +376,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 								size="small"
 								onClick={(e) => {
 									e.stopPropagation();
-									handleOnTrashClick("", item.name);
+									handleOnTrashClick(
+										item['id'] ?? '',
+										item.name,
+									);
 								}}
 							>
 								<DeleteOutline sx={{ color: "#757575" }} />
