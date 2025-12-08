@@ -33,6 +33,21 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [name, setName] = useState<string>("");
+	/**
+	 * Adds .txt extension if no extension is provided for files
+	 */
+	const getFileNameWithExtension = (fileName: string): string => {
+		if (mode === "directory") {
+			return fileName;
+		}
+		const hasExtension = /\.[a-zA-Z0-9]+$/.test(fileName);
+		
+		if (!hasExtension) {
+			return `${fileName}.txt`;
+		}
+		
+		return fileName;
+	};
 
 	/**
 	 * Create the file
@@ -45,6 +60,7 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 				throw new Error("Name is required");
 			}
 
+			const finalName = getFileNameWithExtension(name);
 			let pixel = "";
 			let path = "";
 			if (type === "app") {
@@ -56,7 +72,7 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 				}
 
 				// append the name
-				path = `${path}${name}`;
+				path = `${path}${finalName}`;
 
 				if (mode === "file") {
 					pixel = `SaveAsset(fileName=["${path}"], content=["<encode></encode>"], space=["${space}"]);CommitAsset(filePath=["${path}"], comment=["Creating file"], space=["${space}"]);`;
@@ -77,8 +93,8 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 				}
 
 				// append the name
-				path = `${path}${name}`;
-				const file = path?.split(/assets[\\/]/)[1];
+				path = `${path}${finalName}`;
+				const file = path.split("assets/")[1];
 				if (mode === "file") {
 					pixel = `SaveEngineAssets(filePath=["/${file}"], content=["<encode></encode>"], engine=["${space}"]);CommitAsset(filePath=["/${file}"], comment=["Creating file"], engine=["${space}"]);`;
 				} else if (mode === "directory") {
@@ -115,6 +131,16 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 		}
 	};
 
+	/**
+	 * Handle Enter key press
+	 */
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === "Enter" && name && !isLoading) {
+			e.preventDefault();
+			createFile();
+		}
+	};
+
 	return (
 		<>
 			<Modal.Title>
@@ -133,6 +159,7 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 						fullWidth
 						value={name}
 						onChange={(e) => setName(e.target.value)}
+						onKeyDown={handleKeyDown}
 					/>
 				</Stack>
 			</Modal.Content>

@@ -80,7 +80,7 @@ export const FileManager = (props: FileManagerProps) => {
 		<Container spacing={0}>
 			<LeftPanel>
 				<FileExplorerTab
-					title="Project Files"
+					title="Files"
 					appId={appId}
 					insightId={insightId}
 					setLoading={setLoading}

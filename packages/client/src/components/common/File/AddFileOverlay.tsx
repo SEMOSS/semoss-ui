@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
 	Button,
-	Checkbox,
+	//Checkbox,
 	FileDropzone,
 	LinearProgress,
 	Modal,
@@ -68,7 +68,6 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 			}
 
 			const path = `${uploadPath}${upload[0].fileName}`;
-			console.log("Uploaded:", upload);
 			if (unzipFile) {
 				if ( type === "app") {
 					await monolithStore.runQuery(
@@ -76,7 +75,7 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 					);
 				} 
 				else if ( type === "engine") {
-					const file = path?.split(/assets[\\/]/)[1];
+					const file = path.split("assets/")[1];
 					await monolithStore.runQuery(
 						`UnzipFile(filePath=["/${file}"], engine=["${space}"])`,
 					);
@@ -114,13 +113,13 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 							setUploadFiles(newValue);
 						}}
 					/>
-					<Checkbox
+					{/* <Checkbox
 						checked={unzipFile}
 						onChange={() => {
 							setUnzipFile(!unzipFile);
 						}}
 						label={<Typography variant="body2">Unzip?</Typography>}
-					/>
+					/> */}
 				</Stack>
 			</Modal.Content>
 			<Modal.Actions>

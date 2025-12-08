@@ -179,7 +179,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 		const loadFile = async () => {
 			try {
 				setIsLoading(true);
-				const file = path.split("assets\\")[1];
+				const file = path.split("assets/")[1];
 				let pixel = "";
 				if (type === "app") {
 					pixel = `GetAsset(filePath=["${path}"], space=["${space}"]);`;
@@ -285,7 +285,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
             `;
 				} else if (type === "engine") {
 					console.log(path, "path");
-					const file = path.split("\\").pop();
+					const file = path.split("/").pop();
 
 					pixel = `
                 SaveEngineAssets(filePath=["/${file}"], content=["<encode>${content}</encode>"], engine=["${space}"]); 

@@ -113,7 +113,7 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 	const [isDragging, setIsDragging] = useState(false);
 
 	const isOpen = expanded.indexOf(path) > -1;
-	const file = path.split("assets\\")[1];
+	const file = path.split("assets/")[1];
 	const getAssets = usePixel<
 		{
 			lastModified: string;

@@ -91,14 +91,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 	 */
 	const handleOnNodeSelect = (selected: string[]) => {
 		// trigger the callback on the first one
-		const item = getAssets.data.find((n) => n.path === selected[0]);
-		let selectedPath = selected[0] || "";
-		if (item && item.type === "directory" && selectedPath !== "") {
-			selectedPath = selected[0].endsWith("/")
-				? selected[0]
-				: selected[0] + "/";
-		}
-		onSelect(selectedPath);
+		onSelect(selected[0] || "");
 
 		// set the selected values
 		setSelected(selected);

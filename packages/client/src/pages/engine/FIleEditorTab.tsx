@@ -1,9 +1,20 @@
 import { ContentCopyOutlined, SaveOutlined } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { useRef, useState } from "react";
-import { IconButton, Stack, useNotification } from "@semoss/ui";
+import { useMemo, useRef, useState } from "react";
+import { Chip, IconButton, Stack, styled, useNotification } from "@semoss/ui";
 import { FileEditor, type FileEditorRefDef } from "@/components/common";
 import { Panel } from "@/components/workspace/panels";
+
+const StyledChip = styled(Chip)(({ theme }) => ({
+	backgroundColor: theme.palette.primary.selected,
+	color: theme.palette.info.dark,
+	fontFamily: "Inter",
+	fontSize: "13px",
+	fontWeight: 400,
+	height: "24px",
+	marginLeft: theme.spacing(1),
+}));
+
 
 interface FileEditorPanelProps {
 	path: string;
@@ -37,6 +48,12 @@ export const FileEditorTab = observer((props: FileEditorPanelProps) => {
 		}
 	};
 
+		const fileName = useMemo(() => {
+		if (!path) return "";
+		const parts = path.split(/[/\\]/);
+		return parts[parts.length - 1];
+	}, [path]);
+
 	return (
 		<Panel
 			actions={
@@ -53,6 +70,7 @@ export const FileEditorTab = observer((props: FileEditorPanelProps) => {
 					>
 						<ContentCopyOutlined fontSize="inherit" />
 					</IconButton>
+					{fileName && <StyledChip label={fileName} size="small" />}
 					<Stack flex={1}>&nbsp;</Stack>
 					<IconButton
 						size={"small"}

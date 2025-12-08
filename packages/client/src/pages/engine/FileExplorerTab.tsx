@@ -58,7 +58,7 @@ const StyledFileSpan = styled("span")(({ theme }) => ({
 }));
 
 const StyledTitleSpan = styled("span")(({ theme }) => ({
-	color: "var(--Primary-Dark, #1260DD)",
+	color: theme.palette.info.dark,
 	fontFeatureSettings: "'liga' off, 'clig' off",
 	fontSize: "13px",
 	fontFamily: "Inter",
@@ -183,6 +183,11 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 				space={appId}
 				onClose={(success) => {
 					if (success) {
+						if (selectedPath === fileDeletePath) {
+							setSelectedPath("");
+							setDeselectCounter((prev) => prev + 1);
+							onFileSelect?.("");
+						}
 						refreshFiles();
 					}
 					closeOverlay();
