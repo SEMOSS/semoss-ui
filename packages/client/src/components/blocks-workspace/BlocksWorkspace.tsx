@@ -26,6 +26,7 @@ import {
 } from "../../components/workspace";
 import { DesignerContext } from "../../contexts";
 import { GraphPanel } from "../workspace/panels/GraphPanel";
+import { MCPJsonEditor } from "../workspace/panels/MCPJsonEditor";
 import { BlocksWorkspaceActions } from "./BlocksWorkspaceActions";
 import { BlocksWorkspaceDev } from "./BlocksWorkspaceDev";
 import { DEFAULT_MENU } from "./menus/default-menu";
@@ -317,6 +318,8 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 			return <FileExplorerPanel title={"Files"} layout={layout} />;
 		} else if (component === "file-editor") {
 			return <FileEditorPanel path={config.path} />;
+		} else if (component === "mcpJsonEditor") {
+			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "notebook-explorer") {
 			return <NotebookExplorerPanel title={"Notebook"} layout={layout} />;
 		} else if (component === "notebook-viewer") {
