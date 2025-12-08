@@ -762,14 +762,17 @@ export const LayersPanel = observer(
 				});
 				setSelectedLayers([]); // Clear first
 
-			   const newId = id as string;
-			   selectLayer(selectedPages); // Refresh the layer list
-			   designer.setSelected(newId);
-			   designer.setHovered(newId);
-			   setSelectedLayers([newId]);
-			   renderBlock(newId);
-			   handleMenuClose();
-		};
+				const newId = id as string;
+				selectLayer(selectedPages); // Refresh the layer list
+				// Apply selection and hover
+				designer.setSelected(newId);
+				designer.setHovered(newId);
+				// Ensure visual selection state is fully synced
+				setSelectedLayers([newId]);
+				// Render and scroll to the new block (if your system supports it)
+				renderBlock(newId);
+				handleMenuClose();
+			};
 
 			return (
 				<>
