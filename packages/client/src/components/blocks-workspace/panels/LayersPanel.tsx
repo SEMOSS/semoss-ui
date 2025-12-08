@@ -231,8 +231,7 @@ const StyledRenameTextFiled = styled(TextField)(() => ({
 		maxWidth: "170px",
 		height: "21px",
 		paddingInline: "4px",
-		/* background-color: red; */
-		border: "1px solid #0471F0", // outer container radius
+		border: "1px solid #0471F0",
 		fontFamily: "Inter",
 		fontSize: "14px",
 		fontWeight: 400,
@@ -241,10 +240,10 @@ const StyledRenameTextFiled = styled(TextField)(() => ({
 		letterSpacing: "0.17px",
 		color: "#666666",
 		"& fieldset": {
-			borderRadius: "4px", // the actual outline radius
+			borderRadius: "4px",
 		},
 		"& .MuiOutlinedInput-input": {
-			padding: "0px", // remove padding from input
+			padding: "0px",
 		},
 	},
 }));
@@ -417,12 +416,11 @@ export const LayersPanel = observer(
 				) {
 					const target = event.target as HTMLElement;
 
-					// Allow clicks inside the TextField only
 					if (target.closest(".MuiOutlinedInput-root")) {
-						return; // Ignore clicks inside the TextField
+						return;
 					}
 
-					setEditingBlockId(null); // Reset editingBlockId when clicking outside
+					setEditingBlockId(null);
 				}
 			};
 
@@ -952,13 +950,13 @@ export const LayersPanel = observer(
 											color="primary"
 											disabled={rename}
 											onMouseDown={(e) => {
-												e.stopPropagation(); // Prevent the mousedown event from propagating
+												e.stopPropagation();
 											}}
 											onClick={(e) => {
 												e.stopPropagation();
-												handleRename(block.id); // Replace with your actual function
+												handleRename(block.id);
 												setRename(true);
-												setEditingBlockId(null); // Reset editingBlockId after renaming
+												setEditingBlockId(null);
 											}}
 										>
 											<CheckIcon />
