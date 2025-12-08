@@ -285,7 +285,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
             `;
 				} else if (type === "engine") {
 					console.log(path, "path");
-					const file = path.split("/").pop();
+					const file = path.split("assets/").pop();
 
 					pixel = `
                 SaveEngineAssets(filePath=["/${file}"], content=["<encode>${content}</encode>"], engine=["${space}"]); 
