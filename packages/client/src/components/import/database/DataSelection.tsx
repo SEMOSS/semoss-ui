@@ -75,7 +75,7 @@ const StyledExpandMoreIcon = styled(Icon)<{ collapse?: boolean }>(
 	({ collapse }) => ({
 		transform: collapse ? "rotate(180deg)" : "rotate(0deg)",
 		transition: "transform 0.3s",
-	})
+	}),
 );
 
 const StyledInnerBox = styled(Box)(({ theme }) => ({
@@ -190,21 +190,21 @@ const DataSelection = ({
 	const [openModal, setOpenModal] = useState(false);
 	const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
 	const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(
-		null
+		null,
 	);
 
 	const [columnMetadataList, setColumnMetadataList] = useState<
 		Record<string, ColumnMetadata>[]
 	>([]);
 	const [collapseAll, setCollapseAll] = useState<boolean[]>(
-		files.map(() => true)
+		files.map(() => true),
 	);
 	const [rowEditableStateList, setRowEditableStateList] = useState<
 		Record<number, boolean>[]
 	>([]);
 	const [tableNames, setTableNames] = useState<string[]>(fileName);
 	const [tableNameErrors, setTableNameErrors] = useState<string[]>(
-		fileName.map(() => "")
+		fileName.map(() => ""),
 	);
 
 	// Initialize column metadata and row states for each file
@@ -220,15 +220,15 @@ const DataSelection = ({
 						description: "",
 						logicalName: [],
 					},
-				])
-			)
+				]),
+			),
 		);
 		setColumnMetadataList(metaList);
 
 		const rowStateList = files.map((parsedData) =>
 			Object.fromEntries(
-				parsedData.cleanHeaders.map((_, index) => [index, true])
-			)
+				parsedData.cleanHeaders.map((_, index) => [index, true]),
+			),
 		);
 		setRowEditableStateList(rowStateList);
 	}, [files]);
@@ -236,7 +236,7 @@ const DataSelection = ({
 	const handleNameChange = (
 		fileIdx: number,
 		index: number,
-		newValue: string
+		newValue: string,
 	) => {
 		const column = files[fileIdx].cleanHeaders[index];
 		setColumnMetadataList((prev) => {
@@ -288,7 +288,9 @@ const DataSelection = ({
 	const handleImport = () => {
 		if (tableNames.some((name) => !name.trim())) {
 			setTableNameErrors(
-				tableNames.map((n) => (!n.trim() ? "Enter valid table name" : ""))
+				tableNames.map((n) =>
+					!n.trim() ? "Enter valid table name" : "",
+				),
 			);
 			return;
 		}
@@ -299,7 +301,7 @@ const DataSelection = ({
 			const rowState = rowEditableStateList[fileIdx];
 
 			const activeHeaders = originalHeaders.filter(
-				(_, index) => rowState[index]
+				(_, index) => rowState[index],
 			);
 
 			const dataTypeMap: Record<string, string> = {};
@@ -311,7 +313,8 @@ const DataSelection = ({
 			activeHeaders.forEach((original) => {
 				const userMeta = metadata[original] || {};
 				const updated = userMeta.alias || original;
-				const dataType = userMeta.dataType || parsedData.dataTypes[original];
+				const dataType =
+					userMeta.dataType || parsedData.dataTypes[original];
 
 				dataTypeMap[updated] = dataType;
 
@@ -356,7 +359,10 @@ const DataSelection = ({
 					{/* Header Section */}
 					<StyledHeaderWrapper>
 						<Stack direction={"row"}>
-							<img src={CSV_UPLOAD_ICONS.FILE_EXCEL} alt="Excel File" />
+							<img
+								src={CSV_UPLOAD_ICONS.FILE_EXCEL}
+								alt="Excel File"
+							/>
 							<StyledTypography variant="h6">
 								{fileName[fileIdx]}
 							</StyledTypography>
@@ -367,12 +373,22 @@ const DataSelection = ({
 							data-testid="collapse-button"
 							onClick={() =>
 								setCollapseAll((prev) =>
-									prev.map((v, i) => (i === fileIdx ? !v : v))
+									prev.map((v, i) =>
+										i === fileIdx ? !v : v,
+									),
 								)
 							}
-							startIcon={collapseAll[fileIdx] ? <UnfoldLess /> : <UnfoldMore />}
+							startIcon={
+								collapseAll[fileIdx] ? (
+									<UnfoldLess />
+								) : (
+									<UnfoldMore />
+								)
+							}
 						>
-							{collapseAll[fileIdx] ? "Collapse All" : "Expand All"}
+							{collapseAll[fileIdx]
+								? "Collapse All"
+								: "Expand All"}
 						</StyledCollapseButton>
 					</StyledHeaderWrapper>
 
@@ -381,14 +397,19 @@ const DataSelection = ({
 						<StyledSummaryHeader
 							onClick={() =>
 								setCollapseAll((prev) =>
-									prev.map((v, i) => (i === fileIdx ? !v : v))
+									prev.map((v, i) =>
+										i === fileIdx ? !v : v,
+									),
 								)
 							}
 						>
 							<StyledTypographyTitle variant="h6">
 								Sheet Name: {fileName[fileIdx]}
 							</StyledTypographyTitle>
-							<StyledExpandMoreIcon collapse={collapseAll[fileIdx]} data-testid="expand-icon">
+							<StyledExpandMoreIcon
+								collapse={collapseAll[fileIdx]}
+								data-testid="expand-icon"
+							>
 								<ExpandMore />
 							</StyledExpandMoreIcon>
 						</StyledSummaryHeader>
@@ -406,13 +427,20 @@ const DataSelection = ({
 												fullWidth
 												size="small"
 												placeholder="Enter table name"
-												value={tableNames[fileIdx] || ""}
+												value={
+													tableNames[fileIdx] || ""
+												}
 												onChange={(e) =>
-													handleTableNameChange(fileIdx, e.target.value)
+													handleTableNameChange(
+														fileIdx,
+														e.target.value,
+													)
 												}
 												data-testid="table-name-input"
 												// @ts-expect-error TODO FIX
-												error={!tableNames[fileIdx]?.trim()}
+												error={
+													!tableNames[fileIdx]?.trim()
+												}
 											/>
 											{!tableNames[fileIdx]?.trim() && (
 												<StyledTextFieldTypography
@@ -447,70 +475,123 @@ const DataSelection = ({
 										</Table.Head>
 
 										<Table.Body>
-											{parsedData.cleanHeaders.map((column, index) => (
-												<Table.Row key={column} data-testid={`table-row-${fileIdx}-${index}`}>
-													{/* Name */}
-													<StyledBaseTableCellName data-testid={`table-cell-name-${fileIdx}-${index}`}>
-														<StyedNameTextField
-															fullWidth
-															value={
-																columnMetadataList[fileIdx]?.[column]?.alias ??
-																column
-															}
-															onChange={(e) =>
-																handleNameChange(fileIdx, index, e.target.value)
-															}
-															variant="outlined"
-															size="small"
-															disabled={!rowEditableStateList[fileIdx]?.[index]}
-															data-testid={`column-name-input-${fileIdx}-${index}`}
-														/>
-													</StyledBaseTableCellName >
-
-													{/* Data Type */}
-													<StyledBaseTableCell data-testid={`table-cell-datatype-${fileIdx}-${index}`}>
-														<Typography
-															variant="h6"
-															sx={{
-																fontSize: "14px",
-																color: !rowEditableStateList[fileIdx]?.[index]
-																	? "#9E9E9E"
-																	: "#212121",
-															}}
-															data-testid={`column-datatype-${fileIdx}-${index}`}
+											{parsedData.cleanHeaders.map(
+												(column, index) => (
+													<Table.Row
+														key={column}
+														data-testid={`table-row-${fileIdx}-${index}`}
+													>
+														{/* Name */}
+														<StyledBaseTableCellName
+															data-testid={`table-cell-name-${fileIdx}-${index}`}
 														>
-															{columnMetadataList[fileIdx]?.[column]
-																?.dataType || "STRING"}
-														</Typography>
-													</StyledBaseTableCell >
+															<StyedNameTextField
+																fullWidth
+																value={
+																	columnMetadataList[
+																		fileIdx
+																	]?.[column]
+																		?.alias ??
+																	column
+																}
+																onChange={(e) =>
+																	handleNameChange(
+																		fileIdx,
+																		index,
+																		e.target
+																			.value,
+																	)
+																}
+																variant="outlined"
+																size="small"
+																disabled={
+																	!rowEditableStateList[
+																		fileIdx
+																	]?.[index]
+																}
+																data-testid={`column-name-input-${fileIdx}-${index}`}
+															/>
+														</StyledBaseTableCellName>
 
-													{/* Edit */}
-													<StyledBaseTableCellIcon data-testid={`table-cell-edit-${fileIdx}-${index}`}>
-														<IconButton
-															size="small"
-															onClick={() => handleOpenModal(fileIdx, column)}
-															disabled={!rowEditableStateList[fileIdx]?.[index]}
-															data-testid={`edit-button-${fileIdx}-${index}`}
+														{/* Data Type */}
+														<StyledBaseTableCell
+															data-testid={`table-cell-datatype-${fileIdx}-${index}`}
 														>
-															<CreateOutlined />
-														</IconButton>
-													</StyledBaseTableCellIcon>
+															<Typography
+																variant="h6"
+																sx={{
+																	fontSize:
+																		"14px",
+																	color: !rowEditableStateList[
+																		fileIdx
+																	]?.[index]
+																		? "#9E9E9E"
+																		: "#212121",
+																}}
+																data-testid={`column-datatype-${fileIdx}-${index}`}
+															>
+																{columnMetadataList[
+																	fileIdx
+																]?.[column]
+																	?.dataType ||
+																	"STRING"}
+															</Typography>
+														</StyledBaseTableCell>
 
-													{/* Toggle */}
-													<StyledBaseTableCellIcon data-testid={`table-cell-toggle-${fileIdx}-${index}`}>
-														<IconButton
-															onClick={() => toggleRowEditState(fileIdx, index)}
-															data-testid={`toggle-button-${fileIdx}-${index}`}
+														{/* Edit */}
+														<StyledBaseTableCellIcon
+															data-testid={`table-cell-edit-${fileIdx}-${index}`}
 														>
-															{rowEditableStateList[fileIdx]?.[index] ? (
-																<CloseIcon color="error" data-testid={`toggle-icon-close-${fileIdx}-${index}`} />
-															) : (
-																<AddIcon color="success" data-testid={`toggle-icon-add-${fileIdx}-${index}`}/>
-															)}
-														</IconButton>
-													</StyledBaseTableCellIcon>
-												</Table.Row>
-											))}
+															<IconButton
+																size="small"
+																onClick={() =>
+																	handleOpenModal(
+																		fileIdx,
+																		column,
+																	)
+																}
+																disabled={
+																	!rowEditableStateList[
+																		fileIdx
+																	]?.[index]
+																}
+																data-testid={`edit-button-${fileIdx}-${index}`}
+															>
+																<CreateOutlined />
+															</IconButton>
+														</StyledBaseTableCellIcon>
+
+														{/* Toggle */}
+														<StyledBaseTableCellIcon
+															data-testid={`table-cell-toggle-${fileIdx}-${index}`}
+														>
+															<IconButton
+																onClick={() =>
+																	toggleRowEditState(
+																		fileIdx,
+																		index,
+																	)
+																}
+																data-testid={`toggle-button-${fileIdx}-${index}`}
+															>
+																{rowEditableStateList[
+																	fileIdx
+																]?.[index] ? (
+																	<CloseIcon
+																		color="error"
+																		data-testid={`toggle-icon-close-${fileIdx}-${index}`}
+																	/>
+																) : (
+																	<AddIcon
+																		color="success"
+																		data-testid={`toggle-icon-add-${fileIdx}-${index}`}
+																	/>
+																)}
+															</IconButton>
+														</StyledBaseTableCellIcon>
+													</Table.Row>
+												),
+											)}
 										</Table.Body>
 									</Table>
 								</StyledTableContainer>
@@ -522,7 +603,12 @@ const DataSelection = ({
 
 			{/* Footer */}
 			<StyledFooterWrapper>
-				<Button variant="outlined" color="primary" onClick={onCancel} data-testid="back-button">
+				<Button
+					variant="outlined"
+					color="primary"
+					onClick={onCancel}
+					data-testid="back-button"
+				>
 					Back
 				</Button>
 				<Button
