@@ -120,6 +120,14 @@ const StyledLabelSubtitleText = styled("div")(({ theme }) => ({
 
 const StyledTreeItemIcon = styled(Icon)(() => ({
 	color: "#757575",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	height: "100%",
+}));
+
+const StyledRouteText = styled(Typography)(() => ({
+	lineHeight: "normal",
 }));
 
 const StyledTreeItemIconButton = styled(IconButton)(() => ({
@@ -255,7 +263,7 @@ type TreeNode = {
 };
 
 const findNode = (
-	root: any,
+	root,
 	id: UniqueIdentifier,
 ): { node: TreeNode; parent: TreeNode | null; slot: string | null } | null => {
 	const stack: {
@@ -291,6 +299,13 @@ export interface AddBlocksLayersProps {
 	/** Title to render in the menu */
 	title: string;
 }
+
+const DroppableContainer = React.forwardRef<
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement>
+>(function DroppableContainer(props, ref) {
+	return <div ref={ref} {...props} />;
+});
 
 /**
  * Render the Layers
@@ -367,7 +382,22 @@ export const LayersPanel = observer(
 
 		useEffect(() => {
 			const block = state.blocks[selectedPages];
-			handlePageSelection(block);
+
+			const page1 = state.blocks["page-1"];
+			if (page1 && (!page1.data?.route || page1.data.route === "")) {
+				state.dispatch({
+					message: ActionMessages.SET_BLOCK_DATA,
+					payload: {
+						id: "page-1",
+						path: "route",
+						value: "page--1",
+					},
+				});
+			}
+
+			if (block) {
+				handlePageSelection(block);
+			}
 		}, []);
 
 		const handleDragStart = (event: DragStartEvent) => {
@@ -484,13 +514,7 @@ export const LayersPanel = observer(
 			selectLayer(selectedPages);
 		};
 
-		const DraggableTreeItem = ({
-			node,
-			children,
-		}: {
-			node: any;
-			children: any;
-		}) => {
+		const DraggableTreeItem = ({ node, children }: { node; children }) => {
 			const { attributes, listeners, setNodeRef, transform } =
 				useDraggable({
 					id: node.id,
@@ -517,8 +541,8 @@ export const LayersPanel = observer(
 			children,
 			onDropPositionChange,
 		}: {
-			node: any;
-			children: any;
+			node;
+			children;
 			onDropPositionChange: (
 				position: "top" | "bottom" | "inside",
 			) => void;
@@ -564,8 +588,7 @@ export const LayersPanel = observer(
 			};
 
 			return (
-				// biome-ignore lint/a11y/noStaticElementInteractions: TODO
-				<div
+				<DroppableContainer
 					ref={setNodeRef}
 					data-id={node.id}
 					style={{ position: "relative" }}
@@ -629,7 +652,7 @@ export const LayersPanel = observer(
 						</>
 					)}
 					{children}
-				</div>
+				</DroppableContainer>
 			);
 		};
 
@@ -653,9 +676,9 @@ export const LayersPanel = observer(
 			WidgetIcon,
 			canVariabilize,
 		}: {
-			block: any;
+			block;
 			variableName: string;
-			WidgetIcon: any;
+			WidgetIcon;
 			canVariabilize: boolean;
 		}) => {
 			const [menuAnchorEl, setMenuAnchorEl] =
@@ -995,9 +1018,9 @@ export const LayersPanel = observer(
 								</StyledTreeItemIcon>
 							)}
 						</StyledHomePageChildDiv>
-						<Typography variant="subtitle1">
+						<StyledRouteText variant="subtitle1">
 							/{block.data.route as string}
-						</Typography>
+						</StyledRouteText>
 					</StyledHomePageDiv>
 					{id !== "page-1" && pageHovered === block.id && (
 						<StyledTreeItemIcon>

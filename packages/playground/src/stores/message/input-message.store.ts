@@ -16,11 +16,10 @@ export class InputMessageStore extends AbstractMessageStore {
 	/**
 	 * Files associated with the message
 	 */
-	imageInfos: {
+	mediaInputs: {
 		fileName: string;
-		fileLocation: string;
+		fileLocation?: string;
 		base64Data?: string;
-		fileFormat?: "png";
 		mimeType?: string;
 		imageType?: "FILE";
 	}[];
@@ -32,11 +31,11 @@ export class InputMessageStore extends AbstractMessageStore {
 		super(room, message);
 
 		this.text = message.inputUIPrompt;
-		this.imageInfos = message.imageInfos;
+		this.mediaInputs = message.mediaInputs;
 
 		makeObservable(this, {
 			text: observable,
-			imageInfos: observable,
+			mediaInputs: observable,
 		});
 	}
 }
