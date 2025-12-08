@@ -17,6 +17,7 @@ export interface PixelCommand {
  * All types used in the app
  */
 export type ALL_TYPES = "APP" | ENGINE_TYPES;
+export type ALL_TYPES_WITH_PROJECT = ENGINE_TYPES | "PROJECT";
 
 /**
  * Engine types used in the app
@@ -100,5 +101,5 @@ export interface EventData {
 	engineType: string;
 	userId: string;
 	sessionId: string;
-	spanId:string
+	spanId: string;
 }

@@ -1,5 +1,5 @@
 import Logo from "@/assets/logo.svg";
-import type { ALL_TYPES } from "./types";
+import type { ALL_TYPES_WITH_PROJECT } from "./types";
 
 export const THEME_TITLE = import.meta.env.VITE_THEME_TITLE;
 export const DOCUMENTATION_URL = import.meta.env.VITE_DOCUMENTATION_URL;
@@ -10,10 +10,10 @@ export const THEME = {
 };
 
 export const PERMISSION_DESCRIPTION_MAP: Record<
-	ALL_TYPES,
+	ALL_TYPES_WITH_PROJECT,
 	Record<string, string>
 > = {
-	APP: {
+	PROJECT: {
 		author: "Ability to hide or delete the data app, provision other authors and all editor permissions",
 		editor: "Ability to edit the data app code, provision other users as editors and read only users, and all  read-only permissions",
 		readonly:
