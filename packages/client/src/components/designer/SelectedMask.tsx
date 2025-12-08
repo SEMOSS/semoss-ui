@@ -361,16 +361,16 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 	}, [designer.drag.active, local, handleDocumentMouseUp]);
 
 	if (!size) {
-		return <></>;
+		return null;
 	}
 
 	const handleRename = (id: string): string => {
-        const block = state.getBlock(id);
-        if (block && block?.data?.id) {
-            return block.data.id as string;
-        }
-        return id;
-    };
+		const block = state.getBlock(id);
+		if (block && block?.data?.id) {
+			return block.data.id as string;
+		}
+		return id;
+	};
 
 	if (designer.selectedBlocks.length > 1) {
 		return (
@@ -395,7 +395,13 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 							<StyledTitle onMouseDown={handleMouseDown}>
 								<Stack direction={"row"}>
 									<Typography variant={"body2"}>
-										{variableName ? variableName :String(handleRename(designer.selected))}
+										{variableName
+											? variableName
+											: String(
+													handleRename(
+														designer.selected,
+													),
+												)}
 									</Typography>
 								</Stack>
 								{areAllBlocksDraggable() && (
@@ -424,7 +430,9 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 				<StyledTitle onMouseDown={handleMouseDown}>
 					<Stack direction={"row"}>
 						<Typography variant={"body2"}>
-							 {variableName? variableName:String(handleRename(designer.selected))}
+							{variableName
+								? variableName
+								: String(handleRename(designer.selected))}
 						</Typography>
 					</Stack>
 					{isDraggable && (

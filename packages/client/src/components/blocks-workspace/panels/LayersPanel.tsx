@@ -26,7 +26,7 @@ import {
 	Search,
 } from "@mui/icons-material/";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import { set, toJS } from "mobx";
+import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -106,15 +106,13 @@ const StyledLabelContainer = styled("div", {
 	overflow: "hidden",
 }));
 
-const StyledLabelTitle = styled("div")(({ theme }) => ({
-	...theme.typography.body2,
+const StyledLabelTitle = styled(Typography)(({ theme }) => ({
 	overflow: "hidden",
 	textOverflow: "ellipsis",
 	whiteSpace: "nowrap",
 }));
 
-const StyledLabelSubtitleText = styled("div")(({ theme }) => ({
-	...theme.typography.caption,
+const StyledLabelSubtitleText = styled(Typography)(({ theme }) => ({
 	overflow: "hidden",
 	textOverflow: "ellipsis",
 	whiteSpace: "nowrap",
@@ -362,6 +360,7 @@ export const LayersPanel = observer(
 		const [editBlockId, setEditBlockId] = useState<string | null>(null);
 		const [rename, setRename] = useState(true);
 		const editableAreaRef = useRef<HTMLDivElement | null>(null);
+		const inputRef = useRef<HTMLInputElement>(null);
 
 		const sensors = useSensors(
 			useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -884,11 +883,10 @@ export const LayersPanel = observer(
 					} else if (block.id === id) {
 						setRename(true);
 						break;
-					} else if(id.length ===0  ){
+					} else if (id.length === 0) {
 						setRename(true);
 						break;
-					}
-					 else {
+					} else {
 						setRename(false);
 					}
 				}
@@ -910,7 +908,7 @@ export const LayersPanel = observer(
 									: false
 							}
 						>
-							<StyledLabelTitle>
+							<StyledLabelTitle variant="body2">
 								{block.widget.charAt(0).toUpperCase() +
 									block.widget.slice(1)}
 							</StyledLabelTitle>
@@ -919,10 +917,8 @@ export const LayersPanel = observer(
 									<StyledRenameStack>
 										<StyledRenameStack className="editable-container">
 											<StyledRenameTextFiled
+												inputRef={inputRef}
 												value={editBlockId}
-												onClick={(e) =>
-													e.stopPropagation()
-												}
 												onChange={(e) => {
 													e.preventDefault();
 													e.stopPropagation();
@@ -932,6 +928,20 @@ export const LayersPanel = observer(
 													handlevalidation(
 														e.target.value,
 													);
+													const cursorPosition =
+														e.target.selectionStart;
+													setTimeout(() => {
+														if (
+															inputRef.current &&
+															cursorPosition !==
+																null
+														) {
+															inputRef.current.setSelectionRange(
+																cursorPosition,
+																cursorPosition,
+															);
+														}
+													}, 0);
 												}}
 												size="small"
 												variant="outlined"
@@ -955,8 +965,10 @@ export const LayersPanel = observer(
 										</StyledIconButton>
 									</StyledRenameStack>
 								) : (
-									<StyledLabelSubtitleText>
-										{variableName || block.data.id || block.id}
+									<StyledLabelSubtitleText variant="caption">
+										{variableName ||
+											block.data.id ||
+											block.id}
 									</StyledLabelSubtitleText>
 								)}
 							</div>
@@ -1021,11 +1033,14 @@ export const LayersPanel = observer(
 							},
 						}}
 					>
-						{!(INPUT_BLOCK_TYPES.includes(block.widget)) && (
-						<><Menu.Item
+						{!INPUT_BLOCK_TYPES.includes(block.widget) && (
+							<Menu.Item
 								value="rename"
 								sx={{ display: "flex" }}
-								onClick={() => handleBlockName(block.id)}
+								onClick={(e) => {
+									e.stopPropagation();
+									handleBlockName(block.id);
+								}}
 							>
 								<img
 									src={RenameIcon}
@@ -1034,21 +1049,25 @@ export const LayersPanel = observer(
 										marginRight: "12px",
 										position: "relative",
 										left: "4px",
-									}} />
+									}}
+								/>
 								Rename
 							</Menu.Item>
-							</>)}
-							<Menu.Item
-								value="duplicate"
-								sx={{ display: "flex" }}
-								onClick={(e: React.MouseEvent<HTMLElement>) => handleDuplicate(e, block.id)}
-							>
-									<img
-										src={DuplicateIcon}
-										alt="Duplicate Icon"
-										style={{ marginRight: "8px" }} />{" "}
-									Duplicate
-								</Menu.Item>
+						)}
+						<Menu.Item
+							value="duplicate"
+							sx={{ display: "flex" }}
+							onClick={(e: React.MouseEvent<HTMLElement>) =>
+								handleDuplicate(e, block.id)
+							}
+						>
+							<img
+								src={DuplicateIcon}
+								alt="Duplicate Icon"
+								style={{ marginRight: "8px" }}
+							/>
+							Duplicate
+						</Menu.Item>
 						<Menu.Item
 							value="delete"
 							sx={{ display: "flex" }}
@@ -1056,7 +1075,7 @@ export const LayersPanel = observer(
 						>
 							<DeleteOutlineOutlinedIcon
 								style={{ color: "#757575", marginRight: "6px" }}
-							/>{" "}
+							/>
 							Delete
 						</Menu.Item>
 					</Menu>
