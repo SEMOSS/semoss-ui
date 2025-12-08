@@ -1,5 +1,5 @@
-import { Box, Button } from "@mui/material";
 import { useEffect, useState } from "react";
+import { Box, Button } from "@semoss/ui";
 import type { FilterComponentProps } from "../filter";
 import FilterIconComponent from "./FilterIconComponent";
 import FilterListComponent from "./FilterListComponent";
@@ -29,7 +29,7 @@ const FilterChecklistComponent: React.FC<FilterComponentProps> = ({
 		}
 	}, [resetKey, mode, JSON.stringify(checkedValues)]);
 
-	const handleApply = async () => {
+	const handleApply = () => {
 		let selected: string[] = [];
 
 		selected = checked;

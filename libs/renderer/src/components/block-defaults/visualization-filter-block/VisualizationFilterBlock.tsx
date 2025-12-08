@@ -1,6 +1,12 @@
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useState } from "react";
-import { Box, styled, Typography, useNotification } from "@semoss/ui";
+import {
+	Box,
+	CircularProgress,
+	styled,
+	Typography,
+	useNotification,
+} from "@semoss/ui";
 import { useBlock, useBlocks } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import FilterChecklistComponent from "./ModularFilterComponents/FilterChecklistComponent";
@@ -18,6 +24,7 @@ const FilterContainer = styled(Box)(({ theme }) => ({
 	alignSelf: "stretch",
 	borderRadius: theme.shape.borderRadius,
 	border: `1px solid ${theme.palette.divider}`,
+	position: "relative",
 }));
 
 const FilterHeader = styled(Box)(({ theme }) => ({
@@ -39,6 +46,23 @@ const FilterBody = styled(Box)(({ theme }) => ({
 	padding: theme.spacing(1.25),
 	width: "100%",
 	height: "100%",
+}));
+
+const LoadingOverlay = styled(Box)(({ theme }) => ({
+	position: "absolute",
+	top: 0,
+	left: 0,
+	right: 0,
+	bottom: 0,
+	display: "flex",
+	flexDirection: "column",
+	alignItems: "center",
+	justifyContent: "center",
+	gap: theme.spacing(1.5),
+	backgroundColor: "rgba(255, 255, 255, 0.7)",
+	backdropFilter: "blur(2px)",
+	borderRadius: theme.shape.borderRadius,
+	zIndex: 1300,
 }));
 export interface VisualizationFilterBlockDef
 	extends BlockDef<"visualization-filter"> {
@@ -73,6 +97,7 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 	const notification = useNotification();
 	const { state } = useBlocks();
 	const [resetChecked, setResetChecked] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
 	// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
 	const blocks = state.blocks;
 	useEffect(() => {
@@ -90,63 +115,73 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 			});
 			return;
 		}
-		//set initial value of valuesString -- will change based off mode and array length
-		let valuesString = "";
-		// Update the selected values in the block's data
-		if (mode !== "slider" && mode !== "multiselect") {
-			setData("selectedValues", selected);
-		}
-
+		// Set loading to true and try filter logic
+		setIsLoading(true);
 		try {
-			for (let i = 0; i < data.frame.length; i++) {
-				// Construct the command to set a filter on the frame based on the selected column and values
-				const pixelCommand = `META | UnfilterFrame(${data.frame[i]});`;
-
-				// Execute the command as a side effect in the application state
-				// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
-				const response = await state.runSideEffect(pixelCommand);
+			// Set initial value, this will change based off mode and array length
+			let valuesString = "";
+			// Update the selected values in the block's data
+			if (mode !== "slider" && mode !== "multiselect") {
+				setData("selectedValues", selected);
 			}
-			// biome-ignore lint/correctness/noUnusedVariables: <use error as needed>
-		} catch (error) {
-			// If an error occurs, notify the user with an error message
-			notification.add({
-				color: "error",
-				message:
-					"Invalid response or errors found while applying the filter.",
-			});
-		}
+			// Try to create filter pixel and apply it to the frame
+			// Use notifications to dsipaly messages based on the response
+			try {
+				for (let i = 0; i < data.frame.length; i++) {
+					// Construct the command to set a filter on the frame based on the selected column and values
+					const pixelCommand = `META | UnfilterFrame(${data.frame[i]});`;
 
-		if (type === "slider") {
-			// Convert the selected string values to numbers for range
-			const selectedNumbers = selected.map((s) => parseInt(s, 10));
-			valuesString = `[${selectedNumbers}]`;
-		} else {
-			// if selected is only one value, do not create an array of values to pass in (this is to account for multi select)
-			if (selected.length === 1) {
-				valuesString = `'${selected}'`;
+					// Execute the command as a side effect in the application state
+					await state.runSideEffect(pixelCommand);
+					// If an successful apply occurs, notify the user with a success message
+					notification.add({
+						color: "success",
+						message: "Filter applied successfully!",
+					});
+				}
+				// biome-ignore lint/correctness/noUnusedVariables: <Error messsage is not needed for notification>
+			} catch (error) {
+				// If an error occurs, notify the user with an error message
+				notification.add({
+					color: "error",
+					message:
+						"Invalid response or errors found while applying the filter.",
+				});
+			}
+
+			if (type === "slider") {
+				// Convert the selected string values to numbers for range
+				const selectedNumbers = selected.map((s) => parseInt(s, 10));
+				valuesString = `[${selectedNumbers}]`;
 			} else {
-				valuesString = `[${selected}]`;
+				// if selected is only one value, do not create an array of values to pass in (this is to account for multi select)
+				if (selected.length === 1) {
+					valuesString = `'${selected}'`;
+				} else {
+					valuesString = `[${selected}]`;
+				}
 			}
-		}
-		// Create a string representation of the selected numbers array
-		try {
-			// if no items are selected, do not use the value string
-			for (let i = 0; i < data.frame.length; i++) {
-				// Construct the command to set a filter on the frame based on the selected column and values
-				const pixelCommand = `META | ${data.frame[i]} | AddFrameFilter(((${data.column} == ${selected.length > 0 ? valuesString : "[]"})));`;
+			// Create a string representation of the selected numbers array
+			try {
+				// if no items are selected, do not use the value string
+				for (let i = 0; i < data.frame.length; i++) {
+					// Construct the command to set a filter on the frame based on the selected column and values
+					const pixelCommand = `META | ${data.frame[i]} | AddFrameFilter(((${data.column} == ${selected.length > 0 ? valuesString : "[]"})));`;
 
-				// Execute the command as a side effect in the application state
-				// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
-				const response = await state.runSideEffect(pixelCommand);
+					// Execute the command as a side effect in the application state
+					await state.runSideEffect(pixelCommand);
+				}
+				// biome-ignore lint/correctness/noUnusedVariables: <Error messsage is not needed for notification>
+			} catch (error) {
+				// If an error occurs, notify the user with an error message
+				notification.add({
+					color: "error",
+					message:
+						"Invalid response or errors found while applying the filter.",
+				});
 			}
-			// biome-ignore lint/correctness/noUnusedVariables: <use as needed>
-		} catch (error) {
-			// If an error occurs, notify the user with an error message
-			notification.add({
-				color: "error",
-				message:
-					"Invalid response or errors found while applying the filter.",
-			});
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -157,44 +192,52 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 	 * on the filter component.
 	 */
 	const handleReset = async () => {
-		// Update the block's data by removing any selected values
-		setData("selectedValues", [...data.listOptions]);
-
-		// Reset the resetChecked state to true to indicate that the reset action has been performed
-		setResetChecked(true);
-
+		setIsLoading(true);
 		try {
-			for (let i = 0; i < data.frame.length; i++) {
-				// Construct the command to unfilter the frame in the application state
-				const pixelUnfilterCommand = `META | UnfilterFrame(${data.frame[i]});`;
-				// Execute the command as a side effect in the application state
-				// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
-				const response =
+			// Update the block's data by removing any selected values
+			setData("selectedValues", [...data.listOptions]);
+
+			// Reset the resetChecked state to true to indicate that the reset action has been performed
+			setResetChecked(true);
+
+			try {
+				for (let i = 0; i < data.frame.length; i++) {
+					// Construct the command to unfilter the frame in the application state
+					const pixelUnfilterCommand = `META | UnfilterFrame(${data.frame[i]});`;
+					// Execute the command as a side effect in the application state
 					await state.runSideEffect(pixelUnfilterCommand);
-				const res = await state.runSideEffect(
-					`META | Frame(${data.frame[i]}) | Select(${data.column}).as([${data.column}])|Group(${data.column})|Sort(${data.column}) | Offset(0) | Limit(1000) | Collect(1000);`,
-				);
-				const values = (
-					res?.pixelReturn?.[0]?.output as {
-						// biome-ignore lint/suspicious/noExplicitAny: <more information needed>
-						data?: { values?: any[] };
-					}
-				)?.data?.values;
-				const options = values.map((item) => String(item[0]));
-				setData("listOptions", options);
+					const res = await state.runSideEffect(
+						`META | Frame(${data.frame[i]}) | Select(${data.column}).as([${data.column}])|Group(${data.column})|Sort(${data.column}) | Offset(0) | Limit(1000) | Collect(1000);`,
+					);
+					const values = (
+						res?.pixelReturn?.[0]?.output as {
+							data?: { values };
+						}
+					)?.data?.values;
+					const options = values.map((item) => String(item[0]));
+					setData("listOptions", options);
+				}
+				// If an successful reset occurs, notify the user with a success message
+				notification.add({
+					color: "success",
+					message: "Unfilter applied successfully!",
+				});
+			} catch (error) {
+				// If an error occurs, notify the user with an error message
+				notification.add({
+					color: "error",
+					message: `Invalid response or errors found while fetching options. ${error}`,
+				});
 			}
-		} catch (error) {
-			// If an error occurs, notify the user with an error message
-			notification.add({
-				color: "error",
-				message: `Invalid response or errors found while fetching options. ${error}`,
-			});
+		} finally {
+			setIsLoading(false);
 		}
 	};
 	return (
 		<div
 			style={{
 				...data.style,
+				position: "relative",
 			}}
 			{...attrs}
 		>
@@ -288,6 +331,14 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 					)}
 				</FilterBody>
 			</FilterContainer>
+			{isLoading && (
+				<LoadingOverlay>
+					<CircularProgress />
+					<Typography variant="body2" sx={{ fontWeight: 500 }}>
+						Applying filter...
+					</Typography>
+				</LoadingOverlay>
+			)}
 		</div>
 	);
 });
