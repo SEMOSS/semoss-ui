@@ -1049,11 +1049,6 @@ export const LayersPanel = observer(
 								<StyledRenameImage
 									src={RenameIcon}
 									alt="Rename Icon"
-									// style={{
-									// 	marginRight: "12px",
-									// 	position: "relative",
-									// 	left: "4px",
-									// }}
 								/>
 								Rename
 							</Menu.Item>
