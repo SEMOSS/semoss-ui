@@ -260,6 +260,12 @@ const StyledIconButton = styled(IconButton)(() => ({
 	bottom: "4px",
 }));
 
+const StyledRenameImage = styled("img")(() => ({
+	marginRight: "12px",
+	position: "relative",
+	left: "4px",
+}));
+
 export const PAGE_BLOCK: BlockJSON = {
 	widget: "page",
 	data: {
@@ -1040,14 +1046,14 @@ export const LayersPanel = observer(
 									handleBlockName(block.id);
 								}}
 							>
-								<img
+								<StyledRenameImage
 									src={RenameIcon}
 									alt="Rename Icon"
-									style={{
-										marginRight: "12px",
-										position: "relative",
-										left: "4px",
-									}}
+									// style={{
+									// 	marginRight: "12px",
+									// 	position: "relative",
+									// 	left: "4px",
+									// }}
 								/>
 								Rename
 							</Menu.Item>
