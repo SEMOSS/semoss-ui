@@ -1,0 +1,25 @@
+import { observer } from "mobx-react-lite";
+import { useRoot } from "@/hooks";
+
+interface AppLogoProps {
+	/**
+	 * Show the full logo
+	 */
+	full: boolean;
+}
+
+export const AppLogo: React.FC<AppLogoProps> = observer(({ full = false }) => {
+	const { root } = useRoot();
+
+	return (
+		<div
+			className={`flex h-full w-full select-none flex-row items-center gap-2 overflow-hidden transition-all duration-200 ease-in-out ${full ? "" : "justify-center"}`}
+		>
+			{full ? (
+				<img alt="logo" src={root.theme.images.app} />
+			) : (
+				<img alt="logo" src={root.theme.images.logo} />
+			)}
+		</div>
+	);
+});

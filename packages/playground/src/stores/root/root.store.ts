@@ -1,22 +1,17 @@
-import { configure, makeAutoObservable, runInAction } from "mobx";
+import { configure, makeAutoObservable } from "mobx";
+import appImage from "@/assets/img/app.svg";
+import landingImage from "@/assets/img/landing.png";
+import loginImage from "@/assets/img/login.svg";
+import logoImage from "@/assets/img/logo.svg";
+import workspaceImage from "@/assets/img/workspace.png";
 import type { Theme } from "@/types";
 
 configure({
 	enforceActions: "always",
 });
 
-const APP_NAME = import.meta.env.VITE_APP_NAME
-	? import.meta.env.VITE_APP_NAME
-	: "";
-const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
-	? import.meta.env.VITE_APP_DESCRIPTION
-	: "";
-const APP_LOGO_PATH = import.meta.env.VITE_APP_LOGO_PATH
-	? import.meta.env.VITE_APP_LOGO_PATH
-	: "";
-const APP_THEME = import.meta.env.VITE_APP_THEME
-	? import.meta.env.VITE_APP_THEME
-	: "{}";
+const NAME = import.meta.env.VITE_NAME ? import.meta.env.VITE_NAME : "";
+const THEME = import.meta.env.VITE_THEME ? import.meta.env.VITE_THEME : "{}";
 
 interface RootStoreInterface {
 	/**
@@ -28,6 +23,14 @@ interface RootStoreInterface {
 	 * Current theme setting
 	 */
 	theme: Theme;
+
+	/**
+	 * Custom breadcrumbs for the main layout
+	 */
+	breadcrumbs: {
+		name: string;
+		path: string;
+	}[];
 }
 
 /**
@@ -36,6 +39,7 @@ interface RootStoreInterface {
 export class RootStore {
 	private _store: RootStoreInterface = {
 		isInitialized: false,
+		breadcrumbs: [],
 		theme: {
 			name: "",
 			description: "",
@@ -45,53 +49,35 @@ export class RootStore {
 				secondaryColor: "",
 			},
 			images: {
-				logo: "",
-				defaultWorkspace: "",
-				appName: "",
+				app: appImage,
+				logo: logoImage,
+				login: loginImage,
+				landing: landingImage,
+				workspace: workspaceImage,
 			},
 			overrides: {
 				"main-layout": {},
 			},
-			playground: {
-				playgroundSidebar: [],
-				playgroundSecondarySidebar: [],
-				playgroundModelRequest: {
-					label: "",
-					url: "",
-				},
-				playgroundBanner: "",
-				playgroundHeader: "",
-				playgroundFooter: "",
-				playgroundModal: {
-					header: "",
-					message: "",
-				},
-				images: {
-					appName: "",
-					logo: "",
-					defaultWorkspace: "",
-				},
+			header: "",
+			footer: "",
+			landing: "",
+			sidebar: {
+				headerItems: [],
+				footerItems: [],
 			},
+			dialog: undefined,
 		},
 	};
 
 	constructor() {
 		// If parsing fails, fall back to environment variables only
-		if (APP_NAME) {
-			this._store.theme.name = APP_NAME;
-		}
-
-		if (APP_DESCRIPTION) {
-			this._store.theme.description = APP_DESCRIPTION;
-		}
-
-		if (APP_LOGO_PATH) {
-			this._store.theme.images.logo = APP_LOGO_PATH;
+		if (NAME) {
+			this._store.theme.name = NAME;
 		}
 
 		// merge with the environment variables
 		try {
-			const theme = JSON.parse(APP_THEME) as Partial<Theme>;
+			const theme = JSON.parse(THEME) as Partial<Theme>;
 
 			// update the theme
 			this.updateTheme(theme);
@@ -121,14 +107,34 @@ export class RootStore {
 	}
 
 	/**
+	 * Get the current breadcrumbs
+	 */
+	get breadcrumbs() {
+		return this._store.breadcrumbs;
+	}
+
+	/**
+	 * Set custom breadcrumbs
+	 */
+	setBreadcrumbs = (breadcrumbs: RootStore["breadcrumbs"]) => {
+		this._store.breadcrumbs = breadcrumbs;
+	};
+
+	/**
+	 * Clear breadcrumbs (use default route-based breadcrumbs)
+	 */
+	clearBreadcrumbs = () => {
+		this._store.breadcrumbs = [];
+	};
+
+	/**
 	 * Set the default theme
 	 */
 	initialize = async (theme: Partial<Theme>): Promise<void> => {
 		this.updateTheme(theme);
 
-		runInAction(() => {
-			this._store.isInitialized = true;
-		});
+		// set as initialized
+		this._store.isInitialized = true;
 	};
 
 	/**
@@ -157,81 +163,16 @@ export class RootStore {
 				...this._store.theme.overrides,
 				...(theme?.overrides || {}),
 			},
-			// additional playground fields
-			playground: {
-				images: {
-					...this._store.theme?.playground?.images,
-					...(theme?.playground?.images || {}),
-				},
-				playgroundSidebar: Array.isArray(
-					theme?.playground?.playgroundSidebar,
-				)
-					? theme.playground?.playgroundSidebar
-					: Array.isArray(this._store.theme.playgroundSidebar)
-						? this._store.theme.playgroundSidebar
-						: [],
-				playgroundSecondarySidebar: Array.isArray(
-					theme?.playground?.playgroundSecondarySidebar,
-				)
-					? theme.playground?.playgroundSecondarySidebar
-					: Array.isArray(
-								this._store.theme.playground
-									.playgroundSecondarySidebar,
-							)
-						? this._store.theme.playground
-								.playgroundSecondarySidebar
-						: [],
-				playgroundModelRequest: {
-					...this._store.theme.playground.playgroundModelRequest,
-					...(theme?.playground?.playgroundModelRequest || {}),
-				},
-				playgroundBanner:
-					typeof theme?.playground?.playgroundBanner === "string"
-						? theme.playground?.playgroundBanner
-						: typeof this._store.theme.playgroundBanner === "string"
-							? this._store.theme.playgroundBanner
-							: "",
 
-				playgroundHeader:
-					typeof theme?.playground?.playgroundHeader === "string"
-						? theme.playground?.playgroundHeader
-						: typeof this._store.theme.playgroundHeader === "string"
-							? this._store.theme.playgroundHeader
-							: "",
-				playgroundFooter:
-					typeof theme?.playground?.playgroundFooter === "string"
-						? theme.playground?.playgroundFooter
-						: typeof this._store.theme.playgroundFooter === "string"
-							? this._store.theme.playgroundFooter
-							: "",
-				playgroundModal:
-					theme?.playground?.playgroundModal &&
-					typeof theme.playground.playgroundModal === "object" &&
-					typeof theme.playground.playgroundModal.message ===
-						"string" &&
-					typeof theme.playground.playgroundModal.header === "string"
-						? {
-								message:
-									theme.playground.playgroundModal.message,
-								header: theme.playground.playgroundModal.header,
-							}
-						: this._store.theme.playground.playgroundModal &&
-								typeof this._store.theme.playground
-									.playgroundModal.message === "string" &&
-								typeof this._store.theme.playground
-									.playgroundModal.header === "string"
-							? {
-									message:
-										this._store.theme.playground
-											.playgroundModal.message,
-									header: this._store.theme.playground
-										.playgroundModal.header,
-								}
-							: {
-									message: "",
-									header: "",
-								},
+			header: theme?.header || this._store.theme.header,
+			footer: theme?.footer || this._store.theme.footer,
+			landing: theme?.landing || this._store.theme.landing,
+			sidebar: {
+				...this._store.theme.sidebar,
+				...(theme?.sidebar || {}),
 			},
+
+			dialog: theme?.dialog || this._store.theme.dialog,
 		};
 
 		// apply the theme to document root

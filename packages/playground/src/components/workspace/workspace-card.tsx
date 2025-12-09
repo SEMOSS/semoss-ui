@@ -1,6 +1,5 @@
 import { Ellipsis, SquarePen } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	Button,
@@ -18,7 +17,7 @@ import {
 import { useRoot } from "@/hooks";
 import type { Workspace } from "@/types";
 
-export interface WorkspaceCardProps {
+interface WorkspaceCardProps {
 	workspace: Pick<Workspace, "workspace_id" | "name" | "description">;
 	onEditClick: () => void;
 	onDeleteClick: () => void;
@@ -36,36 +35,6 @@ export const WorkspaceCard = observer(
 		 */
 		const navigate = useNavigate();
 		const { root } = useRoot();
-		const [logo, setLogo] = useState(null);
-
-		useEffect(() => {
-			const loadLogo = async () => {
-				if (root.theme?.playground?.images?.logo) {
-					const base64data = btoa(
-						unescape(
-							encodeURIComponent(
-								root.theme.playground.images.logo,
-							),
-						),
-					);
-					setLogo(base64data);
-				} else if (root.theme.images.logo) {
-					try {
-						const res = await fetch(root.theme.images.logo);
-						const svg = await res.text();
-						const base64data = btoa(
-							unescape(encodeURIComponent(String(svg))),
-						);
-						setLogo(base64data);
-					} catch (err) {
-						console.error("Failed to load logo:", err);
-						setLogo(null);
-					}
-				}
-			};
-
-			loadLogo();
-		}, [root.theme.images.logo, root.theme?.playground?.images?.logo]);
 
 		/**
 		 * Functions
@@ -88,11 +57,11 @@ export const WorkspaceCard = observer(
 				<CardContent className="flex flex-col gap-4 p-6">
 					<div className="flex justify-between">
 						<div className="text-4xl">
-							{logo ? (
+							{root.theme?.images.logo ? (
 								<img
-									className="flex h-10 flex-row items-center"
+									className="flex h-10 select-none flex-row items-center"
 									alt="logo"
-									src={`data:image/svg+xml;base64,${logo}`}
+									src={root.theme?.images.logo}
 								/>
 							) : null}
 						</div>

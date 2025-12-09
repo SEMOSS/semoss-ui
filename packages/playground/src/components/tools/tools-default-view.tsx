@@ -94,7 +94,7 @@ const JSONEditor = ({ value, onChange }: JSONEditorProps) => {
 	);
 };
 
-export interface MCPTool {
+interface MCPTool {
 	name: string;
 	description?: string;
 	inputSchema?: {

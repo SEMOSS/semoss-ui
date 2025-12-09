@@ -2,10 +2,8 @@
 
 interface ImportMetaEnv {
 	readonly VITE_PLATFORM_URL: string;
-	readonly VITE_APP_NAME: string;
-	readonly VITE_APP_DESCRIPTION: string;
-	readonly VITE_APP_LOGO_PATH: string;
-	readonly VITE_APP_THEME: string;
+	readonly VITE_NAME: string;
+	readonly VITE_THEME: string;
 	readonly VITE_DEFAUlT_MODEL_ID: string;
 	readonly VITE_DEFAUlT_MODEL_NAME: string;
 	readonly VITE_ENABLE_MODEL_SELECT: string;

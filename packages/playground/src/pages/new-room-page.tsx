@@ -13,7 +13,6 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import background from "@/assets/img/background.png";
 import {
 	RoomInput,
 	RoomOptions,
@@ -21,7 +20,7 @@ import {
 	workspaceToApp,
 } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
-import { useChat, useRoot } from "@/hooks";
+import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { App, Workspace } from "@/types";
 
@@ -32,6 +31,13 @@ import type { App, Workspace } from "@/types";
  */
 export const NewRoomPage = observer(() => {
 	const { root } = useRoot();
+
+	useGlobalBreadcrumbs([
+		{
+			name: "Home",
+			path: "/",
+		},
+	]);
 
 	const { chat } = useChat();
 	const navigate = useNavigate();
@@ -134,28 +140,31 @@ export const NewRoomPage = observer(() => {
 			<ResizablePanelGroup direction="horizontal">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
-						src={background}
+						src={root.theme.images.landing}
 						alt="Background"
-						className="absolute inset-0 h-full w-full object-cover"
+						className="absolute inset-0 h-full w-full select-none object-cover"
 					/>
 					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
-						{/* Announcement banner (from theme) */}
-						{root.theme.playground.playgroundBanner ? (
-							<div className="w-full rounded-md bg-secondary px-4 py-2 text-center text-white">
-								<span className="text-sm">
-									{root.theme.playground.playgroundBanner}
-								</span>
+						{root.theme.landing ? (
+							<div
+								className="mx-auto flex max-w-xl"
+								// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+								dangerouslySetInnerHTML={{
+									__html: root.theme.landing,
+								}}
+							/>
+						) : (
+							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
+								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
+									Welcome
+								</div>
+								{root.theme.description ? (
+									<div className="text-center text-muted-foreground text-sm leading-normal">
+										{root.theme.description}
+									</div>
+								) : null}
 							</div>
-						) : null}
-
-						<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
-							<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-								Welcome
-							</div>
-							<div className="text-center text-muted-foreground text-sm leading-normal">
-								{root.theme.description}
-							</div>
-						</div>
+						)}
 
 						<RoomInput
 							isLoading={

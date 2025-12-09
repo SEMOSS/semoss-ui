@@ -3,6 +3,7 @@ import { useInsight } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
 import { RootContext } from "@/contexts";
 import { RootStore } from "@/stores";
+import type { Theme } from "@/types";
 
 export const RootLayout = ({ children }) => {
 	const { system } = useInsight();
@@ -11,12 +12,16 @@ export const RootLayout = ({ children }) => {
 	const rootStore = useMemo(() => {
 		if (system.config.theme) {
 			const store = new RootStore();
+
+			// parse the theme
+			let theme: Partial<Theme> = {};
 			try {
-				// initialize it with the new theme
-				store.initialize(
-					JSON.parse(String(system?.config?.theme?.THEME_MAP)),
-				);
+				theme = JSON.parse(
+					String(system?.config?.theme?.THEME_MAP) || "{}",
+				)?.playground;
 			} catch (_e) {}
+
+			store.initialize(theme);
 
 			return store;
 		}

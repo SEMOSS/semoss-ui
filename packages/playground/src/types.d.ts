@@ -14,9 +14,11 @@ export interface Theme {
 
 	/** Images throughout app */
 	images: {
-		appName?: string;
-		logo?: string;
-		defaultWorkspace?: string;
+		app: string;
+		logo: string;
+		login: string;
+		landing: string;
+		workspace: string;
 	};
 
 	/**
@@ -26,73 +28,49 @@ export interface Theme {
 		"main-layout": React.CSSProperties;
 	};
 
-	playground: {
-		/**
-		 * Custom sidebar routes. url should point to a project
-		 */
-		playgroundSidebar?: {
-			pathName: string;
+	/**
+	 * HTML content tos how in the header
+	 */
+	header: string;
+
+	/**
+	 * HTML content tos how in the footer
+	 */
+	footer: string;
+
+	/**
+	 * Content to show on the landing page
+	 */
+	landing: string;
+
+	/**
+	 * Content to show in the sidebar
+	 */
+	sidebar: {
+		headerItems: {
 			name: string;
-			icon: IconNode;
-		}[];
-
-		/**
-		 * Playground Banner
-		 */
-		playgroundBanner?: string;
-
-		/**
-		 * Playground Header
-		 */
-		playgroundHeader?: string;
-
-		/**
-		 * Playground Footer
-		 */
-		playgroundFooter?: string;
-
-		/**
-		 * Playground Secondary sidebar for support operations
-		 */
-		playgroundSecondarySidebar?: {
+			icon: string;
+			path: string;
 			url: string;
-			pathName: string;
+			embed: boolean;
+		}[];
+		footerItems: {
 			name: string;
-			icon: IconNode;
-		}[];
-
-		/**
-		 * Optional display in model dropdown to request a new model
-		 */
-		playgroundModelRequest?: {
-			label: string;
+			icon: string;
+			path: string;
 			url: string;
-		};
-
-		/**
-		 * Playground Modal displayed on startup
-		 */
-		playgroundModal?: {
-			message: string;
-			header: string;
-		};
-
-		/**
-		 * Font settings for the app
-		 */
-		font?: {
-			family: string;
-		};
-
-		/** Images throughout app */
-		images: {
-			appName?: string;
-			logo?: string;
-			defaultWorkspace?: string;
-		};
+			embed: boolean;
+		}[];
 	};
 
-	[key: string]: unknown;
+	/**
+	 * Content to show in the dialog
+	 */
+	dialog?: {
+		key: string;
+		title: string;
+		content: string;
+	};
 }
 
 export interface Engine {

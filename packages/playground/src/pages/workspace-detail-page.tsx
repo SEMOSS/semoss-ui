@@ -6,7 +6,7 @@ import {
 	SearchIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import {
@@ -33,7 +33,7 @@ import {
 	WorkspaceMCPList,
 	WorkspaceOverlay,
 } from "@/components";
-import { useRoot } from "@/hooks";
+import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/useChat";
 import type { Workspace } from "@/types";
 
@@ -53,7 +53,6 @@ export const WorkspaceDetailPage = observer(() => {
 
 	const [tab, setTab] = useState<string>("chats");
 	const [search, setSearch] = useState<string>("");
-	const [logo, setLogo] = useState(null);
 
 	const debouncedSearch = useDebouncedValue(search);
 
@@ -70,32 +69,24 @@ export const WorkspaceDetailPage = observer(() => {
 		},
 	);
 
-	useEffect(() => {
-		const loadLogo = async () => {
-			if (root.theme?.playground?.images?.logo) {
-				const base64data = btoa(
-					unescape(
-						encodeURIComponent(root.theme.playground.images.logo),
-					),
-				);
-				setLogo(base64data);
-			} else if (root.theme.images.logo) {
-				try {
-					const res = await fetch(root.theme.images.logo);
-					const svg = await res.text();
-					const base64data = btoa(
-						unescape(encodeURIComponent(String(svg))),
-					);
-					setLogo(base64data);
-				} catch (err) {
-					console.error("Failed to load logo:", err);
-					setLogo(null);
-				}
-			}
-		};
-
-		loadLogo();
-	}, [root.theme.images.logo, root.theme?.playground?.images?.logo]);
+	// set the breadcrumbs
+	useGlobalBreadcrumbs([
+		{
+			name: "Home",
+			path: "/",
+		},
+		{
+			name: "Workspace",
+			path: "/workspace",
+		},
+		{
+			name:
+				getWorkspace.status === "SUCCESS"
+					? getWorkspace.data.name
+					: "Loading",
+			path: `/workspace/${workspaceId}`,
+		},
+	]);
 
 	if (getWorkspace.status === "LOADING" || isLoading) {
 		return (
@@ -117,11 +108,11 @@ export const WorkspaceDetailPage = observer(() => {
 				<div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 overflow-hidden px-9 py-4 pt-20">
 					<div className="flex flex-row gap-2">
 						<div className="items-center text-2xl">
-							{logo ? (
+							{root.theme?.images.logo ? (
 								<img
-									className="flex h-6 flex-row items-center"
+									className="flex h-6 select-none flex-row items-center"
 									alt="logo"
-									src={`data:image/svg+xml;base64,${logo}`}
+									src={root.theme?.images.logo}
 								/>
 							) : null}
 						</div>

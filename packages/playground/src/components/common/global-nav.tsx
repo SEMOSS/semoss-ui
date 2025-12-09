@@ -1,10 +1,4 @@
-import {
-	ComputerIcon,
-	Icon,
-	Search,
-	SquarePenIcon,
-	TrashIcon,
-} from "lucide-react";
+import { ComputerIcon, Search, SquarePenIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import {
@@ -38,9 +32,11 @@ import {
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
+	useSidebar,
 } from "@semoss/ui/next";
 import { useChat, useRoot } from "@/hooks";
 import { AppLogo } from "./app-logo";
+import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
 
 const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
@@ -54,6 +50,7 @@ export const GlobalNav = observer(() => {
 	const { root } = useRoot();
 	const [search, setSearch] = useState("");
 	const { chat } = useChat();
+	const { open } = useSidebar();
 	const { pathname } = useLocation();
 	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
 	const debouncedSearch = useDebouncedValue(search);
@@ -104,10 +101,6 @@ export const GlobalNav = observer(() => {
 		},
 	});
 
-	const sidebarItems = root.theme.playground.playgroundSidebar ?? [];
-	const sidebarSecondaryItems =
-		root.theme.playground.playgroundSecondarySidebar ?? [];
-
 	/**
 	 * Effects
 	 */
@@ -130,9 +123,9 @@ export const GlobalNav = observer(() => {
 							<Link
 								to={"/"}
 								aria-label={"Go Home"}
-								className="flex h-8 w-full flex-1 items-center"
+								className="flex h-12 w-full flex-1 items-center"
 							>
-								<AppLogo />
+								<AppLogo full={open} />
 							</Link>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
@@ -178,30 +171,16 @@ export const GlobalNav = observer(() => {
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					)}
-					{Array.isArray(sidebarItems) &&
-						sidebarItems.map((item) => (
-							<SidebarMenuItem key={item.name}>
-								<SidebarMenuButton
-									asChild
-									isActive={
-										!!matchPath(
-											`/app/${item.pathName}`,
-											pathname,
-										)
-									}
-								>
-									<Link
-										to={`/app/${item.pathName}`}
-										aria-label={item.name}
-									>
-										{Array.isArray(item?.icon) ? (
-											<Icon iconNode={item.icon} />
-										) : null}
-										{item.name}
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-						))}
+					{root.theme.sidebar.headerItems.map((item, index) => (
+						<GlobalNavItem
+							key={item.path}
+							name={item.name}
+							icon={item.icon}
+							path={item.path}
+							url={item.url}
+							embed={item.embed}
+						/>
+					))}
 					<SidebarMenuItem>&nbsp;</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarHeader>
@@ -301,23 +280,16 @@ export const GlobalNav = observer(() => {
 			</SidebarContent>
 			<SidebarFooter>
 				<SidebarMenu className="gap-2 px-2 pt-2">
-					{Array.isArray(sidebarSecondaryItems) &&
-						sidebarSecondaryItems?.length > 0 &&
-						sidebarSecondaryItems.map((item) => (
-							<SidebarMenuItem key={item.name}>
-								<SidebarMenuButton asChild>
-									<a
-										href={item.url}
-										target="_blank"
-										rel="noopener noreferrer"
-										className="cursor-pointer"
-									>
-										<Icon iconNode={item?.icon} />
-										<span>{item.name}</span>
-									</a>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-						))}
+					{root.theme.sidebar.footerItems.map((item) => (
+						<GlobalNavItem
+							key={item.path}
+							name={item.name}
+							icon={item.icon}
+							path={item.path}
+							url={item.url}
+							embed={item.embed}
+						/>
+					))}
 				</SidebarMenu>
 				<NavUser />
 			</SidebarFooter>

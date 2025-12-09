@@ -12,7 +12,10 @@ import { useRoot } from "@/hooks";
 
 export const Header: React.FC = observer(() => {
 	const { root } = useRoot();
-	if (!root.theme.playground.playgroundHeader) return null;
+
+	if (!root.theme.header) {
+		return null;
+	}
 
 	return (
 		<header className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out">
@@ -41,9 +44,13 @@ export const Header: React.FC = observer(() => {
 			<Separator />
 
 			<SidebarTrigger />
-			<div className="font-semibold text-lg">
-				{root.theme.playground.playgroundHeader}
-			</div>
+			<div
+				className="font-semibold text-lg"
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+				dangerouslySetInnerHTML={{
+					__html: root.theme.header,
+				}}
+			/>
 		</header>
 	);
 });
