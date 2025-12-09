@@ -425,6 +425,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	const cardRef = useRef<HTMLDivElement>(null);
 	const [isInView, setIsInView] = useState(false);
 	const [hasDownloaded, setHasDownloaded] = useState(false);
+	const projectName = removeUnderscores(app?.project_name);
 
 	const open = Boolean(anchorEl);
 	const navigateApp = (appId: string) => {
@@ -813,14 +814,14 @@ export const AppTileCard = (props: AppTileCardProps) => {
 						<StyledCardHeader
 							title={
 								<div
-									title={removeUnderscores(app?.project_name)?.length > 10 ? removeUnderscores(app.project_name) : ""}
+									title={projectName?.length > 10 ? projectName : ""}
 									className={
-									removeUnderscores(app.project_name).length > 10
+									projectName?.length > 10
 										? "w-[10ch] truncate text-ellipsis font-normal text-[14px] leading-[143%]"
 										: "font-normal text-[14px] leading-[143%]"
 									}
 								>
-									{removeUnderscores(app.project_name)}
+									{projectName}
 								</div>
 							}
 						/>

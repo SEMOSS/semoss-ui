@@ -121,7 +121,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 	const { navbarActions, workspace, options, factory = () => null } = props;
 	const layoutRef = useRef<FlexLayout.Layout | null>(null);
 	const model = workspace.model;
-
+	const projectName = workspace?.metadata?.project_name;
 	// build the model from the layout
 	useEffect(() => {
 		const handler = (e: CustomEvent) => {
@@ -295,27 +295,27 @@ export const Workspace = observer((props: WorkspaceProps) => {
 							to={`/app/${workspace.metadata.project_id}/view`}
 						>
 							<div
-								title={workspace?.metadata?.project_name?.length > 10 ? workspace.metadata.project_name : ""}
+								title={projectName?.length > 10 ? projectName : ""}
 								className={
-									workspace.metadata.project_name.length > 10
+									projectName?.length > 10
 										? "w-[10ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
 										: "font-normal text-[16px] leading-[175%]"
 								}
 							>
-								{workspace.metadata.project_name}
+								{projectName}
 							</div>
 						</StyledHeaderLogo>
 
 						<StyledHeaderLogo to="">
 							<div
-								title={workspace?.metadata?.project_name?.length > 10 ? workspace.metadata.project_name : ""}
+								title={projectName?.length > 10 ? projectName : ""}
 								className={
-									workspace.metadata.project_name.length > 10
+									projectName?.length > 10
 										? "w-[10ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
 										: "font-normal text-[16px] leading-[175%]"
 								}
 							>
-								{workspace.metadata.project_name}
+								{projectName}
 							</div>
 							<span className="w-[10ch]"> - Editor</span>
 						</StyledHeaderLogo>

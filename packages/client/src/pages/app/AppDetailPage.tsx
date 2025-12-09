@@ -240,6 +240,7 @@ export const AppDetailPage = () => {
 	const { monolithStore, configStore } = useRootStore();
 	const notification = useNotification();
 	const { appId } = useParams();
+	const projectName = appInfo?.project_name;
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
 
@@ -606,10 +607,10 @@ export const AppDetailPage = () => {
 							variant="body1"
 						>
 							<div
-								title={appInfo?.project_name}
-								className={appInfo?.project_name.length > 10 ? "w-[10ch] truncate text-ellipsis" : ""}
+								title={projectName?.length > 10 ? projectName : ""}
+								className={projectName?.length > 10 ? "w-[10ch] truncate text-ellipsis" : ""}
 							>
-								{appInfo?.project_name}
+								{projectName}
 							</div>
 						</Breadcrumbs.Item>
 					</Breadcrumbs>
@@ -624,10 +625,10 @@ export const AppDetailPage = () => {
 									/>
 									<TitleSectionBodyWrapper>
 										<div
-											title={appInfo?.project_name?.length > 10 ? appInfo?.project_name : ""}
-											className={appInfo?.project_name.length > 10 ? "w-[10ch] truncate text-ellipsis font-normal text-[34px] leading-[150%]" : "font-normal text-[34px] leading-[150%"}
+											title={projectName?.length > 10 ? projectName : ""}
+											className={projectName?.length > 10 ? "w-[10ch] truncate text-ellipsis font-normal text-[34px] leading-[150%]" : "font-normal text-[34px] leading-[150%"}
 										>
-											{appInfo?.project_name}
+											{projectName}
 										</div>
 									</TitleSectionBodyWrapper>
 								</Box>
