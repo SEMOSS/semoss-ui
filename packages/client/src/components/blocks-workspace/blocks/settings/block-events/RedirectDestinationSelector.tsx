@@ -1,4 +1,4 @@
-import { Controller } from "react-hook-form";
+import { Controller} from "react-hook-form";
 import { Select, TextField } from "@semoss/ui";
 
 interface RedirectDestinationSelectorProps {
@@ -60,7 +60,7 @@ export const RedirectDestinationSelector = ({
 											key={`${page.id}-${index}`}
 											value={`${page.route}`}
 										>
-											{`/${page.route}`}
+											{page.id === "page-1" ? "/page-1" : `/${page.route}`}
 										</Select.Item>
 									))}
 								</Select>

@@ -1002,10 +1002,10 @@ export class StateStore {
 	 */
 	private generatePageId(): string {
 		let pageNum = 2;
-		while (this._store.blocks[`page--${pageNum}`]) {
+		while (this._store.blocks[`page-${pageNum}`]) {
 			pageNum++;
 		}
-		return `page--${pageNum}`;
+		return `page-${pageNum}`;
 	}
 
 	/**
