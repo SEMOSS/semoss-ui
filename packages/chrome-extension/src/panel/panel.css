@@ -59,6 +59,40 @@ body {
   overflow-y: auto;
 }
 
+.mode-switcher {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 12px;
+}
+
+.mode-switcher button {
+  flex: 1;
+  padding: 10px 20px;
+  background: transparent;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #666;
+}
+
+.mode-switcher button:hover {
+  border-color: #667eea;
+  color: #667eea;
+  transform: translateY(-2px);
+}
+
+.mode-switcher button.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
 .command-section {
   margin-bottom: 24px;
 }
@@ -334,4 +368,89 @@ body {
 .user-input-dialog .submit-btn:disabled {
   background: #cccccc;
   cursor: not-allowed;
+}
+
+/* Format Selector Styles */
+.format-selector {
+  margin-bottom: 20px;
+}
+
+.format-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #333;
+  font-size: 14px;
+}
+
+.format-options {
+  display: flex;
+  gap: 20px;
+}
+
+.format-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+}
+
+.format-option input[type="radio"] {
+  cursor: pointer;
+}
+
+.format-option .format-icon {
+  font-size: 16px;
+}
+
+.format-option .format-text {
+  font-weight: 500;
+}
+
+/* File Upload Section */
+.file-upload-section {
+  margin-bottom: 20px;
+}
+
+.upload-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+  font-size: 14px;
+}
+
+.file-input-wrapper {
+  margin-bottom: 12px;
+}
+
+.file-input {
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+}
+
+/* Script Loaded Badge */
+.script-loaded-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #e8f5e9;
+  border-left: 3px solid #4caf50;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #2e7d32;
+}
+
+.script-loaded-badge .badge-icon {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.script-loaded-badge .badge-text strong {
+  font-weight: 600;
 }

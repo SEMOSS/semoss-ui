@@ -19,13 +19,15 @@ export interface LLMAction {
 		| "wait"
 		| "done"
 		| "error"
-		| "askUser";
+		| "askUser"
+		| "navigate";
 	elementId?: number;
 	value?: string;
 	reason?: string;
 	message?: string;
 	question?: string; // For askUser action
 	fieldName?: string; // For askUser action - what field needs input
+	url?: string; // For navigate action
 }
 
 export class DirectWorkshopService {

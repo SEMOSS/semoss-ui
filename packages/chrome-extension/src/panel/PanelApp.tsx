@@ -4,6 +4,11 @@ import {
 	createDirectWorkshopService,
 	type LLMAction,
 } from "../services/directWorkshopAPI";
+import {
+	type GoogleRecorderScript,
+	type PlaywrightScript,
+	ScriptExecutor,
+} from "../services/scriptExecutor";
 
 const PanelApp: React.FC = () => {
 	const [hasSettings, setHasSettings] = useState(false);
@@ -17,9 +22,16 @@ const PanelApp: React.FC = () => {
 	const [userInputCallback, setUserInputCallback] = useState<
 		((value: string) => void) | null
 	>(null);
+	const [mode, setMode] = useState<"llm" | "script">("llm");
+	const [scriptJson, setScriptJson] = useState("");
+	const [jsonFormat, setJsonFormat] = useState<"playwright" | "google">(
+		"playwright",
+	);
 	const commandInputRef = React.useRef<HTMLTextAreaElement>(null);
 	const historyEndRef = React.useRef<HTMLDivElement>(null);
 	const userInputRef = React.useRef<HTMLInputElement>(null);
+	const fileInputRef = React.useRef<HTMLInputElement>(null);
+	const fileInputId = React.useId();
 
 	const loadSettings = React.useCallback(async () => {
 		try {
@@ -56,6 +68,307 @@ const PanelApp: React.FC = () => {
 
 	const openSettings = () => {
 		chrome.runtime.openOptionsPage();
+	};
+
+	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const file = event.target.files?.[0];
+		if (!file) return;
+
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			const content = e.target?.result as string;
+			setScriptJson(content);
+			setActionHistory([`📄 Loaded script: ${file.name}`]);
+		};
+		reader.onerror = () => {
+			setActionHistory(["❌ Error reading file"]);
+		};
+		reader.readAsText(file);
+	};
+
+	const handleRunScript = async () => {
+		if (!scriptJson.trim()) {
+			setActionHistory(["❌ Please upload a script JSON file first"]);
+			return;
+		}
+
+		setIsRunning(true);
+		setActionHistory([]);
+
+		try {
+			// Parse script based on format
+			let script: PlaywrightScript | GoogleRecorderScript;
+			if (jsonFormat === "playwright") {
+				script = ScriptExecutor.parseScript(scriptJson);
+			} else {
+				script = ScriptExecutor.parseGoogleRecorderScript(scriptJson);
+			}
+
+			// Get current tab
+			let tab: chrome.tabs.Tab | undefined;
+			if (chrome.devtools?.inspectedWindow) {
+				const tabId = chrome.devtools.inspectedWindow.tabId;
+				const tabs = await chrome.tabs.query({});
+				tab = tabs.find((t) => t.id === tabId);
+			} else {
+				const [currentTab] = await chrome.tabs.query({
+					active: true,
+					currentWindow: true,
+				});
+				tab = currentTab;
+			}
+
+			if (!tab || !tab.id) {
+				throw new Error("No active tab found");
+			}
+
+			// Convert script to actions based on format
+			let actions: Array<{
+				type: string;
+				url?: string;
+				selector?: string;
+				coords?: { x: number; y: number };
+				text?: string;
+				label?: string;
+				isPassword?: boolean;
+				waitAfterMs?: number;
+				tabId?: string;
+				isTriggerNewTab?: { isTrue: boolean; tabId: string };
+			}>;
+			if (jsonFormat === "playwright") {
+				actions = await ScriptExecutor.convertToActions(
+					script as PlaywrightScript,
+				);
+			} else {
+				actions = await ScriptExecutor.convertGoogleRecorderToActions(
+					script as GoogleRecorderScript,
+				);
+			}
+			addToHistory(`✓ Found ${actions.length} actions to execute`);
+
+			// Track tabs: maps tabId (tab-1, tab-2) to Chrome tab ID
+			const tabMap = new Map<string, number>();
+			tabMap.set("tab-1", tab.id); // First tab is the current tab
+			let currentTabId = tab.id;
+
+			// Execute each action
+			for (let i = 0; i < actions.length; i++) {
+				const action = actions[i];
+
+				// Handle tab switching (case-insensitive)
+				if (action.type.toLowerCase() === "switchtab") {
+					if (!action.tabId) {
+						throw new Error("switchTab action requires tabId");
+					}
+
+					const targetTabId = tabMap.get(action.tabId);
+
+					if (!targetTabId) {
+						addToHistory(
+							`⚠️ Waiting for new tab: ${action.tabId}...`,
+						);
+						// Wait for the tab to be created (from previous action)
+						await new Promise((resolve) =>
+							setTimeout(resolve, 1500),
+						); // Try to find the new tab
+						const allTabs = await chrome.tabs.query({});
+						// Assume the newest tab is the one we want
+						const newestTab = allTabs[allTabs.length - 1];
+						if (newestTab?.id) {
+							tabMap.set(action.tabId, newestTab.id);
+							currentTabId = newestTab.id;
+
+							// Make tab active
+							await chrome.tabs.update(currentTabId, {
+								active: true,
+							});
+
+							addToHistory(
+								`✓ Switched to new tab: ${action.tabId}`,
+							);
+
+							// Attach debugger to the new tab
+							try {
+								await chrome.runtime.sendMessage({
+									type: "ATTACH_DEBUGGER",
+									tabId: currentTabId,
+								});
+								if (chrome.runtime.lastError) {
+									// Ignore bfcache errors silently
+								}
+							} catch (error) {
+								console.log(
+									"Debugger attach (may already be attached):",
+									error,
+								);
+							}
+
+							// Wait for tab to become active and page to load
+							let loadTimeout = 15; // Max 15 seconds
+							while (loadTimeout > 0) {
+								const tabs = await chrome.tabs.query({});
+								const tab = tabs.find(
+									(t) => t.id === currentTabId,
+								);
+								if (tab && tab.status === "complete") {
+									// Give extra time for content script to initialize
+									await new Promise((resolve) =>
+										setTimeout(resolve, 1500),
+									);
+									break;
+								}
+								await new Promise((resolve) =>
+									setTimeout(resolve, 500),
+								);
+								loadTimeout--;
+							}
+						} else {
+							throw new Error(
+								`Could not find tab: ${action.tabId}`,
+							);
+						}
+					} else {
+						currentTabId = targetTabId;
+						await chrome.tabs.update(currentTabId, {
+							active: true,
+						});
+						addToHistory(`✓ Switched to tab: ${action.tabId}`);
+
+						// Attach debugger to the new tab
+						try {
+							await chrome.runtime.sendMessage({
+								type: "ATTACH_DEBUGGER",
+								tabId: currentTabId,
+							});
+							// Check for bfcache error and ignore it
+							if (chrome.runtime.lastError) {
+								// Ignore bfcache errors silently
+							}
+						} catch (error) {
+							console.log(
+								"Debugger attach (may already be attached):",
+								error,
+							);
+						}
+
+						// Wait for tab to become active and page to load
+						let loadTimeout = 15; // Max 15 seconds
+						while (loadTimeout > 0) {
+							const tabs = await chrome.tabs.query({});
+							const tab = tabs.find((t) => t.id === currentTabId);
+							if (tab && tab.status === "complete") {
+								// Give extra time for content script to initialize
+								await new Promise((resolve) =>
+									setTimeout(resolve, 1000),
+								);
+								break;
+							}
+							await new Promise((resolve) =>
+								setTimeout(resolve, 500),
+							);
+							loadTimeout--;
+						}
+					}
+
+					continue;
+				}
+
+				addToHistory(
+					`${i + 1}. ${action.type.toUpperCase()}${action.label ? `: ${action.label}` : ""}`,
+				);
+
+				// Handle ask user for TYPE actions
+				const onAskUser = async (
+					label: string,
+					isPassword: boolean,
+				): Promise<string> => {
+					return new Promise<string>((resolve) => {
+						setUserInputPrompt(
+							`${isPassword ? "🔒 " : ""}${label}`,
+						);
+						setWaitingForUserInput(true);
+						setUserInputCallback(() => (value: string) => {
+							setWaitingForUserInput(false);
+							setUserInputPrompt("");
+							setUserInputValue("");
+							setUserInputCallback(null);
+							addToHistory(`✓ User provided input`);
+							resolve(value);
+						});
+					});
+				};
+
+				await ScriptExecutor.executeAction(
+					currentTabId,
+					action,
+					onAskUser,
+				);
+
+				// If this action triggers a new tab, track it
+				if (action.isTriggerNewTab?.isTrue) {
+					addToHistory(
+						`⏳ Waiting for new tab: ${action.isTriggerNewTab.tabId}...`,
+					);
+					// Wait for new tab to be created
+					await new Promise((resolve) => setTimeout(resolve, 1500));
+
+					// Find the new tab
+					const allTabs = await chrome.tabs.query({});
+					const newestTab = allTabs[allTabs.length - 1];
+					if (newestTab?.id) {
+						tabMap.set(action.isTriggerNewTab.tabId, newestTab.id);
+						currentTabId = newestTab.id;
+						addToHistory(
+							`✓ New tab created: ${action.isTriggerNewTab.tabId}`,
+						);
+
+						// Make the new tab active
+						await chrome.tabs.update(currentTabId, {
+							active: true,
+						});
+
+						// Attach debugger to the new tab
+						try {
+							await chrome.runtime.sendMessage({
+								type: "ATTACH_DEBUGGER",
+								tabId: currentTabId,
+							});
+							addToHistory(`✓ Debugger attached to new tab`);
+						} catch (error) {
+							console.log("Debugger attach error:", error);
+						}
+
+						// Wait for the new tab's page to fully load
+						let loadTimeout = 15; // Max 15 seconds
+						while (loadTimeout > 0) {
+							const tabs = await chrome.tabs.query({});
+							const tab = tabs.find((t) => t.id === currentTabId);
+							if (tab && tab.status === "complete") {
+								// Give extra time for content script to initialize
+								await new Promise((resolve) =>
+									setTimeout(resolve, 1500),
+								);
+								addToHistory(`✓ New tab page loaded`);
+								break;
+							}
+							await new Promise((resolve) =>
+								setTimeout(resolve, 500),
+							);
+							loadTimeout--;
+						}
+					}
+				}
+			}
+
+			addToHistory("✅ Script execution completed!");
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			addToHistory(`❌ Error: ${errorMessage}`);
+			console.error("Script execution error:", error);
+		} finally {
+			setIsRunning(false);
+		}
 	};
 
 	const commandId = React.useId();
@@ -137,6 +450,7 @@ const PanelApp: React.FC = () => {
 				reason?: string;
 				fieldName?: string;
 				question?: string;
+				url?: string;
 			}> = [];
 
 			while (!isDone && stepCount < MAX_STEPS) {
@@ -285,6 +599,9 @@ const PanelApp: React.FC = () => {
 							`I need to ask the user for ${act.fieldName}`;
 						// Include the user's response in the action history
 						actionText = `askUser("${act.fieldName}", "${act.question}") -> User provided: "${act.value}"`;
+					} else if (act.type === "navigate") {
+						thoughtText = thoughtText || `Navigating to ${act.url}`;
+						actionText = `navigate("${act.url}")`;
 					} else if (act.type === "done") {
 						thoughtText = thoughtText || "The task is complete";
 						actionText = "done()";
@@ -325,6 +642,43 @@ const PanelApp: React.FC = () => {
 				if (action.type === "wait") {
 					addToHistory(`⏳ Waiting 2 seconds: ${action.reason}`);
 					await new Promise((resolve) => setTimeout(resolve, 2000));
+					continue; // Skip to next iteration
+				}
+
+				// Handle navigate - change URL
+				if (action.type === "navigate") {
+					if (!action.url) {
+						throw new Error("Navigate action requires a URL");
+					}
+					addToHistory(`🌐 Navigating to: ${action.url}`);
+					await chrome.tabs.update(tab.id, { url: action.url });
+
+					// Wait for page to load
+					let loadTimeout = 15; // Max 15 seconds
+					while (loadTimeout > 0) {
+						const tabs = await chrome.tabs.query({});
+						const currentTab = tabs.find((t) => t.id === tab.id);
+						if (currentTab && currentTab.status === "complete") {
+							addToHistory("✓ Page loaded");
+							// Give content script a moment to initialize
+							await new Promise((resolve) =>
+								setTimeout(resolve, 500),
+							);
+							break;
+						}
+						await new Promise((resolve) =>
+							setTimeout(resolve, 500),
+						);
+						loadTimeout--;
+					}
+
+					if (loadTimeout === 0) {
+						addToHistory(
+							"⚠️ Page load timeout, continuing anyway...",
+						);
+					}
+
+					previousUrl = action.url;
 					continue; // Skip to next iteration
 				}
 
@@ -442,10 +796,9 @@ const PanelApp: React.FC = () => {
 					elementId: action.elementId,
 					value:
 						action.type === "setValue" ? action.value : undefined,
+					url: "url" in action ? action.url : undefined,
 					reason: action.reason,
-				});
-
-				// Wait for page updates (longer for clicks that might navigate)
+				}); // Wait for page updates (longer for clicks that might navigate)
 				const waitTime = action.type === "click" ? 3000 : 1500;
 				await new Promise((resolve) => setTimeout(resolve, waitTime));
 			}
@@ -478,12 +831,24 @@ const PanelApp: React.FC = () => {
 
 	const [_historyCounter, setHistoryCounter] = React.useState(0);
 
-	const addToHistory = (message: string) => {
-		// Skip adding counter for step separator lines and initial messages
+	const addToHistory = (message: string, skipNumbering = false) => {
+		// Skip adding counter for:
+		// 1. Messages that explicitly request no numbering
+		// 2. Step separator lines and initial messages
+		// 3. Messages that already have their own format (like numbering)
 		if (
+			skipNumbering ||
 			message.startsWith("\n---") ||
 			message.startsWith("Connecting") ||
-			message.startsWith("✓ Workshop")
+			message.startsWith("✓ Workshop") ||
+			message.startsWith("✓ Found") || // Script action count
+			message.match(/^\d+\./) || // Already has number like "1. NAVIGATE"
+			message.startsWith("⏳ Waiting") || // Waiting messages
+			message.startsWith("✓ Switched") || // Tab switch messages
+			message.startsWith("✓ New tab") || // New tab messages
+			message.startsWith("✓ User provided") || // User input confirmation
+			message.startsWith("✅") || // Success messages
+			message.startsWith("❌") // Error messages
 		) {
 			setActionHistory((prev) => [...prev, message]);
 		} else {
@@ -509,7 +874,10 @@ const PanelApp: React.FC = () => {
 				type: "ATTACH_DEBUGGER",
 				tabId: tabId,
 			});
-
+			// Suppress bfcache errors
+			if (chrome.runtime.lastError) {
+				// Ignore silently
+			}
 			if (!attachResponse.success) {
 				console.log(
 					"Debugger already attached or attachment failed:",
@@ -540,7 +908,10 @@ const PanelApp: React.FC = () => {
 						}
 					).__elementMapping || {}, // Pass element mapping
 			});
-
+			// Suppress bfcache errors
+			if (chrome.runtime.lastError) {
+				// Ignore silently
+			}
 			if (!executeResponse.success) {
 				throw new Error(
 					executeResponse.error || "Failed to execute action",
@@ -623,38 +994,146 @@ const PanelApp: React.FC = () => {
 			</div>
 
 			<div className="panel-content">
-				<div className="command-section">
-					<label htmlFor={commandId}>Task Command:</label>
-					<textarea
-						id={commandId}
-						ref={commandInputRef}
-						value={command}
-						onChange={(e) => setCommand(e.target.value)}
-						placeholder="Enter automation task (e.g., 'click on the search button and type hello')"
-						rows={4}
-						disabled={isRunning}
-						onKeyDown={(e) => {
-							// Allow Enter to submit (but Shift+Enter for new line)
-							if (
-								e.key === "Enter" &&
-								!e.shiftKey &&
-								!isRunning &&
-								command.trim()
-							) {
-								e.preventDefault();
-								handleRunCommand();
-							}
-						}}
-					/>
+				{/* Mode Switcher */}
+				<div className="mode-switcher">
 					<button
 						type="button"
-						onClick={handleRunCommand}
-						disabled={isRunning || !command.trim()}
-						className="run-btn"
+						onClick={() => setMode("llm")}
+						className={mode === "llm" ? "active" : ""}
 					>
-						{isRunning ? "⏸️ Running..." : "▶️ Start Task"}
+						🤖 LLM Mode
+					</button>
+					<button
+						type="button"
+						onClick={() => setMode("script")}
+						className={mode === "script" ? "active" : ""}
+					>
+						📜 Script Mode
 					</button>
 				</div>
+
+				{/* LLM Mode */}
+				{mode === "llm" && (
+					<div className="command-section">
+						<label htmlFor={commandId}>Task Command:</label>
+						<textarea
+							id={commandId}
+							ref={commandInputRef}
+							value={command}
+							onChange={(e) => setCommand(e.target.value)}
+							placeholder="Enter automation task (e.g., 'click on the search button and type hello')"
+							rows={4}
+							disabled={isRunning}
+							onKeyDown={(e) => {
+								// Allow Enter to submit (but Shift+Enter for new line)
+								if (
+									e.key === "Enter" &&
+									!e.shiftKey &&
+									!isRunning &&
+									command.trim()
+								) {
+									e.preventDefault();
+									handleRunCommand();
+								}
+							}}
+						/>
+						<button
+							type="button"
+							onClick={handleRunCommand}
+							disabled={isRunning || !command.trim()}
+							className="run-btn"
+						>
+							{isRunning ? "⏸️ Running..." : "▶️ Start Task"}
+						</button>
+					</div>
+				)}
+
+				{/* Script Mode */}
+				{mode === "script" && (
+					<div className="command-section">
+						{/* Format Toggle */}
+						<div className="format-selector">
+							<div className="format-label">JSON Format:</div>
+							<div className="format-options">
+								<label
+									className={`format-option ${jsonFormat === "playwright" ? "active" : ""}`}
+								>
+									<input
+										type="radio"
+										name="jsonFormat"
+										value="playwright"
+										checked={jsonFormat === "playwright"}
+										onChange={() =>
+											setJsonFormat("playwright")
+										}
+										disabled={isRunning}
+									/>
+									<span className="format-text">
+										Playwright Recorder
+									</span>
+								</label>
+								<label
+									className={`format-option ${jsonFormat === "google" ? "active" : ""}`}
+								>
+									<input
+										type="radio"
+										name="jsonFormat"
+										value="google"
+										checked={jsonFormat === "google"}
+										onChange={() => setJsonFormat("google")}
+										disabled={isRunning}
+									/>
+									<span className="format-text">
+										Google Recorder
+									</span>
+								</label>
+							</div>
+						</div>
+
+						<div className="file-upload-section">
+							<label
+								className="upload-label"
+								htmlFor={fileInputId}
+							>
+								Upload Script JSON:
+							</label>
+							<div className="file-input-wrapper">
+								<input
+									id={fileInputId}
+									ref={fileInputRef}
+									type="file"
+									accept=".json"
+									onChange={handleFileUpload}
+									disabled={isRunning}
+									className="file-input"
+								/>
+							</div>
+							{scriptJson && (
+								<div className="script-loaded-badge">
+									<span className="badge-icon">✓</span>
+									<span className="badge-text">
+										Script loaded:{" "}
+										<strong>
+											{jsonFormat === "playwright"
+												? JSON.parse(scriptJson).meta
+														?.title || "Untitled"
+												: JSON.parse(scriptJson)
+														.title || "Untitled"}
+										</strong>
+									</span>
+								</div>
+							)}
+						</div>
+						<button
+							type="button"
+							onClick={handleRunScript}
+							disabled={isRunning || !scriptJson}
+							className="run-btn"
+						>
+							{isRunning ? "⏸️ Running..." : "▶️ Run Script"}
+						</button>
+					</div>
+				)}
 
 				{actionHistory.length > 0 && (
 					<div className="history-section">
