@@ -41,11 +41,11 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 			return fileName;
 		}
 		const hasExtension = /\.[a-zA-Z0-9]+$/.test(fileName);
-		
+
 		if (!hasExtension) {
 			return `${fileName}.txt`;
 		}
-		
+
 		return fileName;
 	};
 
@@ -94,16 +94,15 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 
 				// append the name
 				path = `${path}${finalName}`;
-				const file = path.split("assets/")[1];
 				if (mode === "file") {
-					pixel = `SaveEngineAssets(filePath=["/${file}"], content=["<encode></encode>"], engine=["${space}"]);CommitAsset(filePath=["/${file}"], comment=["Creating file"], engine=["${space}"]);`;
+					pixel = `SaveEngineAssets(filePath=["/${path.split("assets/")[1]}"], content=["<encode></encode>"], engine=["${space}"]);CommitAsset(filePath=["/${path.split("assets/")[1]}"], comment=["Creating file"], engine=["${space}"]);`;
 				} else if (mode === "directory") {
 					// add in the / to make it a directory
 					if (path.slice(-1) !== "/") {
 						path = `${path}/`;
 					}
 
-					pixel = `NewEngineAssetsDirectory(filePath=["${file}"], engine=["${space}"]);`;
+					pixel = `NewEngineAssetsDirectory(filePath=["${path.split("assets/")[1]}"], engine=["${space}"]);`;
 				}
 			} else {
 				throw new Error("TODO");

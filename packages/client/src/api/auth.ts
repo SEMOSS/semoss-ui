@@ -542,11 +542,10 @@ export const uploadFile = async (
 			if (param.length > 0) {
 				param += "&";
 			}
-			if( type === "engine") {
+			if (type === "engine") {
 				param += `engineId=${projectId}`;
-			}
-			else{
-			param += `projectId=${projectId}`;
+			} else {
+				param += `projectId=${projectId}`;
 			}
 		}
 		if (path) {

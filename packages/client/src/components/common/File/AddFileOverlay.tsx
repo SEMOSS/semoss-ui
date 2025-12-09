@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
 	Button,
-	//Checkbox,
+	Checkbox,
 	FileDropzone,
 	LinearProgress,
 	Modal,
@@ -49,8 +49,7 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 					space,
 					uploadPath,
 				);
-			}
-				else if (type === "engine") {
+			} else if (type === "engine") {
 				upload = await uploadFileAPI(
 					[uploadFile],
 					configStore.store.insightID,
@@ -58,8 +57,7 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 					uploadPath,
 					"engine",
 				);
-			}
-			else {
+			} else {
 				throw new Error("TODO");
 			}
 
@@ -69,17 +67,16 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 
 			const path = `${uploadPath}${upload[0].fileName}`;
 			if (unzipFile) {
-				if ( type === "app") {
+				if (type === "app") {
 					await monolithStore.runQuery(
 						`UnzipFile(filePath=["${path}"], space=["${space}"])`,
 					);
-				} 
-				else if ( type === "engine") {
-					const file = path.split("assets/")[1];
-					await monolithStore.runQuery(
-						`UnzipFile(filePath=["/${file}"], engine=["${space}"])`,
-					);
 				}
+				// else if ( type === "engine") {
+				// 	await monolithStore.runQuery(
+				// 		`UnzipFile(filePath=["/${path.split("assets/")[1]}"], engine=["${space}"])`,
+				// 	);
+				// } TODO: Reactor needs to be created from backend once it is implemented this will work.
 				else {
 					throw new Error("TODO");
 				}
@@ -113,13 +110,17 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 							setUploadFiles(newValue);
 						}}
 					/>
-					{/* <Checkbox
-						checked={unzipFile}
-						onChange={() => {
-							setUnzipFile(!unzipFile);
-						}}
-						label={<Typography variant="body2">Unzip?</Typography>}
-					/> */}
+					{type === "app" && (
+						<Checkbox
+							checked={unzipFile}
+							onChange={() => {
+								setUnzipFile(!unzipFile);
+							}}
+							label={
+								<Typography variant="body2">Unzip?</Typography>
+							}
+						/>
+					)}
 				</Stack>
 			</Modal.Content>
 			<Modal.Actions>

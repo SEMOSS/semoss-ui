@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Box, Stack, styled } from "@semoss/ui";
-import { FileEditorTab } from "./FIleEditorTab";
-import { FileExplorerTab } from "./FileExplorerTab";
+import { FileEditorPanel } from "./FileEditorPanel";
+import { FileExplorerPanel } from "./FileExplorerPanel";
 
 interface FileManagerProps {
 	appId: string;
@@ -44,7 +44,7 @@ const RightPanel = styled(Box)(({ theme }) => ({
 	flexDirection: "column",
 	borderRadius: "8px",
 	border: `1px solid ${theme.palette.divider}`,
-    marginTop:"0px",
+	marginTop: "0px",
 }));
 
 const EmptyState = styled(Box)(({ theme }) => ({
@@ -79,7 +79,7 @@ export const FileManager = (props: FileManagerProps) => {
 	return (
 		<Container spacing={0}>
 			<LeftPanel>
-				<FileExplorerTab
+				<FileExplorerPanel
 					title="Files"
 					appId={appId}
 					insightId={insightId}
@@ -97,7 +97,7 @@ export const FileManager = (props: FileManagerProps) => {
 			</LeftPanel>
 			<RightPanel>
 				{selectedFilePath ? (
-					<FileEditorTab
+					<FileEditorPanel
 						key={selectedFilePath}
 						path={selectedFilePath}
 						appId={appId}

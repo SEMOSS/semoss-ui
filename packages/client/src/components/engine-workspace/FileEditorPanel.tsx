@@ -15,14 +15,13 @@ const StyledChip = styled(Chip)(({ theme }) => ({
 	marginLeft: theme.spacing(1),
 }));
 
-
 interface FileEditorPanelProps {
 	path: string;
 	appId: string;
 	insightId: string;
 }
 
-export const FileEditorTab = observer((props: FileEditorPanelProps) => {
+export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 	const { path, appId, insightId } = props;
 	const notification = useNotification();
 
@@ -48,7 +47,7 @@ export const FileEditorTab = observer((props: FileEditorPanelProps) => {
 		}
 	};
 
-		const fileName = useMemo(() => {
+	const fileName = useMemo(() => {
 		if (!path) return "";
 		const parts = path.split(/[/\\]/);
 		return parts[parts.length - 1];

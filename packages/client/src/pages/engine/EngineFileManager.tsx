@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Modal, styled } from "@semoss/ui";
+import { FileManager } from "@/components/engine-workspace/FileManager";
 import { useRootStore } from "@/hooks";
-import { FileManager } from "./FileManager";
 
 const PageContainer = styled(Box)({
 	width: "100%",
@@ -16,9 +16,9 @@ const OverlayContainer = styled(Modal)(({ theme }) => ({
 	justifyContent: "center",
 	backdropFilter: "rgba(0, 0, 0, 0.5)",
 	"& .MuiDialog-paper": {
-    width: "600px",
-    maxWidth: "none",   
-  },
+		width: "600px",
+		maxWidth: "none",
+	},
 }));
 
 const LoadingOverlay = styled(Box)({
@@ -71,7 +71,11 @@ export const EngineFileManagerPage = () => {
 
 			{/* Render overlay if present */}
 			{overlayComponent && (
-				<OverlayContainer open={true} onClose={handleCloseOverlay} maxWidth="lg">
+				<OverlayContainer
+					open={true}
+					onClose={handleCloseOverlay}
+					maxWidth="lg"
+				>
 					{overlayComponent()}
 				</OverlayContainer>
 			)}

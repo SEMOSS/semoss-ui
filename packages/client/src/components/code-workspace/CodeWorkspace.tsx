@@ -107,7 +107,7 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
 		} else if (component === "file-editor") {
 			return <FileEditorPanel path={config.path} />;
 		} else if (component === "mcpJsonEditor") {
-			return <MCPJsonEditor dataMap={config.data} />;
+			return <MCPJsonEditor dataMap={config.data}/>;
 		} else if (component === "renderer") {
 			return <RendererPanel />;
 		} else if (component === "settingsPanel") {

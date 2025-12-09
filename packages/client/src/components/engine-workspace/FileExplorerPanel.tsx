@@ -19,7 +19,6 @@ import {
 	DeleteFileOverlay,
 	FileExplorer,
 } from "@/components/common";
-import { MakeMCPOverlay } from "@/components/common/File/MakeMCPOverlay";
 import { Panel } from "@/components/workspace/panels";
 
 const EXPLORER_TYPE = "engine";
@@ -70,7 +69,7 @@ const StyledTitleSpan = styled("span")(({ theme }) => ({
 	marginTop: "8px",
 }));
 
-export const FileExplorerTab = (props: FileExplorerPanelProps) => {
+export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 	const {
 		title,
 		appId,
@@ -88,12 +87,6 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 	const [fileUploadPath, setFileUploadPath] = useState<string>("");
 	const [counter, setCounter] = useState(0);
 	const [deselectCounter, setDeselectCounter] = useState(0);
-	const [mcpOverlayOpen, setMCPOverlayOpen] = useState(false);
-	const [mcpTools, setMCPTools] = useState<Record<string, unknown>>({
-		tools: [],
-		_meta: {},
-	});
-	const [currentFilePath, setCurrentFilePath] = useState("");
 
 	useEffect(() => {
 		let path = "app_root/version/assets/";
@@ -105,11 +98,11 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 				const pathParts = selectedPath.split("/");
 				pathParts.pop();
 				path = pathParts.join("/");
-				
+
 				if (path && path.slice(-1) !== "/") {
 					path = path + "/";
 				}
-				
+
 				if (!path) {
 					path = "app_root/version/assets/";
 				}
@@ -136,7 +129,7 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 			<AddFileOverlay
 				type={EXPLORER_TYPE}
 				space={appId}
-				onClose={(success, uploadPath) => {
+				onClose={(success) => {
 					if (success) {
 						refreshFiles();
 					}
@@ -152,7 +145,7 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 			<CreateFileOverlay
 				type={EXPLORER_TYPE}
 				space={appId}
-				onClose={(success, uploadPath) => {
+				onClose={(success) => {
 					if (success) {
 						refreshFiles();
 					}
@@ -177,25 +170,35 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 	};
 
 	const handleOnTrashClick = (fileDeletePath: string) => {
-		openOverlay(() => (
-			<DeleteFileOverlay
-				type={EXPLORER_TYPE}
-				space={appId}
-				onClose={(success) => {
-					if (success) {
-						if (selectedPath === fileDeletePath) {
-							setSelectedPath("");
-							setDeselectCounter((prev) => prev + 1);
-							onFileSelect?.("");
-						}
-						refreshFiles();
+	openOverlay(() => (
+		<DeleteFileOverlay
+			type={EXPLORER_TYPE}
+			space={appId}
+			onClose={(success) => {
+				if (success) {
+					const normalizedDeletedPath = fileDeletePath.endsWith("/")
+						? fileDeletePath
+						: `${fileDeletePath}/`;
+
+					const shouldClearSelection =
+						selectedPath === fileDeletePath ||
+						selectedPath.startsWith(normalizedDeletedPath);
+
+					if (shouldClearSelection) {
+						setSelectedPath("");
+						setDeselectCounter((prev) => prev + 1);
+						onFileSelect?.("");
 					}
-					closeOverlay();
-				}}
-				fileDeletePath={fileDeletePath}
-			/>
-		));
-	};
+
+					refreshFiles();
+				}
+				closeOverlay();
+			}}
+			fileDeletePath={fileDeletePath}
+		/>
+	));
+};
+
 
 	const handleMakeMCPClick = async (
 		event: React.MouseEvent<HTMLButtonElement>,
@@ -203,31 +206,32 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 	) => {
 		setLoading(true);
 		try {
-			const { errors, pixelReturn } = await runPixel(
-				`MakePythonMCP(project="${appId}")`,
-			);
+			//TODO This will be added once backend reactor works are done
+			// const { errors, pixelReturn } = await runPixel(
+			// 	`MakePythonMCP(project="${appId}")`,
+			// );
 			setLoading(false);
+			//TODO This will be added once backend reactor works are done
+			// if (errors?.length) {
+			// 	notification.add({
+			// 		message: errors[0],
+			// 		color: "error",
+			// 	});
+			// 	return;
+			// }
 
-			if (errors?.length) {
-				notification.add({
-					message: errors[0],
-					color: "error",
-				});
-				return;
-			}
+			// refreshFiles();
 
-			refreshFiles();
+			// if (pixelReturn[0].output) {
+			// 	notification.add({
+			// 		message: "Successfully generated MCP tools",
+			// 		color: "success",
+			// 	});
+			// }
 
-			if (pixelReturn[0].output) {
-				notification.add({
-					message: "Successfully generated MCP tools",
-					color: "success",
-				});
-			}
-
-			if (!pixelReturn?.[0]?.output) {
-				throw new Error("Invalid response from pixel call");
-			}
+			// if (!pixelReturn?.[0]?.output) {
+			// 	throw new Error("Invalid response from pixel call");
+			// }
 		} catch (e) {
 			setLoading(false);
 			notification.add({
@@ -243,7 +247,7 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 	) => {
 		setLoading(true);
 		try {
-			const { errors, pixelReturn } = await runPixel(
+			const { errors } = await runPixel(
 				`GetAsset(filePath=["${path}"], space=["${appId}"]);`,
 			);
 			setLoading(false);
@@ -251,10 +255,6 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 			if (errors?.length) {
 				throw new Error(errors[0]);
 			}
-			const output = JSON.parse(pixelReturn[0]?.output as string);
-			setMCPTools(output);
-			setCurrentFilePath(path);
-			setMCPOverlayOpen(true);
 		} catch (e) {
 			setLoading(false);
 			notification.add({
@@ -263,44 +263,43 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 			});
 		}
 	};
+	//TODO This will be added once backend reactor works are done
+	// const handleMCPEditSave = async (finalTools: Record<string, unknown>[]) => {
+	// 	try {
+	// 		setLoading(true);
+	// 		let pixel = "";
+	// 		const tools = { ...mcpTools, tools: finalTools };
+	// 		if (mcpTools) {
+	// 			pixel = `SaveAsset(fileName=["${currentFilePath}"], content=["<encode>${JSON.stringify(tools, null, 2)}</encode>"], space=["${appId}"]);CommitAsset(filePath=["${currentFilePath}"], comment=["Save from editor"], space=["${appId}"])`;
+	// 		}
 
-	const handleMCPEditSave = async (finalTools: Record<string, unknown>[]) => {
-		try {
-			setLoading(true);
-			let pixel = "";
-			const tools = { ...mcpTools, tools: finalTools };
-			if (mcpTools) {
-				pixel = `SaveAsset(fileName=["${currentFilePath}"], content=["<encode>${JSON.stringify(tools, null, 2)}</encode>"], space=["${appId}"]);CommitAsset(filePath=["${currentFilePath}"], comment=["Save from editor"], space=["${appId}"])`;
-			}
+	// 		if (!pixel) {
+	// 			throw new Error("Error missing pixel to get file");
+	// 		}
 
-			if (!pixel) {
-				throw new Error("Error missing pixel to get file");
-			}
+	// 		const { errors, pixelReturn } = await runPixel(pixel, insightId);
 
-			const { errors, pixelReturn } = await runPixel(pixel, insightId);
+	// 		if (pixelReturn[0].output) {
+	// 			notification.add({
+	// 				message: "Successfully saved MCP tools",
+	// 				color: "success",
+	// 			});
+	// 		}
 
-			if (pixelReturn[0].output) {
-				notification.add({
-					message: "Successfully saved MCP tools",
-					color: "success",
-				});
-			}
-
-			for (const e of errors) {
-				throw new Error(e);
-			}
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
-		} finally {
-			setLoading(false);
-		}
-	};
+	// 		for (const e of errors) {
+	// 			throw new Error(e);
+	// 		}
+	// 	} catch (e) {
+	// 		notification.add({
+	// 			color: "error",
+	// 			message: e.message,
+	// 		});
+	// 	} finally {
+	// 		setLoading(false);
+	// 	}
+	// };
 
 	return (
-		<>
 			<Panel
 				actions={
 					<Stack
@@ -404,16 +403,6 @@ export const FileExplorerTab = (props: FileExplorerPanelProps) => {
 					onToggleExpand={handleToggleExpand}
 				/>
 			</Panel>
-			{mcpOverlayOpen && (
-				<MakeMCPOverlay
-					tools={mcpTools.tools as Record<string, unknown>[]}
-					onClose={() => setMCPOverlayOpen(false)}
-					handleToolsUpdate={(tools) =>
-						setMCPTools({ ...mcpTools, tools })
-					}
-					handleMCPEditSave={handleMCPEditSave}
-				/>
-			)}
-		</>
+
 	);
 };
