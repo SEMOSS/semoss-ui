@@ -23,7 +23,7 @@ import {
 	Textarea,
 } from "@semoss/ui/next";
 import type { PlanStep } from "@/types";
-import { HumanInterventionDetails } from "./human-intervention-details";
+// import { HumanInterventionDetails } from "./human-intervention-details";
 import { LLMReasoningDetails } from "./llm-reasoning-details";
 import { ToolCallDetails } from "./tool-call-details";
 
@@ -50,19 +50,20 @@ const getStepDetailsDefaults = (
 			prompt: "",
 			rationaleForStep: "",
 		};
-	} else if (type === "human_intervention") {
-		return {
-			stepType: "human_intervention",
-			required_role: "",
-			instructions: "",
-			rationaleForStep: "",
-		};
 	}
+	// } else if (type === "human_intervention") {
+	// 	return {
+	// 		stepType: "human_intervention",
+	// 		required_role: "",
+	// 		instructions: "",
+	// 		rationaleForStep: "",
+	// 	};
+	// }
 };
 
 interface EditStepOverlayProps {
 	/** Mode of the overlay */
-	mode: "Add" | "Update";
+	mode: "New" | "Edit";
 
 	/** Current step if editing */
 	current?: PlanStep;
@@ -103,8 +104,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 		description: current.description,
 		type: current.type,
 		status: current.status,
-		// always reset the details to ensure compatibility
-		details: getStepDetailsDefaults(current.type),
+		details: current.details,
 	});
 
 	// track if the next button is disabled
@@ -117,8 +117,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 				!step.details.tool_name)) ||
 		(step.details.stepType === "llm_reasoning" &&
 			step.details.prompt.trim() === "") ||
-		(step.details.stepType === "human_intervention" &&
-			step.details.instructions.trim() === "");
+		step.details.stepType === "human_intervention";
 
 	return (
 		<Dialog open={open} onOpenChange={(open) => onOpenChange(open)}>
@@ -188,9 +187,9 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 											<SelectItem value="llm_reasoning">
 												AI
 											</SelectItem>
-											<SelectItem value="human_intervention">
+											{/* <SelectItem value="human_intervention">
 												User
-											</SelectItem>
+											</SelectItem> */}
 										</SelectGroup>
 									</SelectContent>
 								</Select>
@@ -221,7 +220,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 									}}
 								/>
 							)}
-							{step.details.stepType === "human_intervention" && (
+							{/* {step.details.stepType === "human_intervention" && (
 								<HumanInterventionDetails
 									details={step.details}
 									onDetailsChange={(details) => {
@@ -231,7 +230,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 										});
 									}}
 								/>
-							)}
+							)} */}
 						</FieldGroup>
 					</FieldSet>
 				</form>

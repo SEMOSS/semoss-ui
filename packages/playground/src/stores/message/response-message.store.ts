@@ -68,6 +68,20 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		comment: string;
 	} | null = null;
 
+	/**
+	 * Model information associated with the message
+	 */
+	model: {
+		/** Id of the model */
+		id: string;
+
+		/** Name of the model */
+		name: string;
+	} = {
+		id: "",
+		name: "",
+	};
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message:
@@ -96,6 +110,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				response: "",
 			}));
 		}
+
+		// set the model
+		this.model = {
+			id: message.modelId,
+			name: message.ornaments?.modelName || "AI",
+		};
 
 		makeObservable(this, {
 			text: observable,
@@ -134,7 +154,7 @@ engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${inputMessage.files.length ? `image=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "image=[],"}
+${inputMessage.mediaInputs.length ? `image=${JSON.stringify(inputMessage.mediaInputs.map((info) => info.fileLocation))},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
 			max_new_tokens: room.options.tokenLength,
@@ -212,7 +232,7 @@ paramValues=[${JSON.stringify({
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: parentMessage.text,
-			files: parentMessage.files,
+			mediaInputs: parentMessage.mediaInputs,
 			modelId: room.modelId,
 			paramMap: {
 				max_new_tokens: room.options.tokenLength,
@@ -302,19 +322,17 @@ paramValues=[${JSON.stringify({
 		const { output } = response.pixelReturn[0];
 
 		// save the response
-		await this.saveToolExecution(tool, output, false);
+		await this.saveToolExecution(tool, output);
 	};
 
 	/**
-	 * Save a tool execution response
+	 * Save a tool execution responsex
 	 * @param tool - tool to save
 	 * @param toolResponse - response of the tool
-	 * @param disableToolChoice - if true, turn off tool choice
 	 */
 	saveToolExecution = async (
 		tool: ResponseMessageStore["tools"][number],
 		toolResponse: string,
-		disableToolChoice: boolean,
 	): Promise<void> => {
 		const room = this.room;
 
@@ -322,13 +340,6 @@ paramValues=[${JSON.stringify({
 		runInAction(() => {
 			tool.response = toolResponse;
 		});
-
-		const paramValues: Record<string, unknown> = {};
-
-		// turn off tool_choice
-		if (disableToolChoice) {
-			paramValues.tool_choice = { type: "none" };
-		}
 
 		// wait for the pixel to run
 		const response = await room.runRoomPixel<
@@ -345,25 +356,26 @@ ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 toolId = ["${tool.id}"],
 toolName=["${tool.name}"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
-paramValues=[${JSON.stringify(paramValues)}]
+paramValues=[${JSON.stringify({})}]
 );`,
 		);
 
 		const { output } = response.pixelReturn[0];
 
-		// don't create a new message if it is a string. More tools need to be executed
-		if (typeof output.responseMessage === "string") {
-			return;
+		// If the output is a string (as opposed to a tool response message), continue tool execution. Otherwise, create the response message
+		if (
+			typeof output === "string" ||
+			typeof output.responseMessage === "string"
+		) {
+			// Keep executing tools
+			await this.continueToolExecution(tool);
+		} else {
+			// create the response and link to the message
+			const responseMessage = createMessageStore(
+				room,
+				output.responseMessage,
+			);
+			this.addChild(responseMessage);
 		}
-
-		// create the response and link to the message
-		const responseMessage = createMessageStore(
-			room,
-			output.responseMessage,
-		);
-		this.addChild(responseMessage);
-
-		// keep going
-		await this.continueToolExecution(tool);
 	};
 }

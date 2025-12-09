@@ -1,6 +1,7 @@
 import { HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { EngineSelect } from "@semoss/shared";
 import {
 	Button,
 	Field,
@@ -10,13 +11,6 @@ import {
 	FieldSet,
 	Input,
 	ScrollArea,
-	Select,
-	SelectContent,
-	SelectGroup,
-	SelectItem,
-	SelectLabel,
-	SelectTrigger,
-	SelectValue,
 	Slider,
 	Textarea,
 	Tooltip,
@@ -95,40 +89,32 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 							{ENABLE_MODEL_SELECT && (
 								<Field>
 									<FieldLabel>Model</FieldLabel>
-									<Select
-										value={chat.models.selected}
-										onValueChange={(value) => {
-											chat.setSelectedModel(value);
+									<EngineSelect
+										name={
+											chat.models.selected?.app_name || ""
+										}
+										value={
+											chat.models.selected?.app_id || ""
+										}
+										engineTypes={["MODEL"]}
+										metaFilters={[
+											{ tag: "text-generation" },
+										]}
+										onChange={(v) =>
+											chat.setSelectedModel(v)
+										}
+										popoverContentProps={{
+											align: "start",
 										}}
-									>
-										<SelectTrigger className="w-full">
-											<SelectValue placeholder="Select Model" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectGroup>
-												<SelectLabel>Model</SelectLabel>
-
-												{chat.models.options.map(
-													(m) => (
-														<SelectItem
-															key={m.app_id}
-															value={m.app_id}
-														>
-															{m.app_name}
-														</SelectItem>
-													),
-												)}
-											</SelectGroup>
-										</SelectContent>
-									</Select>
+									/>
 								</Field>
 							)}
 
 							<Field>
-								<FieldLabel>System Prompt</FieldLabel>
+								<FieldLabel>Instructions</FieldLabel>
 								<Textarea
-									placeholder="Update System Prompt"
-									className="min-h-[220px] resize-none"
+									placeholder="Update Instructions"
+									className="max-h-[220px] min-h-[220px] resize-none overflow-y-auto"
 									value={options.instructions}
 									onChange={(e) => {
 										setOptions({
@@ -154,24 +140,20 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 
 											<Tooltip>
 												<TooltipTrigger asChild>
-													<span>
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={(
-																event,
-															) => {
-																event.preventDefault();
-																event.stopPropagation();
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={(event) => {
+															event.preventDefault();
+															event.stopPropagation();
 
-																setIsToolsOpen(
-																	true,
-																);
-															}}
-														>
-															<PlusIcon />
-														</Button>
-													</span>
+															setIsToolsOpen(
+																true,
+															);
+														}}
+													>
+														<PlusIcon />
+													</Button>
 												</TooltipTrigger>
 												<TooltipContent>
 													Add Tools

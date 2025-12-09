@@ -14,7 +14,7 @@ import {
 	Avatar,
 	Box,
 	Button,
-Card,
+	Card,
 	Checkbox,
 	Icon,
 	IconButton,
@@ -70,6 +70,7 @@ const NameTableCell = styled(Table.Cell)({
 
 const DateTableCell = styled(Table.Cell)({
 	whiteSpace: "nowrap",
+	paddingLeft: "20px",
 	"@media (max-width: 768px)": {
 		whiteSpace: "normal",
 	},
@@ -101,7 +102,10 @@ const StyledTableContainer = styled(Table.Container)({
 	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
 });
 
-const StyledEngineTable = styled(Table)({ backgroundColor: "white" });
+const StyledEngineTable = styled(Table)({
+	backgroundColor: "white",
+	tableLayout: "fixed",
+});
 
 const StyledTableTitleContainer = styled("div")({
 	display: "flex",
@@ -372,8 +376,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	 * @desc - sets engines in react hook form
 	 */
 	useEffect(() => {
-		filterEngines();	
-	}, [groupId, groupType, enginesPage, searchFilter, count,rowsPerPage]);
+		filterEngines();
+	}, [groupId, groupType, enginesPage, searchFilter, count, rowsPerPage]);
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
@@ -649,8 +653,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				)?.length,
 			);
 		});
-
-
 	}, [
 		enginesPage,
 		searchFilter,
@@ -672,7 +674,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			<StyledEngineInnerContent>
 				{(engines && engines.length > 0) ||
 				enginesCount > 0 ||
-				hasEngines ? (
+				hasEngines ||
+				searchFilter ? (
 					<StyledTableContainer>
 						<StyledTableTitleContainer>
 							<StyledTableTitleEngineContainer>
@@ -747,162 +750,198 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 										/>
 										Name
 									</NameTableCell>
-									<Table.Cell size="small">Access</Table.Cell>
-									<Table.Cell size="small">
+									<Table.Cell
+										size="small"
+										sx={{ width: "320px" }}
+									>
+										Access
+									</Table.Cell>
+									<Table.Cell
+										size="small"
+										sx={{
+											width: "200px",
+											textAlign: "left",
+											paddingLeft: "20px",
+										}}
+									>
 										Added Date
 									</Table.Cell>
-									<Table.Cell size="small">Action</Table.Cell>
+									<Table.Cell
+										size="small"
+										sx={{
+											width: "75px",
+											textAlign: "center",
+										}}
+									>
+										Action
+									</Table.Cell>
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{engines?.map((engine, i) => {
-									let isSelected = false;
+								{Array.isArray(engines) &&
+								engines.length > 0 ? (
+									engines.map((engine, i) => {
+										let isSelected = false;
 
-									if (engine) {
-										isSelected = selectedEngines.some(
-											(value) => {
-												return (
-													value.engineid ===
-													engine.engineid
-												);
-											},
-										);
-									}
-									if (engine) {
-										return (
-											<Table.Row
-												key={`${engine.engineid} + ${i}`}
-											>
-												<Table.Cell size="small">
-													<Stack
-														direction="row"
-														spacing={0}
-													>
-														<StyledCheckbox
-															checked={isSelected}
-															onChange={() => {
-																if (
+										if (engine) {
+											isSelected = selectedEngines.some(
+												(value) => {
+													return (
+														value.engineid ===
+														engine.engineid
+													);
+												},
+											);
+										}
+										if (engine) {
+											return (
+												<Table.Row
+													key={`${engine.engineid} + ${i}`}
+												>
+													<Table.Cell size="small">
+														<Stack
+															direction="row"
+															spacing={0}
+														>
+															<StyledCheckbox
+																checked={
 																	isSelected
-																) {
-																	const selEngines =
-																		[];
-																	selectedEngines.forEach(
-																		(p) => {
-																			if (
-																				p.engineid !==
-																				engine.engineid
-																			)
-																				selEngines.push(
-																					p,
-																				);
-																		},
-																	);
-																	setSelectedEngines(
-																		selEngines,
-																	);
-																} else {
-																	setSelectedEngines(
-																		[
-																			...selectedEngines,
-																			engine,
-																		],
-																	);
 																}
+																onChange={() => {
+																	if (
+																		isSelected
+																	) {
+																		const selEngines =
+																			[];
+																		selectedEngines.forEach(
+																			(
+																				p,
+																			) => {
+																				if (
+																					p.engineid !==
+																					engine.engineid
+																				)
+																					selEngines.push(
+																						p,
+																					);
+																			},
+																		);
+																		setSelectedEngines(
+																			selEngines,
+																		);
+																	} else {
+																		setSelectedEngines(
+																			[
+																				...selectedEngines,
+																				engine,
+																			],
+																		);
+																	}
+																}}
+															/>
+															<NameIDWrapper>
+																<Typography variant="body2">
+																	{
+																		engine.engine_name
+																	}
+																</Typography>
+																<Typography
+																	variant="body2"
+																	color="secondary"
+																>
+																	{`Engine ID: ${engine.engineid}`}
+																</Typography>
+															</NameIDWrapper>
+														</Stack>
+													</Table.Cell>
+													<Table.Cell size="small">
+														<StyledRadioGroup
+															row
+															defaultValue={
+																engine.permission
+															}
+															onChange={(e) => {
+																console.log(
+																	"Hit Update Permission fn and fix in state",
+																);
+																updateSelectedEngines(
+																	{
+																		engineid:
+																			engine.engineid,
+																		type: engine.type,
+																		permission:
+																			e
+																				.target
+																				.value,
+																		engine_name:
+																			engine.engine_name,
+																		engine_id:
+																			engine.engine_id,
+																		engine_type:
+																			engine.engine_type,
+																		engine_date_created:
+																			engine.engine_date_created,
+																	},
+																);
 															}}
-														/>
-														<NameIDWrapper>
-															<Typography variant="body2">
-																{
-																	engine.engine_name
-																}
-															</Typography>
-															<Typography
-																variant="body2"
-																color="secondary"
-															>
-																{`Engine ID: ${engine.engineid}`}
-															</Typography>
-														</NameIDWrapper>
-													</Stack>
-												</Table.Cell>
-												<Table.Cell size="small">
-													<StyledRadioGroup
-														row
-														defaultValue={
-															engine.permission
+														>
+															<RadioGroup.Item
+																value="1"
+																label="Author"
+															/>
+															<RadioGroup.Item
+																value="2"
+																label="Editor"
+															/>
+															<RadioGroup.Item
+																value="3"
+																label="Read-Only"
+															/>
+														</StyledRadioGroup>
+													</Table.Cell>
+													<DateTableCell size="small">
+														{
+															engine.engine_date_created
 														}
-														onChange={(e) => {
-															console.log(
-																"Hit Update Permission fn and fix in state",
-															);
-															updateSelectedEngines(
-																{
-																	engineid:
-																		engine.engineid,
-																	type: engine.type,
-																	permission:
-																		e.target
-																			.value,
-																	engine_name:
-																		engine.engine_name,
-																	engine_id:
-																		engine.engine_id,
-																	engine_type:
-																		engine.engine_type,
-																	engine_date_created:
-																		engine.engine_date_created,
-																},
-															);
-														}}
-													>
-														<RadioGroup.Item
-															value="1"
-															label="Author"
-														/>
-														<RadioGroup.Item
-															value="2"
-															label="Editor"
-														/>
-														<RadioGroup.Item
-															value="3"
-															label="Read-Only"
-														/>
-													</StyledRadioGroup>
-												</Table.Cell>
-												<DateTableCell size="small">
-													{engine.engine_date_created}
-												</DateTableCell>
-												<Table.Cell size="small">
-													<IconButton
-														onClick={() => {
-															// set engine
-															setEngineToDelete(
-																engine,
-															);
-															// open modal
-															setDeleteEngineModal(
-																true,
-															);
-														}}
-													>
-														<Delete></Delete>
-													</IconButton>
-												</Table.Cell>
-											</Table.Row>
-										);
-									} else {
-										return (
-											<Table.Row
-												key={`No data available`}
-											>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-											</Table.Row>
-										);
-									}
-								})}
+													</DateTableCell>
+													<Table.Cell size="small">
+														<IconButton
+															onClick={() => {
+																// set engine
+																setEngineToDelete(
+																	engine,
+																);
+																// open modal
+																setDeleteEngineModal(
+																	true,
+																);
+															}}
+														>
+															<Delete></Delete>
+														</IconButton>
+													</Table.Cell>
+												</Table.Row>
+											);
+										} else {
+											return (
+												<Table.Row
+													key={`No data available`}
+												>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+												</Table.Row>
+											);
+										}
+									})
+								) : (
+									<Table.Row key="no-engines-found">
+										<Table.Cell colSpan={4} align="center">
+											No Engines found.
+										</Table.Cell>
+									</Table.Row>
+								)}
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
@@ -915,7 +954,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 											setSelectedEngines([]);
 										}}
 										onRowsPerPageChange={(e) => {
-											setRowsPerPage(parseInt(e.target.value, 10));
+											setRowsPerPage(
+												parseInt(e.target.value, 10),
+											);
 											setEnginesPage(1);
 										}}
 										page={enginesPage - 1}
@@ -1004,144 +1045,142 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 							}}
 						/>
 
-						{selectedNonCredentialedEngines?.map(
-								(engine, idx) => (
+						{selectedNonCredentialedEngines?.map((engine, idx) => (
+							<Box
+								key={`${engine.engine_name}- ${idx}`}
+								sx={{
+									display: "flex",
+									justifyContent: "left",
+									align: "center",
+									backgroundColor:
+										idx % 2 !== 0
+											? "rgba(0, 0, 0, .03)"
+											: "",
+								}}
+							>
+								<Box
+									sx={{
+										width: "100%",
+										gap: "8px",
+										position: "relative",
+										paddingBottom: "7px",
+										border: "0px",
+										display: "flex",
+										alignItems: "center",
+									}}
+								>
 									<Box
-										key={`${engine.engine_name}- ${idx}`}
 										sx={{
 											display: "flex",
-											justifyContent: "left",
-											align: "center",
-											backgroundColor:
-												idx % 2 !== 0
-													? "rgba(0, 0, 0, .03)"
-													: "",
+											justifyContent: "center",
+											marginTop: "6px",
+											marginLeft: "8px",
+											marginRight: "8px",
+											float: "left",
 										}}
 									>
 										<Box
 											sx={{
-												width: "100%",
-												gap: "8px",
-												position: "relative",
-												paddingBottom: "7px",
-												border: "0px",
 												display: "flex",
+												height: "50px",
+												width: "50px",
+												justifyContent: "center",
 												alignItems: "center",
+												border: "0.5px solid rgba(0, 0, 0, .05)",
+												borderRadius: "50%",
 											}}
 										>
-											<Box
+											<Avatar
+												aria-label="avatar"
 												sx={{
 													display: "flex",
-													justifyContent: "center",
-													marginTop: "6px",
-													marginLeft: "8px",
-													marginRight: "8px",
-													float: "left",
+													width: "50px",
+													height: "50px",
+													"& img": {
+														width: "100%",
+														height: "100%",
+														objectFit: "cover",
+													},
 												}}
-											>
-												<Box
-													sx={{
-														display: "flex",
-														height: "50px",
-														width: "50px",
-														justifyContent: "center",
-														alignItems: "center",
-														border: "0.5px solid rgba(0, 0, 0, .05)",
-														borderRadius: "50%",
-													}}
-												>
-													<Avatar
-														aria-label="avatar"
-														sx={{
-															display: "flex",
-															width: "50px",
-															height: "50px",
-															"& img": {
-																width: "100%",
-																height: "100%",
-																objectFit: "cover",
-															},
-														}}
-														src={getRandomImageForProject(
-															engine.engine_name,
-														)}
-													/>
-												</Box>
-											</Box>
-											<Card.Header
-												title={
-													<Typography variant="h6">
-														{engine.engine_name}
-													</Typography>
-												}
-												sx={{
-													color: "#000",
-													maxWidth: "85%",
-													width: "100%",
-													float: "left",
-													gap: "16px",
-													display: "inline-flex",
-													alignItems: "center",
-													paddingBottom: "7px",
-													margin: "0px 0px 0px 0px",
-												}}
-												subheader={
-													<Box
-														sx={{
-															display: "flex",
-															gap: 2,
-														}}
-													>
-														<span
-															style={{
-																opacity: 0.9,
-																fontSize: "11px",
-																width: "70%",
-																gap: "4px",
-															}}
-														>
-															{`Engine ID: `}
-															<Typography
-																variant="body2"
-																component="span"
-															>
-																{engine.engine_id}
-															</Typography>
-														</span>
-													</Box>
-												}
-												action={
-													<IconButton
-														sx={{
-															height: "48px",
-															width: "48px",
-															fontSize: "small",
-															color: "rgba( 0, 0, 0, .7)",
-															mr: "2px",
-															top: "20%",
-															position: "absolute",
-															padding: "10px",
-														}}
-														onClick={() => {
-															const filtered =
-																selectedNonCredentialedEngines.filter(
-																	(val) =>
-																		val.engine_id !==
-																		engine.engine_id,
-																);
-															setSelectedNonCredentialedEngines(
-																filtered,
-															);
-														}}
-													>
-														<ClearRounded />
-													</IconButton>
-												}
+												src={getRandomImageForProject(
+													engine.engine_name,
+												)}
 											/>
 										</Box>
 									</Box>
-								),
-							)}
+									<Card.Header
+										title={
+											<Typography variant="h6">
+												{engine.engine_name}
+											</Typography>
+										}
+										sx={{
+											color: "#000",
+											maxWidth: "85%",
+											width: "100%",
+											float: "left",
+											gap: "16px",
+											display: "inline-flex",
+											alignItems: "center",
+											paddingBottom: "7px",
+											margin: "0px 0px 0px 0px",
+										}}
+										subheader={
+											<Box
+												sx={{
+													display: "flex",
+													gap: 2,
+												}}
+											>
+												<span
+													style={{
+														opacity: 0.9,
+														fontSize: "11px",
+														width: "70%",
+														gap: "4px",
+													}}
+												>
+													{`Engine ID: `}
+													<Typography
+														variant="body2"
+														component="span"
+													>
+														{engine.engine_id}
+													</Typography>
+												</span>
+											</Box>
+										}
+										action={
+											<IconButton
+												sx={{
+													height: "48px",
+													width: "48px",
+													fontSize: "small",
+													color: "rgba( 0, 0, 0, .7)",
+													mr: "2px",
+													top: "20%",
+													position: "absolute",
+													padding: "10px",
+												}}
+												onClick={() => {
+													const filtered =
+														selectedNonCredentialedEngines.filter(
+															(val) =>
+																val.engine_id !==
+																engine.engine_id,
+														);
+													setSelectedNonCredentialedEngines(
+														filtered,
+													);
+												}}
+											>
+												<ClearRounded />
+											</IconButton>
+										}
+									/>
+								</Box>
+							</Box>
+						))}
 
 						<Typography
 							variant="subtitle1"

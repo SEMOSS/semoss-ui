@@ -26,7 +26,6 @@ const StyledPageContainer = styled("div")(({ theme }) => ({
 	// position Set to relative so we can have a modal to attach to page block
 	position: "relative",
 	width: "100%",
-	height: "100%",
 	background: theme.palette.background.paper,
 	overflow: "scroll",
 }));

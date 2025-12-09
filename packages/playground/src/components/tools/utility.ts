@@ -1,12 +1,12 @@
-import type { App, Engine, Toolbox } from "@/types";
+import type { App, Engine, MCP, Workspace } from "@/types";
 
 /**
  * MyEngineProjects returns responses in a strange foramt where Engines and Apps have different structures.
  * This function normalizes them into a common Toolbox format.
  * @param tool The engine or app to convert
- * @returns The normalized Toolbox object
+ * @returns The normalized MCP object
  */
-export const engineProjectToToolbox = (tool: Engine | App): Toolbox => {
+export const engineProjectToMCP = (tool: Engine | App): MCP => {
 	if ("app_type" in tool) {
 		// It's an Engine
 		return {
@@ -27,3 +27,20 @@ export const engineProjectToToolbox = (tool: Engine | App): Toolbox => {
 		};
 	}
 };
+
+/**
+ * Occasionally it may be useful to return the return of GetWorkspace into an App format.
+ * @param workspace The workspace to convert
+ * @returns The app
+ */
+export const workspaceToApp = (
+	workspace: Workspace,
+): App & {
+	project_type: "WORKSPACE";
+} => ({
+	project_id: workspace.workspace_id,
+	project_name: workspace.name,
+	description: workspace.description,
+	project_date_created: workspace.date_created,
+	project_type: "WORKSPACE",
+});

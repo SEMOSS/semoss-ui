@@ -1,25 +1,21 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { H4 } from "@semoss/ui/next";
-
-const APP_NAME = import.meta.env.VITE_APP_NAME
-	? import.meta.env.VITE_APP_NAME
-	: "";
-const LOGO_PATH = import.meta.env.VITE_LOGO_PATH
-	? import.meta.env.VITE_LOGO_PATH
-	: "";
+import { useRoot } from "@/hooks";
 
 export const AppLogo = observer(() => {
 	const [logo, setLogo] = useState(null);
 
+	const { root } = useRoot();
+
 	useEffect(() => {
-		fetch(LOGO_PATH)
+		fetch(root.theme.images.logo)
 			.then((res) => res.text())
 			.then((svg) => {
 				setLogo(svg);
 			})
 			.catch((err) => console.error("Failed to load SVG:", err));
-	}, []);
+	}, [root.theme.images.logo]);
 
 	return (
 		<div className="flex h-8 w-full flex-row items-center gap-2">
@@ -30,7 +26,7 @@ export const AppLogo = observer(() => {
 					dangerouslySetInnerHTML={{ __html: logo }}
 				/>
 			) : null}
-			<H4>{APP_NAME}</H4>
+			<H4>{root.theme.name}</H4>
 		</div>
 	);
 });

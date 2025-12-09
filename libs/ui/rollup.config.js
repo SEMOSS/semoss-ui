@@ -44,7 +44,7 @@ export default defineConfig({
 		json(),
 		postcss({
 			extract: true,
-			minimize: isProduction,
+			minimize: false,
 			modules: false,
 		}),
 		typescript({

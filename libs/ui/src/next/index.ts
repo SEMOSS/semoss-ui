@@ -1,6 +1,12 @@
 // Import global styles for Next components
 import "../styles/globals.css";
 
+// export the lib
+export * from "../lib";
+
+// export the hooks
+
+export * from "../hooks";
 // Re-export all components (only export what exists)
 export * from "./alert";
 export * from "./avatar";
@@ -27,6 +33,7 @@ export * from "./resizable";
 export * from "./scroll-area";
 export * from "./select";
 export * from "./separator";
+export * from "./sheet";
 export * from "./sidebar";
 export * from "./skeleton";
 export * from "./slider";
@@ -34,6 +41,7 @@ export * from "./sonner";
 export * from "./spinner";
 export * from "./stepper";
 export * from "./table";
+export * from "./tabs";
 export * from "./textarea";
 export * from "./theme-provider";
 export * from "./tooltip";

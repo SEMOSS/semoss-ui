@@ -136,7 +136,7 @@ export const EngineQAPage = () => {
 			});
 
 			setIsAnswered(true);
-		} catch (e) {
+		} catch (_e) {
 			setError("There is an error, please contact administrator");
 		} finally {
 			setIsLoading(false);
@@ -177,10 +177,16 @@ export const EngineQAPage = () => {
 				<StyledContainer>
 					<StyledPaper variant={"elevation"} elevation={2} square>
 						<Stack spacing={2}>
-							<Typography variant="h5">Q&A</Typography>
+							<Typography
+								variant="h5"
+								data-testid="engineQa-title"
+							>
+								Q&A
+							</Typography>
 							<Typography
 								variant="body1"
 								sx={{ marginBottom: "20px" }}
+								data-testid="engineQa-description"
 							>
 								Ask questions about any document within this
 								vector database. The Q&A tool assists users in
@@ -191,7 +197,11 @@ export const EngineQAPage = () => {
 								inputs, and uses LLM models to provide answers.
 							</Typography>
 							{error && (
-								<Alert severity="error" color="error">
+								<Alert
+									severity="error"
+									color="error"
+									data-testid="engineQa-error-alert"
+								>
 									{error}
 								</Alert>
 							)}
@@ -214,6 +224,7 @@ export const EngineQAPage = () => {
 											}
 											multiline
 											rows={4}
+											data-testid="engineQa-question-input"
 										/>
 									);
 								}}
@@ -233,9 +244,7 @@ export const EngineQAPage = () => {
 										startIcon={
 											isLoading ? (
 												<CircularProgress size="1em" />
-											) : (
-												<></>
-											)
+											) : null
 										}
 										data-testid={"engineQa-generate-btn"}
 									>

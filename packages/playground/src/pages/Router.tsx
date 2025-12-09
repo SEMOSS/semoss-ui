@@ -6,6 +6,8 @@ import { LoginPage } from "./login-page";
 import { MainLayout } from "./main-layout";
 import { NewRoomPage } from "./new-room-page";
 import { RoomPage } from "./room-page";
+import { RootLayout } from "./root-layout";
+import { WorkspaceDetailPage } from "./workspace-detail-page";
 import { WorkspacePage } from "./workspace-page";
 
 /**
@@ -28,27 +30,39 @@ export const Router = () => {
 	}
 
 	return (
-		<HashRouter
-			future={{
-				v7_startTransition: true,
-				v7_relativeSplatPath: true,
-			}}
-		>
-			<Routes>
-				<Route element={<AuthenticatedLayout />}>
-					<Route element={<MainLayout />}>
-						<Route path="new" element={<NewRoomPage />} />
-						<Route path="room/:roomId" element={<RoomPage />} />
-						<Route path="workspace" element={<WorkspacePage />} />
-						<Route
-							path="*"
-							element={<Navigate to="/new" replace />}
-						/>
+		<RootLayout>
+			<HashRouter
+				future={{
+					v7_startTransition: true,
+					v7_relativeSplatPath: true,
+				}}
+			>
+				<Routes>
+					<Route element={<AuthenticatedLayout />}>
+						<Route element={<MainLayout />}>
+							<Route path="new" element={<NewRoomPage />} />
+							<Route path="room/:roomId" element={<RoomPage />} />
+							<Route
+								path="workspace"
+								element={<WorkspacePage />}
+							/>
+							<Route
+								path="workspace/:workspaceId"
+								element={<WorkspaceDetailPage />}
+							/>
+							<Route
+								path="*"
+								element={<Navigate to="/new" replace />}
+							/>
+						</Route>
 					</Route>
-				</Route>
-				<Route path="/login" element={<LoginPage />}></Route>
-				<Route path="*" element={<Navigate to="/login" replace />} />
-			</Routes>
-		</HashRouter>
+					<Route path="/login" element={<LoginPage />}></Route>
+					<Route
+						path="*"
+						element={<Navigate to="/login" replace />}
+					/>
+				</Routes>
+			</HashRouter>
+		</RootLayout>
 	);
 };

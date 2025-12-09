@@ -5,13 +5,13 @@ import {
 	FilterList as FilterListIcon,
 	Search as SearchIcon,
 } from "@mui/icons-material";
-import React, { useMemo, useState } from "react";
+import type React from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
 	Badge,
 	Box,
 	Button,
 	Checkbox,
-	Chip,
 	Drawer,
 	IconButton,
 	InputAdornment,
@@ -23,17 +23,20 @@ import {
 	Table,
 	TextField,
 	Typography,
+	useTheme,
 } from "@semoss/ui";
+import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
 import type { EventData } from "@/types";
 import { AuditLogsDetailDrawer } from "./AuditLogsDetailDrawer";
 
-const Container = styled(Paper)({
+// Styled Components
+const Container = styled(Paper)(({ theme }) => ({
 	padding: 0,
-	backgroundColor: "#fff",
+	backgroundColor: theme.palette.common.white,
 	borderRadius: 8,
-	border: "1px solid #e0e0e0",
+	border: `1px solid ${theme.palette.divider}`,
 	marginTop: 16,
-});
+}));
 
 const Header = styled(Box)({
 	display: "flex",
@@ -42,90 +45,82 @@ const Header = styled(Box)({
 	padding: 16,
 });
 
-const StyledTitle = styled(Typography)({
+const StyledTitle = styled(Typography)(({ theme }) => ({
 	fontWeight: 600,
-	color: "#333",
+	color: theme.palette.text.primary,
 	fontSize: "18px",
-});
+}));
 
-const SearchSection = styled(Box)({
+const SearchSection = styled(Box)(({ theme }) => ({
 	padding: "16px",
-	borderBottom: "1px solid #e0e0e0",
-	backgroundColor: "#f8f9fa",
+	borderBottom: `1px solid ${theme.palette.divider}`,
 	display: "flex",
 	alignItems: "center",
 	gap: "16px",
-});
+	flexWrap: "wrap",
+}));
 
-const SearchField = styled(TextField)({
+const SearchField = styled(TextField)(({ theme }) => ({
 	minWidth: "400px",
-	flex: "1 1 400px",
 	"& .MuiOutlinedInput-root": {
-		backgroundColor: "#fff",
+		backgroundColor: theme.palette.common.white,
 		height: "40px",
 	},
-});
+}));
 
-const FilterChipsContainer = styled(Box)({
-	display: "flex",
-	gap: "8px",
-	alignItems: "center",
-	flexWrap: "wrap",
-});
-
-const ResultsInfo = styled(Box)({
+const ResultsInfo = styled(Box)(({ theme }) => ({
 	padding: "8px 16px",
-	backgroundColor: "#f0f4f8",
-	borderBottom: "1px solid #e0e0e0",
+	backgroundColor: theme.palette.primary.hover,
+	borderBottom: `1px solid ${theme.palette.divider}`,
 	display: "flex",
 	justifyContent: "space-between",
 	alignItems: "center",
-});
+}));
 
-const StyledTableContainer = styled(Table.Container)({
-	backgroundColor: "#fff",
+const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
+	backgroundColor: theme.palette.common.white,
 	padding: "16px",
 	"& .MuiTable-root": {
 		borderCollapse: "separate",
 		borderSpacing: 0,
 	},
-});
+}));
 
-const StyledTableHead = styled(Table.Head)({
+const StyledTableHead = styled(Table.Head)(({ theme }) => ({
 	"& .MuiTableCell-head": {
-		backgroundColor: "#f5f9fe",
+		backgroundColor: theme.palette.primary.hover,
 		fontWeight: 600,
-		color: "#0471F0",
+		color: theme.palette.primary.main,
 		padding: "6px 16px",
-		borderBottom: "1px solid #e0e0e0",
+		borderBottom: `1px solid ${theme.palette.divider}`,
 		zIndex: 0,
 	},
-});
+}));
 
-const StyledTableRow = styled(Table.Row)({
+const StyledTableRow = styled(Table.Row)(({ theme }) => ({
 	cursor: "pointer",
 	transition: "background-color 0.15s ease",
 	"&:hover": {
-		backgroundColor: "#f8f9fa",
+		backgroundColor: theme.palette.primary.hover,
 	},
 	"& .MuiTableCell-root": {
-		borderBottom: "1px solid #f0f0f0",
+		borderBottom: `1px solid ${theme.palette.divider}`,
 		padding: "12px 16px",
 	},
-});
+}));
 
-const StyledTableCell = styled(Table.Cell)({
+const StyledTableCell = styled(Table.Cell)(({ theme }) => ({
 	padding: "12px 16px",
 	fontSize: "14px",
-	color: "#333",
+	color: theme.palette.text.primary,
 	verticalAlign: "middle",
 	width: "fit-content",
 	maxWidth: "fit-content",
-	"&:first-of-type, &:nth-of-type(2)": {
+	"&:nth-of-type(3), &:nth-of-type(4)": {
 		width: "15%",
 		maxWidth: "15%",
 	},
-});
+}));
 
 const HeaderCellContent = styled(Box)({
 	display: "flex",
@@ -142,16 +137,13 @@ const FilterPopover = styled(Popover)({
 		borderRadius: "8px",
 		border: "1px solid #e0e0e0",
 		minWidth: "250px",
+		maxWidth: "350px",
 	},
 });
 
 const FilterPopoverContent = styled(Box)({
 	maxHeight: "300px",
 	overflowY: "auto",
-});
-
-const FilterSection = styled(Box)({
-	padding: "0",
 });
 
 const FilterOptionsList = styled(List)({
@@ -165,7 +157,7 @@ const FilterListItem = styled(List.Item)({
 });
 
 const StyledListItemButton = styled(List.ItemButton)({
-	padding: "0px 16px",
+	padding: "8px 16px",
 	borderRadius: 0,
 	margin: 0,
 	display: "flex",
@@ -180,21 +172,6 @@ const StyledListItemButton = styled(List.ItemButton)({
 	},
 });
 
-const SelectAllListItemButton = styled(List.ItemButton)({
-	padding: "0px 16px",
-	borderRadius: 0,
-	margin: 0,
-	display: "flex",
-	alignItems: "center",
-	"&:hover": {
-		backgroundColor: "#f5f5f5",
-	},
-	"& .MuiListItemText-primary": {
-		fontSize: "14px",
-		color: "#333",
-	},
-});
-
 const StyledCheckbox = styled(Checkbox)({
 	"& .MuiSvgIcon-root": {
 		fontSize: "20px",
@@ -202,7 +179,7 @@ const StyledCheckbox = styled(Checkbox)({
 });
 
 const FilterActions = styled(Box)({
-	padding: "8px 16px",
+	padding: "12px 16px",
 	borderTop: "1px solid #e0e0e0",
 	backgroundColor: "#fafafa",
 	display: "flex",
@@ -212,12 +189,21 @@ const FilterActions = styled(Box)({
 
 const FilterActionButton = styled(Button)({
 	flex: 1,
-	height: "24px",
+	height: "32px",
 	fontSize: "14px",
-	fontWeight: 400,
+	fontWeight: 500,
 	textTransform: "none",
 });
 
+const PaginationContainer = styled(Box)(({ theme }) => ({
+	display: "flex",
+	justifyContent: "flex-end",
+	alignItems: "center",
+	borderTop: `1px solid ${theme.palette.divider}`,
+	backgroundColor: theme.palette.common.white,
+}));
+
+// Types
 interface FilterState {
 	engineType: string[];
 	engineName: string[];
@@ -228,27 +214,42 @@ interface FilterState {
 
 interface PopoverState {
 	anchorEl: HTMLElement | null;
-	column: string | null;
+	column: keyof FilterState | null;
 }
 
 interface AuditLogsDataTableProps {
 	logs: EventData[];
+	totalCount?: number;
+	page: number;
+	rowsPerPage: number;
+	onPaginationChange: (page: number, rowsPerPage: number) => void;
 }
 
-const TimeDateFormatter = (timeStamp: string | number) => {
-	const tempDate = new Date(timeStamp);
-	const formattedDate = tempDate.toISOString().split('.')[0];
-    const date = formattedDate.split("T")[0];
-    const time = formattedDate.split("T")[1];
-    return { date, time };
+interface FilterOption {
+	label: string;
+	value: string;
+}
+
+const ellipsed = (text: string | null, maxLength = 50) => {
+	if (!text) return "";
+	return text.length > maxLength
+		? `${text.substring(0, maxLength - 3)}...`
+		: text;
 };
 
+// Main Component
 export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	logs = [],
+	totalCount = 0,
+	page,
+	rowsPerPage,
+	onPaginationChange,
 }) => {
+	const theme = useTheme();
+
+	// State Management
 	const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
 	const [drawerOpen, setDrawerOpen] = useState(false);
-
 	const [searchQuery, setSearchQuery] = useState("");
 	const [appliedFilters, setAppliedFilters] = useState<FilterState>({
 		engineType: [],
@@ -257,7 +258,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		latencyRange: [],
 		tokenRange: [],
 	});
-
 	const [tempFilters, setTempFilters] = useState<FilterState>({
 		engineType: [],
 		engineName: [],
@@ -265,50 +265,139 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		latencyRange: [],
 		tokenRange: [],
 	});
-
 	const [popoverState, setPopoverState] = useState<PopoverState>({
 		anchorEl: null,
 		column: null,
 	});
 
+	// Generate Filter Options
 	const filterOptions = useMemo(() => {
-		const engineType = [
-			...new Set(logs.map((log) => log.engineType)),
-		].filter(Boolean);
-		const engineName = [
-			...new Set(logs.map((log) => log.engineName)),
-		].filter(Boolean);
-		const status = [...new Set(logs.map((log) => log.status))].filter(
-			Boolean,
+		const engineTypes = [
+			...new Set(logs.map((log) => log.engineType).filter(Boolean)),
+		];
+		const engineNames = [
+			...new Set(logs.map((log) => log.engineName).filter(Boolean)),
+		];
+		const statuses = [...new Set(logs.map((log) => log.status))].filter(
+			(status) => status !== undefined && status !== null,
 		);
 
-		const generateDynamicLatencyRanges = () => {
+		const generateDynamicLatencyRanges = (): FilterOption[] => {
 			const latencies = logs
 				.map((log) => Number(log.latency))
-				.filter((latency) => !Number.isNaN(latency) && latency > 0)
+				.filter((latency) => !Number.isNaN(latency) && latency >= 0)
 				.sort((a, b) => a - b);
 
-			if (!latencies.length) {
+			if (latencies.length === 0) {
 				return [
-					{ label: "Fast (≤ 5s)", value: "0-5000" },
-					{ label: "Medium (5-15s)", value: "5000-15000" },
-					{ label: "Slow (> 15s)", value: "15000-999999" },
+					{ label: "Fast (≤ 5ms)", value: "0-5" },
+					{ label: "Medium (5-50ms)", value: "6-50" },
+					{ label: "Slow (> 50ms)", value: "51-999999" },
 				];
 			}
 
 			const minLatency = latencies[0];
 			const maxLatency = latencies[latencies.length - 1];
 
+			// If all values are the same
 			if (minLatency === maxLatency) {
-				const latencyInSeconds = (minLatency / 1000).toFixed(1);
 				return [
 					{
-						label: `${latencyInSeconds}s`,
+						label: `${minLatency}ms`,
 						value: `${minLatency}-${minLatency}`,
 					},
 				];
 			}
 
+			// Get unique latency values to determine bucket boundaries
+			const uniqueLatencies = [...new Set(latencies)].sort(
+				(a, b) => a - b,
+			);
+
+			// If there are only 2 unique values
+			if (uniqueLatencies.length === 2) {
+				return [
+					{
+						label: `Fast (≤ ${uniqueLatencies[0]}ms)`,
+						value: `${uniqueLatencies[0]}-${uniqueLatencies[0]}`,
+					},
+					{
+						label: `Slow (≥ ${uniqueLatencies[1]}ms)`,
+						value: `${uniqueLatencies[1]}-${maxLatency}`,
+					},
+				];
+			}
+
+			// If there are only 3 unique values
+			if (uniqueLatencies.length === 3) {
+				return [
+					{
+						label: `Fast (${uniqueLatencies[0]}ms)`,
+						value: `${uniqueLatencies[0]}-${uniqueLatencies[0]}`,
+					},
+					{
+						label: `Medium (${uniqueLatencies[1]}ms)`,
+						value: `${uniqueLatencies[1]}-${uniqueLatencies[1]}`,
+					},
+					{
+						label: `Slow (${uniqueLatencies[2]}ms)`,
+						value: `${uniqueLatencies[2]}-${uniqueLatencies[2]}`,
+					},
+				];
+			}
+
+			// For more than 3 unique values, use percentile-based bucketing
+			if (maxLatency < 1000) {
+				// Calculate percentile-based buckets
+				const p33Index = Math.floor(uniqueLatencies.length * 0.33);
+				const p66Index = Math.floor(uniqueLatencies.length * 0.66);
+
+				const bucket1End = uniqueLatencies[p33Index];
+				const bucket2Start =
+					uniqueLatencies[p33Index + 1] || bucket1End + 1;
+				const bucket2End = uniqueLatencies[p66Index];
+				const bucket3Start =
+					uniqueLatencies[p66Index + 1] || bucket2End + 1;
+
+				// Ensure no overlapping ranges
+				if (bucket1End >= bucket2Start || bucket2End >= bucket3Start) {
+					// Fall back to equal distribution
+					const range = maxLatency - minLatency;
+					const step = Math.ceil(range / 3);
+
+					return [
+						{
+							label: `Fast (≤ ${minLatency + step}ms)`,
+							value: `${minLatency}-${minLatency + step}`,
+						},
+						{
+							label: `Medium (${minLatency + step + 1}ms - ${minLatency + step * 2}ms)`,
+							value: `${minLatency + step + 1}-${minLatency + step * 2}`,
+						},
+						{
+							label: `Slow (> ${minLatency + step * 2}ms)`,
+							value: `${minLatency + step * 2 + 1}-${maxLatency}`,
+						},
+					];
+				}
+
+				return [
+					{
+						label: `Fast (≤ ${bucket1End}ms)`,
+						value: `${minLatency}-${bucket1End}`,
+					},
+					{
+						label: `Medium (${bucket2Start}ms - ${bucket2End}ms)`,
+						value: `${bucket2Start}-${bucket2End}`,
+					},
+					{
+						label: `Slow (> ${bucket2End}ms)`,
+						value: `${bucket3Start}-${maxLatency}`,
+					},
+				];
+			}
+
+			// For larger latencies (≥ 1000ms), use second-based ranges
 			const range = maxLatency - minLatency;
 			const bucketSize = Math.ceil(range / 3);
 
@@ -321,7 +410,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					value: `${minLatency}-${bucket1End}`,
 				},
 				{
-					label: `Medium (${(bucket1End + 1) / 1000 < 1 ? `${Math.round(bucket1End + 1)}ms` : ((bucket1End + 1) / 1000).toFixed(1)}s - ${(bucket2End / 1000).toFixed(1)}s)`,
+					label: `Medium (${((bucket1End + 1) / 1000).toFixed(1)}s - ${(bucket2End / 1000).toFixed(1)}s)`,
 					value: `${bucket1End + 1}-${bucket2End}`,
 				},
 				{
@@ -331,17 +420,20 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			];
 		};
 
-		const generateDynamicTokenRanges = () => {
+		const generateDynamicTokenRanges = (): FilterOption[] => {
 			const tokens = logs
-				.map((log) => parseInt(log.tokens) || 0)
+				.map((log) => {
+					const parsed = parseInt(log.tokens, 10);
+					return Number.isNaN(parsed) ? 0 : parsed;
+				})
 				.filter((token) => token > 0)
 				.sort((a, b) => a - b);
 
-			if (!tokens.length) {
+			if (tokens.length === 0) {
 				return [
-					{ label: "Short (< 10)", value: "0-10" },
-					{ label: "Medium (10-50)", value: "10-50" },
-					{ label: "Long (> 50)", value: "50-999999" },
+					{ label: "Short (< 100)", value: "0-100" },
+					{ label: "Medium (100-500)", value: "100-500" },
+					{ label: "Long (> 500)", value: "500-999999" },
 				];
 			}
 
@@ -380,42 +472,61 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		};
 
 		return {
-			engineType,
-			engineName,
-			status,
+			engineType: engineTypes,
+			engineName: engineNames,
+			status: statuses.map(String),
 			latencyRange: generateDynamicLatencyRanges(),
 			tokenRange: generateDynamicTokenRanges(),
 		};
 	}, [logs]);
 
+	// Filter Logs
 	const filteredLogs = useMemo(() => {
-		let filtered = logs;
+		let filtered = [...logs];
 
+		// Apply search query
 		if (searchQuery.trim()) {
 			const query = searchQuery.toLowerCase().trim();
 			filtered = filtered.filter(
 				(log) =>
-					log.payload?.toLowerCase().includes(query) ||
+					log.engineName?.toLowerCase().includes(query) ||
+					log.engineType?.toLowerCase().includes(query) ||
+					log.userId?.toLowerCase().includes(query) ||
+					log.sessionId?.toLowerCase().includes(query) ||
+					log.request?.toLowerCase().includes(query) ||
 					log.response?.toLowerCase().includes(query) ||
-					log.engineName?.toLowerCase().includes(query),
+					log.latency?.toString().toLowerCase().includes(query) ||
+					log.tokens?.toString().toLowerCase().includes(query),
 			);
 		}
 
+		// Apply engine type filter
 		if (appliedFilters.engineType.length > 0) {
 			filtered = filtered.filter((log) =>
 				appliedFilters.engineType.includes(log.engineType),
 			);
 		}
 
-		if (appliedFilters.status.length > 0) {
+		// Apply engine name filter
+		if (appliedFilters.engineName.length > 0) {
 			filtered = filtered.filter((log) =>
-				appliedFilters.status.includes(log.status),
+				appliedFilters.engineName.includes(log.engineName),
 			);
 		}
 
+		// Apply status filter
+		if (appliedFilters.status.length > 0) {
+			filtered = filtered.filter((log) =>
+				appliedFilters.status.includes(String(log.status)),
+			);
+		}
+
+		// Apply latency range filter
 		if (appliedFilters.latencyRange.length > 0) {
 			filtered = filtered.filter((log) => {
 				const logLatency = Number(log.latency);
+				if (Number.isNaN(logLatency)) return false;
+
 				return appliedFilters.latencyRange.some((range) => {
 					const [min, max] = range.split("-").map(Number);
 					return logLatency >= min && logLatency <= max;
@@ -423,9 +534,12 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			});
 		}
 
+		// Apply token range filter
 		if (appliedFilters.tokenRange.length > 0) {
 			filtered = filtered.filter((log) => {
-				const logTokens = parseInt(log.tokens) || 0;
+				const logTokens = parseInt(log.tokens, 10);
+				if (Number.isNaN(logTokens)) return false;
+
 				return appliedFilters.tokenRange.some((range) => {
 					const [min, max] = range.split("-").map(Number);
 					return logTokens >= min && logTokens <= max;
@@ -433,200 +547,246 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			});
 		}
 
-		if (appliedFilters.engineName.length > 0) {
-			filtered = filtered.filter((log) =>
-				appliedFilters.engineName.includes(log.engineName),
-			);
-		}
-
 		return filtered;
 	}, [logs, searchQuery, appliedFilters]);
 
-	const handleFilterClick = (
-		event: React.MouseEvent<unknown, MouseEvent>,
-		column: string,
-	) => {
-		event.stopPropagation();
-		setTempFilters({ ...appliedFilters });
-		setPopoverState({
-			anchorEl: event.currentTarget as HTMLElement,
-			column,
-		});
-	};
+	// Event Handlers
+	const handleFilterClick = useCallback(
+		(event: React.MouseEvent<HTMLElement>, column: keyof FilterState) => {
+			event.stopPropagation();
+			setTempFilters({ ...appliedFilters });
+			setPopoverState({
+				anchorEl: event.currentTarget,
+				column,
+			});
+		},
+		[appliedFilters],
+	);
 
-	const handlePopoverClose = () => {
+	const handlePopoverClose = useCallback(() => {
 		setPopoverState({
 			anchorEl: null,
 			column: null,
 		});
 		setTempFilters({ ...appliedFilters });
-	};
+	}, [appliedFilters]);
 
-	const handleApplyFilters = () => {
+	const handleApplyFilters = useCallback(() => {
 		setAppliedFilters({ ...tempFilters });
 		handlePopoverClose();
-	};
+	}, [tempFilters, handlePopoverClose]);
 
-	const handleClearAllFilters = () => {
-		const clearedFilters = {
+	const handleClearFilterPopover = useCallback(() => {
+		if (popoverState.column) {
+			setTempFilters((prev) => ({
+				...prev,
+				[popoverState.column as string]: [],
+			}));
+		}
+	}, [popoverState.column]);
+
+	const handleMultiSelectFilter = useCallback(
+		(filterType: keyof FilterState, value: string) => {
+			setTempFilters((prev) => ({
+				...prev,
+				[filterType]: prev[filterType].includes(value)
+					? prev[filterType].filter((item) => item !== value)
+					: [...prev[filterType], value],
+			}));
+		},
+		[],
+	);
+
+	const handleSelectAll = useCallback(
+		(filterType: keyof FilterState, allOptions: string[]) => {
+			setTempFilters((prev) => {
+				const isAllSelected =
+					prev[filterType].length === allOptions.length;
+				return {
+					...prev,
+					[filterType]: isAllSelected ? [] : [...allOptions],
+				};
+			});
+		},
+		[],
+	);
+
+	const handleClearAllFilters = useCallback(() => {
+		setSearchQuery("");
+		const clearedFilters: FilterState = {
 			engineType: [],
 			engineName: [],
 			status: [],
 			latencyRange: [],
 			tokenRange: [],
 		};
+		setAppliedFilters(clearedFilters);
 		setTempFilters(clearedFilters);
-	};
+	}, []);
 
-	const handleMultiSelectFilter = (
-		filterType: keyof FilterState,
-		value: string,
-	) => {
-		setTempFilters((prev) => ({
-			...prev,
-			[filterType]: prev[filterType].includes(value)
-				? prev[filterType].filter((item) => item !== value)
-				: [...prev[filterType], value],
-		}));
-	};
+	const handleRowClick = useCallback((event: EventData) => {
+		setSelectedEvent(event);
+		setDrawerOpen(true);
+	}, []);
 
-	const handleSelectAll = (
-		filterType: keyof FilterState,
-		allOptions: string[],
-	) => {
-		setTempFilters((prev) => ({
-			...prev,
-			[filterType]:
-				tempFilters[filterType].length === allOptions.length
-					? []
-					: [...allOptions],
-		}));
-	};
+	const handleDrawerClose = useCallback(() => {
+		setDrawerOpen(false);
+		setTimeout(() => {
+			setSelectedEvent(null);
+		}, 300);
+	}, []);
 
-	const clearFilters = () => {
-		setSearchQuery("");
-		setAppliedFilters({
-			engineType: [],
-			engineName: [],
-			status: [],
-			latencyRange: [],
-			tokenRange: [],
-		});
-		setTempFilters({
-			engineType: [],
-			engineName: [],
-			status: [],
-			latencyRange: [],
-			tokenRange: [],
-		});
-	};
+	const handleChangePage = useCallback(
+		(_event: unknown, newPage: number) => {
+			onPaginationChange(newPage, rowsPerPage);
+		},
+		[onPaginationChange, rowsPerPage],
+	);
 
-	const getActiveFiltersCount = (column?: string) => {
-		if (column) {
-			return appliedFilters[column].length;
-		}
-		return (
-			appliedFilters.engineType.length +
-			appliedFilters.engineName.length +
-			appliedFilters.latencyRange.length +
-			appliedFilters.tokenRange.length +
-			appliedFilters.status.length +
-			(searchQuery ? 1 : 0)
-		);
-	};
+	const handleChangeRowsPerPage = useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>) => {
+			const newRowsPerPage = parseInt(event.target.value, 10);
+			onPaginationChange(0, newRowsPerPage);
+		},
+		[onPaginationChange],
+	);
 
-	const renderFilterPopover = () => {
+	// Get Active Filters Count
+	const getActiveFiltersCount = useCallback(
+		(column?: keyof FilterState) => {
+			if (column) {
+				return appliedFilters[column].length;
+			}
+			return (
+				appliedFilters.engineType.length +
+				appliedFilters.engineName.length +
+				appliedFilters.latencyRange.length +
+				appliedFilters.tokenRange.length +
+				appliedFilters.status.length
+			);
+		},
+		[appliedFilters],
+	);
+
+	const totalActiveFilters = getActiveFiltersCount() + (searchQuery ? 1 : 0);
+
+	// Render Filter Popover Content
+	const renderFilterPopover = useCallback(() => {
 		const { column } = popoverState;
 		if (!column) return null;
 
-		const renderFilterContent = () => {
-			const optionValues = filterOptions[column];
-			const allSelected =
-				tempFilters[column]?.length === optionValues?.length;
-			return (
-				<FilterOptionsList>
-					<FilterListItem>
-						<SelectAllListItemButton
-							onClick={() =>
-								handleSelectAll(
-									column as keyof FilterState,
-									optionValues.map((option) =>
-										typeof option === "object"
-											? option.value
-											: option,
-									),
-								)
-							}
-						>
-							<StyledCheckbox
-								checked={allSelected}
-								checkboxProps={{
-									indeterminate:
-										tempFilters[column]?.length > 0 &&
-										!allSelected,
-								}}
-							/>
-							<List.ItemText
-								primary="Select All"
-								primaryTypographyProps={{
-									fontSize: "14px",
-								}}
-							/>
-						</SelectAllListItemButton>
-					</FilterListItem>
-					{optionValues.map((optionValue) => {
-						const option =
-							typeof optionValue === "object"
-								? optionValue
-								: { value: optionValue, label: optionValue };
+		const options = filterOptions[column];
+		const optionValues =
+			column === "latencyRange" || column === "tokenRange"
+				? (options as FilterOption[]).map((opt) => opt.value)
+				: (options as string[]);
 
-						return (
-							<FilterListItem key={option.value}>
-								<StyledListItemButton
-									onClick={() =>
-										handleMultiSelectFilter(
-											column as keyof FilterState,
-											option.value,
-										)
-									}
-								>
-									<StyledCheckbox
-										checked={tempFilters[column].includes(
-											option.value,
-										)}
-									/>
-									<List.ItemText
-										primary={option.label}
-										primaryTypographyProps={{
-											fontSize: "14px",
-											fontWeight: tempFilters[
-												column
-											].includes(option.value)
-												? 500
-												: 400,
-										}}
-									/>
-								</StyledListItemButton>
-							</FilterListItem>
-						);
-					})}
-				</FilterOptionsList>
-			);
-		};
+		const allSelected = tempFilters[column].length === optionValues.length;
 
 		return (
 			<>
 				<FilterPopoverContent>
-					<FilterSection>{renderFilterContent()}</FilterSection>
-				</FilterPopoverContent>
+					<FilterOptionsList>
+						<FilterListItem>
+							<StyledListItemButton
+								onClick={() =>
+									handleSelectAll(column, optionValues)
+								}
+							>
+								<StyledCheckbox
+									checked={allSelected}
+									checkboxProps={{
+										indeterminate:
+											tempFilters[column].length > 0 &&
+											!allSelected,
+									}}
+								/>
+								<List.ItemText
+									primary="Select All"
+									primaryTypographyProps={{
+										fontSize: "14px",
+										fontWeight: 500,
+									}}
+								/>
+							</StyledListItemButton>
+						</FilterListItem>
+						{column === "latencyRange" || column === "tokenRange"
+							? (options as FilterOption[]).map((option) => (
+									<FilterListItem key={option.value}>
+										<StyledListItemButton
+											onClick={() =>
+												handleMultiSelectFilter(
+													column,
+													option.value,
+												)
+											}
+										>
+											<StyledCheckbox
+												checked={tempFilters[
+													column
+												].includes(option.value)}
+											/>
+											<List.ItemText
+												primary={option.label}
+												primaryTypographyProps={{
+													fontSize: "14px",
+													fontWeight: tempFilters[
+														column
+													].includes(option.value)
+														? 500
+														: 400,
+												}}
+											/>
+										</StyledListItemButton>
+									</FilterListItem>
+								))
+							: (options as string[]).map((value) => {
+									const displayValue =
+										column === "status"
+											? value === "true"
+												? "Success"
+												: "Failed"
+											: value;
 
+									return (
+										<FilterListItem key={value}>
+											<StyledListItemButton
+												onClick={() =>
+													handleMultiSelectFilter(
+														column,
+														value,
+													)
+												}
+											>
+												<StyledCheckbox
+													checked={tempFilters[
+														column
+													].includes(value)}
+												/>
+												<List.ItemText
+													primary={displayValue}
+													primaryTypographyProps={{
+														fontSize: "14px",
+														fontWeight: tempFilters[
+															column
+														].includes(value)
+															? 500
+															: 400,
+													}}
+												/>
+											</StyledListItemButton>
+										</FilterListItem>
+									);
+								})}
+					</FilterOptionsList>
+				</FilterPopoverContent>
 				<FilterActions>
 					<FilterActionButton
 						variant="text"
-						onClick={handleClearAllFilters}
+						onClick={handleClearFilterPopover}
 						color="inherit"
 					>
-						Clear All
+						Clear
 					</FilterActionButton>
 					<FilterActionButton
 						variant="contained"
@@ -638,22 +798,17 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				</FilterActions>
 			</>
 		);
-	};
+	}, [
+		popoverState,
+		filterOptions,
+		tempFilters,
+		handleSelectAll,
+		handleMultiSelectFilter,
+		handleClearFilterPopover,
+		handleApplyFilters,
+	]);
 
-	const handleRowClick = (event: EventData) => {
-		setSelectedEvent(event);
-		setDrawerOpen(true);
-	};
-
-	const handleDrawerClose = () => {
-		setDrawerOpen(false);
-		setSelectedEvent(null);
-	};
-
-	const ellipsed = (text: string | null) => {
-		return text?.length > 50 ? `${text.substring(0, 47)}...` : text;
-	};
-
+	// Empty State
 	if (!logs || logs.length === 0) {
 		return (
 			<Container elevation={1}>
@@ -678,81 +833,46 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					<StyledTitle variant="h6">
 						Prompt & Response Timeline
 					</StyledTitle>
-				</Header>
-
-				<SearchSection>
-					<SearchField
-						placeholder="Search prompts, responses..."
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-						InputProps={{
-							startAdornment: (
-								<InputAdornment position="start">
-									<SearchIcon sx={{ color: "#666" }} />
-								</InputAdornment>
-							),
-							endAdornment: searchQuery && (
-								<InputAdornment position="end">
-									<IconButton
-										size="small"
-										onClick={() => setSearchQuery("")}
-									>
-										<ClearIcon fontSize="small" />
-									</IconButton>
-								</InputAdornment>
-							),
-						}}
-					/>
-					{getActiveFiltersCount() > 0 && (
-						<FilterChipsContainer>
-							{Object.entries(appliedFilters).map(
-								([key, values]) => (
-									<React.Fragment key={key}>
-										{values.length > 0 && (
-											<Chip
-												label={`${
-													key
-														.slice(0, 1)
-														?.toUpperCase() +
-													key.slice(1)
-												}: ${values.join(", ")}`}
-												size="small"
-												onDelete={() =>
-													setAppliedFilters(
-														(prev) => ({
-															...prev,
-															[key]: [],
-														}),
-													)
-												}
-												color="primary"
-												variant="outlined"
-											/>
-										)}
-									</React.Fragment>
-								),
-							)}
-							{searchQuery && (
-								<Chip
-									label={`Search: "${searchQuery}"`}
-									size="small"
-									onDelete={() => setSearchQuery("")}
-									color="primary"
-									variant="outlined"
-								/>
-							)}
+					<Box display="flex" alignItems="center" gap={2}>
+						{totalActiveFilters > 0 && (
 							<Button
 								variant="outlined"
-								size="small"
-								onClick={clearFilters}
+								// size="small"
+								onClick={handleClearAllFilters}
 								startIcon={<ClearIcon />}
 							>
-								Clear All
+								Clear Filters
 							</Button>
-						</FilterChipsContainer>
-					)}
-				</SearchSection>
-
+						)}
+						<SearchField
+							placeholder="Search logs..."
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							InputProps={{
+								startAdornment: (
+									<InputAdornment position="start">
+										<SearchIcon
+											sx={{
+												color: theme.palette.text
+													.secondary,
+											}}
+										/>
+									</InputAdornment>
+								),
+								endAdornment: searchQuery && (
+									<InputAdornment position="end">
+										<IconButton
+											size="small"
+											onClick={() => setSearchQuery("")}
+										>
+											<ClearIcon fontSize="small" />
+										</IconButton>
+									</InputAdornment>
+								),
+							}}
+						/>
+					</Box>
+				</Header>
 				<StyledTableContainer>
 					<Table stickyHeader>
 						<StyledTableHead>
@@ -760,7 +880,21 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 								<Table.Cell>
 									<HeaderCellContent>
 										<Typography variant="subtitle2">
-											Prompt
+											User Id
+										</Typography>
+									</HeaderCellContent>
+								</Table.Cell>
+								<Table.Cell>
+									<HeaderCellContent>
+										<Typography variant="subtitle2">
+											Session Id
+										</Typography>
+									</HeaderCellContent>
+								</Table.Cell>
+								<Table.Cell>
+									<HeaderCellContent>
+										<Typography variant="subtitle2">
+											Request
 										</Typography>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -781,22 +915,24 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Engine Type
 											</Typography>
-											<Badge
-												color="primary"
-												badgeContent={getActiveFiltersCount(
-													"engineType",
-												)}
+											<IconButton
+												size="small"
+												onClick={(e) =>
+													handleFilterClick(
+														e,
+														"engineType",
+													)
+												}
 											>
-												<FilterListIcon
-													fontSize="small"
-													onClick={(e) =>
-														handleFilterClick(
-															e,
-															"engineType",
-														)
-													}
-												/>
-											</Badge>
+												<Badge
+													color="primary"
+													badgeContent={getActiveFiltersCount(
+														"engineType",
+													)}
+												>
+													<FilterListIcon fontSize="small" />
+												</Badge>
+											</IconButton>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -810,22 +946,24 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Engine Name
 											</Typography>
-											<Badge
-												color="primary"
-												badgeContent={getActiveFiltersCount(
-													"engineName",
-												)}
+											<IconButton
+												size="small"
+												onClick={(e) =>
+													handleFilterClick(
+														e,
+														"engineName",
+													)
+												}
 											>
-												<FilterListIcon
-													fontSize="small"
-													onClick={(e) =>
-														handleFilterClick(
-															e,
-															"engineName",
-														)
-													}
-												/>
-											</Badge>
+												<Badge
+													color="primary"
+													badgeContent={getActiveFiltersCount(
+														"engineName",
+													)}
+												>
+													<FilterListIcon fontSize="small" />
+												</Badge>
+											</IconButton>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -839,22 +977,24 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Latency
 											</Typography>
-											<Badge
-												color="primary"
-												badgeContent={getActiveFiltersCount(
-													"latencyRange",
-												)}
+											<IconButton
+												size="small"
+												onClick={(e) =>
+													handleFilterClick(
+														e,
+														"latencyRange",
+													)
+												}
 											>
-												<FilterListIcon
-													fontSize="small"
-													onClick={(e) =>
-														handleFilterClick(
-															e,
-															"latencyRange",
-														)
-													}
-												/>
-											</Badge>
+												<Badge
+													color="primary"
+													badgeContent={getActiveFiltersCount(
+														"latencyRange",
+													)}
+												>
+													<FilterListIcon fontSize="small" />
+												</Badge>
+											</IconButton>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -868,22 +1008,24 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Tokens
 											</Typography>
-											<Badge
-												color="primary"
-												badgeContent={getActiveFiltersCount(
-													"tokenRange",
-												)}
+											<IconButton
+												size="small"
+												onClick={(e) =>
+													handleFilterClick(
+														e,
+														"tokenRange",
+													)
+												}
 											>
-												<FilterListIcon
-													fontSize="small"
-													onClick={(e) =>
-														handleFilterClick(
-															e,
-															"tokenRange",
-														)
-													}
-												/>
-											</Badge>
+												<Badge
+													color="primary"
+													badgeContent={getActiveFiltersCount(
+														"tokenRange",
+													)}
+												>
+													<FilterListIcon fontSize="small" />
+												</Badge>
+											</IconButton>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -904,41 +1046,58 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Status
 											</Typography>
-											<Badge
-												color="primary"
-												badgeContent={getActiveFiltersCount(
-													"status",
-												)}
+											<IconButton
+												size="small"
+												onClick={(e) =>
+													handleFilterClick(
+														e,
+														"status",
+													)
+												}
 											>
-												<FilterListIcon
-													fontSize="small"
-													onClick={(e) =>
-														handleFilterClick(
-															e,
-															"status",
-														)
-													}
-												/>
-											</Badge>
+												<Badge
+													color="primary"
+													badgeContent={getActiveFiltersCount(
+														"status",
+													)}
+												>
+													<FilterListIcon fontSize="small" />
+												</Badge>
+											</IconButton>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
 							</Table.Row>
 						</StyledTableHead>
-
 						<Table.Body>
-							{filteredLogs?.map((event, index) => (
+							{filteredLogs.map((event, index) => (
 								<StyledTableRow
-									key={`Log-${event.endTime}`}
+									key={`Log-${event.endTime}-${index}`}
 									data-testid={`log-row-${index}`}
 									onClick={() => handleRowClick(event)}
 								>
 									<StyledTableCell>
 										<Typography
 											variant="body2"
-											title={event.payload}
+											title={event.userId}
 										>
-											{ellipsed(event.payload)}
+											{ellipsed(event.userId, 23)}
+										</Typography>
+									</StyledTableCell>
+									<StyledTableCell>
+										<Typography
+											variant="body2"
+											title={event.sessionId}
+										>
+											{ellipsed(event.sessionId, 23)}
+										</Typography>
+									</StyledTableCell>
+									<StyledTableCell>
+										<Typography
+											variant="body2"
+											title={event.request}
+										>
+											{ellipsed(event.request)}
 										</Typography>
 									</StyledTableCell>
 									<StyledTableCell>
@@ -989,14 +1148,26 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						</Table.Body>
 					</Table>
 				</StyledTableContainer>
+
+				<PaginationContainer>
+					<Table.Pagination
+						count={totalCount}
+						page={page}
+						onPageChange={handleChangePage}
+						rowsPerPage={rowsPerPage}
+						onRowsPerPageChange={handleChangeRowsPerPage}
+						rowsPerPageOptions={[5, 10, 25, 50]}
+						disabled={totalActiveFilters > 0}
+					/>
+				</PaginationContainer>
 			</Container>
 
 			<ResultsInfo>
-				<Typography variant="body2" color="#666">
-					Showing {filteredLogs.length} of {logs.length} results
-					{getActiveFiltersCount() > 0 &&
-						` (${getActiveFiltersCount()} filter${
-							getActiveFiltersCount() > 1 ? "s" : ""
+				<Typography variant="body2" color="textSecondary">
+					Showing {filteredLogs.length} of {totalCount} results
+					{totalActiveFilters > 0 &&
+						` (${totalActiveFilters} filter${
+							totalActiveFilters > 1 ? "s" : ""
 						} applied)`}
 				</Typography>
 				{filteredLogs.length === 0 && logs.length > 0 && (
@@ -1007,7 +1178,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			</ResultsInfo>
 
 			<FilterPopover
-				id="filter-popover"
+				id={"filter-popover"}
 				open={Boolean(popoverState.anchorEl)}
 				anchorEl={popoverState.anchorEl}
 				onClose={handlePopoverClose}

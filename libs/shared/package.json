@@ -6,13 +6,22 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@semoss/sdk": "workspace:*",
+    "@semoss/ui": "workspace:*",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "flexlayout-react": "^0.8.1"
+    "flexlayout-react": "^0.8.1",
+    "lucide-react": "^0.545.0",
+    "echarts": "^5.5.1",
+    "echarts-for-react": "^3.0.2",
+    "@mui/icons-material": "6.0.0"
   },
   "devDependencies": {
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.0",
     "typescript": "~5.5.2"
+  },
+  "peerDependencies": {
+    "@mui/icons-material": "6.0.0"
   }
 }

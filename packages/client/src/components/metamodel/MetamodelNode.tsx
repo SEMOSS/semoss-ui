@@ -1,10 +1,9 @@
-import { AddCircleOutlineRounded, KeyRounded } from "@mui/icons-material";
+import { EditRounded, KeyRounded } from "@mui/icons-material";
 import { Handle, type Node, type NodeProps, Position } from "@xyflow/react";
-import React, { useState } from "react";
-import { Card, Icon, styled, Typography } from "@semoss/ui";
+import React from "react";
+import { Box, Card, IconButton, styled, Typography } from "@semoss/ui";
 import { useMetamodel } from "@/hooks";
 
-// one-off custom icon from figma
 const TableIcon = () => {
 	return (
 		<svg
@@ -14,6 +13,7 @@ const TableIcon = () => {
 			fill="none"
 			xmlns="http://www.w3.org/2000/svg"
 		>
+			<title>Table</title>
 			<rect
 				x="0.5"
 				y="0.5"
@@ -38,30 +38,16 @@ const TableIcon = () => {
 	);
 };
 
-const StyledNode = styled("div", {
-	shouldForwardProp: (prop) => prop !== "isSelected",
-})<{
-	/** Track if the node is isSelected */
-	isSelected: boolean;
-}>(({ theme, isSelected }) => ({
-	borderColor: isSelected
-		? theme.palette.primary.main
-		: theme.palette.divider,
-	borderStyle: "solid",
-	borderWidth: "1px",
-}));
-
 const StyledMetamodelCard = styled(Card, {
 	shouldForwardProp: (prop) => prop !== "isSelected",
-})<{ isSelected: boolean }>(({ isSelected }) => ({
+})<{ isSelected: boolean }>(({ isSelected, theme }) => ({
 	display: "inline-flex",
-	paddingBottom: "var(--spacing-spacing-05, 0px)",
 	flexDirection: "column",
 	alignItems: "flex-start",
 	borderRadius: "var(--border-radius-radius-large, 12px)",
-	backgroundColor: "var(--light-background-paper, #FFF)",
+	backgroundColor: theme.palette.background.paper,
 	boxShadow: isSelected
-		? "0px 5px 22px 0px #D6EAFF"
+		? `0px 5px 22px 0px ${theme.palette.primaryContrast["shadow"]}`
 		: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
 	border: isSelected
 		? "1px solid var(--light-primary-shades-30-p, rgba(4, 113, 240, 0.30))"
@@ -71,21 +57,13 @@ const StyledMetamodelContent = styled(Card.Content)(() => ({
 	display: "flex",
 	flexDirection: "column",
 	alignItems: "flexStart",
-	// backgroundColor: 'rgba(250, 250, 250, 1)',
+	margin: "0px",
 }));
 
-const StyledKeyCell = styled("div")(() => ({
+const StyledKeyIconContainer = styled(Box)(() => ({
 	display: "flex",
-	padding: "6px 16px",
 	alignItems: "center",
-	gap: "6px",
-	flex: "1 0 0",
-	alignSelf: "stretch",
-}));
-
-const StyledKeyIconContainer = styled("div")(() => ({
-	display: "flex",
-	alignItems: "flex-start",
+	marginLeft: "3px",
 }));
 
 const StyledPrimaryKeyIcon = styled(KeyRounded)(() => ({
@@ -95,28 +73,20 @@ const StyledPrimaryKeyIcon = styled(KeyRounded)(() => ({
 	alignItems: "center",
 	color: "rgba(4, 113, 240, 1)",
 }));
-const StyledForeignKeyIcon = styled(KeyRounded)(() => ({
-	width: "24px",
-	height: "24px",
-	justifyContent: "center",
-	alignItems: "center",
-	color: "rgba(181, 181, 181, 1)",
-}));
 
 const StyledTableCellRow = styled("div")(() => ({
 	display: "flex",
-	width: "344px",
-	alignItems: "flex-start",
+	alignItems: "center",
+	justifyContent: "space-between",
 	background: "rgba(255, 255, 255, 0)",
 }));
-const StyledColumnNameCell = styled("div")(() => ({
+const StyledColumnNameCell = styled(Box)(() => ({
 	display: "flex",
 	flexDirection: "column",
 	alignItems: "flex-start",
-	padding: "12px 16px",
-	flex: "1 0 0",
+	padding: "12px 13px",
 }));
-const StyledColumnTypeCell = styled("div")(({ theme }) => ({
+const StyledColumnTypeCell = styled(Box)(({ theme }) => ({
 	display: "flex",
 	padding: "12px 16px",
 	justifyContent: "flex-end",
@@ -135,15 +105,16 @@ const StyledNameFont = styled(Typography)(({ theme }) => ({
 	flexDirection: "column",
 	alignItems: "flex-start",
 }));
-const StyledTableHeaderRow = styled("div")(({ theme }) => ({
+const StyledTableHeaderRow = styled(Box)(({ theme }) => ({
 	display: "flex",
 	padding: "16px",
 	alignItems: "center",
 	gap: "10px",
 	alignSelf: "stretch",
 	color: "rgba(0, 0, 0, 0.87)",
+	backgroundColor: theme.palette.purple[50],
 }));
-const StyledIconContainer = styled("div")(({ theme }) => ({
+const StyledIconContainer = styled(Box)(({ theme }) => ({
 	display: "flex",
 	width: "30px",
 	height: "30px",
@@ -154,45 +125,26 @@ const StyledIconContainer = styled("div")(({ theme }) => ({
 	borderRadius: "8px",
 	border: "1px solid var(--light-other-divider, rgba(0, 0, 0, 0.10))",
 }));
-const StyledDivider = styled("div")(() => ({
+const StyledDivider = styled(Box)(() => ({
 	height: "1px",
 	alignSelf: "stretch",
 	border: "1px solid var(--light-other-divider, rgba(0, 0, 0, 0.10))",
 }));
-const StyledTableFooterRow = styled("div")(({ theme }) => ({
-	display: "flex",
-	height: "44px",
-	width: "344px",
-	justifyContent: "center",
-	alignItems: "center",
-	backgroundColor: "var(--light-background-default, #FAFAFA)",
-	marginBottom: "-11px",
+
+const StyledTypography = styled(Typography)(() => ({
+	fontWeight: 700,
+	color: "rgba(34,34,34,1)",
+}));
+
+const StyledCaption = styled(Typography)(() => ({
+	color: "rgba(117,117,117,1)",
+	marginTop: 4,
 }));
 
 const StyledHandle = styled(Handle)(() => ({
 	display: "none",
 }));
 
-const StyledRow = styled("div", {
-	shouldForwardProp: (prop) => prop !== "isHeader",
-})<{
-	/** Track if the node is isHeader */
-	isHeader: boolean;
-}>(({ isHeader }) => ({
-	display: "flex",
-	alignItems: "center",
-	height: "32ps",
-	width: "100%",
-	paddingLeft: "4px",
-	paddingRight: "4px",
-	gap: "4px",
-	fontWeight: isHeader ? "bold" : "normal",
-}));
-
-const StyledIcon = styled(Icon)(() => ({
-	flexShrink: "0",
-	fontSize: ".750rem",
-}));
 const StyledTitleCell = styled(Typography)(() => ({
 	display: "flex",
 	flexDirection: "column",
@@ -200,84 +152,60 @@ const StyledTitleCell = styled(Typography)(() => ({
 	flex: "1 0 0",
 	alignSelf: "stretch",
 }));
-// const StyledTitle = styled('div')(() => ({
-//     fontSize: '.875rem',
-//     whiteSpace: 'nowrap',
-//     overflow: 'hidden',
-//     textOverflow: 'ellipsis',
-// }));
-// const StyledTitleContainer = styled('div')(() => ({
-//     display: 'flex',
-//     alignItems: 'center',
-//     overflow: 'hidden',
-// }));
 
-/**
- * node container
- * sub container
- *
- * table header row
- *  table header icon cell
- *  table header name cell
- *      header name font styling
- *  table header edit icon cell
- *      edit table icon button
- *  table header delete icon cell
- *      delete table icon button
- *
- * divider
- *
- * table body container
- *  table row container
- *    table row
- *      table cell container: column name
- *      table cell container: column type
- *      table cell container: column icon forKey/primKey
- *      table cell container: edit column icon button
- *
- * relationship styling
- *
- */
+const StyledBox = styled(Box)({
+	display: "flex",
+});
+
+const StyledContainer = styled(Box)(() => ({
+	width: 24,
+	height: 24,
+}));
+
+const StyledHeader = styled(Box)({
+	display: "flex",
+	alignItems: "center",
+	gap: 10,
+});
+
+const StyledDiv = styled(Box)({
+	marginLeft: "auto",
+	display: "flex",
+	alignItems: "center",
+});
 
 type MetamodelNodeProps = NodeProps<
 	Node<{
-		/** Name of the node */
-		name: string; // table
-
-		/** Array of properties associated with the node */
+		name: string;
+		isEditable?: boolean;
+		openEditForColumn?: (payload: {
+			nodeId: string;
+			columnId: string;
+			name: string;
+			type: string;
+			description?: string;
+			logicalNames?: string[];
+		}) => void;
+		openEditTable?: (payload: {
+			nodeId: string;
+			name: string;
+			description?: string;
+		}) => void;
 		properties: {
-			/** Unique id of the property */
 			id: string;
-			/** Name of the property */
-			name: string; // column
-			/** Data type of the property */
-			type: string; // column type
+			name: string;
+			type: string;
+			isPrimary?: boolean;
+			isForeign?: boolean;
+			fkTarget?: string | { table: string; column: string } | null;
+			logicalNames?: string[];
+			description?: string;
+			label?: string;
 		}[];
-
-		/** Bool to determine if node is interactive or not */
 		isInteractive?: boolean;
-
-		/** Hook to set data for edit column modal */
-		setColumnToEdit?: React.Dispatch<
-			React.SetStateAction<{
-				table: object;
-				columnName: string;
-				columnDescription: string;
-				columnType: string;
-				columnDefaultValue: string;
-				columnNotNull: boolean;
-				columnIsPrimary: boolean;
-			}>
-		>;
-
-		/** Hook to open/close delete confirmation modal */
 		setOpenDeleteConfirmationModal?: React.Dispatch<
 			React.SetStateAction<boolean>
 		>;
-		/** Hook to open/close edit table modal */
-		setOpenEditTableModal?: React.Dispatch<React.SetStateAction<boolean>>;
-
-		/** Hook to set the data describing the structure to delete confirmation modal */
 		setDataToDelete?: React.Dispatch<
 			React.SetStateAction<{
 				structureId: string;
@@ -285,181 +213,26 @@ type MetamodelNodeProps = NodeProps<
 				structureType: string;
 			}>
 		>;
-		/** Hook to set data for edit modal */
-		setTableToEdit?: React.Dispatch<
-			React.SetStateAction<{
-				tableId: string;
-				tableName: string;
-				tableDescription: string;
-				columns: object[];
-			}>
-		>;
-		/** Hook to open/close edit column modal */
 		setOpenEditColumnModal?: React.Dispatch<React.SetStateAction<boolean>>;
 	}>
 >;
 
 const _MetamodelNode = (props: MetamodelNodeProps) => {
 	const { id, data } = props;
+	const { selectedNodeId, onSelectNodeId } = useMetamodel();
+	const handleEditColumn = (e: React.MouseEvent, col) => {
+		e.stopPropagation();
+		e.preventDefault();
+		data?.openEditForColumn?.({
+			nodeId: id,
+			columnId: col?.id,
+			name: col?.name,
+			type: col?.type,
+			description: col?.description,
+			logicalNames: col?.logicalNames,
+		});
+	};
 
-	const { selectedNodeId, onSelectNodeId, isInteractive, updateData } =
-		useMetamodel();
-	const [openEditColumnModal, setOpenEditColumnModal] = useState(false);
-
-	// return (
-	//     <StyledMetamodelCard
-	//         isSelected={selectedNodeId === id}
-	//         onClick={() => {
-	//             onSelectNodeId(id);
-	//         }}
-	//     >
-	//         <StyledHandle type="target" position={Position.Left} />
-	//         <StyledMetamodelHeaderFrame>
-	//             <StyledTableRow>
-	//                 {/* <StyledMetamodelIconButton>
-	//                     <TableIcon />
-	//                 </StyledMetamodelIconButton> */}
-	//                 <StyledMetamodelIconButton
-	//                     variant={'text'}
-	//                     color={'primary'}
-	//                     disabled={!isInteractive}
-	//                     onClick={() => {
-	//                         // setTableToEdit({
-	//                         //     tableId: id,
-	//                         //     tableName: data.name,
-	//                         //     tableDescription: '',
-	//                         //     columns: data.properties,
-	//                         // });
-	//                         // setOpenEditTableModal(true);
-	//                     }}
-	//                 >
-	//                     <TableIcon />
-	//                 </StyledMetamodelIconButton>
-	//                 {isInteractive ? (
-	//                     <StyledTableRow>
-	//                         <StyledTitleContainer>
-	//                             {/* <Button
-	//                                 variant={'text'}
-	//                                 color={'primary'}
-	//                                 onClick={() => {
-	//                                     setTableToEdit({
-	//                                         tableId: id,
-	//                                         tableName: data.name,
-	//                                         tableDescription: '',
-	//                                         columns: data.properties,
-	//                                     });
-	//                                     setOpenEditTableModal(true);
-	//                                 }}
-	//                             >
-	//                                 <EditRounded />
-	//                             </Button> */}
-	//                             <StyledHeaderFont variant="body1">
-	//                                 {data.name.toLowerCase()}
-	//                             </StyledHeaderFont>
-	//                         </StyledTitleContainer>
-	//                         <StyledButtonSecondary
-	//                             variant={'text'}
-	//                             color={'error'}
-	//                             onClick={() => {
-	//                                 setDataToDelete({
-	//                                     structureId: id,
-	//                                     structureName: data.name,
-	//                                     structureType: 'table',
-	//                                 });
-	//                                 setOpenDeleteConfirmationModal(true);
-	//                             }}
-	//                         >
-	//                             {/* <Icon size="md" color="red" path={mdiDelete}></Icon> */}
-	//                             <Delete />
-	//                         </StyledButtonSecondary>
-	//                     </StyledTableRow>
-	//                 ) : (
-	//                     <StyledHeaderFont variant="body1">
-	//                         {data.name.toLowerCase()}
-	//                     </StyledHeaderFont>
-	//                 )}
-	//             </StyledTableRow>
-	//         </StyledMetamodelHeaderFrame>
-	//         <StyledDivider />
-	//         {data.properties.map((p) => (
-	//             <StyledTableRow key={p.id}>
-	//                 {isInteractive ? (
-	//                     <StyledTableRow>
-	//                         {/* <StyledTitleContainer> */}
-	//                         {/* <Button
-	//                                 variant={'text'}
-	//                                 color={'primary'}
-	//                                 onClick={() => {
-	//                                     setColumnToEdit({
-	//                                         table: {
-	//                                             id: id,
-	//                                             name: data.name,
-	//                                         },
-	//                                         columnName: p.name,
-	//                                         columnDescription: 'test',
-	//                                         columnType: p.type,
-	//                                         columnDefaultValue: 'empty',
-	//                                         columnNotNull: false,
-	//                                         columnIsPrimary: false,
-	//                                     });
-	//                                     setOpenEditColumnModal(true);
-	//                                 }}
-	//                             > */}
-	//                         {/* <Icon
-	//                                     path={mdiPencil}
-	//                                     color="primary"
-	//                                 ></Icon> */}
-	//                         {/* <EditRounded /> */}
-	//                         {/* </Button> */}
-	//                         <StyledHeaderFont variant="body2">
-	//                             {p.name.toLowerCase()}
-	//                         </StyledHeaderFont>
-	//                         {/* </StyledTitleContainer> */}
-	//                         <StyledValueFont variant="body2">
-	//                             {p.type.toLowerCase()}
-	//                         </StyledValueFont>
-	//                         <StyledButtonSecondary
-	//                             variant={'text'}
-	//                             color={'error'}
-	//                             onClick={() => {
-	//                                 setDataToDelete({
-	//                                     structureId: p.id,
-	//                                     structureName: p.name,
-	//                                     structureType: 'column',
-	//                                 });
-	//                                 setOpenDeleteConfirmationModal(true);
-	//                             }}
-	//                         >
-	//                             <Delete />
-	//                         </StyledButtonSecondary>
-	//                     </StyledTableRow>
-	//                 ) : (
-	//                     <>
-	//                         {/* <StyledIcon>
-	//                             <ViewColumn />
-	//                         </StyledIcon> */}
-	//                         <StyledHeaderFont variant="body2">
-	//                             {p.name.toLowerCase()}
-	//                         </StyledHeaderFont>
-	//                         <StyledValueFont variant="body2">
-	//                             {p.type.toLowerCase()}
-	//                         </StyledValueFont>
-	//                     </>
-	//                 )}
-	//             </StyledTableRow>
-	//         ))}
-	//         <StyledHandle type="source" position={Position.Right} />
-	//         {openEditColumnModal && (
-	//             <EditColumnModal
-	//                 openEditColumnModal={openEditColumnModal}
-	//                 setOpenEditColumnModal={setOpenEditColumnModal}
-	//                 id={id}
-	//                 column={columnToEdit}
-	//                 updateState={updateData}
-	//             />
-	//         )}
-	//     </StyledMetamodelCard>
-	// );
 	return (
 		<StyledMetamodelCard
 			isSelected={selectedNodeId === id}
@@ -468,65 +241,104 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 			}}
 		>
 			<StyledHandle type="target" position={Position.Left} />
+
 			<StyledTableHeaderRow>
-				<StyledIconContainer>
-					<TableIcon />
-				</StyledIconContainer>
-				<StyledTitleCell variant="body1">
-					{data.name.toLowerCase().replaceAll(" ", "_")}
-				</StyledTitleCell>
+				<StyledHeader>
+					<StyledIconContainer>
+						<TableIcon />
+					</StyledIconContainer>
+
+					<StyledTitleCell variant="body1">
+						{data.name.toLowerCase().replaceAll(" ", "_")}
+					</StyledTitleCell>
+				</StyledHeader>
+
+				{data.isEditable && (
+					<StyledDiv>
+						<IconButton
+							size="small"
+							onClick={(e) => {
+								e.stopPropagation();
+								if (data?.openEditTable) {
+									data.openEditTable({
+										nodeId: id,
+										name: data.name,
+									});
+								} else {
+									console.warn(
+										"openEditTable not injected for node",
+										id,
+									);
+								}
+							}}
+							onMouseDown={(e) => e.stopPropagation()}
+							title="Edit table"
+						>
+							<EditRounded fontSize="small" />
+						</IconButton>
+					</StyledDiv>
+				)}
 			</StyledTableHeaderRow>
+
 			<StyledDivider />
+
 			<StyledMetamodelContent>
-				{data.properties.map((p, idx) => {
+				{data.properties?.map((p) => {
 					return (
-						<StyledTableCellRow key={p.id}>
-							{/* {idx === 0 ? ( // demo purposes... will update when we have primary key and foreign key properties
-                                <StyledKeyCell>
-                                    <StyledKeyIconContainer>
-                                        <StyledPrimaryKeyIcon />
-                                    </StyledKeyIconContainer>
-                                    <StyledColumnNameCell variant="body2">
-                                        {p.name
-                                            .toLowerCase()
-                                            .replaceAll(' ', '_')}
-                                    </StyledColumnNameCell>
-                                </StyledKeyCell>
-                            ) : idx === 1 ? (
-                                <StyledKeyCell>
-                                    <StyledKeyIconContainer>
-                                        <StyledForeignKeyIcon />
-                                    </StyledKeyIconContainer>
-                                    <StyledColumnNameCell variant="body2">
-                                        {p.name
-                                            .toLowerCase()
-                                            .replaceAll(' ', '_')}
-                                    </StyledColumnNameCell>
-                                </StyledKeyCell>
-                            ) : (
-                                <StyledColumnNameCell variant="body2">
-                                    {p.name.toLowerCase().replaceAll(' ', '_')}
-                                </StyledColumnNameCell>
-                            )} */}
+						<StyledTableCellRow
+							key={p.id}
+							onMouseDown={(e) => e.stopPropagation()}
+							onClick={(e) => e.stopPropagation()}
+						>
+							<StyledKeyIconContainer>
+								{data.isEditable &&
+									(p.isPrimary ? (
+										<StyledPrimaryKeyIcon />
+									) : p.isForeign ? (
+										<StyledTypography variant="subtitle2">
+											FK
+										</StyledTypography>
+									) : (
+										<StyledContainer />
+									))}
+							</StyledKeyIconContainer>
+
 							<StyledColumnNameCell>
 								<StyledNameFont variant="body2">
 									{p.name.toLowerCase().replaceAll(" ", "_")}
 								</StyledNameFont>
+								{p.isForeign && p.fkTarget && (
+									<StyledCaption variant="caption">
+										{typeof p.fkTarget === "string"
+											? p.fkTarget
+											: `${p.fkTarget.table}.${p.fkTarget.column}`}
+									</StyledCaption>
+								)}
 							</StyledColumnNameCell>
+
 							<StyledColumnTypeCell>
 								<StyledTypeFont variant="body2">
 									{p.type ? p.type.toLowerCase() : ""}
 								</StyledTypeFont>
 							</StyledColumnTypeCell>
+
+							{data.isEditable && (
+								<StyledBox>
+									<IconButton
+										size="small"
+										onMouseDown={(e) => e.stopPropagation()}
+										onClick={(e) => handleEditColumn(e, p)}
+										title="Edit column"
+									>
+										<EditRounded fontSize="small" />
+									</IconButton>
+								</StyledBox>
+							)}
 						</StyledTableCellRow>
 					);
 				})}
+
 				<StyledHandle type="source" position={Position.Right} />
-				{/* <StyledTableFooterRow>
-                    <AddCircleOutlineRounded
-                        sx={{ color: 'rgba(0, 0, 0, 0.54)' }}
-                    />
-                </StyledTableFooterRow> */}
 			</StyledMetamodelContent>
 		</StyledMetamodelCard>
 	);
