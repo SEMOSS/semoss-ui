@@ -14,6 +14,7 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
+import workspaceImage from "@/assets/img/workspace.png";
 import { WorkspaceCard, WorkspaceOverlay } from "@/components";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { App } from "@/types";
@@ -119,7 +120,7 @@ export const WorkspacePage = observer(() => {
 					{/* Image appears only on large screens and above */}
 					<div className="relative hidden w-[351px] overflow-hidden rounded-r-lg lg:block">
 						<img
-							src={root.theme.images.workspace}
+							src={root.theme.images.workspace || workspaceImage}
 							alt="Workspace illustration"
 							className="-translate-y-1/2 absolute top-1/2 left-0 h-[351px] w-full select-none object-cover"
 						/>

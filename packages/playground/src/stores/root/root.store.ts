@@ -1,10 +1,5 @@
 import { configure, makeAutoObservable } from "mobx";
-import appImage from "@/assets/img/app.svg";
-import landingImage from "@/assets/img/landing.png";
-import loginImage from "@/assets/img/login.svg";
-import logoImage from "@/assets/img/logo.svg";
-import workspaceImage from "@/assets/img/workspace.png";
-import type { Theme } from "@/types";
+import type { ThemeMap } from "@semoss/shared";
 
 configure({
 	enforceActions: "always",
@@ -22,7 +17,7 @@ interface RootStoreInterface {
 	/**
 	 * Current theme setting
 	 */
-	theme: Theme;
+	theme: ThemeMap["playground"];
 
 	/**
 	 * Custom breadcrumbs for the main layout
@@ -49,11 +44,11 @@ export class RootStore {
 				secondaryColor: "",
 			},
 			images: {
-				app: appImage,
-				logo: logoImage,
-				login: loginImage,
-				landing: landingImage,
-				workspace: workspaceImage,
+				app: "",
+				logo: "",
+				login: "",
+				landing: "",
+				workspace: "",
 			},
 			overrides: {
 				"main-layout": {},
@@ -76,7 +71,7 @@ export class RootStore {
 
 		// merge with the environment variables
 		try {
-			const theme = JSON.parse(THEME) as Partial<Theme>;
+			const theme = JSON.parse(THEME) as Partial<ThemeMap["playground"]>;
 
 			// update the theme
 			this.updateTheme(theme);
@@ -129,7 +124,9 @@ export class RootStore {
 	/**
 	 * Set the default theme
 	 */
-	initialize = async (theme: Partial<Theme>): Promise<void> => {
+	initialize = async (
+		theme: Partial<ThemeMap["playground"]>,
+	): Promise<void> => {
 		this.updateTheme(theme);
 
 		// set as initialized
@@ -144,7 +141,7 @@ export class RootStore {
 	 * Update the theme
 	 * @param theme Theme
 	 */
-	private updateTheme = (theme: Partial<Theme> | undefined) => {
+	private updateTheme = (theme: Partial<ThemeMap["playground"]>) => {
 		// deep merge from the environment
 		this._store.theme = {
 			...this._store.theme,

@@ -14,6 +14,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@semoss/ui/next";
+import logoImage from "@/assets/img/logo.svg";
 import { useRoot } from "@/hooks";
 import type { Workspace } from "@/types";
 
@@ -57,13 +58,11 @@ export const WorkspaceCard = observer(
 				<CardContent className="flex flex-col gap-4 p-6">
 					<div className="flex justify-between">
 						<div className="text-4xl">
-							{root.theme?.images.logo ? (
-								<img
-									className="flex h-10 select-none flex-row items-center"
-									alt="logo"
-									src={root.theme?.images.logo}
-								/>
-							) : null}
+							<img
+								className="flex h-10 select-none flex-row items-center"
+								alt="logo"
+								src={root.theme?.images.logo || logoImage}
+							/>
 						</div>
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>

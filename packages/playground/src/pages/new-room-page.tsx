@@ -13,6 +13,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
 	RoomOptions,
@@ -140,7 +141,7 @@ export const NewRoomPage = observer(() => {
 			<ResizablePanelGroup direction="horizontal">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
-						src={root.theme.images.landing}
+						src={root.theme.images.landing || landingImage}
 						alt="Background"
 						className="absolute inset-0 h-full w-full select-none object-cover"
 					/>

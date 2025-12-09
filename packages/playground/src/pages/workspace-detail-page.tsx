@@ -28,6 +28,7 @@ import {
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
+import logoImage from "@/assets/img/logo.svg";
 import {
 	WorkspaceChatList,
 	WorkspaceMCPList,
@@ -108,13 +109,11 @@ export const WorkspaceDetailPage = observer(() => {
 				<div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 overflow-hidden px-9 py-4 pt-20">
 					<div className="flex flex-row gap-2">
 						<div className="items-center text-2xl">
-							{root.theme?.images.logo ? (
-								<img
-									className="flex h-6 select-none flex-row items-center"
-									alt="logo"
-									src={root.theme?.images.logo}
-								/>
-							) : null}
+							<img
+								className="flex h-6 select-none flex-row items-center"
+								alt="logo"
+								src={root.theme?.images.logo || logoImage}
+							/>
 						</div>
 						<div className="space-y-2.5">
 							<div className="font-semibold text-2xl text-foreground leading-none">

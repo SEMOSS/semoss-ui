@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { useInsight } from "@semoss/sdk/react";
+import type { ThemeMap } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { RootContext } from "@/contexts";
 import { RootStore } from "@/stores";
-import type { Theme } from "@/types";
 
 export const RootLayout = ({ children }) => {
 	const { system } = useInsight();
@@ -14,7 +14,7 @@ export const RootLayout = ({ children }) => {
 			const store = new RootStore();
 
 			// parse the theme
-			let theme: Partial<Theme> = {};
+			let theme: Partial<ThemeMap["playground"]> = {};
 			try {
 				theme = JSON.parse(
 					String(system?.config?.theme?.THEME_MAP) || "{}",

@@ -2,6 +2,7 @@ import { observer } from "mobx-react-lite";
 import { Navigate, useLocation } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { LoginForm } from "@semoss/shared";
+import loginImage from "@/assets/img/login.svg";
 import { AppLogo } from "@/components";
 import { useRoot } from "@/hooks";
 
@@ -37,7 +38,7 @@ export const LoginPage = observer(() => {
 			</div>
 			<div className="relative hidden bg-muted lg:block">
 				<img
-					src={root.theme.images.login}
+					src={root.theme.images.login || loginImage}
 					alt="Background"
 					className="absolute inset-0 h-full w-full select-none object-cover dark:brightness-[0.2] dark:grayscale"
 				/>
