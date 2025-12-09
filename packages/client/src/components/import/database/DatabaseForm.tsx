@@ -84,6 +84,7 @@ export const DatabaseForm = ({
 	const [resolvedFields, setResolvedFields] = useState(fields);
 	const [parsedData, setParsedData] = useState<ParsedResult[]>([]);
 	const [excelfileName, setExcelFileName] = useState<string[]>([]);
+	const [tableName, setTableName] = useState<string[]>([]);
 	const [filePath, setFilePath] = useState<string>();
 	const [uploadedFile, setUploadedFile] = useState<File[]>([]);
 	const [formValues, setFormValues] = useState({});
@@ -322,6 +323,10 @@ export const DatabaseForm = ({
 					navigate(`/engine/database/${output.database_id}`);
 				}
 			}
+			const tableName = fileNames.map((name) =>
+				name.replace(/\.[^.]+$/, ""),
+			);
+			setTableName(tableName);
 			setExcelFileName(fileNames);
 			setParsedData(parsedResults);
 			updateStepBasedOnMetaModel(formData.METAMODEL_TYPE);
@@ -417,8 +422,12 @@ export const DatabaseForm = ({
 			});
 
 			const meta = {
-				description: formValuesLocal.DATABASE_DESCRIPTION,
-				tag: formValuesLocal.DATABASE_TAG,
+				...(formValuesLocal.DATABASE_DESCRIPTION && {
+					description: formValuesLocal.DATABASE_DESCRIPTION,
+				}),
+				...(formValuesLocal.DATABASE_TAG && {
+					tag: formValuesLocal.DATABASE_TAG,
+				}),
 			};
 
 			const response = await monolithStore.runQuery(
@@ -460,8 +469,12 @@ export const DatabaseForm = ({
 			})
 			.join("");
 		const meta = {
-			description: formValues.DATABASE_DESCRIPTION,
-			tag: formValues.DATABASE_TAG,
+			...(formValues.DATABASE_DESCRIPTION && {
+				description: formValues.DATABASE_DESCRIPTION,
+			}),
+			...(formValues.DATABASE_TAG && {
+				tag: formValues.DATABASE_TAG,
+			}),
 		};
 		pixelStatements += `SetDatabaseMetadata(database=["${formValues.DATABASE_NAME}"],meta=[${JSON.stringify(meta)}])`;
 		try {
@@ -503,8 +516,12 @@ export const DatabaseForm = ({
 			})
 			.join("");
 		const meta = {
-			description: formValues.DATABASE_DESCRIPTION,
-			tag: formValues.DATABASE_TAG,
+			...(formValues.DATABASE_DESCRIPTION && {
+				description: formValues.DATABASE_DESCRIPTION,
+			}),
+			...(formValues.DATABASE_TAG && {
+				tag: formValues.DATABASE_TAG,
+			}),
 		};
 		pixel += `SetDatabaseMetadata(database=["${formValues.DATABASE_NAME}"],meta=[${JSON.stringify(meta)}])`;
 
@@ -552,9 +569,14 @@ export const DatabaseForm = ({
 					key !== "DATABASE_TAGS",
 			),
 		);
-		const { DATABASE_DESCRIPTION: description, DATABASE_TAGS: tag } =
-			formValues;
-		const meta = { description, tag };
+		const meta = {
+			...(formValues.DATABASE_DESCRIPTION && {
+				description: formValues.DATABASE_DESCRIPTION,
+			}),
+			...(formValues.DATABASE_TAG && {
+				tag: formValues.DATABASE_TAG,
+			}),
+		};
 		const relation = Array.isArray(payload)
 			? payload[0].relation
 			: payload.relation;
@@ -1192,6 +1214,7 @@ export const DatabaseForm = ({
 					<DataSelection
 						files={parsedData}
 						fileName={excelfileName}
+						tableName={tableName}
 						onImport={(payload) =>
 							submitTablePixel(payload, formValues)
 						}
