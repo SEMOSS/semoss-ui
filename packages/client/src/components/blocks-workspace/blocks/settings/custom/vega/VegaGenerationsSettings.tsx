@@ -94,19 +94,25 @@ export const VegaGenerationSettings = observer(
 				const pixel = `META | Frame("${selectedFrame}") | QueryAll()| Limit(1000) | CollectAll()`;
 				const result = await runPixel(pixel, workspace.insightId);
 				const { output, operationType } = result.pixelReturn[0];
-
 				if (operationType[0] !== "ERROR") {
 					if (output) {
-						const outputArray = (output as any).data.values.map(
-							(value) => {
-								const row: any = {};
-								value.forEach((val, index) => {
-									row[(output as any).data.headers[index]] =
-										val;
-								});
-								return row;
-							},
-						);
+						const outputArray = (
+							output as {
+								data?: { values?: [] };
+							}
+						).data.values.map((value: []) => {
+							const row: { data?: { values?: [] } } = {};
+							value.forEach((val, index) => {
+								row[
+									(
+										output as {
+											data?: { headers?: string[] };
+										}
+									).data.headers[index]
+								] = val;
+							});
+							return row;
+						});
 						return outputArray;
 					}
 				} else {
@@ -155,10 +161,17 @@ export const VegaGenerationSettings = observer(
 						}
 					}
 				} else {
-					notification.add({
-						color: "error",
-						message: "Missing model or frame selection.",
-					});
+					if (!selectedModel) {
+						notification.add({
+							color: "error",
+							message: "Missing model selection.",
+						});
+					} else {
+						notification.add({
+							color: "error",
+							message: "Missing frame selection.",
+						});
+					}
 				}
 			} catch (e) {
 				console.error(e);
