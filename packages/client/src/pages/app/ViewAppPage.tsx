@@ -43,7 +43,6 @@ export const ViewAppPage = observer(() => {
 	const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
 	const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
 	const [bookmarked, setBookmarked] = useState<boolean>(false);
-	const projectName = workspace?.metadata?.project_name;
 
 	const handleBookmark = (status: boolean) => {
 		setBookmarked(status);
@@ -110,12 +109,10 @@ export const ViewAppPage = observer(() => {
 								src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
 							/>
 							<div
-								title={projectName?.length > 10 ? projectName : ""}
-								className={projectName.length > 10
-									? "w-[10ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
-									: "font-normal text-[16px]"}
+								title={workspace?.metadata?.project_name}
+								className="w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
 							>
-								{projectName}
+								{workspace?.metadata?.project_name}
 							</div>
 						</Stack>
 					}

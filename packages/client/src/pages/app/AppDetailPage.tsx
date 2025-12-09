@@ -240,7 +240,6 @@ export const AppDetailPage = () => {
 	const { monolithStore, configStore } = useRootStore();
 	const notification = useNotification();
 	const { appId } = useParams();
-	const projectName = appInfo?.project_name;
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
 
@@ -607,16 +606,10 @@ export const AppDetailPage = () => {
 							variant="body1"
 						>
 							<div
-								title={
-									projectName?.length > 10 ? projectName : ""
-								}
-								className={
-									projectName?.length > 10
-										? "w-[10ch] truncate text-ellipsis"
-										: ""
-								}
+								title={appInfo?.project_name}
+								className="w-[40ch] truncate text-ellipsis"
 							>
-								{projectName}
+								{appInfo?.project_name}
 							</div>
 						</Breadcrumbs.Item>
 					</Breadcrumbs>
@@ -631,18 +624,12 @@ export const AppDetailPage = () => {
 									/>
 									<TitleSectionBodyWrapper>
 										<div
-											title={
-												projectName?.length > 10
-													? projectName
-													: ""
-											}
+											title={appInfo?.project_name}
 											className={
-												projectName?.length > 10
-													? "mt-1 w-[10ch] truncate text-ellipsis font-normal text-[34px] leading-[150%]"
-													: "mt-1 font-normal text-[34px] leading-[150%]"
+												"mt-1 max-w-[40ch] truncate text-ellipsis font-normal text-[34px] leading-[150%]"
 											}
 										>
-											{projectName}
+											{appInfo?.project_name}
 										</div>
 									</TitleSectionBodyWrapper>
 								</Box>
