@@ -29,11 +29,6 @@ export interface Theme {
 	};
 
 	/**
-	 * HTML content tos how in the header
-	 */
-	header: string;
-
-	/**
 	 * HTML content tos how in the footer
 	 */
 	footer: string;

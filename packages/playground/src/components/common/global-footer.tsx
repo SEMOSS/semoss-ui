@@ -2,8 +2,9 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useRoot } from "@/hooks";
 
-export const Footer: React.FC = observer(() => {
+export const GlobalFooter: React.FC = observer(() => {
 	const { root } = useRoot();
+
 	if (!root.theme.footer) {
 		return null;
 	}

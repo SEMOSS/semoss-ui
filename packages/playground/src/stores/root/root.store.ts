@@ -58,7 +58,6 @@ export class RootStore {
 			overrides: {
 				"main-layout": {},
 			},
-			header: "",
 			footer: "",
 			landing: "",
 			sidebar: {
@@ -163,8 +162,6 @@ export class RootStore {
 				...this._store.theme.overrides,
 				...(theme?.overrides || {}),
 			},
-
-			header: theme?.header || this._store.theme.header,
 			footer: theme?.footer || this._store.theme.footer,
 			landing: theme?.landing || this._store.theme.landing,
 			sidebar: {

@@ -14,7 +14,7 @@ import {
 	SidebarTrigger,
 	useCacheState,
 } from "@semoss/ui/next";
-import { Footer, GlobalNav } from "@/components";
+import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
 import { ChatContext } from "@/contexts";
 import { useRoot } from "@/hooks";
@@ -115,8 +115,10 @@ export const MainLayout = observer(() => {
 							<div className="flex-1" />
 						</div>
 						<Separator />
-						<Outlet />
-						<Footer />
+						<div className="w-full flex-1">
+							<Outlet />
+						</div>
+						<GlobalFooter />
 					</div>
 				</SidebarInset>
 			</SidebarProvider>
