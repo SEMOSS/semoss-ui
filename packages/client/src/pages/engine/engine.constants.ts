@@ -247,4 +247,38 @@ export const ENGINE_ROUTES: {
 			},
 		],
 	},
+	{
+		name: "Guardrail",
+		path: "guardrail",
+		type: "GUARDRAIL",
+		description:
+			"Tapping into unstructured data (e.g., audio, video, images, code) is critical when training and using AI solutions. Our guardrail catalog enables integration with many industry-leading cloud storage solutions to effortlessly access a project's unstructured data.",
+		icon: Inventory2Outlined,
+		specific: [
+			{
+				name: "Overview",
+				path: "",
+				component: EngineOverviewPage,
+				restrict: false,
+			},
+			{
+				name: "Usage",
+				path: "usage",
+				component: EngineUsagePage,
+				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+			},
+			{
+				name: "Access Control",
+				path: "access-control",
+				component: EngineSettingsPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
+				name: "SMSS",
+				path: "smss",
+				component: EngineSmssPage,
+				restrict: ["OWNER"],
+			},
+		],
+	},
 ];

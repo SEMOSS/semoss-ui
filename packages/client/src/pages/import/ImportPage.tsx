@@ -4,6 +4,7 @@ import type { ENGINE_TYPES } from "@/types";
 import { ModelImport } from "../../components/import/model/ModelImport";
 import { ImportLayout } from "./ImportLayout";
 import { ImportPageContent } from "./ImportPageContent";
+import { GuardrailImport } from "@/components/import/guardrail/GuardrailImport";
 
 /** TODO: Refactor */
 interface ImportPageProps {
@@ -31,6 +32,8 @@ export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
 				return <ImportPageContent name={name} type={type} />;
 			case "STORAGE":
 				return <ImportPageContent name={name} type={type} />;
+			case "GUARDRAIL":
+				return <GuardrailImport name={name} />;
 			default:
 				return <ImportPageContent name={name} type={type} />;
 		}
