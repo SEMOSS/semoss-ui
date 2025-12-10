@@ -252,7 +252,7 @@ export const ENGINE_ROUTES: {
 		path: "guardrail",
 		type: "GUARDRAIL",
 		description:
-			"Tapping into unstructured data (e.g., audio, video, images, code) is critical when training and using AI solutions. Our guardrail catalog enables integration with many industry-leading cloud storage solutions to effortlessly access a project's unstructured data.",
+			"The Guardrail Catalog is a centralized list of rules and constraints that guide safe, compliant, and consistent system behavior. It helps ensure outputs stay within defined boundaries and align with organizational standards.",
 		icon: Inventory2Outlined,
 		specific: [
 			{
