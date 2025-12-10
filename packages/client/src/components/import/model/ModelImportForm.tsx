@@ -398,16 +398,18 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								<TextField
 									label={f.label}
 									variant="outlined"
-									type="number"
+									type="text"
 									size="small"
 									required={f.required}
 									value={field.value ?? ""}
 									onChange={(v) => field.onChange(v)}
 									disabled={f.disabled || isLockedModel}
 									data-testId={formatToDataTestId(
-										`model-importForm-${f.label}-number`,
-										)}
-									helperText={(error?.message?.toString() || f.helperText || "")}
+										`model-importForm-${f.label}`,
+									)}
+									helperText={
+										(error?.message?.toString() || f.helperText || "")
+									}
 									error={!!error}
 									inputProps={{
 										onFocus: () => {
