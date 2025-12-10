@@ -176,7 +176,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					// clear the input + files
 					setInput("");
 					setFiles([]);
-				} else {
+				} else if (!clearInputOnPrompt) {
 					// restore to original
 					setInput(userInput);
 					setFiles(userFiles);

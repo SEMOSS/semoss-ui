@@ -24,11 +24,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	text: string = "";
 
 	/**
-	 * Whether the message is an error message
-	 */
-	error?: boolean = true;
-
-	/**
 	 * Tools associated with the message
 	 */
 	tools: {

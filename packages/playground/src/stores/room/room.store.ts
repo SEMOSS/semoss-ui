@@ -29,6 +29,11 @@ interface RoomStoreInterface {
 	isLoading: boolean;
 
 	/**
+	 *  Track if the room has errored
+	 */
+	error?: Error | null;
+
+	/**
 	 *  Track the mode of the room.
 	 */
 	mode: "planning" | "executing" | "chat";
@@ -181,6 +186,13 @@ export class RoomStore {
 	 */
 	get isLoading() {
 		return this._store.isLoading;
+	}
+
+	/**
+	 * Get the error of the room
+	 */
+	get error() {
+		return this._store.error;
 	}
 
 	/**
@@ -738,7 +750,10 @@ export class RoomStore {
 				this._insightID = response.insightId;
 			});
 
+			this._store.error = null;
 			return response;
+		} catch (e) {
+			this._store.error = e;
 		} finally {
 			if (showLoading) {
 				this.setIsLoading(false);

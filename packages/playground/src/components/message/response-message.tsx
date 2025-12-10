@@ -1,7 +1,6 @@
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
-	CircleAlert,
 	CopyIcon,
 	MessageCircleIcon,
 	RefreshCwIcon,
@@ -10,8 +9,6 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import {
-	Alert,
-	AlertTitle,
 	Button,
 	Markdown,
 	Tooltip,
@@ -91,27 +88,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						{message.model.name ?? "Agent"}
 					</span>
 				</div>
-				{message.error ? (
-					<Alert
-						variant="destructive"
-						className="flex items-center justify-between"
-					>
-						<div className="flex items-center gap-2">
-							<CircleAlert className="aspect-square size-4" />
-							<AlertTitle>
-								Unable to process request. Please check your
-								connection or copy your message and refresh.
-							</AlertTitle>
-						</div>
-						<Button
-							size="sm"
-							variant="destructive"
-							className="flex h-6 items-center justify-center gap-2 rounded-md bg-custom-background-dark-input-30! px-3 py-2 text-base-foreground! hover:bg-custom-background-dark-input-30! hover:text-base-foreground!"
-						>
-							Try again
-						</Button>
-					</Alert>
-				) : null}
 				{message.text ? <Markdown>{message.text}</Markdown> : null}
 				{message.tools.map((t) => (
 					<ResponseMessageTool

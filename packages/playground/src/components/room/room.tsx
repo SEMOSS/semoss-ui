@@ -10,6 +10,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import {
+	ErrorMessage,
 	InputMessage,
 	PlanMessage,
 	ResponseMessage,
@@ -32,10 +33,26 @@ interface RoomProps {
  * @component
  */
 export const Room: React.FC<RoomProps> = observer(({ room }) => {
+	/**
+	 * Library hooks
+	 */
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { setScrollEle, scrollToBottom, isUserScrolled } = useAutoScroll(
 		room.history?.length || 0,
 	);
+
+	/**
+	 * Functions
+	 */
+	const handlePrompt = async (prompt: string, files: File[]) => {
+		// update the options
+		await room.updateRoomOptions(room.options);
+
+		// ask the room
+		await room.askMessage(prompt, files);
+
+		return true;
+	};
 
 	/**
 	 * Effects
@@ -73,7 +90,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
-	const isDisabled = room.mode === "executing";
+	const isDisabled = Boolean(room.error) || room.mode === "executing";
 
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
@@ -107,6 +124,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 								</React.Fragment>
 							);
 						})}
+						{room.error && <ErrorMessage />}
 					</div>
 				</ScrollArea>
 
@@ -136,15 +154,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 					minRows={3}
 					maxRows={8}
 					configuration={<RoomConfigurationButton room={room} />}
-					onPrompt={async (prompt, files) => {
-						// update the options
-						await room.updateRoomOptions(room.options);
-
-						// ask the room
-						await room.askMessage(prompt, files);
-
-						return true;
-					}}
+					onPrompt={handlePrompt}
 					clearInputOnPrompt
 				/>
 			</div>
