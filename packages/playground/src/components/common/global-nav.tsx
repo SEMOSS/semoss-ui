@@ -32,9 +32,11 @@ import {
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
+	useSidebar,
 } from "@semoss/ui/next";
-import { useChat } from "@/hooks";
+import { useChat, useRoot } from "@/hooks";
 import { AppLogo } from "./app-logo";
+import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
 
 const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
@@ -45,9 +47,10 @@ const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
  * @component
  */
 export const GlobalNav = observer(() => {
+	const { root } = useRoot();
 	const [search, setSearch] = useState("");
-
 	const { chat } = useChat();
+	const { open } = useSidebar();
 	const { pathname } = useLocation();
 	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
 	const debouncedSearch = useDebouncedValue(search);
@@ -73,11 +76,11 @@ export const GlobalNav = observer(() => {
 
 		(response) => {
 			// if its less than the limit, we know its the end
-			if (response.length < 15) {
+			if (response.length < 25) {
 				return -1;
 			}
 
-			return Infinity;
+			return getRooms?.data?.length + response.length;
 		},
 		(response) => {
 			return response;
@@ -108,24 +111,28 @@ export const GlobalNav = observer(() => {
 	}, [getRooms.reset, chat.keys.roomCounter]);
 
 	return (
-		<Sidebar variant="inset" className="p-0">
+		<Sidebar
+			collapsible="icon"
+			variant="inset"
+			className="h-full justify-between p-0 transition-[width] duration-200 ease-in-out"
+		>
 			<SidebarHeader>
-				<SidebarMenu>
+				<SidebarMenu className="gap-1 transition-all duration-200 ease-in-out group-data-[collapsible=icon]:px-2">
 					<SidebarMenuItem className="flex items-center overflow-hidden">
-						<SidebarMenuButton size="lg" asChild>
+						<SidebarMenuButton size="lg" className="h-8" asChild>
 							<Link
 								to={"/"}
 								aria-label={"Go Home"}
-								className="flex h-8 w-full flex-1 items-center"
+								className="flex h-12 w-full flex-1 items-center"
 							>
-								<AppLogo />
+								<AppLogo full={open} />
 							</Link>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 				</SidebarMenu>
 
 				<SidebarMenu className="gap-2 p-2">
-					<InputGroup className="bg-background">
+					<InputGroup className="bg-background group-data-[collapsible=icon]:hidden">
 						<InputGroupInput
 							placeholder="Search"
 							value={search}
@@ -164,11 +171,24 @@ export const GlobalNav = observer(() => {
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					)}
+					{root.theme.sidebar.headerItems.map((item, index) => (
+						<GlobalNavItem
+							key={item.path}
+							name={item.name}
+							icon={item.icon}
+							path={item.path}
+							url={item.url}
+							embed={item.embed}
+						/>
+					))}
 					<SidebarMenuItem>&nbsp;</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarHeader>
-			<SidebarContent ref={(ele) => setScroll(ele)}>
-				<SidebarGroup>
+			<SidebarContent
+				ref={(ele) => setScroll(ele)}
+				className="transition-all duration-200 ease-in-out"
+			>
+				<SidebarGroup className="pl-4 transition-all duration-200 ease-in-out group-data-[collapsible=icon]:hidden">
 					<SidebarGroupLabel className="truncate font-medium text-muted-foreground text-xs leading-normal">
 						Recents
 					</SidebarGroupLabel>
@@ -259,6 +279,18 @@ export const GlobalNav = observer(() => {
 				</SidebarGroup>
 			</SidebarContent>
 			<SidebarFooter>
+				<SidebarMenu className="gap-2 px-2 pt-2">
+					{root.theme.sidebar.footerItems.map((item) => (
+						<GlobalNavItem
+							key={item.path}
+							name={item.name}
+							icon={item.icon}
+							path={item.path}
+							url={item.url}
+							embed={item.embed}
+						/>
+					))}
+				</SidebarMenu>
 				<NavUser />
 			</SidebarFooter>
 			<SidebarRail />
