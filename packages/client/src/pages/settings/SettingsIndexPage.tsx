@@ -1,8 +1,4 @@
-import {
-	Diversity3,
-	MoreVert,
-	Search as SearchIcon,
-} from "@mui/icons-material";
+import { Diversity3, MoreVert } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -99,12 +95,12 @@ const IconMapper = {
 	"Member Settings": <Group />,
 	Configuration: <Construction />,
 	"Admin Query": <AdminPanel />,
+	"Admin Theme": <PaintRounded />,
 	"External Connections": <Link />,
 	Teams: <GroupRounded />,
 	"Teams Management": <GroupRounded />,
 	"Team Permissions": <Diversity3 />,
 	"My Profile": <PersonRounded />,
-	Theming: <PaintRounded />,
 	Jobs: <Jobs />,
 	"View RDF Map": <Folder />,
 };

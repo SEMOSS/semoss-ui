@@ -304,29 +304,10 @@ export const modifyLoginProperties = async (provider, properties) => {
 	return response.data;
 };
 
-export const createAdminTheme = async (data: {
-	name: string;
-	json: unknown;
-	isActive: boolean;
-}) => {
-	const url = `${Env.MODULE}/api/themes/createAdminTheme`;
-	const postData = {
-		name: data.name,
-		json: JSON.stringify(data.json),
-		isActive: data.isActive,
-	};
-
-	const response = await post<boolean>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
-	return response.data;
-};
-
 export const getInsights = async () => {
 	console.error("needs to be added on BE");
 };
+
 export const getInsightUsers = async (
 	admin: boolean,
 	id: string,
