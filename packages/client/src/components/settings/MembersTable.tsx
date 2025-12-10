@@ -980,6 +980,20 @@ export const MembersTable = (props: MembersTableProps) => {
 															isSelected
 																? StyledSelectedTableRow
 																: Table.Row;
+
+														// Determine if this row represents an Author-level user
+														const targetPermission =
+															permissionPriorityMapper(
+																user.permission,
+															)?.permission;
+
+														const disableActionsForEditorAuthor =
+															userPermission ===
+																"Editor" &&
+															targetPermission ===
+																"Author" &&
+															!adminMode;
+
 														return (
 															<RowComponent
 																key={user.id}
@@ -1220,7 +1234,8 @@ export const MembersTable = (props: MembersTableProps) => {
 																				"access",
 																			) ||
 																			userPermission ===
-																				"Read-Only"
+																				"Read-Only" ||
+																			disableActionsForEditorAuthor
 																		}
 																	>
 																		<Edit />
@@ -1239,7 +1254,8 @@ export const MembersTable = (props: MembersTableProps) => {
 																				"access",
 																			) ||
 																			userPermission ===
-																				"Read-Only"
+																				"Read-Only" || 	
+																			disableActionsForEditorAuthor	
 																		}
 																	>
 																		<Delete></Delete>
