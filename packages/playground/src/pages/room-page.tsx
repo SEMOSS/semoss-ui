@@ -9,7 +9,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { Room, RoomSidebar } from "@/components";
-import { useChat } from "@/hooks";
+import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 import { RoomStore } from "@/stores";
 
 /**
@@ -51,6 +51,20 @@ export const RoomPage = observer(() => {
 			navigate("/");
 		});
 	}, [room, navigate]);
+
+	// set the breadcrumbs
+	useGlobalBreadcrumbs([
+		{
+			name: "Home",
+			path: "/",
+		},
+		{
+			name: room?.isInitialized
+				? room.metadata.name || "Room"
+				: "Loading",
+			path: `/room/${roomId}`,
+		},
+	]);
 
 	if (!room && chat.isInitialized) {
 		// if the chat is initialized and there is no room, the room id is invalid - go back to home
