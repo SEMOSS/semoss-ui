@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => {
 			commonjsOptions: { transformMixedEsModules: true },
 		},
 		server: {
+			port: 5175,
 			proxy: {
 				[MODULE]: {
 					target: ENDPOINT,

@@ -3,14 +3,8 @@ import { observer } from "mobx-react-lite";
 import React, { useEffect } from "react";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbList,
-	BreadcrumbPage,
 	Button,
 	ScrollArea,
-	Separator,
-	SidebarTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -82,30 +76,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 	const isDisabled = room.mode === "executing";
 
 	return (
-		<div className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out">
-			<div className="flex h-12.5 w-full flex-row items-center px-4">
-				<div className="flex flex-row items-center justify-center gap-1.5">
-					<SidebarTrigger />
-					<Separator
-						orientation="vertical"
-						style={{ height: "17px" }}
-					/>
-					<Breadcrumb>
-						<BreadcrumbList>
-							<BreadcrumbItem>
-								<BreadcrumbPage
-									title={room.metadata?.name}
-									className="max-w-100 truncate text-foreground"
-								>
-									{room.metadata?.name}
-								</BreadcrumbPage>
-							</BreadcrumbItem>
-						</BreadcrumbList>
-					</Breadcrumb>
-				</div>
-				<div className="flex-1" />
-			</div>
-			<Separator />
+		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
 					className="h-full w-full"
