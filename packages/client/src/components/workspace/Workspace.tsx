@@ -72,6 +72,8 @@ const StyledHeaderLogo = styled(Link)(({ theme }) => ({
 	color: "inherit",
 	textDecoration: "none",
 	cursor: "pointer",
+	display: "flex",
+	alignItems: "center",
 	":hover": {
 		bacakground: theme.palette.action.hover,
 	},
@@ -119,7 +121,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
 	const { navbarActions, workspace, options, factory = () => null } = props;
 	const layoutRef = useRef<FlexLayout.Layout | null>(null);
 	const model = workspace.model;
-
 	// build the model from the layout
 	useEffect(() => {
 		const handler = (e: CustomEvent) => {
@@ -288,20 +289,26 @@ export const Workspace = observer((props: WorkspaceProps) => {
 								</StyledAppTypography>
 							</Stack>
 						</StyledHeaderLogo>
+
 						<StyledHeaderLogo
 							to={`/app/${workspace.metadata.project_id}/view`}
 						>
-							<StyledAppTypography variant={"subtitle1"}>
-								{workspace.metadata.project_name}
-							</StyledAppTypography>
-						</StyledHeaderLogo>
-						<StyledHeaderLogo to={""}>
-							<Typography
-								variant={"subtitle1"}
-								sx={{ display: "inline", mr: 0.5 }}
+							<div
+								title={workspace?.metadata?.project_name}
+								className="max-w-[10ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
 							>
-								{workspace.metadata.project_name} - Editor
-							</Typography>
+								{workspace?.metadata?.project_name}
+							</div>
+						</StyledHeaderLogo>
+
+						<StyledHeaderLogo to="">
+							<div
+								title={workspace?.metadata?.project_name}
+								className="max-w-[10ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
+							>
+								{workspace?.metadata?.project_name}
+							</div>
+							<span className="w-[10ch]"> - Editor</span>
 						</StyledHeaderLogo>
 					</StyledBreadcrumbs>
 				</StyledNavLeft>
