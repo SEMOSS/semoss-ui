@@ -732,7 +732,19 @@ export class RoomStore {
 	runRoomPixel = async <O extends [] | unknown[]>(
 		pixel: string,
 		showLoading: boolean = true,
-	) => {
+	): Promise<{
+		errors: string[];
+		insightId: string;
+		pixelReturn: {
+			isMeta: boolean;
+			operationType: string[];
+			output: O[number];
+			pixelExpression: string;
+			pixelId: string;
+			additionalOutput?: unknown;
+			timeToRun: number;
+		}[];
+	}> => {
 		try {
 			if (showLoading) {
 				this.setIsLoading(true);
@@ -754,6 +766,7 @@ export class RoomStore {
 			return response;
 		} catch (e) {
 			this._store.error = e;
+			throw e;
 		} finally {
 			if (showLoading) {
 				this.setIsLoading(false);
