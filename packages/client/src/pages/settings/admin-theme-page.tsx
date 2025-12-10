@@ -78,7 +78,9 @@ export const AdminThemePage: React.FC = () => {
 		setThemeId(selectedTheme?.ID || "");
 		setThemeName(selectedTheme?.THEME_NAME || "");
 		setThemeValue(
-			selectedTheme ? JSON.stringify(selectedTheme.THEME_MAP) : "",
+			selectedTheme
+				? JSON.stringify(selectedTheme.THEME_MAP, null, 2)
+				: "",
 		);
 		setThemeActive(selectedTheme?.IS_ACTIVE || false);
 	}, [selectedTheme]);

@@ -70,7 +70,7 @@ export const createAdminTheme = async (
 ) => {
 	const response = await post(`${Env.MODULE}/api/themes/createAdminTheme`, {
 		name: name,
-		json: JSON.stringify(theme, null, 2),
+		json: JSON.stringify(theme),
 		isActive: isActive,
 	});
 
@@ -89,7 +89,7 @@ export const editAdminTheme = async (
 	const response = await post(`${Env.MODULE}/api/themes/editAdminTheme`, {
 		id: id,
 		name: name,
-		json: JSON.stringify(theme, null, 2),
+		json: JSON.stringify(theme),
 		isActive: isActive,
 	});
 
