@@ -202,14 +202,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				file.type.includes("text") ||
 				file.type.includes("document")
 			) {
-				return <FileType2Icon className="size-6 text-muted" />;
+				return (
+					<FileType2Icon className="size-6 text-muted-foreground" />
+				);
 			} else if (file.type.includes("audio")) {
-				return <FileAudio2Icon className="size-6 text-muted" />;
+				return (
+					<FileAudio2Icon className="size-6 text-muted-foreground" />
+				);
 			} else if (file.type.includes("video")) {
-				return <FileVideoCameraIcon className="size-6 text-muted" />;
+				return (
+					<FileVideoCameraIcon className="size-6 text-muted-foreground" />
+				);
 			}
 
-			return <FileIcon className="size-6 text-muted" />;
+			return <FileIcon className="size-6 text-muted-foreground" />;
 		};
 
 		/**
@@ -251,11 +257,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							value={input}
 							disabled={isDisabled}
 							rows={minRows}
-							className={`w-full resize-none px-3 pt-3 pb-14 ${
+							className={`w-full resize-none px-3 pt-3 pb-14${
 								isDragging
 									? "border-primary border-dashed"
 									: "hover:border-primary"
-							} rounded-md bg-background shadow-lg transition-colors`}
+							}rounded-md bg-background shadow-lg transition-colors`}
 							autoFocus={true}
 							style={{
 								minHeight: `${minRows * 3}rem`,
@@ -412,7 +418,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							return (
 								<Tooltip key={fileKey}>
 									<TooltipTrigger asChild>
-										<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border">
+										<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted">
 											{getFileImage(f)}
 											<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
 												<Button

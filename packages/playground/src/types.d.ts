@@ -15,6 +15,13 @@ export interface Theme {
 	images: {
 		logo: string;
 	};
+
+	/**
+	 * Custom CSS to override default styles
+	 */
+	overrides: {
+		"main-layout": React.CSSProperties;
+	};
 }
 
 export interface Engine {
@@ -110,11 +117,10 @@ export interface InputTextPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TEXT";
 	inputUIPrompt: string;
 	modelId: string;
-	imageInfos: {
+	mediaInputs: {
 		fileName: string;
-		fileLocation: string;
+		fileLocation?: string;
 		base64Data?: string;
-		fileFormat?: "png";
 		mimeType?: string;
 		imageType?: "FILE";
 	}[];
@@ -128,11 +134,10 @@ export interface InputMediaPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_MEDIA";
 	inputUIPrompt: string;
 	modelId: string;
-	imageInfos: {
+	mediaInputs: {
 		fileName: string;
-		fileLocation: string;
+		fileLocation?: string;
 		base64Data?: string;
-		fileFormat?: "png";
 		mimeType?: string;
 		imageType?: "FILE";
 	}[];

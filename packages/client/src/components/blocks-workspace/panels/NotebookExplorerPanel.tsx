@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useMemo, useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import { FlexLayout } from "@semoss/shared";
 import {
 	IconButton,
 	InputAdornment,
@@ -13,6 +12,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { FlexLayout } from "@/components/flex-layout";
 import { DeleteNotebookOverlay, NewQueryOverlay } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
