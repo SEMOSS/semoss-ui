@@ -1,13 +1,11 @@
 import { createHashRouter, Navigate, RouterProvider } from "react-router-dom";
-import { useInsight } from "@semoss/sdk/react";
-import { Spinner } from "@semoss/ui/next";
 import { AuthenticatedLayout } from "./authenticated-layout";
 import { ErrorPage } from "./error-page";
+import { InitializedLayout } from "./initialized-layout";
 import { LoginPage } from "./login-page";
 import { MainLayout } from "./main-layout";
 import { NewRoomPage } from "./new-room-page";
 import { RoomPage } from "./room-page";
-import { RootLayout } from "./root-layout";
 import { WorkspaceDetailPage } from "./workspace-detail-page";
 import { WorkspacePage } from "./workspace-page";
 
@@ -15,6 +13,7 @@ const router = createHashRouter(
 	[
 		{
 			// wrap eveything in an error boundary to catch any errors in the layouts or login page
+			element: <InitializedLayout />,
 			errorElement: <ErrorPage />,
 			children: [
 				{
@@ -80,24 +79,5 @@ const router = createHashRouter(
  * The main router for the application. It handles the routing logic and renders the appropriate components based on the current URL.
  */
 export const Router = () => {
-	const { isInitialized, error } = useInsight();
-
-	// don't load anything if it is pending
-	if (!isInitialized) {
-		return (
-			<div className="flex h-full w-full items-center justify-center">
-				<Spinner />
-			</div>
-		);
-	}
-
-	if (error) {
-		return "Error";
-	}
-
-	return (
-		<RootLayout>
-			<RouterProvider router={router} />
-		</RootLayout>
-	);
+	return <RouterProvider router={router} />;
 };
