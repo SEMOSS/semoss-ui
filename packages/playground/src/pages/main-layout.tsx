@@ -67,7 +67,7 @@ export const MainLayout = observer(() => {
 							...root.theme.overrides["main-layout"],
 						}}
 					>
-						<div className="flex h-12.5 w-full flex-row items-center px-4">
+						<div className="flex h-12.5 w-full shrink-0 flex-row items-center px-4">
 							<div className="flex flex-row items-center justify-center gap-1.5">
 								<SidebarTrigger />
 								<Separator
@@ -115,7 +115,7 @@ export const MainLayout = observer(() => {
 							<div className="flex-1" />
 						</div>
 						<Separator />
-						<div className="w-full flex-1">
+						<div className="w-full flex-1 overflow-hidden">
 							<Outlet />
 						</div>
 						<GlobalFooter />

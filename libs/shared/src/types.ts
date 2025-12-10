@@ -51,7 +51,7 @@ export interface ThemeMap {
 		footer: string;
 
 		/**
-		 * Content to show on the landing page
+		 * HTML Content to show on the landing page
 		 */
 		landing: string;
 
