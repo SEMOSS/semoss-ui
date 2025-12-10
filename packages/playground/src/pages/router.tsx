@@ -1,5 +1,6 @@
 import { createHashRouter, Navigate, RouterProvider } from "react-router-dom";
 import { AuthenticatedLayout } from "./authenticated-layout";
+import { EmbedPage } from "./embed-page";
 import { ErrorPage } from "./error-page";
 import { InitializedLayout } from "./initialized-layout";
 import { LoginPage } from "./login-page";
@@ -36,6 +37,10 @@ const router = createHashRouter(
 										{
 											path: "room/:roomId",
 											element: <RoomPage />,
+										},
+										{
+											path: "embed/:path",
+											element: <EmbedPage />,
 										},
 										{
 											path: "workspace",

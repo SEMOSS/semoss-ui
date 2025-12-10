@@ -8,13 +8,12 @@ import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
-	SidebarTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import background from "@/assets/img/background.png";
+import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
 	RoomOptions,
@@ -22,7 +21,7 @@ import {
 	workspaceToApp,
 } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
-import { useChat, useRoot } from "@/hooks";
+import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { App, Workspace } from "@/types";
 
@@ -33,6 +32,13 @@ import type { App, Workspace } from "@/types";
  */
 export const NewRoomPage = observer(() => {
 	const { root } = useRoot();
+
+	useGlobalBreadcrumbs([
+		{
+			name: "Home",
+			path: "/",
+		},
+	]);
 
 	const { chat } = useChat();
 	const navigate = useNavigate();
@@ -132,25 +138,34 @@ export const NewRoomPage = observer(() => {
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
-			<div className="absolute top-2 left-2 z-10 flex h-12.5 items-center px-4">
-				<SidebarTrigger />
-			</div>
 			<ResizablePanelGroup direction="horizontal">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
-						src={background}
+						src={root.theme.images.landing || landingImage}
 						alt="Background"
-						className="absolute inset-0 h-full w-full object-cover"
+						className="absolute inset-0 h-full w-full select-none object-cover"
 					/>
 					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
-						<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
-							<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-								Welcome
+						{root.theme.landing ? (
+							<div
+								className="mx-auto flex max-w-xl"
+								// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+								dangerouslySetInnerHTML={{
+									__html: root.theme.landing,
+								}}
+							/>
+						) : (
+							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
+								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
+									Welcome
+								</div>
+								{root.theme.description ? (
+									<div className="text-center text-muted-foreground text-sm leading-normal">
+										{root.theme.description}
+									</div>
+								) : null}
 							</div>
-							<div className="text-center text-muted-foreground text-sm leading-normal">
-								{root.theme.description}
-							</div>
-						</div>
+						)}
 
 						<RoomInput
 							isLoading={

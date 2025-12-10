@@ -37,7 +37,7 @@ export function NavUser() {
 		.toUpperCase();
 
 	return (
-		<SidebarMenu>
+		<SidebarMenu className="gap-2 group-data-[collapsible=icon]:p-2">
 			<SidebarMenuItem>
 				<DropdownMenu>
 					<SidebarMenuButton
