@@ -19,8 +19,8 @@ export const ErrorMessage = ({ onTryAgain }: ErrorMessageProps) => {
 			<div className="flex items-center gap-2">
 				<CircleAlert className="aspect-square size-4" />
 				<AlertTitle>
-					Unable to process request. Please check your connection or
-					copy your message and refresh.
+					Unable to process request. Please check your connection,
+					copy your message, and refresh.
 				</AlertTitle>
 			</div>
 			{onTryAgain && (
