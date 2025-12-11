@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { ComputerIcon, Search, SquarePenIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
@@ -8,7 +9,7 @@ import {
 	useNavigate,
 	useParams,
 } from "react-router-dom";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { useInsight, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	InputGroup,
@@ -41,12 +42,22 @@ import { NavUser } from "./nav-user";
 
 const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
 
+const BUCKETS = [
+	"Today",
+	"Yesterday",
+	"Last Week",
+	"Last Month",
+	"Older",
+] as const;
+
 /**
  * Renders a sidebar allowing users to navigate between pages
  *
  * @component
  */
 export const GlobalNav = observer(() => {
+	const { system } = useInsight();
+
 	const { root } = useRoot();
 	const [search, setSearch] = useState("");
 	const { chat } = useChat();
@@ -54,6 +65,8 @@ export const GlobalNav = observer(() => {
 	const { pathname } = useLocation();
 	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
 	const debouncedSearch = useDebouncedValue(search);
+
+	const systemDate = dayjs(system.config.systemDate);
 
 	const navigate = useNavigate();
 
@@ -80,7 +93,7 @@ export const GlobalNav = observer(() => {
 				return -1;
 			}
 
-			return getRooms?.data?.length + response.length;
+			return Infinity;
 		},
 		(response) => {
 			return response;
@@ -109,6 +122,36 @@ export const GlobalNav = observer(() => {
 		chat.keys.roomCounter;
 		getRooms.reset();
 	}, [getRooms.reset, chat.keys.roomCounter]);
+
+	/**
+	 * Bucket the rooms by date
+	 */
+	const bucketedRooms = getRooms.data.reduce(
+		(acc, val) => {
+			const d = dayjs(val.DATE_CREATED);
+
+			if (systemDate.isSame(d, "day")) {
+				acc.Today.push(val);
+			} else if (systemDate.subtract(1, "day").isSame(d, "day")) {
+				acc.Yesterday.push(val);
+			} else if (systemDate.isSame(d, "week")) {
+				acc["Last Week"].push(val);
+			} else if (systemDate.isSame(d, "month")) {
+				acc["Last Month"].push(val);
+			} else {
+				acc.Older.push(val);
+			}
+
+			return acc;
+		},
+		{
+			Today: [],
+			Yesterday: [],
+			"Last Week": [],
+			"Last Month": [],
+			Older: [],
+		} as Record<(typeof BUCKETS)[number], typeof getRooms.data>,
+	);
 
 	return (
 		<Sidebar
@@ -181,102 +224,120 @@ export const GlobalNav = observer(() => {
 							embed={item.embed}
 						/>
 					))}
-					<SidebarMenuItem>&nbsp;</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent
 				ref={(ele) => setScroll(ele)}
 				className="transition-all duration-200 ease-in-out"
 			>
-				<SidebarGroup className="pl-4 transition-all duration-200 ease-in-out group-data-[collapsible=icon]:hidden">
-					<SidebarGroupLabel className="truncate font-medium text-muted-foreground text-xs leading-normal">
-						Recents
-					</SidebarGroupLabel>
-					<SidebarGroupContent>
-						<SidebarMenu>
-							{getRooms.isError && (
-								<div className="px-2 py-4 text-center text-destructive text-sm">
-									Error loading rooms
-								</div>
-							)}
-							{getRooms.data.map((room) => {
-								const roomId = room.ROOM_ID;
-								const name = room.ROOM_NAME || "Untitled";
+				{getRooms.isError && (
+					<div className="px-2 py-4 text-center text-destructive text-sm">
+						Error loading rooms
+					</div>
+				)}
+				{!getRooms.isLoading && getRooms.data.length === 0 && (
+					<div className="px-2 py-4 text-center text-muted-foreground text-xs">
+						No rooms found
+					</div>
+				)}
+				{getRooms.isLoading && (
+					<div className="flex items-center justify-center py-4">
+						<Spinner className="size-4" />
+					</div>
+				)}
+				{BUCKETS.map((bucket) => {
+					if (bucketedRooms[bucket].length === 0) {
+						return null;
+					}
 
-								return (
-									<SidebarMenuItem
-										key={roomId}
-										className="group/room flex"
-									>
-										<SidebarMenuButton
-											asChild
-											isActive={activeRoomId === roomId}
-										>
-											<Link
-												className="inline-block flex-1 truncate"
-												to={`/room/${roomId}`}
-												aria-label={"Select room"}
+					return (
+						<SidebarGroup
+							key={bucket}
+							className="pl-4 transition-all duration-200 ease-in-out group-data-[collapsible=icon]:hidden"
+						>
+							<SidebarGroupLabel className="truncate font-medium text-muted-foreground text-xs leading-normal">
+								{bucket}
+							</SidebarGroupLabel>
+							<SidebarGroupContent>
+								<SidebarMenu>
+									{bucketedRooms[bucket].map((room) => {
+										const roomId = room.ROOM_ID;
+										const name =
+											room.ROOM_NAME || "Untitled";
+
+										return (
+											<SidebarMenuItem
+												key={roomId}
+												className="group/room flex"
 											>
-												{name}
-											</Link>
-										</SidebarMenuButton>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<Button
-													className="hidden group-hover/room:inline-flex"
-													variant="ghost"
-													size="icon-sm"
-													onClick={async (e) => {
-														e.stopPropagation();
-
-														try {
-															await chat.closeRoom(
-																roomId,
-															);
-
-															toast.success(
-																"Room deleted successfully",
-															);
-															if (
-																activeRoomId ===
-																roomId
-															) {
-																navigate("/");
-															}
-
-															// Refetch rooms after deletion
-															getRooms.reset();
-														} catch (e) {
-															toast.error(
-																e.message,
-															);
-														}
-													}}
+												<SidebarMenuButton
+													asChild
+													isActive={
+														activeRoomId === roomId
+													}
 												>
-													<TrashIcon className="text-destructive" />
-												</Button>
-											</TooltipTrigger>
-											<TooltipContent>
-												Delete Room
-											</TooltipContent>
-										</Tooltip>
-									</SidebarMenuItem>
-								);
-							})}
-							{!getRooms.isLoading &&
-								getRooms.data.length === 0 && (
-									<div className="px-2 py-4 text-center text-muted-foreground text-xs">
-										No rooms found
-									</div>
-								)}
-							{getRooms.isLoading && (
-								<div className="flex items-center justify-center py-4">
-									<Spinner className="size-4" />
-								</div>
-							)}
-						</SidebarMenu>
-					</SidebarGroupContent>
-				</SidebarGroup>
+													<Link
+														className="inline-block flex-1 truncate"
+														to={`/room/${roomId}`}
+														aria-label={
+															"Select room"
+														}
+													>
+														{name}
+													</Link>
+												</SidebarMenuButton>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<Button
+															className="hidden group-hover/room:inline-flex"
+															variant="ghost"
+															size="icon-sm"
+															onClick={async (
+																e,
+															) => {
+																e.stopPropagation();
+
+																try {
+																	await chat.closeRoom(
+																		roomId,
+																	);
+
+																	toast.success(
+																		"Room deleted successfully",
+																	);
+																	if (
+																		activeRoomId ===
+																		roomId
+																	) {
+																		navigate(
+																			"/",
+																		);
+																	}
+
+																	// Refetch rooms after deletion
+																	getRooms.reset();
+																} catch (e) {
+																	toast.error(
+																		e.message,
+																	);
+																}
+															}}
+														>
+															<TrashIcon className="text-destructive" />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent>
+														Delete Room
+													</TooltipContent>
+												</Tooltip>
+											</SidebarMenuItem>
+										);
+									})}
+								</SidebarMenu>
+							</SidebarGroupContent>
+						</SidebarGroup>
+					);
+				})}
 			</SidebarContent>
 			<SidebarFooter>
 				<SidebarMenu className="gap-2 px-2 pt-2">
