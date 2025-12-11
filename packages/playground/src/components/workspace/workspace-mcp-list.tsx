@@ -7,7 +7,7 @@ const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
 	: "";
 
-export interface WorkspaceMCPListProps {
+interface WorkspaceMCPListProps {
 	/**
 	 * MCPs associated with the workspace
 	 */
