@@ -155,7 +155,11 @@ export const Dependencies = ({
 									<Box>
 										<StyledTypography variant="subtitle1">
 											<Link
-												href={`./#/engine/${dep.type}/${dep.id}`}
+												href={
+													dep.type === "PROJECT"
+														? `./#/app/${dep.id}`
+														: `./#/engine/${dep.type}/${dep.id}`
+												}
 											>
 												<StyledText variant="body2">
 													{dep.name}

@@ -244,6 +244,7 @@ export const AppDetailPage = () => {
 		useState(false);
 
 	useEffect(() => {
+		setSelectedTab("Overview");
 		setValue("appId", appId);
 		fetchUserSpecificData();
 		fetchAppData(appId);
@@ -449,7 +450,7 @@ export const AppDetailPage = () => {
 			const output = response.pixelReturn[0].output,
 				insightId = response.insightId;
 
-			monolithStore.download(insightId, output);
+			monolithStore.download(insightId, output as string);
 		});
 		setExportLoading(false);
 	};
@@ -517,7 +518,7 @@ export const AppDetailPage = () => {
 				if (operationType.indexOf("ERROR") > -1) {
 					notification.add({
 						color: "error",
-						message: output,
+						message: output as string,
 					});
 
 					return;
