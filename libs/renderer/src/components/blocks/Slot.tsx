@@ -15,7 +15,7 @@ export const Slot = observer(<W extends BlockDef>({ slot }: SlotProps<W>) => {
 
 	return (
 		<>
-			{slot.children.length === 0 && (
+			{slot?.children?.length === 0 && (
 				<div
 					data-slot={slot.name}
 					style={{
@@ -31,7 +31,7 @@ export const Slot = observer(<W extends BlockDef>({ slot }: SlotProps<W>) => {
 					Add Content
 				</div>
 			)}
-			{slot.children.map((c) => (
+			{slot?.children?.map((c) => (
 				<RendererEngine key={c} id={c} />
 			))}
 		</>

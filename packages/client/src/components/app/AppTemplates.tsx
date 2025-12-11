@@ -2602,7 +2602,7 @@ The App Name: ${appName}`;
 			const pixelCommand = `LLM(
   engine = "${selectedLLM}",
   command = "${escapedPrompt}",
-  paramValues = [ {"max_completion_tokens": 2000, "temperature": 0.3} ]
+  paramValues = [ {"max_completion_tokens": 7000, "temperature": 0.0} ]
 );`;
 
 			console.log("Calling LLM with:", {
