@@ -895,6 +895,7 @@ export const AppDetailPage = () => {
 				/>
 
 				<EditDependenciesModal
+					currentDependencies={dependencies}
 					isOpen={isEditDependenciesModalOpen}
 					onClose={handleCloseDependenciesModal}
 					appId={appId}

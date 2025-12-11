@@ -4,6 +4,7 @@ import { Env, useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Autocomplete,
 	Button,
+	Chip,
 	CircularProgress,
 	IconButton,
 	Modal,
@@ -23,6 +24,7 @@ interface EditDependenciesModalProps {
 	isOpen: boolean;
 	onClose: (refresh: boolean) => void;
 	appId: string;
+	currentDependencies: modelledDependency[];
 }
 
 interface MyEngineProjectEngine {
@@ -81,6 +83,17 @@ const StyledCardImage = styled("img")({
 });
 
 /**
+ * Capitalizes the first letter of each word in a string
+ */
+const capitalizeType = (type: string): string => {
+	return type
+		.toLowerCase()
+		.split("_")
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ");
+};
+
+/**
  * Renders a modal to edit dependencies for an application.
  *
  * @component
@@ -89,12 +102,14 @@ export const EditDependenciesModal = ({
 	isOpen,
 	onClose,
 	appId,
+	currentDependencies,
 }: EditDependenciesModalProps) => {
 	/**
 	 * State
 	 */
 	const [allDeps, setAllDeps] = useState<Dependency[]>([]);
-	const [selectedDeps, setSelectedDeps] = useState<Dependency[]>([]);
+	const [selectedDeps, setSelectedDeps] =
+		useState<Dependency[]>(currentDependencies);
 	const [search, setSearch] = useState<string>("");
 
 	/**
@@ -175,6 +190,10 @@ export const EditDependenciesModal = ({
 		);
 	}, [getEngines.status, getEngines.data]);
 
+	useEffect(() => {
+		setSelectedDeps(currentDependencies);
+	}, [currentDependencies]);
+
 	return (
 		<Modal open={isOpen} fullWidth onClose={() => onClose(false)}>
 			<StyledModalHeading>
@@ -238,6 +257,23 @@ export const EditDependenciesModal = ({
 					) => {
 						return option.id === value.id;
 					}}
+					renderOption={(props, option: modelledDependency) => (
+						<li {...props}>
+							<Stack
+								direction="row"
+								spacing={1}
+								alignItems="center"
+							>
+								<Chip
+									label={capitalizeType(option.type)}
+									size="small"
+								/>
+								<Typography variant="body1">
+									{option.name}
+								</Typography>
+							</Stack>
+						</li>
+					)}
 					filterOptions={(x) => x}
 					disableCloseOnSelect
 				/>
@@ -256,7 +292,7 @@ export const EditDependenciesModal = ({
 								<Typography variant="h6">{dep.name}</Typography>
 								<Stack direction="row">
 									<Typography variant="body2">
-										{`${dep.type} | Engine ID: ${dep.id}`}
+										{`${capitalizeType(dep.type)} | Engine ID: ${dep.id}`}
 									</Typography>
 								</Stack>
 							</div>
