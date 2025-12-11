@@ -54,6 +54,17 @@
     line-height: 18px; /* 138.462% */
 }
 
+.flexlayout__border_button_right.flexlayout__border_button--unselected {
+    background-color: var(--Secondary-Selected, #ebebeb);
+    color: var(--text-secondary, #666);
+}
+
+
+.flexlayout__border_button_right.flexlayout__border_button:hover {
+    background: var(--Primary-Selected, #ebf4fe);
+    color: var(--text-secondary, #666);
+}
+
 .flexlayout__border_left .flexlayout__border_button--selected {
     background-color: rgb(255, 255, 255);
     color: rgb(4, 113, 240);

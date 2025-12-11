@@ -640,7 +640,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 							<StyledTab
 								key={i}
 								label={label}
-								data-tesId={formatToDataTestId(
+								data-testid={formatToDataTestId(
 									`connect-to-${label}-tab`,
 								)}
 							/>
@@ -716,7 +716,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 				</Typography>
 				<Typography
 					variant="body1"
-					color={isModelPage ? "inherit" : "secondary"}
+					color="inherit"
 				>
 					{steps.length && steps[steps.length - 1].description}
 				</Typography>
