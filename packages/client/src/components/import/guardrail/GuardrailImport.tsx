@@ -20,8 +20,8 @@ import {
 } from "@semoss/ui";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
-import { GuardrailForm } from "./GuardraliImportForm";
 import { GuardrailTitleCard } from "./GuardrailTitleCard";
+import { GuardrailForm } from "./GuardraliImportForm";
 import { GUARDRAIL_CONNECTION } from "./guardrail-import.constants";
 
 const StyledContainer = styled("div")({
@@ -108,7 +108,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 
 	const pageTitle = "Connect to Guardrail Database";
 	const pageDescription =
-		"In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of guardrail options available within the LLM landscape.";
+		"In a platform where safe and reliable interactions are critical, connecting to guardrails allows you to seamlessly integrate predefined or custom safety rules into your workflows. Whether you’re a developer, data engineer, or product owner, this page helps you explore, configure, and apply guardrails to maintain controlled and secure platform operations.";
 
 	const tabLabels = useMemo(() => {
 		return Object.keys(GuardrailOptions).filter(
@@ -202,7 +202,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 				sx={{ cursor: selectedDatabase ? "pointer" : "default" }}
 				data-testid="breadcrumb-page"
 			>
-				Connect to Guardrail 
+				Connect to Guardrail
 			</Breadcrumbs.Item>
 
 			{selectedDatabase && (

@@ -118,7 +118,7 @@ export const GuardrailForm = ({
 	) => {
 		field.onChange(e);
 		const value = e.target.value;
-		if (val.rules?.custom) {
+		if (val.rules?.custom_rules) {
 			const isValid = await validateFormField(val, value);
 			if (!isValid) {
 				setError(val.key, {
@@ -237,8 +237,8 @@ export const GuardrailForm = ({
 	};
 
 	const validateFormField = async (field, userInput) => {
-		if (!field.rules?.custom?.value) return true;
-		const pixelToExecute = field.rules.custom.value.replace(
+		if (!field.rules?.custom_rules?.value) return true;
+		const pixelToExecute = field.rules.custom_rules.value.replace(
 			"[VALUE]",
 			userInput.trim(),
 		);
@@ -543,7 +543,10 @@ export const GuardrailForm = ({
 	}
 
 	return (
-		<form onSubmit={handleSubmit(onFormSubmit)} data-testid="guardrail-form">
+		<form
+			onSubmit={handleSubmit(onFormSubmit)}
+			data-testid="guardrail-form"
+		>
 			<Typography variant="h4" data-testid="guardrail-form-title">
 				{title}
 			</Typography>

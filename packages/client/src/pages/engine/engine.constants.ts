@@ -252,7 +252,7 @@ export const ENGINE_ROUTES: {
 		path: "guardrail",
 		type: "GUARDRAIL",
 		description:
-			"The Guardrail Catalog is a centralized list of rules and constraints that guide safe, compliant, and consistent system behavior. It helps ensure outputs stay within defined boundaries and align with organizational standards.",
+			"Guardrail Catalog is a centralized hub for managing and deploying guardrails that ensure safety, compliance, and reliability across the platform. It provides ready-to-use options like Gliner and Detoxify, and supports custom guardrail uploads via ZIP files, enabling consistent, secure, and scalable interactions.",
 		icon: Inventory2Outlined,
 		specific: [
 			{
@@ -260,12 +260,6 @@ export const ENGINE_ROUTES: {
 				path: "",
 				component: EngineOverviewPage,
 				restrict: false,
-			},
-			{
-				name: "Usage",
-				path: "usage",
-				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
 			},
 			{
 				name: "Access Control",

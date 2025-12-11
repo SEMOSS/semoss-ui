@@ -25,6 +25,18 @@ export const GUARDRAIL_CONNECTION = {
 					disabled: false,
 					required: true,
 					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
 				},
 				{
 					key: "NER_LABELS",
@@ -39,7 +51,7 @@ export const GUARDRAIL_CONNECTION = {
 					key: "DEFAULT_THRESHOLD",
 					label: "Default Threshold",
 					value: "",
-					component: "text",
+					component: "number",
 					disabled: false,
 					required: false,
 					category: "Settings",
@@ -48,15 +60,6 @@ export const GUARDRAIL_CONNECTION = {
 					key: "GUARDRAIL_TYPE",
 					label: "Guardrail Type",
 					value: "EMBEDDED_GLINER",
-					component: "text",
-					disabled: true,
-					required: false,
-					category: "Settings",
-				},
-				{
-					key: "MODEL_NAME",
-					label: "Model Name",
-					value: "GPT-4o",
 					component: "text",
 					disabled: true,
 					required: false,
@@ -79,12 +82,24 @@ export const GUARDRAIL_CONNECTION = {
 					disabled: false,
 					required: true,
 					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
 				},
 				{
 					key: "DEFAULT_THRESHOLD",
 					label: "DEFAULT THRESHOLD",
 					value: "",
-					component: "text",
+					component: "number",
 					disabled: false,
 					required: false,
 					category: "Settings",
@@ -93,15 +108,6 @@ export const GUARDRAIL_CONNECTION = {
 					key: "GUARDRAIL_TYPE",
 					label: "Guardrail Type",
 					value: "EMBEDDED_DETOXIFY",
-					component: "text",
-					disabled: true,
-					required: false,
-					category: "Settings",
-				},
-				{
-					key: "MODEL_NAME",
-					label: "Model Name",
-					value: "GPT-4o",
 					component: "text",
 					disabled: true,
 					required: false,
