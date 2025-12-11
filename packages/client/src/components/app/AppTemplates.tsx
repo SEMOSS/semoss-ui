@@ -77,1191 +77,1196 @@ interface ModelOption {
 }
 
 const DIABETES_TEMPLATE = {
-	queries: {
-		mcp_driver: {
-			id: "mcp_driver",
-			cells: [
-				{
-					id: "1",
-					widget: "code",
-					parameters: {
-						code: "",
-						type: "py",
-					},
-				},
-			],
-		},
-		"insert-diabetes-record": {
-			id: "insert-diabetes-record",
-			cells: [
-				{
-					id: "81571",
-					widget: "query-import",
-					parameters: {
-						frameVariableName: "FRAME_33516",
-						frameType: "PY",
-						databaseId: "950eb187-e352-444d-ad6a-6476ed9390af",
-						selectQuery: "SELECT * FROM diabetes",
-					},
-				},
-				{
-					id: "81570",
-					widget: "code",
-					parameters: {
-						code: 'from gaas_gpt_database import DatabaseEngine;databaseEngine = DatabaseEngine(engine_id = "950eb187-e352-444d-ad6a-6476ed9390af", insight_id = \'${i}\');a = FRAME_33516.columns.to_list();a.remove("DIABETES_UNIQUE_ROW_ID");col_string = ", ".join(a);inputValues = ["{{DRUG}}","{{LOCATION}}",float({{GLYHB}}),float({{BP_1D}}),float({{BP_2D}}),float({{WAIST}}),float({{RATIO}}),float({{HEIGHT}}),"{{FRAME}}",float({{HIP}}),float({{HDL}}),float({{BP_1S}}),float({{BP_2S}}),float({{STAB_GLU}}),"{{GENDER}}",float({{ID}}),float({{TIME_PPN}}),float({{WEIGHT}}),float({{CHOL}}),float({{AGE}})];filtered_columns = [];filtered_values = [];filtered_columns, filtered_values = zip(*[(col, f"{val}") if isinstance(val, str) and val else (col, val) for col, val in zip(a, inputValues) if isinstance(val,(str,float)) and val]);filtered_columns = ", ".join(filtered_columns);filtered_values = str(filtered_values);QS = f\'INSERT INTO diabetes({filtered_columns}) VALUES {filtered_values}\';',
-						type: "py",
-					},
-				},
-				{
-					id: "81572",
-					widget: "code",
-					parameters: {
-						code: "databaseEngine.insertData(query =QS )",
-						type: "py",
-					},
-				},
-			],
-		},
-	},
-	blocks: {
-		container: {
-			parent: {
-				id: "page-1",
-				slot: "content",
-			},
-			slots: {
-				children: {
-					children: [
-						"description",
-						"input--2410",
-						"input--5402",
-						"input--1170",
-						"input--6259",
-						"input--1140",
-						"input--965",
-						"input--4210",
-						"input--6205",
-						"input--9801",
-						"input--4335",
-						"input--1592",
-						"input--8650",
-						"input--282",
-						"input--9548",
-						"input--635",
-						"input--5427",
-						"input--5626",
-						"input--3394",
-						"input--4379",
-						"input--1541",
-						"input--2836",
-						"submit",
-					],
-					name: "children",
-				},
-			},
-			widget: "container",
-			data: {
-				style: {
-					padding: "4px",
-					flexWrap: "wrap",
-					flexDirection: "column",
-					display: "flex",
-					gap: "8px",
-				},
-				loading: false,
-				loadType: "Skeleton",
-			},
-			listeners: {
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "container",
-		},
-		"input--3394": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "WEIGHT",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--3394",
-		},
-		"input--1592": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "HIP",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--1592",
-		},
-		submit: {
-			parent: {
-				id: "form",
-				slot: "children",
-			},
-			slots: {},
-			widget: "button",
-			data: {
-				variant: "contained",
-				style: {},
-				label: "Add record",
-				loading: "{{db-response.isLoading}}",
-				type: "button",
-			},
-			listeners: {
-				onClick: {
-					type: "sync",
-					order: [
-						{
-							payload: {
-								queryId: "insert-diabetes-record",
-							},
-							message: "RUN_QUERY",
-						},
-					],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "submit",
-		},
-		"input--1170": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "LOCATION",
-				type: "text",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--1170",
-		},
-		"input--282": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "BP_1S",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--282",
-		},
-		description: {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {},
-			widget: "text",
-			data: {
-				style: {
-					padding: "4px",
-					whiteSpace: "pre-line",
-					fontSize: "24px",
-					textOverflow: "ellipsis",
-				},
-				text: "Create Diabetes Record",
-				loading: false,
-				loadType: "Skeleton",
-			},
-			listeners: {
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "description",
-		},
-		"input--965": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "BP_2D",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--965",
-		},
-		"input--6205": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "RATIO",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--6205",
-		},
-		"text--4905": {
-			parent: {
-				id: "page-1",
-				slot: "content",
-			},
-			slots: {},
-			widget: "text",
-			data: {
-				route: "text--4905",
-				variant: "p",
-				style: {
-					padding: "4px",
-					whiteSpace: "pre-line",
-					textOverflow: "ellipsis",
-				},
-				text: " {{db-response.output}} ",
-				loading: false,
-				loadType: "Skeleton",
-			},
-			listeners: {
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "text--4905",
-		},
-		"page-1": {
-			parent: {
-				id: "parent-id",
-				slot: "parent-slot",
-			},
-			slots: {
-				content: {
-					children: ["container", "text--4905"],
-					name: "content",
-				},
-			},
-			widget: "page",
-			data: {
-				route: "",
-				style: {
-					padding: "24px",
-					fontFamily: "roboto",
-					flexDirection: "column",
-					display: "flex",
-					gap: "8px",
-				},
-			},
-			listeners: {
-				onPageLoad: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "page-1",
-		},
-		"input--1140": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "BP_1D",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--1140",
-		},
-		"input--4210": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "WAIST",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--4210",
-		},
-		"input--8650": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "HDL",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--8650",
-		},
-		"input--5626": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "TIME_PPN",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--5626",
-		},
-		"input--635": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "STAB_GLU",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--635",
-		},
-		"input--5427": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "GENDER",
-				type: "text",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--5427",
-		},
-		"input--6259": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "GLYHB",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--6259",
-		},
-		"input--9801": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "HEIGHT",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--9801",
-		},
-		"input--9548": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "BP_2S",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--9548",
-		},
-		"input--5402": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "AGE",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--5402",
-		},
-		"input--4335": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "FRAME",
-				type: "text",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--4335",
-		},
-		"input--4379": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "CHOL",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--4379",
-		},
-		"input--2410": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "ID",
-				type: "number",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--2410",
-		},
-		"input--1541": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "DRUG",
-				type: "text",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--1541",
-		},
-		"input--2836": {
-			parent: {
-				id: "container",
-				slot: "children",
-			},
-			slots: {
-				content: {
-					children: [],
-					name: "content",
-				},
-			},
-			widget: "input",
-			data: {
-				hint: "",
-				multiline: false,
-				show: "true",
-				style: {
-					padding: "4px",
-					width: "100%",
-				},
-				disabled: false,
-				label: "dtype",
-				type: "text",
-				rows: 1,
-				loading: false,
-				value: "",
-				required: false,
-			},
-			listeners: {
-				onChange: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "input--2836",
-		},
-	},
-	variables: {
-		LOCATION: {
-			to: "input--1170",
-			type: "block",
-		},
-		DRUG: {
-			to: "input--1541",
-			type: "block",
-		},
-		"db-response": {
-			to: "insert-diabetes-record",
-			type: "query",
-		},
-		GLYHB: {
-			to: "input--6259",
-			type: "block",
-		},
-		BP_1D: {
-			to: "input--1140",
-			type: "block",
-		},
-		"insert-diabetes-record--81571": {
-			to: "insert-diabetes-record",
-			type: "cell",
-			cellId: "81571",
-		},
-		WAIST: {
-			to: "input--4210",
-			type: "block",
-		},
-		RATIO: {
-			to: "input--6205",
-			type: "block",
-		},
-		FRAME: {
-			to: "input--4335",
-			type: "block",
-		},
-		HDL: {
-			to: "input--8650",
-			type: "block",
-		},
-		BP_1S: {
-			to: "input--282",
-			type: "block",
-		},
-		STAB_GLU: {
-			to: "input--635",
-			type: "block",
-		},
-		"insert-diabetes-record--81572": {
-			to: "insert-diabetes-record",
-			type: "cell",
-			cellId: "81572",
-		},
-		GENDER: {
-			to: "input--5427",
-			type: "block",
-		},
-		model: {
-			type: "model",
-			value: "4acbe913-df40-4ac0-b28a-daa5ad91b172",
-		},
-		ID: {
-			to: "input--2410",
-			type: "block",
-		},
-		WEIGHT: {
-			to: "input--3394",
-			type: "block",
-		},
-		CHOL: {
-			to: "input--4379",
-			type: "block",
-		},
-		AGE: {
-			to: "input--5402",
-			type: "block",
-		},
-		"mcp_driver--1": {
-			to: "mcp_driver",
-			type: "cell",
-			cellId: "1",
-		},
-		mcp_driver: {
-			to: "mcp_driver",
-			type: "query",
-			cellId: "1",
-		},
-		BP_2D: {
-			to: "input--965",
-			type: "block",
-		},
-		dtype: {
-			to: "input--2836",
-			type: "block",
-		},
-		HEIGHT: {
-			to: "input--9801",
-			type: "block",
-		},
-		HIP: {
-			to: "input--1592",
-			type: "block",
-		},
-		BP_2S: {
-			to: "input--9548",
-			type: "block",
-		},
-		response: {
-			to: "insert-diabetes-record",
-			type: "cell",
-			cellId: "81570",
-		},
-		TIME_PPN: {
-			to: "input--5626",
-			type: "block",
-		},
-	},
-	executionOrder: ["insert-diabetes-record"],
-	version: "1.0.0-alpha.17",
-};
+    "queries": {
+        "mcp_driver": {
+            "id": "mcp_driver",
+            "cells": [
+                {
+                    "id": "1",
+                    "widget": "code",
+                    "parameters": {
+                        "code": "",
+                        "type": "py"
+                    }
+                }
+            ]
+        },
+        "insert-diabetes-record": {
+            "id": "insert-diabetes-record",
+            "cells": [
+                {
+                    "id": "81571",
+                    "widget": "query-import",
+                    "parameters": {
+                        "frameVariableName": "FRAME_33516",
+                        "frameType": "PY",
+                        "databaseId": "950eb187-e352-444d-ad6a-6476ed9390af",
+                        "selectQuery": "SELECT * FROM diabetes"
+                    }
+                },
+                {
+                    "id": "81570",
+                    "widget": "code",
+                    "parameters": {
+                        "code": "from gaas_gpt_database import DatabaseEngine;databaseEngine = DatabaseEngine(engine_id = \"950eb187-e352-444d-ad6a-6476ed9390af\", insight_id = '${i}');a = FRAME_33516.columns.to_list();a.remove(\"DIABETES_UNIQUE_ROW_ID\");col_string = \", \".join(a);inputValues = [\"{{DRUG}}\",\"{{LOCATION}}\",float({{GLYHB}}),float({{BP_1D}}),float({{BP_2D}}),float({{WAIST}}),float({{RATIO}}),float({{HEIGHT}}),\"{{FRAME}}\",float({{HIP}}),float({{HDL}}),float({{BP_1S}}),float({{BP_2S}}),float({{STAB_GLU}}),\"{{GENDER}}\",float({{ID}}),float({{TIME_PPN}}),float({{WEIGHT}}),float({{CHOL}}),float({{AGE}})];filtered_columns = [];filtered_values = [];filtered_columns, filtered_values = zip(*[(col, f\"{val}\") if isinstance(val, str) and val else (col, val) for col, val in zip(a, inputValues) if isinstance(val,(str,float)) and val]);filtered_columns = \", \".join(filtered_columns);filtered_values = str(filtered_values);QS = f'INSERT INTO diabetes({filtered_columns}) VALUES {filtered_values}';",
+                        "type": "py"
+                    }
+                },
+                {
+                    "id": "81572",
+                    "widget": "code",
+                    "parameters": {
+                        "code": "databaseEngine.insertData(query =QS )",
+                        "type": "py"
+                    }
+                }
+            ]
+        }
+    },
+    "blocks": {
+        "container": {
+            "parent": {
+                "id": "page-1",
+                "slot": "content"
+            },
+            "slots": {
+                "children": {
+                    "children": [
+                        "description",
+                        "input--2410",
+                        "input--5402",
+                        "input--1170",
+                        "input--6259",
+                        "input--1140",
+                        "input--965",
+                        "input--4210",
+                        "input--6205",
+                        "input--9801",
+                        "input--4335",
+                        "input--1592",
+                        "input--8650",
+                        "input--282",
+                        "input--9548",
+                        "input--635",
+                        "input--5427",
+                        "input--5626",
+                        "input--3394",
+                        "input--4379",
+                        "input--1541",
+                        "input--2836",
+                        "submit"
+                    ],
+                    "name": "children"
+                }
+            },
+            "widget": "container",
+            "data": {
+                "style": {
+                    "padding": "4px",
+                    "flexWrap": "wrap",
+                    "flexDirection": "column",
+                    "display": "flex",
+                    "gap": "8px"
+                },
+                "loading": false,
+                "loadType": "Skeleton"
+            },
+            "listeners": {
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "container"
+        },
+        "input--3394": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "WEIGHT",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--3394"
+        },
+        "input--1592": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "HIP",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--1592"
+        },
+        "submit": {
+            "parent": {
+                "id": "form",
+                "slot": "children"
+            },
+            "slots": {},
+            "widget": "button",
+            "data": {
+                "variant": "contained",
+                "style": {},
+                "label": "Add record",
+                "loading": "{{db-response.isLoading}}",
+                "type": "button"
+            },
+            "listeners": {
+                "onClick": {
+                    "type": "sync",
+                    "order": [
+                        {
+                            "payload": {
+                                "queryId": "insert-diabetes-record"
+                            },
+                            "message": "RUN_QUERY"
+                        }
+                    ]
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "submit"
+        },
+        "input--1170": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "LOCATION",
+                "type": "text",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--1170"
+        },
+        "input--282": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "BP_1S",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--282"
+        },
+        "description": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {},
+            "widget": "text",
+            "data": {
+                "style": {
+                    "padding": "4px",
+                    "whiteSpace": "pre-line",
+                    "fontSize": "24px",
+                    "textOverflow": "ellipsis"
+                },
+                "text": "Create Diabetes Record",
+                "loading": false,
+                "loadType": "Skeleton"
+            },
+            "listeners": {
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "description"
+        },
+        "input--965": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "BP_2D",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--965"
+        },
+        "input--6205": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "RATIO",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--6205"
+        },
+        "text--4905": {
+            "parent": {
+                "id": "page-1",
+                "slot": "content"
+            },
+            "slots": {},
+            "widget": "text",
+            "data": {
+                "route": "text--4905",
+                "variant": "p",
+                "style": {
+                    "padding": "4px",
+                    "whiteSpace": "pre-line",
+                    "textOverflow": "ellipsis"
+                },
+                "text": " {{db-response.output}} ",
+                "loading": false,
+                "loadType": "Skeleton"
+            },
+            "listeners": {
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "text--4905"
+        },
+        "page-1": {
+            "parent": {
+                "id": "parent-id",
+                "slot": "parent-slot"
+            },
+            "slots": {
+                "content": {
+                    "children": [
+                        "container",
+                        "text--4905"
+                    ],
+                    "name": "content"
+                }
+            },
+            "widget": "page",
+            "data": {
+                "route": "",
+                "style": {
+                    "padding": "24px",
+                    "fontFamily": "roboto",
+                    "flexDirection": "column",
+                    "display": "flex",
+                    "gap": "8px"
+                }
+            },
+            "listeners": {
+                "onPageLoad": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "page-1"
+        },
+        "input--1140": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "BP_1D",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--1140"
+        },
+        "input--4210": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "WAIST",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--4210"
+        },
+        "input--8650": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "HDL",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--8650"
+        },
+        "input--5626": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "TIME_PPN",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--5626"
+        },
+        "input--635": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "STAB_GLU",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--635"
+        },
+        "input--5427": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "GENDER",
+                "type": "text",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--5427"
+        },
+        "input--6259": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "GLYHB",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--6259"
+        },
+        "input--9801": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "HEIGHT",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--9801"
+        },
+        "input--9548": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "BP_2S",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--9548"
+        },
+        "input--5402": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "AGE",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--5402"
+        },
+        "input--4335": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "FRAME",
+                "type": "text",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--4335"
+        },
+        "input--4379": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "CHOL",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--4379"
+        },
+        "input--2410": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "ID",
+                "type": "number",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--2410"
+        },
+        "input--1541": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "DRUG",
+                "type": "text",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--1541"
+        },
+        "input--2836": {
+            "parent": {
+                "id": "container",
+                "slot": "children"
+            },
+            "slots": {
+                "content": {
+                    "children": [],
+                    "name": "content"
+                }
+            },
+            "widget": "input",
+            "data": {
+                "hint": "",
+                "multiline": false,
+                "show": "true",
+                "style": {
+                    "padding": "4px",
+                    "width": "100%"
+                },
+                "disabled": false,
+                "label": "dtype",
+                "type": "text",
+                "rows": 1,
+                "loading": false,
+                "value": "",
+                "required": false
+            },
+            "listeners": {
+                "onChange": {
+                    "type": "sync",
+                    "order": []
+                },
+                "preProcess": {
+                    "type": "sync",
+                    "order": []
+                }
+            },
+            "id": "input--2836"
+        }
+    },
+    "variables": {
+        "LOCATION": {
+            "to": "input--1170",
+            "type": "block"
+        },
+        "DRUG": {
+            "to": "input--1541",
+            "type": "block"
+        },
+        "db-response": {
+            "to": "insert-diabetes-record",
+            "type": "query"
+        },
+        "GLYHB": {
+            "to": "input--6259",
+            "type": "block"
+        },
+        "BP_1D": {
+            "to": "input--1140",
+            "type": "block"
+        },
+        "insert-diabetes-record--81571": {
+            "to": "insert-diabetes-record",
+            "type": "cell",
+            "cellId": "81571"
+        },
+        "WAIST": {
+            "to": "input--4210",
+            "type": "block"
+        },
+        "RATIO": {
+            "to": "input--6205",
+            "type": "block"
+        },
+        "FRAME": {
+            "to": "input--4335",
+            "type": "block"
+        },
+        "HDL": {
+            "to": "input--8650",
+            "type": "block"
+        },
+        "BP_1S": {
+            "to": "input--282",
+            "type": "block"
+        },
+        "STAB_GLU": {
+            "to": "input--635",
+            "type": "block"
+        },
+        "insert-diabetes-record--81572": {
+            "to": "insert-diabetes-record",
+            "type": "cell",
+            "cellId": "81572"
+        },
+        "GENDER": {
+            "to": "input--5427",
+            "type": "block"
+        },
+        "model": {
+            "type": "model",
+            "value": "4acbe913-df40-4ac0-b28a-daa5ad91b172"
+        },
+        "ID": {
+            "to": "input--2410",
+            "type": "block"
+        },
+        "WEIGHT": {
+            "to": "input--3394",
+            "type": "block"
+        },
+        "CHOL": {
+            "to": "input--4379",
+            "type": "block"
+        },
+        "AGE": {
+            "to": "input--5402",
+            "type": "block"
+        },
+        "mcp_driver--1": {
+            "to": "mcp_driver",
+            "type": "cell",
+            "cellId": "1"
+        },
+        "mcp_driver": {
+            "to": "mcp_driver",
+            "type": "query",
+            "cellId": "1"
+        },
+        "BP_2D": {
+            "to": "input--965",
+            "type": "block"
+        },
+        "dtype": {
+            "to": "input--2836",
+            "type": "block"
+        },
+        "HEIGHT": {
+            "to": "input--9801",
+            "type": "block"
+        },
+        "HIP": {
+            "to": "input--1592",
+            "type": "block"
+        },
+        "BP_2S": {
+            "to": "input--9548",
+            "type": "block"
+        },
+        "response": {
+            "to": "insert-diabetes-record",
+            "type": "cell",
+            "cellId": "81570"
+        },
+        "TIME_PPN": {
+            "to": "input--5626",
+            "type": "block"
+        }
+    },
+    "executionOrder": [
+        "insert-diabetes-record"
+    ],
+    "version": "1.0.0-alpha.17"
+}
 
 const TEMPLATE_FOR_PROMPT = (() => {
 	const clone = JSON.parse(JSON.stringify(DIABETES_TEMPLATE));
