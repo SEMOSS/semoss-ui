@@ -152,7 +152,7 @@ engine=["${modelId}"],
 roomId=["${roomId}"],
 command=["<encode>${prompt}</encode>"],
 ${options.instructions ? `context=["<encode>${options.instructions}</encode>"],` : `context=[],`}
-${uploaded.length ? `image=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "image=[],"}
+${uploaded.length ? `uploadMedia=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "uploadMedia=[],"}
 paramValues=[${JSON.stringify({
 				max_new_tokens: options.tokenLength,
 				temperature: options.temperature,
@@ -164,7 +164,7 @@ engine=["${modelId}"],
 roomId=["${roomId}"],
 command=["<encode>${prompt}</encode>"],
 ${options.instructions ? `context=["<encode>${options.instructions}</encode>"],` : `context=[],`}
-${uploaded.length ? `image=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "image=[],"}
+${uploaded.length ? `uploadMedia=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "uploadMedia=[],"}
 paramValues=[${JSON.stringify({
 				max_new_tokens: options.tokenLength,
 				temperature: options.temperature,

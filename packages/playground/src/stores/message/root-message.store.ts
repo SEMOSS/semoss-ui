@@ -46,7 +46,7 @@ engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${inputMessage.mediaInputs.length ? `image=${JSON.stringify(inputMessage.mediaInputs.map((info) => info.fileLocation))},` : "image=[],"}
+${inputMessage.mediaInputs.length ? `uploadMedia=${JSON.stringify(inputMessage.mediaInputs.map((info) => info.fileLocation))},` : "uploadMedia=[],"}
 paramValues=[${JSON.stringify({
 				max_new_tokens: room.options.tokenLength,
 				temperature: room.options.temperature,
@@ -58,7 +58,7 @@ engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${inputMessage.mediaInputs.length ? `image=${JSON.stringify(inputMessage.mediaInputs.map((info) => info.fileLocation))},` : "image=[],"}
+${inputMessage.mediaInputs.length ? `uploadMedia=${JSON.stringify(inputMessage.mediaInputs.map((info) => info.fileLocation))},` : "uploadMedia=[],"}
 paramValues=[${JSON.stringify({
 				max_new_tokens: room.options.tokenLength,
 				temperature: room.options.temperature,
