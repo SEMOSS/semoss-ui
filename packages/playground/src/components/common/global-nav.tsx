@@ -85,7 +85,7 @@ export const GlobalNav = observer(() => {
 		}
 	>(
 		(limit, offset) =>
-			`GetUserConversationRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""} limit = ${limit} , offset = ${offset} , sort = [ "DESC" ] ) ;`,
+			`GetPlaygroundRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""} limit = ${limit} , offset = ${offset} , sort = [ "DESC" ] ) ;`,
 
 		(response) => {
 			// if its less than the limit, we know its the end
