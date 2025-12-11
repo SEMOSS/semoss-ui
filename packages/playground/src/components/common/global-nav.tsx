@@ -230,23 +230,23 @@ export const GlobalNav = observer(() => {
 				ref={(ele) => setScroll(ele)}
 				className="transition-all duration-200 ease-in-out"
 			>
-				{getRooms.isError && (
+				{open && getRooms.isError && (
 					<div className="px-2 py-4 text-center text-destructive text-sm">
 						Error loading rooms
 					</div>
 				)}
-				{!getRooms.isLoading && getRooms.data.length === 0 && (
+				{open && !getRooms.isLoading && getRooms.data.length === 0 && (
 					<div className="px-2 py-4 text-center text-muted-foreground text-xs">
 						No rooms found
 					</div>
 				)}
-				{getRooms.isLoading && (
+				{open && getRooms.isLoading && (
 					<div className="flex items-center justify-center py-4">
 						<Spinner className="size-4" />
 					</div>
 				)}
 				{BUCKETS.map((bucket) => {
-					if (bucketedRooms[bucket].length === 0) {
+					if (!open || bucketedRooms[bucket].length === 0) {
 						return null;
 					}
 
