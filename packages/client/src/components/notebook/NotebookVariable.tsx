@@ -109,15 +109,6 @@ const StyledEmptyDiv = styled("div")(() => ({
 	padding: "0px",
 }));
 
-const StyledTypography = styled(Typography)(() => ({
-	color: "#212121",
-	fontFamily: "Inter",
-	fontWeight: "400",
-	fontSize: "14px",
-	lineHeight: "150%",
-	letterSpacing: "0.17px",
-}));
-
 const StyledStackVariable = styled(Stack)(() => ({
 	height: "40px",
 	width: "80px",
@@ -241,8 +232,7 @@ const StyledBoxId = styled(Box)(() => ({
 	width: "128px",
 	display: "flex",
 	flexDirection: "column",
-	alignItems:
-		"flex-start",
+	alignItems: "flex-start",
 }));
 
 const StyledVariableIcon = styled(Box)(() => ({
@@ -520,8 +510,8 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 			const engineId = state.getVariable(variable.to, variable.type);
 			const engine = engines[`${variable.type}s`]
 				? engines[`${variable.type}s`].find(
-					(engineValue) => engineValue.app_id === engineId,
-				)
+						(engineValue) => engineValue.app_id === engineId,
+					)
 				: null;
 			if (engine) {
 				return engine.app_name;
@@ -633,7 +623,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 									handleAutoRename();
 									setAnchorEl(null);
 								}}
-								data-testid={"notebook-variable-auto-rename-menuitem"}
+								data-testid={
+									"notebook-variable-auto-rename-menuitem"
+								}
 								disabled={
 									isProcessing || !workspace.agentModelEngine
 								}
@@ -655,7 +647,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 									setIsOpen(true);
 									setAnchorEl(null);
 								}}
-								data-testid={"notebook-variable-delete-menuitem"}
+								data-testid={
+									"notebook-variable-delete-menuitem"
+								}
 							>
 								<Stack direction="row" alignItems="center">
 									<StyledDeleteIconButton>
@@ -676,7 +670,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 						<StyledCloseBox>
 							<StyledCloseIconButton
 								onClick={() => setIsOpen(false)}
-								data-testid={"notebook-variable-delete-close-btn"}
+								data-testid={
+									"notebook-variable-delete-close-btn"
+								}
 							>
 								<Close />
 							</StyledCloseIconButton>
@@ -704,7 +700,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 							<StyledCancelButton
 								variant="text"
 								onClick={() => setIsOpen(false)}
-								data-testid={"notebook-variable-delete-cancel-btn"}
+								data-testid={
+									"notebook-variable-delete-cancel-btn"
+								}
 							>
 								Cancel
 							</StyledCancelButton>
@@ -724,7 +722,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 									});
 									setIsOpen(false);
 								}}
-								data-testid={"notebook-variable-delete-confirm-btn"}
+								data-testid={
+									"notebook-variable-delete-confirm-btn"
+								}
 							>
 								Delete
 							</StyledDeleteButton>
@@ -736,7 +736,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 					primary={
 						<Stack>
 							<StyledTooltip
-								placement={"right"}
+								placement={"right-start"}
 								title={
 									<VariablePreview
 										variable={variable}
@@ -769,8 +769,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 											}}
 										>
 											<Stack direction="row">
-												<StyledVariableIcon
-												>
+												<StyledVariableIcon>
 													<img
 														src={getImage(
 															variable.type,
@@ -778,11 +777,10 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 														alt="variable-type-icon"
 													/>
 												</StyledVariableIcon>
-												<StyledBoxId
-												>
-													<StyledTypography variant="body2">
+												<StyledBoxId>
+													<span className="inline-block min-w-0 max-w-[128px] flex-shrink overflow-hidden text-ellipsis whitespace-nowrap font-normal text-[#202020] text-[14px] leading-[20px]">
 														{id}
-													</StyledTypography>
+													</span>
 													<StyledCapitalizedTypography variant="body2">
 														{getVariableTypeDisplay}
 													</StyledCapitalizedTypography>
@@ -815,7 +813,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 														e.target.value,
 													);
 												}}
-												data-testid={"notebook-variable-rename-input"}
+												data-testid={
+													"notebook-variable-rename-input"
+												}
 												onKeyDown={async (e) => {
 													if (e.key === "Enter") {
 														setOpenRenameAlias(

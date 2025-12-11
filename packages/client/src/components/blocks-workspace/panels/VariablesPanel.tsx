@@ -271,10 +271,10 @@ const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
 	"& .MuiAccordionSummary-expandIconWrapper": {
 		marginRight: "2px",
 		marginLeft: 0,
-		transform: "rotate(0deg)", // Start pointing right
+		transform: "rotate(0deg)",
 		transition: "transform 0.2s",
 		"&.Mui-expanded": {
-			transform: "rotate(90deg)", // Rotate to point down when expanded
+			transform: "rotate(90deg)",
 		},
 	},
 	"&.Mui-expanded": {
@@ -304,7 +304,7 @@ const StyledAccordionContent = styled(Accordion.Content)(() => ({
 const StyledListVariableContent = styled(List)(() => ({
 	padding: 0,
 	"& .MuiStack-root > :not(style):not(style)": {
-		marginTop: 0, // Remove Stack spacing
+		marginTop: 0,
 	},
 }));
 
@@ -319,7 +319,7 @@ const StyledListItemContent = styled(List.Item)(() => ({
 		cursor: "pointer",
 	},
 	"&:last-child": {
-		borderBottom: "none", // Remove border from last item
+		borderBottom: "none",
 	},
 }));
 
@@ -393,7 +393,6 @@ export const VariablesPanel = observer(
 		const [expandedItems, setExpandedItems] = useState<
 			Record<string, boolean>
 		>(() => {
-			// Initialize with all types set to false (collapsed)
 			const groupedVariables = Object.entries(state.variables).reduce(
 				(acc, [id, variable]) => {
 					if (!acc[variable.type]) acc[variable.type] = [];
@@ -405,11 +404,10 @@ export const VariablesPanel = observer(
 
 			const initial: Record<string, boolean> = {};
 			Object.keys(groupedVariables).forEach((type) => {
-				initial[type] = false; // or true if you want them expanded by default
+				initial[type] = false;
 			});
 			return initial;
 		});
-		const [expandAll, setExpandAll] = useState(false);
 		const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc"); // Default to ascending
 		const [tempSortOrder, setTempSortOrder] = useState<"asc" | "desc">(
 			"asc",
@@ -480,7 +478,7 @@ export const VariablesPanel = observer(
 		useEffect(() => {
 			if (filterAnchorEl) {
 				setTempFilter(selectedFilter);
-				setTempSortOrder(sortOrder); // Sync temp sort order
+				setTempSortOrder(sortOrder);
 			}
 		}, [filterAnchorEl]);
 
@@ -498,12 +496,10 @@ export const VariablesPanel = observer(
 						selectedFilter.includes(val.type),
 				)
 				.sort((a, b) => {
-					// First sort by type
 					const typeCompare = a[1].type.localeCompare(b[1].type);
 					if (typeCompare !== 0) {
 						return sortOrder === "asc" ? typeCompare : -typeCompare;
 					}
-					// Then sort by id within same type
 					return sortOrder === "asc"
 						? a[0].localeCompare(b[0])
 						: b[0].localeCompare(a[0]);
@@ -511,7 +507,7 @@ export const VariablesPanel = observer(
 		}, [
 			filterWord,
 			JSON.stringify(selectedFilter),
-			sortOrder, // Add sortOrder as dependency
+			sortOrder,
 			Object.values(state.variables),
 		]);
 
@@ -593,7 +589,7 @@ export const VariablesPanel = observer(
 		const allSelected = tempFilter.length === VARIABLE_TYPES.length;
 
 		function capitalizeFirstLetter(str) {
-			if (!str) return ""; // handle empty or null strings
+			if (!str) return "";
 			return str.charAt(0).toUpperCase() + str.slice(1);
 		}
 
@@ -632,7 +628,6 @@ export const VariablesPanel = observer(
 			}
 		}, [variables, expandedItems]);
 
-		// Track previous variable types to detect new additions
 		const prevTypesRef = useRef<string[]>([]);
 
 		useEffect(() => {
@@ -644,7 +639,6 @@ export const VariablesPanel = observer(
 			);
 
 			if (newTypes.length > 0) {
-				// Use setTimeout to ensure state update happens after render
 				setTimeout(() => {
 					setExpandedItems((prev) => {
 						const updated = { ...prev };
@@ -762,7 +756,9 @@ export const VariablesPanel = observer(
 												onClick={() => {
 													setFilterAnchorEl(null);
 												}}
-												data-testid={"variable-filter-popover-close-btn"}
+												data-testid={
+													"variable-filter-popover-close-btn"
+												}
 											>
 												<Close />
 											</IconButton>
@@ -783,7 +779,9 @@ export const VariablesPanel = observer(
 													]);
 												}
 											}}
-											data-testid={"variable-filter-select-all-item"}
+											data-testid={
+												"variable-filter-select-all-item"
+											}
 										>
 											<StyledSelectAllListContent>
 												<Box
@@ -796,18 +794,18 @@ export const VariablesPanel = observer(
 														onChange={(e) => {
 															e.stopPropagation();
 															if (allSelected) {
-																// Unselect all
 																setTempFilter(
 																	[],
 																);
 															} else {
-																// Select all
 																setTempFilter([
 																	...VARIABLE_TYPES,
 																]);
 															}
 														}}
-														data-testid={"variable-filter-select-all-chk"}
+														data-testid={
+															"variable-filter-select-all-chk"
+														}
 													/>
 												</Box>
 												<StyledTypographyContent variant="body1">
@@ -915,7 +913,9 @@ export const VariablesPanel = observer(
 											onClick={() =>
 												setTempSortOrder("asc")
 											}
-											data-testid={"variable-filter-sort-asc-item"}
+											data-testid={
+												"variable-filter-sort-asc-item"
+											}
 											sx={{
 												"& .MuiStack-root > :not(style) ~ :not(style)":
 													{
@@ -925,7 +925,7 @@ export const VariablesPanel = observer(
 												backgroundColor:
 													tempSortOrder === "asc"
 														? "#E3F2FD"
-														: "transparent", // Highlight if selected
+														: "transparent",
 												cursor: "pointer",
 												"&:hover": {
 													backgroundColor:
@@ -950,7 +950,9 @@ export const VariablesPanel = observer(
 											onClick={() =>
 												setTempSortOrder("desc")
 											}
-											data-testid={"variable-filter-sort-desc-item"}
+											data-testid={
+												"variable-filter-sort-desc-item"
+											}
 											sx={{
 												"& .MuiStack-root > :not(style) ~ :not(style)":
 													{
@@ -960,7 +962,7 @@ export const VariablesPanel = observer(
 												backgroundColor:
 													tempSortOrder === "desc"
 														? "#E3F2FD"
-														: "transparent", // Highlight if selected
+														: "transparent",
 												cursor: "pointer",
 												height: "40px",
 												alignItems: "center",
@@ -993,26 +995,30 @@ export const VariablesPanel = observer(
 											variant="outlined"
 											color="secondary"
 											onClick={() => {
-												setTempFilter(VARIABLE_TYPES); // reset checkboxes
+												setTempFilter(VARIABLE_TYPES);
 												setSelectedFilter(
 													VARIABLE_TYPES,
-												); // reset applied filter
-												setTempSortOrder("asc"); // reset to default asc
-												setSortOrder("asc"); // reset applied sort
-												setFilterAnchorEl(null); // Close popover
+												);
+												setTempSortOrder("asc");
+												setSortOrder("asc");
+												setFilterAnchorEl(null);
 											}}
-											data-testid={"variable-filter-clear-all-btn"}
+											data-testid={
+												"variable-filter-clear-all-btn"
+											}
 										>
 											Clear All
 										</FlexButton>
 										<FlexButton
 											variant="contained"
 											onClick={() => {
-												setSelectedFilter(tempFilter); // Apply filter
-												setSortOrder(tempSortOrder); // Apply sort order
-												setFilterAnchorEl(null); // Close popover
+												setSelectedFilter(tempFilter);
+												setSortOrder(tempSortOrder);
+												setFilterAnchorEl(null);
 											}}
-											data-testid={"variable-filter-apply-btn"}
+											data-testid={
+												"variable-filter-apply-btn"
+											}
 										>
 											Apply
 										</FlexButton>
@@ -1037,7 +1043,9 @@ export const VariablesPanel = observer(
 											isProcessing
 										}
 										onClick={handleOpenRenameModal}
-										data-testid={"variable-panel-rename-suggest-btn"}
+										data-testid={
+											"variable-panel-rename-suggest-btn"
+										}
 									>
 										{llmLoad ? (
 											<CircularProgress
@@ -1059,7 +1067,9 @@ export const VariablesPanel = observer(
 													e.currentTarget,
 												);
 											}}
-											data-testid={"variable-panel-add-variable-btn"}
+											data-testid={
+												"variable-panel-add-variable-btn"
+											}
 										>
 											<Add />
 										</IconButton>
@@ -1085,12 +1095,13 @@ export const VariablesPanel = observer(
 													);
 												types.forEach((type) => {
 													newState[type] =
-														!hasAnyExpanded; // Collapse if any expanded, expand if all collapsed
-												})
+														!hasAnyExpanded;
+												});
 												setExpandedItems(newState);
-												setExpandAll(!hasAnyExpanded);
 											}}
-											data-testid={"variable-panel-expand-collapse-btn"}
+											data-testid={
+												"variable-panel-expand-collapse-btn"
+											}
 										>
 											<StyledExpandIcon
 												src={ExpandCollapseIcon}
@@ -1105,7 +1116,6 @@ export const VariablesPanel = observer(
 						<StyledMenuScroll>
 							{Object.entries(groupedVariables).map(
 								([type, vars]) => {
-									// Only render if we have state for this type
 									if (expandedItems[type] === undefined) {
 										return null;
 									}
