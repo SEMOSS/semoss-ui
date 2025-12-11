@@ -47,6 +47,10 @@ interface InsightStoreInterface {
 				playground: Record<string, unknown>;
 				[key: string]: unknown;
 			};
+			/**
+			 * System Date
+			 */
+			systemDate: string;
 			[key: string]: unknown;
 		};
 	} | null;
