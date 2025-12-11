@@ -2,6 +2,7 @@ import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
 import { AuthenticatedLayout } from "./authenticated-layout";
+import { EmbedPage } from "./embed-page";
 import { LoginPage } from "./login-page";
 import { MainLayout } from "./main-layout";
 import { NewRoomPage } from "./new-room-page";
@@ -42,6 +43,8 @@ export const Router = () => {
 						<Route element={<MainLayout />}>
 							<Route path="new" element={<NewRoomPage />} />
 							<Route path="room/:roomId" element={<RoomPage />} />
+							<Route path="embed/:path" element={<EmbedPage />} />
+
 							<Route
 								path="workspace"
 								element={<WorkspacePage />}
