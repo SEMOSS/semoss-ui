@@ -16,7 +16,7 @@ import { ArchiveBox } from "@/assets/img/ArchiveBox";
 import { Construction } from "@/assets/img/Construction";
 import { DatabaseLayers } from "@/assets/img/DatabaseLayers";
 import { Folder } from "@/assets/img/Folder";
-import { Function } from "@/assets/img/Function";
+import { Function as FunctionImg } from "@/assets/img/Function";
 import { Group } from "@/assets/img/Group";
 import { GroupRounded } from "@/assets/img/GroupRounded";
 import { Jobs } from "@/assets/img/Jobs";
@@ -90,7 +90,7 @@ const IconMapper = {
 	"Storage Settings": <ArchiveBox />,
 	"App Settings": <Folder />,
 	"Vector Settings": <Vector />,
-	"Function Settings": <Function />,
+	"Function Settings": <FunctionImg />,
 	"Insight Settings": <SEMOSS />,
 	"Member Settings": <Group />,
 	Configuration: <Construction />,
@@ -152,10 +152,17 @@ export const SettingsIndexPage = () => {
 			<Grid container spacing={2}>
 				{cards.map((c, i) => {
 					if (c.admin && !adminMode) {
-						return;
+						return null;
 					} else {
 						return (
-							<Grid item key={i} sm={12} md={6} lg={4} xl={3}>
+							<Grid
+								item
+								key={`settingsIndexPage-${c.title}-${c.path}-${i}-card`}
+								sm={12}
+								md={6}
+								lg={4}
+								xl={3}
+							>
 								<StyledCard
 									onClick={() => navigate(c.path)}
 									data-testid={formatToDataTestId(
