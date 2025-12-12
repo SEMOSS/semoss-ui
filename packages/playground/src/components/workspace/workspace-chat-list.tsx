@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import { ScrollArea, Spinner, useInfiniteScroll } from "@semoss/ui/next";
 
-export interface WorkspaceChatListProps {
+interface WorkspaceChatListProps {
 	/**
 	 * List of chats associated with the workspace
 	 */
@@ -50,16 +50,9 @@ export const WorkspaceChatList = ({
 	);
 
 	// Attach infinite scroll
-	const setScroll = useInfiniteScroll({
+	const { setScroll } = useInfiniteScroll({
+		disabled: getWorkspaceRooms.isLoading || !getWorkspaceRooms.hasMore,
 		onNext: () => {
-			if (getWorkspaceRooms.isLoading) {
-				return;
-			}
-
-			if (!getWorkspaceRooms.hasMore) {
-				return;
-			}
-			// get more
 			getWorkspaceRooms.next();
 		},
 	});

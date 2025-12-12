@@ -26,12 +26,14 @@ import {
 } from "../../components/workspace";
 import { DesignerContext } from "../../contexts";
 import { GraphPanel } from "../workspace/panels/GraphPanel";
+import { MCPJsonEditor } from "../workspace/panels/MCPJsonEditor";
 import { BlocksWorkspaceActions } from "./BlocksWorkspaceActions";
 import { BlocksWorkspaceDev } from "./BlocksWorkspaceDev";
 import { DEFAULT_MENU } from "./menus/default-menu";
 import {
 	BlocksMenuPanel,
 	DesignerPanel,
+	ExportButtonPanel,
 	LayersPanel,
 	NotebookExplorerPanel,
 	NotebookViewerPanel,
@@ -111,6 +113,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 				location: "right",
 				size: BLOCK_SETTINGS_MIN_WIDTH,
 				minSize: BLOCK_SETTINGS_MIN_WIDTH,
+				selected: 0,
 				children: [
 					{
 						type: "tab",
@@ -121,6 +124,15 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 							className: "selected_block",
 						},
 						helpText: "Block Settings",
+					},
+					{
+						type: "tab",
+						id: "export-button",
+						name: "Export",
+						component: "export-button",
+						config: {},
+						helpText: "Export Tool",
+						enableDrag: false,
 					},
 				],
 			},
@@ -306,6 +318,8 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 			return <FileExplorerPanel title={"Files"} layout={layout} />;
 		} else if (component === "file-editor") {
 			return <FileEditorPanel path={config.path} />;
+		} else if (component === "mcpJsonEditor") {
+			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "notebook-explorer") {
 			return <NotebookExplorerPanel title={"Notebook"} layout={layout} />;
 		} else if (component === "notebook-viewer") {
@@ -318,6 +332,8 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 			return <SettingsPanel value={config.value} />;
 		} else if (component === "settings") {
 			return <SettingsNavPanel />; // This is a placeholder for the settings tab, which is handled in the border layout
+		} else if (component === "export-button") {
+			return <ExportButtonPanel />;
 		}
 		return <>{component}</>;
 	};

@@ -9,15 +9,14 @@ import {
 	InputGroupInput,
 	Muted,
 	ScrollArea,
-	SidebarTrigger,
 	Spinner,
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import workspaceGraphic from "@/assets/img/workspace-graphic.png";
+import workspaceImage from "@/assets/img/workspace.png";
 import { WorkspaceCard, WorkspaceOverlay } from "@/components";
-import { useChat } from "@/hooks";
+import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { App } from "@/types";
 
 /**
@@ -26,15 +25,24 @@ import type { App } from "@/types";
  * @component
  */
 export const WorkspacePage = observer(() => {
-	/**
-	 * State
-	 */
+	const { root } = useRoot();
+	// set the breadcrumbs
+	useGlobalBreadcrumbs([
+		{
+			name: "Home",
+			path: "/",
+		},
+		{
+			name: "Workspace",
+			path: "/workspace",
+		},
+	]);
+
 	const [search, setSearch] = useState("");
 	const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] =
 		useState<boolean>(false);
 	const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 	const debouncedSearch = useDebouncedValue(search);
-
 	const { chat } = useChat();
 
 	/**
@@ -79,22 +87,17 @@ export const WorkspacePage = observer(() => {
 	/**
 	 * Setup infinite scroll for the command list
 	 */
-	const setScroll = useInfiniteScroll({
+	const { setScroll } = useInfiniteScroll({
+		disabled: getWorkspaces.isLoading || !getWorkspaces.hasMore,
 		onNext: () => {
-			if (getWorkspaces.isLoading || !getWorkspaces.hasMore) {
-				return;
-			}
 			getWorkspaces.next();
 		},
 	});
 
 	return (
-		<div className="flex w-full flex-col px-2">
-			<div className="absolute top-2 left-2 z-10 flex h-12.5 items-center px-4">
-				<SidebarTrigger />
-			</div>
-			<div className="mx-auto flex h-screen w-full max-w-[950px] flex-col gap-12 px-12 pt-8 pb-4">
-				<div className="flex w-full rounded-lg bg-sky-100">
+		<div className="relative h-full w-full overflow-hidden">
+			<div className="mx-auto flex h-full w-full max-w-[950px] flex-col gap-12 px-12 pt-8 pb-4">
+				<div className="flex w-full rounded-lg bg-primary/10">
 					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
 						<div className="font-medium text-primary text-xl leading-normal">
 							Welcome to Workspace Manager
@@ -117,9 +120,9 @@ export const WorkspacePage = observer(() => {
 					{/* Image appears only on large screens and above */}
 					<div className="relative hidden w-[351px] overflow-hidden rounded-r-lg lg:block">
 						<img
-							src={workspaceGraphic}
+							src={root.theme.images.workspace || workspaceImage}
 							alt="Workspace illustration"
-							className="-translate-y-1/2 absolute top-1/2 left-0 h-[351px] w-full object-cover"
+							className="-translate-y-1/2 absolute top-1/2 left-0 h-[351px] w-full select-none object-cover"
 						/>
 					</div>
 				</div>
