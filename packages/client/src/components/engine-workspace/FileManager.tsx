@@ -161,7 +161,7 @@ export const FileManager = (props: FileManagerProps) => {
 									>
 										<CircleX
 											className="h-3.5 w-3.5"
-											color="#0570F0"
+											color={`${path === activeFilePath ? "#0570F0" : "#0A0A0A"}`}
 										/>
 									</button>
 								</Badge>
