@@ -1,6 +1,7 @@
 import { Home, OctagonAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
+	Button,
 	ResizablePanel,
 	ResizablePanelGroup,
 	SidebarTrigger,
@@ -20,7 +21,11 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 	const content = (
 		<div className="max-w-md p-8 text-center">
 			<div className="mb-6 flex justify-center">
-				<OctagonAlert color="#D9DADC" size={50} strokeWidth={1.5} />
+				<OctagonAlert
+					className="text-destructive"
+					size={50}
+					strokeWidth={1.5}
+				/>
 			</div>
 
 			<h1 className="mb-2 whitespace-nowrap text-center font-semibold text-3xl text-foreground leading-normal">
@@ -32,14 +37,15 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 				to the home page.
 			</p>
 
-			<button
+			<Button
 				type="button"
 				onClick={() => navigate("/")}
-				className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50"
+				size="lg"
+				variant="outline"
 			>
-				<Home size={20} />
+				<Home />
 				Back to Home
-			</button>
+			</Button>
 		</div>
 	);
 
