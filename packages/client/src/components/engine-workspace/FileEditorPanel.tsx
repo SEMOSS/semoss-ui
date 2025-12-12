@@ -9,17 +9,24 @@ interface FileEditorPanelProps {
 	path: string;
 	engineId: string;
 	insightId: string;
+	onUnsave?: (path: string) => void;
+	onSave?: (path: string) => void;
 }
 
 export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
-	const { path, engineId, insightId } = props;
+	const { path, engineId, insightId, onUnsave, onSave } = props;
 	const notification = useNotification();
 
 	const [isModified, setIsModified] = useState(false);
 	const fileEditorRef = useRef<FileEditorRefDef>(null);
 
-	const onFileEditorChange = (isModified: boolean) => {
-		setIsModified(isModified);
+	const onFileEditorChange = (isModifiedFlag: boolean) => {
+		setIsModified(isModifiedFlag);
+		if (isModifiedFlag) {
+			onUnsave?.(path);
+		} else {
+			onSave?.(path);
+		}
 	};
 
 	const copyPath = async () => {
@@ -33,6 +40,28 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 			notification.add({
 				color: "error",
 				message: "Unable to copy path",
+			});
+		}
+	};
+
+	const handleSaveClick = async (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+
+		if (!fileEditorRef.current?.saveFile) return;
+
+		try {
+			const result = fileEditorRef.current.saveFile();
+			if (result instanceof Promise) {
+				await result;
+			}
+
+			setIsModified(false);
+			onSave?.(path);
+		} catch {
+			notification.add({
+				color: "error",
+				message: "Failed to save file",
 			});
 		}
 	};
@@ -59,11 +88,7 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 						className="inline-flex items-center justify-center rounded p-1 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
 						title="Save"
 						disabled={!isModified}
-						onClick={(e) => {
-							e.preventDefault();
-							e.stopPropagation();
-							fileEditorRef.current?.saveFile();
-						}}
+						onClick={handleSaveClick}
 					>
 						<Save className="h-4 w-4" />
 					</button>
@@ -76,8 +101,8 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 				space={engineId}
 				insightId={insightId}
 				path={path}
-				onChange={(_content, isModified) => {
-					onFileEditorChange(isModified);
+				onChange={(_content, isModifiedFlag) => {
+					onFileEditorChange(isModifiedFlag);
 				}}
 			/>
 		</Panel>

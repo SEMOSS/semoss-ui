@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { CircleX } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@semoss/ui/next";
 import { FileEditorPanel } from "./FileEditorPanel";
@@ -23,6 +23,17 @@ export const FileManager = (props: FileManagerProps) => {
 		props;
 	const [openFiles, setOpenFiles] = useState<string[]>([]);
 	const [activeFilePath, setActiveFilePath] = useState<string>("");
+	const [unSavedFiles, setUnSavedFiles] = useState<Record<string, boolean>>(
+		{},
+	);
+
+	const handleFileUnsaved = (path: string) => {
+		setUnSavedFiles((prev) => ({ ...prev, [path]: true }));
+	};
+
+	const handleFileSaved = (path: string) => {
+		setUnSavedFiles((prev) => ({ ...prev, [path]: false }));
+	};
 
 	const handleFileSelect = (path: string) => {
 		if (!path || path.endsWith("/")) {
@@ -137,6 +148,7 @@ export const FileManager = (props: FileManagerProps) => {
 										}`}
 									>
 										{getFileNameFromPath(path)}
+										{unSavedFiles[path] ? "*" : ""}
 									</span>
 									<button
 										type="button"
@@ -144,10 +156,13 @@ export const FileManager = (props: FileManagerProps) => {
 											e.stopPropagation();
 											handleCloseFile(path);
 										}}
-										className="ml-auto shrink-0 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+										className="ml-auto shrink-0 rounded-sm"
 										aria-label="Close"
 									>
-										<X className="h-3 w-3" color="black" />
+										<CircleX
+											className="h-3.5 w-3.5"
+											color="#0570F0"
+										/>
 									</button>
 								</Badge>
 							))}
@@ -159,6 +174,10 @@ export const FileManager = (props: FileManagerProps) => {
 								path={activeFilePath}
 								engineId={engineId}
 								insightId={insightId}
+								onUnsave={() =>
+									handleFileUnsaved(activeFilePath)
+								}
+								onSave={() => handleFileSaved(activeFilePath)}
 							/>
 						</div>
 					</div>
