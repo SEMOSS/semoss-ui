@@ -9,6 +9,7 @@ import {
 	Card,
 	CardContent,
 	CardDescription,
+	CardFooter,
 	CardHeader,
 	CardTitle,
 	Checkbox,
@@ -93,7 +94,7 @@ const JSONEditor = ({ value, onChange }: JSONEditorProps) => {
 	);
 };
 
-export interface MCPTool {
+interface MCPTool {
 	name: string;
 	description?: string;
 	inputSchema?: {
@@ -143,6 +144,7 @@ export const DynamicForm = observer(
 			formData || {},
 		);
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+		const [showOptional, setShowOptional] = useState<boolean>(false);
 
 		const handleChange = (field: string, value: unknown) => {
 			setData((prev) => ({ ...prev, [field]: value }));
@@ -509,8 +511,16 @@ export const DynamicForm = observer(
 			}
 		};
 
+		// Separate required and optional fields
+		const requiredFields = Object.entries(properties).filter(
+			([fieldName]) => required.includes(fieldName),
+		);
+		const optionalFields = Object.entries(properties).filter(
+			([fieldName]) => !required.includes(fieldName),
+		);
+
 		return (
-			<div className="flex h-full w-full flex-col items-center justify-center overflow-hidden">
+			<div className="flex h-full w-full flex-col items-center justify-center overflow-auto p-4">
 				<Card className="h-full w-full">
 					<CardHeader>
 						<CardTitle className="font-semibold text-2xl">
@@ -522,26 +532,71 @@ export const DynamicForm = observer(
 							</CardDescription>
 						)}
 					</CardHeader>
-					<CardContent>
+					<CardContent className="max-h-[60vh] overflow-y-auto">
 						<form onSubmit={handleSubmit} className="space-y-6">
 							<div className="space-y-4">
-								{Object.entries(properties).map(
+								{/* Required fields */}
+								{requiredFields.map(
 									([fieldName, fieldSchema]) =>
 										renderField(fieldName, fieldSchema),
 								)}
-							</div>
-							<Button type="submit" className="w-full" size="lg">
-								{isSubmitting ? (
+
+								{/* Optional fields toggle */}
+								{optionalFields.length > 0 && (
 									<>
-										<Loader2 className="animate-spin" />
-										Executing...
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											onClick={() =>
+												setShowOptional(!showOptional)
+											}
+											className="w-full"
+										>
+											{showOptional ? "Hide" : "Show"}{" "}
+											Optional Fields (
+											{optionalFields.length})
+										</Button>
+
+										{showOptional &&
+											optionalFields.map(
+												([fieldName, fieldSchema]) =>
+													renderField(
+														fieldName,
+														fieldSchema,
+													),
+											)}
 									</>
-								) : (
-									"Execute Tool"
 								)}
-							</Button>
+							</div>
 						</form>
 					</CardContent>
+					<CardFooter>
+						<Button
+							type="button"
+							className="w-full"
+							size="lg"
+							onClick={(e) => {
+								// Trigger form submission
+								const form =
+									e.currentTarget.closest("form") ||
+									document.querySelector("form");
+								if (form) {
+									form.requestSubmit();
+								}
+							}}
+							disabled={isSubmitting}
+						>
+							{isSubmitting ? (
+								<>
+									<Loader2 className="animate-spin" />
+									Executing...
+								</>
+							) : (
+								"Execute Tool"
+							)}
+						</Button>
+					</CardFooter>
 				</Card>
 			</div>
 		);

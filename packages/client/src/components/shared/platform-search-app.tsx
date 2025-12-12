@@ -56,15 +56,13 @@ export const PlatformSearchApp = ({
 	return (
 		<CommandGroup heading={name}>
 			{getApps.data.map((app) => {
-				const url = `/app/${app.project_id}/view`;
-
 				return (
 					<CommandItem
 						key={app.project_id}
 						value={app.project_id}
 						onSelect={() => {
 							// manually navigate since it doesn't propagate with a link
-							navigate(url);
+							navigate(`/app/${app.project_id}/view`);
 
 							// close it
 							onSelect(app);
@@ -86,7 +84,7 @@ export const PlatformSearchApp = ({
 						<a
 							className=""
 							target="_blank"
-							href={url}
+							href={`./#/app/${app.project_id}/view`}
 							onClick={(e) => {
 								e.stopPropagation();
 							}}

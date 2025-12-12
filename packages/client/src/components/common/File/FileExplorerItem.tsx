@@ -16,10 +16,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { usePixel } from "@/hooks";
-import {
-	MCP_JSON_FILE_NAME,
-	MCP_PY_FILE_NAME,
-} from "@/pages/app/app.constants";
+import { MCP_FILE_NAMES, MCP_JSON_FILE_NAMES } from "@/pages/app/app.constants";
 
 const StyledNode = styled(TreeView.Item)(({ theme }) => ({
 	".MuiCollapse-wrapperInner": {
@@ -135,10 +132,8 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 		});
 	}, []);
 
-	const makeMCPCandidate =
-		path === `version/assets/py/${MCP_PY_FILE_NAME}` && !isDirectory;
-	const editMCPCandidate =
-		path === `version/assets/mcp/${MCP_JSON_FILE_NAME}` && !isDirectory;
+	const makeMCPCandidate = MCP_FILE_NAMES.some((f) => path.includes(f) && path.split("/").includes("py")) && !isDirectory;
+	const editMCPCandidate = MCP_JSON_FILE_NAMES.some((f) => path.includes(f) && path.split("/").includes("mcp")) && !isDirectory;
 
 	return (
 		<StyledNode
