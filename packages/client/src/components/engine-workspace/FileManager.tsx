@@ -135,7 +135,7 @@ export const FileManager = (props: FileManagerProps) => {
 									className={`h-7 max-w-[200px] cursor-pointer gap-2 px-3 py-1.5 transition-colors ${
 										path === activeFilePath
 											? "bg-[#EBF4FE] hover:bg-[#EBF4FE]"
-											: "hover:bg-primary/20"
+											: "bg-[#F5F5F5]"
 									}`}
 									title={path}
 									onClick={() => setActiveFilePath(path)}
