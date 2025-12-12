@@ -25,7 +25,7 @@ import { engineProjectToMCP } from "@/components";
 import { useChat } from "@/hooks";
 import type { App, Engine, MCP, MCPConfig, Workspace } from "@/types";
 
-export interface WorkspaceOverlayProps {
+interface WorkspaceOverlayProps {
 	/** Track if the overlay is open */
 	open: boolean;
 
