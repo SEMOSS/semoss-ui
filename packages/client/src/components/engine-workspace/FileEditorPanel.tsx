@@ -1,28 +1,18 @@
-import { ContentCopyOutlined, SaveOutlined } from "@mui/icons-material";
+import { Copy, Save } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useMemo, useRef, useState } from "react";
-import { Chip, IconButton, Stack, styled, useNotification } from "@semoss/ui";
+import { useRef, useState } from "react";
+import { useNotification } from "@semoss/ui";
 import { FileEditor, type FileEditorRefDef } from "@/components/common";
-import { Panel } from "@/components/workspace/panels";
-
-const StyledChip = styled(Chip)(({ theme }) => ({
-	backgroundColor: theme.palette.primary.selected,
-	color: theme.palette.info.dark,
-	fontFamily: "Inter",
-	fontSize: "13px",
-	fontWeight: 400,
-	height: "24px",
-	marginLeft: theme.spacing(1),
-}));
+import { Panel } from "./Panel";
 
 interface FileEditorPanelProps {
 	path: string;
-	appId: string;
+	engineId: string;
 	insightId: string;
 }
 
 export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
-	const { path, appId, insightId } = props;
+	const { path, engineId, insightId } = props;
 	const notification = useNotification();
 
 	const [isModified, setIsModified] = useState(false);
@@ -47,19 +37,13 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 		}
 	};
 
-	const fileName = useMemo(() => {
-		if (!path) return "";
-		const parts = path.split(/[/\\]/);
-		return parts[parts.length - 1];
-	}, [path]);
-
 	return (
 		<Panel
 			actions={
 				<>
-					<IconButton
-						size={"small"}
-						color={"default"}
+					<button
+						type="button"
+						className="inline-flex items-center justify-center rounded p-1 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
 						title={`Copy path - ${path}`}
 						onClick={(e) => {
 							e.preventDefault();
@@ -67,14 +51,13 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 							copyPath();
 						}}
 					>
-						<ContentCopyOutlined fontSize="inherit" />
-					</IconButton>
-					{fileName && <StyledChip label={fileName} size="small" />}
-					<Stack flex={1}>&nbsp;</Stack>
-					<IconButton
-						size={"small"}
-						color={"default"}
-						title={"Save"}
+						<Copy className="h-4 w-4" />
+					</button>
+					<div className="flex-1">&nbsp;</div>
+					<button
+						type="button"
+						className="inline-flex items-center justify-center rounded p-1 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+						title="Save"
 						disabled={!isModified}
 						onClick={(e) => {
 							e.preventDefault();
@@ -82,15 +65,15 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 							fileEditorRef.current?.saveFile();
 						}}
 					>
-						<SaveOutlined fontSize="inherit" />
-					</IconButton>
+						<Save className="h-4 w-4" />
+					</button>
 				</>
 			}
 		>
 			<FileEditor
 				ref={fileEditorRef}
 				type={"engine"}
-				space={appId}
+				space={engineId}
 				insightId={insightId}
 				path={path}
 				onChange={(_content, isModified) => {

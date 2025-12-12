@@ -1,45 +1,7 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Box, Modal, styled } from "@semoss/ui";
 import { FileManager } from "@/components/engine-workspace/FileManager";
 import { useRootStore } from "@/hooks";
-
-const PageContainer = styled(Box)({
-	width: "100%",
-	height: "100vh",
-	overflow: "hidden",
-});
-
-const OverlayContainer = styled(Modal)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	backdropFilter: "rgba(0, 0, 0, 0.5)",
-	"& .MuiDialog-paper": {
-		width: "600px",
-		maxWidth: "none",
-	},
-}));
-
-const LoadingOverlay = styled(Box)({
-	position: "fixed",
-	top: 0,
-	left: 0,
-	right: 0,
-	bottom: 0,
-	background: "rgba(0, 0, 0, 0.3)",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	zIndex: 9999,
-});
-
-const LoadingText = styled(Box)(({ theme }) => ({
-	color: theme.palette.common.white,
-	fontSize: "18px",
-	fontWeight: 500,
-	fontFamily: "Inter, sans-serif",
-}));
 
 export const EngineFileManagerPage = () => {
 	const { engineId } = useParams<{ engineId: string }>();
@@ -60,9 +22,9 @@ export const EngineFileManagerPage = () => {
 	};
 
 	return (
-		<PageContainer>
+		<div className="h-screen w-full overflow-hidden">
 			<FileManager
-				appId={engineId || ""}
+				engineId={engineId || ""}
 				insightId={insightId}
 				setLoading={setIsLoading}
 				openOverlay={handleOpenOverlay}
@@ -71,21 +33,35 @@ export const EngineFileManagerPage = () => {
 
 			{/* Render overlay if present */}
 			{overlayComponent && (
-				<OverlayContainer
-					open={true}
-					onClose={handleCloseOverlay}
-					maxWidth="lg"
+				<div
+					role="dialog"
+					aria-modal="true"
+					className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+					onClick={handleCloseOverlay}
+					onKeyDown={(e) => {
+						if (e.key === "Escape") {
+							handleCloseOverlay();
+						}
+					}}
 				>
-					{overlayComponent()}
-				</OverlayContainer>
+					<div
+						role="document"
+						className="w-[600px] max-w-none rounded-lg bg-white p-6 shadow-lg"
+						onClick={(e) => e.stopPropagation()}
+						onKeyDown={(e) => e.stopPropagation()}
+					>
+						{overlayComponent()}
+					</div>
+				</div>
 			)}
 
-			{/* Optional: Loading indicator */}
 			{isLoading && (
-				<LoadingOverlay>
-					<LoadingText>Loading...</LoadingText>
-				</LoadingOverlay>
+				<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30">
+					<div className="font-medium text-lg text-white">
+						Loading...
+					</div>
+				</div>
 			)}
-		</PageContainer>
+		</div>
 	);
 };

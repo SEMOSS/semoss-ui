@@ -1,117 +1,180 @@
+import { X } from "lucide-react";
 import { useState } from "react";
-import { Box, Stack, styled } from "@semoss/ui";
+import { Badge } from "@semoss/ui/next";
 import { FileEditorPanel } from "./FileEditorPanel";
-import { FileExplorerPanel } from "./FileExplorerPanel";
+import FileExplorerPanel from "./FileExplorerPanel";
 
 interface FileManagerProps {
-	appId: string;
+	engineId: string;
 	insightId: string;
 	openOverlay: (component: () => JSX.Element) => void;
 	closeOverlay: () => void;
 	setLoading: (loading: boolean) => void;
 }
 
-const Container = styled(Stack)(({ theme }) => ({
-	width: "100%",
-	height: "100%",
-	overflow: "hidden",
-	flexDirection: "row",
-	gap: theme.spacing(2),
-	padding: theme.spacing(2),
-	boxSizing: "border-box",
-	alignItems: "flex-start",
-}));
-
-const LeftPanel = styled(Box)(({ theme }) => ({
-	width: "300px",
-	minWidth: "250px",
-	maxWidth: "400px",
-	height: "100%",
-	overflow: "hidden",
-	backgroundColor: theme.palette.background.paper,
-	display: "flex",
-	flexDirection: "column",
-	borderRadius: "8px",
-	border: `1px solid ${theme.palette.divider}`,
-}));
-
-const RightPanel = styled(Box)(({ theme }) => ({
-	flex: 1,
-	height: "100%",
-	overflow: "hidden",
-	backgroundColor: theme.palette.background.default,
-	display: "flex",
-	flexDirection: "column",
-	borderRadius: "8px",
-	border: `1px solid ${theme.palette.divider}`,
-	marginTop: "0px",
-}));
-
-const EmptyState = styled(Box)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	height: "100%",
-	width: "100%",
-	color: theme.palette.text.secondary,
-	fontSize: "14px",
-	fontFamily: "Inter",
-	flexDirection: "column",
-	gap: theme.spacing(2),
-}));
-
-const EmptyStateText = styled(Box)(({ theme }) => ({
-	fontSize: "16px",
-	fontWeight: 500,
-	color: theme.palette.text.secondary,
-}));
-
-const EmptyStateSubtext = styled(Box)(({ theme }) => ({
-	fontSize: "14px",
-	color: theme.palette.text.disabled,
-}));
+const getFileNameFromPath = (path: string): string => {
+	if (!path) return "";
+	const parts = path.split(/[/\\]/);
+	return parts[parts.length - 1] ?? "";
+};
 
 export const FileManager = (props: FileManagerProps) => {
-	const { appId, insightId, setLoading, openOverlay, closeOverlay } = props;
+	const { engineId, insightId, setLoading, openOverlay, closeOverlay } =
+		props;
+	const [openFiles, setOpenFiles] = useState<string[]>([]);
+	const [activeFilePath, setActiveFilePath] = useState<string>("");
 
-	const [selectedFilePath, setSelectedFilePath] = useState<string>("");
+	const handleFileSelect = (path: string) => {
+		if (!path || path.endsWith("/")) {
+			setActiveFilePath("");
+			return;
+		}
+
+		setOpenFiles((prev) => {
+			if (prev.includes(path)) {
+				return prev;
+			}
+			return [...prev, path];
+		});
+
+		setActiveFilePath(path);
+	};
+
+	const handleCloseFile = (path: string) => {
+		setOpenFiles((prev) => {
+			const remaining = prev.filter((p) => p !== path);
+
+			if (remaining.length === 0) {
+				setActiveFilePath("");
+			} else if (path === activeFilePath) {
+				setActiveFilePath(remaining[remaining.length - 1]);
+			}
+
+			return remaining;
+		});
+	};
+
+	const handleDeleteFromExplorer = (deletedPath: string) => {
+		setOpenFiles((prev) => {
+			if (prev.length === 0) {
+				return prev;
+			}
+
+			const folderPath = deletedPath.endsWith("/")
+				? deletedPath
+				: `${deletedPath}/`;
+
+			const hasExactFile = prev.includes(deletedPath);
+			const hasChildren = prev.some((path) =>
+				path.startsWith(folderPath),
+			);
+
+			let next = prev;
+
+			if (hasExactFile && !hasChildren) {
+				next = prev.filter((path) => path !== deletedPath);
+			} else if (!hasExactFile && hasChildren) {
+				next = prev.filter((path) => !path.startsWith(folderPath));
+			} else if (hasExactFile && hasChildren) {
+				next = prev.filter(
+					(path) =>
+						path !== deletedPath && !path.startsWith(folderPath),
+				);
+			} else {
+				return prev;
+			}
+
+			if (next.length === 0) {
+				setActiveFilePath("");
+			} else if (!next.includes(activeFilePath)) {
+				setActiveFilePath(next[next.length - 1]);
+			}
+
+			return next;
+		});
+	};
 
 	return (
-		<Container spacing={0}>
-			<LeftPanel>
+		<div className="box-border flex h-full w-full flex-row items-start gap-4 overflow-hidden p-4">
+			<div className="flex h-full w-[300px] min-w-[250px] max-w-[400px] flex-col overflow-hidden rounded-lg border border-border bg-background">
 				<FileExplorerPanel
 					title="Files"
-					appId={appId}
+					engineId={engineId}
 					insightId={insightId}
 					setLoading={setLoading}
 					openOverlay={openOverlay}
 					closeOverlay={closeOverlay}
-					onFileSelect={(path) => {
-						if (path && path.slice(-1) !== "/") {
-							setSelectedFilePath(path);
-						} else {
-							setSelectedFilePath("");
-						}
-					}}
+					onFileSelect={handleFileSelect}
+					onFileDelete={handleDeleteFromExplorer}
 				/>
-			</LeftPanel>
-			<RightPanel>
-				{selectedFilePath ? (
-					<FileEditorPanel
-						key={selectedFilePath}
-						path={selectedFilePath}
-						appId={appId}
-						insightId={insightId}
-					/>
+			</div>
+
+			<div className="flex h-full flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
+				{openFiles.length > 0 && activeFilePath ? (
+					<div className="flex h-full w-full flex-col">
+						<div className="flex w-full min-w-0 flex-row flex-nowrap gap-2 overflow-x-auto overflow-y-hidden border-border border-b p-3 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-muted [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5 [&>*]:shrink-0">
+							{openFiles.map((path) => (
+								<Badge
+									key={path}
+									variant={
+										path === activeFilePath
+											? "default"
+											: "outline"
+									}
+									className={`h-7 max-w-[200px] cursor-pointer gap-2 px-3 py-1.5 transition-colors ${
+										path === activeFilePath
+											? "bg-[#EBF4FE] hover:bg-[#EBF4FE]"
+											: "hover:bg-primary/20"
+									}`}
+									title={path}
+									onClick={() => setActiveFilePath(path)}
+								>
+									<span
+										className={`max-w-[160px] truncate font-normal text-[13px] ${
+											path === activeFilePath
+												? "text-primary"
+												: "text-foreground"
+										}`}
+									>
+										{getFileNameFromPath(path)}
+									</span>
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											handleCloseFile(path);
+										}}
+										className="ml-auto shrink-0 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+										aria-label="Close"
+									>
+										<X className="h-3 w-3" color="black" />
+									</button>
+								</Badge>
+							))}
+						</div>
+
+						<div className="flex min-h-0 flex-1 flex-col">
+							<FileEditorPanel
+								key={activeFilePath}
+								path={activeFilePath}
+								engineId={engineId}
+								insightId={insightId}
+							/>
+						</div>
+					</div>
 				) : (
-					<EmptyState>
-						<EmptyStateText>No File Selected</EmptyStateText>
-						<EmptyStateSubtext>
+					<div className="flex h-full w-full flex-col items-center justify-center gap-4 font-['Inter'] text-muted-foreground text-sm">
+						<div className="font-medium text-base text-muted-foreground">
+							No File Selected
+						</div>
+						<div className="text-muted-foreground/60 text-sm">
 							Select a file from the explorer to start editing
-						</EmptyStateSubtext>
-					</EmptyState>
+						</div>
+					</div>
 				)}
-			</RightPanel>
-		</Container>
+			</div>
+		</div>
 	);
 };
+
+export default FileManager;
