@@ -779,7 +779,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 												</StyledVariableIcon>
 												<StyledBoxId>
 													<span className="inline-block min-w-0 max-w-[128px] flex-shrink overflow-hidden text-ellipsis whitespace-nowrap font-normal text-[#202020] text-[14px] leading-[20px]">
-														{id}
+														{id.length > 12 ? id.slice(0, 12) + "…" : id}
 													</span>
 													<StyledCapitalizedTypography variant="body2">
 														{getVariableTypeDisplay}
