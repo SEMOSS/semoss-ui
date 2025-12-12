@@ -119,7 +119,7 @@ export class ChatStore {
 					roomId: string;
 				},
 			]
-		>(`CreateRoom();`, "new");
+		>(`CreatePlaygroundRoom();`, "new");
 
 		// throw errors
 		if (errors.length > 0) {

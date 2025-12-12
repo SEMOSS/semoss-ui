@@ -376,6 +376,9 @@ paramValues=[${JSON.stringify({})}]
 				output.responseMessage,
 			);
 			this.addChild(responseMessage);
+
+			// start running tools if there are any
+			(responseMessage as ResponseMessageStore).startToolExecution();
 		}
 	};
 }
