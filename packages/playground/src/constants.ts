@@ -5,4 +5,16 @@ export const TEMPERATURE = 0.3;
 
 export const MCP_EXECUTION_AUTO = "auto";
 export const MCP_EXECUTION_ASK = "ask";
-export const MCP_EXECUTION_DISABLED = "disabled";
+
+export const LOADING_MESSAGES = [
+	"Thinking...",
+	"Processing...",
+	"Still thinking...",
+	"Hold tight...",
+	"Hang tight...",
+	"Almost there...",
+	"One sec...",
+	"On it...",
+	"Working...",
+	"Nearly ready...",
+] as const;

@@ -10,12 +10,6 @@ import { useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbPage,
-	BreadcrumbSeparator,
 	Button,
 	DropdownMenu,
 	DropdownMenuContent,
@@ -26,7 +20,6 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 	Separator,
-	SidebarTrigger,
 	Spinner,
 	Tabs,
 	TabsContent,
@@ -35,11 +28,13 @@ import {
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
+import logoImage from "@/assets/img/logo.svg";
 import {
 	WorkspaceChatList,
 	WorkspaceMCPList,
 	WorkspaceOverlay,
 } from "@/components";
+import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/useChat";
 import type { Workspace } from "@/types";
 
@@ -52,6 +47,7 @@ export const WorkspaceDetailPage = observer(() => {
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChat();
+	const { root } = useRoot();
 
 	const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -74,6 +70,25 @@ export const WorkspaceDetailPage = observer(() => {
 		},
 	);
 
+	// set the breadcrumbs
+	useGlobalBreadcrumbs([
+		{
+			name: "Home",
+			path: "/",
+		},
+		{
+			name: "Workspace",
+			path: "/workspace",
+		},
+		{
+			name:
+				getWorkspace.status === "SUCCESS"
+					? getWorkspace.data.name
+					: "Loading",
+			path: `/workspace/${workspaceId}`,
+		},
+	]);
+
 	if (getWorkspace.status === "LOADING" || isLoading) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
@@ -89,41 +104,17 @@ export const WorkspaceDetailPage = observer(() => {
 	return (
 		<>
 			<div className="flex h-full w-full flex-col overflow-hidden">
-				{/* Header */}
-				<div className="flex h-12.5 w-full flex-row items-center px-4">
-					<div className="flex flex-row items-center justify-center gap-1.5">
-						<SidebarTrigger />
-						<Separator
-							orientation="vertical"
-							style={{ height: "17px" }}
-						/>
-
-						<Breadcrumb>
-							<BreadcrumbList>
-								<BreadcrumbItem>
-									<BreadcrumbLink href="#/workspace">
-										Workspaces
-									</BreadcrumbLink>
-								</BreadcrumbItem>
-								<BreadcrumbSeparator />
-								<BreadcrumbItem>
-									<BreadcrumbPage
-										title={getWorkspace.data?.name}
-										className="max-w-100 truncate text-foreground"
-									>
-										{getWorkspace.data?.name}
-									</BreadcrumbPage>
-								</BreadcrumbItem>
-							</BreadcrumbList>
-						</Breadcrumb>
-					</div>
-					<div className="flex-1" />
-				</div>
 				<Separator />
 
 				<div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 overflow-hidden px-9 py-4 pt-20">
 					<div className="flex flex-row gap-2">
-						<div className="text-2xl">🌴</div>
+						<div className="items-center text-2xl">
+							<img
+								className="flex h-6 select-none flex-row items-center"
+								alt="logo"
+								src={root.theme?.images.logo || logoImage}
+							/>
+						</div>
 						<div className="space-y-2.5">
 							<div className="font-semibold text-2xl text-foreground leading-none">
 								{getWorkspace.data?.name}
