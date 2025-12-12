@@ -39,9 +39,7 @@ export const SECTION_ORDER = [
 	SECTION_ELEMENT,
 ];
 
-// Development Environment Blocks
 const DEV_BLOCKS = [];
-// update the json structure also in VisualMapConstant.tsx
 if (import.meta.env.DEV) {
 	console.warn("PUSH DEV ENV BLOCKS");
 }
@@ -1272,7 +1270,6 @@ const TEMPLATE_FOR_PROMPT = (() => {
 		unknown
 	>;
 
-	// Minimal, focused types for the parts we actually inspect & mutate.
 	type QueryCell = {
 		id?: string;
 		widget?: string;
@@ -1289,9 +1286,7 @@ const TEMPLATE_FOR_PROMPT = (() => {
 		[key: string]: unknown;
 	};
 
-	// Guard that clone.queries is an object we can iterate
 	if (clone.queries && typeof clone.queries === "object") {
-		// cast Object.values result to QueryDef[] after ensuring it's an object
 		for (const q of Object.values(clone.queries) as QueryDef[]) {
 			if (q && typeof q === "object" && Array.isArray(q.cells)) {
 				q.cells.forEach((cell: QueryCell) => {
@@ -2526,6 +2521,13 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 	const cleanToValidJSON = (raw: string) => {
 		try {
 			let txt = raw.trim();
+
+			if (txt.startsWith("```")) {
+				txt = txt.replace(/^```(?:json)?\s*\n?/i, "");
+				txt = txt.replace(/\n?```\s*$/, "");
+				txt = txt.trim();
+			}
+
 			if (txt.startsWith('"') && txt.endsWith('"')) {
 				txt = txt.slice(1, -1);
 			}
@@ -2635,35 +2637,52 @@ The App Name: ${appName}`;
 
 			const response = await runPixel(pixelCommand);
 
-			const generatedRaw = response.pixelReturn[0].output;
+			const generatedRaw = response.pixelReturn[0].output as {
+				response?: string;
+			};
 
 			console.log("RAW from LLM:", generatedRaw);
 
-			const cleanJSON = cleanToValidJSON(generatedRaw?.response);
+			const cleanJSON = cleanToValidJSON(generatedRaw?.response || "");
 
 			console.log("CLEAN JSON:", cleanJSON);
 
-			alert("Generated JSON printed in console.");
-			handleCloseModal();
-			// after const cleanJSON = cleanToValidJSON(generatedRaw?.response);
+			let isValidJSON = false;
 			try {
-				const appId = await createAppFromTemplate(
-					cleanJSON,
-					monolithStore,
-					{
-						title: name,
-						description: prompt,
-					},
-				);
-				// navigate to the created app
-				navigate(`/app/${appId}/view`);
-				// then close modal
-				handleCloseModal();
-			} catch (err) {
-				console.error("Failed to create app from template:", err);
+				JSON.parse(cleanJSON);
+				isValidJSON = true;
+			} catch (parseErr) {
+				console.error("Invalid JSON after cleaning:", parseErr);
 				alert(
-					"Failed to create app from generated template. See console for details.",
+					"Generated JSON is invalid. Please check the console for details.",
 				);
+				return;
+			}
+
+			if (isValidJSON) {
+				try {
+					const appId = await createAppFromTemplate(
+						cleanJSON,
+						monolithStore,
+						{
+							title: name,
+							description: prompt,
+						},
+					);
+
+					if (appId) {
+						console.log("App created successfully with ID:", appId);
+						navigate(`/app/${appId}/view`);
+						handleCloseModal();
+					} else {
+						throw new Error("App creation returned no ID");
+					}
+				} catch (err) {
+					console.error("Failed to create app from template:", err);
+					alert(
+						"Failed to create app from generated template. See console for details.",
+					);
+				}
 			}
 		} catch (error) {
 			console.error("Error generating app:", error);
@@ -2782,16 +2801,24 @@ The App Name: ${appName}`;
 					role="button"
 					tabIndex={0}
 				>
-					<div className="flex h-[138px] w-full items-center justify-center px-8 pt-8">
+					<div className="flex h-[138px] w-full items-center justify-center bg-gray-50">
 						<img
-							src="https://via.placeholder.com/283x123"
-							alt="AI Drag and Drop"
+							src="https://img.freepik.com/free-vector/technology-face-circuit-diagram-background_1017-18300.jpg?semt=ais_hybrid&w=740&q=80"
+							alt="AI Assisted App"
 							className="h-[123px] w-[283px] object-cover"
 						/>
 					</div>
-					<div className="flex items-center justify-center p-4">
-						<p className="font-normal text-gray-900 text-sm">
-							AI Drag and Drop
+					<div className="flex flex-col gap-2 p-4">
+						<h1 className="overflow-hidden text-ellipsis whitespace-nowrap font-normal text-base text-gray-900 leading-[143%] tracking-[0.17px]">
+							AI ASSISTED APP
+						</h1>
+						<p
+							className="line-clamp-2 h-10 overflow-hidden text-ellipsis break-words font-normal text-gray-600 text-xs leading-[19.92px] tracking-[0.4px]"
+							title="Create custom applications using AI assistance. Describe your requirements and let AI generate a tailored app template for you."
+						>
+							Create custom applications using AI assistance.
+							Describe your requirements and let AI generate a
+							tailored app template for you.
 						</p>
 					</div>
 				</div>
