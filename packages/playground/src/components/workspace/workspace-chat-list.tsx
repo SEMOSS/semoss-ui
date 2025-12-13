@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import { ScrollArea, Spinner, useInfiniteScroll } from "@semoss/ui/next";
 
-export interface WorkspaceChatListProps {
+interface WorkspaceChatListProps {
 	/**
 	 * List of chats associated with the workspace
 	 */
