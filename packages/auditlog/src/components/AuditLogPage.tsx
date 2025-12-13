@@ -1,10 +1,23 @@
-import { RotateCw } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { ChevronDownIcon, RotateCw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import { AuditLogsDataTable, AuditLogsTimeline } from "@semoss/shared";
 import {
 	Button,
+	Calendar,
+	type DateRange,
+	// Calendar,
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuRadioGroup,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+	Input,
+	Popover,
+	PopoverAnchor,
+	PopoverContent,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -24,6 +37,29 @@ const initialAcc = {
 	STORAGE: [],
 };
 
+const DashboardDurations = [
+	{ label: "Today", value: "today", dateRangeType: "DAY", dateRangeValue: 1 },
+	{
+		label: "Last 7 Days",
+		value: "last7days",
+		dateRangeType: "WEEK",
+		dateRangeValue: 1,
+	},
+	{
+		label: "Last 30 Days",
+		value: "last30days",
+		dateRangeType: "MONTH",
+		dateRangeValue: 1,
+	},
+	{
+		label: "Custom",
+		value: "custom",
+		renderWithSeparator: true,
+		dateRangeType: "CUSTOM",
+		dateRangeValue: 1,
+	},
+];
+
 export const AuditLogPage = ({ catalogName }) => {
 	const { insightId } = useInsight();
 	const [logs, setLogs] = useState<EventData[]>([]);
@@ -36,6 +72,13 @@ export const AuditLogPage = ({ catalogName }) => {
 	const [engineSelectionDetails, setEngineSelectionDetails] = useState({
 		engineType: "",
 		engineId: "",
+	});
+	const [dashboardDuration, setDashboardDuration] =
+		useState<(typeof DashboardDurations)[number]["value"]>("");
+	const [showCustomPopover, setShowCustomPopover] = useState<boolean>(false);
+	const [customDateRange, setCustomDateRange] = useState<DateRange | null>({
+		from: new Date(),
+		to: new Date(),
 	});
 
 	useEffect(() => {
@@ -71,6 +114,14 @@ export const AuditLogPage = ({ catalogName }) => {
 		getMyEngines();
 	}, [insightId]);
 
+	const SelectedDuration = useMemo(() => {
+		return (
+			DashboardDurations.find(
+				(duration) => duration.value === dashboardDuration,
+			) || { label: "", value: "", dateRangeType: "", dateRangeValue: 1 }
+		);
+	}, [dashboardDuration]);
+
 	// const notification = useNotification();
 
 	const fetchLogs = async (limit: number, offset: number) => {
@@ -88,8 +139,14 @@ export const AuditLogPage = ({ catalogName }) => {
 			const catalogId = engineSelectionDetails.engineId ?? null;
 			// window.location.hash.split("/")[catalogName === "Apps" ? 2 : 3];
 			catalogName = engineSelectionDetails.engineType;
+			const startDate = new Date(
+				customDateRange?.from?.setUTCHours(0, 0, 0, 0),
+			);
+			const endDate = new Date(
+				customDateRange?.to?.setUTCHours(23, 59, 59, 999),
+			);
 			const response = await runPixel(
-				`AuditLogReport(paramValues=[{"userId": "${rootStore?.user?.id}", "${catalogName === "APP" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}"}]);`,
+				`AuditLogReport(paramValues=[{"userId": "${rootStore?.user?.id}","projectId" : "${catalogName === "APP" ? catalogId : ""}","engineId": "${catalogName === "APP" ? "" : catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}","dateRangeType": "${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue": ${SelectedDuration.dateRangeValue} ${SelectedDuration.dateRangeType === "CUSTOM" ? `,"startDate": "${startDate?.toISOString()}", "endDate": "${endDate?.toISOString()}"` : ""}}]);`,
 				insightId,
 			);
 			const responseData = response.pixelReturn[0].output as {
@@ -168,8 +225,88 @@ export const AuditLogPage = ({ catalogName }) => {
 		page,
 		rootStore?.user?.id,
 		engineSelectionDetails.engineId,
+		dashboardDuration,
 	]);
 
+	const dateFormat = (dateString: string | undefined) => {
+		if (!dateString) return "";
+		const date = new Date(dateString);
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, "0");
+		const day = String(date.getDate()).padStart(2, "0");
+		return `${year}-${month}-${day}`;
+	};
+	//biome-ignore lint/correctness/useExhaustiveDependencies: adding dataFormat causes infinite rerender
+	const renderCustomDatePopover = useCallback(() => {
+		if (!showCustomPopover) return null;
+		return (
+			<Popover open={showCustomPopover}>
+				<PopoverAnchor>
+					<PopoverContent
+						className="flex w-[75%] flex-col gap-4 p-4"
+						onInteractOutside={() => {
+							console.log("interaction outside detected");
+						}}
+					>
+						<div className="flex justify-between gap-2">
+							<Input
+								value={dateFormat(
+									customDateRange.from?.toString(),
+								)}
+								type="text"
+								className="w-[50%]"
+							></Input>
+							<Input
+								value={dateFormat(
+									customDateRange.to?.toString(),
+								)}
+								type="text"
+								className="w-[50%]"
+							></Input>
+						</div>
+						<div className="flex justify-around">
+							<Calendar
+								mode="range"
+								selected={customDateRange}
+								onSelect={(daterange) => {
+									console.log(daterange, "daterange");
+									if (daterange?.from && daterange?.to) {
+										setCustomDateRange(daterange);
+									}
+								}}
+								className="rounded-md border shadow-sm"
+								captionLayout="dropdown"
+								timeZone="UTC"
+							/>
+						</div>
+						<div className="flex justify-end">
+							<Button
+								variant="outline"
+								className="w-fit justify-end"
+								size="sm"
+								onClick={() => {
+									setShowCustomPopover(false);
+									if (
+										customDateRange?.from &&
+										customDateRange?.to &&
+										engineSelectionDetails.engineId
+									) {
+										fetchLogs(
+											rowsPerPage,
+											page * rowsPerPage,
+										);
+									}
+								}}
+							>
+								Apply
+							</Button>
+						</div>
+					</PopoverContent>
+				</PopoverAnchor>
+			</Popover>
+		);
+	}, [showCustomPopover, customDateRange]);
+	//biome-ignore lint/correctness/useExhaustiveDependencies: adding customDateformat as it is dependency of renderCustomDatePopover
 	const renderFilterSection = useCallback(() => {
 		return (
 			<div className="flex gap-2">
@@ -230,9 +367,70 @@ export const AuditLogPage = ({ catalogName }) => {
 						</SelectContent>
 					</Select>
 				</div>
+				<div className="min-w-[100px]">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline" size="sm">
+								{SelectedDuration?.label === ""
+									? "Today"
+									: SelectedDuration?.label}{" "}
+								<ChevronDownIcon />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							{/* Add dropdown items here */}
+							<DropdownMenuRadioGroup>
+								{DashboardDurations.map((duration) =>
+									duration.renderWithSeparator ? (
+										<>
+											<DropdownMenuSeparator />
+											<DropdownMenuCheckboxItem
+												key="custom"
+												checked={showCustomPopover}
+												onClick={() => {
+													setDashboardDuration(
+														"custom",
+													);
+													setShowCustomPopover(true);
+												}}
+											>
+												Custom
+											</DropdownMenuCheckboxItem>
+										</>
+									) : (
+										<DropdownMenuCheckboxItem
+											key={duration.value}
+											checked={
+												duration.value ===
+												dashboardDuration
+											}
+											onCheckedChange={() => {
+												setDashboardDuration(
+													duration.value,
+												);
+												if (showCustomPopover)
+													setShowCustomPopover(false);
+											}}
+										>
+											{duration.label}
+										</DropdownMenuCheckboxItem>
+									),
+								)}
+							</DropdownMenuRadioGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>
+					{renderCustomDatePopover()}
+				</div>
 			</div>
 		);
-	}, [engineSelectionDetails, engineDetails]);
+	}, [
+		engineSelectionDetails,
+		engineDetails,
+		dashboardDuration,
+		showCustomPopover,
+		customDateRange,
+		SelectedDuration.label,
+	]);
 
 	return (
 		<div className="flex flex-col gap-4 px-8 py-8">
@@ -260,9 +458,15 @@ export const AuditLogPage = ({ catalogName }) => {
 					{renderFilterSection()}
 					<Button
 						variant="default"
-						onClick={() =>
-							fetchLogs(rowsPerPage, page * rowsPerPage)
-						}
+						onClick={() => {
+							if (
+								!engineSelectionDetails.engineId ||
+								!rootStore?.user?.id
+							) {
+								return;
+							}
+							fetchLogs(rowsPerPage, page * rowsPerPage);
+						}}
 					>
 						<RotateCw className="mr-2 h-4 w-4" />
 						Refresh

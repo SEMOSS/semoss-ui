@@ -738,7 +738,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							))}
 						</SelectContent>
 					</Select>
-					{filteredTotalCount}
 					<span className="mx-2 text-sm">
 						{/**
 							Checking for the case like , if a user searches on 2 or 3rd pages, then the filtered records might not have much records, so 
