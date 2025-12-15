@@ -26,7 +26,7 @@ import {
 } from "../../components/workspace";
 import { DesignerContext } from "../../contexts";
 import { GraphPanel } from "../workspace/panels/GraphPanel";
-import { MCPJsonEditor } from "../workspace/panels/MCPJsonEditor";
+import { MCPJsonEditor } from "../workspace/panels/mcp-json-editor";
 import { BlocksWorkspaceActions } from "./BlocksWorkspaceActions";
 import { BlocksWorkspaceDev } from "./BlocksWorkspaceDev";
 import { DEFAULT_MENU } from "./menus/default-menu";

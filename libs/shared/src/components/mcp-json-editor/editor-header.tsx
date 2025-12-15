@@ -1,7 +1,7 @@
 import { Maximize2, Minimize2, Save } from "lucide-react";
 import type React from "react";
 import { Badge, Button } from "@semoss/ui/next";
-import { SearchBar } from "./SearchBar";
+import { SearchBar } from "./search-bar";
 import type { EditorHeaderProps } from "./types";
 
 export const EditorHeader: React.FC<EditorHeaderProps> = ({

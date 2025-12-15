@@ -8,7 +8,7 @@ import {
 	Workspace,
 } from "../../components/workspace";
 import type { WorkspaceOptions, WorkspaceStore } from "../../stores";
-import { MCPJsonEditor } from "../workspace/panels/MCPJsonEditor";
+import { MCPJsonEditor } from "../workspace/panels/mcp-json-editor";
 import { CodeWorkspaceActions } from "./CodeWorkspaceActions";
 import { RendererPanel } from "./panels";
 
