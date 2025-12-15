@@ -1,3 +1,4 @@
+export * from "./room";
 export * from "./room-configuration";
 export * from "./room-configuration-button";
 export * from "./room-input";

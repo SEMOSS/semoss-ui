@@ -31,8 +31,8 @@ interface ConfigStoreInterface {
 		email: string;
 		admin: boolean;
 	};
-	/** App Builder mode (local storage, based on userEpoch) */
-	globalSearch: string;
+	/** Native mode */
+	isNative: boolean;
 	/** Config information */
 	config: {
 		databaseMetaKeys: {
@@ -156,7 +156,7 @@ export class ConfigStore {
 		authenticated: false,
 		insightID: "",
 		userEpoch: "",
-		globalSearch: "",
+		isNative: false,
 		user: {
 			loggedIn: false,
 			id: "",
@@ -469,6 +469,7 @@ export class ConfigStore {
 					user = output.SAML;
 				} else if (output.NATIVE) {
 					user = output.NATIVE;
+					this._store.isNative = true;
 				} else if (Object.keys(output).length > 0) {
 					// This is a hack...since we don't have a single user
 					user = output[Object.keys(output)[0]];
@@ -492,12 +493,6 @@ export class ConfigStore {
 				this._store.status = "ERROR";
 			});
 		}
-	}
-
-	setGlobalSearch(text = "") {
-		runInAction(() => {
-			this._store.globalSearch = text;
-		});
 	}
 
 	/**

@@ -35,9 +35,9 @@ const StyledContainer = styled(Container)(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
 	height: "100%",
-	paddingTop: theme.spacing(2),
-	paddingBottom: theme.spacing(2),
+	width: "inherit",
 	overflow: "auto",
+	padding: theme.spacing(2),
 }));
 
 const StyledCell = styled("div")(({ theme }) => ({
@@ -94,9 +94,9 @@ const SortableItems = ({
  * Render a sheet in the notebook (contains the individual steps)
  */
 export const Notebook = observer((props: NotebookProps): JSX.Element => {
-    const { id } = props;
-    const { state } = useBlocks();
-    const [cellPlayCounter, setCellPlayCounter] = useState<number | null>(null);
+	const { id } = props;
+	const { state } = useBlocks();
+	const [cellPlayCounter, setCellPlayCounter] = useState<number | null>(null);
 
 	/**
 	 * Handle drag end
@@ -109,18 +109,18 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 			return;
 		}
 
-        // If the active item is over a different item, swap them
-        if (over && active.id !== over.id) {
-            state.dispatch({
-                message: ActionMessages.MOVE_CELL,
-                payload: {
-                    queryId: id,
-                    activeCellId: active.id,
-                    overCellId: over.id,
-                },
-            });
-        }
-    };
+		// If the active item is over a different item, swap them
+		if (over && active.id !== over.id) {
+			state.dispatch({
+				message: ActionMessages.MOVE_CELL,
+				payload: {
+					queryId: id,
+					activeCellId: active.id,
+					overCellId: over.id,
+				},
+			});
+		}
+	};
 
 	// need a notebook to render it
 	const notebook = state.getQuery(id);
@@ -177,7 +177,7 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 					items={notebook.list?.map((item) => item)}
 					strategy={verticalListSortingStrategy}
 				>
-					<StyledContainer maxWidth={"xl"}>
+					<StyledContainer maxWidth={false}>
 						{notebook.list.map((cellId) => (
 							<SortableItems key={cellId} id={cellId}>
 								<StyledCell key={cellId}>

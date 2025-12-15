@@ -44,6 +44,9 @@ interface RoomInputProps {
 
 	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
+
+	/** Optionally clear the input when the user asks a question */
+	clearInputOnPrompt?: boolean;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
@@ -55,6 +58,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		workspace = null,
 		configuration = null,
 		onPrompt = () => null,
+		clearInputOnPrompt = false,
 	}) => {
 		const [input, setInput] = useState("");
 		const isEmpty = input.trim().length === 0;
@@ -145,24 +149,38 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		 *
 		 * @param - input
 		 */
-		const promptModel = async (input: string) => {
+		const promptModel = async () => {
+			let success = false;
+			// store old options
+			const userInput = input;
+			const userFiles = files;
 			try {
 				// ignore if loading
 				if (isDisabled || isLoading) {
 					return;
 				}
 
-				// ask the room
-				const success = await onPrompt(input, files);
+				// clear out the input components
+				if (clearInputOnPrompt) {
+					setInput("");
+					setFiles([]);
+				}
+				success = await onPrompt(userInput, userFiles);
+				if (!success) {
+					throw new Error(`Error processing chat`);
+				}
+			} catch (e) {
+				toast.error(e.message);
+			} finally {
 				if (success) {
 					// clear the input + files
 					setInput("");
 					setFiles([]);
 				} else {
-					throw new Error(`Error processing chat`);
+					// restore to original
+					setInput(userInput);
+					setFiles(userFiles);
 				}
-			} catch (e) {
-				toast.error(e.message);
 			}
 		};
 
@@ -184,14 +202,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				file.type.includes("text") ||
 				file.type.includes("document")
 			) {
-				return <FileType2Icon className="size-6 text-muted" />;
+				return (
+					<FileType2Icon className="size-6 text-muted-foreground" />
+				);
 			} else if (file.type.includes("audio")) {
-				return <FileAudio2Icon className="size-6 text-muted" />;
+				return (
+					<FileAudio2Icon className="size-6 text-muted-foreground" />
+				);
 			} else if (file.type.includes("video")) {
-				return <FileVideoCameraIcon className="size-6 text-muted" />;
+				return (
+					<FileVideoCameraIcon className="size-6 text-muted-foreground" />
+				);
 			}
 
-			return <FileIcon className="size-6 text-muted" />;
+			return <FileIcon className="size-6 text-muted-foreground" />;
 		};
 
 		/**
@@ -233,11 +257,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							value={input}
 							disabled={isDisabled}
 							rows={minRows}
-							className={`w-full resize-none px-3 pt-3 pb-14 ${
+							className={`w-full resize-none px-3 pt-3 pb-14${
 								isDragging
 									? "border-primary border-dashed"
 									: "hover:border-primary"
-							} rounded-md bg-background shadow-lg transition-colors`}
+							}rounded-md bg-background shadow-lg transition-colors`}
 							autoFocus={true}
 							style={{
 								minHeight: `${minRows * 3}rem`,
@@ -295,7 +319,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 									// prompt the model
 									e.preventDefault();
-									promptModel(input);
+									promptModel();
 								}
 							}}
 						/>
@@ -366,7 +390,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										isDisabled || isLoading || isEmpty
 									}
 									onClick={() => {
-										promptModel(input);
+										promptModel();
 									}}
 								>
 									{isLoading ? <Spinner /> : <SendIcon />}
@@ -394,7 +418,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							return (
 								<Tooltip key={fileKey}>
 									<TooltipTrigger asChild>
-										<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border">
+										<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted">
 											{getFileImage(f)}
 											<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
 												<Button

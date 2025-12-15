@@ -24,7 +24,6 @@ import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard, EngineTileCard } from "@/components/engine";
 import { useAPI, usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
-import { removeUnderscores } from "@/utility";
 
 export interface DBMember {
 	ID: string;
@@ -358,7 +357,10 @@ export const EngineSettingsIndexPage = (
 	};
 
 	//** infinite sroll variables */
-	let scrollEle :HTMLDivElement, scrollTimeout : ReturnType<typeof setTimeout>, currentScroll :number, previousScroll :number;
+	let scrollEle: HTMLDivElement,
+		scrollTimeout: ReturnType<typeof setTimeout>,
+		currentScroll: number,
+		previousScroll: number;
 	const offsetRef = useRef(0);
 	offsetRef.current = offset;
 	const canCollectRef = useRef(true);
@@ -554,9 +556,7 @@ export const EngineSettingsIndexPage = (
 														`${db.database_id}`,
 														{
 															state: {
-																name: removeUnderscores(
-																	db.database_name,
-																),
+																name: db.database_name,
 																global: db.database_global,
 																permission:
 																	db.permission,
@@ -594,9 +594,7 @@ export const EngineSettingsIndexPage = (
 														`${db.database_id}`,
 														{
 															state: {
-																name: removeUnderscores(
-																	db.database_name,
-																),
+																name: db.database_name,
 																global: db.database_global,
 																permission:
 																	db.permission,
