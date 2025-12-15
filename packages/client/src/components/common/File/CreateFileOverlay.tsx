@@ -6,6 +6,7 @@ import {
 	Stack,
 	TextField,
 	Typography,
+	useNotification,
 } from "@semoss/ui";
 import { useRootStore } from "@/hooks";
 
@@ -30,6 +31,7 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 	const { type, space, mode, uploadPath, onClose = () => null } = props;
 
 	const { monolithStore } = useRootStore();
+	const notification = useNotification();
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [name, setName] = useState<string>("");
@@ -112,16 +114,45 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 				throw new Error("No Pixel defined");
 			}
 
-			const { errors } = await monolithStore.runQuery(pixel);
-			if (errors.length > 0) {
-				for (const e of errors) {
-					throw new Error(e);
+			const response = await monolithStore.runQuery(pixel);
+
+			if (response.pixelReturn && response.pixelReturn.length > 0) {
+				const { operationType, output } = response.pixelReturn[0];
+
+				if (operationType && operationType.indexOf("ERROR") > -1) {
+					notification.add({
+						color: "error",
+						message: (output as string) || "An error occurred",
+					});
+					return;
 				}
 			}
+
+			if (response.errors && response.errors.length > 0) {
+				for (const e of response.errors) {
+					notification.add({
+						color: "error",
+						message: e,
+					});
+				}
+				return;
+			}
+
+			notification.add({
+				color: "success",
+				message: `Successfully created ${mode === "file" ? "file" : "folder"}`,
+			});
 
 			onClose(true, path);
 		} catch (e) {
 			console.error(e);
+			notification.add({
+				color: "error",
+				message:
+					e instanceof Error
+						? e.message
+						: "An unexpected error occurred",
+			});
 		} finally {
 			setIsLoading(false);
 
