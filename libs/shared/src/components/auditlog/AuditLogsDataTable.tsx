@@ -1,5 +1,7 @@
 import {
 	CircleX as Cancel,
+	ChevronLeft,
+	ChevronRight,
 	CircleCheck as CircleCheckIcon,
 	Filter,
 	Search,
@@ -726,7 +728,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					>
 						<SelectTrigger
 							id={"rows-per-page"}
-							className="w-[80px]"
+							className="w-[80px] border-transparent text-sm"
 						>
 							<SelectValue />
 						</SelectTrigger>
@@ -750,18 +752,16 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						{Math.ceil(filteredTotalCount / rowsPerPage)}
 					</span>
 					<Button
-						variant="outline"
-						className="border-b"
+						variant="ghost"
 						disabled={page === 0}
 						onClick={() =>
 							onPaginationChange(page - 1, rowsPerPage)
 						}
 					>
-						Prev
+						<ChevronLeft />
 					</Button>
 					<Button
-						variant="outline"
-						className="border-b"
+						variant="ghost"
 						disabled={
 							page + 1 >=
 							Math.ceil(filteredTotalCount / rowsPerPage)
@@ -770,7 +770,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							onPaginationChange(page + 1, rowsPerPage)
 						}
 					>
-						Next
+						<ChevronRight />
 					</Button>
 				</div>
 			</div>

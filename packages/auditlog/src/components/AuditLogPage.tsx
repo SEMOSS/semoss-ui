@@ -18,11 +18,6 @@ import {
 	Popover,
 	PopoverAnchor,
 	PopoverContent,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	Skeleton,
 } from "@semoss/ui/next";
 import { useUserRootStore } from "@/hooks/useUserRootStore";
@@ -137,7 +132,6 @@ export const AuditLogPage = ({ catalogName }) => {
 
 			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
 			const catalogId = engineSelectionDetails.engineId ?? null;
-			// window.location.hash.split("/")[catalogName === "Apps" ? 2 : 3];
 			catalogName = engineSelectionDetails.engineType;
 			const startDate = new Date(
 				customDateRange?.from?.setUTCHours(0, 0, 0, 0),
@@ -242,12 +236,7 @@ export const AuditLogPage = ({ catalogName }) => {
 		return (
 			<Popover open={showCustomPopover}>
 				<PopoverAnchor>
-					<PopoverContent
-						className="flex w-[75%] flex-col gap-4 p-4"
-						onInteractOutside={() => {
-							console.log("interaction outside detected");
-						}}
-					>
+					<PopoverContent className="flex w-[75%] flex-col gap-4 p-4">
 						<div className="flex justify-between gap-2">
 							<Input
 								value={dateFormat(
@@ -269,7 +258,6 @@ export const AuditLogPage = ({ catalogName }) => {
 								mode="range"
 								selected={customDateRange}
 								onSelect={(daterange) => {
-									console.log(daterange, "daterange");
 									if (daterange?.from && daterange?.to) {
 										setCustomDateRange(daterange);
 									}
@@ -282,7 +270,7 @@ export const AuditLogPage = ({ catalogName }) => {
 						<div className="flex justify-end">
 							<Button
 								variant="outline"
-								className="w-fit justify-end"
+								className="w-fit justify-end bg-primary text-white"
 								size="sm"
 								onClick={() => {
 									setShowCustomPopover(false);
@@ -306,66 +294,116 @@ export const AuditLogPage = ({ catalogName }) => {
 			</Popover>
 		);
 	}, [showCustomPopover, customDateRange]);
-	//biome-ignore lint/correctness/useExhaustiveDependencies: adding customDateformat as it is dependency of renderCustomDatePopover
+
 	const renderFilterSection = useCallback(() => {
 		return (
 			<div className="flex gap-2">
-				<div className="min-w-[100px]">
-					<Select
-						value={engineSelectionDetails.engineType}
-						onValueChange={(value) =>
-							setEngineSelectionDetails({
-								...engineSelectionDetails,
-								engineType: value,
-								engineId: "",
-							})
-						}
-					>
-						<SelectTrigger className="min-w-[180px]">
-							<SelectValue placeholder="Select Engine Type" />
-						</SelectTrigger>
-						<SelectContent>
-							{ENGINE_TYPES.map((engineType) => (
-								<SelectItem
-									value={engineType}
-									key={`${engineType}Selection`}
-								>
-									{engineType}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+				<div className="flex min-w-[100px] justify-between">
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							asChild
+							className="flex justify-between align-center"
+						>
+							<Button
+								variant="outline"
+								size="sm"
+								className={`flex min-w-[180px] justify-between`}
+							>
+								<div className="flex w-full justify-between align-center">
+									<span className="flex justify-start">
+										{engineSelectionDetails.engineType !==
+										""
+											? engineSelectionDetails.engineType
+											: "Select Engine Type"}{" "}
+									</span>
+									<ChevronDownIcon className="flex justify-end align-center" />
+								</div>
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuRadioGroup>
+								{ENGINE_TYPES.map((engineType) => (
+									<DropdownMenuCheckboxItem
+										checked={
+											engineType ===
+											engineSelectionDetails.engineType
+										}
+										key={`${engineType}Selection`}
+										onCheckedChange={(open) => {
+											setEngineSelectionDetails({
+												...engineSelectionDetails,
+												engineType: open
+													? engineType
+													: "",
+												engineId: "",
+											});
+										}}
+									>
+										{engineType}
+									</DropdownMenuCheckboxItem>
+								))}
+							</DropdownMenuRadioGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</div>
-				<div className="min-w-[100px]">
-					<Select
-						value={engineSelectionDetails.engineId}
-						onValueChange={(value) => {
-							setEngineSelectionDetails({
-								...engineSelectionDetails,
-								engineId: value,
-							});
-						}}
-					>
-						<SelectTrigger className="min-w-[180px]">
-							<SelectValue placeholder={`Select Engine`} />
-						</SelectTrigger>
-						<SelectContent>
-							{engineSelectionDetails.engineType &&
-							engineDetails[engineSelectionDetails.engineType]
-								.length > 0
-								? engineDetails[
+				<div className="flex min-w-[100px] justify-between">
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							asChild
+							className="flex justify-between align-center"
+						>
+							<Button
+								variant="outline"
+								size="sm"
+								className={`flex min-w-[180px] justify-between`}
+							>
+								<div className="flex w-full justify-between">
+									<span className="flex justify-start">
+										{engineDetails?.[
+											engineSelectionDetails?.engineType
+										]
+											?.filter(
+												(engine) =>
+													engine.value ===
+													engineSelectionDetails.engineId,
+											)
+											.map((engine) => engine.label) ??
+											"Select Engine"}{" "}
+									</span>
+									<ChevronDownIcon className="flex justify-end align-center" />
+								</div>
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuRadioGroup>
+								{engineSelectionDetails.engineType &&
+									engineDetails[
+										engineSelectionDetails.engineType
+									].length > 0 &&
+									engineDetails[
 										engineSelectionDetails.engineType
 									].map((engine) => (
-										<SelectItem
-											value={engine.value}
+										<DropdownMenuCheckboxItem
 											key={engine.value}
+											checked={
+												engine.value ===
+												engineSelectionDetails.engineId
+											}
+											onCheckedChange={(prop) => {
+												setEngineSelectionDetails({
+													...engineSelectionDetails,
+													engineId: prop
+														? engine.value
+														: "",
+												});
+											}}
 										>
 											{engine.label}
-										</SelectItem>
-									))
-								: null}
-						</SelectContent>
-					</Select>
+										</DropdownMenuCheckboxItem>
+									))}
+							</DropdownMenuRadioGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</div>
 				<div className="min-w-[100px]">
 					<DropdownMenu>
@@ -380,24 +418,11 @@ export const AuditLogPage = ({ catalogName }) => {
 						<DropdownMenuContent>
 							{/* Add dropdown items here */}
 							<DropdownMenuRadioGroup>
-								{DashboardDurations.map((duration) =>
-									duration.renderWithSeparator ? (
-										<>
+								{DashboardDurations.map((duration) => (
+									<>
+										{duration.renderWithSeparator && (
 											<DropdownMenuSeparator />
-											<DropdownMenuCheckboxItem
-												key="custom"
-												checked={showCustomPopover}
-												onClick={() => {
-													setDashboardDuration(
-														"custom",
-													);
-													setShowCustomPopover(true);
-												}}
-											>
-												Custom
-											</DropdownMenuCheckboxItem>
-										</>
-									) : (
+										)}
 										<DropdownMenuCheckboxItem
 											key={duration.value}
 											checked={
@@ -408,18 +433,25 @@ export const AuditLogPage = ({ catalogName }) => {
 												setDashboardDuration(
 													duration.value,
 												);
-												if (showCustomPopover)
-													setShowCustomPopover(false);
+												if (
+													duration.value === "custom"
+												) {
+													setShowCustomPopover(true);
+												} else {
+													if (showCustomPopover)
+														setShowCustomPopover(
+															false,
+														);
+												}
 											}}
 										>
 											{duration.label}
 										</DropdownMenuCheckboxItem>
-									),
-								)}
+									</>
+								))}
 							</DropdownMenuRadioGroup>
 						</DropdownMenuContent>
 					</DropdownMenu>
-					{renderCustomDatePopover()}
 				</div>
 			</div>
 		);
@@ -428,7 +460,6 @@ export const AuditLogPage = ({ catalogName }) => {
 		engineDetails,
 		dashboardDuration,
 		showCustomPopover,
-		customDateRange,
 		SelectedDuration.label,
 	]);
 
@@ -456,6 +487,7 @@ export const AuditLogPage = ({ catalogName }) => {
 							<Menu.Item value="Last Year">Last Year</Menu.Item>
 						</Select> */}
 					{renderFilterSection()}
+					{renderCustomDatePopover()}
 					<Button
 						variant="default"
 						onClick={() => {

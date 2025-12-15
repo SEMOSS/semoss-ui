@@ -226,7 +226,8 @@ export const AuditLogsDetailDrawer = (props) => {
 		>
 			{/** biome-ignore lint/a11y/noStaticElementInteractions: <need a on mouse down event handling> */}
 			<div
-				className="absolute top-0 bottom-0 left-0 w-1 cursor-ew-resize hover:bg-gray-200 active:bg-gray-300"
+				className="absolute top-0 bottom-0 left-0 w-1 hover:bg-gray-200 active:bg-gray-300"
+				style={{ cursor: "ew-resize" }}
 				onMouseDown={handleMouseDown}
 			>
 				&nbsp;

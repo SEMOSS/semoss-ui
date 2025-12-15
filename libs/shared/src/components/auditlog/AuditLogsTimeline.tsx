@@ -651,7 +651,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 			setTimeout(() => {
 				chart.resize({
 					width: "auto",
-					height: 350,
+					height: 295,
 				});
 			}, 100);
 
