@@ -1002,26 +1002,27 @@ export class StateStore {
 	 */
 	private generatePageId(): string {
 		let pageNum = 2;
-		while (this._store.blocks[`page--${pageNum}`]) {
+		while (this._store.blocks[`page-${pageNum}`]) {
 			pageNum++;
 		}
-		return `page--${pageNum}`;
+		return `page-${pageNum}`;
 	}
 
 	/**
 	 * Generates a unique ID for non-page widgets
+	 * @param generatedBlockIds - list of already generated block ids in this sequential operation
 	 */
 	private generateNonPageId(
 		widget: string,
 		isCommunityBlock: boolean,
-		generatedBlocks: string[],
+		generatedBlockIds: string[],
 	): string {
 		// Try sequential numbers starting from 1
 		let blockNum = 1;
 		while (
 			this._store.blocks[
 				`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`
-			] || (generatedBlocks.length >0 && generatedBlocks.includes(`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`))			
+			] || generatedBlockIds.includes(`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`)
 		) {
 			blockNum++;
 		}
@@ -1031,34 +1032,36 @@ export class StateStore {
 	/**
 	 * @description creates a new block id
 	 * @returns block id - string
+	 * @param generatedBlockIds - list of already generated block ids in this sequential operation
 	 */
 	private generateBlockId = (
 		json: BlockJSON,
 		isCommunityBlock: boolean,
-		generatedBlocks: string[],
+		generatedBlockIds: string[],
 	): string => {
 		if (json.widget === "page") {
 			return this.generatePageId();
 		}
-		return this.generateNonPageId(json.widget, isCommunityBlock, generatedBlocks);
+		return this.generateNonPageId(json.widget, isCommunityBlock, generatedBlockIds);
 	};
 
 	/**
 	 * Generate a new block from the json
 	 * @param json - json of the block that we are generating
+	 * @param generatedBlockIds - list of already generated block ids in this sequential operation
 	 * @returns block
 	 */
 	private generateBlock = (
 		json: BlockJSON,
 		isCommunityBlock: boolean,
 		communityIdMap: Record<string, string>,
-		generatedBlocks: string[],
+		generatedBlockIds: string[],
 		parent?: Block["parent"],
 	) => {
 		// generate a new id
-		const id = this.generateBlockId(json, isCommunityBlock, generatedBlocks);
+		const id = this.generateBlockId(json, isCommunityBlock, generatedBlockIds);
 
-		generatedBlocks.push(id);
+		generatedBlockIds.push(id);
 		
 		// create the block
 		const block = {
@@ -1109,7 +1112,7 @@ export class StateStore {
 							child,
 							isCommunityBlock,
 							communityIdMap,
-							generatedBlocks,
+							generatedBlockIds,
 							parent,
 						);
 
@@ -1414,9 +1417,9 @@ export class StateStore {
 			json = newJson;
 			variableContainer = variablesList;
 		}
-		const generatedIds = [];
+		const generatedBlockIds = [];
 		// generate the block
-		const block = this.generateBlock(json, isCommunity, {}, generatedIds);
+		const block = this.generateBlock(json, isCommunity, {}, generatedBlockIds);
 
 		// try to place it if position
 		if (!position) {
