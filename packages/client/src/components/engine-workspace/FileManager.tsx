@@ -64,41 +64,41 @@ export const FileManager = (props: FileManagerProps) => {
 			return remaining;
 		});
 	};
+	const normalizePath = (path: string): string =>
+		path
+			.replace(/\\/g, "/")
+			.replace(/\/+/g, "/")
+			.replace(/^\/+/, "")
+			.replace(/\/$/, "");
 
 	const handleDeleteFromExplorer = (deletedPath: string) => {
+		const deleted = normalizePath(deletedPath);
+		const isFolder = deletedPath.endsWith("/");
+
 		setOpenFiles((prev) => {
-			if (prev.length === 0) {
-				return prev;
-			}
+			const next = prev.filter((p) => {
+				const current = normalizePath(p);
 
-			const folderPath = deletedPath.endsWith("/")
-				? deletedPath
-				: `${deletedPath}/`;
+				const exactMatch = current === deleted;
+				const childMatch = current.startsWith(deleted + "/");
+				if (isFolder) {
+					return !exactMatch && !childMatch;
+				}
 
-			const hasExactFile = prev.includes(deletedPath);
-			const hasChildren = prev.some((path) =>
-				path.startsWith(folderPath),
-			);
-
-			let next = prev;
-
-			if (hasExactFile && !hasChildren) {
-				next = prev.filter((path) => path !== deletedPath);
-			} else if (!hasExactFile && hasChildren) {
-				next = prev.filter((path) => !path.startsWith(folderPath));
-			} else if (hasExactFile && hasChildren) {
-				next = prev.filter(
-					(path) =>
-						path !== deletedPath && !path.startsWith(folderPath),
-				);
-			} else {
-				return prev;
-			}
+				return !exactMatch;
+			});
 
 			if (next.length === 0) {
 				setActiveFilePath("");
-			} else if (!next.includes(activeFilePath)) {
-				setActiveFilePath(next[next.length - 1]);
+			} else {
+				const activeNorm = normalizePath(activeFilePath);
+				const stillExists = next.some(
+					(p) => normalizePath(p) === activeNorm,
+				);
+
+				if (!stillExists) {
+					setActiveFilePath(next[next.length - 1]);
+				}
 			}
 
 			return next;
