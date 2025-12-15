@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./panel.css";
 import {
 	createDirectWorkshopService,
 	type LLMAction,
+	type ScriptFile,
 } from "../services/directWorkshopAPI";
 import {
 	type GoogleRecorderScript,
@@ -27,11 +28,18 @@ const PanelApp: React.FC = () => {
 	const [jsonFormat, setJsonFormat] = useState<"playwright" | "google">(
 		"playwright",
 	);
+	// Hardcoded project ID for Playwright Player
+	const projectId = "b8040678-d208-407b-96d7-327cdce4642e";
+	const [availableScripts, setAvailableScripts] = useState<ScriptFile[]>([]);
+	const [selectedScript, setSelectedScript] = useState<string>("");
+	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+	const [isFetchingScripts, setIsFetchingScripts] = useState(false);
+	const [isLoadingScript, setIsLoadingScript] = useState(false);
+	const dropdownRef = useRef<HTMLDivElement>(null);
+	const fileInputRef = React.useRef<HTMLInputElement>(null);
 	const commandInputRef = React.useRef<HTMLTextAreaElement>(null);
 	const historyEndRef = React.useRef<HTMLDivElement>(null);
 	const userInputRef = React.useRef<HTMLInputElement>(null);
-	const fileInputRef = React.useRef<HTMLInputElement>(null);
-	const fileInputId = React.useId();
 
 	const loadSettings = React.useCallback(async () => {
 		try {
@@ -66,6 +74,113 @@ const PanelApp: React.FC = () => {
 		loadSettings();
 	}, [loadSettings]);
 
+	const handleFetchScripts = React.useCallback(async () => {
+		if (!projectId.trim()) {
+			return;
+		}
+
+		setIsFetchingScripts(true);
+
+		try {
+			const service = await createDirectWorkshopService();
+			if (!service) {
+				throw new Error("Workshop service not configured");
+			}
+
+			const scripts = await service.listScripts(projectId);
+			setAvailableScripts(scripts);
+		} catch (error) {
+			const errorMsg =
+				error instanceof Error ? error.message : String(error);
+			setActionHistory([`❌ Failed to fetch scripts: ${errorMsg}`]);
+			setAvailableScripts([]);
+		} finally {
+			setIsFetchingScripts(false);
+		}
+	}, []);
+
+	const handleLoadScript = React.useCallback(async () => {
+		if (!projectId.trim() || !selectedScript) {
+			setActionHistory(["❌ Please select a script to load"]);
+			return;
+		}
+
+		setIsLoadingScript(true);
+		setActionHistory([`🔄 Loading script: ${selectedScript}...`]);
+
+		try {
+			const service = await createDirectWorkshopService();
+			if (!service) {
+				throw new Error("Workshop service not configured");
+			}
+
+			const scriptContent = await service.fetchScript(
+				projectId,
+				selectedScript,
+			);
+			setScriptJson(scriptContent);
+
+			const scriptFile = availableScripts.find(
+				(s) => s.path === selectedScript,
+			);
+			setActionHistory([
+				`✅ Loaded script: ${scriptFile?.name || selectedScript}`,
+			]);
+		} catch (error) {
+			const errorMsg =
+				error instanceof Error ? error.message : String(error);
+			setActionHistory([`❌ Failed to load script: ${errorMsg}`]);
+		} finally {
+			setIsLoadingScript(false);
+		}
+	}, [selectedScript, availableScripts]);
+
+	// Pre-fetch scripts on page load for instant availability (only for Playwright mode)
+	useEffect(() => {
+		if (
+			hasSettings &&
+			projectId &&
+			availableScripts.length === 0 &&
+			!isFetchingScripts &&
+			jsonFormat === "playwright"
+		) {
+			handleFetchScripts();
+		}
+	}, [
+		hasSettings,
+		jsonFormat,
+		availableScripts.length,
+		isFetchingScripts,
+		handleFetchScripts,
+	]);
+
+	// Auto-load script when selected
+	useEffect(() => {
+		if (selectedScript && !isLoadingScript) {
+			handleLoadScript();
+		}
+	}, [selectedScript, isLoadingScript, handleLoadScript]);
+
+	// Close dropdown when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (
+				dropdownRef.current &&
+				!dropdownRef.current.contains(event.target as Node)
+			) {
+				setIsDropdownOpen(false);
+			}
+		};
+
+		if (isDropdownOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [isDropdownOpen]);
+
 	const openSettings = () => {
 		chrome.runtime.openOptionsPage();
 	};
@@ -76,12 +191,19 @@ const PanelApp: React.FC = () => {
 
 		const reader = new FileReader();
 		reader.onload = (e) => {
-			const content = e.target?.result as string;
-			setScriptJson(content);
-			setActionHistory([`📄 Loaded script: ${file.name}`]);
-		};
-		reader.onerror = () => {
-			setActionHistory(["❌ Error reading file"]);
+			try {
+				const content = e.target?.result as string;
+				setScriptJson(content);
+				setActionHistory((prev) => [
+					...prev,
+					`✓ Loaded script: ${file.name}`,
+				]);
+			} catch (error) {
+				setActionHistory((prev) => [
+					...prev,
+					`✗ Failed to load file: ${error instanceof Error ? error.message : String(error)}`,
+				]);
+			}
 		};
 		reader.readAsText(file);
 	};
@@ -1090,40 +1212,150 @@ const PanelApp: React.FC = () => {
 							</div>
 						</div>
 
-						<div className="file-upload-section">
-							<label
-								className="upload-label"
-								htmlFor={fileInputId}
-							>
-								Upload Script JSON:
-							</label>
-							<div className="file-input-wrapper">
-								<input
-									id={fileInputId}
-									ref={fileInputRef}
-									type="file"
-									accept=".json"
-									onChange={handleFileUpload}
-									disabled={isRunning}
-									className="file-input"
-								/>
-							</div>
-							{scriptJson && (
-								<div className="script-loaded-badge">
-									<span className="badge-icon">✓</span>
-									<span className="badge-text">
-										Script loaded:{" "}
-										<strong>
-											{jsonFormat === "playwright"
-												? JSON.parse(scriptJson).meta
-														?.title || "Untitled"
-												: JSON.parse(scriptJson)
-														.title || "Untitled"}
-										</strong>
-									</span>
+						{/* Playwright Recorder - Script Selector */}
+						{jsonFormat === "playwright" && (
+							<>
+								{availableScripts.length === 0 &&
+									!isFetchingScripts && (
+										<div className="info-section">
+											{isFetchingScripts
+												? "🔄 Fetching scripts..."
+												: "📭 No scripts found. Record a script in Playwright Recorder first."}
+										</div>
+									)}
+
+								{availableScripts.length > 0 && (
+									<div className="script-selector-container">
+										<div className="script-header">
+											<span className="script-label">
+												Select Script:
+											</span>
+											<button
+												type="button"
+												onClick={handleFetchScripts}
+												disabled={
+													isRunning ||
+													isFetchingScripts
+												}
+												className="refresh-btn-small"
+												title="Refresh script list"
+											>
+												{isFetchingScripts
+													? "🔄"
+													: "🔄"}
+											</button>
+										</div>
+
+										<div
+											className="custom-dropdown"
+											ref={dropdownRef}
+										>
+											<button
+												type="button"
+												className="custom-dropdown-header"
+												onClick={() =>
+													!isRunning &&
+													!isLoadingScript &&
+													setIsDropdownOpen(
+														!isDropdownOpen,
+													)
+												}
+												disabled={
+													isRunning || isLoadingScript
+												}
+											>
+												<span>
+													{selectedScript
+														? availableScripts.find(
+																(s) =>
+																	s.path ===
+																	selectedScript,
+															)?.name ||
+															" Choose a script "
+														: " Choose a script "}
+												</span>
+												<span className="dropdown-arrow">
+													{isDropdownOpen ? "▲" : "▼"}
+												</span>
+											</button>
+
+											{isDropdownOpen && (
+												<div className="custom-dropdown-list">
+													{availableScripts.map(
+														(script) => (
+															<button
+																type="button"
+																key={
+																	script.path
+																}
+																className={`custom-dropdown-item ${
+																	selectedScript ===
+																	script.path
+																		? "selected"
+																		: ""
+																}`}
+																onClick={() => {
+																	setSelectedScript(
+																		script.path,
+																	);
+																	setIsDropdownOpen(
+																		false,
+																	);
+																}}
+															>
+																{script.name}
+															</button>
+														),
+													)}
+												</div>
+											)}
+										</div>
+
+										{isLoadingScript && (
+											<div className="loading-indicator">
+												🔄 Loading script...
+											</div>
+										)}
+									</div>
+								)}
+							</>
+						)}
+
+						{/* Google Recorder - File Upload */}
+						{jsonFormat === "google" && (
+							<div className="file-upload-section">
+								<span className="upload-label">
+									Upload Script JSON:
+								</span>
+								<div className="file-input-wrapper">
+									<input
+										type="file"
+										ref={fileInputRef}
+										accept=".json"
+										onChange={handleFileUpload}
+										disabled={isRunning}
+										className="file-input"
+									/>
 								</div>
-							)}
-						</div>
+							</div>
+						)}
+
+						{scriptJson && (
+							<div className="script-loaded-badge">
+								<span className="badge-icon">✓</span>
+								<span className="badge-text">
+									Script loaded:{" "}
+									<strong>
+										{jsonFormat === "playwright"
+											? JSON.parse(scriptJson).meta
+													?.title || "Untitled"
+											: JSON.parse(scriptJson).title ||
+												"Untitled"}
+									</strong>
+								</span>
+							</div>
+						)}
+
 						<button
 							type="button"
 							onClick={handleRunScript}

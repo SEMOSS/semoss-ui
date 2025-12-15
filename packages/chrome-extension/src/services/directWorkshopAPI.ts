@@ -30,6 +30,13 @@ export interface LLMAction {
 	url?: string; // For navigate action
 }
 
+export interface ScriptFile {
+	path: string;
+	name: string;
+	lastModified: string;
+	type: string;
+}
+
 export class DirectWorkshopService {
 	private config: WorkshopConfig;
 
@@ -134,6 +141,100 @@ export class DirectWorkshopService {
 			throw new Error("No output in API response");
 		} catch (error) {
 			console.error("Workshop API call failed:", error);
+			throw error;
+		}
+	}
+
+	/**
+	 * List all saved scripts in a project
+	 */
+	async listScripts(projectId: string): Promise<ScriptFile[]> {
+		try {
+			const url = `${this.config.endpoint}${this.config.module}/api/engine/runPixel`;
+
+			const pixelString = `BrowseAsset(filePath=["version/assets/recordings/"], space=["${projectId}"]);`;
+
+			const payload = {
+				expression: pixelString,
+			};
+
+			console.log("Fetching script list:", pixelString);
+
+			const response = await fetch(url, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Basic ${btoa(`${this.config.accessKey}:${this.config.secretKey}`)}`,
+				},
+				body: JSON.stringify(payload),
+			});
+
+			if (!response.ok) {
+				throw new Error(
+					`HTTP ${response.status}: ${response.statusText}`,
+				);
+			}
+
+			const data = await response.json();
+			console.log("Script list response:", data);
+
+			if (data.pixelReturn?.[0]?.output) {
+				const scripts = data.pixelReturn[0].output as ScriptFile[];
+				// Sort by last modified date (newest first)
+				return scripts.sort((a, b) => {
+					const dateA = new Date(a.lastModified).getTime();
+					const dateB = new Date(b.lastModified).getTime();
+					return dateB - dateA;
+				});
+			}
+
+			return [];
+		} catch (error) {
+			console.error("Failed to list scripts:", error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Fetch script content by file path
+	 */
+	async fetchScript(projectId: string, filePath: string): Promise<string> {
+		try {
+			const url = `${this.config.endpoint}${this.config.module}/api/engine/runPixel`;
+
+			const pixelString = `GetAsset(filePath=["${filePath}"], space=["${projectId}"]);`;
+
+			const payload = {
+				expression: pixelString,
+			};
+
+			console.log("Fetching script content:", pixelString);
+
+			const response = await fetch(url, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Basic ${btoa(`${this.config.accessKey}:${this.config.secretKey}`)}`,
+				},
+				body: JSON.stringify(payload),
+			});
+
+			if (!response.ok) {
+				throw new Error(
+					`HTTP ${response.status}: ${response.statusText}`,
+				);
+			}
+
+			const data = await response.json();
+			console.log("Script content response:", data);
+
+			if (data.pixelReturn?.[0]?.output) {
+				return data.pixelReturn[0].output;
+			}
+
+			throw new Error("No script content in response");
+		} catch (error) {
+			console.error("Failed to fetch script:", error);
 			throw error;
 		}
 	}
