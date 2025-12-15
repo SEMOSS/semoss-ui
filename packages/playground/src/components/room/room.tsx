@@ -1,27 +1,23 @@
 import { MoveDownIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbList,
-	BreadcrumbPage,
 	Button,
 	ScrollArea,
-	Separator,
-	SidebarTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import {
+	AppLogo,
 	InputMessage,
 	PlanMessage,
 	ResponseMessage,
 	RoomConfigurationButton,
 	RoomInput,
 } from "@/components";
+import { LOADING_MESSAGES } from "@/constants";
 import { useAutoScroll } from "@/hooks";
 import type { RoomStore } from "@/stores";
 
@@ -42,6 +38,49 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 	const { setScrollEle, scrollToBottom, isUserScrolled } = useAutoScroll(
 		room.history?.length || 0,
 	);
+
+	const [loadingMessage, setLoadingMessage] = useState<string>("");
+
+	// iterate loading messages
+	useEffect(() => {
+		if (!room.isLoading) {
+			setLoadingMessage("");
+			return;
+		}
+
+		setLoadingMessage(LOADING_MESSAGES[0]);
+
+		let timeoutId: number | undefined;
+		let iteration = 1;
+		let cancelled = false;
+
+		const scheduleNext = () => {
+			const delay = 500 + 1500 * (iteration - 1);
+
+			timeoutId = window.setTimeout(() => {
+				if (cancelled) {
+					return;
+				}
+
+				const randomIndex =
+					1 +
+					Math.floor(Math.random() * (LOADING_MESSAGES.length - 1));
+
+				setLoadingMessage(LOADING_MESSAGES[randomIndex]);
+				iteration += 1;
+				scheduleNext();
+			}, delay);
+		};
+
+		scheduleNext();
+
+		return () => {
+			cancelled = true;
+			if (timeoutId !== undefined) {
+				window.clearTimeout(timeoutId);
+			}
+		};
+	}, [room.isLoading]);
 
 	/**
 	 * Effects
@@ -82,30 +121,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 	const isDisabled = room.mode === "executing";
 
 	return (
-		<div className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out">
-			<div className="flex h-12.5 w-full flex-row items-center px-4">
-				<div className="flex flex-row items-center justify-center gap-1.5">
-					<SidebarTrigger />
-					<Separator
-						orientation="vertical"
-						style={{ height: "17px" }}
-					/>
-					<Breadcrumb>
-						<BreadcrumbList>
-							<BreadcrumbItem>
-								<BreadcrumbPage
-									title={room.metadata?.name}
-									className="max-w-100 truncate text-foreground"
-								>
-									{room.metadata?.name}
-								</BreadcrumbPage>
-							</BreadcrumbItem>
-						</BreadcrumbList>
-					</Breadcrumb>
-				</div>
-				<div className="flex-1" />
-			</div>
-			<Separator />
+		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
 					className="h-full w-full"
@@ -136,6 +152,17 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 								</React.Fragment>
 							);
 						})}
+
+						{room.isLoading && (
+							<div className="flex items-center gap-3 rounded-lg border p-3 text-muted-foreground text-sm shadow-sm">
+								<div className="flex h-10 w-10 items-center justify-center rounded-full">
+									<div className="flex h-8 w-8 animate-spin items-center justify-center">
+										<AppLogo full={false} />
+									</div>
+								</div>
+								<span>{loadingMessage} </span>
+							</div>
+						)}
 					</div>
 				</ScrollArea>
 

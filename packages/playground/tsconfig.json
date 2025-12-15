@@ -23,10 +23,6 @@
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": [
-		"src",
-		"../../libs/shared/src/components/engine",
-		"../../libs/shared/src/components/form/login-form.tsx"
-	],
+	"include": ["vite-env.d.ts", "src", "../../libs/shared/src"],
 	"exclude": ["dist", "node_modules"]
 }
