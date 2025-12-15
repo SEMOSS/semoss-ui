@@ -113,7 +113,6 @@ export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 		if (!path) {
 			setSelectedPath("");
 			setDeselectCounter((s) => s + 1);
-			onFileSelect?.("");
 			return;
 		}
 		if (path.slice(-1) === "/") {
