@@ -60,7 +60,7 @@ export const RedirectDestinationSelector = ({
 											key={`${page.id}-${index}`}
 											value={`${page.route}`}
 										>
-											{`/${page.route}`}
+											{page.id === "page-1" ? "/page-1" : `/${page.route}`}
 										</Select.Item>
 									))}
 								</Select>
