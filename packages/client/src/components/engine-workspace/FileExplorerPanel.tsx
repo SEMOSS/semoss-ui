@@ -23,7 +23,7 @@ interface FileExplorerPanelProps {
 	onFileDelete?: (path: string) => void;
 }
 
-const ASSETS_ROOT = "app_root/version/assets/";
+const ASSETS_ROOT = "/app_root/version/assets/";
 
 export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 	const {
@@ -110,18 +110,24 @@ export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 	};
 
 	const handleOnSelect = (path: string) => {
-		if (!path) {
+	if (!path) {
+		setSelectedPath("");
+		setDeselectCounter((prev) => prev + 1);
+		return;
+	}
+	if (path.slice(-1) === "/") {
+		if (selectedPath === path) {
 			setSelectedPath("");
-			setDeselectCounter((s) => s + 1);
+			setDeselectCounter((prev) => prev + 1);
 			return;
 		}
-		if (path.slice(-1) === "/") {
-			setSelectedPath(path);
-			return;
-		}
+
 		setSelectedPath(path);
-		onFileSelect?.(path);
-	};
+		return;
+	}
+	setSelectedPath(path);
+	onFileSelect?.(path);
+};
 
 	const handleOnTrashClick = (fileDeletePath: string) => {
 		openOverlay(() => (
