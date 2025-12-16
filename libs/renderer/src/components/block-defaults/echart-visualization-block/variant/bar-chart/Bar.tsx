@@ -179,6 +179,19 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 						});
 				}
 			}
+
+			 // Filter series based on yAxis.name array
+			 const yAxisNames = resultData["yAxis"]["name"]; 
+			 
+			 resultData["series"] = resultData["series"].filter((seriesItem) =>
+				 yAxisNames.includes(seriesItem.name)
+			 );
+
+			 // Ensure the series array length matches the yAxisNames length
+			if (resultData["series"].length > yAxisNames.length) {
+				resultData["series"] = resultData["series"].slice(0, yAxisNames.length);
+			}
+
 			return resultData; //returning updated values to chart
 		},
 		[frameData.data.values],
@@ -278,6 +291,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 		return (
 			<StyledMainContainer id={id}>
 				<EChartsReact
+					key={JSON.stringify(resultData)} //to re render the chart when data is changed
 					option={resultData as EChartsOption}
 					// onChartReady={echartsLoaded}
 					onEvents={onClickChart}
