@@ -1,4 +1,4 @@
-import { waitFor } from "@testing-library/react";
+import { fireEvent, waitFor } from "@testing-library/react";
 import { expect } from "vitest";
 import { TimePickerBlock } from "../../components/block-defaults/time-picker-block/TimePickerBlock";
 import { render, screen } from "../utils";
@@ -36,7 +36,7 @@ const blocks = {
 		data: {
 			style: {},
 			label: "Select Time 2",
-			value: "2025-04-29T14:25:01.579Z",
+			value: "",
 			variant: "picker",
 			ampm: true,
 			format: "hh:mm a",
@@ -81,65 +81,78 @@ describe("time picker block", () => {
 			const inputElement = container.querySelector("input");
 			expect(element).toBeInTheDocument();
 			expect(inputElement).toBeInTheDocument();
-			expect(inputElement.querySelector("[value='']")).toBeNull();
+			expect(inputElement?.querySelector("[value='']")).toBeNull();
 			expect(screen.getByText("Select Time")).toBeInTheDocument();
 		});
 	});
 
-	// it("renders time value correctly", async () => {
-	// 	const { container } = render(
-	// 		<TimePickerBlock id={blocks["time-picker2"].id} />,
-	// 		{
-	// 			blocks: blocks,
-	// 		},
-	// 	);
+	it("renders time value correctly", async () => {
+		const { container } = render(
+			<TimePickerBlock id={blocks["time-picker2"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
-	// 	const element = container.querySelector("[data-block='time-picker2']");
-	// 	const inputElement = container.querySelector("input");
-	// 	const buttonElement = container.querySelector("button");
+		const element = container.querySelector("[data-block='time-picker2']");
+		const inputElement = container.querySelector("input");
+		const buttonElement = container.querySelector("button");
 
-	// 	expect(element).toBeInTheDocument();
-	// 	expect(inputElement).toBeInTheDocument();
-	// 	expect(inputElement.querySelector("[value='09:25 am']")).toBeNull();
-	// 	expect(screen.getByText("Select Time 2")).toBeInTheDocument();
-	// 	// fireEvent.click(buttonElement);
+		expect(element).toBeInTheDocument();
+		expect(screen.getByText("Select Time 2")).toBeInTheDocument();
+		expect(inputElement).toBeInTheDocument();
+		expect(buttonElement).toBeInTheDocument();
 
-	// 	const timePickerElement = screen.getByRole("dialog");
-	// 	for (let i = 1; i < 13; i++) {
-	// 		const hourValue = i < 10 ? `0${i}` : `${i}`;
-	// 		if (i === 5 || i === 10) {
-	// 			const textElements = screen.getAllByText(hourValue);
-	// 			expect(textElements).not.toBeNull();
-	// 			expect(textElements.length).equals(2);
-	// 		} else {
-	// 			expect(screen.getByText(hourValue)).toBeInTheDocument();
-	// 		}
-	// 		const minuteValue = (i - 1) * 5;
-	// 		if (i > 3) {
-	// 			expect(screen.getByText(minuteValue)).toBeInTheDocument();
-	// 		}
-	// 	}
-	// 	expect(screen.getByText("00")).toBeInTheDocument();
-	// 	expect(screen.getByText("AM")).toBeInTheDocument();
-	// 	expect(screen.getByText("PM")).toBeInTheDocument();
-	// 	expect(screen.getByText("OK")).toBeInTheDocument();
-	// 	let selectedElements = timePickerElement.querySelectorAll(
-	// 		"[aria-selected='true']",
-	// 	);
-	// 	// Not checking for value because time entered depends on timezone
-	// 	expect(selectedElements[0].textContent).not.toBeNull();
-	// 	expect(selectedElements[1].textContent).equal("25");
-	// 	// Not checking for value because time entered depends on timezone
-	// 	expect(selectedElements[2].textContent).not.toBeNull();
+		if (buttonElement) {
+			fireEvent.click(buttonElement);
+		}
 
-	// 	// fireEvent.click(screen.getByText("06"));
-	// 	// fireEvent.click(screen.getByText("30"));
-	// 	// fireEvent.click(screen.getByText("PM"));
-	// 	// selectedElements = timePickerElement.querySelectorAll(
-	// 	// 	"[aria-selected='true']",
-	// 	// );
-	// 	// expect(selectedElements[0].textContent).equal("06");
-	// 	// expect(selectedElements[1].textContent).equal("30");
-	// 	// expect(selectedElements[2].textContent).equal("PM");
-	// });
+		await waitFor(() => {
+			expect(screen.getByRole("dialog")).toBeInTheDocument();
+		});
+
+		const timePickerElement = screen.getByRole("dialog");
+
+		const testCases = [
+			{ hour: "03", minute: "15", period: "AM" },
+			{ hour: "06", minute: "30", period: "PM" },
+			{ hour: "11", minute: "45", period: "PM" },
+		];
+
+		for (const testCase of testCases) {
+			const { hour, minute, period } = testCase;
+
+			const hourElement = screen.getByText(hour);
+			fireEvent.click(hourElement);
+
+			screen.debug();
+
+			const minuteElement = screen.getByText(minute);
+			fireEvent.click(minuteElement);
+
+			const periodElement = screen.getByText(period);
+			fireEvent.click(periodElement);
+
+			const selectedElements = timePickerElement.querySelectorAll(
+				"[aria-selected='true']",
+			);
+
+			// await waitFor(() => {
+			expect(selectedElements).toHaveLength(3);
+			expect(selectedElements[0].textContent).toBe(hour);
+			console.log(
+				"Selected Elements[0]:",
+				selectedElements[0].textContent,
+			);
+			expect(selectedElements[1].textContent).toBe(minute);
+			expect(selectedElements[2].textContent).toBe(period);
+
+			// });
+
+			expect(screen.getByText("OK")).toBeInTheDocument();
+			expect(inputElement).toHaveValue(
+				`${hour}:${minute} ${period.toLowerCase()}`,
+			);
+		}
+	});
 });
