@@ -180,37 +180,21 @@ export const IMPORTABLE_MODELS = {
 							key: "CHAT_TYPE",
 							label: "Chat Type",
 							type: "select",
-							options: [
-								"chat-completion",
-								"completion",
-								"responses",
-							],
+							options: ["chat-completion", "responses"],
 							required: true,
 							default: "chat-completion",
 							category: "General",
 						},
 						{
 							key: "MAX_TOKENS",
-							label: "Max Completion Tokens",
+							label: "Max Tokens (Max Completion Tokens)",
 							type: "number",
-							required: false,
-							rules: {
+							required: true,
+							default: 16400,
+              rules: {
 								pattern: {
 									value: /^[1-9]\d*$/,
 									message: "Max Token must be a positive integer",
-								},
-							},
-							category: "Settings",
-						},
-						{
-							key: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							type: "number",
-							required: false,
-							rules: {
-								pattern: {
-									value: /^[1-9]\d*$/,
-									message: "Max Input Tokens must be a positive integer",
 								},
 							},
 							category: "Settings",
@@ -220,8 +204,8 @@ export const IMPORTABLE_MODELS = {
 							label: "Context Window",
 							type: "number",
 							required: true,
-							default: 2048,
-							rules: {
+							default: 128000,
+              rules: {
 								pattern: {
 									value: /^[1-9]\d*$/,
 									message: "Context Window must be a positive integer",
@@ -254,7 +238,7 @@ export const IMPORTABLE_MODELS = {
 							required: false,
 							disabled: true,
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}', contextWindow=${CONTEXT_WINDOW})",
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
 							category: "Settings",
 						},
 					],
@@ -434,25 +418,38 @@ export const IMPORTABLE_MODELS = {
 							category: "General",
 						},
 						{
-							key: "CHAT_TYPE",
-							label: "Chat Type",
-							type: "select",
-							options: [
-								"chat",
-								"code",
-								"codechat",
-								"generative",
-								"text",
-							],
-							required: true,
-							default: "text",
-							category: "General",
-						},
-						{
 							key: "SERVICE_ACCOUNT_CREDENTIALS",
 							label: "Service Account Credentials",
 							type: "text",
 							required: false,
+							category: "Credentials",
+						},
+						{
+							key: "MAX_TOKENS",
+							label: "Max Tokens (Max Completion Tokens)",
+							type: "number",
+							required: true,
+							default: 65500,
+              rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Token must be a positive integer",
+								},
+							},
+							category: "Settings",
+						},
+						{
+							key: "CONTEXT_WINDOW",
+							label: "Context Window",
+							type: "number",
+							required: false,
+							default: 128000,
+              rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Context Window must be a positive integer",
+								},
+							},
 							category: "Settings",
 						},
 						{
@@ -474,52 +471,13 @@ export const IMPORTABLE_MODELS = {
 							category: "Settings",
 						},
 						{
-							key: "MAX_TOKENS",
-							label: "Max Completion Tokens",
-							type: "number",
-							required: false,
-							rules: {
-								pattern: {
-									value: /^[1-9]\d*$/,
-									message: "Max Token must be a positive integer",
-								},
-							},
-							category: "Settings",
-						},
-						{
-							key: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							type: "number",
-							required: false,
-							rules: {
-								pattern: {
-									value: /^[1-9]\d*$/,
-									message: "Max Input Tokens must be a positive integer",
-								},
-							},
-							category: "Settings",
-						},
-						{
-							key: "CONTEXT_WINDOW",
-							label: "Context Window",
-							type: "number",
-							required: false,
-							rules: {
-								pattern: {
-									value: /^[1-9]\d*$/,
-									message: "Context Window must be a positive integer",
-								},
-							},
-							category: "Settings",
-						},
-						{
 							key: "INIT_MODEL_ENGINE",
 							label: "Init Script",
 							type: "text",
 							required: true,
 							disabled: true,
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}', project='${PROJECT}')",
+								"import genai_client;${VAR_NAME} = genai_client.GoogleGenAiTextClient(model_name = '${MODEL}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS}, region='${GCP_REGION}', project='${PROJECT}', max_tokens=${MAX_TOKENS})",
 							category: "Settings",
 						},
 					],
@@ -678,14 +636,38 @@ export const IMPORTABLE_MODELS = {
 							key: "CHAT_TYPE",
 							label: "Chat Type",
 							type: "select",
-							options: [
-								"chat-completion",
-								"completion",
-								"responses",
-							],
+							options: ["chat-completion", "responses"],
 							required: true,
 							default: "chat-completion",
 							category: "General",
+						},
+						{
+							key: "MAX_TOKENS",
+							label: "Max Tokens (Max Completion Tokens)",
+							type: "number",
+							required: true,
+							default: 16400,
+              rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Max Token must be a positive integer",
+								},
+							},
+							category: "Settings",
+						},
+						{
+							key: "CONTEXT_WINDOW",
+							label: "Context Window",
+							type: "number",
+							required: true,
+							default: 128000,
+              rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Context Window must be a positive integer",
+								},
+							},
+							category: "Settings",
 						},
 						{
 							key: "KEEP_INPUT_OUTPUT",
@@ -706,52 +688,13 @@ export const IMPORTABLE_MODELS = {
 							category: "Settings",
 						},
 						{
-							key: "MAX_TOKENS",
-							label: "Max Completion Tokens",
-							type: "number",
-							required: false,
-							rules: {
-								pattern: {
-									value: /^[1-9]\d*$/, 
-									message: "Max Token must be a positive integer"
-								},
-							},
-							category: "Settings",
-						},
-						{
-							key: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							type: "number",
-							required: false,
-							rules: {
-								pattern: { 
-									value: /^[1-9]\d*$/,
-									message: "Max Input Tokens must be a positive integer",
-								},
-							},
-							category: "Settings",
-						},
-						{
-							key: "CONTEXT_WINDOW",
-							label: "Context Window",
-							type: "number",
-							required: false,
-							rules: {
-								pattern: { 
-									value: /^[1-9]\d*$/,
-									message: "Context Window must be a positive integer",
-								},
-							},
-							category: "Settings",
-						},
-						{
 							key: "INIT_MODEL_ENGINE",
 							label: "Init Script",
 							type: "text",
 							required: false,
 							disabled: true,
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.AzureOpenAiClient(api_key = '${OPEN_AI_KEY}', endpoint = '${ENDPOINT}', model_name = '${MODEL}', chat_type = '${CHAT_TYPE}', api_version = '${API_VERSION}')",
+								"import genai_client;${VAR_NAME} = genai_client.AzureOpenAiClient(api_key = '${OPEN_AI_KEY}', endpoint = '${ENDPOINT}', model_name = '${MODEL}', chat_type = '${CHAT_TYPE}', api_version = '${API_VERSION}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
 							category: "Settings",
 						},
 					],
@@ -1216,6 +1159,19 @@ export const IMPORTABLE_MODELS = {
 							category: "Settings",
 						},
 						{
+							key: "CONTEXT_WINDOW",
+							label: "Context Window",
+							type: "number",
+							required: false,
+              rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Context Window must be a positive integer",
+								},
+							},
+							category: "Settings",
+						},
+						{
 							key: "KEEP_INPUT_OUTPUT",
 							label: "Record Questions and Responses",
 							type: "select",
@@ -1231,19 +1187,6 @@ export const IMPORTABLE_MODELS = {
 							options: ["true", "false"],
 							required: true,
 							default: "true",
-							category: "Settings",
-						},
-						{
-							key: "CONTEXT_WINDOW",
-							label: "Context Window",
-							type: "number",
-							required: false,
-							rules: {
-								pattern: {
-									value: /^[1-9]\d*$/,
-									message: "Context Window must be a positive integer",
-								},
-							},
 							category: "Settings",
 						},
 						{
@@ -1422,6 +1365,19 @@ export const IMPORTABLE_MODELS = {
 							category: "Settings",
 						},
 						{
+							key: "CONTEXT_WINDOW",
+							label: "Context Window",
+							type: "number",
+							required: false,
+              rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message: "Context Window must be a positive integer",
+								},
+							},
+							category: "Settings",
+						},
+						{
 							key: "KEEP_INPUT_OUTPUT",
 							label: "Record Questions and Responses",
 							type: "select",
@@ -1437,19 +1393,6 @@ export const IMPORTABLE_MODELS = {
 							options: ["true", "false"],
 							required: true,
 							default: "true",
-							category: "Settings",
-						},
-						{
-							key: "CONTEXT_WINDOW",
-							label: "Context Window",
-							type: "number",
-							required: false,
-							rules: {
-								pattern: {
-									value: /^[1-9]\d*$/,
-									message: "Context Window must be a positive integer",
-								},
-							},
 							category: "Settings",
 						},
 						{
@@ -1632,19 +1575,6 @@ export const IMPORTABLE_MODELS = {
 							options: ["true", "false"],
 							required: true,
 							default: "true",
-							category: "Settings",
-						},
-						{
-							key: "CONTEXT_WINDOW",
-							label: "Context Window",
-							type: "number",
-							required: false,
-							rules: {
-								pattern: {
-									value: /^[1-9]\d*$/,
-									message: "Context Window must be a positive integer",
-								},
-							},
 							category: "Settings",
 						},
 						{
