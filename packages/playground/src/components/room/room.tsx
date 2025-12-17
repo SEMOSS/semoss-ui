@@ -82,9 +82,6 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 		};
 	}, [room.isLoading]);
 
-	/**
-	 * Effects
-	 */
 	// create a listener to process messages from the room
 	useEffect(() => {
 		const handleMessage = async (
@@ -117,8 +114,6 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 			window.removeEventListener("message", handleMessage);
 		};
 	}, [room]);
-
-	const isDisabled = room.mode === "executing";
 
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
@@ -185,25 +180,41 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 					</Tooltip>
 				)}
 			</div>
-			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
-				<RoomInput
-					isLoading={room.isLoading}
-					isDisabled={isDisabled}
-					minRows={3}
-					maxRows={8}
-					configuration={<RoomConfigurationButton room={room} />}
-					onPrompt={async (prompt, files) => {
-						// update the options
-						await room.updateRoomOptions(room.options);
+			{room.mode !== "executing" && (
+				<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
+					<RoomInput
+						className="max-h-56 min-h-24"
+						isLoading={room.isLoading}
+						configuration={<RoomConfigurationButton room={room} />}
+						mentions={
+							{
+								// "/": async (search) => {
+								// 	const cleaned = search.toLowerCase().trim();
+								// 	if (!cleaned) {
+								// 		return room.options.mcp;
+								// 	}
+								// 	return room.options.mcp.filter(
+								// 		(mcp) =>
+								// 			mcp.name
+								// 				.toLowerCase()
+								// 				.includes(cleaned) ||
+								// 			mcp.ID.toLowerCase().includes(cleaned),
+								// 	);
+								// },
+							}
+						}
+						onPrompt={async (prompt, files) => {
+							// update the options
+							await room.updateRoomOptions(room.options);
 
-						// ask the room
-						await room.askMessage(prompt, files);
+							// ask the room
+							await room.askMessage(prompt, files);
 
-						return true;
-					}}
-					clearInputOnPrompt
-				/>
-			</div>
+							return true;
+						}}
+					/>
+				</div>
+			)}
 		</div>
 	);
 });
