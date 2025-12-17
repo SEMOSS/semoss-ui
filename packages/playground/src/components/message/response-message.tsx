@@ -97,7 +97,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					/>
 				))}
 
-				<div className="flex flex-1 flex-row items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+				<div className="flex flex-1 flex-row items-center justify-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
 					{inputMessage?.siblings.length > 1 && (
 						<>
 							<Tooltip>
