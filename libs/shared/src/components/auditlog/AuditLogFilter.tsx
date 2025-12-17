@@ -157,7 +157,6 @@ export const AuditLogFilter = (props) => {
 		dashboardDuration,
 		customDateRange,
 		engineSelectionDetails.engineType,
-		SelectedDuration,
 	]);
 
 	const renderCustomDatePopover = useCallback(() => {
@@ -196,20 +195,22 @@ export const AuditLogFilter = (props) => {
 								timeZone="UTC"
 							/>
 						</div>
-						<div className="flex justify-end">
+						<div className="flex justify-between">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => {
+									setShowCustomPopover(false);
+								}}
+							>
+								Close
+							</Button>
 							<Button
 								variant="outline"
 								className="w-fit justify-end bg-primary text-white"
 								size="sm"
 								onClick={() => {
 									setShowCustomPopover(false);
-									// if (
-									// 	customDateRange?.from &&
-									// 	customDateRange?.to &&
-									// 	engineSelectionDetails.engineId
-									// ) {
-									// 	updateLogs();
-									// }
 								}}
 							>
 								Apply

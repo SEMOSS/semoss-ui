@@ -151,7 +151,11 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					log.sessionId?.toLowerCase().includes(query) ||
 					log.request?.toLowerCase().includes(query) ||
 					log.response?.toLowerCase().includes(query) ||
-					log.latency?.toString().toLowerCase().includes(query) ||
+					log.latency
+						?.toString()
+						.concat("ms")
+						.toLowerCase()
+						.includes(query) || //additng latency search with milliseconds option
 					log.tokens?.toString().toLowerCase().includes(query),
 			);
 		}

@@ -7,10 +7,10 @@ import {
 	AuditLogsDataTable,
 	AuditLogsTimeline,
 } from "@semoss/shared";
+import { useNotification } from "@semoss/ui";
 import { Button, Skeleton } from "@semoss/ui/next";
 import { useUserRootStore } from "@/hooks/useUserRootStore";
 import type { EventData } from "./common/utility";
-
 export const AuditLogPage = ({ catalogName }) => {
 	const { insightId } = useInsight();
 	const [logs, setLogs] = useState<EventData[]>([]);
@@ -19,6 +19,7 @@ export const AuditLogPage = ({ catalogName }) => {
 	const [totalCount, setTotalCount] = useState(0);
 	const [loading, setLoading] = useState<boolean>(true);
 	const rootStore = useUserRootStore(insightId);
+	const notification = useNotification();
 	const filteredData = useRef({
 		engineType: "",
 		engineId: "",
@@ -178,7 +179,18 @@ export const AuditLogPage = ({ catalogName }) => {
 					<Button
 						variant="default"
 						onClick={() => {
-							fetchLogs(rowsPerPage, page * rowsPerPage);
+							if (
+								filteredData.current.engineId &&
+								filteredData.current.engineType
+							)
+								fetchLogs(rowsPerPage, page * rowsPerPage);
+							else {
+								notification.add({
+									color: "info",
+									message:
+										"Please select Engine Type and Engine to fetch logs",
+								});
+							}
 						}}
 					>
 						<RotateCw className="mr-2 h-4 w-4" />

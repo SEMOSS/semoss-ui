@@ -1,4 +1,5 @@
 import { Env, InsightProvider } from "@semoss/sdk/react";
+import { LoadingScreen, Notification } from "@semoss/ui";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { Router } from "@/pages";
 
@@ -10,12 +11,16 @@ Env.update({
 function App() {
 	return (
 		<InsightProvider>
-			<ThemeProvider defaultTheme="light">
-				<div className="absolute inset-0 h-screen w-screen overflow-auto">
-					<Router />
-				</div>
-				<Toaster />
-			</ThemeProvider>
+			<Notification>
+				<LoadingScreen>
+					<ThemeProvider defaultTheme="light">
+						<div className="absolute inset-0 h-screen w-screen overflow-auto">
+							<Router />
+						</div>
+						<Toaster />
+					</ThemeProvider>
+				</LoadingScreen>
+			</Notification>
 		</InsightProvider>
 	);
 }
