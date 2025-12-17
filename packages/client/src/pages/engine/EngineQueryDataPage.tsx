@@ -16,7 +16,7 @@ import {
 const StyledContainer = styled("div")(() => ({
 	display: "flex",
 	flexDirection: "column",
-	height: "100vh",
+	height: "105vh",
 	width: "100%",
 	overflow: "hidden",
 	padding: 0,
@@ -64,7 +64,7 @@ const StyledRight = styled("div")(() => ({
 }));
 
 const StyledQueryResultsWrapper = styled("div")<{ isExpanded: boolean }>(
-	({isExpanded }) => ({
+	({ isExpanded }) => ({
 		position: isExpanded ? "absolute" : "relative",
 		top: isExpanded ? 0 : "auto",
 		left: isExpanded ? 0 : "auto",
@@ -151,13 +151,16 @@ export const EngineQueryDataPage = observer(() => {
 		setValue(sql);
 		clearColumnSelection();
 	};
-	
+
 	const handleGenerateQuery = (generatedQuery: string) => {
 		setQuery(generatedQuery);
 		setValue(generatedQuery);
 	};
 
-	const handleToggleColumnSelection = (tableName: string, columnName: string) => {
+	const handleToggleColumnSelection = (
+		tableName: string,
+		columnName: string,
+	) => {
 		toggleColumnSelection(tableName, columnName);
 	};
 
@@ -167,8 +170,11 @@ export const EngineQueryDataPage = observer(() => {
 	};
 
 	return (
-		<StyledContainer>
-			<StyledContent isQueryResultsExpanded={isQueryResultsExpanded}>
+		<StyledContainer data-testid="queryDataPage-container">
+			<StyledContent
+				isQueryResultsExpanded={isQueryResultsExpanded}
+				data-testid="engine-queryDataPage-content"
+			>
 				<StyledLeft>
 					<StyledCard>
 						<DatabaseStructureBrowser
@@ -186,10 +192,14 @@ export const EngineQueryDataPage = observer(() => {
 							onTableClick={generateTableQuery}
 							selectedColumns={selectedColumns}
 							activeTable={activeTable}
-							onToggleColumnSelection={handleToggleColumnSelection}
+							onToggleColumnSelection={
+								handleToggleColumnSelection
+							}
 							onClearColumnSelection={handleClearColumnSelection}
 							onGenerateQuery={handleGenerateQuery}
-							generateSelectedColumnsQuery={generateSelectedColumnsQuery}
+							generateSelectedColumnsQuery={
+								generateSelectedColumnsQuery
+							}
 						/>
 					</StyledCard>
 				</StyledLeft>
