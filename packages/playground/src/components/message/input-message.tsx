@@ -45,6 +45,31 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 					<span className="text-base text-foreground">
 						{message.text}
 					</span>
+					{message.mediaInputs.length > 0 && (
+						<div className="flex flex-row items-center justify-start gap-2 pt-3">
+							{message.mediaInputs.map((info) => {
+								return (
+									<button
+										type="button"
+										key={`${info.fileName}`}
+										className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted"
+										onClick={() => setSelectedImage(info)}
+										aria-label={`View ${info.fileName}`}
+									>
+										{info.mimeType?.startsWith("image/") ? (
+											<img
+												className="w-full"
+												src={`data:image/png;base64,${info.base64Data}`}
+												alt={info.fileName}
+											/>
+										) : (
+											<FileIcon className="size-6 text-muted-foreground" />
+										)}
+									</button>
+								);
+							})}
+						</div>
+					)}
 				</div>
 				<div className="ml-auto flex max-w-[600px] justify-end pt-2 opacity-0 transition-opacity group-hover:opacity-100">
 					<Tooltip>
@@ -69,31 +94,6 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 						</TooltipContent>
 					</Tooltip>
 				</div>
-				{message.mediaInputs.length > 0 && (
-					<div className="ml-auto flex max-w-[600px] flex-row items-center justify-end gap-2 pt-2">
-						{message.mediaInputs.map((info) => {
-							return (
-								<button
-									type="button"
-									key={`${info.fileName}`}
-									className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted"
-									onClick={() => setSelectedImage(info)}
-									aria-label={`View ${info.fileName}`}
-								>
-									{info.mimeType?.startsWith("image/") ? (
-										<img
-											className="w-full"
-											src={`data:image/png;base64,${info.base64Data}`}
-											alt={info.fileName}
-										/>
-									) : (
-										<FileIcon className="size-6 text-muted-foreground" />
-									)}
-								</button>
-							);
-						})}
-					</div>
-				)}
 				<Dialog
 					open={selectedImage !== null}
 					onOpenChange={(open) => {
