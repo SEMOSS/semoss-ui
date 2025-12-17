@@ -39,7 +39,8 @@ const StyledResultsContent = styled('div')<{ isExpanded: boolean }>(({ isExpande
     flex: 1,
     overflow: 'auto',
     minHeight: 0,
-    height: isExpanded ? '95%' : 'auto', // Account for header and footer
+    display: 'flex',
+    flexDirection: 'column'
 }));
 
 const StyledHeaderTypography = styled(Typography)(() => ({
