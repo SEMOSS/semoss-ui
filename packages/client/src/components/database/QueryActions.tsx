@@ -49,13 +49,6 @@ export const QueryActions: React.FC<QueryActionsProps> = ({
     return (
         <StyledActions>
             <Box sx={{ display: 'flex', gap: 1 }}>
-                {/* <Button
-                    variant="text"
-                    onClick={clearQuery}
-                    sx={{ textTransform: 'none' }}
-                >
-                    Cancel
-                </Button> */}
                 <Button
                     variant="outlined"
                     onClick={executeQuery}
