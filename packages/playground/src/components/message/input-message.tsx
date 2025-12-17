@@ -38,7 +38,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 									onClick={() => setSelectedImage(info)}
 									aria-label={`View ${info.fileName}`}
 								>
-									{info.mimeType.startsWith("image/") ? (
+									{info.mimeType?.startsWith("image/") ? (
 										<img
 											className="w-full"
 											src={`data:image/png;base64,${info.base64Data}`}
