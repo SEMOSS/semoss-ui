@@ -1,4 +1,4 @@
-import { MoveDownIcon } from "lucide-react";
+import { MoveDownIcon, TriangleAlertIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import type { MCPToolResponse } from "@semoss/sdk";
@@ -11,7 +11,6 @@ import {
 } from "@semoss/ui/next";
 import {
 	AppLogo,
-	ErrorMessage,
 	InputMessage,
 	PlanMessage,
 	ResponseMessage,
@@ -172,17 +171,26 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 							);
 						})}
 
-						{room.isLoading && (
+						{room.isLoading ? (
 							<div className="flex items-center gap-3 rounded-lg border p-3 text-muted-foreground text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
 									<div className="flex h-8 w-8 animate-spin items-center justify-center">
 										<AppLogo full={false} />
 									</div>
 								</div>
-								<span>{loadingMessage} </span>
+								<span>{loadingMessage}</span>
 							</div>
-						)}
-						{room.error && <ErrorMessage />}
+						) : room.error ? (
+							<div className="flex items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+								<div className="flex h-10 w-10 items-center justify-center rounded-full">
+									<TriangleAlertIcon className="h-6 w-6" />
+								</div>
+								<span>
+									Unable to process request. Please check your
+									connection, copy your message, and refresh.
+								</span>
+							</div>
+						) : null}
 					</div>
 				</ScrollArea>
 

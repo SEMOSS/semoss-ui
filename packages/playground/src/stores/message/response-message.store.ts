@@ -159,7 +159,8 @@ ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
 			max_new_tokens: room.options.tokenLength,
 			temperature: room.options.temperature,
-		})}]
+		})}],
+DENOM = "0"
 );`);
 
 		const { output } = response.pixelReturn[0];
