@@ -152,18 +152,19 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 
 		/** meta data from the tool */
 		_meta: {
-			map: {
-				SMSS_PROJECT_NAME: string;
-				SMSS_PROJECT_ID: string;
-				SMSS_MCP_EXECUTION: McpExecution;
-			};
+			SMSS_PROJECT_NAME: string;
+			SMSS_PROJECT_ID: string;
+			SMSS_MCP_EXECUTION: McpExecution;
 		};
 
 		/**  Display of the tool **/
 		title: string;
 
-		/**  Name of function **/
+		/**  Name of function with app_id **/
 		name: string;
+
+		/**  Name of function in mcp json **/
+		original_name: string;
 
 		/** THIS IS A STRING, but ONLY in playground we parse as an app */
 		/** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
