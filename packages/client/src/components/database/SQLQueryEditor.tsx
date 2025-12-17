@@ -38,6 +38,7 @@ const StyledCardHeader = styled('div')(({ theme }) => ({
 const StyledEditorContainer = styled('div')(({ theme }) => ({
     flex: 1,
     margin: theme.spacing(2),
+    padding: theme.spacing(0.5),
     border: `1px solid #22A4FF`,
     minHeight: '200px',
     backgroundColor: '#FAFAFA',

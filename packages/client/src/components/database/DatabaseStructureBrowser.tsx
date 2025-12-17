@@ -149,6 +149,9 @@ export const DatabaseStructureBrowser: React.FC<
 	onGenerateQuery,
 	generateSelectedColumnsQuery,
 }) => {
+	// trying to put "Expand All/Collapse All" button in sync with expand/collapse icons
+	const allExpanded = searchedStructure.length > 0 && searchedStructure.every((t) => !!expandedTables[t.table]);
+	console.log('allExpanded:', allExpanded);
 	const handleTableHeaderClick = (
 		tableName: string,
 		event: React.MouseEvent,
@@ -281,7 +284,7 @@ export const DatabaseStructureBrowser: React.FC<
 							whiteSpace: "nowrap",
 						}}
 					>
-						{toggleState ? "Collapse All" : "Expand All"}
+						{allExpanded ? "Collapse All" : "Expand All"}
 					</Button>
 				</Stack>
 			</StyledSearchSection>
