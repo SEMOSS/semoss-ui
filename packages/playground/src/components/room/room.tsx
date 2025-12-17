@@ -62,38 +62,6 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 	/**
 	 * Effects
 	 */
-	// create a listener to process messages from the room
-	useEffect(() => {
-		const handleMessage = async (
-			event: MessageEvent<{
-				type: "SMSS_EXEC_TOOL";
-				tool: MCPToolResponse;
-			}>,
-		) => {
-			try {
-				if (!event.data || event.data.type !== "SMSS_EXEC_TOOL") {
-					return;
-				}
-
-				const tool = event.data.tool;
-
-				room.processTool(
-					tool.message,
-					tool.id,
-					tool.name,
-					tool.response,
-				);
-			} catch {
-				// noop
-			}
-		};
-
-		window.addEventListener("message", handleMessage);
-
-		return () => {
-			window.removeEventListener("message", handleMessage);
-		};
-	}, [room]);
 
 	// iterate loading messages
 	useEffect(() => {
@@ -135,6 +103,39 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 			}
 		};
 	}, [room.isLoading]);
+
+	// create a listener to process messages from the room
+	useEffect(() => {
+		const handleMessage = async (
+			event: MessageEvent<{
+				type: "SMSS_EXEC_TOOL";
+				tool: MCPToolResponse;
+			}>,
+		) => {
+			try {
+				if (!event.data || event.data.type !== "SMSS_EXEC_TOOL") {
+					return;
+				}
+
+				const tool = event.data.tool;
+
+				room.processTool(
+					tool.message,
+					tool.id,
+					tool.name,
+					tool.response,
+				);
+			} catch {
+				// noop
+			}
+		};
+
+		window.addEventListener("message", handleMessage);
+
+		return () => {
+			window.removeEventListener("message", handleMessage);
+		};
+	}, [room]);
 
 	const isDisabled = Boolean(room.error) || room.mode === "executing";
 
