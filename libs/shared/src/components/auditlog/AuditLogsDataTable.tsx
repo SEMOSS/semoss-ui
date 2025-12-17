@@ -349,13 +349,13 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						</Button>
 					</PopoverTrigger>
 					{popoverColumn === filterName ? (
-						<PopoverContent className="w-128">
+						<PopoverContent className="w-56">
 							{/* Render filter options for filterType */}
 							{/* ...custom filter UI... */}
 							<div className="flex flex-col gap-2">
 								<div
 									key={`${filterName}SelectAll`}
-									className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+									className="flex flex-row items-center gap-4 overflow-x-auto"
 								>
 									<Checkbox
 										checked={
@@ -394,7 +394,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 									Object.hasOwn(filtered, "value") ? (
 										<div
 											key={`${filtered.value}`}
-											className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+											className="items-cemter flex flex-row gap-4 overflow-x-auto"
 										>
 											<Checkbox
 												checked={tempFilters?.[
@@ -415,7 +415,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 									) : (
 										<div
 											key={`${filtered}`}
-											className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+											className="flex flex-row items-center gap-4 overflow-x-auto"
 										>
 											<Checkbox
 												checked={tempFilters?.[

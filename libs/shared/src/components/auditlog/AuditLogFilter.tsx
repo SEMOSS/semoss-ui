@@ -139,11 +139,7 @@ export const AuditLogFilter = (props) => {
 
 	useEffect(() => {
 		// Implementation for triggering logs API
-		if (
-			(engineSelectionDetails.engineId !== "" &&
-				dashboardDuration !== "") ||
-			parent
-		) {
+		if (engineSelectionDetails.engineId !== "" || parent) {
 			updateLogs({
 				engineId: engineSelectionDetails.engineId,
 				duration: dashboardDuration,
