@@ -1,3 +1,4 @@
+import { FileIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import {
@@ -16,7 +17,7 @@ interface InputMessageProps {
 export const InputMessage: React.FC<InputMessageProps> = observer(
 	({ message }) => {
 		const [selectedImage, setSelectedImage] = useState<
-			InputMessageStore["imageInfos"][number] | null
+			InputMessageStore["mediaInputs"][number] | null
 		>(null);
 
 		return (
@@ -26,22 +27,26 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 						{message.text}
 					</span>
 				</div>
-				{message.imageInfos.length > 0 ? (
+				{message.mediaInputs.length > 0 ? (
 					<div className="ml-auto flex max-w-[600px] flex-row items-center gap-2 pt-2">
-						{message.imageInfos.map((info) => {
+						{message.mediaInputs.map((info) => {
 							return (
 								<button
 									type="button"
 									key={`${info.fileName}`}
-									className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border"
+									className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted"
 									onClick={() => setSelectedImage(info)}
 									aria-label={`View ${info.fileName}`}
 								>
-									<img
-										className="width-100"
-										src={`data:image/png;base64,${info.base64Data}`}
-										alt={info.fileName}
-									/>
+									{info.mimeType?.startsWith("image/") ? (
+										<img
+											className="w-full"
+											src={`data:image/png;base64,${info.base64Data}`}
+											alt={info.fileName}
+										/>
+									) : (
+										<FileIcon className="size-6 text-muted-foreground" />
+									)}
 								</button>
 							);
 						})}
@@ -63,12 +68,16 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 							</DialogTitle>
 						</DialogHeader>
 						<div className="flex items-center justify-center">
-							{selectedImage?.base64Data && (
+							{selectedImage?.mimeType.startsWith("image/") ? (
 								<img
 									src={`data:image/png;base64,${selectedImage.base64Data}`}
 									alt={selectedImage.fileName || "Image"}
 									className="max-h-[70vh] max-w-full object-contain"
 								/>
+							) : (
+								<div className="px-2 py-4 text-center text-muted-foreground text-xs">
+									No preview available
+								</div>
 							)}
 						</div>
 					</DialogContent>
