@@ -1,6 +1,10 @@
 import { Refresh } from "@mui/icons-material";
-import { useEffect, useState } from "react";
-import { AuditLogsDataTable, AuditLogsTimeline } from "@semoss/shared";
+import { useEffect, useRef, useState } from "react";
+import {
+	AuditLogFilter,
+	AuditLogsDataTable,
+	AuditLogsTimeline,
+} from "@semoss/shared";
 import {
 	Button,
 	Skeleton,
@@ -83,6 +87,18 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 	const [totalCount, setTotalCount] = useState(0);
 	const [loading, setLoading] = useState<boolean>(true);
 	const notification = useNotification();
+	const filteredData = useRef({
+		engineType: "",
+		engineId: "",
+		dashboardDuration: "",
+		customDateRange: { from: null, to: null },
+		SelectedDuration: {
+			label: "",
+			value: "",
+			dateRangeType: "",
+			dateRangeValue: 1,
+		},
+	});
 
 	const fetchLogs = async (limit: number, offset: number) => {
 		setLoading(true);
@@ -98,13 +114,42 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
 			const catalogId =
 				window.location.hash.split("/")[catalogName === "Apps" ? 2 : 3];
+			const SelectedDuration = filteredData.current.SelectedDuration;
+			const startDate = new Date(
+				filteredData.current?.customDateRange?.from?.setUTCHours(
+					0,
+					0,
+					0,
+					0,
+				),
+			);
+			const endDate = new Date(
+				filteredData.current?.customDateRange?.to?.setUTCHours(
+					23,
+					59,
+					59,
+					999,
+				),
+			);
 			const response = await monolithStore.runQuery(
-				`AuditLogReport(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogName === "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}"}]);`,
+				`AuditLogReport(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogName === "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}", "dateRangeType": "${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue": ${SelectedDuration.dateRangeValue} ${SelectedDuration.dateRangeType === "CUSTOM" ? `,"startDate": "${startDate?.toISOString()}", "endDate": "${endDate?.toISOString()}"` : ""}}]);`,
 			);
 			const responseData = response.pixelReturn[0].output;
-			setLogs((responseData?.logs as EventData[]) || responseData || []);
+			setLogs(
+				(
+					responseData as unknown as {
+						logs: EventData[];
+						totalCount: number;
+					}
+				)?.logs ||
+					(responseData as unknown as EventData[]) ||
+					[],
+			);
 			setTotalCount(
-				responseData?.totalCount || responseData?.length || 0,
+				(responseData as unknown as { totalCount: number })
+					?.totalCount ||
+					(responseData as unknown as EventData[])?.length ||
+					0,
 			);
 		} catch (error) {
 			setLogs([]);
@@ -149,6 +194,13 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 		};
 	}, [catalogName, rowsPerPage, page]);
 
+	const updateLogs = (filterData) => {
+		filteredData.current = {
+			...filterData,
+		};
+		fetchLogs(rowsPerPage, page * rowsPerPage);
+	};
+
 	return (
 		<>
 			{catalogName === "Apps" && (
@@ -182,6 +234,11 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 										</Menu.Item>
 										<Menu.Item value="Last Year">Last Year</Menu.Item>
 									</Select> */}
+						<AuditLogFilter
+							updateLogs={updateLogs}
+							insightId={configStore.store.insightID}
+							parent={"client"}
+						/>
 						<Button
 							variant="contained"
 							color="primary"

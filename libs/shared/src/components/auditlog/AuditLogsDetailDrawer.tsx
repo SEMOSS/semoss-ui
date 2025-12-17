@@ -221,7 +221,7 @@ export const AuditLogsDetailDrawer = (props) => {
 	return (
 		<div
 			ref={drawerRef}
-			className="absolute top-20 right-0 flex h-full min-w-[500px] flex-col bg-white"
+			className="absolute right-0 flex h-full min-w-[500px] flex-col bg-white"
 			style={{ width: `${width}px` }}
 		>
 			{/** biome-ignore lint/a11y/noStaticElementInteractions: <need a on mouse down event handling> */}

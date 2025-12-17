@@ -172,8 +172,8 @@ export const AuditLogPage = ({ catalogName }) => {
 							<Menu.Item value="Last Year">Last Year</Menu.Item>
 						</Select> */}
 					<AuditLogFilter
-						insightId={insightId}
 						updateLogs={updateLogs}
+						insightId={insightId}
 					/>
 					<Button
 						variant="default"

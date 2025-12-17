@@ -24,7 +24,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Sheet,
-	SheetClose,
 	SheetContent,
 	Table,
 	TableBody,
@@ -800,7 +799,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						handleDrawerClose={handleDrawerClose}
 					/>
 				</SheetContent>
-				<SheetClose />
+				{/* <SheetClose /> */}
 			</Sheet>
 		</>
 	);

@@ -51,7 +51,7 @@ const DashboardDurations = [
 ];
 
 export const AuditLogFilter = (props) => {
-	const { insightId, updateLogs } = props;
+	const { insightId, updateLogs, parent = null } = props;
 	const [engineDetails, setEngineDetails] = useState({ ...initialAcc });
 	const [engineSelectionDetails, setEngineSelectionDetails] = useState({
 		engineType: "",
@@ -140,8 +140,9 @@ export const AuditLogFilter = (props) => {
 	useEffect(() => {
 		// Implementation for triggering logs API
 		if (
-			engineSelectionDetails.engineId !== "" &&
-			dashboardDuration !== ""
+			(engineSelectionDetails.engineId !== "" &&
+				dashboardDuration !== "") ||
+			parent
 		) {
 			updateLogs({
 				engineId: engineSelectionDetails.engineId,
@@ -202,13 +203,13 @@ export const AuditLogFilter = (props) => {
 								size="sm"
 								onClick={() => {
 									setShowCustomPopover(false);
-									if (
-										customDateRange?.from &&
-										customDateRange?.to &&
-										engineSelectionDetails.engineId
-									) {
-										updateLogs();
-									}
+									// if (
+									// 	customDateRange?.from &&
+									// 	customDateRange?.to &&
+									// 	engineSelectionDetails.engineId
+									// ) {
+									// 	updateLogs();
+									// }
 								}}
 							>
 								Apply
@@ -222,112 +223,125 @@ export const AuditLogFilter = (props) => {
 
 	return (
 		<div className="flex gap-2">
-			<div className="flex min-w-[100px] justify-between">
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						asChild
-						className="flex justify-between align-center"
-					>
-						<Button
-							variant="outline"
-							size="sm"
-							className={`flex min-w-[180px] justify-between`}
-						>
-							<div className="flex w-full justify-between align-center">
-								<span className="flex justify-start">
-									{engineSelectionDetails.engineType !== ""
-										? engineSelectionDetails.engineType
-										: "Select Engine Type"}{" "}
-								</span>
-								<ChevronDownIcon className="flex justify-end align-center" />
-							</div>
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuRadioGroup>
-							{ENGINE_TYPES.map((engineType) => (
-								<DropdownMenuCheckboxItem
-									checked={
-										engineType ===
-										engineSelectionDetails.engineType
-									}
-									key={`${engineType}Selection`}
-									onCheckedChange={(open) => {
-										setEngineSelectionDetails({
-											...engineSelectionDetails,
-											engineType: open ? engineType : "",
-											engineId: "",
-										});
-									}}
+			{!parent && (
+				<>
+					<div className="flex min-w-[100px] justify-between">
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								asChild
+								className="flex w-[180px] justify-between align-center"
+							>
+								<Button
+									variant="outline"
+									size="sm"
+									className={`flex justify-between self-center`}
 								>
-									{engineType}
-								</DropdownMenuCheckboxItem>
-							))}
-						</DropdownMenuRadioGroup>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</div>
-			<div className="flex min-w-[100px] justify-between">
+									<div className="flex w-full justify-between self-center">
+										<span className="flex justify-start">
+											{engineSelectionDetails.engineType !==
+											""
+												? engineSelectionDetails.engineType
+												: "Select Engine Type"}{" "}
+										</span>
+										<ChevronDownIcon className="flex justify-end self-center" />
+									</div>
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent>
+								<DropdownMenuRadioGroup>
+									{ENGINE_TYPES.map((engineType) => (
+										<DropdownMenuCheckboxItem
+											checked={
+												engineType ===
+												engineSelectionDetails.engineType
+											}
+											key={`${engineType}Selection`}
+											onCheckedChange={(open) => {
+												setEngineSelectionDetails({
+													...engineSelectionDetails,
+													engineType: open
+														? engineType
+														: "",
+													engineId: "",
+												});
+											}}
+										>
+											{engineType}
+										</DropdownMenuCheckboxItem>
+									))}
+								</DropdownMenuRadioGroup>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+					<div className="flex min-w-[100px] justify-between">
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								asChild
+								className="flex w-[180px] justify-between align-center"
+							>
+								<Button
+									variant="outline"
+									size="sm"
+									className={`flex min-w-[180px] justify-between align-center`}
+								>
+									<div className="flex w-full justify-between">
+										<span className="flex justify-start">
+											{engineDetails?.[
+												engineSelectionDetails
+													?.engineType
+											]
+												?.filter(
+													(engine) =>
+														engine.value ===
+														engineSelectionDetails.engineId,
+												)
+												.map(
+													(engine) => engine.label,
+												) ?? "Select Engine"}{" "}
+										</span>
+										<ChevronDownIcon className="flex justify-end self-center" />
+									</div>
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent>
+								<DropdownMenuRadioGroup>
+									{engineSelectionDetails.engineType &&
+										engineDetails[
+											engineSelectionDetails.engineType
+										].length > 0 &&
+										engineDetails[
+											engineSelectionDetails.engineType
+										].map((engine) => (
+											<DropdownMenuCheckboxItem
+												key={`engine-${engine.value}`}
+												checked={
+													engine.value ===
+													engineSelectionDetails.engineId
+												}
+												onCheckedChange={(prop) => {
+													setEngineSelectionDetails({
+														...engineSelectionDetails,
+														engineId: prop
+															? engine.value
+															: "",
+													});
+												}}
+											>
+												{engine.label}
+											</DropdownMenuCheckboxItem>
+										))}
+								</DropdownMenuRadioGroup>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				</>
+			)}
+			<div className="flex min-w-[100px]">
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						asChild
-						className="flex justify-between align-center"
+						className="flex w-[180px] justify-between align-center"
 					>
-						<Button
-							variant="outline"
-							size="sm"
-							className={`flex min-w-[180px] justify-between`}
-						>
-							<div className="flex w-full justify-between">
-								<span className="flex justify-start">
-									{engineDetails?.[
-										engineSelectionDetails?.engineType
-									]
-										?.filter(
-											(engine) =>
-												engine.value ===
-												engineSelectionDetails.engineId,
-										)
-										.map((engine) => engine.label) ??
-										"Select Engine"}{" "}
-								</span>
-								<ChevronDownIcon className="flex justify-end align-center" />
-							</div>
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuRadioGroup>
-							{engineSelectionDetails.engineType &&
-								engineDetails[engineSelectionDetails.engineType]
-									.length > 0 &&
-								engineDetails[
-									engineSelectionDetails.engineType
-								].map((engine) => (
-									<DropdownMenuCheckboxItem
-										key={engine.value}
-										checked={
-											engine.value ===
-											engineSelectionDetails.engineId
-										}
-										onCheckedChange={(prop) => {
-											setEngineSelectionDetails({
-												...engineSelectionDetails,
-												engineId: prop
-													? engine.value
-													: "",
-											});
-										}}
-									>
-										{engine.label}
-									</DropdownMenuCheckboxItem>
-								))}
-						</DropdownMenuRadioGroup>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</div>
-			<div className="min-w-[100px]">
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
 						<Button variant="outline" size="sm">
 							{SelectedDuration?.label === ""
 								? "Today"
@@ -344,7 +358,7 @@ export const AuditLogFilter = (props) => {
 										<DropdownMenuSeparator />
 									)}
 									<DropdownMenuCheckboxItem
-										key={duration.value}
+										key={`duration-${duration.value}`}
 										checked={
 											duration.value === dashboardDuration
 										}
