@@ -1,12 +1,12 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { H4 } from "@semoss/ui/next";
-import { useRoot } from "@/hooks";
+import { useRootStore } from "@/hooks";
 
 export const AppLogo = observer(() => {
 	const [logo, setLogo] = useState(null);
 
-	const { root } = useRoot();
+	const { root } = useRootStore();
 
 	useEffect(() => {
 		fetch(root.theme.images.logo)
