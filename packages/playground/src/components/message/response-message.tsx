@@ -81,14 +81,18 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		};
 
 		return (
-			<div className="group mb-0 flex w-full flex-col gap-4 overflow-hidden">
+			<div className="group mb-0 flex w-full flex-col gap-2 overflow-hidden">
 				<div className="group flex flex-row items-center gap-2">
 					<MessageCircleIcon className="size-4" />
 					<span className="mr-0.5 font-medium text-base">
 						{message.model.name ?? "Agent"}
 					</span>
 				</div>
-				{message.text ? <Markdown>{message.text}</Markdown> : null}
+				{message.text ? (
+					<Markdown className="[&>*:first-child]:mt-0">
+						{message.text}
+					</Markdown>
+				) : null}
 				{message.tools.map((t) => (
 					<ResponseMessageTool
 						key={`tool-${t.id}`}
@@ -117,7 +121,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										<ArrowLeftIcon />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>
+								<TooltipContent side="bottom">
 									Previous Message
 								</TooltipContent>
 							</Tooltip>
@@ -143,7 +147,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										<ArrowRightIcon />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>Next Message</TooltipContent>
+								<TooltipContent side="bottom">
+									Next Message
+								</TooltipContent>
 							</Tooltip>
 						</>
 					)}
@@ -166,7 +172,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									<RefreshCwIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Rewrite Message</TooltipContent>
+							<TooltipContent side="bottom">
+								Rewrite Message
+							</TooltipContent>
 						</Tooltip>
 					)}
 
@@ -182,7 +190,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<ThumbsUpIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Share Positive Feedback</TooltipContent>
+						<TooltipContent side="bottom">
+							Share Positive Feedback
+						</TooltipContent>
 					</Tooltip>
 
 					<Tooltip>
@@ -197,7 +207,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<ThumbsDownIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Share Negative Feedback</TooltipContent>
+						<TooltipContent side="bottom">
+							Share Negative Feedback
+						</TooltipContent>
 					</Tooltip>
 
 					<Tooltip>
@@ -217,7 +229,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<CopyIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Copy Response</TooltipContent>
+						<TooltipContent side="bottom">
+							Copy Response
+						</TooltipContent>
 					</Tooltip>
 				</div>
 			</div>
