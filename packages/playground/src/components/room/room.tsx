@@ -146,7 +146,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 					className="h-full w-full"
 					viewportRef={(ele) => setScrollEle(ele)}
 				>
-					<div className="mx-auto max-w-4xl space-y-9 px-4 py-6">
+					<div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-6">
 						{room.history.map((m, mIdx) => {
 							if (!m.visible) {
 								return null;

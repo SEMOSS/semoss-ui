@@ -1,11 +1,16 @@
-import { FileIcon } from "lucide-react";
+import { CopyIcon, FileIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import {
+	Button,
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import type { InputMessageStore } from "@/stores";
 
@@ -20,15 +25,52 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 			InputMessageStore["mediaInputs"][number] | null
 		>(null);
 
+		/**
+		 * Copy the text
+		 * @param text - text to copy
+		 */
+		const copyMessage = (text: string) => {
+			try {
+				navigator.clipboard.writeText(text);
+
+				toast.success("Successfully copied to clipboard");
+			} catch (e) {
+				toast.error(e.message);
+			}
+		};
+
 		return (
-			<div>
+			<div className="group">
 				<div className="ml-auto max-w-[600px] items-start self-stretch rounded-lg bg-accent px-5 py-4 leading-normal">
 					<span className="text-base text-foreground">
 						{message.text}
 					</span>
 				</div>
-				{message.mediaInputs.length > 0 ? (
-					<div className="ml-auto flex max-w-[600px] flex-row items-center gap-2 pt-2">
+				<div className="ml-auto flex max-w-[600px] justify-end pt-2 opacity-0 transition-opacity group-hover:opacity-100">
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								disabled={!message.text}
+								onClick={() => {
+									if (!message.text) {
+										return;
+									}
+
+									copyMessage(message.text);
+								}}
+							>
+								<CopyIcon />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">
+							Copy Message
+						</TooltipContent>
+					</Tooltip>
+				</div>
+				{message.mediaInputs.length > 0 && (
+					<div className="ml-auto flex max-w-[600px] flex-row items-center justify-end gap-2 pt-2">
 						{message.mediaInputs.map((info) => {
 							return (
 								<button
@@ -51,8 +93,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 							);
 						})}
 					</div>
-				) : null}
-
+				)}
 				<Dialog
 					open={selectedImage !== null}
 					onOpenChange={(open) => {
