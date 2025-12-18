@@ -55,8 +55,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		/** Response for the tool */
 		response: string;
 
-		/** If the tool execution was cancelled */
-		cancelled?: boolean;
+		/** If the tool execution was cancelled or errored */
+		status?: "success" | "error" | "cancelled";
 	}[] = [];
 
 	/**
@@ -65,7 +65,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	inputToolExecData: {
 		toolCallId: string;
 		inputPrompt: string;
-		cancelled?: boolean;
+		status?: "success" | "error" | "cancelled";
 	} | null = null;
 
 	/**
@@ -133,7 +133,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			this.inputToolExecData = {
 				toolCallId: message.tool_call_id,
 				inputPrompt: message.inputPrompt,
-				cancelled: false, // default to false, implement in the future
+				status: "success", // default to success, implement in the future
 			};
 		}
 
@@ -355,7 +355,7 @@ paramValues=[${JSON.stringify({
 			await this.saveToolExecution(
 				tool,
 				`This tool execution failed due to an unexpected error. The AI assistant should inform the user of the tool's failure and ask the user for further instructions. The AI assistant may mention alternative tools or actions to take next, but should not take any further actions or select any further tools without user input.`,
-				true,
+				"error",
 			);
 		}
 	};
@@ -368,15 +368,15 @@ paramValues=[${JSON.stringify({
 	saveToolExecution = async (
 		tool: ResponseMessageStore["tools"][number],
 		toolResponse: string,
-		cancelled: boolean = false,
+		status: "success" | "error" | "cancelled" = "success",
 	): Promise<void> => {
 		const room = this.room;
 
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
-			// in the future, would like to pass cancelled to AddPlaygroundToolExecution too
-			tool.cancelled = cancelled;
+			// in the future, would like to pass status to AddPlaygroundToolExecution too
+			tool.status = status;
 		});
 
 		// wait for the pixel to run
@@ -428,7 +428,7 @@ paramValues=[${JSON.stringify({})}]
 	markToolAsUsed = (inputToolExecData: {
 		toolCallId: string;
 		inputPrompt: string;
-		cancelled?: boolean;
+		status?: "success" | "error" | "cancelled";
 	}): void => {
 		// find the correct tool
 		const tool = this.tools.find(
@@ -441,7 +441,7 @@ paramValues=[${JSON.stringify({})}]
 		// save the response
 		runInAction(() => {
 			tool.response = inputToolExecData.inputPrompt;
-			tool.cancelled = inputToolExecData.cancelled || false;
+			tool.status = inputToolExecData.status || "success";
 		});
 	};
 }

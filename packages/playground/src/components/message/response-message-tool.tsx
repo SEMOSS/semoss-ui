@@ -1,4 +1,9 @@
-import { CheckIcon, HammerIcon, XCircleIcon } from "lucide-react";
+import {
+	AlertTriangleIcon,
+	CheckIcon,
+	HammerIcon,
+	XCircleIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Button } from "@semoss/ui/next";
 import type { ResponseMessageStore } from "@/stores";
@@ -36,7 +41,9 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		}
 
 		let icon = null;
-		if (tool.cancelled) {
+		if (tool.status === "error") {
+			icon = <AlertTriangleIcon />;
+		} else if (tool.status === "cancelled") {
 			icon = <XCircleIcon />;
 		} else if (tool.response) {
 			icon = <CheckIcon />;
@@ -81,7 +88,8 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				>
 					<div
 						className={`mr-1 flex size-9 flex-col items-center justify-center overflow-hidden rounded p-2 ${
-							tool.cancelled
+							tool.status === "error" ||
+							tool.status === "cancelled"
 								? "bg-destructive/10 text-destructive"
 								: "bg-primary/10 text-primary"
 						}`}
@@ -97,14 +105,16 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							title={tool.title}
 						>
 							{/* {tool.title} */}
-							{tool.cancelled
-								? "Cancelled"
-								: tool.response
-									? "Completed"
-									: tool._meta.map.SMSS_MCP_EXECUTION ===
-											"ask"
-										? "Click to open"
-										: "This tool is set to auto-execute"}
+							{tool.status === "error"
+								? "Failed to execute tool"
+								: tool.status === "cancelled"
+									? "Tool execution cancelled"
+									: tool.response
+										? "Completed"
+										: tool._meta.map.SMSS_MCP_EXECUTION ===
+												"ask"
+											? "Click to open"
+											: "This tool is set to auto-execute"}
 						</div>
 					</div>
 				</button>
@@ -119,7 +129,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							message.saveToolExecution(
 								tool,
 								`This tool execution was intentionally cancelled by the user. The AI assistant should inform the user of the tool's cancellation and ask the user for further instructions. The AI assistant may mention alternative tools or actions to take next, but should not take any further actions or select any further tools without user input.`,
-								true,
+								"cancelled",
 							);
 						}}
 					>
