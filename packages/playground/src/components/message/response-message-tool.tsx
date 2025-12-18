@@ -41,9 +41,9 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		}
 
 		let icon = null;
-		if (tool.toolStatus === "error") {
+		if (tool.tool_status === "error") {
 			icon = <AlertTriangleIcon />;
-		} else if (tool.toolStatus === "cancelled") {
+		} else if (tool.tool_status === "cancelled") {
 			icon = <XCircleIcon />;
 		} else if (tool.response) {
 			icon = <CheckIcon />;
@@ -88,8 +88,8 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				>
 					<div
 						className={`mr-1 flex size-9 flex-col items-center justify-center overflow-hidden rounded p-2 ${
-							tool.toolStatus === "error" ||
-							tool.toolStatus === "cancelled"
+							tool.tool_status === "error" ||
+							tool.tool_status === "cancelled"
 								? "bg-destructive/10 text-destructive"
 								: "bg-primary/10 text-primary"
 						}`}
@@ -105,9 +105,9 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							title={tool.title}
 						>
 							{/* {tool.title} */}
-							{tool.toolStatus === "error"
+							{tool.tool_status === "error"
 								? "Failed to execute tool"
-								: tool.toolStatus === "cancelled"
+								: tool.tool_status === "cancelled"
 									? "Tool execution cancelled"
 									: tool.response
 										? "Completed"

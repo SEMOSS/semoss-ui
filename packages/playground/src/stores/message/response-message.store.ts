@@ -56,7 +56,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		response: string;
 
 		/** If the tool execution was cancelled or errored */
-		toolStatus?: "success" | "error" | "cancelled";
+		tool_status?: "success" | "error" | "cancelled";
 	}[] = [];
 
 	/**
@@ -133,7 +133,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			this.inputToolExecData = {
 				toolCallId: message.tool_call_id,
 				inputPrompt: message.inputPrompt,
-				toolStatus: "success", // default to success, implement in the future
+				toolStatus: message.tool_status ?? "success", // default to success
 			};
 		}
 
@@ -375,8 +375,7 @@ paramValues=[${JSON.stringify({
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
-			// in the future, would like to pass status to AddPlaygroundToolExecution too
-			tool.toolStatus = status;
+			tool.tool_status = status;
 		});
 
 		// wait for the pixel to run
@@ -394,7 +393,8 @@ ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 toolId = ["${tool.id}"],
 toolName=["${tool.name}"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
-paramValues=[${JSON.stringify({})}]
+paramValues=[${JSON.stringify({})}],
+mcpToolStatus=${JSON.stringify(status)}
 );`,
 		);
 
@@ -423,13 +423,11 @@ paramValues=[${JSON.stringify({})}]
 	/**
 	 * Mark a tool as used. Should be called when reconstructing from an INPUT_TOOL_EXEC message
 	 * @param tool - tool to save
-	 * @param toolResponse - response of the tool
+	 * @param inputToolExecData - data from the input tool exec message
 	 */
-	markToolAsUsed = (inputToolExecData: {
-		toolCallId: string;
-		inputPrompt: string;
-		status?: "success" | "error" | "cancelled";
-	}): void => {
+	markToolAsUsed = (
+		inputToolExecData: ResponseMessageStore["inputToolExecData"],
+	): void => {
 		// find the correct tool
 		const tool = this.tools.find(
 			(t) => t.id === inputToolExecData.toolCallId,
@@ -441,7 +439,7 @@ paramValues=[${JSON.stringify({})}]
 		// save the response
 		runInAction(() => {
 			tool.response = inputToolExecData.inputPrompt;
-			tool.toolStatus = inputToolExecData.status || "success";
+			tool.tool_status = inputToolExecData.toolStatus ?? "success";
 		});
 	};
 }
