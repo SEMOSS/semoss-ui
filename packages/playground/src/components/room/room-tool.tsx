@@ -6,7 +6,7 @@ import type { FlexLayout } from "@semoss/shared";
 import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 import type { MCPTool, Tool } from "@/types";
-import { DynamicForm } from "../tools/tools-default-view";
+import { DynamicForm } from "../mcp/tools-default-view";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL

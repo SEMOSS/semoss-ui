@@ -1,11 +1,13 @@
 import { createHashRouter, Navigate, RouterProvider } from "react-router-dom";
 import { AuthenticatedLayout } from "./authenticated-layout";
+import { EditWorkspacePage } from "./edit-workspace-page";
 import { EmbedPage } from "./embed-page";
 import { ErrorPage } from "./error-page";
 import { InitializedLayout } from "./initialized-layout";
 import { LoginPage } from "./login-page";
 import { MainLayout } from "./main-layout";
 import { NewRoomPage } from "./new-room-page";
+import { NewWorkspacePage } from "./new-workspace-page";
 import { RoomPage } from "./room-page";
 import { WorkspaceDetailPage } from "./workspace-detail-page";
 import { WorkspacePage } from "./workspace-page";
@@ -47,8 +49,16 @@ const router = createHashRouter(
 											element: <WorkspacePage />,
 										},
 										{
+											path: "workspace/new",
+											element: <NewWorkspacePage />,
+										},
+										{
 											path: "workspace/:workspaceId",
 											element: <WorkspaceDetailPage />,
+										},
+										{
+											path: "workspace/:workspaceId/edit",
+											element: <EditWorkspacePage />,
 										},
 										{
 											path: "*",
