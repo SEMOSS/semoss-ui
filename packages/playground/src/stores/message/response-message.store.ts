@@ -56,7 +56,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		response: string;
 
 		/** If the tool execution was cancelled or errored */
-		status?: "success" | "error" | "cancelled";
+		toolStatus?: "success" | "error" | "cancelled";
 	}[] = [];
 
 	/**
@@ -65,7 +65,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	inputToolExecData: {
 		toolCallId: string;
 		inputPrompt: string;
-		status?: "success" | "error" | "cancelled";
+		toolStatus?: "success" | "error" | "cancelled";
 	} | null = null;
 
 	/**
@@ -133,7 +133,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			this.inputToolExecData = {
 				toolCallId: message.tool_call_id,
 				inputPrompt: message.inputPrompt,
-				status: "success", // default to success, implement in the future
+				toolStatus: "success", // default to success, implement in the future
 			};
 		}
 
@@ -376,7 +376,7 @@ paramValues=[${JSON.stringify({
 		runInAction(() => {
 			tool.response = toolResponse;
 			// in the future, would like to pass status to AddPlaygroundToolExecution too
-			tool.status = status;
+			tool.toolStatus = status;
 		});
 
 		// wait for the pixel to run
@@ -441,7 +441,7 @@ paramValues=[${JSON.stringify({})}]
 		// save the response
 		runInAction(() => {
 			tool.response = inputToolExecData.inputPrompt;
-			tool.status = inputToolExecData.status || "success";
+			tool.toolStatus = inputToolExecData.status || "success";
 		});
 	};
 }
