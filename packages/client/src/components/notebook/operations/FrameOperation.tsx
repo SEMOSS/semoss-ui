@@ -76,6 +76,12 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 
 	const parent = tableRef?.current?.parentElement;
 	const parentParent = parent?.parentElement as HTMLElement | null;
+	const isTimestamp = (value: unknown): value is string => {
+		return (
+			typeof value === "string" &&
+			/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?$/.test(value)
+		);
+	};
 
 	return (
 		<>
@@ -115,7 +121,9 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 										<Table.Cell
 											key={`data-row-col-${getData.data.data.headers[_rIdx]}-${_rIdx}-${_vIdx}`}
 										>
-											{v}
+											{isTimestamp(v)
+												? v.split(".")[0]
+												: v}
 										</Table.Cell>
 									))}
 								</Table.Row>
