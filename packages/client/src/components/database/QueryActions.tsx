@@ -50,19 +50,12 @@ export const QueryActions: React.FC<QueryActionsProps> = ({
         <StyledActions>
             <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button
-                    variant="text"
-                    onClick={clearQuery}
-                    sx={{ textTransform: 'none' }}
-                >
-                    Cancel
-                </Button>
-                <Button
                     variant="outlined"
                     onClick={executeQuery}
                     sx={{ textTransform: 'none' }}
                     disabled={previewLoading || !query.trim()}
                 >
-                    {previewLoading ? 'Running...' : 'Visualize'}
+                    {previewLoading ? 'Running...' : 'Run Query'}
                 </Button>
             </Box>
         </StyledActions>
