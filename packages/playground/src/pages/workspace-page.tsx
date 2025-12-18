@@ -1,6 +1,7 @@
 import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -15,7 +16,7 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import workspaceImage from "@/assets/img/workspace.png";
-import { WorkspaceCard, WorkspaceOverlay } from "@/components";
+import { WorkspaceCard } from "@/components";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { App } from "@/types";
 
@@ -26,6 +27,7 @@ import type { App } from "@/types";
  */
 export const WorkspacePage = observer(() => {
 	const { root } = useRoot();
+	const navigate = useNavigate();
 	// set the breadcrumbs
 	useGlobalBreadcrumbs([
 		{
@@ -39,9 +41,6 @@ export const WorkspacePage = observer(() => {
 	]);
 
 	const [search, setSearch] = useState("");
-	const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] =
-		useState<boolean>(false);
-	const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 	const debouncedSearch = useDebouncedValue(search);
 	const { chat } = useChat();
 
@@ -69,22 +68,6 @@ export const WorkspacePage = observer(() => {
 	);
 
 	/**
-	 * Delete Workspace
-	 */
-	const handleDeleteWorkspace = async (workspaceId: string) => {
-		try {
-			await chat.deleteWorkspace(workspaceId);
-
-			getWorkspaces.reset();
-		} catch (e) {
-			toast.error(
-				e instanceof Error ? e.message : "Failed to delete workspace",
-			);
-			return;
-		}
-	};
-
-	/**
 	 * Setup infinite scroll for the command list
 	 */
 	const { setScroll } = useInfiniteScroll({
@@ -96,7 +79,7 @@ export const WorkspacePage = observer(() => {
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
-			<div className="mx-auto flex h-full w-full max-w-[950px] flex-col gap-12 px-12 pt-8 pb-4">
+			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-12 px-12 pt-8 pb-4">
 				<div className="flex w-full rounded-lg bg-primary/10">
 					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
 						<div className="font-medium text-primary text-xl leading-normal">
@@ -108,10 +91,7 @@ export const WorkspacePage = observer(() => {
 							processes.
 						</div>
 						<Button
-							onClick={() => {
-								setWorkspaceId(null);
-								setIsWorkspaceModalOpen(true);
-							}}
+							onClick={() => navigate("/workspace/new")}
 							className="w-auto"
 						>
 							Create a Workspace
@@ -157,13 +137,21 @@ export const WorkspacePage = observer(() => {
 											name: w.project_name,
 											description: w.description,
 										}}
-										onEditClick={() => {
-											setWorkspaceId(w.project_id);
-											setIsWorkspaceModalOpen(true);
+										onDeleteClick={async () => {
+											try {
+												await chat.deleteWorkspace(
+													w.project_id,
+												);
+
+												getWorkspaces.reset();
+											} catch (e) {
+												toast.error(
+													e instanceof Error
+														? e.message
+														: "Failed to delete workspace",
+												);
+											}
 										}}
-										onDeleteClick={() =>
-											handleDeleteWorkspace(w.project_id)
-										}
 									/>
 								))}
 							</div>
@@ -179,19 +167,6 @@ export const WorkspacePage = observer(() => {
 					</ScrollArea>
 				</div>
 			</div>
-
-			{isWorkspaceModalOpen && (
-				<WorkspaceOverlay
-					open={isWorkspaceModalOpen}
-					workspaceId={workspaceId}
-					onClose={(newWorkspaceId) => {
-						setIsWorkspaceModalOpen(false);
-						if (newWorkspaceId) {
-							getWorkspaces.reset();
-						}
-					}}
-				/>
-			)}
 		</div>
 	);
 });
