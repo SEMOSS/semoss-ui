@@ -16,7 +16,7 @@ import {
 const StyledContainer = styled("div")(() => ({
 	display: "flex",
 	flexDirection: "column",
-	height: "100vh",
+	height: "105vh",
 	width: "100%",
 	overflow: "hidden",
 	padding: 0,
@@ -167,8 +167,8 @@ export const EngineQueryDataPage = observer(() => {
 	};
 
 	return (
-		<StyledContainer>
-			<StyledContent isQueryResultsExpanded={isQueryResultsExpanded}>
+		<StyledContainer data-testid='queryDataPage-container'>
+			<StyledContent isQueryResultsExpanded={isQueryResultsExpanded} data-testid='engine-queryDataPage-content'>
 				<StyledLeft>
 					<StyledCard>
 						<DatabaseStructureBrowser
