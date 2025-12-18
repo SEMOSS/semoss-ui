@@ -137,11 +137,18 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
+	/**
+	 * Constants
+	 */
 	const isDisabled =
 		Boolean(room.error) ||
 		room.mode === "executing" ||
 		(room.tail.type === "RESPONSE" &&
-			room.tail.tools.some((tool) => !tool.response));
+			room.history.some(
+				(message) =>
+					message.type === "RESPONSE" &&
+					message.tools.some((tool) => !tool.response),
+			));
 
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">

@@ -46,7 +46,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 
 		return (
 			<div
-				className={`group flex w-full flex-row items-center gap-5 rounded-lg border border-border bg-primary-foreground p-4 text-left shadow-sm ${
+				className={`group/toolcard flex w-full flex-row items-center gap-5 rounded-lg border border-border bg-primary-foreground p-4 text-left shadow-sm ${
 					isDisabled
 						? "cursor-not-allowed opacity-50"
 						: `cursor-pointer hover:bg-accent ${isActive ? "border-primary" : ""}`
@@ -104,7 +104,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 									: tool._meta.map.SMSS_MCP_EXECUTION ===
 											"ask"
 										? "Click to open"
-										: ""}
+										: "This tool is set to auto-execute"}
 						</div>
 					</div>
 				</button>
@@ -113,7 +113,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						type="button"
 						size="sm"
 						variant="outline"
-						className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
+						className="invisible hover:text-destructive group-hover/toolcard:visible"
 						onClick={(e) => {
 							e.stopPropagation();
 							message.saveToolExecution(
