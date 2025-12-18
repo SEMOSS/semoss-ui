@@ -708,7 +708,7 @@ export class RoomStore {
 			}
 
 			const tool = message.getTool(toolId, toolName);
-			if (!tool) {
+			if (!tool || tool.response) {
 				return;
 			}
 
