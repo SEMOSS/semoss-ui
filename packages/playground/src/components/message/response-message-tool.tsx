@@ -108,7 +108,11 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 								className="ml-1 flex size-9 flex-col items-center justify-center overflow-hidden rounded bg-destructive/10 p-2 text-destructive hover:bg-destructive/20"
 								onClick={(e) => {
 									e.stopPropagation();
-									console.log("cancelled");
+									message.saveToolExecution(
+										tool,
+										"This tool execution was cancelled by the user.",
+										true,
+									);
 								}}
 							>
 								<XIcon />
