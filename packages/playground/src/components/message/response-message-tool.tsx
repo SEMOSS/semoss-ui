@@ -96,7 +96,15 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							className="truncate text-muted-foreground text-sm"
 							title={tool.title}
 						>
-							{tool.title}
+							{/* {tool.title} */}
+							{tool.cancelled
+								? "Cancelled"
+								: tool.response
+									? "Completed"
+									: tool._meta.map.SMSS_MCP_EXECUTION ===
+											"ask"
+										? "Click to open"
+										: ""}
 						</div>
 					</div>
 				</button>
