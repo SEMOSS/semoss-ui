@@ -340,15 +340,24 @@ paramValues=[${JSON.stringify({
 			return;
 		}
 
-		// wait for the pixel to run
-		const response = await room.runRoomPixel<[string]>(
-			`RunMCPTool(project = [ "${tool._meta.map.SMSS_PROJECT_ID}" ], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
-		);
+		try {
+			// wait for the pixel to run
+			const response = await room.runRoomPixel<[string]>(
+				`RunMCPTool(project = [ "${tool._meta.map.SMSS_PROJECT_ID}" ], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+			);
 
-		const { output } = response.pixelReturn[0];
+			const { output } = response.pixelReturn[0];
 
-		// save the response
-		await this.saveToolExecution(tool, output);
+			// save the response
+			await this.saveToolExecution(tool, output);
+		} catch {
+			// mark the failure
+			await this.saveToolExecution(
+				tool,
+				`This tool execution failed due to an unexpected error. The AI assistant should inform the user of the tool's failure and ask the user for further instructions. The AI assistant may mention alternative tools or actions to take next, but should not take any further actions or select any further tools without user input.`,
+				true,
+			);
+		}
 	};
 
 	/**
