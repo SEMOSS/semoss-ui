@@ -137,7 +137,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
-	const isDisabled = Boolean(room.error) || room.mode === "executing";
+	// console.log(room.error);
 
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
@@ -217,7 +217,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
 				<RoomInput
 					isLoading={room.isLoading}
-					isDisabled={isDisabled}
+					isDisabled={room.mode === "executing"}
 					minRows={3}
 					maxRows={8}
 					configuration={<RoomConfigurationButton room={room} />}

@@ -760,12 +760,13 @@ export class RoomStore {
 			// store the new insight id
 			runInAction(() => {
 				this._insightID = response.insightId;
+				this._store.error = null;
 			});
-
-			this._store.error = null;
 			return response;
 		} catch (e) {
-			this._store.error = e;
+			runInAction(() => {
+				this._store.error = e;
+			});
 			throw e;
 		} finally {
 			if (showLoading) {
