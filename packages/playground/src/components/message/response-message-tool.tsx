@@ -1,5 +1,6 @@
-import { CheckIcon, HammerIcon, XCircleIcon } from "lucide-react";
+import { CheckIcon, HammerIcon, XCircleIcon, XIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import type { ResponseMessageStore } from "@/stores";
 
 // Styled component replaced with Tailwind classes inline
@@ -44,58 +45,79 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		}
 
 		return (
-			<button
-				type="button"
-				disabled={isDisabled}
+			<div
 				className={`group flex w-full flex-row items-center gap-5 rounded-lg border border-border bg-primary-foreground p-4 text-left shadow-sm ${
 					isDisabled
 						? "cursor-not-allowed opacity-50"
 						: `cursor-pointer hover:bg-accent ${isActive ? "border-primary" : ""}`
 				}`}
-				onClick={() => {
-					if (room.isSidebarNodeSelected(nodeId)) {
-						room.removeSidebarNode(nodeId);
-					} else {
-						// open the sidebar
-						room.addSidebarNode(nodeId, {
-							type: "tab",
-							name: tool.title,
-							component: "room-tool",
-							config: {
-								app: tool._meta.map.SMSS_PROJECT_ID,
-								tool: {
-									message: message.id,
-									id: tool.id,
-									name: tool.name,
-									parameters: tool.parameters,
-								},
-							},
-							enableClose: true,
-						});
-					}
-				}}
 			>
-				<div
-					className={`mr-1 flex size-9 flex-col items-center justify-center overflow-hidden rounded p-2 ${
-						tool.cancelled
-							? "bg-destructive/10 text-destructive"
-							: "bg-primary/10 text-primary"
-					}`}
+				<button
+					type="button"
+					disabled={isDisabled}
+					className="flex flex-1 flex-row items-center gap-5 text-left"
+					onClick={() => {
+						if (room.isSidebarNodeSelected(nodeId)) {
+							room.removeSidebarNode(nodeId);
+						} else {
+							// open the sidebar
+							room.addSidebarNode(nodeId, {
+								type: "tab",
+								name: tool.title,
+								component: "room-tool",
+								config: {
+									app: tool._meta.map.SMSS_PROJECT_ID,
+									tool: {
+										message: message.id,
+										id: tool.id,
+										name: tool.name,
+										parameters: tool.parameters,
+									},
+								},
+								enableClose: true,
+							});
+						}
+					}}
 				>
-					{icon}
-				</div>
-				<div className="flex-1">
-					<div className="truncate text-base" title={tool.title}>
-						{tool.title}
-					</div>
 					<div
-						className="truncate text-muted-foreground text-sm"
-						title={tool.title}
+						className={`mr-1 flex size-9 flex-col items-center justify-center overflow-hidden rounded p-2 ${
+							tool.cancelled
+								? "bg-destructive/10 text-destructive"
+								: "bg-primary/10 text-primary"
+						}`}
 					>
-						{tool.title}
+						{icon}
 					</div>
-				</div>
-			</button>
+					<div className="flex-1">
+						<div className="truncate text-base" title={tool.title}>
+							{tool.title}
+						</div>
+						<div
+							className="truncate text-muted-foreground text-sm"
+							title={tool.title}
+						>
+							{tool.title}
+						</div>
+					</div>
+				</button>
+				{!tool.response && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<button
+								type="button"
+								className="ml-1 flex size-9 flex-col items-center justify-center overflow-hidden rounded bg-destructive/10 p-2 text-destructive hover:bg-destructive/20"
+								onClick={(e) => {
+									e.stopPropagation();
+									console.log("cancelled");
+								}}
+							>
+								<XIcon />
+							</button>
+						</TooltipTrigger>
+						<TooltipContent>Cancel tool execution</TooltipContent>
+					</Tooltip>
+				)}
+			</div>
 		);
 	},
 );
