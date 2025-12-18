@@ -118,7 +118,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							e.stopPropagation();
 							message.saveToolExecution(
 								tool,
-								"This tool execution was intentionally cancelled by the user. The AI assistant should either proceed without using this tool if possible, choose another tool if necessary, or ask the user for further instructions.",
+								`This tool execution was intentionally cancelled by the user. The AI assistant should inform the user of the tool's cancellation and ask the user for further instructions. The AI assistant may mention alternative tools or actions to take next, but should not take any further actions or select any further tools without user input.`,
 								true,
 							);
 						}}
