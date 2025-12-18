@@ -103,6 +103,9 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				{!tool.response && (
 					<Button
 						type="button"
+						size="sm"
+						variant="outline"
+						className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
 						onClick={(e) => {
 							e.stopPropagation();
 							message.saveToolExecution(
