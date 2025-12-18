@@ -71,8 +71,6 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 				setFileError(
 					"This is not a valid JSON file. Please upload a valid JSON file.",
 				);
-				setUploadFiles(null);
-				return;
 			}
 		}
 

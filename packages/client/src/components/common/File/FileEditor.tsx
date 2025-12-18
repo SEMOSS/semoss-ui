@@ -130,6 +130,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 			| "mdx"
 			| "markdown"
 			| "txt"
+			| "json"
 			| ""
 		>(() => {
 			const ext = path.split(".").pop();
@@ -164,7 +165,9 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 			if (ext === "txt") {
 				return "txt";
 			}
-
+			if (ext === "json") {
+				return "json";
+			}
 			return "";
 		}, [path]);
 
@@ -218,7 +221,9 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 			try {
 				let formatted = content;
 
-				if (fileLanguage === "python") {
+				if (fileLanguage === "json") {
+					formatted = JSON.stringify(JSON.parse(content), null, 2);
+				} else if (fileLanguage === "python") {
 					//TODO:: Implement
 				} else {
 					const prettierConfig = {};
@@ -368,6 +373,23 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 			if (syntaxSetupDone) return;
 			syntaxSetupDone = true;
 
+			if (language === "json") {
+				monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+					validate: true,
+					allowComments: false,
+					trailingCommas: "error",
+					schemas: [],
+				});
+			}
+			if (language === "typescript" || language === "javascript") {
+				monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions(
+					{
+						noSemanticValidation: false,
+						noSyntaxValidation: false,
+					},
+				);
+			}
+
 			const config = languageConfigs[language];
 			if (!config) return;
 
@@ -382,7 +404,8 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 			// IntelliSense
 			if (typeof config.completionItems === "function") {
 				monaco.languages.registerCompletionItemProvider(language, {
-					triggerCharacters: [".", "("],
+					triggerCharacters:
+						language === "json" ? ['"', ":", ","] : [".", "("],
 					provideCompletionItems: (model, position) => {
 						const word = model.getWordUntilPosition(position);
 						const range = {
