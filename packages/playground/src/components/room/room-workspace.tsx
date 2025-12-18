@@ -2,7 +2,7 @@ import {
 	CheckIcon,
 	ChevronsUpDown,
 	ComputerIcon,
-	ListTodoIcon,
+	// ListTodoIcon, // Commented out - Plan mode is disabled
 	MessageCircle,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -112,14 +112,15 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 											</span>
 										</>
 									)}
-									{mode.type === "plan" && (
+									{/* Commented out - Plan mode is not working correctly at the moment */}
+									{/* {mode.type === "plan" && (
 										<>
 											<ListTodoIcon />
 											<span className="flex-1 truncate">
 												Plan
 											</span>
 										</>
-									)}
+									)} */}
 									{mode.type === "workspace" && (
 										<>
 											<ComputerIcon />
@@ -168,7 +169,8 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 												Ask
 											</CommandItem>
 
-											<Tooltip>
+											{/* Commented out - Plan mode is not working correctly at the moment */}
+											{/* <Tooltip>
 												<TooltipTrigger asChild>
 													<span>
 														<CommandItem
@@ -191,7 +193,7 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 													Note: This is an
 													experimental feature.
 												</TooltipContent>
-											</Tooltip>
+											</Tooltip> */}
 										</CommandGroup>
 										<CommandSeparator />
 										<CommandGroup heading="Workspaces">
