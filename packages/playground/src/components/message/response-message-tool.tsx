@@ -1,6 +1,6 @@
-import { CheckIcon, HammerIcon, XCircleIcon, XIcon } from "lucide-react";
+import { CheckIcon, HammerIcon, XCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
+import { Button } from "@semoss/ui/next";
 import type { ResponseMessageStore } from "@/stores";
 
 // Styled component replaced with Tailwind classes inline
@@ -101,25 +101,19 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					</div>
 				</button>
 				{!tool.response && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<button
-								type="button"
-								className="ml-1 flex size-9 flex-col items-center justify-center overflow-hidden rounded bg-destructive/10 p-2 text-destructive hover:bg-destructive/20"
-								onClick={(e) => {
-									e.stopPropagation();
-									message.saveToolExecution(
-										tool,
-										"This tool execution was intentionally cancelled by the user. The AI assistant should either proceed without using this tool if possible, choose another tool if necessary, or ask the user for further instructions.",
-										true,
-									);
-								}}
-							>
-								<XIcon />
-							</button>
-						</TooltipTrigger>
-						<TooltipContent>Cancel tool execution</TooltipContent>
-					</Tooltip>
+					<Button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							message.saveToolExecution(
+								tool,
+								"This tool execution was intentionally cancelled by the user. The AI assistant should either proceed without using this tool if possible, choose another tool if necessary, or ask the user for further instructions.",
+								true,
+							);
+						}}
+					>
+						Cancel
+					</Button>
 				)}
 			</div>
 		);
