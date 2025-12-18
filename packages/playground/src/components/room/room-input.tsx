@@ -372,7 +372,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										}}
 									>
 										<MicIcon
-											className={`${isListening ? "animate-pulse text-error" : ""}`}
+											className={`${isListening ? "animate-pulse text-destructive" : ""}`}
 										/>
 									</Button>
 								</TooltipTrigger>

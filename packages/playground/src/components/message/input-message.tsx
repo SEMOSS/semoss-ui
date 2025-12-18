@@ -7,6 +7,7 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
+	Muted,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -102,7 +103,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 						}
 					}}
 				>
-					<DialogContent className="max-w-4xl">
+					<DialogContent className="sm:max-w-4xl">
 						<DialogHeader>
 							<DialogTitle>
 								{selectedImage?.fileName || "Image"}
@@ -116,8 +117,8 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 									className="max-h-[70vh] max-w-full object-contain"
 								/>
 							) : (
-								<div className="px-2 py-4 text-center text-muted-foreground text-xs">
-									No preview available
+								<div className="px-2 py-4 text-center">
+									<Muted>No preview available</Muted>
 								</div>
 							)}
 						</div>
