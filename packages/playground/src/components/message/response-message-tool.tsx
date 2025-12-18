@@ -1,4 +1,4 @@
-import { CheckIcon, HammerIcon } from "lucide-react";
+import { CheckIcon, HammerIcon, XCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type { ResponseMessageStore } from "@/stores";
 
@@ -35,7 +35,9 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		}
 
 		let icon = null;
-		if (tool.response) {
+		if (tool.cancelled) {
+			icon = <XCircleIcon />;
+		} else if (tool.response) {
 			icon = <CheckIcon />;
 		} else {
 			icon = <HammerIcon />;
@@ -74,7 +76,11 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				}}
 			>
 				<div
-					className={`mr-1 flex size-9 flex-col items-center justify-center overflow-hidden rounded bg-primary/10 p-2 text-primary`}
+					className={`mr-1 flex size-9 flex-col items-center justify-center overflow-hidden rounded p-2 ${
+						tool.cancelled
+							? "bg-destructive/10 text-destructive"
+							: "bg-primary/10 text-primary"
+					}`}
 				>
 					{icon}
 				</div>

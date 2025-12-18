@@ -54,6 +54,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 		/** Response for the tool */
 		response: string;
+
+		/** If the tool execution was cancelled */
+		cancelled?: boolean;
 	}[] = [];
 
 	/**
@@ -62,6 +65,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	inputToolExecData: {
 		toolCallId: string;
 		inputPrompt: string;
+		cancelled?: boolean;
 	} | null = null;
 
 	/**
@@ -121,6 +125,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				name: t.name,
 				parameters: t.arguments,
 				response: "",
+				cancelled: false,
 			}));
 		}
 
@@ -128,6 +133,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			this.inputToolExecData = {
 				toolCallId: message.tool_call_id,
 				inputPrompt: message.inputPrompt,
+				cancelled: false, // default to false, implement in the future
 			};
 		}
 
@@ -353,12 +359,15 @@ paramValues=[${JSON.stringify({
 	saveToolExecution = async (
 		tool: ResponseMessageStore["tools"][number],
 		toolResponse: string,
+		cancelled: boolean = false,
 	): Promise<void> => {
 		const room = this.room;
 
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
+			// in the future, would like to pass cancelled to AddPlaygroundToolExecution too
+			tool.cancelled = cancelled;
 		});
 
 		// wait for the pixel to run
@@ -410,6 +419,7 @@ paramValues=[${JSON.stringify({})}]
 	markToolAsUsed = (inputToolExecData: {
 		toolCallId: string;
 		inputPrompt: string;
+		cancelled?: boolean;
 	}): void => {
 		// find the correct tool
 		const tool = this.tools.find(
@@ -419,11 +429,10 @@ paramValues=[${JSON.stringify({})}]
 			return;
 		}
 
-		const toolResponse = inputToolExecData.inputPrompt;
-
 		// save the response
 		runInAction(() => {
-			tool.response = toolResponse;
+			tool.response = inputToolExecData.inputPrompt;
+			tool.cancelled = inputToolExecData.cancelled || false;
 		});
 	};
 }
