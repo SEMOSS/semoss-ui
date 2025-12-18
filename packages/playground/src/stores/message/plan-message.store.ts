@@ -17,6 +17,8 @@ import { createMessageStore } from "./utility";
  */
 export class PlanMessageStore extends AbstractMessageStore {
 	readonly type = "PLAN";
+	readonly pixelMessageType: ResponseTextPixelMessage["type"] =
+		"RESPONSE_TEXT";
 
 	/**
 	 * Text associated with the message

@@ -17,6 +17,10 @@ import { createMessageStore } from "./utility";
  */
 export class ResponseMessageStore extends AbstractMessageStore {
 	readonly type = "RESPONSE";
+	readonly pixelMessageType:
+		| ResponseTextPixelMessage["type"]
+		| ResponseToolPixelMessage["type"]
+		| InputToolExecPixelMessage["type"];
 
 	/**
 	 * Text associated with the message
@@ -51,6 +55,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		/** Response for the tool */
 		response: string;
 	}[] = [];
+
+	/**
+	 * If this is input tool exec, the tool call id it is executing
+	 */
+	inputToolExecData: {
+		toolCallId: string;
+		inputPrompt: string;
+	} | null = null;
 
 	/**
 	 * Current execution index of the tool
@@ -90,6 +102,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			| InputToolExecPixelMessage,
 	) {
 		super(room, message);
+		this.pixelMessageType = message.type;
 
 		if (message.type === "RESPONSE_TEXT") {
 			this.text = message.content;
@@ -109,6 +122,13 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				parameters: t.arguments,
 				response: "",
 			}));
+		}
+
+		if (message.type === "INPUT_TOOL_EXEC") {
+			this.inputToolExecData = {
+				toolCallId: message.tool_call_id,
+				inputPrompt: message.inputPrompt,
+			};
 		}
 
 		// set the model
@@ -326,7 +346,7 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Save a tool execution responsex
+	 * Save a tool execution response
 	 * @param tool - tool to save
 	 * @param toolResponse - response of the tool
 	 */
@@ -380,5 +400,30 @@ paramValues=[${JSON.stringify({})}]
 			// start running tools if there are any
 			(responseMessage as ResponseMessageStore).startToolExecution();
 		}
+	};
+
+	/**
+	 * Mark a tool as used. Should be called when reconstructing from an INPUT_TOOL_EXEC message
+	 * @param tool - tool to save
+	 * @param toolResponse - response of the tool
+	 */
+	markToolAsUsed = (inputToolExecData: {
+		toolCallId: string;
+		inputPrompt: string;
+	}): void => {
+		// find the correct tool
+		const tool = this.tools.find(
+			(t) => t.id === inputToolExecData.toolCallId,
+		);
+		if (!tool) {
+			return;
+		}
+
+		const toolResponse = inputToolExecData.inputPrompt;
+
+		// save the response
+		runInAction(() => {
+			tool.response = toolResponse;
+		});
 	};
 }

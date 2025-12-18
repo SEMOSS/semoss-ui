@@ -127,6 +127,7 @@ export interface InputToolExecPixelMessage extends AbstractPixelMessage {
 	tool_call_id: string;
 	tool_name: string;
 	modelId: string;
+	inputPrompt: string;
 	ornaments: {
 		modelName?: string;
 	};
