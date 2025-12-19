@@ -1,6 +1,7 @@
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
+	CircleAlert,
 	CopyIcon,
 	MessageCircleIcon,
 	RefreshCwIcon,
@@ -80,8 +81,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			}
 		};
 
+		const areToolsActive =
+			message.type === "RESPONSE" &&
+			message.tools.some((tool) => !tool.response);
+
 		return (
-			<div className="group mb-0 flex w-full flex-col gap-2 overflow-hidden">
+			<div className="group mb-0 flex w-full flex-col gap-2">
 				<div className="group flex flex-row items-center gap-2">
 					<MessageCircleIcon className="size-4" />
 					<span className="mr-0.5 font-medium text-base">
@@ -100,8 +105,14 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						tool={t}
 					/>
 				))}
+				{areToolsActive && (
+					<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
+						<CircleAlert className="size-4" />
+						Please complete the tool(s) to proceed.
+					</p>
+				)}
 
-				<div className="flex flex-1 flex-row items-center justify-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+				<div className="-ml-2.5 flex flex-1 flex-row items-center justify-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
 					{inputMessage?.siblings.length > 1 && (
 						<>
 							<Tooltip>
