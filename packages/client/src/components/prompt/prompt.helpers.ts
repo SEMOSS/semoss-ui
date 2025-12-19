@@ -189,7 +189,7 @@ export function getInputFormatPrompt(
 function getVectorQuery() {
 	return `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int) -> str:
     from gaas_gpt_vector import VectorEngine
-    vector = VectorEngine(engine_id = vector_engine_id, insight_id = '\${i}', insight_folder = '\${if}')
+    vector = VectorEngine(engine_id = vector_engine_id)
     matches = vector.nearestNeighbor(search_statement = search_statement, limit = limit)
     return ' '.join([matchItem['Content'] for matchItem in matches])`;
 }
@@ -202,7 +202,7 @@ function getCustomQuery(index: number) {
 function getDatabaseQuery() {
 	return `def runDatabaseQuery(query:str, database_engine_id:str) -> str:
     from gaas_gpt_database import DatabaseEngine
-    databaseEngine = DatabaseEngine(engine_id = database_engine_id, insight_id = '\${i}')
+    databaseEngine = DatabaseEngine(engine_id = database_engine_id)
     result_df = databaseEngine.execQuery(query = query)
     return f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}"`;
 }
@@ -316,7 +316,7 @@ export function getQueryForPrompt(
 	}limit = 5) -> str:
     import json
     from gaas_gpt_model import ModelEngine
-    model = ModelEngine(engine_id = "{{${MODEL_ID}}}", insight_id = '\${i}')
+    model = ModelEngine(engine_id = "{{${MODEL_ID}}}")
     ${buildQueryDefinitionFunctionCalls()}
     ${buildQueryDefinitionPromptStatement()}
     response = model.ask(question = prompt)
