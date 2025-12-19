@@ -1,8 +1,12 @@
 import { CircleX } from "lucide-react";
 import { useState } from "react";
+import { runPixel } from "@semoss/sdk";
+import { useNotification } from "@semoss/ui";
 import { Badge } from "@semoss/ui/next";
 import { FileEditorPanel } from "./FileEditorPanel";
 import FileExplorerPanel from "./FileExplorerPanel";
+import { MCPJsonEditor } from "./MCPjsonEditor";
+import { isMCPJsonData, type MCPJsonData } from "./types";
 
 interface FileManagerProps {
 	engineId: string;
@@ -18,12 +22,37 @@ const getFileNameFromPath = (path: string): string => {
 	return parts[parts.length - 1] ?? "";
 };
 
+const parseMCPJson = (payload: unknown): MCPJsonData | null => {
+	try {
+		if (typeof payload === "string") {
+			const parsed = JSON.parse(payload);
+			return isMCPJsonData(parsed) ? parsed : null;
+		} else if (isMCPJsonData(payload)) {
+			return payload;
+		} else {
+			return null;
+		}
+	} catch {
+		return null;
+	}
+};
+
 export const FileManager = (props: FileManagerProps) => {
 	const { engineId, insightId, setLoading, openOverlay, closeOverlay } =
 		props;
+	const notification = useNotification();
+
 	const [openFiles, setOpenFiles] = useState<string[]>([]);
 	const [activeFilePath, setActiveFilePath] = useState<string>("");
 	const [unSavedFiles, setUnSavedFiles] = useState<Record<string, boolean>>(
+		{},
+	);
+
+	const [mcpDataMap, setMcpDataMap] = useState<Record<string, MCPJsonData>>(
+		{},
+	);
+
+	const [mcpEditorMap, setMcpEditorMap] = useState<Record<string, boolean>>(
 		{},
 	);
 
@@ -63,6 +92,19 @@ export const FileManager = (props: FileManagerProps) => {
 
 			return remaining;
 		});
+
+		setMcpDataMap((prevMap) => {
+			if (!(path in prevMap)) return prevMap;
+			const next = { ...prevMap };
+			delete next[path];
+			return next;
+		});
+		setMcpEditorMap((prev) => {
+			if (!(path in prev)) return prev;
+			const next = { ...prev };
+			delete next[path];
+			return next;
+		});
 	};
 	const normalizePath = (path: string): string =>
 		path
@@ -101,8 +143,95 @@ export const FileManager = (props: FileManagerProps) => {
 				}
 			}
 
+			setMcpDataMap((prevMap) => {
+				const nextMap = { ...prevMap };
+				Object.keys(nextMap).forEach((p) => {
+					if (!next.includes(p)) delete nextMap[p];
+				});
+				return nextMap;
+			});
+
+			setMcpEditorMap((prev) => {
+				const nextMap = { ...prev };
+				Object.keys(nextMap).forEach((p) => {
+					if (!next.includes(p)) delete nextMap[p];
+				});
+				return nextMap;
+			});
+
 			return next;
 		});
+	};
+
+const addMCPEditorTab = (json: unknown, path: string) => {
+	if (!path) return;
+
+	if (mcpEditorMap[path]) {
+		setActiveFilePath(path);
+		return;
+	}
+
+	const parsed = parseMCPJson(json);
+	if (!parsed) {
+		notification.add({
+			message: "Failed to parse MCP JSON from response.",
+			color: "error",
+		});
+		return;
+	}
+
+	setOpenFiles((prev) => {
+		if (!prev.includes(path)) return [...prev, path];
+		return prev;
+	});
+
+	setMcpDataMap((prev) => ({
+		...prev,
+		[path]: parsed,
+	}));
+
+	setMcpEditorMap((prev) => ({
+		...prev,
+		[path]: true,
+	}));
+
+	setActiveFilePath(path);
+};
+
+
+	const handleSaveMCP = async (
+		finalTools: Record<string, unknown>,
+		filePath: string,
+	) => {
+		try {
+			setLoading(true);
+
+			const file = filePath.split("assets/").pop();
+			const pixel = `SaveEngineAssets(fileName=["${file}"], content=["<encode>${JSON.stringify(
+				finalTools,
+				null,
+				2,
+			)}</encode>"], space=["${engineId}"]);CommitAsset(filePath=["${file}"], comment=["Save from editor"], engine=["${engineId}"])`;
+
+			const { errors } = await runPixel(pixel, insightId);
+
+			if (errors?.length) {
+				throw new Error(errors.join(", "));
+			}
+
+			notification.add({
+				message: "Successfully saved MCP tools",
+				color: "success",
+			});
+		} catch (e) {
+			notification.add({
+				color: "error",
+				message: (e as Error)?.message ?? String(e),
+			});
+			throw e;
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (
@@ -117,6 +246,7 @@ export const FileManager = (props: FileManagerProps) => {
 					closeOverlay={closeOverlay}
 					onFileSelect={handleFileSelect}
 					onFileDelete={handleDeleteFromExplorer}
+					onAddMCPEditorTab={addMCPEditorTab}
 				/>
 			</div>
 
@@ -147,7 +277,9 @@ export const FileManager = (props: FileManagerProps) => {
 												: "text-foreground"
 										}`}
 									>
-										{getFileNameFromPath(path)}
+										{mcpEditorMap[path]
+											? `${getFileNameFromPath(path)} (UI Editor)`
+											: getFileNameFromPath(path)}
 										{unSavedFiles[path] ? "*" : ""}
 									</span>
 									<button
@@ -169,16 +301,42 @@ export const FileManager = (props: FileManagerProps) => {
 						</div>
 
 						<div className="flex min-h-0 flex-1 flex-col">
-							<FileEditorPanel
-								key={activeFilePath}
-								path={activeFilePath}
-								engineId={engineId}
-								insightId={insightId}
-								onUnsave={() =>
-									handleFileUnsaved(activeFilePath)
+							{(() => {
+								const shouldRenderMCPEditor = Boolean(
+									mcpEditorMap[activeFilePath],
+								);
+
+								if (shouldRenderMCPEditor) {
+									const initialData = mcpDataMap[
+										activeFilePath
+									] ?? { _meta: {}, tools: [] };
+									return (
+										<MCPJsonEditor
+											key={activeFilePath}
+											dataMap={{
+												initialData,
+												onSave: handleSaveMCP,
+												path: activeFilePath,
+											}}
+										/>
+									);
 								}
-								onSave={() => handleFileSaved(activeFilePath)}
-							/>
+
+								return (
+									<FileEditorPanel
+										key={activeFilePath}
+										path={activeFilePath}
+										engineId={engineId}
+										insightId={insightId}
+										onUnsave={() =>
+											handleFileUnsaved(activeFilePath)
+										}
+										onSave={() =>
+											handleFileSaved(activeFilePath)
+										}
+									/>
+								);
+							})()}
 						</div>
 					</div>
 				) : (

@@ -1,6 +1,8 @@
 import { FilePlus, FolderPlus, RefreshCw, Upload } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { runPixel } from "@semoss/sdk";
+import { useNotification } from "@semoss/ui";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import {
 	AddFileOverlay,
@@ -8,6 +10,7 @@ import {
 	DeleteFileOverlay,
 	FileExplorer,
 } from "@/components/common";
+import { MCP_JSON_FILE_NAMES } from "@/pages/app/app.constants";
 import { Panel } from "./Panel";
 
 const EXPLORER_TYPE = "engine";
@@ -21,6 +24,7 @@ interface FileExplorerPanelProps {
 	closeOverlay: () => void;
 	onFileSelect?: (path: string) => void;
 	onFileDelete?: (path: string) => void;
+	onAddMCPEditorTab?: (json: unknown, path: string) => void;
 }
 
 const ASSETS_ROOT = "/app_root/version/assets/";
@@ -34,8 +38,10 @@ export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 		closeOverlay,
 		onFileSelect,
 		onFileDelete = () => null,
+		onAddMCPEditorTab,
+		setLoading,
 	} = props;
-
+	const notification = useNotification();
 	const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
 	const [selectedPath, setSelectedPath] = useState<string>("");
 	const [fileUploadPath, setFileUploadPath] = useState<string>("");
@@ -170,14 +176,80 @@ export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 		event: React.MouseEvent<HTMLButtonElement>,
 		path: string,
 	) => {
-		console.log("handleMakeMCPClick"); //TODO: yet to implement
+		event?.stopPropagation?.();
+		setLoading(true);
+
+		try {
+			const { errors: genErrors, pixelReturn } = await runPixel(
+				`MakePythonMCP(project="${engineId}")`,
+				insightId,
+			);
+
+			if (genErrors?.length) {
+				notification.add({
+					message: String(genErrors[0]),
+					color: "error",
+				});
+				return;
+			}
+
+			if (!pixelReturn?.[0]?.output) {
+				throw new Error("No output from MCP generation pixel");
+			}
+			const sourceFileExtension = path.split(".")[1];
+			const targetFileName = MCP_JSON_FILE_NAMES.find((fileName) =>
+				fileName.includes(sourceFileExtension),
+			);
+			if (!targetFileName) {
+				throw new Error("Could not find target file");
+			}
+
+			refreshFiles?.();
+
+			const targetFilePath = `mcp/${targetFileName}`;
+			onAddMCPEditorTab?.(pixelReturn[0].output, targetFilePath);
+
+			notification.add({
+				message: "Successfully generated MCP tools",
+				color: "success",
+			});
+		} catch (err) {
+			notification.add({
+				message: (err as Error)?.message ?? String(err),
+				color: "error",
+			});
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	const handleMCPEditClick = async (
 		_e: React.MouseEvent<HTMLButtonElement>,
 		path: string,
 	) => {
-		console.log("hadleMCPEditClick"); //TODO: yet to implement
+		setLoading(true);
+		try {
+			const parts = path.split("assets/");
+			const filePath = parts.length > 1 ? parts[1] : path;
+
+			const { errors, pixelReturn } = await runPixel(
+				`GetEngineAssets(filePath=["${filePath}"], engine=["${engineId}"]);`,
+			);
+
+			if (errors?.length) {
+				throw new Error(errors[0]);
+			}
+
+			const output = pixelReturn?.[0]?.output;
+			onAddMCPEditorTab?.(output, filePath);
+		} catch (e) {
+			notification.add({
+				message: (e as Error)?.message ?? String(e),
+				color: "error",
+			});
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (

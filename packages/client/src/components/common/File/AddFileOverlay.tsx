@@ -118,11 +118,11 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 						`UnzipFile(filePath=["${path}"], space=["${space}"])`,
 					);
 				}
-				// else if ( type === "engine") {
-				// 	await monolithStore.runQuery(
-				// 		`UnzipFile(filePath=["/${path.split("assets/")[1]}"], engine=["${space}"])`,
-				// 	);
-				// } TODO: Reactor needs to be created from backend once it is implemented this will work.
+				else if ( type === "engine") {
+					await monolithStore.runQuery(
+						`UnzipFile(filePath=["/${path.split("app_root/")[1]}"], space=["${space}"])`,
+					);
+				} 
 				else {
 					throw new Error("TODO");
 				}
@@ -158,7 +158,6 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 						disabled={isLoading}
 						onChange={handleFileChange}
 					/>
-					{type === "app" && (
 						<Checkbox
 							checked={unzipFile}
 							onChange={() => {
@@ -168,7 +167,6 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 								<Typography variant="body2">Unzip?</Typography>
 							}
 						/>
-					)}
 				</Stack>
 			</Modal.Content>
 			<Modal.Actions>
