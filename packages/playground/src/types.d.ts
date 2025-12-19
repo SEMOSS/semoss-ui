@@ -1,29 +1,3 @@
-export interface Theme {
-	/** Name of the app */
-	name: string;
-
-	/** Description of the app */
-	description: string;
-
-	/** Styles of the app */
-	styles: {
-		backgroundColor: string;
-		primaryColor: string;
-	};
-
-	/** Images throughout app */
-	images: {
-		logo: string;
-	};
-
-	/**
-	 * Custom CSS to override default styles
-	 */
-	overrides: {
-		"main-layout": React.CSSProperties;
-	};
-}
-
 export interface Engine {
 	app_id: string;
 	app_name: string;
@@ -64,7 +38,7 @@ export interface Instructions {
 
 export interface MCP {
 	/** Type of the mcp */
-	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL";
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL" | "VECTOR";
 
 	/** Id of the mcp */
 	id: string;
