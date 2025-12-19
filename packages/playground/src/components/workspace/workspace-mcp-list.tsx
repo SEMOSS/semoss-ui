@@ -1,13 +1,15 @@
 import { SquareArrowOutUpRightIcon } from "lucide-react";
 import { useMemo } from "react";
-import { Button, Card, CardContent, ScrollArea } from "@semoss/ui/next";
+import { Button, Card, CardContent, Muted, ScrollArea } from "@semoss/ui/next";
+import { mcpToPlatformUrl } from "@/components";
 import type { Workspace } from "@/types";
 
-const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
-	? import.meta.env.VITE_PLATFORM_URL
-	: "";
-
 interface WorkspaceMCPListProps {
+	/**
+	 * Type of mcp
+	 */
+	type: "TOOLBOX" | "KNOWLEDGE";
+
 	/**
 	 * MCPs associated with the workspace
 	 */
@@ -25,6 +27,7 @@ interface WorkspaceMCPListProps {
  * @component
  */
 export const WorkspaceMCPList = ({
+	type,
 	mcp = [],
 	search,
 }: WorkspaceMCPListProps) => {
@@ -39,8 +42,10 @@ export const WorkspaceMCPList = ({
 
 	if (searchedMCP.length === 0) {
 		return (
-			<div className="px-2 py-4 text-center text-muted-foreground text-sm">
-				No MCPs
+			<div className="flex h-full w-full items-center justify-center">
+				<Muted>
+					No {type === "TOOLBOX" ? "toolboxes" : "knowledge"} found
+				</Muted>
 			</div>
 		);
 	}
@@ -63,7 +68,7 @@ export const WorkspaceMCPList = ({
 								<Button variant="ghost" size="icon" asChild>
 									<a
 										target="_blank"
-										href={`${PLATFORM_URL}/#/app/${m.id}`}
+										href={mcpToPlatformUrl(m)}
 									>
 										<SquareArrowOutUpRightIcon />
 									</a>
