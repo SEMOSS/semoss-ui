@@ -126,7 +126,9 @@ export interface InputToolExecPixelMessage extends AbstractPixelMessage {
 	visible: false;
 	tool_call_id: string;
 	tool_name: string;
+	tool_status: "error" | "cancelled" | "success";
 	modelId: string;
+	inputPrompt: string;
 	ornaments: {
 		modelName?: string;
 	};
