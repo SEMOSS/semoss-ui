@@ -2,8 +2,8 @@ import { Edit } from "@mui/icons-material";
 import BlockIcon from "@mui/icons-material/Block";
 import PersonIcon from "@mui/icons-material/Person";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import { Env } from "@semoss/sdk";
 import { Box, Chip, Link, Stack, styled, Typography } from "@semoss/ui";
-import OPEN_AI from "@/assets/img/OPEN_AI.png";
 import type { modelledDependency } from "@/components/app";
 import { EngineAccessButton } from "@/components/engine";
 import { EngineContext } from "@/contexts/EngineContext";
@@ -20,6 +20,20 @@ const StyledIcon = styled("span")(({ theme }) => ({
 		height: "100%",
 	},
 }));
+
+const StyledCardImage = styled("img")({
+	display: "flex",
+	width: "48px",
+	height: "48px",
+	borderRadius: "8px",
+	flexDirection: "column",
+	justifyContent: "center",
+	alignItems: "center",
+
+	overflowClipMargin: "content-box",
+	overflow: "clip",
+	objectFit: "cover",
+});
 
 export const PERMISSION_ICONS = {
 	OWNER: (
@@ -86,9 +100,9 @@ const StyledStack = styled(Stack)({
 	width: "100%",
 });
 
-const RootStack = styled(Stack)(({ theme }) => ({
+const RootStack = styled(Stack)({
 	width: "100%",
-}));
+});
 
 const StyledBox = styled(Box)({
 	flex: 1,
@@ -117,11 +131,10 @@ export const Dependencies = ({
 		if (!word) return "";
 		return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 	};
-	console.log(dependencies, "test");
 	return (
 		<RootStack spacing={2}>
 			{dependencies.length === 0 ? (
-				<StyledTypographyPrimary variant="body1" color="text.secondary">
+				<StyledTypographyPrimary variant="body1" color="textSecondary">
 					No Dependencies Found
 				</StyledTypographyPrimary>
 			) : (
@@ -131,16 +144,22 @@ export const Dependencies = ({
 						<StyledContainer key={dep.id}>
 							<StyledBox>
 								<StyledOutline>
-									<img
-										src={OPEN_AI}
+									<StyledCardImage
+										src={
+											dep.type === "PROJECT"
+												? `${Env.MODULE}/api/project-${dep.id}/projectImage/download`
+												: `${Env.MODULE}/api/e-${dep.id}/image/download`
+										}
 										alt={dep.name}
-										width={48}
-										height={48}
 									/>
 									<Box>
 										<StyledTypography variant="subtitle1">
 											<Link
-												href={`./#/engine/${dep.type}/${dep.id}`}
+												href={
+													dep.type === "PROJECT"
+														? `./#/app/${dep.id}`
+														: `./#/engine/${dep.type}/${dep.id}`
+												}
 											>
 												<StyledText variant="body2">
 													{dep.name}
