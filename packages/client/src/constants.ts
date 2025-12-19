@@ -5,7 +5,7 @@ export const THEME_TITLE = import.meta.env.VITE_THEME_TITLE;
 export const DOCUMENTATION_URL = import.meta.env.VITE_DOCUMENTATION_URL;
 
 export const THEME = {
-	name: THEME_TITLE || "SEMOSS",
+	name: THEME_TITLE || "AI Core",
 	logo: Logo,
 };
 
