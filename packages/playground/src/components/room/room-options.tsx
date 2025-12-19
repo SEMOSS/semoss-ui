@@ -32,11 +32,11 @@ interface RoomOptionsProps {
 	setOptions: (options: RoomStore["options"]) => void;
 
 	/** Update model on change */
-	setModel: (modelId: string) => void;
+	setRoomModel: (modelId: string) => void;
 }
 
 export const RoomOptions = observer((props: RoomOptionsProps) => {
-	const { options, setOptions, setModel } = props;
+	const { options, setOptions, setRoomModel } = props;
 
 	/**
 	 * Library hooks
@@ -92,7 +92,7 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 										]}
 										onChange={(v) => {
 											chat.setSelectedModel(v);
-											setModel(v.app_id);
+											setRoomModel(v.app_id);
 										}}
 										popoverContentProps={{
 											align: "start",

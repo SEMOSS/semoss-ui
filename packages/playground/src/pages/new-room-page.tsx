@@ -227,7 +227,7 @@ export const NewRoomPage = observer(() => {
 									setOptions={(o) => {
 										setOptions(o);
 									}}
-									setModel={() => null}
+									setRoomModel={() => null}
 								/>
 							</div>
 						</ResizablePanel>
