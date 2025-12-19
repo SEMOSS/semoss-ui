@@ -255,6 +255,11 @@ paramValues=[${JSON.stringify({
 			throw new Error(this._error.message);
 		}
 
+		// If not found, do nothing
+		if (pixelReturn[0].output.length === 0) {
+			throw new Error("Model not found");
+		}
+
 		this.setSelectedModel(pixelReturn[0].output[0]);
 	};
 
