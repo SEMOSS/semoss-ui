@@ -53,7 +53,10 @@ export interface MCP {
 	tags: string[];
 }
 
-export type MCPConfig = Pick<MCP, "type" | "id" | "name">;
+export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
+	/** Flag to indicate if this MCP comes from a workspace */
+	fromWorkspace?: boolean;
+};
 
 /**
  * Item from the prompt library
