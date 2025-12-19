@@ -87,9 +87,9 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 										metaFilters={[
 											{ tag: "text-generation" },
 										]}
-										onChange={(v) =>
-											chat.setSelectedModel(v)
-										}
+										onChange={(v) => {
+											chat.setSelectedModel(v);
+										}}
 										popoverContentProps={{
 											align: "start",
 										}}

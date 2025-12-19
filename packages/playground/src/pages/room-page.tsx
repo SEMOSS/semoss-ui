@@ -45,12 +45,16 @@ export const RoomPage = observer(() => {
 		}
 
 		// if it doesn't load successfully, go back to home
-		room.initialize().catch((e) => {
-			toast.error(e.message);
+		room.initialize()
+			.then(() => {
+				chat.setSelectedModelById(room.modelId);
+			})
+			.catch((e) => {
+				toast.error(e.message);
 
-			navigate("/");
-		});
-	}, [room, navigate]);
+				navigate("/");
+			});
+	}, [room, navigate, chat.setSelectedModelById]);
 
 	// set the breadcrumbs
 	useGlobalBreadcrumbs([
