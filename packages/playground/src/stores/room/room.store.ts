@@ -29,6 +29,11 @@ interface RoomStoreInterface {
 	isLoading: boolean;
 
 	/**
+	 *  Track if the room has errored
+	 */
+	error?: Error | null;
+
+	/**
 	 *  Track the mode of the room.
 	 */
 	mode: "planning" | "executing" | "chat";
@@ -181,6 +186,13 @@ export class RoomStore {
 	 */
 	get isLoading() {
 		return this._store.isLoading;
+	}
+
+	/**
+	 * Get the error of the room
+	 */
+	get error() {
+		return this._store.error;
 	}
 
 	/**
@@ -720,7 +732,19 @@ export class RoomStore {
 	runRoomPixel = async <O extends [] | unknown[]>(
 		pixel: string,
 		showLoading: boolean = true,
-	) => {
+	): Promise<{
+		errors: string[];
+		insightId: string;
+		pixelReturn: {
+			isMeta: boolean;
+			operationType: string[];
+			output: O[number];
+			pixelExpression: string;
+			pixelId: string;
+			additionalOutput?: unknown;
+			timeToRun: number;
+		}[];
+	}> => {
 		try {
 			if (showLoading) {
 				this.setIsLoading(true);
@@ -736,9 +760,14 @@ export class RoomStore {
 			// store the new insight id
 			runInAction(() => {
 				this._insightID = response.insightId;
+				this._store.error = null;
 			});
-
 			return response;
+		} catch (e) {
+			runInAction(() => {
+				this._store.error = e;
+			});
+			throw e;
 		} finally {
 			if (showLoading) {
 				this.setIsLoading(false);
