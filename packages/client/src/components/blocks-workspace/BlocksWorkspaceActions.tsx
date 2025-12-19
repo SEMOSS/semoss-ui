@@ -27,7 +27,15 @@ export const BlocksWorkspaceActions = observer(() => {
 						.replace(matchedSubstring, "")
 						.replace(/\/+$/, "") // remove trailing slash if left
 				: url;
-			window.location.href = cleanedUrl;
+			try {
+				const urlObj = new URL(cleanedUrl, window.location.origin);
+				// Only allow same-origin redirects
+				if (urlObj.origin === window.location.origin) {
+					window.location.href = cleanedUrl;
+				}
+			} catch (e) {
+				console.error("Invalid URL:", e);
+			}
 		}
 	};
 	/**

@@ -249,3 +249,22 @@ export const extractInitials = (str: string): string => {
 export const formatToDataTestId = (text: string) => {
 	return text.replaceAll(/\(\)/g, "").replaceAll(" ", "-");
 };
+
+/**
+ * 
+ * @param url 
+ * @desc Sanitizes a URL to prevent XSS attacks
+ * @returns sanitized url
+ */
+export const sanitizeUrl = (url) => {
+  try {
+    const parsed = new URL(url);
+    // Allow only safe protocols
+    return ['https:', 'http:'].includes(parsed.protocol) 
+      ? url.toString() 
+      : 'about:blank'; // Safe fallback
+  } catch (e) {
+	console.error("Invalid URL:", e);
+    return 'about:blank'; // Invalid URL
+  }
+}

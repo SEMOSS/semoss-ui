@@ -10,17 +10,25 @@ const HeaderButton = ({
 	ariaLabel,
 	children,
 	className = "",
-}) => (
-	<button
-		type="button"
-		className={`header-btn ${className}`}
-		onClick={onClick}
-		title={title}
-		aria-label={ariaLabel}
-	>
-		{children}
-	</button>
-);
+}) => {
+	const handleClick = (e) => {
+		if (typeof onClick === 'function') {
+			onClick(e);
+		}
+	};
+
+	return (
+		<button
+			type="button"
+			className={`header-btn ${className}`}
+			onClick={handleClick}
+			title={title}
+			aria-label={ariaLabel}
+		>
+			{children}
+		</button>
+	);
+};
 
 /**
  * Download icon SVG

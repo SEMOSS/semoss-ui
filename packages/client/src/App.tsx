@@ -5,6 +5,7 @@ import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { RootStoreContext } from "@/contexts";
 import { RootStore } from "@/stores";
 import { AppWrapper } from "./AppWrapper";
+import { sanitizeUrl } from "@/utility/general";
 
 // use the environment variable to set the module
 Env.update({
@@ -151,10 +152,16 @@ export const App = () => {
 
 	//  NCRT ASK - (https://play.semoss.org/ncrt/SemossWeb/packages/client/dist/#!/)
 	if (window.location.href.includes("client/dist/#!/")) {
-		window.location.href = window.location.href.replace(
-			/(client\/dist\/)#!/,
-			"$1#",
-		);
+		try {
+			const santizedUrl = sanitizeUrl(window.location.href);
+			const newUrl = santizedUrl.includes("client/dist/#!/") ? santizedUrl.replace(
+				/(client\/dist\/)#!/,
+				"$1#",
+			) : santizedUrl;
+			window.location.href = newUrl;
+		} catch (e) {
+			console.error("Invalid URL:", e);
+		}
 	}
 
 	return (
