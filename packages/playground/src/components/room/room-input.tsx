@@ -352,11 +352,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							)}
 
 							{configuration}
-							    <PromptOptimizer
-									input={input}
-									setInput={setInput}
-									disabled={isDisabled || isLoading || isEmpty}
-								/>
+							<PromptOptimizer
+								input={input}
+								setInput={setInput}
+								disabled={isDisabled || isLoading || isEmpty}
+							/>
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
