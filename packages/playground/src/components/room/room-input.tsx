@@ -20,6 +20,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
 
 const ENABLE_ATTACHMENT = import.meta.env.VITE_ENABLE_ATTACHMENT === "true";
 
@@ -351,7 +352,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							)}
 
 							{configuration}
-
+							    <PromptOptimizer
+									input={input}
+									setInput={setInput}
+									disabled={isDisabled || isLoading || isEmpty}
+								/>
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
