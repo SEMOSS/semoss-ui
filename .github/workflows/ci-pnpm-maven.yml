@@ -305,6 +305,27 @@ jobs:
             #       NX_REJECT_UNKNOWN_LOCAL_CACHE: 0
             #   run: npx nx run-many -t build -p @semoss/client @semoss/legacy --verbose
 
+            - name: Install dependencies
+              run: |
+                apt-get --allow-releaseinfo-change update -y
+                apt-get update -y
+                apt-get install -y openjfx
+                apt-get install -y gnupg2
+            - name: Configure GPG (loopback)
+              run: |
+                mkdir -p ~/.gnupg
+                chmod 700 ~/.gnupg
+                echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+                gpgconf --kill gpg-agent || true
+                gpgconf --launch gpg-agent || true
+            - name: Import GPG key
+              run: echo "${{ secrets.GPG_PRIVATE_KEY_2 }}" | gpg --batch --import
+            - name: Refresh keys
+              run: |
+                echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
+                #gpg2 --refresh-key
+                gpg --list-keys
+                
             - name: Deploy with Maven
               shell: bash
               run: |
