@@ -506,7 +506,7 @@ jobs:
             
             - name: Maven clean install
               run: |
-                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ vars.VERSION }}-SNAPSHOT
+                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ vars.VERSION }}
                   rm -rf .m2/repository/org/semoss
                    
             # ---------- Install Dependencies and build -----------
