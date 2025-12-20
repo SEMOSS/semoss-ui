@@ -333,8 +333,8 @@ jobs:
                   if [[ "$REF_NAME" != 'dev' && "$REF_NAME" != 'main' ]]; then
                     mvn clean install -DfailIfNoTests=false -Dci.version=${{ vars.VERSION }}-SNAPSHOT
                   elif [[ "$REF_NAME" == 'dev' || "$REF_NAME" == 'main' ]]; then
-                    mvn $MAVEN_CLI_OPTS versions:set-property -Dproperty=ci.version -DnewVersion=${{ vars.VERSION }} -DgenerateBackupPoms=false
-                    mvn $MAVEN_CLI_OPTS deploy -P deploy -Dmaven.test.skip=${{ vars.SKIP_TESTS }}-SNAPSHOT
+                    mvn $MAVEN_CLI_OPTS versions:set-property -Dproperty=ci.version -DnewVersion=${{ vars.VERSION }}-SNAPSHOT -DgenerateBackupPoms=false
+                    mvn $MAVEN_CLI_OPTS deploy -P deploy -Dmaven.test.skip=${{ vars.SKIP_TESTS }}
                   fi
               env:
                   GITHUB_REF: ${{ github.ref }}
