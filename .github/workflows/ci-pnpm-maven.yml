@@ -15,6 +15,7 @@ env:
     MAVEN_CLI_OPTS: '-s ./settings.xml --batch-mode'
     FF_USE_FASTZIP: 'true'
     GPG_PASS_PHRASE: ${{ secrets.GPG_PASS_PHRASE }}
+    MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASS_PHRASE }}
     RELEASE: ${{ vars.RELEASE }}
     MAVEN_REPO_TOKEN: ${{ vars.MAVEN_REPO_TOKEN }}
     MAVEN_REPO_TOKEN_PASS: ${{ vars.MAVEN_REPO_TOKEN_PASS }}
@@ -497,7 +498,28 @@ jobs:
             #       apt-get install -y maven
             #       npm install -g pnpm@10.10
             #       pnpm install --ignore-scripts
-                  
+
+            - name: Install dependencies
+              run: |
+                apt-get --allow-releaseinfo-change update -y
+                apt-get update -y
+                apt-get install -y openjfx
+                apt-get install -y gnupg2
+            - name: Configure GPG (loopback)
+              run: |
+                mkdir -p ~/.gnupg
+                chmod 700 ~/.gnupg
+                echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+                gpgconf --kill gpg-agent || true
+                gpgconf --launch gpg-agent || true
+            - name: Import GPG key
+              run: echo "${{ secrets.GPG_PRIVATE_KEY_2 }}" | gpg --batch --import
+            - name: Refresh keys
+              run: |
+                echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
+                #gpg2 --refresh-key
+                gpg --list-keys
+
             - name: Deploy with Maven
               shell: bash
               run: |
