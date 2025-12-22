@@ -6,7 +6,9 @@
         "build:dev": "vite build --mode development",
         "type-check": "tsc --pretty --noEmit",
         "test": "vitest run",
-        "test:watch": "vitest --watch"
+        "test:ui": "vitest --ui",
+        "test:watch": "vitest --watch",
+        "test:coverage": "vitest --coverage --watch=false"
     },
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",
@@ -25,10 +27,9 @@
         "@semoss/shared": "workspace:*",
         "@tailwindcss/vite": "^4.1.14",
         "@textea/json-viewer": "^4.0.0",
-        "@vitest/ui": "^1.3.1",
         "@xyflow/react": "^12.0.4",
         "axios": "^1.5.0",
-        "dayjs": "^1.11.4",
+        "dayjs": "1.11.8",
         "echarts": "^5.6.0",
         "echarts-for-react": "^3.0.2",
         "lucide-react": "^0.545.0",
@@ -42,6 +43,7 @@
         "react-hook-form": "^7.34.2",
         "react-router-dom": "^6.3.0",
         "react-color": "^2.19.3",
+        "flexlayout-react": "^0.8.1",
         "prettier": "^2.4.1",
         "tailwindcss": "^4.1.14"
     },
@@ -55,7 +57,11 @@
         "@vitejs/plugin-react": "^4.6.0",
         "typescript": "~5.5.2",
         "vite": "^7.0.0",
-        "vitest": "^3.2.4",
+        "vitest": "^4.0.0",
+        "@vitest/ui": "^4.0.0",
+        "@vitest/coverage-v8": "^4.0.0",
+        "@vitest/browser-playwright": "^4.0.0",
+        "@testing-library/user-event": "^14.4.3",
         "vite-plugin-svgr": "^4.5.0",
         "html2canvas": "^1.4.1"
     }

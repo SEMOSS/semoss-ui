@@ -1,12 +1,12 @@
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Env, usePixel } from "@semoss/sdk/react";
+import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 import type { MCPTool, Tool } from "@/types";
-import { DynamicForm } from "../tools/tools-default-view";
+import { DynamicForm } from "../mcp/tools-default-view";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -114,11 +114,11 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 				tool: {
 					type: "MCP",
 					message: config?.tool?.message || "",
-					app: config?.app || "",
 					id: config?.tool?.id || "",
 					name: config?.tool?.name || "",
 					parameters: toJS(config?.tool?.parameters || {}),
-				},
+					roomId: room.roomId,
+				} satisfies MCPToolRequest,
 			},
 			"*",
 		);
@@ -126,7 +126,6 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 
 	useEffect(() => {
 		const checkPortal = async () => {
-			console.log({ config });
 			// Finish loading
 			if (
 				getAppInfo.status === "INITIAL" ||
@@ -157,13 +156,15 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 			try {
 				const response = await fetch(
 					`${Env.MODULE}/public_home/${config.app}/portals/`,
-					{ method: "HEAD" },
+					{ method: "GET" },
 				);
 				const text = await response.text();
 				//FixMe: Always returns a 200 so currently checking against default text returned
 				foundApp =
+					response.status === 200 &&
+					text &&
 					text !==
-					"Publish is not enabled on this project or there was an error publishing this project";
+						"Publish is not enabled on this project or there was an error publishing this project";
 			} catch (_e) {}
 
 			// Portals view else use default view off tool JSON
@@ -180,8 +181,6 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 	if (!config) {
 		return <div>No Tool</div>;
 	}
-
-	console.log({ isLoading, url, selectedTool });
 
 	return (
 		<div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">

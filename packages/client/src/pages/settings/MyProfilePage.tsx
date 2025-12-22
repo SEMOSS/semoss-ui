@@ -185,12 +185,15 @@ interface EditUserInfoForm {
 export const MyProfilePage = () => {
 	const notification = useNotification();
 	const { configStore } = useRootStore();
-	const { email, id, name, admin } = configStore.store.user;
+	const { email, id, name} = configStore.store.user;
+	const { isNative } = configStore.store;
 
 	// track the models
 	const [addModal, setAddModal] = useState(false);
 	const [profileImgModal, setProfileImgModal] = useState(false);
 	const [passwordModal, setPasswordModal] = useState(false);
+	const [editName, setEditName] = useState(name);
+	const [editEmail, setEditEmail] = useState(email);
 
 	// get the keys
 	const getUserAccessKeys = useAPI(["getUserAccessKeys"]);
@@ -213,7 +216,6 @@ export const MyProfilePage = () => {
 	const {
 		control: userInfoControl,
 		reset: userInfoReset,
-		setValue: userInfoSetValue,
 		handleSubmit: userInfoHandleSubmit,
 		watch: userInfoWatch,
 	} = useForm<EditUserInfoForm>({
@@ -257,9 +259,11 @@ export const MyProfilePage = () => {
 			userObj.id =
 				data.USERID !== nativeLogin ? data.USERID : nativeLogin;
 			userObj.newUsername = data.USERNAME !== id ? data.USERNAME : null;
-			userObj.newEmail = data.EMAIL !== email ? data.EMAIL : null;
+			userObj.newEmail = data.EMAIL;
 
-			const response = await editMemberInfo(true, userObj);
+			const response = await editMemberInfo(false, userObj);
+			setEditName(data.NAME);
+			setEditEmail(data.EMAIL);
 
 			if (response.data) {
 				notification.add({
@@ -272,10 +276,10 @@ export const MyProfilePage = () => {
 					message: "Error editing profile information",
 				});
 			}
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
-				message: String(e),
+				message: "Error editing profile information",
 			});
 		}
 	};
@@ -393,7 +397,7 @@ export const MyProfilePage = () => {
 	const watchedEmail = userInfoWatch("EMAIL");
 
 	// Check if either Name or Email is changed
-	const isChanged = watchedName !== name || watchedEmail !== email;
+	const isChanged = watchedName !== editName || watchedEmail !== editEmail;
 
 	return (
 		<Stack gap={3} className="my-profile-page">
@@ -401,7 +405,7 @@ export const MyProfilePage = () => {
 				<StyledGrid container spacing={3}>
 					<GridItem sm={4}>
 						<Typography variant="h6">
-							{nativeLogin
+							{isNative
 								? "Edit profile information"
 								: "Profile Info"}
 						</Typography>
@@ -427,7 +431,7 @@ export const MyProfilePage = () => {
 				<Grid container spacing={3}>
 					<GridItem sm={4}>{/* spacer */}</GridItem>
 					<GridItem sm={8}>
-						{nativeLogin ? (
+						{isNative ? (
 							<form
 								onSubmit={userInfoHandleSubmit(
 									profileEditSubmit,
@@ -557,7 +561,17 @@ export const MyProfilePage = () => {
 										variant="contained"
 										color="primary"
 										type="submit"
-										disabled={!isChanged}
+										disabled={
+											!isChanged ||
+											!(
+												(watchedName ?? "")
+													.toString()
+													.trim().length > 0 &&
+												(watchedEmail ?? "")
+													.toString()
+													.trim().length > 0
+											)
+										}
 										data-testid={"myProfilePage-save-btn"}
 									>
 										Save
@@ -569,7 +583,7 @@ export const MyProfilePage = () => {
 										onClick={() => {
 											userInfoReset();
 										}}
-										disabled={!admin}
+										disabled={!isChanged}
 										data-testid={"myProfilePage-reset-btn"}
 									>
 										Reset
@@ -622,6 +636,7 @@ export const MyProfilePage = () => {
 												</StyledStack>
 											);
 										}
+										return null;
 									},
 								)}
 							</>

@@ -69,6 +69,7 @@ export const EngineOverviewPage = observer(() => {
 							>
 								{(active.metadata[k.metakey] as string[]).map(
 									(tag) => {
+										if (tag === "") return null;
 										return (
 											<Chip
 												key={tag}

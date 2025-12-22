@@ -1,13 +1,17 @@
-import { OpenInBrowser } from "@mui/icons-material";
+import { ContentCopy, OpenInBrowser } from "@mui/icons-material";
 import LockIcon from "@mui/icons-material/Lock";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { Env, usePixel } from "@semoss/sdk/react";
 import {
 	Box,
 	Button,
 	FileDropzone,
 	Grid,
+	IconButton,
+	InputAdornment,
 	LoadingScreen,
+	Stack,
 	styled,
 	Table,
 	TextField,
@@ -16,7 +20,7 @@ import {
 } from "@semoss/ui";
 import { setProjectPortal, uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { useRootStore, useSettings } from "@/hooks";
 
 const StyledTable = styled(Table)(({ theme }) => ({
 	borderRadius: theme.spacing(1),
@@ -208,6 +212,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	const uploadFile = watch("PROJECT_UPLOAD");
 
 	const admin = configStore.store.user.admin;
+
+	const mcpUrl = `${Env.MODULE}/api/ext/mcp/${id}/comms`;
 
 	const [portalReactors, setPortalReactors] = useState<{
 		reactors: string[];
@@ -495,6 +501,26 @@ export const SettingsTab = (props: AppSettingsProps) => {
 		}
 	});
 
+	/**
+	 * Copy text and add it to the clipboard
+	 * @param text - text to copy
+	 */
+	const copy = async (text: string) => {
+		try {
+			await navigator.clipboard.writeText(text);
+
+			notification.add({
+				color: "success",
+				message: "Successfully copied to clipboard",
+			});
+		} catch (_e) {
+			notification.add({
+				color: "error",
+				message: "Unable to copy to clipboard",
+			});
+		}
+	};
+
 	return (
 		<StyledContainer>
 			{/* Access Section */}
@@ -522,7 +548,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
                 enablePublishing();
               }}
               disabled={
-                !configStore.isEngineOperationAvailable("APP", "access")
+                !configStore.isEngineOperationAvailable("PROJECT", "access")
               }
             />
           </ColumnBox>
@@ -545,7 +571,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
                 size="small"
                 disabled={
                   !portalDetails.project_has_portal ||
-                  !configStore.isEngineOperationAvailable("APP", "access")
+                  !configStore.isEngineOperationAvailable("PROJECT", "access")
                 }
                 onClick={() => {
                   publish();
@@ -633,6 +659,33 @@ export const SettingsTab = (props: AppSettingsProps) => {
 
 			<SectionDivider />
 
+			<Stack direction="row">
+				<TextField
+					label="MCP URL"
+					size="small"
+					value={mcpUrl}
+					fullWidth={true}
+					slotProps={{
+						input: {
+							endAdornment: (
+								<InputAdornment position="end">
+									<IconButton
+										aria-label="copy"
+										color="default"
+										size="small"
+										onClick={() => copy(`{{${mcpUrl}}}`)}
+									>
+										<ContentCopy fontSize="small" />
+									</IconButton>
+								</InputAdornment>
+							),
+						},
+					}}
+				/>
+			</Stack>
+
+			<SectionDivider />
+
 			{/* Update Project Section */}
 			<StyledBox>
 				{/* Left Content */}
@@ -663,7 +716,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 						rules={{}}
 						disabled={
 							!configStore.isEngineOperationAvailable(
-								"APP",
+								"PROJECT",
 								"access",
 							) || isLoading
 						}
@@ -673,7 +726,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 								value={field.value}
 								disabled={
 									!configStore.isEngineOperationAvailable(
-										"APP",
+										"PROJECT",
 										"access",
 									) || isLoading
 								}

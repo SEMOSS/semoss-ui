@@ -10,7 +10,6 @@ import type { WorkspaceStore } from "@/stores";
 const StyledContent = styled("div")(({ theme }) => ({
 	position: "absolute",
 	inset: 0,
-	overflow: "hidden",
 }));
 
 export const EditAppPage = observer(() => {
@@ -28,7 +27,7 @@ export const EditAppPage = observer(() => {
 
 	const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
 
-	const validateDependencies = usePixel(
+	const validateDependencies = usePixel<Record<string, boolean>>(
 		appId
 			? 'ValidateUserProjectDependencies(project="' + appId + '");'
 			: "",
@@ -79,9 +78,7 @@ export const EditAppPage = observer(() => {
 			if (needsAccess.length) {
 				notification.add({
 					color: "warning",
-					message:
-						needsAccess.join(", ") +
-						"- are dependencies you do not have access to",
+					message: `You do not have access to the following dependencies: ${needsAccess.join(", ")}.`,
 				});
 			}
 		}

@@ -19,6 +19,22 @@ Note: If you have a custom setup, create a `.env.local` to configure your enviro
 
 # Notes on Naming
 
-1. "WORKSPACE" = Collection of "MCPs"
+1. "WORKSPACE" = Collection of "Toolbox, Knowledge, Prompt"
 
-2. "MCP" = Collection of "Tools"
+2. "Toolbox" = Collection of "Tools"
+
+# Unit Testing with Vitest
+
+Add unit tests for @semoss/playground next to the corresponding file. Files should be in a .test file format.
+
+## Running tests:
+
+To run tests use the following (to run a specific file add the file name to the end):
+```
+pnpm test
+```
+
+This will run the following script:
+```
+vitest run
+```
