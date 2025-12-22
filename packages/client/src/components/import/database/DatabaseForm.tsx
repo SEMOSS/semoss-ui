@@ -129,8 +129,8 @@ export const DatabaseForm = ({
 		setValue,
 		setFocus,
 		formState,
-		setError,
-		clearErrors,
+		// setError,
+		// clearErrors,
 	} = useForm({
 		mode: "onChange",
 		reValidateMode: "onChange",
@@ -189,7 +189,7 @@ export const DatabaseForm = ({
 		return acc;
 	}, {});
 
-	const handleFieldValidation = async (
+	/*const handleFieldValidation = async (
 		e,
 		val,
 		field,
@@ -212,7 +212,7 @@ export const DatabaseForm = ({
 				clearErrors(val.key);
 			}
 		}
-	};
+	};*/
 
 	const onFormSubmit = async (formData) => {
 		setLoading(true);
@@ -614,7 +614,7 @@ export const DatabaseForm = ({
 			setLoading(false);
 		}
 	};
-
+	//biome-ignore lint/correctness/useExhaustiveDependencies: this functional dependencies cannot be added
 	useEffect(() => {
 		resolvedFields.forEach((f) => {
 			let pixel = f.pixel;
@@ -746,6 +746,17 @@ export const DatabaseForm = ({
 			rules={{
 				required: val?.required,
 				pattern: val.rules?.pattern,
+				validate: async (value) => {
+					if (val.rules?.custom) {
+						const isValid = await validateFormField(val, value);
+						return (
+							isValid ||
+							val.rules.custom.message ||
+							"Invalid value"
+						);
+					}
+					return true;
+				},
 			}}
 			render={({ field, fieldState: { error } }) => {
 				switch (val.type) {
@@ -763,16 +774,16 @@ export const DatabaseForm = ({
 								error={!!error}
 								helperText={getHelperText(error, val)}
 								data-testid={`database-form-input-${val.key}`}
-								onChange={(e) =>
-									handleFieldValidation(
-										e,
-										val,
-										field,
-										validateFormField,
-										setError,
-										clearErrors,
-									)
-								}
+								// onChange={(e) =>
+								// 	handleFieldValidation(
+								// 		e,
+								// 		val,
+								// 		field,
+								// 		validateFormField,
+								// 		setError,
+								// 		clearErrors,
+								// 	)
+								// }
 							/>
 						);
 
@@ -1018,7 +1029,7 @@ export const DatabaseForm = ({
 			positions: {},
 		};
 
-		dbObject.tables.forEach((table, index) => {
+		dbObject.tables.forEach((table, _index) => {
 			// Extract clean column names and types
 			const columnMap = {};
 			table.columns.forEach((col, i) => {

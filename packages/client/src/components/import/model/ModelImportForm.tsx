@@ -303,6 +303,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									helperText={
 										errors?.[f.label]?.message.toString() ||
 										f.helperText ||
+										errors?.[
+											field.name
+										]?.message.toString() ||
 										""
 									}
 									data-testId={formatToDataTestId(
