@@ -50,7 +50,7 @@ export const AccessControl = ({
 					<SectionHeading variant="h2">Access</SectionHeading>
 					<SettingsContext.Provider value={{ adminMode: false }}>
 						<SettingsTiles
-							type="APP"
+							type="PROJECT"
 							direction="row"
 							name={appInfo?.project_name || "app"}
 							id={appId}
@@ -62,22 +62,22 @@ export const AccessControl = ({
 				</StyledSection>
 			)}
 
-      <StyledSection>
-        <SectionHeading variant="h2">Current Member</SectionHeading>
-        <SettingsContext.Provider value={{ adminMode: false }}>
-          <Stack direction="column" spacing={2}>
-            <PendingMembersTable type="APP" id={appId} />
-            <MembersTable
-              type="APP"
-              id={appId}
-              onChange={fetchUserSpecificData}
-            />
-             <div style={{ marginTop: 24 }}>
-              <TeamsTable type="PROJECT" id={appId} />
-            </div>
-          </Stack>
-        </SettingsContext.Provider>
-      </StyledSection>
-    </StyledBox>
-  );
+			<StyledSection>
+				<SectionHeading variant="h2">Current Member</SectionHeading>
+				<SettingsContext.Provider value={{ adminMode: false }}>
+					<Stack direction="column" spacing={2}>
+						<PendingMembersTable type="PROJECT" id={appId} />
+						<MembersTable
+							type="PROJECT"
+							id={appId}
+							onChange={fetchUserSpecificData}
+						/>
+						<div style={{ marginTop: 24 }}>
+							<TeamsTable type="PROJECT" id={appId} />
+						</div>
+					</Stack>
+				</SettingsContext.Provider>
+			</StyledSection>
+		</StyledBox>
+	);
 };
