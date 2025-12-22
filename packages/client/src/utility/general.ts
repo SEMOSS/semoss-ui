@@ -256,15 +256,41 @@ export const formatToDataTestId = (text: string) => {
  * @desc Sanitizes a URL to prevent XSS attacks
  * @returns sanitized url
  */
-export const sanitizeUrl = (url) => {
-  try {
-    const parsed = new URL(url);
-    // Allow only safe protocols
-    return ['https:', 'http:'].includes(parsed.protocol) 
-      ? url.toString() 
-      : 'about:blank'; // Safe fallback
-  } catch (e) {
-	console.error("Invalid URL:", e);
-    return 'about:blank'; // Invalid URL
-  }
+export const sanitizeUrl = (url: string | null | undefined): string => {
+	// Handle null/undefined inputs
+	if (!url || typeof url !== 'string') {
+		return 'about:blank';
+	}
+
+	// Trim whitespace
+	const trimmedUrl = url.trim();
+	
+	if (trimmedUrl.length === 0) {
+		return 'about:blank';
+	}
+
+	try {
+		const parsed = new URL(trimmedUrl);
+		
+		// Allow only safe protocols
+		const safeProtocols = ['https:', 'http:'];
+		
+		if (!safeProtocols.includes(parsed.protocol)) {
+			console.warn(`Unsafe protocol detected: ${parsed.protocol}`);
+			return 'about:blank';
+		}
+
+		// Additional security checks
+		// Prevent javascript: and data: URLs that might bypass URL parsing
+		if (trimmedUrl.toLowerCase().startsWith('javascript:') || 
+				trimmedUrl.toLowerCase().startsWith('data:')) {
+			console.warn('Potentially malicious URL blocked');
+			return 'about:blank';
+		}
+
+		return parsed.toString();
+	} catch (e) {
+		console.error("Invalid URL:", url, e);
+		return 'about:blank';
+	}
 }

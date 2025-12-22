@@ -5,7 +5,9 @@
     <script>
         // Preserve hash fragment during redirect
         var hash = window.location.hash;
-        var newUrl = "packages/legacy/dist/" + hash;
+        // Sanitize hash to prevent XSS - only allow alphanumeric, -, _, /, and #
+        var sanitizedHash = hash.replace(/[^a-zA-Z0-9\-\_\/\#]/g, '');
+        var newUrl = "packages/legacy/dist/" + sanitizedHash;
         window.location.href = newUrl;
     </script>
 </head>

@@ -94,7 +94,7 @@ const _store = new RootStore();
 //get error from request or response
 function getError(error) {
 	if (error.status === 302 && error.headers && error.headers.redirect) {
-		window.location.replace(error.headers.redirect);
+		window.location.replace(sanitizeUrl(error.headers.redirect));
 	}
 
 	if (isAxiosError(error)) {
@@ -104,7 +104,7 @@ function getError(error) {
 			response.headers &&
 			response.headers.redirect
 		) {
-			window.location.replace(response.headers.redirect);
+			window.location.replace(sanitizeUrl(response.headers.redirect));
 		}
 	}
 
