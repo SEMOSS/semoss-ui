@@ -512,9 +512,15 @@ export class RoomStore {
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
+			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
+			const optionsToSave = {
+				...options,
+				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
+			};
+
 			await this.runRoomPixel(
 				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
-					options,
+					optionsToSave,
 				)}]);`,
 			);
 
