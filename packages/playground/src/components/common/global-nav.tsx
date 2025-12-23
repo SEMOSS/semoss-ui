@@ -15,6 +15,7 @@ import {
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
+	Muted,
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
@@ -231,13 +232,15 @@ export const GlobalNav = observer(() => {
 				className="transition-all duration-200 ease-in-out"
 			>
 				{open && getRooms.isError && (
-					<div className="px-2 py-4 text-center text-destructive text-sm">
-						Error loading rooms
+					<div className="px-2 py-4 text-center">
+						<Muted className="text-destructive">
+							Error loading rooms
+						</Muted>
 					</div>
 				)}
 				{open && !getRooms.isLoading && getRooms.data.length === 0 && (
-					<div className="px-2 py-4 text-center text-muted-foreground text-xs">
-						No rooms found
+					<div className="px-2 py-4 text-center">
+						<Muted>No rooms found</Muted>
 					</div>
 				)}
 				{open && getRooms.isLoading && (
