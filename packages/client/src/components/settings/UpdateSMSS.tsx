@@ -66,7 +66,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 			? adminMode
 				? `AdminGetEngineSMSS(engine=['${id}'])`
 				: `GetEngineSMSS(engine=['${id}'])`
-			: type === "APP"
+			: type === "PROJECT"
 				? adminMode
 					? `AdminGetProjectSMSS(project=['${id}'])`
 					: `GetProjectSMSS(project=['${id}'])`
@@ -89,7 +89,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 	const updateSMSSProperties = async () => {
 		try {
 			let response = null;
-			if (type === "APP") {
+			if (type === "PROJECT") {
 				response = await updateProjectSmssProperties(id, value);
 			} else {
 				response = await updateDatabaseSmssProperties(id, value);
