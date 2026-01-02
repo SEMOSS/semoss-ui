@@ -17,6 +17,10 @@ import { createMessageStore } from "./utility";
  */
 export class ResponseMessageStore extends AbstractMessageStore {
 	readonly type = "RESPONSE";
+	readonly pixelMessageType:
+		| ResponseTextPixelMessage["type"]
+		| ResponseToolPixelMessage["type"]
+		| InputToolExecPixelMessage["type"];
 
 	/**
 	 * Text associated with the message
@@ -50,7 +54,19 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 		/** Response for the tool */
 		response: string;
+
+		/** If the tool execution was cancelled or errored */
+		tool_status?: "success" | "error" | "cancelled";
 	}[] = [];
+
+	/**
+	 * If this is input tool exec, the tool call id it is executing
+	 */
+	inputToolExecData: {
+		toolCallId: string;
+		inputPrompt: string;
+		toolStatus?: "success" | "error" | "cancelled";
+	} | null = null;
 
 	/**
 	 * Current execution index of the tool
@@ -90,6 +106,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			| InputToolExecPixelMessage,
 	) {
 		super(room, message);
+		this.pixelMessageType = message.type;
 
 		if (message.type === "RESPONSE_TEXT") {
 			this.text = message.content;
@@ -108,7 +125,16 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				name: t.name,
 				parameters: t.arguments,
 				response: "",
+				cancelled: false,
 			}));
+		}
+
+		if (message.type === "INPUT_TOOL_EXEC") {
+			this.inputToolExecData = {
+				toolCallId: message.tool_call_id,
+				inputPrompt: message.inputPrompt,
+				toolStatus: message.tool_status ?? "success", // default to success
+			};
 		}
 
 		// set the model
@@ -314,31 +340,42 @@ paramValues=[${JSON.stringify({
 			return;
 		}
 
-		// wait for the pixel to run
-		const response = await room.runRoomPixel<[string]>(
-			`RunMCPTool(project = [ "${tool._meta.map.SMSS_PROJECT_ID}" ], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
-		);
+		try {
+			// wait for the pixel to run
+			const response = await room.runRoomPixel<[string]>(
+				`RunMCPTool(project = [ "${tool._meta.map.SMSS_PROJECT_ID}" ], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+			);
 
-		const { output } = response.pixelReturn[0];
+			const { output } = response.pixelReturn[0];
 
-		// save the response
-		await this.saveToolExecution(tool, output);
+			// save the response
+			await this.saveToolExecution(tool, output);
+		} catch {
+			// mark the failure
+			await this.saveToolExecution(
+				tool,
+				`This tool execution failed due to an unexpected error. The AI assistant should inform the user of the tool's failure and ask the user for further instructions. The AI assistant may mention alternative tools or actions to take next, but should not take any further actions or select any further tools without user input.`,
+				"error",
+			);
+		}
 	};
 
 	/**
-	 * Save a tool execution responsex
+	 * Save a tool execution response
 	 * @param tool - tool to save
 	 * @param toolResponse - response of the tool
 	 */
 	saveToolExecution = async (
 		tool: ResponseMessageStore["tools"][number],
 		toolResponse: string,
+		status: "success" | "error" | "cancelled" = "success",
 	): Promise<void> => {
 		const room = this.room;
 
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
+			tool.tool_status = status;
 		});
 
 		// wait for the pixel to run
@@ -356,7 +393,8 @@ ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 toolId = ["${tool.id}"],
 toolName=["${tool.name}"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
-paramValues=[${JSON.stringify({})}]
+paramValues=[${JSON.stringify({})}],
+mcpToolStatus=${JSON.stringify(status)}
 );`,
 		);
 
@@ -376,6 +414,32 @@ paramValues=[${JSON.stringify({})}]
 				output.responseMessage,
 			);
 			this.addChild(responseMessage);
+
+			// start running tools if there are any
+			(responseMessage as ResponseMessageStore).startToolExecution();
 		}
+	};
+
+	/**
+	 * Mark a tool as used. Should be called when reconstructing from an INPUT_TOOL_EXEC message
+	 * @param tool - tool to save
+	 * @param inputToolExecData - data from the input tool exec message
+	 */
+	markToolAsUsed = (
+		inputToolExecData: ResponseMessageStore["inputToolExecData"],
+	): void => {
+		// find the correct tool
+		const tool = this.tools.find(
+			(t) => t.id === inputToolExecData.toolCallId,
+		);
+		if (!tool) {
+			return;
+		}
+
+		// save the response
+		runInAction(() => {
+			tool.response = inputToolExecData.inputPrompt;
+			tool.tool_status = inputToolExecData.toolStatus ?? "success";
+		});
 	};
 }
