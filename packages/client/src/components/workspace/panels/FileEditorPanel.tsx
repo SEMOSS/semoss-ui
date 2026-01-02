@@ -1,7 +1,18 @@
-import { ContentCopyOutlined, SaveOutlined } from "@mui/icons-material";
+import {
+	ContentCopyOutlined,
+	RefreshOutlined,
+	SaveOutlined,
+} from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
-import { IconButton, Stack, useNotification } from "@semoss/ui";
+import {
+	Button,
+	IconButton,
+	Modal,
+	Stack,
+	Typography,
+	useNotification,
+} from "@semoss/ui";
 import { FileEditor, type FileEditorRefDef } from "@/components/common";
 import { FlexLayout } from "@/components/flex-layout";
 import { useWorkspace } from "@/hooks";
@@ -20,6 +31,8 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 	const [isModified, setIsModified] = useState(false);
 
 	const fileEditorRef = useRef<FileEditorRefDef>(null);
+	const [refreshContent, setRefreshContent] = useState(1);
+	const [saveBeforeRefresh, setSaveBeforeRefresh] = useState(false);
 
 	// get the name
 	const name = path.split("/").pop();
@@ -126,6 +139,23 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 					>
 						<ContentCopyOutlined fontSize="inherit" />
 					</IconButton>
+					<IconButton
+						size={"small"}
+						color={"default"}
+						title={`Refresh File - ${path}`}
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							if (isModified) {
+								setSaveBeforeRefresh(true);
+							} else {
+								setRefreshContent((prev) => prev + 1);
+							}
+							// copyPath();
+						}}
+					>
+						<RefreshOutlined fontSize="inherit" />
+					</IconButton>
 					<Stack flex={1}>&nbsp;</Stack>
 					<IconButton
 						size={"small"}
@@ -152,10 +182,59 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 				insightId={workspace.insightId}
 				path={path}
 				agentModelEngine={workspace.agentModelEngine}
+				refreshContent={refreshContent}
 				onChange={(_content, isModified) => {
 					onFileEditorChange(isModified);
 				}}
 			/>
+			<Modal
+				open={saveBeforeRefresh}
+				maxWidth="sm"
+				fullWidth
+				onClose={() => setSaveBeforeRefresh(false)}
+				aria-labelledby="export-modal-title"
+				aria-describedby="export-modal-description"
+			>
+				<Modal.Title>
+					<Typography id={"export-modal-title"} variant="h6">
+						File Content Modified
+					</Typography>
+				</Modal.Title>
+				<Modal.Content>
+					<Typography
+						id={"export-modal-description"}
+						variant="body1"
+						sx={{ mb: 2 }}
+					>
+						File content is modified. Do you want to reload the
+						file?
+					</Typography>
+				</Modal.Content>
+				<Modal.Actions>
+					<Button
+						variant="contained"
+						color="primary"
+						onClick={() => {
+							setRefreshContent((prev) => prev + 1);
+							setSaveBeforeRefresh(false);
+							setIsModified(false);
+							// update the tabs
+							updatePanels(false);
+						}}
+					>
+						Yes
+					</Button>
+					<Button
+						variant="outlined"
+						color="secondary"
+						onClick={() => {
+							setSaveBeforeRefresh(false);
+						}}
+					>
+						No
+					</Button>
+				</Modal.Actions>
+			</Modal>
 		</Panel>
 	);
 });
