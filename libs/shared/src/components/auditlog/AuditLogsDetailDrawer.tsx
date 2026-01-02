@@ -319,7 +319,7 @@ export const AuditLogsDetailDrawer = (props) => {
 								</Button>
 							)}
 						</div>
-						<div className="mt-4 rounded-[6px] border border-black bg-[#FAFAFA] p-1">
+						<div className="mt-4 rounded-[6px] border border-gray-300 bg-[#FAFAFA] p-1">
 							{(() => {
 								if (responseData) {
 									return (
