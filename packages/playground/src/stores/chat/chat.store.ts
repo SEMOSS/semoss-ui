@@ -140,9 +140,15 @@ export class ChatStore {
 
 		let pixel = ``;
 
+		// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
+		const optionsToSave = {
+			...options,
+			mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
+		};
+
 		// set the options
 		pixel += `UpdateRoomOptions(roomId=${JSON.stringify(roomId)}, roomOptions=[${JSON.stringify(
-			options,
+			optionsToSave,
 		)}]);`;
 
 		// run the first message
