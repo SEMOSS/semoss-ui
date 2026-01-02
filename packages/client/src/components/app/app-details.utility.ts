@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { ConfigStore } from "@/stores";
 import type { Role } from "@/types";
 
 /**
@@ -92,8 +93,6 @@ export interface AppDetailsFormTypes {
 	tag: string[];
 	detailsForm: DetailsForm;
 	dependencies: modelledDependency[];
-	allDependencies: modelledDependency[];
-	selectedDependencies: modelledDependency[];
 
 	requestedPermission: "OWNER" | "EDIT" | "READ_ONLY" | "";
 	roleChangeComment: string | ReactNode;
@@ -114,8 +113,6 @@ export const AppDetailsFormValues: AppDetailsFormTypes = {
 	},
 
 	dependencies: [],
-	allDependencies: [],
-	selectedDependencies: [],
 
 	requestedPermission: "",
 	roleChangeComment: "",
@@ -174,8 +171,20 @@ export const fetchMainUses = async (monolithStore, appId: string) => {
 	}
 };
 
-export const fetchDependencies = async (monolithStore, appId: string) => {
-	const res = await monolithStore.runQuery(
+export const fetchDependencies = async (
+	configStore: ConfigStore,
+	appId: string,
+): Promise<
+	| {
+			type: "success";
+			output: appDependency[];
+	  }
+	| {
+			type: "error";
+			output: string;
+	  }
+> => {
+	const res = await configStore.runPixel<(appDependency[] | string)[]>(
 		`GetProjectDependencies(project="${appId}")`,
 	);
 
@@ -185,12 +194,12 @@ export const fetchDependencies = async (monolithStore, appId: string) => {
 	if (type.indexOf("ERROR") === -1) {
 		return {
 			type: "success",
-			output,
+			output: output as appDependency[],
 		};
 	} else {
 		return {
 			type: "error",
-			output,
+			output: output as string,
 		};
 	}
 };
@@ -225,14 +234,15 @@ export const updateProjectDetails = async (
 };
 
 export const SetProjectDependencies = async (
-	monolithStore,
+	configStore: ConfigStore,
 	appId: string,
-	dependencies: string[],
+	dependencies: {
+		id: string;
+		type: string;
+	}[],
 ) => {
-	const res = await monolithStore.runQuery(
-		`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(
-			dependencies.length > 0 ? dependencies : null,
-		)})`,
+	const res = await configStore.runPixel<string[]>(
+		`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(dependencies)})`,
 	);
 
 	const type = res.pixelReturn[0].operationType;

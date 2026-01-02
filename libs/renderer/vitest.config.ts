@@ -11,7 +11,10 @@ export default defineConfig({
 	base: "./",
 	plugins: [react({ include: /\.(js|jsx|ts|tsx)$/ })],
 	resolve: {
-		alias: [{ find: "@", replacement: resolve(__dirname, "./src") }],
+		alias: {
+			"@": resolve(__dirname, "./src"),
+			"@semoss/ui": resolve(__dirname, "../ui/src"),
+		},
 	},
 	build: {
 		minify: isProduction,
