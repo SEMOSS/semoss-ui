@@ -16,6 +16,9 @@ export const RoomConfiguration = observer((props: RoomConfigurationProps) => {
 			setOptions={(o) => {
 				room.setOptions(o);
 			}}
+			setRoomModel={(modelId) => {
+				room.setModel(modelId);
+			}}
 		/>
 	);
 });

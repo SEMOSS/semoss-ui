@@ -14,11 +14,7 @@ import {
 	useState,
 } from "react";
 import { runPixel } from "@semoss/sdk/react";
-import {
-	LoadingScreen,
-	styled,
-	useNotification,
-} from "@semoss/ui";
+import { LoadingScreen, styled, useNotification } from "@semoss/ui";
 import { languageConfigs } from "./FileEditorLanguageConfig";
 
 const Editor = lazy(() => import("@monaco-editor/react"));
@@ -47,6 +43,8 @@ interface FileEditorProps {
 
 	/** insight id */
 	insightId?: string | null;
+	/** Refresh content trigger */
+	refreshContent?: number;
 
 	/**
 	 * Optional Model Engine to use
@@ -83,6 +81,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 			path = "",
 			insightId = null,
 			agentModelEngine = "",
+			refreshContent = 1,
 			onChange = () => null,
 		} = props;
 
@@ -110,7 +109,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 		useEffect(() => {
 			// load when the type space or path change
 			loadFile();
-		}, [type, space, path]);
+		}, [type, space, path, refreshContent]);
 
 		/**
 		 * Trigger the on change function
