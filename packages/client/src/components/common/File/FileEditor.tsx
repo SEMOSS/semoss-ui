@@ -43,6 +43,8 @@ interface FileEditorProps {
 
 	/** insight id */
 	insightId?: string | null;
+	/** Refresh content trigger */
+	refreshContent?: number;
 
 	/**
 	 * Optional Model Engine to use
@@ -79,6 +81,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 			path = "",
 			insightId = null,
 			agentModelEngine = "",
+			refreshContent = 1,
 			onChange = () => null,
 		} = props;
 
@@ -108,7 +111,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 			//if (path && !path.endsWith("/")) {
 			loadFile();
 			//}
-		}, [type, space, path]);
+		}, [type, space, path, refreshContent]);
 
 		/**
 		 * Trigger the on change function
