@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+	Alert,
 	Button,
 	LinearProgress,
 	Modal,
@@ -35,6 +36,7 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [name, setName] = useState<string>("");
+	const [fileError, setFileError] = useState<string>("");
 	/**
 	 * Adds .txt extension if no extension is provided for files
 	 */
@@ -52,17 +54,79 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 	};
 
 	/**
+	 * Check if file already exists in the directory
+	 */
+	const checkIfExists = async (finalName: string): Promise<boolean> => {
+		try {
+			let pixel = "";
+			let directoryPath = "";
+
+			if (type === "app") {
+				// Extract directory path from uploadPath
+				directoryPath = uploadPath
+					.replace(/^\/+/, "")
+					.replace(/\/+$/, "");
+				pixel = `BrowseAsset(filePath=["${directoryPath}"], space=["${space}"]);`;
+			} else if (type === "engine") {
+				// Extract directory path from uploadPath for engine
+				const pathParts = uploadPath.split("assets/");
+				directoryPath =
+					pathParts.length > 1
+						? pathParts[1].replace(/^\/+/, "").replace(/\/+$/, "")
+						: "";
+				pixel = `BrowseEngineAssets(filePath=["${directoryPath}"], engine=["${space}"]);`;
+			}
+
+			if (!pixel) {
+				return false;
+			}
+
+			const response = await monolithStore.runQuery(pixel);
+
+			if (response.pixelReturn && response.pixelReturn.length > 0) {
+				const files = response.pixelReturn[0].output as Array<{
+					name: string;
+					type: "file";
+				}>;
+
+				// Check if file/folder name already exists
+				const nameToCheck =
+					mode === "directory" ? finalName : finalName;
+				return files.some((file) => file.name === nameToCheck);
+			}
+
+			return false;
+		} catch (e) {
+			console.error("Error checking file existence:", e);
+			return false;
+		}
+	};
+
+	/**
 	 * Create the file
 	 */
 	const createFile = async () => {
 		try {
 			setIsLoading(true);
+			setFileError("");
 
 			if (!name) {
 				throw new Error("Name is required");
 			}
 
 			const finalName = getFileNameWithExtension(name);
+
+			// Check if file already exists
+			if (mode === "file") {
+				const exists = await checkIfExists(finalName);
+				if (exists) {
+					setFileError(
+						`A file with the name "${finalName}" already exists in this directory. Please choose a different name.`,
+					);
+					setIsLoading(false);
+					return;
+				}
+			}
 			let pixel = "";
 			let path = "";
 			if (type === "app") {
@@ -182,13 +246,17 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 						Creating {mode === "file" ? "File" : "Folder"} at{" "}
 						<b>{uploadPath}</b>
 					</Typography>
+					{fileError && <Alert severity="error">{fileError}</Alert>}
 					<TextField
 						label="Name"
 						variant="outlined"
 						size="small"
 						fullWidth
 						value={name}
-						onChange={(e) => setName(e.target.value)}
+						onChange={(e) => {
+							setName(e.target.value);
+							setFileError("");
+						}}
 						onKeyDown={handleKeyDown}
 					/>
 				</Stack>
