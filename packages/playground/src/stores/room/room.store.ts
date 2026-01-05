@@ -10,7 +10,7 @@ import {
 	ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { MCPConfig, PixelMessage } from "@/types";
+import type { MCPConfig, PixelMessage, Workspace } from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -73,7 +73,7 @@ interface RoomStoreInterface {
 		instructions: string;
 
 		/*
-		 * MCPs loaded into the room
+		 * MCPs loaded into the room (includes both room and workspace MCPs, distinguished by fromWorkspace flag)
 		 */
 		mcp: MCPConfig[];
 
@@ -427,8 +427,54 @@ export class RoomStore {
 
 			// options
 			const newOptions = { ...optionsOutput.OPTIONS };
+
 			if (!newOptions.workspace?.workspace_id) {
 				delete newOptions.workspace;
+			} else {
+				const workspaceResponse = await this.runRoomPixel<
+					[
+						PixelMessage[],
+						{ OPTIONS?: Workspace }, // partial because this doesn't work for old rooms
+					]
+				>(`GetWorkspace('${newOptions.workspace?.workspace_id}')`);
+
+				const workspaceOutput = workspaceResponse.pixelReturn[0]
+					.output as Workspace;
+
+				// Merge workspace MCPs into the mcp array with fromWorkspace flag
+				if (
+					workspaceOutput?.mcp &&
+					Array.isArray(workspaceOutput.mcp)
+				) {
+					// Create a map of existing MCPs by composite key
+					const existingMCPs = new Map<string, MCPConfig>();
+					for (const mcp of newOptions.mcp || []) {
+						const key = `${mcp.id}-${mcp.type}`;
+						existingMCPs.set(key, mcp);
+					}
+
+					// Add workspace MCPs with fromWorkspace flag
+					const workspaceMCPs = workspaceOutput.mcp.map((mcp) => ({
+						...mcp,
+						fromWorkspace: true,
+					}));
+
+					// Merge, with workspace MCPs first
+					newOptions.mcp = [
+						...workspaceMCPs,
+						...Array.from(existingMCPs.values()).filter(
+							(a) => !workspaceMCPs.some((b) => b.id === a.id),
+						),
+					];
+
+					// Merge workspace system_prompt if room instructions are empty
+					if (
+						workspaceOutput.system_prompt &&
+						!newOptions.instructions
+					) {
+						newOptions.instructions = workspaceOutput.system_prompt;
+					}
+				}
 			}
 
 			runInAction(() => {
@@ -447,13 +493,16 @@ export class RoomStore {
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
 			if (this.tail.type === "RESPONSE") {
-				this.tail.startToolExecution();
+				this.tail
+					.startToolExecution()
+					.finally(() => this.setIsLoading(false));
+			} else {
+				this.setIsLoading(false);
 			}
 		} catch (e) {
 			console.error(e);
-			throw new Error(e.message || "Error initializing room");
-		} finally {
 			this.setIsLoading(false);
+			throw new Error(e.message || "Error initializing room");
 		}
 	};
 
@@ -463,9 +512,15 @@ export class RoomStore {
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
+			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
+			const optionsToSave = {
+				...options,
+				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
+			};
+
 			await this.runRoomPixel(
 				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
-					options,
+					optionsToSave,
 				)}]);`,
 			);
 
@@ -708,7 +763,7 @@ export class RoomStore {
 			}
 
 			const tool = message.getTool(toolId, toolName);
-			if (!tool) {
+			if (!tool || tool.response) {
 				return;
 			}
 
