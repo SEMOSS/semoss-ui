@@ -56,6 +56,7 @@ class ChatbotWebviewProvider {
 
 		// Handle messages from the webview
 		webviewView.webview.onDidReceiveMessage(async (data) => {
+			console.log('[ChatbotWebview] Received message:', data.type, data);
 			switch (data.type) {
 				case "chat": {
 					// Generic command execution path from React (executeCommand in useChatState)
@@ -189,6 +190,18 @@ class ChatbotWebviewProvider {
 						data.config,
 						webviewView.webview,
 					);
+					break;
+				case "discoverTools":
+					// Handle tool discovery for MCP server
+					console.log('[ChatbotWebview] Received discoverTools request:', data.serverConfig?.name);
+					try {
+						await this._handleDiscoverTools(
+							data.serverConfig,
+							webviewView.webview,
+						);
+					} catch (error) {
+						console.error('[ChatbotWebview] Error in discoverTools handler:', error);
+					}
 					break;
 				case "testModel":
 					// Handle model testing
@@ -594,6 +607,31 @@ class ChatbotWebviewProvider {
 			webview.postMessage({
 				type: "configError",
 				error: error.message,
+				timestamp: Date.now(),
+			});
+		}
+	}
+
+	/**
+	 * Handle tool discovery for an MCP server
+	 */
+	async _handleDiscoverTools(serverConfig, webview) {
+		try {
+			const mcpService = require("../../utils/mcpService.js");
+			const tools = await mcpService.discoverServerTools(serverConfig);
+			
+			webview.postMessage({
+				type: "toolsDiscovered",
+				tools: tools,
+				serverName: serverConfig.name,
+				timestamp: Date.now(),
+			});
+		} catch (error) {
+			console.error("Error discovering tools:", error);
+			webview.postMessage({
+				type: "toolsDiscoveryError",
+				error: error.message,
+				serverName: serverConfig.name,
 				timestamp: Date.now(),
 			});
 		}

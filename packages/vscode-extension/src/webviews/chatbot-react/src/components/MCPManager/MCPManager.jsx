@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { configManager } from "../../utils/configManager";
+import { useVSCodeAPI } from "../../hooks/useVSCodeAPI";
 import "./MCPManager.css";
 
 /**
@@ -34,25 +35,12 @@ const MCP_SERVER_TEMPLATES = {
 	},
 	git: {
 		name: "git",
-		command: "npx",
-		args: ["@modelcontextprotocol/server-git"],
-		description: "Git repository operations",
+		command: "uvx",
+		args: ["mcp-server-git"],
+		description: "Git repository operations (Python MCP server)",
 		enabled: true,
-		tools: [
-			{
-				name: "git_status",
-				command: "git status",
-				description:
-					"Get git repository status and working tree changes",
-				timeout: 5000,
-			},
-			{
-				name: "git_log",
-				command: "git log --oneline -10",
-				description: "Show recent commit history",
-				timeout: 5000,
-			},
-		],
+		// Git is a real MCP server - tools will be discovered via JSON-RPC
+		tools: [],
 	},
 	docker: {
 		name: "docker",
@@ -122,6 +110,7 @@ const MCP_SERVER_TEMPLATES = {
 };
 
 const MCPManager = ({ isOpen, onClose }) => {
+	const { postMessage } = useVSCodeAPI();
 	// Server definitions persisted via configManager (mcpServers array)
 	const [servers, setServers] = useState([]);
 	const [tools, setTools] = useState([]);
@@ -136,61 +125,51 @@ const MCPManager = ({ isOpen, onClose }) => {
 		const loadMCPData = async () => {
 			const config = configManager.getConfig();
 			setServers(config.mcpServers || []);
-			// Placeholder: simulate querying active MCP servers for tools/resources
-			loadToolsAndResources();
 		};
 
 		if (isOpen) loadMCPData();
 	}, [isOpen]);
 
-	const loadToolsAndResources = async () => {
-		// Demo data; replace with real server capability queries
-		setTools([
-			{
-				name: "read_file",
-				description: "Read the contents of a file",
-				inputSchema: {
-					type: "object",
-					properties: {
-						path: {
-							type: "string",
-							description: "Path to the file",
-						},
-					},
-					required: ["path"],
-				},
-				server: "filesystem",
-			},
-			{
-				name: "write_file",
-				description: "Write content to a file",
-				inputSchema: {
-					type: "object",
-					properties: {
-						path: {
-							type: "string",
-							description: "Path to the file",
-						},
-						content: {
-							type: "string",
-							description: "Content to write",
-						},
-					},
-					required: ["path", "content"],
-				},
-				server: "filesystem",
-			},
-		]);
+	// Load tools and resources whenever servers change
+	useEffect(() => {
+		loadToolsAndResources();
+	}, [servers]);
 
-		setResources([
-			{
-				uri: "file:///workspace/src/main.js",
-				name: "main.js",
-				description: "Main application file",
-				mimeType: "application/javascript",
-				server: "filesystem",
-			},
-		]);
+	const loadToolsAndResources = () => {
+		// Load tools from configured servers
+		const allTools = [];
+		const allResources = [];
+		
+		for (const server of servers) {
+			if (server.tools && Array.isArray(server.tools)) {
+				// Add each tool with server reference
+				server.tools.forEach(tool => {
+					allTools.push({
+						name: tool.name,
+						description: tool.description,
+						inputSchema: tool.parameters || {
+							type: "object",
+							properties: {},
+							required: [],
+						},
+						server: server.name,
+					});
+				});
+			}
+			
+			// Resources can be added here in the future if needed
+			if (server.resources && Array.isArray(server.resources)) {
+				server.resources.forEach(resource => {
+					allResources.push({
+						...resource,
+						server: server.name,
+					});
+				});
+			}
+		}
+		
+		setTools(allTools);
+		setResources(allResources);
 	};
 
 	const handleDeleteServer = (serverName) => {
@@ -223,11 +202,55 @@ const MCPManager = ({ isOpen, onClose }) => {
 	};
 
 	const handleSaveServer = async (server) => {
+		// If no tools provided, discover them automatically BEFORE saving
+		if (!server.tools || server.tools.length === 0) {
+			try {
+				// Discover tools first
+				const discoveredTools = await new Promise((resolve, reject) => {
+					postMessage({
+						type: "discoverTools",
+						serverConfig: server,
+					});
+					
+					// Set up listener for discovery result
+					const handleDiscoveryMessage = (event) => {
+						const message = event.data;
+						if (message.type === "toolsDiscovered" && message.serverName === server.name) {
+							console.log(`Tools discovered for ${server.name}:`, message.tools);
+							window.removeEventListener("message", handleDiscoveryMessage);
+							resolve(message.tools || []);
+						} else if (message.type === "toolsDiscoveryError" && message.serverName === server.name) {
+							console.error(`Tool discovery failed for ${server.name}:`, message.error);
+							window.removeEventListener("message", handleDiscoveryMessage);
+							resolve([]); // Save with empty tools on error
+						}
+					};
+					window.addEventListener("message", handleDiscoveryMessage);
+					
+					// Timeout after 15 seconds
+					setTimeout(() => {
+						window.removeEventListener("message", handleDiscoveryMessage);
+						resolve([]); // Continue with empty tools on timeout
+					}, 15000);
+				});
+				
+				// Add discovered tools to server before saving
+				server.tools = discoveredTools;
+				
+			} catch (error) {
+				console.error("Error during tool discovery:", error);
+				// Continue with empty tools if discovery fails
+				server.tools = [];
+			}
+		}
+		
+		// Save server (with tools if discovered, or manually provided)
 		const updated = editingServer
 			? servers.map((s) => (s.name === editingServer.name ? server : s))
 			: [...servers, server];
 		setServers(updated);
 		await configManager.updateConfig("mcpServers", updated);
+		
 		setIsAddingServer(false);
 		setEditingServer(null);
 	};
@@ -562,9 +585,7 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 		})),
 	);
 	const [tools, setTools] = useState(
-		server?.tools || [
-			{ name: "", command: "", description: "", timeout: 5000 },
-		],
+		server?.tools && server.tools.length > 0 ? server.tools : [],
 	);
 	const [formError, setFormError] = useState("");
 
@@ -611,7 +632,7 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 			return;
 		}
 
-		// Validate tools
+		// Validate tools - allow empty tools array for auto-discovery
 		const validTools = tools
 			.filter((tool) => tool.name.trim() && tool.command.trim())
 			.map((tool) => ({
@@ -621,8 +642,17 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 				timeout: parseInt(tool.timeout) || 5000,
 			}));
 
-		if (validTools.length === 0) {
-			setFormError("Please add at least one tool with name and command.");
+		// Check for incomplete tools (partial entry)
+		const hasIncompleteTool = tools.some(
+			(tool) =>
+				(tool.name.trim() && !tool.command.trim()) ||
+				(!tool.name.trim() && tool.command.trim()),
+		);
+
+		if (hasIncompleteTool) {
+			setFormError(
+				"Each tool must have both a name and command, or leave empty for auto-discovery.",
+			);
 			return;
 		}
 
@@ -811,10 +841,17 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 				</div>
 
 				<div className="form-section">
-					<h4>Tools Configuration *</h4>
+					<h4>Tools Configuration (Optional)</h4>
 					<p className="form-help">
-						Define the tools/commands this server provides
+						Leave empty to automatically discover tools from the MCP
+						server, or manually define specific tools below.
 					</p>
+					{tools.length === 0 && (
+						<div className="info-message">
+							💡 Tools will be automatically discovered when the
+							server starts
+						</div>
+					)}
 
 					{tools.map((tool, index) => (
 						<div key={index} className="tool-row">

@@ -87,7 +87,7 @@ class LLMService {
 	/**
 	 * Call the LLM API based on the model configuration
 	 */
-	async callLLMAPI(model, message) {
+	async callLLMAPI(model, userMessage) {
 		const { default: fetch } = await import("node-fetch");
 
 		// Ensure MCP service is initialized before getting tools
@@ -164,7 +164,7 @@ class LLMService {
 
 			messages.push({
 				role: "user",
-				content: message,
+				content: userMessage,
 			});
 
 			const requestBody = {
@@ -286,11 +286,11 @@ class LLMService {
 							const followUpMessages = [
 								{
 									role: "system",
-									content: `You are an AI assistant that helps users by executing tools and interpreting the results. When a tool returns data, provide a natural, helpful response based on that data. Always present tool results as answers to the user's question.`,
+									content: `You are an AI assistant that helps users by executing tools and interpreting the results. When a tool returns data, provide a natural, helpful response based on that data. Always present tool results as clear, well-formatted answers to the user's question.`,
 								},
 								{
 									role: "user",
-									content: message.content,
+									content: userMessage,
 								},
 								{
 									role: "assistant",
@@ -362,12 +362,25 @@ class LLMService {
 											toolUsed: selectedTool.name,
 											server: selectedTool.server,
 										};
+									} else {
+										console.error(
+											"Follow-up LLM response missing choices:",
+											followUpData,
+										);
 									}
+								} else {
+									const errorText = await followUpResponse.text();
+									console.error(
+										"Follow-up LLM request failed:",
+										followUpResponse.status,
+										followUpResponse.statusText,
+										errorText,
+									);
 								}
 							} catch (error) {
 								console.error(
 									"Follow-up LLM call failed:",
-									error,
+									error.message,
 								);
 							}
 

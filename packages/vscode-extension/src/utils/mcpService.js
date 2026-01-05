@@ -9,6 +9,7 @@ class MCPService {
 	constructor() {
 		this.servers = new Map(); // serverName -> { process, client, tools, resources }
 		this.initialized = false;
+		this.configManager = configManager; // Store reference for use in async contexts
 	}
 
 	/**
@@ -48,47 +49,106 @@ class MCPService {
 	 */
 	async startServer(serverConfig) {
 		try {
-			const {
-				name,
-				command,
-				args = [],
-				env = {},
-				workingDirectory,
-				timeout = 5000,
-			} = serverConfig;
+		const {
+			name,
+			command,
+			args = [],
+			env = {},
+			workingDirectory,
+			timeout = 5000,
+		} = serverConfig;
 
-			// Skip if already running
-			if (this.servers.has(name)) {
-				return;
+		// Skip if already running
+		if (this.servers.has(name)) {
+			return;
+		}
+		
+		// Check if using uvx and fallback to python if not available
+		let finalCommand = command;
+		let finalArgs = [...args];
+		
+		if (command === 'uvx' || command.includes('uvx')) {
+			const { execSync } = require('child_process');
+			const isWindows = process.platform === "win32";
+			try {
+				// Try to find uvx
+				execSync(isWindows ? 'where uvx' : 'which uvx', { stdio: 'ignore' });
+				console.log('uvx found, using it');
+			} catch (e) {
+				console.warn('uvx not found, falling back to python');
+				// Fallback to python -m <package>
+				finalCommand = 'python';
+				// Convert mcp-server-git to mcp_server_git for Python module
+				const pythonPackage = finalArgs[0]?.replace('mcp-server-', 'mcp_server_');
+				finalArgs = ['-m', pythonPackage, ...finalArgs.slice(1)];
+				console.log('Using fallback command:', finalCommand, finalArgs);
 			}
+		}
 
-			// Spawn the server process
-			const serverProcess = spawn(command, args, {
-				cwd: workingDirectory || process.cwd(),
-				env: { ...process.env, ...env },
-				stdio: ["pipe", "pipe", "pipe"],
-			});
+		// On Windows, if command has spaces, use shell mode
+		const isWindows = process.platform === "win32";
+		const hasSpaces = finalCommand && finalCommand.includes(" ");
+		
+		let spawnOptions = {
+			cwd: workingDirectory || process.cwd(),
+			env: { ...process.env, ...env },
+			stdio: ["pipe", "pipe", "pipe"],
+		};
+		
+		// If Windows and path has spaces, use shell mode
+		if (isWindows && hasSpaces) {
+			spawnOptions.shell = true;
+		}
 
-			// Handle server lifecycle
-			serverProcess.on("error", (error) => {
-				console.error(`MCP server ${name} error:`, error);
+		// Spawn the server process
+		const serverProcess = spawn(finalCommand, finalArgs, spawnOptions);
+		
+		// Store server info first (before any error handlers run)
+		const serverInfo = {
+			process: serverProcess,
+			config: serverConfig,
+			tools: [],
+			resources: [],
+			started: Date.now(),
+			initialized: false,
+		};
+
+		this.servers.set(name, serverInfo);
+
+		// Handle server lifecycle
+		serverProcess.on("error", (error) => {
+			console.error(`MCP server ${name} error:`, error);
+			// Don't delete if we have configured tools (HTTP-based tools can still work)
+			if (!serverConfig.tools || serverConfig.tools.length === 0) {
 				this.servers.delete(name);
-			});
+			}
+		});
 
-			serverProcess.on("exit", (code, signal) => {
-				this.servers.delete(name);
-			});
+		serverProcess.on("exit", (code, signal) => {
+			this.servers.delete(name);
+		});
 
-			// Store server info
-			const serverInfo = {
-				process: serverProcess,
-				config: serverConfig,
-				tools: [],
-				resources: [],
-				started: Date.now(),
+			// Send MCP initialize handshake
+			const initRequest = {
+				jsonrpc: "2.0",
+				id: Date.now(),
+				method: "initialize",
+				params: {
+					protocolVersion: "2024-11-05",
+					capabilities: {},
+					clientInfo: {
+						name: "vscode-semoss-extension",
+						version: "1.0.0",
+					},
+				},
 			};
-
-			this.servers.set(name, serverInfo);
+			
+			console.log(`Initializing MCP server ${name}`);
+			serverProcess.stdin.write(JSON.stringify(initRequest) + "\n");
+			
+			// Wait a moment for initialization to complete
+			await new Promise(resolve => setTimeout(resolve, 1000));
+			serverInfo.initialized = true;
 
 			// Initialize server connection (simplified)
 			await this.initializeServerConnection(name, serverInfo);
@@ -107,6 +167,35 @@ class MCPService {
 		try {
 			// Get tools from configuration
 			const tools = this.getSimulatedTools(name, serverInfo.config);
+			
+			// If no tools configured, try to discover them automatically
+			if (tools.length === 0) {
+				console.log(`No tools in config for ${name}, attempting automatic discovery...`);
+				try {
+					const discoveredTools = await this.discoverServerTools(serverInfo.config);
+					if (discoveredTools && discoveredTools.length > 0) {
+						console.log(`Discovered ${discoveredTools.length} tools for ${name}:`, discoveredTools.map(t => t.name));
+						serverInfo.tools = discoveredTools.map(tool => ({
+							...tool,
+							server: name,
+						}));
+				
+			// Update configuration with discovered tools
+			await this.configManager.loadConfig();
+			const config = this.configManager.config;
+			const serverIndex = config.mcpServers?.findIndex(s => s.name === name);
+				if (serverIndex !== -1) {
+					config.mcpServers[serverIndex].tools = discoveredTools;
+					await this.configManager.saveConfig(config);
+							console.log(`Updated config with discovered tools for ${name}`);
+						}
+						return;
+					}
+				} catch (discoveryError) {
+					console.error(`Tool discovery failed for ${name}:`, discoveryError.message);
+				}
+			}
+			
 			const resources = this.getSimulatedResources(
 				name,
 				serverInfo.config,
@@ -203,6 +292,127 @@ class MCPService {
 					parameters,
 					toolConfig,
 				);
+			}
+
+			// If no command field, this is an MCP protocol tool - use the running server's stdin/stdout
+			if (!toolConfig.command) {
+				const serverInfo = this.servers.get(serverName);
+				if (!serverInfo || !serverInfo.process) {
+					return {
+						success: false,
+						error: `MCP server ${serverName} is not running`,
+					};
+				}
+
+				// Automatically inject repository path from server config if present
+				const serverConfig = serverInfo.config;
+				if (parameters && 'repo_path' in parameters && serverConfig.args) {
+					// Extract repository path from server args (e.g., ['--repository', 'path/to/repo'])
+					const repoArgIndex = serverConfig.args.indexOf('--repository');
+					if (repoArgIndex !== -1 && repoArgIndex + 1 < serverConfig.args.length) {
+						const configuredRepoPath = serverConfig.args[repoArgIndex + 1];
+						// If user passed '.' or a relative path, use the configured absolute path
+						if (parameters.repo_path === '.' || !parameters.repo_path.includes(':')) {
+							parameters.repo_path = configuredRepoPath;
+							console.log(`Auto-injected repo_path from --repository arg: ${configuredRepoPath}`);
+						}
+					}
+				}
+
+				// Send JSON-RPC tools/call request to the running server
+				const requestId = Date.now();
+				const request = {
+					jsonrpc: "2.0",
+					id: requestId,
+					method: "tools/call",
+					params: {
+						name: toolName,
+						arguments: parameters || {},
+					},
+				};
+
+				console.log(`Calling MCP tool ${toolName} on server ${serverName}`, JSON.stringify(request));
+				serverInfo.process.stdin.write(JSON.stringify(request) + "\n");
+
+				// Wait for response
+				return new Promise((resolve, reject) => {
+					let responseData = "";
+					const timeout = setTimeout(() => {
+						console.error(`MCP tool ${toolName} timeout. Accumulated response:`, responseData);
+						cleanup();
+						reject(new Error(`Tool execution timeout for ${toolName}`));
+					}, toolConfig.timeout || 30000);
+
+					const onData = (data) => {
+						responseData += data.toString();
+						console.log(`MCP ${toolName} stdout chunk:`, data.toString());
+						const lines = responseData.split('\n');
+						
+						for (const line of lines) {
+							if (!line.trim()) continue;
+							try {
+								const response = JSON.parse(line);
+								console.log(`MCP ${toolName} parsed response:`, JSON.stringify(response));
+								if (response.id === requestId) {
+									cleanup();
+									if (response.error) {
+										console.error(`MCP ${toolName} error response:`, response.error);
+										resolve({
+											success: false,
+											error: response.error.message || JSON.stringify(response.error),
+											server: serverName,
+											tool: toolName,
+										});
+									} else if (response.result) {
+										console.log(`MCP ${toolName} result:`, JSON.stringify(response.result));
+										// MCP protocol: result.content is an array of content items
+										let textContent = '';
+										if (response.result.content && Array.isArray(response.result.content)) {
+											textContent = response.result.content
+												.map(item => {
+													if (item.type === 'text' && item.text) {
+														return item.text;
+													}
+													return item.text || JSON.stringify(item);
+												})
+												.join('\n');
+										} else if (typeof response.result === 'string') {
+											textContent = response.result;
+										} else {
+											textContent = JSON.stringify(response.result, null, 2);
+										}
+										
+										console.log(`MCP ${toolName} extracted text:`, textContent);
+										resolve({
+											success: true,
+											result: textContent,
+											server: serverName,
+											tool: toolName,
+										});
+									}
+									return;
+								}
+							} catch (e) {
+								// Not valid JSON yet, keep accumulating
+							}
+						}
+					};
+
+					const onError = (error) => {
+						console.error(`MCP ${toolName} stderr:`, error.toString());
+						cleanup();
+						reject(error);
+					};
+
+					const cleanup = () => {
+						clearTimeout(timeout);
+						serverInfo.process.stdout.removeListener('data', onData);
+						serverInfo.process.stderr.removeListener('data', onError);
+					};
+
+					serverInfo.process.stdout.on('data', onData);
+					serverInfo.process.stderr.on('data', onError);
+				});
 			}
 
 			// Get the current workspace directory
@@ -584,6 +794,186 @@ class MCPService {
 		this.initialized = false;
 		await this.initialize();
 	}
-}
 
-module.exports = new MCPService();
+	/**
+	 * Discover available tools from an MCP server using JSON-RPC protocol
+	 * This actually queries the server to get its full list of tools
+	 */
+	async discoverServerTools(serverConfig) {
+		console.log('Starting tool discovery for server:', serverConfig.name);
+		return new Promise((resolve, reject) => {
+			const { command, args = [], env = {}, workingDirectory } = serverConfig;
+			
+			console.log('Discovery spawn config:', { command, args, workingDirectory });
+			
+			// Determine if this is a Python or Node.js MCP server
+			const isPythonServer = command.includes('uvx') || command.includes('python') || 
+							   args.some(arg => arg.includes('mcp-server-') || arg.includes('mcp_server_'));
+			const isNodeServer = command.includes('npx') || command.includes('node') ||
+							 args.some(arg => arg.includes('@modelcontextprotocol/'));
+			
+			console.log('Server type:', { isPythonServer, isNodeServer });
+			
+			// Spawn the server temporarily
+			const spawnOptions = {
+				cwd: workingDirectory || process.cwd(),
+				env: { ...process.env, ...env },
+				stdio: ["pipe", "pipe", "pipe"],
+			};
+
+			// On Windows, if command path has spaces, use shell and quote the command
+			const isWindows = process.platform === "win32";
+			const hasSpaces = command && command.includes(" ");
+			let spawnCommand = command;
+			
+			if (isWindows && hasSpaces) {
+				spawnOptions.shell = true;
+				// Quote the command for Windows shell
+				spawnCommand = `"${command}"`;
+				console.log('Using shell for spawn (Windows path with spaces), quoted command:', spawnCommand);
+			}
+			
+			// For Python servers, check if uvx/python is available
+			if (isPythonServer && !isNodeServer) {
+				// Try to find uvx or python on the system
+				const { execSync } = require('child_process');
+				try {
+					if (command.includes('uvx')) {
+						// Check if uvx is available
+						try {
+							execSync(isWindows ? 'where uvx' : 'which uvx');
+							console.log('uvx found on system');
+						} catch (e) {
+							console.warn('uvx not found, trying python fallback');
+							// Fallback to python if uvx not available
+							spawnCommand = 'python';
+							args.unshift('-m', 'mcp_server_' + serverConfig.name);
+						}
+					}
+				} catch (error) {
+					console.error('Error checking Python runtime:', error);
+				}
+			}
+
+			const serverProcess = spawn(spawnCommand, args, spawnOptions);
+
+			let stdout = "";
+			let stderr = "";
+			const timeout = setTimeout(() => {
+				console.error('Tool discovery timeout for', serverConfig.name);
+				serverProcess.kill();
+				reject(new Error("Tool discovery timed out after 10 seconds"));
+			}, 10000);
+
+			serverProcess.stdout.on("data", (data) => {
+				stdout += data.toString();
+				console.log('Discovery stdout chunk:', data.toString());
+			});
+
+			serverProcess.stderr.on("data", (data) => {
+				stderr += data.toString();
+				console.error('Discovery stderr chunk:', data.toString());
+			});
+
+			serverProcess.on("error", (error) => {
+				console.error('Discovery spawn error:', error);
+				clearTimeout(timeout);
+				reject(error);
+			});
+
+			serverProcess.on("exit", (code) => {
+				console.log('Discovery process exited with code:', code);
+				clearTimeout(timeout);
+				if (code !== 0 && code !== null) {
+					reject(new Error(`Server exited with code ${code}: ${stderr}`));
+				}
+			});
+
+			// Send initialize request
+			const initRequest = {
+				jsonrpc: "2.0",
+				id: 1,
+				method: "initialize",
+				params: {
+					protocolVersion: "2024-11-05",
+					capabilities: {},
+					clientInfo: {
+						name: "vscode-semoss-extension",
+						version: "1.0.0",
+					},
+				},
+			};
+
+			serverProcess.stdin.write(JSON.stringify(initRequest) + "\n");
+
+			// Send tools/list request after a short delay
+			setTimeout(() => {
+				const toolsRequest = {
+					jsonrpc: "2.0",
+					id: 2,
+					method: "tools/list",
+					params: {},
+				};
+				console.log('Sending tools/list request:', JSON.stringify(toolsRequest));
+				serverProcess.stdin.write(JSON.stringify(toolsRequest) + "\n");
+
+				// Wait for responses to accumulate in stdout buffer
+				setTimeout(() => {
+					console.log('Parsing discovery results. Total stdout length:', stdout.length);
+					
+					// Kill process after we've waited for data
+					serverProcess.kill();
+					
+					try {
+						// Parse JSON-RPC responses from stdout
+						const lines = stdout.split("\n").filter(l => l.trim());
+						console.log('Number of stdout lines:', lines.length);
+						let tools = [];
+					
+					for (const line of lines) {
+						try {
+							const response = JSON.parse(line);
+							console.log('Parsed JSON response:', response);
+							if (response.id === 2 && response.result && response.result.tools) {
+								console.log('Found tools in response:', response.result.tools);
+							
+							// Check if server has --repository argument
+							const repoArgIndex = serverConfig.args?.indexOf('--repository');
+							const hasRepositoryArg = repoArgIndex !== -1 && repoArgIndex + 1 < serverConfig.args.length;
+							const configuredRepoPath = hasRepositoryArg ? serverConfig.args[repoArgIndex + 1] : null;
+							
+							tools = response.result.tools.map(tool => {
+								const params = tool.inputSchema || { type: "object", properties: {}, required: [] };
+								
+								// If tool has repo_path parameter and server has --repository arg, add helpful description
+								if (hasRepositoryArg && params.properties && params.properties.repo_path) {
+									params.properties.repo_path.description = `Repository path. Use "." to refer to the configured repository at ${configuredRepoPath}`;
+								}
+								
+								return {
+									name: tool.name,
+									description: tool.description || `Execute ${tool.name}`,
+									// Note: No 'command' field - these are MCP protocol tools, not shell commands
+									timeout: 10000,
+									parameters: params,
+								};
+							});
+							break;
+				}
+			} catch (e) {
+				// Skip invalid JSON lines
+				console.log('Skipping non-JSON line:', line);
+			}
+		}
+		
+		console.log('Discovery completed. Found', tools.length, 'tools:', tools.map(t => t.name));
+		resolve(tools);
+	} catch (error) {
+		console.error('Failed to parse tool list:', error);
+		reject(new Error(`Failed to parse tool list: ${error.message}`));
+	}
+				}, 3000); // Wait 3s for all stdout to accumulate
+			}, 500); // Wait 500ms before sending tools/list
+		});
+	}
+}module.exports = new MCPService();

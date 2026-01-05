@@ -1013,3 +1013,15 @@
     flex-direction: column-reverse;
   }
 }
+
+/* Info message for auto-discovery */
+.info-message {
+  padding: 12px 16px;
+  background-color: var(--vscode-editorInfo-background, #e3f2fd);
+  border: 1px solid var(--vscode-editorInfo-foreground, #2196f3);
+  border-radius: 4px;
+  margin-bottom: 16px;
+  color: var(--vscode-foreground);
+  font-size: 14px;
+  line-height: 1.5;
+}
