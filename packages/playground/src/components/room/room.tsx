@@ -21,8 +21,6 @@ import { LOADING_MESSAGES } from "@/constants";
 import { useAutoScroll } from "@/hooks";
 import type { RoomStore } from "@/stores";
 
-// Styled components removed - using Tailwind CSS classes directly
-
 interface RoomProps {
 	/** Room to load */
 	room: RoomStore;
@@ -186,23 +184,6 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 						className="max-h-56 min-h-24"
 						isLoading={room.isLoading}
 						configuration={<RoomConfigurationButton room={room} />}
-						mentions={
-							{
-								// "/": async (search) => {
-								// 	const cleaned = search.toLowerCase().trim();
-								// 	if (!cleaned) {
-								// 		return room.options.mcp;
-								// 	}
-								// 	return room.options.mcp.filter(
-								// 		(mcp) =>
-								// 			mcp.name
-								// 				.toLowerCase()
-								// 				.includes(cleaned) ||
-								// 			mcp.ID.toLowerCase().includes(cleaned),
-								// 	);
-								// },
-							}
-						}
 						onPrompt={async (prompt, files) => {
 							// update the options
 							await room.updateRoomOptions(room.options);

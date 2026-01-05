@@ -2,7 +2,7 @@ import { Settings2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useInsight, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	ResizableHandle,
@@ -15,7 +15,6 @@ import {
 } from "@semoss/ui/next";
 import landingImage from "@/assets/img/landing.png";
 import {
-	engineProjectToMCP,
 	RoomInput,
 	RoomOptions,
 	RoomWorkspace,
@@ -24,7 +23,7 @@ import {
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { App, Engine, Workspace } from "@/types";
+import type { App, Workspace } from "@/types";
 
 /**
  * The page to create a new room
@@ -53,7 +52,6 @@ export const NewRoomPage = observer(() => {
 	});
 	const workspaceId = searchParams.get("workspaceId");
 
-	const insight = useInsight();
 	const getWorkspace = usePixel<Workspace | null>(
 		workspaceId ? `GetWorkspace("${workspaceId}");` : null,
 		{
@@ -182,36 +180,6 @@ export const NewRoomPage = observer(() => {
 									onModeChange={setMode}
 								/>
 							}
-							mentions={{
-								"/": async (search) => {
-									const { pixelReturn } =
-										await insight.actions.run<
-											[(Engine | App)[]]
-										>(
-											`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION", "MODEL", "VECTOR"] ${search ? `, filterWord=["${search}"]` : ""})`,
-										);
-
-									if (
-										pixelReturn[0].operationType.indexOf(
-											"ERROR",
-										) > -1
-									) {
-										return [];
-									}
-
-									return pixelReturn[0].output.map(
-										(value) => {
-											const mcp =
-												engineProjectToMCP(value);
-
-											return {
-												display: mcp.name,
-												value: mcp.id,
-											};
-										},
-									);
-								},
-							}}
 							configuration={
 								<Tooltip>
 									<TooltipTrigger asChild>

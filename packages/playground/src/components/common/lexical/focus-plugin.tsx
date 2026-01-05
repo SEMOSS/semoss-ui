@@ -1,7 +1,7 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { useEffect } from "react";
 
-export const RoomInputFocusPlugin: React.FC = () => {
+export const FocusPlugin: React.FC = () => {
 	const [editor] = useLexicalComposerContext();
 
 	useEffect(() => {

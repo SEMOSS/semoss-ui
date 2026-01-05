@@ -2,13 +2,11 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { COMMAND_PRIORITY_LOW, KEY_ENTER_COMMAND } from "lexical";
 import { useEffect } from "react";
 
-interface RoomInputEnterPluginProps {
+interface EnterPluginProps {
 	onEnter: () => void;
 }
 
-export const RoomInputEnterPlugin: React.FC<RoomInputEnterPluginProps> = ({
-	onEnter,
-}) => {
+export const EnterPlugin: React.FC<EnterPluginProps> = ({ onEnter }) => {
 	const [editor] = useLexicalComposerContext();
 
 	useEffect(() => {

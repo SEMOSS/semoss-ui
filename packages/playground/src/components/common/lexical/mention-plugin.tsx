@@ -1,17 +1,10 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import {
-	$getSelection,
-	$isRangeSelection,
-	$isTextNode,
-	COMMAND_PRIORITY_HIGH,
-	KEY_ENTER_COMMAND,
-	KEY_ESCAPE_COMMAND,
-	TextNode,
-} from "lexical";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { $getSelection, $isRangeSelection, $isTextNode } from "lexical";
+import { useEffect, useRef, useState } from "react";
 import {
 	Command,
 	CommandEmpty,
+	CommandInput,
 	CommandItem,
 	CommandList,
 	Popover,
@@ -19,26 +12,43 @@ import {
 	PopoverContent,
 	Spinner,
 } from "@semoss/ui/next";
-import { $createMentionNode } from "./room-input-mention-node";
 
-interface MentionItem {
+export interface Mention {
 	display: string;
 	value: string;
 }
 
-interface RoomInputMentionPluginProps {
-	trigger?: string;
-	onSearch: (search: string) => Promise<MentionItem[]>;
+interface MentionPluginProps {
+	/**
+	 * Trigger character to open the mention menu
+	 */
+	trigger: string;
+
+	/**
+	 * Callback to search for mentions
+	 * @param search
+	 * @returns list of mentions that match the search
+	 */
+	onSearch: (search: string) => Promise<Mention[]>;
+
+	/**
+	 * Callback to select a mention
+	 * @param triggerIdx - location of the trigger character
+	 * @param selected mention
+	 * @returns true if the mention was selected, false otherwise
+	 */
+	onSelect: (triggerIdx: number, selected: Mention) => boolean;
 }
 
-export function RoomInputMentionPlugin({
-	trigger = "/",
+export function MentionPlugin({
+	trigger,
 	onSearch,
-}: RoomInputMentionPluginProps) {
+	onSelect,
+}: MentionPluginProps) {
 	const [editor] = useLexicalComposerContext();
 	const [isOpen, setIsOpen] = useState(false);
 	const [search, setSearch] = useState("");
-	const [items, setItems] = useState<MentionItem[]>([]);
+	const [items, setItems] = useState<Mention[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [selectedValue, setSelectedValue] = useState("");
 	const [menuPosition, setMenuPosition] = useState<{
@@ -46,19 +56,7 @@ export function RoomInputMentionPlugin({
 		left: number;
 	} | null>(null);
 
-	const menuRef = useRef<HTMLDivElement>(null);
 	const triggerOffsetRef = useRef<number | null>(null);
-	const itemsRef = useRef<MentionItem[]>([]);
-	const selectedValueRef = useRef<string>("");
-
-	// Keep refs in sync with state
-	useEffect(() => {
-		itemsRef.current = items;
-	}, [items]);
-
-	useEffect(() => {
-		selectedValueRef.current = selectedValue;
-	}, [selectedValue]);
 
 	// Search for items when search text changes
 	useEffect(() => {
@@ -97,68 +95,6 @@ export function RoomInputMentionPlugin({
 			cancelled = true;
 		};
 	}, [isOpen, search, onSearch]);
-
-	// Insert the selected mention
-	const insertMention = useCallback(
-		(item: MentionItem) => {
-			editor.update(() => {
-				const selection = $getSelection();
-				if (!$isRangeSelection(selection)) {
-					return;
-				}
-
-				const anchor = selection.anchor;
-				const anchorNode = anchor.getNode();
-
-				if (!$isTextNode(anchorNode)) {
-					return;
-				}
-
-				const textContent = anchorNode.getTextContent();
-				const triggerIndex = triggerOffsetRef.current;
-
-				if (triggerIndex === null) {
-					return;
-				}
-
-				// Get text before trigger
-				const textBeforeTrigger = textContent.slice(0, triggerIndex);
-				// Get text after cursor
-				const textAfterCursor = textContent.slice(anchor.offset);
-
-				// Create mention node
-				const mentionNode = $createMentionNode(
-					trigger,
-					item.display,
-					item.value,
-				);
-
-				// Update the text node
-				if (textBeforeTrigger) {
-					anchorNode.setTextContent(textBeforeTrigger);
-					anchorNode.insertAfter(mentionNode);
-				} else {
-					anchorNode.replace(mentionNode);
-				}
-
-				// Add text after cursor if any
-				if (textAfterCursor) {
-					const textNode = new TextNode(textAfterCursor);
-					mentionNode.insertAfter(textNode);
-				}
-
-				// Add a space after the mention and move selection there
-				const spaceNode = new TextNode(" ");
-				mentionNode.insertAfter(spaceNode);
-				spaceNode.select();
-			});
-
-			setIsOpen(false);
-			setSearch("");
-			triggerOffsetRef.current = null;
-		},
-		[trigger, editor],
-	);
 
 	// Handle text changes to detect trigger
 	useEffect(() => {
@@ -231,54 +167,22 @@ export function RoomInputMentionPlugin({
 		});
 	}, [editor, trigger]);
 
-	// Handle escape key to close menu
+	// focus on the menu when closed
 	useEffect(() => {
-		if (!isOpen) {
+		if (isOpen) {
 			return;
 		}
-
-		return editor.registerCommand(
-			KEY_ESCAPE_COMMAND,
-			() => {
-				setIsOpen(false);
-				return true;
-			},
-			COMMAND_PRIORITY_HIGH,
-		);
+		editor.focus(() => null, {
+			defaultSelection: "rootEnd",
+		});
 	}, [editor, isOpen]);
-
-	// Handle Enter key to select item
-	useEffect(() => {
-		if (!isOpen) {
-			return;
-		}
-
-		return editor.registerCommand(
-			KEY_ENTER_COMMAND,
-			(event) => {
-				if (event) {
-					event.preventDefault();
-				}
-				const currentItems = itemsRef.current;
-				const currentSelectedValue = selectedValueRef.current;
-				const selectedItem = currentItems.find(
-					(item) => item.value === currentSelectedValue,
-				);
-				if (selectedItem) {
-					insertMention(selectedItem);
-				}
-				return true;
-			},
-			COMMAND_PRIORITY_HIGH,
-		);
-	}, [editor, isOpen, insertMention]);
 
 	if (!isOpen || !menuPosition) {
 		return null;
 	}
 
 	return (
-		<Popover open={isOpen}>
+		<Popover open={isOpen} onOpenChange={setIsOpen}>
 			<PopoverAnchor
 				style={{
 					position: "fixed",
@@ -286,12 +190,17 @@ export function RoomInputMentionPlugin({
 					left: menuPosition.left,
 				}}
 			/>
-			<PopoverContent ref={menuRef} className="w-72 p-0" align="start">
+			<PopoverContent className="w-72 p-0" align="start">
 				<Command
 					shouldFilter={false}
 					value={selectedValue}
 					onValueChange={setSelectedValue}
 				>
+					<CommandInput
+						placeholder="Search"
+						value={search}
+						onValueChange={setSearch}
+					/>
 					<CommandList>
 						<CommandEmpty>
 							{isLoading ? (
@@ -306,7 +215,18 @@ export function RoomInputMentionPlugin({
 							<CommandItem
 								key={item.value}
 								value={item.value}
-								onSelect={() => insertMention(item)}
+								onSelect={() => {
+									const success = onSelect(
+										triggerOffsetRef.current,
+										item,
+									);
+
+									if (success) {
+										setIsOpen(false);
+										setSearch("");
+										triggerOffsetRef.current = null;
+									}
+								}}
 							>
 								{item.display}
 							</CommandItem>

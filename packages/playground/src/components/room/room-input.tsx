@@ -10,7 +10,11 @@ import {
 	$createParagraphNode,
 	$createTextNode,
 	$getRoot,
+	$getSelection,
+	$isRangeSelection,
+	$isTextNode,
 	type LexicalEditor,
+	TextNode,
 } from "lexical";
 import {
 	FileAudio2Icon,
@@ -26,6 +30,7 @@ import {
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	ButtonGroup,
@@ -36,10 +41,15 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { RoomInputEnterPlugin } from "./room-input-enter-plugin";
-import { RoomInputFocusPlugin } from "./room-input-focus-plugin";
-import { MentionNode } from "./room-input-mention-node";
-import { RoomInputMentionPlugin } from "./room-input-mention-plugin";
+import {
+	$createBadgeNode,
+	BadgeNode,
+	EnterPlugin,
+	engineProjectToMCP,
+	FocusPlugin,
+	MentionPlugin,
+} from "@/components";
+import type { App, Engine } from "@/types";
 
 const ENABLE_ATTACHMENT = import.meta.env.VITE_ENABLE_ATTACHMENT === "true";
 
@@ -56,16 +66,6 @@ interface RoomInputProps {
 	/** Configuration toggle */
 	configuration?: React.ReactNode;
 
-	/** Mentions configuration */
-	mentions: {
-		[key: string]: (search: string) => Promise<
-			{
-				display: string;
-				value: string;
-			}[]
-		>;
-	};
-
 	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
 }
@@ -77,8 +77,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		workspace = null,
 		configuration = null,
 		onPrompt = () => null,
-		mentions,
 	}) => {
+		const insight = useInsight();
 		const [isEmpty, setIsEmpty] = useState(true);
 
 		const editorRef = useRef<LexicalEditor>(null);
@@ -184,11 +184,18 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			let success = false;
 
 			// store old options
+
 			let userInput = "";
 			editorRef.current?.getEditorState().read(() => {
 				const root = $getRoot();
 				userInput = root.getTextContent();
 			});
+
+			console.log(
+				"TODO:: convert userInput to string to send ot the backend",
+				userInput,
+			);
+
 			const userFiles = files;
 
 			// skip if there is no input
@@ -276,54 +283,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							setFiles((prev) => [...prev, ...updated]);
 						}}
 					/>
-					{/* <Textarea
-							onDrop={(e) => {
-								e.preventDefault();
-
-								// set the new files
-								const updated = Array.from(
-									e.dataTransfer.files,
-								);
-								setFiles((prev) => [...prev, ...updated]);
-
-								// turn off dragging
-								setIsDragging(false);
-							}}
-							onDragOver={(e) => {
-								e.preventDefault();
-
-								// turn on dragging
-								setIsDragging(true);
-							}}
-							onDragLeave={(e) => {
-								e.preventDefault();
-
-								// turn off dragging
-								setIsDragging(false);
-							}}
-							// onPaste={(e) => {
-							// 	// Only handle file pasting if attachments are enabled
-							// 	if (!ENABLE_ATTACHMENT) {
-							// 		return;
-							// 	}
-
-							// 	// set the new files
-							// 	const updated = Array.from(
-							// 		e.clipboardData.files,
-							// 	);
-
-							// 	if (updated.length > 0) {
-							// 		e.preventDefault();
-							// 		setFiles((prev) => [...prev, ...updated]);
-							// 	}
-							// }}
-						/> */}
-
 					<LexicalComposer
 						initialConfig={{
 							namespace: "RoomInput",
 							theme: {},
-							nodes: [MentionNode],
+							nodes: [BadgeNode],
 							onError: (error) => {
 								console.error(error);
 							},
@@ -346,7 +310,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										placeholder={
 											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-2.5 p-4 text-muted-foreground text-sm">
 												<SparklesIcon className="size-4" />
-												What do you want to do today?
+												/ to open commands
 											</div>
 										}
 										onDrop={(e) => {
@@ -416,70 +380,110 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						/>
 						<HistoryPlugin />
 						<AutoFocusPlugin />
-						<RoomInputFocusPlugin />
+						<FocusPlugin />
 						<EditorRefPlugin editorRef={editorRef} />
-						<RoomInputEnterPlugin onEnter={() => promptModel()} />
+						<EnterPlugin onEnter={() => promptModel()} />
+						<MentionPlugin
+							trigger="/"
+							onSearch={async (search) => {
+								{
+									const { pixelReturn } =
+										await insight.actions.run<
+											[(Engine | App)[]]
+										>(
+											`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION", "MODEL", "VECTOR"] ${search ? `, filterWord=["${search}"]` : ""})`,
+										);
 
-						{Object.keys(mentions).map((trigger) => (
-							<RoomInputMentionPlugin
-								key={trigger}
-								trigger={trigger}
-								onSearch={mentions[trigger]}
-							/>
-						))}
-					</LexicalComposer>
-					{/* 
-						<QuillEditor
-							className={`h-48! .ql-editor:pb-14! ${
-								isDragging
-									? "border-primaryf border-dashed"
-									: "hover:border-primary"
-							} bg-background shadow-lg`}
-							placeholder="What do you want to do today?"
-							disabled={isDisabled}
-							value={input}
-							onMount={(quill) => {
-								quillRef.current = quill;
-							}}
-							onChange={(i) => {
-								console.log(i);
-								setInput(i);
-							}}
-							toolbarOptions={false}
-							keyboardOptions={{
-								bindings: {
-									ENTER: {
-										key: "Enter",
-										handler: () => {
-											promptModel();
+									if (
+										pixelReturn[0].operationType.indexOf(
+											"ERROR",
+										) > -1
+									) {
+										return [];
+									}
 
-											return false;
+									return pixelReturn[0].output.map(
+										(value) => {
+											const mcp =
+												engineProjectToMCP(value);
+
+											return {
+												display: mcp.name,
+												value: mcp.id,
+											};
 										},
-									},
-								},
+									);
+								}
 							}}
-							mentionOptions={{
-								allowedChars: /^[A-Za-z\sÅÄÖåäö]*$/,
-								mentionDenotationChars: Object.keys(
-									mentions || {},
-								),
-								source: async (
-									searchTerm,
-									renderList,
-									mentionChar,
-								) => {
-									// get the matches
-									const matches =
-										await mentions[mentionChar](searchTerm);
+							onSelect={(triggerIdx, selected) => {
+								let success = false;
+								editorRef.current?.update(() => {
+									const selection = $getSelection();
+									if (!$isRangeSelection(selection)) {
+										return;
+									}
 
-									renderList(matches, searchTerm);
-								},
-								onSelect: (item, insertItem) => {
-									console.log(item);
-									insertItem(item);
-								},
+									const anchor = selection.anchor;
+									const anchorNode = anchor.getNode();
+
+									if (!$isTextNode(anchorNode)) {
+										return;
+									}
+
+									const textContent =
+										anchorNode.getTextContent();
+									if (triggerIdx === null) {
+										return;
+									}
+
+									// Get text before trigger
+									const textBeforeTrigger = textContent.slice(
+										0,
+										triggerIdx,
+									);
+
+									// Get text after cursor
+									const textAfterCursor = textContent.slice(
+										anchor.offset,
+									);
+
+									// trigger the callback
+									const badgeNode = $createBadgeNode({
+										content: selected.display,
+										value: `{{app.${selected.value}}}`,
+									});
+
+									// Update the text node
+									if (textBeforeTrigger) {
+										anchorNode.setTextContent(
+											textBeforeTrigger,
+										);
+										anchorNode.insertAfter(badgeNode);
+									} else {
+										anchorNode.replace(badgeNode);
+									}
+
+									// Add text after cursor if any
+									if (textAfterCursor) {
+										const textNode = new TextNode(
+											textAfterCursor,
+										);
+										badgeNode.insertAfter(textNode);
+									}
+
+									// Add a space after the badge and move selection there
+									const spaceNode = new TextNode(" ");
+									badgeNode.insertAfter(spaceNode);
+									spaceNode.select();
+
+									// mark success
+									success = true;
+								});
+
+								return success;
 							}}
-						/> */}
+						/>
+					</LexicalComposer>
 					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
 						{workspace}
 					</div>
