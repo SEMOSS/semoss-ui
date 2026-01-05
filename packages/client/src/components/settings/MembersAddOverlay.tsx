@@ -219,7 +219,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		const fetchUsers = async () => {
 			try {
 				let all = [];
-				if (type === "APP") {
+				if (type === "PROJECT") {
 					const [noCred, cred] = await Promise.all([
 						getProjectUsersNoCredentials(
 							adminMode,
@@ -379,7 +379,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 					id,
 					requests,
 				);
-			} else if (type === "APP") {
+			} else if (type === "PROJECT") {
 				response = await editProjectUserPermissions(
 					adminMode,
 					id,
@@ -493,7 +493,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 					id,
 					requests,
 				);
-			} else if (type === "APP") {
+			} else if (type === "PROJECT") {
 				response = await addProjectUserPermissions(
 					adminMode,
 					id,

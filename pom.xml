@@ -253,12 +253,11 @@
 							<autoReleaseAfterClose>false</autoReleaseAfterClose>
 						</configuration>
 					</plugin>
-					-->
-					<!-- legacy 
+					-->					
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.5</version>
+						<version>3.2.8</version>
 						<executions>
 							<execution>
 								<id>sign-artifacts</id>
@@ -267,14 +266,16 @@
 									<goal>sign</goal>
 								</goals>
 								<configuration>
+									<bestPractices>true</bestPractices>
+									<executable>gpg</executable>
 									<gpgArguments>
+										<arg>--pinentry-mode</arg>
 										<arg>loopback</arg>
-									</gpgArguments> 
+									</gpgArguments>
 								</configuration>
 							</execution>
 						</executions>
-					</plugin>
-					-->
+					</plugin>					
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-source-plugin</artifactId>
