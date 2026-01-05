@@ -596,7 +596,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 
 						<StyledSubRow>
 							<TextField
-								focused={false}
 								label={"Link"}
 								variant={"outlined"}
 								value={
@@ -677,7 +676,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 										}}
 										disabled={
 											!configStore.isEngineOperationAvailable(
-												"APP",
+												"PROJECT",
 												"access",
 											)
 										}
@@ -706,7 +705,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 										disabled={
 											!portalDetails.project_has_portal ||
 											!configStore.isEngineOperationAvailable(
-												"APP",
+												"PROJECT",
 												"access",
 											)
 										}
@@ -720,7 +719,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 
 								<StyledSubRow>
 									<TextField
-										focused={false}
 										label={"Link"}
 										variant={"outlined"}
 										value={
@@ -843,7 +841,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 								rules={{}}
 								disabled={
 									!configStore.isEngineOperationAvailable(
-										"APP",
+										"PROJECT",
 										"access",
 									)
 								}

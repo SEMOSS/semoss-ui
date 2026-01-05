@@ -1,10 +1,11 @@
 import { Close } from "@mui/icons-material";
-import { useEffect } from "react";
-import { Controller } from "react-hook-form";
-import { Env } from "@semoss/sdk/react";
+import { useEffect, useState } from "react";
+import { Env, useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Autocomplete,
 	Button,
+	Chip,
+	CircularProgress,
 	IconButton,
 	Modal,
 	Stack,
@@ -13,12 +14,35 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { usePixel, useRootStore } from "@/hooks";
+import { useRootStore } from "@/hooks";
 import {
-	type engine,
 	type modelledDependency,
 	SetProjectDependencies,
 } from "./app-details.utility";
+
+interface EditDependenciesModalProps {
+	isOpen: boolean;
+	onClose: (refresh: boolean) => void;
+	appId: string;
+	currentDependencies: modelledDependency[];
+}
+
+interface MyEngineProjectEngine {
+	app_id: string;
+	app_name: string;
+	app_type: string;
+}
+
+interface MyEngineProjectProject {
+	project_id: string;
+	project_name: string;
+}
+
+interface Dependency {
+	id: string;
+	name: string;
+	type: string;
+}
 
 const StyledModalHeading = styled(Modal.Title)({
 	display: "flex",
@@ -58,56 +82,61 @@ const StyledCardImage = styled("img")({
 	objectFit: "cover",
 });
 
-interface EditDependenciesModalProps {
-	isOpen: boolean;
-	onClose: (refresh: boolean) => void;
-	control;
-	getValues;
-	setValue;
-	watch;
-}
+/**
+ * Capitalizes the first letter of each word in a string
+ */
+const capitalizeType = (type: string): string => {
+	return type
+		.toLowerCase()
+		.split("_")
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ");
+};
 
-export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
-	const { isOpen, onClose, control, getValues, setValue, watch } = props;
-	const { monolithStore } = useRootStore();
+/**
+ * Renders a modal to edit dependencies for an application.
+ *
+ * @component
+ */
+export const EditDependenciesModal = ({
+	isOpen,
+	onClose,
+	appId,
+	currentDependencies,
+}: EditDependenciesModalProps) => {
+	/**
+	 * State
+	 */
+	const [allDeps, setAllDeps] = useState<Dependency[]>([]);
+	const [selectedDeps, setSelectedDeps] =
+		useState<Dependency[]>(currentDependencies);
+	const [search, setSearch] = useState<string>("");
+
+	/**
+	 * Library Hooks
+	 */
+	const { configStore } = useRootStore();
 	const notification = useNotification();
-	const allDeps = watch("allDependencies");
-	const selectedDeps = watch("selectedDependencies");
+	const debouncedSearch = useDebouncedValue(search);
+	const getEngines = usePixel<
+		(MyEngineProjectEngine | MyEngineProjectProject)[]
+	>(
+		`MyEngineProject(filterWord=${JSON.stringify(debouncedSearch ?? "")});`,
+		undefined,
+		configStore.store.insightID,
+	);
 
-	const getEngines = usePixel<engine[]>("MyEngines();");
-
-	useEffect(() => {
-		if (getEngines.status !== "SUCCESS") {
-			return;
-		}
-
-		const dependencies = modelDependencies(getEngines.data);
-
-		setValue("allDependencies", dependencies);
-	}, [getEngines.status, getEngines.data]);
-
-	const modelDependencies = (
-		dependencies: engine[],
-	): modelledDependency[] => {
-		const modelled = dependencies.map((d) => ({
-			name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
-			id: d.app_id,
-			type: d.app_type,
-			userPermission: d.user_permission,
-			isPublic: !!d.database_global,
-			isDiscoverable: !!d.database_discoverable,
-			description: d.description,
-			access_permission: d.access_permission,
-		}));
-		return modelled;
-	};
-
+	/**
+	 * Functions
+	 */
 	const handleUpdateDependencies = async () => {
-		const appId = getValues("appId");
 		const res = await SetProjectDependencies(
-			monolithStore,
+			configStore,
 			appId,
-			selectedDeps.map((dep: modelledDependency) => dep.id),
+			selectedDeps.map((dep: modelledDependency) => ({
+				id: dep.id,
+				type: dep.type,
+			})),
 		);
 
 		if (res.type === "success") {
@@ -128,8 +157,42 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
 		const newDependencies = selectedDeps.filter(
 			(dep: modelledDependency) => dep.id !== id,
 		);
-		setValue("selectedDependencies", newDependencies);
+		setSelectedDeps(newDependencies);
 	};
+
+	/**
+	 * Effects
+	 */
+	useEffect(() => {
+		if (getEngines.status !== "SUCCESS") {
+			return;
+		}
+
+		setAllDeps(
+			getEngines.data.map((engineProject) => {
+				const eng = engineProject as MyEngineProjectEngine;
+				const proj = engineProject as MyEngineProjectProject;
+				if (eng.app_id) {
+					return {
+						id: eng.app_id,
+						name: eng.app_name,
+						type: eng.app_type,
+					};
+				} else if (proj.project_id) {
+					return {
+						id: proj.project_id,
+						name: proj.project_name,
+						type: "PROJECT",
+					};
+				}
+				return null;
+			}),
+		);
+	}, [getEngines.status, getEngines.data]);
+
+	useEffect(() => {
+		setSelectedDeps(currentDependencies);
+	}, [currentDependencies]);
 
 	return (
 		<Modal open={isOpen} fullWidth onClose={() => onClose(false)}>
@@ -148,45 +211,88 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
 					Linked Dependencies
 				</StyledModalSubHeading>
 
-				<Controller
-					name="selectedDependencies"
-					control={control}
-					render={({ field }) => {
-						return (
-							<Autocomplete
-								options={allDeps}
-								value={field.value}
-								fullWidth
-								multiple
-								onChange={(_, val) => field.onChange(val)}
-								renderInput={(params) => (
-									<TextField {...params} label="Searching" />
-								)}
-								renderOption={(props, option) => (
-									<li {...props}>{option.name}</li>
-								)}
-								getOptionLabel={(option: modelledDependency) =>
-									option.name
+				<Autocomplete
+					options={allDeps}
+					value={selectedDeps}
+					fullWidth
+					multiple
+					onChange={(_, val: Dependency[]) => setSelectedDeps(val)}
+					renderInput={(params) => (
+						<TextField
+							{...params}
+							placeholder="Search..."
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							slotProps={{
+								input: {
+									...params.InputProps,
+									endAdornment: (
+										<>
+											{search !== debouncedSearch ||
+											getEngines.status !== "SUCCESS" ? (
+												<CircularProgress size={24} />
+											) : null}
+											{params.InputProps.endAdornment}
+										</>
+									),
+								},
+							}}
+							onKeyDown={() => {
+								if (
+									!(
+										params.inputProps.ref as {
+											current: { value: string };
+										}
+									)?.current?.value
+								) {
+									setSearch("");
 								}
-								isOptionEqualToValue={(option, value) => {
-									return option.id === value.id;
-								}}
-							/>
-						);
+							}}
+						/>
+					)}
+					getOptionLabel={(option: modelledDependency) => option.name}
+					isOptionEqualToValue={(
+						option: modelledDependency,
+						value: modelledDependency,
+					) => {
+						return option.id === value.id;
 					}}
+					renderOption={(props, option: modelledDependency) => (
+						<li {...props}>
+							<Stack
+								direction="row"
+								spacing={1}
+								alignItems="center"
+							>
+								<Chip
+									label={capitalizeType(option.type)}
+									size="small"
+								/>
+								<Typography variant="body1">
+									{option.name}
+								</Typography>
+							</Stack>
+						</li>
+					)}
+					filterOptions={(x) => x}
+					disableCloseOnSelect
 				/>
 
-				{selectedDeps.map((dep: modelledDependency, idx: number) => {
+				{selectedDeps.map((dep, idx: number) => {
 					return (
 						<StyledDependencyListItem key={`${dep.id}-${idx}`}>
 							<StyledCardImage
-								src={`${Env.MODULE}/api/e-${dep.id}/image/download`}
+								src={
+									dep.type === "PROJECT"
+										? `${Env.MODULE}/api/project-${dep.id}/projectImage/download`
+										: `${Env.MODULE}/api/e-${dep.id}/image/download`
+								}
 							/>
 							<div>
 								<Typography variant="h6">{dep.name}</Typography>
 								<Stack direction="row">
 									<Typography variant="body2">
-										{`${dep.type} | Engine ID: ${dep.id}`}
+										{`${capitalizeType(dep.type)} | Engine ID: ${dep.id}`}
 									</Typography>
 								</Stack>
 							</div>
