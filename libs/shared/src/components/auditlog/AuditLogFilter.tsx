@@ -189,6 +189,9 @@ export const AuditLogFilter = (props) => {
 								className="rounded-md border shadow-sm"
 								captionLayout="dropdown"
 								timeZone="UTC"
+								disabled={{
+									after: new Date(new Date().toUTCString()),
+								}}
 							/>
 						</div>
 						<div className="flex justify-between">
