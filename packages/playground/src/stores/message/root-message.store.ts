@@ -10,6 +10,7 @@ import { createMessageStore } from "./utility";
  */
 export class RootMessageStore extends AbstractMessageStore {
 	readonly type = "ROOT";
+	readonly pixelMessageType = null;
 
 	constructor(room: AbstractMessageStore["room"]) {
 		super(room, {
@@ -46,7 +47,7 @@ engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${inputMessage.imageInfos.length ? `image=${JSON.stringify(inputMessage.imageInfos.map((info) => info.fileLocation))},` : "image=[],"}
+${inputMessage.mediaInputs.length ? `image=${JSON.stringify(inputMessage.mediaInputs.map((info) => info.fileLocation))},` : "image=[],"}
 paramValues=[${JSON.stringify({
 				max_new_tokens: room.options.tokenLength,
 				temperature: room.options.temperature,
@@ -58,7 +59,7 @@ engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${inputMessage.imageInfos.length ? `image=${JSON.stringify(inputMessage.imageInfos.map((info) => info.fileLocation))},` : "image=[],"}
+${inputMessage.mediaInputs.length ? `image=${JSON.stringify(inputMessage.mediaInputs.map((info) => info.fileLocation))},` : "image=[],"}
 paramValues=[${JSON.stringify({
 				max_new_tokens: room.options.tokenLength,
 				temperature: room.options.temperature,

@@ -175,17 +175,19 @@ export const setEngineGlobal = async (
 	}
 	// change to database
 	url += "engine/setEngineGlobal";
-	const postData: Record<string, unknown> = {
-		engineId: encodeURIComponent(engineId),
-		public: encodeURIComponent(global),
-	};
-	const postRecordData = processPostData(postData);
-	const response = await post<{
+
+	return await post<{
 		success: boolean;
-	}>(url, postRecordData, {}).catch((error) => {
+	}>(
+		url,
+		{
+			engineId: encodeURIComponent(engineId),
+			public: encodeURIComponent(global),
+		},
+		{},
+	).catch((error) => {
 		throw Error(error);
 	});
-	return response;
 };
 
 export const setEngineVisiblity = async (
@@ -213,17 +215,16 @@ export const setEngineFavorite = async (
 	engineId: string,
 	favorite: boolean,
 ) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	url += "engine/setEngineFavorite";
-	const postData: Record<string, unknown> = {
-		engineId: engineId,
-		isFavorite: favorite,
-	};
-
-	const response = await post<{
+	return await post<{
 		success: boolean;
-	}>(url, processPostData(postData), {});
-	return response;
+	}>(
+		`${Env.MODULE}/api/auth/engine/setEngineFavorite`,
+		{
+			engineId: engineId,
+			isFavorite: favorite,
+		},
+		{},
+	);
 };
 
 export const approveEngineUserAccessRequest = async (
@@ -357,10 +358,10 @@ export const deleteEnginePermission = async (
  * @returns
  */
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 export const editEngineUserPermissions = async (
 	admin: boolean,
 	appId: string,
+	// biome-ignore lint/suspicious/noExplicitAny: TODO: type
 	users: any[],
 ) => {
 	let url = `${Env.MODULE}/api/auth/`,
