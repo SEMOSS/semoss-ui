@@ -25,6 +25,12 @@ export default defineConfig(({ mode }) => {
 		},
 		define: {
 			"import.meta.env.MODULE": JSON.stringify(MODULE),
+			"import.meta.env.ACCESS_KEY": isProduction
+				? undefined
+				: JSON.stringify(env.ACCESS_KEY),
+			"import.meta.env.SECRET_KEY": isProduction
+				? undefined
+				: JSON.stringify(env.SECRET_KEY),
 		},
 		build: {
 			minify: isProduction,
