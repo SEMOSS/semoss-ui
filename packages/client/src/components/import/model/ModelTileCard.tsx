@@ -127,20 +127,6 @@ const DocsLinkButton = styled("button")(() => ({
 	},
 }));
 
-const DescriptionText = styled(Typography)(() => ({
-	fontSize: "11px",
-	lineHeight: 1.3,
-	color: "#555",
-	marginTop: "4px",
-	// Height should exactly match 3 lines to avoid cutting a partial line.
-	minHeight: "calc(3 * 1.3em)",
-	maxHeight: "calc(3 * 1.3em)",
-	overflow: "hidden",
-	display: "-webkit-box",
-	WebkitLineClamp: 3,
-	WebkitBoxOrient: "vertical",
-}));
-
 function hashString(str: string): number {
 	let h = 0;
 	for (let i = 0; i < str.length; i++) {
@@ -287,9 +273,12 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 						{model.display || model.name}
 					</StyledCardModelText>
 				</TitleRow>
-				<DescriptionText component="p" variant="caption">
+				<p
+					className="mt-1 line-clamp-3 text-[#555] text-[12px] leading-[1.3]"
+					title={model.description || ""}
+				>
 					{model.description}
-				</DescriptionText>
+				</p>
 			</StyledInnerBox>
 		</StyledFormTypeModelBox>
 	);
