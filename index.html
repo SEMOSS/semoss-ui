@@ -7,8 +7,13 @@
         var hash = window.location.hash;
         // Sanitize hash to prevent XSS - only allow alphanumeric, -, _, /, and #
         var sanitizedHash = hash.replace(/[^a-zA-Z0-9\-\_\/\#]/g, '');
-        var newUrl = "packages/legacy/dist/" + sanitizedHash;
-        window.location.href = newUrl;
+        // Validate that sanitized hash only contains safe characters
+        if (sanitizedHash && /^[a-zA-Z0-9\-\_\/\#]*$/.test(sanitizedHash)) {
+            var newUrl = "packages/legacy/dist/" + encodeURI(sanitizedHash);
+            window.location.href = newUrl;
+        } else {
+            window.location.href = "packages/legacy/dist/";
+        }
     </script>
 </head>
 

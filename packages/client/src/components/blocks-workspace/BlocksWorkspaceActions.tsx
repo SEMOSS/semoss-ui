@@ -9,6 +9,7 @@ import { ShareOverlay } from "@/components/ui";
 import { PreviewOverlay } from "@/components/workspace";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { LLMSelectOverlay } from "../llms";
+import { sanitizeUrl } from "@/utility";
 
 export const BlocksWorkspaceActions = observer(() => {
 	const { state } = useBlocks();
@@ -31,7 +32,7 @@ export const BlocksWorkspaceActions = observer(() => {
 				const urlObj = new URL(cleanedUrl, window.location.origin);
 				// Only allow same-origin redirects
 				if (urlObj.origin === window.location.origin) {
-					window.location.href = cleanedUrl;
+					window.location.href = sanitizeUrl(cleanedUrl);
 				}
 			} catch (e) {
 				console.error("Invalid URL:", e);
