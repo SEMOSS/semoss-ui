@@ -3,6 +3,7 @@ import {
 	ArrowRightIcon,
 	CircleAlert,
 	CopyIcon,
+	DownloadIcon,
 	MessageCircleIcon,
 	RefreshCwIcon,
 	ThumbsDownIcon,
@@ -84,6 +85,19 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		const areToolsActive =
 			message.type === "RESPONSE" &&
 			message.tools.some((tool) => !tool.response);
+
+		/**
+		 * Download the response
+		 * @param text - text to copy
+		 */
+		const downloadResponse = async () => {
+			try {
+				await message.downloadResponse();
+				toast.success("Response downloaded successfully");
+			} catch (e) {
+				toast.error(e.message || "Failed to download response");
+			}
+		};
 
 		return (
 			<div className="group mb-0 flex w-full flex-col gap-2">
@@ -242,6 +256,22 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						</TooltipTrigger>
 						<TooltipContent side="bottom">
 							Copy Response
+						</TooltipContent>
+					</Tooltip>
+
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								disabled={!message.text}
+								onClick={() => downloadResponse()}
+							>
+								<DownloadIcon />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">
+							Download Response
 						</TooltipContent>
 					</Tooltip>
 				</div>

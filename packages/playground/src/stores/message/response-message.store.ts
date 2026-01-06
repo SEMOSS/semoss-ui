@@ -1,3 +1,5 @@
+import { Document, Packer, Paragraph, TextRun } from "docx";
+import { saveAs } from "file-saver";
 import { makeObservable, observable, runInAction } from "mobx";
 import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "@/constants";
 import type {
@@ -226,6 +228,55 @@ paramValues=[${JSON.stringify({
 			};
 		} finally {
 			// noop
+		}
+	};
+
+	/**
+	 * Download the response as a Word document
+	 */
+	downloadResponse = async (): Promise<void> => {
+		if (!this.text) {
+			throw new Error("No content to download");
+		}
+
+		try {
+			// Create a new document
+			const doc = new Document({
+				sections: [
+					{
+						properties: {},
+						children: [
+							new Paragraph({
+								children: [
+									new TextRun({
+										text: this.text,
+										size: 24, // 12pt font (size is in half-points)
+									}),
+								],
+							}),
+						],
+					},
+				],
+			});
+
+			// Generate and download the document
+			const now = new Date();
+			const dateStr = now.toLocaleDateString("en-CA"); // YYYY-MM-DD format
+			const timeStr = now
+				.toLocaleTimeString("en-US", {
+					hour12: true,
+					hour: "2-digit",
+					minute: "2-digit",
+				})
+				.replace(":", "-")
+				.replace(" ", "_");
+
+			const fileName = `Elsa_output_${dateStr}_${timeStr}.docx`;
+			const blob = await Packer.toBlob(doc);
+			saveAs(blob, fileName);
+		} catch (error) {
+			console.error("Error downloading response:", error);
+			throw new Error("Failed to download response");
 		}
 	};
 
