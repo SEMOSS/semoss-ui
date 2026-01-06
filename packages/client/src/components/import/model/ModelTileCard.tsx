@@ -63,19 +63,6 @@ const StyledModelAvatar = styled("div")<{ gradientBg: string }>(
 	}),
 );
 
-const StyledCardModelText = styled("p")({
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	whiteSpace: "nowrap",
-	margin: "2px 0 0",
-	alignSelf: "stretch",
-	fontSize: "14px",
-	fontWeight: "500",
-	lineHeight: "143%",
-	letterSpacing: "0.17px",
-	color: "#212121",
-});
-
 const StyledTypographyText = styled(Typography)(() => ({
 	display: "flex",
 	alignItems: "center",
@@ -97,13 +84,6 @@ const ModelTypeTile = styled(Typography)(() => ({
 	fontSize: "13px",
 	color: "#0471F0",
 	fontWeight: 600,
-}));
-
-const TitleRow = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	width: "100%",
-	gap: theme.spacing(1),
 }));
 
 const StyledCardContentSpan = styled("span")(() => ({
@@ -268,11 +248,14 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 						</ModelTypeTile>
 					)}
 				</Stack>
-				<TitleRow>
-					<StyledCardModelText ref={textRef}>
+				<div className="flex w-full items-center gap-2">
+					<p
+						ref={textRef}
+						className="mt-[2px] self-stretch overflow-hidden text-ellipsis whitespace-nowrap font-medium text-[#212121] text-sm leading-[143%] tracking-[0.17px]"
+					>
 						{model.display || model.name}
-					</StyledCardModelText>
-				</TitleRow>
+					</p>
+				</div>
 				<p
 					className="mt-1 line-clamp-3 text-[#555] text-[12px] leading-[1.3]"
 					title={model.description || ""}
