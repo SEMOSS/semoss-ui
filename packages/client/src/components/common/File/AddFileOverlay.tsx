@@ -14,7 +14,7 @@ import { useRootStore } from "@/hooks";
 
 interface AddFileOverlayProps {
 	/** Type of file opened */
-	type: "app" | "insight";
+	type: "app" | "insight" | "engine";
 
 	/** Space where the file is located */
 	space: string;
@@ -95,6 +95,14 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 					space,
 					uploadPath,
 				);
+			} else if (type === "engine") {
+				upload = await uploadFileAPI(
+					[uploadFile],
+					configStore.store.insightID,
+					space,
+					uploadPath,
+					"engine",
+				);
 			} else {
 				throw new Error("TODO");
 			}
@@ -104,13 +112,18 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 			}
 
 			const path = `${uploadPath}${upload[0].fileName}`;
-
 			if (unzipFile) {
 				if (type === "app") {
 					await monolithStore.runQuery(
 						`UnzipFile(filePath=["${path}"], space=["${space}"])`,
 					);
-				} else {
+				}
+				else if ( type === "engine") {
+					await monolithStore.runQuery(
+						`UnzipFile(filePath=["/${path.split("app_root/")[1]}"], space=["${space}"])`,
+					);
+				} 
+				else {
 					throw new Error("TODO");
 				}
 			}
@@ -145,13 +158,15 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 						disabled={isLoading}
 						onChange={handleFileChange}
 					/>
-					<Checkbox
-						checked={unzipFile}
-						onChange={() => {
-							setUnzipFile(!unzipFile);
-						}}
-						label={<Typography variant="body2">Unzip?</Typography>}
-					/>
+						<Checkbox
+							checked={unzipFile}
+							onChange={() => {
+								setUnzipFile(!unzipFile);
+							}}
+							label={
+								<Typography variant="body2">Unzip?</Typography>
+							}
+						/>
 				</Stack>
 			</Modal.Content>
 			<Modal.Actions>
