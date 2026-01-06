@@ -185,7 +185,7 @@ export const fetchDependencies = async (
 	  }
 > => {
 	const res = await configStore.runPixel<(appDependency[] | string)[]>(
-		`GetProjectDependencies(project="${appId}")`,
+		`GetEnginesDependencies(space="${appId}")`,
 	);
 
 	const type = res.pixelReturn[0].operationType;

@@ -494,7 +494,8 @@ export class StateStore {
 					type === "storage" ||
 					type === "string" ||
 					type === "date" ||
-					type === "number"
+					type === "number"||
+					type === "guardrail"
 				) {
 					return value;
 				} else if (type === "array" || type === "JSON") {

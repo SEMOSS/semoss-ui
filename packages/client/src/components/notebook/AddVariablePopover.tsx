@@ -117,6 +117,12 @@ interface AddVariablePopoverProps {
 			app_type: string;
 			app_subtype: string;
 		}[];
+		guardrails: {
+			app_id: string;
+			app_name: string;
+			app_type: string;
+			app_subtype: string;
+		}[];
 	};
 }
 export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
@@ -283,7 +289,18 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 					</Select.Item>
 				);
 			});
-		} else {
+		} else if( variableType === "guardrail") {
+			return engines.guardrails.map((model) => {
+				return (
+					<Select.Item key={model.app_id} value={model}>
+						<Typography variant="caption">
+							{model.app_name}
+						</Typography>
+					</Select.Item>
+				);
+			});
+		}
+		 else {
 			return <Select.Item value="">No options</Select.Item>;
 		}
 	}, [variableType]);

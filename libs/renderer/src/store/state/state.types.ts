@@ -43,7 +43,8 @@ export type VariableType =
 	| "JSON"
 	| "date"
 	| "array"
-	| "LLM Comparison"; // TODO: Ignore and delete later
+	| "LLM Comparison" // TODO: Ignore and delete later
+	| "guardrail";
 
 /**
  * Variables

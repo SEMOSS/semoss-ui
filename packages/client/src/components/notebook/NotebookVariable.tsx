@@ -133,6 +133,12 @@ interface NotebookTokenProps {
 			app_type: string;
 			app_subtype: string;
 		}[];
+		guardrails: {
+			app_id: string;
+			app_name: string;
+			app_type: string;
+			app_subtype: string;
+		}[];
 	};
 }
 

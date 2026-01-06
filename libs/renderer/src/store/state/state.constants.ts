@@ -28,6 +28,7 @@ export const VARIABLE_TYPES = [
 	"date",
 	"array",
 	"JSON",
+	"guardrail"
 ];
 
 export const ACTIONS_DISPLAY = {

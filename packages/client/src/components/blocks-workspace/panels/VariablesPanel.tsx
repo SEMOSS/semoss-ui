@@ -145,12 +145,19 @@ export const VariablesPanel = observer(
 				app_type: string;
 				app_subtype: string;
 			}[];
+			guardrails: {
+				app_id: string;
+				app_name: string;
+				app_type: string;
+				app_subtype: string;
+			}[];
 		}>({
 			models: [],
 			databases: [],
 			storages: [],
 			functions: [],
 			vectors: [],
+			guardrails: [],
 		});
 		const [filterWord, setFilterWord] = useState("");
 		const [selectedFilter, setSelectedFilter] = useState(VARIABLE_TYPES);
@@ -212,6 +219,9 @@ export const VariablesPanel = observer(
 					(e) => e.app_type === "FUNCTION",
 				),
 				vectors: cleanedEngines.filter((e) => e.app_type === "VECTOR"),
+				guardrails: cleanedEngines.filter(
+					(e) => e.app_type === "GUARDRAIL",
+				),
 			};
 
 			setEngines(newEngines);
