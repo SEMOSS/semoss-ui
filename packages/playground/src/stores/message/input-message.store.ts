@@ -8,6 +8,9 @@ import { AbstractMessageStore } from "./abstract-message.store";
  */
 export class InputMessageStore extends AbstractMessageStore {
 	readonly type = "INPUT";
+	readonly pixelMessageType:
+		| InputTextPixelMessage["type"]
+		| InputMediaPixelMessage["type"];
 
 	/**
 	 * Text associated with the message
@@ -30,6 +33,7 @@ export class InputMessageStore extends AbstractMessageStore {
 		message: InputTextPixelMessage | InputMediaPixelMessage,
 	) {
 		super(room, message);
+		this.pixelMessageType = message.type;
 
 		this.text = message.inputUIPrompt;
 		this.mediaInputs = message.mediaInputs;
