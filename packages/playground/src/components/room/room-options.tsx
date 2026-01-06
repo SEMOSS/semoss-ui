@@ -346,10 +346,14 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 								}
 								onClose={(mcp) => {
 									if (mcp) {
-										// remove from the options
+										// Merge updated MCPs with the other type
+										const otherTypeMCPs = mCPOverlay.type === "TOOLBOX" 
+											? knowledge 
+											: toolbox;
+										
 										setOptions({
 											...options,
-											mcp: mcp,
+											mcp: [...otherTypeMCPs, ...mcp],
 										});
 									}
 
