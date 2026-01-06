@@ -49,7 +49,8 @@ import {
 	FocusPlugin,
 	MentionPlugin,
 } from "@/components";
-import type { App, Engine } from "@/types";
+import type { App, Engine, MCP } from "@/types";
+import { generateTemplate } from "@/utility";
 
 const ENABLE_ATTACHMENT = import.meta.env.VITE_ENABLE_ATTACHMENT === "true";
 
@@ -190,11 +191,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				const root = $getRoot();
 				userInput = root.getTextContent();
 			});
-
-			console.log(
-				"TODO:: convert userInput to string to send ot the backend",
-				userInput,
-			);
 
 			const userFiles = files;
 
@@ -383,7 +379,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<FocusPlugin />
 						<EditorRefPlugin editorRef={editorRef} />
 						<EnterPlugin onEnter={() => promptModel()} />
-						<MentionPlugin
+						<MentionPlugin<MCP>
 							trigger="/"
 							onSearch={async (search) => {
 								{
@@ -410,6 +406,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											return {
 												display: mcp.name,
 												value: mcp.id,
+												data: mcp,
 											};
 										},
 									);
@@ -450,7 +447,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									// trigger the callback
 									const badgeNode = $createBadgeNode({
 										content: selected.display,
-										value: `{{app.${selected.value}}}`,
+										value: generateTemplate([
+											{
+												type: "DATA",
+												data: {
+													...selected.data,
+												},
+											},
+										]),
 									});
 
 									// Update the text node
@@ -479,6 +483,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									// mark success
 									success = true;
 								});
+
+								// add to the room
 
 								return success;
 							}}

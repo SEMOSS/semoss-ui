@@ -1,6 +1,6 @@
 import { FileIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
 	Dialog,
 	DialogContent,
@@ -8,6 +8,8 @@ import {
 	DialogTitle,
 } from "@semoss/ui/next";
 import type { InputMessageStore } from "@/stores";
+import type { MCP } from "@/types";
+import { InputMessageBadge } from "./input-message-badge";
 
 interface InputMessageProps {
 	/** Message to render */
@@ -23,9 +25,21 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 		return (
 			<div>
 				<div className="ml-auto max-w-[600px] items-start self-stretch rounded-lg bg-accent px-5 py-4 leading-normal">
-					<span className="text-base text-foreground">
-						{message.text}
-					</span>
+					{message.tokens.map((token, index) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: this is valid as order matters
+						<React.Fragment key={index}>
+							{token.type === "TEXT" && (
+								<span className="text-base text-foreground">
+									{token.text}
+								</span>
+							)}
+							{token.type === "DATA" && (
+								<InputMessageBadge
+									mcp={token.data as unknown as MCP}
+								/>
+							)}
+						</React.Fragment>
+					))}
 				</div>
 				{message.mediaInputs.length > 0 ? (
 					<div className="ml-auto flex max-w-[600px] flex-row items-center gap-2 pt-2">

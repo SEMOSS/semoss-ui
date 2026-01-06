@@ -13,12 +13,13 @@ import {
 	Spinner,
 } from "@semoss/ui/next";
 
-export interface Mention {
+export interface Mention<D> {
 	display: string;
 	value: string;
+	data?: D;
 }
 
-interface MentionPluginProps {
+interface MentionPluginProps<D> {
 	/**
 	 * Trigger character to open the mention menu
 	 */
@@ -29,7 +30,7 @@ interface MentionPluginProps {
 	 * @param search
 	 * @returns list of mentions that match the search
 	 */
-	onSearch: (search: string) => Promise<Mention[]>;
+	onSearch: (search: string) => Promise<Mention<D>[]>;
 
 	/**
 	 * Callback to select a mention
@@ -37,18 +38,18 @@ interface MentionPluginProps {
 	 * @param selected mention
 	 * @returns true if the mention was selected, false otherwise
 	 */
-	onSelect: (triggerIdx: number, selected: Mention) => boolean;
+	onSelect: (triggerIdx: number, selected: Mention<D>) => boolean;
 }
 
-export function MentionPlugin({
+export function MentionPlugin<D>({
 	trigger,
 	onSearch,
 	onSelect,
-}: MentionPluginProps) {
+}: MentionPluginProps<D>) {
 	const [editor] = useLexicalComposerContext();
 	const [isOpen, setIsOpen] = useState(false);
 	const [search, setSearch] = useState("");
-	const [items, setItems] = useState<Mention[]>([]);
+	const [items, setItems] = useState<Mention<D>[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [selectedValue, setSelectedValue] = useState("");
 	const [menuPosition, setMenuPosition] = useState<{
