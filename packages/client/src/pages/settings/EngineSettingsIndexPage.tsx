@@ -23,7 +23,7 @@ import {
 import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard, EngineTileCard } from "@/components/engine";
 import { useAPI, usePixel, useRootStore, useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
+import type { ENGINE_TYPES } from "@/types";
 
 export interface DBMember {
 	ID: string;
@@ -95,7 +95,7 @@ const reducer = (state, action) => {
  */
 interface EngineSettingsIndexPageProps {
 	/** Type of the page to render */
-	type: ALL_TYPES;
+	type: ENGINE_TYPES;
 }
 
 export const EngineSettingsIndexPage = (
@@ -438,7 +438,7 @@ export const EngineSettingsIndexPage = (
 						}}
 						size="small"
 						onClear={() => setSearch("")}
-						ref={searchbarRef}
+						inputRef={searchbarRef}
 					/>
 					<StyledSort
 						size={"small"}
