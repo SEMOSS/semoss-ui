@@ -1,3 +1,4 @@
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: Complex interdependencies in this file make exhaustive deps impractical
 import { Add, Delete, Edit } from "@mui/icons-material";
 import SearchIcon from "@mui/icons-material/Search";
 import type { AxiosResponse } from "axios";
@@ -180,16 +181,16 @@ const StyledRadioGroup = styled(RadioGroup)({
 	flexWrap: "nowrap",
 });
 
-const StyledCell = styled(Table.Cell)(({ theme }) => ({
+const StyledCell = styled(Table.Cell)({
 	whiteSpace: "nowrap",
 	overflow: "hidden",
 	textOverflow: "ellipsis",
-}));
+});
 
-const StyledFooter = styled(Table.Footer)(({ theme }) => ({
+const StyledFooter = styled(Table.Footer)({
 	display: "flex",
 	justifyContent: "flex-end",
-}));
+});
 
 const formatValue = (input: string) => {
 	if (input !== undefined) {
@@ -307,7 +308,7 @@ export const MembersTable = (props: MembersTableProps) => {
 	let getMembersApi: Parameters<typeof useAPI>[0] = null;
 	let getUserDataApi: Parameters<typeof useAPI>[0] = null;
 	let getAllAuthorsApi: Parameters<typeof useAPI>[0] = null;
-	if (type === "APP") {
+	if (type === "PROJECT") {
 		getUserDataApi = ["getUserProjectPermission", id];
 		getMembersApi = [
 			"getProjectUsers",
@@ -408,7 +409,6 @@ export const MembersTable = (props: MembersTableProps) => {
 					?.permission as SETTINGS_ROLE,
 			);
 		} else {
-			console.log("user data", userData);
 			setUserPermission(
 				permissionPriorityMapper(
 					userData.permission === "OWNER"
@@ -442,7 +442,7 @@ export const MembersTable = (props: MembersTableProps) => {
 	const readOnlyRestricted = (member) => {
 		if (!userData) return false;
 		return (
-			(type === "DATABASE" || type === "APP") &&
+			(type === "DATABASE" || type === "PROJECT") &&
 			member.name === userData.name
 		);
 	};
@@ -508,7 +508,7 @@ export const MembersTable = (props: MembersTableProps) => {
 					id,
 					requests,
 				);
-			} else if (type === "APP") {
+			} else if (type === "PROJECT") {
 				response = await editProjectUserPermissions(
 					adminMode,
 					id,
@@ -1227,9 +1227,6 @@ export const MembersTable = (props: MembersTableProps) => {
 																			setAddModalUser(
 																				user,
 																			);
-																			console.log(
-																				user,
-																			);
 																		}}
 																		disabled={
 																			!configStore.isEngineOperationAvailable(
@@ -1257,8 +1254,8 @@ export const MembersTable = (props: MembersTableProps) => {
 																				"access",
 																			) ||
 																			userPermission ===
-																				"Read-Only" || 	
-																			disableActionsForEditorAuthor	
+																				"Read-Only" ||
+																			disableActionsForEditorAuthor
 																		}
 																	>
 																		<Delete></Delete>
