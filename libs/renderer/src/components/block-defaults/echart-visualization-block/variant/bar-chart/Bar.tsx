@@ -135,61 +135,75 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 		(resultData: unknown) => {
 			let frameDataIndex = 0;
 			//setting xaxis data
-			resultData["xAxis"]["data"] = frameData.data?.values?.map(
-				(item, index) => {
-					return { value: item[frameDataIndex] };
-				},
-			);
-			const optionSeriesLength = frameData.data.headers.length;
-			frameDataIndex++;
-			//setting all values to all existing series to null, to restore the chart to initial state so new values will be updated
-			for (
-				let seriesIdx = 0;
-				seriesIdx < resultData["series"].length;
-				seriesIdx++
-			) {
-				if (
-					resultData["series"][seriesIdx] !== undefined &&
-					Object.hasOwn(resultData["series"][seriesIdx], "data") &&
-					!Object.hasOwn(
-						resultData["series"][seriesIdx],
-						"toggleTrendLineObject",
-					)
-				) {
-					resultData["series"][seriesIdx]["data"] =
-						frameData.data?.values?.map((item, index) => {
-							return { value: null };
-						});
-				}
-			}
-			//setting new values to series
-			let i;
-			for (i = frameDataIndex; i < optionSeriesLength; i++) {
-				if (
-					resultData["series"][i - 1] !== undefined &&
-					Object.hasOwn(resultData["series"][i - 1], "data") &&
-					!Object.hasOwn(
-						resultData["series"][i - 1],
-						"toggleTrendLineObject",
-					)
-				) {
-					resultData["series"][i - 1]["data"] =
-						frameData.data?.values?.map((item, index) => {
-							return { value: item[i] ?? null };
-						});
-				}
-			}
+			resultData["xAxis"]["data"] = frameData.data?.values?.map((item) => {
+				const value = item[frameDataIndex];
+				return typeof value === "number" && !isNaN(value) ? value : null; // Replace NaN with null
+			});
 
-			 // Filter series based on yAxis.name array
-			 const yAxisNames = resultData["yAxis"]["name"]; 
-			 
-			 resultData["series"] = resultData["series"].filter((seriesItem) =>
-				 yAxisNames.includes(seriesItem.name)
-			 );
+			if (resultData["xAxis"]["name"]?.length > 0) {
+				const optionSeriesLength = frameData.data.headers.length;
+				frameDataIndex++;
+				//setting all values to all existing series to null, to restore the chart to initial state so new values will be updated
+				for (
+					let seriesIdx = 0;
+					seriesIdx < resultData["series"].length;
+					seriesIdx++
+				) {
+					if (
+						resultData["series"][seriesIdx] !== undefined &&
+						Object.hasOwn(resultData["series"][seriesIdx], "data") &&
+						!Object.hasOwn(
+							resultData["series"][seriesIdx],
+							"toggleTrendLineObject",
+						)
+					) {
+						resultData["series"][seriesIdx]["data"] =
+							frameData.data?.values?.map((item) => null); // Set to null directly
+					}
+				}
+				
+				// Setting new values to series
+				let i;
+				for (i = frameDataIndex; i < optionSeriesLength; i++) {
+					if (
+						resultData["series"][i - 1] !== undefined &&
+						Object.hasOwn(resultData["series"][i - 1], "data") &&
+						!Object.hasOwn(
+							resultData["series"][i - 1],
+							"toggleTrendLineObject",
+						)
+					) {
+						resultData["series"][i - 1]["data"] =
+						frameData.data?.values?.map((item) => {
+							const value = item[i];
+							return typeof value === "number" && isNaN(value) ? null : value; // Replace NaN with null
+						});
+					}
+				}
 
-			 // Ensure the series array length matches the yAxisNames length
-			if (resultData["series"].length > yAxisNames.length) {
-				resultData["series"] = resultData["series"].slice(0, yAxisNames.length);
+				// Filter series based on yAxis.name array
+				const yAxisNames = resultData["yAxis"]["name"]; 
+				
+				resultData["series"] = resultData["series"].filter((seriesItem) =>
+					yAxisNames.includes(seriesItem.name) || seriesItem.toggleTrendLineObject === true
+				);
+
+				// Ensure the series array length matches the yAxisNames length
+				if (resultData["series"].length > yAxisNames.length) {
+				
+					// Separate series with toggleTrendLineObject === true
+					const trendLineSeries = resultData["series"].filter(
+						(seriesItem) => seriesItem.toggleTrendLineObject === true
+					);
+				
+					// Slice only the remaining series to match yAxisNames length
+					const otherSeries = resultData["series"].filter(
+						(seriesItem) => seriesItem.toggleTrendLineObject !== true
+					).slice(0, yAxisNames.length);
+				
+					// Combine the sliced series with the trend line series
+					resultData["series"] = [...otherSeries, ...trendLineSeries];
+				}
 			}
 
 			return resultData; //returning updated values to chart
