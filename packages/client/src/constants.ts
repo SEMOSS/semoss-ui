@@ -13,7 +13,7 @@ export const PERMISSION_DESCRIPTION_MAP: Record<
 	ALL_TYPES,
 	Record<string, string>
 > = {
-	APP: {
+	PROJECT: {
 		author: "Ability to hide or delete the data app, provision other authors and all editor permissions",
 		editor: "Ability to edit the data app code, provision other users as editors and read only users, and all  read-only permissions",
 		readonly:
