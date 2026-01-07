@@ -193,7 +193,7 @@ export const ToggleTrendline = observer(
 					if (displayPositionIndex > -1 && lineAlreadyExists == -1) {
 						const toggleLineData = {
 							...trendLinesData,
-							name: `${option["series"][displayPositionIndex]["name"]} Trend`,
+							name: `Trendline: ${option["series"][displayPositionIndex]["name"]}`,
 							data:
 								option["series"][displayPositionIndex][
 									"data"
