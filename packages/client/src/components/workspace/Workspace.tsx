@@ -348,6 +348,42 @@ export const Workspace = observer((props: WorkspaceProps) => {
 												tabNode.getName(),
 										);
 										const isSelected = tabNode.isSelected();
+
+										// Base test ID without suffix
+										const baseDataTestId =
+											formatToDataTestId(
+												`workspace-${tabNode.getName()}`,
+											);
+
+										// Ref callback to set data-testid based on ghost/original state
+										const DynamicDataTestId = (
+											el: HTMLElement | null,
+										) => {
+											if (el) {
+												// Check if this is a ghost/preview element during drag
+												const parent = el.parentElement;
+												const grandParent =
+													parent?.parentElement;
+
+												const isGhost =
+													parent?.classList.contains(
+														"flexlayout__tab_button_stamp",
+													) ||
+													grandParent?.classList.contains(
+														"flexlayout__tab_button_stamp",
+													);
+
+												// Determine suffix: ghost for drag preview, image for original
+												const suffix = isGhost
+													? "ghost"
+													: "image";
+												el.setAttribute(
+													"data-testid",
+													`${baseDataTestId}-${suffix}`,
+												);
+											}
+										};
+
 										if (item?.icon?.component) {
 											const Icon = item.icon.component;
 
@@ -358,9 +394,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 													<IconButton
 														size={"small"}
 														color="default"
-														data-testId={formatToDataTestId(
-															`workspace-${tabNode.getName()}`,
-														)}
+														ref={DynamicDataTestId}
 													>
 														<Icon
 															color={
@@ -381,9 +415,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 												<StyledLetTabImage
 													src={iconSrc}
 													alt={tabNode.getName()}
-													data-testId={formatToDataTestId(
-														`workspace-${tabNode.getName()}`,
-													)}
+													ref={DynamicDataTestId}
 												/>
 											);
 										}
