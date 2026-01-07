@@ -4,7 +4,7 @@ import { useRootStore } from "@/hooks";
 
 interface DeleteFileOverlayProps {
 	/** Type of file opened */
-	type: "app" | "insight";
+	type: "app" | "insight" | "engine";
 
 	/** Space where the file is located */
 	space: string;
@@ -35,6 +35,10 @@ export const DeleteFileOverlay = (props: DeleteFileOverlayProps) => {
 			if (type === "app") {
 				await monolithStore.runQuery(
 					`DeleteAsset(filePath=["${fileDeletePath}"], space=["${space}"]);`,
+				);
+			} else if (type === "engine") {
+				await monolithStore.runQuery(
+					`DeleteEngineAssets(filePath=["${fileDeletePath.split("assets/")[1]}"], engine=["${space}"]);`,
 				);
 			} else if (type === "insight") {
 				throw new Error("TODO");
