@@ -40,17 +40,36 @@ export const RoomPage = observer(() => {
 
 	// load the room
 	useEffect(() => {
+		const loadRoom = async () => {
+			try {
+				await room.initialize();
+				try {
+					await chat.setSelectedModelById(room.modelId);
+				} catch {
+					// model id is invalid
+					toast.warning(
+						`The model previously selected for this room is no longer available.`,
+					);
+					room.setModel(chat.models?.selected?.app_id);
+				}
+			} catch (e) {
+				// if it doesn't load successfully, go back to home
+				toast.error(e.message);
+				navigate("/");
+			}
+		};
+
 		if (!room || room.isInitialized) {
 			return;
+		} else {
+			loadRoom();
 		}
-
-		// if it doesn't load successfully, go back to home
-		room.initialize().catch((e) => {
-			toast.error(e.message);
-
-			navigate("/");
-		});
-	}, [room, navigate]);
+	}, [
+		room,
+		navigate,
+		chat.setSelectedModelById,
+		chat.models?.selected?.app_id,
+	]);
 
 	// set the breadcrumbs
 	useGlobalBreadcrumbs([
