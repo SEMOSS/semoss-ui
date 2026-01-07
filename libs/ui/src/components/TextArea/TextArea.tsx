@@ -13,6 +13,11 @@ export type TextAreaProps = MuiInputProps &
 		/** amount of rows to render */
 		rows?: number;
 
+		/**
+		 * The value to associated with the input element (if controlled).
+		 */
+		value?: unknown;
+
 		/** min number of rows that can be rendered */
 		minRows?: number;
 
@@ -24,6 +29,9 @@ export type TextAreaProps = MuiInputProps &
 
 		/** placeholder text displayed within textarea */
 		placeholder?: string | number;
+
+		/** callback function triggered when the value changes */
+		onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 	};
 
 export const TextArea = (props: TextAreaProps) => {
@@ -34,6 +42,7 @@ export const TextArea = (props: TextAreaProps) => {
 		label,
 		multiline = true,
 		placeholder,
+		onChange,
 	} = props;
 	return (
 		<MuiTextfield
@@ -44,6 +53,7 @@ export const TextArea = (props: TextAreaProps) => {
 			label={label}
 			multiline={multiline}
 			placeholder={placeholder}
+			onChange={onChange}
 		/>
 	);
 };
