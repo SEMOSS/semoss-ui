@@ -1254,8 +1254,8 @@ export const MembersTable = (props: MembersTableProps) => {
 																				"access",
 																			) ||
 																			userPermission ===
-																				"Read-Only" || 	
-																			disableActionsForEditorAuthor	
+																				"Read-Only" ||
+																			disableActionsForEditorAuthor
 																		}
 																	>
 																		<Delete></Delete>
