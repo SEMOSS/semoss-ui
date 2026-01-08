@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { styled, Table, Typography } from "@semoss/ui";
-import { getTeamsByEngineId, getTeamsByProjectId } from "@/api/teams";
+import {
+	getGroupsWithAccessToEngine,
+	getGroupsWithAccessToProject,
+} from "@/api/teams";
 import { AddTeamModal } from "@/components/teams/AddTeamModal";
 
 const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
@@ -35,10 +38,18 @@ export const TeamsTable = ({ type, id }) => {
 			try {
 				let data: any[] = [];
 				if (type === "ENGINE") {
-					const result = await getTeamsByEngineId(String(id), 100, 0);
+					const result = await getGroupsWithAccessToEngine(
+						String(id),
+						100,
+						0,
+					);
 					data = Array.isArray(result) ? result : [];
 				} else if (type === "PROJECT") {
-					const result = await getTeamsByProjectId(String(id), 100, 0);
+					const result = await getGroupsWithAccessToProject(
+						String(id),
+						100,
+						0,
+					);
 					data = Array.isArray(result) ? result : [];
 				}
 				const permissionMap = {
@@ -46,15 +57,14 @@ export const TeamsTable = ({ type, id }) => {
 					2: "Editor",
 					3: "Read-Only",
 				};
-				const mappedTeams = data.map(
-					(team, idx) => ({
-						id: team.id || idx,
-						name: team.id,
-						type: team.type,
-						permission: permissionMap[team.permission] || team.permission,
-						dateAdded: team.dateadded,
-					}),
-				);
+				const mappedTeams = data.map((team, idx) => ({
+					id: team.ID || idx,
+					name: team.ID,
+					type: team.TYPE,
+					permission:
+						permissionMap[team.PERMISSION] || team.PERMISSION,
+					dateAdded: team.DATEADDED,
+				}));
 				setTeams(mappedTeams);
 			} catch (e) {
 				console.error(e);

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Stack } from "@semoss/ui";
+import { DatabasePageContent } from "@/components/import/database/DatabasePageContent";
 import type { ENGINE_TYPES } from "@/types";
 import { ModelImport } from "../../components/import/model/ModelImport";
 import { ImportLayout } from "./ImportLayout";
@@ -22,16 +22,9 @@ export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
 	const EngineImportFlow = useMemo(() => {
 		switch (type) {
 			case "DATABASE":
-				return <ImportPageContent name={name} type={type} />;
+				return <DatabasePageContent name={name} />;
 			case "MODEL":
-				return (
-					<Stack>
-						{/* <ModelImport />
-						<br></br>
-						<br></br> */}
-						<ImportPageContent name={name} type={type} />
-					</Stack>
-				);
+				return <ModelImport />;
 			case "VECTOR":
 				return <ImportPageContent name={name} type={type} />;
 			case "FUNCTION":

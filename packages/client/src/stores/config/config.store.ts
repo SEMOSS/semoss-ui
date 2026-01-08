@@ -31,8 +31,8 @@ interface ConfigStoreInterface {
 		email: string;
 		admin: boolean;
 	};
-	/** App Builder mode (local storage, based on userEpoch) */
-	globalSearch: string;
+	/** Native mode */
+	isNative: boolean;
 	/** Flag to trigger reloading of the file explorer UI */
 	reloadFiles: string;
 	/** Config information */
@@ -158,7 +158,7 @@ export class ConfigStore {
 		authenticated: false,
 		insightID: "",
 		userEpoch: "",
-		globalSearch: "",
+		isNative: false,
 		reloadFiles: "",
 		user: {
 			loggedIn: false,
@@ -320,7 +320,7 @@ export class ConfigStore {
 		}
 
 		const moduleMap = {
-			APP: "Project",
+			PROJECT: "Project",
 			DATABASE: "Db",
 			FUNCTION: "Function",
 			MODEL: "Model",
@@ -472,6 +472,7 @@ export class ConfigStore {
 					user = output.SAML;
 				} else if (output.NATIVE) {
 					user = output.NATIVE;
+					this._store.isNative = true;
 				} else if (Object.keys(output).length > 0) {
 					// This is a hack...since we don't have a single user
 					user = output[Object.keys(output)[0]];
@@ -495,12 +496,6 @@ export class ConfigStore {
 				this._store.status = "ERROR";
 			});
 		}
-	}
-
-	setGlobalSearch(text = "") {
-		runInAction(() => {
-			this._store.globalSearch = text;
-		});
 	}
 
 	setReloadFiles(value: string) {

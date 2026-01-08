@@ -112,8 +112,8 @@ export const BASE_APP_VARIABLES = {
 	},
 };
 
-export const MCP_PY_FILE_NAME = "mcp_driver.py";
+export const MCP_FILE_NAMES = ["mcp_driver.py"];
 
-export const MCP_JSON_FILE_NAME = "py_mcp.json";
+export const MCP_JSON_FILE_NAMES = ["py_mcp.json", "pixel_mcp.json"];
 
 export const MCP_NOTEBOOK_NAME = "mcp_driver";

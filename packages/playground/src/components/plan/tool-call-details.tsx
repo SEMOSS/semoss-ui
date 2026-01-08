@@ -37,7 +37,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	 * Get all of the groups
 	 */
 	const getApps = usePixel<(Engine | App)[]>(
-		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"])`,
+		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION", "MODEL", "VECTOR"])`,
 		{
 			data: [],
 		},

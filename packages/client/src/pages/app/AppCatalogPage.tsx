@@ -242,9 +242,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		if (Object.keys(metaFilters).length === 0 && getApps.data?.length > 0) {
 			setUpdatedNewApps(getApps.data);
 		}
-		console.log(metaFilters, getApps.data, "metaFilters");
 	}, [metaFilters, getApps.status, getApps.data]);
-	console.log(updatedNewApps, "updatedApps outside");
 
 	const debouncedSet = debounced((newInputValue: string) => {
 		setSearch(newInputValue);
@@ -385,7 +383,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				// If tags are still present, set the tag property of nextFilters to each tag
 				stillPresentTags.forEach((t) => {
 					nextFilters.tag = t;
-					console.log(nextFilters, "nextFilters.tag");
 				});
 			}
 		}
@@ -407,7 +404,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				// If domains are still present, set the domain property of nextFilters to each domain
 				stillPresentDomains.forEach((t) => {
 					nextFilters.domain = t;
-					console.log(nextFilters, "nextFilters.domain");
 				});
 			}
 		}
@@ -452,7 +448,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							Apps
 						</Typography>
 						{configStore.isEngineOperationAvailable(
-							"APP",
+							"PROJECT",
 							"add",
 						) && (
 							<Button
@@ -480,12 +476,12 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				<StyledContainer>
 					{!configStore.store.config.adminOnlyViewMenuBarFlag &&
 						configStore.isEngineOperationAvailable(
-							"APP",
+							"PROJECT",
 							"add",
 						) && (
 							<div style={{ width: "355px" }}>
 								<Filterbox
-									type={"APP"}
+									type={"PROJECT"}
 									onChange={(
 										filters: Record<string, unknown>,
 									) => {

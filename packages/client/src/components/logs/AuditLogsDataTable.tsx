@@ -1178,7 +1178,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			</ResultsInfo>
 
 			<FilterPopover
-				id="filter-popover"
+				id={"filter-popover"}
 				open={Boolean(popoverState.anchorEl)}
 				anchorEl={popoverState.anchorEl}
 				onClose={handlePopoverClose}

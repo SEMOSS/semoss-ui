@@ -1,5 +1,5 @@
-import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps, toast } from "sonner";
+import { useTheme } from "./theme-provider";
 export { toast };
 
 const Toaster = ({ ...props }: ToasterProps) => {

@@ -8,7 +8,7 @@ import {
 	upload,
 } from "../../api";
 import { Env } from "../../env";
-import type { Script } from "../../types";
+import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
 
 interface InsightStoreInterface {
@@ -47,6 +47,10 @@ interface InsightStoreInterface {
 				playground: Record<string, unknown>;
 				[key: string]: unknown;
 			};
+			/**
+			 * System Date
+			 */
+			systemDate: string;
 			[key: string]: unknown;
 		};
 	} | null;
@@ -58,6 +62,9 @@ interface InsightStoreInterface {
 
 		/** Python code associated with the insight */
 		python: Script | null;
+
+		/** Whether to disable connecting the insight to a room */
+		disableRoom: boolean;
 	};
 }
 
@@ -72,6 +79,7 @@ export class InsightStore {
 		options: {
 			appId: "",
 			python: null,
+			disableRoom: false,
 		},
 	};
 
@@ -143,6 +151,12 @@ export class InsightStore {
 					alias: string;
 			  }
 			| false;
+
+		/**
+		 * Whether to disable connecting the insight to a room
+		 * Defaults to false
+		 */
+		disableRoom?: boolean;
 	}): Promise<{
 		tool: (typeof Env)["TOOL"] | null;
 	}> => {
@@ -152,11 +166,12 @@ export class InsightStore {
 		this._store.isReady = false;
 
 		const merged: NonNullable<typeof options> = {
-			app: options?.app ? options.app : "",
+			app: options?.app || "",
 			python:
 				options && typeof options.python !== "undefined"
 					? options.python
 					: false,
+			disableRoom: options?.disableRoom || false,
 		};
 
 		// save the initial appId
@@ -179,6 +194,9 @@ export class InsightStore {
 				};
 			}
 		}
+
+		// save the disable room option
+		this._store.options.disableRoom = merged.disableRoom || false;
 
 		// load the environment from the document (production)
 		try {
@@ -368,6 +386,14 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		// set the insight ID
 		this._store.insightId = insightId;
+
+		// point the insight space toward the room
+		if (Env?.TOOL?.roomId && !this._store.options.disableRoom) {
+			await runPixel<[boolean]>(
+				`SetRoomForInsight(roomId=${JSON.stringify(Env.TOOL.roomId)});`,
+				insightId,
+			);
+		}
 
 		// set as ready
 		this._store.isReady = true;
@@ -585,7 +611,39 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
-		 * Run a MCP tool
+		 * Send a MCP tool response to the playground
+		 * @param mcpToolResponse - response to send
+		 */
+		sendMCPResponseToPlayground: (mcpToolResponse: string) => {
+			if (!Env.TOOL) {
+				throw new Error("No MCP tool execution context found");
+			} else if (
+				typeof window === "undefined" ||
+				typeof window.parent === "undefined"
+			) {
+				throw new Error(
+					"Cannot send MCP tool response outside of embedded browser",
+				);
+			}
+
+			window.parent.postMessage(
+				{
+					type: "SMSS_EXEC_TOOL",
+					tool: {
+						type: "MCP",
+						message: Env.TOOL.message,
+						id: Env.TOOL.id,
+						name: Env.TOOL.name,
+						response: mcpToolResponse,
+						roomId: Env.TOOL.roomId,
+					} satisfies MCPToolResponse,
+				},
+				"*",
+			);
+		},
+
+		/**
+		 * Run a MCP tool and send the response to the playground
 		 * @param name - name of the tool
 		 * @param parameters - parameters to pass to the tool
 		 */
@@ -593,37 +651,27 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			name: string,
 			parameters: Record<string, unknown>,
 		) => {
-			const { pixelReturn } = await this.actions.run<
-				[{ response: string }]
-			>(
-				`RunMCPTool(project = [ "${Env.APP}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ]);`,
+			const { pixelReturn } = await this.actions.run<[string]>(
+				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ] );`,
 			);
 
 			const { output, operationType } = pixelReturn[0];
-			if (Env.TOOL && operationType.indexOf("MCP_TOOL_EXECUTION") > -1) {
-				// only works in embedded browser
-				if (
-					typeof window !== "undefined" &&
-					typeof window.parent !== "undefined"
-				) {
-					window.parent.postMessage(
-						{
-							type: "SMSS_EXEC_TOOL",
-							tool: {
-								type: "MCP",
-								message: Env.TOOL.message,
-								id: Env.TOOL.id,
-								name: Env.TOOL.name,
-								response: output,
-							},
-						},
-						"*",
+			if (!output || operationType.indexOf("MCP_TOOL_EXECUTION") < 0) {
+				throw new Error("Error running MCP tool");
+			}
+
+			if (Env.TOOL) {
+				try {
+					this.actions.sendMCPResponseToPlayground(output);
+				} catch (e) {
+					console.warn(
+						`Failed to send MCP response to playground${e.message ? `: ${e.message}` : ""}`,
 					);
 				}
 			}
 
 			return {
-				output: output,
+				output,
 			};
 		},
 

@@ -29,19 +29,7 @@ import ImageSkeleton from "@/assets/img/Image_Skeleton.svg";
 import { AppDeleteModal } from "@/components/app";
 import { AddAppCloneModal } from "@/components/app/save-app/AddAppCloneModal";
 import { formatToDataTestId, removeUnderscores } from "@/utility";
-import { APP_IMAGES } from "./app.images";
 import type { AppMetadata } from "./app.types";
-
-const StyledName = styled(Typography)(() => ({
-	fontWeight: 400,
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	fontFamily: "Inter",
-	fontsize: "14px",
-	fontStyle: "normal",
-	lineHeight: "143%",
-	letterSpacing: "0.17px",
-}));
 
 const StyledTileCard = styled(
 	React.forwardRef<HTMLDivElement, CardProps & { disabled: boolean }>(
@@ -72,18 +60,6 @@ const StyledOverlayContent = styled("div")(({ theme }) => ({
 	justifyContent: "flex-end",
 	paddingTop: theme.spacing(2),
 	paddingRight: theme.spacing(2),
-}));
-
-const StyledTileCardMedia = styled(Card.Media)(({ theme }) => ({
-	display: "flex",
-	alignItems: "flex-start",
-	gap: theme.spacing(1.25),
-	alignSelf: "stretch",
-	overflowClipMargin: "content-box",
-	overflow: "clip",
-	objectFit: "cover",
-	width: "100%",
-	height: "77px",
 }));
 
 const StyledPublishedByContainer = styled("div")(({ theme }) => ({
@@ -362,10 +338,6 @@ const StyledMenu = styled(Menu)(({ theme }) => ({
 	},
 }));
 
-const StyledCardImage = {
-	position: "relative",
-};
-
 interface AppTileCardProps {
 	/**
 	 * App
@@ -449,7 +421,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isAppDeleteModalOpen, setIsAppDeleteModalOpen] = useState(false);
-	const [base64Image, setBase64Image] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true); // Add loading state
 	const cardRef = useRef<HTMLDivElement>(null);
 	const [isInView, setIsInView] = useState(false);
@@ -496,6 +467,51 @@ export const AppTileCard = (props: AppTileCardProps) => {
 		? (Array.isArray(app.tag) ? app.tag : [app.tag]).filter(Boolean)
 		: [];
 
+	// --- Gradient avatar logic (from ModelTileCard) ---
+	function hashString(str: string): number {
+		let h = 0;
+		for (let i = 0; i < str.length; i++) {
+			h = (h << 5) - h + str.charCodeAt(i);
+			h |= 0;
+		}
+		return Math.abs(h);
+	}
+
+	function pickGradient(name: string): string {
+		// Subtle pastel gradient derived from hash: lower saturation + higher lightness.
+		const base = hashString(name) % 360;
+		const hue2 = (base + 35) % 360;
+		const hue3 = (base + 70) % 360;
+		return `linear-gradient(135deg, hsl(${base} 45% 88%), hsl(${hue2} 40% 84%), hsl(${hue3} 35% 80%))`;
+	}
+
+	function buildInitials(label: string): string {
+		const tokens = label.split(/[^A-Za-z0-9]+/).filter((t) => t.length > 0);
+		const chars = tokens.map((t) => t[0]);
+		return chars.slice(0, 3).join("");
+	}
+
+	const StyledAppAvatar = styled("div")<{ gradientBg: string }>(
+		({ gradientBg }) => ({
+			display: "flex",
+			height: "77px",
+			width: "100%",
+			alignItems: "center",
+			justifyContent: "center",
+			fontWeight: 600,
+			fontSize: "32px",
+			color: "#fff",
+			borderRadius: "4px",
+			textTransform: "uppercase",
+			background: gradientBg,
+			boxShadow:
+				"0 0 0 1px rgba(0,0,0,0.08) inset, 0 2px 4px -1px rgba(0,0,0,0.12)",
+			transition: "filter 0.25s ease",
+			userSelect: "none",
+			WebkitFontSmoothing: "antialiased",
+		}),
+	);
+
 	// Intersection Observer to detect if card is in viewport
 	useEffect(() => {
 		const observer = new window.IntersectionObserver(
@@ -537,8 +553,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
 						canvas.width = img.width;
 						canvas.height = img.height;
 						ctx?.drawImage(img, 0, 0);
-						const base64String = canvas.toDataURL("image/png");
-						setBase64Image(base64String); // Store the base64 string in state
 						setLoading(false);
 						setHasDownloaded(true); // Set hasDownloaded to true after loading
 					};
@@ -580,21 +594,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	 * @params appType
 	 * @returns image
 	 */
-	const findAppImage = (appType: string) => {
-		let randomInt = Math.floor(Math.random() * 5);
-		if (appType === "BI" || appType === "TERMINAL" || appType === "") {
-			randomInt = 0;
-		}
-
-		const image = APP_IMAGES[appType];
-
-		if (!image) {
-			return APP_IMAGES.INSIGHTS[0];
-		}
-		// eliminating random and making it static for now
-		randomInt = 0;
-		return image[randomInt];
-	};
 
 	/**
 	 * @name findAppDetails
@@ -642,7 +641,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
 		}
 	};
 
-	const image = findAppImage(appType);
 	const appDetails = findAppDetails(appType);
 
 	// Show skeleton when image is loading or when showSkeleton is true
@@ -800,30 +798,29 @@ export const AppTileCard = (props: AppTileCardProps) => {
 							/>
 						</StyledSkeletonImage>
 					) : (
-						<StyledTileCardMedia
-							src="img"
-							image={
-								base64Image ? base64Image : image ? image : ""
-							}
-							sx={StyledCardImage}
-							onError={(e) => {
-								// Fallback to default image if base64 image fails to load
-								const target = e.target as HTMLImageElement;
-								if (base64Image && image) {
-									target.src = image;
-								}
-							}}
-						/>
+						<StyledAppAvatar
+							gradientBg={pickGradient(
+								app.project_name || appType || "App",
+							)}
+						>
+							{buildInitials(
+								app.project_name || appType || "App",
+							)}
+						</StyledAppAvatar>
 					)}
 					<StyledCardContentSection>&nbsp;</StyledCardContentSection>
 					<StyledContent>
 						<StyledCardHeader
 							title={
-								<StyledName variant={"body2"}>
-									{removeUnderscores(app.project_name)}
-								</StyledName>
+								<div
+									title={removeUnderscores(app?.project_name)}
+									className="truncate text-ellipsis font-normal text-[14px] leading-[143%]"
+								>
+									{removeUnderscores(app?.project_name)}
+								</div>
 							}
 						/>
+
 						<StyledCardContent>
 							<StyledCardDescription variant={"caption"}>
 								{app.description

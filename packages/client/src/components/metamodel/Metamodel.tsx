@@ -7,36 +7,23 @@ import {
 	useEdgesState,
 	useNodesState,
 } from "@xyflow/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@xyflow/react/dist/style.css";
-
-import { Button, styled } from "@semoss/ui";
-import { MetamodelContext, MetamodelContextType } from "@/contexts";
+import { Button } from "@semoss/ui";
+import { MetamodelContext } from "@/contexts";
+import type { ColumnOption, Property } from "../import/database/MetamodelTypes";
+import {
+	createPropertiesFromNames,
+	edgeIdsEqual,
+	nodeIdsEqual,
+	updateColumnProperties,
+} from "../import/database/MetamodelUtils";
+import { Editmetamodel } from "./Editmetamodel";
+import EditTable from "./Edittable";
 import { FloatingEdge } from "./FloatingEdge";
 import { MetamodelNode } from "./MetamodelNode";
 
-const StyledMetamodelPage = styled("div")(() => ({
-	display: "flex",
-	width: "1271px",
-	height: "1032px",
-	padding: "var(--spacing-spacing-08, 40px) 0px 20px 0px",
-	alignItems: "flex-start",
-	gap: "var(--spacing-spacing-05, 16px)",
-	flexShrink: 0,
-}));
-const StyledMetamodelContainer = styled("div")(() => ({
-	display: "flex",
-	height: "785px",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: "24px",
-	flexShrink: 0,
-	alignSelf: "stretch",
-}));
-const defaultViewport = { x: 0, y: 0, zoom: 1.5 };
-
-// const StyledReactFlowContainer = styled('div')(() => ({
-// }));
+// TYPES & CONSTANTS
 
 const edgeTypes = {
 	floating: FloatingEdge,
@@ -45,36 +32,25 @@ const edgeTypes = {
 const nodeTypes = {
 	metamodel: MetamodelNode,
 };
-
-export type MetamodelNode = Node<
+export type MetamodelNodeType = Node<
 	React.ComponentProps<typeof MetamodelNode>["data"]
 >;
 
 interface MetamodelProps {
-	/** Nodes to render in the metamodel */
-	nodes?: MetamodelNode[];
-	/** Edges (aka relationships) to render in the metamodel */
+	nodes?: MetamodelNodeType[];
 	edges?: Edge[];
-
-	/** Track the selected node */
-	selectedNode?: MetamodelNode | null;
-	/** Function that is called when a new node is selected */
-	onSelectNode?: (selected: MetamodelNode | null) => void;
-
-	/** callback to be sent for updates to metamodel */
-	callback?: (data: any) => void;
-
-	/** boolean to determine if metamodel can be modified */
+	selectedNode?: MetamodelNodeType | null;
+	onSelectNode?: (selected: MetamodelNodeType | null) => void;
+	callback?: (data) => void;
 	isInteractive?: boolean;
+	isEditable?: boolean;
+	onMetaModelUpdate?: (snapshot: MetamodelNodeType[]) => void;
+	dataSourceId?: number | string;
+	resetKey?: number;
+	columnOptions?: ColumnOption[];
 }
 
-// depending on the type of action, functionality will be different
-// csvForm: full edit functionality
-// connect: only relationship edit functionly
-// regardless of functionality, will send back all data? allow the higher order component to determine what to use
-
-// data to return in callback
-// { nodes: [], edges: [] }
+// COMPONENT
 
 export const Metamodel = (props: MetamodelProps) => {
 	const {
@@ -84,113 +60,376 @@ export const Metamodel = (props: MetamodelProps) => {
 		edges = [],
 		callback,
 		isInteractive,
+		isEditable = false,
+		onMetaModelUpdate,
+		dataSourceId,
+		resetKey,
+		columnOptions,
 	} = props;
 
-	// node is {
-	//     data: { name: 'table', properties: [{ id: 'colid', name: 'colname', type: 'coltype' }] },
-	// id: 'table',
-	// position: { x: 180, y: 179 },
-	// type: 'metamodel'
-	// };
+	// STATE
 
-	// edge is {
-	//     id: 'tableFrom_tableTo',
-	//     source: 'tableFrom',
-	//     target: 'tableTo',
-	//     type: 'floating'
-	// };
-
-	const [originalData, setOriginalData] = useState({
-		nodes: nodes,
-		edges: edges,
+	const [data, setData] = useState<{
+		nodes: MetamodelNodeType[];
+		edges: Edge[];
+	}>({
+		nodes: nodes ?? [],
+		edges: edges ?? [],
 	});
-	const [data, setData] = useState({ nodes: nodes, edges: edges });
 
-	const [flowNodes, setFlowNodes, onFlowNodesChange] = useNodesState(nodes);
+	const [openEditColumnModal, setOpenEditColumnModal] = useState(false);
+	const [columnToEdit, setColumnToEdit] = useState<{
+		nodeId: string;
+		columnId: string;
+		name: string;
+		type: string;
+		description?: string;
+		logicalNames?: string[];
+	} | null>(null);
+
+	const existingColumnNames = useMemo(() => {
+		if (!columnToEdit) return [];
+		const node = data.nodes.find((n) => n.id === columnToEdit.nodeId);
+		if (!node) return [];
+		return (node.data?.properties || [])
+			.filter((prop) => prop.id !== columnToEdit.columnId)
+			.map((prop) => prop.name.toLowerCase());
+	}, [columnToEdit, data.nodes]);
+
+	const [openEditTableModal, setOpenEditTableModal] = useState(false);
+	const [tableToEdit, setTableToEdit] = useState<null | {
+		nodeId: string;
+		name: string;
+	}>(null);
+	const [availableColumnNames, setAvailableColumnNames] = useState<
+		ColumnOption[]
+	>([]);
+
+	// REFS
+
+	const isInitialMount = useRef<Record<string | number, boolean>>({});
+	const resetKeyRef = useRef<number | null>(null);
+	const currentDataSourceRef = useRef<string | number | null>(null);
+	const lastPropsRef = useRef<{ nodes: MetamodelNodeType[]; edges: Edge[] }>({
+		nodes: [],
+		edges: [],
+	});
+
+	// MODAL HANDLERS
+
+	const openEditForColumn = useCallback(
+		(payload: {
+			nodeId: string;
+			columnId: string;
+			name: string;
+			type: string;
+			description?: string;
+			logicalNames?: string[];
+		}) => {
+			setColumnToEdit(payload);
+			setOpenEditColumnModal(true);
+		},
+		[],
+	);
+
+	const closeEditModal = useCallback(() => {
+		setOpenEditColumnModal(false);
+		setColumnToEdit(null);
+	}, []);
+
+	const openEditTable = useCallback(
+		(payload: { nodeId: string; name: string; description?: string }) => {
+			setTableToEdit(payload);
+			setOpenEditTableModal(true);
+		},
+		[],
+	);
+
+	const closeEditTableModal = useCallback(() => {
+		setOpenEditTableModal(false);
+		setTableToEdit(null);
+	}, []);
+
+	// MEMOIZED VALUES
+
+	const injectIsAction = useCallback(
+		(incomingNodes: MetamodelNodeType[]): MetamodelNodeType[] =>
+			incomingNodes.map((n) => ({
+				...n,
+				data: {
+					name: n.data?.name || "",
+					properties: n.data?.properties || [],
+					...(n.data || {}),
+					isEditable: !!isEditable,
+					openEditForColumn: openEditForColumn,
+					openEditTable: openEditTable,
+				},
+			})),
+		[isEditable],
+	);
+
+	const initialFlowNodes = useMemo<MetamodelNodeType[]>(
+		() => (isEditable ? injectIsAction(nodes) : nodes),
+		[isEditable, nodes, injectIsAction],
+	);
+
+	// CUSTOM HOOKS
+
+	const [flowNodes, setFlowNodes, onFlowNodesChange] =
+		useNodesState(initialFlowNodes);
 	const [flowEdges, setFlowEdges, onFlowEdgesChange] = useEdgesState(edges);
 
-	// update when the props change
-	useEffect(() => {
-		setFlowNodes(nodes);
-		setFlowEdges(edges);
-	}, [nodes, edges]);
+	// DATA MUTATION HANDLERS
 
-	const updateData = (nodeData, action) => {
-		const temp = data;
-		// if action === 'column name change'
-		if (action === "COLUMN_NAME_CHANGE") {
-			// access data by nodeData.table.name
-			for (const node of temp.nodes) {
-				if (node.id === nodeData.table.id) {
-					// loop over properties
-					for (const col of node.data.properties) {
-						// find property name that matches nodeData.prevName
-						if (col.name === nodeData.prevName) {
-							// update property name to nodeData.newName
-							col.name = nodeData.newName;
-							col.id = nodeData.newName;
-							// setData
-							setData({ ...temp });
+	const applyColumnEdit = useCallback(
+		(payload: {
+			name?: string;
+			type?: string;
+			description?: string;
+			logicalNames?: string[];
+		}) => {
+			if (!columnToEdit) return;
+
+			const { nodeId, columnId } = columnToEdit;
+
+			setData((prev) => {
+				const node = prev.nodes.find((n) => n.id === nodeId);
+				if (!node) {
+					closeEditModal();
+					return prev;
+				}
+
+				const oldProps: Property[] = Array.isArray(node.data.properties)
+					? node.data.properties
+					: [];
+
+				const updatedProps = updateColumnProperties(
+					oldProps,
+					columnId,
+					payload,
+				);
+				if (!updatedProps) {
+					closeEditModal();
+					return prev;
+				}
+
+				const newNodes = prev.nodes.map((n) =>
+					n.id === nodeId
+						? {
+								...n,
+								data: {
+									...n.data,
+									properties: updatedProps,
+								},
+							}
+						: n,
+				);
+
+				if (callback) {
+					callback({ nodes: newNodes, edges: prev.edges });
+				}
+
+				if (onMetaModelUpdate) {
+					try {
+						onMetaModelUpdate(JSON.parse(JSON.stringify(newNodes)));
+					} catch {
+						onMetaModelUpdate(newNodes);
+					}
+				}
+				closeEditModal();
+				return { ...prev, nodes: newNodes };
+			});
+
+			setFlowNodes((cur) => {
+				if (!Array.isArray(cur)) return cur;
+
+				return cur.map((n) => {
+					if (n.id !== nodeId) return n;
+
+					const oldProps: Property[] = Array.isArray(
+						n.data?.properties,
+					)
+						? n.data.properties
+						: [];
+
+					const updatedProps = updateColumnProperties(
+						oldProps,
+						columnId,
+						payload,
+					);
+					if (!updatedProps) return n;
+
+					return {
+						...n,
+						data: {
+							...n.data,
+							properties: updatedProps,
+						},
+					};
+				});
+			});
+		},
+		[columnToEdit, callback, closeEditModal, onMetaModelUpdate],
+	);
+
+	const applyReplaceColumnsForNode = useCallback(
+		(
+			nodeId: string,
+			payload: {
+				names: string[];
+				type?: string;
+				description?: string;
+				alias?: string;
+			},
+		) => {
+			if (!nodeId) return;
+
+			const names = Array.isArray(payload.names)
+				? payload.names.map((s) => (s || "").trim()).filter(Boolean)
+				: [];
+			const chosenType = payload.type ?? "varchar";
+			const { description, alias } = payload;
+
+			setData((prev) => {
+				const node = prev.nodes.find((n) => n.id === nodeId);
+				if (!node) return prev;
+
+				const existingProps = node.data?.properties || [];
+
+				const newProps = createPropertiesFromNames(
+					nodeId,
+					names,
+					existingProps,
+					availableColumnNames,
+					chosenType,
+				);
+
+				const updatedNodeData = {
+					properties: newProps,
+					description: description !== null ? description : "",
+					name: alias !== null ? alias : node.data?.name,
+				};
+
+				const newNodes = prev.nodes.map((n) =>
+					n.id === nodeId
+						? {
+								...n,
+								data: {
+									...n.data,
+									...updatedNodeData,
+								},
+							}
+						: n,
+				);
+
+				if (callback) {
+					callback({ nodes: newNodes, edges: prev.edges });
+				}
+
+				if (onMetaModelUpdate) {
+					try {
+						onMetaModelUpdate(JSON.parse(JSON.stringify(newNodes)));
+					} catch {
+						onMetaModelUpdate(newNodes);
+					}
+				}
+
+				return { ...prev, nodes: newNodes };
+			});
+
+			setFlowNodes((cur) => {
+				if (!Array.isArray(cur)) return cur;
+
+				return cur.map((n) => {
+					if (n.id !== nodeId) return n;
+
+					const existingProps = n.data?.properties || [];
+
+					const newProps = createPropertiesFromNames(
+						nodeId,
+						names,
+						existingProps,
+						availableColumnNames,
+						chosenType,
+					);
+
+					const updatedNodeData = {
+						properties: newProps,
+						description: description !== null ? description : "",
+						name: alias !== null ? alias : n.data?.name,
+					};
+
+					return {
+						...n,
+						data: {
+							...n.data,
+							...updatedNodeData,
+						},
+					};
+				});
+			});
+		},
+		[availableColumnNames, callback, onMetaModelUpdate],
+	);
+
+	const updateData = useCallback((nodeData, action: string) => {
+		setData((prev) => {
+			const temp = { ...prev };
+
+			if (action === "COLUMN_NAME_CHANGE") {
+				for (const node of temp.nodes) {
+					if (node.id === nodeData.table.id) {
+						for (const col of node.data.properties) {
+							if (col.name === nodeData.prevName) {
+								col.name = nodeData.newName;
+								col.id = nodeData.newName;
+							}
 						}
 					}
 				}
+				return { ...temp };
 			}
-		}
-		if (action === "COLUMN_TYPE_CHANGE") {
-			// handle column type change
-		}
-		if (action === "COLUMN_DESCRIPTION_CHANGE") {
-			// handle column type change
-		}
-		if (action === "COLUMN_LOGICAL_NAME_CHANGE") {
-			// handle column type change
-		}
+			if (action === "COLUMN_TYPE_CHANGE") {
+				// handle column type change
+			}
+			if (action === "COLUMN_DESCRIPTION_CHANGE") {
+				// handle column type change
+			}
+			if (action === "COLUMN_LOGICAL_NAME_CHANGE") {
+				// handle column type change
+			}
 
-		if (action === "TABLE_NAME_CHANGE") {
-			// handle table name change
-		}
-		if (action === "TABLE_DESCRIPTION_CHANGE") {
-			// handle table relationship change
-		}
-		if (action === "TABLE_RELATIONSHIP_CHANGE") {
-			// handle table relationship change
-		}
-		if (action === "TABLE_POSITION_CHANGE") {
-			// handle table relationship change
-		}
-		// if action === 'column data type change'
-	};
+			if (action === "TABLE_NAME_CHANGE") {
+				// handle table name change
+			}
+			if (action === "TABLE_DESCRIPTION_CHANGE") {
+				// handle table relationship change
+			}
+			if (action === "TABLE_RELATIONSHIP_CHANGE") {
+				// handle table relationship change
+			}
+			if (action === "TABLE_POSITION_CHANGE") {
+				// handle table relationship change
+			}
 
-	const onSubmit = () => {
+			return prev;
+		});
+	}, []);
+
+	// ACTION HANDLERS
+
+	const onSubmit = useCallback(() => {
 		const payloadObj = {
-			metamodel: {
-				relation: [
-					// { fromTable: 'id', toTable: 'Drug', relName: 'id_Drug' },
-				],
-				nodeProp: {
-					// tableName: [ // 'colname' EXCLUDING THE FIRST COLUMN
-					// ],
-				},
-			},
-			dataTypeMap: {
-				// colName: type,
-			},
-			newHeaders: {}, // oldColName: newColName
-			additionalDataTypes: {}, // colName: specificFormat
-			descriptionMap: {}, // colName: description
-			logicalNamesMap: {}, // colName/alias: logicalName
+			metamodel: { relation: [], nodeProp: {} },
+			dataTypeMap: {},
+			newHeaders: {},
+			additionalDataTypes: {},
+			descriptionMap: {},
+			logicalNamesMap: {},
 			position: [{}],
 			nodes: data.nodes,
 		};
-		// // format the data
-		// const dataObj = {
-		//     metamodel: { relation: [], nodeProp: {} },
-		//     dataTypeMap: {},
-		// };
 
-		// loop over data state
-
-		// build metamodel relation for each table
 		for (const edge of data.edges) {
 			const relName = `${edge.source}_${edge.target}`;
 			payloadObj.metamodel.relation.push({
@@ -200,13 +439,7 @@ export const Metamodel = (props: MetamodelProps) => {
 			});
 		}
 
-		// build metamodel node prop
-
-		// build dataTypeMap for each table
 		for (const node of data.nodes) {
-			console.log("node: ", node);
-			// const temp = { [node.data.name]: [] };
-			// const temp = [];
 			for (const col of node.data.properties) {
 				payloadObj.dataTypeMap[col.name] = col.type;
 				// temp[node.data.name].push(col.name);
@@ -220,13 +453,11 @@ export const Metamodel = (props: MetamodelProps) => {
 				// }
 				// }
 			}
-
 			payloadObj.metamodel.nodeProp[node.data.name] = [];
 		}
 
-		// callback(payloadObj);
 		callback(payloadObj);
-	};
+	}, [data, callback]);
 
 	const onSelectNodeId = useCallback(
 		(id) => {
@@ -245,11 +476,139 @@ export const Metamodel = (props: MetamodelProps) => {
 					}
 				}
 			}
-
 			onSelectNode(node);
 		},
-		[nodes],
+		[nodes, onSelectNode],
 	);
+
+	useEffect(() => {
+		if (
+			resetKeyRef.current !== undefined &&
+			resetKeyRef.current !== resetKey
+		) {
+			const sourceKey = String(dataSourceId ?? "default");
+			isInitialMount.current[sourceKey] = false;
+		}
+		resetKeyRef.current = resetKey;
+	}, [resetKey, dataSourceId]);
+
+	useEffect(() => {
+		if (!isEditable) {
+			setData({ nodes: nodes || [], edges: edges || [] });
+			setFlowNodes(nodes || []);
+			setFlowEdges(edges || []);
+			return;
+		}
+
+		const sourceKey =
+			dataSourceId !== undefined ? String(dataSourceId) : "default";
+
+		const dataSourceChanged =
+			currentDataSourceRef.current !== undefined &&
+			currentDataSourceRef.current !== sourceKey;
+
+		const nodesStr = JSON.stringify(
+			nodes?.map((n) => ({
+				id: n.id,
+				dataLen: n.data?.properties?.length,
+			})),
+		);
+		const edgesStr = JSON.stringify(
+			edges?.map((e) => ({
+				id: e.id,
+				source: e.source,
+				target: e.target,
+			})),
+		);
+		const lastNodesStr = JSON.stringify(
+			lastPropsRef.current.nodes?.map((n) => ({
+				id: n.id,
+				dataLen: n.data?.properties?.length,
+			})),
+		);
+		const lastEdgesStr = JSON.stringify(
+			lastPropsRef.current.edges?.map((e) => ({
+				id: e.id,
+				source: e.source,
+				target: e.target,
+			})),
+		);
+
+		const propsChanged =
+			nodesStr !== lastNodesStr || edgesStr !== lastEdgesStr;
+
+		if (dataSourceChanged) {
+			currentDataSourceRef.current = sourceKey;
+			isInitialMount.current[sourceKey] = false;
+		} else {
+			currentDataSourceRef.current = sourceKey;
+		}
+
+		if (
+			!isInitialMount.current[sourceKey] ||
+			(dataSourceChanged && propsChanged)
+		) {
+			const nodeCopy =
+				Array.isArray(nodes) && nodes.length > 0
+					? JSON.parse(JSON.stringify(nodes))
+					: [];
+			const edgesCopy =
+				Array.isArray(edges) && edges.length > 0
+					? JSON.parse(JSON.stringify(edges))
+					: [];
+
+			const processedNodes = injectIsAction(nodeCopy);
+
+			setData({ nodes: processedNodes, edges: edgesCopy });
+			setFlowNodes(processedNodes);
+			setFlowEdges(edgesCopy);
+
+			lastPropsRef.current = { nodes: nodeCopy, edges: edgesCopy };
+
+			if (onMetaModelUpdate && processedNodes.length > 0) {
+				onMetaModelUpdate(processedNodes);
+			}
+
+			isInitialMount.current[sourceKey] = true;
+		} else if (propsChanged) {
+			const computed = injectIsAction(nodes || []);
+			if (!nodeIdsEqual(flowNodes, computed)) {
+				setFlowNodes(computed);
+				setData((prev) => ({
+					...prev,
+					nodes: computed,
+				}));
+			}
+
+			if (!edgeIdsEqual(data.edges, edges || [])) {
+				setData((prev) => ({
+					...prev,
+					edges: edges || [],
+				}));
+				setFlowEdges(edges || []);
+			}
+
+			lastPropsRef.current = { nodes: nodes || [], edges: edges || [] };
+		}
+	}, [
+		nodes,
+		edges,
+		isEditable,
+		dataSourceId,
+		injectIsAction,
+		nodeIdsEqual,
+		edgeIdsEqual,
+		onMetaModelUpdate,
+		data.edges,
+	]);
+
+	useEffect(() => {
+		if (isEditable) {
+			setAvailableColumnNames(columnOptions || []);
+		} else {
+			setAvailableColumnNames([]);
+		}
+	}, [columnOptions, isEditable]);
 
 	return (
 		<MetamodelContext.Provider
@@ -265,9 +624,10 @@ export const Metamodel = (props: MetamodelProps) => {
 				edges={flowEdges}
 				nodeTypes={nodeTypes}
 				edgeTypes={edgeTypes}
+				fitView={true}
 				onNodesChange={onFlowNodesChange}
 				onEdgesChange={onFlowEdgesChange}
-				fitView={true}
+				defaultViewport={{ x: 70, y: 50, zoom: 1 }}
 			>
 				<MiniMap />
 				<Controls showInteractive={false} />
@@ -278,19 +638,59 @@ export const Metamodel = (props: MetamodelProps) => {
 					onClick={() => {
 						onSubmit();
 					}}
+					data-testid="metamodel-apply-btn"
 				>
 					Apply
 				</Button>
 			)}
+
+			<Editmetamodel
+				open={openEditColumnModal}
+				onClose={closeEditModal}
+				isEdit={true}
+				initialName={columnToEdit?.name ?? ""}
+				initialType={columnToEdit?.type ?? ""}
+				initialDescription={columnToEdit?.description ?? ""}
+				initialLogicalNames={columnToEdit?.logicalNames ?? []}
+				existingColumnNames={existingColumnNames}
+				onSave={(p) =>
+					applyColumnEdit(
+						p as {
+							name?: string;
+							type?: string;
+							description?: string;
+							logicalNames?: string[];
+						},
+					)
+				}
+			/>
+
+			<EditTable
+				open={openEditTableModal}
+				onClose={closeEditTableModal}
+				node={
+					tableToEdit
+						? data.nodes.find((n) => n.id === tableToEdit.nodeId)
+						: null
+				}
+				columnOptions={availableColumnNames}
+				initialAlias={
+					tableToEdit
+						? (data.nodes.find((n) => n.id === tableToEdit.nodeId)
+								?.data?.name ?? "")
+						: ""
+				}
+				onSave={({ nodeId, names, description, alias }) => {
+					applyReplaceColumnsForNode(nodeId, {
+						names,
+						description,
+						alias,
+					});
+					closeEditTableModal();
+				}}
+			/>
 		</MetamodelContext.Provider>
 	);
 };
 
-/** CHANGES MADE:
- * made onSelectNode an option prop in MetamodelProps
- *  removed arg / prop in CSVForm calling Metamodel component bc it was null and caused error. And the function is not needed in the CSVForm
- *
- */
-
-// OBSERVATION: metamodel in legacy gives the table a primary key column that matches the table name...
-// dataType map needs to include the primary key for all tables
+export default Metamodel;

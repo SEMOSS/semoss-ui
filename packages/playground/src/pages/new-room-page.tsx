@@ -13,7 +13,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import background from "@/assets/img/background.png";
+import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
 	RoomOptions,
@@ -21,7 +21,7 @@ import {
 	workspaceToApp,
 } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
-import { useChat, useRoot } from "@/hooks";
+import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { App, Workspace } from "@/types";
 
@@ -32,6 +32,13 @@ import type { App, Workspace } from "@/types";
  */
 export const NewRoomPage = observer(() => {
 	const { root } = useRoot();
+
+	useGlobalBreadcrumbs([
+		{
+			name: "Home",
+			path: "/",
+		},
+	]);
 
 	const { chat } = useChat();
 	const navigate = useNavigate();
@@ -45,8 +52,13 @@ export const NewRoomPage = observer(() => {
 	});
 	const workspaceId = searchParams.get("workspaceId");
 
+	// Fetch workspace data based on URL param or selected workspace
+	const selectedWorkspaceId =
+		(mode.type === "workspace" ? mode.workspace?.project_id : null) ||
+		workspaceId;
+
 	const getWorkspace = usePixel<Workspace | null>(
-		workspaceId ? `GetWorkspace("${workspaceId}");` : null,
+		selectedWorkspaceId ? `GetWorkspace("${selectedWorkspaceId}");` : null,
 		{
 			data: null,
 		},
@@ -115,43 +127,116 @@ export const NewRoomPage = observer(() => {
 	/**
 	 * Effects
 	 */
-	// if the workspaceId is passed in, use that to set the mode
+	// Handle workspace data loading
 	useEffect(() => {
-		if (getWorkspace.status !== "SUCCESS") {
+		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) {
 			return;
 		}
 
-		if (getWorkspace.data) {
+		// If workspaceId came from URL, update the mode
+		if (workspaceId) {
 			setMode({
 				type: "workspace",
 				workspace: workspaceToApp(getWorkspace.data),
 			});
 		}
-	}, [getWorkspace.status, getWorkspace.data]);
+
+		// Update options with workspace instructions and MCPs if available
+		setOptions((prev) => {
+			// Add workspace MCPs with fromWorkspace flag to the mcp array
+			const workspaceMCPs = (getWorkspace.data.mcp || []).map((mcp) => ({
+				...mcp,
+				fromWorkspace: true,
+			}));
+
+			return {
+				...prev,
+				instructions:
+					getWorkspace.data.system_prompt || prev.instructions,
+				mcp: workspaceMCPs,
+			};
+		});
+	}, [workspaceId, getWorkspace.status, getWorkspace.data]);
+
+	// Handle workspace data loading from RoomWorkspace component selection
+	useEffect(() => {
+		if (
+			mode.type !== "workspace" ||
+			!mode.workspace ||
+			getWorkspace.status !== "SUCCESS" ||
+			!getWorkspace.data
+		) {
+			return;
+		}
+
+		// Update options with workspace instructions if available
+		if (getWorkspace.data.system_prompt) {
+			setOptions((prev) => {
+				// Add workspace MCPs with fromWorkspace flag to the mcp array
+				const workspaceMCPs = (getWorkspace.data.mcp || []).map(
+					(mcp) => ({
+						...mcp,
+						fromWorkspace: true,
+					}),
+				);
+
+				return {
+					...prev,
+					instructions:
+						getWorkspace.data?.system_prompt || prev.instructions,
+					mcp: workspaceMCPs,
+				};
+			});
+		}
+	}, [mode.type, mode.workspace, getWorkspace.status, getWorkspace.data]);
+
+	// Clear instructions and workspace MCPs when switching away from workspace mode
+	useEffect(() => {
+		if (mode.type !== "workspace") {
+			setOptions((prev) => ({
+				...prev,
+				instructions: "",
+				mcp: [], // Remove workspace MCPs
+			}));
+		}
+	}, [mode.type]);
 
 	return (
-		<div className="h-[calc(100vh-theme(space.2))] w-full overflow-hidden">
+		<div className="relative h-full w-full overflow-hidden">
 			<ResizablePanelGroup direction="horizontal">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
-						src={background}
+						src={root.theme.images.landing || landingImage}
 						alt="Background"
-						className="absolute inset-0 h-full w-full object-cover"
+						className="absolute inset-0 h-full w-full select-none object-cover"
 					/>
 					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
-						<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
-							<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-								Welcome
+						{root.theme.landing ? (
+							<div
+								className="mx-auto flex max-w-xl"
+								// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+								dangerouslySetInnerHTML={{
+									__html: root.theme.landing,
+								}}
+							/>
+						) : (
+							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
+								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
+									Welcome
+								</div>
+								{root.theme.description ? (
+									<div className="text-center text-muted-foreground text-sm leading-normal">
+										{root.theme.description}
+									</div>
+								) : null}
 							</div>
-							<div className="text-center text-muted-foreground text-sm leading-normal">
-								{root.theme.description}
-							</div>
-						</div>
+						)}
 
 						<RoomInput
 							isLoading={
 								isLoading ||
-								(workspaceId &&
+								(mode.type === "workspace" &&
+									mode.workspace &&
 									getWorkspace.status !== "SUCCESS")
 							}
 							isDisabled={false}
@@ -208,6 +293,7 @@ export const NewRoomPage = observer(() => {
 									setOptions={(o) => {
 										setOptions(o);
 									}}
+									setRoomModel={() => null}
 								/>
 							</div>
 						</ResizablePanel>

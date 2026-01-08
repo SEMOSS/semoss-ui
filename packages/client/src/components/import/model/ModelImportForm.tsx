@@ -1,15 +1,26 @@
-import { useEffect } from "react";
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import {
+	Box,
 	Button,
+	Collapse,
+	Divider,
+	FileDropzone,
+	IconButton,
 	Select,
 	Stack,
 	Switch,
+	styled,
 	TextArea,
 	TextField,
 	Typography,
+	useNotification,
 } from "@semoss/ui";
-import type { FieldDefinition } from "./model-import.constants";
+import { useRootStore, useStepper } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
+import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
 
 interface ModelImportFormProps {
 	/** Optional model name being configured */
@@ -26,13 +37,48 @@ interface ModelImportFormProps {
 	 * callback invoked when form is submitted with values
 	 */
 	onComplete?: (data: Record<string, unknown>) => void;
+
+	selectedProvider: string;
+
+	importableModelsCategory: CategoryTexts;
 }
 
+const StyledDropzoneField = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(2),
+	width: "100%",
+	height: "100%",
+}));
+
 export const ModelImportForm = (props: ModelImportFormProps) => {
-	const { name, fields, advanced, onComplete } = props;
+	const {
+		name,
+		fields,
+		advanced,
+		onComplete,
+		selectedProvider,
+		importableModelsCategory,
+	} = props;
+
+	const { monolithStore } = useRootStore();
+	const navigate = useNavigate();
+	const notification = useNotification();
+	const { isLoading, setIsLoading } = useStepper();
+
+	const [advancedOpen, setAdvancedOpen] = useState(false);
 
 	// prepare default values from fields + advanced
-	const { control, handleSubmit, reset } = useForm({
+	const {
+		control,
+		handleSubmit,
+		reset,
+		setError,
+		clearErrors,
+		trigger,
+		formState: { isValid },
+	} = useForm({
+		mode: "onSubmit",
 		defaultValues: [...fields, ...advanced].reduce<Record<string, unknown>>(
 			(acc, f) => {
 				// if a name was supplied for the model, lock the MODEL field to that name
@@ -50,6 +96,20 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		),
 	});
 
+	const _lastField = useRef({
+		lastFocussedField: "",
+		lastFocussedValue: "",
+		lastValidatedValue: "",
+		runValidate: false,
+	});
+
+	//  Group fields by category
+	const grouped = fields.reduce((acc, f) => {
+		if (!acc[f.category]) acc[f.category] = [];
+		acc[f.category].push(f);
+		return acc;
+	}, {});
+
 	// reset defaults when fields change
 	useEffect(() => {
 		const defaults: Record<string, unknown> = {};
@@ -65,27 +125,31 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	}, [fields, advanced, reset, name]);
 
 	const onSubmit = (data: Record<string, unknown>) => {
-		console.log("Submission Pixel");
-		console.log(data);
+		const pixel = `CreateModelEngine(model=["${
+			data.NAME
+		}"],modelDetails=[${JSON.stringify(data)}])`;
 
-		// CreateModelEngine(
-		//     model=["CATALOG_NAME"],
-		//     modelDetails=[
-		// 		{
-		// 			"NAME":"getet",
-		// 			"MODEL_TYPE":"OPEN_AI",
-		// 			"OPEN_AI_KEY":"w898398931",
-		// 			"MODEL":"gpt-3.5-turbo",
-		// 			"VAR_NAME":"hdhd",
-		// 			"CHAT_TYPE":"chat-completion",
-		// 			"INIT_MODEL_ENGINE":"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
-		// 			"KEEP_CONVERSATION_HISTORY":"false",
-		// 			"KEEP_INPUT_OUTPUT":"false",
-		// 			"MAX_TOKENS":"",
-		// 			"MAX_INPUT_TOKENS":""
-		// 		}
-		// 	]
-		// )
+		// debugger;
+		monolithStore.runQuery(pixel).then(async (response) => {
+			const output = response.pixelReturn[0].output,
+				operationType = response.pixelReturn[0].operationType;
+
+			setIsLoading(false);
+
+			if (operationType.indexOf("ERROR") > -1) {
+				notification.add({
+					color: "error",
+					message: output,
+				});
+				return;
+			}
+
+			notification.add({
+				color: "success",
+				message: `Successfully added LLM to catalog`,
+			});
+			navigate(`/engine/model/${output.database_id}`);
+		});
 
 		if (onComplete) onComplete(data);
 	};
@@ -96,8 +160,6 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 				? name
 				: (f.default ?? f.value ?? (f.type === "boolean" ? false : ""));
 		const isLockedModel = f.key === "MODEL" && !!name;
-
-		// TODO: add rules here based on field.key
 
 		if (f.type === "hidden") {
 			return (
@@ -112,6 +174,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 							type="hidden"
 							name={field.name}
 							value={String(field.value ?? "")}
+							data-testId={`model-ImportForm-${f.key}-hidden-input`}
 							onChange={(e) =>
 								field.onChange(
 									(e.target as HTMLInputElement).value,
@@ -124,24 +187,191 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 			);
 		}
 
+		const validateFormField = async (
+			field,
+			userInput,
+		): Promise<boolean> => {
+			const pixelToExecute = field.rules.custom_rules.value.replace(
+				"[VALUE]",
+				userInput,
+			);
+
+			const response = await monolithStore.runQuery(pixelToExecute);
+			const output = response.pixelReturn[0].output,
+				operationType = response.pixelReturn[0].operationType;
+
+			if (operationType.indexOf("ERROR") > -1) {
+				notification.add({
+					color: "error",
+					message: output,
+				});
+				return;
+			}
+
+			//if the name already exists then the engine name is not valid
+			if (output.exists) {
+				// setFocus(field.fieldName);
+				setError(field.label, {
+					message: field.rules.custom_rules.message,
+					type: "checkField",
+				});
+				return false;
+			} else {
+				clearErrors(field.label);
+			}
+
+			return true;
+		};
+
 		return (
 			<Controller
 				key={f.key}
 				name={f.key}
 				control={control}
 				defaultValue={defaultVal}
-				rules={{ required: f.required }}
-				render={({ field }) => {
+				//rules={{ required: f.required }}
+				rules={{
+					required: f.required,
+					validate: {
+						...(f.rules?.custom_rules
+							? {
+									checkField: async (fieldVal) => {
+										// Skip validation if not needed
+										if (!_lastField.current.runValidate)
+											return true;
+										try {
+											// Run validation only if criteria match
+											if (
+												_lastField.current
+													.lastFocussedField ===
+													f.key &&
+												_lastField.current
+													.lastValidatedValue !==
+													fieldVal
+											) {
+												const isValid =
+													await validateFormField(
+														f,
+														fieldVal,
+													); // must await
+												return (
+													isValid ||
+													f.rules.custom_rules.message
+												);
+											}
+
+											return true; // default valid
+										} catch (err) {
+											console.error(
+												"Validation error:",
+												err,
+											);
+											return (
+												f.rules.custom_rules.message ||
+												"Validation failed."
+											);
+										} finally {
+											_lastField.current.runValidate = false;
+										}
+									},
+								}
+							: {}),
+					},
+					pattern: {
+						...(f.rules?.pattern && {
+							value: f.rules?.pattern.value,
+							message: f.rules?.pattern.message,
+						}),
+					},
+				}}
+				render={({
+					field: { ref, ...field },
+					fieldState: { error },
+					formState: { errors },
+				}) => {
 					switch (f.type) {
 						case "text":
+							return (
+								<TextField
+									label={f.label}
+									size="small"
+									variant="outlined"
+									required={f.required}
+									value={field.value ?? ""}
+									onChange={(v) => field.onChange(v)}
+									disabled={f.disabled || isLockedModel}
+									helperText={
+										errors?.[f.label]?.message.toString() ||
+										f.helperText ||
+										""
+									}
+									data-testId={formatToDataTestId(
+										`importForm-${f.label}-textField`,
+									)}
+									error={!!error}
+									inputProps={{
+										onFocus: () => {
+											_lastField.current = {
+												..._lastField.current,
+												lastFocussedField: field.name,
+												lastFocussedValue: field.value,
+												lastValidatedValue: field.value,
+											};
+										},
+										onBlur: () => {
+											if (f.rules?.custom_rules) {
+												_lastField.current.runValidate = true;
+												trigger(field.name);
+											}
+										},
+									}}
+								/>
+							);
+						case "file-upload":
+							return (
+								<StyledDropzoneField>
+									<Typography
+										data-testid={`model-import-form-${f.label}-file-upload`}
+										variant={"body1"}
+									>
+										{f.label}
+									</Typography>
+									<FileDropzone
+										multiple={false}
+										value={field.value as File | File[]}
+										disabled={false}
+										data-testid={formatToDataTestId(
+											`importForm-${field.name}-fileDropZone`,
+										)}
+										onChange={(newValues) => {
+											const files = newValues as
+												| File
+												| File[];
+											field.onChange(files);
+											_lastField.current = {
+												..._lastField.current,
+												lastFocussedField: f.value,
+												lastFocussedValue: String(
+													field.value ?? "",
+												),
+											};
+										}}
+									/>
+								</StyledDropzoneField>
+							);
 						case "url":
 							return (
 								<TextField
 									label={f.label}
 									variant="outlined"
+									size="small"
+									required={f.required}
 									value={field.value ?? ""}
 									onChange={(v) => field.onChange(v)}
-									disabled={isLockedModel}
+									disabled={f.disabled || isLockedModel}
+									data-testId={formatToDataTestId(
+										`model-importForm-${f.label}-url`,
+									)}
 								/>
 							);
 						case "password":
@@ -150,9 +380,15 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									label={f.label}
 									variant="outlined"
 									type="password"
+									size="small"
+									required={f.required}
 									value={field.value ?? ""}
 									onChange={(v) => field.onChange(v)}
-									disabled={isLockedModel}
+									helperText={f.helperText || ""}
+									disabled={f.disabled || isLockedModel}
+									data-testId={formatToDataTestId(
+										`model-importForm-${f.label}-password`,
+									)}
 								/>
 							);
 						case "number":
@@ -161,6 +397,8 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									label={f.label}
 									variant="outlined"
 									type="number"
+									size="small"
+									required={f.required}
 									value={String(field.value ?? "")}
 									onChange={(v) => {
 										const asNumber = Number(v);
@@ -170,7 +408,10 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 												: asNumber,
 										);
 									}}
-									disabled={isLockedModel}
+									disabled={f.disabled || isLockedModel}
+									data-testId={formatToDataTestId(
+										`model-importForm-${f.label}-number`,
+									)}
 								/>
 							);
 						case "textarea":
@@ -178,10 +419,14 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								<TextArea
 									label={f.label}
 									variant="outlined"
+									required={f.required}
 									value={field.value ?? ""}
 									onChange={(v) => field.onChange(v)}
 									rows={4}
-									disabled={isLockedModel}
+									disabled={f.disabled || isLockedModel}
+									data-testId={formatToDataTestId(
+										`model-importForm-${f.label}-textarea`,
+									)}
 								/>
 							);
 						case "select":
@@ -190,6 +435,8 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									fullWidth
 									size="small"
 									value={field.value ?? ""}
+									required={f.required}
+									label={f.label}
 									onChange={(e: unknown) =>
 										field.onChange(
 											(
@@ -201,7 +448,10 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 											).target?.value ?? e,
 										)
 									}
-									disabled={isLockedModel}
+									disabled={f.disabled || isLockedModel}
+									data-testId={formatToDataTestId(
+										`model-importForm-${f.label}-select`,
+									)}
 								>
 									{(f.options || []).map((opt) => (
 										<Select.Item key={opt} value={opt}>
@@ -231,9 +481,15 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 											);
 											field.onChange(checked);
 										}}
-										disabled={isLockedModel}
+										required={f.required}
+										disabled={f.disabled || isLockedModel}
 									/>
-									<Typography variant="body1">
+									<Typography
+										variant="body1"
+										data-testId={formatToDataTestId(
+											`model-importForm-${f.label}-text`,
+										)}
+									>
 										{f.label}
 									</Typography>
 								</Stack>
@@ -247,30 +503,121 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	};
 
 	return (
-		<form onSubmit={handleSubmit(onSubmit)}>
-			<Stack spacing={2}>
-				<Typography variant="h6">
-					{name ? `Configure ${name}` : "Configure Model"}
-				</Typography>
+		<form
+			onSubmit={handleSubmit(onSubmit)}
+			style={{ marginTop: "16px", marginBottom: "16px" }}
+		>
+			{Object.keys(grouped).map((category) => (
+				<Box
+					key={category}
+					sx={{
+						display: "flex",
+						gap: 4,
+						mb: 4,
+						flexDirection: "column",
+					}}
+				>
+					<Box
+						sx={{
+							display: "flex",
+							gap: 4,
+							alignItems: "flex-start",
+						}}
+					>
+						{/* Left: Category title + description */}
+						<Stack sx={{ flex: 1 }}>
+							<Typography
+								variant="h6"
+								data-testId={`model-importForm-category-title`}
+							>
+								{category}
+							</Typography>
+							<Typography
+								variant="body2"
+								data-testId={`model-importForm-category-description`}
+								color="textSecondary"
+							>
+								{importableModelsCategory[selectedProvider]?.[
+									category
+								] ?? "No description available."}
+							</Typography>
+						</Stack>
 
-				<Stack spacing={1}>
-					<Typography variant="subtitle2">Fields</Typography>
-					<Stack spacing={1}>
-						{fields.map((f) => renderField(f))}
+						{/* Right: Fields under this category */}
+						<Stack spacing={2} sx={{ flex: 2 }}>
+							{grouped[category].map((f) => renderField(f))}
+						</Stack>
+					</Box>
+					<Divider sx={{ color: "secondary" }} />
+				</Box>
+			))}
+			{advanced.length > 0 && (
+				<Box sx={{ mt: 4 }}>
+					<Stack
+						direction="row"
+						alignItems="center"
+						justifyContent="space-between"
+					>
+						<Typography
+							data-testId="model-advanced-settings-title"
+							variant="h6"
+						>
+							Advanced Settings
+						</Typography>
+						<IconButton
+							data-testId="model-advanced-settings-toggle"
+							onClick={() => setAdvancedOpen((prev) => !prev)}
+							size="small"
+						>
+							{advancedOpen ? <ExpandLess /> : <ExpandMore />}
+						</IconButton>
 					</Stack>
-				</Stack>
+					<Collapse in={advancedOpen}>
+						<Box
+							sx={{
+								display: "flex",
+								gap: 4,
+								mb: 4,
+								flexDirection: "column",
+							}}
+						>
+							<Box
+								sx={{
+									display: "flex",
+									gap: 4,
+									alignItems: "flex-start",
+								}}
+							>
+								{/* Left: Category title + description */}
+								<Stack sx={{ flex: 1 }}>
+									<Typography
+										data-testId="model-advanced-settings-description"
+										variant="body2"
+										color="textSecondary"
+									>
+										Add advanced settings here
+									</Typography>
+								</Stack>
 
-				<Stack spacing={1}>
-					<Typography variant="subtitle2">Advanced</Typography>
-					<Stack spacing={1}>
-						{advanced.map((f) => renderField(f))}
-					</Stack>
-				</Stack>
-
-				<Button type="submit" variant="contained">
+								{/* Right: Fields under this category */}
+								<Stack spacing={2} sx={{ flex: 2 }}>
+									{advanced.map((f) => renderField(f))}
+								</Stack>
+							</Box>
+						</Box>
+					</Collapse>
+				</Box>
+			)}
+			<Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4 }}>
+				<Button
+					data-testId="model-importForm-connect-button"
+					type="submit"
+					variant="contained"
+					disabled={isLoading || !isValid}
+				>
 					Connect
 				</Button>
-			</Stack>
+			</Box>
 		</form>
 	);
 };

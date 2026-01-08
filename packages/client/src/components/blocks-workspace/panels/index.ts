@@ -1,5 +1,6 @@
 export * from "./BlocksMenuPanel";
 export * from "./DesignerPanel";
+export * from "./ExportButtonPanel";
 export * from "./LayersPanel";
 export * from "./NotebookExplorerPanel";
 export * from "./NotebookViewerPanel";

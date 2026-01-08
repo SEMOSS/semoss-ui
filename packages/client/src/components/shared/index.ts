@@ -3,7 +3,7 @@ import { NavbarLeft } from "./NavbarLeft";
 import { NavbarRight } from "./NavbarRight";
 import { Page } from "./Page";
 import { PlatformMessages } from "./PlatformMessages";
-import { PlatformSearch } from "./PlatformSearch";
+import { PlatformSearch } from "./platform-search";
 
 export {
 	Page,

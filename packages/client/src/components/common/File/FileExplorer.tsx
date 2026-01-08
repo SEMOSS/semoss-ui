@@ -18,7 +18,7 @@ interface FileExplorerProps {
 	expandedPaths: string[];
 	onToggleExpand: (path: string) => void;
 	/** Type of file opened */
-	type: "app" | "insight";
+	type: "app" | "insight" | "engine";
 
 	/** Space where the file is located */
 	space: string;
@@ -77,7 +77,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 	>(
 		type === "app"
 			? `BrowseAsset(filePath=["version/assets"], space=["${space}"]);`
-			: "",
+			: `BrowseEngineAssets(filePath=[], engine=["${space}"]);`,
 		{},
 		insightId,
 	);
@@ -98,6 +98,19 @@ export const FileExplorer = (props: FileExplorerProps) => {
 	};
 
 	/**
+	 * Handle deselecting items when clicking/interacting outside tree items
+	 */
+	const handleDeselectOutside = (target: HTMLElement) => {
+		// Only deselect if not clicking on a tree item
+		if (
+			!target.closest(".MuiTreeItem-root") &&
+			!target.closest(".MuiTreeItem-content")
+		) {
+			handleOnNodeSelect([]);
+		}
+	};
+
+	/**
 	 * Triggered when a item is toggled
 	 * @param expanded - newly expanded values
 	 */
@@ -109,69 +122,84 @@ export const FileExplorer = (props: FileExplorerProps) => {
 	}
 
 	return (
-		<StyledTreeView
-			multiSelect
-			expanded={expandedPaths}
-			selected={selected}
-			onNodeToggle={(e, nodeIds) => {
-				const lastToggled =
-					nodeIds.find((id) => !expandedPaths.includes(id)) ||
-					expandedPaths.find((id) => !nodeIds.includes(id));
-				if (lastToggled) {
-					onToggleExpand(lastToggled);
+		<div
+			role="region"
+			className="h-full w-full"
+			aria-label="File Explorer"
+			onClick={(e) => {
+				handleDeselectOutside(e.target as HTMLElement);
+			}}
+			onKeyDown={(e) => {
+				// Handle Escape key to deselect
+				if (e.key === "Escape") {
+					handleDeselectOutside(e.target as HTMLElement);
 				}
 			}}
-			onNodeSelect={(e, v) => {
-				handleOnNodeSelect(v);
-			}}
-			defaultCollapseIcon={
-				<Icon color={"disabled"}>
-					<ExpandMore />
-				</Icon>
-			}
-			defaultExpandIcon={
-				<Icon color={"disabled"}>
-					<ChevronRight />
-				</Icon>
-			}
 		>
-			<LoadingScreen>
-				{getAssets.status === "INITIAL" ||
-				getAssets.status === "LOADING" ? (
-					<LoadingScreen.Trigger />
-				) : getAssets.status === "SUCCESS" ? (
-					getAssets.data.map((n) => {
-						return (
-							<FileExplorerItem
-								key={n.path}
-								type={type}
-								space={space}
-								name={n.name}
-								path={n.path}
-								isDirectory={n.type === "directory"}
-								lastModified={n.lastModified}
-								expanded={expandedPaths}
-								selected={selected}
-								onDragStart={(e, path) => {
-									onDragStart(e, path);
-								}}
-								onDragEnd={(e, path) => {
-									onDragEnd(e, path);
-								}}
-								onTrashClick={(e, path) => {
-									onTrashClick(e, path);
-								}}
-								onMakeMCPClick={(e, path) => {
-									onMakeMCPClick(e, path);
-								}}
-								onMCPEditClick={(e, path) => {
-									onMCPEditClick(e, path);
-								}}
-							/>
-						);
-					})
-				) : null}
-			</LoadingScreen>
-		</StyledTreeView>
+			<StyledTreeView
+				multiSelect
+				expanded={expandedPaths}
+				selected={selected}
+				onNodeToggle={(e, nodeIds) => {
+					const lastToggled =
+						nodeIds.find((id) => !expandedPaths.includes(id)) ||
+						expandedPaths.find((id) => !nodeIds.includes(id));
+					if (lastToggled) {
+						onToggleExpand(lastToggled);
+					}
+				}}
+				onNodeSelect={(e, v) => {
+					handleOnNodeSelect(v);
+				}}
+				defaultCollapseIcon={
+					<Icon color={"disabled"}>
+						<ExpandMore />
+					</Icon>
+				}
+				defaultExpandIcon={
+					<Icon color={"disabled"}>
+						<ChevronRight />
+					</Icon>
+				}
+			>
+				<LoadingScreen>
+					{getAssets.status === "INITIAL" ||
+					getAssets.status === "LOADING" ? (
+						<LoadingScreen.Trigger />
+					) : getAssets.status === "SUCCESS" ? (
+						getAssets.data.map((n) => {
+							return (
+								<FileExplorerItem
+									key={n.path}
+									type={type}
+									space={space}
+									name={n.name}
+									path={n.path}
+									isDirectory={n.type === "directory"}
+									lastModified={n.lastModified}
+									expanded={expandedPaths}
+									selected={selected}
+									onDragStart={(e, path) => {
+										onDragStart(e, path);
+									}}
+									onDragEnd={(e, path) => {
+										onDragEnd(e, path);
+									}}
+									onTrashClick={(e, path) => {
+										onTrashClick(e, path);
+									}}
+									onMakeMCPClick={(e, path) => {
+										onMakeMCPClick(e, path);
+									}}
+									onMCPEditClick={(e, path) => {
+										onMCPEditClick(e, path);
+									}}
+								/>
+							);
+						})
+					) : null}
+				</LoadingScreen>
+			</StyledTreeView>
+		</div>
 	);
 };

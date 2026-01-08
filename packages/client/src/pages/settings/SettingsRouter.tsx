@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { JobsPage } from "../jobs/JobsPage";
 import { AdminQueryPage } from "./AdminQueryPage";
 import { AppSettingsDetailPage } from "./AppSettingsDetailPage";
+import { AdminThemePage } from "./admin-theme-page";
 import { ConfigurationsPage } from "./ConfigurationsPage";
 import { EngineSettingsDetailPage } from "./EngineSettingsDetailPage";
 import { EngineSettingsIndexPage } from "./EngineSettingsIndexPage";
@@ -28,6 +29,7 @@ const SETTINGS_COMPONETS = {
 	members: MemberSettingsPage,
 	"social-properties": ConfigurationsPage,
 	"admin-query": AdminQueryPage,
+	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,
 	jobs: JobsPage,
 	"team-permissions": TeamsSettingsPage,

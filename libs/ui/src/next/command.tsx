@@ -1,6 +1,6 @@
 import { Command as CommandPrimitive } from "cmdk";
 import { SearchIcon } from "lucide-react";
-import type * as React from "react";
+import * as React from "react";
 import { cn } from "@/lib/utils";
 import {
 	Dialog,
@@ -79,21 +79,22 @@ function CommandInput({
 	);
 }
 
-function CommandList({
-	className,
-	...props
-}: React.ComponentProps<typeof CommandPrimitive.List>) {
-	return (
-		<CommandPrimitive.List
-			data-slot="command-list"
-			className={cn(
-				"max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden",
-				className,
-			)}
-			{...props}
-		/>
-	);
-}
+const CommandList = React.forwardRef<
+	HTMLDivElement,
+	React.ComponentProps<typeof CommandPrimitive.List>
+>(({ className, ...props }, ref) => (
+	<CommandPrimitive.List
+		ref={ref}
+		data-slot="command-list"
+		className={cn(
+			"max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden",
+			className,
+		)}
+		{...props}
+	/>
+));
+
+CommandList.displayName = "CommandList";
 
 function CommandEmpty({
 	...props

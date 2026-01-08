@@ -1,6 +1,7 @@
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
+	CircleAlert,
 	CopyIcon,
 	MessageCircleIcon,
 	RefreshCwIcon,
@@ -46,7 +47,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			try {
 				navigator.clipboard.writeText(text);
 
-				toast.success("Successfully copied to clipboar");
+				toast.success("Successfully copied to clipboard");
 			} catch (e) {
 				toast.error(e.message);
 			}
@@ -80,15 +81,23 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			}
 		};
 
+		const areToolsActive =
+			message.type === "RESPONSE" &&
+			message.tools.some((tool) => !tool.response);
+
 		return (
-			<div className="group mb-0 flex w-full flex-col gap-2 overflow-hidden">
+			<div className="group mb-0 flex w-full flex-col gap-2">
 				<div className="group flex flex-row items-center gap-2">
 					<MessageCircleIcon className="size-4" />
 					<span className="mr-0.5 font-medium text-base">
-						{message.model.name}
+						{message.model.name ?? "Agent"}
 					</span>
 				</div>
-				{message.text ? <Markdown>{message.text}</Markdown> : null}
+				{message.text ? (
+					<Markdown className="[&>*:first-child]:mt-0">
+						{message.text}
+					</Markdown>
+				) : null}
 				{message.tools.map((t) => (
 					<ResponseMessageTool
 						key={`tool-${t.id}`}
@@ -96,8 +105,14 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						tool={t}
 					/>
 				))}
+				{areToolsActive && (
+					<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
+						<CircleAlert className="size-4" />
+						Please complete the tool(s) to proceed.
+					</p>
+				)}
 
-				<div className="flex flex-1 flex-row items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+				<div className="-ml-2.5 flex flex-1 flex-row items-center justify-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
 					{inputMessage?.siblings.length > 1 && (
 						<>
 							<Tooltip>
@@ -117,7 +132,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										<ArrowLeftIcon />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>
+								<TooltipContent side="bottom">
 									Previous Message
 								</TooltipContent>
 							</Tooltip>
@@ -143,7 +158,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										<ArrowRightIcon />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>Next Message</TooltipContent>
+								<TooltipContent side="bottom">
+									Next Message
+								</TooltipContent>
 							</Tooltip>
 						</>
 					)}
@@ -154,7 +171,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<Button
 									disabled={
 										inputMessage.parent instanceof
-										RootMessageStore
+											RootMessageStore ||
+										message.room.mode === "executing"
 									}
 									variant="ghost"
 									size="icon"
@@ -165,7 +183,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									<RefreshCwIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Rewrite Message</TooltipContent>
+							<TooltipContent side="bottom">
+								Rewrite Message
+							</TooltipContent>
 						</Tooltip>
 					)}
 
@@ -181,7 +201,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<ThumbsUpIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Share Positive Feedback</TooltipContent>
+						<TooltipContent side="bottom">
+							Share Positive Feedback
+						</TooltipContent>
 					</Tooltip>
 
 					<Tooltip>
@@ -196,7 +218,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<ThumbsDownIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Share Negative Feedback</TooltipContent>
+						<TooltipContent side="bottom">
+							Share Negative Feedback
+						</TooltipContent>
 					</Tooltip>
 
 					<Tooltip>
@@ -216,7 +240,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<CopyIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Copy Response</TooltipContent>
+						<TooltipContent side="bottom">
+							Copy Response
+						</TooltipContent>
 					</Tooltip>
 				</div>
 			</div>
