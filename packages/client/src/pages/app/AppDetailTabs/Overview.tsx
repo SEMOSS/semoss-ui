@@ -1,5 +1,6 @@
-import React from "react";
-import { Box, Card, Chip, Grid, Stack, styled, Typography } from "@semoss/ui";
+import { Box, styled, Typography } from "@semoss/ui";
+
+/*
 import BLOCKS_APP_2 from "@/assets/img/blocks_app_2.png";
 import Apps from "../../../assets/img/Apps.png";
 import Download from "../../../assets/img/Downloads.png";
@@ -20,7 +21,9 @@ const similarApps: any[] = [
 	// },
 ];
 
+
 const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString();
+*/
 
 const StyledBox = styled(Box)(({ theme }) => ({
 	padding: theme.spacing(3),
@@ -32,7 +35,7 @@ const StyledDescription = styled(Typography)(({ theme }) => ({
 	color: theme.palette.text.disabled,
 	fontSize: "16px",
 }));
-
+/*
 const SectionTitle = styled(Typography)(({ theme }) => ({
 	paddingTop: theme.spacing(1), // 8px
 }));
@@ -47,7 +50,8 @@ const StatCard = styled(Box)(({ theme }) => ({
 	gap: theme.spacing(1.5),
 }));
 
-// Similar apps
+// Similar apps - hidden
+
 const AppCard = styled(Card)(({ theme }) => ({
 	height: "100%",
 	display: "flex",
@@ -72,7 +76,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
 	flexDirection: "column",
 	borderRadius: 2,
 }));
-
+*/
 const StyledPlaceholderBox = styled(Box)(({ theme }) => ({
 	border: `1px solid ${theme.palette.secondary.main}`,
 	borderRadius: 2,
@@ -104,7 +108,8 @@ export const Overview = ({ appInfo }: OverviewProps) => {
 				</StyledPlaceholderBox>
 			)}
 
-			<SectionTitle variant="h6" gutterBottom sx={{ paddingTop: "8px" }}>
+			{/* Statistics & Similar Apps - hidden */}
+			{/* <SectionTitle variant="h6" gutterBottom sx={{ paddingTop: "8px" }}>
 				Statistics
 			</SectionTitle>
 
@@ -181,7 +186,7 @@ export const Overview = ({ appInfo }: OverviewProps) => {
 						No similar apps available
 					</Typography>
 				</StyledPlaceholderBox>
-			)}
+			)} */}
 		</StyledBox>
 	);
 };
