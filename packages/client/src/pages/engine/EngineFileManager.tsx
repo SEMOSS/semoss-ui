@@ -46,7 +46,7 @@ export const EngineFileManagerPage = () => {
 				>
 					<div
 						role="document"
-						className="w-[600px] max-w-none rounded-lg bg-white p-6 shadow-lg"
+						className="w-[600px] max-w-none rounded-lg bg-white p-4 shadow-lg"
 						onClick={(e) => e.stopPropagation()}
 						onKeyDown={(e) => e.stopPropagation()}
 					>

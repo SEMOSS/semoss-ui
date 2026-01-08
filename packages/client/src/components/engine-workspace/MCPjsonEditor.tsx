@@ -366,7 +366,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = (props) => {
 	);
 
 	return (
-		<div className="mx-auto w-full max-w-full px-2 py-6 pb-8">
+		<div className="mx-auto w-full max-w-full px-2 py-6 pb-8 overflow-y-auto">
 			<div className="mb-6 px-4">
 				<h2 className="font-bold text-2xl">{headerText}</h2>
 			</div>

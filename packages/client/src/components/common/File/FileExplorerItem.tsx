@@ -131,10 +131,14 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 		});
 	}, []);
 
-	// determine if the file is a mcp candidate >> 1.is one of the mcp file names 2.is not a directory(should be a file) 3.is in assets/py(root directory)
-	const makeMCPCandidate = MCP_FILE_NAMES.some((f) => path.includes(f) && path.split("/").includes("py") && path.split("/")[path.split("/").length - 3] === "assets") && !isDirectory;
-	// determine if the file is a mcp-json edit candidate >> 1.is one of the mcp-json file names 2.is not a directory(should be a file) 3.is in assets/mcp(root directory)
-	const editMCPCandidate = MCP_JSON_FILE_NAMES.some((f) => path.includes(f) && path.split("/").includes("mcp") && path.split("/")[path.split("/").length - 3] === "assets") && !isDirectory;
+	const makeMCPCandidate =
+		MCP_FILE_NAMES.some(
+			(f) => path.includes(f) && path.split("/").includes("py"),
+		) && !isDirectory;
+	const editMCPCandidate =
+		MCP_JSON_FILE_NAMES.some(
+			(f) => path.includes(f) && path.split("/").includes("mcp"),
+		) && !isDirectory;
 
 	return (
 		<StyledNode
