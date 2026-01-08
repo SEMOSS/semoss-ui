@@ -119,7 +119,7 @@ export class ChatStore {
 					roomId: string;
 				},
 			]
-		>(`CreateRoom();`, "new");
+		>(`CreatePlaygroundRoom();`, "new");
 
 		// throw errors
 		if (errors.length > 0) {
@@ -140,9 +140,15 @@ export class ChatStore {
 
 		let pixel = ``;
 
+		// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
+		const optionsToSave = {
+			...options,
+			mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
+		};
+
 		// set the options
 		pixel += `UpdateRoomOptions(roomId=${JSON.stringify(roomId)}, roomOptions=[${JSON.stringify(
-			options,
+			optionsToSave,
 		)}]);`;
 
 		// run the first message
@@ -223,9 +229,9 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Get available models from the backend
+	 * Set the selected model
 	 */
-	setSelectedModel = async (model: Engine): Promise<void> => {
+	setSelectedModel = (model: Engine): void => {
 		this.models.selected = model;
 
 		// save to local storage
@@ -235,6 +241,32 @@ paramValues=[${JSON.stringify({
 				JSON.stringify(this.models.selected),
 			);
 		}
+	};
+
+	/**
+	 * Set the selected model by its id
+	 */
+	setSelectedModelById = async (modelId: string): Promise<void> => {
+		if (!modelId || this.models.selected?.app_id === modelId) {
+			return;
+		}
+
+		// get available models
+		const { pixelReturn } = await this._actions.run<[Engine[]]>(
+			` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(modelId)})`,
+		);
+
+		// throw errors
+		if (this._error) {
+			throw new Error(this._error.message);
+		}
+
+		// If not found, do nothing
+		if (pixelReturn[0].output.length === 0) {
+			throw new Error("Model not found");
+		}
+
+		this.setSelectedModel(pixelReturn[0].output[0]);
 	};
 
 	/**

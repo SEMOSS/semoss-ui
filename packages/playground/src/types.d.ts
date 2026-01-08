@@ -1,29 +1,3 @@
-export interface Theme {
-	/** Name of the app */
-	name: string;
-
-	/** Description of the app */
-	description: string;
-
-	/** Styles of the app */
-	styles: {
-		backgroundColor: string;
-		primaryColor: string;
-	};
-
-	/** Images throughout app */
-	images: {
-		logo: string;
-	};
-
-	/**
-	 * Custom CSS to override default styles
-	 */
-	overrides: {
-		"main-layout": React.CSSProperties;
-	};
-}
-
 export interface Engine {
 	app_id: string;
 	app_name: string;
@@ -64,7 +38,7 @@ export interface Instructions {
 
 export interface MCP {
 	/** Type of the mcp */
-	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL";
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL" | "VECTOR";
 
 	/** Id of the mcp */
 	id: string;
@@ -79,7 +53,10 @@ export interface MCP {
 	tags: string[];
 }
 
-export type MCPConfig = Pick<MCP, "type" | "id" | "name">;
+export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
+	/** Flag to indicate if this MCP comes from a workspace */
+	fromWorkspace?: boolean;
+};
 
 /**
  * Item from the prompt library
@@ -152,7 +129,9 @@ export interface InputToolExecPixelMessage extends AbstractPixelMessage {
 	visible: false;
 	tool_call_id: string;
 	tool_name: string;
+	tool_status: "error" | "cancelled" | "success";
 	modelId: string;
+	inputPrompt: string;
 	ornaments: {
 		modelName?: string;
 	};

@@ -4,7 +4,7 @@ import {
 	removeEngineUserPermissions,
 	removeProjectUserPermissions,
 } from "@/api";
-import { useRootStore, useSettings } from "@/hooks";
+import { useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import type { SETTINGS_PROVISIONED_USER } from "./settings.types";
 
@@ -46,7 +46,6 @@ export const MembersDeleteOverlay = (props: MembersDeleteOverlayProps) => {
 		onClose = () => null,
 	} = props;
 
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -88,7 +87,7 @@ export const MembersDeleteOverlay = (props: MembersDeleteOverlayProps) => {
 					id,
 					requests,
 				);
-			} else if (type === "APP") {
+			} else if (type === "PROJECT") {
 				response = await removeProjectUserPermissions(
 					adminMode,
 					id,

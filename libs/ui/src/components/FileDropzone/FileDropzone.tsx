@@ -255,6 +255,11 @@ const _FileDropzone = <Multiple extends boolean>(
 		} else {
 			updateFiles([Array.from(files)[0]]);
 		}
+
+		// Reset the input value to allow re-uploading the same file
+		if (inputRef.current) {
+			inputRef.current.value = "";
+		}
 	};
 
 	/**

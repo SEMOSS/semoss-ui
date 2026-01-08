@@ -4,6 +4,7 @@ import {
   Box,
   Alert,
   styled,
+  Table,
 } from '@semoss/ui';
 import {
   Error as ErrorIcon,
@@ -36,24 +37,31 @@ const StyledExecutionTimeContainerWithMargin = styled(StyledExecutionTimeContain
   marginBottom: theme.spacing(2)
 }));
 
-const StyledTableContainer = styled(Box)(({ theme }) => ({
-  padding: theme.spacing(2)
+const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
+  padding: theme.spacing(2),
+  paddingTop: 0,
+  overflow: 'auto',
+  width: '100%',
 }));
 
-const StyledTable = styled(Box)(() => ({
+const StyledTable = styled(Table)(() => ({
   border: 'none',
-  overflow: 'hidden'
+  display: 'table',
+  width: '100%',
 }));
 
-const StyledTableHeader = styled(Box)(() => ({
+const StyledTableHeader = styled(Table.Head)(() => ({
   display: 'flex',
   fontWeight: 'bold',
   backgroundColor: '#F5F9FE',
   color: '#0471F0',
-  borderBottom: '1px solid #e0e0e0'
+  borderBottom: '1px solid #e0e0e0',
+  position: 'sticky',
+  top: 0,
+  zIndex: 1,
 }));
 
-const StyledHeaderCell = styled(Box)(() => ({
+const StyledHeaderCell = styled(Table.Cell)(() => ({
   flex: 1,
   padding: '8px',
   fontSize: '12px',
@@ -61,12 +69,13 @@ const StyledHeaderCell = styled(Box)(() => ({
   minWidth: '100px',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap'
+  whiteSpace: 'nowrap',
+  color: '#0471F0',
+  backgroundColor: '#F5F9FE',
 }));
 
-const StyledTableBody = styled(Box)<{ isExpanded: boolean }>(({ isExpanded }) => ({
+const StyledTableBody = styled(Table.Body)<{ isExpanded: boolean }>(({ isExpanded }) => ({
   maxHeight: isExpanded ? 'calc(100vh - 200px)' : '180px',
-  overflow: 'auto'
 }));
 
 const StyledEmptyDataContainer = styled(Box)(({ theme }) => ({
@@ -75,7 +84,7 @@ const StyledEmptyDataContainer = styled(Box)(({ theme }) => ({
   color: 'secondary'
 }));
 
-const StyledTableRow = styled(Box)(({ theme }) => ({
+const StyledTableRow = styled(Table.Row)(({ theme }) => ({
   display: 'flex',
   borderBottom: '1px solid #e0e0e0',
   '&:hover': {
@@ -83,7 +92,7 @@ const StyledTableRow = styled(Box)(({ theme }) => ({
   }
 }));
 
-const StyledDataCell = styled(Box)(() => ({
+const StyledDataCell = styled(Table.Cell)(() => ({
   flex: 1,
   padding: '8px',
   fontSize: '12px',
@@ -240,40 +249,40 @@ export function useQueryResults() {
 
     if (hasTabularData(previewData)) {
       return (
-        <StyledTableContainer>
-          <StyledTable>
-            {previewData.output.data.headers && (
-              <StyledTableHeader>
-                {previewData.output.data.headers.map((header: string, index: number) => (
-                  <StyledHeaderCell key={index}>
-                    {header}
-                  </StyledHeaderCell>
-                ))}
-              </StyledTableHeader>
-            )}
-            
-            {previewData.output.data.values && (
-              <StyledTableBody isExpanded={isExpanded}>
-                {previewData.output.data.values.length === 0 ? (
-                  <StyledEmptyDataContainer>
-                    <Typography variant="body2">
-                      No data returned
-                    </Typography>
-                  </StyledEmptyDataContainer>
-                ) : (
-                  previewData.output.data.values.map((row: any[], rowIndex: number) => (
-                    <StyledTableRow key={rowIndex}>
-                      {row.map((cell: any, cellIndex: number) => (
-                        <StyledDataCell key={cellIndex}>
-                          {cell !== null && cell !== undefined ? String(cell) : '(null)'}
-                        </StyledDataCell>
-                      ))}
-                    </StyledTableRow>
-                  ))
-                )}
-              </StyledTableBody>
-            )}
-          </StyledTable>
+        <StyledTableContainer data-testid="query-results-table-container">
+            <StyledTable aria-label="sticky table" data-testid="query-results-table">
+              {previewData.output.data.headers && (
+                <StyledTableHeader>
+                 {previewData.output.data.headers.map((header: string, index: number) => (
+                    <StyledHeaderCell key={index}>
+                      {header}
+                    </StyledHeaderCell>
+                  ))}
+                </StyledTableHeader>
+              )}
+              
+              {previewData.output.data.values && (
+                <StyledTableBody isExpanded={isExpanded} data-testid="query-results-table-body">
+                  {previewData.output.data.values.length === 0 ? (
+                    <StyledEmptyDataContainer>
+                      <Typography variant="body2">
+                        No data returned
+                      </Typography>
+                    </StyledEmptyDataContainer>
+                  ) : (
+                    previewData.output.data.values.map((row: any[], rowIndex: number) => (
+                      <StyledTableRow key={rowIndex}>
+                        {row.map((cell: any, cellIndex: number) => (
+                          <StyledDataCell key={cellIndex}>
+                            {cell !== null && cell !== undefined ? String(cell) : '(null)'}
+                          </StyledDataCell>
+                        ))}
+                      </StyledTableRow>
+                    ))
+                  )}
+                </StyledTableBody>
+              )}
+            </StyledTable>
         </StyledTableContainer>
       );
     }

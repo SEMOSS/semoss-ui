@@ -8,6 +8,7 @@ import {
 	Workspace,
 } from "../../components/workspace";
 import type { WorkspaceOptions, WorkspaceStore } from "../../stores";
+import { MCPJsonEditor } from "../workspace/panels/MCPJsonEditor";
 import { CodeWorkspaceActions } from "./CodeWorkspaceActions";
 import { RendererPanel } from "./panels";
 
@@ -105,6 +106,8 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
 			return <FileExplorerPanel title={"Files"} layout={layout} />;
 		} else if (component === "file-editor") {
 			return <FileEditorPanel path={config.path} />;
+		} else if (component === "mcpJsonEditor") {
+			return <MCPJsonEditor dataMap={config.data}/>;
 		} else if (component === "renderer") {
 			return <RendererPanel />;
 		} else if (component === "settingsPanel") {

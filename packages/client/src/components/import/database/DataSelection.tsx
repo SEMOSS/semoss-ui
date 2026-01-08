@@ -169,6 +169,7 @@ interface ParsedResult {
 interface DataSelectionProps {
 	files: ParsedResult[];
 	fileName: string[];
+	tableName: string[];
 	onImport: (payload: Record<string, unknown>[]) => Promise<void>;
 	onCancel: () => void;
 }
@@ -184,6 +185,7 @@ interface ColumnMetadata {
 const DataSelection = ({
 	files,
 	fileName,
+	tableName,
 	onImport,
 	onCancel,
 }: DataSelectionProps) => {
@@ -202,10 +204,7 @@ const DataSelection = ({
 	const [rowEditableStateList, setRowEditableStateList] = useState<
 		Record<number, boolean>[]
 	>([]);
-	const [tableNames, setTableNames] = useState<string[]>(fileName);
-	const [tableNameErrors, setTableNameErrors] = useState<string[]>(
-		fileName.map(() => ""),
-	);
+	const [tableNames, setTableNames] = useState<string[]>(tableName);
 
 	// Initialize column metadata and row states for each file
 	useEffect(() => {
@@ -272,29 +271,9 @@ const DataSelection = ({
 			updated[index] = newValue;
 			return updated;
 		});
-
-		// Live validation
-		setTableNameErrors((prev) => {
-			const updated = [...prev];
-			if (!newValue.trim()) {
-				updated[index] = "Enter valid table name";
-			} else {
-				updated[index] = "";
-			}
-			return updated;
-		});
 	};
 
 	const handleImport = () => {
-		if (tableNames.some((name) => !name.trim())) {
-			setTableNameErrors(
-				tableNames.map((n) =>
-					!n.trim() ? "Enter valid table name" : "",
-				),
-			);
-			return;
-		}
-
 		const tables = files.map((parsedData, fileIdx) => {
 			const originalHeaders = parsedData.cleanHeaders;
 			const metadata = columnMetadataList[fileIdx];

@@ -123,7 +123,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 		<Dialog open={open} onOpenChange={(open) => onOpenChange(open)}>
 			<DialogContent
 				aria-describedby="Edit the details of the step"
-				className="sm:max-w-lg"
+				className="sm:max-w-4xl"
 			>
 				<DialogHeader>
 					<DialogTitle>{mode} Step</DialogTitle>

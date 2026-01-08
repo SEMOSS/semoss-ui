@@ -21,9 +21,9 @@ import {
 	DeleteFileOverlay,
 	FileExplorer,
 } from "@/components/common";
-import { MakeMCPOverlay } from "@/components/common/File/MakeMCPOverlay";
 import { FlexLayout } from "@/components/flex-layout";
 import { useRootStore, useWorkspace } from "@/hooks";
+import { MCP_JSON_FILE_NAMES } from "@/pages/app/app.constants";
 import { Panel } from "./Panel";
 
 const EXPLORER_TYPE = "app";
@@ -89,13 +89,6 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 
 	// Track deselection to force FileExplorer remount
 	const [deselectCounter, setDeselectCounter] = useState(0);
-
-	const [mcpOverlayOpen, setMCPOverlayOpen] = useState(false);
-	const [mcpTools, setMCPTools] = useState<Record<string, unknown>>({
-		tools: [],
-		_meta: {},
-	});
-	const [currentFilePath, setCurrentFilePath] = useState("");
 
 	// set the uploadPath based on the selected item
 	useEffect(() => {
@@ -368,7 +361,6 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			const { errors, pixelReturn } = await runPixel(
 				`MakePythonMCP(project="${workspace.appId}")`,
 			);
-			workspace.setLoading(false);
 			// Handle pixel call errors
 			if (errors?.length) {
 				notification.add({
@@ -377,21 +369,42 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				});
 				return;
 			}
+			// remove the mcp json and UI tab on mcp generation
 			if (workspace.model) {
-				const tabset = workspace.model
-					.getActiveTabset()
-					.getChildren()
-					.find((tabset) => tabset.getAttr("name") === "py_mcp.json");
-				if (tabset) {
-					await workspace.model.doAction(
-						FlexLayout.Actions.deleteTab(tabset.getId()),
-					);
-				}
+				const toBeRemoved = [
+					...MCP_JSON_FILE_NAMES,
+					...MCP_JSON_FILE_NAMES.map(
+						(fileName) => `${fileName} (UI Editor)`,
+					),
+				];
+				toBeRemoved.forEach((file) => {
+					const tabset = workspace.model
+						.getActiveTabset()
+						.getChildren()
+						.find((tabset) => tabset.getAttr("name") === file);
+					if (tabset) {
+						workspace.model.doAction(
+							FlexLayout.Actions.deleteTab(tabset.getId()),
+						);
+					}
+				});
 			}
 			// refresh the content
 			refreshFiles();
 			// Handle pixel call response
 			if (pixelReturn[0].output) {
+				// open the relevant newly generated json editor
+				const sourceFileExtension = path.split(".")[1];
+				const targetFileName = MCP_JSON_FILE_NAMES.find((fileName) =>
+					fileName.includes(sourceFileExtension),
+				);
+				if (!targetFileName) {
+					throw new Error("Could not find target file");
+				}
+				const targetFilePath = `version/assets/mcp/${targetFileName}`;
+
+				addMCPEditorTab(pixelReturn[0].output, targetFilePath);
+
 				notification.add({
 					message: "Successfully generated MCP tools",
 					color: "success",
@@ -407,6 +420,64 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				message: e.message,
 				color: "error",
 			});
+		} finally {
+			workspace.setLoading(false);
+		}
+	};
+
+	const { Actions, DockLocation, TabNode } = FlexLayout;
+
+	const addMCPEditorTab = (json, path) => {
+		const fileName = path.split("/").pop() || "mcp.json";
+		// get the model
+		const model = workspace.model;
+		if (!model) throw new Error("Missing model");
+
+		let selectedNode: FlexLayout.TabNode | null = null;
+
+		// visit the notes, and see if it exists
+		model.visitNodes((node) => {
+			// check if it is a tabNode and it needs to be a settingsPanel
+			if (
+				node instanceof TabNode &&
+				node.getComponent() === "mcpJsonEditor" &&
+				node.getAttr("name") === `${fileName} (UI Editor)`
+			) {
+				selectedNode = node;
+			}
+		});
+
+		// create a new panel if there is no node
+		if (!selectedNode) {
+			const addId =
+				model.getActiveTabset()?.getId() ||
+				model.getRoot().getChildren()[0]?.getId() ||
+				"";
+
+			model.doAction(
+				Actions.addNode(
+					{
+						type: "tab",
+						name: `${fileName} (UI Editor)`,
+						component: "mcpJsonEditor",
+						config: {
+							data: {
+								initialData: json,
+								onSave: (data, path) =>
+									handleMCPEditSave(data, path),
+								path: path,
+							},
+						},
+						enableClose: true,
+					},
+					addId,
+					DockLocation.CENTER,
+					-1,
+					true,
+				),
+			);
+		} else {
+			model.doAction(Actions.selectTab(selectedNode.getId()));
 		}
 	};
 
@@ -426,9 +497,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				throw new Error(errors[0]);
 			}
 			const output = JSON.parse(pixelReturn[0]?.output as string);
-			setMCPTools(output);
-			setCurrentFilePath(path);
-			setMCPOverlayOpen(true);
+			addMCPEditorTab(output, path);
 		} catch (e) {
 			workspace.setLoading(false);
 			notification.add({
@@ -438,13 +507,15 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 		}
 	};
 
-	const handleMCPEditSave = async (finalTools: Record<string, unknown>[]) => {
+	const handleMCPEditSave = async (
+		finalTools: Record<string, unknown>,
+		filePath: string,
+	) => {
 		try {
 			workspace.setLoading(true);
 			let pixel = "";
-			const tools = { ...mcpTools, tools: finalTools };
-			if (mcpTools) {
-				pixel = `SaveAsset(fileName=["${currentFilePath}"], content=["<encode>${JSON.stringify(tools, null, 2)}</encode>"], space=["${workspace.appId}"]);CommitAsset(filePath=["${currentFilePath}"], comment=["Save from editor"], space=["${workspace.appId}"])`;
+			if (finalTools) {
+				pixel = `SaveAsset(fileName=["${filePath}"], content=["<encode>${JSON.stringify(finalTools, null, 2)}</encode>"], space=["${workspace.appId}"]);CommitAsset(filePath=["${filePath}"], comment=["Save from editor"], space=["${workspace.appId}"])`;
 			}
 
 			if (!pixel) {
@@ -667,179 +738,167 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 	};
 
 	return (
-		<>
-			<Panel
-				actions={
+		<Panel
+			actions={
+				<Stack
+					direction={"column"}
+					spacing={0}
+					className="notebook-variables-menu"
+					width={"100%"}
+				>
+					<StyledTitle>
+						<StyledTitleSpan>{title}</StyledTitleSpan>
+					</StyledTitle>
+					{/* TODO: Implement Search functionality and remove the comments */}
+					{/* <StyledTextField
+							placeholder="Search"
+							size="small"
+							fullWidth
+							// value={search}
+							// onChange={(e) => setSearch(e.target.value)}
+							InputProps={{
+								startAdornment: (
+									<InputAdornment position="start">
+										<Search />
+									</InputAdornment>
+								),
+								// endAdornment: (
+								//     <InputAdornment position="end">
+								//         <IconButton
+								//             size="small"
+								//             onClick={(e) =>
+								//                 setMenuAnchorEl(e.currentTarget)
+								//             }
+								//         >
+								//             <Badge
+								//                 variant="dot"
+								//                 invisible={!anyEnabledFilter}
+								//                 color="primary"
+								//             >
+								//                 <Tune />
+								//             </Badge>
+								//         </IconButton>
+								//     </InputAdornment>
+								// ),
+							}}
+						/> */}
 					<Stack
-						direction={"column"}
-						spacing={0}
-						className="notebook-variables-menu"
-						width={"100%"}
+						direction={"row"}
+						alignItems={"center"}
+						justifyContent={"space-between"}
+						paddingLeft={"16px"}
+						paddingRight={"16px"}
+						paddingTop={"16px"}
 					>
-						<StyledTitle>
-							<StyledTitleSpan>{title}</StyledTitleSpan>
-						</StyledTitle>
-						{/* TODO: Implement Search functionality and remove the comments */}
-						{/* <StyledTextField
-								placeholder="Search"
-								size="small"
-								fullWidth
-								// value={search}
-								// onChange={(e) => setSearch(e.target.value)}
-								InputProps={{
-									startAdornment: (
-										<InputAdornment position="start">
-											<Search />
-										</InputAdornment>
-									),
-									// endAdornment: (
-									//     <InputAdornment position="end">
-									//         <IconButton
-									//             size="small"
-									//             onClick={(e) =>
-									//                 setMenuAnchorEl(e.currentTarget)
-									//             }
-									//         >
-									//             <Badge
-									//                 variant="dot"
-									//                 invisible={!anyEnabledFilter}
-									//                 color="primary"
-									//             >
-									//                 <Tune />
-									//             </Badge>
-									//         </IconButton>
-									//     </InputAdornment>
-									// ),
-								}}
-							/> */}
-						<Stack
-							direction={"row"}
-							alignItems={"center"}
-							justifyContent={"space-between"}
-							paddingLeft={"16px"}
-							paddingRight={"16px"}
-							paddingTop={"16px"}
-						>
-							<StyledFileSpan>Files</StyledFileSpan>
-							<Stack direction={"row"} spacing={0.5}>
-								<Tooltip title={`Refresh files`}>
-									<IconButton
-										size={"small"}
-										color={"default"}
-										onClick={(e) => {
-											e.stopPropagation();
-											refreshFiles();
-										}}
-									>
-										<RefreshOutlined fontSize="inherit" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip title={`Publish files`}>
-									<IconButton
-										size={"small"}
-										color={"default"}
-										onClick={(e) => {
-											e.stopPropagation();
-											publishApp();
-										}}
-									>
-										<PublishedWithChangesOutlined fontSize="inherit" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip title={`Recompile reactors`}>
-									<IconButton
-										size={"small"}
-										color={"default"}
-										onClick={(e) => {
-											e.stopPropagation();
-											recompileApp();
-										}}
-									>
-										<CoffeeOutlined fontSize="inherit" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip
-									title={`Upload file(s) to ${fileUploadPath}`}
+						<StyledFileSpan>Files</StyledFileSpan>
+						<Stack direction={"row"} spacing={0.5}>
+							<Tooltip title={`Refresh files`}>
+								<IconButton
+									size={"small"}
+									color={"default"}
+									onClick={(e) => {
+										e.stopPropagation();
+										refreshFiles();
+									}}
 								>
-									<IconButton
-										size={"small"}
-										color={"default"}
-										onClick={(e) => {
-											e.stopPropagation();
-											handleOpenAddFile();
-										}}
-									>
-										<FileUpload fontSize="inherit" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip
+									<RefreshOutlined fontSize="inherit" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title={`Publish files`}>
+								<IconButton
+									size={"small"}
+									color={"default"}
+									onClick={(e) => {
+										e.stopPropagation();
+										publishApp();
+									}}
+								>
+									<PublishedWithChangesOutlined fontSize="inherit" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title={`Recompile reactors`}>
+								<IconButton
+									size={"small"}
+									color={"default"}
+									onClick={(e) => {
+										e.stopPropagation();
+										recompileApp();
+									}}
+								>
+									<CoffeeOutlined fontSize="inherit" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip
+								title={`Upload file(s) to ${fileUploadPath}`}
+							>
+								<IconButton
+									size={"small"}
+									color={"default"}
+									onClick={(e) => {
+										e.stopPropagation();
+										handleOpenAddFile();
+									}}
+								>
+									<FileUpload fontSize="inherit" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip
+								title={`Create new file at ${fileUploadPath}`}
+							>
+								<IconButton
 									title={`Create new file at ${fileUploadPath}`}
+									size={"small"}
+									color={"default"}
+									onClick={(e) => {
+										e.stopPropagation();
+										handleOpenCreateFile("file");
+									}}
 								>
-									<IconButton
-										title={`Create new file at ${fileUploadPath}`}
-										size={"small"}
-										color={"default"}
-										onClick={(e) => {
-											e.stopPropagation();
-											handleOpenCreateFile("file");
-										}}
-									>
-										<NoteAddOutlined fontSize="inherit" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip
-									title={`Create new folder at ${fileUploadPath}`}
+									<NoteAddOutlined fontSize="inherit" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip
+								title={`Create new folder at ${fileUploadPath}`}
+							>
+								<IconButton
+									size={"small"}
+									color={"default"}
+									onClick={(e) => {
+										e.stopPropagation();
+										handleOpenCreateFile("directory");
+									}}
 								>
-									<IconButton
-										size={"small"}
-										color={"default"}
-										onClick={(e) => {
-											e.stopPropagation();
-											handleOpenCreateFile("directory");
-										}}
-									>
-										<CreateNewFolderOutlined fontSize="inherit" />
-									</IconButton>
-								</Tooltip>
-							</Stack>
+									<CreateNewFolderOutlined fontSize="inherit" />
+								</IconButton>
+							</Tooltip>
 						</Stack>
 					</Stack>
-				}
-			>
-				<FileExplorer
-					key={`${counter}-${deselectCounter}`}
-					type={EXPLORER_TYPE}
-					space={workspace.appId}
-					insightId={workspace.insightId}
-					onSelect={(path) => {
-						handleOnSelect(path);
-					}}
-					onTrashClick={(_e, path) => {
-						handleOnTrashClick(path);
-					}}
-					onDragStart={(e, path) => {
-						handleOnItemDragStart(e, path);
-					}}
-					onMakeMCPClick={(e, path) => {
-						handleMakeMCPClick(e, path);
-					}}
-					onMCPEditClick={(e, path) => {
-						handleMCPEditClick(e, path);
-					}}
-					expandedPaths={expandedPaths}
-					onToggleExpand={handleToggleExpand}
-				/>
-			</Panel>
-			{mcpOverlayOpen && (
-				<MakeMCPOverlay
-					tools={mcpTools.tools as Record<string, unknown>[]}
-					onClose={() => setMCPOverlayOpen(false)}
-					handleToolsUpdate={(tools) =>
-						setMCPTools({ ...mcpTools, tools })
-					}
-					handleMCPEditSave={handleMCPEditSave}
-				/>
-			)}
-		</>
+				</Stack>
+			}
+		>
+			<FileExplorer
+				key={`${counter}-${deselectCounter}`}
+				type={EXPLORER_TYPE}
+				space={workspace.appId}
+				insightId={workspace.insightId}
+				onSelect={(path) => {
+					handleOnSelect(path);
+				}}
+				onTrashClick={(_e, path) => {
+					handleOnTrashClick(path);
+				}}
+				onDragStart={(e, path) => {
+					handleOnItemDragStart(e, path);
+				}}
+				onMakeMCPClick={(e, path) => {
+					handleMakeMCPClick(e, path);
+				}}
+				onMCPEditClick={(e, path) => {
+					handleMCPEditClick(e, path);
+				}}
+				expandedPaths={expandedPaths}
+				onToggleExpand={handleToggleExpand}
+			/>
+		</Panel>
 	);
 };

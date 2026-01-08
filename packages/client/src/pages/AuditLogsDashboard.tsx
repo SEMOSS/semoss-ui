@@ -1,5 +1,6 @@
 import { Refresh } from "@mui/icons-material";
 import { useEffect, useState } from "react";
+import { AuditLogsDataTable, AuditLogsTimeline } from "@semoss/shared";
 import {
 	Button,
 	Skeleton,
@@ -8,10 +9,8 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { AuditLogsDataTable, AuditLogsTimeline } from "@/components/logs";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
-import type { EventData } from "@/types";
 
 const DashboardHeader = styled("div")(({ theme }) => ({
 	width: "100%",
@@ -59,6 +58,22 @@ export const TimeDateFormatter = (
 		return { date: "", time: "" };
 	}
 };
+
+export interface EventData {
+	startTime: string;
+	endTime: string;
+	logTimestamp: string;
+	request: string;
+	response: string;
+	tokens: string | null;
+	latency: number;
+	status: string | null;
+	engineName: string;
+	engineType: string;
+	userId: string;
+	sessionId: string;
+	spanId: string;
+}
 
 export const AuditLogsDashboard = ({ catalogName }) => {
 	const { configStore, monolithStore } = useRootStore();
@@ -132,7 +147,7 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 				contentElement.style.maxWidth = "";
 			}
 		};
-	}, [catalogName]);
+	}, [catalogName, rowsPerPage, page]);
 
 	return (
 		<>
@@ -141,7 +156,6 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 					<NavbarHeader />
 				</NavbarLeft>
 			)}
-
 			<Stack gap={2}>
 				<DashboardHeader>
 					<Typography variant="h6">
@@ -154,20 +168,20 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 					>
 						{/* Disabled for now */}
 						{/* <Select
-							variant="outlined"
-							size="small"
-							onChange={() => {}}
-							sx={{ minWidth: 120 }}
-							value={"Last 30 Days"}
-						>
-							<Menu.Item value="Last 30 Days">
-								Last 30 Days
-							</Menu.Item>
-							<Menu.Item value="Last 90 Days">
-								Last 90 Days
-							</Menu.Item>
-							<Menu.Item value="Last Year">Last Year</Menu.Item>
-						</Select> */}
+										variant="outlined"
+										size="small"
+										onChange={() => {}}
+										sx={{ minWidth: 120 }}
+										value={"Last 30 Days"}
+									>
+										<Menu.Item value="Last 30 Days">
+											Last 30 Days
+										</Menu.Item>
+										<Menu.Item value="Last 90 Days">
+											Last 90 Days
+										</Menu.Item>
+										<Menu.Item value="Last Year">Last Year</Menu.Item>
+									</Select> */}
 						<Button
 							variant="contained"
 							color="primary"

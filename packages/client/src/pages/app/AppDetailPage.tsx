@@ -110,11 +110,6 @@ const TagsBodyWrapper = styled("div")({
 	gap: "0.6rem",
 });
 
-const Title = styled(Typography)({
-	fontSize: "34px",
-	fontWeight: "400",
-});
-
 const TagsDescription = styled(Typography)(({ theme }) => ({
 	paddingBottom: theme.spacing(2),
 }));
@@ -249,6 +244,7 @@ export const AppDetailPage = () => {
 		useState(false);
 
 	useEffect(() => {
+		setSelectedTab("Overview");
 		setValue("appId", appId);
 		fetchUserSpecificData();
 		fetchAppData(appId);
@@ -309,7 +305,7 @@ export const AppDetailPage = () => {
 			fetchMainUses(monolithStore, id),
 		];
 		if (permission !== "discoverable") {
-			promises.push(fetchDependencies(monolithStore, id));
+			promises.push(fetchDependencies(configStore, id));
 		}
 		const results = await Promise.allSettled(promises);
 		results.forEach((res, idx) => {
@@ -386,7 +382,6 @@ export const AppDetailPage = () => {
 					} else {
 						const modelled = modelDependencies(res.value.output);
 						setValue("dependencies", modelled);
-						setValue("selectedDependencies", modelled);
 					}
 				}
 			}
@@ -455,30 +450,24 @@ export const AppDetailPage = () => {
 			const output = response.pixelReturn[0].output,
 				insightId = response.insightId;
 
-			monolithStore.download(insightId, output);
+			monolithStore.download(insightId, output as string);
 		});
 		setExportLoading(false);
 	};
 
 	const handleCloseDependenciesModal = async (refreshData: boolean) => {
-		const currDependencies = getValues("dependencies");
-
 		if (refreshData) {
 			const appId = getValues("appId");
-			const res = await fetchDependencies(monolithStore, appId);
+			const res = await fetchDependencies(configStore, appId);
 			if (res.type === "success") {
 				const modelled = modelDependencies(res.output);
 				setValue("dependencies", modelled);
-				setValue("selectedDependencies", modelled);
 			} else {
-				setValue("selectedDependencies", currDependencies);
 				notification.add({
 					color: "error",
 					message: res.output,
 				});
 			}
-		} else {
-			setValue("selectedDependencies", currDependencies);
 		}
 		setIsEditDependenciesModalOpen(false);
 	};
@@ -529,7 +518,7 @@ export const AppDetailPage = () => {
 				if (operationType.indexOf("ERROR") > -1) {
 					notification.add({
 						color: "error",
-						message: output,
+						message: output as string,
 					});
 
 					return;
@@ -610,7 +599,12 @@ export const AppDetailPage = () => {
 							color="text.disabled"
 							variant="body1"
 						>
-							{appInfo?.project_name}
+							<div
+								title={appInfo?.project_name}
+								className="w-[40ch] truncate text-ellipsis"
+							>
+								{appInfo?.project_name}
+							</div>
 						</Breadcrumbs.Item>
 					</Breadcrumbs>
 
@@ -623,9 +617,14 @@ export const AppDetailPage = () => {
 										alt="App Image"
 									/>
 									<TitleSectionBodyWrapper>
-										<Title variant="h6">
+										<div
+											title={appInfo?.project_name}
+											className={
+												"mt-1 max-w-[40ch] truncate text-ellipsis font-normal text-[34px] leading-[150%]"
+											}
+										>
 											{appInfo?.project_name}
-										</Title>
+										</div>
 									</TitleSectionBodyWrapper>
 								</Box>
 
@@ -856,7 +855,10 @@ export const AppDetailPage = () => {
 											adminMode: false,
 										}}
 									>
-										<UpdateSMSS type={"APP"} id={appId} />
+										<UpdateSMSS
+											type={"PROJECT"}
+											id={appId}
+										/>
 									</SettingsContext.Provider>
 								)}
 							</StyledTabsSection>
@@ -893,12 +895,10 @@ export const AppDetailPage = () => {
 				/>
 
 				<EditDependenciesModal
+					currentDependencies={dependencies}
 					isOpen={isEditDependenciesModalOpen}
 					onClose={handleCloseDependenciesModal}
-					control={control}
-					getValues={getValues}
-					setValue={setValue}
-					watch={watch}
+					appId={appId}
 				/>
 			</OuterContainer>
 		</div>

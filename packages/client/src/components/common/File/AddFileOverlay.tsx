@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+	Alert,
 	Button,
 	Checkbox,
 	FileDropzone,
@@ -13,7 +14,7 @@ import { useRootStore } from "@/hooks";
 
 interface AddFileOverlayProps {
 	/** Type of file opened */
-	type: "app" | "insight";
+	type: "app" | "insight" | "engine";
 
 	/** Space where the file is located */
 	space: string;
@@ -33,6 +34,50 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [uploadFile, setUploadFiles] = useState<File>(null);
 	const [unzipFile, setUnzipFile] = useState<boolean>(false);
+	const [fileError, setFileError] = useState<string>("");
+
+	/**
+	 * Validate if the file is a valid JSON
+	 */
+	const validateJSON = async (file: File): Promise<boolean> => {
+		try {
+			// Read the file content
+			const fileContent = await file.text();
+
+			// Try to parse the JSON
+			JSON.parse(fileContent);
+
+			return true; // Valid JSON
+		} catch {
+			return false; // Invalid JSON
+		}
+	};
+
+	/**
+	 * Handle file selection with validation
+	 */
+	const handleFileChange = async (newValue: File) => {
+		setFileError("");
+
+		if (!newValue) {
+			setUploadFiles(null);
+			return;
+		}
+		if (newValue.name.toLowerCase().endsWith(".json")) {
+			// Validate JSON files
+			const isValid = await validateJSON(newValue);
+
+			if (!isValid) {
+				setFileError(
+					"This is not a valid JSON file. Please upload a valid JSON file.",
+				);
+				setUploadFiles(null);
+				return;
+			}
+		}
+
+		setUploadFiles(newValue);
+	};
 
 	/**
 	 * Add the file to the app
@@ -40,6 +85,7 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 	const addFile = async () => {
 		try {
 			setIsLoading(true);
+			setFileError("");
 
 			let upload = null;
 			if (type === "app") {
@@ -48,6 +94,14 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 					configStore.store.insightID,
 					space,
 					uploadPath,
+				);
+			} else if (type === "engine") {
+				upload = await uploadFileAPI(
+					[uploadFile],
+					configStore.store.insightID,
+					space,
+					uploadPath,
+					"engine",
 				);
 			} else {
 				throw new Error("TODO");
@@ -58,13 +112,18 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 			}
 
 			const path = `${uploadPath}${upload[0].fileName}`;
-
 			if (unzipFile) {
 				if (type === "app") {
 					await monolithStore.runQuery(
 						`UnzipFile(filePath=["${path}"], space=["${space}"])`,
 					);
-				} else {
+				}
+				else if ( type === "engine") {
+					await monolithStore.runQuery(
+						`UnzipFile(filePath=["/${path.split("app_root/")[1]}"], space=["${space}"])`,
+					);
+				} 
+				else {
 					throw new Error("TODO");
 				}
 			}
@@ -72,6 +131,7 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 			onClose(true, path);
 		} catch (e) {
 			console.error(e);
+			setFileError("Error uploading file. Please try again.");
 		} finally {
 			setIsLoading(false);
 
@@ -89,21 +149,24 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 					<Typography variant="body2">
 						Upload files to <b>{uploadPath}</b>
 					</Typography>
+
+					{fileError && <Alert severity="error">{fileError}</Alert>}
+
 					<FileDropzone
 						multiple={false}
 						value={uploadFile}
 						disabled={isLoading}
-						onChange={(newValue: File) => {
-							setUploadFiles(newValue);
-						}}
+						onChange={handleFileChange}
 					/>
-					<Checkbox
-						checked={unzipFile}
-						onChange={() => {
-							setUnzipFile(!unzipFile);
-						}}
-						label={<Typography variant="body2">Unzip?</Typography>}
-					/>
+						<Checkbox
+							checked={unzipFile}
+							onChange={() => {
+								setUnzipFile(!unzipFile);
+							}}
+							label={
+								<Typography variant="body2">Unzip?</Typography>
+							}
+						/>
 				</Stack>
 			</Modal.Content>
 			<Modal.Actions>
@@ -116,7 +179,7 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 				</Button>
 				<Button
 					variant={"contained"}
-					disabled={isLoading}
+					disabled={isLoading || !uploadFile}
 					onClick={() => addFile()}
 				>
 					Upload
