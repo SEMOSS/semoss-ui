@@ -69,12 +69,7 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 				pixel = `BrowseAsset(filePath=["${directoryPath}"], space=["${space}"]);`;
 			} else if (type === "engine") {
 				// Extract directory path from uploadPath for engine
-				const pathParts = uploadPath.split("assets/");
-				directoryPath =
-					pathParts.length > 1
-						? pathParts[1].replace(/^\/+/, "").replace(/\/+$/, "")
-						: "";
-				pixel = `BrowseEngineAssets(filePath=["${directoryPath}"], engine=["${space}"]);`;
+				pixel = `BrowseEngineAssets(filePath=["${uploadPath}"], engine=["${space}"]);`;
 			}
 
 			if (!pixel) {
@@ -161,14 +156,14 @@ export const CreateFileOverlay = (props: CreateFileOverlayProps) => {
 				// append the name
 				path = `${path}${finalName}`;
 				if (mode === "file") {
-					pixel = `SaveEngineAssets(filePath=["/${path.split("assets/")[1]}"], content=["<encode></encode>"], engine=["${space}"]);CommitAsset(filePath=["/${path.split("assets/")[1]}"], comment=["Creating file"], engine=["${space}"]);`;
+					pixel = `SaveEngineAssets(filePath=["${path}"], content=["<encode></encode>"], engine=["${space}"]);CommitAsset(filePath=["${path}"], comment=["Creating file"], engine=["${space}"]);`;
 				} else if (mode === "directory") {
 					// add in the / to make it a directory
 					if (path.slice(-1) !== "/") {
 						path = `${path}/`;
 					}
 
-					pixel = `NewEngineAssetsDirectory(filePath=["${path.split("assets/")[1]}"], engine=["${space}"]);`;
+					pixel = `NewEngineAssetsDirectory(filePath=["${path}"], engine=["${space}"]);`;
 				}
 			} else {
 				throw new Error("TODO");
