@@ -121,7 +121,7 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 		isDirectory && isOpen
 			? type === "app"
 				? `BrowseAsset(filePath=["${path}"], space=["${space}"]);`
-				: `BrowseEngineAssets(filePath=["${path.split("assets/")[1]}"], engine=["${space}"]);`
+				: `BrowseEngineAssets(filePath=["${path}"], engine=["${space}"]);`
 			: "",
 	);
 

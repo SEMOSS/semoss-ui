@@ -27,8 +27,6 @@ interface FileExplorerPanelProps {
 	onAddMCPEditorTab?: (json: unknown, path: string) => void;
 }
 
-const ASSETS_ROOT = "/app_root/version/assets/";
-
 export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 	const {
 		title,
@@ -49,7 +47,7 @@ export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 	const [deselectCounter, setDeselectCounter] = useState(0);
 
 	useEffect(() => {
-		let path = `${ASSETS_ROOT}`;
+		let path = "/";
 
 		if (selectedPath) {
 			if (selectedPath.slice(-1) === "/") {
@@ -116,24 +114,24 @@ export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 	};
 
 	const handleOnSelect = (path: string) => {
-	if (!path) {
-		setSelectedPath("");
-		setDeselectCounter((prev) => prev + 1);
-		return;
-	}
-	if (path.slice(-1) === "/") {
-		if (selectedPath === path) {
+		if (!path) {
 			setSelectedPath("");
 			setDeselectCounter((prev) => prev + 1);
 			return;
 		}
+		if (path.slice(-1) === "/") {
+			if (selectedPath === path) {
+				setSelectedPath("");
+				setDeselectCounter((prev) => prev + 1);
+				return;
+			}
 
+			setSelectedPath(path);
+			return;
+		}
 		setSelectedPath(path);
-		return;
-	}
-	setSelectedPath(path);
-	onFileSelect?.(path);
-};
+		onFileSelect?.(path);
+	};
 
 	const handleOnTrashClick = (fileDeletePath: string) => {
 		openOverlay(() => (
@@ -160,9 +158,7 @@ export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 								.split("/");
 							parts.pop();
 							const parentPath =
-								parts.length > 0
-									? parts.join("/") + "/"
-									: ASSETS_ROOT;
+								parts.length > 0 ? parts.join("/") + "/" : "/";
 							setSelectedPath(parentPath);
 						}
 					}
