@@ -211,7 +211,7 @@ export const GuardrailForm = ({
   const onFormSubmit = async (formData) => {
     setLoading(true);
     const pixel = `CreateGuardrailEngine(guardrail=["${
-      formData.NAME
+      formData.MODEL_NAME
     }"],guardrailDetails=[${JSON.stringify(formData)}])`;
 
     monolithStore.runQuery(pixel).then(async (response) => {
