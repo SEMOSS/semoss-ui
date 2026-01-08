@@ -42,7 +42,7 @@ export const GUARDRAIL_CONNECTION = {
 					key: "NER_LABELS",
 					label: "NER Labels",
 					value: "",
-					component: "text",
+					component: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -146,7 +146,7 @@ export const GUARDRAIL_CONNECTION = {
 					key: "LABELS",
 					label: "Labels",
 					value: "",
-					component: "text",
+					component: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -202,7 +202,7 @@ export const GUARDRAIL_CONNECTION = {
 					key: "CATEGORIES",
 					label: "Categories",
 					value: "",
-					component: "text",
+					component: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -219,7 +219,7 @@ export const GUARDRAIL_CONNECTION = {
 				{
 					key: "GUARDRAIL_TYPE",
 					label: "Guardrail Type",
-					value: "EMBEDDED_GLINER",
+					value: "EMBEDDED_OPENAI_MODERATION",
 					component: "text",
 					disabled: true,
 					required: false,
@@ -230,7 +230,8 @@ export const GUARDRAIL_CONNECTION = {
 		{
 			name: "Microsoft Content Moderation",
 			disable: false,
-			description:"Classifies content to identify policy-violating or unsafe text.",
+			description:
+				"Classifies content to identify policy-violating or unsafe text.",
 			fields: [
 				{
 					key: "MODEL_NAME",
@@ -257,7 +258,7 @@ export const GUARDRAIL_CONNECTION = {
 					key: "CATEGORIES",
 					label: "Categories",
 					value: "",
-					component: "text",
+					component: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -274,7 +275,7 @@ export const GUARDRAIL_CONNECTION = {
 				{
 					key: "GUARDRAIL_TYPE",
 					label: "Guardrail Type",
-					value: "EMBEDDED_GLINER",
+					value: "EMBEDDED_MICROSOFT_CONTENT_MODERATION",
 					component: "text",
 					disabled: true,
 					required: false,
@@ -284,8 +285,9 @@ export const GUARDRAIL_CONNECTION = {
 		},
 		{
 			name: "NVIDIA NEMO GUARDRAILS",
-			disable: false,
-			description:"Classifies content to identify policy-violating or unsafe text.",
+			disable: true,
+			description:
+				"Classifies content to identify policy-violating or unsafe text.",
 			fields: [
 				{
 					key: "MODEL_NAME",
@@ -338,7 +340,7 @@ export const GUARDRAIL_CONNECTION = {
 				{
 					key: "GUARDRAIL_TYPE",
 					label: "Guardrail Type",
-					value: "EMBEDDED_GLINER",
+					value: "EMBEDDED_NVIDIA_NEMO",
 					component: "text",
 					disabled: true,
 					required: false,
@@ -349,7 +351,8 @@ export const GUARDRAIL_CONNECTION = {
 		{
 			name: "REBUFF (Prompt Injection)",
 			disable: false,
-			description:"Detects and scores toxic, abusive, and harassing language in text.",
+			description:
+				"Detects and scores toxic, abusive, and harassing language in text.",
 			fields: [
 				{
 					key: "MODEL_NAME",
@@ -376,10 +379,12 @@ export const GUARDRAIL_CONNECTION = {
 					key: "ACTION",
 					label: "Action",
 					value: "",
-					component: "text",
+					component: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
+					helperText:
+						"Defines what the system should do when this guardrail is triggered (e.g., block, mask, warn, or log).",
 				},
 				{
 					key: "DEFAULT_THRESHOLD",
@@ -393,7 +398,7 @@ export const GUARDRAIL_CONNECTION = {
 				{
 					key: "GUARDRAIL_TYPE",
 					label: "Guardrail Type",
-					value: "EMBEDDED_GLINER",
+					value: "EMBEDDED_REBUFF",
 					component: "text",
 					disabled: true,
 					required: false,
@@ -404,7 +409,8 @@ export const GUARDRAIL_CONNECTION = {
 		{
 			name: "Lakera Guard",
 			disable: false,
-			description:" Provides real-time content moderation to ensure safe and compliant AI interactions.",
+			description:
+				" Provides real-time content moderation to ensure safe and compliant AI interactions.",
 			fields: [
 				{
 					key: "MODEL_NAME",
@@ -431,7 +437,7 @@ export const GUARDRAIL_CONNECTION = {
 					key: "CATEGORIES",
 					label: "Categories",
 					value: "",
-					component: "text",
+					component: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -448,7 +454,7 @@ export const GUARDRAIL_CONNECTION = {
 				{
 					key: "GUARDRAIL_TYPE",
 					label: "Guardrail Type",
-					value: "EMBEDDED_GLINER",
+					value: "EMBEDDED_LAKERA_GUARD",
 					component: "text",
 					disabled: true,
 					required: false,
@@ -459,7 +465,8 @@ export const GUARDRAIL_CONNECTION = {
 		{
 			name: "PromptGuard (META)",
 			disable: false,
-			description:"Classifies content to identify policy-violating or unsafe text.",
+			description:
+				"Classifies content to identify policy-violating or unsafe text.",
 			fields: [
 				{
 					key: "MODEL_NAME",
@@ -494,7 +501,7 @@ export const GUARDRAIL_CONNECTION = {
 				{
 					key: "GUARDRAIL_TYPE",
 					label: "Guardrail Type",
-					value: "EMBEDDED_GLINER",
+					value: "EMBEDDED_PROMPTGUARD_META",
 					component: "text",
 					disabled: true,
 					required: false,
