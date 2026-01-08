@@ -33,7 +33,7 @@ const StyledContainer = styled("div")(({ theme }) => ({
 
 interface FileEditorProps {
 	/** Type of file opened */
-	type: "app" | "insight";
+	type: "app" | "insight" | "engine";
 
 	/** Space where the file is located */
 	space: string;
@@ -108,7 +108,9 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 		 */
 		useEffect(() => {
 			// load when the type space or path change
+			//if (path && !path.endsWith("/")) {
 			loadFile();
+			//}
 		}, [type, space, path, refreshContent]);
 
 		/**
@@ -176,10 +178,11 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 		const loadFile = async () => {
 			try {
 				setIsLoading(true);
-
 				let pixel = "";
 				if (type === "app") {
 					pixel = `GetAsset(filePath=["${path}"], space=["${space}"]);`;
+				} else if (type === "engine") {
+					pixel = `GetEngineAssets(filePath=["${path}"], engine=["${space}"]);`;
 				} else if (type === "insight") {
 					throw Error("TODO");
 					// TODO: add insight
@@ -278,6 +281,11 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                 SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${space}"]); 
                 CommitAsset(filePath=["${path}"], comment=["Save from editor"], space=["${space}"])
             `;
+				} else if (type === "engine") {
+					console.log(path, "path");
+					pixel = `
+                SaveEngineAssets(filePath=["${path}"], content=["<encode>${content}</encode>"], engine=["${space}"]); 
+                CommitAsset(filePath=["${path}"], comment=["Save from editor"], engine=["${space}"])`;
 				} else if (type === "insight") {
 					throw Error("TODO");
 					// TODO: add insight
