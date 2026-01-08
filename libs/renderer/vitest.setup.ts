@@ -1,4 +1,3 @@
-// src/test-setup.ts
 import { vi } from "vitest";
 import "@testing-library/jest-dom";
 
@@ -24,6 +23,16 @@ vi.mock("react-vega", () => ({
 	VegaLite: vi.fn(() => null),
 	Vega: vi.fn(() => null),
 	createClassFromSpec: vi.fn(() => vi.fn(() => null)),
+}));
+
+vi.mock("echarts-wordcloud", () => ({
+	isSupported: true,
+	wordCloudLayoutHelper: {
+		isSupported: true,
+	},
+	default: {
+		layout: () => ({ run: () => [] }),
+	},
 }));
 
 // Mock canvas getContext

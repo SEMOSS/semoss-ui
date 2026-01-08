@@ -190,14 +190,14 @@ export const ModelImport: React.FC = () => {
 									setSearch(e.target.value);
 								}}
 								fullWidth
-								data-tesId={"model-search-bar"}
+								data-testid={"model-search-bar"}
 							/>
 							<UploadButton
 								sx={{ lineHeight: 0.75 }}
 								size="large"
 								variant="outlined"
 								onClick={() => handleFileUpload(true)}
-								data-tesId={"model-upload-file-button"}
+								data-testid={"model-upload-file-button"}
 							>
 								<FileUploadOutlined fontSize="medium" />
 							</UploadButton>
@@ -356,7 +356,7 @@ export const ModelImport: React.FC = () => {
 													);
 												})()}
 												value={provider.name}
-												data-tesId={formatToDataTestId(
+												data-testid={formatToDataTestId(
 													`connect-to-${provider.name}-tab`,
 												)}
 											/>

@@ -243,9 +243,8 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 				active: {
 					id: engineId,
 					role: getUserEnginePermission.data.permission,
-					name: (
-						(getEngineMetadata.data?.database_name as string) || ""
-					),
+					name:
+						(getEngineMetadata.data?.database_name as string) || "",
 					metadata: values,
 					database_subtype: getEngineMetadata.data?.database_subtype,
 					database_created_by:

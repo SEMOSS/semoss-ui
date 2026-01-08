@@ -1,6 +1,5 @@
 import { SearchIcon } from "lucide-react";
 import React, { Suspense, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Badge,
 	Button,
@@ -36,7 +35,6 @@ interface PromptSearchProps {
 }
 
 export const PlatformSearch = ({ className }: PromptSearchProps) => {
-	const navigate = useNavigate();
 	const [search, setSearch] = useState("");
 	const [open, setOpen] = useState(false);
 
@@ -184,11 +182,8 @@ export const PlatformSearch = ({ className }: PromptSearchProps) => {
 												<PlatformSearchApp
 													name={c.name}
 													search={debouncedSearch}
-													onSelect={(app) => {
+													onSelect={() => {
 														setOpen(false);
-														navigate(
-															`/app/${app.project_id}/view`,
-														);
 													}}
 												/>
 												<CommandSeparator />
@@ -202,11 +197,8 @@ export const PlatformSearch = ({ className }: PromptSearchProps) => {
 												name={c.name}
 												type={c.type}
 												search={debouncedSearch}
-												onSelect={(engine) => {
+												onSelect={() => {
 													setOpen(false);
-													navigate(
-														`/engine/${c.type.toLowerCase()}/${engine.app_id}`,
-													);
 												}}
 											/>
 											<CommandSeparator />

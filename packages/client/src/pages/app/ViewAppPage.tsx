@@ -18,7 +18,6 @@ import {
 	Stack,
 	styled,
 	Tooltip,
-	Typography,
 	useNotification,
 } from "@semoss/ui";
 import { setProjectFavorite } from "@/api";
@@ -28,10 +27,10 @@ import { usePage, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
-const StyledContent = styled("div")(({
+const StyledContent = styled("div")({
 	position: "absolute",
 	inset: 0,
-}));
+});
 
 export const ViewAppPage = observer(() => {
 	// App ID Needed for pixel calls
@@ -109,9 +108,12 @@ export const ViewAppPage = observer(() => {
 								variant="rounded"
 								src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
 							/>
-							<Typography variant={"subtitle1"}>
-								{workspace.metadata.project_name}
-							</Typography>
+							<div
+								title={workspace?.metadata?.project_name}
+								className="w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
+							>
+								{workspace?.metadata?.project_name}
+							</div>
 						</Stack>
 					}
 				/>

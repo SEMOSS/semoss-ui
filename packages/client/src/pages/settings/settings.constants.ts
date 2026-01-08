@@ -7,8 +7,11 @@ import {
 	mdiCog,
 	mdiDatabase,
 	mdiDatabaseSearch,
+	mdiPalette,
 	mdiTabletCellphone,
 } from "@mdi/js";
+
+console.log(mdiPalette);
 
 export const SETTINGS_ROUTES: {
 	/*** Title of the page */
@@ -190,6 +193,14 @@ export const SETTINGS_ROUTES: {
 		path: "admin-query",
 		description: "Query on SEMOSS based databases",
 		icon: mdiDatabaseSearch,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
+		title: "Admin Theme",
+		path: "admin-theme",
+		description: "Update theming for the instance",
+		icon: mdiPalette,
 		history: ["settings/"],
 		admin: true,
 	},

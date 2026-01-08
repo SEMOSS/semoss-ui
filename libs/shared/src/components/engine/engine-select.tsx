@@ -118,7 +118,7 @@ export const EngineSelect = ({
 							{getEngines.isLoading &&
 							getEngines.data.length === 0 ? (
 								<div className="flex items-center justify-center py-4">
-									<Spinner className="size-4" />
+									<Spinner />
 								</div>
 							) : (
 								"Not Found"

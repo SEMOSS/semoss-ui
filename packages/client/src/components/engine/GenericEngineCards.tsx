@@ -203,7 +203,6 @@ const StyledCardIconsDiv = styled("div")({
 	gap: "8px",
 });
 
-
 /**
  * @name findDBImage
  * @params appType & appSubType
@@ -354,7 +353,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 								<>
 									{/** biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation> */}
 									{tag.map((t, i) => {
-										if (i <= 2 && t!=="") {
+										if (i <= 2 && t !== "") {
 											return (
 												<StyledTagChip
 													maxWidth={
@@ -381,10 +380,9 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 										</Typography>
 									) : null}
 								</>
-							) : (
-								tag !== '' ?
-                                <StyledTagChip key={`${id}0`} label={tag} /> : null
-							))}
+							) : tag !== "" ? (
+								<StyledTagChip key={`${id}0`} label={tag} />
+							) : null)}
 					</Stack>
 				</StyledLandscapeCardHeaderDiv>
 				<StyledCardIconsDiv>
@@ -495,9 +493,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 								gap: "8px",
 							}}
 						>
-							<Typography variant={"body1"}>
-								{name}
-							</Typography>
+							<Typography variant={"body1"}>{name}</Typography>
 							{sub_type === "VERTEX" ? (
 								<StyledCardImg src={GOOGLE}></StyledCardImg>
 							) : null}
@@ -552,7 +548,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 							<>
 								{/** biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation> */}
 								{tag.map((t, i) => {
-									if (i <= 2 && t !=="") {
+									if (i <= 2 && t !== "") {
 										return (
 											<StyledTagChip
 												maxWidth={
@@ -579,10 +575,9 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 									</Typography>
 								) : null}
 							</>
-						) : (
-							tag !== '' ?
-                                <StyledTagChip key={`${id}0`} label={tag} /> : null
-						))}
+						) : tag !== "" ? (
+							<StyledTagChip key={`${id}0`} label={tag} />
+						) : null)}
 				</Stack>
 			</Card.Content>
 			<Card.Actions>
