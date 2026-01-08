@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { DatabasePageContent } from "@/components/import/database/DatabasePageContent";
 import { StorageImport } from "@/components/import/storage/StorageImport";
 import { FunctionImport } from "@/components/import/function/FunctionImport";
+import { VectorImport } from "@/components/import/vector/VectorImport";
 import type { ENGINE_TYPES } from "@/types";
 import { ModelImport } from "../../components/import/model/ModelImport";
 import { ImportLayout } from "./ImportLayout";
@@ -28,7 +29,7 @@ export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
 			case "MODEL":
 				return <ModelImport />;
 			case "VECTOR":
-				return <ImportPageContent name={name} type={type} />;
+				return <VectorImport name={name} />;
 			case "FUNCTION":
 				return <FunctionImport name={name} />;
 			case "STORAGE":
