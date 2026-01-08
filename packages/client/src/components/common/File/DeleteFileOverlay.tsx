@@ -38,7 +38,7 @@ export const DeleteFileOverlay = (props: DeleteFileOverlayProps) => {
 				);
 			} else if (type === "engine") {
 				await monolithStore.runQuery(
-					`DeleteEngineAssets(filePath=["${fileDeletePath.split("assets/")[1]}"], engine=["${space}"]);`,
+					`DeleteEngineAssets(filePath=["${fileDeletePath}"], engine=["${space}"]);`,
 				);
 			} else if (type === "insight") {
 				throw new Error("TODO");
