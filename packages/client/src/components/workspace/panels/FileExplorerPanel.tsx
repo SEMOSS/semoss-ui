@@ -170,26 +170,27 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			workspace.setLoading(true);
 
 			const response = await monolithStore.runQuery(
-				`ReloadInsightClasses(project='${workspace.appId}', release=false);`,
+				`CompileAppReactors(project='${workspace.appId}', release=false);`,
 			);
 
-			const output = response.pixelReturn[0].output,
-				type = response.pixelReturn[0].operationType[0];
+			const output = response.pixelReturn[0].output as string[];
+			const type = response.pixelReturn[0].operationType[0];
+			const hasError = output.filter(line => line.includes("[ERROR]"));
 
-			if (type.indexOf("ERROR") > -1) {
+			// handle errors
+			if (hasError.length > 0) {
 				notification.add({
 					color: "error",
-					message: output,
+					message: hasError.join(""),
 				});
 
-				throw new Error(output.join(""));
+				throw new Error(hasError.join("\n"));
+			} else {
+				notification.add({
+					color: "success",
+					message: "Successfully recompiled reactors. Remember to publish changes.",
+				});
 			}
-
-			notification.add({
-				color: "success",
-				message:
-					"Successfully recompiled reactors. Remember to publish changes.",
-			});
 		} catch (e) {
 			notification.add({
 				color: "error",
