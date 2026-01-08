@@ -6,7 +6,6 @@ import type { FixedVegaChartProps } from "react-vega/lib/createClassFromSpec";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent } from "../../../store";
 
-
 const StyledNoDataContainer = styled("div", {
 	shouldForwardProp: (prop) => prop !== "error",
 })<{ error?: boolean }>(({ error = false, theme }) => ({

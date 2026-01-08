@@ -47,6 +47,10 @@ interface InsightStoreInterface {
 				playground: Record<string, unknown>;
 				[key: string]: unknown;
 			};
+			/**
+			 * System Date
+			 */
+			systemDate: string;
 			[key: string]: unknown;
 		};
 	} | null;
@@ -607,7 +611,39 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
-		 * Run a MCP tool
+		 * Send a MCP tool response to the playground
+		 * @param mcpToolResponse - response to send
+		 */
+		sendMCPResponseToPlayground: (mcpToolResponse: string) => {
+			if (!Env.TOOL) {
+				throw new Error("No MCP tool execution context found");
+			} else if (
+				typeof window === "undefined" ||
+				typeof window.parent === "undefined"
+			) {
+				throw new Error(
+					"Cannot send MCP tool response outside of embedded browser",
+				);
+			}
+
+			window.parent.postMessage(
+				{
+					type: "SMSS_EXEC_TOOL",
+					tool: {
+						type: "MCP",
+						message: Env.TOOL.message,
+						id: Env.TOOL.id,
+						name: Env.TOOL.name,
+						response: mcpToolResponse,
+						roomId: Env.TOOL.roomId,
+					} satisfies MCPToolResponse,
+				},
+				"*",
+			);
+		},
+
+		/**
+		 * Run a MCP tool and send the response to the playground
 		 * @param name - name of the tool
 		 * @param parameters - parameters to pass to the tool
 		 */
@@ -620,25 +656,16 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			);
 
 			const { output, operationType } = pixelReturn[0];
-			if (Env.TOOL && operationType.indexOf("MCP_TOOL_EXECUTION") > -1) {
-				// only works in embedded browser
-				if (
-					typeof window !== "undefined" &&
-					typeof window.parent !== "undefined"
-				) {
-					window.parent.postMessage(
-						{
-							type: "SMSS_EXEC_TOOL",
-							tool: {
-								type: "MCP",
-								message: Env.TOOL.message,
-								id: Env.TOOL.id,
-								name: Env.TOOL.name,
-								response: output,
-								roomId: Env.TOOL.roomId,
-							} satisfies MCPToolResponse,
-						},
-						"*",
+			if (!output || operationType.indexOf("MCP_TOOL_EXECUTION") < 0) {
+				throw new Error("Error running MCP tool");
+			}
+
+			if (Env.TOOL) {
+				try {
+					this.actions.sendMCPResponseToPlayground(output);
+				} catch (e) {
+					console.warn(
+						`Failed to send MCP response to playground${e.message ? `: ${e.message}` : ""}`,
 					);
 				}
 			}

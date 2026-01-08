@@ -16,10 +16,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { usePixel } from "@/hooks";
-import {
-	MCP_JSON_FILE_NAME,
-	MCP_PY_FILE_NAME,
-} from "@/pages/app/app.constants";
+import { MCP_FILE_NAMES, MCP_JSON_FILE_NAMES } from "@/pages/app/app.constants";
 
 const StyledNode = styled(TreeView.Item)(({ theme }) => ({
 	".MuiCollapse-wrapperInner": {
@@ -51,7 +48,7 @@ const StyledTypography = styled(Typography)(() => ({
 
 interface FileExplorerItemProps {
 	/** Type of file opened */
-	type: "app" | "insight";
+	type: "app" | "insight" | "engine";
 
 	/** Space where the file is located */
 	space: string;
@@ -113,7 +110,6 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 	const [isDragging, setIsDragging] = useState(false);
 
 	const isOpen = expanded.indexOf(path) > -1;
-
 	const getAssets = usePixel<
 		{
 			lastModified: string;
@@ -125,7 +121,7 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 		isDirectory && isOpen
 			? type === "app"
 				? `BrowseAsset(filePath=["${path}"], space=["${space}"]);`
-				: ""
+				: `BrowseEngineAssets(filePath=["${path}"], engine=["${space}"]);`
 			: "",
 	);
 
@@ -136,9 +132,13 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 	}, []);
 
 	const makeMCPCandidate =
-		path === `version/assets/py/${MCP_PY_FILE_NAME}` && !isDirectory;
+		MCP_FILE_NAMES.some(
+			(f) => path.includes(f) && path.split("/").includes("py"),
+		) && !isDirectory;
 	const editMCPCandidate =
-		path === `version/assets/mcp/${MCP_JSON_FILE_NAME}` && !isDirectory;
+		MCP_JSON_FILE_NAMES.some(
+			(f) => path.includes(f) && path.split("/").includes("mcp"),
+		) && !isDirectory;
 
 	return (
 		<StyledNode

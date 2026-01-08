@@ -110,7 +110,6 @@
         }
     },
     "scripts": {
-        "test": "node ./test/runTest.js",
         "vscode:prepublish": "npm run build-chatbot && npm run esbuild-base -- --minify",
         "build-chatbot": "cd src/webviews/chatbot-react && npm run build",
         "esbuild-base": "esbuild ./extension.js --bundle --outfile=out/main.js --external:vscode --external:util --external:fs --external:path --external:os --external:crypto --external:http --external:https --external:stream --external:zlib --external:buffer --format=cjs --platform=node --metafile=out/meta.json",

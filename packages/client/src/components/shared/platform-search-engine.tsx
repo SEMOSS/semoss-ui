@@ -1,3 +1,5 @@
+import { ExternalLinkIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Env, useIteratorPixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { Button, CommandGroup, CommandItem, Spinner } from "@semoss/ui/next";
@@ -14,7 +16,7 @@ interface PlatformSearchEngineProps {
 	/** Search to filter on */
 	search: string;
 
-	/** Callback when an app is selected */
+	/** Callback when an engine is selected */
 	onSelect: (engine: Engine) => void;
 }
 
@@ -24,6 +26,8 @@ export const PlatformSearchEngine = ({
 	search,
 	onSelect,
 }: PlatformSearchEngineProps) => {
+	const navigate = useNavigate();
+
 	/**
 	 * Get all of the engines with lazy loading
 	 */
@@ -60,7 +64,15 @@ export const PlatformSearchEngine = ({
 					<CommandItem
 						key={engine.app_id}
 						value={engine.app_id}
-						onSelect={() => onSelect(engine)}
+						onSelect={() => {
+							// manually navigate since it doesn't propagate with a link
+							navigate(
+								`/engine/${type.toLowerCase()}/${engine.app_id}`,
+							);
+
+							// close it
+							onSelect(engine);
+						}}
 					>
 						<img
 							src={`${Env.MODULE}/api/e-${engine.app_id}/image/download`}
@@ -75,6 +87,16 @@ export const PlatformSearchEngine = ({
 								</span>
 							)}
 						</div>
+						<a
+							className=""
+							target="_blank"
+							href={`./#/engine/${type.toLowerCase()}/${engine.app_id}`}
+							onClick={(e) => {
+								e.stopPropagation();
+							}}
+						>
+							<ExternalLinkIcon />
+						</a>
 					</CommandItem>
 				);
 			})}

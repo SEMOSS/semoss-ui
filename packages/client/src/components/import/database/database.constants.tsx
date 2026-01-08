@@ -71,7 +71,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 					type: "text",
 					disabled: false,
-					required: true,
+					required: false,
 				},
 				{
 					key: "DATABASE_TAG",
@@ -81,7 +81,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 					type: "tags",
 					disabled: false,
-					required: true,
+					required: false,
 				},
 				{
 					key: "DELIMITER",
@@ -205,7 +205,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 					type: "text",
 					disabled: false,
-					required: true,
+					required: false,
 				},
 				{
 					key: "DATABASE_TAG",
@@ -215,7 +215,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 					type: "tags",
 					disabled: false,
-					required: true,
+					required: false,
 				},
 				{
 					key: "DATABASE_TYPE",
@@ -316,7 +316,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 					type: "text",
 					disabled: false,
-					required: true,
+					required: false,
 				},
 				{
 					key: "DATABASE_TAG",
@@ -326,7 +326,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 					type: "tags",
 					disabled: false,
-					required: true,
+					required: false,
 				},
 				{
 					key: "DELIMITER",
