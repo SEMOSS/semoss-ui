@@ -5,6 +5,7 @@ import {
 	MessagesSquareIcon,
 	PlusIcon,
 	SearchIcon,
+	UsersRound,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -33,6 +34,7 @@ import { WorkspaceChatList, WorkspaceMCPList } from "@/components";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/useChat";
 import type { Workspace } from "@/types";
+import { MembersTable } from "../../../../libs/shared/src/components/members/members-table";
 
 /**
  * Renders the Workspace Detail Page, displaying information about a specific workspace
@@ -186,6 +188,10 @@ export const WorkspaceDetailPage = observer(() => {
 								<HammerIcon />
 								Toolbox
 							</TabsTrigger>
+							<TabsTrigger value="members">
+								<UsersRound />
+								Members
+							</TabsTrigger>
 						</TabsList>
 						<InputGroup className="bg-background">
 							<InputGroupInput
@@ -250,6 +256,12 @@ export const WorkspaceDetailPage = observer(() => {
 								search={debouncedSearch}
 							/>
 						)}
+					</TabsContent>
+					<TabsContent
+						value="members"
+						className="w-full overflow-hidden rounded-md"
+					>
+						{tab === "members" && <MembersTable />}
 					</TabsContent>
 				</Tabs>
 			</div>
