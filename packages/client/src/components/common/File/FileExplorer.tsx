@@ -1,18 +1,9 @@
 import { ChevronRight, ExpandMore } from "@mui/icons-material";
 import React from "react";
-import { Icon, LoadingScreen, styled, TreeView } from "@semoss/ui";
+import { Icon, LoadingScreen } from "@semoss/ui";
+import { TreeView } from "@semoss/ui/next";
 import { usePixel } from "@/hooks";
 import { FileExplorerItem } from "./FileExplorerItem";
-
-const StyledTreeView = styled(TreeView)(({ theme }) => ({
-	width: "100%",
-	maxHeight: "100%",
-	gap: theme.spacing(3),
-	".MuiTreeItem-content": {
-		padding: theme.spacing(0.5),
-	},
-	overflow: "auto",
-}));
 
 interface FileExplorerProps {
 	expandedPaths: string[];
@@ -136,11 +127,11 @@ export const FileExplorer = (props: FileExplorerProps) => {
 				}
 			}}
 		>
-			<StyledTreeView
+			<TreeView
 				multiSelect
 				expanded={expandedPaths}
 				selected={selected}
-				onNodeToggle={(e, nodeIds) => {
+				onNodeToggle={(_e, nodeIds) => {
 					const lastToggled =
 						nodeIds.find((id) => !expandedPaths.includes(id)) ||
 						expandedPaths.find((id) => !nodeIds.includes(id));
@@ -148,7 +139,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 						onToggleExpand(lastToggled);
 					}
 				}}
-				onNodeSelect={(e, v) => {
+				onNodeSelect={(_e, v) => {
 					handleOnNodeSelect(v);
 				}}
 				defaultCollapseIcon={
@@ -161,6 +152,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 						<ChevronRight />
 					</Icon>
 				}
+				className="flex max-h-full w-full flex-col gap-6 overflow-auto"
 			>
 				<LoadingScreen>
 					{getAssets.status === "INITIAL" ||
@@ -199,7 +191,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 						})
 					) : null}
 				</LoadingScreen>
-			</StyledTreeView>
+			</TreeView>
 		</div>
 	);
 };

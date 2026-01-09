@@ -45,4 +45,5 @@ export * from "./tabs";
 export * from "./textarea";
 export * from "./theme-provider";
 export * from "./tooltip";
+export * from "./treeview";
 export * from "./typography";

@@ -12,18 +12,11 @@ import {
 	Icon,
 	IconButton,
 	styled,
-	TreeView,
 	Typography,
 } from "@semoss/ui";
+import { TreeItem } from "@semoss/ui/next";
 import { usePixel } from "@/hooks";
 import { MCP_FILE_NAMES, MCP_JSON_FILE_NAMES } from "@/pages/app/app.constants";
-
-const StyledNode = styled(TreeView.Item)(({ theme }) => ({
-	".MuiCollapse-wrapperInner": {
-		height: "auto",
-		overflow: "none",
-	},
-}));
 
 const StyledLabel = styled("div", {
 	shouldForwardProp: (prop) => prop !== "isDragging",
@@ -141,10 +134,10 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 		) && !isDirectory;
 
 	return (
-		<StyledNode
+		<TreeItem
 			ref={nodeRef}
 			key={path}
-			nodeId={path}
+			id={path}
 			title={name}
 			label={
 				<StyledLabel
@@ -263,6 +256,6 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 						: null}
 				</>
 			) : null}
-		</StyledNode>
+		</TreeItem>
 	);
 };

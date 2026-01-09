@@ -44,10 +44,10 @@ import {
 	Stack,
 	styled,
 	TextField,
-	TreeView,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { TreeItem, TreeView } from "@semoss/ui/next";
 import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
@@ -643,19 +643,13 @@ export const LayersPanel = observer(
 			);
 		};
 
-		const handleAccordionToggle = (
-			event: React.MouseEvent<SVGSVGElement, MouseEvent>,
-		) => {
+		const handleAccordionToggle = (id: string) => {
 			event.stopPropagation();
-			const id = event.currentTarget.getAttribute("data-expand-id");
-			if (!id) return;
-			const action = event.currentTarget.getAttribute("name");
-			setExpanded((prev) => {
-				if (action === "expand") {
-					return [...prev, id];
-				}
-				return prev.filter((nodeId) => nodeId !== id);
-			});
+			setExpanded((prev) =>
+				prev.includes(id)
+					? prev.filter((p) => p !== id)
+					: [...prev, id],
+			);
 		};
 		const TreeViewComponent = ({
 			block,
@@ -918,29 +912,21 @@ export const LayersPanel = observer(
 					onDropPositionChange={setGlobalDropPositions}
 				>
 					<DraggableTreeItem key={block.id} node={block}>
-						<TreeView.Item
+						<TreeItem
 							key={block.id}
-							nodeId={block.id}
+							id={block.id}
 							ref={(node) => {
 								accordionRefs.current[block.id] =
 									node instanceof HTMLElement ? node : null;
 							}}
 							expandIcon={
 								<StyledTreeItemIcon>
-									<ChevronRight
-										name="expand"
-										data-expand-id={block.id}
-										onClick={handleAccordionToggle}
-									/>
+									<ChevronRight />
 								</StyledTreeItemIcon>
 							}
 							collapseIcon={
 								<StyledTreeItemIcon>
-									<ExpandMore
-										name="collapse"
-										data-expand-id={block.id}
-										onClick={handleAccordionToggle}
-									/>
+									<ExpandMore />
 								</StyledTreeItemIcon>
 							}
 							label={
@@ -964,14 +950,14 @@ export const LayersPanel = observer(
 								e.stopPropagation();
 								designer.setHovered("");
 							}}
-							sx={{
+							style={{
 								minWidth: 0,
 							}}
 						>
 							{children.map((c) => {
 								return renderBlock(c);
 							})}
-						</TreeView.Item>
+						</TreeItem>
 					</DraggableTreeItem>
 				</DroppableTreeItem>
 			);
@@ -1006,7 +992,9 @@ export const LayersPanel = observer(
 							)}
 						</StyledHomePageChildDiv>
 						<StyledRouteText variant="subtitle1">
-							{id === "page-1"? "/page-1": `/${block.data.route as string}`}
+							{id === "page-1"
+								? "/page-1"
+								: `/${block.data.route as string}`}
 						</StyledRouteText>
 					</StyledHomePageDiv>
 					{id !== "page-1" && pageHovered === block.id && (
@@ -1402,6 +1390,26 @@ export const LayersPanel = observer(
 										<TreeView
 											selected={selectedLayers}
 											expanded={expanded}
+											onNodeToggle={(_e, nodeIds) => {
+												const lastToggled =
+													nodeIds.find(
+														(id) =>
+															!expanded.includes(
+																id,
+															),
+													) ||
+													expanded.find(
+														(id) =>
+															!nodeIds.includes(
+																id,
+															),
+													);
+												if (lastToggled) {
+													handleAccordionToggle(
+														lastToggled,
+													);
+												}
+											}}
 											onNodeSelect={(
 												e: React.SyntheticEvent,
 												nodeIds: string[],
