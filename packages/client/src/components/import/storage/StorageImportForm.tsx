@@ -100,6 +100,9 @@ export const StorageForm = ({
 	const advancedFields = advanced;
 	const categoryDescriptions = categoryDescription;
 	const [loading, setLoading] = useState(false);
+	const debounceTimeoutsRef = useRef<
+		Record<string, ReturnType<typeof setTimeout>>
+	>({});
 
 	//  Group fields by category
 	const grouped = defaultFields.reduce((acc, f) => {
@@ -107,31 +110,6 @@ export const StorageForm = ({
 		acc[f.category].push(f);
 		return acc;
 	}, {});
-
-	const handleFieldValidation = async (
-		e,
-		val,
-		field,
-		validateFormField,
-		setError,
-		clearErrors,
-	) => {
-		field.onChange(e);
-		const value = e.target.value;
-		if (val.rules?.custom) {
-			const isValid = await validateFormField(val, value);
-			if (!isValid) {
-				setError(val.key, {
-					type: "manual",
-					message:
-						val.rules?.custom?.message ||
-						"Database name already exists.",
-				});
-			} else {
-				clearErrors(val.key);
-			}
-		}
-	};
 
 	const onFormSubmit = async (formData) => {
 		setLoading(true);
@@ -306,16 +284,46 @@ export const StorageForm = ({
 								error={!!error}
 								helperText={getHelperText(error, val)}
 								data-testid={`storage-form-input-${val.key}`}
-								onChange={(e) =>
-									handleFieldValidation(
-										e,
-										val,
-										field,
-										validateFormField,
-										setError,
-										clearErrors,
-									)
-								}
+								onChange={(e) => {
+									field.onChange(e);
+									if (val.rules?.custom) {
+										if (
+											debounceTimeoutsRef.current[val.key]
+										) {
+											clearTimeout(
+												debounceTimeoutsRef.current[
+													val.key
+												],
+											);
+										}
+										debounceTimeoutsRef.current[val.key] =
+											setTimeout(async () => {
+												const value = e.target.value;
+												if (
+													!val.rules.pattern.value.test(
+														value,
+													)
+												) {
+													return;
+												}
+												const isValid =
+													await validateFormField(
+														val,
+														value,
+													);
+												if (!isValid) {
+													setError(val.key, {
+														message:
+															val.rules?.custom
+																?.message ||
+															"Database name already exists.",
+													});
+												} else {
+													clearErrors(val.key);
+												}
+											}, 300);
+									}
+								}}
 							/>
 						);
 
