@@ -59,7 +59,7 @@ export const HTMLBlockMenu: BlockComponent = ({ id }) => {
 					/>
 				</Accordion.Content>
 			</Accordion>
-			<div className="h-full pb-6">
+			<div className="min-h-[250px] pb-6">
 				<CodeEditorSettings id={id} path="html" />
 			</div>
 			{/* the AI tool input and button underneath editor is fixed / working */}
