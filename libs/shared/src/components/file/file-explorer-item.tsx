@@ -5,11 +5,14 @@ import {
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { FileItem } from "./file.types";
 import { FileExplorerMenuItem } from "./file-explorer-menu-item";
 
-interface FileExplorerItemProps {
+interface FileExplorerItemProps extends React.HTMLAttributes<HTMLSpanElement> {
 	/** Item */
 	item: FileItem;
 
@@ -21,8 +24,16 @@ interface FileExplorerItemProps {
 	/** Callback that is triggered when selected */
 	onSelect?: () => void;
 
-	/** Actions */
+	/** Primary actions */
 	actions?: ({
+		name: string;
+		icon: React.ReactNode;
+		tooltip: React.ReactNode;
+		action: (item: FileItem) => Promise<void>;
+	} | null)[];
+
+	/** Secondary Actions */
+	secondaryActions?: ({
 		name: string;
 		action: (item: FileItem) => Promise<void>;
 	} | null)[];
@@ -33,6 +44,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	refresh,
 	onSelect = () => null,
 	actions = [],
+	secondaryActions = [],
 	...props
 }) => {
 	return (
@@ -60,7 +72,29 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 					{item.lastModified}
 				</div>
 			</div>
-			{actions.length > 0 && (
+			{actions.map((a) => {
+				if (!a) {
+					return null;
+				}
+
+				return (
+					<Tooltip key={a.name}>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								onClick={(e) => {
+									e.stopPropagation();
+									a.action(item);
+								}}
+							>
+								{a.icon}
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>{a.tooltip}</TooltipContent>
+					</Tooltip>
+				);
+			})}
+			{secondaryActions.length > 0 && (
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button
@@ -72,7 +106,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
 						<DropdownMenuGroup>
-							{actions.map((a) => {
+							{secondaryActions.map((a) => {
 								if (!a) {
 									return null;
 								}

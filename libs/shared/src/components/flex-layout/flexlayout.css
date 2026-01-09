@@ -1,7 +1,11 @@
-/*
-  Layout
-*/
-.flexlayout__layout {
+@reference "@semoss/ui/globals.css";
+
+/**
+ * SMSS Theme for FlexLayout
+ */
+
+ /** Layout **/
+.flexlayout__theme_smss .flexlayout__layout {
     --color-background: transparent;
     --color-tabset-background: transparent;
     --color-tabset-background-selected: transparent;
@@ -10,67 +14,62 @@
     --smss-tab-border-radius: 4px;
 }
 
-.flexlayout__tabset_tabbar_outer {
-    padding: var(--spacing-2, 8px);
+ /** Tabs **/
+.flexlayout__theme_smss .flexlayout__tabset_tabbar_outer {
+    @apply p-2;
+    min-height: 51px;
 }
 
-.flexlayout__tabset_tabbar_outer_top {
+.flexlayout__theme_smss .flexlayout__tabset_tabbar_outer_top {
     padding-right: 85px;
 }
 
-.flexlayout__tab_button {
-    display: flex;
-    height: var(--height-h-8, 32px);
-    padding: var(--spacing-2, 8px) var(--spacing-3, 12px);
-    justify-content: center;
-    align-items: center;
-    gap: var(--spacing-2, 8px);
-    border-radius: var(--border-radius-rounded-md, 8px);
-    background: var(--base-secondary, #F5F5F5);
+.flexlayout__theme_smss .flexlayout__tab_button {
+    @apply flex h-8 px-2 py-3 justify-center items-center gap-2 rounded-md bg-background;
 }
 
-.flexlayout__tab_button--selected {
-    border: var(--border-width-border, 1px) solid var(--base-input, #E5E5E5);
-    background: var(--custom-background-dark-input-30, #FFF);
-
-    /* shadow/xs */
-    box-shadow: var(--shadow-xs-offset-x, 0) var(--shadow-xs-offset-y, 1px) var(--shadow-xs-blur-radius, 2px) var(--shadow-xs-spread-radius, 0) var(--shadow-xs-color, rgba(0, 0, 0, 0.05));
+.flexlayout__theme_smss .flexlayout__tab_button--selected {
+    @apply dark:bg-input/30 shadow-xs border border-input;
 }
 
-.flexlayout__tab_button__content {
-    overflow: hidden;
-    color: var(--base-foreground, #0A0A0A);
-    text-overflow: ellipsis;
-
-    /* text-xs/leading-normal/medium */
-    font-family: var(--font-font-sans, Geist);
-    font-size: var(--text-xs-font-size, 12px);
-    font-style: normal;
-    font-weight: var(--font-weight-medium, 500);
-    line-height: var(--text-xs-line-height, 16px); /* 133.333% */
+.flexlayout__theme_smss .flexlayout__tab_button__content {
+    @apply truncate text-foreground text-xs leading-normal font-medium;
 }
 
-.flexlayout__tab_button--selected .flexlayout__tab_button_leading {
-    color: var(--base-primary, #0471F0);
+.flexlayout__theme_smss .flexlayout__tab_button--selected .flexlayout__tab_button_leading {
+    @apply text-primary;
 }
 
-.flexlayout__tabset_tab_divider {
-    width: var(--spacing-2, 8px);
+.flexlayout__theme_smss .flexlayout__tabset_tab_divider {
+    @apply w-2
 }
 
-.flexlayout__popup_menu_container {
-    border-radius: var(--border-radius-rounded-md, 8px);
-    border: var(--border-width-border, 1px) solid var(--base-input, #E5E5E5);
-
-     /* shadow/xs */
-    box-shadow: var(--shadow-xs-offset-x, 0) var(--shadow-xs-offset-y, 1px) var(--shadow-xs-blur-radius, 2px) var(--shadow-xs-spread-radius, 0) var(--shadow-xs-color, rgba(0, 0, 0, 0.05));
+ /** Popover **/
+.flexlayout__theme_smss .flexlayout__popup_menu_container {
+    @apply border border-input rounded-md shadow-xs;
 }
 
-.flexlayout__popup_menu_item {
-    height: var(--height-h-8, 32px);
-    padding: var(--spacing-2, 8px) var(--spacing-3, 12px);
+.flexlayout__theme_smss .flexlayout__popup_menu_item {
+    @apply h-8 px-2 py-3
 }
 
-.flexlayout__popup_menu_item:hover {
-    background: var(--base-secondary, #F5F5F5);
+.flexlayout__theme_smss .flexlayout__popup_menu_item:hover {
+    @apply bg-secondary;
+}
+
+/** Borders **/
+.flexlayout__theme_smss .flexlayout__border {
+    @apply p-2;
+}
+
+.flexlayout__theme_smss .flexlayout__border_button {
+    @apply flex h-8 px-2 py-3 justify-center items-center gap-2 rounded-md bg-background;
+}
+
+.flexlayout__theme_smss .flexlayout__border_button--selected {
+    @apply dark:bg-input/30 shadow-xs border border-input;
+}
+
+.flexlayout__theme_smss .flexlayout__border_button--selected .flexlayout__border_button_leading {
+    @apply text-primary;
 }

@@ -13,6 +13,9 @@ interface FileEditorProps {
 
 	/** Callback when the file is changed */
 	onChange?: (content: string, isModified: boolean) => void;
+
+	/** Callback when the file is saved */
+	onSave?: () => void;
 }
 
 export const FileEditor: React.FC<FileEditorProps> = ({

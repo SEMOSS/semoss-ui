@@ -34,14 +34,17 @@ export const FilePdfViewer: React.FC<FilePdfViewerProps> = ({ mode, path }) => {
 					</Muted>
 				</div>
 			)}
-			<object
-				className="flex flex-1 overflow-hidden"
-				aria-label={`Preview of ${path}`}
-				data={`data:application/pdf;base64,${getFile.data}`}
-				type="application/pdf"
-			>
-				<Muted>Your browser doesn't support PDF viewing.</Muted>
-			</object>
+
+			{getFile.status === "SUCCESS" && (
+				<object
+					className="flex flex-1 overflow-hidden"
+					aria-label={`Preview of ${path}`}
+					data={`data:application/pdf;base64,${getFile.data}`}
+					type="application/pdf"
+				>
+					<Muted>Your browser doesn't support PDF viewing.</Muted>
+				</object>
+			)}
 		</div>
 	);
 };

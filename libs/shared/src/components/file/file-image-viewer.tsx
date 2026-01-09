@@ -52,12 +52,14 @@ export const FileImageViewer: React.FC<FileImageViewerProps> = ({
 					</Muted>
 				</div>
 			)}
-			<div className="flex flex-1 items-center justify-center overflow-hidden p-4">
-				<img
-					src={`data:${getMimeType(ext)};base64,${getFile.data}`}
-					alt={`Preview of ${path}`}
-				/>
-			</div>
+			{getFile.status === "SUCCESS" && (
+				<div className="flex flex-1 items-center justify-center overflow-hidden p-4">
+					<img
+						src={`data:${getMimeType(ext)};base64,${getFile.data}`}
+						alt={`Preview of ${path}`}
+					/>
+				</div>
+			)}
 		</div>
 	);
 };

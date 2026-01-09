@@ -43,7 +43,7 @@ interface FileCodeEditorProps {
 		| null;
 
 	/**
-	 *
+	 * Calback when the file is changed
 	 * @param isModified
 	 * @returns
 	 */
@@ -112,10 +112,6 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		}
 
 		// add the actions
-		editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-			saveFile();
-		});
-
 		editor.addAction({
 			contextMenuGroupId: "1_modification",
 			contextMenuOrder: 2,
@@ -127,6 +123,17 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				editor.updateOptions({
 					wordWrap: wordWrapRef.current ? "on" : "off",
 				});
+			},
+		});
+
+		editor.addAction({
+			contextMenuGroupId: "1_modification",
+			contextMenuOrder: 2,
+			id: "save",
+			label: "Save",
+			keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+			run: async () => {
+				saveFile();
 			},
 		});
 	};
@@ -156,6 +163,11 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 			// refresh after save
 			getFile.refresh();
+
+			// trigger onChange
+			onChange(content, false);
+
+			toast.success("Successfully saved file");
 		} catch (e) {
 			toast.error("Error saving file");
 
@@ -166,7 +178,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	};
 
 	return (
-		<div className="flex h-full w-full flex-col items-center bg-background">
+		<div className="relative flex h-full w-full flex-col items-center bg-background [&_.quick-input-widget]:mx-0!">
 			<Suspense
 				fallback={
 					<div className="flex h-full w-full items-center justify-center">

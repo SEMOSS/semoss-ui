@@ -1,15 +1,22 @@
 import { observer } from "mobx-react-lite";
 import { useInsight } from "@semoss/sdk/react";
-import { FileExplorer, FileExplorerItem } from "@semoss/shared";
+import {
+	FileExplorer,
+	FileExplorerItem,
+	type FlexLayout,
+} from "@semoss/shared";
 import type { RoomStore } from "@/stores";
 
 interface RoomFileExplorerProps {
+	/** Layout */
+	layout: FlexLayout.Layout | null;
+
 	/** Room */
 	room: RoomStore;
 }
 
 export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
-	({ room }) => {
+	({ layout, room }) => {
 		const insight = useInsight();
 
 		const mode = {
@@ -45,7 +52,28 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 									enableClose: true,
 								});
 							}}
-							actions={[
+							onDragStart={(e) => {
+								// cannot drag directories
+								if (item.type === "directory") {
+									return;
+								}
+
+								// add to layout
+								layout.addTabWithDragAndDrop(
+									e as unknown as DragEvent,
+									{
+										type: "tab",
+										name: item.name,
+										component: "room-file-editor",
+										config: {
+											name: item.name,
+											path: item.path,
+										},
+										enableClose: true,
+									},
+								);
+							}}
+							secondaryActions={[
 								{
 									name: "Copy Path",
 									action: async (item) => {
@@ -60,18 +88,18 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 										}
 									},
 								},
-								item.path.endsWith(".zip")
-									? {
-											name: "Unzip",
-											action: async (item) => {
-												const pixel = "";
+								// item.path.endsWith(".zip")
+								// 	? {
+								// 			name: "Unzip",
+								// 			action: async (item) => {
+								// 				const pixel = "";
 
-												await insight.actions.run(
-													pixel,
-												);
-											},
-										}
-									: null,
+								// 				await insight.actions.run(
+								// 					pixel,
+								// 				);
+								// 			},
+								// 		}
+								// 	: null,
 								{
 									name: "Delete",
 									action: async (item) => {

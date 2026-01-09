@@ -318,7 +318,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 			<StyledMain>
 				<StyledContent>
 					<WorkspaceLoading />
-					<StyledSpacer>
+					<StyledSpacer className="flexlayout__theme_smss--legacy">
 						{workspace.model ? (
 							<>
 								<FlexLayout.Layout
