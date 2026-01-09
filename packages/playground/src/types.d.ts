@@ -245,6 +245,7 @@ export interface MCPTool {
 		type: "object";
 	};
 	title?: string;
+	original_name: string;
 }
 
 export interface ToolStructure {

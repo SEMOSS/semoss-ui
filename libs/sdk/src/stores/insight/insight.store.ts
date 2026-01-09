@@ -315,6 +315,7 @@ export class InsightStore {
 					theme: {
 						playground: {},
 					},
+					systemDate: "",
 				},
 			};
 
