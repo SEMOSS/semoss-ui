@@ -67,6 +67,11 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	const { isLoading, setIsLoading } = useStepper();
 
 	const [advancedOpen, setAdvancedOpen] = useState(false);
+	const debounceTimeoutsRef = useRef<
+		Record<string, ReturnType<typeof setTimeout>>
+	>({});
+	const [isValidDatabaseName, setIsValidDatabaseName] =
+		useState<boolean>(false);
 
 	// prepare default values from fields + advanced
 	const {
@@ -75,7 +80,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		reset,
 		setError,
 		clearErrors,
-		trigger,
+		setFocus,
 		formState: { isValid },
 	} = useForm({
 		mode: "onSubmit",
@@ -187,6 +192,14 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 			);
 		}
 
+		const getHelperText = (error, val) => {
+			if (!error) return val.helperText || "";
+			if (error.type === "checkField" && val.rules?.custom?.message) {
+				return val.rules.custom.message;
+			}
+			return error.message;
+		};
+
 		const validateFormField = async (
 			field,
 			userInput,
@@ -210,15 +223,11 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 			//if the name already exists then the engine name is not valid
 			if (output.exists) {
-				// setFocus(field.fieldName);
-				setError(field.label, {
-					message: field.rules.custom_rules.message,
-					type: "checkField",
-				});
+				setFocus(field.fieldName);
+				setIsValidDatabaseName(true);
 				return false;
-			} else {
-				clearErrors(field.label);
 			}
+			setIsValidDatabaseName(false);
 
 			return true;
 		};
@@ -229,60 +238,8 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 				name={f.key}
 				control={control}
 				defaultValue={defaultVal}
-				//rules={{ required: f.required }}
 				rules={{
 					required: f.required,
-					validate: {
-						...(f.rules?.custom_rules
-							? {
-									checkField: async (fieldVal) => {
-										// Skip validation if not needed
-										if (!_lastField.current.runValidate)
-											return true;
-										try {
-											// Run validation only if criteria match
-											if (
-												_lastField.current
-													.lastFocussedField ===
-													f.key &&
-												_lastField.current
-													.lastValidatedValue !==
-													fieldVal
-											) {
-												const isValid =
-													await validateFormField(
-														f,
-														fieldVal,
-													); // must await
-												return (
-													isValid ||
-													f.rules.custom_rules.message
-												);
-											}
-
-											return true; // default valid
-										} catch (err) {
-											console.error(
-												"Validation error:",
-												err,
-											);
-											return (
-												f.rules.custom_rules.message ||
-												"Validation failed."
-											);
-										} finally {
-											_lastField.current.runValidate = false;
-										}
-									},
-								}
-							: {}),
-					},
-					pattern: {
-						...(f.rules?.pattern && {
-							value: f.rules?.pattern.value,
-							message: f.rules?.pattern.message,
-						}),
-					},
 				}}
 				render={({
 					field: { ref, ...field },
@@ -298,36 +255,66 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									variant="outlined"
 									required={f.required}
 									value={field.value ?? ""}
-									onChange={(v) => field.onChange(v)}
+									onChange={(v) => {
+										field.onChange(v);
+										if (f.rules?.custom_rules) {
+											if (
+												debounceTimeoutsRef.current[
+													f.key
+												]
+											) {
+												clearTimeout(
+													debounceTimeoutsRef.current[
+														f.key
+													],
+												);
+											}
+											debounceTimeoutsRef.current[f.key] =
+												setTimeout(async () => {
+													const value =
+														v.target.value;
+													if (value === "") {
+														setError(f.key, {});
+														return;
+													}
+													if (
+														!f.rules.pattern.value.test(
+															value,
+														)
+													) {
+														setError(f.key, {
+															message:
+																f.rules.pattern
+																	.message ||
+																"Invalid characters in input.",
+														});
+														return;
+													}
+													const isValid =
+														await validateFormField(
+															f,
+															value,
+														);
+													if (!isValid) {
+														setError(f.key, {
+															message:
+																f.rules
+																	?.custom_rules
+																	?.message ||
+																"Invalid value.",
+														});
+													} else {
+														clearErrors(f.key);
+													}
+												}, 300);
+										}
+									}}
 									disabled={f.disabled || isLockedModel}
-									helperText={
-										errors?.[f.label]?.message.toString() ||
-										f.helperText ||
-										errors?.[
-											field.name
-										]?.message.toString() ||
-										""
-									}
+									helperText={getHelperText(error, f)}
 									data-testId={formatToDataTestId(
 										`importForm-${f.label}-textField`,
 									)}
 									error={!!error}
-									inputProps={{
-										onFocus: () => {
-											_lastField.current = {
-												..._lastField.current,
-												lastFocussedField: field.name,
-												lastFocussedValue: field.value,
-												lastValidatedValue: field.value,
-											};
-										},
-										onBlur: () => {
-											if (f.rules?.custom_rules) {
-												_lastField.current.runValidate = true;
-												trigger(field.name);
-											}
-										},
-									}}
 								/>
 							);
 						case "file-upload":
@@ -616,7 +603,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 					data-testId="model-importForm-connect-button"
 					type="submit"
 					variant="contained"
-					disabled={isLoading || !isValid}
+					disabled={isLoading || !isValid || isValidDatabaseName}
 				>
 					Connect
 				</Button>

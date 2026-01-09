@@ -129,8 +129,8 @@ export const DatabaseForm = ({
 		setValue,
 		setFocus,
 		formState,
-		// setError,
-		// clearErrors,
+		setError,
+		clearErrors,
 	} = useForm({
 		mode: "onChange",
 		reValidateMode: "onChange",
@@ -141,6 +141,9 @@ export const DatabaseForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
+	const debounceTimeoutsRef = useRef<
+		Record<string, ReturnType<typeof setTimeout>>
+	>({});
 	const { monolithStore, configStore } = useRootStore();
 	const notification = useNotification();
 	const navigate = useNavigate();
@@ -746,17 +749,6 @@ export const DatabaseForm = ({
 			rules={{
 				required: val?.required,
 				pattern: val.rules?.pattern,
-				validate: async (value) => {
-					if (val.rules?.custom) {
-						const isValid = await validateFormField(val, value);
-						return (
-							isValid ||
-							val.rules.custom.message ||
-							"Invalid value"
-						);
-					}
-					return true;
-				},
 			}}
 			render={({ field, fieldState: { error } }) => {
 				switch (val.type) {
@@ -774,16 +766,44 @@ export const DatabaseForm = ({
 								error={!!error}
 								helperText={getHelperText(error, val)}
 								data-testid={`database-form-input-${val.key}`}
-								// onChange={(e) =>
-								// 	handleFieldValidation(
-								// 		e,
-								// 		val,
-								// 		field,
-								// 		validateFormField,
-								// 		setError,
-								// 		clearErrors,
-								// 	)
-								// }
+								onChange={(e) => {
+									field.onChange(e);
+									if (val.rules?.custom) {
+										if (
+											debounceTimeoutsRef.current[val.key]
+										) {
+											clearTimeout(
+												debounceTimeoutsRef.current[
+													val.key
+												],
+											);
+										}
+										debounceTimeoutsRef.current[val.key] =
+											setTimeout(async () => {
+												const value = e.target.value;
+												if (
+													!val.rules.pattern.value.test(value)
+												) {
+													return;
+												}
+												const isValid =
+													await validateFormField(
+														val,
+														value,
+													);
+												if (!isValid) {
+													setError(val.key, {
+														message:
+															val.rules?.custom
+																?.message ||
+															"Database name already exists.",
+													});
+												} else {
+													clearErrors(val.key);
+												}
+											}, 300);
+									}
+								}}
 							/>
 						);
 
@@ -1200,7 +1220,8 @@ export const DatabaseForm = ({
 								variant="contained"
 								data-testid="database-form-submit"
 								disabled={
-									!formState.isValid || isValidDatabaseName
+									!formState.isValid ||
+									isValidDatabaseName
 								}
 							>
 								Next
