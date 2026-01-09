@@ -192,31 +192,6 @@ export const DatabaseForm = ({
 		return acc;
 	}, {});
 
-	/*const handleFieldValidation = async (
-		e,
-		val,
-		field,
-		validateFormField,
-		setError,
-		clearErrors,
-	) => {
-		field.onChange(e);
-		const value = e.target.value;
-		if (val.rules?.custom) {
-			const isValid = await validateFormField(val, value);
-			if (!isValid) {
-				setError(val.key, {
-					type: "manual",
-					message:
-						val.rules?.custom?.message ||
-						"Database name already exists.",
-				});
-			} else {
-				clearErrors(val.key);
-			}
-		}
-	};*/
-
 	const onFormSubmit = async (formData) => {
 		setLoading(true);
 		setFormValues(formData);
@@ -782,7 +757,9 @@ export const DatabaseForm = ({
 											setTimeout(async () => {
 												const value = e.target.value;
 												if (
-													!val.rules.pattern.value.test(value)
+													!val.rules.pattern.value.test(
+														value,
+													)
 												) {
 													return;
 												}
@@ -1220,8 +1197,7 @@ export const DatabaseForm = ({
 								variant="contained"
 								data-testid="database-form-submit"
 								disabled={
-									!formState.isValid ||
-									isValidDatabaseName
+									!formState.isValid || isValidDatabaseName
 								}
 							>
 								Next
