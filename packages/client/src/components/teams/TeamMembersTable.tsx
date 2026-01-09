@@ -8,9 +8,7 @@ import {
 	AvatarGroup,
 	Box,
 	Button,
-	Card,
 	Checkbox,
-	Chip,
 	IconButton,
 	Modal,
 	Search,
@@ -864,27 +862,30 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 				)}
 			</StyledMemberInnerContent>
 
-			<Modal open={addMembersModal} maxWidth="lg">
-				<Modal.Title>Add Members</Modal.Title>
-				<Modal.Content sx={{ width: "50rem" }}>
+			<Modal
+				open={addMembersModal}
+				maxWidth="lg"
+				sx={{ padding: "16px" }}
+			>
+				<Modal.Title sx={{ padding: "16px 16px 0" }}>
+					Add Members
+				</Modal.Title>
+				<Modal.Content sx={{ width: "50vw", padding: "16px" }}>
 					<StyledModalContentText>
 						<Autocomplete
 							label="Search"
+							helpText=""
 							loading={searchLoading}
 							multiple={true}
 							freeSolo={false}
 							filterOptions={(x) => x}
 							options={filteredNonCredentialedUsers}
 							includeInputInList={true}
-							limitTags={2}
-							getLimitTagsText={() =>
-								` +${selectedNonCredentialedUsers.length - 2}`
-							}
+							limitTags={0}
 							value={selectedNonCredentialedUsers}
 							inputValue={searchMemberInput}
-							getOptionLabel={(option: unknown) => {
-								return `${(option as { name: string }).name}`;
-							}}
+							getOptionLabel={() => ""}
+							renderTags={() => null}
 							renderOption={(props, option: TeamMember) => (
 								<li
 									{...props}
@@ -1017,6 +1018,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								setSearchMemberInput(newValue);
 								setOffset(0);
 							}}
+							disableClearable={true}
 						/>
 
 						{selectedNonCredentialedUsers?.map((user, idx) => {
@@ -1033,149 +1035,161 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									key={`${user.name} - ${idx}`}
 									sx={{
 										display: "flex",
-										justifyContent: "left",
-										align: "center",
+										alignItems: "center",
 										backgroundColor:
 											idx % 2 !== 0
 												? "rgba(0, 0, 0, .03)"
 												: "",
-										paddingBottom: "8px",
+										padding: "8px",
 										borderRadius: "8px",
 										width: "100%",
 										boxSizing: "border-box",
+										gap: "12px",
 									}}
 								>
+									{/* Column 1: Avatar */}
 									<Box
 										sx={{
-											width: "100%",
-											gap: "8px",
-											position: "relative",
-											border: "5px",
-											display: "flex",
+											flexShrink: 0,
 										}}
 									>
 										<Box
 											sx={{
 												display: "flex",
-												justifyContent: "left",
-												marginTop: "6px",
-												marginLeft: "8px",
-												marginRight: "8px",
-												float: "left",
+												height: "32px",
+												width: "32px",
+												justifyContent: "center",
+												alignItems: "center",
+												border: "0.5px solid rgba(0, 0, 0, .05)",
+												borderRadius: "50%",
 											}}
 										>
-											<Box
+											<Avatar
+												aria-label="avatar"
 												sx={{
 													display: "flex",
-													height: "32px",
 													width: "32px",
-													justifyContent: "center",
-													alignItems: "center",
-													border: "0.5px solid rgba(0, 0, 0, .05)",
-													borderRadius: "50%",
+													height: "32px",
+													fontSize: "24px",
+													backgroundColor: user.color,
 												}}
 											>
-												<Avatar
-													aria-label="avatar"
-													sx={{
-														display: "flex",
-														width: "32px",
-														height: "32px",
-														fontSize: "24px",
-														backgroundColor:
-															user.color,
-													}}
-												>
-													{initial}
-												</Avatar>
-											</Box>
+												{initial}
+											</Avatar>
 										</Box>
-										<Card.Header
-											title={
-												<Typography
-													variant="h6"
-													sx={{
-														marginTop: "5px",
-														maxWidth: "100%",
-														lineHeight: 1.1,
-													}}
-												>
-													{user.name}
-												</Typography>
-											}
+									</Box>
+
+									{/* Column 2: User Details */}
+									<Box
+										sx={{
+											flex: 1,
+											display: "flex",
+											flexDirection: "column",
+											gap: "4px",
+											minWidth: 0,
+										}}
+									>
+										<Typography
+											variant="h6"
 											sx={{
-												color: "#000",
-												width: "100%",
-												gap: "16px",
-												margin: "0",
+												lineHeight: 1.1,
 											}}
-											subheader={
-												<Box
-													sx={{
-														display: "flex",
-														gap: "2px",
-														marginTop: "2px",
+										>
+											{user.name}
+										</Typography>
+										<Box
+											sx={{
+												display: "flex",
+												gap: "8px",
+												flexWrap: "wrap",
+												alignItems: "center",
+												justifyContent: "space-between",
+											}}
+										>
+											<span
+												style={{
+													opacity: 0.9,
+													fontSize: "11px",
+													display: "flex",
+													alignItems: "center",
+												}}
+											>
+												{`User ID: `}
+												<span
+													style={{
+														paddingLeft: "4px",
+														color: "#212121",
 													}}
 												>
-													<span
-														style={{
-															opacity: 0.9,
-															fontSize: "11px",
-														}}
-													>
-														{`User ID: `}
-														<Chip
-															label={user.id}
-															size="small"
-														/>
-													</span>
-													{`• `}
-													<span>
-														{`Email: `}
-														<Chip
-															label={user.email}
-															size="small"
-														/>
-													</span>
-												</Box>
-											}
-											action={
-												<IconButton
-													sx={{
-														height: "28px",
-														width: "28px",
-														gap: "30px",
-														fontSize: "small",
-														mt: "16px",
-														color: "rgba( 0, 0, 0, .7)",
-														mr: "2px",
-														top: "0px",
-														position: "absolute",
-														padding: "10px",
-													}}
-													onClick={() => {
-														const filtered =
-															selectedNonCredentialedUsers.filter(
-																(val) =>
-																	val.id !==
-																	user.id,
-															);
-														setSelectedNonCredentialedUsers(
-															filtered,
-														);
+													{user.id}
+												</span>
+											</span>
+											<span
+												style={{
+													opacity: 0.9,
+													fontSize: "11px",
+												}}
+											>
+												{`Email: `}
+												<span
+													style={{
+														paddingLeft: "4px",
+														color: "#212121",
 													}}
 												>
-													<ClearRounded />
-												</IconButton>
-											}
-										/>
+													{user.email}
+												</span>
+											</span>
+											<span
+												style={{
+													opacity: 0.9,
+													fontSize: "11px",
+												}}
+											>
+												{`Type: `}
+												<span
+													style={{
+														paddingLeft: "4px",
+														color: "#212121",
+													}}
+												>
+													{user.type}
+												</span>
+											</span>
+										</Box>
+									</Box>
+
+									{/* Column 3: Close Icon */}
+									<Box
+										sx={{
+											flexShrink: 0,
+										}}
+									>
+										<IconButton
+											size="small"
+											sx={{
+												color: "rgba(0, 0, 0, .7)",
+											}}
+											onClick={() => {
+												const filtered =
+													selectedNonCredentialedUsers.filter(
+														(val) =>
+															val.id !== user.id,
+													);
+												setSelectedNonCredentialedUsers(
+													filtered,
+												);
+											}}
+										>
+											<ClearRounded />
+										</IconButton>
 									</Box>
 								</Box>
 							);
 						})}
 					</StyledModalContentText>
 				</Modal.Content>
-				<Modal.Actions>
+				<Modal.Actions sx={{ padding: "0 16px 16px" }}>
 					<Button
 						variant="outlined"
 						onClick={() => {

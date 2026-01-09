@@ -51,6 +51,7 @@ export interface AutocompleteProps<
 		FreeSolo
 	>["renderInput"];
 	label?: React.ReactNode;
+	helpText?: React.ReactNode;
 	value?: Multiple extends true ? (T | string)[] : T | string | null;
 }
 
@@ -62,6 +63,7 @@ export function Autocomplete<
 	ChipComponent extends React.ElementType = ChipTypeMap["defaultComponent"],
 >({
 	label,
+	helpText = "Press enter to add",
 	...props
 }: AutocompleteProps<T, Multiple, DisableClearable, FreeSolo, ChipComponent>) {
 	return (
@@ -76,9 +78,7 @@ export function Autocomplete<
 					{...params}
 					label={label}
 					helperText={
-						<Typography variant="caption">
-							Press enter to add
-						</Typography>
+						<Typography variant="caption">{helpText}</Typography>
 					}
 				/>
 			)}

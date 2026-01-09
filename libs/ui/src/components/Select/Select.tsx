@@ -4,7 +4,7 @@ import {
 	type TextFieldProps as MuiTextFieldProps,
 	type SxProps,
 } from "@mui/material";
-import { InputAdornment } from "../InputAdornment";
+// import { InputAdornment } from "../InputAdornment";
 
 export interface SelectProps {
 	/**

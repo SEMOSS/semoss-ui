@@ -39,6 +39,7 @@ const StyledModalTitle = styled(Modal.Title)(() => ({
 	width: "100%",
 	display: "flex",
 	justifyContent: "space-between",
+	padding: "24px 24px 0",
 }));
 
 const StyledContainer = styled(Container)({
@@ -260,7 +261,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 	});
 
 	return (
-		<Modal open={open} fullWidth>
+		<Modal open={open} fullWidth sx={{ borderRadius: "12px" }}>
 			<StyledModalTitle>
 				{isEdit ? (
 					<Typography sx={{ color: "#000000DE" }} variant="h6">
@@ -278,7 +279,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 				</IconButton>
 			</StyledModalTitle>
 			<form onSubmit={onSubmit}>
-				<Modal.Content>
+				<Modal.Content sx={{ padding: "24px" }}>
 					<Stack direction="column" spacing={2}>
 						<Box>
 							<Controller
@@ -309,6 +310,20 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 												field.onChange(value)
 											}
 											disabled={isEdit}
+											SelectProps={{
+												renderValue: (value) => {
+													const selectedProvider =
+														filteredLoginTypes.find(
+															(p) =>
+																p.provider ===
+																value,
+														);
+													return (
+														selectedProvider?.name ||
+														""
+													);
+												},
+											}}
 										>
 											{filteredLoginTypes.map(
 												(p, _idx) => {
@@ -446,13 +461,8 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 						</Box>
 					</Stack>
 				</Modal.Content>
-				<Modal.Actions>
-					<Stack
-						direction="row"
-						spacing={1}
-						paddingX={2}
-						paddingBottom={2}
-					>
+				<Modal.Actions sx={{ padding: "24px" }}>
+					<Stack direction="row" spacing={1}>
 						<Button
 							type="button"
 							sx={{ color: "#212121" }}
