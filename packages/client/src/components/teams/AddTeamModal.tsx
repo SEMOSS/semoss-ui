@@ -66,15 +66,13 @@ const StyledMenuItemDesc = styled(Typography)(({ theme }) => ({
 }));
 
 const StyledSelectItem = styled(Select.Item, {
-	shouldForwardProp: (prop) => prop !== "type" && prop !== "showBorder",
+	shouldForwardProp: (prop) => prop !== "type",
 })<{
 	/** Track if the page header is stuck */
 	type: string;
-	/** Show bottom border */
-	showBorder?: boolean;
-}>(({ type, showBorder = true }) => ({
+}>(({ type }) => ({
 	borderBottom:
-		type === "CUSTOM" && showBorder
+		type === "CUSTOM"
 			? "1px solid var(--Secondary-Border, #C4C4C4)"
 			: "none",
 }));
@@ -289,15 +287,6 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 									required: "Please select a team type",
 								}}
 								render={({ field, fieldState: { error } }) => {
-									const filteredLoginTypes = loginTypes
-										.sort()
-										.filter(
-											(p) =>
-												![
-													"native",
-													"registration",
-												].includes(p.provider),
-										);
 									return (
 										<Select
 											label={"Type*"}
@@ -325,17 +314,21 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 												},
 											}}
 										>
-											{filteredLoginTypes.map(
-												(p, _idx) => {
+											{loginTypes
+												.sort()
+												.filter(
+													(p) =>
+														![
+															"native",
+															"registration",
+														].includes(p.provider),
+												)
+												.map((p, _idx) => {
 													return (
 														<StyledSelectItem
 															key={`logintype-${p.provider}`}
 															value={p.provider}
 															type={p.provider}
-															showBorder={
-																filteredLoginTypes.length >
-																1
-															}
 														>
 															<Box
 																sx={{
@@ -386,8 +379,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 															</Box>
 														</StyledSelectItem>
 													);
-												},
-											)}
+												})}
 										</Select>
 									);
 								}}
@@ -445,10 +437,8 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 											value={
 												field.value ? field.value : ""
 											}
-											onChange={(event) =>
-												field.onChange(
-													event.target.value,
-												)
+											onChange={(value) =>
+												field.onChange(value)
 											}
 											fullWidth={true}
 											multiline
