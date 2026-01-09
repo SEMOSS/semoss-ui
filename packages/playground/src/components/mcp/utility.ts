@@ -56,5 +56,5 @@ export const mcpToPlatformUrl = (mcp: Pick<MCP, "type" | "id">): string => {
 	if (mcp.type === "PROJECT") {
 		return `${PLATFORM_URL}/#/app/${mcp.id}`;
 	}
-	return `${PLATFORM_URL}/#/engine/${mcp.id}`;
+	return `${PLATFORM_URL}/#/engine/${mcp.type.toLowerCase()}/${mcp.id}`;
 };

@@ -317,7 +317,7 @@ export class ConfigStore {
 		}
 
 		const moduleMap = {
-			APP: "Project",
+			PROJECT: "Project",
 			DATABASE: "Db",
 			FUNCTION: "Function",
 			MODEL: "Model",

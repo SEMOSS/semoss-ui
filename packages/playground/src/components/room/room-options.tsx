@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { EngineSelect } from "@semoss/shared";
 import {
+	Badge,
 	Button,
 	Field,
 	FieldGroup,
@@ -30,10 +31,13 @@ interface RoomOptionsProps {
 
 	/** Update options on change */
 	setOptions: (options: RoomStore["options"]) => void;
+
+	/** Update model on change */
+	setRoomModel: (modelId: string) => void;
 }
 
 export const RoomOptions = observer((props: RoomOptionsProps) => {
-	const { options, setOptions } = props;
+	const { options, setOptions, setRoomModel } = props;
 
 	/**
 	 * Library hooks
@@ -50,6 +54,7 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 		isOpen: false,
 	});
 
+	// All MCPs are in the mcp array (workspace MCPs have fromWorkspace flag)
 	const knowledge = options.mcp.filter((mcp) => mcp.type === "VECTOR");
 	const toolbox = options.mcp.filter((mcp) => mcp.type !== "VECTOR");
 
@@ -57,6 +62,11 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 	 * Functions
 	 */
 	const handleDeleteMCP = (mcp: MCPConfig) => {
+		// Don't allow deletion of workspace MCPs
+		if (mcp.fromWorkspace) {
+			return;
+		}
+
 		const updatedMCPs = options.mcp.filter(
 			(t) => !(t.id === mcp.id && t.type === mcp.type),
 		);
@@ -87,9 +97,10 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 										metaFilters={[
 											{ tag: "text-generation" },
 										]}
-										onChange={(v) =>
-											chat.setSelectedModel(v)
-										}
+										onChange={(v) => {
+											chat.setSelectedModel(v);
+											setRoomModel(v.app_id);
+										}}
 										popoverContentProps={{
 											align: "start",
 										}}
@@ -154,23 +165,49 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 											return (
 												<div
 													key={mcp.id}
-													className="group flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2 hover:bg-muted/50"
+													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border px-3 py-2 ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
 												>
 													<HammerIcon className="size-4" />
 													<span className="flex-1 truncate text-sm">
 														{mcp.name}
 													</span>
-													<Button
-														variant="ghost"
-														size="icon-sm"
-														color=""
-														className="invisible group-hover:visible"
-														onClick={() =>
-															handleDeleteMCP(mcp)
-														}
-													>
-														<TrashIcon className="text-destructive" />
-													</Button>
+													{mcp.fromWorkspace ? (
+														<Badge
+															key={mcp.id}
+															variant="outline"
+															className="disabled: mr-2 border border-primary text-primary text-xs"
+														>
+															From Workspace
+														</Badge>
+													) : (
+														<Button
+															variant="ghost"
+															size="icon-sm"
+															color=""
+															className="invisible group-hover:visible"
+															onClick={() =>
+																handleDeleteMCP(
+																	mcp,
+																)
+															}
+															disabled={
+																mcp.fromWorkspace
+															}
+															title={
+																mcp.fromWorkspace
+																	? "Cannot delete workspace MCPs"
+																	: "Delete MCP"
+															}
+														>
+															<TrashIcon
+																className={
+																	mcp.fromWorkspace
+																		? "text-muted-foreground"
+																		: "text-destructive"
+																}
+															/>
+														</Button>
+													)}
 												</div>
 											);
 										})
@@ -236,22 +273,48 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 											return (
 												<div
 													key={mcp.id}
-													className="group flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2 hover:bg-muted/50"
+													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border px-3 py-2 ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
 												>
 													<HammerIcon className="size-4" />
 													<span className="flex-1 truncate text-sm">
 														{mcp.name}
 													</span>
-													<Button
-														variant="ghost"
-														size="icon-sm"
-														className="invisible group-hover:visible"
-														onClick={() =>
-															handleDeleteMCP(mcp)
-														}
-													>
-														<TrashIcon className="text-destructive" />
-													</Button>
+													{mcp.fromWorkspace ? (
+														<Badge
+															key={mcp.id}
+															variant="outline"
+															className="disabled: mr-2 border border-primary text-primary text-xs"
+														>
+															From Workspace
+														</Badge>
+													) : (
+														<Button
+															variant="ghost"
+															size="icon-sm"
+															className="invisible group-hover:visible"
+															onClick={() =>
+																handleDeleteMCP(
+																	mcp,
+																)
+															}
+															disabled={
+																mcp.fromWorkspace
+															}
+															title={
+																mcp.fromWorkspace
+																	? "Cannot delete workspace MCPs"
+																	: "Delete MCP"
+															}
+														>
+															<TrashIcon
+																className={
+																	mcp.fromWorkspace
+																		? "text-muted-foreground"
+																		: "text-destructive"
+																}
+															/>
+														</Button>
+													)}
 												</div>
 											);
 										})
@@ -283,10 +346,15 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 								}
 								onClose={(mcp) => {
 									if (mcp) {
-										// remove from the options
+										// Merge updated MCPs with the other type
+										const otherTypeMCPs =
+											mCPOverlay.type === "TOOLBOX"
+												? knowledge
+												: toolbox;
+
 										setOptions({
 											...options,
-											mcp: mcp,
+											mcp: [...otherTypeMCPs, ...mcp],
 										});
 									}
 

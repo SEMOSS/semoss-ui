@@ -18,7 +18,7 @@ interface FileExplorerProps {
 	expandedPaths: string[];
 	onToggleExpand: (path: string) => void;
 	/** Type of file opened */
-	type: "app" | "insight";
+	type: "app" | "insight" | "engine";
 
 	/** Space where the file is located */
 	space: string;
@@ -77,7 +77,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 	>(
 		type === "app"
 			? `BrowseAsset(filePath=["version/assets"], space=["${space}"]);`
-			: "",
+			: `BrowseEngineAssets(filePath=[], engine=["${space}"]);`,
 		{},
 		insightId,
 	);
@@ -122,9 +122,8 @@ export const FileExplorer = (props: FileExplorerProps) => {
 	}
 
 	return (
-		<div
-			style={{ height: "100%", width: "100%" }}
-			role="region"
+		<section
+			className="h-full w-full"
 			aria-label="File Explorer"
 			onClick={(e) => {
 				handleDeselectOutside(e.target as HTMLElement);
@@ -200,6 +199,6 @@ export const FileExplorer = (props: FileExplorerProps) => {
 					) : null}
 				</LoadingScreen>
 			</StyledTreeView>
-		</div>
+		</section>
 	);
 };

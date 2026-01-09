@@ -16,6 +16,7 @@ import {
 	FieldLabel,
 	Input,
 	Spinner,
+	Textarea,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -39,6 +40,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [name, setName] = useState("");
+	const [description, setDescription] = useState("");
 	const [embeddingEngine, setEmbeddingEngine] = useState<Engine | null>(null);
 	const [files, setFiles] = useState<File[]>([]);
 
@@ -47,6 +49,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 	 */
 	const resetForm = () => {
 		setName("");
+		setDescription("");
 		setFiles([]);
 		onClose();
 	};
@@ -71,6 +74,11 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 				return;
 			}
 
+			if (!description) {
+				toast.error("Please enter a description");
+				return;
+			}
+
 			setIsLoading(true);
 
 			// create the base vector engine
@@ -82,7 +90,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 				]
 			>(`CreateVectorDatabaseEngine(
 				database=["${name}"],
-				conDetails=[{"VECTOR_TYPE": "FAISS", "EMBEDDER_ENGINE_ID": "${embeddingEngine.app_id}"}]
+				conDetails=[{"VECTOR_TYPE": "FAISS", "EMBEDDER_ENGINE_ID": "${embeddingEngine.app_id}","DESCRIPTION":"${description}","TAGS":""}]
 			);`);
 
 			const engineId =
@@ -105,7 +113,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 						database_id: string;
 					},
 				]
-			>(`CreateVectorDatabaseEngine(
+			>(`CreateEmbeddingsFromDocuments(
 				engine=["${engineId}"],
 				filePaths=[${filePaths}]
 			);`);
@@ -151,6 +159,16 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 								placeholder="Enter Name"
 								value={name}
 								onChange={(e) => setName(e.target.value)}
+								disabled={isLoading}
+								required
+							/>
+						</Field>
+						<Field>
+							<FieldLabel>Description</FieldLabel>
+							<Textarea
+								placeholder="Enter Description"
+								value={description}
+								onChange={(e) => setDescription(e.target.value)}
 								disabled={isLoading}
 								required
 							/>

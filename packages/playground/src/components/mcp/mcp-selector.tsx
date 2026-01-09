@@ -175,7 +175,14 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 
 									<Checkbox
 										className="data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white"
-										disabled={disabled}
+										disabled={
+											disabled ||
+											values.some(
+												(a) =>
+													a.id === t.id &&
+													a.fromWorkspace,
+											)
+										}
 										checked={Object.hasOwn(selected, t.id)}
 										onCheckedChange={() => {
 											onSelect(t);
@@ -219,7 +226,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 									type="button"
 									variant="ghost"
 									size="icon-sm"
-									disabled={disabled}
+									disabled={disabled || t.fromWorkspace}
 									onClick={() => {
 										onSelect(t);
 									}}

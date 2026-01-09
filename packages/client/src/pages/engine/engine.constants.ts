@@ -6,6 +6,7 @@ import {
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { ENGINE_TYPES, Role } from "@/types";
+import { EngineFileManagerPage } from "./EngineFileManager";
 import { EngineFilePage } from "./EngineFilePage";
 import { EngineMetadataPage } from "./EngineMetadataPage";
 import { EngineModelChatPage } from "./EngineModelChatPage";
@@ -79,6 +80,12 @@ export const ENGINE_ROUTES: {
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
 			},
+			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["OWNER", "EDIT", "READ_ONLY"],
+			},
 		],
 	},
 	{
@@ -118,6 +125,12 @@ export const ENGINE_ROUTES: {
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
+			},
+			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["OWNER", "EDIT", "READ_ONLY"],
 			},
 		],
 	},
@@ -165,6 +178,12 @@ export const ENGINE_ROUTES: {
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
 			},
+			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["OWNER"],
+			},
 		],
 	},
 	{
@@ -188,8 +207,8 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER", "READ_ONLY"],
 			},
 			{
-				name: "Files",
-				path: "files",
+				name: "Documents",
+				path: "documents",
 				component: EngineFilePage,
 				restrict: ["EDIT", "OWNER", "READ_ONLY"],
 			},
@@ -209,6 +228,12 @@ export const ENGINE_ROUTES: {
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
+				restrict: ["OWNER"],
+			},
+			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
 				restrict: ["OWNER"],
 			},
 		],
@@ -243,6 +268,12 @@ export const ENGINE_ROUTES: {
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
+				restrict: ["OWNER"],
+			},
+			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
 				restrict: ["OWNER"],
 			},
 		],

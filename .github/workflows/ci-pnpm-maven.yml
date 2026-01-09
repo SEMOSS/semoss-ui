@@ -15,6 +15,7 @@ env:
     MAVEN_CLI_OPTS: '-s ./settings.xml --batch-mode'
     FF_USE_FASTZIP: 'true'
     GPG_PASS_PHRASE: ${{ secrets.GPG_PASS_PHRASE }}
+    MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASS_PHRASE }}
     RELEASE: ${{ vars.RELEASE }}
     MAVEN_REPO_TOKEN: ${{ vars.MAVEN_REPO_TOKEN }}
     MAVEN_REPO_TOKEN_PASS: ${{ vars.MAVEN_REPO_TOKEN_PASS }}
@@ -304,6 +305,27 @@ jobs:
             #       NX_REJECT_UNKNOWN_LOCAL_CACHE: 0
             #   run: npx nx run-many -t build -p @semoss/client @semoss/legacy --verbose
 
+            - name: Install dependencies
+              run: |
+                apt-get --allow-releaseinfo-change update -y
+                apt-get update -y
+                apt-get install -y openjfx
+                apt-get install -y gnupg2
+            - name: Configure GPG (loopback)
+              run: |
+                mkdir -p ~/.gnupg
+                chmod 700 ~/.gnupg
+                echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+                gpgconf --kill gpg-agent || true
+                gpgconf --launch gpg-agent || true
+            - name: Import GPG key
+              run: echo "${{ secrets.GPG_PRIVATE_KEY_2 }}" | gpg --batch --import
+            - name: Refresh keys
+              run: |
+                echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
+                #gpg2 --refresh-key
+                gpg --list-keys
+                
             - name: Deploy with Maven
               shell: bash
               run: |
@@ -311,7 +333,8 @@ jobs:
                   if [[ "$REF_NAME" != 'dev' && "$REF_NAME" != 'main' ]]; then
                     mvn clean install -DfailIfNoTests=false -Dci.version=${{ vars.VERSION }}-SNAPSHOT
                   elif [[ "$REF_NAME" == 'dev' || "$REF_NAME" == 'main' ]]; then
-                    mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${{ vars.VERSION }}-SNAPSHOT
+                    mvn $MAVEN_CLI_OPTS versions:set-property -Dproperty=ci.version -DnewVersion=${{ vars.VERSION }}-SNAPSHOT -DgenerateBackupPoms=false
+                    mvn $MAVEN_CLI_OPTS deploy -P deploy -Dmaven.test.skip=${{ vars.SKIP_TESTS }}
                   fi
               env:
                   GITHUB_REF: ${{ github.ref }}
@@ -484,7 +507,7 @@ jobs:
             
             - name: Maven clean install
               run: |
-                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ vars.VERSION }}-SNAPSHOT
+                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ vars.VERSION }}
                   rm -rf .m2/repository/org/semoss
                    
             # ---------- Install Dependencies and build -----------
@@ -497,11 +520,33 @@ jobs:
             #       apt-get install -y maven
             #       npm install -g pnpm@10.10
             #       pnpm install --ignore-scripts
-                  
+
+            - name: Install dependencies
+              run: |
+                apt-get --allow-releaseinfo-change update -y
+                apt-get update -y
+                apt-get install -y openjfx
+                apt-get install -y gnupg2
+            - name: Configure GPG (loopback)
+              run: |
+                mkdir -p ~/.gnupg
+                chmod 700 ~/.gnupg
+                echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+                gpgconf --kill gpg-agent || true
+                gpgconf --launch gpg-agent || true
+            - name: Import GPG key
+              run: echo "${{ secrets.GPG_PRIVATE_KEY_2 }}" | gpg --batch --import
+            - name: Refresh keys
+              run: |
+                echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
+                #gpg2 --refresh-key
+                gpg --list-keys
+
             - name: Deploy with Maven
               shell: bash
               run: |
-                  mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${{ vars.VERSION }}
+                  mvn $MAVEN_CLI_OPTS versions:set-property -Dproperty=ci.version -DnewVersion=${{ vars.VERSION }} -DgenerateBackupPoms=false
+                  mvn $MAVEN_CLI_OPTS deploy -P deploy -Dmaven.test.skip=${{ vars.SKIP_TESTS }}
               env:
                   GITHUB_REF: ${{ github.ref }}
 

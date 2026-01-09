@@ -10,6 +10,7 @@ import { createMessageStore } from "./utility";
  */
 export class RootMessageStore extends AbstractMessageStore {
 	readonly type = "ROOT";
+	readonly pixelMessageType = null;
 
 	constructor(room: AbstractMessageStore["room"]) {
 		super(room, {
