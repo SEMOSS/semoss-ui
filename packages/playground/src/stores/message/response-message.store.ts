@@ -1,5 +1,9 @@
 import { makeObservable, observable, runInAction } from "mobx";
-import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "@/constants";
+import {
+	MCP_EXECUTION_ASK,
+	MCP_EXECUTION_AUTO,
+	TOOL_ERROR_PROMPT,
+} from "@/constants";
 import type {
 	InputToolExecPixelMessage,
 	McpExecution,
@@ -354,11 +358,7 @@ paramValues=[${JSON.stringify({
 			await this.saveToolExecution(tool, output);
 		} catch {
 			// mark the failure
-			await this.saveToolExecution(
-				tool,
-				`This tool execution failed due to an unexpected error. The AI assistant should inform the user of the tool's failure and ask the user for further instructions. The AI assistant may mention alternative tools or actions to take next, but should not take any further actions or select any further tools without user input.`,
-				"error",
-			);
+			await this.saveToolExecution(tool, TOOL_ERROR_PROMPT, "error");
 		}
 	};
 
