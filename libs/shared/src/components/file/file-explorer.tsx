@@ -45,7 +45,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	mode,
 	ItemComponent = FileExplorerItem,
 }) => {
-	const { actions } = useInsight();
+	const insight = useInsight();
 
 	const [path, setPath] = useState<string>("/");
 	const [search, setSearch] = useState("");
@@ -72,6 +72,12 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		} else {
 			getFilesPixel = `BrowseEngineAssets(filePath=["${path}"], engine=["${mode.engine}"]);`;
 		}
+	} else if (mode.type === "INSIGHT") {
+		if (debouncedSearch) {
+			getFilesPixel = `SearchInsightAssets(filePath=["${searchType === "all" ? "" : path}"], search=["${debouncedSearch}"]);`;
+		} else {
+			getFilesPixel = `BrowseInsightAssets(filePath=["${path}"]);`;
+		}
 	}
 
 	const getFiles = usePixel<FileItem[]>(getFilesPixel, {});
@@ -84,9 +90,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			setIsUploading(true);
 
 			// upload the files
-			console.error("Not implemented yet");
-
-			await actions.upload(files, path);
+			if (mode.type === "APP") {
+				await insight.actions.uploadApp(mode.app, path, files);
+			} else if (mode.type === "ENGINE") {
+				await insight.actions.uploadEngine(mode.engine, path, files);
+			} else if (mode.type === "INSIGHT") {
+				await insight.actions.uploadInsight(path, files);
+			}
 
 			// refresh the files
 			getFiles.refresh();

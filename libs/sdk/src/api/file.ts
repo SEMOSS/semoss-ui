@@ -121,3 +121,4 @@ export const download = async (insightId: string, fileKey: string) => {
 		return arrayBuffer;
 	}
 };
+

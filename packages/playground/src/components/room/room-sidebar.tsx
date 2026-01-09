@@ -123,7 +123,12 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								} else if (component === "room-configuration") {
 									return <RoomConfiguration room={room} />;
 								} else if (component === "room-file-explorer") {
-									return <RoomFileExplorer room={room} />;
+									return (
+										<RoomFileExplorer
+											layout={layoutRef.current}
+											room={room}
+										/>
+									);
 								} else if (component === "room-file-editor") {
 									return (
 										<RoomFileEditor

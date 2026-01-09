@@ -16,6 +16,8 @@ export const FilePdfViewer: React.FC<FilePdfViewerProps> = ({ mode, path }) => {
 		getFilePixel = `GetAppAssetsBase64(filePath=["${path}"], project=["${mode.app}"]);`;
 	} else if (mode.type === "ENGINE") {
 		getFilePixel = `GetEngineAssetsBase64(filePath=["${path}"], engine=["${mode.engine}"]);`;
+	} else if (mode.type === "INSIGHT") {
+		getFilePixel = `GetInsightAssetsBase64(filePath=["${path}"]);`;
 	}
 
 	const getFile = usePixel<string>(getFilePixel, {});

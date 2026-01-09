@@ -67,6 +67,8 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		getFilePixel = `GetAppAssets(filePath=["${path}"], project=["${mode.app}"]);`;
 	} else if (mode.type === "ENGINE") {
 		getFilePixel = `GetEngineAssets(filePath=["${path}"], engine=["${mode.engine}"]);`;
+	}else if (mode.type === "INSIGHT") {
+		getFilePixel = `GetInsightAssets(filePath=["${path}"]);`;
 	}
 
 	const getFile = usePixel<string>(getFilePixel, {});
@@ -152,6 +154,8 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				pixel = `SaveAppAssets(project=["${mode.app}"], filePath=["${path}"], content=["<encode>${content}</encode>"]);`;
 			} else if (mode.type === "ENGINE") {
 				pixel = `SaveEngineAssets(engine=["${mode.engine}"], filePath=["${path}"], content=["<encode>${content}</encode>"]);`;
+			} else if (mode.type === "INSIGHT") {
+				pixel = `SaveInsightAssets(filePath=["${path}"], content=["<encode>${content}</encode>"]);`;
 			}
 
 			if (!pixel) {

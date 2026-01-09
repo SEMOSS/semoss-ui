@@ -48,7 +48,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 	open,
 	onClose = () => null,
 }) => {
-	const { actions } = useInsight();
+	const insight = useInsight();
 	const [data, setData] = useState<
 		| {
 				action: "upload";
@@ -100,9 +100,18 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 					return;
 				}
 
-				console.error("Not implemented yet");
-
-				await actions.upload(data.files, path);
+				// upload the files
+				if (mode.type === "APP") {
+					await insight.actions.uploadApp(mode.app, path, data.files);
+				} else if (mode.type === "ENGINE") {
+					await insight.actions.uploadEngine(
+						mode.engine,
+						path,
+						data.files,
+					);
+				} else if (mode.type === "INSIGHT") {
+					await insight.actions.uploadInsight(path, data.files);
+				}
 			} else if (data.action === "add_file") {
 				if (!data.name.trim()) {
 					toast.error("Please enter a name for the file");
@@ -113,10 +122,12 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 					pixel = `NewAppAssetsFile(project=["${mode.app}"], filePath=["${path}${data.name}"]);`;
 				} else if (mode.type === "ENGINE") {
 					pixel = `NewEngineAssetsFile(engine=["${mode.engine}"], filePath=["${path}${data.name}"]);`;
+				} else if (mode.type === "INSIGHT") {
+					pixel = `NewInsightAssetsFile(filePath=["${path}${data.name}"]);`;
 				}
 
 				// run it
-				await actions.run(pixel);
+				await insight.actions.run(pixel);
 			} else if (data.action === "add_directory") {
 				if (!data.name.trim()) {
 					toast.error("Please enter a name for the directory");
@@ -127,10 +138,12 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 					pixel = `NewAppAssetsDirectory(project=["${mode.app}"], filePath=["${path}${data.name}"]);`;
 				} else if (mode.type === "ENGINE") {
 					pixel = `NewEngineAssetsDirectory(engine=["${mode.engine}"], filePath=["${path}${data.name}"]);`;
+				} else if (mode.type === "INSIGHT") {
+					pixel = `NewInsightAssetsDirectory(filePath=["${path}${data.name}"]);`;
 				}
 
 				// run it
-				await actions.run(pixel);
+				await insight.actions.run(pixel);
 			} else {
 				throw new Error("Unknown action");
 			}

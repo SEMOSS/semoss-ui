@@ -175,9 +175,9 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 								{
 									name: "Delete",
 									action: async (item) => {
-										const pixel = `DeleteEngineAssets(engine=["${engine}"], filePath=["${item.path}"]);`;
-
-										await insight.actions.run(pixel);
+										await insight.actions.run(
+											`DeleteEngineAssets(engine=["${engine}"], filePath=["${item.path}"]);`,
+										);
 									},
 								},
 							]}

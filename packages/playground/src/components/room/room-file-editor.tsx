@@ -20,8 +20,7 @@ export const RoomFileEditor: React.FC<RoomFileEditorProps> = observer(
 		return (
 			<FileEditor
 				mode={{
-					type: "APP",
-					app: "059ad2f3-fae4-4c56-8b1e-a1933d540846",
+					type: "INSIGHT",
 				}}
 				path={config.path}
 				onChange={(_content, isModified) => {

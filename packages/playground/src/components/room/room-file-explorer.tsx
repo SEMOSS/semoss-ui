@@ -19,14 +19,11 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 	({ layout, room }) => {
 		const insight = useInsight();
 
-		const mode = {
-			type: "APP",
-			app: "059ad2f3-fae4-4c56-8b1e-a1933d540846",
-		} as const;
-
 		return (
 			<FileExplorer
-				mode={mode}
+				mode={{
+					type: "INSIGHT",
+				}}
 				ItemComponent={({ item, onSelect, ...otherProps }) => {
 					return (
 						<FileExplorerItem
@@ -103,15 +100,9 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 								{
 									name: "Delete",
 									action: async (item) => {
-										let pixel = "";
-
-										if (mode.type === "APP") {
-											pixel = `DeleteAppAssets(project=["${mode.app}"], filePath=["${item.path}"]);`;
-										} else if (mode.type === "ENGINE") {
-											// pixel = `DeleteEngineAssets(engine=["${mode.engine}"], filePath=["${item.path}"]);`;
-										}
-
-										await insight.actions.run(pixel);
+										await insight.actions.run(
+											`DeleteInsightAssets(filePath=["${item.path}"]);`,
+										);
 									},
 								},
 							]}

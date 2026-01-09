@@ -9,6 +9,9 @@ export type FileMode =
 	| {
 			type: "ENGINE";
 			engine: string;
+	  }
+	| {
+			type: "INSIGHT";
 	  };
 
 /**

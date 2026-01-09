@@ -41,7 +41,7 @@
 }
 
 .flexlayout__theme_smss .flexlayout__tabset_tab_divider {
-    @apply w-2
+    @apply w-2;
 }
 
  /** Popover **/
@@ -50,7 +50,7 @@
 }
 
 .flexlayout__theme_smss .flexlayout__popup_menu_item {
-    @apply h-8 px-2 py-3
+    @apply h-8 px-2 py-3;
 }
 
 .flexlayout__theme_smss .flexlayout__popup_menu_item:hover {
