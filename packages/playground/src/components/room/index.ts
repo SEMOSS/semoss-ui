@@ -1,6 +1,7 @@
 export * from "./room";
 export * from "./room-configuration";
 export * from "./room-configuration-button";
+export * from "./room-file-explorer-button";
 export * from "./room-input";
 export * from "./room-options";
 export * from "./room-sidebar";

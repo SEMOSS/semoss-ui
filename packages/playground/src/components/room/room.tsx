@@ -15,6 +15,7 @@ import {
 	PlanMessage,
 	ResponseMessage,
 	RoomConfigurationButton,
+	RoomFileExplorerButton,
 	RoomInput,
 } from "@/components";
 import { LOADING_MESSAGES } from "@/constants";
@@ -231,7 +232,12 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 					isDisabled={isDisabled}
 					minRows={3}
 					maxRows={8}
-					configuration={<RoomConfigurationButton room={room} />}
+					configuration={
+						<>
+							<RoomFileExplorerButton room={room} />
+							<RoomConfigurationButton room={room} />
+						</>
+					}
 					onPrompt={handlePrompt}
 					clearInputOnPrompt
 				/>

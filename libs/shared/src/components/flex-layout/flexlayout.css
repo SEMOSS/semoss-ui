@@ -57,3 +57,20 @@
 .flexlayout__tabset_tab_divider {
     width: var(--spacing-2, 8px);
 }
+
+.flexlayout__popup_menu_container {
+    border-radius: var(--border-radius-rounded-md, 8px);
+    border: var(--border-width-border, 1px) solid var(--base-input, #E5E5E5);
+
+     /* shadow/xs */
+    box-shadow: var(--shadow-xs-offset-x, 0) var(--shadow-xs-offset-y, 1px) var(--shadow-xs-blur-radius, 2px) var(--shadow-xs-spread-radius, 0) var(--shadow-xs-color, rgba(0, 0, 0, 0.05));
+}
+
+.flexlayout__popup_menu_item {
+    height: var(--height-h-8, 32px);
+    padding: var(--spacing-2, 8px) var(--spacing-3, 12px);
+}
+
+.flexlayout__popup_menu_item:hover {
+    background: var(--base-secondary, #F5F5F5);
+}

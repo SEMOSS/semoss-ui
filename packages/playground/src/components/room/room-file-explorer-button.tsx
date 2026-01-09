@@ -1,4 +1,4 @@
-import { Settings2Icon } from "lucide-react";
+import { FolderTreeIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import {
 	Button,
@@ -8,14 +8,14 @@ import {
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 
-const ROOM_CONFIGURATION_ID = "CONFIGURATION";
+const ROOM_FILE_EXPLORER_ID = "FILE_EXPLORER";
 
-interface RoomConfigurationButtonProps {
+interface RoomFileExplorerButtonProps {
 	/** Room  */
 	room: RoomStore;
 }
 
-export const RoomConfigurationButton: React.FC<RoomConfigurationButtonProps> =
+export const RoomFileExplorerButton: React.FC<RoomFileExplorerButtonProps> =
 	observer(({ room }) => {
 		// this will render the component whenever the sidebar model changes
 		room.sidebar.counter;
@@ -23,7 +23,7 @@ export const RoomConfigurationButton: React.FC<RoomConfigurationButtonProps> =
 		// track if it is active
 		const isActive =
 			room.sidebar.isOpen &&
-			!!room.sidebar.model.getNodeById(ROOM_CONFIGURATION_ID);
+			!!room.sidebar.model.getNodeById(ROOM_FILE_EXPLORER_ID);
 
 		return (
 			<Tooltip>
@@ -33,31 +33,31 @@ export const RoomConfigurationButton: React.FC<RoomConfigurationButtonProps> =
 						className={`${isActive ? "text-primary" : ""}`}
 						variant={"ghost"}
 						type="button"
-						aria-label="Open Configuration Menu"
+						aria-label="Open File Explorer"
 						disabled={room.isLoading}
 						onClick={() => {
 							if (
 								room.isSidebarNodeSelected(
-									ROOM_CONFIGURATION_ID,
+									ROOM_FILE_EXPLORER_ID,
 								)
 							) {
-								room.removeSidebarNode(ROOM_CONFIGURATION_ID);
+								room.removeSidebarNode(ROOM_FILE_EXPLORER_ID);
 							} else {
 								// this will select if there or open if not
-								room.addSidebarNode(ROOM_CONFIGURATION_ID, {
+								room.addSidebarNode(ROOM_FILE_EXPLORER_ID, {
 									type: "tab",
-									name: "Configuration",
-									component: "room-configuration",
+									name: "File Explorer",
+									component: "room-file-explorer",
 									config: {},
 									enableClose: true,
 								});
 							}
 						}}
 					>
-						<Settings2Icon />
+						<FolderTreeIcon />
 					</Button>
 				</TooltipTrigger>
-				<TooltipContent>Open Configuration Menu</TooltipContent>
+				<TooltipContent>Open File Explorer</TooltipContent>
 			</Tooltip>
 		);
 	});

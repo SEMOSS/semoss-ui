@@ -1,49 +1,38 @@
-import { FileIcon, FolderIcon } from "lucide-react";
+import { Ellipsis, FileIcon, FolderIcon } from "lucide-react";
+import {
+	Button,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuTrigger,
+} from "@semoss/ui/next";
+import type { FileItem } from "./file.types";
+import { FileExplorerMenuItem } from "./file-explorer-menu-item";
 
-interface FileExplorerItemProps
-	extends Omit<React.HTMLAttributes<HTMLSpanElement>, "onSelect"> {
+interface FileExplorerItemProps {
 	/** Item */
-	item: {
-		/**
-		 * Name of the file
-		 */
-		name: string;
-
-		/**
-		 * Path of the file
-		 */
-		path: string;
-
-		/**
-		 * Track if it is a directory
-		 */
-		type?: "directory";
-
-		/**
-		 * Last modified date
-		 */
-		lastModified?: string;
-	};
-
-	/**
-	 * Actions to show with the item
-	 */
-	actions?: React.ReactNode;
+	item: FileItem;
 
 	/**
 	 * Refresh callback to refresh the items
 	 */
-	refresh?: () => void;
+	refresh: () => void;
 
 	/** Callback that is triggered when selected */
-	onSelect?: (item: FileExplorerItemProps["item"]) => void;
+	onSelect?: () => void;
+
+	/** Actions */
+	actions?: ({
+		name: string;
+		action: (item: FileItem) => Promise<void>;
+	} | null)[];
 }
 
 export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	item,
-	actions,
 	refresh,
 	onSelect = () => null,
+	actions = [],
 	...props
 }) => {
 	return (
@@ -52,10 +41,10 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			role="option"
 			className="flex w-full cursor-default flex-row items-center overflow-hidden rounded-sm px-2 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50"
 			tabIndex={0}
-			onClick={() => onSelect(item)}
+			onClick={() => onSelect()}
 			onKeyDown={(e) => {
 				if (e.key === "Enter") {
-					onSelect(item);
+					onSelect();
 				}
 			}}
 			{...props}
@@ -71,7 +60,36 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 					{item.lastModified}
 				</div>
 			</div>
-			{actions}
+			{actions.length > 0 && (
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="ghost"
+							onClick={(e) => e.stopPropagation()}
+						>
+							<Ellipsis />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end">
+						<DropdownMenuGroup>
+							{actions.map((a) => {
+								if (!a) {
+									return null;
+								}
+
+								return (
+									<FileExplorerMenuItem
+										key={a.name}
+										item={item}
+										name={a.name}
+										action={a.action}
+									/>
+								);
+							})}
+						</DropdownMenuGroup>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			)}
 		</span>
 	);
 };

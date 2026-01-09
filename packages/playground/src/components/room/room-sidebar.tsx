@@ -1,4 +1,6 @@
 import {
+	FileIcon,
+	FolderTreeIcon,
 	HammerIcon,
 	MonitorXIcon,
 	Settings2Icon,
@@ -17,6 +19,8 @@ import {
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 import { RoomConfiguration } from "./room-configuration";
+import { RoomFileEditor } from "./room-file-editor";
+import { RoomFileExplorer } from "./room-file-explorer";
 import { RoomTool } from "./room-tool";
 
 interface RoomSidebarProps {
@@ -99,6 +103,14 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 									renderValues.leading = (
 										<Settings2Icon className="size-4" />
 									);
+								} else if (component === "room-file-explorer") {
+									renderValues.leading = (
+										<FolderTreeIcon className="size-4" />
+									);
+								} else if (component === "room-file-editor") {
+									renderValues.leading = (
+										<FileIcon className="size-4" />
+									);
 								}
 							}}
 							factory={(node) => {
@@ -108,6 +120,15 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 									return <RoomTool node={node} room={room} />;
 								} else if (component === "room-configuration") {
 									return <RoomConfiguration room={room} />;
+								} else if (component === "room-file-explorer") {
+									return <RoomFileExplorer room={room} />;
+								} else if (component === "room-file-editor") {
+									return (
+										<RoomFileEditor
+											node={node}
+											room={room}
+										/>
+									);
 								}
 
 								return null;
