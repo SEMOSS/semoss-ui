@@ -44,4 +44,5 @@ export interface MCPToolResponse {
 	name: string;
 	response: string;
 	roomId: string;
+	tool_status: "success" | "error" | "cancelled";
 }

@@ -124,6 +124,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 					tool.id,
 					tool.name,
 					tool.response,
+					tool.tool_status,
 				);
 			} catch {
 				// noop
