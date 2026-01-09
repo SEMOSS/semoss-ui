@@ -37,7 +37,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				room.plan?.step?.details.stepType !== "tool_call" ||
 				room.plan?.step?.details.tool_name !== tool.name ||
 				room.plan?.step?.details._meta.map.SMSS_PROJECT_ID !==
-					tool._meta.map.SMSS_PROJECT_ID;
+					tool._meta.SMSS_PROJECT_ID;
 		}
 
 		let icon = null;
@@ -73,7 +73,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 								name: tool.title,
 								component: "room-tool",
 								config: {
-									app: tool._meta.map.SMSS_PROJECT_ID,
+									app: tool._meta.SMSS_PROJECT_ID,
 									tool: {
 										message: message.id,
 										id: tool.id,
@@ -111,7 +111,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 									? "Tool execution cancelled"
 									: tool.response
 										? "Completed"
-										: tool._meta.map.SMSS_MCP_EXECUTION ===
+										: tool._meta.SMSS_MCP_EXECUTION ===
 												"ask"
 											? "Click to open"
 											: "This tool is set to auto-execute"}
