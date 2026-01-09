@@ -502,8 +502,7 @@ stepNumber=["${step.step_number}"]
 		}
 
 		if (
-			step.details._meta.map.SMSS_PROJECT_ID !==
-				tool._meta.SMSS_PROJECT_ID ||
+			step.details._meta.SMSS_PROJECT_ID !== tool._meta.SMSS_PROJECT_ID ||
 			step.details.tool_name !== tool.name
 		) {
 			return;

@@ -36,7 +36,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			isDisabled =
 				room.plan?.step?.details.stepType !== "tool_call" ||
 				room.plan?.step?.details.tool_name !== tool.name ||
-				room.plan?.step?.details._meta.map.SMSS_PROJECT_ID !==
+				room.plan?.step?.details._meta.SMSS_PROJECT_ID !==
 					tool._meta.SMSS_PROJECT_ID;
 		}
 

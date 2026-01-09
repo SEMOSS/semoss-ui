@@ -208,10 +208,8 @@ export interface PlanStep {
 				rationaleForStep: string;
 				title: string;
 				_meta: {
-					map: {
-						SMSS_PROJECT_NAME: string;
-						SMSS_PROJECT_ID: string;
-					};
+					SMSS_PROJECT_NAME: string;
+					SMSS_PROJECT_ID: string;
 				};
 		  }
 		| {
