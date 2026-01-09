@@ -16,6 +16,7 @@ import {
 import { runPixel } from "@semoss/sdk/react";
 import { LoadingScreen, styled, useNotification } from "@semoss/ui";
 import { languageConfigs } from "./FileEditorLanguageConfig";
+import { FileViewer } from "./FileViewer";
 
 const Editor = lazy(() => import("@monaco-editor/react"));
 
@@ -119,6 +120,33 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 		useEffect(() => {
 			onChange(content, isModified);
 		}, [isModified]);
+
+		const fileType = useMemo<"pdf" | "image" | "editor">(() => {
+			const ext = path.split(".").pop()?.toLowerCase();
+
+			// PDF files
+			if (ext === "pdf") {
+				return "pdf";
+			}
+
+			// Image files
+			if (
+				[
+					"jpg",
+					"jpeg",
+					"png",
+					"gif",
+					"svg",
+					"webp",
+					"bmp",
+					"ico",
+				].includes(ext || "")
+			) {
+				return "image";
+			}
+			// Default to editor
+			return "editor";
+		}, [path]);
 
 		const fileLanguage = useMemo<
 			| "typescript"
@@ -504,6 +532,22 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 			setupSyntax(monaco, fileLanguage);
 		};
 
+		// Render file viewer for PDF and images
+		if (fileType === "pdf" || fileType === "image") {
+			return (
+				<StyledContainer>
+					<FileViewer
+						type={type}
+						space={space}
+						path={path}
+						insightId={insightId}
+						fileType={fileType}
+					/>
+				</StyledContainer>
+			);
+		}
+
+		// Default to Monaco editor for code files
 		return (
 			<StyledContainer>
 				<Suspense
