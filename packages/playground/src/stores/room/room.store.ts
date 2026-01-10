@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { download, runPixel, upload } from "@semoss/sdk/react";
+import { runPixel, uploadInsight } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import {
@@ -17,6 +17,11 @@ interface RoomStoreInterface {
 	 * ID of the room
 	 */
 	roomId: string;
+
+	/**
+	 * insightId of the room
+	 */
+	insightId: string;
 
 	/**
 	 *  Track if the room is initialized
@@ -118,9 +123,9 @@ interface RoomStoreInterface {
  * Manage the room
  */
 export class RoomStore {
-	private _insightID = "new";
 	private _store: RoomStoreInterface = {
 		roomId: "",
+		insightId: "new",
 		isInitialized: false,
 		isLoading: false,
 		mode: "chat",
@@ -151,9 +156,10 @@ export class RoomStore {
 		},
 	};
 
-	constructor(roomId: string) {
-		// register the roomId and actions
+	constructor(roomId: string, insightId: string) {
+		// register the roomId, insightId, and actions
 		this._store.roomId = roomId;
+		this._store.insightId = insightId;
 
 		// make it observable
 		makeAutoObservable(this);
@@ -531,42 +537,6 @@ export class RoomStore {
 	};
 
 	/**
-	 * Download the history of the room as a PDF
-	 */
-	downloadHistory = async (): Promise<void> => {
-		try {
-			// turn on the loading screen
-			this.setIsLoading(true);
-
-			// convert the content to html
-			const html = this.history
-				.map((message) => {
-					if (message.type === "RESPONSE") {
-						return `<div>Response: ${message.text}</div>`;
-					}
-
-					if (message.type === "INPUT") {
-						return `<div>Input: ${message.text}</div>`;
-					}
-
-					return "";
-				})
-				.join("\n");
-
-			// wait for the pixel to run
-			const { pixelReturn } = await this.runRoomPixel<[string]>(
-				`ToPdf( html=["<encode>${html}</encode>"]);`,
-			);
-
-			// get the response
-			await this.downloadRoomFiles(pixelReturn[0].output);
-		} finally {
-			// turn off the loading screen
-			this.setIsLoading(false);
-		}
-	};
-
-	/**
 	 * Sidebar
 	 */
 	/**
@@ -709,7 +679,8 @@ export class RoomStore {
 		// upload the files
 		let uploaded = [];
 		if (files.length > 0) {
-			uploaded = await this.uploadRoomFiles(files, "");
+			uploaded = (await uploadInsight(this._store.insightId, "", files))
+				.data;
 		}
 
 		// create the input message
@@ -806,7 +777,7 @@ export class RoomStore {
 			}
 
 			// get the response
-			const response = await runPixel<O>(pixel, this._insightID);
+			const response = await runPixel<O>(pixel, this._store.insightId);
 
 			if (response.errors.length > 0) {
 				throw new Error(response.errors.join(""));
@@ -814,7 +785,6 @@ export class RoomStore {
 
 			// store the new insight id
 			runInAction(() => {
-				this._insightID = response.insightId;
 				this._store.error = null;
 			});
 			return response;
@@ -828,23 +798,5 @@ export class RoomStore {
 				this.setIsLoading(false);
 			}
 		}
-	};
-
-	/**
-	 * Download a file from the room
-	 * @param fileKey - key
-	 */
-	downloadRoomFiles = async (fileKey: string) => {
-		// get the response
-		await download(this._insightID, fileKey);
-	};
-
-	/**
-	 * Upload a file to the room
-	 * @param fileKey - key
-	 */
-	uploadRoomFiles = async (files: File[], path: string = "") => {
-		// get the response
-		return await upload(files, this._insightID, "", path);
 	};
 }

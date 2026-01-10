@@ -80,7 +80,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		}
 	}
 
-	const getFiles = usePixel<FileItem[]>(getFilesPixel, {});
+	const getFiles = usePixel<FileItem[]>(getFilesPixel, {}, insight.insightId);
 
 	/**
 	 * Upload a file to the path
@@ -275,17 +275,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 			<ScrollArea className="[&>div>div]:!block h-full min-h-0 w-full min-w-0 flex-1">
 				{(getFiles.status === "LOADING" || isUploading) && (
-					<div className="flex items-center justify-center py-4">
+					<div className="flex items-center justify-center py-16">
 						<Spinner />
 					</div>
 				)}
-				{getFiles.status === "SUCCESS" &&
-					!isUploading &&
-					getFiles.data.length === 0 && (
-						<div className="flex items-center justify-center py-4">
-							<Muted>Not found</Muted>
-						</div>
-					)}
+
 				{getFiles.status === "ERROR" && (
 					<div className="flex items-center justify-center py-4">
 						<Muted className="text-destructive">
@@ -295,7 +289,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 				)}
 
 				{getFiles.status === "SUCCESS" &&
-					getFiles.data.length > 0 &&
 					!isUploading &&
 					getFiles.data.map((i) => {
 						return (

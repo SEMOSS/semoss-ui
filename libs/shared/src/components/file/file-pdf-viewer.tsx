@@ -1,4 +1,4 @@
-import { usePixel } from "@semoss/sdk/react";
+import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Muted, Spinner } from "@semoss/ui/next";
 import type { FileMode } from "./file.types";
 
@@ -11,6 +11,8 @@ interface FilePdfViewerProps {
 }
 
 export const FilePdfViewer: React.FC<FilePdfViewerProps> = ({ mode, path }) => {
+	const insight = useInsight();
+
 	let getFilePixel = "";
 	if (mode.type === "APP") {
 		getFilePixel = `GetAppAssetsBase64(filePath=["${path}"], project=["${mode.app}"]);`;
@@ -20,7 +22,7 @@ export const FilePdfViewer: React.FC<FilePdfViewerProps> = ({ mode, path }) => {
 		getFilePixel = `GetInsightAssetsBase64(filePath=["${path}"]);`;
 	}
 
-	const getFile = usePixel<string>(getFilePixel, {});
+	const getFile = usePixel<string>(getFilePixel, {}, insight.insightId);
 
 	return (
 		<div className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1">

@@ -56,7 +56,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	language,
 	onChange = () => null,
 }) => {
-	const { actions } = useInsight();
+	const insight = useInsight();
 	const [isLoading, setIsLoading] = useState(false);
 
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
@@ -71,7 +71,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		getFilePixel = `GetInsightAssets(filePath=["${path}"]);`;
 	}
 
-	const getFile = usePixel<string>(getFilePixel, {});
+	const getFile = usePixel<string>(getFilePixel, {}, insight.insightId);
 
 	/**
 	 * Handler called when the editor is mounted
@@ -163,7 +163,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 			}
 
 			// save it
-			await actions.run(pixel);
+			await insight.actions.run(pixel);
 
 			// refresh after save
 			getFile.refresh();

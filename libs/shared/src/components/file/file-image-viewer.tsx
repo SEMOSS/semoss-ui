@@ -1,4 +1,4 @@
-import { usePixel } from "@semoss/sdk/react";
+import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Muted, Spinner } from "@semoss/ui/next";
 import type { FileMode } from "./file.types";
 
@@ -27,6 +27,7 @@ export const FileImageViewer: React.FC<FileImageViewerProps> = ({
 	mode,
 	path,
 }) => {
+	const insight = useInsight();
 	const ext = path.split(".").pop()?.toLowerCase() || "";
 
 	let getFilePixel = "";
@@ -38,7 +39,7 @@ export const FileImageViewer: React.FC<FileImageViewerProps> = ({
 		getFilePixel = `GetInsightAssetsBase64(filePath=["${path}"]);`;
 	}
 
-	const getFile = usePixel<string>(getFilePixel, {});
+	const getFile = usePixel<string>(getFilePixel, {}, insight.insightId);
 
 	return (
 		<div className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1">
