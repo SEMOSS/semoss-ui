@@ -60,7 +60,7 @@ export const Room: React.FC<RoomProps> = observer(({ roomId }) => {
 			}
 		};
 
-        // only load the room if the insight is initialized
+		// only load the room if the insight is initialized
 		if (insight.isInitialized) {
 			loadRoom();
 		}

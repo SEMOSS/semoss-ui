@@ -644,7 +644,7 @@ export class RoomStore {
 		}
 	};
 
-	/**f
+	/**
 	 * Helpers
 	 */
 	/**
