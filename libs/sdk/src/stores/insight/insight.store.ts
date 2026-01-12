@@ -318,6 +318,7 @@ export class InsightStore {
 					theme: {
 						playground: {},
 					},
+					systemDate: "",
 				},
 			};
 
@@ -617,7 +618,10 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 * Send a MCP tool response to the playground
 		 * @param mcpToolResponse - response to send
 		 */
-		sendMCPResponseToPlayground: (mcpToolResponse: string) => {
+		sendMCPResponseToPlayground: (
+			mcpToolResponse: string,
+			mcpToolStatus: MCPToolResponse["tool_status"] = "success",
+		) => {
 			if (!Env.TOOL) {
 				throw new Error("No MCP tool execution context found");
 			} else if (
@@ -639,6 +643,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						name: Env.TOOL.name,
 						response: mcpToolResponse,
 						roomId: Env.TOOL.roomId,
+						tool_status: mcpToolStatus,
 					} satisfies MCPToolResponse,
 				},
 				"*",

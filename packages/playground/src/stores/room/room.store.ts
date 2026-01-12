@@ -720,12 +720,14 @@ export class RoomStore {
 	 * @param toolId - id of the tool
 	 * @param toolName - name of the tool
 	 * @param toolResponse - response from the tool
+	 * @param toolStatus - status of the tool execution
 	 */
 	processTool = async (
 		messageId: string,
 		toolId: string,
 		toolName: string,
 		toolResponse: string,
+		toolStatus: "success" | "error" | "cancelled" = "success",
 	): Promise<void> => {
 		try {
 			const message = this.getMessage(messageId);
@@ -743,7 +745,7 @@ export class RoomStore {
 				await this.plan?.saveToolExecution(message, tool, toolResponse);
 			} else {
 				// save the response with the tool
-				await message.saveToolExecution(tool, toolResponse);
+				await message.saveToolExecution(tool, toolResponse, toolStatus);
 			}
 		} catch (e) {
 			console.error(e);

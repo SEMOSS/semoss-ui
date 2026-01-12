@@ -123,6 +123,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tool.id,
 					tool.name,
 					tool.response,
+					tool.tool_status,
 				);
 			} catch {
 				// noop
