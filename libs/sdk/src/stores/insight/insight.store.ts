@@ -656,7 +656,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			);
 
 			const { output, operationType } = pixelReturn[0];
-			if (!output || !operationType.indexOf("MCP_TOOL_EXECUTION")) {
+			if (!output || operationType.indexOf("MCP_TOOL_EXECUTION") < 0) {
 				throw new Error("Error running MCP tool");
 			}
 
