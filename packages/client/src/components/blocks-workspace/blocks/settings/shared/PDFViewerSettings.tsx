@@ -239,6 +239,13 @@ export const PDFViewerSettings = observer(
 				refreshFiles();
 			}
 		}, [uploadedRefresh]);
+		
+		useEffect(() => {
+			setSelectedPdfPath(data.selectedPdf || "");
+			if (!data.selectedPdf){
+				setUploadFiles(null);
+			}
+		}, [data.selectedPdf]);
 
 		useEffect(() => {
 			// Fetch Engine Ids

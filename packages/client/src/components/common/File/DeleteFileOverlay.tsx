@@ -36,6 +36,7 @@ export const DeleteFileOverlay = (props: DeleteFileOverlayProps) => {
 				await monolithStore.runQuery(
 					`DeleteAsset(filePath=["${fileDeletePath}"], space=["${space}"]);`,
 				);
+				configStore.setReloadFiles("Delete");
 			} else if (type === "engine") {
 				await monolithStore.runQuery(
 					`DeleteEngineAssets(filePath=["${fileDeletePath}"], engine=["${space}"]);`,
