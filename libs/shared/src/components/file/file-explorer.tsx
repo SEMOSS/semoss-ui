@@ -36,6 +36,11 @@ interface FileExplorerProps {
 	mode: FileMode;
 
 	/**
+	 * Actions at the end of the header
+	 */
+	headerActions?: React.ReactNode;
+
+	/**
 	 * Override for the file item component
 	 */
 	ItemComponent?: typeof FileExplorerItem;
@@ -43,6 +48,7 @@ interface FileExplorerProps {
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({
 	mode,
+	headerActions = null,
 	ItemComponent = FileExplorerItem,
 }) => {
 	const insight = useInsight();
@@ -162,7 +168,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							</TooltipTrigger>
 							<TooltipContent>Refresh {path}</TooltipContent>
 						</Tooltip>
-
 						<DropdownMenu>
 							<DropdownMenuTrigger
 								className="flex flex-1 items-center gap-1.5"
@@ -241,6 +246,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							</TooltipTrigger>
 							<TooltipContent>Create at {path}</TooltipContent>
 						</Tooltip>
+						{headerActions}
 					</div>
 				</div>
 				{showSearch && (

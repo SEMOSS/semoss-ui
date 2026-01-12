@@ -1,22 +1,29 @@
-import { PencilIcon } from "lucide-react";
+import { CloudUploadIcon, HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useInsight } from "@semoss/sdk/react";
 import { FileExplorer, FileExplorerItem, FlexLayout } from "@semoss/shared";
+import {
+	Button,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { MCP } from "@/constants";
 
-interface EngineFileExplorerProps {
+interface AppFileExplorerProps {
 	/** Node */
 	layout: FlexLayout.Layout | null;
 
 	/** Node */
 	node: FlexLayout.TabNode;
 
-	/** Engine */
-	engine: string;
+	/** App */
+	app: string;
 }
 
-export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
-	({ layout, node, engine }) => {
+export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
+	({ layout, node, app }) => {
 		const insight = useInsight();
 
 		/**
@@ -64,17 +71,91 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 			);
 		};
 
+		/**
+		 * Add the editor tab
+		 */
+		const addMCPEditorTab = async (itemPath: string) => {
+			const name = `Tool Editor ${`- ${itemPath.split("/").pop()}` || ""}`;
+
+			// add the editor
+			const { pixelReturn } = await insight.actions.run<[string]>(
+				`GetAppAssets(filePath=["${itemPath}"], project=["${app}"]);`,
+			);
+
+			let json = {};
+			try {
+				json = JSON.parse(pixelReturn[0].output);
+			} catch (e) {
+				console.error(`Failed to parse MCP JSON: ${e}`);
+			}
+
+			addNode(`APP_MCP_EDITOR--${itemPath}`, {
+				type: "tab",
+				name: name,
+				component: "mcpJsonEditor",
+				config: {
+					data: {
+						initialData: json,
+						onSave: async (data, path) => {
+							try {
+								await insight.actions.run(
+									`SaveAsset(fileName=["${path}"], content=["<encode>${JSON.stringify(data, null, 2)}</encode>"], space=["${app}"]);CommitAsset(filePath=["${path}"], comment=["Save from editor"], space=["${app}"])`,
+								);
+								toast.success("Tool saved successfully");
+							} catch (e) {
+								toast.error(`Failed to save Tool: ${e}`);
+								return;
+							}
+						},
+						name: name,
+						path: itemPath,
+					},
+				},
+				enableClose: true,
+			});
+		};
+
 		return (
 			<FileExplorer
 				mode={{
-					type: "ENGINE",
-					engine: engine,
+					type: "APP",
+					app: app,
 				}}
-				ItemComponent={({ item, onSelect, ...otherProps }) => {
+				headerActions={
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								onClick={async () => {
+									try {
+										// Seperate calls so we reload successfully compiled classes before publishing
+										await insight.actions.run(
+											`ReloadInsightClasses(project='${app}', release=false);`,
+										);
+
+										await insight.actions.run(
+											`PublishProject(project='${app}', release=true);`,
+										);
+									} catch (e) {
+										toast.error(`Error: ${e}`);
+									}
+								}}
+							>
+								<CloudUploadIcon className="size-3" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							Compile and publish the app
+						</TooltipContent>
+					</Tooltip>
+				}
+				ItemComponent={({ item, refresh, onSelect, ...otherProps }) => {
 					return (
 						<FileExplorerItem
 							draggable={true}
 							item={item}
+							refresh={refresh}
 							onSelect={() => {
 								// trigger the default
 								onSelect();
@@ -88,7 +169,7 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 								addNode(`ENGINE_FILE--${item.path}`, {
 									type: "tab",
 									name: item.name,
-									component: "engine-file-editor",
+									component: "app-file-editor",
 									config: {
 										name: item.name,
 										path: item.path,
@@ -108,7 +189,7 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 									{
 										type: "tab",
 										name: item.name,
-										component: "engine-file-editor",
+										component: "app-file-editor",
 										config: {
 											name: item.name,
 											path: item.path,
@@ -118,6 +199,32 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 								);
 							}}
 							actions={[
+								MCP.DRIVER_PATHS.some((f) =>
+									item.path.startsWith(f),
+								) && item.type !== "directory"
+									? {
+											name: "Create",
+											icon: <HammerIcon />,
+											tooltip: "Create Toolbox",
+											action: async () => {
+												try {
+													await insight.actions.run(
+														`MakePythonMCP(project=["${app}"]);`,
+													);
+
+													// refresh the explorer
+													refresh();
+
+													// add it
+													addMCPEditorTab(
+														"/mcp/py_mcp.json",
+													);
+												} catch (e) {
+													toast.error(e);
+												}
+											},
+										}
+									: null,
 								MCP.JSON_PATHS.some((f) =>
 									item.path.startsWith(f),
 								) && item.type !== "directory"
@@ -126,21 +233,7 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 											icon: <PencilIcon />,
 											tooltip: "Edit Toolbox",
 											action: async (item) => {
-												// this will select if there or open if not
-												addNode(
-													`ENGINE_MCP_EDITOR--${item.path}`,
-													{
-														type: "tab",
-														name: `Toolbox Editor - ${item.name}`,
-														component:
-															"engine-mcp-editor",
-														config: {
-															name: item.name,
-															path: item.path,
-														},
-														enableClose: true,
-													},
-												);
+												addMCPEditorTab(item.path);
 											},
 										}
 									: null,
@@ -176,8 +269,10 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 									name: "Delete",
 									action: async (item) => {
 										await insight.actions.run(
-											`DeleteEngineAssets(engine=["${engine}"], filePath=["${item.path}"]);`,
+											`DeleteAppAssets(project=["${app}"], filePath=["${item.path}"]);`,
 										);
+
+										refresh();
 									},
 								},
 							]}

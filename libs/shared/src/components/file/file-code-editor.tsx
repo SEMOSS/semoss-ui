@@ -3,7 +3,7 @@ import type * as monaco from "monaco-editor";
 import { lazy, Suspense, useRef, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
-import { MONACO_CONFIG } from "./file.constants";
+import { MONACO_CONFIG, MONACO_EXT_LANGUAGE_MAPPING } from "./file.constants";
 import type { FileMode } from "./file.types";
 
 const MonacoEditor = lazy(() => import("@monaco-editor/react"));
@@ -14,33 +14,6 @@ interface FileCodeEditorProps {
 
 	/** Path to the file */
 	path: string;
-
-	/** Language of the file */
-	language?:
-		| "text"
-		| "txt"
-		| "jsx"
-		| "tsx"
-		| "javascript"
-		| "js"
-		| "typescript"
-		| "ts"
-		| "html"
-		| "css"
-		| "python"
-		| "py"
-		| "json"
-		| "java"
-		| "markdown"
-		| "md"
-		| "yaml"
-		| "yml"
-		| "xml"
-		| "sh"
-		| "bash"
-		| "csv"
-		| "tsv"
-		| null;
 
 	/**
 	 * Calback when the file is changed
@@ -53,7 +26,6 @@ interface FileCodeEditorProps {
 export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	mode,
 	path,
-	language,
 	onChange = () => null,
 }) => {
 	const insight = useInsight();
@@ -67,11 +39,15 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		getFilePixel = `GetAppAssets(filePath=["${path}"], project=["${mode.app}"]);`;
 	} else if (mode.type === "ENGINE") {
 		getFilePixel = `GetEngineAssets(filePath=["${path}"], engine=["${mode.engine}"]);`;
-	}else if (mode.type === "INSIGHT") {
+	} else if (mode.type === "INSIGHT") {
 		getFilePixel = `GetInsightAssets(filePath=["${path}"]);`;
 	}
 
 	const getFile = usePixel<string>(getFilePixel, {}, insight.insightId);
+
+	// get the language
+	const ext = path.split(".").pop()?.toLowerCase() || "";
+	const language = MONACO_EXT_LANGUAGE_MAPPING[ext] || "plaintext";
 
 	/**
 	 * Handler called when the editor is mounted
@@ -82,6 +58,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 		// update the theme
 		const config = MONACO_CONFIG[language];
+
 		if (config) {
 			// set the language tokens
 			if (config.monarchTokensProvider) {
@@ -101,6 +78,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 			// set the theme
 			if (config.theme) {
+				console.log("setting theme for", language);
 				monaco.editor.defineTheme(
 					`${language}-smss-theme`,
 					config.theme,
@@ -112,6 +90,94 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		} else {
 			monaco.editor.setTheme("light");
 		}
+
+		// editor.addAction({
+		// 	contextMenuGroupId: "1_modification",
+		// 	contextMenuOrder: 1,
+		// 	id: "prompt-LLM",
+		// 	label: "Generate Code",
+		// 	keybindings: [
+		// 		monaco.KeyMod.CtrlCmd |
+		// 			monaco.KeyMod.Shift |
+		// 			monaco.KeyCode.KeyG,
+		// 	],
+
+		// 	run: async (editor) => {
+		// 		const selection = editor.getSelection();
+		// 		const selectedText = editor
+		// 			.getModel()
+		// 			.getValueInRange(selection);
+
+		// 		const content = editor.getValue();
+
+		// 		const command = `
+		// 			You are a ${ext} assistant. Respond to the user prompt: "${selectedText}"
+
+		// 			Based on the following data:
+
+		// 			file: ${path}
+		// 			content: ${content}
+
+		// 			Do not include any explanations, only provide the code.
+		// 			`;
+
+		// 		const { pixelReturn } = await insight.actions.run<
+		// 			[{ response: string }]
+		// 		>(
+		// 			`LLM(engine = "", command = "<encode>${command}</encode>", paramValues = [ {} ] );`,
+		// 		);
+
+		// 		const response = pixelReturn[0].output.response;
+
+		// 		// adds LLM response after response
+		// 		editor.executeEdits("custom-action", [
+		// 			{
+		// 				range: new monaco.Range(
+		// 					selection.endLineNumber + 2,
+		// 					1,
+		// 					selection.endLineNumber + 2,
+		// 					1,
+		// 				),
+		// 				text: `\n\n${response}\n`,
+		// 				forceMoveMarkers: true,
+		// 			},
+		// 		]);
+
+		// 		// highligts LLM response after response
+		// 		editor.setSelection(
+		// 			new monaco.Range(
+		// 				selection.endLineNumber + 3,
+		// 				1,
+		// 				selection.endLineNumber +
+		// 					3 +
+		// 					response.split("\n").length,
+		// 				1,
+		// 			),
+		// 		);
+		// 	},
+		// });
+
+		editor.addAction({
+			contextMenuGroupId: "1_modification",
+			contextMenuOrder: 1,
+			id: "refresh",
+			label: "Refresh",
+			keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyR],
+			run: async () => {
+				getFile.refresh();
+			},
+		});
+
+		editor.addAction({
+			contextMenuGroupId: "1_modification",
+			contextMenuOrder: 1,
+			id: "save",
+			label: "Save",
+			keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+			run: async () => {
+				saveFile();
+			},
+		});
 
 		// add the actions
 		editor.addAction({
@@ -125,17 +191,6 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				editor.updateOptions({
 					wordWrap: wordWrapRef.current ? "on" : "off",
 				});
-			},
-		});
-
-		editor.addAction({
-			contextMenuGroupId: "1_modification",
-			contextMenuOrder: 2,
-			id: "save",
-			label: "Save",
-			keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
-			run: async () => {
-				saveFile();
 			},
 		});
 	};

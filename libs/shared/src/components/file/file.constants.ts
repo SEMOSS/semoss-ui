@@ -1,5 +1,67 @@
 import * as monaco from "monaco-editor";
 
+type MONACO_LANGUAGES =
+	| "text"
+	| "javascript"
+	| "typescript"
+	| "react"
+	| "html"
+	| "css"
+	| "python"
+	| "json"
+	| "java"
+	| "markdown"
+	| "yaml"
+	| "xml"
+	| "sh"
+	| "bash"
+	| "csv"
+	| "tsv";
+
+export const MONACO_EXT_LANGUAGE_MAPPING: Record<string, MONACO_LANGUAGES> = {
+	// Text files
+	txt: "text",
+	text: "text",
+
+	// JavaScript/TypeScript
+	js: "javascript",
+	jsx: "react",
+	ts: "typescript",
+	tsx: "react",
+
+	// Web
+	html: "html",
+	css: "css",
+
+	// Python
+	py: "python",
+
+	// JSON
+	json: "json",
+
+	// Java
+	java: "java",
+
+	// Markdown
+	md: "markdown",
+	markdown: "markdown",
+
+	// YAML
+	yaml: "yaml",
+	yml: "yaml",
+
+	// XML
+	xml: "xml",
+
+	// Shell
+	sh: "sh",
+	bash: "bash",
+
+	// Data files
+	csv: "csv",
+	tsv: "tsv",
+};
+
 export const MONACO_CONFIG: Record<
 	string,
 	{
@@ -341,6 +403,95 @@ export const MONACO_CONFIG: Record<
 				{ token: "operator", foreground: "000000" },
 			],
 			colors: {},
+		},
+	},
+	react: {
+		theme: {
+			base: "vs",
+			inherit: true,
+			rules: [
+				{ token: "keyword", foreground: "AF00DB", fontStyle: "bold" },
+				{ token: "identifier", foreground: "001080" },
+				{ token: "type.identifier", foreground: "267F99" },
+				{ token: "function", foreground: "795E26" },
+				{ token: "comment", foreground: "008000", fontStyle: "italic" },
+				{ token: "string", foreground: "A31515" },
+				{ token: "number", foreground: "098658" },
+				{ token: "operator", foreground: "000000" },
+				{ token: "tag", foreground: "800000" },
+				{ token: "attribute.name", foreground: "FF0000" },
+				{ token: "attribute.value", foreground: "0000FF" },
+				{ token: "delimiter.html", foreground: "800000" },
+				{ token: "metatag.html", foreground: "800000" },
+				{ token: "metatag.content.html", foreground: "FF0000" },
+			],
+			colors: {},
+		},
+		completionItemProvider: {
+			triggerCharacters: [".", "<", "("],
+			provideCompletionItems: (model, position) => {
+				const word = model.getWordUntilPosition(position);
+				const range = {
+					startLineNumber: position.lineNumber,
+					endLineNumber: position.lineNumber,
+					startColumn: word.startColumn,
+					endColumn: word.endColumn,
+				};
+
+				return {
+					suggestions: [
+						{
+							label: "useState",
+							kind: monaco.languages.CompletionItemKind.Function,
+							insertText:
+								"const [${1:state}, set${1/(.*)/${1:/capitalize}/}] = useState(${2:initialValue});",
+							insertTextRules:
+								monaco.languages.CompletionItemInsertTextRule
+									.InsertAsSnippet,
+							documentation: "React useState hook.",
+						},
+						{
+							label: "useEffect",
+							kind: monaco.languages.CompletionItemKind.Function,
+							insertText: [
+								"useEffect(() => {",
+								"    ${1:// effect}",
+								"    return () => {",
+								"        ${2:// cleanup}",
+								"    };",
+								"}, [${3:dependencies}]);",
+							].join("\n"),
+							insertTextRules:
+								monaco.languages.CompletionItemInsertTextRule
+									.InsertAsSnippet,
+							documentation: "React useEffect hook.",
+						},
+						{
+							label: "React Functional Component",
+							kind: monaco.languages.CompletionItemKind.Snippet,
+							insertText: [
+								"const ${1:ComponentName} = () => {",
+								"    return (",
+								"        <div>",
+								"            $0",
+								"        </div>",
+								"    );",
+								"};",
+								"",
+								"export default ${1:ComponentName};",
+							].join("\n"),
+							insertTextRules:
+								monaco.languages.CompletionItemInsertTextRule
+									.InsertAsSnippet,
+							documentation:
+								"React functional component template.",
+						},
+					].map((s) => ({
+						...s,
+						range,
+					})),
+				};
+			},
 		},
 	},
 };

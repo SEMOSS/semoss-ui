@@ -43,7 +43,7 @@ export const EngineWorkspace: React.FC<EngineWorkspaceProps> = observer(
 							{
 								type: "tab",
 								id: "ENGINE_FILE_EXPLORER",
-								name: "File Explorer",
+								name: "Files",
 								component: "engine-file-explorer",
 								config: {},
 								helpText: "File Explorer",

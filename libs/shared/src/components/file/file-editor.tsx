@@ -1,4 +1,3 @@
-import { Muted } from "@semoss/ui/next";
 import type { FileMode } from "./file.types";
 import { FileCodeEditor } from "./file-code-editor";
 import { FileImageViewer } from "./file-image-viewer";
@@ -35,57 +34,13 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 		"bmp",
 	].includes(ext);
 	const isPdf = ext === "pdf";
-	const isCode = [
-		"json",
-		"text",
-		"txt",
-		"jsx",
-		"tsx",
-		"javascript",
-		"js",
-		"typescript",
-		"ts",
-		"html",
-		"css",
-		"python",
-		"py",
-		"json",
-		"java",
-		"markdown",
-		"md",
-		"yaml",
-		"yml",
-		"xml",
-		"sh",
-		"bash",
-		"csv",
-		"tsv",
-	].includes(ext);
 
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background py-1">
 			{isImage && <FileImageViewer mode={mode} path={path} />}
 			{isPdf && <FilePdfViewer mode={mode} path={path} />}
-			{isCode && (
-				<FileCodeEditor
-					mode={mode}
-					path={path}
-					language={
-						ext as React.ComponentProps<
-							typeof FileCodeEditor
-						>["language"]
-					}
-					onChange={onChange}
-				/>
-			)}
-			{!isImage && !isPdf && !isCode && (
-				<div className="flex flex-1 items-center justify-center py-4">
-					<Muted>
-						Unable to preview files of type ".
-						{path.split(".").pop() || "unknown"}". This file type is
-						not supported.
-					</Muted>
-				</div>
+			{!isImage && !isPdf && (
+				<FileCodeEditor mode={mode} path={path} onChange={onChange} />
 			)}
 		</div>
 	);
