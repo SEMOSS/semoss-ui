@@ -36,6 +36,11 @@ export type EngineContextType = {
         database_created_by?: string;
         PERMISSIONGRANTEDBY?: string;
         DATEADDED?: string;
+		/** Whether the MCP can be generated for this engine */
+		canGenerateMCP?: boolean;
+
+		/** Updates the canGenerateMCP flag */
+		updateCanGenerateMCP: (value: boolean) => void;
 	};
 };
 

@@ -1,4 +1,4 @@
-import { Maximize2, Minimize2, Save } from "lucide-react";
+import { Maximize2, Minimize2, Plus, Save } from "lucide-react";
 import type React from "react";
 import { Badge, Button } from "@semoss/ui/next";
 import { SearchBar } from "./search-bar";
@@ -18,6 +18,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 	onSave,
 	onSearchChange,
 	onSearchClear,
+	handleAddEngineMCPTools,
 	saveShortcut = "Ctrl+S / Cmd+S",
 }) => {
 	return (
@@ -41,6 +42,17 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 					)}
 				</div>
 				<div className="flex items-center gap-2">
+					{handleAddEngineMCPTools && (
+						<Button
+							variant="ghost"
+							size="sm"
+							className="text-primary hover:bg-primary/10 hover:text-primary"
+							onClick={handleAddEngineMCPTools}
+						>
+							<Plus />
+							<span>Add</span>
+						</Button>
+					)}
 					{showExpandAll && onExpandAll && (
 						<Button
 							variant="outline"

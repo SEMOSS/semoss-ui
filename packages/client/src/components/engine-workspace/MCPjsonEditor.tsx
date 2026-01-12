@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
 	EditorHeader,
 	FunctionCard,
@@ -19,6 +20,8 @@ type MCPJsonEditorProps = {
 
 export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = (props) => {
 	const { dataMap } = props;
+	// navigation
+	const navigate = useNavigate();
 
 	const safeInitialData: MCPJsonData =
 		dataMap?.initialData ?? ({ _meta: {}, tools: [] } as MCPJsonData);
@@ -365,8 +368,12 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = (props) => {
 		[deletedTools],
 	);
 
+	const handleAddEngineMCPTools = () => {
+		navigate(`?addMCPTools=true`);
+	};
+
 	return (
-		<div className="mx-auto w-full max-w-full px-2 py-6 pb-8 overflow-y-auto">
+		<div className="mx-auto w-full max-w-full overflow-y-auto px-2 py-6 pb-8">
 			<div className="mb-6 px-4">
 				<h2 className="font-bold text-2xl">{headerText}</h2>
 			</div>
@@ -385,6 +392,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = (props) => {
 				onSave={handleSave}
 				onSearchChange={setSearchQuery}
 				onSearchClear={clearSearch}
+				handleAddEngineMCPTools={handleAddEngineMCPTools}
 			/>
 
 			<MetaDataSection

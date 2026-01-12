@@ -1,4 +1,4 @@
-import { type SyntheticEvent, useMemo } from "react";
+import { type SyntheticEvent, useEffect, useMemo, useState } from "react";
 import {
 	matchPath,
 	Navigate,
@@ -89,6 +89,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		PERMISSIONGRANTEDBY?: string;
 		markdown?: string;
 		tags?: string[];
+		generated_mcp?: string;
 	}>(
 		engineId
 			? `GetEngineMetadata(engine=["${engineId}"], metaKeys=${JSON.stringify(
@@ -214,6 +215,16 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		return -1;
 	}, [route, tabs, resolvedPath, pathname]);
 
+	// track the canGenerateMCP state locally for updates from child components
+	const [canGenerateMCP, setCanGenerateMCP] = useState(
+		Boolean(getEngineMetadata.data?.generated_mcp),
+	);
+
+	// sync state when metadata changes
+	useEffect(() => {
+		setCanGenerateMCP(Boolean(getEngineMetadata.data?.generated_mcp));
+	}, [getEngineMetadata.data?.generated_mcp]);
+
 	// if the engine isn't found, navigate to the Home Page
 	if (!engineId || getUserEnginePermission.status === "ERROR") {
 		return <Navigate to={`${route.path}`} replace />;
@@ -252,6 +263,8 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 					PERMISSIONGRANTEDBY:
 						getEngineMetadata.data?.PERMISSIONGRANTEDBY,
 					DATEADDED: getEngineMetadata.data?.DATEADDED,
+					canGenerateMCP,
+					updateCanGenerateMCP: setCanGenerateMCP,
 					refresh: getEngineMetadata.refresh,
 				},
 			}}

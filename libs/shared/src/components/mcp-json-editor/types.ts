@@ -37,6 +37,7 @@ export interface EditorHeaderProps {
     onSave?: () => void;
     onSearchChange: (value: string) => void;
     onSearchClear: () => void;
+    handleAddEngineMCPTools?: () => void;
     saveShortcut?: string;
 }
 

@@ -1,6 +1,7 @@
 import { FilePlus, FolderPlus, RefreshCw, Upload } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { runPixel } from "@semoss/sdk";
 import { useNotification } from "@semoss/ui";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
@@ -10,6 +11,7 @@ import {
 	DeleteFileOverlay,
 	FileExplorer,
 } from "@/components/common";
+import { useEngine } from "@/hooks";
 import { MCP_JSON_FILE_NAMES } from "@/pages/app/app.constants";
 import { Panel } from "./Panel";
 
@@ -40,6 +42,8 @@ export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 		setLoading,
 	} = props;
 	const notification = useNotification();
+	const [searchParams, setSearchParams] = useSearchParams();
+	const { active } = useEngine();
 	const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
 	const [selectedPath, setSelectedPath] = useState<string>("");
 	const [fileUploadPath, setFileUploadPath] = useState<string>("");
@@ -62,6 +66,71 @@ export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 
 		setFileUploadPath(path);
 	}, [selectedPath]);
+
+	const generateEngineMCP = useCallback(async (mcpFilePath) => {
+		try {
+			setLoading(true);
+			await onFileDelete(mcpFilePath);
+			handleMCPEditClick(null, mcpFilePath);
+			if (!expandedPaths.includes("/mcp/")) {
+				handleToggleExpand("/mcp/");
+			}
+			setSelectedPath(mcpFilePath);
+			refreshFiles();
+			searchParams.delete("mcp");
+			// Remove the mcp param from the URL
+			setSearchParams(searchParams);
+			setLoading(false);
+		} catch (e) {
+			notification.add({
+				message: (e as Error)?.message ?? String(e),
+				color: "error",
+			});
+		} finally {
+			active.updateCanGenerateMCP(false);
+		}
+	}, []);
+
+
+	const revertEngineMCP = useCallback(async (mcpFilePath) => {
+		try {
+			setLoading(true);
+			await runPixel(
+				`DeleteEngineAssets(filePath=["${mcpFilePath}"], engine=["${engineId}"]);`,
+			);
+			refreshFiles();
+			onFileDelete(mcpFilePath);
+			notification.add({
+				message: "Successfully reverted MCP changes",
+				color: "success",
+			});
+			setLoading(false);
+		} catch (e) {
+			notification.add({
+				message: (e as Error)?.message ?? String(e),
+				color: "error",
+			});
+		} finally {
+			searchParams.delete("mcp");
+			// Remove the mcp param from the URL
+			setSearchParams(searchParams);
+			// Reset the MCP state
+			active.updateCanGenerateMCP(true);
+		}
+	}, []);
+
+	useEffect(() => {
+		const mcpParam = searchParams.get("mcp");
+		const mcpFilePath = "/mcp/pixel_mcp.json";
+		if (mcpParam === "generate_mcp") {
+			onFileDelete(mcpFilePath);
+			// Open the MCP JSON file in the editor
+			generateEngineMCP(mcpFilePath);
+		} else if (mcpParam === "revert_mcp") {
+			revertEngineMCP(mcpFilePath);
+			setSelectedPath("");
+		}
+	}, [searchParams]);
 
 	const refreshFiles = useCallback(() => setCounter((c) => c + 1), []);
 

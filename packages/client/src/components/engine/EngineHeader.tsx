@@ -17,7 +17,7 @@ import {
 } from "@semoss/ui";
 import { useEngine, useRootStore } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
-import { EditEngineDetails, EngineAccessButton } from ".";
+import { EditEngineDetails, EngineAccessButton, EngineMCPButton } from ".";
 
 const StyledName = styled(Stack)(({ theme }) => ({
 	width: "100%",
@@ -173,6 +173,7 @@ export const EngineHeader: React.FC = () => {
 									Export
 								</Button>
 							)}
+							<EngineMCPButton />
 							<EditEngineDetails />
 						</Stack>
 					</Stack>
