@@ -49,7 +49,7 @@ export const WorkspacePage = observer(() => {
 	 */
 	const getWorkspaces = useIteratorPixel<App[], App>(
 		(limit, offset) =>
-			`MyProjects(metaKeys = ${JSON.stringify([
+			`MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} metaKeys = ${JSON.stringify([
 				"description",
 			])}, type = "WORKSPACE", limit=[${limit}], offset=[${offset}]);`,
 		(response) => {
