@@ -163,41 +163,40 @@ export const FileManager = (props: FileManagerProps) => {
 		});
 	};
 
-const addMCPEditorTab = (json: unknown, path: string) => {
-	if (!path) return;
+	const addMCPEditorTab = (json: unknown, path: string) => {
+		if (!path) return;
 
-	if (mcpEditorMap[path]) {
-		setActiveFilePath(path);
-		return;
-	}
+		if (mcpEditorMap[path]) {
+			setActiveFilePath(path);
+			return;
+		}
 
-	const parsed = parseMCPJson(json);
-	if (!parsed) {
-		notification.add({
-			message: "Failed to parse MCP JSON from response.",
-			color: "error",
+		const parsed = parseMCPJson(json);
+		if (!parsed) {
+			notification.add({
+				message: "Failed to parse MCP JSON from response.",
+				color: "error",
+			});
+			return;
+		}
+
+		setOpenFiles((prev) => {
+			if (!prev.includes(path)) return [...prev, path];
+			return prev;
 		});
-		return;
-	}
 
-	setOpenFiles((prev) => {
-		if (!prev.includes(path)) return [...prev, path];
-		return prev;
-	});
+		setMcpDataMap((prev) => ({
+			...prev,
+			[path]: parsed,
+		}));
 
-	setMcpDataMap((prev) => ({
-		...prev,
-		[path]: parsed,
-	}));
+		setMcpEditorMap((prev) => ({
+			...prev,
+			[path]: true,
+		}));
 
-	setMcpEditorMap((prev) => ({
-		...prev,
-		[path]: true,
-	}));
-
-	setActiveFilePath(path);
-};
-
+		setActiveFilePath(path);
+	};
 
 	const handleSaveMCP = async (
 		finalTools: Record<string, unknown>,

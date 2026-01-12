@@ -122,8 +122,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 	}
 
 	return (
-		<div
-			role="region"
+		<section
 			className="h-full w-full"
 			aria-label="File Explorer"
 			onClick={(e) => {
@@ -200,6 +199,6 @@ export const FileExplorer = (props: FileExplorerProps) => {
 					) : null}
 				</LoadingScreen>
 			</StyledTreeView>
-		</div>
+		</section>
 	);
 };

@@ -117,13 +117,11 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 					await monolithStore.runQuery(
 						`UnzipFile(filePath=["${path}"], space=["${space}"])`,
 					);
-				}
-				else if ( type === "engine") {
+				} else if (type === "engine") {
 					await monolithStore.runQuery(
 						`UnzipFile(filePath=["/${path.split("app_root/")[1]}"], space=["${space}"])`,
 					);
-				} 
-				else {
+				} else {
 					throw new Error("TODO");
 				}
 			}
@@ -158,15 +156,13 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 						disabled={isLoading}
 						onChange={handleFileChange}
 					/>
-						<Checkbox
-							checked={unzipFile}
-							onChange={() => {
-								setUnzipFile(!unzipFile);
-							}}
-							label={
-								<Typography variant="body2">Unzip?</Typography>
-							}
-						/>
+					<Checkbox
+						checked={unzipFile}
+						onChange={() => {
+							setUnzipFile(!unzipFile);
+						}}
+						label={<Typography variant="body2">Unzip?</Typography>}
+					/>
 				</Stack>
 			</Modal.Content>
 			<Modal.Actions>
