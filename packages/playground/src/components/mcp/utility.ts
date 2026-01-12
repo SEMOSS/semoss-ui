@@ -1,5 +1,9 @@
 import type { App, Engine, MCP, Workspace } from "@/types";
 
+const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
+	? import.meta.env.VITE_PLATFORM_URL
+	: "";
+
 /**
  * MyEngineProjects returns responses in a strange foramt where Engines and Apps have different structures.
  * This function normalizes them into a common Toolbox format.
@@ -44,3 +48,13 @@ export const workspaceToApp = (
 	project_date_created: workspace.date_created,
 	project_type: "WORKSPACE",
 });
+
+/**
+ * Convert the MCP into a platform url
+ */
+export const mcpToPlatformUrl = (mcp: Pick<MCP, "type" | "id">): string => {
+	if (mcp.type === "PROJECT") {
+		return `${PLATFORM_URL}/#/app/${mcp.id}`;
+	}
+	return `${PLATFORM_URL}/#/engine/${mcp.type.toLowerCase()}/${mcp.id}`;
+};

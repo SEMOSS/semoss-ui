@@ -8,7 +8,13 @@ import {
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { FlexLayout } from "@semoss/shared";
-import { Button, Separator } from "@semoss/ui/next";
+import {
+	Button,
+	Separator,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 import { RoomConfiguration } from "./room-configuration";
 import { RoomTool } from "./room-tool";
@@ -34,31 +40,50 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
 				<div className="absolute top-0 right-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pr-2">
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						onClick={() => {
-							setIsMaximized(!isMaximized);
-						}}
-					>
-						{isMaximized ? <MonitorXIcon /> : <TvMinimalIcon />}
-					</Button>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								onClick={() => {
+									setIsMaximized(!isMaximized);
+								}}
+							>
+								{isMaximized ? (
+									<MonitorXIcon />
+								) : (
+									<TvMinimalIcon />
+								)}
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							{isMaximized
+								? "Minimize Sidebar"
+								: "Maximize Sidebar"}
+						</TooltipContent>
+					</Tooltip>
 					<Separator
 						orientation="vertical"
 						style={{ height: "17px" }}
 					/>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						onClick={() => {
-							// turn off maximized state when closing sidebar
-							setIsMaximized(false);
 
-							room.closeSidebar();
-						}}
-					>
-						<XIcon />
-					</Button>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								onClick={() => {
+									// turn off maximized state when closing sidebar
+									setIsMaximized(false);
+
+									room.closeSidebar();
+								}}
+							>
+								<XIcon />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Close Sidebar</TooltipContent>
+					</Tooltip>
 				</div>
 				<div className="w-full flex-1 overflow-hidden rounded-md">
 					<div className="relative h-full w-full overflow-hidden">
