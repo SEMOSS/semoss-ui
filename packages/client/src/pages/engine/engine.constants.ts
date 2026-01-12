@@ -6,7 +6,6 @@ import {
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { ENGINE_TYPES, Role } from "@/types";
-import { EngineFileManagerPage } from "./EngineFileManager";
 import { EngineFilePage } from "./EngineFilePage";
 import { EngineMetadataPage } from "./EngineMetadataPage";
 import { EngineModelChatPage } from "./EngineModelChatPage";
@@ -16,6 +15,7 @@ import { EngineQueryDataPage } from "./EngineQueryDataPage";
 import { EngineSettingsPage } from "./EngineSettingsPage";
 import { EngineSmssPage } from "./EngineSmssPage";
 import { EngineUsagePage } from "./EngineUsagePage";
+import { EngineFileManagerPage } from "./engine-file-manager-page";
 
 export const ENGINE_ROUTES: {
 	/** Name of the route */

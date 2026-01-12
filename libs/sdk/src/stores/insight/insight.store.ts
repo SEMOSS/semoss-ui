@@ -6,6 +6,9 @@ import {
 	oauth,
 	runPixel,
 	upload,
+	uploadApp,
+	uploadEngine,
+	uploadInsight,
 } from "../../api";
 import { Env } from "../../env";
 import type { MCPToolResponse, Script } from "../../types";
@@ -716,6 +719,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
+		 * @deprecated use uploadInsight from sdk/api/insight
 		 * Upload a file to the project space
 		 *
 		 * @param files- file objects to upload
@@ -770,6 +774,84 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 			// throw an error
 			throw new Error("No download");
+		},
+
+		/**
+		 * App
+		 */
+		/**
+		 * Upload file(s) to an app
+		 * @param appId
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadApp: async (
+			appId: string,
+			path: string,
+			files: File | File[],
+		) => {
+			try {
+				return await uploadApp(
+					appId,
+					path,
+					files,
+					this._store.insightId,
+				);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
+		},
+		/**
+		 * Engine
+		 */
+		/**
+		 * Upload file(s) to an engine
+		 * @param engineId
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadEngine: async (
+			engineId: string,
+			path: string,
+			files: File | File[],
+		) => {
+			try {
+				return await uploadEngine(
+					engineId,
+					path,
+					files,
+					this._store.insightId,
+				);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
+		},
+		/**
+		 * Insight
+		 */
+		/**
+		 * Upload file(s) to an insight
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadInsight: async (path: string, files: File | File[]) => {
+			try {
+				return await uploadInsight(this._store.insightId, path, files);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
 		},
 	};
 }
