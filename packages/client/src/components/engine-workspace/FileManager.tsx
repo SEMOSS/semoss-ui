@@ -163,41 +163,42 @@ export const FileManager = (props: FileManagerProps) => {
 		});
 	};
 
-const addMCPEditorTab = (json: unknown, path: string) => {
-	if (!path) return;
+	const addMCPEditorTab = (json: unknown, path: string) => {
+		if (!path) return;
 
-	if (mcpEditorMap[path]) {
-		setActiveFilePath(path);
-		return;
-	}
+		const mcpTabPath = `${path}#mcp`;
 
-	const parsed = parseMCPJson(json);
-	if (!parsed) {
-		notification.add({
-			message: "Failed to parse MCP JSON from response.",
-			color: "error",
+		if (mcpEditorMap[mcpTabPath]) {
+			setActiveFilePath(mcpTabPath);
+			return;
+		}
+
+		const parsed = parseMCPJson(json);
+		if (!parsed) {
+			notification.add({
+				message: "Failed to parse MCP JSON from response.",
+				color: "error",
+			});
+			return;
+		}
+
+		setOpenFiles((prev) => {
+			if (!prev.includes(mcpTabPath)) return [...prev, mcpTabPath];
+			return prev;
 		});
-		return;
-	}
 
-	setOpenFiles((prev) => {
-		if (!prev.includes(path)) return [...prev, path];
-		return prev;
-	});
+		setMcpDataMap((prev) => ({
+			...prev,
+			[mcpTabPath]: parsed,
+		}));
 
-	setMcpDataMap((prev) => ({
-		...prev,
-		[path]: parsed,
-	}));
+		setMcpEditorMap((prev) => ({
+			...prev,
+			[mcpTabPath]: true,
+		}));
 
-	setMcpEditorMap((prev) => ({
-		...prev,
-		[path]: true,
-	}));
-
-	setActiveFilePath(path);
-};
-
+		setActiveFilePath(mcpTabPath);
+	};
 
 	const handleSaveMCP = async (
 		finalTools: Record<string, unknown>,
@@ -206,7 +207,8 @@ const addMCPEditorTab = (json: unknown, path: string) => {
 		try {
 			setLoading(true);
 
-			const file = filePath.split("assets/").pop();
+			const actualPath = filePath.replace(/#mcp$/, "");
+			const file = actualPath.split("assets/").pop();
 			const pixel = `SaveEngineAssets(fileName=["${file}"], content=["<encode>${JSON.stringify(
 				finalTools,
 				null,
@@ -254,50 +256,68 @@ const addMCPEditorTab = (json: unknown, path: string) => {
 				{openFiles.length > 0 && activeFilePath ? (
 					<div className="flex h-full w-full flex-col">
 						<div className="flex w-full min-w-0 flex-row flex-nowrap gap-2 overflow-x-auto overflow-y-hidden border-border border-b p-3 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-muted [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5 [&>*]:shrink-0">
-							{openFiles.map((path) => (
-								<Badge
-									key={path}
-									variant={
-										path === activeFilePath
-											? "default"
-											: "outline"
-									}
-									className={`h-7 max-w-[200px] cursor-pointer gap-2 px-3 py-1.5 transition-colors ${
-										path === activeFilePath
-											? "bg-[#EBF4FE] hover:bg-[#EBF4FE]"
-											: "bg-[#F5F5F5]"
-									}`}
-									title={path}
-									onClick={() => setActiveFilePath(path)}
-								>
-									<span
-										className={`max-w-[160px] truncate font-normal text-[13px] ${
+							{openFiles.map((path) => {
+								const displayPath = path.replace(/#mcp$/, "");
+								const isMCPEditor = mcpEditorMap[path];
+								return (
+									<Badge
+										key={path}
+										variant={
 											path === activeFilePath
-												? "text-primary"
-												: "text-foreground"
-										}`}
-									>
-										{mcpEditorMap[path]
-											? `${getFileNameFromPath(path)} (UI Editor)`
-											: getFileNameFromPath(path)}
-										{unSavedFiles[path] ? "*" : ""}
-									</span>
-									<button
-										type="button"
-										onClick={(e) => {
-											e.stopPropagation();
-											handleCloseFile(path);
+												? "default"
+												: "outline"
+										}
+										className="h-7 max-w-[200px] cursor-pointer gap-2 px-3 py-1.5 transition-colors"
+										style={{
+											backgroundColor:
+												path === activeFilePath
+													? "color-mix(in srgb, var(--primary) 10%, transparent)"
+													: "var(--secondary)",
 										}}
-										className="ml-auto shrink-0 rounded-sm"
-										aria-label="Close"
+										title={displayPath}
+										onClick={() => setActiveFilePath(path)}
 									>
-										<CircleX
-											className="h-3.5 w-3.5"
-											color={`${path === activeFilePath ? "#0570F0" : "#0A0A0A"}`}
-										/>
-									</button>
-								</Badge>
-							))}
+										<span
+											className="max-w-[160px] truncate font-normal text-[13px]"
+											style={{
+												color:
+													path === activeFilePath
+														? "var(--primary)"
+														: "var(--foreground)",
+											}}
+										>
+											{isMCPEditor
+												? `${getFileNameFromPath(displayPath)} (UI Editor)`
+												: getFileNameFromPath(
+														displayPath,
+													)}
+											{unSavedFiles[path] ? "*" : ""}
+										</span>
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												handleCloseFile(path);
+											}}
+											className="ml-auto shrink-0 rounded-sm"
+											aria-label="Close"
+											style={{
+												color:
+													path === activeFilePath
+														? "var(--primary)"
+														: "var(--foreground)",
+											}}
+										>
+											<CircleX
+												className="h-3.5 w-3.5"
+												style={{
+													color: "currentColor",
+												}}
+											/>
+										</button>
+									</Badge>
+								);
+							})}
 						</div>
 
 						<div className="flex min-h-0 flex-1 flex-col">
@@ -322,10 +342,14 @@ const addMCPEditorTab = (json: unknown, path: string) => {
 									);
 								}
 
+								const actualFilePath = activeFilePath.replace(
+									/#mcp$/,
+									"",
+								);
 								return (
 									<FileEditorPanel
 										key={activeFilePath}
-										path={activeFilePath}
+										path={actualFilePath}
 										engineId={engineId}
 										insightId={insightId}
 										onUnsave={() =>

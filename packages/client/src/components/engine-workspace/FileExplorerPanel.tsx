@@ -14,6 +14,39 @@ import { MCP_JSON_FILE_NAMES } from "@/pages/app/app.constants";
 import { Panel } from "./Panel";
 
 const EXPLORER_TYPE = "engine";
+const UPLOAD_PATH_PREFIX = "app_root/version/assets";
+
+/**
+ * Helper function to add the upload prefix to a path
+ */
+const addUploadPrefix = (path: string): string => {
+	// Remove any existing prefix first to avoid duplication
+	const cleanPath = path.replace(new RegExp(`^${UPLOAD_PATH_PREFIX}/?`), "");
+
+	// Ensure clean path starts with /
+	const normalizedPath = cleanPath.startsWith("/")
+		? cleanPath
+		: `/${cleanPath}`;
+
+	return `${UPLOAD_PATH_PREFIX}${normalizedPath}`;
+};
+
+/**
+ * Helper function to remove the upload prefix from a path
+ */
+const removeUploadPrefix = (path: string): string => {
+	if (!path) return "/";
+
+	// Remove the prefix
+	const cleanPath = path.replace(new RegExp(`^${UPLOAD_PATH_PREFIX}/?`), "");
+
+	// Ensure result is at least "/" or starts with "/"
+	if (!cleanPath) {
+		return "/";
+	}
+
+	return cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`;
+};
 
 interface FileExplorerPanelProps {
 	title: string;
@@ -56,7 +89,12 @@ export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 				const parts = selectedPath.split("/");
 				parts.pop();
 				path = parts.join("/");
-				if (path && !path.endsWith("/")) path = path + "/";
+				// Ensure path is at least "/" if empty
+				if (!path) {
+					path = "/";
+				} else if (!path.endsWith("/")) {
+					path = path + "/";
+				}
 			}
 		}
 
@@ -73,6 +111,8 @@ export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 		);
 
 	const handleOpenAddFile = () => {
+		const prefixedUploadPath = addUploadPrefix(fileUploadPath);
+
 		openOverlay(() => (
 			<AddFileOverlay
 				type={EXPLORER_TYPE}
@@ -81,13 +121,14 @@ export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 					if (success) {
 						refreshFiles();
 						if (uploadPath) {
-							setSelectedPath(uploadPath);
-							onFileSelect?.(uploadPath);
+							const cleanedPath = removeUploadPrefix(uploadPath);
+							setSelectedPath(cleanedPath);
+							onFileSelect?.(cleanedPath);
 						}
 					}
 					closeOverlay();
 				}}
-				uploadPath={fileUploadPath}
+				uploadPath={prefixedUploadPath}
 			/>
 		));
 	};
@@ -115,13 +156,13 @@ export const FileExplorerPanel: React.FC<FileExplorerPanelProps> = (props) => {
 
 	const handleOnSelect = (path: string) => {
 		if (!path) {
-			setSelectedPath("");
+			setSelectedPath("/");
 			setDeselectCounter((prev) => prev + 1);
 			return;
 		}
 		if (path.slice(-1) === "/") {
 			if (selectedPath === path) {
-				setSelectedPath("");
+				setSelectedPath("/");
 				setDeselectCounter((prev) => prev + 1);
 				return;
 			}
