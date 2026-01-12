@@ -20,6 +20,7 @@ import {
 import { LOADING_MESSAGES } from "@/constants";
 import { useAutoScroll } from "@/hooks";
 import type { RoomStore } from "@/stores";
+import { RoomInputMenuPlugin } from "./room-input-menu-plugin";
 
 interface RoomProps {
 	/** Room to load */
@@ -203,6 +204,12 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 						className="max-h-56 min-h-24"
 						isLoading={room.isLoading}
 						configuration={<RoomConfigurationButton room={room} />}
+						plugins={
+							<RoomInputMenuPlugin
+								options={room.options}
+								setOptions={room.setOptions}
+							/>
+						}
 						onPrompt={async (prompt, files) => {
 							// update the options
 							await room.updateRoomOptions(room.options);

@@ -1,6 +1,5 @@
-import { computed, makeObservable, observable } from "mobx";
+import { makeObservable, observable } from "mobx";
 import type { InputMediaPixelMessage, InputTextPixelMessage } from "@/types";
-import { parseTemplate, type TemplateToken } from "@/utility";
 import { AbstractMessageStore } from "./abstract-message.store";
 
 /**
@@ -40,18 +39,7 @@ export class InputMessageStore extends AbstractMessageStore {
 
 		makeObservable(this, {
 			text: observable,
-			tokens: computed,
 			mediaInputs: observable,
 		});
-	}
-
-	/**
-	 * Getters
-	 */
-	/**
-	 * Tokens associated with the message
-	 */
-	get tokens(): TemplateToken[] {
-		return parseTemplate(this.text);
 	}
 }

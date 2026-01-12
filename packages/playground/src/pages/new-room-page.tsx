@@ -16,6 +16,7 @@ import {
 import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
+	RoomInputMenuPlugin,
 	RoomOptions,
 	RoomWorkspace,
 	workspaceToApp,
@@ -70,7 +71,7 @@ export const NewRoomPage = observer(() => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
-		mcp: [],
+		mcp: [...(root.theme.defaultTools || [])],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
 		workspace: null,
@@ -244,6 +245,12 @@ export const NewRoomPage = observer(() => {
 								<RoomWorkspace
 									mode={mode}
 									onModeChange={setMode}
+								/>
+							}
+							plugins={
+								<RoomInputMenuPlugin
+									options={options}
+									setOptions={setOptions}
 								/>
 							}
 							configuration={

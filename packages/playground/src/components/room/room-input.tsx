@@ -10,11 +10,7 @@ import {
 	$createParagraphNode,
 	$createTextNode,
 	$getRoot,
-	$getSelection,
-	$isRangeSelection,
-	$isTextNode,
 	type LexicalEditor,
-	TextNode,
 } from "lexical";
 import {
 	FileAudio2Icon,
@@ -30,7 +26,6 @@ import {
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	ButtonGroup,
@@ -41,16 +36,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import {
-	$createBadgeNode,
-	BadgeNode,
-	EnterPlugin,
-	engineProjectToMCP,
-	FocusPlugin,
-	MentionPlugin,
-} from "@/components";
-import type { App, Engine, MCP } from "@/types";
-import { generateTemplate } from "@/utility";
+import { EnterPlugin, FocusPlugin } from "@/components";
 
 const ENABLE_ATTACHMENT = import.meta.env.VITE_ENABLE_ATTACHMENT === "true";
 
@@ -64,6 +50,9 @@ interface RoomInputProps {
 	/** Workspace toggle */
 	workspace?: React.ReactNode;
 
+	/** Plugins plugins */
+	plugins?: React.ReactNode;
+
 	/** Configuration toggle */
 	configuration?: React.ReactNode;
 
@@ -76,10 +65,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		className,
 		isLoading,
 		workspace = null,
+		plugins = null,
 		configuration = null,
 		onPrompt = () => null,
 	}) => {
-		const insight = useInsight();
 		const [isEmpty, setIsEmpty] = useState(true);
 
 		const editorRef = useRef<LexicalEditor>(null);
@@ -283,7 +272,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						initialConfig={{
 							namespace: "RoomInput",
 							theme: {},
-							nodes: [BadgeNode],
+							nodes: [],
 							onError: (error) => {
 								console.error(error);
 							},
@@ -379,116 +368,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<FocusPlugin />
 						<EditorRefPlugin editorRef={editorRef} />
 						<EnterPlugin onEnter={() => promptModel()} />
-						<MentionPlugin<MCP>
-							trigger="/"
-							onSearch={async (search) => {
-								{
-									const { pixelReturn } =
-										await insight.actions.run<
-											[(Engine | App)[]]
-										>(
-											`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION", "MODEL", "VECTOR"] ${search ? `, filterWord=["${search}"]` : ""})`,
-										);
-
-									if (
-										pixelReturn[0].operationType.indexOf(
-											"ERROR",
-										) > -1
-									) {
-										return [];
-									}
-
-									return pixelReturn[0].output.map(
-										(value) => {
-											const mcp =
-												engineProjectToMCP(value);
-
-											return {
-												display: mcp.name,
-												value: mcp.id,
-												data: mcp,
-											};
-										},
-									);
-								}
-							}}
-							onSelect={(triggerIdx, selected) => {
-								let success = false;
-								editorRef.current?.update(() => {
-									const selection = $getSelection();
-									if (!$isRangeSelection(selection)) {
-										return;
-									}
-
-									const anchor = selection.anchor;
-									const anchorNode = anchor.getNode();
-
-									if (!$isTextNode(anchorNode)) {
-										return;
-									}
-
-									const textContent =
-										anchorNode.getTextContent();
-									if (triggerIdx === null) {
-										return;
-									}
-
-									// Get text before trigger
-									const textBeforeTrigger = textContent.slice(
-										0,
-										triggerIdx,
-									);
-
-									// Get text after cursor
-									const textAfterCursor = textContent.slice(
-										anchor.offset,
-									);
-
-									// trigger the callback
-									const badgeNode = $createBadgeNode({
-										content: selected.display,
-										value: generateTemplate([
-											{
-												type: "DATA",
-												data: {
-													...selected.data,
-												},
-											},
-										]),
-									});
-
-									// Update the text node
-									if (textBeforeTrigger) {
-										anchorNode.setTextContent(
-											textBeforeTrigger,
-										);
-										anchorNode.insertAfter(badgeNode);
-									} else {
-										anchorNode.replace(badgeNode);
-									}
-
-									// Add text after cursor if any
-									if (textAfterCursor) {
-										const textNode = new TextNode(
-											textAfterCursor,
-										);
-										badgeNode.insertAfter(textNode);
-									}
-
-									// Add a space after the badge and move selection there
-									const spaceNode = new TextNode(" ");
-									badgeNode.insertAfter(spaceNode);
-									spaceNode.select();
-
-									// mark success
-									success = true;
-								});
-
-								// add to the room
-
-								return success;
-							}}
-						/>
+						{plugins}
 					</LexicalComposer>
 					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
 						{workspace}
