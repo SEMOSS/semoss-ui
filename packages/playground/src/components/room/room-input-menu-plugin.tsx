@@ -165,7 +165,7 @@ export const RoomInputMenuPlugin: React.FC<RoomInputMenuPluginProps> = ({
 				const textAfterCursor = textContent.slice(anchor.offset);
 
 				// Add the node
-				const textNode = $createTextNode(tool.name);
+				const textNode = $createTextNode(`<${tool.name}>`);
 
 				// Update the text node
 				if (textBeforeTrigger) {

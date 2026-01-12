@@ -293,9 +293,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										aria-disabled={isLoading}
 										disabled={isLoading}
 										placeholder={
-											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-2.5 p-4 text-muted-foreground text-sm">
+											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
 												<SparklesIcon className="size-4" />
-												/ to open commands
+												/ to add capability
 											</div>
 										}
 										onDrop={(e) => {
