@@ -151,6 +151,8 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 					message.tools.some((tool) => !tool.response),
 			));
 
+	const tempContextUsedPercent = 42; // TODO: Replace with actual context usage calculation
+
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
@@ -235,6 +237,7 @@ export const Room: React.FC<RoomProps> = observer(({ room }) => {
 					configuration={<RoomConfigurationButton room={room} />}
 					onPrompt={handlePrompt}
 					clearInputOnPrompt
+					contextUsedPercent={tempContextUsedPercent}
 				/>
 			</div>
 		</div>

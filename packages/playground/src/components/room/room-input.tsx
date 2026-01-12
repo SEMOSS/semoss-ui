@@ -20,6 +20,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { ContextChart } from "./context-chart";
 
 const ENABLE_ATTACHMENT = import.meta.env.VITE_ENABLE_ATTACHMENT === "true";
 
@@ -47,6 +48,9 @@ interface RoomInputProps {
 
 	/** Optionally clear the input when the user asks a question */
 	clearInputOnPrompt?: boolean;
+
+	/** Percentage of context used */
+	contextUsedPercent?: number;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
@@ -59,6 +63,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		configuration = null,
 		onPrompt = () => null,
 		clearInputOnPrompt = false,
+		contextUsedPercent,
 	}) => {
 		const [input, setInput] = useState("");
 		const isEmpty = input.trim().length === 0;
@@ -324,8 +329,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							}}
 						/>
 					</div>
-					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
+					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
 						{workspace}
+						<ContextChart contextUsedPercent={contextUsedPercent} />
 					</div>
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
 						<div className="flex flex-row items-center">
