@@ -15,10 +15,8 @@ interface RoomConfigurationButtonProps {
 	room: RoomStore;
 }
 
-export const RoomConfigurationButton = observer(
-	(props: RoomConfigurationButtonProps) => {
-		const { room } = props;
-
+export const RoomConfigurationButton: React.FC<RoomConfigurationButtonProps> =
+	observer(({ room }) => {
 		// this will render the component whenever the sidebar model changes
 		room.sidebar.counter;
 
@@ -62,5 +60,4 @@ export const RoomConfigurationButton = observer(
 				<TooltipContent>Open Configuration Menu</TooltipContent>
 			</Tooltip>
 		);
-	},
-);
+	});

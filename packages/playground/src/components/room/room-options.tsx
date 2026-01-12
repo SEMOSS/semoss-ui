@@ -165,7 +165,7 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 											return (
 												<div
 													key={mcp.id}
-													className={`group flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2 ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
+													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border px-3 py-2 ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
 												>
 													<HammerIcon className="size-4" />
 													<span className="flex-1 truncate text-sm">
@@ -347,10 +347,11 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 								onClose={(mcp) => {
 									if (mcp) {
 										// Merge updated MCPs with the other type
-										const otherTypeMCPs = mCPOverlay.type === "TOOLBOX" 
-											? knowledge 
-											: toolbox;
-										
+										const otherTypeMCPs =
+											mCPOverlay.type === "TOOLBOX"
+												? knowledge
+												: toolbox;
+
 										setOptions({
 											...options,
 											mcp: [...otherTypeMCPs, ...mcp],
