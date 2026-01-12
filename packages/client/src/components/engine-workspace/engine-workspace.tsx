@@ -38,6 +38,7 @@ export const EngineWorkspace: React.FC<EngineWorkspaceProps> = observer(
 						type: "border",
 						location: "left",
 						size: DEFAULT_BORDER_SIZE,
+						selected: 0,
 						children: [
 							{
 								type: "tab",

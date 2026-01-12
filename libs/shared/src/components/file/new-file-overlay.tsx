@@ -211,10 +211,10 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 												Upload Files
 											</SelectItem>
 											<SelectItem value="add_file">
-												Add File
+												New File
 											</SelectItem>
 											<SelectItem value="add_directory">
-												Add Directory
+												New Directory
 											</SelectItem>
 										</SelectGroup>
 									</SelectContent>
