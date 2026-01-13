@@ -23,9 +23,10 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
+import { engineProjectToMCP } from "@/components";
 import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { App, MCPConfig } from "@/types";
+import type { App, Engine, MCPConfig } from "@/types";
 
 const TRIGGER = "/";
 
@@ -64,7 +65,7 @@ export const RoomInputMenuPlugin: React.FC<RoomInputMenuPluginProps> = ({
 	/**
 	 * Get all of the toolboxes with lazy loading
 	 */
-	const getToolbox = useIteratorPixel<App[], App>(
+	const getToolbox = useIteratorPixel<(App | Engine)[], MCPConfig>(
 		(limit, offset) =>
 			`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
 		(response) => {
@@ -76,7 +77,7 @@ export const RoomInputMenuPlugin: React.FC<RoomInputMenuPluginProps> = ({
 			return Infinity;
 		},
 		(response) => {
-			return response;
+			return response.map(engineProjectToMCP);
 		},
 		{
 			limit: 15,
@@ -332,27 +333,19 @@ export const RoomInputMenuPlugin: React.FC<RoomInputMenuPluginProps> = ({
 								<CommandGroup heading="All Tools">
 									{getToolbox.data.map((item) => (
 										<CommandItem
-											key={item.project_id}
-											value={item.project_id}
+											key={item.id}
+											value={item.id}
 											onSelect={() => {
-												let type = item.project_type;
-												if (
-													type === "CODE" ||
-													type === "BLOCKS"
-												) {
-													type = "PROJECT";
-												}
-
 												onSelect({
-													type: type as MCPConfig["type"],
-													id: item.project_id,
-													name: item.project_name,
+													type: item.type,
+													id: item.id,
+													name: item.name,
 												});
 											}}
 										>
-											{item.project_name}
+											{item.name}
 											<CheckIcon
-												className={`ml-auto ${tools[item.project_id] ? "opacity-100" : "opacity-0"}`}
+												className={`ml-auto ${tools[item.id] ? "opacity-100" : "opacity-0"}`}
 											/>
 										</CommandItem>
 									))}

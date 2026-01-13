@@ -199,8 +199,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				if (!success) {
 					throw new Error(`Error processing chat`);
 				}
-
-				console.log("success", success);
 			} catch (e) {
 				toast.error(e.message);
 			} finally {

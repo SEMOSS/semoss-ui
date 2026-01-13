@@ -16,6 +16,39 @@ import { InputMessageStore } from "./input-message.store";
 import { PlanMessageStore } from "./plan-message.store";
 import { createMessageStore } from "./utility";
 
+interface Tool {
+	/** tool execution id */
+	id: string;
+
+	/**  title of tool **/
+	title: string;
+
+	/** meta data from the tool */
+	_meta: {
+		SMSS_MCP_EXECUTION: McpExecution;
+		SMSS_PROJECT_NAME: string;
+		SMSS_PROJECT_ID: string;
+	};
+
+	/**  Name of function with app_id **/
+	name: string;
+
+	/**  Name of function in mcp json **/
+	original_name: string;
+
+	/** Parameters used in the tool */
+	parameters: Record<string, unknown>;
+
+	/** Response for the tool */
+	response: string;
+
+	/** If the tool execution was cancelled or errored */
+	tool_status?: "success" | "error" | "cancelled";
+
+	/** If the tool is currently executing */
+	is_executing: boolean;
+}
+
 /**
  * Response Message Store
  */
@@ -34,35 +67,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	/**
 	 * Tools associated with the message
 	 */
-	tools: {
-		/** tool execution id */
-		id: string;
-
-		/**  title of tool **/
-		title: string;
-
-		/** meta data from the tool */
-		_meta: {
-			SMSS_MCP_EXECUTION: McpExecution;
-			SMSS_PROJECT_NAME: string;
-			SMSS_PROJECT_ID: string;
-		};
-
-		/**  Name of function with app_id **/
-		name: string;
-
-		/**  Name of function in mcp json **/
-		original_name: string;
-
-		/** Parameters used in the tool */
-		parameters: Record<string, unknown>;
-
-		/** Response for the tool */
-		response: string;
-
-		/** If the tool execution was cancelled or errored */
-		tool_status?: "success" | "error" | "cancelled";
-	}[] = [];
+	tools: Tool[] = [];
 
 	/**
 	 * If this is input tool exec, the tool call id it is executing
@@ -118,21 +123,24 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		}
 
 		if (message.type === "RESPONSE_TOOL") {
-			this.tools = message.tool_responses.map((t) => ({
-				id: t.id,
-				_meta: {
-					SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
-					// On 12/16/25 we changed from _meta.map to just _meta, so support both
-					...(t._meta as { map?: Record<string, unknown> })?.map,
-					...t._meta,
-				},
-				title: t.title,
-				name: t.name,
-				original_name: t.original_name,
-				parameters: t.arguments,
-				response: "",
-				cancelled: false,
-			}));
+			this.tools = message.tool_responses.map(
+				(t): Tool => ({
+					id: t.id,
+					_meta: {
+						SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
+						// On 12/16/25 we changed from _meta.map to just _meta, so support both
+						...(t._meta as { map?: Record<string, unknown> })?.map,
+						...t._meta,
+					},
+					title: t.title,
+					name: t.name,
+					original_name: t.original_name,
+					parameters: t.arguments,
+					response: "",
+					tool_status: "success",
+					is_executing: false,
+				}),
+			);
 		}
 
 		if (message.type === "INPUT_TOOL_EXEC") {
@@ -354,10 +362,15 @@ paramValues=[${JSON.stringify({
 			return;
 		}
 
+		runInAction(() => {
+			tool.is_executing = true;
+		});
+
 		try {
 			// wait for the pixel to run
 			const response = await room.runRoomPixel<[string]>(
 				`RunMCPTool(project = [ "${tool._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+				// false,
 			);
 
 			const { output } = response.pixelReturn[0];
@@ -386,6 +399,7 @@ paramValues=[${JSON.stringify({
 		runInAction(() => {
 			tool.response = toolResponse;
 			tool.tool_status = status;
+			tool.is_executing = false;
 		});
 
 		// wait for the pixel to run

@@ -2,6 +2,7 @@ import {
 	AlertTriangleIcon,
 	CheckIcon,
 	HammerIcon,
+	Loader2Icon,
 	XCircleIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -42,7 +43,9 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		}
 
 		let icon = null;
-		if (tool.tool_status === "error") {
+		if (tool.is_executing) {
+			icon = <Loader2Icon className="animate-spin" />;
+		} else if (tool.tool_status === "error") {
 			icon = <AlertTriangleIcon />;
 		} else if (tool.tool_status === "cancelled") {
 			icon = <XCircleIcon />;
