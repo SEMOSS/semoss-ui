@@ -263,8 +263,6 @@ const TreeItem = React.forwardRef<HTMLLIElement, TreeItemProps>(
 						"flex w-full items-center gap-1 rounded px-2 py-1 transition-colors hover:bg-muted",
 						"cursor-pointer",
 					)}
-					onClick={handleSelection}
-					onKeyDown={handleSelection}
 				>
 					{hasChildren ? (
 						<button
