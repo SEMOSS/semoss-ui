@@ -598,7 +598,7 @@ export const IMPORTABLE_MODELS = {
 							type: "hidden",
 							disabled: true,
 							required: true,
-							default: "AZURE_OPEN_AI",
+							default: "OPEN_AI",
 							category: "General",
 						},
 						{
