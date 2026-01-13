@@ -334,6 +334,14 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
+	 * Check if all tools have been completed
+	 * @returns if all tools have been completed
+	 */
+	hasUnfinishedTools = (): boolean => {
+		return this.tools.some((tool) => !tool.response);
+	};
+
+	/**
 	 * Run a tool if possible
 	 */
 	private runToolExecution = async (): Promise<void> => {
@@ -344,6 +352,8 @@ paramValues=[${JSON.stringify({
 			this.toolAutoExecutionIdx < 0 ||
 			this.toolAutoExecutionIdx >= this.tools.length
 		) {
+			// all tools have run
+			room.setHasUnfinishedTools(false);
 			return;
 		}
 
@@ -370,7 +380,7 @@ paramValues=[${JSON.stringify({
 			// wait for the pixel to run
 			const response = await room.runRoomPixel<[string]>(
 				`RunMCPTool(project = [ "${tool._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
-				// false,
+				false,
 			);
 
 			const { output } = response.pixelReturn[0];

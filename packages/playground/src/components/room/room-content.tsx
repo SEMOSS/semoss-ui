@@ -59,6 +59,13 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		return true;
 	};
 
+	console.log(
+		JSON.stringify({
+			loading: room.isLoading,
+			hasUnfinishedTools: room.hasUnfinishedTools,
+		}),
+	);
+
 	/**
 	 * Effects
 	 */
@@ -230,6 +237,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						</>
 					}
 					onPrompt={handlePrompt}
+					hasOutstandingTools={room.hasUnfinishedTools}
 				/>
 			</div>
 		</div>

@@ -30,7 +30,6 @@ import {
 	Button,
 	ButtonGroup,
 	cn,
-	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -58,6 +57,9 @@ interface RoomInputProps {
 
 	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
+
+	/** Has outstanding tools */
+	hasOutstandingTools?: boolean;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
@@ -68,6 +70,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		plugins = null,
 		configuration = null,
 		onPrompt = () => null,
+		hasOutstandingTools = false,
 	}) => {
 		const [isEmpty, setIsEmpty] = useState(true);
 
@@ -424,16 +427,22 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						</ButtonGroup>
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<Button
-									variant="default"
-									aria-label="Ask the AI"
-									disabled={isLoading || isEmpty}
-									onClick={() => {
-										promptModel();
-									}}
-								>
-									{isLoading ? <Spinner /> : <SendIcon />}
-								</Button>
+								<span>
+									<Button
+										variant="default"
+										aria-label="Ask the AI"
+										disabled={
+											isLoading ||
+											isEmpty ||
+											hasOutstandingTools
+										}
+										onClick={() => {
+											promptModel();
+										}}
+									>
+										<SendIcon />
+									</Button>
+								</span>
 							</TooltipTrigger>
 							<TooltipContent>
 								{(() => {
@@ -441,8 +450,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										return "Processing question";
 									} else if (isEmpty) {
 										return "Please enter a question";
+									} else if (hasOutstandingTools) {
+										return "Please complete the tool(s) to proceed";
 									}
-
 									return "Ask";
 								})()}
 							</TooltipContent>
