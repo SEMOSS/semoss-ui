@@ -206,6 +206,7 @@ export const AdminThemePage: React.FC = () => {
 						headerItems: [],
 						footerItems: [],
 					},
+					defaultTools: [],
 				},
 			};
 
