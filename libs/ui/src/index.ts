@@ -60,6 +60,7 @@ export * from "./components/ToggleButton";
 export * from "./components/ToggleButtonGroup";
 export * from "./components/ToggleTabsGroup";
 export * from "./components/Tooltip";
+export * from "./components/TreeView";
 export * from "./components/Typography";
 
 import type { SvgIconProps } from "@mui/material";
