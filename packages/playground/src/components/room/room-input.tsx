@@ -30,6 +30,7 @@ import {
 	Button,
 	ButtonGroup,
 	cn,
+	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -60,6 +61,9 @@ interface RoomInputProps {
 
 	/** Has outstanding tools */
 	hasOutstandingTools?: boolean;
+
+	/** Show loading spinner */
+	hideLoadingSpinner?: boolean;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
@@ -71,6 +75,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		configuration = null,
 		onPrompt = () => null,
 		hasOutstandingTools = false,
+		hideLoadingSpinner = false,
 	}) => {
 		const [isEmpty, setIsEmpty] = useState(true);
 
@@ -440,7 +445,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											promptModel();
 										}}
 									>
-										<SendIcon />
+										{isLoading && !hideLoadingSpinner ? (
+											<Spinner />
+										) : (
+											<SendIcon />
+										)}
 									</Button>
 								</span>
 							</TooltipTrigger>
