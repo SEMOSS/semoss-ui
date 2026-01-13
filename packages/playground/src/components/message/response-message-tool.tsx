@@ -8,6 +8,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { Button } from "@semoss/ui/next";
 import { TOOL_CANCELLATION_PROMPT } from "@/constants";
+import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore } from "@/stores";
 
 // Styled component replaced with Tailwind classes inline
@@ -23,9 +24,17 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 	({ message, tool }) => {
 		const { room } = message;
 
+		/**
+		 * Library hooks
+		 */
+		const toolExecutionMessage = useLoadingMessage(tool.is_executing);
+
 		// this will render the component whenever the sidebar model changes
 		room.sidebar.counter;
 
+		/**
+		 * Constants
+		 */
 		const nodeId = `message-${message.id}-tool-${tool.id}`;
 
 		// track if it is active
@@ -42,6 +51,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					tool._meta.SMSS_PROJECT_ID;
 		}
 
+		// icon
 		let icon = null;
 		if (tool.is_executing) {
 			icon = <Loader2Icon className="animate-spin" />;
@@ -118,7 +128,9 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 										: tool._meta.SMSS_MCP_EXECUTION ===
 												"ask"
 											? "Click to open"
-											: "This tool is set to auto-execute"}
+											: tool.is_executing
+												? toolExecutionMessage
+												: "This tool is set to auto-execute"}
 						</div>
 					</div>
 				</button>
