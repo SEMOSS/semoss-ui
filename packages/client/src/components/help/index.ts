@@ -1,3 +1,3 @@
-import { Help } from "./help";
+import { Help } from './Help'
 
 export { Help };
