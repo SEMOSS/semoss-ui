@@ -191,17 +191,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 			const userFiles = files;
 
-			// skip if there is no input
-			if (!userInput) {
+			// skip if there is no input, if loading, or if there are outstanding tools
+			if (!userInput || isLoading || hasOutstandingTools) {
 				return;
 			}
 
 			try {
-				// ignore if loading
-				if (isLoading) {
-					return;
-				}
-
 				// clear out the input components
 				success = await onPrompt(userInput, userFiles);
 				if (!success) {
