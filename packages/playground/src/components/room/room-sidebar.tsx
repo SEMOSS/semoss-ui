@@ -1,4 +1,6 @@
 import {
+	FileIcon,
+	FolderTreeIcon,
 	HammerIcon,
 	MonitorXIcon,
 	Settings2Icon,
@@ -6,7 +8,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { FlexLayout } from "@semoss/shared";
 import {
 	Button,
@@ -17,6 +19,8 @@ import {
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 import { RoomConfiguration } from "./room-configuration";
+import { RoomFileEditor } from "./room-file-editor";
+import { RoomFileExplorer } from "./room-file-explorer";
 import { RoomTool } from "./room-tool";
 
 interface RoomSidebarProps {
@@ -25,6 +29,7 @@ interface RoomSidebarProps {
 }
 
 export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
+	const layoutRef = useRef<FlexLayout.Layout | null>(null);
 	const [isMaximized, setIsMaximized] = useState(false);
 
 	return (
@@ -86,8 +91,9 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 					</Tooltip>
 				</div>
 				<div className="w-full flex-1 overflow-hidden rounded-md">
-					<div className="relative h-full w-full overflow-hidden">
+					<div className="flexlayout__theme_smss relative h-full w-full overflow-hidden">
 						<FlexLayout.Layout
+							ref={layoutRef}
 							model={room.sidebar.model}
 							onRenderTab={(node, renderValues) => {
 								const component = node.getComponent();
@@ -99,6 +105,14 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 									renderValues.leading = (
 										<Settings2Icon className="size-4" />
 									);
+								} else if (component === "room-file-explorer") {
+									renderValues.leading = (
+										<FolderTreeIcon className="size-4" />
+									);
+								} else if (component === "room-file-editor") {
+									renderValues.leading = (
+										<FileIcon className="size-4" />
+									);
 								}
 							}}
 							factory={(node) => {
@@ -108,6 +122,20 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 									return <RoomTool node={node} room={room} />;
 								} else if (component === "room-configuration") {
 									return <RoomConfiguration room={room} />;
+								} else if (component === "room-file-explorer") {
+									return (
+										<RoomFileExplorer
+											layout={layoutRef.current}
+											room={room}
+										/>
+									);
+								} else if (component === "room-file-editor") {
+									return (
+										<RoomFileEditor
+											node={node}
+											room={room}
+										/>
+									);
 								}
 
 								return null;

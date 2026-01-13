@@ -217,7 +217,7 @@ export class WorkspaceStore {
 	 * The key for the local storage cache
 	 */
 	get cacheKey() {
-		return `smss-workspace--${this._store.appId}-v3`;
+		return `smss-workspace--${this._store.appId}-v4`;
 	}
 
 	/**
