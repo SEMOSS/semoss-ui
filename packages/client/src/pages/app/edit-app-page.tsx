@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useParams } from "react-router-dom";
 import { InsightProvider } from "@semoss/sdk/react";
-import { Workspace } from "@/components/workspace";
+import { Workspace } from "@/components/workspace/Workspace";
 import { usePage } from "@/hooks";
 
 export const EditAppPage = observer(() => {
