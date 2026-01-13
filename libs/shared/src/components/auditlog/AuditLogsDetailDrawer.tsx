@@ -138,7 +138,7 @@ const hasExpandableContent = (data: unknown): boolean => {
 
 export const AuditLogsDetailDrawer = (props) => {
 	const { logDetails } = props; //handleDrawerClose
-	const [width, setWidth] = useState(500);
+	const [_width, setWidth] = useState(500);
 	const [promptExpandAll, setPromptExpandAll] = useState<boolean | undefined>(
 		undefined,
 	);
@@ -162,17 +162,6 @@ export const AuditLogsDetailDrawer = (props) => {
 		document.removeEventListener("mousemove", handleMouseMove);
 		document.removeEventListener("mouseup", handleMouseUp);
 	}, [handleMouseMove]);
-
-	const handleMouseDown = useCallback(
-		(e) => {
-			isDragging.current = true;
-			startX.current = e.clientX;
-			startWidth.current = width;
-			document.addEventListener("mousemove", handleMouseMove);
-			document.addEventListener("mouseup", handleMouseUp);
-		},
-		[width, handleMouseUp, handleMouseMove],
-	);
 
 	useEffect(() => {
 		return () => {
@@ -221,21 +210,9 @@ export const AuditLogsDetailDrawer = (props) => {
 	return (
 		<div
 			ref={drawerRef}
-			className="absolute right-0 flex h-full min-w-[500px] flex-col bg-white"
-			style={{ width: `${width}px` }}
+			className="top-20 right-0 flex h-full min-w-[500px] flex-col bg-white"
 		>
-			{/** biome-ignore lint/a11y/noStaticElementInteractions: <need a on mouse down event handling> */}
-			<div
-				className="absolute top-0 bottom-0 left-0 w-1 hover:bg-gray-200 active:bg-gray-300"
-				style={{ cursor: "ew-resize" }}
-				onMouseDown={handleMouseDown}
-			>
-				&nbsp;
-			</div>
-			<div
-				className="flex items-center justify-between border-b px-3 py-2"
-				style={{ backgroundColor: "#F5F9FE" }}
-			>
+			<div className="flex items-center justify-between border-b bg-[#F5F9FE] px-3 py-2">
 				<span className="font-normal text-base text-primary leading-normal">
 					Audit Details
 				</span>
