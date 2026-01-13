@@ -129,11 +129,11 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 					<DialogTitle>Add Members</DialogTitle>
 
 					<DialogDescription className="mb-4 flex w-full flex-col gap-4 text-gray-600">
-						<div className="flex w-[100%] gap-2">
+						<div className="flex w-full gap-2">
 							<div className="flex min-h-[42px] w-[90%] flex-wrap items-center justify-between gap-1 overflow-visible rounded border bg-white px-2 py-1 ring-primary focus-within:ring-2">
 								{/* <InputGroup className="border-none p-0 shadow-none focus:outline-none focus:ring-0"> */}
 								<div className="flex w-full flex-row justify-between">
-									<div className="flex w-[80%] flex-wrap justify-start justify-start gap-2 [overflow-wrap:anywhere]">
+									<div className="flex w-[80%] flex-wrap justify-start gap-2 [overflow-wrap:anywhere]">
 										{selectedUsers.map((userEmail) => {
 											return (
 												<div

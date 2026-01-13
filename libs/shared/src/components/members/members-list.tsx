@@ -31,6 +31,7 @@ interface MembersProps {
 	search?: string;
 	isAddMember?: boolean;
 	refreshList?: boolean;
+	permission?: string;
 }
 
 export const MembersList = ({
@@ -39,6 +40,7 @@ export const MembersList = ({
 	search = "",
 	isAddMember = false,
 	refreshList = false,
+	permission = "",
 }: MembersProps) => {
 	const [userData, setUserData] = useState<SETTINGS_PROVISIONED_USER[]>([
 		/*{
@@ -161,19 +163,24 @@ export const MembersList = ({
 			});
 	};
 
+	const userDataFiltered =
+		permission !== ""
+			? userData.filter((user) => user.permission === permission)
+			: userData;
+
 	return (
 		<>
 			<div className="flex w-full flex-column gap-2" id={membersListId}>
 				<Card className="max-h-[300px] w-full gap-0 overflow-y-auto rounded-none p-4">
 					<CardHeader className="px-2 py-0">
-						<span className="font-geist font-medium text-muted-foreground text-neutral-500 text-sm leading-[20px]">
+						<span className="font-geist font-medium text-neutral-500 text-sm leading-[20px]">
 							Who has access{" "}
 							{/* <Badge variant="secondary">{userData.length}</Badge> */}
 						</span>
 					</CardHeader>
 					<CardContent className="px-2 py-0">
-						{userData.length > 0 ? (
-							userData.map((user) => (
+						{userDataFiltered.length > 0 ? (
+							userDataFiltered.map((user) => (
 								<div
 									className="flex flex-column items-center gap-2 py-2"
 									key={`members-row-${user.email}`}
@@ -184,7 +191,7 @@ export const MembersList = ({
                                                 alt="User"
                                             /> */}
 									{/* <UserRound /> */}
-									<div className="width-[50px] inline-block flex rounded-2xl bg-[#ECEDEF]">
+									<div className="width-[50px] flex rounded-2xl bg-[#ECEDEF]">
 										<Avatar className="items-center justify-center text-gray-500">
 											{user.name.charAt(0).toUpperCase()}
 										</Avatar>

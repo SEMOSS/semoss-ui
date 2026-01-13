@@ -1,14 +1,15 @@
 import { ChevronDown, LockOpen, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
 	Button,
 	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
 	DropdownMenuTrigger,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
 	useDebouncedValue,
-	// Muted,
 } from "@semoss/ui/next";
 import { AddMembersOverlay } from "./add-members";
 import { MembersList } from "./members-list";
@@ -29,6 +30,20 @@ export const MembersTable = ({ id, type }: MembersProps) => {
 	const [openAddMembers, setOpenAddMembers] = useState<boolean>(false);
 	const [searchKey, setSearchKey] = useState<string>("");
 	const debouncedValue = useDebouncedValue(searchKey, 300);
+	const [filterPermission, setFilterPermission] = useState("");
+
+	const returnAccessType = useCallback((permission: string) => {
+		switch (permission) {
+			case "can view":
+				return "READ_ONLY";
+			case "can edit":
+				return "EDIT";
+			case "owner":
+				return "OWNER";
+			default:
+				return "";
+		}
+	}, []);
 
 	return (
 		<div className="w-full">
@@ -48,16 +63,53 @@ export const MembersTable = ({ id, type }: MembersProps) => {
 					<DropdownMenu>
 						<DropdownMenuTrigger
 							asChild
-							className="flex h-auto items-center px-2.5 py-2"
+							className="flex h-auto w-35 items-center px-2.5 py-2"
 						>
 							<Button variant="outline" size="sm">
 								<div className="flex flex-column items-center gap-2">
 									<LockOpen />
-									<span>Permissions</span>
+									<span>
+										{filterPermission || "Permissions"}
+									</span>
 									<ChevronDown />
 								</div>
 							</Button>
 						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuCheckboxItem
+								key="permission-dropdown-view"
+								checked={filterPermission === "can view"}
+								onCheckedChange={() => {
+									setFilterPermission((prev) =>
+										prev === "can view" ? "" : "can view",
+									);
+								}}
+							>
+								Can View
+							</DropdownMenuCheckboxItem>
+							<DropdownMenuCheckboxItem
+								key="permission-dropdown-edit"
+								checked={filterPermission === "can edit"}
+								onCheckedChange={() => {
+									setFilterPermission((prev) =>
+										prev === "can edit" ? "" : "can edit",
+									);
+								}}
+							>
+								Can Edit
+							</DropdownMenuCheckboxItem>
+							<DropdownMenuCheckboxItem
+								key="permission-dropdown-owner"
+								checked={filterPermission === "owner"}
+								onCheckedChange={() => {
+									setFilterPermission((prev) =>
+										prev === "owner" ? "" : "owner",
+									);
+								}}
+							>
+								Owner
+							</DropdownMenuCheckboxItem>
+						</DropdownMenuContent>
 					</DropdownMenu>
 					<Button
 						size="sm"
@@ -77,6 +129,7 @@ export const MembersTable = ({ id, type }: MembersProps) => {
 				type={type}
 				refreshList={!openAddMembers}
 				search={debouncedValue}
+				permission={returnAccessType(filterPermission)}
 			/>
 			<AddMembersOverlay
 				className="w-full"
