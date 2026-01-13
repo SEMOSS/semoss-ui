@@ -29,7 +29,8 @@ import type { MCPToolRequest } from "./types";
 							name: eventData.tool.name || "",
 							parameters: eventData.tool.parameters || {},
 							roomId: eventData.tool.roomId || "",
-						},
+							original_name: eventData.tool.original_name || "",
+						} satisfies MCPToolRequest,
 					});
 				} catch {
 					// noop

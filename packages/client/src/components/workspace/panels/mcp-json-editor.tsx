@@ -19,6 +19,7 @@ type MCPJsonEditorProps = {
 		initialData: MCPJsonData;
 		onSave?: (data: MCPJsonData, path: string) => void;
 		path: string;
+		name: string;
 	};
 };
 
@@ -91,11 +92,9 @@ const useKeyboardShortcut = (
 };
 
 export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
-	const { initialData, onSave, path } = dataMap;
+	const { initialData, onSave, path, name } = dataMap;
 	const { workspace } = useWorkspace();
 	const notification = useNotification();
-
-	const activeTabName = path.split("/").pop() + " (UI Editor)";
 
 	// Data state
 	const [data, setData] = useState<MCPJsonData>(initialData);
@@ -168,17 +167,11 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 
 						if (isModified) {
 							model.doAction(
-								FlexLayout.Actions.renameTab(
-									id,
-									`${activeTabName}*`,
-								),
+								FlexLayout.Actions.renameTab(id, `${name}*`),
 							);
 						} else {
 							model.doAction(
-								FlexLayout.Actions.renameTab(
-									id,
-									`${activeTabName}`,
-								),
+								FlexLayout.Actions.renameTab(id, `${name}`),
 							);
 						}
 					}
@@ -190,7 +183,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				});
 			}
 		},
-		[workspace.model, path, activeTabName, notification],
+		[workspace.model, path, name, notification],
 	);
 
 	const updateTool = useCallback((index: number, value: Partial<MCPTool>) => {
@@ -458,7 +451,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		updatePanels,
 	]);
 
-	const visibleTools = useMemo(() => data.tools, [data.tools]);
+	const visibleTools = useMemo(() => data.tools || [], [data.tools]);
 
 	const filteredTools = useMemo(() => {
 		if (!debouncedSearch.trim()) {

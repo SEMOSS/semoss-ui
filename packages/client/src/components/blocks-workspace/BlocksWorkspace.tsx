@@ -12,17 +12,14 @@ import {
 } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
 import { LoadingScreen, useNotification } from "@semoss/ui";
+import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
+import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
+import { useWorkspace } from "@/hooks";
+import { DesignerStore, type WorkspaceOptions } from "@/stores";
 import {
-	DesignerStore,
-	type WorkspaceOptions,
-	type WorkspaceStore,
-} from "@/stores";
-import {
-	FileEditorPanel,
-	FileExplorerPanel,
 	SettingsPanel,
 	TerminalPanel,
-	Workspace,
+	WorkspaceManager,
 } from "../../components/workspace";
 import { DesignerContext } from "../../contexts";
 import { GraphPanel } from "../workspace/panels/GraphPanel";
@@ -84,7 +81,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						type: "tab",
 						id: "filexplorer",
 						name: "Files",
-						component: "file-explorer",
+						component: "app-file-explorer",
 						config: {},
 						helpText: "Files",
 					},
@@ -197,16 +194,11 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 
 const ACTIVE = "page-1";
 
-interface BlocksWorkspaceProps {
-	/** Workspace to render */
-	workspace: WorkspaceStore;
-}
-
 /**
  * Render the Blocks worksapce
  */
-export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
-	const { workspace } = props;
+export const BlocksWorkspace: React.FC = observer(() => {
+	const { workspace } = useWorkspace();
 	const notification = useNotification();
 	const [state, setState] = useState<StateStore>();
 
@@ -292,7 +284,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 		return <LoadingScreen.Trigger />;
 	}
 
-	const FACTORY: React.ComponentProps<typeof Workspace>["factory"] = (
+	const FACTORY: React.ComponentProps<typeof WorkspaceManager>["factory"] = (
 		node,
 		layout,
 	) => {
@@ -314,10 +306,16 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 					name={component}
 				/>
 			);
-		} else if (component === "file-explorer") {
-			return <FileExplorerPanel title={"Files"} layout={layout} />;
-		} else if (component === "file-editor") {
-			return <FileEditorPanel path={config.path} />;
+		} else if (component === "app-file-explorer") {
+			return (
+				<AppFileExplorer
+					node={node}
+					layout={layout}
+					app={workspace.appId}
+				/>
+			);
+		} else if (component === "app-file-editor") {
+			return <AppFileEditor node={node} app={workspace.appId} />;
 		} else if (component === "mcpJsonEditor") {
 			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "notebook-explorer") {
@@ -344,10 +342,9 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 					designer: designer,
 				}}
 			>
-				<Workspace
+				<WorkspaceManager
 					navbarActions={<BlocksWorkspaceActions />}
 					options={DEFAULT_OPTIONS}
-					workspace={workspace}
 					factory={FACTORY}
 				/>
 				<BlocksWorkspaceDev />
