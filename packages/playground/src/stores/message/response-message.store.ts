@@ -74,9 +74,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	} | null = null;
 
 	/**
-	 * Current execution index of the tool
+	 * Current execution index of the tool, used for auto execution
 	 */
-	toolExecutionIdx: number = 0;
+	toolAutoExecutionIdx: number = 0;
 
 	/**
 	 * Feedback provided by the user; only applicable to messages provided via the LLM
@@ -304,7 +304,7 @@ paramValues=[${JSON.stringify({
 	 * Start executing from the first step
 	 */
 	startToolExecution = async (): Promise<void> => {
-		this.toolExecutionIdx = 0;
+		this.toolAutoExecutionIdx = 0;
 		await this.runToolExecution();
 	};
 
@@ -318,8 +318,11 @@ paramValues=[${JSON.stringify({
 	): Promise<void> => {
 		const currentIdx = this.tools.findIndex((t) => t.id === current.id);
 
-		this.toolExecutionIdx = currentIdx + 1;
-		await this.runToolExecution();
+		if (currentIdx === this.toolAutoExecutionIdx) {
+			// we just finished this tool, move to the next
+			this.toolAutoExecutionIdx += 1;
+			await this.runToolExecution();
+		}
 	};
 
 	/**
@@ -330,14 +333,19 @@ paramValues=[${JSON.stringify({
 
 		// skip if the index is out of bounds
 		if (
-			this.toolExecutionIdx < 0 ||
-			this.toolExecutionIdx >= this.tools.length
+			this.toolAutoExecutionIdx < 0 ||
+			this.toolAutoExecutionIdx >= this.tools.length
 		) {
 			return;
 		}
 
-		const tool = this.tools[this.toolExecutionIdx];
+		const tool = this.tools[this.toolAutoExecutionIdx];
 		if (!tool) {
+			return;
+		} else if (tool.response) {
+			// already has a response, skip
+			this.toolAutoExecutionIdx += 1;
+			await this.runToolExecution();
 			return;
 		}
 
