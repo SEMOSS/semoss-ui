@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Button } from "@semoss/ui/next";
+import { TOOL_CANCELLATION_PROMPT } from "@/constants";
 import type { ResponseMessageStore } from "@/stores";
 
 // Styled component replaced with Tailwind classes inline
@@ -36,8 +37,8 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			isDisabled =
 				room.plan?.step?.details.stepType !== "tool_call" ||
 				room.plan?.step?.details.tool_name !== tool.name ||
-				room.plan?.step?.details._meta.map.SMSS_PROJECT_ID !==
-					tool._meta.map.SMSS_PROJECT_ID;
+				room.plan?.step?.details._meta.SMSS_PROJECT_ID !==
+					tool._meta.SMSS_PROJECT_ID;
 		}
 
 		let icon = null;
@@ -73,7 +74,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 								name: tool.title,
 								component: "room-tool",
 								config: {
-									app: tool._meta.map.SMSS_PROJECT_ID,
+									app: tool._meta.SMSS_PROJECT_ID,
 									tool: {
 										message: message.id,
 										id: tool.id,
@@ -111,7 +112,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 									? "Tool execution cancelled"
 									: tool.response
 										? "Completed"
-										: tool._meta.map.SMSS_MCP_EXECUTION ===
+										: tool._meta.SMSS_MCP_EXECUTION ===
 												"ask"
 											? "Click to open"
 											: "This tool is set to auto-execute"}
@@ -128,7 +129,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							e.stopPropagation();
 							message.saveToolExecution(
 								tool,
-								`This tool execution was intentionally cancelled by the user. The AI assistant should inform the user of the tool's cancellation and ask the user for further instructions. The AI assistant may mention alternative tools or actions to take next, but should not take any further actions or select any further tools without user input.`,
+								TOOL_CANCELLATION_PROMPT,
 								"cancelled",
 							);
 						}}
