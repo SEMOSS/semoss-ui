@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { MembersTable as MembersTableShared } from "@semoss/shared";
 import { styled, ToggleTabsGroup } from "@semoss/ui";
 import { AppSettings } from "@/components/app";
 import {
+	// MembersTable,
 	MembersTable,
 	PendingMembersTable,
 	SettingsTiles,
@@ -81,7 +83,7 @@ export const AppSettingsUserDetailPage = () => {
 			<StyledContent>
 				<ToggleTabsGroup
 					value={view}
-					onChange={(e, v) => setView(v as VIEW)}
+					onChange={(_e, v) => setView(v as VIEW)}
 				>
 					<ToggleTabsGroup.Item label="Member" value={"CURRENT"} />
 					<ToggleTabsGroup.Item
@@ -96,11 +98,14 @@ export const AppSettingsUserDetailPage = () => {
 					/>
 				</ToggleTabsGroup>
 				{view === "CURRENT" && (
-					<MembersTable
-						id={id}
-						type={"PROJECT"}
-						onChange={() => getUserEnginePermission.refresh()}
-					/>
+					// <>
+					// <MembersTable
+					// 	id={id}
+					// 	type={"PROJECT"}
+					// 	onChange={() => getUserEnginePermission.refresh()}
+					// />
+					<MembersTableShared id={id} type={"PROJECT"} />
+					// </>
 				)}
 				{view === "PENDING" && (
 					<PendingMembersTable id={id} type={"PROJECT"} />
@@ -131,7 +136,7 @@ export const AppSettingsAdminDetailPage = () => {
 			<StyledContent>
 				<ToggleTabsGroup
 					value={view}
-					onChange={(e, v) => setView(v as VIEW)}
+					onChange={(_e, v) => setView(v as VIEW)}
 				>
 					<ToggleTabsGroup.Item label="Member" value={"CURRENT"} />
 					<ToggleTabsGroup.Item
@@ -141,7 +146,10 @@ export const AppSettingsAdminDetailPage = () => {
 					<ToggleTabsGroup.Item label="Data Apps" value={"APP"} />
 				</ToggleTabsGroup>
 				{view === "CURRENT" && (
-					<MembersTable id={id} type={"PROJECT"} />
+					<>
+						<MembersTable id={id} type={"PROJECT"} />
+						{/* <MembersTableShared id={id} type={"PROJECT"} /> */}
+					</>
 				)}
 				{view === "PENDING" && (
 					<PendingMembersTable id={id} type={"PROJECT"} />

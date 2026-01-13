@@ -2,3 +2,4 @@ export * from "./auditlog";
 export * from "./engine";
 export * from "./flex-layout";
 export * from "./form";
+export * from "./members";
