@@ -1,7 +1,8 @@
-import { PencilIcon } from "lucide-react";
+import { HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useInsight } from "@semoss/sdk/react";
 import { FileExplorer, FileExplorerItem, FlexLayout } from "@semoss/shared";
+import { toast } from "@semoss/ui/next";
 import { MCP } from "@/constants";
 
 interface EngineFileExplorerProps {
@@ -70,11 +71,12 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 					type: "ENGINE",
 					engine: engine,
 				}}
-				ItemComponent={({ item, onSelect, ...otherProps }) => {
+				ItemComponent={({ item, refresh, onSelect, ...otherProps }) => {
 					return (
 						<FileExplorerItem
 							draggable={true}
 							item={item}
+							refresh={refresh}
 							onSelect={() => {
 								// trigger the default
 								onSelect();
@@ -118,6 +120,43 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 								);
 							}}
 							actions={[
+								MCP.DRIVER_PATHS.some((f) =>
+									item.path.startsWith(f),
+								) && item.type !== "directory"
+									? {
+											name: "Create",
+											icon: <HammerIcon />,
+											tooltip: "Create Toolbox",
+											action: async () => {
+												try {
+													await insight.actions.run(
+														`MakePythonMCP(engine=["${engine}"]);`,
+													);
+
+													// refresh the explorer
+													refresh();
+
+													// open the editor for the created file
+													addNode(
+														`ENGINE_MCP_EDITOR--/mcp/py_mcp.json`,
+														{
+															type: "tab",
+															name: `Toolbox Editor - py_mcp.json`,
+															component:
+																"engine-mcp-editor",
+															config: {
+																name: "py_mcp.json",
+																path: "/mcp/py_mcp.json",
+															},
+															enableClose: true,
+														},
+													);
+												} catch (e) {
+													toast.error(`Error: ${e}`);
+												}
+											},
+										}
+									: null,
 								MCP.JSON_PATHS.some((f) =>
 									item.path.startsWith(f),
 								) && item.type !== "directory"
@@ -178,6 +217,8 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 										await insight.actions.run(
 											`DeleteEngineAssets(engine=["${engine}"], filePath=["${item.path}"]);`,
 										);
+
+										refresh();
 									},
 								},
 							]}

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
-import { MCPJsonEditor } from "./MCPjsonEditor";
+import { MCPJsonEditor } from "./mcp-json-editor";
 
 interface EngineMcpEditorProps {
 	/** Node */
@@ -32,15 +32,28 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 		const getFile = usePixel<string>(
 			`GetEngineAssets(filePath=["${config.path}"], engine=["${engine}"]);`,
 			{
-				onSuccess: () => {
+				onSuccess: (fileContent) => {
 					let data = {
 						_meta: {},
 						tools: [],
 					};
 
 					try {
-						data = JSON.parse(getFile.data);
-					} catch (_e) {}
+						if (
+							fileContent &&
+							typeof fileContent === "string" &&
+							fileContent.trim()
+						) {
+							data = JSON.parse(fileContent);
+						} else {
+							console.warn(
+								"Empty, null, or non-string data received:",
+								fileContent,
+							);
+						}
+					} catch (e) {
+						console.error("Failed to parse JSON:", e);
+					}
 
 					setData(data);
 				},
@@ -81,7 +94,7 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 
 		return (
 			<div className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1">
-				{getFile.status === "LOADING" && isLoading && (
+				{(getFile.status === "LOADING" || isLoading) && (
 					<div className="flex flex-1 items-center justify-center py-4">
 						<Spinner />
 					</div>
@@ -94,12 +107,13 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 					</div>
 				)}
 				{getFile.status === "SUCCESS" && data && (
-					<div className="flex flex-1 items-center justify-center overflow-hidden p-4">
+					<div className="flex h-full w-full flex-1 flex-col overflow-hidden">
 						<MCPJsonEditor
 							dataMap={{
 								initialData: data,
 								onSave: (data) => saveFile(data),
 								path: config.path,
+								name: config.name,
 							}}
 						/>
 					</div>
