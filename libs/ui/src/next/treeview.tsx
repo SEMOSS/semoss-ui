@@ -199,6 +199,49 @@ const TreeItem = React.forwardRef<HTMLLIElement, TreeItemProps>(
 
 		const isSelected = selectedIds.includes(id);
 
+		const handleSelection = (event) => {
+			event.stopPropagation();
+			// handle onClick if provided
+			if (typeof onClick === "function") {
+				onClick(event);
+			}
+			selectCtx.setLastClickedId(id);
+			// handle expansion if has children
+			hasChildren && onToggleExpand(event);
+			if (selectCtx.disableSelection) {
+				return;
+			}
+
+			const isCtrl = event.ctrlKey || event.metaKey; // metaKey for Mac
+			const isShift = event.shiftKey;
+			const lastSelectedId = selectCtx.lastClickedId;
+			const nodesInOrder = selectCtx.nodesInOrder || [];
+			let nextSelected: string[];
+
+			// If multi-select, toggle this id in the selected list
+			if (selectCtx.multiSelect) {
+				if (isShift && lastSelectedId) {
+					const start = nodesInOrder.indexOf(lastSelectedId);
+					const end = nodesInOrder.indexOf(id);
+					const [from, to] = [
+						Math.min(start, end),
+						Math.max(start, end),
+					];
+					nextSelected = nodesInOrder.slice(from, to + 1);
+				} else if (isCtrl) {
+					nextSelected = isSelected
+						? selectedIds.filter((nodeId) => nodeId !== id)
+						: [...selectedIds, id];
+				} else {
+					nextSelected = [id];
+				}
+
+				selectCtx.onNodeSelect(event, nextSelected);
+			} else {
+				selectCtx.onNodeSelect(event, [id]);
+			}
+		};
+
 		return (
 			<li
 				ref={ref}
@@ -208,6 +251,8 @@ const TreeItem = React.forwardRef<HTMLLIElement, TreeItemProps>(
 				aria-selected={isSelected}
 				className={cn("flex flex-col", className)}
 				tabIndex={-1}
+				onClick={handleSelection}
+				onKeyDown={handleSelection}
 				{...otherProps}
 			>
 				{/** biome-ignore lint/a11y/useSemanticElements: this is valid since it is a treeview */}
@@ -218,20 +263,8 @@ const TreeItem = React.forwardRef<HTMLLIElement, TreeItemProps>(
 						"flex w-full items-center gap-1 rounded px-2 py-1 transition-colors hover:bg-muted",
 						"cursor-pointer",
 					)}
-					onClick={(event) => {
-						if (typeof onClick === "function") {
-							onClick(event);
-						}
-						selectCtx.setLastClickedId?.(id);
-					}}
-					onKeyDown={(event) => {
-						if (event.key === "Enter" || event.key === " ") {
-							if (typeof onClick === "function") {
-								onClick(event);
-							}
-							selectCtx.setLastClickedId?.(id);
-						}
-					}}
+					onClick={handleSelection}
+					onKeyDown={handleSelection}
 				>
 					{hasChildren ? (
 						<button
