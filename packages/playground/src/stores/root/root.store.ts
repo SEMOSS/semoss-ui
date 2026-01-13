@@ -60,6 +60,7 @@ export class RootStore {
 				footerItems: [],
 			},
 			dialog: undefined,
+			defaultTools: [],
 		},
 	};
 
@@ -165,8 +166,15 @@ export class RootStore {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),
 			},
-
 			dialog: theme?.dialog || this._store.theme.dialog,
+			defaultTools: [
+				...new Map(
+					[
+						...this._store.theme.defaultTools,
+						...(theme?.defaultTools || []),
+					].map((tool) => [tool.id, tool]),
+				).values(),
+			],
 		};
 
 		// apply the theme to document root
