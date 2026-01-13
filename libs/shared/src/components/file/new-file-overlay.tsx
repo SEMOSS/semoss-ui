@@ -87,6 +87,36 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 	};
 
 	/**
+	 * Validate JSON files
+	 */
+	const validateJsonFiles = async (files: File[]): Promise<void> => {
+		const jsonFiles = files.filter((file) =>
+			file.name.toLowerCase().endsWith(".json"),
+		);
+
+		if (jsonFiles.length === 0) {
+			return;
+		}
+
+		const invalidFiles: string[] = [];
+
+		for (const file of jsonFiles) {
+			try {
+				const content = await file.text();
+				JSON.parse(content);
+			} catch {
+				invalidFiles.push(file.name);
+			}
+		}
+
+		if (invalidFiles.length > 0) {
+			toast.error(
+				`Warning: Invalid JSON file${invalidFiles.length > 1 ? "s" : ""}: ${invalidFiles.join(", ")}`,
+			);
+		}
+	};
+
+	/**
 	 * Submit the form
 	 */
 	const submitForm = async () => {
@@ -99,6 +129,9 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 					toast.error("Please select at least one file to upload");
 					return;
 				}
+
+				// Validate JSON files before uploading
+				await validateJsonFiles(data.files);
 
 				// upload the files
 				if (mode.type === "APP") {
@@ -150,9 +183,8 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 
 			onClose(true);
 		} catch (e) {
-			toast.error(e);
-
-			console.error(e);
+			const errorMessage = e instanceof Error ? e.message : String(e);
+			toast.error(errorMessage);
 		} finally {
 			setIsLoading(false);
 		}
