@@ -73,11 +73,11 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 				ItemComponent={({ item, onSelect, ...otherProps }) => {
 					return (
 						<FileExplorerItem
-							draggable={true}
+							draggable={item.type !== "directory"}
 							item={item}
 							onSelect={() => {
 								// trigger the default
-								onSelect();
+								onSelect(item);
 
 								// don't open directories
 								if (item.type === "directory") {

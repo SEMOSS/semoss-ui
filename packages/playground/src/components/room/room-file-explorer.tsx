@@ -27,10 +27,11 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 				ItemComponent={({ item, onSelect, ...otherProps }) => {
 					return (
 						<FileExplorerItem
+							draggable={item.type !== "directory"}
 							item={item}
 							onSelect={() => {
 								// trigger the default
-								onSelect();
+								onSelect(item);
 
 								// don't open directories
 								if (item.type === "directory") {

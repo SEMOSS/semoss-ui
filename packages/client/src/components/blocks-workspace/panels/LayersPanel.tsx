@@ -15,10 +15,8 @@ import { restrictToFirstScrollableAncestor } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import {
 	Add,
-	ChevronRight,
 	ContentCopy,
 	Delete,
-	ExpandMore,
 	HomeOutlined,
 	LibraryAdd,
 	MoreVert,
@@ -919,16 +917,6 @@ export const LayersPanel = observer(
 								accordionRefs.current[block.id] =
 									node instanceof HTMLElement ? node : null;
 							}}
-							expandIcon={
-								<StyledTreeItemIcon>
-									<ChevronRight />
-								</StyledTreeItemIcon>
-							}
-							collapseIcon={
-								<StyledTreeItemIcon>
-									<ExpandMore />
-								</StyledTreeItemIcon>
-							}
 							label={
 								<TreeViewComponent
 									block={block}

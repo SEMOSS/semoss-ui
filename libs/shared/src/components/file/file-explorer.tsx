@@ -24,6 +24,7 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	TreeView,
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
@@ -62,6 +63,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	const [isUploading, setIsUploading] = useState(false);
 
 	const [isNewFile, setIsNewFile] = useState(false);
+	const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
 
 	const debouncedSearch = useDebouncedValue(search);
 
@@ -279,7 +281,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 			<Separator className="my-1" />
 
-			<ScrollArea className="[&>div>div]:!block h-full min-h-0 w-full min-w-0 flex-1">
+			<ScrollArea className="[&>div>div]:block! h-full min-h-0 w-full min-w-0 flex-1">
 				{(getFiles.status === "LOADING" || isUploading) && (
 					<div className="flex items-center justify-center py-16">
 						<Spinner />
@@ -294,26 +296,33 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 					</div>
 				)}
 
-				{getFiles.status === "SUCCESS" &&
-					!isUploading &&
-					getFiles.data.map((i) => {
-						return (
-							<ItemComponent
-								key={i.path}
-								item={i}
-								refresh={() => getFiles.refresh()}
-								onSelect={() => {
-									if (i.type === "directory") {
-										// set the new path
-										setPath(i.path);
-
-										// clear the search
-										setSearch("");
-									}
-								}}
-							/>
-						);
-					})}
+				{getFiles.status === "SUCCESS" && !isUploading && (
+					<TreeView
+						className="w-full"
+						expanded={expandedPaths}
+						onNodeToggle={(_, nodeIds) => setExpandedPaths(nodeIds)}
+						disableSelection
+					>
+						{getFiles.data.map((i) => {
+							return (
+								<ItemComponent
+									key={i.path}
+									mode={mode}
+									item={i}
+									refresh={() => getFiles.refresh()}
+									expandedPaths={expandedPaths}
+									onSelect={(item) => {
+										if (item.type === "directory") {
+											setPath(item.path);
+											setSearch("");
+										}
+									}}
+									ItemComponent={ItemComponent}
+								/>
+							);
+						})}
+					</TreeView>
+				)}
 			</ScrollArea>
 
 			{isDragging && (

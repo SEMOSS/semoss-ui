@@ -153,12 +153,12 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 				ItemComponent={({ item, refresh, onSelect, ...otherProps }) => {
 					return (
 						<FileExplorerItem
-							draggable={true}
+							draggable={item.type !== "directory"}
 							item={item}
 							refresh={refresh}
 							onSelect={() => {
 								// trigger the default
-								onSelect();
+								onSelect(item);
 
 								// don't open directories
 								if (item.type === "directory") {
@@ -220,7 +220,8 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 														"/mcp/py_mcp.json",
 													);
 												} catch (e) {
-													toast.error(e);
+													toast.error(e.message);
+													console.error(e);
 												}
 											},
 										}
