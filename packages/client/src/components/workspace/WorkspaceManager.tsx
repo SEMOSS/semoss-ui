@@ -455,7 +455,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 				</StyledContent>
 			</StyledMain>
 			<WorkspaceOverlay />
-		</WorkspaceContext.Provider>
+		</>
 	);
 });
 
