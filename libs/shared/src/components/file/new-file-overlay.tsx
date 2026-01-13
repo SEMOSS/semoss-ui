@@ -110,9 +110,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 		}
 
 		if (invalidFiles.length > 0) {
-			toast.error(
-				`Warning: Invalid JSON file${invalidFiles.length > 1 ? "s" : ""}: ${invalidFiles.join(", ")}`,
-			);
+			toast.error("This file does not contain valid JSON");
 		}
 	};
 
