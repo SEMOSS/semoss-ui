@@ -83,7 +83,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		setFocus,
 		formState: { isValid },
 	} = useForm({
-		mode: "onSubmit",
+		mode: "onChange",
 		defaultValues: [...fields, ...advanced].reduce<Record<string, unknown>>(
 			(acc, f) => {
 				// if a name was supplied for the model, lock the MODEL field to that name
@@ -386,22 +386,39 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								<TextField
 									label={f.label}
 									variant="outlined"
-									type="number"
+									type="text"
 									size="small"
 									required={f.required}
-									value={String(field.value ?? "")}
-									onChange={(v) => {
-										const asNumber = Number(v);
-										field.onChange(
-											Number.isNaN(asNumber)
-												? v
-												: asNumber,
-										);
-									}}
+									value={field.value ?? ""}
+									onChange={(v) => field.onChange(v)}
 									disabled={f.disabled || isLockedModel}
 									data-testId={formatToDataTestId(
-										`model-importForm-${f.label}-number`,
+										`model-importForm-${f.label}`,
 									)}
+									helperText={
+										error?.message?.toString() ||
+										f.helperText ||
+										""
+									}
+									error={!!error}
+									inputProps={{
+										onFocus: () => {
+											_lastField.current = {
+												..._lastField.current,
+												lastFocussedField: field.name,
+												lastFocussedValue: String(
+													field.value ?? "",
+												),
+												lastValidatedValue: field.value,
+											};
+										},
+										onBlur: () => {
+											if (f.rules?.custom_rules) {
+												_lastField.current.runValidate = true;
+												trigger(field.name);
+											}
+										},
+									}}
 								/>
 							);
 						case "textarea":
