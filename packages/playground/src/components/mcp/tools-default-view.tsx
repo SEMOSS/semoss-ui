@@ -151,8 +151,7 @@ export const DynamicForm = observer(
 		};
 
 		// Tool Execution
-		const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-			e.preventDefault();
+		const handleSubmit = async () => {
 			setIsSubmitting(true);
 			const response = await room.runRoomPixel<[string]>(
 				`RunMCPTool(project = [ "${config.app}" ], function=[ "${
@@ -576,14 +575,8 @@ export const DynamicForm = observer(
 							type="button"
 							className="w-full"
 							size="lg"
-							onClick={(e) => {
-								// Trigger form submission
-								const form =
-									e.currentTarget.closest("form") ||
-									document.querySelector("form");
-								if (form) {
-									form.requestSubmit();
-								}
+							onClick={() => {
+								handleSubmit();
 							}}
 							disabled={isSubmitting}
 						>
