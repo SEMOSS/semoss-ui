@@ -111,10 +111,20 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 				onClose(true);
 			});
 	}
+	function resetAddMemberState() {
+		setSelectedUsers([]);
+		setSearchKey("");
+	}
 
 	return (
 		<div className="position-relative w-full">
-			<Dialog open={open} onOpenChange={onClose}>
+			<Dialog
+				open={open}
+				onOpenChange={() => {
+					onClose();
+					resetAddMemberState();
+				}}
+			>
 				<DialogContent className="w-full max-w-2xl rounded-lg bg-white p-8 shadow-lg sm:max-w-6xl">
 					<DialogTitle>Add Members</DialogTitle>
 
@@ -130,14 +140,14 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 													key={userEmail?.email}
 													className="flex items-center gap-1 rounded border bg-transparent px-2 py-1"
 												>
-													<span>
+													<span className="text-black">
 														{userEmail?.email}
 													</span>
 													<span>
 														<Button
 															size="icon-sm"
 															variant="outline"
-															className="border-none"
+															className="border-none text-black"
 															onClick={() =>
 																setSelectedUsers(
 																	selectedUsers.filter(

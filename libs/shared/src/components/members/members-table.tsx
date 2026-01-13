@@ -7,6 +7,7 @@ import {
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
+	useDebouncedValue,
 	// Muted,
 } from "@semoss/ui/next";
 import { AddMembersOverlay } from "./add-members";
@@ -26,6 +27,8 @@ interface MembersProps {
 
 export const MembersTable = ({ id, type }: MembersProps) => {
 	const [openAddMembers, setOpenAddMembers] = useState<boolean>(false);
+	const [searchKey, setSearchKey] = useState<string>("");
+	const debouncedValue = useDebouncedValue(searchKey, 300);
 
 	return (
 		<div className="w-full">
@@ -33,7 +36,11 @@ export const MembersTable = ({ id, type }: MembersProps) => {
 			<div className="flex flex-column gap-[10px] rounded-xl rounded-br-none rounded-bl-none border-gray-200 border-b bg-[#f4f4f4] p-4 align-start">
 				<div className="flex h-[36px] w-full flex-column gap-2">
 					<InputGroup className="flex h-auto gap-1 self-stretch bg-[#FFF] px-2 py-1 align-center">
-						<InputGroupInput placeholder="Search" />
+						<InputGroupInput
+							placeholder="Search"
+							value={searchKey}
+							onChange={(e) => setSearchKey(e.target.value)}
+						/>
 						<InputGroupAddon>
 							<Search />
 						</InputGroupAddon>
@@ -65,7 +72,12 @@ export const MembersTable = ({ id, type }: MembersProps) => {
 				</div>
 			</div>
 			{/* Members List Section */}
-			<MembersList id={id} type={type} refreshList={!openAddMembers} />
+			<MembersList
+				id={id}
+				type={type}
+				refreshList={!openAddMembers}
+				search={debouncedValue}
+			/>
 			<AddMembersOverlay
 				className="w-full"
 				id={id}
