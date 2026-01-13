@@ -45,3 +45,8 @@ export const PERMISSION_DESCRIPTION_MAP: Record<
 		readonly: "Ability to query against the vector database",
 	},
 };
+
+export const MCP = {
+	DRIVER_PATHS: ["/py/mcp_driver.py"],
+	JSON_PATHS: ["/mcp/py_mcp.json", "/mcp/pixel_mcp.json"],
+} as const;

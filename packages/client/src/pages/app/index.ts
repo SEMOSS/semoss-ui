@@ -2,7 +2,7 @@ import { AppCatalogPage } from "./AppCatalogPage";
 import { AppDetailPage } from "./AppDetailPage";
 import { AppMarketplacePage } from "./AppMarketplacePage";
 import { CreateAppPage } from "./CreateAppPage";
-import { EditAppPage } from "./EditAppPage";
+import { EditAppPage } from "./edit-app-page";
 import { NewPromptBuilderAppPage } from "./NewPromptBuilderAppPage";
 import { ViewAppPage } from "./ViewAppPage";
 
