@@ -27,7 +27,8 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = (props) => {
 
 	const headerText = useMemo(() => {
 		if (!safePath) return "MCP JSON Editor";
-		const fileName = safePath.split("/").pop() ?? "";
+		const cleanPath = safePath.replace(/#mcp$/, "");
+		const fileName = cleanPath.split("/").pop() ?? "";
 		const base = fileName.replace(".json", "");
 		return `${base.toUpperCase()} JSON Editor`;
 	}, [safePath]);
@@ -366,7 +367,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = (props) => {
 	);
 
 	return (
-		<div className="mx-auto w-full max-w-full px-2 py-6 pb-8 overflow-y-auto">
+		<div className="mx-auto w-full max-w-full overflow-y-auto px-2 py-6 pb-8">
 			<div className="mb-6 px-4">
 				<h2 className="font-bold text-2xl">{headerText}</h2>
 			</div>
