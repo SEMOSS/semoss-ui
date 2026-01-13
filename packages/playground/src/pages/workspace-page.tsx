@@ -49,9 +49,7 @@ export const WorkspacePage = observer(() => {
 	 */
 	const getWorkspaces = useIteratorPixel<App[], App>(
 		(limit, offset) =>
-			`MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} metaKeys = ${JSON.stringify([
-				"description",
-			])}, type = "WORKSPACE", limit=[${limit}], offset=[${offset}]);`,
+			`MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} metaKeys = ["description"], type = "WORKSPACE", limit=[${limit}], offset=[${offset}]);`,
 		(response) => {
 			// if its less than the limit, we know its the end
 			if (response.length < 25) {
