@@ -201,8 +201,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 													.reverse()
 													.join("/");
 
-												console.log(crumbs, newPath);
-
 												setPath(newPath);
 												setSearch("");
 											}}
@@ -311,7 +309,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 									item={i}
 									refresh={() => getFiles.refresh()}
 									expandedPaths={expandedPaths}
-									onSelect={(item) => {
+									onItemSelect={(item) => {
 										if (item.type === "directory") {
 											setPath(item.path);
 											setSearch("");

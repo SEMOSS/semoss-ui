@@ -15,8 +15,7 @@ import {
 import type { FileItem, FileMode } from "./file.types";
 import { FileExplorerMenuItem } from "./file-explorer-menu-item";
 
-interface FileExplorerItemProps
-	extends Omit<React.HTMLAttributes<HTMLLIElement>, "onSelect"> {
+interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
 	/** Mode of file editor */
 	mode: FileMode;
 
@@ -32,7 +31,7 @@ interface FileExplorerItemProps
 	expandedPaths: string[];
 
 	/** Callback when item is selected (clicked) */
-	onSelect?: (item: FileItem) => void;
+	onItemSelect?: (item: FileItem) => void;
 
 	/** Primary actions */
 	actions?: ({
@@ -59,7 +58,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	item,
 	refresh,
 	expandedPaths,
-	onSelect,
+	onItemSelect,
 	actions = [],
 	secondaryActions = [],
 	ItemComponent = FileExplorerItem,
@@ -101,7 +100,9 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	return (
 		<TreeItem
 			id={item.path}
-			onClick={() => onSelect?.(item)}
+			onClick={() => {
+				onItemSelect?.(item);
+			}}
 			label={
 				<div
 					className="flex w-full flex-1 flex-row items-center gap-2"
@@ -182,7 +183,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 								item={child}
 								refresh={refresh}
 								expandedPaths={expandedPaths}
-								onSelect={onSelect}
+								onItemSelect={onItemSelect}
 								actions={actions}
 								secondaryActions={secondaryActions}
 							/>

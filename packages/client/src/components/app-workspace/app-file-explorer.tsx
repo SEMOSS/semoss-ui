@@ -1,6 +1,6 @@
 import { CloudUploadIcon, HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useInsight } from "@semoss/sdk/react";
+import { download, useInsight } from "@semoss/sdk/react";
 import { FileExplorer, FileExplorerItem, FlexLayout } from "@semoss/shared";
 import {
 	Button,
@@ -150,15 +150,20 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 						</TooltipContent>
 					</Tooltip>
 				}
-				ItemComponent={({ item, refresh, onSelect, ...otherProps }) => {
+				ItemComponent={({
+					item,
+					refresh,
+					onItemSelect,
+					...otherProps
+				}) => {
 					return (
 						<FileExplorerItem
 							draggable={item.type !== "directory"}
 							item={item}
 							refresh={refresh}
-							onSelect={() => {
+							onItemSelect={(item) => {
 								// trigger the default
-								onSelect(item);
+								onItemSelect(item);
 
 								// don't open directories
 								if (item.type === "directory") {
@@ -254,6 +259,32 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 										}
 									},
 								},
+								item.type !== "directory"
+									? {
+											name: "Download",
+											action: async (item) => {
+												// save it
+												const { pixelReturn } =
+													await insight.actions.run<
+														[string]
+													>(
+														`DownloadAppAsset(project=["${app}"], filePath=["${item.path}"]);`,
+													);
+
+												// get the file key
+												const fileKey =
+													pixelReturn[0].output;
+
+												// download the file
+												await download(
+													insight.insightId,
+													fileKey,
+												);
+
+												refresh();
+											},
+										}
+									: null,
 								// item.path.endsWith(".zip")
 								// 	? {
 								// 			name: "Unzip",

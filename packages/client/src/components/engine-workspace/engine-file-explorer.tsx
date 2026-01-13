@@ -1,6 +1,6 @@
 import { PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useInsight } from "@semoss/sdk/react";
+import { download, useInsight } from "@semoss/sdk/react";
 import { FileExplorer, FileExplorerItem, FlexLayout } from "@semoss/shared";
 import { MCP } from "@/constants";
 
@@ -70,14 +70,20 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 					type: "ENGINE",
 					engine: engine,
 				}}
-				ItemComponent={({ item, onSelect, ...otherProps }) => {
+				ItemComponent={({
+					item,
+					onItemSelect,
+					refresh,
+					...otherProps
+				}) => {
 					return (
 						<FileExplorerItem
 							draggable={item.type !== "directory"}
 							item={item}
-							onSelect={() => {
+							refresh={refresh}
+							onItemSelect={(item) => {
 								// trigger the default
-								onSelect(item);
+								onItemSelect(item);
 
 								// don't open directories
 								if (item.type === "directory") {
@@ -160,6 +166,32 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 										}
 									},
 								},
+								item.type !== "directory"
+									? {
+											name: "Download",
+											action: async (item) => {
+												// save it
+												const { pixelReturn } =
+													await insight.actions.run<
+														[string]
+													>(
+														`DownloadEngineAsset(engine=["${engine}"], filePath=["${item.path}"]);`,
+													);
+
+												// get the file key
+												const fileKey =
+													pixelReturn[0].output;
+
+												// download the file
+												await download(
+													insight.insightId,
+													fileKey,
+												);
+
+												refresh();
+											},
+										}
+									: null,
 								// item.path.endsWith(".zip")
 								// 	? {
 								// 			name: "Unzip",
@@ -178,6 +210,8 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 										await insight.actions.run(
 											`DeleteEngineAssets(engine=["${engine}"], filePath=["${item.path}"]);`,
 										);
+
+										refresh();
 									},
 								},
 							]}
