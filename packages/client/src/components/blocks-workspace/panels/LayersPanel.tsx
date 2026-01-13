@@ -15,8 +15,10 @@ import { restrictToFirstScrollableAncestor } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import {
 	Add,
+	ChevronRight,
 	ContentCopy,
 	Delete,
+	ExpandMore,
 	HomeOutlined,
 	LibraryAdd,
 	MoreVert,
@@ -42,10 +44,10 @@ import {
 	Stack,
 	styled,
 	TextField,
+	TreeView,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { TreeItem, TreeView } from "@semoss/ui/next";
 import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
@@ -641,13 +643,19 @@ export const LayersPanel = observer(
 			);
 		};
 
-		const handleAccordionToggle = (id: string) => {
+		const handleAccordionToggle = (
+			event: React.MouseEvent<SVGSVGElement, MouseEvent>,
+		) => {
 			event.stopPropagation();
-			setExpanded((prev) =>
-				prev.includes(id)
-					? prev.filter((p) => p !== id)
-					: [...prev, id],
-			);
+			const id = event.currentTarget.getAttribute("data-expand-id");
+			if (!id) return;
+			const action = event.currentTarget.getAttribute("name");
+			setExpanded((prev) => {
+				if (action === "expand") {
+					return [...prev, id];
+				}
+				return prev.filter((nodeId) => nodeId !== id);
+			});
 		};
 		const TreeViewComponent = ({
 			block,
@@ -910,13 +918,31 @@ export const LayersPanel = observer(
 					onDropPositionChange={setGlobalDropPositions}
 				>
 					<DraggableTreeItem key={block.id} node={block}>
-						<TreeItem
+						<TreeView.Item
 							key={block.id}
-							id={block.id}
+							nodeId={block.id}
 							ref={(node) => {
 								accordionRefs.current[block.id] =
 									node instanceof HTMLElement ? node : null;
 							}}
+							expandIcon={
+								<StyledTreeItemIcon>
+									<ChevronRight
+										name="expand"
+										data-expand-id={block.id}
+										onClick={handleAccordionToggle}
+									/>
+								</StyledTreeItemIcon>
+							}
+							collapseIcon={
+								<StyledTreeItemIcon>
+									<ExpandMore
+										name="collapse"
+										data-expand-id={block.id}
+										onClick={handleAccordionToggle}
+									/>
+								</StyledTreeItemIcon>
+							}
 							label={
 								<TreeViewComponent
 									block={block}
@@ -938,14 +964,14 @@ export const LayersPanel = observer(
 								e.stopPropagation();
 								designer.setHovered("");
 							}}
-							style={{
+							sx={{
 								minWidth: 0,
 							}}
 						>
 							{children.map((c) => {
 								return renderBlock(c);
 							})}
-						</TreeItem>
+						</TreeView.Item>
 					</DraggableTreeItem>
 				</DroppableTreeItem>
 			);
@@ -1378,26 +1404,6 @@ export const LayersPanel = observer(
 										<TreeView
 											selected={selectedLayers}
 											expanded={expanded}
-											onNodeToggle={(_e, nodeIds) => {
-												const lastToggled =
-													nodeIds.find(
-														(id) =>
-															!expanded.includes(
-																id,
-															),
-													) ||
-													expanded.find(
-														(id) =>
-															!nodeIds.includes(
-																id,
-															),
-													);
-												if (lastToggled) {
-													handleAccordionToggle(
-														lastToggled,
-													);
-												}
-											}}
 											onNodeSelect={(
 												e: React.SyntheticEvent,
 												nodeIds: string[],
