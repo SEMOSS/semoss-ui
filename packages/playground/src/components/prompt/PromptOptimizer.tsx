@@ -13,7 +13,19 @@ import {
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
 
-const PROMPT_OPTIMIZER_FUNCTION = "23583ab4-4738-4fe8-a7e9-737a14da734w";
+interface LLMOutput {
+  response?: string;
+  [key: string]: unknown;
+}
+
+interface PixelReturn {
+  output?: LLMOutput;
+  operationType?: string[];
+}
+
+interface LLMResponse {
+  pixelReturn?: PixelReturn[];
+}
 
 interface PromptOptimizerProps {
 	input: string;
@@ -41,27 +53,56 @@ export const PromptOptimizer: React.FC<PromptOptimizerProps> = observer(
 				// Store input before optimizing
 				prevInputRef.current = input;
 
-				// Call platform optimizer
-				const response = await actions.run<{ response: string }[]>(
-					`ExecuteFunctionEngine( engine = ${JSON.stringify(
-						PROMPT_OPTIMIZER_FUNCTION,
-					)}, map=[{ "roomId": "${insightId}", "modelId": ${JSON.stringify(
-						chat?.models?.selected?.app_id,
-					)}, "prompt":${JSON.stringify(input)}}] )`,
-				);
+				// Create optimization prompt
+				const optimizationPrompt = `Please optimize the following prompt to be more clear, specific, and effective while maintaining its original intent:
+				"${input}"
+				Return only the optimized prompt without any additional explanation or formatting.`;
 
+				// Use modelId from useLLM hook or fallback to chat selection
+				const selectedModelId = chat?.models?.selected?.app_id;
+
+				if (!selectedModelId) {
+					throw new Error("No model selected");
+				}
+
+				// Call LLM directly using the selected model - fix pixel syntax
+				const escapedPrompt = optimizationPrompt.replace(/"/g, '\\"');
+				const pixel = `LLM(engine=["${selectedModelId}"], command=["${escapedPrompt}"], paramValues=[{"temperature":0.3, "max_tokens":1000}]);`;
+				
+				const response = await actions.run(pixel) as LLMResponse;
+
+				// Rest of your code remains the same...
 				if (!response?.pixelReturn?.[0]) {
 					throw new Error("Invalid response structure from LLM");
 				}
-				const { output, operationType } = response.pixelReturn[0];
-				const newPrompt = output?.response;
 
-				if (operationType?.includes("ERROR") || !newPrompt) {
-					throw new Error(
-						output?.[0]?.response || "LLM operation failed",
-					);
+				const { output, operationType } = response.pixelReturn[0];
+
+				if (operationType?.includes("ERROR")) {
+					const errorMessage = output?.response || output || "LLM operation failed";
+					
+					if (typeof errorMessage === "string") {
+						if (errorMessage.toLowerCase().includes("token limit") || 
+							errorMessage.toLowerCase().includes("context length")) {
+							throw new Error("Prompt is too large for optimization. Please shorten it first.");
+						} else if (errorMessage.toLowerCase().includes("permission") || 
+								errorMessage.toLowerCase().includes("access")) {
+							throw new Error("You do not have permission to use this model");
+						} else {
+							throw new Error(errorMessage);
+						}
+					} else {
+						throw new Error("LLM operation failed");
+					}
 				}
 
+				const newPrompt = output?.response;
+
+				if (!newPrompt) {
+					throw new Error("No optimized prompt received");
+				}
+
+				// Only show revert if the prompt actually changed
 				if (newPrompt !== input) {
 					prevOptimizedRef.current = newPrompt;
 					setShowRevert(true);
