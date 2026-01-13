@@ -99,7 +99,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 						onSave: async (data, path) => {
 							try {
 								await insight.actions.run(
-									`SaveAsset(fileName=["${path}"], content=["<encode>${JSON.stringify(data, null, 2)}</encode>"], space=["${app}"]);CommitAsset(filePath=["${path}"], comment=["Save from editor"], space=["${app}"])`,
+									`SaveAppAssets(project=["${app}"], filePath=["${path}"], content=["<encode>${JSON.stringify(data, null, 2)}</encode>"]);`,
 								);
 								toast.success("Tool saved successfully");
 							} catch (e) {
