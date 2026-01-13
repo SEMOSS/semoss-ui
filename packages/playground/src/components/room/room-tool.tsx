@@ -74,6 +74,7 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 							required: [],
 							title: "",
 						},
+						original_name: "",
 					},
 				],
 				_meta: {
@@ -118,6 +119,7 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 					name: config?.tool?.name || "",
 					parameters: toJS(config?.tool?.parameters || {}),
 					roomId: room.roomId,
+					original_name: selectedTool?.original_name || "",
 				} satisfies MCPToolRequest,
 			},
 			"*",
