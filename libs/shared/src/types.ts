@@ -83,5 +83,25 @@ export interface ThemeMap {
 			title: string;
 			content: string;
 		};
+
+		/**
+		 * Default tools to show in the room
+		 */
+		defaultTools: {
+			/** Type of the mcp */
+			type:
+				| "PROJECT"
+				| "STORAGE"
+				| "DATABASE"
+				| "FUNCTION"
+				| "MODEL"
+				| "VECTOR";
+
+			/** Id of the mcp */
+			id: string;
+
+			/** Name of the mcp */
+			name: string;
+		}[];
 	};
 }
