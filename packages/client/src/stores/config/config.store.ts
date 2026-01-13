@@ -499,56 +499,6 @@ export class ConfigStore {
 	}
 
 	/**
-	 * Add a recent search to localStorage.
-	 * Stores up to 8 items, removes oldest if limit exceeded.
-	 * If same id exists, remove it and add new at the end.
-	 * @param recentSearch { label: string, id: string, type: string }
-	 */
-	setRecentSearch(recentSearch: { label: string; id: string; type: string }) {
-		const key = `recent-searches--${this._store.userEpoch}`;
-		let recent: Array<{ label: string; id: string; type: string }> = [];
-
-		// Get existing searches
-		const item = localStorage.getItem(key);
-		if (item) {
-			try {
-				recent = JSON.parse(item);
-				// Remove if id already exists
-				recent = recent.filter((s) => s.id !== recentSearch.id);
-			} catch {
-				recent = [];
-			}
-		}
-
-		// Add new search at the end
-		recent.push(recentSearch);
-
-		// Keep only last 8
-		if (recent.length > 8) {
-			recent = recent.slice(recent.length - 8);
-		}
-
-		localStorage.setItem(key, JSON.stringify(recent));
-	}
-
-	/**
-	 * Get recent searches from localStorage.
-	 */
-	getRecentSearches(): Array<{ label: string; id: string; type: string }> {
-		const key = `recent-searches--${this._store.userEpoch}`;
-		const item = localStorage.getItem(key);
-
-		if (item) {
-			try {
-				return JSON.parse(item);
-			} catch {
-				return [];
-			}
-		}
-		return [];
-	}
-
-	/**
 	 * Allow the user to login
 	 *
 	 * @param username - username to login with
@@ -774,7 +724,7 @@ export class ConfigStore {
 	 *
 	 * @param appId - id of app to load into the workspace
 	 */
-	async createWorkspace(appId: string) {
+	async createWorkspace(appId: string, insightId: string = "new") {
 		// check the permission
 		const getUserProjectPermission =
 			await getUserProjectLevelPermission(appId);
@@ -785,7 +735,8 @@ export class ConfigStore {
 			throw new Error("Unauthorized");
 		}
 
-		const { insightId } = await runPixel(`SetContext("${appId}")`, "new");
+		// set the context
+		await runPixel(`SetContext("${appId}")`, insightId);
 
 		// get the metadata
 		const getAppInfo = await this._root.monolithStore.runQuery<
