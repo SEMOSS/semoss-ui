@@ -150,38 +150,30 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 						</TooltipContent>
 					</Tooltip>
 				}
-				ItemComponent={({
-					item,
-					refresh,
-					onItemSelect,
-					...otherProps
-				}) => {
+				onItemSelect={(item) => {
+					// don't open directories
+					if (item.type === "directory") {
+						return;
+					}
+
+					// this will select if there or open if not
+					addNode(`ENGINE_FILE--${item.path}`, {
+						type: "tab",
+						name: item.name,
+						component: "app-file-editor",
+						config: {
+							name: item.name,
+							path: item.path,
+						},
+						enableClose: true,
+					});
+				}}
+				ItemComponent={({ item, refresh, ...otherProps }) => {
 					return (
 						<FileExplorerItem
 							draggable={item.type !== "directory"}
 							item={item}
 							refresh={refresh}
-							onItemSelect={(item) => {
-								// trigger the default
-								onItemSelect(item);
-
-								// don't open directories
-								if (item.type === "directory") {
-									return;
-								}
-
-								// this will select if there or open if not
-								addNode(`ENGINE_FILE--${item.path}`, {
-									type: "tab",
-									name: item.name,
-									component: "app-file-editor",
-									config: {
-										name: item.name,
-										path: item.path,
-									},
-									enableClose: true,
-								});
-							}}
 							onDragStart={(e) => {
 								// cannot drag directories
 								if (item.type === "directory") {

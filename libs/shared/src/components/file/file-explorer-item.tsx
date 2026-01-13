@@ -6,11 +6,12 @@ import {
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuTrigger,
-	Spinner,
+	Muted,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
-	TreeItem,
+	TreeViewItem,
+	useTreeView,
 } from "@semoss/ui/next";
 import type { FileItem, FileMode } from "./file.types";
 import { FileExplorerMenuItem } from "./file-explorer-menu-item";
@@ -26,12 +27,6 @@ interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
 	 * Refresh callback to refresh the items
 	 */
 	refresh: () => void;
-
-	/** Currently expanded paths (from TreeView) */
-	expandedPaths: string[];
-
-	/** Callback when item is selected (clicked) */
-	onItemSelect?: (item: FileItem) => void;
 
 	/** Primary actions */
 	actions?: ({
@@ -57,16 +52,16 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	mode,
 	item,
 	refresh,
-	expandedPaths,
-	onItemSelect,
+
 	actions = [],
 	secondaryActions = [],
 	ItemComponent = FileExplorerItem,
 	...otherProps
 }) => {
+	const treeView = useTreeView<FileItem>();
 	const insight = useInsight();
 	const isDirectory = item.type === "directory";
-	const isExpanded = expandedPaths.includes(item.path);
+	const isExpanded = treeView.expanded.includes(item.path);
 
 	// Only fetch children if expanded and is a directory
 	let getChildrenPixel = "";
@@ -98,11 +93,10 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	};
 
 	return (
-		<TreeItem
+		<TreeViewItem
 			id={item.path}
-			onClick={() => {
-				onItemSelect?.(item);
-			}}
+			item={item}
+			loading={getChildren.status === "LOADING"}
 			label={
 				<div
 					className="flex w-full flex-1 flex-row items-center gap-2"
@@ -170,11 +164,6 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 		>
 			{isDirectory ? (
 				<>
-					{getChildren.status === "LOADING" && (
-						<div className="flex items-center justify-center py-2">
-							<Spinner className="size-4" />
-						</div>
-					)}
 					{getChildren.status === "SUCCESS" &&
 						getChildren.data.map((child) => (
 							<ItemComponent
@@ -182,17 +171,15 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 								mode={mode}
 								item={child}
 								refresh={refresh}
-								expandedPaths={expandedPaths}
-								onItemSelect={onItemSelect}
 								actions={actions}
 								secondaryActions={secondaryActions}
 							/>
 						))}
 					{getChildren.status === "SUCCESS" &&
 						getChildren.data.length === 0 && (
-							<div className="flex items-center justify-center py-2 text-muted-foreground text-xs">
+							<Muted className="flex items-center justify-center py-2 text-xs">
 								Empty folder
-							</div>
+							</Muted>
 						)}
 					{/* Placeholder to ensure chevron is always shown for directories */}
 					{getChildren.status !== "LOADING" &&
@@ -201,6 +188,6 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 						)}
 				</>
 			) : null}
-		</TreeItem>
+		</TreeViewItem>
 	);
 };

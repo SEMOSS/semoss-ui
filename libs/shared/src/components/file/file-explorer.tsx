@@ -42,6 +42,11 @@ interface FileExplorerProps {
 	headerActions?: React.ReactNode;
 
 	/**
+	 * Callback when an item is selected
+	 */
+	onItemSelect?: (item: FileItem) => void;
+
+	/**
 	 * Override for the file item component
 	 */
 	ItemComponent?: typeof FileExplorerItem;
@@ -50,6 +55,7 @@ interface FileExplorerProps {
 export const FileExplorer: React.FC<FileExplorerProps> = ({
 	mode,
 	headerActions = null,
+	onItemSelect = () => null,
 	ItemComponent = FileExplorerItem,
 }) => {
 	const insight = useInsight();
@@ -201,6 +207,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 													.reverse()
 													.join("/");
 
+												setExpandedPaths([]);
 												setPath(newPath);
 												setSearch("");
 											}}
@@ -220,7 +227,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							type="search"
 							placeholder="Search"
 							value={search}
-							onChange={(e) => setSearch(e.target.value)}
+							onChange={(e) => {
+								setSearch(e.target.value);
+								setExpandedPaths([]);
+							}}
 							onFocus={() => setIsSearchActive(true)}
 							onBlur={() => setIsSearchActive(false)}
 						/>
@@ -295,11 +305,27 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 				)}
 
 				{getFiles.status === "SUCCESS" && !isUploading && (
-					<TreeView
+					<TreeView<FileItem>
 						className="w-full"
 						expanded={expandedPaths}
-						onNodeToggle={(_, nodeIds) => setExpandedPaths(nodeIds)}
-						disableSelection
+						onExpandChange={(e) => {
+							setExpandedPaths(e);
+						}}
+						onItemSelect={(item) => {
+							if (item.type === "directory") {
+								setExpandedPaths((prev) => {
+									return prev.filter((p) =>
+										p.startsWith(item.path),
+									);
+								});
+								setPath(item.path);
+								setSearch("");
+								return;
+							}
+
+							// select if an item
+							onItemSelect(item);
+						}}
 					>
 						{getFiles.data.map((i) => {
 							return (
@@ -308,13 +334,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 									mode={mode}
 									item={i}
 									refresh={() => getFiles.refresh()}
-									expandedPaths={expandedPaths}
-									onItemSelect={(item) => {
-										if (item.type === "directory") {
-											setPath(item.path);
-											setSearch("");
-										}
-									}}
 									ItemComponent={ItemComponent}
 								/>
 							);

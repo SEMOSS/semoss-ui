@@ -24,38 +24,30 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 				mode={{
 					type: "INSIGHT",
 				}}
-				ItemComponent={({
-					item,
-					refresh,
-					onItemSelect,
-					...otherProps
-				}) => {
+				onItemSelect={(item) => {
+					// don't open directories
+					if (item.type === "directory") {
+						return;
+					}
+
+					// this will select if there or open if not
+					room.addSidebarNode(`FILE--${item.path}`, {
+						type: "tab",
+						name: item.name,
+						component: "room-file-editor",
+						config: {
+							name: item.name,
+							path: item.path,
+						},
+						enableClose: true,
+					});
+				}}
+				ItemComponent={({ item, refresh, ...otherProps }) => {
 					return (
 						<FileExplorerItem
 							draggable={item.type !== "directory"}
 							item={item}
 							refresh={refresh}
-							onItemSelect={(item) => {
-								// trigger the default
-								onItemSelect(item);
-
-								// don't open directories
-								if (item.type === "directory") {
-									return;
-								}
-
-								// this will select if there or open if not
-								room.addSidebarNode(`FILE--${item.path}`, {
-									type: "tab",
-									name: item.name,
-									component: "room-file-editor",
-									config: {
-										name: item.name,
-										path: item.path,
-									},
-									enableClose: true,
-								});
-							}}
 							onDragStart={(e) => {
 								// cannot drag directories
 								if (item.type === "directory") {
