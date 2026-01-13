@@ -122,9 +122,9 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 											/>
 											<div
 												className="flex-1 truncate text-left text-sm"
-												title={s.description}
+												title={s.step_name}
 											>
-												{s.description}
+												{s.step_name}
 											</div>
 
 											{isLast && (

@@ -1,5 +1,9 @@
 import { makeObservable, observable, runInAction } from "mobx";
-import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "@/constants";
+import {
+	MCP_EXECUTION_ASK,
+	MCP_EXECUTION_AUTO,
+	TOOL_ERROR_PROMPT,
+} from "@/constants";
 import type {
 	InputToolExecPixelMessage,
 	McpExecution,
@@ -39,15 +43,16 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 		/** meta data from the tool */
 		_meta: {
-			map: {
-				SMSS_MCP_EXECUTION: McpExecution;
-				SMSS_PROJECT_NAME: string;
-				SMSS_PROJECT_ID: string;
-			};
+			SMSS_MCP_EXECUTION: McpExecution;
+			SMSS_PROJECT_NAME: string;
+			SMSS_PROJECT_ID: string;
 		};
 
-		/**  Name of function **/
+		/**  Name of function with app_id **/
 		name: string;
+
+		/**  Name of function in mcp json **/
+		original_name: string;
 
 		/** Parameters used in the tool */
 		parameters: Record<string, unknown>;
@@ -116,13 +121,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			this.tools = message.tool_responses.map((t) => ({
 				id: t.id,
 				_meta: {
-					map: {
-						SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
-						...t._meta.map,
-					},
+					SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
+					// On 12/16/25 we changed from _meta.map to just _meta, so support both
+					...(t._meta as { map?: Record<string, unknown> })?.map,
+					...t._meta,
 				},
 				title: t.title,
 				name: t.name,
+				original_name: t.original_name,
 				parameters: t.arguments,
 				response: "",
 				cancelled: false,
@@ -336,14 +342,14 @@ paramValues=[${JSON.stringify({
 		}
 
 		// only run if it is set to auto execute
-		if (tool._meta.map.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
+		if (tool._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
 			return;
 		}
 
 		try {
 			// wait for the pixel to run
 			const response = await room.runRoomPixel<[string]>(
-				`RunMCPTool(project = [ "${tool._meta.map.SMSS_PROJECT_ID}" ], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+				`RunMCPTool(project = [ "${tool._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
 			);
 
 			const { output } = response.pixelReturn[0];
@@ -352,11 +358,7 @@ paramValues=[${JSON.stringify({
 			await this.saveToolExecution(tool, output);
 		} catch {
 			// mark the failure
-			await this.saveToolExecution(
-				tool,
-				`This tool execution failed due to an unexpected error. The AI assistant should inform the user of the tool's failure and ask the user for further instructions. The AI assistant may mention alternative tools or actions to take next, but should not take any further actions or select any further tools without user input.`,
-				"error",
-			);
+			await this.saveToolExecution(tool, TOOL_ERROR_PROMPT, "error");
 		}
 	};
 
