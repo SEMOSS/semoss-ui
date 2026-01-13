@@ -405,6 +405,11 @@ paramValues=[${JSON.stringify({
 	): Promise<void> => {
 		const room = this.room;
 
+		if (tool.response) {
+			// If this tool already has a response, this must be an outdated call, skip
+			return;
+		}
+
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
