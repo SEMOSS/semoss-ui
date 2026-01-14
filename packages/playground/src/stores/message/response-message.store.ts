@@ -157,8 +157,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	}
 
 	/**
-	 * Run a new user message and recieve a response
-	 * @param parentMessage - parent message to connect to
+	 * Run a new user message and receive a response with streaming
 	 * @param inputMessage - input message to send
 	 */
 	runMessage = async (inputMessage: InputMessageStore): Promise<void> => {
@@ -173,15 +172,29 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			context = room.options?.instructions;
 		}
 
-		// wait for the pixel to run
-		const response = await room.runRoomPixel<
-			[
-				{
-					inputMessage: PixelMessage;
-					responseMessage: PixelMessage;
-				},
-			]
-		>(`AskPlayground(
+		// Create a placeholder response message to show streaming content
+		const responseMessage = new ResponseMessageStore(room, {
+			messageId: "FAKE_ID",
+			type: "RESPONSE_TEXT",
+			visible: true,
+			content: "",
+			modelId: this.model.id,
+			paramMap: {
+				max_new_tokens: room.options.tokenLength,
+				temperature: room.options.temperature,
+			},
+			ornaments: {
+				modelName: this.model.name,
+			},
+			dateCreated: new Date().toISOString(),
+		} as ResponseTextPixelMessage);
+
+		// Add placeholder as child of input to show streaming text
+		inputMessage.addChild(responseMessage);
+
+		// wait for the pixel to run with streaming
+		await room.runRoomPixelStreaming(
+			`AskPlayground(
 engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
@@ -189,22 +202,22 @@ ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${inputMessage.mediaInputs.length ? `image=${JSON.stringify(inputMessage.mediaInputs.map((info) => info.fileLocation))},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
-			max_new_tokens: room.options.tokenLength,
-			temperature: room.options.temperature,
-		})}]
-);`);
-
-		const { output } = response.pixelReturn[0];
+				max_new_tokens: room.options.tokenLength,
+				temperature: room.options.temperature,
+			})}]
+);`,
+			(chunk) => {
+				runInAction(() => {
+					if (chunk.stream_type === "content") {
+						responseMessage.text += chunk;
+					}
+				});
+			},
+		);
 
 		// update the input's id
-		inputMessage.updateId(output.inputMessage.messageId);
-
-		// create the response and link to the input
-		const responseMessage = createMessageStore(
-			room,
-			output.responseMessage,
-		) as ResponseMessageStore;
-		inputMessage.addChild(responseMessage);
+		inputMessage.updateId("TODO");
+		responseMessage.updateId("TODO");
 
 		// start running tools if there are any
 		responseMessage.startToolExecution();

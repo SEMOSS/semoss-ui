@@ -1,5 +1,10 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { runPixel, uploadInsight } from "@semoss/sdk/react";
+import {
+	getPixelJobStreaming,
+	runPixel,
+	runPixelAsync,
+	uploadInsight,
+} from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import {
@@ -799,6 +804,72 @@ export class RoomStore {
 			if (showLoading) {
 				this.setIsLoading(false);
 			}
+		}
+	};
+
+	/**
+	 * Run a pixel with streaming support for LLM responses
+	 * @param pixel - pixel to execute
+	 * @param onPoll - callback for each streaming chunk
+	 */
+	runRoomPixelStreaming = async (
+		pixel: string,
+		onPoll: (
+			message: Awaited<
+				ReturnType<typeof getPixelJobStreaming>
+			>["message"][number],
+		) => void,
+	) => {
+		try {
+			// Start async execution to get job ID
+			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
+
+			if (!jobId) {
+				throw new Error("No job ID returned from pixel execution");
+			}
+
+			// Poll for streaming content
+			let isPolling = true;
+
+			const pollingInterval = 300; // 300ms for responsive streaming
+
+			while (isPolling) {
+				try {
+					const response = await getPixelJobStreaming(jobId);
+
+					if (response && response.message.length > 0) {
+						for (const message of response.message) {
+							if (message.data.finish_reason) {
+								isPolling = false;
+								break;
+							}
+
+							onPoll(message);
+						}
+					}
+
+					// Check status for completion
+					if (
+						response.status === "ProgressComplete" ||
+						response.status === "Complete"
+					) {
+						isPolling = false;
+					} else if (response.status === "Error") {
+						throw new Error("Streaming job encountered an error");
+					}
+
+					if (isPolling) {
+						await new Promise((resolve) =>
+							setTimeout(resolve, pollingInterval),
+						);
+					}
+				} catch (error) {
+					isPolling = false;
+					throw error;
+				}
+			}
+		} catch (e) {
+			console.error(e);
 		}
 	};
 }
