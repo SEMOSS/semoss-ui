@@ -5,7 +5,7 @@ import DREAMHOST from "@/assets/img/DREAMHOST.png";
 import DROPBOX from "@/assets/img/dropbox.png";
 import GOOGLE_CLOUD from "@/assets/img/GOOGLE_CLOUD_STORAGE.png";
 import GOOGLE_DRIVE from "@/assets/img/GOOGLE_DRIVE.png";
-import LOCAL_FILE_SYSTEM from "@/assets/img/Local_File_System.png";
+import LOCAL_FILE_SYSTEM from "@/assets/img/LOCAL_FILE_SYSTEM.png";
 import MINIO from "@/assets/img/MINIO.png";
 import NETWORK_FILE_SYSTEM from "@/assets/img/NETWORK_FILE_SYSTEM.png";
 import ONEDRIVE from "@/assets/img/ONEDRIVE.png";
