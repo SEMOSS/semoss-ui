@@ -48,4 +48,5 @@ export * from "./theme-provider";
 export * from "./toggle";
 export * from "./toggle-group";
 export * from "./tooltip";
+export * from "./tree-view";
 export * from "./typography";
