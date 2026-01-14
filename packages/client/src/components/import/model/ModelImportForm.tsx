@@ -306,7 +306,11 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									// 	f.helperText ||
 									// 	""
 									// }
-									helperText={(error?.message?.toString() || f.helperText || "")}
+									helperText={
+										error?.message?.toString() ||
+										f.helperText ||
+										""
+									}
 									data-testId={formatToDataTestId(
 										`importForm-${f.label}-textField`,
 									)}
@@ -408,7 +412,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										`model-importForm-${f.label}`,
 									)}
 									helperText={
-										(error?.message?.toString() || f.helperText || "")
+										error?.message?.toString() ||
+										f.helperText ||
+										""
 									}
 									error={!!error}
 									inputProps={{
@@ -416,7 +422,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 											_lastField.current = {
 												..._lastField.current,
 												lastFocussedField: field.name,
-												lastFocussedValue: String(field.value ?? ""),
+												lastFocussedValue: String(
+													field.value ?? "",
+												),
 												lastValidatedValue: field.value,
 											};
 										},

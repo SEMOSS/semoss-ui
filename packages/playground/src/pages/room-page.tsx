@@ -10,11 +10,8 @@ import { useGlobalBreadcrumbs } from "@/hooks";
  * @component
  */
 export const RoomPage = observer(() => {
-
 	// set the get the room based on the params
 	const { roomId } = useParams();
-
-
 
 	/**
 	 * Effects
