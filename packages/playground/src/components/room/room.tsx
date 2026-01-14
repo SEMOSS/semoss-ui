@@ -1,31 +1,22 @@
-import { MoveDownIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { useEffect, useState } from "react";
-import type { MCPToolResponse } from "@semoss/sdk";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useInsight } from "@semoss/sdk/react";
 import {
-	Button,
-	ScrollArea,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+	Spinner,
+	toast,
 } from "@semoss/ui/next";
-import {
-	AppLogo,
-	InputMessage,
-	PlanMessage,
-	ResponseMessage,
-	RoomConfigurationButton,
-	RoomInput,
-} from "@/components";
-import { LOADING_MESSAGES } from "@/constants";
-import { useAutoScroll } from "@/hooks";
-import type { RoomStore } from "@/stores";
-
-// Styled components removed - using Tailwind CSS classes directly
+import { RoomContent, RoomSidebar } from "@/components";
+import { useChat } from "@/hooks";
+import { RoomStore } from "@/stores";
 
 interface RoomProps {
 	/** Room to load */
-	room: RoomStore;
+	roomId: string;
 }
 
 /**
@@ -33,177 +24,85 @@ interface RoomProps {
  *
  * @component
  */
-export const Room: React.FC<RoomProps> = observer(({ room }) => {
-	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
-	const { setScrollEle, scrollToBottom, isUserScrolled } = useAutoScroll(
-		room.history?.length || 0,
-	);
+export const Room: React.FC<RoomProps> = observer(({ roomId }) => {
+	const { chat } = useChat();
+	const insight = useInsight();
+	const navigate = useNavigate();
 
-	const [loadingMessage, setLoadingMessage] = useState<string>("");
+	const [room, setRoom] = useState<RoomStore | null>(null);
 
-	// iterate loading messages
+	// load the room
 	useEffect(() => {
-		if (!room.isLoading) {
-			setLoadingMessage("");
-			return;
-		}
-
-		setLoadingMessage(LOADING_MESSAGES[0]);
-
-		let timeoutId: number | undefined;
-		let iteration = 1;
-		let cancelled = false;
-
-		const scheduleNext = () => {
-			const delay = 500 + 1500 * (iteration - 1);
-
-			timeoutId = window.setTimeout(() => {
-				if (cancelled) {
-					return;
-				}
-
-				const randomIndex =
-					1 +
-					Math.floor(Math.random() * (LOADING_MESSAGES.length - 1));
-
-				setLoadingMessage(LOADING_MESSAGES[randomIndex]);
-				iteration += 1;
-				scheduleNext();
-			}, delay);
-		};
-
-		scheduleNext();
-
-		return () => {
-			cancelled = true;
-			if (timeoutId !== undefined) {
-				window.clearTimeout(timeoutId);
-			}
-		};
-	}, [room.isLoading]);
-
-	/**
-	 * Effects
-	 */
-	// create a listener to process messages from the room
-	useEffect(() => {
-		const handleMessage = async (
-			event: MessageEvent<{
-				type: "SMSS_EXEC_TOOL";
-				tool: MCPToolResponse;
-			}>,
-		) => {
+		const loadRoom = async () => {
 			try {
-				if (!event.data || event.data.type !== "SMSS_EXEC_TOOL") {
-					return;
+				const room = new RoomStore(roomId, insight.insightId);
+
+				// initialize the room
+				await room.initialize();
+
+				// set the selected model
+				try {
+					await chat.setSelectedModelById(room.modelId);
+				} catch {
+					// model id is invalid
+					toast.warning(
+						`The model previously selected for this room is no longer available.`,
+					);
+					room.setModel(chat.models?.selected?.app_id);
 				}
 
-				const tool = event.data.tool;
-
-				room.processTool(
-					tool.message,
-					tool.id,
-					tool.name,
-					tool.response,
-				);
-			} catch {
-				// noop
+				// set the room
+				setRoom(room);
+			} catch (e) {
+				// if it doesn't load successfully, go back to home
+				toast.error(e.message);
+				navigate("/");
 			}
 		};
 
-		window.addEventListener("message", handleMessage);
+		// only load the room if the insight is initialized
+		if (insight.isInitialized) {
+			loadRoom();
+		}
+	}, [
+		roomId,
+		insight.isInitialized,
+		insight.insightId,
+		navigate,
+		chat.setSelectedModelById,
+		chat.models?.selected?.app_id,
+	]);
 
-		return () => {
-			window.removeEventListener("message", handleMessage);
-		};
-	}, [room]);
-
-	const isDisabled = room.mode === "executing";
+	if (!room || !room.isInitialized) {
+		// room is valid, but not initialized yet
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner />
+			</div>
+		);
+	}
 
 	return (
-		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
-			<div className="relative w-full flex-1 overflow-hidden">
-				<ScrollArea
-					className="h-full w-full"
-					viewportRef={(ele) => setScrollEle(ele)}
-				>
-					<div className="mx-auto max-w-4xl space-y-9 px-4 py-6">
-						{room.history.map((m, mIdx) => {
-							if (!m.visible) {
-								return null;
-							}
-
-							return (
-								<React.Fragment key={m.id}>
-									{m.type === "INPUT" && (
-										<InputMessage message={m} />
-									)}
-									{m.type === "RESPONSE" && (
-										<ResponseMessage message={m} />
-									)}
-									{m.type === "PLAN" && (
-										<PlanMessage
-											message={m}
-											isLast={
-												mIdx === room.history.length - 1
-											}
-										/>
-									)}
-								</React.Fragment>
-							);
-						})}
-
-						{room.isLoading && (
-							<div className="flex items-center gap-3 rounded-lg border p-3 text-muted-foreground text-sm shadow-sm">
-								<div className="flex h-10 w-10 items-center justify-center rounded-full">
-									<div className="flex h-8 w-8 animate-spin items-center justify-center">
-										<AppLogo full={false} />
-									</div>
-								</div>
-								<span>{loadingMessage} </span>
-							</div>
-						)}
-					</div>
-				</ScrollArea>
-
-				{isUserScrolled && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<span className="absolute right-4 bottom-4 z-50">
-								<Button
-									size="icon-sm"
-									variant={"outline"}
-									onClick={() => scrollToBottom()}
-									aria-label="Scroll to bottom"
-									className="shadow-lg"
-								>
-									<MoveDownIcon />
-								</Button>
-							</span>
-						</TooltipTrigger>
-						<TooltipContent>Scroll to bottom</TooltipContent>
-					</Tooltip>
+		<div className="flex h-full w-full flex-col overflow-hidden">
+			<ResizablePanelGroup
+				direction="horizontal"
+				className="w-full flex-1 overflow-hidden"
+			>
+				<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
+					<RoomContent room={room} />
+				</ResizablePanel>
+				{room.sidebar.isOpen && (
+					<>
+						<ResizableHandle />
+						<ResizablePanel
+							className={"relative p-2"}
+							defaultSize={70}
+						>
+							<RoomSidebar room={room} />
+						</ResizablePanel>
+					</>
 				)}
-			</div>
-			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
-				<RoomInput
-					isLoading={room.isLoading}
-					isDisabled={isDisabled}
-					minRows={3}
-					maxRows={8}
-					configuration={<RoomConfigurationButton room={room} />}
-					onPrompt={async (prompt, files) => {
-						// update the options
-						await room.updateRoomOptions(room.options);
-
-						// ask the room
-						await room.askMessage(prompt, files);
-
-						return true;
-					}}
-					clearInputOnPrompt
-				/>
-			</div>
+			</ResizablePanelGroup>
 		</div>
 	);
 });

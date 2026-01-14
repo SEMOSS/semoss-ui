@@ -6,7 +6,7 @@ import type { FlexLayout } from "@semoss/shared";
 import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 import type { MCPTool, Tool } from "@/types";
-import { DynamicForm } from "../tools/tools-default-view";
+import { DynamicForm } from "../mcp/tools-default-view";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -74,6 +74,7 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 							required: [],
 							title: "",
 						},
+						original_name: "",
 					},
 				],
 				_meta: {
@@ -118,6 +119,7 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 					name: config?.tool?.name || "",
 					parameters: toJS(config?.tool?.parameters || {}),
 					roomId: room.roomId,
+					original_name: selectedTool?.original_name || "",
 				} satisfies MCPToolRequest,
 			},
 			"*",

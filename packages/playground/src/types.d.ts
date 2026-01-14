@@ -38,7 +38,7 @@ export interface Instructions {
 
 export interface MCP {
 	/** Type of the mcp */
-	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL";
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL" | "VECTOR";
 
 	/** Id of the mcp */
 	id: string;
@@ -53,7 +53,10 @@ export interface MCP {
 	tags: string[];
 }
 
-export type MCPConfig = Pick<MCP, "type" | "id" | "name">;
+export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
+	/** Flag to indicate if this MCP comes from a workspace */
+	fromWorkspace?: boolean;
+};
 
 /**
  * Item from the prompt library
@@ -126,7 +129,9 @@ export interface InputToolExecPixelMessage extends AbstractPixelMessage {
 	visible: false;
 	tool_call_id: string;
 	tool_name: string;
+	tool_status: "error" | "cancelled" | "success";
 	modelId: string;
+	inputPrompt: string;
 	ornaments: {
 		modelName?: string;
 	};
@@ -152,18 +157,19 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 
 		/** meta data from the tool */
 		_meta: {
-			map: {
-				SMSS_PROJECT_NAME: string;
-				SMSS_PROJECT_ID: string;
-				SMSS_MCP_EXECUTION: McpExecution;
-			};
+			SMSS_PROJECT_NAME: string;
+			SMSS_PROJECT_ID: string;
+			SMSS_MCP_EXECUTION: McpExecution;
 		};
 
 		/**  Display of the tool **/
 		title: string;
 
-		/**  Name of function **/
+		/**  Name of function with app_id **/
 		name: string;
+
+		/**  Name of function in mcp json **/
+		original_name: string;
 
 		/** THIS IS A STRING, but ONLY in playground we parse as an app */
 		/** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
@@ -202,10 +208,8 @@ export interface PlanStep {
 				rationaleForStep: string;
 				title: string;
 				_meta: {
-					map: {
-						SMSS_PROJECT_NAME: string;
-						SMSS_PROJECT_ID: string;
-					};
+					SMSS_PROJECT_NAME: string;
+					SMSS_PROJECT_ID: string;
 				};
 		  }
 		| {
@@ -241,6 +245,7 @@ export interface MCPTool {
 		type: "object";
 	};
 	title?: string;
+	original_name: string;
 }
 
 export interface ToolStructure {

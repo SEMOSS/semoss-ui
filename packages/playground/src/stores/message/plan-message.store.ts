@@ -17,6 +17,8 @@ import { createMessageStore } from "./utility";
  */
 export class PlanMessageStore extends AbstractMessageStore {
 	readonly type = "PLAN";
+	readonly pixelMessageType: ResponseTextPixelMessage["type"] =
+		"RESPONSE_TEXT";
 
 	/**
 	 * Text associated with the message
@@ -500,8 +502,7 @@ stepNumber=["${step.step_number}"]
 		}
 
 		if (
-			step.details._meta.map.SMSS_PROJECT_ID !==
-				tool._meta.map.SMSS_PROJECT_ID ||
+			step.details._meta.SMSS_PROJECT_ID !== tool._meta.SMSS_PROJECT_ID ||
 			step.details.tool_name !== tool.name
 		) {
 			return;

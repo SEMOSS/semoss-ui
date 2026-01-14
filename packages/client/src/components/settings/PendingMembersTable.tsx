@@ -211,7 +211,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 		type === "VECTOR" ||
 		type === "FUNCTION"
 			? `GetEngineUserAccessRequest(engine='${id}');`
-			: type === "APP"
+			: type === "PROJECT"
 				? `GetProjectUserAccessRequest(project='${id}')`
 				: "";
 
@@ -277,7 +277,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 					id,
 					requests,
 				);
-			} else if (type === "APP") {
+			} else if (type === "PROJECT") {
 				response = await approveProjectUserAccessRequest(
 					adminMode,
 					id,
@@ -369,7 +369,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 					id,
 					requests,
 				);
-			} else if (type === "APP") {
+			} else if (type === "PROJECT") {
 				response = await denyProjectUserAccessRequest(
 					adminMode,
 					id,

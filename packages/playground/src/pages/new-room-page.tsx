@@ -16,6 +16,7 @@ import {
 import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
+	RoomInputMenuPlugin,
 	RoomOptions,
 	RoomWorkspace,
 	workspaceToApp,
@@ -52,8 +53,13 @@ export const NewRoomPage = observer(() => {
 	});
 	const workspaceId = searchParams.get("workspaceId");
 
+	// Fetch workspace data based on URL param or selected workspace
+	const selectedWorkspaceId =
+		(mode.type === "workspace" ? mode.workspace?.project_id : null) ||
+		workspaceId;
+
 	const getWorkspace = usePixel<Workspace | null>(
-		workspaceId ? `GetWorkspace("${workspaceId}");` : null,
+		selectedWorkspaceId ? `GetWorkspace("${selectedWorkspaceId}");` : null,
 		{
 			data: null,
 		},
@@ -65,7 +71,7 @@ export const NewRoomPage = observer(() => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
-		mcp: [],
+		mcp: [...(root.theme.defaultTools || [])],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
 		workspace: null,
@@ -122,19 +128,79 @@ export const NewRoomPage = observer(() => {
 	/**
 	 * Effects
 	 */
-	// if the workspaceId is passed in, use that to set the mode
+	// Handle workspace data loading
 	useEffect(() => {
-		if (getWorkspace.status !== "SUCCESS") {
+		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) {
 			return;
 		}
 
-		if (getWorkspace.data) {
+		// If workspaceId came from URL, update the mode
+		if (workspaceId) {
 			setMode({
 				type: "workspace",
 				workspace: workspaceToApp(getWorkspace.data),
 			});
 		}
-	}, [getWorkspace.status, getWorkspace.data]);
+
+		// Update options with workspace instructions and MCPs if available
+		setOptions((prev) => {
+			// Add workspace MCPs with fromWorkspace flag to the mcp array
+			const workspaceMCPs = (getWorkspace.data.mcp || []).map((mcp) => ({
+				...mcp,
+				fromWorkspace: true,
+			}));
+
+			return {
+				...prev,
+				instructions:
+					getWorkspace.data.system_prompt || prev.instructions,
+				mcp: workspaceMCPs,
+			};
+		});
+	}, [workspaceId, getWorkspace.status, getWorkspace.data]);
+
+	// Handle workspace data loading from RoomWorkspace component selection
+	useEffect(() => {
+		if (
+			mode.type !== "workspace" ||
+			!mode.workspace ||
+			getWorkspace.status !== "SUCCESS" ||
+			!getWorkspace.data
+		) {
+			return;
+		}
+
+		// Update options with workspace instructions if available
+		if (getWorkspace.data.system_prompt) {
+			setOptions((prev) => {
+				// Add workspace MCPs with fromWorkspace flag to the mcp array
+				const workspaceMCPs = (getWorkspace.data.mcp || []).map(
+					(mcp) => ({
+						...mcp,
+						fromWorkspace: true,
+					}),
+				);
+
+				return {
+					...prev,
+					instructions:
+						getWorkspace.data?.system_prompt || prev.instructions,
+					mcp: workspaceMCPs,
+				};
+			});
+		}
+	}, [mode.type, mode.workspace, getWorkspace.status, getWorkspace.data]);
+
+	// Clear instructions and workspace MCPs when switching away from workspace mode
+	useEffect(() => {
+		if (mode.type !== "workspace") {
+			setOptions((prev) => ({
+				...prev,
+				instructions: "",
+				mcp: [], // Remove workspace MCPs
+			}));
+		}
+	}, [mode.type]);
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
@@ -168,18 +234,23 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
+							className="max-h-64 min-h-48"
 							isLoading={
 								isLoading ||
-								(workspaceId &&
+								(mode.type === "workspace" &&
+									mode.workspace &&
 									getWorkspace.status !== "SUCCESS")
 							}
-							isDisabled={false}
-							minRows={4}
-							maxRows={8}
 							workspace={
 								<RoomWorkspace
 									mode={mode}
 									onModeChange={setMode}
+								/>
+							}
+							plugins={
+								<RoomInputMenuPlugin
+									options={options}
+									setOptions={setOptions}
 								/>
 							}
 							configuration={
@@ -227,6 +298,7 @@ export const NewRoomPage = observer(() => {
 									setOptions={(o) => {
 										setOptions(o);
 									}}
+									setRoomModel={() => null}
 								/>
 							</div>
 						</ResizablePanel>

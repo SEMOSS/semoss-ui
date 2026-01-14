@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { download, runPixel, upload } from "@semoss/sdk/react";
+import { runPixel, uploadInsight } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import {
@@ -10,13 +10,18 @@ import {
 	ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { MCPConfig, PixelMessage } from "@/types";
+import type { MCPConfig, PixelMessage, Workspace } from "@/types";
 
 interface RoomStoreInterface {
 	/**
 	 * ID of the room
 	 */
 	roomId: string;
+
+	/**
+	 * insightId of the room
+	 */
+	insightId: string;
 
 	/**
 	 *  Track if the room is initialized
@@ -27,6 +32,11 @@ interface RoomStoreInterface {
 	 *  Track if the room is loading
 	 */
 	isLoading: boolean;
+
+	/**
+	 *  Track if the room has errored
+	 */
+	error?: Error | null;
 
 	/**
 	 *  Track the mode of the room.
@@ -68,7 +78,7 @@ interface RoomStoreInterface {
 		instructions: string;
 
 		/*
-		 * MCPs loaded into the room
+		 * MCPs loaded into the room (includes both room and workspace MCPs, distinguished by fromWorkspace flag)
 		 */
 		mcp: MCPConfig[];
 
@@ -113,9 +123,9 @@ interface RoomStoreInterface {
  * Manage the room
  */
 export class RoomStore {
-	private _insightID = "new";
 	private _store: RoomStoreInterface = {
 		roomId: "",
+		insightId: "new",
 		isInitialized: false,
 		isLoading: false,
 		mode: "chat",
@@ -146,9 +156,10 @@ export class RoomStore {
 		},
 	};
 
-	constructor(roomId: string) {
-		// register the roomId and actions
+	constructor(roomId: string, insightId: string) {
+		// register the roomId, insightId, and actions
 		this._store.roomId = roomId;
+		this._store.insightId = insightId;
 
 		// make it observable
 		makeAutoObservable(this);
@@ -181,6 +192,13 @@ export class RoomStore {
 	 */
 	get isLoading() {
 		return this._store.isLoading;
+	}
+
+	/**
+	 * Get the error of the room
+	 */
+	get error() {
+		return this._store.error;
 	}
 
 	/**
@@ -415,8 +433,54 @@ export class RoomStore {
 
 			// options
 			const newOptions = { ...optionsOutput.OPTIONS };
+
 			if (!newOptions.workspace?.workspace_id) {
 				delete newOptions.workspace;
+			} else {
+				const workspaceResponse = await this.runRoomPixel<
+					[
+						PixelMessage[],
+						{ OPTIONS?: Workspace }, // partial because this doesn't work for old rooms
+					]
+				>(`GetWorkspace('${newOptions.workspace?.workspace_id}')`);
+
+				const workspaceOutput = workspaceResponse.pixelReturn[0]
+					.output as Workspace;
+
+				// Merge workspace MCPs into the mcp array with fromWorkspace flag
+				if (
+					workspaceOutput?.mcp &&
+					Array.isArray(workspaceOutput.mcp)
+				) {
+					// Create a map of existing MCPs by composite key
+					const existingMCPs = new Map<string, MCPConfig>();
+					for (const mcp of newOptions.mcp || []) {
+						const key = `${mcp.id}-${mcp.type}`;
+						existingMCPs.set(key, mcp);
+					}
+
+					// Add workspace MCPs with fromWorkspace flag
+					const workspaceMCPs = workspaceOutput.mcp.map((mcp) => ({
+						...mcp,
+						fromWorkspace: true,
+					}));
+
+					// Merge, with workspace MCPs first
+					newOptions.mcp = [
+						...workspaceMCPs,
+						...Array.from(existingMCPs.values()).filter(
+							(a) => !workspaceMCPs.some((b) => b.id === a.id),
+						),
+					];
+
+					// Merge workspace system_prompt if room instructions are empty
+					if (
+						workspaceOutput.system_prompt &&
+						!newOptions.instructions
+					) {
+						newOptions.instructions = workspaceOutput.system_prompt;
+					}
+				}
 			}
 
 			runInAction(() => {
@@ -435,13 +499,16 @@ export class RoomStore {
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
 			if (this.tail.type === "RESPONSE") {
-				this.tail.startToolExecution();
+				this.tail
+					.startToolExecution()
+					.finally(() => this.setIsLoading(false));
+			} else {
+				this.setIsLoading(false);
 			}
 		} catch (e) {
 			console.error(e);
-			throw new Error(e.message || "Error initializing room");
-		} finally {
 			this.setIsLoading(false);
+			throw new Error(e.message || "Error initializing room");
 		}
 	};
 
@@ -451,51 +518,21 @@ export class RoomStore {
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
+			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
+			const optionsToSave = {
+				...options,
+				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
+			};
+
 			await this.runRoomPixel(
 				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
-					options,
+					optionsToSave,
 				)}]);`,
 			);
 
 			this.setOptions(options);
 		} catch (e) {
 			throw new Error(e.message || "Error updating room options");
-		}
-	};
-
-	/**
-	 * Download the history of the room as a PDF
-	 */
-	downloadHistory = async (): Promise<void> => {
-		try {
-			// turn on the loading screen
-			this.setIsLoading(true);
-
-			// convert the content to html
-			const html = this.history
-				.map((message) => {
-					if (message.type === "RESPONSE") {
-						return `<div>Response: ${message.text}</div>`;
-					}
-
-					if (message.type === "INPUT") {
-						return `<div>Input: ${message.text}</div>`;
-					}
-
-					return "";
-				})
-				.join("\n");
-
-			// wait for the pixel to run
-			const { pixelReturn } = await this.runRoomPixel<[string]>(
-				`ToPdf( html=["<encode>${html}</encode>"]);`,
-			);
-
-			// get the response
-			await this.downloadRoomFiles(pixelReturn[0].output);
-		} finally {
-			// turn off the loading screen
-			this.setIsLoading(false);
 		}
 	};
 
@@ -607,7 +644,7 @@ export class RoomStore {
 		}
 	};
 
-	/**f
+	/**
 	 * Helpers
 	 */
 	/**
@@ -642,7 +679,8 @@ export class RoomStore {
 		// upload the files
 		let uploaded = [];
 		if (files.length > 0) {
-			uploaded = await this.uploadRoomFiles(files, "");
+			uploaded = (await uploadInsight(this._store.insightId, "", files))
+				.data;
 		}
 
 		// create the input message
@@ -682,12 +720,14 @@ export class RoomStore {
 	 * @param toolId - id of the tool
 	 * @param toolName - name of the tool
 	 * @param toolResponse - response from the tool
+	 * @param toolStatus - status of the tool execution
 	 */
 	processTool = async (
 		messageId: string,
 		toolId: string,
 		toolName: string,
 		toolResponse: string,
+		toolStatus: "success" | "error" | "cancelled" = "success",
 	): Promise<void> => {
 		try {
 			const message = this.getMessage(messageId);
@@ -696,7 +736,7 @@ export class RoomStore {
 			}
 
 			const tool = message.getTool(toolId, toolName);
-			if (!tool) {
+			if (!tool || tool.response) {
 				return;
 			}
 
@@ -705,7 +745,7 @@ export class RoomStore {
 				await this.plan?.saveToolExecution(message, tool, toolResponse);
 			} else {
 				// save the response with the tool
-				await message.saveToolExecution(tool, toolResponse);
+				await message.saveToolExecution(tool, toolResponse, toolStatus);
 			}
 		} catch (e) {
 			console.error(e);
@@ -720,14 +760,26 @@ export class RoomStore {
 	runRoomPixel = async <O extends [] | unknown[]>(
 		pixel: string,
 		showLoading: boolean = true,
-	) => {
+	): Promise<{
+		errors: string[];
+		insightId: string;
+		pixelReturn: {
+			isMeta: boolean;
+			operationType: string[];
+			output: O[number];
+			pixelExpression: string;
+			pixelId: string;
+			additionalOutput?: unknown;
+			timeToRun: number;
+		}[];
+	}> => {
 		try {
 			if (showLoading) {
 				this.setIsLoading(true);
 			}
 
 			// get the response
-			const response = await runPixel<O>(pixel, this._insightID);
+			const response = await runPixel<O>(pixel, this._store.insightId);
 
 			if (response.errors.length > 0) {
 				throw new Error(response.errors.join(""));
@@ -735,32 +787,18 @@ export class RoomStore {
 
 			// store the new insight id
 			runInAction(() => {
-				this._insightID = response.insightId;
+				this._store.error = null;
 			});
-
 			return response;
+		} catch (e) {
+			runInAction(() => {
+				this._store.error = e;
+			});
+			throw e;
 		} finally {
 			if (showLoading) {
 				this.setIsLoading(false);
 			}
 		}
-	};
-
-	/**
-	 * Download a file from the room
-	 * @param fileKey - key
-	 */
-	downloadRoomFiles = async (fileKey: string) => {
-		// get the response
-		await download(this._insightID, fileKey);
-	};
-
-	/**
-	 * Upload a file to the room
-	 * @param fileKey - key
-	 */
-	uploadRoomFiles = async (files: File[], path: string = "") => {
-		// get the response
-		return await upload(files, this._insightID, "", path);
 	};
 }

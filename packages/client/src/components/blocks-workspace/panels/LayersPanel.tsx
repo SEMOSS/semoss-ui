@@ -382,19 +382,6 @@ export const LayersPanel = observer(
 
 		useEffect(() => {
 			const block = state.blocks[selectedPages];
-
-			const page1 = state.blocks["page-1"];
-			if (page1 && (!page1.data?.route || page1.data.route === "")) {
-				state.dispatch({
-					message: ActionMessages.SET_BLOCK_DATA,
-					payload: {
-						id: "page-1",
-						path: "route",
-						value: "page--1",
-					},
-				});
-			}
-
 			if (block) {
 				handlePageSelection(block);
 			}
@@ -787,16 +774,15 @@ export const LayersPanel = observer(
 				});
 				setSelectedLayers([]); // Clear first
 
+				const newId = id as string;
+				selectLayer(selectedPages); // Refresh the layer list
 				// Apply selection and hover
-				designer.setSelected(id as string);
-				designer.setHovered(id as string);
-
+				designer.setSelected(newId);
+				designer.setHovered(newId);
 				// Ensure visual selection state is fully synced
-				const nodeIds = [id as string];
-				setSelectedLayers(nodeIds);
-
+				setSelectedLayers([newId]);
 				// Render and scroll to the new block (if your system supports it)
-				renderBlock(id as string);
+				renderBlock(newId);
 				handleMenuClose();
 			};
 
@@ -1020,7 +1006,9 @@ export const LayersPanel = observer(
 							)}
 						</StyledHomePageChildDiv>
 						<StyledRouteText variant="subtitle1">
-							/{block.data.route as string}
+							{id === "page-1"
+								? "/page-1"
+								: `/${block.data.route as string}`}
 						</StyledRouteText>
 					</StyledHomePageDiv>
 					{id !== "page-1" && pageHovered === block.id && (
