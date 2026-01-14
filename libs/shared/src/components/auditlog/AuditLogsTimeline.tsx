@@ -110,20 +110,31 @@ const ZoomIconButton = styled(IconButton)<{ position: "left" | "right" }>(
 		borderRadius: position === "left" ? "4px 0 0 4px" : "0 4px 4px 0",
 	}),
 );*/
-
+//props for audit logs timeline
 interface AuditLogsTimelineProps {
 	logs: EventData[];
 }
-
+/**
+	Renders a chart with a time series as the x-axis and a custom series 
+	as the y-axis. The chart can be zoomed in and out using the mouse wheel 
+	or by clicking the zoom in/out buttons. The chart can be resized by 
+	dragging one of its corners. The chart is also responsive to window resizing events.
+	*/
 export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	logs,
 }) => {
-	const chartRef = useRef<HTMLDivElement>(null);
+	const chartRef = useRef<HTMLDivElement>(null); //ref object for placing chart created
 	const [chartInstance, setChartInstance] = useState<echarts.ECharts | null>(
 		null,
-	);
-	const [zoomState, setZoomState] = useState({ start: 0, end: 100 });
+	); //placing the chart instance in this state obj
+	const [zoomState, setZoomState] = useState({ start: 0, end: 100 }); //setting zoom state
 
+	/**
+	 * Processes the logs to prepare the data for the chart.
+	 * It creates a set of all times in the logs, sorts them, and maps each time to its position in the sorted array.
+	 * It then goes through each log and creates a data point for the chart with the start position, latency, and end position.
+	 * The function returns an object with the time categories, event data, and time to position map.
+	 */
 	const processApiData = (): ProcessApiDataResult => {
 		const allTimes = new Set<string>();
 		const timeToPosition = new Map<string, number>();
@@ -167,6 +178,16 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 		};
 	};
 
+	/**
+	 * Calculates the configuration for the x-axis labels based on the available width and the number of labels.
+	 * If there are too many labels, it uses smart interval calculation to determine the interval between labels.
+	 * If there are very many labels, it tilts the labels by 45 degrees to fit more labels.
+	 * If there are a moderate number of labels, it tilts the labels by 30 degrees.
+	 * If there are few labels, it does not tilt the labels and uses the default margin.
+	 * @param {string[]} timeCategories - The array of time categories.
+	 * @param {number} [chartWidth=800] - The width of the chart in pixels.
+	 * @returns {Object} - An object with the interval, rotate, and margin properties.
+	 */
 	const calculateXAxisLabelConfig = (
 		timeCategories: string[],
 		chartWidth: number = 800,
@@ -213,6 +234,12 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 		}
 	};
 
+	/**
+	 * Zooms in the chart by a factor of 0.6.
+	 * If the current zoom range is less than or equal to 15, the function does nothing.
+	 * Otherwise, it calculates the new start and end points of the zoom range and updates the zoom state.
+	 * Finally, it dispatches an action to the chart with the type "dataZoom" and the new start and end points as parameters.
+	 */
 	const handleZoomIn = () => {
 		if (!chartInstance) return;
 
@@ -233,6 +260,12 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 		});
 	};
 
+	/**
+	 * Zooms out the chart by a factor of 1.4.
+	 * If the current zoom range is greater than or equal to 100, the function does nothing.
+	 * Otherwise, it calculates the new start and end points of the zoom range and updates the zoom state.
+	 * Finally, it dispatches an action to the chart with the type "dataZoom" and the new start and end points as parameters.
+	 */
 	const handleZoomOut = () => {
 		if (!chartInstance) return;
 
@@ -252,6 +285,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 			end: newEnd,
 		});
 	};
+	//when the logs are available then the chart will start to render
 	//biome-ignore lint/correctness/useExhaustiveDependencies: chart needs to be re-rendered on logs change
 	useEffect(() => {
 		if (chartRef.current && logs.length > 0) {

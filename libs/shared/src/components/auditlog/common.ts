@@ -1,3 +1,5 @@
+//Common place to keep and make changes for audit logs related common functions for enhancing reusablity
+//event data object will have all the details about when the user clicks on table row
 export interface EventData {
 	startTime: string;
 	endTime: string;
@@ -13,6 +15,12 @@ export interface EventData {
 	sessionId: string;
 	spanId: string;
 }
+/**
+ * A function to format a timestamp into a date and time string.
+ * @param {string|number|null|undefined} timeStamp - The timestamp to be formatted.
+ * @returns {{date: string, time: string}} - An object containing the date and time strings.
+ * @return  {{date : "", time: ""}} when the date is not valid
+ */
 export const TimeDateFormatter = (
 	timeStamp: string | number | null | undefined,
 ) => {
@@ -53,6 +61,12 @@ export const TimeDateFormatter = (
 	}
 };
 
+/**
+ * A function to format a date string into a standardised date string format of 'yyyy-mm-dd'
+ * @param {string|undefined} dateString - The date string to be formatted.
+ * @returns {string} - The formatted date string.
+ * @returns {string} - An empty string when the date string is not valid.
+ */
 export const dateFormat = (dateString: string | undefined) => {
 	if (!dateString) return "";
 	const date = new Date(dateString);
@@ -62,6 +76,7 @@ export const dateFormat = (dateString: string | undefined) => {
 	return `${year}-${month}-${day}`;
 };
 
+//Engine types object for audit logs
 export const ENGINE_TYPES = [
 	"APP",
 	"MODEL",

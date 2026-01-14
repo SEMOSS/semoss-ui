@@ -11,8 +11,15 @@ import { useNotification } from "@semoss/ui";
 import { Button, Skeleton } from "@semoss/ui/next";
 import { useUserRootStore } from "@/hooks/useUserRootStore";
 import type { EventData } from "./common/utility";
+
+/**
+ * This component displays the audit logs.
+ *
+ * @param {string} catalogName - The name of the catalog.
+ */
+
 export const AuditLogPage = ({ catalogName }) => {
-	const { insightId } = useInsight();
+	const { insightId } = useInsight(); // fetching insight id for access
 	const [logs, setLogs] = useState<EventData[]>([]);
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -33,8 +40,12 @@ export const AuditLogPage = ({ catalogName }) => {
 		},
 	});
 
-	// const notification = useNotification();
-
+	/**
+	 * Fetches audit logs from the API.
+	 *
+	 * @param {number} limit - The limit of the logs to fetch.
+	 * @param {number} offset - The offset of the logs to fetch.
+	 */
 	const fetchLogs = async (limit: number, offset: number) => {
 		setLoading(true);
 		try {
@@ -98,6 +109,11 @@ export const AuditLogPage = ({ catalogName }) => {
 		}
 	};
 
+	/**
+	 * Handles pagination change by updating page and rows per page state and fetching logs with the new offset.
+	 * @param {number} newPage - The new page number.
+	 * @param {number} newRowsPerPage - The new number of rows per page.
+	 */
 	const handlePaginationChange = (
 		newPage: number,
 		newRowsPerPage: number,
@@ -143,6 +159,10 @@ export const AuditLogPage = ({ catalogName }) => {
 		};
 	}, [catalogName, rowsPerPage, page, rootStore?.user?.id]);
 
+	/**
+	 * Updates the filtered data state with the new filter data and fetches logs with the new offset.
+	 * @param {object} filterData - The new filter data.
+	 */
 	const updateLogs = (filterData) => {
 		filteredData.current = {
 			...filterData,

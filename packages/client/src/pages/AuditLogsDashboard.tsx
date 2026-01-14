@@ -16,6 +16,7 @@ import {
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 
+//Custom dashboard header styling
 const DashboardHeader = styled("div")(({ theme }) => ({
 	width: "100%",
 	paddingY: theme.spacing(2),
@@ -23,6 +24,11 @@ const DashboardHeader = styled("div")(({ theme }) => ({
 	alignItems: "center",
 }));
 
+/**
+ * A function to format a timestamp into a date and time string.
+ * @param {string | number | null | undefined} timeStamp - The timestamp to be formatted.
+ * @returns {{date: string, time: string}} - An object containing the date and time strings.
+ * */
 export const TimeDateFormatter = (
 	timeStamp: string | number | null | undefined,
 ) => {
@@ -62,7 +68,7 @@ export const TimeDateFormatter = (
 		return { date: "", time: "" };
 	}
 };
-
+//event data object structure will have entire row details of auditlog table row
 export interface EventData {
 	startTime: string;
 	endTime: string;
@@ -79,6 +85,12 @@ export interface EventData {
 	spanId: string;
 }
 
+/**
+ * A component for displaying the audit logs dashboard for a given catalog.
+ *
+ * @param {string} catalogName - The name of the catalog.
+ * @returns {JSX.Element} - A JSX element containing the audit logs dashboard.
+ */
 export const AuditLogsDashboard = ({ catalogName }) => {
 	const { configStore, monolithStore } = useRootStore();
 	const [logs, setLogs] = useState<EventData[]>([]);
@@ -100,6 +112,12 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 		},
 	});
 
+	/**
+	 * Fetches the audit logs from the API.
+	 * @param {number} limit - The limit of the logs to fetch.
+	 * @param {number} offset - The offset of the logs to fetch.
+	 * @returns {Promise<EventData[]>} - A promise that resolves with the fetched logs.
+	 */
 	const fetchLogs = async (limit: number, offset: number) => {
 		setLoading(true);
 		try {
@@ -163,6 +181,11 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 		}
 	};
 
+	/**
+	 * Handles pagination change by updating page and rows per page state and fetching logs with the new offset.
+	 * @param {number} newPage - The new page number.
+	 * @param {number} newRowsPerPage - The new number of rows per page.
+	 */
 	const handlePaginationChange = (
 		newPage: number,
 		newRowsPerPage: number,
@@ -172,7 +195,7 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 		setRowsPerPage(newRowsPerPage);
 		fetchLogs(newRowsPerPage, offset);
 	};
-
+	//whenever there is a change in rowsperpage, page then logs will be fetched again
 	useEffect(() => {
 		if (catalogName) {
 			setLogs([]);
@@ -194,6 +217,10 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 		};
 	}, [catalogName, rowsPerPage, page]);
 
+	/**
+	 * Updates the filtered data state with the new filter data and fetches logs with the new offset.
+	 * @param {object} filterData - The new filter data.
+	 */
 	const updateLogs = (filterData) => {
 		filteredData.current = {
 			...filterData,

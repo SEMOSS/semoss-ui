@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import {
 	Button,
-	Calendar,
+	Calendar, //Added calendar option newly to filter for handling Custom date range filtering
 	type DateRange,
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
@@ -18,6 +18,7 @@ import {
 } from "@semoss/ui/next";
 import { dateFormat, ENGINE_TYPES } from "./common";
 
+//initial state of engine details
 const initialAcc = {
 	APP: [],
 	MODEL: [],
@@ -26,7 +27,7 @@ const initialAcc = {
 	FUNCTION: [],
 	STORAGE: [],
 };
-
+//Dashboard durations for filtering logs based on duration like day, week, month, etc
 const DashboardDurations = [
 	{ label: "Today", value: "today", dateRangeType: "DAY", dateRangeValue: 1 },
 	{
@@ -52,18 +53,20 @@ const DashboardDurations = [
 
 export const AuditLogFilter = (props) => {
 	const { insightId, updateLogs, parent = null } = props;
-	const [engineDetails, setEngineDetails] = useState({ ...initialAcc });
+	const [engineDetails, setEngineDetails] = useState({ ...initialAcc }); //engine details for user
 	const [engineSelectionDetails, setEngineSelectionDetails] = useState({
-		engineType: "",
-		engineId: "",
+		engineType: "", // selected engine type
+		engineId: "", //selected engine id
 	});
 	const [dashboardDuration, setDashboardDuration] =
-		useState<(typeof DashboardDurations)[number]["value"]>("");
-	const [showCustomPopover, setShowCustomPopover] = useState<boolean>(false);
+		useState<(typeof DashboardDurations)[number]["value"]>(""); //selected dashboard duration
+	const [showCustomPopover, setShowCustomPopover] = useState<boolean>(false); //show custom popover for custom date range
 	const [customDateRange, setCustomDateRange] = useState<DateRange | null>({
 		from: new Date(),
 		to: new Date(),
-	});
+	}); //custom date range data
+
+	//fetch engines for user
 	useEffect(() => {
 		async function getMyEngines() {
 			if (insightId) {
@@ -128,7 +131,7 @@ export const AuditLogFilter = (props) => {
 		}
 		getMyEngines();
 	}, [insightId]);
-
+	//getting details about label, value, daterangetype and value of selected dashboard duration
 	const SelectedDuration = useMemo(() => {
 		return (
 			DashboardDurations.find(
@@ -136,7 +139,7 @@ export const AuditLogFilter = (props) => {
 			) || { label: "", value: "", dateRangeType: "", dateRangeValue: 1 }
 		);
 	}, [dashboardDuration]);
-
+	//logs table will be updated when engineid or duration or daterange or engine type
 	useEffect(() => {
 		// Implementation for triggering logs API
 		if (engineSelectionDetails.engineId !== "" || parent) {
@@ -154,7 +157,7 @@ export const AuditLogFilter = (props) => {
 		customDateRange,
 		engineSelectionDetails.engineType,
 	]);
-
+	//render custom date popover
 	const renderCustomDatePopover = useCallback(() => {
 		if (!showCustomPopover) return null;
 		return (
@@ -223,6 +226,7 @@ export const AuditLogFilter = (props) => {
 
 	return (
 		<div className="flex gap-2">
+			{/** rendering duration dropdown filter, engine filter in auditlog if parent is auditlog, and so if client package, it wont render duration filter */}
 			{!parent && (
 				<>
 					<div className="flex min-w-[100px] justify-between">
@@ -382,6 +386,9 @@ export const AuditLogFilter = (props) => {
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</div>
+			{/**
+			 * Added calendar option newly to filter for handling Custom date range filtering
+			 */}
 			{renderCustomDatePopover()}
 		</div>
 	);

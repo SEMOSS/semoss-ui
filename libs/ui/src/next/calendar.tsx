@@ -15,6 +15,21 @@ import {
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/next/button";
 
+/**
+ * A DayPicker component that wraps the react-day-picker library.
+ *
+ * @example
+ * <Calendar />
+ * This calendar component is installed into ui/next installed with command: pnpm dlx shadcn@latest add calendar
+ * @param {React.ComponentProps<DayPicker>} props - Props passed to the DayPicker component.
+ * @param {string} className - The CSS class name for the root element.
+ * @param {Object} classNames - A dictionary of CSS class names for the DayPicker component.
+ * @param {boolean} showOutsideDays - Whether to show days outside of the current month. Defaults to true.
+ * @param {string} captionLayout - The layout for the month captions. Defaults to "label".
+ * @param {string} buttonVariant - The variant for the next and previous buttons. Defaults to "ghost".
+ * @param {Object} formatters - A dictionary of functions to format the dates in the DayPicker component.
+ * @param {Object} components - A dictionary of components to use in the DayPicker component.
+ */
 function Calendar({
 	className,
 	classNames,
@@ -152,6 +167,15 @@ function Calendar({
 	);
 }
 
+/**
+ * CalendarRoot
+ * @description
+ * The root element of the calendar component.
+ * @param {string} className - Additional CSS classes to apply to the root element.
+ * @param {React.MutableRefObject<HTMLDivElement>} rootRef - A mutable React ref object to reference the root element.
+ * @param {object} props - Additional props to pass to the root element.
+ * @returns {JSX.Element} - The root element of the calendar component.
+ */
 function CalendarRoot({ className, rootRef, ...props }) {
 	return (
 		<div
@@ -163,6 +187,15 @@ function CalendarRoot({ className, rootRef, ...props }) {
 	);
 }
 
+/**
+ * CalendarChevron
+ * @description
+ * A component that renders a chevron icon for the calendar.
+ * @param {string} className - Additional CSS classes to apply to the chevron icon element.
+ * @param {string} orientation - The orientation of the calendar. Must be either "left", "right", or "down".
+ * @param {object} props - Additional props to pass to the chevron icon element.
+ * @returns {JSX.Element} - The chevron icon element.
+ */
 function CalendarChevron({
 	className,
 	orientation,
@@ -183,6 +216,14 @@ function CalendarChevron({
 	return <ChevronDownIcon className={cn("size-4", className)} {...props} />;
 }
 
+/**
+ * CalendarWeekNumber
+ * @description
+ * A component that renders a week number in the calendar.
+ * @param {ReactNode} children - The children of the component.
+ * @param {object} props - Additional props to pass to the component.
+ * @returns {JSX.Element} - The week number element.
+ */
 function CalendarWeekNumber({
 	children,
 	...props
@@ -196,6 +237,16 @@ function CalendarWeekNumber({
 	);
 }
 
+/**
+ * A component that renders a day in the calendar.
+ * The component will render a button with the day number as its content.
+ * The component will also apply CSS classes based on the modifiers passed in.
+ * @param {string} className - Additional CSS classes to apply to the button element.
+ * @param {object} day - The day object to render.
+ * @param {object} modifiers - The modifiers object to apply CSS classes based on.
+ * @param {object} props - Additional props to pass to the button element.
+ * @returns {JSX.Element} - The button element with the day number as its content and CSS classes applied based on the modifiers.
+ */
 function CalendarDayButton({
 	className,
 	day,

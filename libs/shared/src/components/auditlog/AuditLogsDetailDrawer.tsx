@@ -34,6 +34,11 @@ const JSONTreeView = ({
 		setIsExpanded(!isExpanded);
 	};
 
+	/**
+	 * Returns a JSX element representing a value in a JSON tree view.
+	 * @param {unknown} value - The value to render.
+	 * @returns {React.ReactElement | null} - A JSX element representing the value, or null if the value is unknown.
+	 */
 	const renderValue = (value: unknown) => {
 		if (value === null)
 			return <span style={{ color: "#0471F0" }}>null</span>;
@@ -122,6 +127,13 @@ const JSONTreeView = ({
 	);
 };
 
+/**
+ * Returns true if the given data has expandable content.
+ * Expandable content is content that is not null and is of type object.
+ * This function is used to determine if a JSON tree view should be expanded or not.
+ * @param {unknown} data - The data to check for expandable content.
+ * @returns {boolean} - True if the data has expandable content, false otherwise.
+ */
 const hasExpandableContent = (data: unknown): boolean => {
 	if (data === null || typeof data !== "object") {
 		return false;
@@ -136,8 +148,15 @@ const hasExpandableContent = (data: unknown): boolean => {
 	return false;
 };
 
+/**
+ * A drawer component for displaying audit log details.
+ *
+ *
+ * @param {logDetails} The audit log details object.
+ * @returns {JSX.Element} A JSX element which is a side drwawer.
+ */
 export const AuditLogsDetailDrawer = (props) => {
-	const { logDetails } = props; //handleDrawerClose
+	const { logDetails } = props;
 	const [_width, setWidth] = useState(500);
 	const [promptExpandAll, setPromptExpandAll] = useState<boolean | undefined>(
 		undefined,
@@ -170,14 +189,25 @@ export const AuditLogsDetailDrawer = (props) => {
 		};
 	}, [handleMouseMove, handleMouseUp]);
 
+	/**
+	 * Toggle the prompt to expand/collapse.
+	 */
 	const handlePromptToggle = () => {
 		setPromptExpandAll((prev) => !prev);
 	};
 
+	/**
+	 * Toggle the response to expand/collapse.
+	 */
 	const handleResponseToggle = () => {
 		setResponseExpandAll((prev) => !prev);
 	};
 
+	/**
+	 * Attempts to parse the request of an audit log into a JSON object.
+	 *
+	 * @returns {unknown|null} The parsed request JSON object, or null if the request is not JSON.
+	 */
 	const getPromptData = () => {
 		try {
 			return JSON.parse(logDetails.request);
@@ -186,6 +216,11 @@ export const AuditLogsDetailDrawer = (props) => {
 		}
 	};
 
+	/**
+	 * Attempts to parse the response of an audit log into a JSON object.
+	 *
+	 * @returns {unknown|null} The parsed response JSON object, or null if the response is not JSON.
+	 */
 	const getResponseData = () => {
 		try {
 			return JSON.parse(logDetails.response);
@@ -194,13 +229,13 @@ export const AuditLogsDetailDrawer = (props) => {
 		}
 	};
 
-	const promptData = logDetails ? getPromptData() : null;
-	const responseData = logDetails ? getResponseData() : null;
+	const promptData = logDetails ? getPromptData() : null; // request data in json or null
+	const responseData = logDetails ? getResponseData() : null; // response data in json or null
 	const showPromptExpandButton =
-		promptData && hasExpandableContent(promptData);
+		promptData && hasExpandableContent(promptData); //show request prompt expand button
 	const showResponseExpandButton =
-		responseData && hasExpandableContent(responseData);
-
+		responseData && hasExpandableContent(responseData); //show request prompt expand button
+	//if no logs, then display no details available
 	if (!logDetails)
 		return (
 			<span className="font-normal text-sm leading-[1.43] tracking-normal">
