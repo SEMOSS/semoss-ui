@@ -17,6 +17,7 @@ import {
 	RoomConfigurationButton,
 	RoomFileExplorerButton,
 	RoomInput,
+	RoomInputMenuPlugin,
 } from "@/components";
 import { LOADING_MESSAGES } from "@/constants";
 import { useAutoScroll } from "@/hooks";
@@ -137,19 +138,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
-	/**
-	 * Constants
-	 */
-	const isDisabled =
-		Boolean(room.error) ||
-		room.mode === "executing" ||
-		(room.tail.type === "RESPONSE" &&
-			room.history.some(
-				(message) =>
-					message.type === "RESPONSE" &&
-					message.tools.some((tool) => !tool.response),
-			));
-
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
@@ -227,10 +215,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			</div>
 			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
 				<RoomInput
+					className="max-h-56 min-h-24"
 					isLoading={room.isLoading}
-					isDisabled={isDisabled}
-					minRows={3}
-					maxRows={8}
+					plugins={
+						<RoomInputMenuPlugin
+							options={room.options}
+							setOptions={room.setOptions}
+						/>
+					}
 					configuration={
 						<>
 							<RoomFileExplorerButton room={room} />
@@ -238,7 +230,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						</>
 					}
 					onPrompt={handlePrompt}
-					clearInputOnPrompt
 				/>
 			</div>
 		</div>
