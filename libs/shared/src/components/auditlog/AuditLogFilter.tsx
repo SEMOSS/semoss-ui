@@ -51,6 +51,14 @@ const DashboardDurations = [
 	},
 ];
 
+/**
+ * AuditLogFilter component is used for filtering audit logs
+ * It filters by engine type, engine id, and dashboard duration.
+ * It also provides a custom date range feature for filtering audit logs.
+ *
+ * @param {React.ComponentProps} props - The props passed to the component
+ * @returns {JSX.Element} - The rendered component shows filter details for audit logs if it is auditlogs package, every filters are shown and for client package it will show duration filter
+ */
 export const AuditLogFilter = (props) => {
 	const { insightId, updateLogs, parent = null } = props;
 	const [engineDetails, setEngineDetails] = useState({ ...initialAcc }); //engine details for user

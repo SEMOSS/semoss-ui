@@ -132,7 +132,8 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
 			const catalogId =
 				window.location.hash.split("/")[catalogName === "Apps" ? 2 : 3];
-			const SelectedDuration = filteredData.current.SelectedDuration;
+			const SelectedDuration = filteredData.current.SelectedDuration; // getting date range type like day/week/month
+			//start and end dates, if custom date range is selected
 			const startDate = new Date(
 				filteredData.current?.customDateRange?.from?.setUTCHours(
 					0,
@@ -195,7 +196,7 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 		setRowsPerPage(newRowsPerPage);
 		fetchLogs(newRowsPerPage, offset);
 	};
-	//whenever there is a change in rowsperpage, page then logs will be fetched again
+	//whenever there is a change in rowsperpage/page number, page then logs will be fetched again
 	useEffect(() => {
 		if (catalogName) {
 			setLogs([]);
@@ -218,7 +219,7 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 	}, [catalogName, rowsPerPage, page]);
 
 	/**
-	 * Updates the filtered data state with the new filter data and fetches logs with the new offset.
+	 * Updates the filtered data state with the new filter data and fetches logs with the new filtering options like start, end date,etc.
 	 * @param {object} filterData - The new filter data.
 	 */
 	const updateLogs = (filterData) => {
