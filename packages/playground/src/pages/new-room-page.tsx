@@ -197,10 +197,10 @@ export const NewRoomPage = observer(() => {
 			setOptions((prev) => ({
 				...prev,
 				instructions: "",
-				mcp: [], // Remove workspace MCPs
+				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
 			}));
 		}
-	}, [mode.type]);
+	}, [mode.type, root.theme.defaultTools]);
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
