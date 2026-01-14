@@ -1,7 +1,14 @@
-import { Maximize2, Minimize2, Save } from "lucide-react";
+import { Maximize2, Minimize2, Save, Search, X } from "lucide-react";
 import type React from "react";
-import { Badge, Button } from "@semoss/ui/next";
-import { SearchBar } from "./search-bar";
+import {
+	Badge,
+	Button,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupButton,
+	InputGroupInput,
+	InputGroupText,
+} from "@semoss/ui/next";
 import type { EditorHeaderProps } from "./types";
 
 export const EditorHeader: React.FC<EditorHeaderProps> = ({
@@ -21,7 +28,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 	saveShortcut = "Ctrl+S / Cmd+S",
 }) => {
 	return (
-		<div className="sticky top-0 z-50 mb-6 rounded-lg border border-gray-200 bg-white/95 p-4 backdrop-blur-sm">
+		<div className="sticky top-0 z-50 mb-6 rounded-lg border bg-card/95 p-4 shadow-sm backdrop-blur-sm">
 			{/* Top Row: Function Count, Actions */}
 			<div className="mb-3 flex items-center justify-between">
 				<div className="flex items-center gap-2">
@@ -35,7 +42,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 						</Badge>
 					)}
 					{debouncedSearch && (
-						<span className="text-gray-500 text-xs">
+						<span className="text-muted-foreground text-xs">
 							(filtered)
 						</span>
 					)}
@@ -46,7 +53,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 							variant="outline"
 							size="sm"
 							onClick={onExpandAll}
-							className="flex items-center gap-1.5"
+							className="flex items-center gap-1.5 border-border bg-background text-foreground hover:bg-accent hover:text-foreground"
 						>
 							{expandAll ? (
 								<Minimize2 size={14} />
@@ -65,7 +72,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 							onClick={onSave}
 							disabled={!hasChanges}
 							title={saveShortcut}
-							className="flex items-center gap-1.5 bg-blue-600 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
+							className="flex items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
 						>
 							<Save size={14} />
 							<span>Save</span>
@@ -76,11 +83,34 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 
 			{/* Search Bar */}
 			{showSearch && (
-				<SearchBar
-					value={searchQuery}
-					onChange={onSearchChange}
-					onClear={onSearchClear}
-				/>
+				<InputGroup>
+					<InputGroupAddon align="inline-start">
+						<InputGroupText>
+							<Search
+								size={18}
+								className="text-muted-foreground"
+							/>
+						</InputGroupText>
+					</InputGroupAddon>
+					<InputGroupInput
+						value={searchQuery}
+						onChange={(e) => onSearchChange?.(e.target.value)}
+						placeholder="Search functions by name, title, or description..."
+						className="text-foreground text-sm"
+					/>
+					{searchQuery && (
+						<InputGroupAddon align="inline-end">
+							<InputGroupButton
+								size="icon-xs"
+								variant="ghost"
+								onClick={onSearchClear}
+								className="text-muted-foreground transition-colors hover:text-foreground"
+							>
+								<X size={18} />
+							</InputGroupButton>
+						</InputGroupAddon>
+					)}
+				</InputGroup>
 			)}
 		</div>
 	);

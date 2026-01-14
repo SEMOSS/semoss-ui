@@ -9,7 +9,7 @@ import {
 	WorkspaceManager,
 } from "../../components/workspace";
 import type { WorkspaceOptions } from "../../stores";
-import { MCPJsonEditor } from "../workspace/panels/mcp-json-editor";
+import { MCPJsonEditor } from "../shared";
 import { CodeWorkspaceActions } from "./CodeWorkspaceActions";
 import { RendererPanel } from "./panels";
 
