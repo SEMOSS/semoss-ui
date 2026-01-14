@@ -335,8 +335,16 @@ export const RoomInputMenuPlugin: React.FC<RoomInputMenuPluginProps> = ({
 											key={item.project_id}
 											value={item.project_id}
 											onSelect={() => {
+												let type = item.project_type;
+												if (
+													type === "CODE" ||
+													type === "BLOCKS"
+												) {
+													type = "PROJECT";
+												}
+
 												onSelect({
-													type: item.project_type as MCPConfig["type"],
+													type: type as MCPConfig["type"],
 													id: item.project_id,
 													name: item.project_name,
 												});
