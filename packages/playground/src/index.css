@@ -1,4 +1,6 @@
 @import "@semoss/ui/globals.css";
+@import "@semoss/shared/globals.css";
+
 
 @source "./**/*.{ts,tsx}";
 
