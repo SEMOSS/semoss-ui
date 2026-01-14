@@ -175,5 +175,9 @@ export abstract class AbstractMessageStore {
 	 */
 	activateMessage = () => {
 		this.parent.activeChildPosition = this.position;
+		this.room.setHasUnfinishedTools(
+			(this.room.tail as ResponseMessageStore).hasUnfinishedTools?.() ??
+				false,
+		);
 	};
 }
