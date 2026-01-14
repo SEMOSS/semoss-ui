@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useInsight } from "@semoss/sdk/react";
+import { download, useInsight } from "@semoss/sdk/react";
 import {
 	FileExplorer,
 	FileExplorerItem,
@@ -24,31 +24,30 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 				mode={{
 					type: "INSIGHT",
 				}}
-				ItemComponent={({ item, onSelect, ...otherProps }) => {
+				onItemSelect={(item) => {
+					// don't open directories
+					if (item.type === "directory") {
+						return;
+					}
+
+					// this will select if there or open if not
+					room.addSidebarNode(`FILE--${item.path}`, {
+						type: "tab",
+						name: item.name,
+						component: "room-file-editor",
+						config: {
+							name: item.name,
+							path: item.path,
+						},
+						enableClose: true,
+					});
+				}}
+				ItemComponent={({ item, refresh, ...otherProps }) => {
 					return (
 						<FileExplorerItem
+							draggable={item.type !== "directory"}
 							item={item}
-							onSelect={() => {
-								// trigger the default
-								onSelect();
-
-								// don't open directories
-								if (item.type === "directory") {
-									return;
-								}
-
-								// this will select if there or open if not
-								room.addSidebarNode(`FILE--${item.path}`, {
-									type: "tab",
-									name: item.name,
-									component: "room-file-editor",
-									config: {
-										name: item.name,
-										path: item.path,
-									},
-									enableClose: true,
-								});
-							}}
+							refresh={refresh}
 							onDragStart={(e) => {
 								// cannot drag directories
 								if (item.type === "directory") {
@@ -85,24 +84,40 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 										}
 									},
 								},
-								// item.path.endsWith(".zip")
-								// 	? {
-								// 			name: "Unzip",
-								// 			action: async (item) => {
-								// 				const pixel = "";
+								item.type !== "directory"
+									? {
+											name: "Download",
+											action: async (item) => {
+												// save it
+												const { pixelReturn } =
+													await insight.actions.run<
+														[string]
+													>(
+														`DownloadInsightAsset(filePath=["${item.path}"]);`,
+													);
 
-								// 				await insight.actions.run(
-								// 					pixel,
-								// 				);
-								// 			},
-								// 		}
-								// 	: null,
+												// get the file key
+												const fileKey =
+													pixelReturn[0].output;
+
+												// download the file
+												await download(
+													insight.insightId,
+													fileKey,
+												);
+
+												refresh();
+											},
+										}
+									: null,
 								{
 									name: "Delete",
 									action: async (item) => {
 										await insight.actions.run(
 											`DeleteInsightAssets(filePath=["${item.path}"]);`,
 										);
+
+										refresh();
 									},
 								},
 							]}

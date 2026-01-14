@@ -14,6 +14,7 @@ export const config: BlockConfig<TextBlockDef> = {
 	widget: "text",
 	type: BLOCK_TYPE_DISPLAY,
 	data: {
+		showPlaceholder: false,
 		style: DefaultStyles,
 		text: "Hello world",
 		isStreaming: false,
