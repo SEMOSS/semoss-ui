@@ -94,8 +94,8 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 	};
 
 	return (
-		<div className="h-[60vh] w-full overflow-hidden rounded-xl border border-border bg-card">
-			<div className="flex w-full flex-row items-center gap-1 border-border bg-primary-foreground p-4">
+		<div className="h-[60vh] w-full overflow-hidden rounded-md border border-input bg-transparent dark:bg-input/30">
+			<div className="flex w-full flex-row items-center gap-1 border-input border-b bg-primary-foreground p-4">
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
@@ -171,7 +171,6 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 				)}
 				{getSMSS.status === "SUCCESS" && (
 					<Editor
-						data-slot="input-group-control"
 						width={"100%"}
 						height={"100%"}
 						options={{
