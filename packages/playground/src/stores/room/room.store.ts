@@ -20,6 +20,7 @@ interface RoomStoreInterface {
 
 	/**
 	 * insightId of the room
+	 * Set during the constructor and never changes
 	 */
 	insightId: string;
 
