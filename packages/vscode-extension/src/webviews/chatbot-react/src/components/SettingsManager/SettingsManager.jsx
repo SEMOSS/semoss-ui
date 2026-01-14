@@ -92,28 +92,49 @@ const ConfigurationEditor = () => {
 		};
 		window.addEventListener("message", handler);
 
-		const loadConfig = async () => {
-			try {
-				setIsLoading(true);
-				// Export the current configuration as YAML
-				const yamlConfig = configManager.exportAsYaml();
-				setConfigContent(yamlConfig);
-			} catch (error) {
-				console.error("Failed to load configuration:", error);
-				// Fallback - request config from VS Code extension if local loading fails
-				console.warn(
-					"Local config loading failed, requesting from extension",
-				);
-				window.vscode?.postMessage({ type: "getConfig" });
-				// Temporary placeholder while waiting for extension response
-				setConfigContent(`# Loading configuration...
-# If this persists, check the VS Code extension logs for errors`);
-			} finally {
+	const loadConfig = async () => {
+		try {
+			setIsLoading(true);
+			
+			// Request the raw file content from extension
+			window.vscode?.postMessage({ type: "getConfig" });
+			
+			// Set a timeout in case the message doesn't arrive
+			const timeoutId = setTimeout(() => {
+				// Default to empty if no response
+				setConfigContent("");
 				setIsLoading(false);
-			}
-		};
-
-		loadConfig();
+			}, 1000);
+			
+			// Listen for the response
+			const responseHandler = (event) => {
+				const { data } = event;
+				if (data && data.type === "configData") {
+					clearTimeout(timeoutId);
+					const rawConfig = data.config || "";
+					
+					// Check if config is essentially empty (only has comments or whitespace)
+					const hasActualConfig = rawConfig && 
+						rawConfig.split('\n').some(line => {
+							const trimmed = line.trim();
+							return trimmed && !trimmed.startsWith('#');
+						});
+					
+					// Set to empty if no actual config, otherwise use the file content
+					setConfigContent(hasActualConfig ? rawConfig : "");
+					setIsLoading(false);
+					window.removeEventListener("message", responseHandler);
+				}
+			};
+			
+			window.addEventListener("message", responseHandler);
+			
+		} catch (error) {
+			console.error("Failed to load configuration:", error);
+			setConfigContent("");
+			setIsLoading(false);
+		}
+	};		loadConfig();
 		return () => window.removeEventListener("message", handler);
 	}, [configManager]);
 
@@ -131,58 +152,6 @@ const ConfigurationEditor = () => {
 				message: `Failed to save: ${error.message}`,
 			});
 		}
-	};
-
-	const handleReset = () => {
-		// Non-blocking confirmation pattern
-		if (isSaving) return; // avoid during save
-		setStatus({
-			type: "info",
-			message: "Reset to defaults (unsaved). Click Save to apply.",
-		});
-		const defaultYaml = `# Semoss Configuration File
-# This file controls various aspects of your Semoss AI assistant
-
-# LLM Models Configuration
-models: []
-
-# MCP (Model Context Protocol) Servers  
-mcpServers:
-  - name: "filesystem"
-    command: "npx"
-    args: ["@modelcontextprotocol/server-filesystem", "/workspace"]
-    description: "File system access for reading and writing files"
-    enabled: true
-
-# Preferences
-preferences:
-  chat:
-    defaultModel: ""
-    autoSave: true
-    persistHistory: true
-    maxHistoryLength: 1000
-    enableTypingIndicator: true
-  ui:
-    theme: "auto"
-    fontSize: 14
-    fontFamily: "Segoe UI"
-    showLineNumbers: true
-    wordWrap: true
-  code:
-    autoComplete: true
-    syntaxHighlighting: true
-    enableInlineChat: true
-    defaultLanguage: "javascript"
-
-# Shortcuts
-shortcuts:
-  openChat: "Ctrl+Shift+L"
-  clearChat: "Ctrl+K"
-  openSettings: "Ctrl+,"
-  toggleModel: "Ctrl+M"
-  executeCommand: "Enter"
-  multilineInput: "Shift+Enter"`;
-		setConfigContent(defaultYaml);
 	};
 
 	if (isLoading) {
@@ -216,13 +185,67 @@ shortcuts:
 				/>
 			</div>
 
-			<div className="config-editor-footer">
-				<p className="config-note">
-					<strong>Note:</strong> Use environment variables like{" "}
-					<code>$OPENAI_API_KEY</code> for sensitive information.
-					Changes will be applied when you click Save.
-				</p>
+			<div className="config-examples">
+				<h3>Configuration Examples</h3>
+				
+				<div className="example-section">
+					<h4>Model Configuration Example</h4>
+					<pre className="example-code">{`models:
+  - name: GPT-4o-mini
+    provider: openai
+    model: model-id
+    apiKey: your-api-key
+    apiBase: http://localhost:9090/Monolith/api/model/openai
+    roles:
+      - chat
+    capabilities:
+      - tool_use
+    enabled: true`}</pre>
+				</div>
+
+				<div className="example-section">
+					<h4>MCP Server Configuration Examples</h4>
+					
+					<div className="example-subsection">
+						<h5>Semoss-based MCP Server</h5>
+						<pre className="example-code">{`mcpServers:
+  - name: Date
+    command: npx
+    args: []
+    timeout: 15000
+    enabled: true
+    url: http://localhost:9090/Monolith/api/ext/mcp/app-id/comms
+    method: POST
+    headers:
+      Content-Type: application/json
+      Authorization: Bearer your-token
+    tools:
+      - name: Date
+        command: semoss_npx
+        description: Get current date and time
+        parameters:
+          type: object
+          properties:
+            format:
+              type: string
+              description: Date format (e.g., 'DD-MM-YYYY')
+          required: []`}</pre>
+					</div>
+
+					<div className="example-subsection">
+						<h5>NPX-based MCP Server</h5>
+						<pre className="example-code">{`mcpServers:
+  - name: git
+    command: npx
+    args:
+      - '@modelcontextprotocol/server-git'
+    timeout: 5000
+    enabled: true
+    tools: []`}</pre>
+					</div>
+				</div>
 			</div>
+
 			<div className="config-actions">
 				{status && (
 					<div

@@ -15,10 +15,10 @@
     background: #2d2f31;
     box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
     transition: border-color .15s, box-shadow .15s, background .15s;
+    margin-bottom: 8px;
 }
 
 .chat-composer-textarea-wrapper:focus-within {
-    box-shadow: 0 0 0 1px #4a4d4f, 0 0 0 3px rgba(0, 0, 0, 0.35);
     background: #313335;
 }
 
@@ -32,6 +32,12 @@
     font-size: 13px;
     line-height: 1.4;
     max-height: 110px;
+}
+
+.chat-composer-textarea:focus {
+    outline: none;
+    border: none;
+    box-shadow: none;
 }
 
 .chat-composer-placeholder {

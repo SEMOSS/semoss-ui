@@ -146,6 +146,7 @@
   display: flex;
   flex-direction: column;
   padding: 20px;
+  overflow-y: auto;
 }
 
 .config-editor-header {
@@ -164,13 +165,12 @@
 }
 
 .config-actions {
-  margin-top: 10px;
-  margin-right: 0px;
-  overflow: hidden;
-}
-
-.save-button{
-  float:right;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 8px 0 0 0;
+  margin-top: 8px;
+  background-color: var(--vscode-editor-background);
 }
 
 .reset-button {
@@ -208,6 +208,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 300px;
+  margin-bottom: 16px;
 }
 
 .config-textarea {
@@ -349,5 +351,77 @@
 }
 
 .config-textarea::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode-scrollbarSlider-hoverBackground);
+}
+
+/* Configuration Examples */
+.config-examples {
+  margin: 0 0 8px 0;
+  padding: 16px 16px 32px 16px;
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  max-height: 250px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.config-examples h3 {
+  margin: 0 0 16px 0;
+  color: var(--vscode-foreground);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.example-section {
+  margin-bottom: 14px;
+}
+
+.example-section h4 {
+  margin: 0 0 12px 0;
+  color: var(--vscode-foreground);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.example-subsection {
+  margin-bottom: 16px;
+}
+
+.example-subsection h5 {
+  margin: 0 0 8px 0;
+  color: var(--vscode-descriptionForeground);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.example-code {
+  background-color: var(--vscode-textCodeBlock-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  padding: 12px;
+  font-family: var(--vscode-editor-font-family);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--vscode-editor-foreground);
+  overflow-x: auto;
+  margin: 0;
+  white-space: pre;
+}
+
+.config-examples::-webkit-scrollbar {
+  width: 8px;
+}
+
+.config-examples::-webkit-scrollbar-track {
+  background: var(--vscode-scrollbarSlider-background);
+}
+
+.config-examples::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background);
+  border-radius: 4px;
+}
+
+.config-examples::-webkit-scrollbar-thumb:hover {
   background: var(--vscode-scrollbarSlider-hoverBackground);
 }

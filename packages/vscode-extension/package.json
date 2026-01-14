@@ -3,7 +3,7 @@
     "displayName": "Semoss VSCode",
     "publisher": "Semoss",
     "description": "VSCode extension for Semoss applications with features for zipping, deploying, and managing multiple Semoss instances. Includes a modern chatbot interface for assistance.",
-    "version": "0.0.5",
+    "version": "1.0.0",
     "license": "UNLICENSED",
     "private": true,
     "categories": [

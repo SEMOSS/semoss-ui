@@ -197,13 +197,24 @@ class MCPService {
 		try {
 			// Check if this is a semoss_npx command and use HTTP alternative instead
 			if (toolConfig.command === "semoss_npx") {
+				const config = configManager.config;
+				const serverConfig = config?.mcpServers?.find(
+					(s) => s.name === serverName,
+				);
 				return await this.executeSemossNpx(
 					serverName,
 					toolName,
 					parameters,
 					toolConfig,
+					serverConfig,
 				);
 			}
+
+			// Get server config for server-level properties
+			const config = configManager.config;
+			const serverConfig = config?.mcpServers?.find(
+				(s) => s.name === serverName,
+			);
 
 			// Get the current workspace directory
 			const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
@@ -231,7 +242,7 @@ class MCPService {
 			// Execute the command
 			const execOptions = {
 				cwd: workingDirectory,
-				timeout: toolConfig.timeout || 10000, // Default 10 second timeout
+				timeout: serverConfig?.timeout || 10000, // Server timeout or default
 				...(toolConfig.env && {
 					env: { ...process.env, ...toolConfig.env },
 				}),
@@ -397,15 +408,15 @@ class MCPService {
 	/**
 	 * Execute semoss_npx command using Node.js HTTP alternative with direct config parameters
 	 */
-	async executeSemossNpx(serverName, toolName, parameters, toolConfig) {
+	async executeSemossNpx(serverName, toolName, parameters, toolConfig, serverConfig) {
 		const { default: fetch } = await import("node-fetch");
 
 		try {
-			// Get parameters directly from config
+			// Get parameters from server config first, then tool config as fallback
 			const url =
-				toolConfig.url || "http://localhost:9090/Monolith/api/ext/mcp";
-			const method = toolConfig.method || "POST";
-			const headers = toolConfig.headers || {
+				serverConfig?.url || toolConfig.url || "http://localhost:9090/Monolith/api/ext/mcp";
+			const method = serverConfig?.method || toolConfig.method || "POST";
+			const headers = serverConfig?.headers || toolConfig.headers || {
 				"Content-Type": "application/json",
 			};
 
@@ -429,7 +440,7 @@ class MCPService {
 			const controller = new AbortController();
 			const timeoutId = setTimeout(
 				() => controller.abort(),
-				toolConfig.timeout || 15000,
+				serverConfig?.timeout || 15000, // Server timeout or default
 			);
 
 			try {

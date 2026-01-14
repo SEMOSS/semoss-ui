@@ -203,6 +203,85 @@ class ChatbotWebviewProvider {
 				case "error":
 					console.error("Webview error:", data.message);
 					break;
+				case "downloadManual": {
+					try {
+						// Locate the PDF in the extension's assets folder
+						const manualPath = vscode.Uri.joinPath(
+							this._extensionUri,
+							"assets",
+							"docs",
+							"semoss_user_manual.pdf",
+						);
+
+						// Check if file exists
+						try {
+							await vscode.workspace.fs.stat(manualPath);
+						} catch (err) {
+							webviewView.webview.postMessage({
+								type: "response",
+								text: "User manual not found in extension assets.",
+								status: "error",
+							});
+							break;
+						}
+
+						// Prompt user to save the file
+						const saveUri = await vscode.window.showSaveDialog({
+							defaultUri: vscode.Uri.file(
+								path.join(
+									require("os").homedir(),
+									"Downloads",
+									"semoss_user_manual.pdf",
+								),
+							),
+							filters: {
+								PDF: ["pdf"],
+							},
+							saveLabel: "Save User Manual",
+						});
+
+						if (saveUri) {
+							// Copy the PDF to the selected location
+							const pdfContent =
+								await vscode.workspace.fs.readFile(manualPath);
+							await vscode.workspace.fs.writeFile(
+								saveUri,
+								pdfContent,
+							);
+
+							// Show success message with option to open
+							const action = await vscode.window.showInformationMessage(
+								`User manual saved to ${saveUri.fsPath}`,
+								"Open File",
+							);
+
+							if (action === "Open File") {
+								// Open with system default PDF viewer
+								await vscode.env.openExternal(saveUri);
+							}
+
+							webviewView.webview.postMessage({
+								type: "response",
+								text: `User manual saved successfully to ${saveUri.fsPath}`,
+								status: "ok",
+							});
+						} else {
+							webviewView.webview.postMessage({
+								type: "response",
+								text: "Download cancelled by user.",
+								status: "info",
+							});
+						}
+					} catch (err) {
+						console.error("Failed to download user manual:", err);
+						webviewView.webview.postMessage({
+							type: "response",
+							text: `Failed to download user manual: ${err.message}`,
+							status: "error",
+						});
+					}
+					break;
+				}
 				case "listInstances": {
 					try {
 						const instances = await getStoredInstances(
@@ -538,10 +617,21 @@ class ChatbotWebviewProvider {
 	 */
 	async _handleGetConfig(webview) {
 		try {
-			await configManager.loadConfig();
-			const config = configManager.config;
-			const yaml = require("js-yaml");
-			const yamlString = yaml.dump(config);
+			const fs = require("fs");
+			const path = require("path");
+			
+			// Get the config file path
+			const configPath = path.join(
+				this._context.extensionPath,
+				"config",
+				"semoss-config.yaml"
+			);
+			
+			// Read the raw file content
+			let yamlString = "";
+			if (fs.existsSync(configPath)) {
+				yamlString = fs.readFileSync(configPath, "utf8");
+			}
 
 			webview.postMessage({
 				type: "configData",

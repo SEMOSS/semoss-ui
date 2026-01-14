@@ -9,189 +9,22 @@ import "./MCPManager.css";
  * - Allows adding new server definitions
  * - Displays mock tools/resources (placeholder until live integration)
  */
-// Common MCP server templates with tools
-const MCP_SERVER_TEMPLATES = {
-	filesystem: {
-		name: "filesystem",
-		command: "npx",
-		args: ["@modelcontextprotocol/server-filesystem", "/workspace"],
-		description: "File system access for reading and writing files",
-		enabled: true,
-		tools: [
-			{
-				name: "read_file",
-				command: 'cat "{{file_path}}"',
-				description: "Read contents of a file",
-				timeout: 5000,
-			},
-			{
-				name: "list_directory",
-				command: 'ls -la "{{directory_path}}"',
-				description: "List directory contents with details",
-				timeout: 5000,
-			},
-		],
-	},
-	git: {
-		name: "git",
-		command: "npx",
-		args: ["@modelcontextprotocol/server-git"],
-		description: "Git repository operations",
-		enabled: true,
-		tools: [
-			{
-				name: "git_status",
-				command: "git status",
-				description:
-					"Get git repository status and working tree changes",
-				timeout: 5000,
-			},
-			{
-				name: "git_log",
-				command: "git log --oneline -10",
-				description: "Show recent commit history",
-				timeout: 5000,
-			},
-		],
-	},
-	docker: {
-		name: "docker",
-		command: "docker",
-		args: [],
-		description: "Docker container management",
-		enabled: true,
-		tools: [
-			{
-				name: "list_containers",
-				command: "docker ps -a",
-				description: "List all Docker containers",
-				timeout: 10000,
-			},
-			{
-				name: "container_logs",
-				command: "docker logs {{container_id}}",
-				description: "Get logs for a specific container",
-				timeout: 15000,
-			},
-		],
-	},
-	system: {
-		name: "system",
-		command: "powershell",
-		args: [],
-		description: "System information and monitoring",
-		enabled: true,
-		tools: [
-			{
-				name: "disk_usage",
-				command:
-					'Get-WmiObject -Class Win32_LogicalDisk | Select-Object DeviceID, @{Name="Size(GB)";Expression={[math]::Round($_.Size/1GB,2)}}, @{Name="FreeSpace(GB)";Expression={[math]::Round($_.FreeSpace/1GB,2)}} | Format-Table',
-				description: "Show disk usage for all drives",
-				timeout: 5000,
-			},
-			{
-				name: "running_processes",
-				command:
-					"Get-Process | Sort-Object CPU -Descending | Select-Object -First 10 Name, CPU, WorkingSet | Format-Table",
-				description: "Show top 10 processes by CPU usage",
-				timeout: 5000,
-			},
-		],
-	},
-	nodejs: {
-		name: "nodejs",
-		command: "npm",
-		args: [],
-		description: "Node.js project development tools",
-		enabled: true,
-		tools: [
-			{
-				name: "run_tests",
-				command: "npm test",
-				description: "Run the project test suite",
-				timeout: 30000,
-			},
-			{
-				name: "build_project",
-				command: "npm run build",
-				description: "Build the project for production",
-				timeout: 60000,
-			},
-		],
-	},
-};
 
 const MCPManager = ({ isOpen, onClose }) => {
 	// Server definitions persisted via configManager (mcpServers array)
 	const [servers, setServers] = useState([]);
-	const [tools, setTools] = useState([]);
-	const [resources, setResources] = useState([]);
-	const [activeTab, setActiveTab] = useState("servers");
 	const [isAddingServer, setIsAddingServer] = useState(false);
 	const [editingServer, setEditingServer] = useState(null);
-	const [showTemplates, setShowTemplates] = useState(false);
 	const [deleteConfirmation, setDeleteConfirmation] = useState(null);
 
 	useEffect(() => {
 		const loadMCPData = async () => {
 			const config = configManager.getConfig();
 			setServers(config.mcpServers || []);
-			// Placeholder: simulate querying active MCP servers for tools/resources
-			loadToolsAndResources();
 		};
 
 		if (isOpen) loadMCPData();
 	}, [isOpen]);
-
-	const loadToolsAndResources = async () => {
-		// Demo data; replace with real server capability queries
-		setTools([
-			{
-				name: "read_file",
-				description: "Read the contents of a file",
-				inputSchema: {
-					type: "object",
-					properties: {
-						path: {
-							type: "string",
-							description: "Path to the file",
-						},
-					},
-					required: ["path"],
-				},
-				server: "filesystem",
-			},
-			{
-				name: "write_file",
-				description: "Write content to a file",
-				inputSchema: {
-					type: "object",
-					properties: {
-						path: {
-							type: "string",
-							description: "Path to the file",
-						},
-						content: {
-							type: "string",
-							description: "Content to write",
-						},
-					},
-					required: ["path", "content"],
-				},
-				server: "filesystem",
-			},
-		]);
-
-		setResources([
-			{
-				uri: "file:///workspace/src/main.js",
-				name: "main.js",
-				description: "Main application file",
-				mimeType: "application/javascript",
-				server: "filesystem",
-			},
-		]);
-	};
 
 	const handleDeleteServer = (serverName) => {
 		// Show custom confirmation dialog instead of window.confirm
@@ -232,23 +65,6 @@ const MCPManager = ({ isOpen, onClose }) => {
 		setEditingServer(null);
 	};
 
-	const handleAddFromTemplate = async (templateKey) => {
-		const template = MCP_SERVER_TEMPLATES[templateKey];
-		if (!template) return;
-
-		// Check if server with same name already exists
-		const exists = servers.find((s) => s.name === template.name);
-		if (exists) {
-			alert(`MCP server "${template.name}" already exists!`);
-			return;
-		}
-
-		const updated = [...servers, { ...template }];
-		setServers(updated);
-		await configManager.updateConfig("mcpServers", updated);
-		setShowTemplates(false);
-	};
-
 	const handleEditServer = (server) => {
 		setEditingServer(server);
 		setIsAddingServer(true);
@@ -271,60 +87,18 @@ const MCPManager = ({ isOpen, onClose }) => {
 				</div>
 
 				<div className="mcp-manager-content">
-					<div className="mcp-tabs">
-						<button
-							type="button"
-							className={`tab-button ${activeTab === "servers" ? "active" : ""}`}
-							onClick={() => setActiveTab("servers")}
-						>
-							Servers ({servers.length})
-						</button>
-						<button
-							type="button"
-							className={`tab-button ${activeTab === "tools" ? "active" : ""}`}
-							onClick={() => setActiveTab("tools")}
-						>
-							Tools ({tools.length})
-						</button>
-						<button
-							type="button"
-							className={`tab-button ${activeTab === "resources" ? "active" : ""}`}
-							onClick={() => setActiveTab("resources")}
-						>
-							Resources ({resources.length})
-						</button>
-					</div>
-
-					<div className="mcp-tab-content">
-						{activeTab === "servers" && (
-							<ServersTab
-								servers={servers}
-								isAddingServer={isAddingServer}
-								editingServer={editingServer}
-								setIsAddingServer={setIsAddingServer}
-								setEditingServer={setEditingServer}
-								onSaveServer={handleSaveServer}
-								setServers={setServers}
-								onEditServer={handleEditServer}
-								onDeleteServer={handleDeleteServer}
-								onToggleServer={handleToggleServer}
-								showTemplates={showTemplates}
-								setShowTemplates={setShowTemplates}
-								onAddFromTemplate={handleAddFromTemplate}
-							/>
-						)}
-
-						{activeTab === "tools" && (
-							<ToolsTab tools={tools} servers={servers} />
-						)}
-
-						{activeTab === "resources" && (
-							<ResourcesTab
-								resources={resources}
-								servers={servers}
-							/>
-						)}
-					</div>
+				<ServersTab
+					servers={servers}
+					isAddingServer={isAddingServer}
+					editingServer={editingServer}
+					setIsAddingServer={setIsAddingServer}
+					setEditingServer={setEditingServer}
+					onSaveServer={handleSaveServer}
+					setServers={setServers}
+					onEditServer={handleEditServer}
+					onDeleteServer={handleDeleteServer}
+					onToggleServer={handleToggleServer}
+				/>
 				</div>
 
 				{/* Custom Delete Confirmation Dialog */}
@@ -373,9 +147,6 @@ const ServersTab = ({
 	onEditServer,
 	onDeleteServer,
 	onToggleServer,
-	showTemplates,
-	setShowTemplates,
-	onAddFromTemplate,
 }) => {
 	if (isAddingServer) {
 		return (
@@ -397,13 +168,6 @@ const ServersTab = ({
 				<div className="server-actions">
 					<button
 						type="button"
-						className="add-server-button secondary"
-						onClick={() => setShowTemplates(!showTemplates)}
-					>
-						📋 Add from Template
-					</button>
-					<button
-						type="button"
 						className="add-server-button"
 						onClick={() => {
 							setIsAddingServer(true);
@@ -414,35 +178,6 @@ const ServersTab = ({
 					</button>
 				</div>
 			</div>
-
-			{showTemplates && (
-				<div className="server-templates">
-					<h4>Common MCP Server Templates</h4>
-					<div className="template-grid">
-						{Object.entries(MCP_SERVER_TEMPLATES).map(
-							([key, template]) => (
-								<div key={key} className="template-card">
-									<h5>{template.name}</h5>
-									<p>{template.description}</p>
-									<div className="template-details">
-										<small>
-											Command: {template.command}{" "}
-											{template.args.join(" ")}
-										</small>
-									</div>
-									<button
-										type="button"
-										className="template-add-button"
-										onClick={() => onAddFromTemplate(key)}
-									>
-										Add {template.name}
-									</button>
-								</div>
-							),
-						)}
-					</div>
-				</div>
-			)}
 
 			<div className="servers-list">
 				{servers.length === 0 ? (
@@ -552,6 +287,9 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 		timeout: server?.timeout || 5000,
 		enabled: server?.enabled ?? true,
 		env: server?.env || {},
+		url: server?.url || "",
+		method: server?.method || "POST",
+		headers: server?.headers || {},
 	});
 
 	const [argsText, setArgsText] = useState(server?.args?.join(" ") || "");
@@ -561,9 +299,18 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 			value,
 		})),
 	);
+	const [headerVars, setHeaderVars] = useState(
+		Object.entries(server?.headers || {}).map(([key, value]) => ({
+			key,
+			value,
+		})),
+	);
 	const [tools, setTools] = useState(
-		server?.tools || [
-			{ name: "", command: "", description: "", timeout: 5000 },
+		server?.tools?.map(tool => ({
+			...tool,
+			parameters: tool.parameters ? JSON.stringify(tool.parameters, null, 2) : ""
+		})) || [
+			{ name: "", command: "", description: "", parameters: "" },
 		],
 	);
 	const [formError, setFormError] = useState("");
@@ -571,7 +318,7 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 	const addTool = () => {
 		setTools([
 			...tools,
-			{ name: "", command: "", description: "", timeout: 5000 },
+			{ name: "", command: "", description: "", parameters: "" },
 		]);
 	};
 
@@ -603,6 +350,21 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 		setEnvVars(updated);
 	};
 
+	const addHeaderVar = () => {
+		setHeaderVars([...headerVars, { key: "", value: "" }]);
+	};
+
+	const removeHeaderVar = (index) => {
+		setHeaderVars(headerVars.filter((_, i) => i !== index));
+	};
+
+	const updateHeaderVar = (index, field, value) => {
+		const updated = headerVars.map((header, i) =>
+			i === index ? { ...header, [field]: value } : header,
+		);
+		setHeaderVars(updated);
+	};
+
 	const handleSubmit = (e) => {
 		e.preventDefault();
 
@@ -614,12 +376,24 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 		// Validate tools
 		const validTools = tools
 			.filter((tool) => tool.name.trim() && tool.command.trim())
-			.map((tool) => ({
-				name: tool.name.trim(),
-				command: tool.command.trim(),
-				description: tool.description.trim() || `Execute ${tool.name}`,
-				timeout: parseInt(tool.timeout) || 5000,
-			}));
+			.map((tool) => {
+				const toolData = {
+					name: tool.name.trim(),
+					command: tool.command.trim(),
+					description: tool.description.trim() || `Execute ${tool.name}`,
+				};
+				
+				// Parse parameters if provided
+				if (tool.parameters && tool.parameters.trim()) {
+					try {
+						toolData.parameters = JSON.parse(tool.parameters);
+					} catch (e) {
+						console.warn(`Invalid JSON in parameters for tool ${tool.name}:`, e);
+					}
+				}
+				
+				return toolData;
+			});
 
 		if (validTools.length === 0) {
 			setFormError("Please add at least one tool with name and command.");
@@ -627,6 +401,13 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 		}
 
 		const envObject = envVars.reduce((acc, { key, value }) => {
+			if (key.trim() && value.trim()) {
+				acc[key.trim()] = value.trim();
+			}
+			return acc;
+		}, {});
+
+		const headersObject = headerVars.reduce((acc, { key, value }) => {
 			if (key.trim() && value.trim()) {
 				acc[key.trim()] = value.trim();
 			}
@@ -642,6 +423,9 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 			timeout: formData.timeout || undefined,
 			enabled: formData.enabled,
 			env: Object.keys(envObject).length > 0 ? envObject : undefined,
+			url: formData.url || undefined,
+			method: formData.method || undefined,
+			headers: Object.keys(headersObject).length > 0 ? headersObject : undefined,
 			tools: validTools,
 		};
 
@@ -694,11 +478,11 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 
 					<div className="form-group">
 						<label>Arguments</label>
-						<input
-							type="text"
+						<textarea
 							value={argsText}
 							onChange={(e) => setArgsText(e.target.value)}
 							placeholder="e.g., @modelcontextprotocol/server-filesystem /workspace"
+							rows="3"
 						/>
 					</div>
 
@@ -714,21 +498,6 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 								}))
 							}
 							placeholder="Brief description of what this server provides"
-						/>
-					</div>
-
-					<div className="form-group">
-						<label>Working Directory</label>
-						<input
-							type="text"
-							value={formData.workingDirectory}
-							onChange={(e) =>
-								setFormData((prev) => ({
-									...prev,
-									workingDirectory: e.target.value,
-								}))
-							}
-							placeholder="Optional: custom working directory"
 						/>
 					</div>
 
@@ -750,6 +519,39 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 					</div>
 
 					<div className="form-group">
+						<label>URL</label>
+						<input
+							type="text"
+							value={formData.url}
+							onChange={(e) =>
+								setFormData((prev) => ({
+									...prev,
+									url: e.target.value,
+								}))
+							}
+							placeholder="e.g., http://localhost:9090/Monolith/api/ext/mcp/..."
+						/>
+					</div>
+
+					<div className="form-group">
+						<label>Method</label>
+						<select
+							value={formData.method}
+							onChange={(e) =>
+								setFormData((prev) => ({
+									...prev,
+									method: e.target.value,
+								}))
+							}
+						>
+							<option value="GET">GET</option>
+							<option value="POST">POST</option>
+							<option value="PUT">PUT</option>
+							<option value="DELETE">DELETE</option>
+						</select>
+					</div>
+
+					<div className="form-group">
 						<label className="checkbox-label">
 							<input
 								type="checkbox"
@@ -767,34 +569,35 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 				</div>
 
 				<div className="form-section">
-					<h4>Environment Variables</h4>
+					<h4>Headers</h4>
 					<p className="form-help">
-						Optional environment variables for this server
+						Optional headers for Semoss-based MCP servers
 					</p>
 
-					{envVars.map((envVar, index) => (
+					{headerVars.map((headerVar, index) => (
 						<div key={index} className="env-var-row">
 							<input
 								type="text"
-								placeholder="Variable name"
-								value={envVar.key}
+								placeholder="Header name (e.g., Content-Type)"
+								value={headerVar.key}
 								onChange={(e) =>
-									updateEnvVar(index, "key", e.target.value)
+									updateHeaderVar(index, "key", e.target.value)
 								}
 							/>
 							<input
 								type="text"
-								placeholder="Variable value"
-								value={envVar.value}
+								placeholder="Header value"
+								value={headerVar.value}
 								onChange={(e) =>
-									updateEnvVar(index, "value", e.target.value)
+									updateHeaderVar(index, "value", e.target.value)
 								}
 							/>
 							<button
+								id="headerremoveBtn"
 								type="button"
-								onClick={() => removeEnvVar(index)}
+								onClick={() => removeHeaderVar(index)}
 								className="remove-button"
-								disabled={envVars.length === 1}
+								disabled={headerVars.length === 1}
 							>
 								🗑️
 							</button>
@@ -803,10 +606,10 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 
 					<button
 						type="button"
-						onClick={addEnvVar}
+						onClick={addHeaderVar}
 						className="add-button"
 					>
-						+ Add Environment Variable
+						+ Add Header
 					</button>
 				</div>
 
@@ -853,42 +656,41 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 									/>
 								</div>
 
-								<div className="form-group">
-									<label>Description</label>
-									<input
-										type="text"
-										placeholder="What this tool does"
-										value={tool.description}
-										onChange={(e) =>
-											updateTool(
-												index,
-												"description",
-												e.target.value,
-											)
-										}
-									/>
-								</div>
-
-								<div className="form-group">
-									<label>Timeout (ms)</label>
-									<input
-										type="number"
-										value={tool.timeout}
-										onChange={(e) =>
-											updateTool(
-												index,
-												"timeout",
-												parseInt(e.target.value) ||
-													5000,
-											)
-										}
-										min="1000"
-										max="300000"
-									/>
-								</div>
+							<div className="form-group">
+								<label>Description</label>
+								<input
+									type="text"
+									placeholder="What this tool does"
+									value={tool.description}
+									onChange={(e) =>
+										updateTool(
+											index,
+											"description",
+											e.target.value,
+										)
+									}
+								/>
 							</div>
 
-							<button
+							<div className="form-group">
+								<label>Parameters (Optional JSON)</label>
+								<textarea
+									value={tool.parameters || ""}
+									onChange={(e) =>
+										updateTool(
+											index,
+											"parameters",
+											e.target.value,
+										)
+									}
+									placeholder='{\n  "type": "object",\n  "properties": {\n    "param1": {\n      "type": "string",\n      "description": "..."\n    }\n  }\n}'
+									rows="6"
+								/>
+								<small style={{ color: '#888', fontSize: '0.85em' }}>
+									For Semoss-related servers, define tool parameters in JSON format
+								</small>
+							</div>
+						</div>							<button
 								type="button"
 								onClick={() => removeTool(index)}
 								className="remove-tool-button"
@@ -922,102 +724,6 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 					</button>
 				</div>
 			</form>
-		</div>
-	);
-};
-
-const ToolsTab = ({ tools, servers }) => {
-	const enabledServers = servers.filter((s) => s.enabled);
-
-	return (
-		<div className="tools-tab">
-			<div className="tools-header">
-				<h3>Available Tools</h3>
-				<p>Tools provided by enabled MCP servers</p>
-			</div>
-
-			{enabledServers.length === 0 ? (
-				<div className="no-tools">
-					<p>
-						No enabled MCP servers. Enable servers to see available
-						tools.
-					</p>
-				</div>
-			) : (
-				<div className="tools-list">
-					{tools.map((tool, index) => (
-						<div
-							key={`${tool.server}-${tool.name}-${index}`}
-							className="tool-card"
-						>
-							<div className="tool-header">
-								<h4>{tool.name}</h4>
-								<span className="tool-server">
-									from {tool.server}
-								</span>
-							</div>
-							<p className="tool-description">
-								{tool.description}
-							</p>
-							<div className="tool-schema">
-								<h5>Input Schema:</h5>
-								<pre>
-									{JSON.stringify(tool.inputSchema, null, 2)}
-								</pre>
-							</div>
-						</div>
-					))}
-				</div>
-			)}
-		</div>
-	);
-};
-
-const ResourcesTab = ({ resources, servers }) => {
-	const enabledServers = servers.filter((s) => s.enabled);
-
-	return (
-		<div className="resources-tab">
-			<div className="resources-header">
-				<h3>Available Resources</h3>
-				<p>Resources provided by enabled MCP servers</p>
-			</div>
-
-			{enabledServers.length === 0 ? (
-				<div className="no-resources">
-					<p>
-						No enabled MCP servers. Enable servers to see available
-						resources.
-					</p>
-				</div>
-			) : (
-				<div className="resources-list">
-					{resources.map((resource, index) => (
-						<div
-							key={`${resource.server}-${resource.uri}-${index}`}
-							className="resource-card"
-						>
-							<div className="resource-header">
-								<h4>{resource.name}</h4>
-								<span className="resource-server">
-									from {resource.server}
-								</span>
-							</div>
-							<p className="resource-uri">{resource.uri}</p>
-							{resource.description && (
-								<p className="resource-description">
-									{resource.description}
-								</p>
-							)}
-							{resource.mimeType && (
-								<span className="resource-mime-type">
-									{resource.mimeType}
-								</span>
-							)}
-						</div>
-					))}
-				</div>
-			)}
 		</div>
 	);
 };
