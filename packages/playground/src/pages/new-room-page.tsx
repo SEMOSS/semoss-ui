@@ -16,6 +16,7 @@ import {
 import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
+	RoomInputMenuPlugin,
 	RoomOptions,
 	RoomWorkspace,
 	workspaceToApp,
@@ -70,7 +71,7 @@ export const NewRoomPage = observer(() => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
-		mcp: [],
+		mcp: [...(root.theme.defaultTools || [])],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
 		workspace: null,
@@ -196,10 +197,10 @@ export const NewRoomPage = observer(() => {
 			setOptions((prev) => ({
 				...prev,
 				instructions: "",
-				mcp: [], // Remove workspace MCPs
+				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
 			}));
 		}
-	}, [mode.type]);
+	}, [mode.type, root.theme.defaultTools]);
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
@@ -233,19 +234,23 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
+							className="max-h-64 min-h-48"
 							isLoading={
 								isLoading ||
 								(mode.type === "workspace" &&
 									mode.workspace &&
 									getWorkspace.status !== "SUCCESS")
 							}
-							isDisabled={false}
-							minRows={4}
-							maxRows={8}
 							workspace={
 								<RoomWorkspace
 									mode={mode}
 									onModeChange={setMode}
+								/>
+							}
+							plugins={
+								<RoomInputMenuPlugin
+									options={options}
+									setOptions={setOptions}
 								/>
 							}
 							configuration={
