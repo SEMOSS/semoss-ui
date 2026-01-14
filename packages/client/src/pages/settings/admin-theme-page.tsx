@@ -13,13 +13,11 @@ import {
 	FieldGroup,
 	FieldLabel,
 	Input,
-	InputGroup,
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	Skeleton,
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
@@ -325,17 +323,23 @@ export const AdminThemePage: React.FC = () => {
 						</Button>
 					</div>
 				</Field>
-
-				<InputGroup>
-					<Suspense fallback={<Skeleton className="h-80 w-full" />}>
+				<div className="h-[60vh] w-full overflow-hidden rounded-md border border-input bg-transparent dark:bg-input/30">
+					<Suspense
+						fallback={
+							<div className="flex h-full w-full items-center justify-center">
+								<Spinner />
+							</div>
+						}
+					>
 						<Editor
-							data-slot="input-group-control"
-							className="h-80 p-0.5"
+							width={"100%"}
+							height={"100%"}
 							options={{
 								minimap: {
 									enabled: false,
 								},
 								readOnly: isLoading,
+								contextmenu: false,
 							}}
 							value={themeValue}
 							language={"json"}
@@ -345,7 +349,7 @@ export const AdminThemePage: React.FC = () => {
 							data-test-id="theme-editor"
 						/>
 					</Suspense>
-				</InputGroup>
+				</div>
 			</FieldGroup>
 
 			{/* Create Theme Dialog */}
