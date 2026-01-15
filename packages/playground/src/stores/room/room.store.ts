@@ -20,6 +20,7 @@ interface RoomStoreInterface {
 
 	/**
 	 * insightId of the room
+	 * Set during the constructor and never changes
 	 */
 	insightId: string;
 
@@ -32,6 +33,11 @@ interface RoomStoreInterface {
 	 *  Track if the room is loading
 	 */
 	isLoading: boolean;
+
+	/**
+	 *  Track whether the room has tools that need to be finished before the next message can be sent
+	 */
+	hasUnfinishedTools: boolean;
 
 	/**
 	 *  Track if the room has errored
@@ -128,6 +134,7 @@ export class RoomStore {
 		insightId: "new",
 		isInitialized: false,
 		isLoading: false,
+		hasUnfinishedTools: false,
 		mode: "chat",
 		metadata: {
 			name: "",
@@ -192,6 +199,13 @@ export class RoomStore {
 	 */
 	get isLoading() {
 		return this._store.isLoading;
+	}
+
+	/**
+	 * Indicator to check if the room is ready for the next message
+	 */
+	get hasUnfinishedTools() {
+		return this._store.hasUnfinishedTools;
 	}
 
 	/**
@@ -366,9 +380,6 @@ export class RoomStore {
 				return;
 			}
 
-			// turn on the loading screen
-			this.setIsLoading(true);
-
 			// get all of the messages, get all the options
 			const response = await this.runRoomPixel<
 				[
@@ -377,6 +388,7 @@ export class RoomStore {
 				]
 			>(
 				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)}); SetRoomForInsight(roomId=${JSON.stringify(this._store.roomId)});`,
+				false,
 			);
 
 			const messageOutput = response.pixelReturn[0]
@@ -499,15 +511,17 @@ export class RoomStore {
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
 			if (this.tail.type === "RESPONSE") {
-				this.tail
-					.startToolExecution()
-					.finally(() => this.setIsLoading(false));
-			} else {
-				this.setIsLoading(false);
+				runInAction(() => {
+					this.setHasUnfinishedTools(true);
+				});
+				this.tail.startToolExecution();
 			}
 		} catch (e) {
 			console.error(e);
-			this.setIsLoading(false);
+			runInAction(() => {
+				this.setIsLoading(false);
+				this.setHasUnfinishedTools(false);
+			});
 			throw new Error(e.message || "Error initializing room");
 		}
 	};
@@ -653,6 +667,14 @@ export class RoomStore {
 	 */
 	private setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
+	};
+
+	/**
+	 * Set the hasUnfinishedTools boolean
+	 * @param hasUnfinishedTools - is it ready
+	 */
+	setHasUnfinishedTools = (isReady: boolean): void => {
+		this._store.hasUnfinishedTools = isReady;
 	};
 
 	/**
