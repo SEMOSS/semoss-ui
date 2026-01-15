@@ -150,8 +150,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 
 			onClose(true);
 		} catch (e) {
-			toast.error(e);
-
+			toast.error(e.message);
 			console.error(e);
 		} finally {
 			setIsLoading(false);
