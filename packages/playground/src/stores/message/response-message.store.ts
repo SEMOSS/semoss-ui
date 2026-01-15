@@ -168,7 +168,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 * Run a new user message and receive a response with streaming
 	 * @param inputMessage - input message to send
 	 */
-	runMessage = async (inputMessage: InputMessageStore): Promise<void> => {
+	runMessage = async (inputMessage: InputMessageStore) => {
 		const room = this.room;
 
 		// connect to the parent
@@ -182,7 +182,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 		// Create a placeholder response message to show streaming content
 		const responseMessage = new ResponseMessageStore(room, {
-			messageId: "FAKE_ID",
+			messageId: "TEMP",
 			type: "RESPONSE_TEXT",
 			visible: true,
 			content: "",
@@ -201,7 +201,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		inputMessage.addChild(responseMessage);
 
 		// wait for the pixel to run with streaming
-		await room.runRoomPixelStreaming(
+		const response = await room.runRoomPixelStreaming<
+			[
+				{
+					inputMessage: PixelMessage;
+					responseMessage: PixelMessage;
+				},
+			]
+		>(
 			`AskPlayground(
 engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
@@ -217,18 +224,59 @@ paramValues=[${JSON.stringify({
 			(chunk) => {
 				runInAction(() => {
 					if (chunk.stream_type === "content") {
-						responseMessage.text += chunk;
+						if (chunk.data.content) {
+							responseMessage.text += chunk.data.content;
+						}
 					}
 				});
 			},
 		);
 
+		const { output } = response.results[0];
+
 		// update the input's id
-		inputMessage.updateId("TODO");
-		responseMessage.updateId("TODO");
+		inputMessage.updateId(output.inputMessage.messageId);
+		responseMessage.updateId(output.responseMessage.messageId);
+
+		// TODO: clean up
+
+		if (output.responseMessage.type === "RESPONSE_TEXT") {
+			this.text = output.responseMessage.content;
+		}
+
+		if (output.responseMessage.type === "RESPONSE_TOOL") {
+			this.tools = output.responseMessage.tool_responses.map(
+				(t): Tool => ({
+					id: t.id,
+					_meta: {
+						SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
+						// On 12/16/25 we changed from _meta.map to just _meta, so support both
+						...(t._meta as { map?: Record<string, unknown> })?.map,
+						...t._meta,
+					},
+					title: t.title,
+					name: t.name,
+					original_name: t.original_name,
+					parameters: t.arguments,
+					response: "",
+					tool_status: "success",
+					is_executing: false,
+				}),
+			);
+		}
+
+		if (output.responseMessage.type === "INPUT_TOOL_EXEC") {
+			this.inputToolExecData = {
+				toolCallId: output.responseMessage.tool_call_id,
+				inputPrompt: output.responseMessage.inputPrompt,
+				toolStatus: output.responseMessage.tool_status ?? "success", // default to success
+			};
+		}
 
 		// start running tools if there are any
 		responseMessage.startToolExecution();
+
+		return response;
 	};
 
 	/**

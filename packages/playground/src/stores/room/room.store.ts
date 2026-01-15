@@ -1,5 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import {
+	getPixelAsyncResult,
 	getPixelJobStreaming,
 	runPixel,
 	runPixelAsync,
@@ -834,7 +835,7 @@ export class RoomStore {
 	 * @param pixel - pixel to execute
 	 * @param onPoll - callback for each streaming chunk
 	 */
-	runRoomPixelStreaming = async (
+	runRoomPixelStreaming = async <O extends unknown[] | []>(
 		pixel: string,
 		onPoll: (
 			message: Awaited<
@@ -843,6 +844,8 @@ export class RoomStore {
 		) => void,
 	) => {
 		try {
+			this.setIsLoading(true);
+
 			// Start async execution to get job ID
 			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
 
@@ -861,11 +864,6 @@ export class RoomStore {
 
 					if (response && response.message.length > 0) {
 						for (const message of response.message) {
-							if (message.data.finish_reason) {
-								isPolling = false;
-								break;
-							}
-
 							onPoll(message);
 						}
 					}
@@ -890,8 +888,13 @@ export class RoomStore {
 					throw error;
 				}
 			}
+
+			// get the final result
+			return await getPixelAsyncResult<O>(jobId);
 		} catch (e) {
 			console.error(e);
+		} finally {
+			this.setIsLoading(false);
 		}
 	};
 }

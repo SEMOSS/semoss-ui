@@ -20,19 +20,27 @@ import {
 import {
 	InputMessageStore,
 	type ResponseMessageStore,
+	type RoomStore,
 	RootMessageStore,
 } from "@/stores";
+import { AppLogo } from "../common";
 import { ResponseMessageTool } from "./response-message-tool";
 
 // Styled components replaced with Tailwind classes inline
 
 interface ResponseMessageProps {
+	/** Room */
+	room: RoomStore;
+
 	/** Message to render */
 	message: ResponseMessageStore;
+
+	/** Is it last */
+	isLast: boolean;
 }
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
-	({ message }) => {
+	({ room, message, isLast }) => {
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
 		if (message.parent instanceof InputMessageStore) {
@@ -93,6 +101,17 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						{message.model.name ?? "Agent"}
 					</span>
 				</div>
+				{isLast && room.isLoading ? (
+					<div className="flex items-center gap-3 rounded-lg border p-3 text-muted-foreground text-sm shadow-sm">
+						<div className="flex h-10 w-10 items-center justify-center rounded-full">
+							<div className="flex h-8 w-8 animate-spin items-center justify-center">
+								<AppLogo full={false} />
+							</div>
+						</div>
+						<span>Thinking</span>
+					</div>
+				) : null}
+
 				{message.text ? (
 					<Markdown className="[&>*:first-child]:mt-0">
 						{message.text}
