@@ -10,6 +10,7 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import {useState} from 'react';
 import {
 	Button,
 	Markdown,
@@ -17,6 +18,11 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
 } from "@semoss/ui/next";
 import {
 	InputMessageStore,
@@ -25,8 +31,6 @@ import {
 } from "@/stores";
 import { ResponseMessageTool } from "./response-message-tool";
 
-// Styled components replaced with Tailwind classes inline
-
 interface ResponseMessageProps {
 	/** Message to render */
 	message: ResponseMessageStore;
@@ -34,6 +38,8 @@ interface ResponseMessageProps {
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 	({ message }) => {
+		const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false);
+
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
 		if (message.parent instanceof InputMessageStore) {
@@ -47,7 +53,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		const copyMessage = (text: string) => {
 			try {
 				navigator.clipboard.writeText(text);
-
 				toast.success("Successfully copied to clipboard");
 			} catch (e) {
 				toast.error(e.message);
@@ -61,7 +66,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		const recordFeedback = async (rating: boolean) => {
 			try {
 				await message.recordFeedback(rating);
-
 				toast.success("Successfully saved feedback");
 			} catch (e) {
 				toast.error(e.message);
@@ -69,13 +73,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		};
 
 		/**
-		 * Copy the text
-		 * @param text - text to copy
+		 * Rewrite the message
 		 */
 		const rewriteMessage = async () => {
 			try {
 				await message.rewriteMessage();
-
 				toast.success("Successfully rewrote message");
 			} catch (e) {
 				toast.error(e.message);
@@ -87,17 +89,25 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			message.tools.some((tool) => !tool.response);
 
 		/**
-		 * Download the response
-		 * @param text - text to copy
+		 * Download the response in specified format
+		 * @param format - format to download (word, excel, pdf, powerpoint)
 		 */
-		const downloadResponse = async () => {
+		const downloadResponse = async (format: string) => {
 			try {
-				await message.downloadResponse();
-				toast.success("Response downloaded successfully");
+				await message.downloadResponse(format);
+				toast.success(`Response downloaded successfully as ${format.toUpperCase()}`);
+				setIsDownloadDialogOpen(false);
 			} catch (e) {
 				toast.error(e.message || "Failed to download response");
 			}
 		};
+
+		const downloadFormats = [
+			{ value: "word", label: "Word Document", extension: ".docx" },
+			{ value: "excel", label: "Excel Spreadsheet", extension: ".xlsx" },
+			{ value: "pdf", label: "PDF Document", extension: ".pdf" },
+			{ value: "powerpoint", label: "PowerPoint Presentation", extension: ".pptx" },
+		];
 
 		return (
 			<div className="group mb-0 flex w-full flex-col gap-2">
@@ -139,7 +149,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											if (!inputMessage.previousSibling) {
 												return;
 											}
-
 											inputMessage.previousSibling.activateMessage();
 										}}
 									>
@@ -165,7 +174,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											if (!inputMessage.nextSibling) {
 												return;
 											}
-
 											inputMessage.nextSibling.activateMessage();
 										}}
 									>
@@ -184,8 +192,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							<TooltipTrigger asChild>
 								<Button
 									disabled={
-										inputMessage.parent instanceof
-											RootMessageStore ||
+										inputMessage.parent instanceof RootMessageStore ||
 										message.room.mode === "executing"
 									}
 									variant="ghost"
@@ -247,7 +254,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									if (!message.text) {
 										return;
 									}
-
 									copyMessage(message.text);
 								}}
 							>
@@ -259,13 +265,14 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						</TooltipContent>
 					</Tooltip>
 
+					{/* Separate Tooltip for Download Button */}
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
 								variant="ghost"
 								size="icon"
 								disabled={!message.text}
-								onClick={() => downloadResponse()}
+								onClick={() => setIsDownloadDialogOpen(true)}
 							>
 								<DownloadIcon />
 							</Button>
@@ -275,6 +282,32 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						</TooltipContent>
 					</Tooltip>
 				</div>
+
+				<Dialog open={isDownloadDialogOpen} onOpenChange={setIsDownloadDialogOpen}>
+					<DialogContent className="sm:max-w-md">
+						<DialogHeader>
+							<DialogTitle>Download Response</DialogTitle>
+							<DialogDescription>
+								Choose the format you'd like to download your response as:
+							</DialogDescription>
+						</DialogHeader>
+						<div className="grid grid-cols-2 gap-3 py-4">
+							{downloadFormats.map((format) => (
+								<Button
+									key={format.value}
+									variant="outline"
+									className="h-auto flex-col gap-1 p-4"
+									onClick={() => downloadResponse(format.value)}
+								>
+									<span className="font-medium">{format.label}</span>
+									<span className="text-muted-foreground text-xs">
+										{format.extension}
+									</span>
+								</Button>
+							))}
+						</div>
+					</DialogContent>
+				</Dialog>
 			</div>
 		);
 	},

@@ -234,7 +234,7 @@ paramValues=[${JSON.stringify({
 	/**
 	 * Download the response as a Word document
 	 */
-	downloadResponse = async (): Promise<void> => {
+	downloadResponse = async (format: string = 'word'): Promise<void> => {
 		if (!this.text) {
 			throw new Error("No content to download");
 		}
