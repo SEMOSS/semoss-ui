@@ -93,7 +93,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
-	const tempContextUsedPercent = 42; // TODO: replace with calculation
+	const tempContextUsedPercent = 45; // TODO: replace with calculation
 
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">

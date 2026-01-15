@@ -26,10 +26,16 @@ export const ContextChart = ({ contextUsedPercent }: ContextChartProps) => {
 				<circle cx={cx} cy={cy} r={radius} className="fill-muted" />
 				<path
 					d={`M ${cx} ${cy} L ${cx} ${cy - radius} A ${radius} ${radius} 0 ${largeArc} 1 ${x} ${y} Z`}
-					className="fill-muted-foreground"
+					className={
+						contextUsedPercent > 75
+							? "fill-destructive"
+							: "fill-muted-foreground"
+					}
 				/>
 			</svg>
-			<span>{contextUsedPercent}%</span>
+			<span className="text-muted-foreground text-sm">
+				{contextUsedPercent}%
+			</span>
 		</div>
 	);
 };
