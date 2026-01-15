@@ -387,6 +387,50 @@ export const LayersPanel = observer(
 			}
 		}, []);
 
+		// When searching, auto-expand ancestors and scroll to the first matching layer
+		useEffect(() => {
+			if (!search) return;
+
+			const lower = search.toLowerCase();
+
+			const collectDescendants = (rootId: string): string[] => {
+				const out: string[] = [];
+				const visit = (id: string) => {
+					const blk = state.blocks[id];
+					if (!blk) return;
+					out.push(id);
+					for (const s in blk.slots) {
+						blk.slots[s]?.children?.forEach((cid: string) => visit(cid));
+					}
+				};
+				visit(rootId);
+				return out;
+			};
+
+			const allIds = collectDescendants(selectedPages);
+			const matchId = allIds.find((id) => {
+				const blk = state.blocks[id];
+				if (!blk) return false;
+				const label = `${blk.widget}${blk.id}`.toLowerCase();
+				return label.indexOf(lower) > -1;
+			});
+
+			if (matchId) {
+				// Expand all ancestors so the node will render
+				const parents = state.getAllParents(matchId);
+				if (parents?.length) {
+					setExpanded((prev) => [...new Set([...prev, ...parents])]);
+				}
+				// After expansion renders, scroll the matched item into view
+				setTimeout(() => {
+					const el = accordionRefs.current[matchId] as HTMLElement | null;
+					if (el) {
+						scrollIntoView(el, { block: "center" });
+					}
+				}, 120);
+			}
+		}, [search, selectedPages]);
+
 		const handleDragStart = (event: DragStartEvent) => {
 			const { active } = event;
 			const block = state.blocks[selectedPages];
@@ -1297,28 +1341,31 @@ export const LayersPanel = observer(
 		};
 
 		return (
-			<Panel>
-				<Stack spacing={undefined}>
-					<StyledTitle>
-						<StyledTitleSpan>{title}</StyledTitleSpan>
-					</StyledTitle>
-					<StyledStack>
-						<StyledTextFiled
-							placeholder="Search"
-							size="small"
-							fullWidth
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<Search />
-									</InputAdornment>
-								),
-							}}
-						/>
-					</StyledStack>
-				</Stack>
+			<Panel
+				actions={
+					<Stack spacing={undefined}>
+						<StyledTitle>
+							<StyledTitleSpan>{title}</StyledTitleSpan>
+						</StyledTitle>
+						<StyledStack>
+							<StyledTextFiled
+								placeholder="Search"
+								size="small"
+								fullWidth
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								InputProps={{
+									startAdornment: (
+										<InputAdornment position="start">
+											<Search />
+										</InputAdornment>
+									),
+								}}
+							/>
+						</StyledStack>
+					</Stack>
+				}
+			>
 				<Grid
 					container
 					direction="column"
