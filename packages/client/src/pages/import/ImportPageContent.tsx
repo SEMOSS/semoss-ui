@@ -16,7 +16,6 @@
  * - /import/model/OpenAi
  */
 
-import Tooltip from "@mui/material/Tooltip";
 import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -29,6 +28,7 @@ import {
 	Stack,
 	styled,
 	Tabs,
+	Tooltip,
 	Typography,
 } from "@semoss/ui";
 import { BuildDb } from "@/assets/img/BuildDb";
@@ -39,6 +39,7 @@ import { CopyDb } from "@/assets/img/CopyDb";
 import { Help } from "@/components/help";
 import { useStepper } from "@/hooks";
 import type { ENGINE_TYPES } from "@/types";
+import { formatToDataTestId } from "@/utility";
 import { CopyDatabaseForm } from "../../components/import/refactor/CopyDatabaseForm";
 import { UploadData } from "../../components/import/refactor/UploadData";
 import { EstablishConnectionPage, ImportConnectionPage } from ".";
@@ -243,16 +244,17 @@ interface ImportPageContentProps {
 	type: ENGINE_TYPES;
 }
 
+/**
+ * @deprecated
+ */
 export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 	name,
 	type,
 }) => {
-	const { steps, activeStep, setSteps, setIsLoading, isLoading } =
-		useStepper();
+	const { steps, setSteps, setIsLoading, isLoading } = useStepper();
 
 	const navigate = useNavigate();
 
-	const [importSearch, setImportSearch] = React.useState("");
 	const [search, setSearch] = React.useState("");
 
 	const [connectionOptions, setConnectionOptions] =
@@ -297,6 +299,9 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 						);
 					}
 				}}
+				data-testid={formatToDataTestId(
+					`importPageContent-connect-to-${model.name}-img`,
+				)}
 			>
 				<StyledInnerBox isModel={true}>
 					{model.disable ? (
@@ -540,7 +545,6 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 									<StyledCategoryTitle>
 										{kv[0]}
 									</StyledCategoryTitle>
-
 									<Box>
 										<Grid
 											container
@@ -570,6 +574,9 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 																disabled={
 																	stage.disable
 																}
+																data-testid={formatToDataTestId(
+																	`importPageContent-${stage.name}-card`,
+																)}
 																onClick={() => {
 																	if (
 																		!stage.disable
@@ -630,7 +637,13 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 						sx={{ mt: 2, borderBottom: "2px solid #E0E0E0" }}
 					>
 						{tabLabels.map((label, i) => (
-							<StyledTab key={i} label={label} />
+							<StyledTab
+								key={i}
+								label={label}
+								data-testid={formatToDataTestId(
+									`connect-to-${label}-tab`,
+								)}
+							/>
 						))}
 					</Tabs>
 					<Box sx={{ mt: 4 }}>
@@ -642,6 +655,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 			);
 		}
 	};
+
 	return (
 		<Stack direction="column" gap={2}>
 			<StyledStack>
@@ -702,7 +716,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 				</Typography>
 				<Typography
 					variant="body1"
-					color={isModelPage ? "secondary" : "inherit"}
+					color="inherit"
 				>
 					{steps.length && steps[steps.length - 1].description}
 				</Typography>
@@ -723,12 +737,10 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 							/>
 						</StyledSearchbarContainer>
 					)}
-
 				{/*  When Step changes scroll top into view */}
 				<div ref={scrollToTopRef} style={{ height: "0px" }}>
 					&nbsp;
 				</div>
-
 				{/* Step 2a: Selection for options that require more info */}
 				{/* This is shared between vector, function, database, model and storage */}
 				{steps.length === 1 &&
@@ -736,7 +748,6 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 					steps[0].title !== "Upload Database" &&
 					!isLoading &&
 					mapEngineOptions()}
-
 				{/* Step 2b: Show Form for Copy and Upload ( this is only a 2-step process) */}
 				{steps.length === 1 &&
 					(steps[0].title === "Copy Database" ||
@@ -749,10 +760,8 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 							)}
 						</StyledBox>
 					)}
-
 				{/* Step 3:  Will be the form to capture specific engine connection details */}
 				{steps.length === 2 && <ImportConnectionPage />}
-
 				{/* Step 4: If there is a step in the process after inputting connection details: metamodel for example */}
 				{steps.length === 3 && <EstablishConnectionPage />}
 			</StyledContainer>

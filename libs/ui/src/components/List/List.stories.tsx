@@ -1,6 +1,5 @@
 import { FilterRounded, StarOutlined, StartRounded } from "@mui/icons-material";
 import type { Meta, StoryObj } from "@storybook/react-webpack5";
-import React from "react";
 import { Box } from "../..";
 import { List } from ".";
 

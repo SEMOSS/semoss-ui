@@ -1,7 +1,7 @@
-import { type IJsonModel, Model } from "flexlayout-react";
-import { makeAutoObservable, reaction } from "mobx";
+import { makeAutoObservable } from "mobx";
 import { runPixel } from "@semoss/sdk/react";
 import type { AppMetadata } from "@/components/app";
+import { FlexLayout } from "@/components/flex-layout";
 import type { RootStore, WorkspaceOptions } from "@/stores";
 import type { Role } from "@/types";
 
@@ -44,7 +44,7 @@ export interface WorkspaceStoreInterface {
 	/**
 	 * Model associated with the layout
 	 **/
-	model: Model | null;
+	model: FlexLayout.Model | null;
 
 	/**
 	 * Overlay information
@@ -217,7 +217,7 @@ export class WorkspaceStore {
 	 * The key for the local storage cache
 	 */
 	get cacheKey() {
-		return `smss-workspace--${this._store.appId}-v3`;
+		return `smss-workspace--${this._store.appId}-v4`;
 	}
 
 	/**
@@ -239,7 +239,7 @@ export class WorkspaceStore {
 		try {
 			// add the new layout
 			if (options.layout) {
-				this._store.model = Model.fromJson(options.layout);
+				this._store.model = FlexLayout.Model.fromJson(options.layout);
 			}
 			return true;
 		} catch (e) {
@@ -300,8 +300,8 @@ export class WorkspaceStore {
 	 * @param id - id of the layout
 	 * @param layout - layout that is being added
 	 */
-	updateLayout = (layout: IJsonModel) => {
-		this._store.model = Model.fromJson(layout);
+	updateLayout = (layout: FlexLayout.IJsonModel) => {
+		this._store.model = FlexLayout.Model.fromJson(layout);
 
 		// trigger the save manually as the Model is recreated
 		this.saveToCache();

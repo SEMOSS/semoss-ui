@@ -10,68 +10,40 @@ export function getHumanReadableCronExpression(cronExpression: string) {
 	const cronValues = cronExpression.split(" ");
 	if (cronValues.length < 6) {
 		return "Invalid cron syntax";
-	} else if (Number.isNaN(cronValues[1]) || Number.isNaN(cronValues[2])) {
-		return cronValues.slice(0, 6).join(" ");
+	} else if (isNaN(Number(cronValues[1])) || isNaN(Number(cronValues[2]))) {
+		return cronExpression;
 	}
 
 	try {
+		const hour = parseInt(cronValues[2], 10);
+		const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+		const displayMinute = parseInt(cronValues[1], 10);
+		const amPm = hour >= 12 ? "PM" : "AM";
 		if (
-			cronValues[3] == "*" &&
-			cronValues[4] == "*" &&
-			cronValues[5] == "*"
+			cronValues[3] === "*" &&
+			cronValues[4] === "*" &&
+			cronValues[5] === "*"
 		) {
 			// daily frequency
-			const displayHour =
-				parseInt(cronValues[2]) === 0
-					? 12
-					: parseInt(cronValues[2]) > 12
-						? parseInt(cronValues[2]) - 12
-						: parseInt(cronValues[2]);
-			const displayMinute = parseInt(cronValues[1]);
-			const amPm = parseInt(cronValues[2]) >= 12 ? "PM" : "AM";
 			return `Daily at ${displayHour}:${
 				displayMinute < 10 ? `0${displayMinute}` : displayMinute
 			} ${amPm}`;
-		} else if (cronValues[3] == "*" && cronValues[4] == "*") {
+		} else if (cronValues[3] === "*" && cronValues[4] === "*") {
 			// weekly frequency
-			const displayHour =
-				parseInt(cronValues[2]) === 0
-					? 12
-					: parseInt(cronValues[2]) > 12
-						? parseInt(cronValues[2]) - 12
-						: parseInt(cronValues[2]);
-			const displayMinute = parseInt(cronValues[1]);
-			const amPm = parseInt(cronValues[2]) >= 12 ? "PM" : "AM";
 			const dayOfWeek = DaysOfWeek.find(
-				(value) => value.value == parseInt(cronValues[5]),
+				(value) => value.value === parseInt(cronValues[5], 10),
 			);
 			return `Every ${dayOfWeek.day} at ${displayHour}:${
 				displayMinute < 10 ? `0${displayMinute}` : displayMinute
 			} ${amPm}`;
-		} else if (cronValues[4] == "*" && cronValues[5] == "*") {
+		} else if (cronValues[4] === "*" && cronValues[5] === "*") {
 			// monthly frequency
-			const displayHour =
-				parseInt(cronValues[2]) === 0
-					? 12
-					: parseInt(cronValues[2]) > 12
-						? parseInt(cronValues[2]) - 12
-						: parseInt(cronValues[2]);
-			const displayMinute = parseInt(cronValues[1]);
-			const amPm = parseInt(cronValues[2]) >= 12 ? "PM" : "AM";
 			return `Every month on day ${cronValues[3]} at ${displayHour}:${
 				displayMinute < 10 ? `0${displayMinute}` : displayMinute
 			} ${amPm}`;
-		} else if (cronValues[5] == "*") {
-			const displayHour =
-				parseInt(cronValues[2]) === 0
-					? 12
-					: parseInt(cronValues[2]) > 12
-						? parseInt(cronValues[2]) - 12
-						: parseInt(cronValues[2]);
-			const displayMinute = parseInt(cronValues[1]);
-			const amPm = parseInt(cronValues[2]) >= 12 ? "PM" : "AM";
+		} else if (cronValues[5] === "*") {
 			const month = Months.find(
-				(value) => value.value == parseInt(cronValues[4]),
+				(value) => value.value === parseInt(cronValues[4], 10),
 			);
 			return `Yearly on ${month.month} ${
 				cronValues[3]
@@ -79,10 +51,10 @@ export function getHumanReadableCronExpression(cronExpression: string) {
 				displayMinute < 10 ? `0${displayMinute}` : displayMinute
 			} ${amPm}`;
 		} else {
-			return cronValues.slice(0, 6).join(" ");
+			return cronExpression;
 		}
-	} catch (e) {
-		return cronValues.slice(0, 6).join(" ");
+	} catch (_e) {
+		return cronExpression;
 	}
 }
 
@@ -158,8 +130,13 @@ export function convertSendEmailRecipeToJob(recipe: string): SendEmailJob {
 	cleanedRecipe = cleanedRecipe.replaceAll("', ", "', '");
 	cleanedRecipe = cleanedRecipe.replaceAll("'", '"');
 	cleanedRecipe = `{"${cleanedRecipe}}`;
-	const job: SendEmailJob = JSON.parse(cleanedRecipe);
-	return job;
+	try {
+		const job: SendEmailJob = JSON.parse(cleanedRecipe);
+		return job;
+	} catch (_e) {
+		// skip a bad email job
+		return;
+	}
 }
 
 export function getEncodeByJobType(builder: JobBuilder) {

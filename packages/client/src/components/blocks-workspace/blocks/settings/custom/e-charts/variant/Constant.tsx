@@ -213,3 +213,24 @@ export const Dendrogram = [
 		aggregate: false,
 	},
 ];
+
+export const Cloud = [
+	{
+		name: "Words",
+		multiLabel: false,
+		label: "words",
+		aggregate: false,
+	},
+	{
+		name: "Size",
+		multiLabel: false,
+		label: "size",
+		aggregate: true,
+	},
+	{
+		name: "Tooltip",
+		multiLabel: true,
+		label: "tooltip",
+		aggregate: true,
+	},
+];

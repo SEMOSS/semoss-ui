@@ -19,6 +19,8 @@ export const config: BlockConfig<ImageBlockDef> = {
 		src: "",
 		title: "",
 		show: "true",
+		unavailable: "",
+		placeholderText: "",
 	},
 	listeners: {
 		preProcess: {

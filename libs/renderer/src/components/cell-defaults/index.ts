@@ -33,12 +33,14 @@ import {
 	type JoinTransformationCellDef,
 } from "./join-transformation-cell";
 import { LLMCellConfig, type LLMCellDef } from "./llm-cell";
+import { MCPToolCellConfig, type MCPToolCellDef } from "./mcp-tool-cell";
 import {
 	QueryImportCellConfig,
 	type QueryImportCellDef,
 } from "./query-import-cell";
 import { SendEmailCellConfig, type SendEmailCellDef } from "./send-email-cell";
 import type { TransformationCellDef } from "./shared";
+import { TextToSqlCellConfig, type TextToSqlCellDef } from "./text-to-sql-cell";
 import {
 	TimestampTransformationCellConfig,
 	type TimestampTransformationCellDef,
@@ -58,22 +60,24 @@ import {
 
 export type DefaultCellDefinitions =
 	| CodeCellDef
-	| QueryImportCellDef
-	| DataImportCellDef
-	| FilterDataCellDef
-	| UnFilterDataCellDef
-	| TransformationCellDef
-	| UppercaseTransformationCellDef
-	| UpdateRowTransformationCellDef
-	| LLMCellDef
+	| CollapseTransformationCellDef
 	| ColumnTypeTransformationCellDef
-	| DateDifferenceTransformationCellDef
-	| TimestampTransformationCellDef
-	| JoinTransformationCellDef
 	| CumulativeSumTransformationCellDef
 	| EncodeColumnTransformationCellDef
-	| CollapseTransformationCellDef
-	| SendEmailCellDef;
+	| DataImportCellDef
+	| DateDifferenceTransformationCellDef
+	| FilterDataCellDef
+	| JoinTransformationCellDef
+	| LLMCellDef
+	| MCPToolCellDef
+	| QueryImportCellDef
+	| SendEmailCellDef
+	| TextToSqlCellDef
+	| TransformationCellDef
+	| TimestampTransformationCellDef
+	| UnFilterDataCellDef
+	| UppercaseTransformationCellDef
+	| UpdateRowTransformationCellDef;
 
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
 	[CodeCellConfig.widget]: CodeCellConfig,
@@ -81,6 +85,7 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
 	[FilterDataCellConfig.widget]: FilterDataCellConfig,
 	[UnFilterDataCellConfig.widget]: UnFilterDataCellConfig,
 	[DataImportCellConfig.widget]: DataImportCellConfig,
+	[MCPToolCellConfig.widget]: MCPToolCellConfig,
 	[UppercaseTransformationCellConfig.widget]:
 		UppercaseTransformationCellConfig,
 	[UpdateRowTransformationCellConfig.widget]:
@@ -89,6 +94,7 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
 		ColumnTypeTransformationCellConfig,
 	[DateDifferenceTransformationCellConfig.widget]:
 		DateDifferenceTransformationCellConfig,
+	[TextToSqlCellConfig.widget]: TextToSqlCellConfig,
 	[TimestampTransformationCellConfig.widget]:
 		TimestampTransformationCellConfig,
 	[JoinTransformationCellConfig.widget]: JoinTransformationCellConfig,

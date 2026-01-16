@@ -1,7 +1,5 @@
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
-
-import { LinkBlock } from "@/components/block-defaults/link-block/LinkBlock";
+import { LinkBlock } from "../../components/block-defaults/link-block/LinkBlock";
 import { render, screen } from "../utils";
 
 const blocks = {
@@ -33,7 +31,7 @@ const blocks = {
 
 describe("link block", () => {
 	it("renders correctly with mocked provider", async () => {
-		const { container } = render(<LinkBlock id="link" />, {
+		const { container } = render(<LinkBlock id={blocks.link.id} />, {
 			blocks: blocks,
 		});
 
@@ -41,7 +39,7 @@ describe("link block", () => {
 
 		expect(element).toBeInTheDocument();
 		expect(element.tagName).equal("A", "element is type a");
-		expect(element["href"]).equal(
+		expect(element.href).equal(
 			"http://localhost:9090/SemossWeb/#!",
 			"element contain href",
 		);

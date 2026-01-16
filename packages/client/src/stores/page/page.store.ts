@@ -67,7 +67,7 @@ export class PageStore {
 				this._store.sidebar.pinned = cached.sidebar.pinned;
 			}
 		} catch (e) {
-			// noop
+			console.error(e);
 		}
 
 		// make it observable
@@ -85,7 +85,7 @@ export class PageStore {
 				// save cache
 				localStorage.setItem(CACHE_KEY, JSON.stringify(item));
 			} catch (e) {
-				// noop
+				console.error(e);
 			}
 		});
 	}
@@ -151,6 +151,7 @@ export class PageStore {
 	 * Close the sidebar
 	 */
 	closeSidebar = () => {
+		this._store.sidebar.pinned = false;
 		this._store.sidebar.open = false;
 	};
 

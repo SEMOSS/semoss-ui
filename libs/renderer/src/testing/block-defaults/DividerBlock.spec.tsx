@@ -1,9 +1,7 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { expect, test } from "vitest";
-import { render } from "../utils";
-import "@testing-library/jest-dom";
-
+import { screen } from "@testing-library/react";
+import { expect } from "vitest";
 import { DividerBlock } from "../../components/block-defaults/divider-block";
+import { render } from "../utils";
 
 const blocks = {
 	divider: {
@@ -44,7 +42,7 @@ const blocks = {
 
 describe("divider block", () => {
 	it("renders default divider", async () => {
-		const { container } = render(<DividerBlock id="divider" />, {
+		const { container } = render(<DividerBlock id={blocks.divider.id} />, {
 			blocks: blocks,
 		});
 
@@ -53,7 +51,7 @@ describe("divider block", () => {
 	});
 
 	it("displays label text", async () => {
-		const { container } = render(<DividerBlock id="divider2" />, {
+		render(<DividerBlock id={blocks.divider2.id} />, {
 			blocks: blocks,
 		});
 
@@ -61,7 +59,7 @@ describe("divider block", () => {
 	});
 
 	it("displays correct orientation and variant 1", async () => {
-		const { container } = render(<DividerBlock id="divider" />, {
+		const { container } = render(<DividerBlock id={blocks.divider.id} />, {
 			blocks: blocks,
 		});
 
@@ -75,7 +73,7 @@ describe("divider block", () => {
 	});
 
 	it("displays correct orientation and variant 2", async () => {
-		const { container } = render(<DividerBlock id="divider2" />, {
+		const { container } = render(<DividerBlock id={blocks.divider2.id} />, {
 			blocks: blocks,
 		});
 

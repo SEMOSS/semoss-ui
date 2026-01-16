@@ -6,6 +6,7 @@ import BoxIcon from "../../../../../../assets/block-settings/img/Box.svg";
 import BulletIcon from "../../../../../../assets/block-settings/img/Bullet.svg";
 import ButtonIcon from "../../../../../../assets/block-settings/img/Button.svg";
 import ChoroPlethIcon from "../../../../../../assets/block-settings/img/ChroplethIcon.svg";
+import CloudIcon from "../../../../../../assets/block-settings/img/CloudIcon.svg";
 import ClusterIcon from "../../../../../../assets/block-settings/img/Cluster.svg";
 import DendrogramIcon from "../../../../../../assets/block-settings/img/dendrogram.svg";
 import FunnelIcon from "../../../../../../assets/block-settings/img/Funnel.svg";
@@ -48,10 +49,15 @@ export const VisualMapConstant = {
 			option: {
 				xAxis: {
 					type: "category",
-					data: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+					data: [],
+					nameLocation: "middle",
+					nameGap: 25,
 				},
 				yAxis: {
 					type: "value",
+					nameLocation: "middle",
+					nameGap: 25,
+					axisLabel: {},
 				},
 				color: [
 					"#5470c6",
@@ -67,17 +73,7 @@ export const VisualMapConstant = {
 				series: [
 					{
 						name: "Category",
-						data: [
-							{
-								value: 120,
-							},
-							200,
-							150,
-							80,
-							70,
-							110,
-							130,
-						],
+						data: [],
 						type: "bar",
 						labelLine: {
 							show: true,
@@ -124,6 +120,19 @@ export const VisualMapConstant = {
 						fontSize: 12,
 					},
 				},
+				reset: {
+					title: {
+						text: "Bar Graph",
+						left: "left",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+				},
 			},
 		},
 		{
@@ -155,13 +164,15 @@ export const VisualMapConstant = {
 			title: "echart-line-graph",
 			option: {
 				title: {
-					text: "ECharts Line Chart",
-					left: "center",
+					text: "Line Chart",
 					top: 20,
+					left: "left",
+					show: true,
 					textStyle: {
-						fontSize: 18,
-						fontWeight: "normal",
 						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
 					},
 				},
 				tooltip: {
@@ -185,7 +196,7 @@ export const VisualMapConstant = {
 					nameTextStyle: {
 						fontSize: 10,
 					},
-					data: ["A", "B", "C", "D", "E"],
+					data: [],
 					show: true,
 				},
 				axisTick: {
@@ -193,7 +204,7 @@ export const VisualMapConstant = {
 				},
 				yAxis: {
 					type: "value",
-					name: "b",
+					name: "",
 					nameLocation: "middle",
 					nameGap: 40,
 					axisLabel: {
@@ -228,9 +239,9 @@ export const VisualMapConstant = {
 				],
 				series: [
 					{
-						name: "a",
+						name: "",
 						type: "line",
-						data: [28, 30, 22, 35, 30],
+						data: [],
 						lineStyle: {
 							type: "solid",
 							width: 1,
@@ -246,14 +257,14 @@ export const VisualMapConstant = {
 				],
 				reset: {
 					title: {
-						text: "",
-						left: "center",
+						text: "Line Chart",
+						left: "left",
 						show: true,
 						textStyle: {
-							fontSize: 18,
-							color: "#ff6f61",
-							fontWeight: "normal",
-							fontFamily: "",
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
 						},
 					},
 					xAxis: {
@@ -334,6 +345,252 @@ export const VisualMapConstant = {
 			icon: <img src={String(KPIIcon)} alt="KPI Icon" />,
 			name: "kpi",
 			label: "KPI",
+		},
+	],
+	Words: [
+		{
+			icon: <img src={String(CloudIcon)} alt="Cloud Icon" />,
+			name: "cloud",
+			label: "Cloud",
+			title: "echart-word-cloud",
+			option: {
+				title: {
+					text: "Word Cloud",
+					left: "left",
+					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
+				},
+				tooltip: {
+					show: true,
+					trigger: "item",
+				},
+				color: [
+					"#5470c6",
+					"#91cc75",
+					"#fac858",
+					"#ee6666",
+					"#73c0de",
+					"#3ba272",
+					"#fc8452",
+					"#9a60b4",
+					"#ea7ccc",
+					"#45b7d1",
+				],
+				series: [
+					{
+						type: "wordCloud",
+						gridSize: 2,
+						sizeRange: [12, 60],
+						rotationRange: [-90, 90],
+						rotationStep: 45,
+						shape: "pentagon",
+						width: "100%",
+						height: "100%",
+						drawOutOfBound: false,
+						layoutAnimation: true,
+						textStyle: {
+							fontFamily: "sans-serif",
+							fontWeight: "bold",
+						},
+						emphasis: {
+							focus: "self",
+							textStyle: {
+								shadowBlur: 10,
+								shadowColor: "#333",
+							},
+						},
+						data: [
+							{
+								name: "A",
+								value: 26,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "B",
+								value: 25,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "C",
+								value: 24,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "D",
+								value: 23,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "E",
+								value: 22,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "F",
+								value: 21,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "G",
+								value: 20,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "H",
+								value: 19,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "I",
+								value: 18,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "J",
+								value: 17,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "K",
+								value: 16,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "L",
+								value: 15,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "M",
+								value: 14,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "N",
+								value: 13,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "O",
+								value: 12,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "P",
+								value: 11,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "Q",
+								value: 10,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "R",
+								value: 9,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "S",
+								value: 8,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "T",
+								value: 7,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "U",
+								value: 6,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "V",
+								value: 5,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "W",
+								value: 4,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "X",
+								value: 3,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "Y",
+								value: 2,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "Z",
+								value: 1,
+								// Style of single text
+								textStyle: {},
+							},
+						],
+					},
+				],
+				reset: {
+					title: {
+						text: "Word Cloud",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					series: {
+						gridSize: 2,
+						sizeRange: [12, 60],
+						rotationRange: [-90, 90],
+						rotationStep: 45,
+						shape: "pentagon",
+						textStyle: {
+							fontFamily: "sans-serif",
+							fontWeight: "bold",
+						},
+					},
+				},
+			},
 		},
 	],
 	Map: [
@@ -421,13 +678,26 @@ export const VisualMapConstant = {
 				},
 				title: {
 					text: "Map Graph",
-					show: true,
 					left: "left",
+					show: true,
 					textStyle: {
 						color: "#000000",
 						fontWeight: "bold",
 						fontFamily: "Arial Narrow",
 						fontSize: 12,
+					},
+				},
+				reset: {
+					title: {
+						text: "Map Graph",
+						left: "left",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
 					},
 				},
 			},
@@ -456,7 +726,6 @@ export const VisualMapConstant = {
 						{ name: "b", value: 79 },
 					],
 				},
-				// color: ['#40A0FF','#9A74B6','#FBB83A','#F18630','#51ACA8','#187687','#CD5498','#364A90'],
 				color: [
 					"#ff6f61",
 					"#6b5b95",
@@ -468,13 +737,14 @@ export const VisualMapConstant = {
 					"#deeaee",
 				],
 				title: {
-					text: "",
-					left: "center",
+					text: "Pie Chart",
+					left: "left",
 					show: true,
 					textStyle: {
-						fontSize: 18,
-						color: "#ff6f61",
-						fontWeight: "normal",
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
 					},
 				},
 				tooltip: {
@@ -507,13 +777,7 @@ export const VisualMapConstant = {
 						labelLine: {
 							length: 30,
 						},
-						data: [
-							{ value: 1048, name: "Search Engine" },
-							{ value: 735, name: "Direct" },
-							{ value: 580, name: "Email" },
-							{ value: 484, name: "Union Ads" },
-							{ value: 300, name: "Video Ads" },
-						],
+						data: [],
 						emphasis: {
 							itemStyle: {
 								shadowBlur: 10,
@@ -526,14 +790,14 @@ export const VisualMapConstant = {
 				reset: {
 					radius: "50%",
 					title: {
-						text: "",
-						left: "center",
+						text: "Pie Chart",
+						left: "left",
 						show: true,
 						textStyle: {
-							fontSize: 18,
-							color: "#ff6f61",
-							fontWeight: "normal",
-							fontFamily: "",
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
 						},
 					},
 					label: {
@@ -573,9 +837,16 @@ export const VisualMapConstant = {
 			title: "echart-stack-chart",
 			option: {
 				title: {
-					text: "",
-					left: "center",
+					text: "Stacked Bar Chart",
+					left: "left",
 					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
 				},
 				tooltip: {
 					show: false,
@@ -757,6 +1028,18 @@ export const VisualMapConstant = {
 						fontSize: 12,
 						color: "#000000",
 					},
+					title: {
+						text: "Stacked Bar Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
 					barWidth: 10,
 				},
 			},
@@ -795,9 +1078,16 @@ export const VisualMapConstant = {
 			title: "echart-scatter-plots",
 			option: {
 				title: {
-					text: "",
-					left: "center",
+					text: "Scatter Plot",
+					left: "left",
 					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
 				},
 				tooltip: {
 					show: true,
@@ -946,6 +1236,18 @@ export const VisualMapConstant = {
 						fontSize: 12,
 						color: "#000000",
 					},
+					title: {
+						text: "Scatter Plot",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
 				},
 			},
 		},
@@ -1019,6 +1321,32 @@ export const VisualMapConstant = {
 				tooltip: {
 					trigger: "item",
 					triggerOn: "mousemove",
+				},
+				title: {
+					text: "Dendrogram Chart",
+					left: "left",
+					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
+				},
+				reset: {
+					title: {
+						text: "Dendrogram Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
 				},
 				toolbox: {
 					show: true,
@@ -1130,6 +1458,32 @@ export const VisualMapConstant = {
 			label: "Gantt",
 			title: "echart-gantt-chart",
 			option: {
+				title: {
+					text: "Gantt Chart",
+					left: "left",
+					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
+				},
+				reset: {
+					title: {
+						text: "Gantt Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+				},
 				tooltip: {
 					show: true,
 				},
@@ -1141,50 +1495,13 @@ export const VisualMapConstant = {
 				},
 				yAxis: {
 					type: "category",
-					data: ["Task A", "Task B", "Task C"],
+					data: [],
 				},
 				series: [
 					{
 						type: "custom",
 
-						data: [
-							{
-								task: "Task A",
-								start: "2024-02-01",
-								end: "2024-02-05",
-								resource: "A",
-							},
-							{
-								task: "Task B",
-								start: "2024-02-03",
-								end: "2024-02-08",
-								resource: "B",
-							},
-							{
-								task: "Task C",
-								start: "2024-02-06",
-								end: "2024-02-12",
-								resource: "C",
-							},
-							{
-								task: "Task D",
-								start: "2024-02-02",
-								end: "2024-02-11",
-								resource: "B",
-							},
-							{
-								task: "Task E",
-								start: "2024-02-03",
-								end: "2024-02-10",
-								resource: "A",
-							},
-							{
-								task: "Task F",
-								start: "2024-02-07",
-								end: "2024-02-11",
-								resource: "C",
-							},
-						],
+						data: [],
 					},
 				],
 				customSettings: {

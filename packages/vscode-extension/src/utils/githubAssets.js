@@ -1,10 +1,10 @@
-import axios from "axios";
-import fs from "fs";
-import https from "https";
-import ncp from "ncp";
-import StreamZip from "node-stream-zip";
-import path from "path";
-import * as vscode from "vscode";
+const axios = require("axios");
+const fs = require("node:fs");
+const https = require("node:https");
+const ncp = require("ncp");
+const StreamZip = require("node-stream-zip");
+const path = require("path");
+const vscode = require("vscode");
 
 /**
  * Downloads and extracts assets from a GitHub repository
@@ -17,7 +17,7 @@ import * as vscode from "vscode";
  * @param {string} accessToken - GitHub access token for private repositories
  * @returns {Promise<boolean>} - True if successful, false otherwise
  */
-export async function processGithubAssets(
+async function processGithubAssets(
 	githubLink,
 	downloadsDir,
 	appName,
@@ -56,22 +56,19 @@ export async function processGithubAssets(
 				// Add authorization header for private repositories OR if we have a token
 				if (
 					(isPrivateRepo && accessToken) ||
-					(accessToken && accessToken.startsWith("ghp_"))
+					accessToken?.startsWith("ghp_")
 				) {
-					headers["Authorization"] = `token ${accessToken}`;
+					headers.Authorization = `token ${accessToken}`;
 				}
 
 				const res = await axios.get(apiUrl, { headers });
 				usedBranch = res.data.default_branch;
 			} catch (apiError) {
-				if (apiError.response && apiError.response.status === 404) {
+				if (apiError.response?.status === 404) {
 					throw new Error(
 						`Repository not found: ${owner}/${repo}. Please check the URL and access permissions.`,
 					);
-				} else if (
-					apiError.response &&
-					apiError.response.status === 401
-				) {
+				} else if (apiError.response?.status === 401) {
 					throw new Error(
 						`Unauthorized access to ${owner}/${repo}. Please check your access token.`,
 					);
@@ -268,14 +265,8 @@ const downloadPrivateRepo = async (url, dest, accessToken) => {
 			response.data.on("error", reject);
 		});
 	} catch (error) {
-		const status =
-			error.response && error.response.status
-				? error.response.status
-				: "unknown";
-		const statusText =
-			error.response && error.response.statusText
-				? error.response.statusText
-				: error.message;
+		const status = error.response?.status || "unknown";
+		const statusText = error.response?.statusText || error.message;
 		vscode.window.showErrorMessage(
 			`Download failed - Status: ${status}, Message: ${statusText}`,
 		);
@@ -338,3 +329,5 @@ const downloadZipWithRedirect = (url, dest, accessToken = null) => {
 			.on("error", reject);
 	});
 };
+
+module.exports = { processGithubAssets };

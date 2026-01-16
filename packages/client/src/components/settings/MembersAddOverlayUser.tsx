@@ -1,3 +1,4 @@
+import { extractInitials } from '@/utility/general';
 import { Avatar, Stack, styled, Typography } from "@semoss/ui";
 
 const StyledUser = styled(Stack)(({ theme }) => ({
@@ -47,23 +48,6 @@ interface MembersAddOverlayUserProps {
 	 */
 	action?: React.ReactNode;
 }
-
-/**
- * @name extractInitials
- *
- * Extract a initials for a string
- *
- * @param str
- */
-const extractInitials = (str: string): string => {
-	if (str.length < 1) {
-		return "";
-	}
-
-	return str.split(" ").reduce((prev, curr) => {
-		return prev + (curr[0] || "");
-	}, "");
-};
 
 export const MembersAddOverlayUser = (props: MembersAddOverlayUserProps) => {
 	const { name, id, email, type, action } = props;

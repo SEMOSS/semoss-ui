@@ -1,76 +1,72 @@
-/**
- * Singleton variable holding environment information
- */
-export class Env {
-	/**
-	 * Variables that are loaded into the enviornment
-	 */
-	private static _store = {
-		APP: "",
-		MODULE: "",
-		ACCESS_KEY: "",
-		SECRET_KEY: "",
-		CSRF: false,
-	};
+import type { MCPToolRequest } from "./types";
 
+/**
+ * Singleton object holding environment information
+ */
+const envStore: {
+	APP: string;
+	MODULE: string;
+	ACCESS_KEY: string;
+	SECRET_KEY: string;
+	CSRF: boolean;
+	TOOL: MCPToolRequest | null;
+} = {
+	APP: "",
+	MODULE: "",
+	ACCESS_KEY: "",
+	SECRET_KEY: "",
+	CSRF: false,
+	TOOL: null,
+};
+
+export const Env = {
 	/**
 	 * Get the APP ID
 	 */
-	static get APP() {
-		return Env._store.APP;
-	}
+	get APP() {
+		return envStore.APP;
+	},
 
 	/**
-	 * Ready only getter
+	 * Module for the backend
 	 */
-	static get MODULE() {
-		return Env._store.MODULE;
-	}
+	get MODULE() {
+		return envStore.MODULE;
+	},
 
 	/**
-	 * Ready only getter
+	 * Access key to authenticate with. Should only be set in development mode
 	 */
-	static get ACCESS_KEY() {
-		return Env._store.ACCESS_KEY;
-	}
+	get ACCESS_KEY() {
+		return envStore.ACCESS_KEY;
+	},
 
 	/**
-	 * Ready only getter
+	 * Secret key to authenticate with. Should only be set in development mode
 	 */
-	static get SECRET_KEY() {
-		return Env._store.SECRET_KEY;
-	}
+	get SECRET_KEY() {
+		return envStore.SECRET_KEY;
+	},
 
 	/**
-	 * Ready only getter
+	 * CSRF token for the current session
 	 */
-	static get CSRF() {
-		return Env._store.CSRF;
-	}
+	get CSRF() {
+		return envStore.CSRF;
+	},
 
 	/**
-	 *
+	 * Current tool information
+	 */
+	get TOOL() {
+		return envStore.TOOL;
+	},
+
+	/**
+	 * Update the environment variables
 	 * @param updated - updated variables
 	 */
-	static update = (updated: Partial<(typeof Env)["_store"]> = {}) => {
-		if (Object.hasOwn(updated, "APP")) {
-			this._store.APP = updated.APP;
-		}
-
-		if (Object.hasOwn(updated, "MODULE")) {
-			this._store.MODULE = updated.MODULE;
-		}
-
-		if (Object.hasOwn(updated, "ACCESS_KEY")) {
-			this._store.ACCESS_KEY = updated.ACCESS_KEY;
-		}
-
-		if (Object.hasOwn(updated, "SECRET_KEY")) {
-			this._store.SECRET_KEY = updated.SECRET_KEY;
-		}
-
-		if (Object.hasOwn(updated, "CSRF")) {
-			this._store.CSRF = updated.CSRF;
-		}
-	};
-}
+	update(updated: Partial<typeof envStore>) {
+		Object.assign(envStore, updated);
+	},
+};

@@ -1,8 +1,8 @@
 import {
 	Paper,
 	styled,
-	type TooltipProps,
 	Tooltip,
+	type TooltipProps,
 	tooltipClasses,
 } from "@semoss/ui";
 

@@ -7,8 +7,11 @@ import {
 	mdiCog,
 	mdiDatabase,
 	mdiDatabaseSearch,
+	mdiPalette,
 	mdiTabletCellphone,
 } from "@mdi/js";
+
+console.log(mdiPalette);
 
 export const SETTINGS_ROUTES: {
 	/*** Title of the page */
@@ -149,6 +152,7 @@ export const SETTINGS_ROUTES: {
 		description: "Search by job name or filter using job tags",
 		icon: mdiTabletCellphone,
 		history: ["settings/"],
+		admin: true,
 	},
 	{
 		title: "Member Settings",
@@ -169,11 +173,11 @@ export const SETTINGS_ROUTES: {
 	},
 	{
 		title: "Team Permissions",
-		path: "team-permissions/:id",
+		path: "team-permissions/:type/:id",
 		description:
 			"View member permissions, pending requests, and all other viewable settings pertaining to the team",
 		icon: mdiDatabase,
-		history: ["team-permissions", "team-permissions/<id>"],
+		history: ["team-permissions", "team-permissions/<type>/<id>"],
 		admin: true,
 	},
 	{
@@ -193,11 +197,27 @@ export const SETTINGS_ROUTES: {
 		admin: true,
 	},
 	{
+		title: "Admin Theme",
+		path: "admin-theme",
+		description: "Update theming for the instance",
+		icon: mdiPalette,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
 		title: "My Profile",
 		path: "my-profile",
 		description: "Update settings related to your profile.",
 		icon: mdiDatabase,
 		history: ["settings/"],
 		admin: false,
+	},
+	{
+		title: "View RDF Map",
+		path: "view-rdf-map",
+		description: "View RDF Map",
+		icon: mdiClipboardTextOutline,
+		history: ["settings/"],
+		admin: true,
 	},
 ];

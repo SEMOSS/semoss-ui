@@ -1,4 +1,3 @@
-import { HighlightAlt } from "@mui/icons-material";
 import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import { ContainerBlock, type ContainerBlockDef } from "./ContainerBlock";
@@ -11,6 +10,8 @@ export const config: BlockConfig<ContainerBlockDef> = {
 		type: "custom",
 		dimension: null,
 		show: "true",
+		loading: false,
+		loadType: "Skeleton",
 		style: {
 			display: "flex",
 			flexDirection: "column",

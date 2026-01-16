@@ -18,6 +18,8 @@ export const config: BlockConfig<TextBlockDef> = {
 		text: "Hello world",
 		isStreaming: false,
 		show: "true",
+		loading: false,
+		loadType: "Skeleton",
 	},
 	listeners: {
 		preProcess: {

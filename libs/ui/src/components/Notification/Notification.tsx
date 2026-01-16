@@ -162,18 +162,19 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 			>
 				<div>
 					{active ? (
-						<>
-							<Alert
-								onClose={() => setIsOpen(false)}
-								severity={active.color}
-								sx={{ width: "100%" }}
+						<Alert
+							onClose={() => setIsOpen(false)}
+							severity={active.color}
+							sx={{ width: "100%" }}
+							data-testid={`notification-${active.color}-alert`}
+						>
+							<span
+								data-testid={`notification-${active.color}-message`}
 							>
 								{active.message}
-							</Alert>
-						</>
-					) : (
-						<></>
-					)}
+							</span>
+						</Alert>
+					) : null}
 				</div>
 			</Snackbar>
 		</NotificationContext.Provider>

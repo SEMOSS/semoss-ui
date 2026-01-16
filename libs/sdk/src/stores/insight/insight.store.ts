@@ -6,9 +6,12 @@ import {
 	oauth,
 	runPixel,
 	upload,
+	uploadApp,
+	uploadEngine,
+	uploadInsight,
 } from "../../api";
 import { Env } from "../../env";
-import type { Script, Space } from "../../types";
+import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
 
 interface InsightStoreInterface {
@@ -40,6 +43,17 @@ interface InsightStoreInterface {
 				name: string;
 				isOauth: boolean;
 			}[];
+			/**
+			 * Theme of the app
+			 */
+			theme: {
+				playground: Record<string, unknown>;
+				[key: string]: unknown;
+			};
+			/**
+			 * System Date
+			 */
+			systemDate: string;
 			[key: string]: unknown;
 		};
 	} | null;
@@ -51,6 +65,9 @@ interface InsightStoreInterface {
 
 		/** Python code associated with the insight */
 		python: Script | null;
+
+		/** Whether to disable connecting the insight to a room */
+		disableRoom: boolean;
 	};
 }
 
@@ -65,6 +82,7 @@ export class InsightStore {
 		options: {
 			appId: "",
 			python: null,
+			disableRoom: false,
 		},
 	};
 
@@ -126,9 +144,6 @@ export class InsightStore {
 		 */
 		python?:
 			| {
-					type: "detect";
-			  }
-			| {
 					type: "file";
 					path: string;
 					alias: string;
@@ -139,20 +154,27 @@ export class InsightStore {
 					alias: string;
 			  }
 			| false;
-	}): Promise<void> => {
+
+		/**
+		 * Whether to disable connecting the insight to a room
+		 * Defaults to false
+		 */
+		disableRoom?: boolean;
+	}): Promise<{
+		tool: (typeof Env)["TOOL"] | null;
+	}> => {
 		// reset it
 		this._store.isInitialized = false;
 		this._store.isAuthorized = false;
 		this._store.isReady = false;
 
 		const merged: NonNullable<typeof options> = {
-			app: options && options.app ? options.app : "",
+			app: options?.app || "",
 			python:
 				options && typeof options.python !== "undefined"
 					? options.python
-					: {
-							type: "detect",
-						},
+					: false,
+			disableRoom: options?.disableRoom || false,
 		};
 
 		// save the initial appId
@@ -164,9 +186,7 @@ export class InsightStore {
 		// save the python
 		this._store.options.python = null;
 		if (merged.python) {
-			if (merged.python.type === "detect") {
-				this._store.options.python = await this.detectScript();
-			} else if (merged.python.type === "file") {
+			if (merged.python.type === "file") {
 				this._store.options.python = await this.loadScript(
 					merged.python,
 				);
@@ -178,27 +198,28 @@ export class InsightStore {
 			}
 		}
 
+		// save the disable room option
+		this._store.options.disableRoom = merged.disableRoom || false;
+
 		// load the environment from the document (production)
 		try {
-			if (!document) {
-				return;
-			}
+			if (typeof document !== "undefined") {
+				const env = JSON.parse(
+					document.getElementById("semoss-env")?.textContent || "",
+				) as {
+					APP: string;
+					MODULE: string;
+				};
 
-			const env = JSON.parse(
-				document.getElementById("semoss-env")?.textContent || "",
-			) as {
-				APP: string;
-				MODULE: string;
-			};
-
-			// update the enviornment variables with the module
-			if (env) {
-				Env.update({
-					APP: env.APP,
-					MODULE: env.MODULE,
-				});
+				// update the enviornment variables with the module
+				if (env) {
+					Env.update({
+						APP: env.APP,
+						MODULE: env.MODULE,
+					});
+				}
 			}
-		} catch (e) {
+		} catch (_e) {
 			// noop
 		}
 
@@ -232,6 +253,11 @@ export class InsightStore {
 
 				// setup the insight
 				await this.setupInsight();
+
+				// return the tool (if set)
+				return {
+					tool: Env.TOOL,
+				};
 			} else {
 				// track that the user is unauthorized
 				this._store.isAuthorized = false;
@@ -243,6 +269,8 @@ export class InsightStore {
 			// store the error
 			this._store.error = error as Error;
 		}
+
+		return null;
 	};
 
 	/**
@@ -287,6 +315,10 @@ export class InsightStore {
 				config: {
 					logins: {},
 					availableProviders: [],
+					theme: {
+						playground: {},
+					},
+					systemDate: "",
 				},
 			};
 
@@ -326,7 +358,7 @@ export class InsightStore {
 		}
 
 		// load the python code int
-		if (this._store.options.python && this._store.options.python.script) {
+		if (this._store.options.python?.script) {
 			// validate the alias
 			let alias = this._store.options.python.alias;
 			if (!alias) {
@@ -358,6 +390,14 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		// set the insight ID
 		this._store.insightId = insightId;
+
+		// point the insight space toward the room
+		if (Env?.TOOL?.roomId && !this._store.options.disableRoom) {
+			await runPixel<[boolean]>(
+				`SetRoomForInsight(roomId=${JSON.stringify(Env.TOOL.roomId)});`,
+				insightId,
+			);
+		}
 
 		// set as ready
 		this._store.isReady = true;
@@ -401,35 +441,6 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 	};
 
 	/**
-	 * Detect a script from the html
-	 */
-	private detectScript = async (): Promise<Script | null> => {
-		const output = {
-			script: "",
-			alias: "",
-		};
-
-		try {
-			const scriptEle = document.querySelector("[data-semoss-py]");
-			const content = scriptEle?.textContent;
-			if (!content) {
-				return null;
-			}
-
-			// get the script
-			output.script = content;
-
-			// get the alias
-			output.alias = scriptEle?.getAttribute("data-alias") || "";
-		} catch (e) {
-			console.warn(e);
-			return null;
-		}
-
-		return output;
-	};
-
-	/**
 	 * Load an external script
 	 */
 	private loadScript = async (config: {
@@ -460,27 +471,6 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		return output;
 	};
-
-	/**
-	 * Get the id of the space
-	 * @param space - where to get it
-	 * @returns id of the space
-	 */
-	private getSpaceId(space: Space) {
-		let id = "";
-		if (space === "insight") {
-			id = this._store.insightId;
-		} else if (space === "app") {
-			if (!this._store.options.appId) {
-				throw new Error("An app is required to run in the app space");
-			}
-
-			// set it
-			id = this._store.options.appId;
-		}
-
-		return id;
-	}
 
 	/** Actions */
 	/** Accessible by the end user */
@@ -551,6 +541,9 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 					return false;
 				}
 
+				// turn off authorized
+				this._store.isAuthorized = false;
+
 				// success
 				return true;
 			} catch (error) {
@@ -563,28 +556,13 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		/**
 		 * Run a pixel against the insight
 		 * @param pixel - pixel command to run
-		 * @param space - where to run it
 		 */
-		run: async <O extends unknown[] | []>(
-			pixel: string,
-			space: Space = "insight",
-		) => {
+		run: async <O extends unknown[] | []>(pixel: string) => {
 			try {
-				let id = "";
-				if (space === "insight") {
-					id = this._store.insightId;
-				} else if (space === "app") {
-					if (!this._store.options.appId) {
-						throw new Error(
-							"An app is required to run in the app space",
-						);
-					}
-
-					// set it
-					id = this._store.options.appId;
-				}
-
-				const { errors, pixelReturn } = await runPixel<O>(pixel, id);
+				const { errors, pixelReturn } = await runPixel<O>(
+					pixel,
+					this._store.insightId,
+				);
 
 				if (errors.length) {
 					throw new Error(errors.join(""));
@@ -602,9 +580,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		/**
 		 * Run a pixel against the insight
 		 * @param pixel - pixel command to run
-		 * @param space - where to run it
 		 */
-		runPy: async <O>(python: string, space: Space = "insight") => {
+		runPy: async <O>(python: string) => {
 			const { pixelReturn } = await this.actions.run<
 				[
 					[
@@ -613,7 +590,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						},
 					],
 				]
-			>(`Py("<encode>${python}</encode>")`, space);
+			>(`Py("<encode>${python}</encode>")`);
 
 			return {
 				output: pixelReturn[0].output[0].output,
@@ -624,18 +601,12 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 * Ask a model a question
 		 * @param engineId - engine to ask
 		 * @param command - command to ask
-		 * @param space - where to run it
 		 */
-		askModel: async (
-			engineId: string,
-			command: string,
-			space: Space = "insight",
-		) => {
+		askModel: async (engineId: string, command: string) => {
 			const { pixelReturn } = await this.actions.run<
 				[{ response: string }]
 			>(
 				`LLM(engine=["${engineId}"], command=["<encode>${command}</encode>"]);`,
-				space,
 			);
 
 			return {
@@ -644,11 +615,79 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
+		 * Send a MCP tool response to the playground
+		 * @param mcpToolResponse - response to send
+		 */
+		sendMCPResponseToPlayground: (
+			mcpToolResponse: string,
+			mcpToolStatus: MCPToolResponse["tool_status"] = "success",
+		) => {
+			if (!Env.TOOL) {
+				throw new Error("No MCP tool execution context found");
+			} else if (
+				typeof window === "undefined" ||
+				typeof window.parent === "undefined"
+			) {
+				throw new Error(
+					"Cannot send MCP tool response outside of embedded browser",
+				);
+			}
+
+			window.parent.postMessage(
+				{
+					type: "SMSS_EXEC_TOOL",
+					tool: {
+						type: "MCP",
+						message: Env.TOOL.message,
+						id: Env.TOOL.id,
+						name: Env.TOOL.name,
+						response: mcpToolResponse,
+						roomId: Env.TOOL.roomId,
+						tool_status: mcpToolStatus,
+					} satisfies MCPToolResponse,
+				},
+				"*",
+			);
+		},
+
+		/**
+		 * Run a MCP tool and send the response to the playground
+		 * @param name - name of the tool
+		 * @param parameters - parameters to pass to the tool
+		 */
+		runMCPTool: async (
+			name: string,
+			parameters: Record<string, unknown>,
+		) => {
+			const { pixelReturn } = await this.actions.run<[string]>(
+				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ] );`,
+			);
+
+			const { output, operationType } = pixelReturn[0];
+			if (!output || operationType.indexOf("MCP_TOOL_EXECUTION") < 0) {
+				throw new Error("Error running MCP tool");
+			}
+
+			if (Env.TOOL) {
+				try {
+					this.actions.sendMCPResponseToPlayground(output);
+				} catch (e) {
+					console.warn(
+						`Failed to send MCP response to playground${e.message ? `: ${e.message}` : ""}`,
+					);
+				}
+			}
+
+			return {
+				output,
+			};
+		},
+
+		/**
 		 * Query a database
 		 * @param databaseId - database to query
 		 * @param query - command to query
 		 * @param options - options to query with
-		 * @param space - where to run it
 		 */
 		queryDatabase: async (
 			databaseId: string,
@@ -658,7 +697,6 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			} = {
 				collect: -1,
 			},
-			space: Space = "insight",
 		) => {
 			const { pixelReturn } = await this.actions.run<
 				[
@@ -672,8 +710,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			>(
 				`Database(database=["${databaseId}"]) | Query("<encode>${query}</encode>") | Collect(${
 					typeof options.collect === "number" ? options.collect : -1
-				});;`,
-				space,
+				});`,
 			);
 
 			return {
@@ -682,16 +719,15 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
+		 * @deprecated use uploadInsight from sdk/api/insight
 		 * Upload a file to the project space
 		 *
 		 * @param files- file objects to upload
 		 * @param path - relative path
-		 * @param space - where to run it
 		 */
 		upload: async (
 			files: File | File[],
 			path: string,
-			space: Space = "insight",
 		): Promise<
 			{
 				fileName: string;
@@ -702,7 +738,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				const response = await upload(
 					files,
 					this._store.insightId,
-					space === "app" ? this._store.options.appId : "",
+					"",
 					path,
 				);
 
@@ -719,17 +755,10 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 * Download a file from the app
 		 *
 		 * @param path - relative path to the file
-		 * @param space - where to det it
 		 */
-		download: async (
-			path: string | null,
-			space: Space = "insight",
-		): Promise<boolean> => {
-			const id = this.getSpaceId(space);
-
+		download: async (path: string | null): Promise<boolean> => {
 			const { pixelReturn } = await this.actions.run<[string]>(
-				`DownloadAsset(filePath=["${path}"], space=["${id}"]);`,
-				"insight",
+				`DownloadAsset(filePath=["${path}"], space=["${this._store.insightId}"]);`,
 			);
 
 			// get the file key
@@ -745,6 +774,84 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 			// throw an error
 			throw new Error("No download");
+		},
+
+		/**
+		 * App
+		 */
+		/**
+		 * Upload file(s) to an app
+		 * @param appId
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadApp: async (
+			appId: string,
+			path: string,
+			files: File | File[],
+		) => {
+			try {
+				return await uploadApp(
+					appId,
+					path,
+					files,
+					this._store.insightId,
+				);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
+		},
+		/**
+		 * Engine
+		 */
+		/**
+		 * Upload file(s) to an engine
+		 * @param engineId
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadEngine: async (
+			engineId: string,
+			path: string,
+			files: File | File[],
+		) => {
+			try {
+				return await uploadEngine(
+					engineId,
+					path,
+					files,
+					this._store.insightId,
+				);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
+		},
+		/**
+		 * Insight
+		 */
+		/**
+		 * Upload file(s) to an insight
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadInsight: async (path: string, files: File | File[]) => {
+			try {
+				return await uploadInsight(this._store.insightId, path, files);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
 		},
 	};
 }

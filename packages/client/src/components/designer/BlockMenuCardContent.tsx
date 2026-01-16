@@ -1,5 +1,6 @@
 import html2canvas from "html2canvas";
 import { Stack, styled, Typography } from "@semoss/ui";
+import { formatToDataTestId } from "@/utility";
 
 export interface BlockCardContentProps {
 	name?: string;
@@ -24,6 +25,9 @@ export const BlockCardContent = (props: BlockCardContentProps) => {
 			height="106px"
 			alignItems="center"
 			justifyContent="center"
+			data-testId={formatToDataTestId(
+				`blockMenuCardContent-card-${name}`,
+			)}
 		>
 			{image ? (
 				<img draggable={false} src={image} width="100%" height="100%" />

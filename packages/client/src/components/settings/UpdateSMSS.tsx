@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Box,
 	Button,
@@ -7,7 +8,11 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
+import {
+	updateDatabaseSmssProperties,
+	updateProjectSmssProperties,
+} from "@/api";
+import { useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 
 const Editor = lazy(() => import("@monaco-editor/react"));
@@ -45,7 +50,6 @@ const StyledPaper = styled(Paper)(() => ({
 export const UpdateSMSS = (props: UpdateSMSSProps) => {
 	const { type, id } = props;
 
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -62,7 +66,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 			? adminMode
 				? `AdminGetEngineSMSS(engine=['${id}'])`
 				: `GetEngineSMSS(engine=['${id}'])`
-			: type === "APP"
+			: type === "PROJECT"
 				? adminMode
 					? `AdminGetProjectSMSS(project=['${id}'])`
 					: `GetProjectSMSS(project=['${id}'])`
@@ -82,32 +86,38 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 	 * @name updateSMSSProperties
 	 * @desc hit endpoint to update smss file
 	 */
-	const updateSMSSProperties = () => {
-		monolithStore
-			.updateDatabaseSmssProperties(id, value)
-			.then((resp) => {
-				const { data } = resp;
+	const updateSMSSProperties = async () => {
+		try {
+			let response = null;
+			if (type === "PROJECT") {
+				response = await updateProjectSmssProperties(id, value);
+			} else {
+				response = await updateDatabaseSmssProperties(id, value);
+			}
 
-				if (data.success) {
-					setReadOnly(true);
-					setInitialValue(value);
-					notification.add({
-						color: "success",
-						message: `Successfully updated SMSS Properties`,
-					});
-				} else {
-					notification.add({
-						color: "error",
-						message: `Unable to update SMSS Properties for`,
-					});
-				}
-			})
-			.catch((error) => {
+			if (!response) {
+				throw Error("No Response from server");
+			}
+
+			if (response.data.success) {
+				setReadOnly(true);
+				setInitialValue(value);
+				notification.add({
+					color: "success",
+					message: `Successfully updated SMSS Properties`,
+				});
+			} else {
 				notification.add({
 					color: "error",
-					message: ` ${error}: Unable to update SMSS Properties`,
+					message: `Unable to update SMSS Properties for`,
 				});
+			}
+		} catch (error) {
+			notification.add({
+				color: "error",
+				message: ` ${error}: Unable to update SMSS Properties`,
 			});
+		}
 	};
 
 	return (
@@ -119,6 +129,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 						variant="contained"
 						size={"small"}
 						onClick={() => setReadOnly(false)}
+						data-test-id={`updateSMSS-editSNSS-btn`}
 					>
 						Edit SMSS
 					</Button>
@@ -130,6 +141,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 						onClick={() => {
 							updateSMSSProperties();
 						}}
+						data-test-id={`updateSMSS-updateSNSS-btn`}
 					>
 						Update SMSS
 					</Button>
@@ -152,6 +164,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 						borderRadius: "8px",
 					},
 				}}
+				data-test-id={`SMSS-editor-container`}
 			>
 				{!readOnly && (
 					<Box
@@ -171,6 +184,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 							color: "#1976d2",
 							zIndex: 1,
 						}}
+						data-test-id={`SMSS-edit-mode-banner`}
 					>
 						Edit Mode
 					</Box>
@@ -185,6 +199,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 							// Handle changes in the editor's content.
 							setValue(newValue);
 						}}
+						data-test-id={`SMSS-editor`}
 					/>
 				</Suspense>
 			</StyledPaper>

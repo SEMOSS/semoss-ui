@@ -1,6 +1,7 @@
 import { TextFields } from "@mui/icons-material";
 import type { CSSProperties } from "react";
 import { QueryInputSettings } from "../../settings";
+import { ShowLoadingSettings } from "../../settings/shared/ShowLoadingSettings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import {
@@ -41,6 +42,26 @@ export const config: BlockSettingsConfig = {
 							description="This setting will enable the typewriting effect on the text"
 						/>
 					),
+				},
+				{
+					description: "Show Placeholder When Empty",
+					render: ({ id }) => (
+						<SwitchSettings
+							id={id}
+							label="Enable Loading Placeholder"
+							path="showPlaceholder"
+							description='If enabled, displays "Waiting for value..." when no text value is set.'
+						/>
+					),
+				},
+			],
+		},
+		{
+			name: "Loading",
+			children: [
+				{
+					description: "Show Loading",
+					render: ({ id }) => <ShowLoadingSettings id={id} />,
 				},
 			],
 		},

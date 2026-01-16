@@ -5,6 +5,7 @@ import {
 	PendingMembersTable,
 	SettingsTiles,
 } from "@/components/settings";
+import { TeamsTable } from "@/components/settings/TeamsTable";
 import { SettingsContext } from "@/contexts";
 import { useEngine } from "@/hooks";
 
@@ -40,6 +41,9 @@ export const EngineSettingsPage = () => {
 				<PendingMembersTable type={type} id={active.id} />
 				<MembersTable type={type} id={active.id} />
 			</StyledContainer>
+			<div style={{ marginTop: 24 }}>
+				<TeamsTable type="ENGINE" id={active.id} />
+			</div>
 		</SettingsContext.Provider>
 	);
 };

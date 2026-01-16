@@ -18,6 +18,7 @@ import {
 	TextField,
 } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 import { BaseSettingSection } from "../BaseSettingSection";
 
 /**
@@ -169,7 +170,7 @@ export const SelectInputSettings = observer(
 					<Autocomplete
 						fullWidth
 						size="small"
-                        multiple={false}
+						multiple={false}
 						value={value}
 						onChange={(_, newValue) => {
 							onChange(newValue.replace("Custom: ", ""));
@@ -215,6 +216,9 @@ export const SelectInputSettings = observer(
 							);
 						}}
 						freeSolo
+						data-testid={formatToDataTestId(
+							`selectInputSettings-${label}-${id}-txt`,
+						)}
 						renderInput={(params) => <TextField {...params} />}
 					/>
 				) : (
@@ -222,6 +226,11 @@ export const SelectInputSettings = observer(
 						fullWidth
 						size="small"
 						value={value}
+						InputProps={{
+							"data-testid": formatToDataTestId(
+								`selectInputSettings-${label}-${id}-select`,
+							),
+						}}
 						onChange={(e) => {
 							// sync the data on change
 							onChange(e.target.value);
@@ -234,7 +243,7 @@ export const SelectInputSettings = observer(
 						) : null}
 						{Array.from(options, (option, i) => {
 							return (
-								<Menu.Item key={i} value={option.value}>
+								<Menu.Item key={option.value} value={option.value}>
 									{option.display}
 								</Menu.Item>
 							);

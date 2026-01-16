@@ -1,4 +1,7 @@
 node_modules
+.nx
+.husky
+.turbo
 target
 .DS_Store
 dist
@@ -22,3 +25,6 @@ yarn-error.log
 *.tgz
 .vscode/.ropeproject
 .idea/
+
+# Ignore legacy
+packages/legacy

@@ -33,6 +33,12 @@ interface SelectSettingsProps<D extends BlockDef = BlockDef> {
 	 * Options
 	 */
 	options: string[];
+
+	// TODO: ARRAY of options
+	/**
+	 * Multiple options
+	 */
+	multiple: boolean;
 }
 
 export const SelectSettings = observer(
@@ -41,6 +47,7 @@ export const SelectSettings = observer(
 		label = "",
 		path,
 		options,
+		multiple = true,
 	}: SelectSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
 		const { state } = useBlocks();
@@ -100,7 +107,7 @@ export const SelectSettings = observer(
 			<BaseSettingSection label={label}>
 				<Autocomplete
 					fullWidth
-					multiple
+					multiple={multiple}
 					value={value}
 					options={options}
 					getOptionLabel={(option) => option}

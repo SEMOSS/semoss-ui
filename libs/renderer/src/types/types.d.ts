@@ -8,7 +8,7 @@ export type Role =
 
 export interface PixelCommand {
 	type: string;
-	components: any[];
+	components: unknown[];
 	terminal?: boolean;
 	meta?: boolean;
 }
@@ -68,15 +68,72 @@ export type Prev = [
 	...0[],
 ];
 
-export type Paths<T, D extends number = 10> = [D] extends [never]
-	? never
-	: T extends object
+// ---------- helpers ----------
+type Keys<T> = Extract<keyof T, string | number>;
+type KeyStr<K> = K extends string | number ? `${K}` : never;
+type ChildKeys<T> = KeyStr<keyof T>;
+
+type IsObject<T> = T extends object ? true : false;
+
+// ---------- level builders ----------
+type L1<T> = KeyStr<Keys<T>>;
+
+type L2<T> = {
+	[K1 in Keys<T>]: IsObject<T[K1]> extends true
+		? `${KeyStr<K1>}.${ChildKeys<T[K1]>}`
+		: never;
+}[Keys<T>];
+
+type L3<T> = {
+	[K1 in Keys<T>]: IsObject<T[K1]> extends true
 		? {
-				[K in keyof T]-?: K extends string | number
-					? `${K}` | Join<K, Paths<T[K], Prev[D]>>
+				[K2 in Keys<T[K1]>]: IsObject<T[K1][K2]> extends true
+					? `${KeyStr<K1>}.${KeyStr<K2>}.${ChildKeys<T[K1][K2]>}`
 					: never;
-			}[keyof T]
-		: "";
+			}[Keys<T[K1]>]
+		: never;
+}[Keys<T>];
+
+type L4<T> = {
+	[K1 in Keys<T>]: IsObject<T[K1]> extends true
+		? {
+				[K2 in Keys<T[K1]>]: IsObject<T[K1][K2]> extends true
+					? {
+							[K3 in Keys<T[K1][K2]>]: IsObject<
+								T[K1][K2][K3]
+							> extends true
+								? `${KeyStr<K1>}.${KeyStr<K2>}.${KeyStr<K3>}.${ChildKeys<T[K1][K2][K3]>}`
+								: never;
+						}[Keys<T[K1][K2]>]
+					: never;
+			}[Keys<T[K1]>]
+		: never;
+}[Keys<T>];
+
+type L5<T> = {
+	[K1 in Keys<T>]: IsObject<T[K1]> extends true
+		? {
+				[K2 in Keys<T[K1]>]: IsObject<T[K1][K2]> extends true
+					? {
+							[K3 in Keys<T[K1][K2]>]: IsObject<
+								T[K1][K2][K3]
+							> extends true
+								? {
+										[K4 in Keys<T[K1][K2][K3]>]: IsObject<
+											T[K1][K2][K3][K4]
+										> extends true
+											? `${KeyStr<K1>}.${KeyStr<K2>}.${KeyStr<K3>}.${KeyStr<K4>}.${ChildKeys<T[K1][K2][K3][K4]>}`
+											: never;
+									}[Keys<T[K1][K2][K3]>]
+								: never;
+						}[Keys<T[K1][K2]>]
+					: never;
+			}[Keys<T[K1]>]
+		: never;
+}[Keys<T>];
+
+// ---------- exported ----------
+export type Paths<T> = L1<T> | L2<T> | L3<T> | L4<T> | L5<T>;
 
 export type PathValue<
 	T,

@@ -246,20 +246,14 @@ export const AskLLMTemplate: Template = {
 		},
 		variables: {
 			question: {
-				isInput: true,
-				isOutput: false,
 				to: "question",
 				type: "block",
 			},
 			"ask-llm": {
-				isInput: false,
-				isOutput: true,
 				to: "ask-llm",
 				type: "query",
 			},
 			model: {
-				isInput: true,
-				isOutput: false,
 				type: "model",
 				value: "4acbe913-df40-4ac0-b28a-daa5ad91b172",
 			},

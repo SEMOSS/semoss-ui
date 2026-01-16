@@ -1,0 +1,492 @@
+import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
+import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
+import {
+	$createParagraphNode,
+	$createTextNode,
+	$getRoot,
+	type LexicalEditor,
+} from "lexical";
+import {
+	FileAudio2Icon,
+	FileIcon,
+	FileType2Icon,
+	FileVideoCameraIcon,
+	MicIcon,
+	PaperclipIcon,
+	SendIcon,
+	SparklesIcon,
+	XIcon,
+} from "lucide-react";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+	Button,
+	ButtonGroup,
+	cn,
+	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
+import { EnterPlugin, FocusPlugin } from "@/components";
+
+const ENABLE_ATTACHMENT = import.meta.env.VITE_ENABLE_ATTACHMENT === "true";
+
+interface RoomInputProps {
+	/** Classes to override */
+	className?: string;
+
+	/** Track if it is loading */
+	isLoading?: boolean;
+
+	/** Workspace toggle */
+	workspace?: React.ReactNode;
+
+	/** Plugins plugins */
+	plugins?: React.ReactNode;
+
+	/** Configuration toggle */
+	configuration?: React.ReactNode;
+
+	/** Callback triggered to process the prompt. Throw an error if necessary */
+	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
+}
+
+export const RoomInput: React.FC<RoomInputProps> = observer(
+	({
+		className,
+		isLoading,
+		workspace = null,
+		plugins = null,
+		configuration = null,
+		onPrompt = () => null,
+	}) => {
+		const [isEmpty, setIsEmpty] = useState(true);
+
+		const editorRef = useRef<LexicalEditor>(null);
+		const fileRef = useRef<HTMLInputElement>(null);
+
+		const [isDragging, setIsDragging] = useState(false);
+		const [files, setFiles] = useState<File[]>([]);
+
+		const [canListen, setCanListen] = useState(false);
+		const [isListening, setIsListening] = useState(false);
+
+		const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+		useEffect(() => {
+			// Check if Speech Recognition is supported
+			const SpeechRecognition =
+				window.SpeechRecognition || window.webkitSpeechRecognition;
+
+			if (SpeechRecognition) {
+				setCanListen(true);
+
+				const recognition = new SpeechRecognition();
+				recognition.continuous = true;
+				recognition.interimResults = true;
+				recognition.lang = "en-US";
+
+				recognition.onstart = () => {
+					setIsListening(true);
+				};
+
+				recognition.onresult = (event) => {
+					let transcript = "";
+
+					// get the final ones
+					for (
+						let i = event.resultIndex;
+						i < event.results.length;
+						i++
+					) {
+						if (event.results[i].isFinal) {
+							transcript += event.results[i][0].transcript;
+						}
+					}
+
+					// trim to manually handle spaces
+					transcript = transcript.trim();
+					if (transcript) {
+						editorRef.current?.update(() => {
+							const root = $getRoot();
+							const currentText = root.getTextContent();
+
+							// clear existing content
+							root.clear();
+
+							// create new paragraph with combined text
+							const paragraphNode = $createParagraphNode();
+							const textNode = $createTextNode(
+								currentText
+									? `${currentText} ${transcript}`
+									: transcript,
+							);
+							paragraphNode.append(textNode);
+							root.append(paragraphNode);
+						});
+					}
+				};
+
+				recognition.onerror = (event) => {
+					console.error(event);
+
+					// turn off and focus on element
+					setIsListening(false);
+					editorRef.current?.focus();
+				};
+
+				recognition.onend = () => {
+					// turn off and focus on element
+					setIsListening(false);
+					editorRef.current?.focus();
+				};
+
+				recognitionRef.current = recognition;
+			} else {
+				setCanListen(false);
+			}
+
+			return () => {
+				recognitionRef.current?.stop();
+			};
+		}, []);
+
+		// update editable
+		useEffect(() => {
+			editorRef.current?.setEditable(!isLoading);
+		}, [isLoading]);
+
+		/**
+		 * Prompt the model
+		 *
+		 * @param - input
+		 */
+		const promptModel = async () => {
+			let success = false;
+
+			// store old options
+
+			let userInput = "";
+			editorRef.current?.getEditorState().read(() => {
+				const root = $getRoot();
+				userInput = root.getTextContent();
+			});
+
+			const userFiles = files;
+
+			// skip if there is no input
+			if (!userInput) {
+				return;
+			}
+
+			try {
+				// ignore if loading
+				if (isLoading) {
+					return;
+				}
+
+				// clear out the input components
+				success = await onPrompt(userInput, userFiles);
+				if (!success) {
+					throw new Error(`Error processing chat`);
+				}
+
+				console.log("success", success);
+			} catch (e) {
+				toast.error(e.message);
+			} finally {
+				if (success) {
+					// clear the files
+					setFiles([]);
+
+					// reset the view
+					editorRef.current?.update(() => {
+						const root = $getRoot();
+						root.clear();
+
+						const paragraphNode = $createParagraphNode();
+						root.append(paragraphNode);
+					});
+				}
+			}
+		};
+
+		/**
+		 * Get an image for the file
+		 */
+		const getFileImage = (file: File): React.ReactNode => {
+			if (file.type.startsWith("image/")) {
+				const imageUrl = URL.createObjectURL(file);
+				return (
+					<img
+						className="width-100"
+						src={imageUrl}
+						alt={file.name}
+						onLoad={() => URL.revokeObjectURL(imageUrl)}
+					/>
+				);
+			} else if (
+				file.type.includes("text") ||
+				file.type.includes("document")
+			) {
+				return (
+					<FileType2Icon className="size-6 text-muted-foreground" />
+				);
+			} else if (file.type.includes("audio")) {
+				return (
+					<FileAudio2Icon className="size-6 text-muted-foreground" />
+				);
+			} else if (file.type.includes("video")) {
+				return (
+					<FileVideoCameraIcon className="size-6 text-muted-foreground" />
+				);
+			}
+
+			return <FileIcon className="size-6 text-muted-foreground" />;
+		};
+
+		return (
+			<>
+				<div className="relative w-full">
+					<input
+						ref={fileRef}
+						type="file"
+						multiple={true}
+						hidden
+						onChange={(e) => {
+							// set the new files
+							const updated = Array.from(e.target.files);
+							setFiles((prev) => [...prev, ...updated]);
+						}}
+					/>
+					<LexicalComposer
+						initialConfig={{
+							namespace: "RoomInput",
+							theme: {},
+							nodes: [],
+							onError: (error) => {
+								console.error(error);
+							},
+						}}
+					>
+						<PlainTextPlugin
+							contentEditable={
+								<div className="relative">
+									<ContentEditable
+										className={cn(
+											`h-auto w-full overflow-y-auto rounded-md border border-input bg-background p-4 pb-14 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
+											isDragging
+												? "border-primary border-dashed"
+												: "hover:border-primary",
+											className,
+										)}
+										aria-placeholder={"Enter text"}
+										aria-disabled={isLoading}
+										disabled={isLoading}
+										placeholder={
+											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
+												<SparklesIcon className="size-4" />
+												/ to add capability
+											</div>
+										}
+										onDrop={(e) => {
+											e.preventDefault();
+
+											// set the new files
+											const updated = Array.from(
+												e.dataTransfer.files,
+											);
+											setFiles((prev) => [
+												...prev,
+												...updated,
+											]);
+
+											// turn off dragging
+											setIsDragging(false);
+										}}
+										onDragOver={(e) => {
+											e.preventDefault();
+
+											// turn on dragging
+											setIsDragging(true);
+										}}
+										onDragLeave={(e) => {
+											e.preventDefault();
+
+											// turn off dragging
+											setIsDragging(false);
+										}}
+										onPaste={(e) => {
+											// Only handle file pasting if attachments are enabled
+											if (!ENABLE_ATTACHMENT) {
+												return;
+											}
+
+											// set the new files
+											const updated = Array.from(
+												e.clipboardData.files,
+											);
+
+											if (updated.length > 0) {
+												e.preventDefault();
+												setFiles((prev) => [
+													...prev,
+													...updated,
+												]);
+											}
+										}}
+									/>
+								</div>
+							}
+							ErrorBoundary={LexicalErrorBoundary}
+						/>
+						<OnChangePlugin
+							onChange={(editorState) => {
+								editorState.read(() => {
+									// get the root
+									const root = $getRoot();
+
+									// set empty state
+									setIsEmpty(
+										root.getTextContent().trim().length ===
+											0,
+									);
+								});
+							}}
+						/>
+						<HistoryPlugin />
+						<AutoFocusPlugin />
+						<FocusPlugin />
+						<EditorRefPlugin editorRef={editorRef} />
+						<EnterPlugin onEnter={() => promptModel()} />
+						{plugins}
+					</LexicalComposer>
+					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
+						{workspace}
+					</div>
+					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
+						<ButtonGroup className="rounded-md bg-background">
+							{ENABLE_ATTACHMENT && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											aria-label="Attach Documents"
+											disabled={isLoading}
+											variant="ghost"
+											size="icon-sm"
+											onClick={() => {
+												fileRef.current?.click();
+											}}
+										>
+											<PaperclipIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										Attach Document
+									</TooltipContent>
+								</Tooltip>
+							)}
+
+							{configuration}
+
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant={"ghost"}
+										aria-label="Record the Model"
+										size="icon-sm"
+										disabled={!canListen || isLoading}
+										onClick={() => {
+											if (isListening) {
+												recognitionRef.current?.stop();
+												editorRef.current?.focus();
+											} else {
+												recognitionRef.current?.start();
+											}
+										}}
+									>
+										<MicIcon
+											className={`${isListening ? "animate-pulse text-destructive" : ""}`}
+										/>
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{isListening ? "Stop Recording" : "Record"}
+								</TooltipContent>
+							</Tooltip>
+						</ButtonGroup>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="default"
+									aria-label="Ask the AI"
+									disabled={isLoading || isEmpty}
+									onClick={() => {
+										promptModel();
+									}}
+								>
+									{isLoading ? <Spinner /> : <SendIcon />}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								{(() => {
+									if (isLoading) {
+										return "Processing question";
+									} else if (isEmpty) {
+										return "Please enter a question";
+									}
+
+									return "Ask";
+								})()}
+							</TooltipContent>
+						</Tooltip>
+					</div>
+				</div>
+				{files.length > 0 ? (
+					<div className="flex flex-row items-center gap-2 pt-4">
+						{files.map((f, fIdx) => {
+							const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
+							return (
+								<Tooltip key={fileKey}>
+									<TooltipTrigger asChild>
+										<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted">
+											{getFileImage(f)}
+											<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
+												<Button
+													variant="ghost"
+													size={"icon-sm"}
+													onClick={() => {
+														const updated = [
+															...files,
+														];
+
+														// remove it
+														updated.splice(fIdx, 1);
+
+														setFiles(updated);
+													}}
+												>
+													<XIcon />
+												</Button>
+											</div>
+										</div>
+									</TooltipTrigger>
+									<TooltipContent>{f.name}</TooltipContent>
+								</Tooltip>
+							);
+						})}
+					</div>
+				) : null}
+			</>
+		);
+	},
+);

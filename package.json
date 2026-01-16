@@ -9,6 +9,7 @@
     "dev:playground": "turbo run dev --filter=@semoss/playground...",
     "build": "turbo run build",
     "build:dev": "turbo run build:dev",
+    "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "check": "biome check",
     "fix": "biome check --write"
@@ -16,7 +17,7 @@
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@biomejs/biome": "2.1.1",
+    "@biomejs/biome": "2.2.0",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@types/jest": "^29.5.14",

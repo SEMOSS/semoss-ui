@@ -1,5 +1,5 @@
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { Fragment, useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
 	Avatar,
@@ -11,7 +11,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { usePixel, useRootStore } from "@/hooks";
-import { removeUnderscores, toTitleCase } from "@/utility";
+import { formatToDataTestId, removeUnderscores, toTitleCase } from "@/utility";
 
 const StyledFilter = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -56,7 +56,7 @@ const StyledShowMore = styled(Typography)(({ theme }) => {
 export interface FilterboxProps {
 	/** Determined to get metakeys for Engines/App */
 	type:
-		| "APP"
+		| "PROJECT"
 		| "MODEL"
 		| "FUNCTION"
 		| "VECTOR"
@@ -65,6 +65,9 @@ export interface FilterboxProps {
 		| "BROWSETEMPLATES";
 	/** Filters to hold in state at parent */
 	onChange: (filters: unknown) => void;
+	filteredCatalogIds?: string[];
+	filterBoxRefresh?: boolean;
+	onfilterBoxRefreshCompleted?: () => void;
 }
 
 const initialState = {
@@ -86,7 +89,13 @@ const reducer = (state, action) => {
 };
 
 export const Filterbox = (props: FilterboxProps) => {
-	const { type, onChange } = props;
+	const {
+		type,
+		onChange,
+		filteredCatalogIds = [],
+		filterBoxRefresh = false,
+		onfilterBoxRefreshCompleted = () => {},
+	} = props;
 	const { configStore } = useRootStore();
 	const [searchParams, setSearchParams] = useSearchParams();
 
@@ -106,7 +115,7 @@ export const Filterbox = (props: FilterboxProps) => {
 	];
 
 	const list =
-		type === "APP"
+		type === "PROJECT"
 			? configStore.store.config.projectMetaKeys
 			: configStore.store.config.databaseMetaKeys;
 
@@ -125,7 +134,10 @@ export const Filterbox = (props: FilterboxProps) => {
 
 	// get metakeys to the ones we want
 	const metaKeys = metaKeyList.map((k) => {
-		if (!k.display_values) return k.metakey;
+		if (!k.display_values) {
+			return k.metakey;
+		}
+		return null;
 	});
 
 	// Filter out nulls
@@ -160,15 +172,30 @@ export const Filterbox = (props: FilterboxProps) => {
 		}[]
 	>(
 		metaKeys.length > 0
-			? type === "APP"
+			? type === "PROJECT"
 				? `GetProjectMetaValues(metaKeys=${JSON.stringify(
 						metaKeys.filter((mk) => mk),
-					)}) ;`
+					)}${
+						filteredCatalogIds.length > 0
+							? `, projectIdList = ${JSON.stringify(filteredCatalogIds)}`
+							: ""
+					}) ;`
 				: `GetEngineMetaValues( engineTypes=["${type}"], metaKeys = ${JSON.stringify(
 						metaKeys.filter((mk) => mk),
-					)} ) ;`
+					)}${
+						filteredCatalogIds.length > 0
+							? `, engineIdList = ${JSON.stringify(filteredCatalogIds)}`
+							: ""
+					}) ;`
 			: "",
 	);
+	//Refresh the pixel call, if any tagrefresh is needed
+	useEffect(() => {
+		if (filterBoxRefresh && filteredCatalogIds.length === 0) {
+			getCatalogFilters.refresh();
+		}
+		onfilterBoxRefreshCompleted();
+	}, [filterBoxRefresh]);
 
 	// Apply the URL's query params to the filters' state on component mount.
 	useEffect(() => {
@@ -193,7 +220,6 @@ export const Filterbox = (props: FilterboxProps) => {
 			if (!prev[current.METAKEY]) {
 				prev[current.METAKEY] = [];
 			}
-
 			prev[current.METAKEY].push({
 				value: current.METAVALUE,
 				count: current.count,
@@ -218,25 +244,79 @@ export const Filterbox = (props: FilterboxProps) => {
 		metaKeysWithOpts.forEach((filter) => {
 			if (filter.display_values) {
 				const split = filter.display_values.split(",");
-				const formatted = [];
-				split.forEach((val) => {
-					formatted.push({
-						value: val,
-					});
-				});
-
+				const formatted = split.map((val) => ({ value: val }));
 				updated[filter.metakey] = formatted;
 			}
-			//Initialize filter metakey collapsibles to be open
+			// Initialize filter metakey collapsibles to be open
 			setShowCollapsible((set) => ({
 				...set,
 				[filter.metakey]: true,
 			}));
 		});
 
-		setFilterOptions(updated);
-	}, [getCatalogFilters.status, getCatalogFilters.data]);
+		const validMap: Record<string, string[]> = Object.entries(
+			updated,
+		).reduce(
+			(acc, [k, v]) => {
+				acc[k] = (v as { value: string }[]).map((o) => o.value);
+				return acc;
+			},
+			{} as Record<string, string[]>,
+		);
 
+		// 1) Clean up filterVisibility: remove selected values that no longer exist
+		setFilterVisibility((prevVisibility) => {
+			const newVisibility = { ...prevVisibility };
+			Object.entries(prevVisibility).forEach(([metaKey, metaVal]) => {
+				const validValues = validMap[metaKey] || [];
+				const filteredValues = metaVal.value.filter((val) =>
+					validValues.includes(val),
+				);
+
+				if (filteredValues.length !== metaVal.value.length) {
+					newVisibility[metaKey] = {
+						...metaVal,
+						value: filteredValues,
+					};
+				}
+			});
+			return newVisibility;
+		});
+
+		// 2) Clean up searchParams: preserve order, keys, and other valid keys (tag, domain, etc.)
+		if (searchParams.size > 0) {
+			const keys = [...new Set([...searchParams.keys()])]; // unique keys in original order
+			const newParams = new URLSearchParams();
+			let hasInvalid = false;
+
+			for (const key of keys) {
+				const values = searchParams.getAll(key); // current values in original order
+				const validValues = validMap[key] || [];
+
+				// keep only values still valid (preserve order from `values`)
+				const filtered = values.filter((v) => validValues.includes(v));
+
+				// append filtered values in their original order (avoid duplicates)
+				for (const v of filtered) {
+					if (!newParams.getAll(key).includes(v)) {
+						newParams.append(key, v);
+					}
+				}
+
+				// detect if any value was removed for this key
+				if (filtered.length !== values.length) {
+					hasInvalid = true;
+				}
+			}
+
+			// update URL only if something changed
+			if (hasInvalid) {
+				setSearchParams(newParams, { replace: true });
+			}
+		}
+
+		setFilterOptions(updated);
+	}, [getCatalogFilters.status, getCatalogFilters.data, filteredCatalogIds]);
 	/**
 	 *
 	 * @param opt - option for the field color
@@ -247,7 +327,7 @@ export const Filterbox = (props: FilterboxProps) => {
 			opt
 				.split("")
 				.map((x) => x.charCodeAt(0))
-				.reduce((a, b) => a + b) % 8
+				.reduce((a, b) => a + b, 0) % 8
 		];
 	};
 
@@ -259,7 +339,6 @@ export const Filterbox = (props: FilterboxProps) => {
 		filterLabel: string,
 		filter: { value: string; count: number },
 	) => {
-		// first find specific filter
 		const newValue = filterVisibility[filterLabel].value;
 		const index = newValue.indexOf(filter.value);
 
@@ -268,8 +347,6 @@ export const Filterbox = (props: FilterboxProps) => {
 		} else {
 			newValue.splice(index, 1);
 		}
-
-		// Now update filter object to have new selected values
 		setFilterVisibility({ ...filterVisibility });
 	};
 
@@ -290,7 +367,6 @@ export const Filterbox = (props: FilterboxProps) => {
 		// Update query params in the URL
 		setSearchParams(constructedFilters);
 	};
-
 	return (
 		<StyledFilter>
 			<StyledFilterList dense={true}>
@@ -310,7 +386,6 @@ export const Filterbox = (props: FilterboxProps) => {
 					}
 				>
 					<List.ItemText
-						disableTypography
 						primary={
 							<Typography variant="h6">Filter By</Typography>
 						}
@@ -333,6 +408,7 @@ export const Filterbox = (props: FilterboxProps) => {
 									});
 								}}
 								sx={{ width: "100%" }}
+								data-testid={`filterbox-search`}
 							/>
 						</StyledFilterSearchContainer>
 					) : null}
@@ -344,7 +420,7 @@ export const Filterbox = (props: FilterboxProps) => {
 							const list = entries[1];
 							let shownListItems = 0; // for show more
 							return (
-								<div key={i}>
+								<div key={entries[0]}>
 									<List.Item
 										secondaryAction={
 											<List.ItemButton
@@ -369,7 +445,6 @@ export const Filterbox = (props: FilterboxProps) => {
 										}
 									>
 										<List.ItemText
-											disableTypography
 											primary={
 												<Typography variant={"h6"}>
 													{toTitleCase(
@@ -382,16 +457,17 @@ export const Filterbox = (props: FilterboxProps) => {
 										/>
 									</List.Item>
 									<Collapse
+										// biome-ignore lint/suspicious/noArrayIndexKey: This is a list of filters, and the index is the best key we have
 										key={i}
 										in={showCollapsible[entries[0]]}
 									>
-										{list.map((filterOption, i) => {
+										{list.map((filterOption) => {
 											if (
 												shownListItems > 4 &&
 												!filterVisibility[entries[0]]
 													.open
 											) {
-												return;
+												return null;
 											} else {
 												if (
 													filterOption.value
@@ -404,7 +480,9 @@ export const Filterbox = (props: FilterboxProps) => {
 													return (
 														<List.Item
 															disableGutters
-															key={i}
+															key={
+																filterOption.value
+															}
 														>
 															<List.ItemButton
 																disableGutters
@@ -454,9 +532,13 @@ export const Filterbox = (props: FilterboxProps) => {
 																	}}
 																>
 																	<List.ItemText
-																		disableTypography
 																		primary={
-																			<Typography variant="body1">
+																			<Typography
+																				variant="body1"
+																				data-testid={formatToDataTestId(
+																					`filterbox-${filterOption.value}-filterBtn`,
+																				)}
+																			>
 																				{
 																					filterOption.value
 																				}
@@ -479,18 +561,17 @@ export const Filterbox = (props: FilterboxProps) => {
 														</List.Item>
 													);
 												}
+												return null;
 											}
 										})}
 										{shownListItems > 4 && (
-											<List.Item>
-												<div
-													onClick={() => {
-														const visibleFilters = {
-															...filterVisibility,
-														};
-														visibleFilters[
-															entries[0]
-														] = {
+											<List.Item
+												onClick={() => {
+													const visibleFilters = {
+														...filterVisibility,
+													};
+													visibleFilters[entries[0]] =
+														{
 															open:
 																!visibleFilters[
 																	entries[0]
@@ -502,11 +583,12 @@ export const Filterbox = (props: FilterboxProps) => {
 																entries[0]
 															].search,
 														};
-														setFilterVisibility(
-															visibleFilters,
-														);
-													}}
-												>
+													setFilterVisibility(
+														visibleFilters,
+													);
+												}}
+											>
+												<div>
 													<StyledShowMore
 														variant={"body1"}
 													>

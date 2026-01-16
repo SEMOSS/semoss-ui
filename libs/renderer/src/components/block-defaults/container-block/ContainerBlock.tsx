@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
+import { Skeleton } from "@semoss/ui";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
@@ -17,6 +18,8 @@ export interface ContainerBlockDef extends BlockDef<"container"> {
 	data: {
 		style: CSSProperties;
 		show: string;
+		loading: boolean | string;
+		loadType: string;
 		type: "custom" | "grid";
 		dimension?: null | string;
 		rowSpacing?: null | string;
@@ -72,6 +75,28 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
 			listeners.preProcess();
 		}
 	}, []);
+
+	const isLoading =
+		Object.hasOwn(data, "loading") &&
+		data.loading?.toString().toLowerCase() === "true";
+
+	if (isLoading && data.loadType === "None (show nothing)") {
+		return <div {...attrs} />;
+	}
+
+	if (isLoading && data.loadType === "Skeleton") {
+		return (
+			<div
+				style={{
+					width: "auto",
+					height: "auto",
+				}}
+				{...attrs}
+			>
+				<Skeleton width={"auto"} height={"auto"} />
+			</div>
+		);
+	}
 
 	return (
 		<div

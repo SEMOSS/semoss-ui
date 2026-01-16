@@ -46,7 +46,6 @@ export function usePixel<D>(
 	// Memoize the initial data
 	// biome-ignore lint/correctness/useExhaustiveDependencies: config?.data is handled by deep check
 	const initialData = useMemo(() => {
-		console.log("setting intial data");
 		return config?.data;
 	}, [JSON.stringify(config?.data)]);
 

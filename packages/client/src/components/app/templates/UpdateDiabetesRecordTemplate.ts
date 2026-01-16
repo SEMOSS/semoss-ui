@@ -1206,8 +1206,6 @@ export const UpdateDiabetesRecordTemplate: Template = {
 				type: "block",
 			},
 			model: {
-				isInput: true,
-				isOutput: false,
 				type: "model",
 				value: "4acbe913-df40-4ac0-b28a-daa5ad91b172",
 			},

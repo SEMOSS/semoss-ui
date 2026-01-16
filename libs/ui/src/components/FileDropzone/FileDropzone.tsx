@@ -1,5 +1,5 @@
-import { OpenInBrowserOutlined } from "@mui/icons-material";
-import { styled } from "@mui/material";
+import { OpenInBrowserRounded } from "@mui/icons-material";
+import { styled, Typography } from "@mui/material";
 import type React from "react";
 import {
 	type ComponentPropsWithRef,
@@ -36,7 +36,7 @@ const StyledDropzone = styled("div", {
 	disabled: boolean;
 	valid: boolean;
 	dragging: boolean;
-}>(({ disabled, dragging, valid }) => ({
+}>(({ theme, disabled, dragging, valid }) => ({
 	display: "flex",
 	flexDirection: "column",
 	justifyContent: "center",
@@ -48,13 +48,17 @@ const StyledDropzone = styled("div", {
 	height: "100%",
 	padding: "16px 8px",
 	borderColor: disabled
-		? "#D9D9D9"
+		? theme.palette.action.disabled
 		: dragging
-			? "#40A0FF"
+			? theme.palette.primary.main
 			: !valid
-				? "#F84C34"
-				: "#D9D9D9",
-	color: disabled ? "#BDBDBD" : dragging ? "#40A0FF" : "BDBDBD",
+				? theme.palette.error.main
+				: theme.palette.secondary.main,
+	color: disabled
+		? theme.palette.text.disabled
+		: dragging
+			? theme.palette.primary.main
+			: theme.palette.text.primary,
 	cursor: disabled || dragging ? "default" : "",
 }));
 
@@ -65,26 +69,23 @@ const StyledContentContainer = styled("div")({
 	alignItems: "center",
 });
 
-const StyledDropzoneDescription = styled("div")(({ theme }) => ({
-	fontSize: "12px",
+const StyledDropzoneDescription = styled(Typography)(() => ({
 	marginTop: "8px",
 	marginBottom: "16px 8px",
-	color: theme.palette.grey[600],
 }));
 
 const StyledFileUploadInput = styled("input")({
 	display: "none",
 });
 
-const StyledFileListContainer = styled("div")({
-	overflowY: "auto",
+const StyledFileListContainer = styled("div")(() => ({
+	display: "flex",
+	flexDirection: "column",
+	gap: "8px",
 	zIndex: 1,
 	maxHeight: "4rem 2rem",
-	marginBottom: "12px",
-});
-
-const mdiFolderUpload =
-	"M20,6A2,2 0 0,1 22,8V18A2,2 0 0,1 20,20H4A2,2 0 0,1 2,18V6A2,2 0 0,1 4,4H10L12,6H20M10.75,13H14V17H16V13H19.25L15,8.75";
+	overflowY: "auto",
+}));
 
 interface BaseFileDropzoneProps<V>
 	extends InputOptions<V>,
@@ -133,7 +134,7 @@ const _FileDropzone = <Multiple extends boolean>(
 		multiple = false,
 		disabled = false,
 		valid = true,
-		description = "or drop file to upload",
+		description = "or drop to upload",
 		extensions = [],
 		inputProps,
 		...otherProps
@@ -254,6 +255,11 @@ const _FileDropzone = <Multiple extends boolean>(
 		} else {
 			updateFiles([Array.from(files)[0]]);
 		}
+
+		// Reset the input value to allow re-uploading the same file
+		if (inputRef.current) {
+			inputRef.current.value = "";
+		}
 	};
 
 	/**
@@ -352,7 +358,7 @@ const _FileDropzone = <Multiple extends boolean>(
 				/>
 			);
 		} else {
-			return <></>;
+			return null;
 		}
 	}
 
@@ -371,20 +377,22 @@ const _FileDropzone = <Multiple extends boolean>(
 					<StyledIconButton
 						size="small"
 						onClick={() => inputRef.current?.click()}
+						data-testid={`fileDropZone-iconBrowse-btn`}
 						disabled={disabled}
 					>
-						<OpenInBrowserOutlined color="primary" />
+						<OpenInBrowserRounded color="inherit" />
 					</StyledIconButton>
 					<StyledButton
 						size="small"
 						variant="text"
 						color="primary"
 						onClick={() => inputRef.current?.click()}
+						data-testid={`fileDropZone-browse-btn`}
 						disabled={disabled}
 					>
 						Browse
 					</StyledButton>
-					<StyledDropzoneDescription>
+					<StyledDropzoneDescription variant="caption">
 						{description}
 					</StyledDropzoneDescription>
 					<StyledFileUploadInput
@@ -398,7 +406,9 @@ const _FileDropzone = <Multiple extends boolean>(
 					/>
 				</StyledContentContainer>
 			</StyledDropzone>
-			<StyledFileListContainer>{renderFiles()}</StyledFileListContainer>
+			<StyledFileListContainer data-testid={"fileDropZone-files-list"}>
+				{renderFiles()}
+			</StyledFileListContainer>
 		</StyledContainer>
 	);
 };

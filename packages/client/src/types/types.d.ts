@@ -8,7 +8,7 @@ export type Role =
 
 export interface PixelCommand {
 	type: string;
-	components: any[];
+	components: unknown[];
 	terminal?: boolean;
 	meta?: boolean;
 }
@@ -16,7 +16,7 @@ export interface PixelCommand {
 /**
  * All types used in the app
  */
-export type ALL_TYPES = "APP" | ENGINE_TYPES;
+export type ALL_TYPES = ENGINE_TYPES | "PROJECT";
 
 /**
  * Engine types used in the app
@@ -86,3 +86,19 @@ export type PathValue<
 		? PathValue<Idx<T, Key>, Rest>
 		: never
 	: Idx<T, P>;
+
+export interface EventData {
+	startTime: string;
+	endTime: string;
+	logTimestamp: string;
+	request: string;
+	response: string;
+	tokens: string | null;
+	latency: number;
+	status: string | null;
+	engineName: string;
+	engineType: string;
+	userId: string;
+	sessionId: string;
+	spanId: string;
+}

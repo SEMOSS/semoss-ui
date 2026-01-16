@@ -186,7 +186,7 @@ export const SettingsLayout = observer(() => {
 											setPrivacyCenterOpen(true)
 										}
 										data-testid={
-											"settings-layout-privacy-btn"
+											"settingsLayout-privacy-btn"
 										}
 									>
 										Privacy Center
@@ -227,7 +227,7 @@ export const SettingsLayout = observer(() => {
 									onClick={() => {
 										copy(id);
 									}}
-									data-testid={"settings-layout-copy-btn"}
+									data-testid={"settingsLayout-copy-btn"}
 								>
 									<Tooltip title={`Copy ID`}>
 										<ContentCopyOutlined fontSize="inherit" />

@@ -11,6 +11,7 @@ import {
 } from "@semoss/renderer";
 import { IconButton } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 
 /**
  * Used in the DistinctPathButtonGroupSettings
@@ -137,6 +138,9 @@ export const DistinctPathButtonGroupButton = observer(
 				onClick={onClick}
 				title={title}
 				disabled={isDisabled}
+				data-testid={formatToDataTestId(
+					`distinctPathButtonGroupButton-${title}-btn`,
+				)}
 			>
 				<ButtonIcon />
 			</IconButton>

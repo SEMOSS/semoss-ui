@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, styled, useNotification } from "@semoss/ui";
+import { uploadFile } from "@/api";
 import { ImportForm } from "@/components/import";
 import { useRootStore, useStepper } from "@/hooks";
 
@@ -11,6 +12,9 @@ const StyledBox = styled(Box)(({ theme }) => ({
 	marginBottom: "32px",
 }));
 
+/**
+ * @deprecated
+ */
 export const ImportConnectionPage = () => {
 	const { monolithStore, configStore } = useRootStore();
 	const navigate = useNavigate();
@@ -72,7 +76,7 @@ export const ImportConnectionPage = () => {
 			/** Model: START */
 			let pixel;
 			if (values.secondaryFields["FILE"]) {
-				const upload = await monolithStore.uploadFile(
+				const upload = await uploadFile(
 					[values.secondaryFields["FILE"]],
 					configStore.store.insightID,
 				);
@@ -144,7 +148,7 @@ export const ImportConnectionPage = () => {
 				});
 
 				if (values.secondaryFields["EMBEDDINGS"]) {
-					const upload = await monolithStore.uploadFile(
+					const upload = await uploadFile(
 						[values.secondaryFields["EMBEDDINGS"]],
 						configStore.store.insightID,
 					);
@@ -225,16 +229,16 @@ export const ImportConnectionPage = () => {
                     functionDetails=[${JSON.stringify(functionDetails)}]
                 );
                 `;
-            } else if (values.secondaryFields?.['FILE']) {
-                const upload = await monolithStore.uploadFile(
-                    [values.secondaryFields['FILE']],
+            } else if (values.secondaryFields?.["FILE"]) {
+                const upload = await uploadFile(
+                    [values.secondaryFields["FILE"]],
                     configStore.store.insightID,
                 );
 
                 pixel = `
                     CreateRestFunctionEngine(
                         function=["${values.name}"],
-                        functionDetails=[${JSON.stringify(fieldMap)}],
+                        functionDetails=[${JSON.stringify(values.fields)}],
                         filePaths=["${upload[0].fileLocation}"]
                     );
                     `;
@@ -242,7 +246,7 @@ export const ImportConnectionPage = () => {
                 pixel = `
                     CreateRestFunctionEngine(
                         function=["${values.name}"],
-                        functionDetails=[${JSON.stringify(fieldMap)}]
+                        functionDetails=[${JSON.stringify(values.fields)}]
                     );
                     `;
             }

@@ -1,6 +1,7 @@
 import { ListItemIcon as MuiListItemIcon, type SxProps } from "@mui/material";
 
-export interface ListItemIconProps {
+export interface ListItemIconProps
+	extends React.HTMLAttributes<HTMLDivElement> {
 	/**
 	 * The content of the component, normally `Icon`, `SvgIcon`,
 	 * or a `@mui/icons-material` SVG icon element.
@@ -12,7 +13,9 @@ export interface ListItemIconProps {
 	 */
 	sx?: SxProps;
 }
-export const ListItemIcon = (props: ListItemIconProps) => {
-	const { sx } = props;
-	return <MuiListItemIcon sx={sx} {...props} />;
+export const ListItemIcon: React.FC<ListItemIconProps> = ({
+	sx,
+	...otherProps
+}) => {
+	return <MuiListItemIcon sx={sx} {...otherProps} />;
 };

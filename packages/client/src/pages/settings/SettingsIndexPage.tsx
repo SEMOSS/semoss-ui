@@ -1,8 +1,4 @@
-import {
-	Diversity3,
-	MoreVert,
-	Search as SearchIcon,
-} from "@mui/icons-material";
+import { Diversity3, MoreVert } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -20,7 +16,7 @@ import { ArchiveBox } from "@/assets/img/ArchiveBox";
 import { Construction } from "@/assets/img/Construction";
 import { DatabaseLayers } from "@/assets/img/DatabaseLayers";
 import { Folder } from "@/assets/img/Folder";
-import { Function } from "@/assets/img/Function";
+import { Function as FunctionImg } from "@/assets/img/Function";
 import { Group } from "@/assets/img/Group";
 import { GroupRounded } from "@/assets/img/GroupRounded";
 import { Jobs } from "@/assets/img/Jobs";
@@ -31,6 +27,7 @@ import { PersonRounded } from "@/assets/img/PersonRounded";
 import { SEMOSS } from "@/assets/img/SEMOSS";
 import { Vector } from "@/assets/img/Vector";
 import { useSettings } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 import { SETTINGS_ROUTES } from "./settings.constants";
 
 const StyledContainer = styled("div")(({ theme }) => ({
@@ -93,18 +90,19 @@ const IconMapper = {
 	"Storage Settings": <ArchiveBox />,
 	"App Settings": <Folder />,
 	"Vector Settings": <Vector />,
-	"Function Settings": <Function />,
+	"Function Settings": <FunctionImg />,
 	"Insight Settings": <SEMOSS />,
 	"Member Settings": <Group />,
 	Configuration: <Construction />,
 	"Admin Query": <AdminPanel />,
+	"Admin Theme": <PaintRounded />,
 	"External Connections": <Link />,
 	Teams: <GroupRounded />,
 	"Teams Management": <GroupRounded />,
 	"Team Permissions": <Diversity3 />,
 	"My Profile": <PersonRounded />,
-	Theming: <PaintRounded />,
 	Jobs: <Jobs />,
+	"View RDF Map": <Folder />,
 };
 
 export const SettingsIndexPage = () => {
@@ -135,6 +133,7 @@ export const SettingsIndexPage = () => {
 			<StyledSearchbarContainer>
 				<StyledSearch
 					size="small"
+					data-testid={`settingsIndexPage-searchBar`}
 					onChange={(e) => {
 						setSearch(e.target.value);
 					}}
@@ -143,6 +142,7 @@ export const SettingsIndexPage = () => {
 					size={"small"}
 					label={"Sort"}
 					value={sort}
+					data-testid={`settingsIndexPage-sort-select`}
 					onChange={(e) => setSort(e.target.value)}
 				>
 					<Menu.Item value="Name">Name</Menu.Item>
@@ -152,11 +152,23 @@ export const SettingsIndexPage = () => {
 			<Grid container spacing={2}>
 				{cards.map((c, i) => {
 					if (c.admin && !adminMode) {
-						return;
+						return null;
 					} else {
 						return (
-							<Grid item key={i} sm={12} md={6} lg={4} xl={3}>
-								<StyledCard onClick={() => navigate(c.path)}>
+							<Grid
+								item
+								key={`settingsIndexPage-${c.title}-${c.path}-${i}-card`}
+								sm={12}
+								md={6}
+								lg={4}
+								xl={3}
+							>
+								<StyledCard
+									onClick={() => navigate(c.path)}
+									data-testid={formatToDataTestId(
+										`settingsIndexPage-${c.title}-card`,
+									)}
+								>
 									<StyledCardHeader
 										title={c.title}
 										titleTypographyProps={{
@@ -176,7 +188,7 @@ export const SettingsIndexPage = () => {
 											<IconButton
 												disabled={true}
 												data-testid={
-													"settings-index-setting-btn"
+													"settingsIndexPage-setting-btn"
 												}
 											>
 												<MoreVert />

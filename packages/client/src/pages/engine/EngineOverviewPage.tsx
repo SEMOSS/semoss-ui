@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { Chip, Markdown, Stack, styled, Typography } from "@semoss/ui";
+import { Chip, Markdown, Stack, styled } from "@semoss/ui";
 import { DatabaseStatistics } from "@/components/database/DatabaseStatistics";
 import { Section } from "@/components/ui";
 import { useEngine, useRootStore } from "@/hooks";
@@ -32,10 +32,12 @@ export const EngineOverviewPage = observer(() => {
 	return (
 		<StyledPage>
 			<Section>
-				<Section.Header>Details</Section.Header>
+				<Section.Header data-testid="engine-overview-header">
+					Details
+				</Section.Header>
 				{active.metadata.markdown ? (
 					<StyledMarkdownContainer>
-						<Markdown>
+						<Markdown data-testid="engine-overview-markdown">
 							{active.metadata.markdown as string}
 						</Markdown>
 					</StyledMarkdownContainer>
@@ -67,18 +69,20 @@ export const EngineOverviewPage = observer(() => {
 							>
 								{(active.metadata[k.metakey] as string[]).map(
 									(tag) => {
+										if (tag === "") return null;
 										return (
 											<Chip
 												key={tag}
 												label={tag}
 												color={"primary"}
+												data-testid="tag-chip"
 											></Chip>
 										);
 									},
 								)}
 							</Stack>
 						) : (
-							<>{active.metadata[k.metakey]}</>
+							String(active.metadata[k.metakey] || "")
 						)}
 					</Section>
 				);

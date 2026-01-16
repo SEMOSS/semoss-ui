@@ -1,5 +1,4 @@
-import { Face } from "@mui/icons-material";
-import { Chip, styled } from "@mui/material";
+import { Chip } from "@mui/material";
 import { darken } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import type React from "react";

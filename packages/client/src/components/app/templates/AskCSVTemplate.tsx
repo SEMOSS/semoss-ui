@@ -327,14 +327,10 @@ export const AskCSVTemplate: Template = {
 		},
 		variables: {
 			file: {
-				isInput: true,
-				isOutput: false,
 				to: "file",
 				type: "block",
 			},
 			question: {
-				isInput: true,
-				isOutput: false,
 				to: "question",
 				type: "block",
 			},
@@ -344,14 +340,10 @@ export const AskCSVTemplate: Template = {
 				cellId: "py-query-function",
 			},
 			model: {
-				isInput: true,
-				isOutput: false,
 				type: "model",
 				value: "4acbe913-df40-4ac0-b28a-daa5ad91b172",
 			},
 			"ask-model": {
-				isInput: false,
-				isOutput: true,
 				to: "ask-model",
 				type: "query",
 			},

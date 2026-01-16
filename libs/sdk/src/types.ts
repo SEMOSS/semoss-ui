@@ -1,9 +1,4 @@
 /**
- * Space where to run commands in
- */
-export type Space = "insight" | "app" | "system";
-
-/**
  * Script object
  */
 export type Script = {
@@ -21,3 +16,33 @@ export type Role =
 	| "READ_ONLY"
 	| "DISCOVERABLE"
 	| "EDITOR";
+
+export interface ColumnInterface {
+	column: string;
+	type: string;
+}
+
+export interface TableInterface {
+	table: string;
+	columns: ColumnInterface[];
+}
+
+export interface MCPToolRequest {
+	type: "MCP";
+	message: string;
+	id: string;
+	name: string;
+	parameters: Record<string, unknown>;
+	roomId: string;
+	original_name: string;
+}
+
+export interface MCPToolResponse {
+	type: "MCP";
+	message: string;
+	id: string;
+	name: string;
+	response: string;
+	roomId: string;
+	tool_status: "success" | "error" | "cancelled";
+}

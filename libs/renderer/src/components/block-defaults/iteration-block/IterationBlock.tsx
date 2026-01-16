@@ -62,7 +62,7 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 	 * Add Blocks at runtime
 	 */
 	useEffect(() => {
-		let list;
+		let list: string | [] = [];
 		if (typeof data.source === "string") {
 			try {
 				list = JSON.parse(data.source);
@@ -88,6 +88,7 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 					});
 				});
 
+				// biome-ignore lint/correctness/noUnusedFunctionParameters: though it is not used, to extract index we need it
 				list.forEach(async (j, i) => {
 					// Skip the first
 					if (i === 0) return;
@@ -130,6 +131,55 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 							position: position,
 						},
 					});
+
+					const fixListeners = (id: string) => {
+						const block = state.blocks[id];
+
+						for (const listener in block.listeners) {
+							if (block.listeners[listener].order) {
+								// Iterate through the order array of messages
+								block.listeners[listener].order.forEach(
+									async (message: ListenerActions) => {
+										// Check for the "MODIFY_VARIABLE" message
+										if (
+											message.message ===
+											"MODIFY_VARIABLE"
+										) {
+											// Update the blockId in the payload
+											message.payload.blockId = id;
+
+											await state.dispatch({
+												message:
+													ActionMessages.SET_LISTENER,
+												payload: {
+													id: id,
+													listener: listener,
+													type: block.listeners[
+														listener
+													].type,
+													actions:
+														block.listeners[
+															listener
+														].order,
+												},
+											});
+										}
+									},
+								);
+							}
+						}
+						// Now do the same for all slots recursively
+						for (const slot in block.slots) {
+							if (block.slots[slot]) {
+								block.slots[slot].children.forEach(
+									(childId) => {
+										fixListeners(childId);
+									},
+								);
+							}
+						}
+					};
+					await fixListeners(newBlockId as string);
 
 					newIds.push(newBlockId);
 				});

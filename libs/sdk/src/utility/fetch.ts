@@ -1,12 +1,73 @@
+import { Env } from "../env";
+import { UnauthorizedError } from "./error";
+
+export const CSRF = {
+	isEnabled: false,
+	token: "",
+};
+
 /**
  * Store the interceptors to modify any fetch command
  */
-export const interceptors: {
+const interceptors: {
 	request: ((options: RequestInit) => Promise<RequestInit>) | null;
 	response: ((output: { response: Response }) => Promise<void>) | null;
 } = {
-	request: null,
-	response: null,
+	request: async (options) => {
+		// create the headers if it doesn't exist
+		if (!options.headers) {
+			options.headers = {};
+		}
+
+		if (Env.ACCESS_KEY && Env.SECRET_KEY) {
+			// add the authorization tokens
+			options.headers = {
+				...options.headers,
+				authorization: `Basic ${btoa(
+					`${Env.ACCESS_KEY}:${Env.SECRET_KEY}`,
+				)}`,
+			};
+		}
+
+		// only set if enabled
+		if (CSRF.isEnabled || Env.CSRF) {
+			if (options.method === "POST") {
+				// use the token if it is there otherwise fetch it
+				if (!CSRF.token) {
+					const response = await fetch(
+						`${Env.MODULE}/api/config/fetchCsrf`,
+						{
+							headers: {
+								"X-CSRF-Token": "fetch",
+							},
+						},
+					);
+
+					// not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
+					CSRF.token =
+						response.headers.get("X-CSRF-Token") ||
+						response.headers.get("x-csrf-token") ||
+						"";
+				}
+
+				// add the token
+				if (CSRF.token) {
+					options.headers = {
+						...options.headers,
+						"X-CSRF-Token": CSRF.token,
+					};
+				}
+			}
+		}
+
+		return options;
+	},
+	response: async ({ response }) => {
+		// TODO: maybe we shouldn't just throw unauthorized error for 302 and actually honor the redirect?
+		if (response.status === 302) {
+			throw new UnauthorizedError("Unauthorized");
+		}
+	},
 };
 
 /**
@@ -34,6 +95,16 @@ export const get = async <O>(path: string, options: RequestInit = {}) => {
 		await interceptors.response({
 			response: response,
 		});
+	}
+
+	if (!response.ok) {
+		const errorData = await response.json();
+		const errorMessage =
+			errorData.message ||
+			errorData.error ||
+			errorData.errorMessage ||
+			`Request failed with status ${response.status}`;
+		throw new Error(errorMessage);
 	}
 
 	// get the data
@@ -104,6 +175,16 @@ export const post = async <O>(
 		await interceptors.response({
 			response: response,
 		});
+	}
+
+	if (!response.ok) {
+		const errorData = await response.json();
+		const errorMessage =
+			errorData.message ||
+			errorData.error ||
+			errorData.errorMessage ||
+			`Request failed with status ${response.status}`;
+		throw new Error(errorMessage);
 	}
 
 	// get the data

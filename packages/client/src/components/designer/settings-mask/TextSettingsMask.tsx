@@ -116,7 +116,7 @@ export const TextSettingsMask = observer(() => {
 				renderInput={(params) => (
 					<TextField {...params} label="Fonts Style" />
 				)}
-                multiple={false}
+				multiple={false}
 				value={value.fontFamily}
 				onChange={(e, newValue) =>
 					onChange("fontFamily", newValue, true)

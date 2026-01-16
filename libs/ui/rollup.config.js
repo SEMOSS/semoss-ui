@@ -27,6 +27,7 @@ const stripUseClient = () => ({
 export default defineConfig({
 	input: {
 		index: "src/index.ts",
+		next: "src/next/index.ts",
 	},
 	output: {
 		dir: "dist",
@@ -41,7 +42,11 @@ export default defineConfig({
 		commonjs(),
 		image(),
 		json(),
-		postcss(),
+		postcss({
+			extract: true,
+			minimize: false,
+			modules: false,
+		}),
 		typescript({
 			tsconfig: "./tsconfig.json",
 		}),
@@ -57,5 +62,11 @@ export default defineConfig({
 	],
 	watch: {
 		clearScreen: false,
+	},
+	onwarn(warning, warn) {
+		if (warning.code === "MODULE_LEVEL_DIRECTIVE") {
+			return; // Ignore the warning
+		}
+		warn(warning); // Otherwise, call the default warn handler
 	},
 });

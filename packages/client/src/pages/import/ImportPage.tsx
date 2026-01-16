@@ -1,4 +1,7 @@
+import { useMemo } from "react";
+import { DatabasePageContent } from "@/components/import/database/DatabasePageContent";
 import type { ENGINE_TYPES } from "@/types";
+import { ModelImport } from "../../components/import/model/ModelImport";
 import { ImportLayout } from "./ImportLayout";
 import { ImportPageContent } from "./ImportPageContent";
 
@@ -15,11 +18,23 @@ interface ImportPageProps {
 	type: ENGINE_TYPES;
 }
 export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
-	return (
-		<>
-			<ImportLayout>
-				<ImportPageContent name={name} type={type} />
-			</ImportLayout>
-		</>
-	);
+	// TODO: Start With Model Import Flow, utilize old component for other flows refactor and replace
+	const EngineImportFlow = useMemo(() => {
+		switch (type) {
+			case "DATABASE":
+				return <DatabasePageContent name={name} />;
+			case "MODEL":
+				return <ModelImport />;
+			case "VECTOR":
+				return <ImportPageContent name={name} type={type} />;
+			case "FUNCTION":
+				return <ImportPageContent name={name} type={type} />;
+			case "STORAGE":
+				return <ImportPageContent name={name} type={type} />;
+			default:
+				return <ImportPageContent name={name} type={type} />;
+		}
+	}, [type]);
+
+	return <ImportLayout>{EngineImportFlow}</ImportLayout>;
 };

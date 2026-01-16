@@ -120,7 +120,7 @@ export const IconSelectSettings = observer(
 				<Autocomplete
 					fullWidth
 					size="small"
-                    multiple={false}
+					multiple={false}
 					value={value}
 					onChange={(_, newValue) => {
 						onChange(newValue);

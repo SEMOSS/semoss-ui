@@ -12,6 +12,13 @@ import {
 	ToggleButtonGroup,
 	useNotification,
 } from "@semoss/ui";
+import {
+	hasValidDays,
+	hasValidHours,
+	hasValidMinutes,
+	hasValidMonths,
+	hasValidWeekdays,
+} from "./cronValidator";
 import { JobCustomFrequencyBuilder } from "./JobCustomFrequencyBuilder";
 import { JobStandardFrequencyBuilder } from "./JobStandardFrequencyBuilder";
 import { JobTypesBuilder } from "./JobTypesBuilder";
@@ -53,6 +60,9 @@ export const JobBuilderModal = (props: {
 	);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [builder, setBuilder] = useState<JobBuilder>(emptyBuilder);
+	const [cronExpression, setCronExpression] = useState<string>(
+		emptyBuilder.cronExpression,
+	);
 	const setBuilderField = (field: string, value: string | string[]) => {
 		setBuilder((previousBuilder) => ({
 			...previousBuilder,
@@ -67,31 +77,35 @@ export const JobBuilderModal = (props: {
 	useEffect(() => {
 		const builderToSet = initialBuilder ? initialBuilder : emptyBuilder;
 		setBuilder(builderToSet);
+		setCronExpression(builderToSet.cronExpression);
 		const cronValues = builderToSet.cronExpression.split(" ");
 		if (cronValues.length < 6) {
 			// invalid cron syntax, send to standard builder
 			setFrequencyType("standard");
 			return;
-		} else if (Number.isNaN(cronValues[1]) || Number.isNaN(cronValues[2])) {
+		} else if (
+			isNaN(Number(cronValues[1])) ||
+			isNaN(Number(cronValues[2]))
+		) {
 			// non-integer time values, must be custom
 			setFrequencyType("custom");
 			return;
 		}
 
 		if (
-			cronValues[3] == "*" &&
-			cronValues[4] == "*" &&
-			cronValues[5] == "*"
+			cronValues[3] === "*" &&
+			cronValues[4] === "*" &&
+			cronValues[5] === "*"
 		) {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[3] == "*" && cronValues[4] == "*") {
+		} else if (cronValues[3] === "*" && cronValues[4] === "*") {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[4] == "*" && cronValues[5] == "*") {
+		} else if (cronValues[4] === "*" && cronValues[5] === "*") {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[5] == "*") {
+		} else if (cronValues[5] === "*") {
 			setFrequencyType("standard");
 			return;
 		} else {
@@ -106,54 +120,19 @@ export const JobBuilderModal = (props: {
 			// make sure it's valid cron syntax
 			return false;
 		}
-		if (
-			cronValues[1] !== "*" &&
-			!(
-				!Number.isNaN(cronValues[1]) &&
-				parseInt(cronValues[1]) <= 59 &&
-				parseInt(cronValues[1]) >= 0
-			)
-		) {
+		if (hasValidMinutes(cronValues[1]).error) {
 			return false;
 		}
-		if (
-			cronValues[2] !== "*" &&
-			!(
-				!Number.isNaN(cronValues[2]) &&
-				parseInt(cronValues[2]) <= 23 &&
-				parseInt(cronValues[2]) >= 0
-			)
-		) {
+		if (hasValidHours(cronValues[2]).error) {
 			return false;
 		}
-		if (
-			cronValues[3] !== "*" &&
-			!(
-				!Number.isNaN(cronValues[3]) &&
-				parseInt(cronValues[3]) <= 31 &&
-				parseInt(cronValues[3]) >= 0
-			)
-		) {
+		if (hasValidDays(cronValues[3]).error) {
 			return false;
 		}
-		if (
-			cronValues[4] !== "*" &&
-			!(
-				!Number.isNaN(cronValues[4]) &&
-				parseInt(cronValues[4]) <= 12 &&
-				parseInt(cronValues[4]) >= 1
-			)
-		) {
+		if (hasValidMonths(cronValues[4]).error) {
 			return false;
 		}
-		if (
-			cronValues[5] !== "?" &&
-			!(
-				!Number.isNaN(cronValues[5]) &&
-				parseInt(cronValues[5]) <= 6 &&
-				parseInt(cronValues[5]) >= 0
-			)
-		) {
+		if (hasValidWeekdays(cronValues[5]).error) {
 			return false;
 		}
 		return true;
@@ -252,17 +231,16 @@ export const JobBuilderModal = (props: {
 					builder.jobType
 				}","jobName":"${builder.name}", "cronExpression":"${
 					builder.cronExpression
-				}","cronTimeZone":"${builder.cronTz}","recipe":"${
-					builder.pixel
-				}","recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
+				}","cronTimeZone":"${builder.cronTz}", "recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
 			);
 			if (response.errors.length) {
-				notification.add({
-					color: "error",
-					message: response.errors.length[0],
-				});
+				throw new Error(response.errors[0]);
 			}
-		} catch (e) {
+			notification.add({
+				color: "success",
+				message: "Job added successfully",
+			});
+		} catch {
 			notification.add({
 				color: "error",
 				message: "Unable to add job",
@@ -276,6 +254,10 @@ export const JobBuilderModal = (props: {
 	const updateJob = async () => {
 		setIsLoading(true);
 		const encode = getEncodeByJobType(builder);
+		const cronExpr =
+			builder.cronExpression.split(" ").length < 7
+				? `${builder.cronExpression} *`
+				: builder.cronExpression;
 		await runPixel(
 			`META|EditScheduledJob(jobId="${builder.id}",jobName="${
 				builder.name
@@ -283,14 +265,12 @@ export const JobBuilderModal = (props: {
 				builder.tags.length
 					? `jobTags=${JSON.stringify(builder.tags)},`
 					: ""
-			}jobGroup=["defaultGroup"],cronExpression="${
-				builder.cronExpression
-			} *",cronTz="${
+			}jobGroup=["defaultGroup"],cronExpression="${cronExpr}",cronTz="${
 				builder.cronTz
 			}",recipe="<encode>${encode}</encode>",uiState='{"jobType":"${
 				builder.jobType
 			}", "jobName":"${builder.name}", "cronExpression":"${
-				builder.cronExpression
+				cronExpr
 			}", "cronTimeZone":"${
 				builder.cronTz
 			}"}',triggerOnLoad=[false],triggerNow=[false]);`,
@@ -317,7 +297,7 @@ export const JobBuilderModal = (props: {
 					<IconButton
 						aria-label="close"
 						onClick={closeModal}
-						data-testid={"job-builder-close-btn"}
+						data-testid={"jobBuilder-close-btn"}
 					>
 						<Close />
 					</IconButton>
@@ -341,20 +321,20 @@ export const JobBuilderModal = (props: {
 						<ToggleButton
 							value="standard"
 							onClick={() => setFrequencyType("standard")}
-							data-testid={"job-builder-standard-btn"}
+							data-testid={"jobBuilder-standard-btn"}
 						>
 							Standard
 						</ToggleButton>
 						<ToggleButton
 							value="custom"
 							onClick={() => setFrequencyType("custom")}
-							data-testid={"job-builder-custom-btn"}
+							data-testid={"jobBuilder-custom-btn"}
 						>
 							Custom
 						</ToggleButton>
 					</ToggleButtonGroup>
 					<Autocomplete
-                        multiple={false}
+						multiple={false}
 						value={builder.cronTz}
 						options={timezones}
 						onChange={(_, value) =>
@@ -374,12 +354,12 @@ export const JobBuilderModal = (props: {
 					/>
 					{frequencyType === "standard" ? (
 						<JobStandardFrequencyBuilder
-							builder={builder}
+							cronExpression={cronExpression}
 							setBuilderField={setBuilderField}
 						/>
 					) : (
 						<JobCustomFrequencyBuilder
-							builder={builder}
+							cronExpression={cronExpression}
 							setBuilderField={setBuilderField}
 						/>
 					)}
@@ -396,7 +376,7 @@ export const JobBuilderModal = (props: {
 						type="button"
 						disabled={isLoading}
 						onClick={closeModal}
-						data-testid={"job-builder-cancel-btn"}
+						data-testid={"jobBuilder-cancel-btn"}
 					>
 						Cancel
 					</Button>
@@ -413,7 +393,7 @@ export const JobBuilderModal = (props: {
 							isEditMode ? updateJob() : addJob();
 						}}
 						loading={isLoading}
-						data-testid={"job-builder-add-save-btn"}
+						data-testid={"jobBuilder-add-save-btn"}
 					>
 						{isEditMode ? "Save" : "Add"}
 					</Button>

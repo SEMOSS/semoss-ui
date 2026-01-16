@@ -9,14 +9,14 @@ import { useEffect } from "react";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
-const StyledRating = styled(Rating)({
+const StyledRating = styled(Rating)(({ theme }) => ({
 	"& .MuiRating-iconFilled": {
-		color: "#ff6d75",
+		color: theme.palette.error[300],
 	},
 	"& .MuiRating-iconHover": {
-		color: "#ff3d47",
+		color: theme.palette.error[500],
 	},
-});
+}));
 
 const StyledBox = styled(Box)({
 	display: "flex",

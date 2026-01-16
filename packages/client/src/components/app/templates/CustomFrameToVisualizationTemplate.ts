@@ -186,7 +186,6 @@ export const CustomFrameToVisualizationTemplate: Template = {
 			"create-pandas-frame": {
 				type: "query",
 				to: "create-pandas-frame",
-				isOutput: true,
 			},
 			"create-pandas-frame--1": {
 				type: "cell",

@@ -1,5 +1,4 @@
-import type { Story } from "@storybook/react-webpack5";
-import React, { type ComponentProps, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FileDropzone } from "./FileDropzone";
 
 export default {
@@ -9,7 +8,7 @@ export default {
 };
 
 /* Stories */
-const Template: Story<ComponentProps<typeof FileDropzone>> = (args) => {
+const Template = (args) => {
 	const { value, onChange, ...otherArgs } = args;
 	const [selectedValues, setSelectedValues] = useState(value);
 
@@ -22,6 +21,7 @@ const Template: Story<ComponentProps<typeof FileDropzone>> = (args) => {
 			value={selectedValues}
 			onChange={(newValues) => {
 				setSelectedValues(newValues);
+				onChange(newValues);
 			}}
 			{...otherArgs}
 		/>

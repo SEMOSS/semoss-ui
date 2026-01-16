@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { debounced } from "@semoss/sdk/react";
 import {
@@ -10,6 +10,7 @@ import {
 	ToggleTabsGroup,
 	Typography,
 } from "@semoss/ui";
+import { setProjectFavorite } from "@/api";
 import { type AppMetadata, AppTileCard } from "@/components/app";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
@@ -69,6 +70,11 @@ const initialState = {
 	apps: [],
 };
 const SKELETON_CARD_COUNT = 6;
+
+const skeletonKeys = Array.from(
+	{ length: SKELETON_CARD_COUNT },
+	(_, i) => `skeleton-key-${i}`,
+);
 
 const reducer = (state, action) => {
 	switch (action.type) {
@@ -138,7 +144,7 @@ const TERMINAL_APP: AppMetadata = {
  * App page
  */
 export const AppCatalogPage = observer((): JSX.Element => {
-	const { configStore, monolithStore } = useRootStore();
+	const { configStore } = useRootStore();
 	const navigate = useNavigate();
 
 	const [state, dispatch] = useReducer(reducer, initialState);
@@ -148,6 +154,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 	const [inputValue, setInputValue] = useState("");
 	const [search, setSearch] = useState("");
+	const appCatalogPageStatus = useRef({ removalChanges: false });
 
 	// get a list of the keys
 	const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
@@ -230,7 +237,14 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		});
 	}, [getFavoritedApps.status, getFavoritedApps.data]);
 
-	const debouncedSet = debounced((newInputValue) => {
+	const [updatedNewApps, setUpdatedNewApps] = useState([]);
+	useEffect(() => {
+		if (Object.keys(metaFilters).length === 0 && getApps.data?.length > 0) {
+			setUpdatedNewApps(getApps.data);
+		}
+	}, [metaFilters, getApps.status, getApps.data]);
+
+	const debouncedSet = debounced((newInputValue: string) => {
 		setSearch(newInputValue);
 	}, 300);
 
@@ -246,17 +260,16 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	 */
 	const favoriteApp = (app) => {
 		const favorite = !isFavorited(app.project_id);
-		monolithStore
-			.setProjectFavorite(app.project_id, favorite)
+		setProjectFavorite(app.project_id, favorite)
 			.then(() => {
 				if (!favorite) {
-					const newFavorites = favoritedApps;
+					// Create a new array before modifying
+					const newFavorites = [...favoritedApps];
 					for (let i = newFavorites.length - 1; i >= 0; i--) {
 						if (newFavorites[i].project_id === app.project_id) {
 							newFavorites.splice(i, 1);
 						}
 					}
-
 					dispatch({
 						type: "field",
 						field: "favoritedApps",
@@ -271,7 +284,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				}
 			})
 			.catch((err) => {
-				// throw error if promise doesn't fulfill
 				throw Error(err);
 			});
 	};
@@ -288,14 +300,133 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		return favorites.some((el) => el.project_id === id);
 	};
 
+	/**
+	 * @desc Remove an app from the app list and the filters accordingly
+	 * @param app the app to be removed
+	 */
 	const removeApp = (app) => {
-		const updatedApps = apps;
-		for (let i = updatedApps.length - 1; i >= 0; i--) {
-			if (updatedApps[i].project_id === app.project_id) {
-				updatedApps.splice(i, 1);
+		// Check if the app is favorited
+		const favorite = isFavorited(app.project_id);
+		// Filter out the app to be removed from the apps array
+		const updatedApps = apps.filter((a) => a.project_id !== app.project_id);
+		// Filter out the app to be removed from the newApps array
+		const newApps = updatedNewApps.filter(
+			(a) => a.project_id !== app.project_id,
+		);
+		// Filter out the app to be removed from the favoritedApps array
+		setUpdatedNewApps(newApps);
+		const updatedFavoritedApps = favorite
+			? favoritedApps.filter((a) => a.project_id !== app.project_id)
+			: favoritedApps;
+		// Dispatch actions to update the state with the updated arrays
+		dispatch({ type: "field", field: "apps", value: updatedApps });
+		dispatch({
+			type: "field",
+			field: "favoritedApps",
+			value: updatedFavoritedApps,
+		});
+
+		/**
+		 * @desc toArr takes a value v and returns an array.
+		 * If v is null, return an empty array.
+		 * If v is an array, map each element to a string and trim the string.
+		 * If v is not an array, return an array with a single element, which is the value of v converted to a string and trimmed.
+		 * @param v
+		 * @returns {Array<string>}
+		 */
+		const toArr = (v) =>
+			v == null
+				? []
+				: Array.isArray(v)
+					? v.map((x) => String(x).trim())
+					: [String(v).trim()];
+		/**
+		 * @desc readTags extracts tags from an object.
+		 * It uses optional chaining and nullish coalescing to handle cases where the tag or tags properties are null or undefined.
+		 * @param a
+		 * @returns {Array<string>}
+		 */
+		const readTags = (a) => toArr(a?.tag ?? a?.tags ?? []);
+		/**
+		 * @desc readDomains extracts domains from an object.
+		 * It uses optional chaining and nullish coalescing to handle cases where the domain property is null or undefined.
+		 * @param a
+		 * @returns {Array<string>}
+		 */
+		const readDomains = (a) => toArr(a?.domain ?? []);
+
+		// Check if metaFilters is falsy or if it has no keys
+		if (!metaFilters || Object.keys(metaFilters).length === 0) {
+			// Set appCatalogPageStatus.current.removalChanges to true if no filters are present
+			appCatalogPageStatus.current.removalChanges = true;
+			return;
+		}
+		// Create a new object nextFilters by spreading the properties of metaFilters into it
+		const nextFilters = { ...(metaFilters || {}) };
+
+		// Check if the tag property of metaFilters is not null
+		if (metaFilters.tag != null) {
+			// Convert the tag value to an array using the toArr function
+			const selectedTags = toArr(metaFilters.tag);
+
+			// Filter the newApps array to find tags that are still present
+			const stillPresentTags = selectedTags.filter((tag) =>
+				newApps.some((remainingApp) =>
+					readTags(remainingApp).some((t) => t === tag),
+				),
+			);
+
+			// If no tags are still present, delete the tag property from nextFilters
+			if (stillPresentTags.length === 0) {
+				delete nextFilters.tag;
+			} else if (stillPresentTags.length > 0) {
+				// If tags are still present, set the tag property of nextFilters to each tag
+				stillPresentTags.forEach((t) => {
+					nextFilters.tag = t;
+				});
 			}
 		}
+
+		// Check if the domain property of metaFilters is not null
+		if (metaFilters.domain != null) {
+			// Convert the domain value to an array using the toArr function
+			const selectedDomains = toArr(metaFilters.domain);
+			// Filter the newApps array to find domains that are still present
+			const stillPresentDomains = selectedDomains.filter((domain) =>
+				newApps.some((remainingApp) =>
+					readDomains(remainingApp).some((d) => d === domain),
+				),
+			);
+			// If no domains are still present, delete the domain property from nextFilters
+			if (stillPresentDomains.length === 0) {
+				delete nextFilters.domain;
+			} else if (stillPresentDomains.length > 0) {
+				// If domains are still present, set the domain property of nextFilters to each domain
+				stillPresentDomains.forEach((t) => {
+					nextFilters.domain = t;
+				});
+			}
+		}
+		// Check if the nextFilters object is different from the metaFilters object by comparing their JSON strings
+		const filtersChanged =
+			JSON.stringify(nextFilters) !== JSON.stringify(metaFilters);
+		// If the filters have changed, update the metaFilters state with the nextFilters object
+		if (filtersChanged) {
+			setMetaFilters(nextFilters);
+		}
+
+		appCatalogPageStatus.current.removalChanges = true;
 	};
+
+	// to limit the apps that are sent to filterbox for performance
+	let renderedAppIds = [];
+	if (inputValue) {
+		renderedAppIds.push(...apps.map((app) => app.project_id));
+		renderedAppIds.push(...favoritedApps.map((app) => app.project_id));
+		if (renderedAppIds.length === 0) renderedAppIds = ["dummy-id"]; //dummy id to avoid empty array in query
+	} else {
+		renderedAppIds = [];
+	}
 
 	return (
 		<>
@@ -317,7 +448,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							Apps
 						</Typography>
 						{configStore.isEngineOperationAvailable(
-							"APP",
+							"PROJECT",
 							"add",
 						) && (
 							<Button
@@ -327,7 +458,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									navigate("/app/new");
 								}}
 								aria-label={`Open the App Model`}
-								data-testid={"home-create-app-btn"}
+								data-testid={
+									"appCatalogPage-create-new-app-btn"
+								}
 							>
 								Create New App
 							</Button>
@@ -343,16 +476,24 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				<StyledContainer>
 					{!configStore.store.config.adminOnlyViewMenuBarFlag &&
 						configStore.isEngineOperationAvailable(
-							"APP",
+							"PROJECT",
 							"add",
 						) && (
 							<div style={{ width: "355px" }}>
 								<Filterbox
-									type={"APP"}
+									type={"PROJECT"}
 									onChange={(
 										filters: Record<string, unknown>,
 									) => {
 										setMetaFilters(filters);
+									}}
+									filteredCatalogIds={renderedAppIds}
+									filterBoxRefresh={
+										appCatalogPageStatus.current
+											.removalChanges
+									}
+									onfilterBoxRefreshCompleted={() => {
+										appCatalogPageStatus.current.removalChanges = false;
 									}}
 								/>
 							</div>
@@ -377,25 +518,28 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								<StyledToggleTabsGroupItem
 									label="My Apps"
 									value={"Mine"}
+									data-testid={`appCatalogPage-myApps-btn`}
 								/>
 								<StyledToggleTabsGroupItem
 									label="Discoverable"
 									value={"Discoverable"}
+									data-testid={`appCatalogPage-discoverable-btn`}
 								/>
 								<StyledToggleTabsGroupItem
 									label="System Apps"
 									value={"System"}
+									data-testid={`appCatalogPage-systemApps-btn`}
 								/>
 							</StyledToggleTabsGroup>
 						</Stack>
 
-						{mode != "System" && favoritedApps.length > 0 ? (
+						{mode !== "System" && favoritedApps.length > 0 ? (
 							<StyledSectionLabel variant="subtitle1">
 								Bookmarked
 							</StyledSectionLabel>
 						) : null}
 
-						{mode != "System" && favoritedApps.length > 0 ? (
+						{mode !== "System" && favoritedApps.length > 0 ? (
 							<StyledSection>
 								{favoritedApps.map((app) => {
 									return (
@@ -426,6 +570,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 											favorite={() => {
 												favoriteApp(app);
 											}}
+											onDelete={() => {
+												removeApp(app);
+											}}
 											isDiscoverable={mode !== "Mine"}
 											isLoading={true}
 											showSkeleton={false}
@@ -435,13 +582,13 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							</StyledSection>
 						) : null}
 
-						{mode == "System" && (
+						{mode === "System" && (
 							<StyledSectionLabel variant="subtitle1">
 								All Apps
 							</StyledSectionLabel>
 						)}
 
-						{mode == "System" && (
+						{mode === "System" && (
 							<StyledSection>
 								{"bi".includes(search.toLowerCase()) && (
 									<AppTileCard
@@ -469,13 +616,12 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								)}
 							</StyledSection>
 						)}
-						{mode != "System" && getApps.status !== "SUCCESS" ? (
+
+						{mode !== "System" && getApps.status !== "SUCCESS" ? (
 							<StyledSection>
-								{Array.from({
-									length: SKELETON_CARD_COUNT,
-								}).map((_, i) => (
+								{skeletonKeys.map((key) => (
 									<AppTileCard
-										key={`skeleton-${i}`}
+										key={key.toString()}
 										app={TERMINAL_APP}
 										systemApp={false}
 										isDiscoverable={mode !== "Mine"}
@@ -485,14 +631,14 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								))}
 							</StyledSection>
 						) : null}
-						{mode != "System" && apps.length > 0 ? (
+						{mode !== "System" && apps.length > 0 ? (
 							<StyledSectionLabel variant="subtitle1">
 								All Apps
 							</StyledSectionLabel>
 						) : null}
 
 						{/* do not show favorited apps in all apps view */}
-						{mode != "System" && apps.length > 0 ? (
+						{mode !== "System" && apps.length > 0 ? (
 							<StyledSection>
 								{apps
 									.filter(
@@ -506,13 +652,13 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									.map((app, i) => {
 										return (
 											<AppTileCard
-												key={i}
+												key={app.project_id}
 												app={app}
 												systemApp={false}
 												isDiscoverable={mode !== "Mine"}
 												href={
 													mode === "Discoverable"
-														? `#/app/${app.project_id}/detail`
+														? `#/app/${app.project_id}`
 														: `#/app/${app.project_id}/view`
 												}
 												onAction={() => {
@@ -520,7 +666,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 														mode === "Discoverable"
 													) {
 														navigate(
-															`/app/${app.project_id}/detail`,
+															`/app/${app.project_id}`,
 														);
 													} else {
 														navigate(

@@ -1,7 +1,5 @@
-import { ContainerBlock } from "@/components/block-defaults/container-block/ContainerBlock";
-import { config } from "@/components/block-defaults/container-block/config";
-import { useBlock } from "@/hooks";
-import { cleanup, render, screen } from "../utils";
+import { ContainerBlock } from "../../components/block-defaults/container-block/ContainerBlock";
+import { render, screen } from "../utils";
 
 const blocks = {
 	"test-container": {
@@ -83,7 +81,10 @@ describe("Container Block", () => {
 	it(" Should render the Container Block", async () => {
 		const { container } = render(
 			// passing the data-testid property does not work; use the querySelector instead since data-block is a custom attribute
-			<ContainerBlock data-testid="containerID" id="test-container" />,
+			<ContainerBlock
+				data-testid="containerID"
+				id={blocks["test-container"].id}
+			/>,
 			{
 				blocks: blocks,
 			},
@@ -95,7 +96,10 @@ describe("Container Block", () => {
 	it("Should render the Container's default Slot text", async () => {
 		render(
 			// passing the data-testid property does not work; use the querySelector instead since data-block is a custom attribute
-			<ContainerBlock data-testid="containerID" id="test-container" />,
+			<ContainerBlock
+				data-testid="containerID"
+				id={blocks["test-container"].id}
+			/>,
 			{
 				blocks: blocks,
 			},
@@ -104,9 +108,12 @@ describe("Container Block", () => {
 	});
 
 	it("Should render a Container Block inside a Container Block", async () => {
-		const { container } = render(<ContainerBlock id="parent-container" />, {
-			blocks: nestedContainerBlock,
-		});
+		const { container } = render(
+			<ContainerBlock id={nestedContainerBlock["parent-container"].id} />,
+			{
+				blocks: nestedContainerBlock,
+			},
+		);
 
 		expect(
 			container.querySelector("[data-block='child-container']"),
@@ -116,7 +123,10 @@ describe("Container Block", () => {
 	it("Should render a P tag inside the Container Block", async () => {
 		const { container } = render(
 			// passing the data-testid property does not work; use the querySelector instead since data-block is a custom attribute
-			<ContainerBlock data-testid="containerID" id="test-container" />,
+			<ContainerBlock
+				data-testid="containerID"
+				id={blocks["test-container"].id}
+			/>,
 			{
 				blocks: {
 					"test-container": {
@@ -156,7 +166,7 @@ describe("Container Block", () => {
 	});
 
 	it("Should render a P tag with hello world as its content", async () => {
-		const { container } = render(<ContainerBlock id="test-container" />, {
+		render(<ContainerBlock id={blocks["test-container"].id} />, {
 			blocks: {
 				"test-container": {
 					...blocks["test-container"],

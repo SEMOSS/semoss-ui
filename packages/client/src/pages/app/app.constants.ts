@@ -83,3 +83,37 @@ export const BASE_PAGE_BLOCKS: Record<string, Block> = {
 		slots: {},
 	},
 };
+
+export const BASE_APP_QUERIES = {
+	mcp_driver: {
+		id: "mcp_driver",
+		cells: [
+			{
+				id: "1",
+				widget: "code",
+				parameters: {
+					code: "",
+					type: "pixel",
+				},
+			},
+		],
+	},
+};
+
+export const BASE_APP_VARIABLES = {
+	mcp_driver: {
+		type: "query",
+		to: "mcp_driver",
+	},
+	"mcp_driver--1": {
+		type: "cell",
+		to: "mcp_driver",
+		cellId: "1",
+	},
+};
+
+export const MCP_FILE_NAMES = ["mcp_driver.py"];
+
+export const MCP_JSON_FILE_NAMES = ["py_mcp.json", "pixel_mcp.json"];
+
+export const MCP_NOTEBOOK_NAME = "mcp_driver";

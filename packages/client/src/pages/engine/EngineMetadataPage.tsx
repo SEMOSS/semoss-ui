@@ -1,6 +1,6 @@
 import { ArrowCircleDown, Create } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	Button,
@@ -47,6 +47,30 @@ export const EngineMetadataPage = observer(() => {
 	const [canSave, setCanSave] = useState(true);
 	const navigate = useNavigate();
 
+	const refreshData = (showModal: boolean = false) => {
+		const pixel = `ExternalUpdateJdbcTablesAndViews(database=["${active.id}"]);`;
+		monolithStore.runQuery(pixel).then((response) => {
+			const output = response.pixelReturn?.[0]?.output ?? {};
+			setTabledata(output.tables ?? []);
+			setViewdata(output.views ?? []);
+			if (showModal) {
+				setShowSyncModal(true);
+			}
+		});
+	};
+
+	const query = useMemo(() => {
+		if (!active?.id) return "";
+
+		return `GetDatabaseMetamodel( database=["${active.id}"], options=["dataTypes","additionalDataTypes","logicalNames","descriptions","positions"]);`;
+	}, [active?.id]);
+
+	useEffect(() => {
+		if (active?.id) {
+			refreshData(false);
+		}
+	}, [query]);
+
 	const getDatabaseMetamodel = usePixel<{
 		dataTypes: Record<string, "INT" | "DOUBLE" | "STRING">;
 		logicalNames: Record<string, string[]>;
@@ -68,9 +92,7 @@ export const EngineMetadataPage = observer(() => {
 		>;
 		descriptions: Record<string, string>;
 		additionalDataTypes: Record<string, "INT" | "FLOAT" | "VARCHAR(2000)">;
-	}>(
-		`GetDatabaseMetamodel( database=["${active.id}"], options=["dataTypes","additionalDataTypes","logicalNames","descriptions","positions"]); `,
-	);
+	}>(query);
 
 	// get the data if a table is selected
 	const getData = usePixel<{
@@ -143,16 +165,6 @@ export const EngineMetadataPage = observer(() => {
 	const [showSyncModal, setShowSyncModal] = useState(false);
 	const [tabledata, setTabledata] = useState<string[]>([]);
 	const [viewdata, setViewdata] = useState<string[]>([]);
-
-	const refreshData = () => {
-		const pixel = `ExternalUpdateJdbcTablesAndViews(database=["${active.id}"]);`;
-		monolithStore.runQuery(pixel).then((response) => {
-			const output = response.pixelReturn[0].output;
-			setTabledata(output.tables ?? []);
-			setViewdata(output.views ?? []);
-			setShowSyncModal(true);
-		});
-	};
 
 	const handleSyncApply = (
 		selectedTables: string[],
@@ -323,14 +335,17 @@ export const EngineMetadataPage = observer(() => {
 				<Section.Header
 					actions={
 						<Stack direction="row" spacing={2}>
-							<Button variant="outlined" onClick={refreshData}>
+							<Button
+								variant="outlined"
+								onClick={() => refreshData(true)}
+							>
 								Refresh Data
 							</Button>
 							<Button
 								startIcon={<ArrowCircleDown />}
 								variant="outlined"
 								onClick={printMeta}
-								data-testid={"engine-metadata-print-btn"}
+								data-testid={"engineMetadata-print-btn"}
 							>
 								Print Metadata
 							</Button>
@@ -393,7 +408,7 @@ export const EngineMetadataPage = observer(() => {
 									</Table.Row>
 								</Table.Head>
 								<Table.Body>
-									{columnRows.map((property, idx) => {
+									{columnRows.map((property) => {
 										const desc =
 											getDatabaseMetamodel.data
 												?.descriptions?.[property.id] ||
@@ -404,7 +419,7 @@ export const EngineMetadataPage = observer(() => {
 											[];
 										return (
 											<Table.Row
-												key={`${property}--${idx}`}
+												key={`${property}--${property.id}`}
 											>
 												<Table.Cell>
 													<IconButton disabled>
@@ -482,10 +497,10 @@ export const EngineMetadataPage = observer(() => {
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{getData.data.data.values.map((row, i) => (
-									<Table.Row key={i}>
-										{row.map((val, j) => (
-											<Table.Cell key={j}>
+								{getData.data.data.values.map((row) => (
+									<Table.Row key={`row-${row}`}>
+										{row.map((val) => (
+											<Table.Cell key={`val-${val}`}>
 												{val}
 											</Table.Cell>
 										))}
