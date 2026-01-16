@@ -55,24 +55,32 @@ export const FunctionCard = memo<FunctionCardProps>(
 				<button
 					type="button"
 					onClick={handleHeaderClick}
-					className={`flex w-full cursor-pointer items-center justify-between p-2 text-left ${isDeleted ? "bg-zinc-100" : "bg-slate-100"} ${isExpanded ? "rounded-t-lg" : "rounded-lg"} transition-colors hover:bg-slate-200`}
+					className={`flex w-full cursor-pointer items-center justify-between p-2 text-left ${
+						isDeleted ? "bg-muted" : "bg-secondary"
+					} ${
+						isExpanded ? "rounded-t-lg" : "rounded-lg"
+					} transition-colors hover:bg-accent`}
 				>
 					<div className="flex items-center gap-2">
 						<div className="rounded p-1">
 							{isExpanded ? (
 								<ChevronUp
 									size={18}
-									className="text-gray-600"
+									className="text-muted-foreground"
 								/>
 							) : (
 								<ChevronDown
 									size={18}
-									className="text-gray-600"
+									className="text-muted-foreground"
 								/>
 							)}
 						</div>
 						<span
-							className={`font-bold text-base ${isDeleted ? "text-gray-500 line-through" : ""}`}
+							className={`font-bold text-base ${
+								isDeleted
+									? "text-muted-foreground line-through"
+									: "text-foreground"
+							}`}
 						>
 							{tool.title || tool.name}
 						</span>
@@ -88,7 +96,7 @@ export const FunctionCard = memo<FunctionCardProps>(
 									onDelete(actualIdx);
 								}}
 								data-action="delete"
-								className="flex items-center gap-1 text-red-600 hover:bg-transparent"
+								className="flex items-center gap-1 text-destructive hover:bg-transparent hover:text-destructive/90"
 							>
 								<Trash2 size={14} />
 								<span className="hidden sm:inline">Delete</span>
@@ -102,7 +110,7 @@ export const FunctionCard = memo<FunctionCardProps>(
 									onRestore(actualIdx);
 								}}
 								data-action="restore"
-								className="flex items-center gap-1 text-green-600 hover:bg-transparent"
+								className="flex items-center gap-1 text-destructive hover:bg-transparent hover:text-destructive/90"
 							>
 								<RotateCcw size={14} />
 								<span className="hidden sm:inline">
@@ -116,7 +124,7 @@ export const FunctionCard = memo<FunctionCardProps>(
 				{isExpanded && (
 					<div className="p-4">
 						<div className="mb-3">
-							<Label className="mb-1 block text-sm">
+							<Label className="mb-1 block text-foreground text-sm">
 								Description:
 							</Label>
 							<Textarea
@@ -129,14 +137,18 @@ export const FunctionCard = memo<FunctionCardProps>(
 								disabled={isDeleted}
 								rows={2}
 								style={{ height: "4rem" }}
-								className={`w-full resize-y overflow-y-auto px-2 py-1 text-sm ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+								className={`w-full resize-y overflow-y-auto px-2 py-1 text-foreground text-sm ${
+									isDeleted
+										? "cursor-not-allowed bg-muted opacity-60"
+										: ""
+								}`}
 								placeholder="Describe function purpose and parameters..."
 							/>
 						</div>
 
 						<div className="w-full overflow-x-auto">
 							<div
-								className="min-w-full overflow-hidden rounded-lg border border-base-300"
+								className="min-w-full overflow-hidden rounded-lg border"
 								style={{
 									display: "grid",
 									gridTemplateColumns:
@@ -145,22 +157,22 @@ export const FunctionCard = memo<FunctionCardProps>(
 								}}
 							>
 								{/* Header Row */}
-								<div className="flex items-center border-gray-300 border-r border-b bg-zinc-50 px-2 py-2 font-semibold">
+								<div className="flex items-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
 									Name
 								</div>
-								<div className="flex items-center border-gray-300 border-r border-b bg-zinc-50 px-2 py-2 font-semibold">
+								<div className="flex items-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
 									Title
 								</div>
-								<div className="flex items-center border-gray-300 border-r border-b bg-zinc-50 px-2 py-2 font-semibold">
+								<div className="flex items-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
 									Description
 								</div>
-								<div className="flex items-center border-gray-300 border-r border-b bg-zinc-50 px-2 py-2 font-semibold">
+								<div className="flex items-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
 									Type
 								</div>
-								<div className="flex items-center justify-center border-gray-300 border-r border-b bg-zinc-50 px-2 py-2 font-semibold">
+								<div className="flex items-center justify-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
 									Required
 								</div>
-								<div className="flex items-center border-gray-300 border-b bg-zinc-50 px-2 py-2 font-semibold">
+								<div className="flex items-center border-border border-b bg-muted px-2 py-2 font-semibold text-foreground">
 									Default Value
 								</div>
 
@@ -177,17 +189,17 @@ export const FunctionCard = memo<FunctionCardProps>(
 
 									return (
 										<React.Fragment key={k}>
-											<div className="flex w-full items-center border-gray-200 border-r border-b bg-white px-2 py-2">
+											<div className="flex w-full items-center border-border border-r border-b bg-card px-2 py-2">
 												<div className="min-w-0 flex-1">
 													<span
-														className="block truncate"
+														className="block truncate text-foreground"
 														title={k}
 													>
 														{k}
 													</span>
 												</div>
 											</div>
-											<div className="flex items-center border-gray-200 border-r border-b bg-white px-2 py-2">
+											<div className="flex items-center border-border border-r border-b bg-card px-2 py-2">
 												<Input
 													value={p.title}
 													onChange={(e) =>
@@ -201,10 +213,14 @@ export const FunctionCard = memo<FunctionCardProps>(
 														)
 													}
 													disabled={isDeleted}
-													className={`w-full px-1.5 py-1 text-sm ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+													className={`w-full px-1.5 py-1 text-foreground text-sm ${
+														isDeleted
+															? "cursor-not-allowed bg-muted opacity-60"
+															: ""
+													}`}
 												/>
 											</div>
-											<div className="border-gray-200 border-r border-b bg-white px-2 py-2">
+											<div className="border-border border-r border-b bg-card px-2 py-2">
 												<Textarea
 													value={p.description ?? ""}
 													onChange={(e) =>
@@ -223,11 +239,15 @@ export const FunctionCard = memo<FunctionCardProps>(
 													style={{
 														height: "3rem",
 													}}
-													className={`w-full resize-y overflow-y-auto px-1.5 py-1 text-xs ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+													className={`w-full resize-y overflow-y-auto px-1.5 py-1 text-foreground text-xs ${
+														isDeleted
+															? "cursor-not-allowed bg-muted opacity-60"
+															: ""
+													}`}
 													placeholder="Parameter description..."
 												/>
 											</div>
-											<div className="flex items-center border-gray-200 border-r border-b bg-white px-2 py-2">
+											<div className="flex items-center border-border border-r border-b bg-card px-2 py-2">
 												<select
 													value={p.type}
 													onChange={(e) =>
@@ -238,7 +258,11 @@ export const FunctionCard = memo<FunctionCardProps>(
 														)
 													}
 													disabled={isDeleted}
-													className={`h-[34px] w-full rounded border bg-white px-1.5 text-sm ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+													className={`h-[34px] w-full rounded border border-border bg-card px-1.5 text-foreground text-sm ${
+														isDeleted
+															? "cursor-not-allowed opacity-60"
+															: ""
+													}`}
 												>
 													{TYPE_OPTIONS.map((opt) => (
 														<option
@@ -250,7 +274,7 @@ export const FunctionCard = memo<FunctionCardProps>(
 													))}
 												</select>
 											</div>
-											<div className="flex items-center justify-center border-gray-200 border-r border-b bg-white px-2 py-2">
+											<div className="flex items-center justify-center border-border border-r border-b bg-card px-2 py-2">
 												<label className="flex cursor-pointer items-center gap-2">
 													<input
 														type="checkbox"
@@ -264,10 +288,22 @@ export const FunctionCard = memo<FunctionCardProps>(
 															)
 														}
 														disabled={isDeleted}
-														className={`h-4 w-4 rounded border-gray-300 text-blue-600 accent-blue-600 focus:ring-2 focus:ring-blue-500 ${isDeleted ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+														className={`h-4 w-4 rounded border border-border text-primary accent-primary focus:ring-2 focus:ring-ring ${
+															isDeleted
+																? "cursor-not-allowed opacity-60"
+																: "cursor-pointer"
+														}`}
 													/>
 													<span
-														className={`text-xs ${isRequired ? "font-semibold text-blue-600" : "text-gray-500"} ${isDeleted ? "opacity-60" : ""}`}
+														className={`text-xs ${
+															isRequired
+																? "font-semibold text-primary"
+																: "text-muted-foreground"
+														} ${
+															isDeleted
+																? "opacity-60"
+																: ""
+														}`}
 													>
 														{isRequired
 															? "Required"
@@ -277,7 +313,7 @@ export const FunctionCard = memo<FunctionCardProps>(
 											</div>
 											{p.type === "array" ||
 											p.type === "object" ? (
-												<div className="border-gray-200 border-b bg-white px-2 py-2">
+												<div className="border-border border-b bg-card px-2 py-2">
 													<Textarea
 														value={getJsonTextValue(
 															actualIdx,
@@ -296,7 +332,15 @@ export const FunctionCard = memo<FunctionCardProps>(
 														style={{
 															height: "4.5rem",
 														}}
-														className={`w-full resize-y overflow-y-auto px-1.5 py-1 font-mono text-xs ${hasError ? "border-red-500 focus:border-red-500" : ""} ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+														className={`w-full resize-y overflow-y-auto px-1.5 py-1 font-mono text-foreground text-xs ${
+															hasError
+																? "border-destructive ring-destructive/20 focus:border-destructive"
+																: "border-border"
+														} ${
+															isDeleted
+																? "cursor-not-allowed bg-muted opacity-60"
+																: ""
+														}`}
 														placeholder={
 															p.type === "array"
 																? '["item1", "item2"]'
@@ -304,7 +348,7 @@ export const FunctionCard = memo<FunctionCardProps>(
 														}
 													/>
 													{hasError && (
-														<div className="mt-1 flex items-start gap-1 text-red-600 text-xs">
+														<div className="mt-1 flex items-start gap-1 text-destructive text-xs">
 															<AlertCircle
 																size={12}
 																className="mt-0.5 flex-shrink-0"
@@ -317,7 +361,7 @@ export const FunctionCard = memo<FunctionCardProps>(
 													{!hasError &&
 														p.default !==
 															undefined && (
-															<div className="mt-1 flex items-center gap-1 text-green-600 text-xs">
+															<div className="mt-1 flex items-center gap-1 text-[color:var(--chart-2)] text-xs">
 																<CheckCircle
 																	size={12}
 																	className="flex-shrink-0"
@@ -329,7 +373,7 @@ export const FunctionCard = memo<FunctionCardProps>(
 														)}
 												</div>
 											) : (
-												<div className="flex items-center border-gray-200 border-b bg-white px-2 py-2">
+												<div className="flex items-center border-border border-b bg-card px-2 py-2">
 													{p.type === "boolean" ? (
 														<select
 															value={String(
@@ -345,7 +389,11 @@ export const FunctionCard = memo<FunctionCardProps>(
 																)
 															}
 															disabled={isDeleted}
-															className={`h-[34px] w-full rounded border bg-white px-1.5 text-sm ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+															className={`h-[34px] w-full rounded border border-border bg-card px-1.5 text-foreground text-sm ${
+																isDeleted
+																	? "cursor-not-allowed opacity-60"
+																	: ""
+															}`}
 														>
 															<option value="true">
 																True
@@ -375,7 +423,11 @@ export const FunctionCard = memo<FunctionCardProps>(
 																)
 															}
 															disabled={isDeleted}
-															className={`w-full px-1.5 py-1 text-sm ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+															className={`w-full px-1.5 py-1 text-foreground text-sm ${
+																isDeleted
+																	? "cursor-not-allowed bg-muted opacity-60"
+																	: ""
+															}`}
 														/>
 													)}
 												</div>

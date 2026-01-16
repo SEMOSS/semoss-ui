@@ -41,32 +41,6 @@ export interface EditorHeaderProps {
     saveShortcut?: string;
 }
 
-export interface MetaDataSectionProps {
-    metadata: Record<string, string>;
-    title?: string;
-    columns?: number;
-    className?: string;
-}
-
-export interface SearchBarProps {
-    value: string;
-    onChange: (value: string) => void;
-    onClear: () => void;
-    placeholder?: string;
-    className?: string;
-}
-
-export interface JsonTextareaProps {
-    value: string;
-    onChange: (value: string) => void;
-    disabled?: boolean;
-    placeholder?: string;
-    height?: string;
-    validator?: (value: string) => { valid: boolean; error?: string };
-    showValidation?: boolean;
-    className?: string;
-}
-
 export interface FunctionCardProps {
     tool: MCPTool;
     actualIdx: number;
