@@ -62,6 +62,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		| InputToolExecPixelMessage["type"];
 
 	/**
+	 * Thinking for the tool
+	 */
+	thinking: string = "";
+
+	/**
 	 * Text associated with the message
 	 */
 	text: string = "";
@@ -121,6 +126,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		this.pixelMessageType = message.type;
 
 		makeObservable(this, {
+			thinking: observable,
 			text: observable,
 			tools: observable,
 			rating: observable,
@@ -146,8 +152,10 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	sync = (message: PixelMessage) => {
 		// type guard + specifics
 		if (message.type === "RESPONSE_TEXT") {
+			this.thinking = message.thinking || "";
 			this.text = message.content;
 		} else if (message.type === "RESPONSE_TOOL") {
+			this.thinking = message.thinking || "";
 			this.tools = message.tool_responses.map(
 				(t): Tool => ({
 					id: t.id,
@@ -262,6 +270,14 @@ paramValues=[${JSON.stringify({
 						if (chunk.data.content) {
 							responseMessage.text += chunk.data.content;
 						}
+					} else if (chunk.stream_type === "thinking") {
+						if (chunk.data.thinking) {
+							responseMessage.thinking += chunk.data.thinking;
+						}
+					} else if (chunk.stream_type === "tool") {
+						//noop
+					} else {
+						console.error(`Unknown stream type`, chunk);
 					}
 				});
 			},

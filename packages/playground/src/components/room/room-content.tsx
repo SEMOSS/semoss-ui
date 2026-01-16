@@ -1,4 +1,4 @@
-import { MoveDownIcon, TriangleAlertIcon } from "lucide-react";
+import { MoveDownIcon, MoveUpIcon, TriangleAlertIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import React, { useEffect } from "react";
 import type { MCPToolResponse } from "@semoss/sdk";
@@ -32,15 +32,25 @@ interface RoomContentProps {
  * @component
  */
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
-	/**
-	 * Library hooks
-	 */
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
-	const { setScrollEle, scrollToBottom, isUserScrolled } = useAutoScroll(
+	const {
+		setScrollEle: setBottomScrollEle,
+		scroll: scrollToBottom,
+		isUserScrolled: showBottomScrollAction,
+	} = useAutoScroll(
 		room.history?.length || room.tail?.type === "RESPONSE"
 			? (room.tail as ResponseMessageStore)?.text.length
 			: 0,
+		{ direction: "bottom" },
 	);
+
+	// Auto-scroll hook
+	const {
+		setScrollEle: setTopScrollEle,
+		scroll: scrollToTop,
+		isUserScrolled: showTopScrollAction,
+	} = useAutoScroll([], { direction: "top" });
+
 	/**
 	 * Functions
 	 */
@@ -97,7 +107,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
 					className="h-full w-full"
-					viewportRef={(ele) => setScrollEle(ele)}
+					viewportRef={(ele) => {
+						setTopScrollEle(ele);
+						setBottomScrollEle(ele);
+					}}
 				>
 					<div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-6">
 						{room.history.map((m, mIdx) => {
@@ -144,14 +157,33 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					) : null}
 				</ScrollArea>
 
-				{isUserScrolled && (
+				{showTopScrollAction && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<span className="absolute top-4 right-4 z-50">
+								<Button
+									size="icon-sm"
+									variant={"outline"}
+									onClick={() => scrollToTop(false)}
+									aria-label="Scroll to tio"
+									className="shadow-lg"
+								>
+									<MoveUpIcon />
+								</Button>
+							</span>
+						</TooltipTrigger>
+						<TooltipContent>Scroll to top</TooltipContent>
+					</Tooltip>
+				)}
+
+				{showBottomScrollAction && (
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<span className="absolute right-4 bottom-4 z-50">
 								<Button
 									size="icon-sm"
 									variant={"outline"}
-									onClick={() => scrollToBottom()}
+									onClick={() => scrollToBottom(false)}
 									aria-label="Scroll to bottom"
 									className="shadow-lg"
 								>
