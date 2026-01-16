@@ -1,6 +1,6 @@
 import { MoveDownIcon, TriangleAlertIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
@@ -17,9 +17,9 @@ import {
 	RoomConfigurationButton,
 	RoomFileExplorerButton,
 	RoomInput,
+	RoomInputMenuPlugin,
 } from "@/components";
-import { LOADING_MESSAGES } from "@/constants";
-import { useAutoScroll } from "@/hooks";
+import { useAutoScroll, useLoadingMessage } from "@/hooks";
 import type { RoomStore } from "@/stores";
 
 interface RoomContentProps {
@@ -40,10 +40,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { setScrollEle, scrollToBottom, isUserScrolled } = useAutoScroll(
 		room.history?.length || 0,
 	);
-	/**
-	 * State
-	 */
-	const [loadingMessage, setLoadingMessage] = useState<string>("");
+	const loadingMessage = useLoadingMessage(room.isLoading);
 
 	/**
 	 * Functions
@@ -61,47 +58,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	/**
 	 * Effects
 	 */
-
-	// iterate loading messages
-	useEffect(() => {
-		if (!room.isLoading) {
-			setLoadingMessage("");
-			return;
-		}
-
-		setLoadingMessage(LOADING_MESSAGES[0]);
-
-		let timeoutId: number | undefined;
-		let iteration = 1;
-		let cancelled = false;
-
-		const scheduleNext = () => {
-			const delay = 500 + 1500 * (iteration - 1);
-
-			timeoutId = window.setTimeout(() => {
-				if (cancelled) {
-					return;
-				}
-
-				const randomIndex =
-					1 +
-					Math.floor(Math.random() * (LOADING_MESSAGES.length - 1));
-
-				setLoadingMessage(LOADING_MESSAGES[randomIndex]);
-				iteration += 1;
-				scheduleNext();
-			}, delay);
-		};
-
-		scheduleNext();
-
-		return () => {
-			cancelled = true;
-			if (timeoutId !== undefined) {
-				window.clearTimeout(timeoutId);
-			}
-		};
-	}, [room.isLoading]);
 
 	// create a listener to process messages from the room
 	useEffect(() => {
@@ -136,19 +92,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			window.removeEventListener("message", handleMessage);
 		};
 	}, [room]);
-
-	/**
-	 * Constants
-	 */
-	const isDisabled =
-		Boolean(room.error) ||
-		room.mode === "executing" ||
-		(room.tail.type === "RESPONSE" &&
-			room.history.some(
-				(message) =>
-					message.type === "RESPONSE" &&
-					message.tools.some((tool) => !tool.response),
-			));
 
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
@@ -227,10 +170,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			</div>
 			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
 				<RoomInput
+					className="max-h-56 min-h-24"
 					isLoading={room.isLoading}
-					isDisabled={isDisabled}
-					minRows={3}
-					maxRows={8}
+					plugins={
+						<RoomInputMenuPlugin
+							options={room.options}
+							setOptions={room.setOptions}
+						/>
+					}
 					configuration={
 						<>
 							<RoomFileExplorerButton room={room} />
@@ -238,7 +185,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						</>
 					}
 					onPrompt={handlePrompt}
-					clearInputOnPrompt
+					hasOutstandingTools={room.hasUnfinishedTools}
+					hideLoadingSpinner
 				/>
 			</div>
 		</div>
