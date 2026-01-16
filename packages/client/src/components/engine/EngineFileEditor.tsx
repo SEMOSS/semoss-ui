@@ -143,7 +143,7 @@ export const EngineFileEditor = ({
       path: string;
       type: "directory" | "file";
     }[]
-  >(`GetEngineFiles(engine=['${engineId}'], filePath=["/${fileName}"])`);
+  >(`GetEngineAssets(engine=['${engineId}'], filePath=["/${fileName}"])`);
 
   useEffect(() => {
     if (status === "SUCCESS" && data) {

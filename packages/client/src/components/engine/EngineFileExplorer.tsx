@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
-import { Icon, TreeView, styled } from '@semoss/ui';
-import { LoadingScreen } from '@/components/ui';
+import { Icon, LoadingScreen, TreeView, styled } from '@semoss/ui';
 import { usePixel } from '@/hooks';
 import { ExpandMoreOutlined, ChevronRightOutlined } from '@mui/icons-material';
 
@@ -57,7 +56,7 @@ export const EngineFileExplorer = (props: EngineFileExplorerProps) => {
 
     const getAssets = usePixel<AssetItem[]>(
         type === 'engine'
-            ? `BrowseEngineAssets(filePath=[""], engine=["${engine}"]);`
+            ? `BrowseEngineAssets(engine=["${engine}"],filePath=[""]);`
             : '',
         {},
     );

@@ -8,6 +8,7 @@ import {
     Stack,
 } from '@semoss/ui';
 import { useRootStore } from '@/hooks';
+import { uploadFile } from "@/api";
 
 interface EngineAddFileOverlayProps {
     type: 'engine';
@@ -22,7 +23,7 @@ export const EngineAddFileOverlay = (props: EngineAddFileOverlayProps) => {
     const { monolithStore, configStore } = useRootStore();
 
     const [isLoading, setIsLoading] = useState(false);
-    const [uploadFile, setUploadFiles] = useState<File>(null);
+    const [newUploadFile, setNewUploadFiles] = useState<File>(null);
 
     const addFile = async () => {
         try {
@@ -30,8 +31,8 @@ export const EngineAddFileOverlay = (props: EngineAddFileOverlayProps) => {
 
             let upload = null;
             if (type === 'engine') {
-                upload = await monolithStore.uploadFile(
-                    [uploadFile],
+                upload = await uploadFile(
+                    [newUploadFile],
                     configStore.store.insightID,
                     null,
                     uploadPath,
@@ -52,7 +53,7 @@ export const EngineAddFileOverlay = (props: EngineAddFileOverlayProps) => {
             console.error(e);
         } finally {
             setIsLoading(false);
-            setUploadFiles(null);
+            setNewUploadFiles(null);
         }
     };
 
@@ -69,7 +70,7 @@ export const EngineAddFileOverlay = (props: EngineAddFileOverlayProps) => {
                         value={uploadFile}
                         disabled={isLoading}
                         onChange={(newValue: File) => {
-                            setUploadFiles(newValue);
+                            setNewUploadFiles(newValue);
                         }}
                     />
                 </Stack>

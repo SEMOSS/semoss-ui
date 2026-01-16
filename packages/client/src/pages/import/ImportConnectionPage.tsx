@@ -216,9 +216,9 @@ export const ImportConnectionPage = () => {
                     FUNCTION_NAME: 'main',
                     FUNCTION_DESCRIPTION: fieldMap.FUNCTION_DESCRIPTION || '',
                     FUNCTION_TYPE: fieldMap.FUNCTION_TYPE || '',
-                    FUNCTION_REQUIRED_PARAMETERS:
-                        fieldMap.FUNCTION_REQUIRED_PARAMETERS || '',
-                    FUNCTION_PARAMETERS: fieldMap.FUNCTION_PARAMETERS || '',
+                    FUNCTION_REQUIRED_PARAMETERS: ["shubham"],
+                        //fieldMap.FUNCTION_REQUIRED_PARAMETERS || '',
+                    FUNCTION_PARAMETERS: [{"ram":"uuu"}],//fieldMap.FUNCTION_PARAMETERS || '',
                     PYTHON_FILE_NAME: fieldMap.PYTHON_FILE_NAME || '',
                 };
 
