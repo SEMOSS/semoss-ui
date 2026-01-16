@@ -713,7 +713,7 @@ export class RoomStore {
 
 		// create the input message
 		const inputMessage = new InputMessageStore(this, {
-			messageId: "TEMP",
+			messageId: "ASK_PLACEHOLDER_ID",
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: prompt,

@@ -1,10 +1,12 @@
-import { makeObservable, observable, runInAction } from "mobx";
+import { action, makeObservable, observable, runInAction } from "mobx";
 import {
 	MCP_EXECUTION_ASK,
 	MCP_EXECUTION_AUTO,
 	TOOL_ERROR_PROMPT,
 } from "@/constants";
 import type {
+	InputMediaPixelMessage,
+	InputTextPixelMessage,
 	InputToolExecPixelMessage,
 	McpExecution,
 	PixelMessage,
@@ -118,11 +120,34 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		super(room, message);
 		this.pixelMessageType = message.type;
 
+		makeObservable(this, {
+			text: observable,
+			tools: observable,
+			rating: observable,
+			sync: action,
+			runMessage: action,
+			recordFeedback: action,
+			rewriteMessage: action,
+			getTool: action,
+			startToolExecution: action,
+			continueToolExecution: action,
+			hasUnfinishedTools: action,
+			saveToolExecution: action,
+			markToolAsUsed: action,
+		});
+
+		// sync the message (must be after makeObservable so sync action is registered)
+		this.sync(message);
+	}
+
+	/**
+	 * Sync store properties from the pixel message
+	 */
+	sync = (message: PixelMessage) => {
+		// type guard + specifics
 		if (message.type === "RESPONSE_TEXT") {
 			this.text = message.content;
-		}
-
-		if (message.type === "RESPONSE_TOOL") {
+		} else if (message.type === "RESPONSE_TOOL") {
 			this.tools = message.tool_responses.map(
 				(t): Tool => ({
 					id: t.id,
@@ -141,28 +166,33 @@ export class ResponseMessageStore extends AbstractMessageStore {
 					is_executing: false,
 				}),
 			);
-		}
-
-		if (message.type === "INPUT_TOOL_EXEC") {
+		} else if (message.type === "INPUT_TOOL_EXEC") {
 			this.inputToolExecData = {
 				toolCallId: message.tool_call_id,
 				inputPrompt: message.inputPrompt,
 				toolStatus: message.tool_status ?? "success", // default to success
 			};
+		} else {
+			throw new Error(
+				`Invalid message object passed to ResponseMessageStore.update: ${JSON.stringify(message)}`,
+			);
 		}
 
-		// set the model
+		// cast the types
+		message = message as
+			| ResponseTextPixelMessage
+			| ResponseToolPixelMessage
+			| InputToolExecPixelMessage;
+
+		// set the id
+		this.id = message.messageId;
+
+		// set the model that was used
 		this.model = {
 			id: message.modelId,
 			name: message.ornaments?.modelName || "AI",
 		};
-
-		makeObservable(this, {
-			text: observable,
-			tools: observable,
-			rating: observable,
-		});
-	}
+	};
 
 	/**
 	 * Run a new user message and receive a response with streaming
@@ -182,7 +212,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 		// Create a placeholder response message to show streaming content
 		const responseMessage = new ResponseMessageStore(room, {
-			messageId: "TEMP",
+			messageId: "STREAMING_PLACEHOLDER_ID",
 			type: "RESPONSE_TEXT",
 			visible: true,
 			content: "",
@@ -204,8 +234,13 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		const response = await room.runRoomPixelStreaming<
 			[
 				{
-					inputMessage: PixelMessage;
-					responseMessage: PixelMessage;
+					inputMessage:
+						| InputTextPixelMessage
+						| InputMediaPixelMessage;
+					responseMessage:
+						| ResponseTextPixelMessage
+						| ResponseToolPixelMessage
+						| InputToolExecPixelMessage;
 				},
 			]
 		>(
@@ -234,44 +269,11 @@ paramValues=[${JSON.stringify({
 
 		const { output } = response.results[0];
 
-		// update the input's id
-		inputMessage.updateId(output.inputMessage.messageId);
-		responseMessage.updateId(output.responseMessage.messageId);
+		// sync withe the results
+		inputMessage.sync(output.inputMessage);
+		responseMessage.sync(output.responseMessage);
 
 		// TODO: clean up
-
-		if (output.responseMessage.type === "RESPONSE_TEXT") {
-			this.text = output.responseMessage.content;
-		}
-
-		if (output.responseMessage.type === "RESPONSE_TOOL") {
-			this.tools = output.responseMessage.tool_responses.map(
-				(t): Tool => ({
-					id: t.id,
-					_meta: {
-						SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
-						// On 12/16/25 we changed from _meta.map to just _meta, so support both
-						...(t._meta as { map?: Record<string, unknown> })?.map,
-						...t._meta,
-					},
-					title: t.title,
-					name: t.name,
-					original_name: t.original_name,
-					parameters: t.arguments,
-					response: "",
-					tool_status: "success",
-					is_executing: false,
-				}),
-			);
-		}
-
-		if (output.responseMessage.type === "INPUT_TOOL_EXEC") {
-			this.inputToolExecData = {
-				toolCallId: output.responseMessage.tool_call_id,
-				inputPrompt: output.responseMessage.inputPrompt,
-				toolStatus: output.responseMessage.tool_status ?? "success", // default to success
-			};
-		}
 
 		// start running tools if there are any
 		responseMessage.startToolExecution();
@@ -329,7 +331,7 @@ paramValues=[${JSON.stringify({
 
 		// create a new input message
 		const rewrittenMessage = new InputMessageStore(room, {
-			messageId: "TEMP",
+			messageId: "REWRITE_PLACEHOLDER_ID",
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: parentMessage.text,
