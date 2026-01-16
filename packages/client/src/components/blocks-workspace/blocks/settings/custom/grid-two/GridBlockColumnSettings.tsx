@@ -8,6 +8,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Sync } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
+import { useEffect } from "react";
 import {
 	type GridBlockColumn,
 	type GridBlockDef,
@@ -53,7 +54,8 @@ export const GridBlockColumnSettings = observer(
 				// get the columns by selector
 				const columnMap: Record<string, GridBlockColumn> =
 					data.columns.reduce((acc, val) => {
-						acc[val.name] = acc;
+						// Assign individual column to the key, instead of the object itself
+						acc[val.name] = val;
 
 						return acc;
 					}, {});
@@ -131,6 +133,18 @@ export const GridBlockColumnSettings = observer(
 		// columns to render
 		const columns = data.columns || [];
 
+		/**
+		 * Auto-sync when frame headers load after frame change
+		 */
+		useEffect(() => {
+			if (
+				!frameHeaders.isLoading &&
+				frameHeaders.data?.list?.length > 0
+			) {
+				syncFrameHeaders();
+			}
+		}, [frameHeaders.data?.list?.length]);
+
 		return (
 			<>
 				<BaseSettingSection label="Frame">
@@ -144,6 +158,8 @@ export const GridBlockColumnSettings = observer(
 							return option;
 						}}
 						onChange={(_, value) => {
+							// clear columns immediately
+							setData("columns", []);
 							// update the frame
 							setData("frame.name", value);
 						}}
@@ -185,7 +201,6 @@ export const GridBlockColumnSettings = observer(
 										>
 											<GridBlockColumnSettingsItem
 												id={id}
-												key={cIdx}
 												column={c}
 												index={cIdx}
 											/>
