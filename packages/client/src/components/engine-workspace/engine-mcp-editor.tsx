@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
-import { MCPJsonEditor } from "./mcp-json-editor";
+import { MCPJsonEditor } from "../shared";
 
 interface EngineMcpEditorProps {
 	/** Node */
@@ -107,7 +107,7 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 					</div>
 				)}
 				{getFile.status === "SUCCESS" && data && (
-					<div className="flex h-full w-full flex-1 flex-col overflow-hidden">
+					<div className="flex h-full w-full flex-1 flex-col overflow-y-auto">
 						<MCPJsonEditor
 							dataMap={{
 								initialData: data,
