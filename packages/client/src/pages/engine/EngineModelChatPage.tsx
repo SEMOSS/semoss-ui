@@ -212,7 +212,7 @@ export const EngineModelChatPage = () => {
 		};
 		setMessages((prev) => [...prev, userMessage]);
 		try {
-			const pixel = `LLM2(engine="${selectedModel.model_id}", command=["<encode>${data.prompt}</encode>"], paramValues=[{"temperature":${temperature}, "max_tokens":${maxTokens}}])`;
+			const pixel = `LLM(engine="${selectedModel.model_id}", command=["<encode>${data.prompt}</encode>"], paramValues=[{"temperature":${temperature}, "max_tokens":${maxTokens}}])`;
 			const response = await runPixel(pixel, insightId);
 			const { output, operationType } = response.pixelReturn[0];
 			if (operationType.indexOf("ERROR") > -1) {
