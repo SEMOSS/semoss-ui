@@ -58,6 +58,12 @@ interface RoomInputProps {
 
 	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
+
+	/** Has outstanding tools */
+	hasOutstandingTools?: boolean;
+
+	/** Show loading spinner */
+	hideLoadingSpinner?: boolean;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
@@ -68,6 +74,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		plugins = null,
 		configuration = null,
 		onPrompt = () => null,
+		hasOutstandingTools = false,
+		hideLoadingSpinner = false,
 	}) => {
 		const [isEmpty, setIsEmpty] = useState(true);
 
@@ -183,24 +191,17 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 			const userFiles = files;
 
-			// skip if there is no input
-			if (!userInput) {
+			// skip if there is no input, if loading, or if there are outstanding tools
+			if (!userInput || isLoading || hasOutstandingTools) {
 				return;
 			}
 
 			try {
-				// ignore if loading
-				if (isLoading) {
-					return;
-				}
-
 				// clear out the input components
 				success = await onPrompt(userInput, userFiles);
 				if (!success) {
 					throw new Error(`Error processing chat`);
 				}
-
-				console.log("success", success);
 			} catch (e) {
 				toast.error(e.message);
 			} finally {
@@ -426,16 +427,26 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						</ButtonGroup>
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<Button
-									variant="default"
-									aria-label="Ask the AI"
-									disabled={isLoading || isEmpty}
-									onClick={() => {
-										promptModel();
-									}}
-								>
-									{isLoading ? <Spinner /> : <SendIcon />}
-								</Button>
+								<span>
+									<Button
+										variant="default"
+										aria-label="Ask the AI"
+										disabled={
+											isLoading ||
+											isEmpty ||
+											hasOutstandingTools
+										}
+										onClick={() => {
+											promptModel();
+										}}
+									>
+										{isLoading && !hideLoadingSpinner ? (
+											<Spinner />
+										) : (
+											<SendIcon />
+										)}
+									</Button>
+								</span>
 							</TooltipTrigger>
 							<TooltipContent>
 								{(() => {
@@ -443,8 +454,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										return "Processing question";
 									} else if (isEmpty) {
 										return "Please enter a question";
+									} else if (hasOutstandingTools) {
+										return "Please complete the tool(s) to proceed";
 									}
-
 									return "Ask";
 								})()}
 							</TooltipContent>
