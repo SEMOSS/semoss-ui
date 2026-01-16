@@ -29,7 +29,7 @@ export const RoomPage = observer(() => {
 	]);
 
 	return (
-		<InsightProvider>
+		<InsightProvider key={roomId}>
 			<Room roomId={roomId} />
 		</InsightProvider>
 	);
