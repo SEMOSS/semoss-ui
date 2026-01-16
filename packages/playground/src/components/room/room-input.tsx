@@ -1,3 +1,17 @@
+import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
+import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
+import {
+	$createParagraphNode,
+	$createTextNode,
+	$getRoot,
+	type LexicalEditor,
+} from "lexical";
 import {
 	FileAudio2Icon,
 	FileIcon,
@@ -6,6 +20,7 @@ import {
 	MicIcon,
 	PaperclipIcon,
 	SendIcon,
+	SparklesIcon,
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -13,31 +28,30 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import {
 	Button,
+	ButtonGroup,
+	cn,
 	Spinner,
-	Textarea,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { EnterPlugin, FocusPlugin } from "@/components";
 
 const ENABLE_ATTACHMENT = import.meta.env.VITE_ENABLE_ATTACHMENT === "true";
 
 interface RoomInputProps {
+	/** Classes to override */
+	className?: string;
+
 	/** Track if it is loading */
-	isLoading: boolean;
-
-	/** Track if it is disabled */
-	isDisabled: boolean;
-
-	/** Minimum number of rendered rows rows */
-	minRows: number;
-
-	/** Maximum number of rendered rows rows */
-	maxRows: number;
+	isLoading?: boolean;
 
 	/** Workspace toggle */
 	workspace?: React.ReactNode;
+
+	/** Plugins plugins */
+	plugins?: React.ReactNode;
 
 	/** Configuration toggle */
 	configuration?: React.ReactNode;
@@ -45,26 +59,28 @@ interface RoomInputProps {
 	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
 
-	/** Optionally clear the input when the user asks a question */
-	clearInputOnPrompt?: boolean;
+	/** Has outstanding tools */
+	hasOutstandingTools?: boolean;
+
+	/** Show loading spinner */
+	hideLoadingSpinner?: boolean;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
 	({
+		className,
 		isLoading,
-		isDisabled,
-		minRows = 2,
-		maxRows = 6,
 		workspace = null,
+		plugins = null,
 		configuration = null,
 		onPrompt = () => null,
-		clearInputOnPrompt = false,
+		hasOutstandingTools = false,
+		hideLoadingSpinner = false,
 	}) => {
-		const [input, setInput] = useState("");
-		const isEmpty = input.trim().length === 0;
+		const [isEmpty, setIsEmpty] = useState(true);
 
+		const editorRef = useRef<LexicalEditor>(null);
 		const fileRef = useRef<HTMLInputElement>(null);
-		const inputRef = useRef<HTMLTextAreaElement>(null);
 
 		const [isDragging, setIsDragging] = useState(false);
 		const [files, setFiles] = useState<File[]>([]);
@@ -108,12 +124,22 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					// trim to manually handle spaces
 					transcript = transcript.trim();
 					if (transcript) {
-						setInput((prev) => {
-							if (!prev) {
-								return transcript;
-							}
+						editorRef.current?.update(() => {
+							const root = $getRoot();
+							const currentText = root.getTextContent();
 
-							return `${prev} ${transcript}`;
+							// clear existing content
+							root.clear();
+
+							// create new paragraph with combined text
+							const paragraphNode = $createParagraphNode();
+							const textNode = $createTextNode(
+								currentText
+									? `${currentText} ${transcript}`
+									: transcript,
+							);
+							paragraphNode.append(textNode);
+							root.append(paragraphNode);
 						});
 					}
 				};
@@ -123,13 +149,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 					// turn off and focus on element
 					setIsListening(false);
-					inputRef.current?.focus();
+					editorRef.current?.focus();
 				};
 
 				recognition.onend = () => {
 					// turn off and focus on element
 					setIsListening(false);
-					inputRef.current?.focus();
+					editorRef.current?.focus();
 				};
 
 				recognitionRef.current = recognition;
@@ -138,11 +164,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 
 			return () => {
-				if (recognitionRef.current) {
-					recognitionRef.current.stop();
-				}
+				recognitionRef.current?.stop();
 			};
 		}, []);
+
+		// update editable
+		useEffect(() => {
+			editorRef.current?.setEditable(!isLoading);
+		}, [isLoading]);
 
 		/**
 		 * Prompt the model
@@ -151,20 +180,24 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		 */
 		const promptModel = async () => {
 			let success = false;
-			// store old options
-			const userInput = input;
-			const userFiles = files;
-			try {
-				// ignore if loading
-				if (isDisabled || isLoading) {
-					return;
-				}
 
+			// store old options
+
+			let userInput = "";
+			editorRef.current?.getEditorState().read(() => {
+				const root = $getRoot();
+				userInput = root.getTextContent();
+			});
+
+			const userFiles = files;
+
+			// skip if there is no input, if loading, or if there are outstanding tools
+			if (!userInput || isLoading || hasOutstandingTools) {
+				return;
+			}
+
+			try {
 				// clear out the input components
-				if (clearInputOnPrompt) {
-					setInput("");
-					setFiles([]);
-				}
 				success = await onPrompt(userInput, userFiles);
 				if (!success) {
 					throw new Error(`Error processing chat`);
@@ -173,13 +206,17 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				toast.error(e.message);
 			} finally {
 				if (success) {
-					// clear the input + files
-					setInput("");
+					// clear the files
 					setFiles([]);
-				} else if (!clearInputOnPrompt) {
-					// restore to original
-					setInput(userInput);
-					setFiles(userFiles);
+
+					// reset the view
+					editorRef.current?.update(() => {
+						const root = $getRoot();
+						root.clear();
+
+						const paragraphNode = $createParagraphNode();
+						root.append(paragraphNode);
+					});
 				}
 			}
 		};
@@ -218,24 +255,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			return <FileIcon className="size-6 text-muted-foreground" />;
 		};
 
-		/**
-		 * Start Listening
-		 */
-		const startListening = () => {
-			if (recognitionRef.current && !isListening) {
-				recognitionRef.current.start();
-			}
-		};
-
-		/**
-		 * Stop Listening
-		 */
-		const stopListening = () => {
-			if (recognitionRef.current && isListening) {
-				recognitionRef.current.stop();
-			}
-		};
-
 		return (
 			<>
 				<div className="relative w-full">
@@ -250,91 +269,119 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							setFiles((prev) => [...prev, ...updated]);
 						}}
 					/>
-					<div className="relative">
-						<Textarea
-							ref={inputRef}
-							placeholder="What do you want to do today?"
-							value={input}
-							disabled={isDisabled}
-							rows={minRows}
-							className={`w-full resize-none px-3 pt-3 pb-14${
-								isDragging
-									? "border-primary border-dashed"
-									: "hover:border-primary"
-							}rounded-md bg-background shadow-lg transition-colors`}
-							autoFocus={true}
-							style={{
-								minHeight: `${minRows * 3}rem`,
-								maxHeight: `${maxRows * 3}rem`,
-							}}
-							onChange={(e) => {
-								setInput(e.target.value);
-							}}
-							onDrop={(e) => {
-								e.preventDefault();
+					<LexicalComposer
+						initialConfig={{
+							namespace: "RoomInput",
+							theme: {},
+							nodes: [],
+							onError: (error) => {
+								console.error(error);
+							},
+						}}
+					>
+						<PlainTextPlugin
+							contentEditable={
+								<div className="relative">
+									<ContentEditable
+										className={cn(
+											`h-auto w-full overflow-y-auto rounded-md border border-input bg-background p-4 pb-14 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
+											isDragging
+												? "border-primary border-dashed"
+												: "hover:border-primary",
+											className,
+										)}
+										aria-placeholder={"Enter text"}
+										aria-disabled={isLoading}
+										disabled={isLoading}
+										placeholder={
+											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
+												<SparklesIcon className="size-4" />
+												/ to add capability
+											</div>
+										}
+										onDrop={(e) => {
+											e.preventDefault();
 
-								// set the new files
-								const updated = Array.from(
-									e.dataTransfer.files,
-								);
-								setFiles((prev) => [...prev, ...updated]);
+											// set the new files
+											const updated = Array.from(
+												e.dataTransfer.files,
+											);
+											setFiles((prev) => [
+												...prev,
+												...updated,
+											]);
 
-								// turn off dragging
-								setIsDragging(false);
-							}}
-							onDragOver={(e) => {
-								e.preventDefault();
+											// turn off dragging
+											setIsDragging(false);
+										}}
+										onDragOver={(e) => {
+											e.preventDefault();
 
-								// turn on dragging
-								setIsDragging(true);
-							}}
-							onDragLeave={(e) => {
-								e.preventDefault();
+											// turn on dragging
+											setIsDragging(true);
+										}}
+										onDragLeave={(e) => {
+											e.preventDefault();
 
-								// turn off dragging
-								setIsDragging(false);
-							}}
-							onPaste={(e) => {
-								// Only handle file pasting if attachments are enabled
-								if (!ENABLE_ATTACHMENT) {
-									return;
-								}
+											// turn off dragging
+											setIsDragging(false);
+										}}
+										onPaste={(e) => {
+											// Only handle file pasting if attachments are enabled
+											if (!ENABLE_ATTACHMENT) {
+												return;
+											}
 
-								// set the new files
-								const updated = Array.from(
-									e.clipboardData.files,
-								);
+											// set the new files
+											const updated = Array.from(
+												e.clipboardData.files,
+											);
 
-								if (updated.length > 0) {
-									e.preventDefault();
-									setFiles((prev) => [...prev, ...updated]);
-								}
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									// allow new lines with shift
-									if (e.shiftKey) {
-										return;
-									}
+											if (updated.length > 0) {
+												e.preventDefault();
+												setFiles((prev) => [
+													...prev,
+													...updated,
+												]);
+											}
+										}}
+									/>
+								</div>
+							}
+							ErrorBoundary={LexicalErrorBoundary}
+						/>
+						<OnChangePlugin
+							onChange={(editorState) => {
+								editorState.read(() => {
+									// get the root
+									const root = $getRoot();
 
-									// prompt the model
-									e.preventDefault();
-									promptModel();
-								}
+									// set empty state
+									setIsEmpty(
+										root.getTextContent().trim().length ===
+											0,
+									);
+								});
 							}}
 						/>
-					</div>
+						<HistoryPlugin />
+						<AutoFocusPlugin />
+						<FocusPlugin />
+						<EditorRefPlugin editorRef={editorRef} />
+						<EnterPlugin onEnter={() => promptModel()} />
+						{plugins}
+					</LexicalComposer>
 					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
 						{workspace}
 					</div>
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
-						<div className="flex flex-row items-center">
+						<ButtonGroup className="rounded-md bg-background">
 							{ENABLE_ATTACHMENT && (
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
 											aria-label="Attach Documents"
-											disabled={isDisabled || isLoading}
+											disabled={isLoading}
 											variant="ghost"
 											size="icon-sm"
 											onClick={() => {
@@ -358,16 +405,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										variant={"ghost"}
 										aria-label="Record the Model"
 										size="icon-sm"
-										disabled={
-											!canListen ||
-											isDisabled ||
-											isLoading
-										}
+										disabled={!canListen || isLoading}
 										onClick={() => {
 											if (isListening) {
-												stopListening();
+												recognitionRef.current?.stop();
+												editorRef.current?.focus();
 											} else {
-												startListening();
+												recognitionRef.current?.start();
 											}
 										}}
 									>
@@ -380,32 +424,40 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									{isListening ? "Stop Recording" : "Record"}
 								</TooltipContent>
 							</Tooltip>
-						</div>
+						</ButtonGroup>
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<Button
-									variant="default"
-									aria-label="Prompt the Model"
-									disabled={
-										isDisabled || isLoading || isEmpty
-									}
-									onClick={() => {
-										promptModel();
-									}}
-								>
-									{isLoading ? <Spinner /> : <SendIcon />}
-								</Button>
+								<span>
+									<Button
+										variant="default"
+										aria-label="Ask the AI"
+										disabled={
+											isLoading ||
+											isEmpty ||
+											hasOutstandingTools
+										}
+										onClick={() => {
+											promptModel();
+										}}
+									>
+										{isLoading && !hideLoadingSpinner ? (
+											<Spinner />
+										) : (
+											<SendIcon />
+										)}
+									</Button>
+								</span>
 							</TooltipTrigger>
 							<TooltipContent>
 								{(() => {
 									if (isLoading) {
-										return "Processing prompt";
+										return "Processing question";
 									} else if (isEmpty) {
-										return "Please enter a prompt";
-									} else if (isDisabled) {
-										return "";
+										return "Please enter a question";
+									} else if (hasOutstandingTools) {
+										return "Please complete the tool(s) to proceed";
 									}
-									return "Prompt";
+									return "Ask";
 								})()}
 							</TooltipContent>
 						</Tooltip>
