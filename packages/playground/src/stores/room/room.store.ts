@@ -1,5 +1,11 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { runPixel, uploadInsight } from "@semoss/sdk/react";
+import {
+	getPixelAsyncResult,
+	getPixelJobStreaming,
+	runPixel,
+	runPixelAsync,
+	uploadInsight,
+} from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import {
@@ -707,7 +713,7 @@ export class RoomStore {
 
 		// create the input message
 		const inputMessage = new InputMessageStore(this, {
-			messageId: "TEMP",
+			messageId: "ASK_PLACEHOLDER_ID",
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: prompt,
@@ -821,6 +827,74 @@ export class RoomStore {
 			if (showLoading) {
 				this.setIsLoading(false);
 			}
+		}
+	};
+
+	/**
+	 * Run a pixel with streaming support for LLM responses
+	 * @param pixel - pixel to execute
+	 * @param onPoll - callback for each streaming chunk
+	 */
+	runRoomPixelStreaming = async <O extends unknown[] | []>(
+		pixel: string,
+		onPoll: (
+			message: Awaited<
+				ReturnType<typeof getPixelJobStreaming>
+			>["message"][number],
+		) => void,
+	) => {
+		try {
+			this.setIsLoading(true);
+
+			// Start async execution to get job ID
+			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
+
+			if (!jobId) {
+				throw new Error("No job ID returned from pixel execution");
+			}
+
+			// Poll for streaming content
+			let isPolling = true;
+
+			const pollingInterval = 300; // 300ms for responsive streaming
+
+			while (isPolling) {
+				try {
+					const response = await getPixelJobStreaming(jobId);
+
+					if (response && response.message.length > 0) {
+						for (const message of response.message) {
+							onPoll(message);
+						}
+					}
+
+					// Check status for completion
+					if (
+						response.status === "ProgressComplete" ||
+						response.status === "Complete"
+					) {
+						isPolling = false;
+					} else if (response.status === "Error") {
+						throw new Error("Streaming job encountered an error");
+					}
+
+					if (isPolling) {
+						await new Promise((resolve) =>
+							setTimeout(resolve, pollingInterval),
+						);
+					}
+				} catch (error) {
+					isPolling = false;
+					throw error;
+				}
+			}
+
+			// get the final result
+			return await getPixelAsyncResult<O>(jobId);
+		} catch (e) {
+			console.error(e);
+		} finally {
+			this.setIsLoading(false);
 		}
 	};
 }
