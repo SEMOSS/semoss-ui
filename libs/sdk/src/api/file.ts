@@ -77,28 +77,47 @@ export const upload = async (
  * @param fileKey - id for the file to download
  */
 export const download = async (insightId: string, fileKey: string) => {
-	return new Promise<void>((resolve) => {
-		if (!insightId) {
-			throw Error("No Insight ID provided for download.");
+	if (!insightId) {
+		throw Error("No Insight ID provided for download.");
+	}
+
+	// create the download url
+	const url = `${
+		Env.MODULE
+	}/api/engine/downloadFile?insightId=${insightId}&fileKey=${encodeURIComponent(
+		fileKey,
+	)}`;
+
+	// only works in browser
+	if (typeof window !== "undefined" && typeof document !== "undefined") {
+		return new Promise<void>((resolve) => {
+			// fake clicking a link
+			const link: HTMLAnchorElement = document.createElement("a");
+
+			link.href = url;
+			link.target = "_blank";
+			document.body.appendChild(link);
+			link.click();
+
+			document.body.removeChild(link);
+
+			// resolve the promise
+			resolve();
+		});
+	} else {
+		const response = await fetch(url);
+		if (!response.ok) {
+			const errorData = await response.json();
+			const errorMessage =
+				errorData.message ||
+				errorData.error ||
+				`Request failed with status ${response.status}`;
+			throw new Error(errorMessage);
 		}
-		// create the download url
-		const url = `${
-			Env.MODULE
-		}/api/engine/downloadFile?insightId=${insightId}&fileKey=${encodeURIComponent(
-			fileKey,
-		)}`;
 
-		// fake clicking a link
-		const link: HTMLAnchorElement = document.createElement("a");
+		// Get the response as an ArrayBuffer
+		const arrayBuffer = await response.arrayBuffer();
 
-		link.href = url;
-		link.target = "_blank";
-		document.body.appendChild(link);
-		link.click();
-
-		document.body.removeChild(link);
-
-		// resolve the promise
-		resolve();
-	});
+		return arrayBuffer;
+	}
 };

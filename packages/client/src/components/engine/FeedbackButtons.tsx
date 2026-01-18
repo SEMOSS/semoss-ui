@@ -1,64 +1,56 @@
-import { useState } from 'react';
-import { ThumbUpOffAlt, ThumbDownOffAlt } from '@mui/icons-material';
-import { IconButton, Box, Snackbar } from '@mui/material';
-import { styled } from '@semoss/ui';
+import { ThumbDownOffAlt, ThumbUpOffAlt } from "@mui/icons-material";
+import { useState } from "react";
+import { IconButton, Stack, styled, useNotification } from "@semoss/ui";
 
 interface FeedbackButtonsProps {
-  messageId: string;
-  onFeedbackCall: (messageId: string, value: 'true' | 'false') => void;
-  initialValue?: 'true' | 'false' | null;
+	messageId: string;
+	onFeedbackCall: (messageId: string, value: "true" | "false") => void;
+	initialValue?: "true" | "false" | null;
 }
 
 const StyledIcon = styled(IconButton)(() => ({
-  opacity: 0.7,
-  padding: 0
-}));
-
-const StyledSnackBar = styled(Snackbar)(({ theme }) => ({
-  '& .MuiSnackbarContent-root': {
-    background: theme.palette.primary.main,
-    color: theme.palette.primary.contrastText
-  }
+	opacity: 0.7,
+	padding: 0,
 }));
 
 export const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({
-  messageId,
-  onFeedbackCall: onFeedbackCall,
-  initialValue = null,
+	messageId,
+	onFeedbackCall,
+	initialValue = null,
 }) => {
-  const [feedback, setFeedback] = useState<'true' | 'false' | null>(initialValue);
-  const [showThanks, setShowThanks] = useState(false);
+	const notification = useNotification();
 
-  const handleFeedback = (value: 'true' | 'false') => {
-    if (feedback) return;
+	const [feedback, setFeedback] = useState<"true" | "false" | null>(
+		initialValue,
+	);
 
-    setFeedback(value);
-    onFeedbackCall(messageId, value);
-    setShowThanks(true);
-  };
+	const handleFeedback = (value: "true" | "false") => {
+		if (feedback) return;
 
-  return (
-    <Box display="flex" alignItems="center" mt={1}>
+		setFeedback(value);
+		onFeedbackCall(messageId, value);
 
-      <StyledIcon
-        onClick={() => handleFeedback('true')}
-        disabled={!!feedback}
-      >
-        <ThumbUpOffAlt fontSize='small' />
-      </StyledIcon>
+		notification.add({
+			color: "success",
+			message: "Successfully added feedback",
+		});
+	};
 
-      <StyledIcon
-        onClick={() => handleFeedback('false')}
-        disabled={!!feedback}
-      >
-        <ThumbDownOffAlt fontSize='small' />
-      </StyledIcon>
+	return (
+		<Stack display="flex" alignItems="center" mt={1}>
+			<StyledIcon
+				onClick={() => handleFeedback("true")}
+				disabled={!!feedback}
+			>
+				<ThumbUpOffAlt fontSize="small" />
+			</StyledIcon>
 
-
-      {showThanks && (
-        <StyledSnackBar open={showThanks} message="Thank you for your feedback!" autoHideDuration={3000} onClose={() => setShowThanks(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        />
-      )}
-    </Box>
-  );
+			<StyledIcon
+				onClick={() => handleFeedback("false")}
+				disabled={!!feedback}
+			>
+				<ThumbDownOffAlt fontSize="small" />
+			</StyledIcon>
+		</Stack>
+	);
 };

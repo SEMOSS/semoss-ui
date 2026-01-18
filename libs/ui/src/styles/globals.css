@@ -1,0 +1,235 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/** Add all of the component styles **/
+@source "../**/*.{ts,tsx}";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --radius: 0.625rem;
+  --background: rgba(255, 255, 255, 1);
+  --secondary-background: rgba(255, 255, 255, 1);
+  --foreground: rgba(10, 10, 10, 1);
+  --card: rgba(255, 255, 255, 1);
+  --card-foreground: rgba(10, 10, 10, 1);
+  --popover: rgba(255, 255, 255, 1);
+  --popover-foreground: rgba(10, 10, 10, 1);
+  --primary: rgba(5, 112, 240, 1);
+  --primary-foreground: rgba(250, 250, 250, 1);
+  --secondary: rgba(245, 245, 245, 1);
+  --secondary-foreground: rgba(23, 23, 23, 1);
+  --muted: rgba(245, 245, 245, 1);
+  --muted-foreground: rgba(115, 115, 115, 1);
+  --accent: rgba(245, 245, 245, 1);
+  --accent-foreground: rgba(23, 23, 23, 1);
+  --destructive: rgba(219, 38, 38, 1);
+  --destructive-foreground: rgba(255, 242, 242, 1);
+  --border: rgba(230, 230, 230, 1);
+  --input: rgba(230, 230, 230, 1);
+  --ring: rgba(163, 163, 163, 1);
+  --ring-offset: rgba(255, 255, 255, 1);
+  --chart-1: rgba(235, 89, 13, 1);
+  --chart-2: rgba(13, 148, 135, 1);
+  --chart-3: rgba(23, 79, 99, 1);
+  --chart-4: rgba(250, 191, 36, 1);
+  --chart-5: rgba(245, 158, 10, 1);
+  --sidebar: rgba(250, 250, 250, 1);
+  --sidebar-foreground: rgba(10, 10, 10, 1);
+  --sidebar-primary-foreground: rgba(250, 250, 250, 1);
+  --sidebar-primary: rgba(23, 23, 23, 1);
+  --sidebar-accent: rgba(245, 245, 245, 1);
+  --sidebar-accent-foreground: rgba(23, 23, 23, 1);
+  --sidebar-border: rgba(230, 230, 230, 1);
+  --sidebar-ring: rgba(163, 163, 163, 1);
+}
+
+.dark {
+  --background: rgba(10, 10, 10, 1);
+  --secondary-background: rgba(38, 38, 38, 1);
+  --foreground: rgba(250, 250, 250, 1);
+  --card: rgba(23, 23, 23, 1);
+  --card-foreground: rgba(250, 250, 250, 1);
+  --popover: rgba(38, 38, 38, 1);
+  --popover-foreground: rgba(250, 250, 250, 1);
+  --primary: rgba(5, 112, 240, 1);
+  --primary-foreground: rgba(250, 250, 250, 1);
+  --secondary: rgba(38, 38, 38, 1);
+  --secondary-foreground: rgba(250, 250, 250, 1);
+  --muted: rgba(38, 38, 38, 1);
+  --muted-foreground: rgba(163, 163, 163, 1);
+  --accent: rgba(64, 64, 64, 1);
+  --accent-foreground: rgba(250, 250, 250, 1);
+  --destructive: rgba(247, 112, 112, 1);
+  --destructive-foreground: rgba(255, 242, 242, 1);
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: rgba(115, 115, 115, 1);
+  --ring-offset: rgba(10, 10, 10, 1);
+  --chart-1: rgba(28, 79, 217, 1);
+  --chart-2: rgba(15, 186, 130, 1);
+  --chart-3: rgba(245, 158, 10, 1);
+  --chart-4: rgba(168, 84, 247, 1);
+  --chart-5: rgba(245, 64, 94, 1);
+  --sidebar: rgba(23, 23, 23, 1);
+  --sidebar-foreground: rgba(250, 250, 250, 1);
+  --sidebar-primary-foreground: rgba(23, 23, 23, 1);
+  --sidebar-primary: rgba(250, 250, 250, 1);
+  --sidebar-accent: rgba(38, 38, 38, 1);
+  --sidebar-accent-foreground: rgba(250, 250, 250, 1);
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: rgba(82, 82, 82, 1);
+}
+
+/* Custom */
+
+/* Theme variables */
+@theme inline {
+  --color-background: var(--background);
+  --color-secondary-background: var(--secondary-background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-ring-offset: var(--ring-offset);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  button:not([disabled]), [role="button"]:not([disabled]) {
+    cursor: pointer;
+  }
+  button {
+    cursor: pointer;
+  }
+  
+  .heading-xl {
+    font-family: var(--font-sans);
+    font-size: 3rem;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .heading-lg {
+    font-family: var(--font-sans);
+    font-size: 2.25rem;
+    line-height: 1.111;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .heading-md {
+    font-family: var(--font-sans);
+    font-size: 1.875rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .heading-sm {
+    font-family: var(--font-sans);
+    font-size: 1.5rem;
+    line-height: 1.333;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .container-padding-x {
+    padding-inline: 1.5rem;
+  }
+  .section-padding-y {
+    padding-block: 6rem;
+  }
+  .section-title-gap-xl {
+    gap: 1.5rem;
+  }
+  .section-title-gap-lg {
+    gap: 1.25rem;
+  }
+  .section-title-gap-md {
+    gap: 1.25rem;
+  }
+  .section-title-gap-sm {
+    gap: 1rem;
+  }
+}
+
+/*  ---break  ---*/
+
+@media (max-width: 64rem) {
+  .heading-xl {
+    font-size: 1.875rem;
+    line-height: 1.2;
+  }
+  .heading-lg {
+    font-size: 1.875rem;
+    line-height: 1.2;
+  }
+  .heading-md {
+    font-size: 1.5rem;
+    line-height: 1.2;
+  }
+  .heading-sm {
+    font-size: 1.5rem;
+    line-height: 1.333;
+  }
+  .container-padding-x {
+    padding-inline: 1.5rem;
+  }
+  .section-padding-y {
+    padding-block: 4rem;
+  }
+  .section-title-gap-xl {
+    gap: 1rem;
+  }
+  .section-title-gap-lg {
+    gap: 1rem;
+  }
+  .section-title-gap-md {
+    gap: 1rem;
+  }
+  .section-title-gap-sm {
+    gap: 1rem;
+  }
+}

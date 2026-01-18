@@ -23,7 +23,7 @@ export interface PixelCommand {
 /**
  * All types used in the app
  */
-export type ALL_TYPES = "APP" | ENGINE_TYPES;
+export type ALL_TYPES = ENGINE_TYPES | "PROJECT";
 
 /**
  * Engine types used in the app
@@ -147,4 +147,19 @@ export interface AddTagModalProps {
 	projectId: string;
 	existingTags: string[]; // All existing tags for this app to check uniqueness
 	onTagAdded: (tag: string) => void; // Callback when tag is successfully added
+}
+export interface EventData {
+	startTime: string;
+	endTime: string;
+	logTimestamp: string;
+	request: string;
+	response: string;
+	tokens: string | null;
+	latency: number;
+	status: string | null;
+	engineName: string;
+	engineType: string;
+	userId: string;
+	sessionId: string;
+	spanId: string;
 }

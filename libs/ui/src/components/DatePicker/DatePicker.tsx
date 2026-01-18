@@ -33,7 +33,7 @@ const DayPicker = (props: PickersDayProps<dayjs.Dayjs>) => {
 		<PickersDay
 			sx={{
 				[`&&.${pickersDayClasses.selected}`]: {
-					backgroundColor: "#40a0ff",
+					backgroundColor: (theme) => theme.palette.primary.main,
 				},
 			}}
 			{...props}

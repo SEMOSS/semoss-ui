@@ -1,7 +1,6 @@
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
 import { ButtonBlock } from "../../components/block-defaults/button-block/ButtonBlock";
-import { fireEvent, render, screen } from "../utils";
+import { render, screen } from "../utils";
 
 const blocks = {
 	button: {
@@ -51,7 +50,7 @@ const blocks = {
 
 describe("button block", () => {
 	it("renders button block with correct label", async () => {
-		const { container } = render(<ButtonBlock id="button" />, {
+		const { container } = render(<ButtonBlock id={blocks.button.id} />, {
 			blocks: blocks,
 		});
 
@@ -62,9 +61,12 @@ describe("button block", () => {
 	});
 
 	it("renders button with correct color, variant, dimensions", async () => {
-		const { container } = render(<ButtonBlock id="styledButton" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<ButtonBlock id={blocks.styledButton.id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelector("[data-block='styledButton']");
 		const buttonElement = container.querySelector("button");

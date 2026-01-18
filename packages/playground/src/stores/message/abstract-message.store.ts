@@ -1,4 +1,6 @@
 import { action, computed, makeObservable, observable } from "mobx";
+import type { ResponseMessageStore, RoomStore } from "@/stores";
+import type { AbstractPixelMessage, PixelMessage } from "@/types";
 
 /**
  * Abstract Message Store
@@ -10,9 +12,24 @@ export abstract class AbstractMessageStore {
 	id: string = "";
 
 	/**
+	 * Is the message visible to the user
+	 */
+	visible: boolean = false;
+
+	/**
+	 * Store the room
+	 */
+	room: RoomStore = null;
+
+	/**
 	 * Track if it is an root, input, or response message
 	 */
-	abstract type: "ROOT" | "INPUT" | "RESPONSE";
+	abstract type: "ROOT" | "PLAN" | "INPUT" | "RESPONSE";
+
+	/**
+	 * Track its pixelMessageType
+	 */
+	abstract pixelMessageType: PixelMessage["type"];
 
 	/**
 	 * Parent of the message
@@ -38,10 +55,14 @@ export abstract class AbstractMessageStore {
 	 * Set the message
 	 * @param id
 	 */
-	constructor(id: string) {
-		this.id = id;
+	constructor(room: RoomStore, message: AbstractPixelMessage) {
+		this.room = room;
+
+		this.id = message.messageId;
+		this.visible = message.visible;
 
 		makeObservable(this, {
+			room: observable,
 			id: observable,
 			parent: observable,
 			position: observable,
@@ -125,6 +146,20 @@ export abstract class AbstractMessageStore {
 		// store it
 		this.children.push(message);
 
+		// if the child is an INPUT_TOOL_EXEC, find the related tool message and mark its response
+		if (message.pixelMessageType === "INPUT_TOOL_EXEC") {
+			let currentMessage: AbstractMessageStore | null = this;
+			while (currentMessage !== null) {
+				if (currentMessage.pixelMessageType === "RESPONSE_TOOL") break;
+				currentMessage = currentMessage.parent;
+			}
+			if (currentMessage !== null) {
+				(currentMessage as ResponseMessageStore).markToolAsUsed(
+					(message as ResponseMessageStore).inputToolExecData,
+				);
+			}
+		}
+
 		// last idx is the position
 		const position = this.children.length - 1;
 
@@ -140,5 +175,9 @@ export abstract class AbstractMessageStore {
 	 */
 	activateMessage = () => {
 		this.parent.activeChildPosition = this.position;
+		this.room.setHasUnfinishedTools(
+			(this.room.tail as ResponseMessageStore).hasUnfinishedTools?.() ??
+				false,
+		);
 	};
 }

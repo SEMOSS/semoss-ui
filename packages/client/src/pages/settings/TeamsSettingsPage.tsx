@@ -9,14 +9,13 @@ import {
 	Grid,
 	IconButton,
 	Menu,
-	MenuItem,
 	Search,
 	styled,
 	Typography,
 } from "@semoss/ui";
+import { getTeams } from "@/api";
 import { AddTeamModal } from "@/components/teams/AddTeamModal";
 import { TeamTileCard } from "@/components/teams/TeamTileCard";
-import { useRootStore } from "@/hooks";
 import { useSettings } from "@/hooks/useSettings";
 
 export interface DBMember {
@@ -97,7 +96,6 @@ const TeamsList = styled("div")({
 
 export const TeamsSettingsPage = observer(() => {
 	const { adminMode } = useSettings();
-	const { monolithStore } = useRootStore();
 	const navigate = useNavigate();
 
 	const [addModal, setAddModal] = useState(false);
@@ -111,7 +109,7 @@ export const TeamsSettingsPage = observer(() => {
 	const searchbarRef = useRef(null);
 
 	useEffect(() => {
-		monolithStore.getTeams(true).then((data) => {
+		getTeams(true).then((data) => {
 			dispatch({
 				type: "field",
 				field: "teams",
@@ -169,6 +167,9 @@ export const TeamsSettingsPage = observer(() => {
 		});
 		return JSON.stringify(filteredTeams) === JSON.stringify(sorted);
 	};
+
+	// Build a URL-safe slug for a team id WITHOUT mutating case or removing characters (just encode)
+	const teamSlug = useCallback((id: string) => encodeURIComponent(id), []);
 
 	return (
 		<StyledContainer>
@@ -247,22 +248,22 @@ export const TeamsSettingsPage = observer(() => {
 						},
 					}}
 				>
-					<MenuItem
+					<Menu.Item
 						onClick={() => handleSort("asc")}
 						sx={{
 							backgroundColor: isAsc() ? "#EBF3F8" : "inherit",
 						}}
 					>
 						A<ArrowForward fontSize="small" />Z
-					</MenuItem>
-					<MenuItem
+					</Menu.Item>
+					<Menu.Item
 						onClick={() => handleSort("desc")}
 						sx={{
 							backgroundColor: isDesc() ? "#EBF3F8" : "inherit",
 						}}
 					>
 						Z<ArrowBack fontSize="small" />A
-					</MenuItem>
+					</Menu.Item>
 				</Menu>
 
 				<Grid container spacing={3}>
@@ -282,20 +283,11 @@ export const TeamsSettingsPage = observer(() => {
 								description={team.description}
 								dispatch={dispatch}
 								teams={teams}
-								onClick={() => {
+								onClick={() =>
 									navigate(
-										team.id
-											.toLowerCase()
-											.replace(/['"]+/g, "")
-											.replace(/\s/g, "-"),
-										{
-											state: {
-												name: team.id,
-												type: team.type,
-											},
-										},
-									);
-								}}
+										`${teamSlug(team.type)}/${teamSlug(team.id)}`,
+									)
+								}
 							/>
 						</Grid>
 					))}

@@ -1,9 +1,7 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { expect, test } from "vitest";
-import { render } from "../utils";
-import "@testing-library/jest-dom";
-
+import { screen } from "@testing-library/react";
+import { expect } from "vitest";
 import { SwitchBlock } from "../../components/block-defaults/switch-block/SwitchBlock";
+import { render } from "../utils";
 
 const blocks = {
 	switch: {
@@ -32,33 +30,33 @@ const blocks = {
 
 describe("switch block", () => {
 	it("renders correctly", async () => {
-		// const { container } = render(< SwitchBlock id="switch" />, {
-		//     blocks: blocks,
-		// });
-		// const switchBlock = container.querySelector("[data-block='switch']");
-		// expect(switchBlock).toBeInTheDocument();
+		const { container } = render(<SwitchBlock id={blocks.switch.id} />, {
+			blocks: blocks,
+		});
+		const switchBlock = container.querySelector("[data-block='switch']");
+		expect(switchBlock).toBeInTheDocument();
 	});
 
 	it("displays default text label", async () => {
-		// const { container } = render(< SwitchBlock id="switch" />, {
-		//     blocks: blocks,
-		// });
-		// expect(screen.getByText("Toggle Switch")).toBeVisible();
+		render(<SwitchBlock id={blocks.switch.id} />, {
+			blocks: blocks,
+		});
+		expect(screen.getByText("Toggle Switch")).toBeVisible();
 	});
 
 	it("toggles value on clicked", async () => {
-		// const { container } = render(< SwitchBlock id="switch" />, {
-		//     blocks: blocks,
-		// });
-		// const switchElement = screen.getByRole("checkbox");
-		// expect(switchElement).not.toBeChecked();
+		render(<SwitchBlock id={blocks.switch.id} />, {
+			blocks: blocks,
+		});
+		const switchElement = screen.getByRole("checkbox");
+		expect(switchElement).not.toBeChecked();
 		// fireEvent.click(switchElement);
 		// await waitFor(() => {
-		//     expect(switchElement).toBeChecked();
+		// 	expect(switchElement).toBeChecked();
 		// });
 		// fireEvent.click(switchElement);
 		// await waitFor(() => {
-		//     expect(switchElement).not.toBeChecked();
+		// 	expect(switchElement).not.toBeChecked();
 		// });
 	});
 });

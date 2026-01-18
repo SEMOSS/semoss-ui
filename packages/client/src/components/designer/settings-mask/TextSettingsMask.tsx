@@ -71,7 +71,8 @@ export const TextSettingsMask = observer(() => {
 			// set the initial value from the block's style
 			setValue({
 				fontFamily: ff ?? "",
-				fontSize: fs ? Number(fs.replace("px", "")) : null,
+				fontSize:
+					fs && fs !== "revert" ? Number(fs.replace("px", "")) : null,
 			});
 		}
 	}, [designer.selected, isVisible]);
@@ -116,7 +117,7 @@ export const TextSettingsMask = observer(() => {
 				renderInput={(params) => (
 					<TextField {...params} label="Fonts Style" />
 				)}
-                multiple={false}
+				multiple={false}
 				value={value.fontFamily}
 				onChange={(e, newValue) =>
 					onChange("fontFamily", newValue, true)

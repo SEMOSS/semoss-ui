@@ -1,7 +1,11 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
-import { Env, runPixel } from "@semoss/sdk/react";
-import { AppMetadata } from "@/components/app";
+import { Env, logout, runPixel } from "@semoss/sdk/react";
+import {
+	getUserProjectPermission as getUserProjectLevelPermission,
+	registerUser,
+} from "@/api";
+import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
 import {
 	type RootStore,
@@ -27,8 +31,8 @@ interface ConfigStoreInterface {
 		email: string;
 		admin: boolean;
 	};
-	/** App Builder mode (local storage, based on userEpoch) */
-	globalSearch: string;
+	/** Native mode */
+	isNative: boolean;
 	/** Config information */
 	config: {
 		databaseMetaKeys: {
@@ -152,7 +156,7 @@ export class ConfigStore {
 		authenticated: false,
 		insightID: "",
 		userEpoch: "",
-		globalSearch: "",
+		isNative: false,
 		user: {
 			loggedIn: false,
 			id: "",
@@ -248,6 +252,7 @@ export class ConfigStore {
 	get theme(): {
 		name: string;
 		logo: string;
+		landingPageName: string;
 		isLogoUrl: boolean;
 		cookiePolicyBannerReact: string;
 		cookiePolicyOrderReact: string[];
@@ -265,6 +270,7 @@ export class ConfigStore {
 		const defaultTheme = {
 			name: THEME.name,
 			logo: THEME.logo,
+			landingPageName: THEME.name,
 			isLogoUrl: false,
 			cookiePolicyBannerReact: "",
 			cookiePolicyOrderReact: [],
@@ -283,11 +289,11 @@ export class ConfigStore {
 		let customTheme = {};
 		try {
 			if (
-				this._store.config.theme &&
-				this._store.config.theme["THEME_MAP"]
+				(this._store.config.theme as { THEME_MAP: string })?.THEME_MAP
 			) {
 				customTheme = JSON.parse(
-					this._store.config.theme["THEME_MAP"] as string,
+					(this._store.config.theme as { THEME_MAP: string })
+						.THEME_MAP as string,
 				);
 			}
 		} catch {}
@@ -311,7 +317,7 @@ export class ConfigStore {
 		}
 
 		const moduleMap = {
-			APP: "Project",
+			PROJECT: "Project",
 			DATABASE: "Db",
 			FUNCTION: "Function",
 			MODEL: "Model",
@@ -459,11 +465,12 @@ export class ConfigStore {
 				}
 
 				// get the user based on provider
-				if (output["SAML"]) {
-					user = output["SAML"];
-				} else if (output["NATIVE"]) {
-					user = output["NATIVE"];
-				} else if (output && Object.keys(output).length > 0) {
+				if (output.SAML) {
+					user = output.SAML;
+				} else if (output.NATIVE) {
+					user = output.NATIVE;
+					this._store.isNative = true;
+				} else if (Object.keys(output).length > 0) {
 					// This is a hack...since we don't have a single user
 					user = output[Object.keys(output)[0]];
 				}
@@ -486,62 +493,6 @@ export class ConfigStore {
 				this._store.status = "ERROR";
 			});
 		}
-	}
-
-	setGlobalSearch(text = "") {
-		runInAction(() => {
-			this._store.globalSearch = text;
-		});
-	}
-
-	/**
-	 * Add a recent search to localStorage.
-	 * Stores up to 8 items, removes oldest if limit exceeded.
-	 * If same id exists, remove it and add new at the end.
-	 * @param recentSearch { label: string, id: string, type: string }
-	 */
-	setRecentSearch(recentSearch: { label: string; id: string; type: string }) {
-		const key = `recent-searches--${this._store.userEpoch}`;
-		let recent: Array<{ label: string; id: string; type: string }> = [];
-
-		// Get existing searches
-		const item = localStorage.getItem(key);
-		if (item) {
-			try {
-				recent = JSON.parse(item);
-				// Remove if id already exists
-				recent = recent.filter((s) => s.id !== recentSearch.id);
-			} catch {
-				recent = [];
-			}
-		}
-
-		// Add new search at the end
-		recent.push(recentSearch);
-
-		// Keep only last 8
-		if (recent.length > 8) {
-			recent = recent.slice(recent.length - 8);
-		}
-
-		localStorage.setItem(key, JSON.stringify(recent));
-	}
-
-	/**
-	 * Get recent searches from localStorage.
-	 */
-	getRecentSearches(): Array<{ label: string; id: string; type: string }> {
-		const key = `recent-searches--${this._store.userEpoch}`;
-		const item = localStorage.getItem(key);
-
-		if (item) {
-			try {
-				return JSON.parse(item);
-			} catch {
-				return [];
-			}
-		}
-		return [];
 	}
 
 	/**
@@ -671,10 +622,10 @@ export class ConfigStore {
 		phoneextension: string,
 		countrycode: string,
 	): Promise<boolean> {
-		const { monolithStore } = this._root;
+		// const { monolithStore } = this._root;
 
 		// login that preceeds sending of OTP
-		await monolithStore.registerUser(
+		await registerUser(
 			name,
 			username,
 			email,
@@ -734,12 +685,8 @@ export class ConfigStore {
 	 * @returns true if successful
 	 */
 	async logout() {
-		const { monolithStore } = this._root;
-
+		await logout();
 		try {
-			// wait for logout
-			await monolithStore.logout();
-
 			runInAction(() => {
 				// clear the info and reset the user
 				this._store.user = {
@@ -749,7 +696,6 @@ export class ConfigStore {
 					name: "",
 					email: "",
 				};
-
 				this._store.status = "MISSING AUTHENTICATION";
 			});
 		} catch (error) {
@@ -775,10 +721,10 @@ export class ConfigStore {
 	 *
 	 * @param appId - id of app to load into the workspace
 	 */
-	async createWorkspace(appId: string) {
+	async createWorkspace(appId: string, insightId: string = "new") {
 		// check the permission
 		const getUserProjectPermission =
-			await this._root.monolithStore.getUserProjectPermission(appId);
+			await getUserProjectLevelPermission(appId);
 
 		// get the role and throw an error if it is missing
 		const role = getUserProjectPermission.permission;
@@ -786,7 +732,8 @@ export class ConfigStore {
 			throw new Error("Unauthorized");
 		}
 
-		const { insightId } = await runPixel(`SetContext("${appId}")`, "new");
+		// set the context
+		await runPixel(`SetContext("${appId}")`, insightId);
 
 		// get the metadata
 		const getAppInfo = await this._root.monolithStore.runQuery<
@@ -827,8 +774,9 @@ export class ConfigStore {
 			const res = await runPixel("META|HelpJson();");
 
 			runInAction(() => {
-				const generalReactorList = res.pixelReturn[0].output["General"];
-
+				const generalReactorList = (
+					res.pixelReturn[0].output as { General: string[] }
+				)?.General;
 				this._generalReactors = generalReactorList;
 			});
 		} catch {

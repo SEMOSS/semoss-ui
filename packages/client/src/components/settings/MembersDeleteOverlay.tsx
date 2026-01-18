@@ -1,6 +1,10 @@
 import type { AxiosResponse } from "axios";
 import { Button, Modal, useNotification } from "@semoss/ui";
-import { useRootStore, useSettings } from "@/hooks";
+import {
+	removeEngineUserPermissions,
+	removeProjectUserPermissions,
+} from "@/api";
+import { useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import type { SETTINGS_PROVISIONED_USER } from "./settings.types";
 
@@ -42,7 +46,6 @@ export const MembersDeleteOverlay = (props: MembersDeleteOverlayProps) => {
 		onClose = () => null,
 	} = props;
 
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -63,7 +66,15 @@ export const MembersDeleteOverlay = (props: MembersDeleteOverlayProps) => {
 				return m.id;
 			});
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -71,13 +82,13 @@ export const MembersDeleteOverlay = (props: MembersDeleteOverlayProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await monolithStore.removeEngineUserPermissions(
+				response = await removeEngineUserPermissions(
 					adminMode,
 					id,
 					requests,
 				);
-			} else if (type === "APP") {
-				response = await monolithStore.removeProjectUserPermissions(
+			} else if (type === "PROJECT") {
+				response = await removeProjectUserPermissions(
 					adminMode,
 					id,
 					requests,

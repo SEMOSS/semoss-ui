@@ -70,8 +70,8 @@ const StyledTypographyEror = styled(Typography)(({ theme }) => ({
 }));
 
 const StyledAutocomplete = styled(Autocomplete)({
-    paddingLeft: "9px",
-    marginTop: "12px",
+	paddingLeft: "9px",
+	marginTop: "12px",
 });
 
 const StyledEngineContent = styled(Accordion.Content)(({ theme }) => ({
@@ -481,7 +481,7 @@ export const PDFViewerSettings = observer(
 const InsightTab: React.FC<{ options: Option[] }> = ({ options }) => (
 	<StyledAutocomplete
 		fullWidth
-		id="PDFViewer-Insight"
+		id={"PDFViewer-Insight"}
 		multiple={false}
 		options={options}
 		groupBy={(option) =>
@@ -552,7 +552,7 @@ const EngineTab: React.FC<{
 }) => (
 	<StyledAutocomplete
 		fullWidth
-		id="PDFViewer-Engine"
+		id={"PDFViewer-Engine"}
 		multiple={false}
 		options={engineOptionList}
 		groupBy={(option) =>
@@ -636,7 +636,7 @@ const EngineTab: React.FC<{
 																option.display?.trim() ? (
 																	<li
 																		key={
-																			option.id
+																			option.engineId
 																		}
 																		style={{
 																			paddingLeft:
@@ -751,7 +751,7 @@ const AppTab: React.FC<{
 			<Stack>
 				<Autocomplete
 					fullWidth
-					id="PDFViewer-App"
+					id={"PDFViewer-App"}
 					multiple={false}
 					value={
 						appOptions.find(

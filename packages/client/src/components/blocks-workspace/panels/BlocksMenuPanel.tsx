@@ -19,6 +19,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { AddBlocksMenuCard } from "@/components/designer";
+import { AddClientBlockModal } from "@/components/designer/AddClientBlockModal";
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
 import { SECTION_ORDER } from "../menus/default-menu";
@@ -28,7 +29,6 @@ import type {
 	FilterCategory,
 } from "../menus/menu-types";
 import { BlocksMenuPanelFilterMenu } from "./BlocksMenuPanelFilterMenu";
-import { AddClientBlockModal } from '@/components/designer/AddClientBlockModal';
 
 const StyledTitle = styled("div")(({ theme }) => ({
 	borderRadius: "16px",
@@ -177,10 +177,10 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 		runPixel(`DeleteBlock(blockId = "${blockId}", hardDelete = true)`).then(
 			(res) => {
 				const { errors } = res;
-				if (errors.length) {
+				if (errors.length || !res.pixelReturn[0].output) {
 					notification.add({
 						color: "error",
-						message: errors.join(""),
+						message: errors.join("") ?? "Error deleting block",
 					});
 				} else {
 					notification.add({
@@ -202,13 +202,14 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 				<Modal.Title>Delete Selected Block?</Modal.Title>
 				<Modal.Content>
 					<Typography variant="body2">
-						You will permanently remove the block from the community block section.
+						You will permanently remove the block from the community
+						block section.
 					</Typography>
 				</Modal.Content>
 				<Modal.Actions>
 					<Button
 						variant={"text"}
-                        color="secondary"
+						color="secondary"
 						onClick={() => workspace.closeOverlay()}
 					>
 						Cancel
@@ -224,17 +225,17 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 			</>
 		));
 	};
-    const handleOnEditClick = (blockId: string, item: DesignerMenuItem) => {
-        workspace.openOverlay(() => (
-            <AddClientBlockModal
-                isOpen={true}
-                onClose={() => workspace.closeOverlay()}
-                selected={blockId}
-                isEdit={true}
-                block_json={item}
-            />
-        ));
-    };
+	const handleOnEditClick = (blockId: string, item: DesignerMenuItem) => {
+		workspace.openOverlay(() => (
+			<AddClientBlockModal
+				isOpen={true}
+				onClose={() => workspace.closeOverlay()}
+				selected={blockId}
+				isEdit={true}
+				block_json={item}
+			/>
+		));
+	};
 
 	const sortedItems = useMemo(() => {
 		// Use community Block when mode is COMMUNITY otherwise use items from the props
@@ -451,9 +452,9 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 													handleOnTrashClick={
 														handleOnTrashClick
 													}
-                                                    handleOnEditClick={
-                                                        handleOnEditClick
-                                                    }
+													handleOnEditClick={
+														handleOnEditClick
+													}
 												/>
 											</Grid>
 										))}

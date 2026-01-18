@@ -1,8 +1,8 @@
-import { styled, Table } from "@semoss/ui";
 import ReactECharts from "echarts-for-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { styled, Table } from "@semoss/ui";
 import { useBlock, useFrame } from "../../../../../hooks";
 import type { BlockDef } from "../../../../../store";
 import { getValueByPath } from "../../../../../utility";

@@ -189,36 +189,36 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 	}
 
 	return (
-			<ViewerContainer elevation={2} {...attrs}>
-				<Header>
-					<Typography variant="h6" noWrap sx={{ flex: 1 }}>
-						{fileName}
-					</Typography>
-					<IconButton
-						onClick={handleClear}
-						size="small"
-						aria-label="clear pdf"
-						edge="end"
-					>
-						<ClearIcon />
-					</IconButton>
-				</Header>
+		<ViewerContainer elevation={2} {...attrs}>
+			<Header>
+				<Typography variant="h6" noWrap sx={{ flex: 1 }}>
+					{fileName}
+				</Typography>
+				<IconButton
+					onClick={handleClear}
+					size="small"
+					aria-label="clear pdf"
+					edge="end"
+				>
+					<ClearIcon />
+				</IconButton>
+			</Header>
 
-				{loading && (
-					<LoadingContainer>
-						<CircularProgress />
-					</LoadingContainer>
-				)}
+			{loading && (
+				<LoadingContainer>
+					<CircularProgress />
+				</LoadingContainer>
+			)}
 
-				{error && <ErrorMessage variant="body1">{error}</ErrorMessage>}
+			{error && <ErrorMessage variant="body1">{error}</ErrorMessage>}
 
-				{pdfContent && !loading && !error && (
-					<PDFContainer>
-						<PDFObject data={pdfContent} type="application/pdf">
-							<PDFIframe src={pdfContent} title={fileName} />
-						</PDFObject>
-					</PDFContainer>
-				)}
-			</ViewerContainer>
+			{pdfContent && !loading && !error && (
+				<PDFContainer>
+					<PDFObject data={pdfContent} type="application/pdf">
+						<PDFIframe src={pdfContent} title={fileName} />
+					</PDFObject>
+				</PDFContainer>
+			)}
+		</ViewerContainer>
 	);
 });

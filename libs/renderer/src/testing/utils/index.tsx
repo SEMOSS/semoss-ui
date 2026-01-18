@@ -18,7 +18,6 @@ interface MockProviderProps {
 }
 
 const MockProvider: React.FC<MockProviderProps> = ({
-	children,
 	blocks,
 	renderEngineId,
 	queryConfig,
@@ -138,10 +137,25 @@ const customRenderHook = <TProps, TResult>(
 	});
 };
 
-// Automatically clean up after each test
-// afterEach(() => {
-//     cleanup();
-// });
+beforeAll(() => {
+	vi.stubGlobal("jest", {
+		advanceTimersByTime: vi.advanceTimersByTime.bind(vi),
+	});
+});
+
+beforeEach(() => {
+	vi.useFakeTimers();
+});
+
+afterEach(() => {
+	vi.runOnlyPendingTimers();
+	vi.useRealTimers();
+	vi.clearAllTimers();
+});
+
+afterAll(() => {
+	vi.unstubAllGlobals();
+});
 
 // Re-export everything from React Testing Library
 export * from "@testing-library/react";

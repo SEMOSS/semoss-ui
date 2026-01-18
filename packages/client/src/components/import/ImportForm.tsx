@@ -18,6 +18,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { uploadFile } from "@/api";
 import { useRootStore, useStepper } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 
@@ -71,6 +72,9 @@ const reducer = (state, action) => {
 	return state;
 };
 
+/**
+ * @deprecated
+ */
 export const ImportForm = (props) => {
 	const { submitFunc, fields } = props;
 
@@ -128,7 +132,7 @@ export const ImportForm = (props) => {
 					});
 				}
 			}
-			if (f.options.pixel) {
+			if (f.options?.pixel) {
 				const pixelParams = f.options.pixel.match(/<([^>]+)>/g);
 				if (pixelParams) {
 					pixelParams.forEach((p) => {
@@ -483,7 +487,7 @@ export const ImportForm = (props) => {
 		// If it's a File Upload
 		if (steps[1].id.includes("File Uploads")) {
 			if (steps[1].title === "ZIP") {
-				const upload = await monolithStore.uploadFile(
+				const upload = await uploadFile(
 					[data.ZIP],
 					configStore.store.insightID,
 				);
@@ -506,7 +510,14 @@ export const ImportForm = (props) => {
 					return;
 				}
 
-				navigate(`/engine/${(steps[0].data as string).toUpperCase()}`);
+				notification.add({
+					color: "success",
+					message: `ZIP uploaded successfully`,
+				});
+
+				navigate(
+					`/engine/${(steps[0].data as string).toLowerCase()}/${output.database_id}`,
+				);
 				return;
 			}
 			setFormLoading(false);
@@ -727,7 +738,7 @@ export const ImportForm = (props) => {
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<Stack rowGap={2}>
-				{defaultFields.map((val, i) => {
+				{defaultFields?.map((val, i) => {
 					if (!val.hidden) {
 						return (
 							<StyledKeyValue
@@ -757,8 +768,11 @@ export const ImportForm = (props) => {
 																	_lastField
 																		.current
 																		.lastFocussedField ===
-																	val.fieldName &&
-																	_lastField.current.lastValidatedValue !== fieldVal
+																		val.fieldName &&
+																	_lastField
+																		.current
+																		.lastValidatedValue !==
+																		fieldVal
 																) {
 																	validStatus =
 																		validateFormField(
@@ -852,15 +866,21 @@ export const ImportForm = (props) => {
 																		val.fieldName,
 																	lastFocussedValue:
 																		field.value,
-																	lastValidatedValue: field.value
+																	lastValidatedValue:
+																		field.value,
 																};
 														},
 														onBlur: () => {
-															if(val.rules?.custom){
+															if (
+																val.rules
+																	?.custom
+															) {
 																_lastField.current.runValidate = true;
-																trigger(val.fieldName);
-															} 
-														}
+																trigger(
+																	val.fieldName,
+																);
+															}
+														},
 													}}
 													{...field}
 												></TextField>
@@ -1016,7 +1036,7 @@ export const ImportForm = (props) => {
 													<Typography
 														variant={"body1"}
 													>
-														{val.label}
+														{val.label}{val.rules.required ? " *" : ""}
 													</Typography>
 													<FileDropzone
 														multiple={false}

@@ -11,7 +11,7 @@ export const config: BlockConfig<PDFViewerBlockDef> = {
 			padding: "8px",
 		},
 		selectedPdf: null,
-        engineId: '',
+		engineId: "",
 		show: "true",
 	},
 	listeners: {

@@ -70,7 +70,7 @@ export const FlipCardBlock: BlockComponent = observer(({ id }) => {
 	const { state } = useBlocks();
 
 	const isStatic = state.mode === "static";
-	const { width, height, padding, margin, ...withoutDimensions } = data.style;
+	const { ...withoutDimensions } = data.style;
 
 	const [flipped, setFlipped] = useState(false);
 

@@ -24,38 +24,36 @@ export const Search = (props: SearchFieldProps) => {
 			placeholder="Search"
 			{...props}
 			inputRef={inputRef}
-			InputProps={{
-				startAdornment: (
-					<InputAdornment
-						position="start"
-						onClick={() => inputRef.current?.focus()}
-						style={{ cursor: "pointer" }}
-					>
-						<SearchOutlined />
-					</InputAdornment>
-				),
-				endAdornment: (
-					<>
-						{props?.onClear && (
-							<IconButton
-								onClick={() => {
-									props?.onClear ? props.onClear() : null;
-								}}
-								sx={{
-									visibility: hasSearch
-										? "visible"
-										: "hidden",
-								}}
-							>
-								<CloseOutlined
-									sx={{
-										color: "#5c5c5c",
+			slotProps={{
+				input: {
+					startAdornment: (
+						<InputAdornment
+							position="start"
+							onClick={() => inputRef.current?.focus()}
+							style={{ cursor: "pointer" }}
+						>
+							<SearchOutlined />
+						</InputAdornment>
+					),
+					endAdornment: (
+						<>
+							{props?.onClear && (
+								<IconButton
+									onClick={() => {
+										props?.onClear ? props.onClear() : null;
 									}}
-								/>
-							</IconButton>
-						)}
-					</>
-				),
+									sx={{
+										visibility: hasSearch
+											? "visible"
+											: "hidden",
+									}}
+								>
+									<CloseOutlined color="secondary" />
+								</IconButton>
+							)}
+						</>
+					),
+				},
 			}}
 		>
 			{props.children}

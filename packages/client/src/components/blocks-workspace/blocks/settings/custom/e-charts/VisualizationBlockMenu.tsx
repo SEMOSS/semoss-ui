@@ -9,6 +9,7 @@ import { AIGenerationSettings, JsonSettings } from "../../shared";
 import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualizationTool";
 import {
 	Bar,
+	Cloud,
 	Dendrogram,
 	Gantt,
 	Line,
@@ -219,6 +220,18 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 								updateFrame={updateFrame}
 								path="option"
 								chart={Dendrogram}
+								storedColumns={selectedColumn}
+								handleStoreData={handleStoreData}
+								selectedItem={handleSelectedItem}
+							/>
+						)}
+
+						{data.variation === "echart-word-cloud" && (
+							<FrameOperations
+								id={id}
+								updateFrame={updateFrame}
+								path="option"
+								chart={Cloud}
 								storedColumns={selectedColumn}
 								handleStoreData={handleStoreData}
 								selectedItem={handleSelectedItem}

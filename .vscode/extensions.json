@@ -1,7 +1,3 @@
 {
-    "recommendations": [
-        {
-            "biomejs.json"
-        }
-    ]
+	"recommendations": ["biomejs.json"]
 }

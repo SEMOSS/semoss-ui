@@ -13,7 +13,7 @@ export const PERMISSION_DESCRIPTION_MAP: Record<
 	ALL_TYPES,
 	Record<string, string>
 > = {
-	APP: {
+	PROJECT: {
 		author: "Ability to hide or delete the data app, provision other authors and all editor permissions",
 		editor: "Ability to edit the data app code, provision other users as editors and read only users, and all  read-only permissions",
 		readonly:
@@ -45,3 +45,8 @@ export const PERMISSION_DESCRIPTION_MAP: Record<
 		readonly: "Ability to query against the vector database",
 	},
 };
+
+export const MCP = {
+	DRIVER_PATHS: ["/py/mcp_driver.py"],
+	JSON_PATHS: ["/mcp/py_mcp.json", "/mcp/pixel_mcp.json"],
+} as const;

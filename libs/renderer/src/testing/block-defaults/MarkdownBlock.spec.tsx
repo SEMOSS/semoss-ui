@@ -1,8 +1,6 @@
 import { expect } from "vitest";
+import { MarkdownBlock } from "../../components/block-defaults/markdown-block/MarkdownBlock";
 import { render, screen, waitFor } from "../utils";
-import "@testing-library/jest-dom";
-
-import { MarkdownBlock } from "@/components/block-defaults/markdown-block/MarkdownBlock";
 
 const blocks = {
 	markdown: {
@@ -36,16 +34,19 @@ const blocks = {
 
 describe("Markdown Block", () => {
 	it("should render correctly with mocked provider", async () => {
-		const { container } = render(<MarkdownBlock id="markdown" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<MarkdownBlock id={blocks.markdown.id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const markdown = container.querySelector("[data-block='markdown']");
 		expect(markdown).toBeInTheDocument();
 	});
 
 	it("should render content in markdown properly", async () => {
-		render(<MarkdownBlock id="markdown" />, {
+		render(<MarkdownBlock id={blocks.markdown.id} />, {
 			blocks: blocks,
 		});
 
@@ -53,7 +54,7 @@ describe("Markdown Block", () => {
 	});
 
 	it("should render streaming markdown content after animation", async () => {
-		render(<MarkdownBlock id="streaming" />, {
+		render(<MarkdownBlock id={blocks.streaming.id} />, {
 			blocks: blocks,
 		});
 
@@ -63,9 +64,12 @@ describe("Markdown Block", () => {
 	});
 
 	it("should apply styles to the block", async () => {
-		const { container } = render(<MarkdownBlock id="markdown" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<MarkdownBlock id={blocks.markdown.id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const div = container.querySelector("[data-block='markdown']");
 		expect(div).toHaveStyle("padding: 32px");

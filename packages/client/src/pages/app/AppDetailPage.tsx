@@ -6,7 +6,6 @@ import {
 	SimCardDownload,
 } from "@mui/icons-material";
 import UpdateIcon from "@mui/icons-material/Update";
-import { IconButton, Tooltip } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
@@ -18,13 +17,16 @@ import {
 	Chip,
 	CircularProgress,
 	Grid,
+	IconButton,
 	Modal,
 	Stack,
 	styled,
 	ToggleTabsGroup,
+	Tooltip,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { getUserProjectPermission, uploadImage } from "@/api";
 import {
 	type AppDetailsFormTypes,
 	AppDetailsFormValues,
@@ -39,6 +41,7 @@ import {
 	fetchMainUses,
 	type modelledDependency,
 } from "@/components/app";
+import { UpdateSMSS } from "@/components/settings";
 import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
@@ -105,11 +108,6 @@ const TagsBodyWrapper = styled("div")({
 	display: "flex",
 	flexWrap: "wrap",
 	gap: "0.6rem",
-});
-
-const Title = styled(Typography)({
-	fontSize: "34px",
-	fontWeight: "400",
 });
 
 const TagsDescription = styled(Typography)(({ theme }) => ({
@@ -245,9 +243,8 @@ export const AppDetailPage = () => {
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
 
-	console.log(appInfo, "appInfo");
-
 	useEffect(() => {
+		setSelectedTab("Overview");
 		setValue("appId", appId);
 		fetchUserSpecificData();
 		fetchAppData(appId);
@@ -284,8 +281,7 @@ export const AppDetailPage = () => {
 	}, [appId]);
 
 	async function getPermission() {
-		const { permission: role } =
-			await monolithStore.getUserProjectPermission(appId);
+		const { permission: role } = await getUserProjectPermission(appId);
 
 		setValue("userRole", role);
 		const permission = determineUserPermission(role);
@@ -309,7 +305,7 @@ export const AppDetailPage = () => {
 			fetchMainUses(monolithStore, id),
 		];
 		if (permission !== "discoverable") {
-			promises.push(fetchDependencies(monolithStore, id));
+			promises.push(fetchDependencies(configStore, id));
 		}
 		const results = await Promise.allSettled(promises);
 		results.forEach((res, idx) => {
@@ -386,7 +382,6 @@ export const AppDetailPage = () => {
 					} else {
 						const modelled = modelDependencies(res.value.output);
 						setValue("dependencies", modelled);
-						setValue("selectedDependencies", modelled);
 					}
 				}
 			}
@@ -455,30 +450,24 @@ export const AppDetailPage = () => {
 			const output = response.pixelReturn[0].output,
 				insightId = response.insightId;
 
-			monolithStore.download(insightId, output);
+			monolithStore.download(insightId, output as string);
 		});
 		setExportLoading(false);
 	};
 
 	const handleCloseDependenciesModal = async (refreshData: boolean) => {
-		const currDependencies = getValues("dependencies");
-
 		if (refreshData) {
 			const appId = getValues("appId");
-			const res = await fetchDependencies(monolithStore, appId);
+			const res = await fetchDependencies(configStore, appId);
 			if (res.type === "success") {
 				const modelled = modelDependencies(res.output);
 				setValue("dependencies", modelled);
-				setValue("selectedDependencies", modelled);
 			} else {
-				setValue("selectedDependencies", currDependencies);
 				notification.add({
 					color: "error",
 					message: res.output,
 				});
 			}
-		} else {
-			setValue("selectedDependencies", currDependencies);
 		}
 		setIsEditDependenciesModalOpen(false);
 	};
@@ -529,7 +518,7 @@ export const AppDetailPage = () => {
 				if (operationType.indexOf("ERROR") > -1) {
 					notification.add({
 						color: "error",
-						message: output,
+						message: output as string,
 					});
 
 					return;
@@ -544,7 +533,11 @@ export const AppDetailPage = () => {
 					const filesToUpload = Array.isArray(imageMeta)
 						? imageMeta
 						: [imageMeta];
-					await monolithStore.uploadImage(filesToUpload, appId);
+					await uploadImage(
+						filesToUpload,
+						appId,
+						configStore.store.insightID,
+					);
 				}
 
 				// close it, refresh and succesfully message
@@ -570,7 +563,13 @@ export const AppDetailPage = () => {
 	const [selectedTab, setSelectedTab] = useState("Overview");
 
 	const TABS_BY_PERMISSION: Record<string, string[]> = {
-		author: ["Overview", "Access Control", "Dependencies", "Settings"],
+		author: [
+			"Overview",
+			"Access Control",
+			"Dependencies",
+			"Settings",
+			"SMSS",
+		],
 		editor: ["Overview", "Access Control"],
 		readOnly: ["Overview"],
 		discoverable: ["Overview"],
@@ -587,7 +586,7 @@ export const AppDetailPage = () => {
 				<InnerContainer>
 					<Breadcrumbs separator="/">
 						<Breadcrumbs.Item
-							href={`../../..`}
+							href="#/app"
 							underline="none"
 							color="inherit"
 							variant="body1"
@@ -600,7 +599,12 @@ export const AppDetailPage = () => {
 							color="text.disabled"
 							variant="body1"
 						>
-							{appInfo?.project_name}
+							<div
+								title={appInfo?.project_name}
+								className="w-[40ch] truncate text-ellipsis"
+							>
+								{appInfo?.project_name}
+							</div>
 						</Breadcrumbs.Item>
 					</Breadcrumbs>
 
@@ -613,9 +617,14 @@ export const AppDetailPage = () => {
 										alt="App Image"
 									/>
 									<TitleSectionBodyWrapper>
-										<Title variant="h6">
+										<div
+											title={appInfo?.project_name}
+											className={
+												"mt-1 max-w-[40ch] truncate text-ellipsis font-normal text-[34px] leading-[150%]"
+											}
+										>
 											{appInfo?.project_name}
-										</Title>
+										</div>
 									</TitleSectionBodyWrapper>
 								</Box>
 
@@ -660,9 +669,7 @@ export const AppDetailPage = () => {
 											onClick={() =>
 												setIsChangeAccessModalOpen(true)
 											}
-											data-testid={
-												"appDetail-access-btn"
-											}
+											data-testid={"appDetail-access-btn"}
 										>
 											{responseStatus || pendingRequest
 												? "Pending Access"
@@ -772,6 +779,13 @@ export const AppDetailPage = () => {
 											value="Settings"
 										/>
 									)}
+									{visibleTabs.includes("SMSS") && (
+										<StyledToggleTabsGroupItem
+											label="SMSS"
+											value="SMSS"
+										/>
+									)}
+									Hi
 								</StyledToggleTabsGroup>
 							</StyledContentContainer>
 							<StyledTabsSection>
@@ -835,6 +849,18 @@ export const AppDetailPage = () => {
 										<SettingsTab id={appId} />
 									</SettingsContext.Provider>
 								)}
+								{selectedTab === "SMSS" && (
+									<SettingsContext.Provider
+										value={{
+											adminMode: false,
+										}}
+									>
+										<UpdateSMSS
+											type={"PROJECT"}
+											id={appId}
+										/>
+									</SettingsContext.Provider>
+								)}
 							</StyledTabsSection>
 						</PageBody>
 					</div>
@@ -869,12 +895,10 @@ export const AppDetailPage = () => {
 				/>
 
 				<EditDependenciesModal
+					currentDependencies={dependencies}
 					isOpen={isEditDependenciesModalOpen}
 					onClose={handleCloseDependenciesModal}
-					control={control}
-					getValues={getValues}
-					setValue={setValue}
-					watch={watch}
+					appId={appId}
 				/>
 			</OuterContainer>
 		</div>

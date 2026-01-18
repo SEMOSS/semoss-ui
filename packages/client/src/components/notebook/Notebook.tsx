@@ -35,9 +35,9 @@ const StyledContainer = styled(Container)(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
 	height: "100%",
-	paddingTop: theme.spacing(2),
-	paddingBottom: theme.spacing(2),
+	width: "inherit",
 	overflow: "auto",
+	padding: theme.spacing(2),
 }));
 
 const StyledCell = styled("div")(({ theme }) => ({
@@ -96,7 +96,7 @@ const SortableItems = ({
 export const Notebook = observer((props: NotebookProps): JSX.Element => {
 	const { id } = props;
 	const { state } = useBlocks();
-	const [cellPlayCounter, setCellPlayCounter] = useState(null);
+	const [cellPlayCounter, setCellPlayCounter] = useState<number | null>(null);
 
 	/**
 	 * Handle drag end
@@ -111,8 +111,6 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 
 		// If the active item is over a different item, swap them
 		if (over && active.id !== over.id) {
-			const oldIndex = Number(active.id);
-			const newIndex = Number(over.id);
 			state.dispatch({
 				message: ActionMessages.MOVE_CELL,
 				payload: {
@@ -179,7 +177,7 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 					items={notebook.list?.map((item) => item)}
 					strategy={verticalListSortingStrategy}
 				>
-					<StyledContainer maxWidth={"xl"}>
+					<StyledContainer maxWidth={false}>
 						{notebook.list.map((cellId) => (
 							<SortableItems key={cellId} id={cellId}>
 								<StyledCell key={cellId}>

@@ -117,7 +117,7 @@ const StyledListItemButton = styled(List.ItemButton, {
 	backgroundColor: selected ? theme.palette.primary.selected : undefined,
 })) as unknown as typeof List.ItemButton;
 
-const StyledListItemIcon = styled(List.Icon)(() => ({
+const StyledListItemIcon = styled(List.ItemIcon)(() => ({
 	width: "28px",
 	minWidth: "auto",
 }));

@@ -3,8 +3,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { JobsPage } from "../jobs/JobsPage";
 import { AdminQueryPage } from "./AdminQueryPage";
 import { AppSettingsDetailPage } from "./AppSettingsDetailPage";
+import { AdminThemePage } from "./admin-theme-page";
 import { ConfigurationsPage } from "./ConfigurationsPage";
-import { DatabaseSettingsPage } from "./DatabaseSettingsPage";
 import { EngineSettingsDetailPage } from "./EngineSettingsDetailPage";
 import { EngineSettingsIndexPage } from "./EngineSettingsIndexPage";
 import { InsightSettingsDetailPage } from "./InsightSettingsDetailPage";
@@ -12,6 +12,7 @@ import { InsightSettingsPage } from "./InsightSettingsPage";
 import { MemberSettingsPage } from "./MemberSettingsPage";
 import { MyProfilePage } from "./MyProfilePage";
 import { ProjectSettingsPage } from "./ProjectSettingsPage";
+import { RDFMapPage } from "./RDFMapPage";
 import { SettingsIndexPage } from "./SettingsIndexPage";
 import { SettingsLayout } from "./SettingsLayout";
 import { SETTINGS_ROUTES } from "./settings.constants";
@@ -28,10 +29,12 @@ const SETTINGS_COMPONETS = {
 	members: MemberSettingsPage,
 	"social-properties": ConfigurationsPage,
 	"admin-query": AdminQueryPage,
+	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,
 	jobs: JobsPage,
 	"team-permissions": TeamsSettingsPage,
-	"team-permissions/:id": TeamSettingsDetailPage,
+	"team-permissions/:type/:id": TeamSettingsDetailPage,
+	"view-rdf-map": RDFMapPage,
 
 	// engine
 	database: () => <EngineSettingsIndexPage type="DATABASE" />,
