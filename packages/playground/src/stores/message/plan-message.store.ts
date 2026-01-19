@@ -1,4 +1,10 @@
-import { makeObservable, observable, runInAction } from "mobx";
+import {
+	action,
+	computed,
+	makeObservable,
+	observable,
+	runInAction,
+} from "mobx";
 import type {
 	InputToolExecPixelMessage,
 	PixelMessage,
@@ -54,21 +60,21 @@ export class PlanMessageStore extends AbstractMessageStore {
 	) {
 		super(room, message);
 
-		try {
-			this.plan = JSON.parse(message.content);
-		} catch {
-			console.error("ERROR Parsing Plan");
-		}
-
-		// set the model
-		this.model = {
-			id: message.modelId,
-			name: message.ornaments?.modelName || "AI",
-		};
-
 		makeObservable(this, {
 			plan: observable,
+			step: computed,
+			sync: action,
+			addStep: action,
+			updateStep: action,
+			removeStep: action,
+			runMessage: action,
+			confirmPlan: action,
+			saveToolExecution: action,
+			failStepExecution: action,
 		});
+
+		// sync the message (must be after makeObservable so sync action is registered)
+		this.sync(message);
 	}
 
 	/**
@@ -77,6 +83,36 @@ export class PlanMessageStore extends AbstractMessageStore {
 	get step(): PlanStep | null {
 		return this.plan.steps[this.executionIdx] || null;
 	}
+
+	/**
+	 * Sync store properties from the pixel message
+	 */
+	sync = (message: PixelMessage) => {
+		// type guard + specifics
+		if (message.type === "RESPONSE_TEXT") {
+			try {
+				this.plan = JSON.parse(message.content);
+			} catch {
+				console.error("ERROR Parsing Plan");
+			}
+		} else {
+			throw new Error(
+				`Invalid message object passed to ResponseMessageStore.update: ${JSON.stringify(message)}`,
+			);
+		}
+
+		// cast the types
+		message = message as ResponseTextPixelMessage;
+
+		// set the id
+		this.id = message.messageId;
+
+		// set the model that was used
+		this.model = {
+			id: message.modelId,
+			name: message.ornaments?.modelName || "AI",
+		};
+	};
 
 	/***
 	 * Add a new step to the plan
@@ -161,8 +197,8 @@ paramValues=[${JSON.stringify({
 
 		const { output } = response.pixelReturn[0];
 
-		// update the input's id
-		inputMessage.updateId(output.inputMessage.messageId);
+		// sync the input message
+		inputMessage.sync(output.inputMessage);
 
 		// create the response and link to the input
 		const responseMessage = createMessageStore(
