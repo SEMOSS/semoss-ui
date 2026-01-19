@@ -33,7 +33,7 @@ export const PlatformSearchEngine = ({
 	 */
 	const getEngines = useIteratorPixel<Engine[], Engine>(
 		(limit, offset) => {
-			return `MyEngines(${search ? `filterWord=["<encode>${search}</encode>"], ` : ""} engineTypes=["${type}"], limit=[${limit}], offset=[${offset}]);`;
+			return `MyEngines(${search ? `filterWord=["${search}"], ` : ""} engineTypes=["${type}"], limit=[${limit}], offset=[${offset}]);`;
 		},
 		(response) => {
 			// if its less than the limit, we know its the end

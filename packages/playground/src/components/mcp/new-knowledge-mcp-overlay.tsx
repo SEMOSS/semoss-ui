@@ -90,7 +90,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 				]
 			>(`CreateVectorDatabaseEngine(
 				database=["${name}"],
-				conDetails=[{"VECTOR_TYPE": "FAISS", "EMBEDDER_ENGINE_ID": "${embeddingEngine.app_id}","DESCRIPTION":"${description}"."TAGS":""}]
+				conDetails=[{"VECTOR_TYPE": "FAISS", "EMBEDDER_ENGINE_ID": "${embeddingEngine.app_id}","DESCRIPTION":"${description}","TAGS":""}]
 			);`);
 
 			const engineId =

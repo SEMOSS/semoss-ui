@@ -8,14 +8,17 @@ export * from "../lib";
 
 export * from "../hooks";
 // Re-export all components (only export what exists)
+export * from "./accordion";
 export * from "./alert";
 export * from "./avatar";
 export * from "./badge";
 export * from "./breadcrumb";
 export * from "./button";
 export * from "./button-group";
+export * from "./calendar";
 export * from "./card";
 export * from "./checkbox";
+export * from "./code";
 export * from "./collapsible";
 export * from "./command";
 export * from "./dialog";
@@ -44,5 +47,8 @@ export * from "./table";
 export * from "./tabs";
 export * from "./textarea";
 export * from "./theme-provider";
+export * from "./toggle";
+export * from "./toggle-group";
 export * from "./tooltip";
+export * from "./tree-view";
 export * from "./typography";
