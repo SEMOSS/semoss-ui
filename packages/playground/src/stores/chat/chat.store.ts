@@ -143,6 +143,7 @@ export class ChatStore {
 		// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
 		const optionsToSave = {
 			...options,
+			modelId: modelId,
 			mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
 		};
 
