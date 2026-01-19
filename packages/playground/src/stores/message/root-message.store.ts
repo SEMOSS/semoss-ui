@@ -83,7 +83,7 @@ paramValues=[${JSON.stringify({
 		const { output } = response.pixelReturn[0];
 
 		// update the input's id
-		inputMessage.updateId(output.inputMessage.messageId);
+		inputMessage.update(output.inputMessage);
 
 		// create the response and link to the input
 		const responseMessage = createMessageStore(

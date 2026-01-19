@@ -8,6 +8,7 @@ export * from "../lib";
 
 export * from "../hooks";
 // Re-export all components (only export what exists)
+export * from "./accordion";
 export * from "./alert";
 export * from "./avatar";
 export * from "./badge";
