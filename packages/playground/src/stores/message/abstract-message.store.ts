@@ -72,7 +72,6 @@ export abstract class AbstractMessageStore {
 			previousSibling: computed,
 			nextSibling: computed,
 			activeChild: computed,
-			updateId: action,
 			connectParent: action,
 			addChild: action,
 			activateMessage: action,
@@ -123,12 +122,9 @@ export abstract class AbstractMessageStore {
 
 	/** Actions */
 	/**
-	 * Update the id
+	 * Sync store properties from the pixel message
 	 */
-	updateId = (id: string) => {
-		// update the id
-		this.id = id;
-	};
+	abstract sync: (message: PixelMessage) => void;
 
 	/**
 	 * Connect the parent and store the position
