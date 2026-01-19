@@ -8,12 +8,14 @@ export * from "../lib";
 
 export * from "../hooks";
 // Re-export all components (only export what exists)
+export * from "./accordion";
 export * from "./alert";
 export * from "./avatar";
 export * from "./badge";
 export * from "./breadcrumb";
 export * from "./button";
 export * from "./button-group";
+export * from "./calendar";
 export * from "./card";
 export * from "./checkbox";
 export * from "./code";

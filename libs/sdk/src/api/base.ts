@@ -174,6 +174,7 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
 };
 
 /**
+ * @deprecated use getPixelJobStreaming
  * Get a partial result from the insight
  * @param insightId - id of the insight to run
  */
@@ -202,6 +203,72 @@ export const console = async (insightId: string) => {
 	}>(`${Env.MODULE}/api/engine/console`, {
 		jobId: insightId,
 	});
+
+	return response.data;
+};
+
+/**
+ * Get streaming output from an async pixel job (LLM responses)
+ * Poll this endpoint until a message with `finish_reason` is received
+ *
+ * @param jobId - The job ID returned from runPixelAsync
+ * @returns Streaming response with message chunks and status
+ */
+export const getPixelJobStreaming = async (jobId: string) => {
+	if (!jobId) {
+		throw new Error("No job id provided for streaming");
+	}
+
+	const response = await post<{
+		/** Array of streaming messages received since last poll */
+		message: (
+			| {
+					/** Type of stream message */
+					stream_type: "content";
+					/** Data payload for the message */
+					data: {
+						/** Incremental content chunk from the LLM */
+						content?: string;
+
+						/** Stop reason*/
+						finish_reason?: string;
+					};
+			  }
+			| {
+					/** Type of stream message */
+					stream_type: "tool";
+					/** Data payload for the message */
+					data: {
+						/** Stop reason*/
+						finish_reason?: string;
+					};
+			  }
+			| {
+					/** Type of stream message */
+					stream_type: "thinking";
+					/** Data payload for the message */
+					data: {
+						/** Incremental content chunk from the LLM */
+						thinking?: string;
+
+						/** Stop reason*/
+						finish_reason?: string;
+					};
+			  }
+		)[];
+		/** Status of the streaming job */
+		status:
+			| "Created"
+			| "Submitted"
+			| "Canceled"
+			| "InProgress"
+			| "ProgressComplete"
+			| "Streaming"
+			| "Complete"
+			| "Paused"
+			| "Error"
+			| "UnknownJob";
+	}>(`${Env.MODULE}/api/engine/pixelJobStreaming`, { jobId });
 
 	return response.data;
 };
