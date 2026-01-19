@@ -2,14 +2,38 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const THRESHOLD = 100;
 
+interface UseAutoScrollOptions {
+	/**
+	 * The direction to auto-scroll. Defaults to "bottom".
+	 */
+	direction?: "top" | "bottom";
+}
+
 /**
- * Auto scroll to bottom when new content is added. This only scrolls if the user hasn't scrolled up.
+ * Auto scroll to top or bottom when new content is added. This only scrolls if the user hasn't scrolled away.
  */
-export const useAutoScroll = <T>(dependency: T) => {
+export const useAutoScroll = <T>(
+	dependency: T,
+	options?: UseAutoScrollOptions,
+) => {
+	const { direction = "bottom" } = options;
+
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [isUserScrolled, setIsUserScrolled] = useState(false);
 	const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 	const prevDependencyRef = useRef<T>(dependency);
+
+	/**
+	 * Check if the user is near the top of the scroll container
+	 */
+	const isNearTop = useCallback(() => {
+		if (!scrollEle) {
+			return false;
+		}
+		const { scrollTop } = scrollEle;
+
+		return scrollTop <= THRESHOLD;
+	}, [scrollEle]);
 
 	/**
 	 * Check if the user is near the bottom of the scroll container
@@ -24,25 +48,48 @@ export const useAutoScroll = <T>(dependency: T) => {
 	}, [scrollEle]);
 
 	/**
-	 * Scroll to bottom smoothly
+	 * Check if the user is near the target scroll position based on direction
 	 */
-	const scrollToBottom = useCallback(
+	const isNearTarget = useCallback(() => {
+		return direction === "top" ? isNearTop() : isNearBottom();
+	}, [direction, isNearTop, isNearBottom]);
+
+	/**
+	 * Scroll to target position based on direction
+	 */
+	const scroll = useCallback(
 		(enableAutoScroll = true) => {
-			if (!scrollEle) {
-				return;
-			}
+			if (direction === "top") {
+				if (!scrollEle) {
+					return;
+				}
 
-			scrollEle.scrollTo({
-				top: scrollEle.scrollHeight,
-				behavior: "smooth",
-			});
+				scrollEle.scrollTo({
+					top: 0,
+					behavior: "smooth",
+				});
 
-			if (enableAutoScroll) {
-				setIsUserScrolled(false);
-				setShouldAutoScroll(true);
+				if (enableAutoScroll) {
+					setIsUserScrolled(false);
+					setShouldAutoScroll(true);
+				}
+			} else {
+				if (!scrollEle) {
+					return;
+				}
+
+				scrollEle.scrollTo({
+					top: scrollEle.scrollHeight,
+					behavior: "smooth",
+				});
+
+				if (enableAutoScroll) {
+					setIsUserScrolled(false);
+					setShouldAutoScroll(true);
+				}
 			}
 		},
-		[scrollEle],
+		[direction, scrollEle],
 	);
 
 	/**
@@ -53,14 +100,14 @@ export const useAutoScroll = <T>(dependency: T) => {
 			return;
 		}
 
-		const nearBottom = isNearBottom();
+		const nearTarget = isNearTarget();
 
-		// If user scrolled near bottom, enable auto-scroll
-		setIsUserScrolled(!nearBottom);
+		// If user scrolled near target, enable auto-scroll
+		setIsUserScrolled(!nearTarget);
 
-		// If user scrolled up (not near bottom), disable auto-scroll
-		setShouldAutoScroll(nearBottom);
-	}, [scrollEle, isNearBottom]);
+		// If user scrolled away (not near target), disable auto-scroll
+		setShouldAutoScroll(nearTarget);
+	}, [scrollEle, isNearTarget]);
 
 	/**
 	 * Auto-scroll when dependency changes (new messages added)
@@ -73,10 +120,10 @@ export const useAutoScroll = <T>(dependency: T) => {
 		if (hasChanged && shouldAutoScroll && !isUserScrolled) {
 			// Use requestAnimationFrame to ensure DOM has updated
 			requestAnimationFrame(() => {
-				scrollToBottom(false);
+				scroll(false);
 			});
 		}
-	}, [dependency, shouldAutoScroll, isUserScrolled, scrollToBottom]);
+	}, [dependency, shouldAutoScroll, isUserScrolled, scroll]);
 
 	/**
 	 * Set up scroll event listener
@@ -113,7 +160,7 @@ export const useAutoScroll = <T>(dependency: T) => {
 
 	return {
 		setScrollEle,
-		scrollToBottom,
+		scroll,
 		isUserScrolled,
 		shouldAutoScroll,
 	};
