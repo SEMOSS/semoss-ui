@@ -117,7 +117,7 @@ export const GUARDRAIL_CONNECTION = {
 		},
 		{
 			name: "Perspective API",
-			disable: false,
+			disable: true,
 			description:
 				"Detects and scores toxic, abusive, and harassing language in text.",
 			fields: [
@@ -173,7 +173,7 @@ export const GUARDRAIL_CONNECTION = {
 		},
 		{
 			name: "OpenAI Moderation",
-			disable: false,
+			disable: true,
 			description:
 				"Classifies content to identify policy-violating or unsafe text.",
 			fields: [
@@ -229,7 +229,7 @@ export const GUARDRAIL_CONNECTION = {
 		},
 		{
 			name: "Microsoft Content Moderation",
-			disable: false,
+			disable: true,
 			description:
 				"Classifies content to identify policy-violating or unsafe text.",
 			fields: [
@@ -350,7 +350,7 @@ export const GUARDRAIL_CONNECTION = {
 		},
 		{
 			name: "REBUFF (Prompt Injection)",
-			disable: false,
+			disable: true,
 			description:
 				"Detects and scores toxic, abusive, and harassing language in text.",
 			fields: [
@@ -408,7 +408,7 @@ export const GUARDRAIL_CONNECTION = {
 		},
 		{
 			name: "Lakera Guard",
-			disable: false,
+			disable: true,
 			description:
 				" Provides real-time content moderation to ensure safe and compliant AI interactions.",
 			fields: [
@@ -464,7 +464,7 @@ export const GUARDRAIL_CONNECTION = {
 		},
 		{
 			name: "PromptGuard (META)",
-			disable: false,
+			disable: true,
 			description:
 				"Classifies content to identify policy-violating or unsafe text.",
 			fields: [
