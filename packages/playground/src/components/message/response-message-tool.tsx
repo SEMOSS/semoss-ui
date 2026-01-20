@@ -27,7 +27,9 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		/**
 		 * Library hooks
 		 */
-		const toolExecutionMessage = useLoadingMessage(tool.is_executing);
+		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
+			tool.is_executing,
+		);
 
 		// this will render the component whenever the sidebar model changes
 		room.sidebar.counter;

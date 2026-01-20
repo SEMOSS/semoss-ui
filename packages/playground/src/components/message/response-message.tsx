@@ -84,7 +84,7 @@ const THINKING_MARKDOWN_COMPONENTS = {
 	a: ({ children, href, ...props }) => (
 		<a
 			href={href}
-			className="font-medium text-primary text-primary text-sm underline underline-offset-1"
+			className="font-medium text-primary text-sm underline underline-offset-1"
 			target="_blank"
 			rel="noopener noreferrer"
 			{...props}
@@ -131,7 +131,9 @@ interface ResponseMessageProps {
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 	({ room, message }) => {
-		const thinkingMessage = useLoadingMessage(room.isLoading);
+		const { loadingMessage: thinkingMessage } = useLoadingMessage(
+			room.isLoading,
+		);
 
 		const [thinking, setThinking] = useState<string>("");
 
