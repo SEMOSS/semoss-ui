@@ -62,6 +62,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		| InputToolExecPixelMessage["type"];
 
 	/**
+	 *  Track if the message is thinking
+	 */
+	isThinking: boolean = false;
+
+	/**
 	 * Thinking for the tool
 	 */
 	thinking: string = "";
@@ -126,6 +131,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		this.pixelMessageType = message.type;
 
 		makeObservable(this, {
+			isThinking: observable,
 			thinking: observable,
 			text: observable,
 			tools: observable,
@@ -209,15 +215,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	runMessage = async (inputMessage: InputMessageStore) => {
 		const room = this.room;
 
-		// connect to the parent
-		this.addChild(inputMessage);
-
-		// build the context if it is there
-		let context = "";
-		if (room.options?.instructions) {
-			context = room.options?.instructions;
-		}
-
 		// Create a placeholder response message to show streaming content
 		const responseMessage = new ResponseMessageStore(room, {
 			messageId: "STREAMING_PLACEHOLDER_ID",
@@ -235,24 +232,37 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			dateCreated: new Date().toISOString(),
 		} as ResponseTextPixelMessage);
 
-		// Add placeholder as child of input to show streaming text
-		inputMessage.addChild(responseMessage);
+		try {
+			// connect to the parent
+			this.addChild(inputMessage);
 
-		// wait for the pixel to run with streaming
-		const response = await room.runRoomPixelStreaming<
-			[
-				{
-					inputMessage:
-						| InputTextPixelMessage
-						| InputMediaPixelMessage;
-					responseMessage:
-						| ResponseTextPixelMessage
-						| ResponseToolPixelMessage
-						| InputToolExecPixelMessage;
-				},
-			]
-		>(
-			`AskPlayground(
+			// build the context if it is there
+			let context = "";
+			if (room.options?.instructions) {
+				context = room.options?.instructions;
+			}
+
+			// Add placeholder as child of input to show streaming text
+			inputMessage.addChild(responseMessage);
+
+			// turn on thinking
+			responseMessage.isThinking = true;
+
+			// wait for the pixel to run with streaming
+			const response = await room.runRoomPixelStreaming<
+				[
+					{
+						inputMessage:
+							| InputTextPixelMessage
+							| InputMediaPixelMessage;
+						responseMessage:
+							| ResponseTextPixelMessage
+							| ResponseToolPixelMessage
+							| InputToolExecPixelMessage;
+					},
+				]
+			>(
+				`AskPlayground(
 engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
@@ -260,41 +270,47 @@ ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${inputMessage.mediaInputs.length ? `image=${JSON.stringify(inputMessage.mediaInputs.map((info) => info.fileLocation))},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
-				max_new_tokens: room.options.tokenLength,
-				temperature: room.options.temperature,
-			})}]
+					max_new_tokens: room.options.tokenLength,
+					temperature: room.options.temperature,
+				})}]
 );`,
-			(chunk) => {
-				runInAction(() => {
-					if (chunk.stream_type === "content") {
-						if (chunk.data.content) {
-							responseMessage.text += chunk.data.content;
+				(chunk) => {
+					runInAction(() => {
+						if (chunk.stream_type === "content") {
+							if (chunk.data.content) {
+								responseMessage.text += chunk.data.content;
+							}
+						} else if (chunk.stream_type === "thinking") {
+							if (chunk.data.thinking) {
+								responseMessage.thinking += chunk.data.thinking;
+							}
+						} else if (chunk.stream_type === "tool") {
+							//noop
+						} else {
+							console.error(`Unknown stream type`, chunk);
 						}
-					} else if (chunk.stream_type === "thinking") {
-						if (chunk.data.thinking) {
-							responseMessage.thinking += chunk.data.thinking;
-						}
-					} else if (chunk.stream_type === "tool") {
-						//noop
-					} else {
-						console.error(`Unknown stream type`, chunk);
-					}
-				});
-			},
-		);
+					});
+				},
+			);
 
-		const { output } = response.results[0];
+			const { output } = response.results[0];
 
-		// sync withe the results
-		inputMessage.sync(output.inputMessage);
-		responseMessage.sync(output.responseMessage);
+			// sync withe the results
+			inputMessage.sync(output.inputMessage);
+			responseMessage.sync(output.responseMessage);
 
-		// TODO: clean up
+			// TODO: clean up
 
-		// start running tools if there are any
-		responseMessage.startToolExecution();
+			// start running tools if there are any
+			responseMessage.startToolExecution();
 
-		return response;
+			return response;
+		} finally {
+			runInAction(() => {
+				// turn off thinking
+				responseMessage.isThinking = false;
+			});
+		}
 	};
 
 	/**
