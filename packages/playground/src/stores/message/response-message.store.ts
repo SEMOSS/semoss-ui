@@ -1,6 +1,12 @@
-import { makeObservable, observable, runInAction } from "mobx";
-import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "@/constants";
+import { action, makeObservable, observable, runInAction } from "mobx";
+import {
+	MCP_EXECUTION_ASK,
+	MCP_EXECUTION_AUTO,
+	TOOL_ERROR_PROMPT,
+} from "@/constants";
 import type {
+	InputMediaPixelMessage,
+	InputTextPixelMessage,
 	InputToolExecPixelMessage,
 	McpExecution,
 	PixelMessage,
@@ -11,6 +17,39 @@ import { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
 import { PlanMessageStore } from "./plan-message.store";
 import { createMessageStore } from "./utility";
+
+interface Tool {
+	/** tool execution id */
+	id: string;
+
+	/**  title of tool **/
+	title: string;
+
+	/** meta data from the tool */
+	_meta: {
+		SMSS_MCP_EXECUTION: McpExecution;
+		SMSS_PROJECT_NAME: string;
+		SMSS_PROJECT_ID: string;
+	};
+
+	/**  Name of function with app_id **/
+	name: string;
+
+	/**  Name of function in mcp json **/
+	original_name: string;
+
+	/** Parameters used in the tool */
+	parameters: Record<string, unknown>;
+
+	/** Response for the tool */
+	response: string;
+
+	/** If the tool execution was cancelled or errored */
+	tool_status?: "success" | "error" | "cancelled";
+
+	/** If the tool is currently executing */
+	is_executing: boolean;
+}
 
 /**
  * Response Message Store
@@ -23,6 +62,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		| InputToolExecPixelMessage["type"];
 
 	/**
+	 * Thinking for the tool
+	 */
+	thinking: string = "";
+
+	/**
 	 * Text associated with the message
 	 */
 	text: string = "";
@@ -30,34 +74,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	/**
 	 * Tools associated with the message
 	 */
-	tools: {
-		/** tool execution id */
-		id: string;
-
-		/**  title of tool **/
-		title: string;
-
-		/** meta data from the tool */
-		_meta: {
-			map: {
-				SMSS_MCP_EXECUTION: McpExecution;
-				SMSS_PROJECT_NAME: string;
-				SMSS_PROJECT_ID: string;
-			};
-		};
-
-		/**  Name of function **/
-		name: string;
-
-		/** Parameters used in the tool */
-		parameters: Record<string, unknown>;
-
-		/** Response for the tool */
-		response: string;
-
-		/** If the tool execution was cancelled or errored */
-		tool_status?: "success" | "error" | "cancelled";
-	}[] = [];
+	tools: Tool[] = [];
 
 	/**
 	 * If this is input tool exec, the tool call id it is executing
@@ -69,9 +86,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	} | null = null;
 
 	/**
-	 * Current execution index of the tool
+	 * Current execution index of the tool, used for auto execution
 	 */
-	toolExecutionIdx: number = 0;
+	toolAutoExecutionIdx: number = 0;
 
 	/**
 	 * Feedback provided by the user; only applicable to messages provided via the LLM
@@ -108,54 +125,88 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		super(room, message);
 		this.pixelMessageType = message.type;
 
+		makeObservable(this, {
+			thinking: observable,
+			text: observable,
+			tools: observable,
+			rating: observable,
+			sync: action,
+			runMessage: action,
+			recordFeedback: action,
+			rewriteMessage: action,
+			getTool: action,
+			startToolExecution: action,
+			continueToolExecution: action,
+			hasUnfinishedTools: action,
+			saveToolExecution: action,
+			markToolAsUsed: action,
+		});
+
+		// sync the message (must be after makeObservable so sync action is registered)
+		this.sync(message);
+	}
+
+	/**
+	 * Sync store properties from the pixel message
+	 */
+	sync = (message: PixelMessage) => {
+		// type guard + specifics
 		if (message.type === "RESPONSE_TEXT") {
+			this.thinking = message.thinking || "";
 			this.text = message.content;
-		}
-
-		if (message.type === "RESPONSE_TOOL") {
-			this.tools = message.tool_responses.map((t) => ({
-				id: t.id,
-				_meta: {
-					map: {
+		} else if (message.type === "RESPONSE_TOOL") {
+			this.thinking = message.thinking || "";
+			this.tools = message.tool_responses.map(
+				(t): Tool => ({
+					id: t.id,
+					_meta: {
 						SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
-						...t._meta.map,
+						// On 12/16/25 we changed from _meta.map to just _meta, so support both
+						...(t._meta as { map?: Record<string, unknown> })?.map,
+						...t._meta,
 					},
-				},
-				title: t.title,
-				name: t.name,
-				parameters: t.arguments,
-				response: "",
-				cancelled: false,
-			}));
-		}
-
-		if (message.type === "INPUT_TOOL_EXEC") {
+					title: t.title,
+					name: t.name,
+					original_name: t.original_name,
+					parameters: t.arguments,
+					response: "",
+					tool_status: "success",
+					is_executing: false,
+				}),
+			);
+		} else if (message.type === "INPUT_TOOL_EXEC") {
 			this.inputToolExecData = {
 				toolCallId: message.tool_call_id,
 				inputPrompt: message.inputPrompt,
 				toolStatus: message.tool_status ?? "success", // default to success
 			};
+		} else {
+			throw new Error(
+				`Invalid message object passed to ResponseMessageStore.update: ${JSON.stringify(message)}`,
+			);
 		}
 
-		// set the model
+		// cast the types
+		message = message as
+			| ResponseTextPixelMessage
+			| ResponseToolPixelMessage
+			| InputToolExecPixelMessage;
+
+		// set the id
+		this.id = message.messageId;
+
+		// set the model that was used
 		this.model = {
 			id: message.modelId,
 			name: message.ornaments?.modelName || "AI",
 		};
-
-		makeObservable(this, {
-			text: observable,
-			tools: observable,
-			rating: observable,
-		});
-	}
+	};
 
 	/**
-	 * Run a new user message and recieve a response
-	 * @param parentMessage - parent message to connect to
+	 * Run a new user message and receive a response with streaming
 	 * @param inputMessage - input message to send
 	 */
-	runMessage = async (inputMessage: InputMessageStore): Promise<void> => {
+	runMessage = async (inputMessage: InputMessageStore) => {
 		const room = this.room;
 
 		// connect to the parent
@@ -167,15 +218,41 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			context = room.options?.instructions;
 		}
 
-		// wait for the pixel to run
-		const response = await room.runRoomPixel<
+		// Create a placeholder response message to show streaming content
+		const responseMessage = new ResponseMessageStore(room, {
+			messageId: "STREAMING_PLACEHOLDER_ID",
+			type: "RESPONSE_TEXT",
+			visible: true,
+			content: "",
+			modelId: this.model.id,
+			paramMap: {
+				max_new_tokens: room.options.tokenLength,
+				temperature: room.options.temperature,
+			},
+			ornaments: {
+				modelName: this.model.name,
+			},
+			dateCreated: new Date().toISOString(),
+		} as ResponseTextPixelMessage);
+
+		// Add placeholder as child of input to show streaming text
+		inputMessage.addChild(responseMessage);
+
+		// wait for the pixel to run with streaming
+		const response = await room.runRoomPixelStreaming<
 			[
 				{
-					inputMessage: PixelMessage;
-					responseMessage: PixelMessage;
+					inputMessage:
+						| InputTextPixelMessage
+						| InputMediaPixelMessage;
+					responseMessage:
+						| ResponseTextPixelMessage
+						| ResponseToolPixelMessage
+						| InputToolExecPixelMessage;
 				},
 			]
-		>(`AskPlayground(
+		>(
+			`AskPlayground(
 engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
@@ -183,25 +260,41 @@ ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${inputMessage.mediaInputs.length ? `image=${JSON.stringify(inputMessage.mediaInputs.map((info) => info.fileLocation))},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
-			max_new_tokens: room.options.tokenLength,
-			temperature: room.options.temperature,
-		})}]
-);`);
+				max_new_tokens: room.options.tokenLength,
+				temperature: room.options.temperature,
+			})}]
+);`,
+			(chunk) => {
+				runInAction(() => {
+					if (chunk.stream_type === "content") {
+						if (chunk.data.content) {
+							responseMessage.text += chunk.data.content;
+						}
+					} else if (chunk.stream_type === "thinking") {
+						if (chunk.data.thinking) {
+							responseMessage.thinking += chunk.data.thinking;
+						}
+					} else if (chunk.stream_type === "tool") {
+						//noop
+					} else {
+						console.error(`Unknown stream type`, chunk);
+					}
+				});
+			},
+		);
 
-		const { output } = response.pixelReturn[0];
+		const { output } = response.results[0];
 
-		// update the input's id
-		inputMessage.updateId(output.inputMessage.messageId);
+		// sync withe the results
+		inputMessage.sync(output.inputMessage);
+		responseMessage.sync(output.responseMessage);
 
-		// create the response and link to the input
-		const responseMessage = createMessageStore(
-			room,
-			output.responseMessage,
-		) as ResponseMessageStore;
-		inputMessage.addChild(responseMessage);
+		// TODO: clean up
 
 		// start running tools if there are any
 		responseMessage.startToolExecution();
+
+		return response;
 	};
 
 	/**
@@ -254,7 +347,7 @@ paramValues=[${JSON.stringify({
 
 		// create a new input message
 		const rewrittenMessage = new InputMessageStore(room, {
-			messageId: "TEMP",
+			messageId: "REWRITE_PLACEHOLDER_ID",
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: parentMessage.text,
@@ -298,7 +391,7 @@ paramValues=[${JSON.stringify({
 	 * Start executing from the first step
 	 */
 	startToolExecution = async (): Promise<void> => {
-		this.toolExecutionIdx = 0;
+		this.toolAutoExecutionIdx = 0;
 		await this.runToolExecution();
 	};
 
@@ -312,8 +405,19 @@ paramValues=[${JSON.stringify({
 	): Promise<void> => {
 		const currentIdx = this.tools.findIndex((t) => t.id === current.id);
 
-		this.toolExecutionIdx = currentIdx + 1;
-		await this.runToolExecution();
+		if (currentIdx === this.toolAutoExecutionIdx) {
+			// we just finished this tool, move to the next
+			this.toolAutoExecutionIdx += 1;
+			await this.runToolExecution();
+		}
+	};
+
+	/**
+	 * Check if all tools have been completed
+	 * @returns if all tools have been completed
+	 */
+	hasUnfinishedTools = (): boolean => {
+		return this.tools.some((tool) => !tool.response);
 	};
 
 	/**
@@ -324,26 +428,38 @@ paramValues=[${JSON.stringify({
 
 		// skip if the index is out of bounds
 		if (
-			this.toolExecutionIdx < 0 ||
-			this.toolExecutionIdx >= this.tools.length
+			this.toolAutoExecutionIdx < 0 ||
+			this.toolAutoExecutionIdx >= this.tools.length
 		) {
+			// all tools have run
+			room.setHasUnfinishedTools(false);
 			return;
 		}
 
-		const tool = this.tools[this.toolExecutionIdx];
+		const tool = this.tools[this.toolAutoExecutionIdx];
 		if (!tool) {
+			return;
+		} else if (tool.response) {
+			// already has a response, skip
+			this.toolAutoExecutionIdx += 1;
+			await this.runToolExecution();
 			return;
 		}
 
 		// only run if it is set to auto execute
-		if (tool._meta.map.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
+		if (tool._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
 			return;
 		}
+
+		runInAction(() => {
+			tool.is_executing = true;
+		});
 
 		try {
 			// wait for the pixel to run
 			const response = await room.runRoomPixel<[string]>(
-				`RunMCPTool(project = [ "${tool._meta.map.SMSS_PROJECT_ID}" ], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+				`RunMCPTool(project = [ "${tool._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+				false,
 			);
 
 			const { output } = response.pixelReturn[0];
@@ -352,11 +468,7 @@ paramValues=[${JSON.stringify({
 			await this.saveToolExecution(tool, output);
 		} catch {
 			// mark the failure
-			await this.saveToolExecution(
-				tool,
-				`This tool execution failed due to an unexpected error. The AI assistant should inform the user of the tool's failure and ask the user for further instructions. The AI assistant may mention alternative tools or actions to take next, but should not take any further actions or select any further tools without user input.`,
-				"error",
-			);
+			await this.saveToolExecution(tool, TOOL_ERROR_PROMPT, "error");
 		}
 	};
 
@@ -372,10 +484,16 @@ paramValues=[${JSON.stringify({
 	): Promise<void> => {
 		const room = this.room;
 
+		if (tool.response) {
+			// If this tool already has a response, this must be an outdated call, skip
+			return;
+		}
+
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
 			tool.tool_status = status;
+			tool.is_executing = false;
 		});
 
 		// wait for the pixel to run

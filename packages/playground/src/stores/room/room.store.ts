@@ -1,5 +1,11 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { download, runPixel, upload } from "@semoss/sdk/react";
+import {
+	getPixelAsyncResult,
+	getPixelJobStreaming,
+	runPixel,
+	runPixelAsync,
+	uploadInsight,
+} from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import {
@@ -19,6 +25,12 @@ interface RoomStoreInterface {
 	roomId: string;
 
 	/**
+	 * insightId of the room
+	 * Set during the constructor and never changes
+	 */
+	insightId: string;
+
+	/**
 	 *  Track if the room is initialized
 	 */
 	isInitialized: boolean;
@@ -27,6 +39,11 @@ interface RoomStoreInterface {
 	 *  Track if the room is loading
 	 */
 	isLoading: boolean;
+
+	/**
+	 *  Track whether the room has tools that need to be finished before the next message can be sent
+	 */
+	hasUnfinishedTools: boolean;
 
 	/**
 	 *  Track if the room has errored
@@ -118,11 +135,12 @@ interface RoomStoreInterface {
  * Manage the room
  */
 export class RoomStore {
-	private _insightID = "new";
 	private _store: RoomStoreInterface = {
 		roomId: "",
+		insightId: "new",
 		isInitialized: false,
 		isLoading: false,
+		hasUnfinishedTools: false,
 		mode: "chat",
 		metadata: {
 			name: "",
@@ -151,9 +169,10 @@ export class RoomStore {
 		},
 	};
 
-	constructor(roomId: string) {
-		// register the roomId and actions
+	constructor(roomId: string, insightId: string) {
+		// register the roomId, insightId, and actions
 		this._store.roomId = roomId;
+		this._store.insightId = insightId;
 
 		// make it observable
 		makeAutoObservable(this);
@@ -186,6 +205,13 @@ export class RoomStore {
 	 */
 	get isLoading() {
 		return this._store.isLoading;
+	}
+
+	/**
+	 * Indicator to check if the room is ready for the next message
+	 */
+	get hasUnfinishedTools() {
+		return this._store.hasUnfinishedTools;
 	}
 
 	/**
@@ -360,9 +386,6 @@ export class RoomStore {
 				return;
 			}
 
-			// turn on the loading screen
-			this.setIsLoading(true);
-
 			// get all of the messages, get all the options
 			const response = await this.runRoomPixel<
 				[
@@ -371,6 +394,7 @@ export class RoomStore {
 				]
 			>(
 				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)}); SetRoomForInsight(roomId=${JSON.stringify(this._store.roomId)});`,
+				false,
 			);
 
 			const messageOutput = response.pixelReturn[0]
@@ -493,15 +517,17 @@ export class RoomStore {
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
 			if (this.tail.type === "RESPONSE") {
-				this.tail
-					.startToolExecution()
-					.finally(() => this.setIsLoading(false));
-			} else {
-				this.setIsLoading(false);
+				runInAction(() => {
+					this.setHasUnfinishedTools(true);
+				});
+				this.tail.startToolExecution();
 			}
 		} catch (e) {
 			console.error(e);
-			this.setIsLoading(false);
+			runInAction(() => {
+				this.setIsLoading(false);
+				this.setHasUnfinishedTools(false);
+			});
 			throw new Error(e.message || "Error initializing room");
 		}
 	};
@@ -527,42 +553,6 @@ export class RoomStore {
 			this.setOptions(options);
 		} catch (e) {
 			throw new Error(e.message || "Error updating room options");
-		}
-	};
-
-	/**
-	 * Download the history of the room as a PDF
-	 */
-	downloadHistory = async (): Promise<void> => {
-		try {
-			// turn on the loading screen
-			this.setIsLoading(true);
-
-			// convert the content to html
-			const html = this.history
-				.map((message) => {
-					if (message.type === "RESPONSE") {
-						return `<div>Response: ${message.text}</div>`;
-					}
-
-					if (message.type === "INPUT") {
-						return `<div>Input: ${message.text}</div>`;
-					}
-
-					return "";
-				})
-				.join("\n");
-
-			// wait for the pixel to run
-			const { pixelReturn } = await this.runRoomPixel<[string]>(
-				`ToPdf( html=["<encode>${html}</encode>"]);`,
-			);
-
-			// get the response
-			await this.downloadRoomFiles(pixelReturn[0].output);
-		} finally {
-			// turn off the loading screen
-			this.setIsLoading(false);
 		}
 	};
 
@@ -674,7 +664,7 @@ export class RoomStore {
 		}
 	};
 
-	/**f
+	/**
 	 * Helpers
 	 */
 	/**
@@ -683,6 +673,14 @@ export class RoomStore {
 	 */
 	private setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
+	};
+
+	/**
+	 * Set the hasUnfinishedTools boolean
+	 * @param hasUnfinishedTools - is it ready
+	 */
+	setHasUnfinishedTools = (isReady: boolean): void => {
+		this._store.hasUnfinishedTools = isReady;
 	};
 
 	/**
@@ -709,12 +707,13 @@ export class RoomStore {
 		// upload the files
 		let uploaded = [];
 		if (files.length > 0) {
-			uploaded = await this.uploadRoomFiles(files, "");
+			uploaded = (await uploadInsight(this._store.insightId, "", files))
+				.data;
 		}
 
 		// create the input message
 		const inputMessage = new InputMessageStore(this, {
-			messageId: "TEMP",
+			messageId: "ASK_PLACEHOLDER_ID",
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: prompt,
@@ -749,12 +748,14 @@ export class RoomStore {
 	 * @param toolId - id of the tool
 	 * @param toolName - name of the tool
 	 * @param toolResponse - response from the tool
+	 * @param toolStatus - status of the tool execution
 	 */
 	processTool = async (
 		messageId: string,
 		toolId: string,
 		toolName: string,
 		toolResponse: string,
+		toolStatus: "success" | "error" | "cancelled" = "success",
 	): Promise<void> => {
 		try {
 			const message = this.getMessage(messageId);
@@ -772,7 +773,7 @@ export class RoomStore {
 				await this.plan?.saveToolExecution(message, tool, toolResponse);
 			} else {
 				// save the response with the tool
-				await message.saveToolExecution(tool, toolResponse);
+				await message.saveToolExecution(tool, toolResponse, toolStatus);
 			}
 		} catch (e) {
 			console.error(e);
@@ -806,7 +807,7 @@ export class RoomStore {
 			}
 
 			// get the response
-			const response = await runPixel<O>(pixel, this._insightID);
+			const response = await runPixel<O>(pixel, this._store.insightId);
 
 			if (response.errors.length > 0) {
 				throw new Error(response.errors.join(""));
@@ -814,7 +815,6 @@ export class RoomStore {
 
 			// store the new insight id
 			runInAction(() => {
-				this._insightID = response.insightId;
 				this._store.error = null;
 			});
 			return response;
@@ -831,20 +831,70 @@ export class RoomStore {
 	};
 
 	/**
-	 * Download a file from the room
-	 * @param fileKey - key
+	 * Run a pixel with streaming support for LLM responses
+	 * @param pixel - pixel to execute
+	 * @param onPoll - callback for each streaming chunk
 	 */
-	downloadRoomFiles = async (fileKey: string) => {
-		// get the response
-		await download(this._insightID, fileKey);
-	};
+	runRoomPixelStreaming = async <O extends unknown[] | []>(
+		pixel: string,
+		onPoll: (
+			message: Awaited<
+				ReturnType<typeof getPixelJobStreaming>
+			>["message"][number],
+		) => void,
+	) => {
+		try {
+			this.setIsLoading(true);
 
-	/**
-	 * Upload a file to the room
-	 * @param fileKey - key
-	 */
-	uploadRoomFiles = async (files: File[], path: string = "") => {
-		// get the response
-		return await upload(files, this._insightID, "", path);
+			// Start async execution to get job ID
+			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
+
+			if (!jobId) {
+				throw new Error("No job ID returned from pixel execution");
+			}
+
+			// Poll for streaming content
+			let isPolling = true;
+
+			const pollingInterval = 300; // 300ms for responsive streaming
+
+			while (isPolling) {
+				try {
+					const response = await getPixelJobStreaming(jobId);
+
+					if (response && response.message.length > 0) {
+						for (const message of response.message) {
+							onPoll(message);
+						}
+					}
+
+					// Check status for completion
+					if (
+						response.status === "ProgressComplete" ||
+						response.status === "Complete"
+					) {
+						isPolling = false;
+					} else if (response.status === "Error") {
+						throw new Error("Streaming job encountered an error");
+					}
+
+					if (isPolling) {
+						await new Promise((resolve) =>
+							setTimeout(resolve, pollingInterval),
+						);
+					}
+				} catch (error) {
+					isPolling = false;
+					throw error;
+				}
+			}
+
+			// get the final result
+			return await getPixelAsyncResult<O>(jobId);
+		} catch (e) {
+			console.error(e);
+		} finally {
+			this.setIsLoading(false);
+		}
 	};
 }

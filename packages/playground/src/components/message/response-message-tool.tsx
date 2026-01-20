@@ -2,10 +2,13 @@ import {
 	AlertTriangleIcon,
 	CheckIcon,
 	HammerIcon,
+	Loader2Icon,
 	XCircleIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Button } from "@semoss/ui/next";
+import { TOOL_CANCELLATION_PROMPT } from "@/constants";
+import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore } from "@/stores";
 
 // Styled component replaced with Tailwind classes inline
@@ -21,9 +24,17 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 	({ message, tool }) => {
 		const { room } = message;
 
+		/**
+		 * Library hooks
+		 */
+		const toolExecutionMessage = useLoadingMessage(tool.is_executing);
+
 		// this will render the component whenever the sidebar model changes
 		room.sidebar.counter;
 
+		/**
+		 * Constants
+		 */
 		const nodeId = `message-${message.id}-tool-${tool.id}`;
 
 		// track if it is active
@@ -36,12 +47,15 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			isDisabled =
 				room.plan?.step?.details.stepType !== "tool_call" ||
 				room.plan?.step?.details.tool_name !== tool.name ||
-				room.plan?.step?.details._meta.map.SMSS_PROJECT_ID !==
-					tool._meta.map.SMSS_PROJECT_ID;
+				room.plan?.step?.details._meta.SMSS_PROJECT_ID !==
+					tool._meta.SMSS_PROJECT_ID;
 		}
 
+		// icon
 		let icon = null;
-		if (tool.tool_status === "error") {
+		if (tool.is_executing) {
+			icon = <Loader2Icon className="animate-spin" />;
+		} else if (tool.tool_status === "error") {
 			icon = <AlertTriangleIcon />;
 		} else if (tool.tool_status === "cancelled") {
 			icon = <XCircleIcon />;
@@ -73,7 +87,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 								name: tool.title,
 								component: "room-tool",
 								config: {
-									app: tool._meta.map.SMSS_PROJECT_ID,
+									app: tool._meta.SMSS_PROJECT_ID,
 									tool: {
 										message: message.id,
 										id: tool.id,
@@ -111,10 +125,12 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 									? "Tool execution cancelled"
 									: tool.response
 										? "Completed"
-										: tool._meta.map.SMSS_MCP_EXECUTION ===
+										: tool._meta.SMSS_MCP_EXECUTION ===
 												"ask"
 											? "Click to open"
-											: "This tool is set to auto-execute"}
+											: tool.is_executing
+												? toolExecutionMessage
+												: "This tool is set to auto-execute"}
 						</div>
 					</div>
 				</button>
@@ -128,7 +144,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							e.stopPropagation();
 							message.saveToolExecution(
 								tool,
-								`This tool execution was intentionally cancelled by the user. The AI assistant should inform the user of the tool's cancellation and ask the user for further instructions. The AI assistant may mention alternative tools or actions to take next, but should not take any further actions or select any further tools without user input.`,
+								TOOL_CANCELLATION_PROMPT,
 								"cancelled",
 							);
 						}}
