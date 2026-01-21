@@ -146,16 +146,30 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 				headersDataSet.shift();
 				const yAxisListLength =
 					resultData["_state"]?.["fields"]?.["yAxis"].length;
+				if (!resultData["series"]) {
+					resultData["series"] = [];
+				}
 				for (let index = 0; index < yAxisListLength; index++) {
+					if (!resultData["series"][index]) {
+						resultData["series"][index] = {};
+					}
+
 					resultData["series"][index]["data"] = valuesDataSet.map(
 						(x) => {
-							return x[index];
+							const value = x[index];
+							return value === "NaN" ? null : value; // Replace "NaN" with null
 						},
 					);
 					resultData["series"][index]["name"] = headersDataSet[index];
+					resultData["series"][index]["type"] = "line";
 				}
-				// resultData["series"].length = yAxisListLength;
-				resultData["series"].slice(0, yAxisListLength);
+
+				const yAxisNames = resultData["yAxis"]["name"];
+
+				resultData["series"] = resultData["series"].filter(
+					(seriesItem) => yAxisNames.includes(seriesItem.name),
+				);
+
 				valuesDataSet.map((x) => x.splice(0, yAxisListLength));
 				headersDataSet.splice(0, yAxisListLength);
 				const customTooltipData = [];
@@ -307,6 +321,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 		return (
 			<StyledChartContainer>
 				<ReactECharts
+					key={JSON.stringify(resultData)}
 					option={resultData as EChartsOption}
 					onEvents={onClickChart}
 					onChartReady={(chart) => {
