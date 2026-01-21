@@ -215,10 +215,22 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	/**
 	 * Run a new user message and receive a response with streaming
 	 * @param inputMessage - input message to send
+	 * @param optionsToSave - optional room options to save before running the message
 	 */
-	runMessage = async (inputMessage: InputMessageStore) => {
+	runMessage = async (
+		inputMessage: InputMessageStore,
+		optionsToSave?: Record<string, unknown>,
+	) => {
 		const room = this.room;
 
+		// Update room options if provided
+		if (optionsToSave) {
+			await room.runRoomPixel(
+				`UpdateRoomOptions(roomId=${JSON.stringify(room.roomId)}, roomOptions=[${JSON.stringify(
+					optionsToSave,
+				)}]);`,
+			);
+		}
 		// Create a placeholder response message to show streaming content
 		const responseMessage = new ResponseMessageStore(room, {
 			messageId: "STREAMING_PLACEHOLDER_ID",
@@ -266,7 +278,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 					},
 				]
 			>(
-				`AskPlayground(
+				`UpdateRoomOptions(roomId=${JSON.stringify(room.roomId)}, roomOptions=[${JSON.stringify(
+					optionsToSave,
+				)}]);AskPlayground(
 engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
@@ -380,7 +394,13 @@ paramValues=[${JSON.stringify({
 			dateCreated: "",
 		});
 
-		grandParentMessage.runMessage(rewrittenMessage);
+		const optionsToSave = {
+			...room.options,
+			modelId: room.modelId,
+			mcp: room.options.mcp.filter((mcp) => !mcp?.fromWorkspace),
+		};
+
+		grandParentMessage.runMessage(rewrittenMessage, optionsToSave);
 	};
 
 	/**

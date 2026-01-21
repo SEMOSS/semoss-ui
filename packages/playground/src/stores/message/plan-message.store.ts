@@ -159,12 +159,22 @@ export class PlanMessageStore extends AbstractMessageStore {
 	/**
 	 * Send a new user message and recieve a response
 	 * @param prompt - user message
+	 * @param optionsToSave - optional room options to save before running the message
 	 */
 	runMessage = async (
 		inputMessage: InputMessageStore,
-	): Promise<PlanMessageStore> => {
+		optionsToSave?: Record<string, unknown>,
+	) => {
 		const room = this.room;
 
+		// Update room options if provided
+		if (optionsToSave) {
+			await room.runRoomPixel(
+				`UpdateRoomOptions(roomId=${JSON.stringify(room.roomId)}, roomOptions=[${JSON.stringify(
+					optionsToSave,
+				)}]);`,
+			);
+		}
 		// connect to the parent
 		this.addChild(inputMessage);
 
