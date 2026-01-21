@@ -11,6 +11,7 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
+import { MembersTable } from "@semoss/shared";
 import {
 	Button,
 	DropdownMenu,
@@ -34,7 +35,6 @@ import { WorkspaceChatList, WorkspaceMCPList } from "@/components";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/useChat";
 import type { Workspace } from "@/types";
-import { MembersTable } from "../../../../libs/shared/src/components/members/members-table";
 
 /**
  * Renders the Workspace Detail Page, displaying information about a specific workspace

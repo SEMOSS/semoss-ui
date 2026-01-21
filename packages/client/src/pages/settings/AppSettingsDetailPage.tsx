@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { MembersTable as MembersTableShared } from "@semoss/shared";
+import { MembersTable } from "@semoss/shared";
 import { styled, ToggleTabsGroup } from "@semoss/ui";
 import { AppSettings } from "@/components/app";
 import {
 	// MembersTable,
-	MembersTable,
 	PendingMembersTable,
 	SettingsTiles,
 } from "@/components/settings";
@@ -104,7 +103,7 @@ export const AppSettingsUserDetailPage = () => {
 					// 	type={"PROJECT"}
 					// 	onChange={() => getUserEnginePermission.refresh()}
 					// />
-					<MembersTableShared id={id} type={"PROJECT"} />
+					<MembersTable id={id} type={"PROJECT"} />
 					// </>
 				)}
 				{view === "PENDING" && (

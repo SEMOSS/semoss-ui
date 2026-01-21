@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { MembersTable } from "@semoss/shared";
 import { styled, ToggleTabsGroup } from "@semoss/ui";
 import {
-	MembersTable,
+	// MembersTable,
 	PendingMembersTable,
 	SettingsTiles,
 	UpdateSMSS,
