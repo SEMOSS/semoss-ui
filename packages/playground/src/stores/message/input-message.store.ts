@@ -1,5 +1,9 @@
-import { makeObservable, observable } from "mobx";
-import type { InputMediaPixelMessage, InputTextPixelMessage } from "@/types";
+import { action, makeObservable, observable } from "mobx";
+import type {
+	InputMediaPixelMessage,
+	InputTextPixelMessage,
+	PixelMessage,
+} from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 
 /**
@@ -25,7 +29,7 @@ export class InputMessageStore extends AbstractMessageStore {
 		base64Data?: string;
 		mimeType?: string;
 		imageType?: "FILE";
-	}[];
+	}[] = [];
 
 	constructor(
 		room: AbstractMessageStore["room"],
@@ -34,12 +38,36 @@ export class InputMessageStore extends AbstractMessageStore {
 		super(room, message);
 		this.pixelMessageType = message.type;
 
-		this.text = message.inputUIPrompt;
-		this.mediaInputs = message.mediaInputs;
-
 		makeObservable(this, {
 			text: observable,
 			mediaInputs: observable,
+			sync: action,
 		});
+
+		// sync the message (must be after makeObservable so sync action is registered)
+		this.sync(message);
 	}
+
+	/**
+	 * Sync store properties from the pixel message
+	 */
+	sync = (message: PixelMessage) => {
+		if (message.type === "INPUT_TEXT") {
+			this.text = message.inputUIPrompt;
+			this.mediaInputs = message.mediaInputs;
+		} else if (message.type === "INPUT_MEDIA") {
+			this.text = message.inputUIPrompt;
+			this.mediaInputs = message.mediaInputs;
+		} else {
+			throw new Error(
+				`Invalid message object passed to InputMessageStore.update: ${JSON.stringify(message)}`,
+			);
+		}
+
+		// cast the types
+		message = message as InputMediaPixelMessage | InputMediaPixelMessage;
+
+		// set the id
+		this.id = message.messageId;
+	};
 }
