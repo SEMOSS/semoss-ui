@@ -93,7 +93,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
-	const tempContextUsedPercent = 45; // TODO: replace with calculation
+	const tempTokensUsed = 270; //
+	const tempTokensMax = 2500; //
 
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
@@ -187,7 +188,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						</>
 					}
 					onPrompt={handlePrompt}
-					contextUsedPercent={tempContextUsedPercent}
+					tokensMax={tempTokensMax}
+					tokensUsed={tempTokensUsed}
 					hasOutstandingTools={room.hasUnfinishedTools}
 					hideLoadingSpinner
 				/>

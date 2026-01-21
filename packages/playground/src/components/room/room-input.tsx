@@ -67,7 +67,8 @@ interface RoomInputProps {
 	hideLoadingSpinner?: boolean;
 
 	/** Percentage of context used */
-	contextUsedPercent?: number;
+	tokensMax?: number;
+	tokensUsed?: number;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
@@ -80,7 +81,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onPrompt = () => null,
 		hasOutstandingTools = false,
 		hideLoadingSpinner = false,
-		contextUsedPercent,
+		tokensMax,
+		tokensUsed,
 	}) => {
 		const [isEmpty, setIsEmpty] = useState(true);
 
@@ -378,7 +380,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					</LexicalComposer>
 					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
 						{workspace}
-						<ContextChart contextUsedPercent={contextUsedPercent} />
+						<ContextChart
+							tokensUsed={tokensUsed}
+							tokensMax={tokensMax}
+						/>
 					</div>
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
 						<ButtonGroup className="rounded-md bg-background">
