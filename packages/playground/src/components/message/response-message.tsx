@@ -90,7 +90,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 		/**
 		 * Download the response in specified format
-		 * @param format - format to download (word, excel, pdf, powerpoint)
+		 * @param format - format to download (word, pdf)
 		 */
 		const downloadResponse = async (format: string) => {
 			try {
@@ -104,9 +104,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 		const downloadFormats = [
 			{ value: "word", label: "Word Document", extension: ".docx" },
-			{ value: "excel", label: "Excel Spreadsheet", extension: ".xlsx" },
 			{ value: "pdf", label: "PDF Document", extension: ".pdf" },
-			{ value: "powerpoint", label: "PowerPoint Presentation", extension: ".pptx" },
 		];
 
 		return (
