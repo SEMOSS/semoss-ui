@@ -248,6 +248,15 @@ export interface MCPTool {
 	};
 	title?: string;
 	original_name: string;
+	description?: string;
+	title?: string;
+	_meta: {
+		generated_on: string;
+		SMSS_MCP_UI?: {
+			loadingMessage?: string;
+			resourceURI?: string;
+		};
+	};
 }
 
 export interface ToolStructure {
@@ -258,12 +267,5 @@ export interface ToolStructure {
 		SMSS_ENGINE_TYPE: string;
 		SMSS_ENGINE_ID: string;
 	};
-	tools: Tool[];
-}
-
-export interface Tool extends MCPTool {
-	name: string;
-	description: string;
-	_meta: { generated_on: string };
-	title: string;
+	tools: MCPTool[];
 }

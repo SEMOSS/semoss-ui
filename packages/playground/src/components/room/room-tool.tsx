@@ -5,7 +5,7 @@ import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
-import type { MCPTool, Tool } from "@/types";
+import type { MCPTool } from "@/types";
 import { DynamicForm } from "../mcp/tools-default-view";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
@@ -20,7 +20,7 @@ interface ToolStructure {
 		SMSS_ENGINE_TYPE: string;
 		SMSS_ENGINE_ID: string;
 	};
-	tools: Tool[];
+	tools: MCPTool[];
 }
 
 interface RoomToolProps {
@@ -152,11 +152,12 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 
 	// Check portal availability and set appropriate URL
 	useEffect(() => {
-		const checkPortal = async () => {
+		const loadUrl = async () => {
 			// Finish loading
 			if (
 				getAppInfo.status === "INITIAL" ||
-				getAppInfo.status === "LOADING"
+				getAppInfo.status === "LOADING" ||
+				!selectedTool?.name
 			) {
 				return;
 			}
@@ -171,39 +172,24 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 
 			setIsLoading(true);
 
-			// Low code app
-			if (getAppInfo.data.project_type === "BLOCKS") {
-				setUrl(`${PLATFORM_URL}/#/s/${config.app}/`);
-				setIsLoading(false);
-				return;
+			const resourceURI = selectedTool._meta.SMSS_MCP_UI?.resourceURI;
+			if (!resourceURI) {
+				// No UI defined, show form
+				setUrl(null);
+			} else if (getAppInfo.data.project_type === "BLOCKS") {
+				// Low code app
+				setUrl(`${PLATFORM_URL}/#/s/${config.app}${resourceURI}`);
+			} else {
+				setUrl(
+					`${Env.MODULE}/public_home/${config.app}/portals${resourceURI}`,
+				);
 			}
 
-			// Check if portals exists
-			let foundApp = false;
-			try {
-				const response = await fetch(
-					`${Env.MODULE}/public_home/${config.app}/portals/`,
-					{ method: "GET" },
-				);
-				const text = await response.text();
-				//FixMe: Always returns a 200 so currently checking against default text returned
-				foundApp =
-					response.status === 200 &&
-					text &&
-					text !==
-						"Publish is not enabled on this project or there was an error publishing this project";
-			} catch (_e) {}
-
-			// Portals view else use default view off tool JSON
-			setUrl(
-				foundApp
-					? `${Env.MODULE}/public_home/${config.app}/portals/`
-					: null,
-			);
 			setIsLoading(false);
 		};
-		checkPortal();
-	}, [config, config?.app, getAppInfo.status, getAppInfo.data]);
+
+		loadUrl();
+	}, [config, config?.app, getAppInfo.status, getAppInfo.data, selectedTool]);
 
 	if (!config) {
 		return <div>No Tool</div>;
