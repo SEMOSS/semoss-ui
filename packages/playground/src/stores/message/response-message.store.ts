@@ -29,6 +29,10 @@ interface Tool {
 		SMSS_MCP_EXECUTION: McpExecution;
 		SMSS_PROJECT_NAME: string;
 		SMSS_PROJECT_ID: string;
+		SMSS_MCP_UI?: {
+			loadingMessage?: string;
+			resourceURI?: string;
+		};
 	};
 
 	/**  Name of function with app_id **/
