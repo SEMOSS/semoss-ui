@@ -3,11 +3,23 @@ import {
 	CheckIcon,
 	HammerIcon,
 	Loader2Icon,
+	PanelBottomIcon,
+	PanelRightIcon,
 	XCircleIcon,
+	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { Button } from "@semoss/ui/next";
-import { TOOL_CANCELLATION_PROMPT } from "@/constants";
+import {
+	Button,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
+import {
+	MCP_DISPLAY_HIDDEN,
+	MCP_DISPLAY_INLINE,
+	TOOL_CANCELLATION_PROMPT,
+} from "@/constants";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore } from "@/stores";
 
@@ -37,9 +49,16 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		 */
 		const nodeId = `message-${message.id}-tool-${tool.id}`;
 
-		// track if it is active
-		const isActive =
+		// track if it is active in sidebar
+		const isActiveInSidebar =
 			room.sidebar.isOpen && !!room.sidebar.model.getNodeById(nodeId);
+
+		// track if it is active inline
+		const isActiveInline = room.isInlineToolOpen(nodeId);
+
+		// check display mode (hidden tools are not shown)
+		const displayMode = tool._meta.SMSS_MCP_DISPLAY;
+		const isHidden = displayMode === MCP_DISPLAY_HIDDEN;
 
 		// TODO: if the plan is executing, only the execution step is enabled
 		let isDisabled = false;
@@ -65,93 +84,242 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			icon = <HammerIcon />;
 		}
 
+		// Don't render if hidden
+		if (isHidden) {
+			return null;
+		}
+
+		/**
+		 * Open tool in the default location based on SMSS_MCP_DISPLAY
+		 */
+		const openToolInDefaultLocation = () => {
+			// Already open somewhere - do nothing
+			if (isActiveInSidebar || isActiveInline) {
+				return;
+			}
+
+			const toolConfig = {
+				app: tool._meta.SMSS_PROJECT_ID,
+				tool: {
+					message: message.id,
+					id: tool.id,
+					name: tool.name,
+					title: tool.title,
+					parameters: tool.parameters,
+				},
+			};
+
+			// Open based on display mode preference
+			if (displayMode === MCP_DISPLAY_INLINE) {
+				room.addInlineTool(nodeId, toolConfig);
+			} else {
+				// Default to sidebar
+				room.addSidebarNode(nodeId, {
+					type: "tab",
+					name: tool.title,
+					component: "room-tool",
+					config: toolConfig,
+					enableClose: true,
+				});
+			}
+		};
+
 		return (
-			<div
-				className={`group/toolcard flex w-full flex-row items-center gap-5 rounded-lg border border-border bg-primary-foreground p-4 text-left shadow-sm ${
-					isDisabled
-						? "cursor-not-allowed opacity-50"
-						: `cursor-pointer hover:bg-accent ${isActive ? "border-primary" : ""}`
-				}`}
-			>
-				<button
-					type="button"
-					disabled={isDisabled}
-					className="flex flex-1 flex-row items-center gap-5 text-left"
-					onClick={() => {
-						if (room.isSidebarNodeSelected(nodeId)) {
-							room.removeSidebarNode(nodeId);
-						} else {
-							// open the sidebar
-							room.addSidebarNode(nodeId, {
-								type: "tab",
-								name: tool.title,
-								component: "room-tool",
-								config: {
-									app: tool._meta.SMSS_PROJECT_ID,
-									tool: {
-										message: message.id,
-										id: tool.id,
-										name: tool.name,
-										parameters: tool.parameters,
-									},
-								},
-								enableClose: true,
-							});
-						}
-					}}
+			<div className="flex flex-col gap-2">
+				<div
+					className={`group/toolcard flex w-full flex-row items-center gap-5 rounded-lg border border-border bg-primary-foreground p-4 text-left shadow-sm ${
+						isDisabled
+							? "cursor-not-allowed opacity-50"
+							: `cursor-pointer hover:bg-accent ${isActiveInSidebar || isActiveInline ? "border-primary" : ""}`
+					}`}
 				>
-					<div
-						className={`mr-1 flex size-9 flex-col items-center justify-center overflow-hidden rounded p-2 ${
-							tool.tool_status === "error" ||
-							tool.tool_status === "cancelled"
-								? "bg-destructive/10 text-destructive"
-								: "bg-primary/10 text-primary"
-						}`}
-					>
-						{icon}
-					</div>
-					<div className="flex-1">
-						<div className="truncate text-base" title={tool.title}>
-							{tool.title}
-						</div>
-						<div
-							className="truncate text-muted-foreground text-sm"
-							title={tool.title}
-						>
-							{/* {tool.title} */}
-							{tool.tool_status === "error"
-								? "Failed to execute tool"
-								: tool.tool_status === "cancelled"
-									? "Tool execution cancelled"
-									: tool.response
-										? "Completed"
-										: tool._meta.SMSS_MCP_EXECUTION ===
-												"ask"
-											? "Click to open"
-											: tool.is_executing
-												? toolExecutionMessage
-												: "This tool is set to auto-execute"}
-						</div>
-					</div>
-				</button>
-				{!tool.response && (
-					<Button
+					<button
 						type="button"
-						size="sm"
-						variant="outline"
-						className="invisible hover:text-destructive group-hover/toolcard:visible"
-						onClick={(e) => {
-							e.stopPropagation();
-							message.saveToolExecution(
-								tool,
-								TOOL_CANCELLATION_PROMPT,
-								"cancelled",
-							);
-						}}
+						disabled={isDisabled}
+						className="flex flex-1 flex-row items-center gap-5 text-left"
+						onClick={() => openToolInDefaultLocation()}
 					>
-						Cancel
-					</Button>
-				)}
+						<div className="flex items-center gap-2">
+							<div
+								className={`flex size-9 flex-col items-center justify-center overflow-hidden rounded p-2 ${
+									tool.tool_status === "error" ||
+									tool.tool_status === "cancelled"
+										? "bg-destructive/10 text-destructive"
+										: "bg-primary/10 text-primary"
+								}`}
+							>
+								{icon}
+							</div>
+						</div>
+						<div className="flex-1">
+							<div
+								className="truncate text-base"
+								title={tool.title}
+							>
+								{tool.title}
+							</div>
+							<div
+								className="truncate text-muted-foreground text-sm"
+								title={tool.title}
+							>
+								{/* {tool.title} */}
+								{tool.tool_status === "error"
+									? "Failed to execute tool"
+									: tool.tool_status === "cancelled"
+										? "Tool execution cancelled"
+										: tool.response
+											? "Completed"
+											: tool._meta.SMSS_MCP_EXECUTION ===
+													"ask"
+												? "Click to open"
+												: tool.is_executing
+													? toolExecutionMessage
+													: "This tool is set to auto-execute"}
+							</div>
+						</div>
+					</button>
+					<div className="flex items-center gap-2">
+						{/* Open/Move dropdown */}
+
+						{/* Close buttons */}
+						{isActiveInline && (
+							<>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											type="button"
+											size="sm"
+											variant="ghost"
+											className="invisible group-hover/toolcard:visible"
+											onClick={(e) => {
+												e.stopPropagation();
+
+												// remove from inline
+												room.removeInlineTool(nodeId);
+
+												// add to sidebar
+												room.addSidebarNode(nodeId, {
+													type: "tab",
+													name: tool.title,
+													component: "room-tool",
+													config: {
+														app: tool._meta
+															.SMSS_PROJECT_ID,
+														tool: {
+															message: message.id,
+															id: tool.id,
+															name: tool.name,
+															title: tool.title,
+															parameters:
+																tool.parameters,
+														},
+													},
+													enableClose: true,
+												});
+											}}
+										>
+											<PanelRightIcon className="size-4" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										Open in Sidebar
+									</TooltipContent>
+								</Tooltip>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											type="button"
+											size="sm"
+											variant="ghost"
+											className="invisible group-hover/toolcard:visible"
+											onClick={(e) => {
+												e.stopPropagation();
+
+												// remove from inline
+												room.removeInlineTool(nodeId);
+											}}
+										>
+											<XIcon className="size-4" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Close</TooltipContent>
+								</Tooltip>
+							</>
+						)}
+						{isActiveInSidebar && (
+							<>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											type="button"
+											size="sm"
+											variant="ghost"
+											className="invisible group-hover/toolcard:visible"
+											onClick={(e) => {
+												e.stopPropagation();
+
+												// remove from sidebar
+												room.removeSidebarNode(nodeId);
+
+												// add to inline
+												room.addInlineTool(nodeId, {
+													app: tool._meta
+														.SMSS_PROJECT_ID,
+													tool: {
+														message: message.id,
+														id: tool.id,
+														name: tool.name,
+														title: tool.title,
+														parameters:
+															tool.parameters,
+													},
+												});
+											}}
+										>
+											<PanelBottomIcon className="size-4" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Open Inline</TooltipContent>
+								</Tooltip>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											type="button"
+											size="sm"
+											variant="ghost"
+											className="invisible group-hover/toolcard:visible"
+											onClick={(e) => {
+												e.stopPropagation();
+												room.removeSidebarNode(nodeId);
+											}}
+										>
+											<XIcon className="size-4" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Close</TooltipContent>
+								</Tooltip>
+							</>
+						)}
+						{!tool.response && (
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="invisible hover:text-destructive group-hover/toolcard:visible"
+								onClick={(e) => {
+									e.stopPropagation();
+									message.saveToolExecution(
+										tool,
+										TOOL_CANCELLATION_PROMPT,
+										"cancelled",
+									);
+								}}
+							>
+								Cancel
+							</Button>
+						)}
+					</div>
+				</div>
 			</div>
 		);
 	},

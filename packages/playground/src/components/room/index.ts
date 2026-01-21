@@ -3,6 +3,7 @@ export * from "./room-configuration";
 export * from "./room-configuration-button";
 export * from "./room-content";
 export * from "./room-file-explorer-button";
+export * from "./room-inline-tool";
 export * from "./room-input";
 export * from "./room-input-menu-plugin";
 export * from "./room-options";

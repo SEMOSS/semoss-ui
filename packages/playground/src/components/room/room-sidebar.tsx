@@ -3,6 +3,7 @@ import {
 	FolderTreeIcon,
 	HammerIcon,
 	MonitorXIcon,
+	PanelBottomIcon,
 	Settings2Icon,
 	TvMinimalIcon,
 	XIcon,
@@ -45,6 +46,50 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
 				<div className="absolute top-0 right-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pr-2">
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								type="button"
+								size="sm"
+								variant="ghost"
+								className="invisible group-hover/toolcard:visible"
+								onClick={(e) => {
+									e.stopPropagation();
+
+									const nodeId =
+										room.sidebar.model
+											.getActiveTabset()
+											?.getId() ||
+										room.sidebar.model
+											.getRoot()
+											.getChildren()[0]
+											?.getId() ||
+										"";
+
+									if (!nodeId) {
+										return;
+									}
+
+									// remove from sidebar
+									room.removeSidebarNode(nodeId);
+
+									// TODO: validate
+									const node = room.sidebar.model.getNodeById(
+										nodeId,
+									) as unknown as FlexLayout.TabNode;
+
+									const config = node.getConfig();
+
+									// add to inline
+									room.addInlineTool(nodeId, config);
+								}}
+							>
+								<PanelBottomIcon className="size-4" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Open in Sidebar</TooltipContent>
+					</Tooltip>
+
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
