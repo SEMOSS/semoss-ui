@@ -164,7 +164,7 @@ export class PlanMessageStore extends AbstractMessageStore {
 	runMessage = async (
 		inputMessage: InputMessageStore,
 		optionsToSave?: Record<string, unknown>,
-	) => {
+	): Promise<PlanMessageStore> => {
 		const room = this.room;
 
 		// Update room options if provided
