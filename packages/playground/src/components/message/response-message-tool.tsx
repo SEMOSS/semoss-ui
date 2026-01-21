@@ -11,8 +11,6 @@ import { TOOL_CANCELLATION_PROMPT } from "@/constants";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore } from "@/stores";
 
-// import { useEffect } from "react";
-
 // Styled component replaced with Tailwind classes inline
 interface ResponseMessageToolProps {
 	/** Message to render */
@@ -57,10 +55,6 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				room.plan?.step?.details._meta.SMSS_PROJECT_ID !==
 					tool._meta.SMSS_PROJECT_ID;
 		}
-
-		// useEffect(() => {
-
-		// }, [tool])
 
 		// icon
 		let icon = null;
