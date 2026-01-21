@@ -10,6 +10,17 @@ import {
 } from "@semoss/ui/next";
 import { apiPost } from "../utility/api";
 
+/**
+ * DeleteMembersOverlay is a component that allows users to delete members from the app or engine.
+ *
+ * @param {string} id - the id of the app or engine
+ * @param {ALL_TYPES} type - the type of the app or engine (e.g. "PROJECT", "ENGINE")
+ * @param {boolean} open - whether the overlay is open or not
+ * @param {function} onClose - callback to close the overlay
+ * @param {string[]} idsToDelete - the ids of the members to delete
+ *
+ * @returns {ReactElement} - the DeleteMembersOverlay component
+ */
 export const DeleteMembersOverlay = ({
 	id,
 	type,
@@ -24,6 +35,11 @@ export const DeleteMembersOverlay = ({
 			: "removeEngineUserPermissions";
 	const typeId = type === "PROJECT" ? "projectId" : "engineId";
 
+	/**
+	 * Delete the selected members from the app or engine.
+	 *
+	 * @throws {Error} - an error occurred while deleting the selected members
+	 */
 	function deleteSelectedMembers() {
 		// Logic to delete members
 		apiPost(`/api/auth/project/${usersUrl}`, {

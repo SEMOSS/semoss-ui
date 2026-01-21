@@ -1,5 +1,5 @@
 import { ChevronDown, LockOpen, Plus, Search } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	Button,
 	DropdownMenu,
@@ -24,9 +24,10 @@ interface MembersProps {
 		| "MODEL"
 		| "VECTOR"
 		| "FUNCTION";
+	onChange?: () => void;
 }
 
-export const MembersTable = ({ id, type }: MembersProps) => {
+export const MembersTable = ({ id, type, onChange }: MembersProps) => {
 	const [openAddMembers, setOpenAddMembers] = useState<boolean>(false);
 	const [searchKey, setSearchKey] = useState<string>("");
 	const debouncedValue = useDebouncedValue(searchKey, 300);
@@ -44,6 +45,12 @@ export const MembersTable = ({ id, type }: MembersProps) => {
 				return "";
 		}
 	}, []);
+
+	useEffect(() => {
+		if (!openAddMembers && onChange) {
+			onChange();
+		}
+	}, [openAddMembers]);
 
 	return (
 		<div className="w-full">
@@ -131,6 +138,7 @@ export const MembersTable = ({ id, type }: MembersProps) => {
 				search={debouncedValue}
 				permission={returnAccessType(filterPermission)}
 			/>
+			{/** Add members overlay */}
 			<AddMembersOverlay
 				className="w-full"
 				id={id}

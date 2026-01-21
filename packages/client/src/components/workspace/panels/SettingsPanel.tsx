@@ -1,6 +1,7 @@
 import { GetAppRounded } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router-dom";
+import { MembersTable } from "@semoss/shared";
 import {
 	Container,
 	IconButton,
@@ -12,7 +13,7 @@ import {
 } from "@semoss/ui";
 import { AppSettings } from "@/components/app";
 import {
-	MembersTable,
+	// MembersTable,
 	PendingMembersTable,
 	SettingsTiles,
 } from "@/components/settings";

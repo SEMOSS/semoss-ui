@@ -1,11 +1,5 @@
 import { ChevronDown, X } from "lucide-react";
-import {
-	type ChangeEvent,
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { useNotification } from "@semoss/ui";
 import {
 	Button,
@@ -20,6 +14,7 @@ import {
 	Input,
 } from "@semoss/ui/next";
 import { apiGet, apiPost } from "../utility/api";
+import { returnAccessType } from "./common";
 import { MembersList } from "./members-list";
 
 interface AddPopupSearchResult {
@@ -30,6 +25,13 @@ interface AddPopupSearchResult {
 	username: string;
 }
 
+/**
+ * AddMembersOverlay is a component that allows users to add members to the current project or engine.
+ * @param {string} id - the id of the project or engine
+ * @param {ALL_TYPES} type - the type of the project or engine (e.g. "PROJECT", "ENGINE", "DATABASE")
+ * @param {boolean} open - whether the overlay is open or not
+ * @param {function} onClose - callback to close the overlay
+ */
 export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 	const dialogContainer = useRef();
 	const [searchKey, setSearchKey] = useState<string>("");
@@ -45,7 +47,7 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 			: "getEngineUsersNoCredentials";
 	const typeId = type === "PROJECT" ? "projectId" : "engineId";
 	useEffect(() => {
-		// Fetch users based on searchKey
+		// Fetch users based on searchKey and by default limits record to 5
 		apiGet(
 			"/api/auth/project/" +
 				usersUrl +
@@ -56,18 +58,12 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 			})
 			.catch((_error) => {});
 	}, [searchKey, typeId, id, usersUrl]);
-	const returnAccessType = useCallback((permission: string) => {
-		switch (permission) {
-			case "READ_ONLY":
-				return "can view";
-			case "EDIT":
-				return "can edit";
-			case "OWNER":
-				return "owner";
-			default:
-				return "select access";
-		}
-	}, []);
+
+	/**
+	 * Add selected members to the current project or engine.
+	 *
+	 * @param {function} onClose - callback to close the overlay
+	 */
 	function addNewMembers() {
 		const selectedUserObj = selectedUsers.map((m) => ({
 			userid: m.id,
@@ -111,6 +107,9 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 				onClose(true);
 			});
 	}
+	/**
+	 * resets the add member state to initial values
+	 */
 	function resetAddMemberState() {
 		setSelectedUsers([]);
 		setSearchKey("");
@@ -131,7 +130,6 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 					<DialogDescription className="mb-4 flex w-full flex-col gap-4 text-gray-600">
 						<div className="flex w-full gap-2">
 							<div className="flex min-h-[42px] w-[90%] flex-wrap items-center justify-between gap-1 overflow-visible rounded border bg-white px-2 py-1 ring-primary focus-within:ring-2">
-								{/* <InputGroup className="border-none p-0 shadow-none focus:outline-none focus:ring-0"> */}
 								<div className="flex w-full flex-row justify-between">
 									<div className="flex w-[80%] flex-wrap justify-start gap-2 [overflow-wrap:anywhere]">
 										{selectedUsers.map((userEmail) => {
@@ -141,7 +139,7 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 													className="flex items-center gap-1 rounded border bg-transparent px-2 py-1"
 												>
 													<span className="text-black">
-														{userEmail?.email}
+														{userEmail?.name}
 													</span>
 													<span>
 														<Button
@@ -245,32 +243,6 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 										</div>
 									)}
 								</div>
-								{/* <Popover
-                                        open={popupOpen}
-                                        onOpenChange={(e) =>
-                                            console.log(e, "openChange")
-                                        }
-                                    >
-                                        <PopoverPortalContent
-                                            container={dialogContainer.current}
-                                        >
-                                            <PopoverContent
-                                                align="start"
-                                                className={`position-relative w-[200px] left-[${popoverPosition?.left}] top-[${popoverPosition?.top}] max-h-60 overflow-y-auto p-0`}
-                                                sideOffset={8}
-                                            >
-                                                <Command>
-                                                    {searchedResults.map((user) => (
-                                                        <CommandItem key={user.id}>
-                                                            {user.name}
-                                                        </CommandItem>
-                                                    ))}
-                                                </Command>
-                                            </PopoverContent>
-                                        </PopoverPortalContent>
-                                    </Popover> */}
-
-								{/* </InputGroup> */}
 							</div>
 							<div className="flex w-[10%] items-center">
 								<Button
@@ -339,16 +311,8 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 								</div>
 							</div>
 						)}
-						<MembersList
-							id={id}
-							type={type}
-							// search={searchKey}
-							isAddMember={true}
-						/>
+						<MembersList id={id} type={type} isAddMember={true} />
 					</DialogDescription>
-					{/* <DialogClose>
-                    <Button onClick={onClose}>Cancel</Button>
-                </DialogClose> */}
 				</DialogContent>
 			</Dialog>
 		</div>

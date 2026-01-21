@@ -1,5 +1,5 @@
 import { ChevronDown, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNotification } from "@semoss/ui";
 import {
 	Avatar,
@@ -15,6 +15,7 @@ import {
 	Muted,
 } from "@semoss/ui/next";
 import { apiGet, apiPost } from "../utility/api";
+import { returnAccessType } from "./common";
 import { DeleteMembersOverlay } from "./delete-members";
 import type { SETTINGS_PROVISIONED_USER } from "./members-types";
 
@@ -34,6 +35,18 @@ interface MembersProps {
 	permission?: string;
 }
 
+/**
+ * Renders a list of members for a given project/engine.
+ * This component is reused in main members table and add members overlay.
+ * It fetches records from api on initial render and on search and also when the scrolling is reaching the bottom.
+ * It also handles refreshing the list of members when add members popup is closed or when a user is deleted.
+ * @param {string} id - The ID of the project/engine to fetch members for.
+ * @param {string} type - The type of the project/engine to fetch members for.
+ * @param {string} [search] - The search query to filter members by.
+ * @param {boolean} [isAddMember] - Whether to display add members button or not.
+ * @param {number} [refreshList] - Whether to refresh the list of members or not.
+ * @param {string} [permission] - The permission to filter members by.
+ */
 export const MembersList = ({
 	id,
 	type,
@@ -42,18 +55,7 @@ export const MembersList = ({
 	refreshList = false,
 	permission = "",
 }: MembersProps) => {
-	const [userData, setUserData] = useState<SETTINGS_PROVISIONED_USER[]>([
-		/*{
-			id: "",
-			name: "string",
-			type: "string",
-			email: "string",
-			permission: "string",
-			permission_granted_by: "string",
-			permission_granted_by_type: "string",
-			date_added: "string",
-		},*/
-	]);
+	const [userData, setUserData] = useState<SETTINGS_PROVISIONED_USER[]>([]);
 	const [refreshData, setRefreshData] = useState<number>(0);
 	const [limit, setLimit] = useState<number>(5);
 	const [totalMembers, setTotalMembers] = useState<number>(0);
@@ -61,6 +63,10 @@ export const MembersList = ({
 	const membersListId = `members-table-list-container-${isAddMember ? "add-member" : "default"}`;
 	const apiCallTriggerId = `triggerAPICall-${isAddMember ? "add-member" : "default"}`;
 	const notification = useNotification();
+
+	/**
+	 * Central managing of fetching records from api based on scroll by adding the limit
+	 */
 	//biome-ignore lint: elint/correctness/useExhaustiveDependencies: this is essential for fetching data
 	useEffect(() => {
 		const observer = new IntersectionObserver(
@@ -84,7 +90,10 @@ export const MembersList = ({
 			observer.disconnect();
 		};
 	}, [userData, totalMembers]);
-	// const getUserDataApi = ["getUserProjectPermission", id];
+
+	/**
+	 * fetches records from api on initial render and on search
+	 */
 	//biome-ignore lint: elint/correctness/useExhaustiveDependencies: this is essential for fetching data
 	useEffect(() => {
 		async function fetchUserData() {
@@ -112,7 +121,9 @@ export const MembersList = ({
 		}
 		fetchUserData();
 	}, [id, type, refreshData, limit, search]);
-
+	/**
+	 * refreshes members list, when add members is closed
+	 */
 	useEffect(() => {
 		if (refreshList) {
 			setRefreshData((prev) => prev + 1);
@@ -120,19 +131,11 @@ export const MembersList = ({
 		}
 	}, [refreshList]);
 
-	const returnAccessType = useCallback((permission: string) => {
-		switch (permission) {
-			case "READ_ONLY":
-				return "can view";
-			case "EDIT":
-				return "can edit";
-			case "OWNER":
-				return "owner";
-			default:
-				return "select access";
-		}
-	}, []);
-
+	/**
+	 * Updates a user's permission for the given project/engine.
+	 * @param {string} userId - The ID of the user to update.
+	 * @param {string} permission - The permission to update the user to.
+	 */
 	const updateUserPermission = (userId, permission) => {
 		// Implement API call to update user permission
 		apiPost(
@@ -162,7 +165,7 @@ export const MembersList = ({
 				});
 			});
 	};
-
+	//filtering user data based on permission group like, can view/ can edit
 	const userDataFiltered =
 		permission !== ""
 			? userData.filter((user) => user.permission === permission)
@@ -175,7 +178,6 @@ export const MembersList = ({
 					<CardHeader className="px-2 py-0">
 						<span className="font-geist font-medium text-neutral-500 text-sm leading-[20px]">
 							Who has access{" "}
-							{/* <Badge variant="secondary">{userData.length}</Badge> */}
 						</span>
 					</CardHeader>
 					<CardContent className="px-2 py-0">
@@ -185,12 +187,6 @@ export const MembersList = ({
 									className="flex flex-column items-center gap-2 py-2"
 									key={`members-row-${user.email}`}
 								>
-									{/* <img
-                                                className="h-16 w-16 text-neutral-300"
-                                                src={""}
-                                                alt="User"
-                                            /> */}
-									{/* <UserRound /> */}
 									<div className="width-[50px] flex rounded-2xl bg-[#ECEDEF]">
 										<Avatar className="items-center justify-center text-gray-500">
 											{user.name.charAt(0).toUpperCase()}
@@ -277,6 +273,7 @@ export const MembersList = ({
 										variant="outline"
 										size="icon-sm"
 										className="border-none"
+										disabled={user.permission === "OWNER"}
 										onClick={() => {
 											setIdsToDelete([
 												...idsToDelete,
@@ -303,7 +300,7 @@ export const MembersList = ({
 				open={idsToDelete.length > 0}
 				onClose={() => {
 					setIdsToDelete([]);
-					setRefreshData((prev) => prev + 1);
+					setRefreshData((prev) => prev + 1); //fetches latest user data when a user is deleted
 				}}
 				idsToDelete={idsToDelete}
 			/>
