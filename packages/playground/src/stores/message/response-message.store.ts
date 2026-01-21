@@ -278,9 +278,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 					},
 				]
 			>(
-				`UpdateRoomOptions(roomId=${JSON.stringify(room.roomId)}, roomOptions=[${JSON.stringify(
-					optionsToSave,
-				)}]);AskPlayground(
+				`AskPlayground(
 engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
