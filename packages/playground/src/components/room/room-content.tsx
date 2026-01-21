@@ -102,8 +102,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
-	const tempTokensUsed = 270; //
-	const tempTokensMax = 2500; //
+	const tempTokensUsed = 1000; //
+	const tempTokensMax = 1049; //
 
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">

@@ -21,10 +21,10 @@ export const ContextChart = ({ tokensUsed, tokensMax }: ContextChartProps) => {
 	const contextUsedPercent =
 		tokensMax > 0 ? (tokensUsed / tokensMax) * 100 : undefined;
 
-	if (contextUsedPercent === undefined || contextUsedPercent < 10)
+	if (contextUsedPercent === undefined || contextUsedPercent < 12.5)
 		return null;
 
-	const roundedPercent = Math.ceil(contextUsedPercent);
+	const roundedPercent = Math.round(contextUsedPercent / 12.5) * 12.5;
 	const radius = 8;
 	const cx = 9;
 	const cy = 9;
@@ -61,14 +61,27 @@ export const ContextChart = ({ tokensUsed, tokensMax }: ContextChartProps) => {
 										: "fill-muted"
 								}
 							/>
-							<path
-								d={`M ${cx} ${cy} L ${cx} ${cy - radius} A ${radius} ${radius} 0 ${largeArc} 1 ${x} ${y} Z`}
-								className={
-									roundedPercent >= 75
-										? "fill-destructive"
-										: "fill-muted-foreground"
-								}
-							/>
+							{roundedPercent >= 100 ? (
+								<circle
+									cx={cx}
+									cy={cy}
+									r={radius}
+									className={
+										roundedPercent >= 75
+											? "fill-destructive"
+											: "fill-muted-foreground"
+									}
+								/>
+							) : (
+								<path
+									d={`M ${cx} ${cy} L ${cx} ${cy - radius} A ${radius} ${radius} 0 ${largeArc} 1 ${x} ${y} Z`}
+									className={
+										roundedPercent >= 75
+											? "fill-destructive"
+											: "fill-muted-foreground"
+									}
+								/>
+							)}
 						</svg>
 					</div>
 				</div>
