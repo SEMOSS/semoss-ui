@@ -22,44 +22,50 @@ interface ToolStructure {
 	};
 	tools: Tool[];
 }
+
 interface RoomToolProps {
 	/** Node */
 	node: FlexLayout.TabNode;
+
+	/** Room store */
 	room: RoomStore;
 }
 
+/**
+ * Renders a tool inside a room
+ *
+ * @component
+ */
 export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
-	const config: {
-		app: string;
-		tool: {
-			message: string;
-			id: string;
-			name: string;
-			parameters: Record<string, unknown>;
-		};
-	} = useMemo(() => {
-		return node.getConfig();
-	}, [node]);
-
+	/**
+	 * State
+	 */
 	const iframeRef = useRef<HTMLIFrameElement>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
-
 	const [selectedTool, setSelectedTool] = useState<MCPTool>(null);
 	const [formData, setFormData] = useState<Record<string, unknown>>({});
 	const [url, setUrl] = useState("");
 
-	// get the metadata
+	/**
+	 * Library Hooks
+	 */
+	// Get the app metadata
 	const getAppInfo = usePixel<{
 		project_type: "BLOCKS" | "CODE" | "INSIGHT" | "";
-	}>(config.app ? `ProjectInfo(project=["${config.app}"]);` : "", {
-		data: {
-			project_type: "",
+	}>(
+		node.getConfig().app
+			? `ProjectInfo(project=["${node.getConfig().app}"]);`
+			: "",
+		{
+			data: {
+				project_type: "",
+			},
 		},
-	});
+	);
 
 	// Get tool JSON
 	const getToolInfo = usePixel<ToolStructure>(
-		`GetMCPTools(project=["${config.app}"]);`,
+		`GetMCPTools(project=["${node.getConfig().app}"]);`,
 		{
 			data: {
 				tools: [
@@ -88,26 +94,13 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 		},
 	);
 
-	// Populate selected tool
-	useEffect(() => {
-		if (getToolInfo.status === "SUCCESS" && config?.tool?.name) {
-			setSelectedTool(
-				getToolInfo.data.tools.find((a) => {
-					const underscoreIndex = config.tool.name.indexOf("_");
-					const shortName =
-						underscoreIndex !== -1
-							? config.tool.name.substring(underscoreIndex + 1)
-							: config.tool.name;
-					return a.name === shortName;
-				}),
-			);
-		}
-	}, [getToolInfo, config.tool.name]);
-
 	/**
-	 * Process iframe on load
+	 * Functions
 	 */
+	// Process iframe on load and send initialization message
 	const handleOnLoad = () => {
+		const config = node.getConfig();
+
 		// send the parameters
 		iframeRef.current?.contentWindow?.postMessage(
 			{
@@ -126,6 +119,38 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 		);
 	};
 
+	/**
+	 * Memos / Effects
+	 */
+	const config: {
+		app: string;
+		tool: {
+			message: string;
+			id: string;
+			name: string;
+			parameters: Record<string, unknown>;
+		};
+	} = useMemo(() => {
+		return node.getConfig();
+	}, [node]);
+
+	// Initialize selected tool from tool info
+	useEffect(() => {
+		if (getToolInfo.status === "SUCCESS" && config?.tool?.name) {
+			setSelectedTool(
+				getToolInfo.data.tools.find((a) => {
+					const underscoreIndex = config.tool.name.indexOf("_");
+					const shortName =
+						underscoreIndex !== -1
+							? config.tool.name.substring(underscoreIndex + 1)
+							: config.tool.name;
+					return a.name === shortName;
+				}),
+			);
+		}
+	}, [getToolInfo, config.tool.name]);
+
+	// Check portal availability and set appropriate URL
 	useEffect(() => {
 		const checkPortal = async () => {
 			// Finish loading
