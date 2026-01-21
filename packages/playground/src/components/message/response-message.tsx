@@ -127,13 +127,10 @@ interface ResponseMessageProps {
 
 	/** Message to render */
 	message: ResponseMessageStore;
-
-	/** Is it last */
-	isLast: boolean;
 }
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
-	({ room, message, isLast }) => {
+	({ room, message }) => {
 		const thinkingMessage = useLoadingMessage(room.isLoading);
 
 		const [thinking, setThinking] = useState<string>("");
@@ -193,7 +190,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		return (
 			<div className="group mb-0 flex w-full flex-col gap-4">
 				<div className="group flex flex-row items-center gap-2">
-					{room.isLoading && isLast ? (
+					{message.isThinking ? (
 						<div className="flex size-4 animate-spin items-center justify-center">
 							<AppLogo full={false} />
 						</div>
@@ -204,13 +201,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						{message.model.name ?? "Agent"}
 					</span>
 				</div>
-				{((room.isLoading && isLast) ||
-					message.thinking.length > 0) && (
+				{(message.isThinking || message.thinking.length > 0) && (
 					<Accordion
 						type="single"
 						collapsible
 						className="rounded-lg border p-3 text-muted-foreground text-sm shadow-sm"
-						value={room.isLoading && isLast ? "thinking" : thinking}
+						value={message.isThinking ? "thinking" : thinking}
 						onValueChange={(val) => setThinking(val || "")}
 					>
 						<AccordionItem value="thinking">
@@ -228,7 +224,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						</AccordionItem>
 					</Accordion>
 				)}
-
 				{message.text ? (
 					<Markdown className="[&>*:first-child]:mt-0">
 						{message.text}
