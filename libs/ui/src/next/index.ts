@@ -24,6 +24,7 @@ export * from "./command";
 export * from "./dialog";
 export * from "./dropdown-menu";
 export * from "./field";
+export * from "./hover-card";
 export * from "./input";
 export * from "./input-group";
 export * from "./item";

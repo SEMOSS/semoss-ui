@@ -1,3 +1,12 @@
+import { Cpu, HelpCircle } from "lucide-react";
+import {
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 export interface ContextChartProps {
 	tokensUsed?: number;
 	tokensMax?: number;
@@ -8,20 +17,7 @@ export interface ContextChartProps {
  *
  * @component
  */
-
-import { Cpu, HelpCircle } from "lucide-react";
-import { useState } from "react";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuTrigger,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
-
 export const ContextChart = ({ tokensUsed, tokensMax }: ContextChartProps) => {
-	const [isOpen, setIsOpen] = useState(false);
 	const contextUsedPercent =
 		tokensMax > 0 ? (tokensUsed / tokensMax) * 100 : undefined;
 
@@ -49,14 +45,9 @@ export const ContextChart = ({ tokensUsed, tokensMax }: ContextChartProps) => {
 	};
 
 	return (
-		<DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-			<DropdownMenuTrigger asChild>
-				{/** biome-ignore lint/a11y/noStaticElementInteractions: element is interactive */}
-				<div
-					className="relative"
-					onMouseEnter={() => setIsOpen(true)}
-					onMouseLeave={() => setIsOpen(false)}
-				>
+		<HoverCard openDelay={10}>
+			<HoverCardTrigger asChild>
+				<div className="relative">
 					<div className="flex cursor-pointer items-center gap-2">
 						{/** biome-ignore lint/a11y/noSvgWithoutTitle: hover status is applied to provide description for interactive svg */}
 						<svg width={18} height={18} viewBox="0 0 18 18">
@@ -81,16 +72,14 @@ export const ContextChart = ({ tokensUsed, tokensMax }: ContextChartProps) => {
 						</svg>
 					</div>
 				</div>
-			</DropdownMenuTrigger>
+			</HoverCardTrigger>
 
-			<DropdownMenuContent
+			<HoverCardContent
 				side="top"
 				align="center"
 				className="w-70 border-gray-200 bg-white"
-				onMouseEnter={() => setIsOpen(true)}
-				onMouseLeave={() => setIsOpen(false)}
 			>
-				<div className="flex flex-col gap-2 p-3">
+				<div className="flex flex-col gap-2">
 					{/* Header with Memory title and help icon */}
 					<div className="flex items-center gap-1.5">
 						<p className="font-semibold text-base text-card-foreground">
@@ -114,23 +103,19 @@ export const ContextChart = ({ tokensUsed, tokensMax }: ContextChartProps) => {
 					</div>
 
 					{/* Tokens left section */}
-					<div className="flex w-full items-center gap-1.5">
-						<Cpu className="h-5 w-5 shrink-0 text-muted-foreground" />
-						<div className="flex w-full items-center">
-							<p className="font-medium text-muted-foreground text-sm">
-								Tokens used
-							</p>
+					<div className="flex w-full items-center justify-between font-medium text-muted-foreground text-sm">
+						<div className="flex items-center gap-1.5">
+							<Cpu className="h-5 w-5" />
+							<p>Tokens used</p>
 						</div>
 						{/*Tokens used / max section */}
-						<div className="text-right">
-							<p className="items-center justify-between whitespace-nowrap font-medium text-muted-foreground text-sm">
-								{formatTokens(tokensUsed)} /{" "}
-								{formatTokens(tokensMax)}
-							</p>
-						</div>
+						<p>
+							{formatTokens(tokensUsed)} /{" "}
+							{formatTokens(tokensMax)}
+						</p>
 					</div>
 				</div>
-			</DropdownMenuContent>
-		</DropdownMenu>
+			</HoverCardContent>
+		</HoverCard>
 	);
 };
