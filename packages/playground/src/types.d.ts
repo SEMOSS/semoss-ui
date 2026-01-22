@@ -164,7 +164,11 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 			SMSS_PROJECT_NAME: string;
 			SMSS_PROJECT_ID: string;
 			SMSS_MCP_EXECUTION: McpExecution;
-			SMSS_MCP_DISPLAY?: McpDisplay;
+			SMSS_MCP_UI?: {
+				loadingMessage?: string;
+				displayLocation?: McpDisplay;
+				resourceURI?: string;
+			};
 		};
 
 		/**  Display of the tool **/
@@ -258,6 +262,7 @@ export interface MCPTool {
 		SMSS_MCP_UI?: {
 			loadingMessage?: string;
 			resourceURI?: string;
+			displayLocation?: McpDisplay;
 		};
 	};
 }
