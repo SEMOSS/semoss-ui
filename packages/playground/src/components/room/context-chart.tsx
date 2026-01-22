@@ -140,7 +140,8 @@ export const ContextChart = ({ tokensUsed, tokensMax }: ContextChartProps) => {
 						</div>
 						{/* Right side: Token count (used / max) */}
 						<p>
-							{formatTokens(tokensUsed)} /{" "}
+							{formatTokens(tokensUsed)}
+							{" / "}
 							{formatTokens(tokensMax)}
 						</p>
 					</div>
