@@ -137,23 +137,25 @@ export const NewRoomPage = observer(() => {
 			setIsLoading(true);
 
 			// create a new room
-			const roomId = await chat.createRoom(
-				prompt,
-				files,
-				mode.type === "plan" ? "planning" : "chat",
-				chat.models.selected.app_id,
-				mode.type === "workspace" && mode.workspace
-					? {
-							...options,
-							workspace: {
-								workspace_id: mode.workspace.project_id,
-							},
-						}
-					: options,
-			);
+			const room = await chat.createRoom();
+
+			// set the model
+			room.setModel(chat.models.selected);
+
+			// set the mode
+			room.setMode(mode.type === "plan" ? "planning" : "chat");
+
+			// update the options
+			await room.updateRoomOptions({
+				...options,
+				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
+			});
+
+			// ask the room
+			room.askMessage(prompt, files);
 
 			// go to the new room
-			navigate(`/room/${roomId}`);
+			navigate(`/room/${room.roomId}`);
 		} catch (error) {
 			toast.error(
 				`An error occurred while creating the room. Error: ${error.message}`,

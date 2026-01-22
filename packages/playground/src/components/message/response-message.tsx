@@ -34,7 +34,6 @@ import {
 	InputMessageStore,
 	type ResponseMessageStore,
 	type RoomStore,
-	RootMessageStore,
 } from "@/stores";
 import { AppLogo } from "../common";
 import { RoomInlineTool } from "../room/room-inline-tool";
@@ -315,8 +314,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							<TooltipTrigger asChild>
 								<Button
 									disabled={
-										inputMessage.parent instanceof
-											RootMessageStore ||
+										!inputMessage.parent?.parent ||
 										message.room.mode === "executing"
 									}
 									variant="ghost"
