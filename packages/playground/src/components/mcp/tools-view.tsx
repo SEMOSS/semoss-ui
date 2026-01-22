@@ -203,8 +203,6 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 			setURL();
 		}, [app, tool, getAppInfo.status, getAppInfo.data, selectedTool]);
 
-		console.log({ tool, hi: getMCP.data.tools });
-
 		return (
 			<div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
 				{isLoading && <Skeleton className="h-full w-full" />}
