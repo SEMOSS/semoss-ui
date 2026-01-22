@@ -127,9 +127,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 										<ResponseMessage
 											message={m}
 											room={room}
-											isLast={
-												mIdx === room.history.length - 1
-											}
 										/>
 									)}
 									{m.type === "PLAN" && (
