@@ -1,30 +1,27 @@
-import { Settings2Icon } from "lucide-react";
+import { CheckIcon, ListTodoIcon, MessageCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import {
-	Button,
-	ResizableHandle,
-	ResizablePanel,
-	ResizablePanelGroup,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
 	toast,
 } from "@semoss/ui/next";
 import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
-	RoomInputMenuPlugin,
-	RoomOptions,
-	RoomWorkspace,
+	RoomInputMenuKnowledge,
+	RoomInputMenuSettings,
+	RoomInputMenuToolbox,
+	RoomInputMenuUpload,
+	RoomInputMenuWorkspace,
 	workspaceToApp,
 } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { App, Workspace } from "@/types";
+import type { App, MCPConfig, Workspace } from "@/types";
 
 /**
  * The page to create a new room
@@ -77,11 +74,52 @@ export const NewRoomPage = observer(() => {
 		workspace: null,
 	});
 
-	const [isMenuOpen, setIsMenuOpen] = useState(false);
-
 	/**
 	 * Functions
 	 */
+	/**
+	 * Handle tool selection
+	 * @param tool - selected tool
+	 */
+	const handleToolSelect = (tool: MCPConfig) => {
+		// Toggle tool in options
+		const tools = options.mcp.reduce(
+			(acc, curr) => {
+				acc[curr.id] = curr;
+				return acc;
+			},
+			{} as Record<string, MCPConfig>,
+		);
+
+		if (Object.hasOwn(tools, tool.id)) {
+			delete tools[tool.id];
+		} else {
+			tools[tool.id] = tool;
+		}
+
+		setOptions({
+			...options,
+			mcp: Object.values(tools),
+		});
+	};
+
+	/**
+	 * Handle workspace selection
+	 */
+	const handleWorkspaceSelect = (workspace: App | null) => {
+		if (workspace) {
+			setMode({
+				type: "workspace",
+				workspace,
+			});
+		} else {
+			setMode({
+				type: "chat",
+				workspace: null,
+			});
+		}
+	};
+
 	/**
 	 * Create a new room and ask the model
 	 *
@@ -204,107 +242,144 @@ export const NewRoomPage = observer(() => {
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
-			<ResizablePanelGroup direction="horizontal">
-				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
-					<img
-						src={root.theme.images.landing || landingImage}
-						alt="Background"
-						className="absolute inset-0 h-full w-full select-none object-cover"
-					/>
-					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
-						{root.theme.landing ? (
-							<div
-								className="mx-auto flex max-w-xl"
-								// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
-								dangerouslySetInnerHTML={{
-									__html: root.theme.landing,
-								}}
-							/>
-						) : (
-							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
-								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-									Welcome
-								</div>
-								{root.theme.description ? (
-									<div className="text-center text-muted-foreground text-sm leading-normal">
-										{root.theme.description}
-									</div>
-								) : null}
-							</div>
-						)}
-
-						<RoomInput
-							className="max-h-64 min-h-48"
-							isLoading={
-								isLoading ||
-								(mode.type === "workspace" &&
-									mode.workspace &&
-									getWorkspace.status !== "SUCCESS")
-							}
-							workspace={
-								<RoomWorkspace
-									mode={mode}
-									onModeChange={setMode}
-								/>
-							}
-							plugins={
-								<RoomInputMenuPlugin
-									options={options}
-									setOptions={setOptions}
-								/>
-							}
-							configuration={
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											aria-label="Open Configuration Menu"
-											className={`${isMenuOpen ? "text-primary" : ""}`}
-											disabled={isLoading}
-											variant="ghost"
-											size="icon-sm"
-											onClick={() => {
-												setIsMenuOpen(!isMenuOpen);
-											}}
-										>
-											<Settings2Icon />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>
-										Open Configuration Menu
-									</TooltipContent>
-								</Tooltip>
-							}
-							onPrompt={async (prompt, files) => {
-								await createRoom(prompt, files);
-
-								return true;
+			<div className="relative flex h-full w-full flex-col items-center justify-center overflow-auto p-2">
+				<img
+					src={root.theme.images.landing || landingImage}
+					alt="Background"
+					className="absolute inset-0 h-full w-full select-none object-cover"
+				/>
+				<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
+					{root.theme.landing ? (
+						<div
+							className="mx-auto flex max-w-xl"
+							// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+							dangerouslySetInnerHTML={{
+								__html: root.theme.landing,
 							}}
 						/>
-					</div>
-				</ResizablePanel>
-
-				{isMenuOpen && (
-					<>
-						<ResizableHandle />
-						<ResizablePanel
-							className="relative h-full w-full p-2"
-							defaultSize={25}
-						>
-							<div
-								className={`h-full w-full overflow-hidden rounded-lg border border-border bg-background shadow-sm`}
-							>
-								<RoomOptions
-									options={options}
-									setOptions={(o) => {
-										setOptions(o);
-									}}
-									setRoomModel={() => null}
-								/>
+					) : (
+						<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
+							<div className="text-center font-semibold text-4xl text-foreground leading-normal">
+								Welcome
 							</div>
-						</ResizablePanel>
-					</>
-				)}
-			</ResizablePanelGroup>
+							{root.theme.description ? (
+								<div className="text-center text-muted-foreground text-sm leading-normal">
+									{root.theme.description}
+								</div>
+							) : null}
+						</div>
+					)}
+
+					<RoomInput
+						className="max-h-64 min-h-48"
+						isLoading={
+							isLoading ||
+							(mode.type === "workspace" &&
+								mode.workspace &&
+								getWorkspace.status !== "SUCCESS")
+						}
+						model={chat.models.selected}
+						setModel={(m) => {
+							chat.setSelectedModel(m);
+						}}
+						MenuComponent={observer(
+							({ addToken, onOpenChange, fileRef }) => (
+								<>
+									<DropdownMenuItem
+										onSelect={() => {
+											setMode({
+												type: "chat",
+												workspace: null,
+											});
+											onOpenChange(false);
+										}}
+									>
+										<MessageCircleIcon />
+										<span className="flex-1">Ask</span>
+										{mode.type === "chat" ? (
+											<div className="px-1">
+												<CheckIcon />
+											</div>
+										) : null}
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onSelect={() => {
+											setMode({
+												type: "plan",
+												workspace: null,
+											});
+											onOpenChange(false);
+										}}
+									>
+										<ListTodoIcon />
+										<span className="flex-1">Plan</span>
+
+										{mode.type === "plan" ? (
+											<div className="px-1">
+												<CheckIcon />
+											</div>
+										) : null}
+									</DropdownMenuItem>
+									<RoomInputMenuWorkspace
+										workspace={
+											mode.type === "workspace"
+												? mode.workspace
+												: null
+										}
+										onSelect={handleWorkspaceSelect}
+									/>
+									<DropdownMenuSeparator />
+									<RoomInputMenuUpload
+										fileRef={fileRef}
+										onSelect={() => onOpenChange(false)}
+									/>
+									<DropdownMenuSeparator />
+									<RoomInputMenuKnowledge
+										options={options}
+										onSelect={(tool) => {
+											handleToolSelect(tool);
+											addToken(`<${tool.name}>`);
+										}}
+									/>
+									<RoomInputMenuToolbox
+										options={options}
+										onSelect={(tool) => {
+											handleToolSelect(tool);
+											addToken(`<${tool.name}>`);
+										}}
+									/>
+									<RoomInputMenuSettings
+										model={chat.models.selected}
+										options={options}
+										onClose={(
+											success,
+											{ model, options },
+										) => {
+											if (success) {
+												if (model) {
+													chat.setSelectedModel(
+														model,
+													);
+												}
+
+												if (options) {
+													setOptions(options);
+												}
+											}
+											onOpenChange(false);
+										}}
+									/>
+								</>
+							),
+						)}
+						onPrompt={async (prompt, files) => {
+							await createRoom(prompt, files);
+
+							return true;
+						}}
+					/>
+				</div>
+			</div>
 		</div>
 	);
 });

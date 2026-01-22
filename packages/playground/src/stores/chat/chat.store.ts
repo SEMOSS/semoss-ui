@@ -232,7 +232,9 @@ paramValues=[${JSON.stringify({
 	 * Set the selected model
 	 */
 	setSelectedModel = (model: Engine): void => {
-		this.models.selected = model;
+		runInAction(() => {
+			this._store.models.selected = model;
+		});
 
 		// save to local storage
 		if (localStorage) {
@@ -241,32 +243,6 @@ paramValues=[${JSON.stringify({
 				JSON.stringify(this.models.selected),
 			);
 		}
-	};
-
-	/**
-	 * Set the selected model by its id
-	 */
-	setSelectedModelById = async (modelId: string): Promise<void> => {
-		if (!modelId || this.models.selected?.app_id === modelId) {
-			return;
-		}
-
-		// get available models
-		const { pixelReturn } = await this._actions.run<[Engine[]]>(
-			` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(modelId)})`,
-		);
-
-		// throw errors
-		if (this._error) {
-			throw new Error(this._error.message);
-		}
-
-		// If not found, do nothing
-		if (pixelReturn[0].output.length === 0) {
-			throw new Error("Model not found");
-		}
-
-		this.setSelectedModel(pixelReturn[0].output[0]);
 	};
 
 	/**

@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -13,6 +13,7 @@ import {
 import { RoomContent, RoomSidebar } from "@/components";
 import { useChat } from "@/hooks";
 import { RoomStore } from "@/stores";
+import type { Engine } from "@/types";
 
 interface RoomProps {
 	/** Room to load */
@@ -30,6 +31,12 @@ export const Room: React.FC<RoomProps> = observer(({ roomId }) => {
 	const navigate = useNavigate();
 
 	const [room, setRoom] = useState<RoomStore | null>(null);
+	const selectedModelRef = useRef<Engine | null>(null);
+
+	// keep track of the selected model
+	useEffect(() => {
+		selectedModelRef.current = chat.models.selected;
+	}, [chat.models.selected]);
 
 	// load the room
 	useEffect(() => {
@@ -40,15 +47,12 @@ export const Room: React.FC<RoomProps> = observer(({ roomId }) => {
 				// initialize the room
 				await room.initialize();
 
-				// set the selected model
-				try {
-					await chat.setSelectedModelById(room.modelId);
-				} catch {
-					// model id is invalid
-					toast.warning(
-						`The model previously selected for this room is no longer available.`,
-					);
-					room.setModel(chat.models?.selected?.app_id);
+				// update the model based on the room
+				if (room.model) {
+					chat.setSelectedModel(room.model);
+				} else {
+					// If no model is set on the room, use the selected model from chat
+					room.setModel(selectedModelRef.current);
 				}
 
 				// set the room
@@ -69,8 +73,7 @@ export const Room: React.FC<RoomProps> = observer(({ roomId }) => {
 		insight.isInitialized,
 		insight.insightId,
 		navigate,
-		chat.setSelectedModelById,
-		chat.models?.selected?.app_id,
+		chat.setSelectedModel,
 	]);
 
 	if (!room || !room.isInitialized) {
