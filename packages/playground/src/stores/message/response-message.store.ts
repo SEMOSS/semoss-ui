@@ -16,7 +16,6 @@ import type {
 import { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
 import { PlanMessageStore } from "./plan-message.store";
-import { createMessageStore } from "./utility";
 
 interface Tool {
 	/** tool execution id */
@@ -94,6 +93,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 * Current execution index of the tool, used for auto execution
 	 */
 	toolAutoExecutionIdx: number = 0;
+
+	/**
+	 * Response to an execution
+	 */
+	toolResponseMessage: ResponseMessageStore | null = null;
 
 	/**
 	 * Feedback provided by the user; only applicable to messages provided via the LLM
@@ -407,7 +411,10 @@ paramValues=[${JSON.stringify({
 	 * Start executing from the first step
 	 */
 	startToolExecution = async (): Promise<void> => {
+		// reset it
 		this.toolAutoExecutionIdx = 0;
+		this.toolResponseMessage = null;
+
 		await this.runToolExecution();
 	};
 
@@ -505,22 +512,52 @@ paramValues=[${JSON.stringify({
 			return;
 		}
 
-		// save the response
-		runInAction(() => {
-			tool.response = toolResponse;
-			tool.tool_status = status;
-			tool.is_executing = false;
-		});
-
-		// wait for the pixel to run
-		const response = await room.runRoomPixel<
-			[
-				{
-					responseMessage: PixelMessage | string;
+		// if there is no responseMessage create it. This will hold it.
+		let responseMessage = this.toolResponseMessage;
+		if (!responseMessage) {
+			this.toolResponseMessage = new ResponseMessageStore(room, {
+				messageId: "STREAMING_TOOL_PLACEHOLDER_ID",
+				type: "RESPONSE_TEXT",
+				visible: true,
+				content: "",
+				modelId: this.model.id,
+				paramMap: {
+					max_new_tokens: room.options.tokenLength,
+					temperature: room.options.temperature,
 				},
-			]
-		>(
-			`AddPlaygroundToolExecution(
+				ornaments: {
+					modelName: this.model.name,
+				},
+				dateCreated: new Date().toISOString(),
+			} as ResponseTextPixelMessage);
+
+			// add as a child
+			this.addChild(this.toolResponseMessage);
+
+			// save it
+			responseMessage = this.toolResponseMessage;
+		}
+
+		try {
+			// save the response
+			runInAction(() => {
+				tool.response = toolResponse;
+				tool.tool_status = status;
+				tool.is_executing = false;
+			});
+
+			// turn on thinking
+			responseMessage.isThinking = true;
+
+			// wait for the pixel to run
+			const response = await room.runRoomPixelStreaming<
+				[
+					{
+						responseMessage: PixelMessage | string;
+					},
+				]
+			>(
+				`AddPlaygroundToolExecution(
 engine=["${room.modelId}"],
 roomId = ["${room.roomId}"],
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
@@ -530,27 +567,49 @@ toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
 mcpToolStatus=${JSON.stringify(status)}
 );`,
-		);
-
-		const { output } = response.pixelReturn[0];
-
-		// If the output is a string (as opposed to a tool response message), continue tool execution. Otherwise, create the response message
-		if (
-			typeof output === "string" ||
-			typeof output.responseMessage === "string"
-		) {
-			// Keep executing tools
-			await this.continueToolExecution(tool);
-		} else {
-			// create the response and link to the message
-			const responseMessage = createMessageStore(
-				room,
-				output.responseMessage,
+				(chunk) => {
+					runInAction(() => {
+						if (chunk.stream_type === "content") {
+							if (chunk.data.content) {
+								responseMessage.text += chunk.data.content;
+							}
+						} else if (chunk.stream_type === "thinking") {
+							if (chunk.data.thinking) {
+								responseMessage.thinking += chunk.data.thinking;
+							}
+						} else if (chunk.stream_type === "tool") {
+							//noop
+						} else {
+							console.error(`Unknown stream type`, chunk);
+						}
+					});
+				},
 			);
-			this.addChild(responseMessage);
 
-			// start running tools if there are any
-			(responseMessage as ResponseMessageStore).startToolExecution();
+			const { output } = response.results[0];
+
+			// If the output is a string (as opposed to a tool response message), continue tool execution. Otherwise, create the response message
+			if (
+				typeof output === "string" ||
+				typeof output.responseMessage === "string"
+			) {
+				// Keep executing tools
+				await this.continueToolExecution(tool);
+			} else {
+				// create the response and link to the message
+				responseMessage.sync(output.responseMessage);
+
+				// start running tools if there are any
+				responseMessage.startToolExecution();
+
+				// clear it
+				this.toolResponseMessage = null;
+			}
+		} finally {
+			runInAction(() => {
+				// turn off thinking
+				responseMessage.isThinking = false;
+			});
 		}
 	};
 
