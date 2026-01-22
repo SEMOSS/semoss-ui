@@ -271,7 +271,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 										if (options) {
 											room.setOptions(options);
-											chat.setSelectedModel(model);
 										}
 									}
 									onOpenChange(false);
