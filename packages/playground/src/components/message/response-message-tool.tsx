@@ -3,21 +3,14 @@ import {
 	CheckIcon,
 	HammerIcon,
 	Loader2Icon,
-	PanelBottomIcon,
-	PanelRightIcon,
 	XCircleIcon,
-	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import {
-	Button,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
+import { Button } from "@semoss/ui/next";
 import {
 	MCP_DISPLAY_HIDDEN,
 	MCP_DISPLAY_INLINE,
+	MCP_DISPLAY_SIDEBAR,
 	TOOL_CANCELLATION_PROMPT,
 } from "@/constants";
 import { useLoadingMessage } from "@/hooks";
@@ -56,10 +49,6 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		// track if it is active inline
 		const isActiveInline = room.isInlineToolOpen(nodeId);
 
-		// check display mode (hidden tools are not shown)
-		const displayMode = tool._meta.SMSS_MCP_DISPLAY;
-		const isHidden = displayMode === MCP_DISPLAY_HIDDEN;
-
 		// TODO: if the plan is executing, only the execution step is enabled
 		let isDisabled = false;
 		if (room.mode === "executing") {
@@ -84,11 +73,6 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			icon = <HammerIcon />;
 		}
 
-		// Don't render if hidden
-		if (isHidden) {
-			return null;
-		}
-
 		/**
 		 * Open tool in the default location based on SMSS_MCP_DISPLAY
 		 */
@@ -109,10 +93,11 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				},
 			};
 
-			// Open based on display mode preference
-			if (displayMode === MCP_DISPLAY_INLINE) {
+			if (tool._meta.SMSS_MCP_DISPLAY === MCP_DISPLAY_HIDDEN) {
+				//noop
+			} else if (tool._meta.SMSS_MCP_DISPLAY === MCP_DISPLAY_INLINE) {
 				room.addInlineTool(nodeId, toolConfig);
-			} else {
+			} else if (tool._meta.SMSS_MCP_DISPLAY === MCP_DISPLAY_SIDEBAR) {
 				// Default to sidebar
 				room.addSidebarNode(nodeId, {
 					type: "tab",
@@ -123,6 +108,11 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				});
 			}
 		};
+
+		// Don't render if hidden
+		if (tool._meta.SMSS_MCP_DISPLAY === MCP_DISPLAY_HIDDEN) {
+			return null;
+		}
 
 		return (
 			<div className="flex flex-col gap-2">
@@ -179,127 +169,6 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						</div>
 					</button>
 					<div className="flex items-center gap-2">
-						{/* Open/Move dropdown */}
-
-						{/* Close buttons */}
-						{isActiveInline && (
-							<>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											type="button"
-											size="sm"
-											variant="ghost"
-											className="invisible group-hover/toolcard:visible"
-											onClick={(e) => {
-												e.stopPropagation();
-
-												// remove from inline
-												room.removeInlineTool(nodeId);
-
-												// add to sidebar
-												room.addSidebarNode(nodeId, {
-													type: "tab",
-													name: tool.title,
-													component: "room-tool",
-													config: {
-														app: tool._meta
-															.SMSS_PROJECT_ID,
-														tool: {
-															message: message.id,
-															id: tool.id,
-															name: tool.name,
-															title: tool.title,
-															parameters:
-																tool.parameters,
-														},
-													},
-													enableClose: true,
-												});
-											}}
-										>
-											<PanelRightIcon className="size-4" />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>
-										Open in Sidebar
-									</TooltipContent>
-								</Tooltip>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											type="button"
-											size="sm"
-											variant="ghost"
-											className="invisible group-hover/toolcard:visible"
-											onClick={(e) => {
-												e.stopPropagation();
-
-												// remove from inline
-												room.removeInlineTool(nodeId);
-											}}
-										>
-											<XIcon className="size-4" />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>Close</TooltipContent>
-								</Tooltip>
-							</>
-						)}
-						{isActiveInSidebar && (
-							<>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											type="button"
-											size="sm"
-											variant="ghost"
-											className="invisible group-hover/toolcard:visible"
-											onClick={(e) => {
-												e.stopPropagation();
-
-												// remove from sidebar
-												room.removeSidebarNode(nodeId);
-
-												// add to inline
-												room.addInlineTool(nodeId, {
-													app: tool._meta
-														.SMSS_PROJECT_ID,
-													tool: {
-														message: message.id,
-														id: tool.id,
-														name: tool.name,
-														title: tool.title,
-														parameters:
-															tool.parameters,
-													},
-												});
-											}}
-										>
-											<PanelBottomIcon className="size-4" />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>Open Inline</TooltipContent>
-								</Tooltip>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											type="button"
-											size="sm"
-											variant="ghost"
-											className="invisible group-hover/toolcard:visible"
-											onClick={(e) => {
-												e.stopPropagation();
-												room.removeSidebarNode(nodeId);
-											}}
-										>
-											<XIcon className="size-4" />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>Close</TooltipContent>
-								</Tooltip>
-							</>
-						)}
 						{!tool.response && (
 							<Button
 								type="button"

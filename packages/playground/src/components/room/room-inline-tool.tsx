@@ -55,14 +55,16 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 							<TooltipTrigger asChild>
 								<Button
 									type="button"
-									size="sm"
+									size="icon-sm"
 									variant="ghost"
-									className="invisible group-hover/toolcard:visible"
 									onClick={(e) => {
 										e.stopPropagation();
 
 										// remove from inline
 										room.removeInlineTool(nodeId);
+
+										// turn off maximized state
+										setIsMaximized(false);
 
 										// add to sidebar
 										room.addSidebarNode(nodeId, {
@@ -83,7 +85,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 										});
 									}}
 								>
-									<PanelRightIcon className="size-4" />
+									<PanelRightIcon />
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent>Open in Sidebar</TooltipContent>
@@ -105,9 +107,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent>
-								{isMaximized
-									? "Minimize Tool"
-									: "Maximize Tool"}
+								{isMaximized ? "Minimize" : "Maximize"}
 							</TooltipContent>
 						</Tooltip>
 						<Separator
@@ -123,13 +123,15 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 									onClick={() => {
 										// turn off maximized state when closing sidebar
 										setIsMaximized(false);
+
+										// remove from inline
 										room.removeInlineTool(nodeId);
 									}}
 								>
 									<XIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Close Sidebar</TooltipContent>
+							<TooltipContent>Close</TooltipContent>
 						</Tooltip>
 					</div>
 					<div className="w-full flex-1 overflow-hidden">

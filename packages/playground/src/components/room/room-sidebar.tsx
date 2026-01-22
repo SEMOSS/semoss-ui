@@ -32,6 +32,16 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 	const layoutRef = useRef<FlexLayout.Layout | null>(null);
 	const [isMaximized, setIsMaximized] = useState(false);
 
+	// this will render the component whenever the sidebar model changes
+	room.sidebar.counter;
+
+	// get the node and do a type check
+	let activeNode: FlexLayout.TabNode | null = null;
+	const node = room.sidebar.model.getActiveTabset()?.getSelectedNode();
+	if (node instanceof FlexLayout.TabNode) {
+		activeNode = node;
+	}
+
 	return (
 		<div className="relative h-full w-full overflow-hidden">
 			<div
@@ -45,49 +55,40 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
 				<div className="absolute top-0 right-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pr-2">
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								type="button"
-								size="sm"
-								variant="ghost"
-								className="invisible group-hover/toolcard:visible"
-								onClick={(e) => {
-									e.stopPropagation();
+					{activeNode?.getComponent() === "room-tool" && (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									type="button"
+									size="icon-sm"
+									variant="ghost"
+									onClick={(e) => {
+										e.stopPropagation();
 
-									const nodeId =
-										room.sidebar.model
-											.getActiveTabset()
-											?.getId() ||
-										room.sidebar.model
-											.getRoot()
-											.getChildren()[0]
-											?.getId() ||
-										"";
+										if (!activeNode) {
+											return;
+										}
 
-									if (!nodeId) {
-										return;
-									}
+										const nodeId = activeNode.getId();
 
-									// remove from sidebar
-									room.removeSidebarNode(nodeId);
+										// remove from sidebar
+										room.removeSidebarNode(nodeId);
 
-									// TODO: validate
-									const node = room.sidebar.model.getNodeById(
-										nodeId,
-									) as unknown as FlexLayout.TabNode;
+										const config = activeNode.getConfig();
 
-									const config = node.getConfig();
+										// turn off maximized state
+										setIsMaximized(false);
 
-									// add to inline
-									room.addInlineTool(nodeId, config);
-								}}
-							>
-								<PanelBottomIcon className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>Open in Sidebar</TooltipContent>
-					</Tooltip>
+										// add to inline
+										room.addInlineTool(nodeId, config);
+									}}
+								>
+									<PanelBottomIcon />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Open Inline</TooltipContent>
+						</Tooltip>
+					)}
 
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -106,9 +107,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
-							{isMaximized
-								? "Minimize Sidebar"
-								: "Maximize Sidebar"}
+							{isMaximized ? "Minimize" : "Maximize"}
 						</TooltipContent>
 					</Tooltip>
 					<Separator
@@ -122,16 +121,17 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								variant="ghost"
 								size="icon-sm"
 								onClick={() => {
-									// turn off maximized state when closing sidebar
+									// turn off maximized state
 									setIsMaximized(false);
 
+									// close sidebar
 									room.closeSidebar();
 								}}
 							>
 								<XIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Close Sidebar</TooltipContent>
+						<TooltipContent>Close</TooltipContent>
 					</Tooltip>
 				</div>
 				<div className="w-full flex-1 overflow-hidden rounded-md">
