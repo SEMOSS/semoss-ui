@@ -41,6 +41,7 @@ import {
 } from "@semoss/ui/next";
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import type { Engine } from "@/types";
+import { ContextChart } from "./context-chart";
 
 interface RoomInputProps {
 	/** Classes to override */
@@ -419,7 +420,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						)}
 					</LexicalComposer>
 					{!isLoading && (
-						<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
+						<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
 							<DropdownMenu
 								open={menuOpen}
 								onOpenChange={setMenuOpen}
@@ -453,6 +454,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									/>
 								</DropdownMenuContent>
 							</DropdownMenu>
+							<ContextChart
+								tokensUsed={tokensUsed}
+								tokensMax={tokensMax}
+							/>
 						</div>
 					)}
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
