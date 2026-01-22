@@ -35,7 +35,7 @@ export const ContextChart = ({ tokensUsed, tokensMax }: ContextChartProps) => {
 	 */
 	const formatTokens = (tokens: number) => {
 		if (tokens >= 1000000) {
-			return `${(tokens / 1000000).toFixed(1)}m`;
+			return `${(tokens / 1000000).toFixed(1)}M`;
 		}
 		if (tokens >= 1000) {
 			return `${(tokens / 1000).toFixed(1)}k`;
