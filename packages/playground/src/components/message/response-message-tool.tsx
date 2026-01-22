@@ -10,7 +10,6 @@ import { Button } from "@semoss/ui/next";
 import {
 	MCP_DISPLAY_HIDDEN,
 	MCP_DISPLAY_INLINE,
-	MCP_DISPLAY_SIDEBAR,
 	TOOL_CANCELLATION_PROMPT,
 } from "@/constants";
 import { useLoadingMessage } from "@/hooks";
@@ -97,7 +96,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				//noop
 			} else if (tool._meta.SMSS_MCP_DISPLAY === MCP_DISPLAY_INLINE) {
 				room.addInlineTool(nodeId, toolConfig);
-			} else if (tool._meta.SMSS_MCP_DISPLAY === MCP_DISPLAY_SIDEBAR) {
+			} else {
 				// Default to sidebar
 				room.addSidebarNode(nodeId, {
 					type: "tab",
