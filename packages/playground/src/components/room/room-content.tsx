@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
+	DropdownMenuSeparator,
 	ScrollArea,
 	Tooltip,
 	TooltipContent,
@@ -13,13 +14,16 @@ import {
 	InputMessage,
 	PlanMessage,
 	ResponseMessage,
-	RoomConfigurationButton,
-	RoomFileExplorerButton,
 	RoomInput,
-	RoomInputMenuPlugin,
+	RoomInputMenuFileExplorer,
+	RoomInputMenuKnowledge,
+	RoomInputMenuSettings,
+	RoomInputMenuToolbox,
+	RoomInputMenuUpload,
 } from "@/components";
-import { useAutoScroll } from "@/hooks";
+import { useAutoScroll, useChat } from "@/hooks";
 import type { ResponseMessageStore, RoomStore } from "@/stores";
+import type { Engine, MCPConfig } from "@/types";
 
 interface RoomContentProps {
 	/** Room to load */
@@ -32,6 +36,8 @@ interface RoomContentProps {
  * @component
  */
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
+	const { chat } = useChat();
+
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const {
 		setScrollEle: setBottomScrollEle,
@@ -62,6 +68,37 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		await room.askMessage(prompt, files);
 
 		return true;
+	};
+
+	const setModel = (model: Engine) => {
+		room.setModel(model);
+		chat.setSelectedModel(model);
+	};
+
+	/**
+	 * Handle tool selection
+	 * @param tool - selected tool
+	 */
+	const handleToolSelect = (tool: MCPConfig) => {
+		// Toggle tool in options
+		const tools = room.options.mcp.reduce(
+			(acc, curr) => {
+				acc[curr.id] = curr;
+				return acc;
+			},
+			{} as Record<string, typeof tool>,
+		);
+
+		if (Object.hasOwn(tools, tool.id)) {
+			delete tools[tool.id];
+		} else {
+			tools[tool.id] = tool;
+		}
+
+		room.setOptions({
+			...room.options,
+			mcp: Object.values(tools),
+		});
 	};
 
 	/**
@@ -196,18 +233,51 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				<RoomInput
 					className="max-h-56 min-h-24"
 					isLoading={room.isLoading}
-					plugins={
-						<RoomInputMenuPlugin
-							options={room.options}
-							setOptions={room.setOptions}
-						/>
-					}
-					configuration={
+					model={room.model}
+					setModel={setModel}
+					MenuComponent={({ addToken, onOpenChange, fileRef }) => (
 						<>
-							<RoomFileExplorerButton room={room} />
-							<RoomConfigurationButton room={room} />
+							<RoomInputMenuUpload
+								fileRef={fileRef}
+								onSelect={() => onOpenChange(false)}
+							/>
+							<RoomInputMenuFileExplorer
+								room={room}
+								onSelect={() => onOpenChange(false)}
+							/>
+							<DropdownMenuSeparator />
+							<RoomInputMenuKnowledge
+								options={room.options}
+								onSelect={(tool) => {
+									handleToolSelect(tool);
+									addToken(`<${tool.name}>`);
+								}}
+							/>
+							<RoomInputMenuToolbox
+								options={room.options}
+								onSelect={(tool) => {
+									handleToolSelect(tool);
+									addToken(`<${tool.name}>`);
+								}}
+							/>
+							<RoomInputMenuSettings
+								model={room.model}
+								options={room.options}
+								onClose={(success, { model, options }) => {
+									if (success) {
+										if (model) {
+											setModel(model);
+										}
+
+										if (options) {
+											room.setOptions(options);
+										}
+									}
+									onOpenChange(false);
+								}}
+							/>
 						</>
-					}
+					)}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={room.hasUnfinishedTools}
 					hideLoadingSpinner

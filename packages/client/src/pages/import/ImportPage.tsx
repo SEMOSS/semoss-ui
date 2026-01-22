@@ -1,10 +1,13 @@
 import { useMemo } from "react";
 import { DatabasePageContent } from "@/components/import/database/DatabasePageContent";
+import { FunctionImport } from "@/components/import/function/FunctionImport";
+import { GuardrailImport } from "@/components/import/guardrail/GuardrailImport";
+import { StorageImport } from "@/components/import/storage/StorageImport";
+import { VectorImport } from "@/components/import/vector/VectorImport";
 import type { ENGINE_TYPES } from "@/types";
 import { ModelImport } from "../../components/import/model/ModelImport";
 import { ImportLayout } from "./ImportLayout";
 import { ImportPageContent } from "./ImportPageContent";
-import { GuardrailImport } from "@/components/import/guardrail/GuardrailImport";
 
 /** TODO: Refactor */
 interface ImportPageProps {
@@ -27,11 +30,11 @@ export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
 			case "MODEL":
 				return <ModelImport />;
 			case "VECTOR":
-				return <ImportPageContent name={name} type={type} />;
+				return <VectorImport name={name} />;
 			case "FUNCTION":
-				return <ImportPageContent name={name} type={type} />;
+				return <FunctionImport name={name} />;
 			case "STORAGE":
-				return <ImportPageContent name={name} type={type} />;
+				return <StorageImport name={name} />;
 			case "GUARDRAIL":
 				return <GuardrailImport name={name} />;
 			default:
