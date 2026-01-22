@@ -474,7 +474,8 @@ export const Filterbox = (props: FilterboxProps) => {
 														.toLowerCase()
 														.includes(
 															filterSearch.toLowerCase(),
-														) && filterOption.value !== ""
+														) &&
+													filterOption.value !== ""
 												) {
 													shownListItems += 1;
 													return (
