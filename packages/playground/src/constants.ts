@@ -1,4 +1,4 @@
-export const MODEL_KEY = "SMSS-SELECTED-MODEL-V2";
+export const MODEL_KEY = "SMSS-SELECTED-MODEL-V3";
 
 export const TOKEN_LENGTH = undefined;
 export const TEMPERATURE = 0.3;
