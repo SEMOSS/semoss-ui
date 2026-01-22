@@ -16,7 +16,7 @@ import {
 	ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { MCPConfig, PixelMessage, Workspace } from "@/types";
+import type { Engine, MCPConfig, PixelMessage, Workspace } from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -70,15 +70,15 @@ interface RoomStoreInterface {
 		dateCreated: string;
 	};
 
-	/*
-	 * Model that is being chatted against
-	 */
-	modelId: string;
-
 	/**
 	 * Root message
 	 */
 	root: RootMessageStore;
+
+	/*
+	 * Model that is being chatted against
+	 */
+	model: Engine | null;
 
 	/*
 	 * Options that is passed to the model
@@ -165,7 +165,7 @@ export class RoomStore {
 			name: "",
 			dateCreated: "",
 		},
-		modelId: "",
+		model: null,
 		root: new RootMessageStore(this),
 		options: {
 			instructions: "",
@@ -258,8 +258,8 @@ export class RoomStore {
 	/**
 	 * Models that the user is interacting with
 	 */
-	get modelId() {
-		return this._store.modelId;
+	get model() {
+		return this._store.model;
 	}
 
 	/**
@@ -374,11 +374,11 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set the model
+	 * Set the model Id
 	 * @param modelId - model to use in the room
 	 */
-	setModel = (modelId: string) => {
-		this._store.modelId = modelId;
+	setModel = (model: Engine) => {
+		this._store.model = model;
 	};
 
 	/**
@@ -443,7 +443,7 @@ export class RoomStore {
 			> = {};
 
 			// store the last model
-			let activeModelId = this._store.modelId;
+			let activeModelId = this._store.model?.app_id;
 
 			// This is done as seperate loops because of INPUT_TOOL_EXEC
 			for (const pixelMessage of messageOutput) {
@@ -528,10 +528,18 @@ export class RoomStore {
 				}
 			}
 
-			runInAction(() => {
-				// set the model based on the history
-				this.setModel(activeModelId);
+			// set the model based on the history
+			if (activeModelId) {
+				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
+					` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(activeModelId)})`,
+				);
 
+				runInAction(() => {
+					this.setModel(pixelReturn[0].output[0]);
+				});
+			}
+
+			runInAction(() => {
 				// set the options based on the history
 				this.setOptions(newOptions);
 
@@ -773,7 +781,7 @@ export class RoomStore {
 	 * @param files - files
 	 */
 	askMessage = async (prompt: string, files: File[] = []): Promise<void> => {
-		if (!this.modelId) {
+		if (!this.model) {
 			throw new Error("Model is required");
 		}
 
@@ -795,7 +803,7 @@ export class RoomStore {
 			visible: true,
 			inputUIPrompt: prompt,
 			mediaInputs: uploaded,
-			modelId: this.modelId,
+			modelId: this.model?.app_id,
 			paramMap: {
 				max_new_tokens: this.options.tokenLength,
 				temperature: this.options.temperature,
