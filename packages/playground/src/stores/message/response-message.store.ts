@@ -51,9 +51,6 @@ interface Tool {
 
 	/** If the tool is currently executing */
 	is_executing: boolean;
-
-	/** The number of tokens used by this branch */
-	branch_tokens_used?: number;
 }
 
 /**
