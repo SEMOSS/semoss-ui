@@ -1,5 +1,6 @@
 import { action, makeObservable, observable, runInAction } from "mobx";
 import {
+	MCP_DISPLAY_SIDEBAR,
 	MCP_EXECUTION_ASK,
 	MCP_EXECUTION_AUTO,
 	TOOL_ERROR_PROMPT,
@@ -8,6 +9,7 @@ import type {
 	InputMediaPixelMessage,
 	InputTextPixelMessage,
 	InputToolExecPixelMessage,
+	McpDisplay,
 	McpExecution,
 	PixelMessage,
 	ResponseTextPixelMessage,
@@ -27,6 +29,7 @@ interface Tool {
 	/** meta data from the tool */
 	_meta: {
 		SMSS_MCP_EXECUTION: McpExecution;
+		SMSS_MCP_DISPLAY: McpDisplay;
 		SMSS_PROJECT_NAME: string;
 		SMSS_PROJECT_ID: string;
 	};
@@ -174,6 +177,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 					id: t.id,
 					_meta: {
 						SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
+						SMSS_MCP_DISPLAY: MCP_DISPLAY_SIDEBAR,
 						// On 12/16/25 we changed from _meta.map to just _meta, so support both
 						...(t._meta as { map?: Record<string, unknown> })?.map,
 						...t._meta,
