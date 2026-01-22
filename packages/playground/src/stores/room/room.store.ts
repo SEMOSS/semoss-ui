@@ -305,6 +305,21 @@ export class RoomStore {
 	}
 
 	/**
+	 * Number of tokens used
+	 */
+	get tokensUsed() {
+		let currMessage = this.tail as AbstractMessageStore;
+		let tokensUsed = 0;
+		while (currMessage) {
+			tokensUsed += currMessage.tokens;
+			if (currMessage.type === "INPUT") break;
+			currMessage = currMessage.parent;
+		}
+
+		return tokensUsed;
+	}
+
+	/**
 	 * Get the most recent plan
 	 */
 	get plan(): PlanMessageStore | null {
@@ -724,6 +739,7 @@ export class RoomStore {
 				temperature: this.options.temperature,
 			},
 			dateCreated: "",
+			tokens: 0,
 		});
 
 		// get the parent message

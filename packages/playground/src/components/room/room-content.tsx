@@ -102,7 +102,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
-	const tempTokensUsed = 1000; //
 	const tempTokensMax = 1049; //
 
 	return (
@@ -213,7 +212,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}
 					onPrompt={handlePrompt}
 					tokensMax={tempTokensMax}
-					tokensUsed={tempTokensUsed}
+					tokensUsed={room.tokensUsed}
 					hasOutstandingTools={room.hasUnfinishedTools}
 					hideLoadingSpinner
 				/>

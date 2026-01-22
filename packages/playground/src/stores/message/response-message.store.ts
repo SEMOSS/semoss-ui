@@ -48,6 +48,9 @@ interface Tool {
 
 	/** If the tool is currently executing */
 	is_executing: boolean;
+
+	/** The number of tokens used by this branch */
+	branch_tokens_used?: number;
 }
 
 /**
@@ -205,6 +208,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		// set the id
 		this.id = message.messageId;
 
+		// set tokens
+		this.tokens = message.tokens;
+
 		// set the model that was used
 		this.model = {
 			id: message.modelId,
@@ -234,6 +240,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				modelName: this.model.name,
 			},
 			dateCreated: new Date().toISOString(),
+			tokens: 0,
 		} as ResponseTextPixelMessage);
 
 		try {
@@ -378,6 +385,7 @@ paramValues=[${JSON.stringify({
 				temperature: room.options.temperature,
 			},
 			dateCreated: "",
+			tokens: parentMessage.tokens,
 		});
 
 		grandParentMessage.runMessage(rewrittenMessage);
@@ -528,6 +536,7 @@ paramValues=[${JSON.stringify({
 				ornaments: {
 					modelName: this.model.name,
 				},
+				tokens: 0,
 				dateCreated: new Date().toISOString(),
 			} as ResponseTextPixelMessage);
 
