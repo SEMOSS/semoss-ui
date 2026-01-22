@@ -40,15 +40,9 @@ export const Room: React.FC<RoomProps> = observer(({ roomId }) => {
 				// initialize the room
 				await room.initialize();
 
-				// set the selected model
-				try {
-					await chat.setSelectedModelById(room.modelId);
-				} catch {
-					// model id is invalid
-					toast.warning(
-						`The model previously selected for this room is no longer available.`,
-					);
-					room.setModel(chat.models?.selected?.app_id);
+				// update the model based on the room
+				if (room.model) {
+					chat.setSelectedModel(room.model);
 				}
 
 				// set the room
@@ -69,8 +63,7 @@ export const Room: React.FC<RoomProps> = observer(({ roomId }) => {
 		insight.isInitialized,
 		insight.insightId,
 		navigate,
-		chat.setSelectedModelById,
-		chat.models?.selected?.app_id,
+		chat.setSelectedModel,
 	]);
 
 	if (!room || !room.isInitialized) {

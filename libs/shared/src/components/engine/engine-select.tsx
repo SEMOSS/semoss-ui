@@ -9,6 +9,7 @@ import {
 	CommandInput,
 	CommandItem,
 	CommandList,
+	cn,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -19,6 +20,9 @@ import {
 import type { Engine } from "@/types";
 
 interface EngineSelectProps {
+	/** css classes */
+	className?: string;
+
 	/** Name of the selected engine */
 	name: string;
 
@@ -41,6 +45,7 @@ interface EngineSelectProps {
 }
 
 export const EngineSelect = ({
+	className,
 	name,
 	value,
 	onChange,
@@ -100,7 +105,10 @@ export const EngineSelect = ({
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}
-					className="w-full justify-between overflow-hidden"
+					className={cn(
+						`w-full justify-between overflow-hidden`,
+						className,
+					)}
 				>
 					<span className="truncate">{name || "Select"}</span>
 					<ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
