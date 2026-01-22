@@ -8,9 +8,11 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Sync } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
+import { useMemo, useState } from "react";
 import {
 	type GridBlockColumn,
 	type GridBlockDef,
+	useBlocks,
 	useBlocksPixel,
 	useFrameHeaders,
 } from "@semoss/renderer";
@@ -21,6 +23,8 @@ import {
 	List,
 	Stack,
 	TextField,
+	ToggleButton,
+	ToggleButtonGroup,
 	useNotification,
 } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
@@ -34,8 +38,12 @@ interface GridBlockColumnSettingsProps {
 
 export const GridBlockColumnSettings = observer(
 	({ id }: GridBlockColumnSettingsProps) => {
+		const [frameMode, setFrameMode] = useState<"direct" | "variable">(
+			"direct",
+		);
 		const notification = useNotification();
 		const { data, setData } = useBlockSettings<GridBlockDef>(id);
+		const { state } = useBlocks();
 		// get all of the frames
 		const getFrames = useBlocksPixel<string[]>("GetFrames();", {
 			data: [],
@@ -44,7 +52,23 @@ export const GridBlockColumnSettings = observer(
 		// get headers associated with the selected frames
 		const frameHeaders = useFrameHeaders(data.frame.name);
 
-		console.log(getFrames, "getFrames", frameHeaders, "frameHeaders");
+		// get variables of type 'cell'
+		const queryVariables = useMemo(() => {
+			return Object.entries(state.variables)
+				.filter(([, variable]) => variable.type === "cell")
+				.map(([variableId]) => {
+					const parsedValue = state.parseVariable(
+						`{{${variableId}}}`,
+					) as { name: string; value: string } | null | undefined;
+					const value = parsedValue;
+
+					return {
+						label: variableId,
+						value: value?.name,
+					};
+				});
+		}, [state.variables]);
+
 		/**
 		 * Sync the columns with the frame headers
 		 */
@@ -125,8 +149,22 @@ export const GridBlockColumnSettings = observer(
 			}
 		};
 
-		// options for the autocomplete
-		const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
+		// options for the autocomplete based on selected mode
+		const frameOptions = useMemo(() => {
+			if (frameMode === "direct") {
+				return getFrames.status === "SUCCESS"
+					? getFrames.data.map((frame) => ({
+							label: frame,
+							value: frame,
+						}))
+					: [];
+			} else {
+				return queryVariables.map((v) => ({
+					label: v.label,
+					value: v.value,
+				}));
+			}
+		}, [frameMode, getFrames, queryVariables]);
 
 		// columns to render
 		const columns = data.columns || [];
@@ -134,33 +172,90 @@ export const GridBlockColumnSettings = observer(
 		return (
 			<>
 				<BaseSettingSection label="Frame">
-					<Autocomplete
-						fullWidth
-						multiple={false}
-						disabled={getFrames.status !== "SUCCESS"}
-						value={data.frame.name}
-						options={options}
-						getOptionLabel={(option) => {
-							return option;
-						}}
-						onChange={(_, value) => {
-							// update the frame
-							setData("frame.name", value);
-						}}
-						freeSolo={false}
-						renderInput={(params) => (
-							<TextField
-								{...params}
-								placeholder="Select frame"
-								size="small"
-								variant="outlined"
-							/>
-						)}
-					/>
+					<Stack direction="column" gap={1} width="100%">
+						<ToggleButtonGroup
+							value={frameMode}
+							exclusive
+							size="small"
+							fullWidth
+						>
+							<ToggleButton
+								value="direct"
+								onClick={() => {
+									setFrameMode("direct");
+									setData("frame.name", "");
+								}}
+							>
+								Direct
+							</ToggleButton>
+							<ToggleButton
+								value="variable"
+								onClick={() => {
+									setFrameMode("variable");
+									setData("frame.name", "");
+								}}
+							>
+								Variable
+							</ToggleButton>
+						</ToggleButtonGroup>
+						<Stack direction="row" gap={1} width="100%">
+							<Autocomplete
+								fullWidth
+								multiple={false}
+								disabled={getFrames.status !== "SUCCESS"}
+								value={
+									frameOptions.find(
+										(opt) => opt.value === data.frame.name,
+									) || null
+								}
+								options={frameOptions}
+								getOptionLabel={(option) => {
+									const label =
+										typeof option === "string"
+											? option
+											: option.label;
+									return label;
+								}}
+								onChange={(_, selectedOption) => {
+									// update the frame
+									const value =
+										typeof selectedOption === "string"
+											? selectedOption
+											: selectedOption?.value || "";
 
-					<IconButton size="small" onClick={() => syncFrameHeaders()}>
-						<Sync />
-					</IconButton>
+									// Check if value is empty/null when using variable mode
+									if (
+										frameMode === "variable" &&
+										selectedOption !== null &&
+										(!value || value.trim() === "")
+									) {
+										notification.add({
+											color: "warning",
+											message:
+												"Warning: No value found for this variable",
+										});
+									}
+									setData("frame.name", value);
+								}}
+								freeSolo={false}
+								renderInput={(params) => (
+									<TextField
+										{...params}
+										placeholder={`Select ${frameMode === "direct" ? "frame" : "variable"}`}
+										size="small"
+										variant="outlined"
+									/>
+								)}
+							/>
+
+							<IconButton
+								size="small"
+								onClick={() => syncFrameHeaders()}
+							>
+								<Sync />
+							</IconButton>
+						</Stack>
+					</Stack>
 				</BaseSettingSection>
 				<Stack direction={"column"} width={"100%"} overflow={"hidden"}>
 					<DndContext
@@ -185,22 +280,12 @@ export const GridBlockColumnSettings = observer(
 										>
 											<GridBlockColumnSettingsItem
 												id={id}
-												key={cIdx}
 												column={c}
 												index={cIdx}
 											/>
 										</SortableItems>
 									);
 								})}
-								{/* <List.Item
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        dense={true}
-                                        divider
-                                    >
-                                        <List.ItemText primary={'Add Column'} />
-                                    </List.Item> */}
 							</List>
 						</SortableContext>
 					</DndContext>

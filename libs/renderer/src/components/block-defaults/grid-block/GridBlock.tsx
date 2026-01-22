@@ -220,13 +220,31 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	 */
 	useEffect(() => {
 		if (!frameHeaders.isLoading && frameHeaders.data.list.length > 0) {
-			// Only sync if columns are empty (initial load)
-			// Don't override user's column selections
-			if (data.columns.length === 0) {
+			// Get current column selectors
+			const currentSelectors = new Set(
+				data.columns.map((c) => c.selector),
+			);
+
+			const newSelectors = new Set(
+				frameHeaders.data.list.map((h) => h.header),
+			);
+
+			// Check if headers have changed
+			const headersChanged =
+				currentSelectors.size !== newSelectors.size ||
+				![...currentSelectors].every((s) => newSelectors.has(s));
+
+			// Sync if columns are empty OR headers have changed
+			if (data.columns.length === 0 || headersChanged) {
 				syncBlockDataColumns(frameHeaders);
 			}
 		}
-	}, [frameHeaders.data.list, frameHeaders.isLoading]);
+	}, [
+		frameHeaders,
+		frameHeaders.data.list,
+		frame.data.values.length,
+		data.columns,
+	]);
 
 	/**
 	 * Handle data accumulation when batching is enabled
