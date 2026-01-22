@@ -305,7 +305,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										placeholder={
 											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
 												<SparklesIcon className="size-4" />
-												/ to add capability
+												/ to open menu
 											</div>
 										}
 										onDrop={(e) => {
@@ -452,7 +452,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
 						<div className="flex flex-row items-center gap-1">
 							<EngineSelect
-								className="h-8 w-48 px-2 py-1 text-xs [&>svg]:hidden"
+								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
 								name={model?.app_name || ""}
 								value={model?.app_id || ""}
 								engineTypes={["MODEL"]}
