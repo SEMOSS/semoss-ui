@@ -146,12 +146,17 @@ export const EngineSelect = ({
 										className={`mr-2 size-4 ${value === engine.app_id ? "opacity-100" : "opacity-0"}`}
 									/>
 									<div className="flex flex-1 flex-col truncate">
-										<span>{engine.app_name}</span>
-										{/* {engine.description && (
-											<span className="text-muted-foreground text-xs">
+										<span className="truncate">
+											{engine.app_name}
+										</span>
+										{engine.description && (
+											<span
+												title={engine.description}
+												className="truncate text-muted-foreground text-xs"
+											>
 												{engine.description}
 											</span>
-										)} */}
+										)}
 									</div>
 								</CommandItem>
 							))}
