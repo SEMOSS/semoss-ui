@@ -21,9 +21,9 @@ import {
 	RoomInputMenuToolbox,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useAutoScroll } from "@/hooks";
+import { useAutoScroll, useChat } from "@/hooks";
 import type { ResponseMessageStore, RoomStore } from "@/stores";
-import type { MCPConfig } from "@/types";
+import type { Engine, MCPConfig } from "@/types";
 
 interface RoomContentProps {
 	/** Room to load */
@@ -36,6 +36,8 @@ interface RoomContentProps {
  * @component
  */
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
+	const { chat } = useChat();
+
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const {
 		setScrollEle: setBottomScrollEle,
@@ -66,6 +68,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		await room.askMessage(prompt, files);
 
 		return true;
+	};
+
+	const setModel = (model: Engine) => {
+		room.setModel(model);
+		chat.setSelectedModel(model);
 	};
 
 	/**
@@ -227,7 +234,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					className="max-h-56 min-h-24"
 					isLoading={room.isLoading}
 					model={room.model}
-					setModel={room.setModel}
+					setModel={setModel}
 					MenuComponent={({ addToken, onOpenChange, fileRef }) => (
 						<>
 							<RoomInputMenuUpload
@@ -259,11 +266,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								onClose={(success, { model, options }) => {
 									if (success) {
 										if (model) {
-											room.setModel(model);
+											setModel(model);
 										}
 
 										if (options) {
 											room.setOptions(options);
+											chat.setSelectedModel(model);
 										}
 									}
 									onOpenChange(false);

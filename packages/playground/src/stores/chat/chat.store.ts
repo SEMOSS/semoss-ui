@@ -232,7 +232,9 @@ paramValues=[${JSON.stringify({
 	 * Set the selected model
 	 */
 	setSelectedModel = (model: Engine): void => {
-		this.models.selected = model;
+		runInAction(() => {
+			this._store.models.selected = model;
+		});
 
 		// save to local storage
 		if (localStorage) {
