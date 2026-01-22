@@ -1,6 +1,6 @@
 import { MoveDownIcon, MoveUpIcon, TriangleAlertIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
@@ -21,9 +21,10 @@ import {
 	RoomInputMenuToolbox,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useAutoScroll } from "@/hooks";
 import type { ResponseMessageStore, RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
+
+const SCROLL_THRESHOLD = 100;
 
 interface RoomContentProps {
 	/** Room to load */
@@ -32,28 +33,11 @@ interface RoomContentProps {
 
 /**
  * The page for a room
- *
- * @component
  */
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
-	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
-	const {
-		setScrollEle: setBottomScrollEle,
-		scroll: scrollToBottom,
-		isUserScrolled: showBottomScrollAction,
-	} = useAutoScroll(
-		room.history?.length || room.tail?.type === "RESPONSE"
-			? (room.tail as ResponseMessageStore)?.text.length
-			: 0,
-		{ direction: "bottom" },
-	);
-
-	// Auto-scroll hook
-	const {
-		setScrollEle: setTopScrollEle,
-		scroll: scrollToTop,
-		isUserScrolled: showTopScrollAction,
-	} = useAutoScroll([], { direction: "top" });
+	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
+	const [showScrollup, setShowScrollup] = useState(false);
+	const [showScrolldown, setShowScrolldown] = useState(false);
 
 	/**
 	 * Functions
@@ -95,6 +79,53 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	};
 
 	/**
+	 * Handle scroll events to detect user scrolling
+	 */
+	const handleScroll = useCallback(() => {
+		if (!scrollEle) {
+			setShowScrolldown(false);
+			setShowScrollup(false);
+			return;
+		}
+
+		// show scroll up if near the top
+		if (scrollEle.scrollTop > SCROLL_THRESHOLD) {
+			setShowScrollup(true);
+		} else {
+			setShowScrollup(false);
+		}
+
+		// show scroll down if near the bottom
+		if (
+			scrollEle.scrollHeight -
+				scrollEle.scrollTop -
+				scrollEle.clientHeight <=
+			SCROLL_THRESHOLD
+		) {
+			setShowScrolldown(false);
+		} else {
+			setShowScrolldown(true);
+		}
+	}, [scrollEle]);
+
+	/**
+	 * Scroll to target position based on direction
+	 */
+	const scrollToTarget = useCallback(
+		(target: number = 0) => {
+			if (!scrollEle) {
+				return;
+			}
+
+			scrollEle.scrollTo({
+				top: target,
+				behavior: "smooth",
+			});
+		},
+		[scrollEle],
+	);
+
+	/**
 	 * Effects
 	 */
 
@@ -132,14 +163,67 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
+	/**
+	 * Auto-scroll when dependency changes (new messages added)
+	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies:> needed to trigger scroll
+	useEffect(() => {
+		if (!scrollEle) {
+			return;
+		}
+
+		requestAnimationFrame(() => {
+			scrollToTarget(scrollEle.scrollHeight);
+		});
+	}, [
+		scrollEle,
+		scrollToTarget,
+		room.history?.length || 0,
+		room.tail?.type === "RESPONSE"
+			? (room.tail as ResponseMessageStore)?.text.length
+			: 0,
+	]);
+
+	/**
+	 * Set up scroll event listener
+	 */
+	useEffect(() => {
+		if (!scrollEle) {
+			return;
+		}
+
+		// Throttle scroll events for better performance
+		let ticking = false;
+
+		const throttledHandleScroll = () => {
+			if (!ticking) {
+				requestAnimationFrame(() => {
+					handleScroll();
+					ticking = false;
+				});
+				ticking = true;
+			}
+		};
+
+		scrollEle.addEventListener("scroll", throttledHandleScroll, {
+			passive: true,
+		});
+
+		// Initial check
+		handleScroll();
+
+		return () => {
+			scrollEle.removeEventListener("scroll", throttledHandleScroll);
+		};
+	}, [scrollEle, handleScroll]);
+
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
 					className="h-full w-full"
 					viewportRef={(ele) => {
-						setTopScrollEle(ele);
-						setBottomScrollEle(ele);
+						setScrollEle(ele);
 					}}
 				>
 					<div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-6">
@@ -184,15 +268,15 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					) : null}
 				</ScrollArea>
 
-				{showTopScrollAction && (
+				{showScrollup && (
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<span className="absolute top-4 right-4 z-50">
 								<Button
 									size="icon-sm"
 									variant={"outline"}
-									onClick={() => scrollToTop(false)}
-									aria-label="Scroll to tio"
+									onClick={() => scrollToTarget(0)}
+									aria-label="Scroll to top"
 									className="shadow-lg"
 								>
 									<MoveUpIcon />
@@ -203,14 +287,16 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					</Tooltip>
 				)}
 
-				{showBottomScrollAction && (
+				{showScrolldown && (
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<span className="absolute right-4 bottom-4 z-50">
 								<Button
 									size="icon-sm"
 									variant={"outline"}
-									onClick={() => scrollToBottom(false)}
+									onClick={() =>
+										scrollToTarget(scrollEle.scrollHeight)
+									}
 									aria-label="Scroll to bottom"
 									className="shadow-lg"
 								>
@@ -228,48 +314,50 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					isLoading={room.isLoading}
 					model={room.model}
 					setModel={room.setModel}
-					MenuComponent={({ addToken, onOpenChange, fileRef }) => (
-						<>
-							<RoomInputMenuUpload
-								fileRef={fileRef}
-								onSelect={() => onOpenChange(false)}
-							/>
-							<RoomInputMenuFileExplorer
-								room={room}
-								onSelect={() => onOpenChange(false)}
-							/>
-							<DropdownMenuSeparator />
-							<RoomInputMenuKnowledge
-								options={room.options}
-								onSelect={(tool) => {
-									handleToolSelect(tool);
-									addToken(`<${tool.name}>`);
-								}}
-							/>
-							<RoomInputMenuToolbox
-								options={room.options}
-								onSelect={(tool) => {
-									handleToolSelect(tool);
-									addToken(`<${tool.name}>`);
-								}}
-							/>
-							<RoomInputMenuSettings
-								model={room.model}
-								options={room.options}
-								onClose={(success, { model, options }) => {
-									if (success) {
-										if (model) {
-											room.setModel(model);
-										}
+					MenuComponent={observer(
+						({ addToken, onOpenChange, fileRef }) => (
+							<>
+								<RoomInputMenuUpload
+									fileRef={fileRef}
+									onSelect={() => onOpenChange(false)}
+								/>
+								<RoomInputMenuFileExplorer
+									room={room}
+									onSelect={() => onOpenChange(false)}
+								/>
+								<DropdownMenuSeparator />
+								<RoomInputMenuKnowledge
+									options={room.options}
+									onSelect={(tool) => {
+										handleToolSelect(tool);
+										addToken(`<${tool.name}>`);
+									}}
+								/>
+								<RoomInputMenuToolbox
+									options={room.options}
+									onSelect={(tool) => {
+										handleToolSelect(tool);
+										addToken(`<${tool.name}>`);
+									}}
+								/>
+								<RoomInputMenuSettings
+									model={room.model}
+									options={room.options}
+									onClose={(success, { model, options }) => {
+										if (success) {
+											if (model) {
+												room.setModel(model);
+											}
 
-										if (options) {
-											room.setOptions(options);
+											if (options) {
+												room.setOptions(options);
+											}
 										}
-									}
-									onOpenChange(false);
-								}}
-							/>
-						</>
+										onOpenChange(false);
+									}}
+								/>
+							</>
+						),
 					)}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={room.hasUnfinishedTools}

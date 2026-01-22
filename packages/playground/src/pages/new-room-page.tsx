@@ -282,92 +282,95 @@ export const NewRoomPage = observer(() => {
 						setModel={(m) => {
 							chat.setSelectedModel(m);
 						}}
-						MenuComponent={({
-							addToken,
-							onOpenChange,
-							fileRef,
-						}) => (
-							<>
-								<DropdownMenuItem
-									onSelect={() => {
-										setMode({
-											type: "chat",
-											workspace: null,
-										});
-										onOpenChange(false);
-									}}
-								>
-									<MessageCircleIcon />
-									<span className="flex-1">Ask</span>
-									{mode.type === "chat" ? (
-										<div className="px-1">
-											<CheckIcon />
-										</div>
-									) : null}
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onSelect={() => {
-										setMode({
-											type: "plan",
-											workspace: null,
-										});
-										onOpenChange(false);
-									}}
-								>
-									<ListTodoIcon />
-									<span className="flex-1">Plan</span>
+						MenuComponent={observer(
+							({ addToken, onOpenChange, fileRef }) => (
+								<>
+									<DropdownMenuItem
+										onSelect={() => {
+											setMode({
+												type: "chat",
+												workspace: null,
+											});
+											onOpenChange(false);
+										}}
+									>
+										<MessageCircleIcon />
+										<span className="flex-1">Ask</span>
+										{mode.type === "chat" ? (
+											<div className="px-1">
+												<CheckIcon />
+											</div>
+										) : null}
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onSelect={() => {
+											setMode({
+												type: "plan",
+												workspace: null,
+											});
+											onOpenChange(false);
+										}}
+									>
+										<ListTodoIcon />
+										<span className="flex-1">Plan</span>
 
-									{mode.type === "plan" ? (
-										<div className="px-1">
-											<CheckIcon />
-										</div>
-									) : null}
-								</DropdownMenuItem>
-								<RoomInputMenuWorkspace
-									workspace={
-										mode.type === "workspace"
-											? mode.workspace
-											: null
-									}
-									onSelect={handleWorkspaceSelect}
-								/>
-								<DropdownMenuSeparator />
-								<RoomInputMenuUpload
-									fileRef={fileRef}
-									onSelect={() => onOpenChange(false)}
-								/>
-								<DropdownMenuSeparator />
-								<RoomInputMenuKnowledge
-									options={options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
-									}}
-								/>
-								<RoomInputMenuToolbox
-									options={options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
-									}}
-								/>
-								<RoomInputMenuSettings
-									model={chat.models.selected}
-									options={options}
-									onClose={(success, { model, options }) => {
-										if (success) {
-											if (model) {
-												chat.setSelectedModel(model);
-											}
-
-											if (options) {
-												setOptions(options);
-											}
+										{mode.type === "plan" ? (
+											<div className="px-1">
+												<CheckIcon />
+											</div>
+										) : null}
+									</DropdownMenuItem>
+									<RoomInputMenuWorkspace
+										workspace={
+											mode.type === "workspace"
+												? mode.workspace
+												: null
 										}
-										onOpenChange(false);
-									}}
-								/>
-							</>
+										onSelect={handleWorkspaceSelect}
+									/>
+									<DropdownMenuSeparator />
+									<RoomInputMenuUpload
+										fileRef={fileRef}
+										onSelect={() => onOpenChange(false)}
+									/>
+									<DropdownMenuSeparator />
+									<RoomInputMenuKnowledge
+										options={options}
+										onSelect={(tool) => {
+											handleToolSelect(tool);
+											addToken(`<${tool.name}>`);
+										}}
+									/>
+									<RoomInputMenuToolbox
+										options={options}
+										onSelect={(tool) => {
+											handleToolSelect(tool);
+											addToken(`<${tool.name}>`);
+										}}
+									/>
+									<RoomInputMenuSettings
+										model={chat.models.selected}
+										options={options}
+										onClose={(
+											success,
+											{ model, options },
+										) => {
+											if (success) {
+												if (model) {
+													chat.setSelectedModel(
+														model,
+													);
+												}
+
+												if (options) {
+													setOptions(options);
+												}
+											}
+											onOpenChange(false);
+										}}
+									/>
+								</>
+							),
 						)}
 						onPrompt={async (prompt, files) => {
 							await createRoom(prompt, files);
