@@ -7,6 +7,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+
 export interface ContextChartProps {
 	tokensUsed?: number;
 	tokensMax?: number;
@@ -18,22 +19,20 @@ export interface ContextChartProps {
  * @component
  */
 export const ContextChart = ({ tokensUsed, tokensMax }: ContextChartProps) => {
+	// Calculate the percentage of context used
 	const contextUsedPercent =
-		tokensMax > 0 ? (tokensUsed / tokensMax) * 100 : undefined;
+		tokensMax > 0 && tokensUsed !== undefined
+			? (tokensUsed / tokensMax) * 100
+			: undefined;
 
+	// Only show the chart when usage is above 12.5% to avoid clutter
 	if (contextUsedPercent === undefined || contextUsedPercent < 12.5)
 		return null;
 
-	const roundedPercent = Math.round(contextUsedPercent / 12.5) * 12.5;
-	const radius = 8;
-	const cx = 9;
-	const cy = 9;
-	const angle = (roundedPercent / 100) * 360;
-	const radians = (angle * Math.PI) / 180;
-	const x = cx + radius * Math.cos(radians - Math.PI / 2);
-	const y = cy + radius * Math.sin(radians - Math.PI / 2);
-	const largeArc = angle > 180 ? 1 : 0;
-
+	/**
+	 * Helper function to format token counts for display
+	 * Converts large numbers to readable format (e.g., 1500 -> 1.5k, 2000000 -> 2.0m)
+	 */
 	const formatTokens = (tokens: number) => {
 		if (tokens >= 1000000) {
 			return `${(tokens / 1000000).toFixed(1)}m`;
@@ -43,6 +42,23 @@ export const ContextChart = ({ tokensUsed, tokensMax }: ContextChartProps) => {
 		}
 		return tokens.toString();
 	};
+
+	/**
+	 * Constants
+	 */
+	// Round to nearest 12.5% increment for smoother visual transitions
+	const roundedPercent = Math.round(contextUsedPercent / 12.5) * 12.5;
+
+	// SVG circle calculations for the pie chart
+	const radius = 8;
+	const cx = 9;
+	const cy = 9;
+	const angle = (roundedPercent / 100) * 360;
+	const radians = (angle * Math.PI) / 180;
+	const x = cx + radius * Math.cos(radians - Math.PI / 2);
+	const y = cy + radius * Math.sin(radians - Math.PI / 2);
+	// Use large arc flag when angle exceeds 180 degrees
+	const largeArc = angle > 180 ? 1 : 0;
 
 	return (
 		<HoverCard openDelay={10}>
@@ -115,13 +131,14 @@ export const ContextChart = ({ tokensUsed, tokensMax }: ContextChartProps) => {
 						</Tooltip>
 					</div>
 
-					{/* Tokens left section */}
+					{/* Tokens usage display section */}
 					<div className="flex w-full items-center justify-between font-medium text-muted-foreground text-sm">
+						{/* Left side: Icon and label */}
 						<div className="flex items-center gap-1.5">
 							<Cpu className="h-5 w-5" />
 							<p>Tokens used</p>
 						</div>
-						{/*Tokens used / max section */}
+						{/* Right side: Token count (used / max) */}
 						<p>
 							{formatTokens(tokensUsed)} /{" "}
 							{formatTokens(tokensMax)}
