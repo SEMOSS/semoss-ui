@@ -365,7 +365,7 @@ paramValues=[${JSON.stringify({
 			grandParentMessage instanceof PlanMessageStore === false
 		) {
 			throw new Error(
-				"Can only if the parent is a response, plan, or root message",
+				"Can only if the parent is a response or plan message",
 			);
 		}
 
