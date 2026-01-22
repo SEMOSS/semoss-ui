@@ -231,13 +231,13 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			type: "RESPONSE_TEXT",
 			visible: true,
 			content: "",
-			modelId: this.model.id,
+			modelId: room.model.app_id,
 			paramMap: {
 				max_new_tokens: room.options.tokenLength,
 				temperature: room.options.temperature,
 			},
 			ornaments: {
-				modelName: this.model.name,
+				modelName: room.model.app_name,
 			},
 			dateCreated: new Date().toISOString(),
 			tokens: 0,
@@ -274,7 +274,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				]
 			>(
 				`AskPlayground(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
@@ -379,7 +379,7 @@ paramValues=[${JSON.stringify({
 			visible: true,
 			inputUIPrompt: parentMessage.text,
 			mediaInputs: parentMessage.mediaInputs,
-			modelId: room.modelId,
+			modelId: room.model.app_id,
 			paramMap: {
 				max_new_tokens: room.options.tokenLength,
 				temperature: room.options.temperature,
@@ -528,13 +528,13 @@ paramValues=[${JSON.stringify({
 				type: "RESPONSE_TEXT",
 				visible: true,
 				content: "",
-				modelId: this.model.id,
+				modelId: this.room.model.app_id,
 				paramMap: {
 					max_new_tokens: room.options.tokenLength,
 					temperature: room.options.temperature,
 				},
 				ornaments: {
-					modelName: this.model.name,
+					modelName: this.room.model.app_name,
 				},
 				tokens: 0,
 				dateCreated: new Date().toISOString(),
@@ -567,7 +567,7 @@ paramValues=[${JSON.stringify({
 				]
 			>(
 				`AddPlaygroundToolExecution(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId = ["${room.roomId}"],
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 toolId = ["${tool.id}"],

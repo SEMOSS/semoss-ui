@@ -22,6 +22,14 @@ export class RootMessageStore extends AbstractMessageStore {
 	}
 
 	/**
+	 * Sync store properties from the pixel message
+	 */
+	sync = (message: PixelMessage) => {
+		// set the id
+		this.id = message.messageId;
+	};
+
+	/**
 	 * Run a new user message and recieve a response
 	 * @param parentMessage - parent message to connect to
 	 * @param inputMessage - input message to send
@@ -43,7 +51,7 @@ export class RootMessageStore extends AbstractMessageStore {
 		let pixel = "";
 		if (room.mode === "chat") {
 			pixel = `AskPlayground(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
@@ -55,7 +63,7 @@ paramValues=[${JSON.stringify({
 );`;
 		} else if (room.mode === "planning") {
 			pixel = `AskCOTRoom(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
@@ -82,8 +90,8 @@ paramValues=[${JSON.stringify({
 
 		const { output } = response.pixelReturn[0];
 
-		// update the input's id
-		inputMessage.update(output.inputMessage);
+		// sync the message
+		inputMessage.sync(output.inputMessage);
 
 		// create the response and link to the input
 		const responseMessage = createMessageStore(

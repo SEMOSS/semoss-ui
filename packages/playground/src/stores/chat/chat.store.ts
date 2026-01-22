@@ -235,7 +235,7 @@ paramValues=[${JSON.stringify({
 	/**
 	 * Set the selected model
 	 */
-	setSelectedModel = (model: Engine) => {
+	setSelectedModel = (model: Engine): void => {
 		runInAction(() => {
 			this._store.models.selected = model;
 		});
@@ -249,32 +249,6 @@ paramValues=[${JSON.stringify({
 		}
 
 		this.loadEngineContextWindow(model.app_id);
-	};
-
-	/**
-	 * Set the selected model by its id
-	 */
-	setSelectedModelById = async (modelId: string): Promise<void> => {
-		if (!modelId || this.models.selected?.app_id === modelId) {
-			return;
-		}
-
-		// get available models
-		const { pixelReturn } = await this._actions.run<[Engine[]]>(
-			` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(modelId)})`,
-		);
-
-		// throw errors
-		if (this._error) {
-			throw new Error(this._error.message);
-		}
-
-		// If not found, do nothing
-		if (pixelReturn[0].output.length === 0) {
-			throw new Error("Model not found");
-		}
-
-		this.setSelectedModel(pixelReturn[0].output[0]);
 	};
 
 	private loadEngineContextWindow = async (engineId: string) => {
