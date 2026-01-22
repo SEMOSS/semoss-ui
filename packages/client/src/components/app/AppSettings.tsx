@@ -1,5 +1,6 @@
 import {
 	Cached,
+	ContentCopy,
 	InsertLink,
 	Person,
 	Publish,
@@ -8,11 +9,14 @@ import {
 } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { Env } from "@semoss/sdk/react";
 import {
 	Avatar,
 	Button,
 	Divider,
 	FileDropzone,
+	IconButton,
+	InputAdornment,
 	LoadingScreen,
 	Paper,
 	Stack,
@@ -244,6 +248,8 @@ export const AppSettings = (props: AppSettingsProps) => {
 
 	const admin = configStore.store.user.admin;
 
+	const mcpUrl = `${Env.MODULE}/api/ext/mcp/${id}/comms`;
+
 	const [portalReactors, setPortalReactors] = useState<{
 		reactors: string[];
 		lastCompiled?: string;
@@ -320,7 +326,9 @@ export const AppSettings = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				const output = response.pixelReturn[0].output;
+				const output = Array.isArray(response.pixelReturn[0].output)
+					? (response.pixelReturn[0].output as string[])
+					: [response.pixelReturn[0].output as string];
 				const type = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
@@ -359,7 +367,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				const output = response.pixelReturn[0].output;
+				const output: string = response.pixelReturn[0].output as string;
 				const type: string = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
@@ -400,7 +408,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				const output = response.pixelReturn[0].output;
+				const output: string = response.pixelReturn[0].output as string;
 				const type = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
@@ -528,6 +536,26 @@ export const AppSettings = (props: AppSettingsProps) => {
 			setIsLoading(false);
 		}
 	});
+
+	/**
+	 * Copy text and add it to the clipboard
+	 * @param text - text to copy
+	 */
+	const copy = async (text: string) => {
+		try {
+			await navigator.clipboard.writeText(text);
+
+			notification.add({
+				color: "success",
+				message: "Successfully copied to clipboard",
+			});
+		} catch (_e) {
+			notification.add({
+				color: "error",
+				message: "Unable to copy to clipboard",
+			});
+		}
+	};
 
 	if (condensed) {
 		return (
@@ -819,6 +847,34 @@ export const AppSettings = (props: AppSettingsProps) => {
 								</StyledCenteredFallback>
 							)}
 						</StyledCardRight>
+					</StyledCardDiv>
+				</StyledCardContainer>
+				<StyledCardContainer>
+					<StyledCardDiv>
+						<TextField
+							label="MCP URL"
+							size="small"
+							value={mcpUrl}
+							fullWidth={true}
+							slotProps={{
+								input: {
+									endAdornment: (
+										<InputAdornment position="end">
+											<IconButton
+												aria-label="copy"
+												color="default"
+												size="small"
+												onClick={() =>
+													copy(`{{${mcpUrl}}}`)
+												}
+											>
+												<ContentCopy fontSize="small" />
+											</IconButton>
+										</InputAdornment>
+									),
+								},
+							}}
+						/>
 					</StyledCardDiv>
 				</StyledCardContainer>
 
