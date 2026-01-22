@@ -251,7 +251,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 										});
 									}}
 								>
-									<div className="flex-1">MCPs</div>
+									<div className="flex-1">Toolbox</div>
 
 									<Tooltip>
 										<TooltipTrigger asChild>
