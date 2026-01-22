@@ -21,8 +21,9 @@ import {
 	RoomInputMenuToolbox,
 	RoomInputMenuUpload,
 } from "@/components";
+import { useChat } from "@/hooks";
 import type { ResponseMessageStore, RoomStore } from "@/stores";
-import type { MCPConfig } from "@/types";
+import type { Engine, MCPConfig } from "@/types";
 
 const SCROLL_THRESHOLD = 100;
 
@@ -35,9 +36,19 @@ interface RoomContentProps {
  * The page for a room
  */
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
+	const { chat } = useChat();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
+
+	/**
+	 * Set the model
+	 * @param model - model
+	 */
+	const setModel = (model: Engine) => {
+		room.setModel(model);
+		chat.setSelectedModel(model);
+	};
 
 	/**
 	 * Functions
@@ -313,7 +324,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					className="max-h-56 min-h-24"
 					isLoading={room.isLoading}
 					model={room.model}
-					setModel={room.setModel}
+					setModel={setModel}
 					MenuComponent={observer(
 						({ addToken, onOpenChange, fileRef }) => (
 							<>
@@ -346,7 +357,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									onClose={(success, { model, options }) => {
 										if (success) {
 											if (model) {
-												room.setModel(model);
+												setModel(model);
 											}
 
 											if (options) {
