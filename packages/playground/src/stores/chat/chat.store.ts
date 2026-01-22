@@ -20,6 +20,9 @@ interface ChatStoreInterface {
 	models: {
 		/** The current model */
 		selected: Engine | null;
+
+		/** The current context window */
+		contextWindow?: number;
 	};
 
 	/**
@@ -43,6 +46,7 @@ export class ChatStore {
 		isInitialized: false,
 		models: {
 			selected: null,
+			contextWindow: undefined,
 		},
 		keys: {
 			roomCounter: 0,
@@ -231,8 +235,10 @@ paramValues=[${JSON.stringify({
 	/**
 	 * Set the selected model
 	 */
-	setSelectedModel = (model: Engine): void => {
-		this.models.selected = model;
+	setSelectedModel = (model: Engine) => {
+		runInAction(() => {
+			this._store.models.selected = model;
+		});
 
 		// save to local storage
 		if (localStorage) {
@@ -241,6 +247,8 @@ paramValues=[${JSON.stringify({
 				JSON.stringify(this.models.selected),
 			);
 		}
+
+		this.loadEngineContextWindow(model.app_id);
 	};
 
 	/**
@@ -267,6 +275,27 @@ paramValues=[${JSON.stringify({
 		}
 
 		this.setSelectedModel(pixelReturn[0].output[0]);
+	};
+
+	private loadEngineContextWindow = async (engineId: string) => {
+		runInAction(() => {
+			this._store.models.contextWindow = undefined;
+		});
+
+		const { pixelReturn } = await this._actions.run<[number | undefined]>(
+			`GetContextWindow(${JSON.stringify(engineId)});`,
+		);
+
+		// throw errors
+		if (this._error) {
+			throw new Error(this._error.message);
+		}
+
+		if (this.models.selected?.app_id === engineId) {
+			runInAction(() => {
+				this._store.models.contextWindow = pixelReturn[0].output;
+			});
+		}
 	};
 
 	/**

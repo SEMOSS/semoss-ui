@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -30,6 +30,12 @@ export const Room: React.FC<RoomProps> = observer(({ roomId }) => {
 	const navigate = useNavigate();
 
 	const [room, setRoom] = useState<RoomStore | null>(null);
+	const modelIdRef = useRef<string | null>(null);
+
+	// keep track of the selected model id
+	useEffect(() => {
+		modelIdRef.current = chat.models?.selected?.app_id || null;
+	}, [chat.models?.selected?.app_id]);
 
 	// load the room
 	useEffect(() => {
@@ -48,7 +54,7 @@ export const Room: React.FC<RoomProps> = observer(({ roomId }) => {
 					toast.warning(
 						`The model previously selected for this room is no longer available.`,
 					);
-					room.setModel(chat.models?.selected?.app_id);
+					room.setModel(modelIdRef.current);
 				}
 
 				// set the room
@@ -70,7 +76,6 @@ export const Room: React.FC<RoomProps> = observer(({ roomId }) => {
 		insight.insightId,
 		navigate,
 		chat.setSelectedModelById,
-		chat.models?.selected?.app_id,
 	]);
 
 	if (!room || !room.isInitialized) {

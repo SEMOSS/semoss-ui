@@ -18,7 +18,7 @@ import {
 	RoomInput,
 	RoomInputMenuPlugin,
 } from "@/components";
-import { useAutoScroll } from "@/hooks";
+import { useAutoScroll, useChat } from "@/hooks";
 import type { ResponseMessageStore, RoomStore } from "@/stores";
 
 interface RoomContentProps {
@@ -43,6 +43,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			: 0,
 		{ direction: "bottom" },
 	);
+
+	const { chat } = useChat();
 
 	// Auto-scroll hook
 	const {
@@ -101,8 +103,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			window.removeEventListener("message", handleMessage);
 		};
 	}, [room]);
-
-	const tempTokensMax = 1049; //
 
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
@@ -211,7 +211,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						</>
 					}
 					onPrompt={handlePrompt}
-					tokensMax={tempTokensMax}
+					tokensMax={chat.models.contextWindow}
 					tokensUsed={room.tokensUsed}
 					hasOutstandingTools={room.hasUnfinishedTools}
 					hideLoadingSpinner
