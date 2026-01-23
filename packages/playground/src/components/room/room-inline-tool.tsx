@@ -79,6 +79,8 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 													name: tool.name,
 													title: tool.title,
 													parameters: tool.parameters,
+													original_name:
+														tool.original_name,
 												},
 											},
 											enableClose: true,

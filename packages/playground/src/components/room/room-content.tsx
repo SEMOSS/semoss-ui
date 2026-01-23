@@ -243,12 +243,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							return (
 								<React.Fragment key={m.id}>
 									{m.type === "INPUT" && (
-										<InputMessage message={m} />
+										<InputMessage room={room} message={m} />
 									)}
 									{m.type === "RESPONSE" && (
 										<ResponseMessage
-											message={m}
 											room={room}
+											message={m}
 										/>
 									)}
 									{m.type === "PLAN" && (
