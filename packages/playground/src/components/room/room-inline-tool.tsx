@@ -145,6 +145,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 								id: tool.id,
 								name: tool.name,
 								parameters: tool.parameters,
+								original_name: tool.original_name,
 							}}
 						/>
 					</div>
