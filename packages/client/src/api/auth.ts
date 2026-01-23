@@ -509,6 +509,7 @@ export const uploadFile = async (
 	insightId: string | null,
 	projectId?: string | null,
 	path?: string | null,
+	type?: string | null,
 ) => {
 	let param = "";
 	if (insightId || projectId || path) {
@@ -522,7 +523,11 @@ export const uploadFile = async (
 			if (param.length > 0) {
 				param += "&";
 			}
-			param += `projectId=${projectId}`;
+			if (type === "engine") {
+				param += `engineId=${projectId}`;
+			} else {
+				param += `projectId=${projectId}`;
+			}
 		}
 		if (path) {
 			if (param.length > 0) {

@@ -6,15 +6,7 @@ import { RoomInput } from "./room-input";
 test("pressing Enter calls onPrompt with textarea content", async () => {
 	const onPrompt = vi.fn(() => Promise.resolve(true));
 
-	render(
-		<RoomInput
-			isLoading={false}
-			isDisabled={false}
-			minRows={2}
-			maxRows={6}
-			onPrompt={onPrompt}
-		/>,
-	);
+	render(<RoomInput isLoading={false} onPrompt={onPrompt} />);
 
 	const textarea = screen.getByPlaceholderText(
 		"What do you want to do today?",
@@ -36,15 +28,7 @@ test("pressing Enter calls onPrompt with textarea content", async () => {
 test("clicking send button calls onPrompt", async () => {
 	const onPrompt = vi.fn(() => Promise.resolve(true));
 
-	render(
-		<RoomInput
-			isLoading={false}
-			isDisabled={false}
-			minRows={2}
-			maxRows={6}
-			onPrompt={onPrompt}
-		/>,
-	);
+	render(<RoomInput isLoading={false} onPrompt={onPrompt} />);
 
 	const textarea = screen.getByPlaceholderText(
 		"What do you want to do today?",
@@ -67,13 +51,7 @@ test("does not call onPrompt when loading or disabled", async () => {
 
 	// isLoading true
 	const { rerender } = render(
-		<RoomInput
-			isLoading={true}
-			isDisabled={false}
-			minRows={2}
-			maxRows={6}
-			onPrompt={onPrompt}
-		/>,
+		<RoomInput isLoading={true} onPrompt={onPrompt} />,
 	);
 
 	const textarea = screen.getByPlaceholderText(
@@ -86,15 +64,7 @@ test("does not call onPrompt when loading or disabled", async () => {
 	expect(onPrompt).not.toHaveBeenCalled();
 
 	// isDisabled true
-	rerender(
-		<RoomInput
-			isLoading={false}
-			isDisabled={true}
-			minRows={2}
-			maxRows={6}
-			onPrompt={onPrompt}
-		/>,
-	);
+	rerender(<RoomInput isLoading={false} onPrompt={onPrompt} />);
 
 	fireEvent.change(textarea, { target: { value: "Should not send either" } });
 	fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", charCode: 13 });
@@ -107,15 +77,7 @@ test("shows toast when onPrompt fails or returns false", async () => {
 	const onPrompt = vi.fn(() => Promise.resolve(false));
 	toast.error = vi.fn();
 
-	render(
-		<RoomInput
-			isLoading={false}
-			isDisabled={false}
-			minRows={2}
-			maxRows={6}
-			onPrompt={onPrompt}
-		/>,
-	);
+	render(<RoomInput isLoading={false} onPrompt={onPrompt} />);
 
 	const textarea = screen.getByPlaceholderText(
 		"What do you want to do today?",

@@ -1,6 +1,8 @@
 import { createHighlighterCore } from "@shikijs/core";
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
+import shikiLangBash from "@shikijs/langs/bash";
 import shikiLangCSS from "@shikijs/langs/css";
+import shikiLangCSV from "@shikijs/langs/csv";
 import shikiLangHTML from "@shikijs/langs/html";
 import shikiLangJava from "@shikijs/langs/java";
 import shikiLangJavascript from "@shikijs/langs/javascript";
@@ -8,8 +10,13 @@ import shikiLangJSON from "@shikijs/langs/json";
 import shikiLangJSX from "@shikijs/langs/jsx";
 import shikiLangMarkdown from "@shikijs/langs/markdown";
 import shikiLangPython from "@shikijs/langs/python";
+import shikiLangSH from "@shikijs/langs/sh";
+import shikiLangTSV from "@shikijs/langs/tsv";
 import shikiLangTSX from "@shikijs/langs/tsx";
 import shikiLangTypescript from "@shikijs/langs/typescript";
+import shikiLangXML from "@shikijs/langs/xml";
+import shikiLangYAML from "@shikijs/langs/yaml";
+import shikiLangYML from "@shikijs/langs/yml";
 import gitHubDark from "@shikijs/themes/github-dark";
 import minLight from "@shikijs/themes/min-light";
 import type * as React from "react";
@@ -36,7 +43,7 @@ interface CodeProps extends Omit<React.ComponentProps<"code">, "children"> {
 	/** Code to render as code */
 	code: string;
 
-	/** Content to render as code */
+	/** Format of the code to render */
 	language?:
 		| "text"
 		| "txt"
@@ -54,6 +61,13 @@ interface CodeProps extends Omit<React.ComponentProps<"code">, "children"> {
 		| "java"
 		| "markdown"
 		| "md"
+		| "yaml"
+		| "yml"
+		| "xml"
+		| "sh"
+		| "bash"
+		| "csv"
+		| "tsv"
 		| null;
 }
 
@@ -86,6 +100,13 @@ function Code({ code, language, className, ...props }: CodeProps): JSX.Element {
 					shikiLangJSX,
 					shikiLangTSX,
 					shikiLangMarkdown,
+					shikiLangXML,
+					shikiLangYAML,
+					shikiLangYML,
+					shikiLangSH,
+					shikiLangBash,
+					shikiLangCSV,
+					shikiLangTSV,
 				],
 				engine: createJavaScriptRegexEngine(),
 			});

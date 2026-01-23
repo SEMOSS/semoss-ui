@@ -34,6 +34,11 @@ const JSONTreeView = ({
 		setIsExpanded(!isExpanded);
 	};
 
+	/**
+	 * Returns a JSX element representing a value in a JSON tree view.
+	 * @param {unknown} value - The value to render.
+	 * @returns {React.ReactElement | null} - A JSX element representing the value, or null if the value is unknown.
+	 */
 	const renderValue = (value: unknown) => {
 		if (value === null)
 			return <span style={{ color: "#0471F0" }}>null</span>;
@@ -122,6 +127,13 @@ const JSONTreeView = ({
 	);
 };
 
+/**
+ * Returns true if the given data has expandable content.
+ * Expandable content is content that is not null and is of type object.
+ * This function is used to determine if a JSON tree view should be expanded or not.
+ * @param {unknown} data - The data to check for expandable content.
+ * @returns {boolean} - True if the data has expandable content, false otherwise.
+ */
 const hasExpandableContent = (data: unknown): boolean => {
 	if (data === null || typeof data !== "object") {
 		return false;
@@ -136,9 +148,16 @@ const hasExpandableContent = (data: unknown): boolean => {
 	return false;
 };
 
+/**
+ * A drawer component for displaying audit log details.
+ *
+ *
+ * @param {logDetails} The audit log details object.
+ * @returns {JSX.Element} A JSX element which is a side drwawer.
+ */
 export const AuditLogsDetailDrawer = (props) => {
-	const { logDetails } = props; //handleDrawerClose
-	const [width, setWidth] = useState(500);
+	const { logDetails } = props;
+	const [_width, setWidth] = useState(500);
 	const [promptExpandAll, setPromptExpandAll] = useState<boolean | undefined>(
 		undefined,
 	);
@@ -163,17 +182,6 @@ export const AuditLogsDetailDrawer = (props) => {
 		document.removeEventListener("mouseup", handleMouseUp);
 	}, [handleMouseMove]);
 
-	const handleMouseDown = useCallback(
-		(e) => {
-			isDragging.current = true;
-			startX.current = e.clientX;
-			startWidth.current = width;
-			document.addEventListener("mousemove", handleMouseMove);
-			document.addEventListener("mouseup", handleMouseUp);
-		},
-		[width, handleMouseUp, handleMouseMove],
-	);
-
 	useEffect(() => {
 		return () => {
 			document.removeEventListener("mousemove", handleMouseMove);
@@ -181,14 +189,25 @@ export const AuditLogsDetailDrawer = (props) => {
 		};
 	}, [handleMouseMove, handleMouseUp]);
 
+	/**
+	 * Toggle the prompt to expand/collapse.
+	 */
 	const handlePromptToggle = () => {
 		setPromptExpandAll((prev) => !prev);
 	};
 
+	/**
+	 * Toggle the response to expand/collapse.
+	 */
 	const handleResponseToggle = () => {
 		setResponseExpandAll((prev) => !prev);
 	};
 
+	/**
+	 * Attempts to parse the request of an audit log into a JSON object.
+	 *
+	 * @returns {unknown|null} The parsed request JSON object, or null if the request is not JSON.
+	 */
 	const getPromptData = () => {
 		try {
 			return JSON.parse(logDetails.request);
@@ -197,6 +216,11 @@ export const AuditLogsDetailDrawer = (props) => {
 		}
 	};
 
+	/**
+	 * Attempts to parse the response of an audit log into a JSON object.
+	 *
+	 * @returns {unknown|null} The parsed response JSON object, or null if the response is not JSON.
+	 */
 	const getResponseData = () => {
 		try {
 			return JSON.parse(logDetails.response);
@@ -205,13 +229,13 @@ export const AuditLogsDetailDrawer = (props) => {
 		}
 	};
 
-	const promptData = logDetails ? getPromptData() : null;
-	const responseData = logDetails ? getResponseData() : null;
+	const promptData = logDetails ? getPromptData() : null; // request data in json or null
+	const responseData = logDetails ? getResponseData() : null; // response data in json or null
 	const showPromptExpandButton =
-		promptData && hasExpandableContent(promptData);
+		promptData && hasExpandableContent(promptData); //show request prompt expand button
 	const showResponseExpandButton =
-		responseData && hasExpandableContent(responseData);
-
+		responseData && hasExpandableContent(responseData); //show request prompt expand button
+	//if no logs, then display no details available
 	if (!logDetails)
 		return (
 			<span className="font-normal text-sm leading-[1.43] tracking-normal">
@@ -221,20 +245,9 @@ export const AuditLogsDetailDrawer = (props) => {
 	return (
 		<div
 			ref={drawerRef}
-			className="absolute top-20 right-0 flex h-full min-w-[500px] flex-col bg-white"
-			style={{ width: `${width}px` }}
+			className="top-20 right-0 flex h-full min-w-[500px] flex-col bg-white"
 		>
-			{/** biome-ignore lint/a11y/noStaticElementInteractions: <need a on mouse down event handling> */}
-			<div
-				className="absolute top-0 bottom-0 left-0 w-1 cursor-ew-resize hover:bg-gray-200 active:bg-gray-300"
-				onMouseDown={handleMouseDown}
-			>
-				&nbsp;
-			</div>
-			<div
-				className="flex items-center justify-between border-b px-3 py-2"
-				style={{ backgroundColor: "#F5F9FE" }}
-			>
+			<div className="flex items-center justify-between border-b bg-[#F5F9FE] px-3 py-2">
 				<span className="font-normal text-base text-primary leading-normal">
 					Audit Details
 				</span>
@@ -318,7 +331,7 @@ export const AuditLogsDetailDrawer = (props) => {
 								</Button>
 							)}
 						</div>
-						<div className="mt-4 rounded-[6px] border border-black bg-[#FAFAFA] p-1">
+						<div className="mt-4 rounded-[6px] border border-gray-300 bg-[#FAFAFA] p-1">
 							{(() => {
 								if (responseData) {
 									return (
