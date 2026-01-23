@@ -1,23 +1,37 @@
-import { CheckIcon, ListTodoIcon, MessageCircleIcon } from "lucide-react";
+import {
+	CheckIcon,
+	ListTodoIcon,
+	MessageCircleIcon,
+	Settings2Icon,
+	XIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import {
+	Button,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+	ScrollArea,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
 	RoomInputMenuKnowledge,
-	RoomInputMenuSettings,
 	RoomInputMenuToolbox,
 	RoomInputMenuUpload,
 	RoomInputMenuWorkspace,
 	workspaceToApp,
 } from "@/components";
+import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
@@ -41,6 +55,7 @@ export const NewRoomPage = observer(() => {
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [mode, setMode] = useState<{
 		type: "chat" | "plan" | "workspace";
 		workspace: App | null;
@@ -137,23 +152,25 @@ export const NewRoomPage = observer(() => {
 			setIsLoading(true);
 
 			// create a new room
-			const roomId = await chat.createRoom(
-				prompt,
-				files,
-				mode.type === "plan" ? "planning" : "chat",
-				chat.models.selected.app_id,
-				mode.type === "workspace" && mode.workspace
-					? {
-							...options,
-							workspace: {
-								workspace_id: mode.workspace.project_id,
-							},
-						}
-					: options,
-			);
+			const room = await chat.createRoom();
+
+			// set the model
+			room.setModel(chat.models.selected);
+
+			// set the mode
+			room.setMode(mode.type === "plan" ? "planning" : "chat");
+
+			// update the options
+			await room.updateRoomOptions({
+				...options,
+				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
+			});
+
+			// ask the room
+			room.askMessage(prompt, files);
 
 			// go to the new room
-			navigate(`/room/${roomId}`);
+			navigate(`/room/${room.roomId}`);
 		} catch (error) {
 			toast.error(
 				`An error occurred while creating the room. Error: ${error.message}`,
@@ -242,113 +259,170 @@ export const NewRoomPage = observer(() => {
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
-			<div className="relative flex h-full w-full flex-col items-center justify-center overflow-auto p-2">
-				<img
-					src={root.theme.images.landing || landingImage}
-					alt="Background"
-					className="absolute inset-0 h-full w-full select-none object-cover"
-				/>
-				<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
-					{root.theme.landing ? (
-						<div
-							className="mx-auto flex max-w-xl"
-							// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
-							dangerouslySetInnerHTML={{
-								__html: root.theme.landing,
+			<ResizablePanelGroup direction="horizontal">
+				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
+					<img
+						src={root.theme.images.landing || landingImage}
+						alt="Background"
+						className="absolute inset-0 h-full w-full select-none object-cover"
+					/>
+					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
+						{root.theme.landing ? (
+							<div
+								className="mx-auto flex max-w-xl"
+								// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+								dangerouslySetInnerHTML={{
+									__html: root.theme.landing,
+								}}
+							/>
+						) : (
+							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
+								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
+									Welcome
+								</div>
+								{root.theme.description ? (
+									<div className="text-center text-muted-foreground text-sm leading-normal">
+										{root.theme.description}
+									</div>
+								) : null}
+							</div>
+						)}
+
+						<RoomInput
+							className="max-h-64 min-h-48"
+							isLoading={
+								isLoading ||
+								(mode.type === "workspace" &&
+									mode.workspace &&
+									getWorkspace.status !== "SUCCESS")
+							}
+							model={chat.models.selected}
+							setModel={(m) => {
+								chat.setSelectedModel(m);
+							}}
+							MenuComponent={observer(
+								({ addToken, onOpenChange, fileRef }) => (
+									<>
+										<DropdownMenuItem
+											onSelect={() => {
+												setMode({
+													type: "chat",
+													workspace: null,
+												});
+												onOpenChange(false);
+											}}
+										>
+											<MessageCircleIcon />
+											<span className="flex-1">Ask</span>
+											{mode.type === "chat" ? (
+												<div className="px-1">
+													<CheckIcon />
+												</div>
+											) : null}
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onSelect={() => {
+												setMode({
+													type: "plan",
+													workspace: null,
+												});
+												onOpenChange(false);
+											}}
+										>
+											<ListTodoIcon />
+											<span className="flex-1">Plan</span>
+
+											{mode.type === "plan" ? (
+												<div className="px-1">
+													<CheckIcon />
+												</div>
+											) : null}
+										</DropdownMenuItem>
+										<RoomInputMenuWorkspace
+											workspace={
+												mode.type === "workspace"
+													? mode.workspace
+													: null
+											}
+											onSelect={handleWorkspaceSelect}
+										/>
+										<DropdownMenuSeparator />
+										<RoomInputMenuUpload
+											fileRef={fileRef}
+											onSelect={() => onOpenChange(false)}
+										/>
+										<DropdownMenuSeparator />
+										<RoomInputMenuKnowledge
+											options={options}
+											onSelect={(tool) => {
+												handleToolSelect(tool);
+												addToken(`<${tool.name}>`);
+											}}
+										/>
+										<RoomInputMenuToolbox
+											options={options}
+											onSelect={(tool) => {
+												handleToolSelect(tool);
+												addToken(`<${tool.name}>`);
+											}}
+										/>
+										<DropdownMenuItem
+											onSelect={(e) => {
+												e.preventDefault();
+
+												setIsConfgurationOpen(
+													!isConfigurationOpen,
+												);
+											}}
+										>
+											<Settings2Icon />
+											<span className="flex-1">
+												{isConfigurationOpen
+													? "Close"
+													: "Open"}{" "}
+												Settings
+											</span>
+										</DropdownMenuItem>
+									</>
+								),
+							)}
+							onPrompt={async (prompt, files) => {
+								await createRoom(prompt, files);
+
+								return true;
 							}}
 						/>
-					) : (
-						<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
-							<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-								Welcome
-							</div>
-							{root.theme.description ? (
-								<div className="text-center text-muted-foreground text-sm leading-normal">
-									{root.theme.description}
-								</div>
-							) : null}
-						</div>
-					)}
+					</div>
+				</ResizablePanel>
+				{isConfigurationOpen && (
+					<>
+						<ResizableHandle />
+						<ResizablePanel
+							className="relative h-full w-full p-2"
+							defaultSize={25}
+						>
+							<div
+								className={`relative h-full w-full overflow-hidden rounded-lg border border-input shadow-xs dark:bg-input/30`}
+							>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											className="absolute top-0 right-0 z-10"
+											variant="ghost"
+											size="icon-sm"
+											onClick={() => {
+												// close it
+												setIsConfgurationOpen(false);
+											}}
+										>
+											<XIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Close</TooltipContent>
+								</Tooltip>
 
-					<RoomInput
-						className="max-h-64 min-h-48"
-						isLoading={
-							isLoading ||
-							(mode.type === "workspace" &&
-								mode.workspace &&
-								getWorkspace.status !== "SUCCESS")
-						}
-						model={chat.models.selected}
-						setModel={(m) => {
-							chat.setSelectedModel(m);
-						}}
-						MenuComponent={observer(
-							({ addToken, onOpenChange, fileRef }) => (
-								<>
-									<DropdownMenuItem
-										onSelect={() => {
-											setMode({
-												type: "chat",
-												workspace: null,
-											});
-											onOpenChange(false);
-										}}
-									>
-										<MessageCircleIcon />
-										<span className="flex-1">Ask</span>
-										{mode.type === "chat" ? (
-											<div className="px-1">
-												<CheckIcon />
-											</div>
-										) : null}
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										onSelect={() => {
-											setMode({
-												type: "plan",
-												workspace: null,
-											});
-											onOpenChange(false);
-										}}
-									>
-										<ListTodoIcon />
-										<span className="flex-1">Plan</span>
-
-										{mode.type === "plan" ? (
-											<div className="px-1">
-												<CheckIcon />
-											</div>
-										) : null}
-									</DropdownMenuItem>
-									<RoomInputMenuWorkspace
-										workspace={
-											mode.type === "workspace"
-												? mode.workspace
-												: null
-										}
-										onSelect={handleWorkspaceSelect}
-									/>
-									<DropdownMenuSeparator />
-									<RoomInputMenuUpload
-										fileRef={fileRef}
-										onSelect={() => onOpenChange(false)}
-									/>
-									<DropdownMenuSeparator />
-									<RoomInputMenuKnowledge
-										options={options}
-										onSelect={(tool) => {
-											handleToolSelect(tool);
-											addToken(`<${tool.name}>`);
-										}}
-									/>
-									<RoomInputMenuToolbox
-										options={options}
-										onSelect={(tool) => {
-											handleToolSelect(tool);
-											addToken(`<${tool.name}>`);
-										}}
-									/>
-									<RoomInputMenuSettings
+								<ScrollArea className="h-full w-full">
+									<RoomOptionsForm
 										model={chat.models.selected}
 										options={options}
 										onClose={(
@@ -365,21 +439,19 @@ export const NewRoomPage = observer(() => {
 												if (options) {
 													setOptions(options);
 												}
+
+												toast.success(
+													"Options updated",
+												);
 											}
-											onOpenChange(false);
 										}}
 									/>
-								</>
-							),
-						)}
-						onPrompt={async (prompt, files) => {
-							await createRoom(prompt, files);
-
-							return true;
-						}}
-					/>
-				</div>
-			</div>
+								</ScrollArea>
+							</div>
+						</ResizablePanel>
+					</>
+				)}
+			</ResizablePanelGroup>
 		</div>
 	);
 });

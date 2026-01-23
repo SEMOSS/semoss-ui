@@ -1,9 +1,15 @@
-import { MoveDownIcon, MoveUpIcon, TriangleAlertIcon } from "lucide-react";
+import {
+	MoveDownIcon,
+	MoveUpIcon,
+	Settings2Icon,
+	TriangleAlertIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
+	DropdownMenuItem,
 	DropdownMenuSeparator,
 	ScrollArea,
 	Tooltip,
@@ -17,14 +23,14 @@ import {
 	RoomInput,
 	RoomInputMenuFileExplorer,
 	RoomInputMenuKnowledge,
-	RoomInputMenuSettings,
 	RoomInputMenuToolbox,
 	RoomInputMenuUpload,
 } from "@/components";
 import { useChat } from "@/hooks";
 import type { ResponseMessageStore, RoomStore } from "@/stores";
-import type { Engine, MCPConfig } from "@/types";
+import type { MCPConfig } from "@/types";
 
+const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 100;
 
 interface RoomContentProps {
@@ -40,15 +46,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
-
-	/**
-	 * Set the model
-	 * @param model - model
-	 */
-	const setModel = (model: Engine) => {
-		room.setModel(model);
-		chat.setSelectedModel(model);
-	};
 
 	/**
 	 * Functions
@@ -324,7 +321,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					className="max-h-56 min-h-24"
 					isLoading={room.isLoading}
 					model={room.model}
-					setModel={setModel}
+					setModel={(model) => {
+						room.setModel(model);
+						chat.setSelectedModel(model);
+					}}
 					MenuComponent={observer(
 						({ addToken, onOpenChange, fileRef }) => (
 							<>
@@ -351,22 +351,29 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 										addToken(`<${tool.name}>`);
 									}}
 								/>
-								<RoomInputMenuSettings
-									model={room.model}
-									options={room.options}
-									onClose={(success, { model, options }) => {
-										if (success) {
-											if (model) {
-												setModel(model);
-											}
+								<DropdownMenuItem
+									onSelect={(e) => {
+										e.preventDefault();
 
-											if (options) {
-												room.setOptions(options);
-											}
-										}
+										// add to the sidebar
+										room.addSidebarNode(
+											ROOM_CONFIGURATION_ID,
+											{
+												type: "tab",
+												name: "Configuration",
+												component: "room-configuration",
+												config: {},
+												enableClose: true,
+											},
+										);
 										onOpenChange(false);
 									}}
-								/>
+								>
+									<Settings2Icon />
+									<span className="flex-1">
+										Edit Settings
+									</span>
+								</DropdownMenuItem>
 							</>
 						),
 					)}

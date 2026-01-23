@@ -14,9 +14,14 @@ import {
 	InputMessageStore,
 	PlanMessageStore,
 	ResponseMessageStore,
-	RootMessageStore,
 } from "@/stores";
-import type { Engine, MCPConfig, PixelMessage, Workspace } from "@/types";
+import type {
+	Engine,
+	MCPConfig,
+	PixelMessage,
+	ResponseTextPixelMessage,
+	Workspace,
+} from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -29,11 +34,6 @@ interface RoomStoreInterface {
 	 * Set during the constructor and never changes
 	 */
 	insightId: string;
-
-	/**
-	 *  Track if the room is initialized
-	 */
-	isInitialized: boolean;
 
 	/**
 	 *  Track if the room is loading
@@ -73,7 +73,7 @@ interface RoomStoreInterface {
 	/**
 	 * Root message
 	 */
-	root: RootMessageStore;
+	root: ResponseMessageStore | PlanMessageStore | null;
 
 	/*
 	 * Model that is being chatted against
@@ -157,7 +157,6 @@ export class RoomStore {
 	private _store: RoomStoreInterface = {
 		roomId: "",
 		insightId: "new",
-		isInitialized: false,
 		isLoading: false,
 		hasUnfinishedTools: false,
 		mode: "chat",
@@ -166,7 +165,7 @@ export class RoomStore {
 			dateCreated: "",
 		},
 		model: null,
-		root: new RootMessageStore(this),
+		root: null,
 		options: {
 			instructions: "",
 			mcp: [],
@@ -189,7 +188,7 @@ export class RoomStore {
 		inlineTools: new Map(),
 	};
 
-	constructor(roomId: string, insightId: string) {
+	constructor(roomId: string, insightId: string = "new") {
 		// register the roomId, insightId, and actions
 		this._store.roomId = roomId;
 		this._store.insightId = insightId;
@@ -214,10 +213,10 @@ export class RoomStore {
 	}
 
 	/**
-	 * Indicator to chack if it is ready for use
+	 * Get the insightId of the roomId
 	 */
-	get isInitialized() {
-		return this._store.isInitialized;
+	get insightId() {
+		return this._store.insightId;
 	}
 
 	/**
@@ -408,11 +407,6 @@ export class RoomStore {
 	 */
 	initialize = async () => {
 		try {
-			// only load messages once
-			if (this._store.isInitialized) {
-				return;
-			}
-
 			// get all of the messages, get all the options
 			const response = await this.runRoomPixel<
 				[
@@ -430,7 +424,48 @@ export class RoomStore {
 				OPTIONS?: RoomStoreInterface["options"];
 			};
 
-			const root = new RootMessageStore(this);
+			// sync the insight ID
+			runInAction(() => {
+				this._store.insightId = response.insightId;
+			});
+
+			// create the root
+			let root = null;
+			if (this.mode === "chat") {
+				root = new ResponseMessageStore(this, {
+					messageId: "ROOT_PLACEHOLDER_ID",
+					type: "RESPONSE_TEXT",
+					visible: false,
+					content: "",
+					modelId: this._store.model?.app_id || "",
+					paramMap: {
+						max_new_tokens: this._store.options.tokenLength,
+						temperature: this._store.options.temperature,
+					},
+					ornaments: {
+						modelName: this._store.model?.app_name || "",
+					},
+					dateCreated: new Date().toISOString(),
+				} as ResponseTextPixelMessage);
+			} else if (this.mode === "planning") {
+				root = new PlanMessageStore(this, {
+					messageId: "ROOT_PLACEHOLDER_ID",
+					type: "RESPONSE_TEXT",
+					visible: false,
+					content: "",
+					modelId: this._store.model?.app_id || "",
+					paramMap: {
+						max_new_tokens: this._store.options.tokenLength,
+						temperature: this._store.options.temperature,
+					},
+					ornaments: {
+						PLAYGROUND_MESSAGE_TYPE: "COT",
+						modelName: this._store.model?.app_name || "",
+					},
+					dateCreated: new Date().toISOString(),
+				} as ResponseTextPixelMessage);
+			}
+
 			const messages: Record<
 				string,
 				{
@@ -545,9 +580,6 @@ export class RoomStore {
 
 				// store it
 				this._store.root = root;
-
-				// mark as initialized
-				this._store.isInitialized = true;
 			});
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
@@ -769,13 +801,6 @@ export class RoomStore {
 	};
 
 	/**
-	 * Mark a room as initialized
-	 */
-	setInitialized = (): void => {
-		this._store.isInitialized = true;
-	};
-
-	/**
 	 * Ask a message to the room
 	 * @param prompt - user message
 	 * @param files - files
@@ -810,6 +835,8 @@ export class RoomStore {
 			},
 			dateCreated: "",
 		});
+
+		console.log(this.tail, "tail");
 
 		// get the parent message
 		const parentMessage = this.tail;

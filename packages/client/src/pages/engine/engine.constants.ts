@@ -278,4 +278,32 @@ export const ENGINE_ROUTES: {
 			},
 		],
 	},
+	{
+		name: "Guardrail",
+		path: "guardrail",
+		type: "GUARDRAIL",
+		description:
+			"Guardrail Catalog is a centralized hub for managing and deploying guardrails that ensure safety, compliance, and reliability across the platform. It provides ready-to-use options like Gliner and Detoxify, and supports custom guardrail uploads via ZIP files, enabling consistent, secure, and scalable interactions.",
+		icon: Inventory2Outlined,
+		specific: [
+			{
+				name: "Overview",
+				path: "",
+				component: EngineOverviewPage,
+				restrict: false,
+			},
+			{
+				name: "Access Control",
+				path: "access-control",
+				component: EngineSettingsPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
+				name: "SMSS",
+				path: "smss",
+				component: EngineSmssPage,
+				restrict: ["OWNER"],
+			},
+		],
+	},
 ];

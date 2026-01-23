@@ -19,6 +19,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
+import { RoomConfiguration } from "./room-configuration";
 import { RoomFileEditor } from "./room-file-editor";
 import { RoomFileExplorer } from "./room-file-explorer";
 import { RoomTool } from "./room-tool";
@@ -171,6 +172,8 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 											room={room}
 										/>
 									);
+								} else if (component === "room-configuration") {
+									return <RoomConfiguration room={room} />;
 								} else if (component === "room-file-editor") {
 									return (
 										<RoomFileEditor
