@@ -1,7 +1,6 @@
 import { FileUploadOutlined } from "@mui/icons-material";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { runPixel } from "@semoss/sdk";
 import {
 	Box,
 	Breadcrumbs,
@@ -115,7 +114,7 @@ export const ModelImport: React.FC = () => {
 	useEffect(() => {
 		const fetch = async () => {
 			// TODO: Get importable models from backend
-			await runPixel("1+1");
+			//await runPixel("1+1");
 
 			setImportableModels(IMPORTABLE_MODELS as ImportableModels);
 			setimportableModelsCategory(IMPORTABLE_MODELS.categoryTexts);
@@ -191,14 +190,14 @@ export const ModelImport: React.FC = () => {
 									setSearch(e.target.value);
 								}}
 								fullWidth
-								data-tesId={"model-search-bar"}
+								data-testid={"model-search-bar"}
 							/>
 							<UploadButton
 								sx={{ lineHeight: 0.75 }}
 								size="large"
 								variant="outlined"
 								onClick={() => handleFileUpload(true)}
-								data-tesId={"model-upload-file-button"}
+								data-testid={"model-upload-file-button"}
 							>
 								<FileUploadOutlined fontSize="medium" />
 							</UploadButton>
@@ -241,110 +240,108 @@ export const ModelImport: React.FC = () => {
 															}}
 														>
 															{providerImage && (
-																<>
-																	<img
-																		src={
-																			providerImage
-																		}
-																		alt={`${provider.name} logo`}
-																		style={{
-																			width: 20,
-																			height: 20,
-																			objectFit:
-																				"contain",
-																			borderRadius: 4,
-																			display:
-																				"block",
-																		}}
-																		onError={(
-																			e,
-																		) => {
-																			const target =
-																				e.currentTarget;
-																			target.onerror =
-																				null;
-																			target.style.display =
-																				"none";
-																			const fallback =
-																				document.createElement(
-																					"div",
-																				);
-																			fallback.textContent =
-																				(
-																					provider.name ||
-																					""
-																				)
-																					.split(
-																						/[^A-Za-z0-9]+/,
-																					)
-																					.map(
-																						(
-																							t,
-																						) =>
-																							t[0],
-																					)
-																					.join(
-																						"",
-																					)
-																					.slice(
-																						0,
-																						2,
-																					)
-																					.toUpperCase();
-																			fallback.style.width =
-																				"20px";
-																			fallback.style.height =
-																				"20px";
-																			fallback.style.display =
-																				"flex";
-																			fallback.style.alignItems =
-																				"center";
-																			fallback.style.justifyContent =
-																				"center";
-																			fallback.style.fontWeight =
-																				"600";
-																			fallback.style.fontSize =
-																				"12px";
-																			fallback.style.color =
-																				"#fff";
-																			fallback.style.borderRadius =
-																				"4px";
-																			// Simple pastel gradient based on hash
-																			let h = 0;
-																			for (
-																				let i = 0;
-																				i <
-																				provider
-																					.name
-																					.length;
-																				i++
-																			) {
-																				h =
-																					(h <<
-																						5) -
-																					h +
-																					provider.name.charCodeAt(
-																						i,
-																					);
-																				h |= 0;
-																			}
-																			const base =
-																				Math.abs(
-																					h,
-																				) %
-																				360;
-																			const hue2 =
-																				(base +
-																					35) %
-																				360;
-																			fallback.style.background = `linear-gradient(135deg, hsl(${base} 45% 70%), hsl(${hue2} 40% 60%))`;
-																			target.parentNode.insertBefore(
-																				fallback,
-																				target.nextSibling,
+																<img
+																	src={
+																		providerImage
+																	}
+																	alt={`${provider.name} logo`}
+																	style={{
+																		width: 20,
+																		height: 20,
+																		objectFit:
+																			"contain",
+																		borderRadius: 4,
+																		display:
+																			"block",
+																	}}
+																	onError={(
+																		e,
+																	) => {
+																		const target =
+																			e.currentTarget;
+																		target.onerror =
+																			null;
+																		target.style.display =
+																			"none";
+																		const fallback =
+																			document.createElement(
+																				"div",
 																			);
-																		}}
-																	/>
-																</>
+																		fallback.textContent =
+																			(
+																				provider.name ||
+																				""
+																			)
+																				.split(
+																					/[^A-Za-z0-9]+/,
+																				)
+																				.map(
+																					(
+																						t,
+																					) =>
+																						t[0],
+																				)
+																				.join(
+																					"",
+																				)
+																				.slice(
+																					0,
+																					2,
+																				)
+																				.toUpperCase();
+																		fallback.style.width =
+																			"20px";
+																		fallback.style.height =
+																			"20px";
+																		fallback.style.display =
+																			"flex";
+																		fallback.style.alignItems =
+																			"center";
+																		fallback.style.justifyContent =
+																			"center";
+																		fallback.style.fontWeight =
+																			"600";
+																		fallback.style.fontSize =
+																			"12px";
+																		fallback.style.color =
+																			"#fff";
+																		fallback.style.borderRadius =
+																			"4px";
+																		// Simple pastel gradient based on hash
+																		let h = 0;
+																		for (
+																			let i = 0;
+																			i <
+																			provider
+																				.name
+																				.length;
+																			i++
+																		) {
+																			h =
+																				(h <<
+																					5) -
+																				h +
+																				provider.name.charCodeAt(
+																					i,
+																				);
+																			h |= 0;
+																		}
+																		const base =
+																			Math.abs(
+																				h,
+																			) %
+																			360;
+																		const hue2 =
+																			(base +
+																				35) %
+																			360;
+																		fallback.style.background = `linear-gradient(135deg, hsl(${base} 45% 70%), hsl(${hue2} 40% 60%))`;
+																		target.parentNode.insertBefore(
+																			fallback,
+																			target.nextSibling,
+																		);
+																	}}
+																/>
 															)}
 															<Typography
 																component="span"
@@ -359,7 +356,7 @@ export const ModelImport: React.FC = () => {
 													);
 												})()}
 												value={provider.name}
-												data-tesId={formatToDataTestId(
+												data-testid={formatToDataTestId(
 													`connect-to-${provider.name}-tab`,
 												)}
 											/>

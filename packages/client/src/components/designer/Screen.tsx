@@ -13,6 +13,7 @@ import {
 } from "@/stores";
 import { BlockSettingsMask } from "./BlockSettingsMask";
 import { DeleteDuplicateMask } from "./DeleteDuplicateMask";
+import { FormMenuHost } from "./FormMenuHost";
 import { Ghost } from "./Ghost";
 import { HoveredMask } from "./HoveredMask";
 import { Placeholder } from "./Placeholder";
@@ -130,7 +131,7 @@ export const Screen = observer((props: ScreenProps) => {
 	const handleMouseOver = (event: React.MouseEvent) => {
 		const id = getNearestBlock(event.target as Element);
 
-		if (!id || id == designer.hovered) {
+		if (!id || id === designer.hovered) {
 			return;
 		}
 
@@ -267,7 +268,7 @@ export const Screen = observer((props: ScreenProps) => {
 	}, [designer.drag.active, handleDocumentMouseMove]);
 
 	const isHoveredOverSelectedBlock = useMemo(() => {
-		return designer.hovered == designer.selected;
+		return designer.hovered === designer.selected;
 	}, [designer.hovered, designer.selected, handleMouseOver]);
 
 	useEffect(() => {
@@ -339,6 +340,7 @@ export const Screen = observer((props: ScreenProps) => {
 
 			{designer.drag.active && <Placeholder />}
 			{designer.drag.active && <Ghost />}
+			{<FormMenuHost />}
 
 			<StyledContent off={designer.drag.active ? true : false}>
 				<StyledContentOuter onMouseLeave={handleMouseLeave}>

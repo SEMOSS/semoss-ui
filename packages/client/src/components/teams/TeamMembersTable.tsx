@@ -12,7 +12,6 @@ import {
 	Checkbox,
 	Chip,
 	IconButton,
-	Link,
 	Modal,
 	Search,
 	Stack,
@@ -42,7 +41,7 @@ const NameIDWrapper = styled("div")({
 	display: "inline-block",
 });
 
-const NameTableCell = styled(Table.Cell)({
+const _NameTableCell = styled(Table.Cell)({
 	width: "100%",
 	maxWidth: "1px",
 });
@@ -204,8 +203,7 @@ interface TeamMember {
 	publisher: boolean;
 	type: string;
 	username: string;
-};
-
+}
 
 export const TeamMembersTable = (props: MembersTableProps) => {
 	const { groupId } = props;
@@ -300,7 +298,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 				getAdditionalUsersNonGroup();
 			}
 		}
-	}, [isScrollBottom]);
+	}, [isScrollBottom, canCollect, getAdditionalUsersNonGroup]);
 
 	useEffect(() => {
 		if (addMembersModal) {
@@ -500,14 +498,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedUsers;
-				const users = (response as unknown as TeamMember[]).map((val) => {
-					return {
-						...val,
-						color: colors[
-							Math.floor(Math.random() * colors.length)
-						],
-					};
-				});
+				const users = (response as unknown as TeamMember[]).map(
+					(val) => {
+						return {
+							...val,
+							color: colors[
+								Math.floor(Math.random() * colors.length)
+							],
+						};
+					},
+				);
 				requests = requests.concat(users);
 				setNonCredentialedUsers(requests);
 				setCanCollect(users.length === AUTOCOMPLETE_LIMIT);
@@ -560,7 +560,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			setTeamMembers(data);
 			setHasMembers(data?.length > 0);
 		});
-	}, [count, membersPage, searchFilter, rowsPerPage]);
+	}, [groupId, membersPage, searchFilter, rowsPerPage]);
 
 	const filterUsersTwo = useCallback(() => {
 		getTeamUsers(
@@ -569,10 +569,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			0, // offset
 			searchFilter,
 		).then((data: unknown[]) => {
-				setMemberCount(data.length);
-				setAllTeamMembers(data);
-			});
-	}, [count, membersPage, searchFilter]);
+			setMemberCount(data.length);
+			setAllTeamMembers(data);
+		});
+	}, [groupId, membersPage, searchFilter]);
 
 	const filter = () => {
 		filterUsers();
@@ -680,8 +680,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												}
 											}}
 										/>
+										Name
 									</Table.Cell>
-									<Table.Cell size="small">Name</Table.Cell>
 									<Table.Cell size="small">
 										Added Date
 									</Table.Cell>
@@ -691,22 +691,23 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							<Table.Body>
 								{Array.isArray(teamMembers) &&
 								teamMembers.length > 0 ? (
-									teamMembers?.map((user, i) => {
+									teamMembers?.map((user) => {
 										let isSelected = false;
 
-									if (user) {
-										isSelected = selectedMembers.some(
-											(value) => {
-												return (
-													value.userid === user.userid
-												);
-											},
-										);
-									}
+										if (user) {
+											isSelected = selectedMembers.some(
+												(value) => {
+													return (
+														value.userid ===
+														user.userid
+													);
+												},
+											);
+										}
 
 										if (user) {
 											return (
-												<Table.Row key={user.name + i}>
+												<Table.Row key={user.userid}>
 													<Table.Cell size="small">
 														<Stack
 															direction="row"
@@ -772,13 +773,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 															</Stack>
 														</Stack>
 													</Table.Cell>
-													<Table.Cell size="medium">
-														{user.dateadded}
-													</Table.Cell>
 
-												<DateTableCell size="small">
-													{user.dateadded}
-												</DateTableCell>
+													<DateTableCell size="small">
+														{user.dateadded}
+													</DateTableCell>
 
 													<Table.Cell size="small">
 														<IconButton
@@ -800,9 +798,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										} else {
 											return (
 												<Table.Row
-													key={
-														i + "No data available"
-													}
+													key={`No data available`}
 												>
 													<Table.Cell size="small"></Table.Cell>
 													<Table.Cell size="small"></Table.Cell>
@@ -889,6 +885,108 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							getOptionLabel={(option: unknown) => {
 								return `${(option as { name: string }).name}`;
 							}}
+							renderOption={(props, option: TeamMember) => (
+								<li
+									{...props}
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										alignItems: "flex-start",
+										padding: "8px 16px",
+									}}
+								>
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											width: "100%",
+											gap: "8px",
+										}}
+									>
+										<Avatar sx={{ width: 32, height: 32 }}>
+											{option.name
+												? option.name
+														.split(" ")
+														.map((n) => n[0])
+														.join("")
+														.toUpperCase()
+												: option.id[0].toUpperCase()}
+										</Avatar>
+										<Typography variant="body1">
+											{option.name}
+										</Typography>
+									</Box>
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											gap: "16px",
+											whiteSpace: "nowrap",
+											fontSize: "14px",
+											width: "100%",
+											marginLeft: "40px",
+										}}
+									>
+										<span
+											style={{ color: "rgba(0,0,0,0.7)" }}
+										>
+											User ID:{" "}
+										</span>
+										<span
+											title={option.id}
+											style={{
+												color: "#000",
+												fontWeight: 500,
+												width: "180px",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												display: "inline-block",
+												verticalAlign: "bottom",
+											}}
+										>
+											{option.id}
+										</span>
+										<span
+											style={{ color: "rgba(0,0,0,0.7)" }}
+										>
+											Email:{" "}
+										</span>
+										<span
+											title={option.email}
+											style={{
+												color: "#000",
+												fontWeight: 500,
+												width: "220px",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												display: "inline-block",
+												verticalAlign: "bottom",
+											}}
+										>
+											{option.email}
+										</span>
+										<span
+											style={{ color: "rgba(0,0,0,0.7)" }}
+										>
+											Type:{" "}
+										</span>
+										<span
+											title={option.type}
+											style={{
+												color: "#000",
+												fontWeight: 500,
+												width: "180px",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												display: "inline-block",
+												verticalAlign: "bottom",
+											}}
+										>
+											{option.type}
+										</span>
+									</Box>
+								</li>
+							)}
 							isOptionEqualToValue={(option, value) => {
 								return (
 									(option as { name: string }).name ===
@@ -909,6 +1007,11 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											},
 										),
 									),
+								style: {
+									paddingLeft: "16px",
+									paddingRight: "30px",
+									paddingBottom: "16px",
+								},
 							}}
 							onInputChange={(_event, newValue) => {
 								setSearchMemberInput(newValue);
@@ -936,15 +1039,19 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											idx % 2 !== 0
 												? "rgba(0, 0, 0, .03)"
 												: "",
+										paddingBottom: "8px",
+										borderRadius: "8px",
+										width: "100%",
+										boxSizing: "border-box",
 									}}
 								>
 									<Box
 										sx={{
-											height: "56px",
 											width: "100%",
 											gap: "8px",
 											position: "relative",
 											border: "5px",
+											display: "flex",
 										}}
 									>
 										<Box
@@ -988,9 +1095,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												<Typography
 													variant="h6"
 													sx={{
-														maxHeight: "24px",
-														height: "90%",
 														marginTop: "5px",
+														maxWidth: "100%",
+														lineHeight: 1.1,
 													}}
 												>
 													{user.name}
@@ -998,11 +1105,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											}
 											sx={{
 												color: "#000",
-												maxWidth: "466px",
-												height: "15px",
 												width: "100%",
-												float: "left",
 												gap: "16px",
+												margin: "0",
 											}}
 											subheader={
 												<Box
@@ -1027,12 +1132,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 													{`• `}
 													<span>
 														{`Email: `}
-														<Link
-															href={`mailto:${user.email}`}
-															underline="none"
-														>
-															{user.email}
-														</Link>
+														<Chip
+															label={user.email}
+															size="small"
+														/>
 													</span>
 												</Box>
 											}

@@ -1,21 +1,29 @@
 import {
-	ChevronDownIcon,
+	ChevronRightIcon,
+	Ellipsis,
 	HammerIcon,
-	LinkIcon,
 	ListEndIcon,
-	ListIndentIncreaseIcon,
-	PencilIcon,
-	TrashIcon,
+	PlusIcon,
+	ShieldXIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import {
 	Button,
+	ButtonGroup,
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
 	Muted,
 	Separator,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { EditStepOverlay } from "@/components";
@@ -67,7 +75,10 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 		// only accept if all tools are there
 		let canAccept = true;
 		for (const step of message.plan.steps) {
-			if (step.details.stepType === "no_tool_available") {
+			if (
+				step.details.stepType === "no_tool_available" ||
+				step.details.stepType === "human_intervention"
+			) {
 				canAccept = false;
 				break;
 			}
@@ -77,74 +88,119 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 			<div className="w-full overflow-hidden">
 				<div className="group flex flex-row items-center gap-2">
 					<ListEndIcon className="size-4" />
-					<span className="mr-0.5 font-medium text-base">Plan</span>
+					<span className="mr-0.5 font-medium text-base">
+						{message.model.name}
+					</span>
 				</div>
-				<p className="mt-2 text-secondary-foreground text-sm">
+				<p className="normal mt-2 mb-3 text-base text-foreground leading-normal">
 					Here is the plan that I have created. Feel free to modify it
 					as needed.
 				</p>
-
 				{message.plan.steps.length > 0 && (
-					<div className="mt-4 flex flex-col rounded-lg border border-border p-4">
+					<div className="flex flex-col">
+						<div className="rounded-t-md border-input border-t border-r border-l bg-primary-foreground px-3 py-4">
+							Plan
+						</div>
 						{message.plan.steps.map((s) => {
+							const needsResolution =
+								s.details.stepType === "no_tool_available" ||
+								s.details.stepType === "human_intervention";
+
 							return (
 								<Collapsible
 									key={s.step_number}
-									className="group"
+									className="border-input border-t border-r border-l px-3 py-4 last:rounded-b-md last:border-b"
 								>
 									<CollapsibleTrigger
-										className="flex w-full overflow-hidden [&[data-state=open]>*>svg[data-rotate=true]]:rotate-180"
+										className="flex w-full overflow-hidden [&[data-state=open]>svg[data-rotate=true]]:rotate-90"
 										asChild
 									>
-										<div className="flex flex-row items-start gap-1">
-											<div className="mt-2 flex flex-1 flex-row items-start gap-4 overflow-hidden">
-												<div
-													className={`mt-0.5 flex size-4 shrink-0 flex-col items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground text-xs`}
-												>
-													{s.step_number}
-												</div>
-												<div
-													className="flex-1 truncate text-left text-sm"
-													title={s.description}
-												>
-													{s.description}
-												</div>
+										<div className="flex flex-row items-center gap-2">
+											<ChevronRightIcon
+												className="size-4"
+												data-rotate={true}
+											/>
+											<div
+												className="flex-1 truncate text-left text-sm"
+												title={s.step_name}
+											>
+												{s.step_name}
 											</div>
 
 											{isLast && (
-												<div className="flex flex-row items-center">
-													<Button
-														variant="ghost"
-														size="icon-sm"
-														className="invisible group-hover:visible"
-														onClick={(e) => {
-															e.stopPropagation();
+												<ButtonGroup>
+													{needsResolution && (
+														<Tooltip>
+															<TooltipTrigger
+																asChild
+															>
+																<Button
+																	size="icon-sm"
+																	variant="ghost"
+																	onClick={(
+																		e,
+																	) => {
+																		e.stopPropagation();
 
-															setEditStep(s);
-														}}
-													>
-														<PencilIcon />
-													</Button>
-													<Button
-														variant="ghost"
-														size="icon-sm"
-														className="invisible text-destructive group-hover:visible"
-														onClick={(e) => {
-															e.stopPropagation();
-
-															removeStep(
-																s.step_number,
-															);
-														}}
-													>
-														<TrashIcon />
-													</Button>
-												</div>
+																		setEditStep(
+																			s,
+																		);
+																	}}
+																>
+																	<ShieldXIcon className="text-destructive" />
+																</Button>
+															</TooltipTrigger>
+															<TooltipContent>
+																Fix Step
+															</TooltipContent>
+														</Tooltip>
+													)}
+													<DropdownMenu>
+														<DropdownMenuTrigger
+															asChild
+														>
+															<Button
+																className=""
+																size="icon-sm"
+																variant="ghost"
+																onClick={(e) =>
+																	e.stopPropagation()
+																}
+															>
+																<Ellipsis />
+															</Button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent align="end">
+															<DropdownMenuGroup>
+																<DropdownMenuItem
+																	onClick={(
+																		e,
+																	) => {
+																		e.stopPropagation();
+																		setEditStep(
+																			s,
+																		);
+																	}}
+																>
+																	Edit
+																</DropdownMenuItem>
+																<DropdownMenuItem
+																	onClick={(
+																		e,
+																	) => {
+																		e.stopPropagation();
+																		removeStep(
+																			s.step_number,
+																		);
+																	}}
+																>
+																	Delete
+																</DropdownMenuItem>
+															</DropdownMenuGroup>
+														</DropdownMenuContent>
+													</DropdownMenu>
+												</ButtonGroup>
 											)}
-											<ChevronDownIcon
-												className="mt-2 size-4"
-												data-rotate={true}
-											/>
 										</div>
 									</CollapsibleTrigger>
 									<CollapsibleContent className="group flex flex-row py-2">
@@ -158,8 +214,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 												{s.details.rationaleForStep}
 											</Muted>
 
-											{s.details.stepType ===
-												"no_tool_available" && (
+											{needsResolution && (
 												<div className="flex flex-row justify-center">
 													<Button
 														size="sm"
@@ -168,11 +223,12 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 															setEditStep(s);
 														}}
 													>
-														<LinkIcon />
+														<ShieldXIcon />
 														Fix Step
 													</Button>
 												</div>
 											)}
+
 											{s.details.stepType ===
 												"tool_call" && (
 												<div className="flex flex-row justify-between">
@@ -191,18 +247,26 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 								</Collapsible>
 							);
 						})}
+
+						{isLast && (
+							<button
+								type="button"
+								className="flex w-full flex-row items-center gap-2 border-input border-t border-r border-l px-3 py-4 last:rounded-b-md last:border-b hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50"
+								onClick={() => setIsAddStepOpen(true)}
+							>
+								<PlusIcon className="size-4" />
+								<div
+									className="flex-1 truncate text-left font-medium text-muted-foreground text-sm leading-normal"
+									title={"Add a new step to the plan"}
+								>
+									Add Task
+								</div>
+							</button>
+						)}
 					</div>
 				)}
 				{isLast && (
-					<div className="mt-4 flex flex-row gap-2">
-						<Button
-							size="sm"
-							variant="outline"
-							onClick={() => setIsAddStepOpen(true)}
-						>
-							<ListIndentIncreaseIcon />
-							Add
-						</Button>
+					<div className="mt-2 flex flex-row justify-end gap-2">
 						<Button
 							size="sm"
 							variant="default"

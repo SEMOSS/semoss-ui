@@ -1,37 +1,140 @@
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
+	CircleAlert,
 	CopyIcon,
 	MessageCircleIcon,
+	Quote,
 	RefreshCwIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useState } from "react";
 import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
 	Button,
+	H1,
+	H2,
+	H3,
+	H4,
 	Markdown,
+	P,
+	Separator,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { useLoadingMessage } from "@/hooks/useLoadingMessage";
 import {
 	InputMessageStore,
 	type ResponseMessageStore,
-	RootMessageStore,
+	type RoomStore,
 } from "@/stores";
+import { AppLogo } from "../common";
+import { RoomInlineTool } from "../room/room-inline-tool";
 import { ResponseMessageTool } from "./response-message-tool";
 
-// Styled components replaced with Tailwind classes inline
+const THINKING_MARKDOWN_COMPONENTS = {
+	h1: ({ children, ...props }) => (
+		<H1 className="text-inherit text-sm" {...props}>
+			{children}
+		</H1>
+	),
+	h2: ({ children, ...props }) => (
+		<H2 className="mt-2 text-inherit text-sm" {...props}>
+			{children}
+		</H2>
+	),
+	h3: ({ children, ...props }) => (
+		<H3 className="mt-2 text-inherit text-sm" {...props}>
+			{children}
+		</H3>
+	),
+	h4: ({ children, ...props }) => (
+		<H4 className="mt-2 text-inherit text-sm" {...props}>
+			{children}
+		</H4>
+	),
+	h5: ({ children, ...props }) => (
+		<h5
+			className="mt-1 scroll-m-20 font-medium text-inherit text-sm tracking-tight"
+			{...props}
+		>
+			{children}
+		</h5>
+	),
+	h6: ({ children, ...props }) => (
+		<h6
+			className="mt-1 scroll-m-20 font-medium text-inherit text-sm tracking-tight"
+			{...props}
+		>
+			{children}
+		</h6>
+	),
+	p: ({ children, ...props }) => (
+		<P className="mt-1 text-inherit text-sm" {...props}>
+			{children}
+		</P>
+	),
+	a: ({ children, href, ...props }) => (
+		<a
+			href={href}
+			className="font-medium text-primary text-primary text-sm underline underline-offset-1"
+			target="_blank"
+			rel="noopener noreferrer"
+			{...props}
+		>
+			{children}
+		</a>
+	),
+	ul: ({ children, ...props }) => (
+		<ul
+			className="my-1 ml-4 list-disc text-inherit text-sm [&>li]:mt-1"
+			{...props}
+		>
+			{children}
+		</ul>
+	),
+	ol: ({ children, ...props }) => (
+		<ol
+			className="my-1 ml-4 list-decimal text-inherit text-sm [&>li]:mt-1"
+			{...props}
+		>
+			{children}
+		</ol>
+	),
+	li: ({ children, ...props }) => (
+		<li className="text-inherit text-sm" {...props}>
+			{children}
+		</li>
+	),
+	blockquote: ({ children, ...props }) => (
+		<Quote className="mt-1" {...props}>
+			{children}
+		</Quote>
+	),
+	hr: ({ ...props }) => <Separator className="mt-2 mb-1" {...props} />,
+};
 
 interface ResponseMessageProps {
+	/** Room */
+	room: RoomStore;
+
 	/** Message to render */
 	message: ResponseMessageStore;
 }
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
-	({ message }) => {
+	({ room, message }) => {
+		const thinkingMessage = useLoadingMessage(room.isLoading);
+
+		const [thinking, setThinking] = useState<string>("");
+
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
 		if (message.parent instanceof InputMessageStore) {
@@ -46,7 +149,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			try {
 				navigator.clipboard.writeText(text);
 
-				toast.success("Successfully copied to clipboar");
+				toast.success("Successfully copied to clipboard");
 			} catch (e) {
 				toast.error(e.message);
 			}
@@ -80,24 +183,80 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			}
 		};
 
+		const areToolsActive =
+			message.type === "RESPONSE" &&
+			message.tools.some((tool) => !tool.response);
+
 		return (
-			<div className="group mb-0 flex w-full flex-col gap-4 overflow-hidden">
+			<div className="group mb-0 flex w-full flex-col gap-4">
 				<div className="group flex flex-row items-center gap-2">
-					<MessageCircleIcon className="size-4" />
+					{message.isThinking ? (
+						<div className="flex size-4 animate-spin items-center justify-center">
+							<AppLogo full={false} />
+						</div>
+					) : (
+						<MessageCircleIcon className="size-4" />
+					)}
 					<span className="mr-0.5 font-medium text-base">
-						{message.model.name}
+						{message.model.name ?? "Agent"}
 					</span>
 				</div>
-				{message.text ? <Markdown>{message.text}</Markdown> : null}
-				{message.tools.map((t) => (
-					<ResponseMessageTool
-						key={`tool-${t.id}`}
-						message={message}
-						tool={t}
-					/>
-				))}
+				{(message.isThinking || message.thinking.length > 0) && (
+					<Accordion
+						type="single"
+						collapsible
+						className="rounded-lg border p-3 text-muted-foreground text-sm shadow-sm"
+						value={message.isThinking ? "thinking" : thinking}
+						onValueChange={(val) => setThinking(val || "")}
+					>
+						<AccordionItem value="thinking">
+							<AccordionTrigger className="p-0">
+								<span className="font-medium">Thinking</span>
+							</AccordionTrigger>
+							<AccordionContent className="pt-2">
+								<Markdown
+									className="[&>*:first-child]:mt-0"
+									components={THINKING_MARKDOWN_COMPONENTS}
+								>
+									{message.thinking || thinkingMessage}
+								</Markdown>
+							</AccordionContent>
+						</AccordionItem>
+					</Accordion>
+				)}
+				{message.text ? (
+					<Markdown className="[&>*:first-child]:mt-0">
+						{message.text}
+					</Markdown>
+				) : null}
+				{message.tools.map((t) => {
+					const isInlineToolOpen = room.isInlineToolOpen(
+						`message-${message.id}-tool-${t.id}`,
+					);
 
-				<div className="flex flex-1 flex-row items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+					return (
+						<div
+							key={`tool-${t.id}`}
+							className="flex flex-col gap-2"
+						>
+							<ResponseMessageTool message={message} tool={t} />
+							{isInlineToolOpen && (
+								<RoomInlineTool
+									room={room}
+									message={message}
+									tool={t}
+								/>
+							)}
+						</div>
+					);
+				})}
+				{areToolsActive && (
+					<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
+						<CircleAlert className="size-4" />
+						Please complete the tool(s) to proceed.
+					</p>
+				)}
+				<div className="-ml-2.5 flex flex-1 flex-row items-center justify-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
 					{inputMessage?.siblings.length > 1 && (
 						<>
 							<Tooltip>
@@ -117,7 +276,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										<ArrowLeftIcon />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>
+								<TooltipContent side="bottom">
 									Previous Message
 								</TooltipContent>
 							</Tooltip>
@@ -143,7 +302,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										<ArrowRightIcon />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>Next Message</TooltipContent>
+								<TooltipContent side="bottom">
+									Next Message
+								</TooltipContent>
 							</Tooltip>
 						</>
 					)}
@@ -153,8 +314,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							<TooltipTrigger asChild>
 								<Button
 									disabled={
-										inputMessage.parent instanceof
-										RootMessageStore
+										!inputMessage.parent?.parent ||
+										message.room.mode === "executing"
 									}
 									variant="ghost"
 									size="icon"
@@ -165,7 +326,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									<RefreshCwIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Rewrite Message</TooltipContent>
+							<TooltipContent side="bottom">
+								Rewrite Message
+							</TooltipContent>
 						</Tooltip>
 					)}
 
@@ -181,7 +344,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<ThumbsUpIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Share Positive Feedback</TooltipContent>
+						<TooltipContent side="bottom">
+							Share Positive Feedback
+						</TooltipContent>
 					</Tooltip>
 
 					<Tooltip>
@@ -196,7 +361,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<ThumbsDownIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Share Negative Feedback</TooltipContent>
+						<TooltipContent side="bottom">
+							Share Negative Feedback
+						</TooltipContent>
 					</Tooltip>
 
 					<Tooltip>
@@ -216,7 +383,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<CopyIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Copy Response</TooltipContent>
+						<TooltipContent side="bottom">
+							Copy Response
+						</TooltipContent>
 					</Tooltip>
 				</div>
 			</div>

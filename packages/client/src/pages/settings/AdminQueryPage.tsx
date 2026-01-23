@@ -216,32 +216,10 @@ export const AdminQueryPage = () => {
 		verifySelectQuery();
 	}, [verifySelectQuery]);
 
-	const rowsValue = watch("ROWS");
 	const trimmedQuery = query?.trim() || "";
 
-	//  accepts subqueries, aliases, joins, distinct, group by, etc.
-	const selectRegex = /^\s*select\s+[\s\S]+?\s+from\s+[\s\S]+/i;
-
-	// Specifically for SELECT * FROM (still for your row limit rule)
-	const selectStarRegex = /^\s*select\s*\*\s*from\s+[\s\S]+/i;
-
-	// checks if it starts with SELECT and matches general SELECT shape
-	const isValidSelect = selectRegex.test(trimmedQuery);
-	const isSelectStar = selectStarRegex.test(trimmedQuery);
-
-	// Ensures query has at least one alphabet (avoid blank/garbage)
-	const hasRealContent = !!trimmedQuery && /[a-zA-Z]/.test(trimmedQuery);
-
-	// Allows SELECT * FROM only if rows are specified
-	const isRowsValid = !isSelectStar || Number(rowsValue) > 0;
-
 	// Final condition to enable Run button
-	const disableButton =
-		Boolean(selectedDatabase) &&
-		hasRealContent &&
-		isValidSelect &&
-		isRowsValid;
-
+	const disableButton = Boolean(selectedDatabase) && trimmedQuery.length > 0;
 	useEffect(() => {
 		setPage(0);
 		setRowsPerPage(10);
@@ -256,7 +234,8 @@ export const AdminQueryPage = () => {
 	 * @desc make runQuery API call based on submitted fields
 	 */
 	const submitQuery = handleSubmit((data: TypeDbQuery) => {
-		let pixelString = `META | AdminDatabase("${data.SELECTED_DATABASE}") | Query("<encode>${data.QUERY}</encode>")`;
+		const trimmedQuery = data.QUERY?.trim() ?? "";
+		let pixelString = `META | AdminDatabase("${data.SELECTED_DATABASE}") | Query("<encode>${trimmedQuery}</encode>")`;
 
 		if (showRowsField) {
 			pixelString += `| Collect(${data.ROWS});`;

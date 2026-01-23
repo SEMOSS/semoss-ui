@@ -1,5 +1,10 @@
 import { Refresh } from "@mui/icons-material";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+	AuditLogFilter,
+	AuditLogsDataTable,
+	AuditLogsTimeline,
+} from "@semoss/shared";
 import {
 	Button,
 	Skeleton,
@@ -8,11 +13,10 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { AuditLogsDataTable, AuditLogsTimeline } from "@/components/logs";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
-import type { EventData } from "@/types";
 
+//Custom dashboard header styling
 const DashboardHeader = styled("div")(({ theme }) => ({
 	width: "100%",
 	paddingY: theme.spacing(2),
@@ -20,6 +24,11 @@ const DashboardHeader = styled("div")(({ theme }) => ({
 	alignItems: "center",
 }));
 
+/**
+ * A function to format a timestamp into a date and time string.
+ * @param {string | number | null | undefined} timeStamp - The timestamp to be formatted.
+ * @returns {{date: string, time: string}} - An object containing the date and time strings.
+ * */
 export const TimeDateFormatter = (
 	timeStamp: string | number | null | undefined,
 ) => {
@@ -59,7 +68,29 @@ export const TimeDateFormatter = (
 		return { date: "", time: "" };
 	}
 };
+//event data object structure will have entire row details of auditlog table row
+export interface EventData {
+	startTime: string;
+	endTime: string;
+	logTimestamp: string;
+	request: string;
+	response: string;
+	tokens: string | null;
+	latency: number;
+	status: string | null;
+	engineName: string;
+	engineType: string;
+	userId: string;
+	sessionId: string;
+	spanId: string;
+}
 
+/**
+ * A component for displaying the audit logs dashboard for a given catalog.
+ *
+ * @param {string} catalogName - The name of the catalog.
+ * @returns {JSX.Element} - A JSX element containing the audit logs dashboard.
+ */
 export const AuditLogsDashboard = ({ catalogName }) => {
 	const { configStore, monolithStore } = useRootStore();
 	const [logs, setLogs] = useState<EventData[]>([]);
@@ -68,7 +99,25 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 	const [totalCount, setTotalCount] = useState(0);
 	const [loading, setLoading] = useState<boolean>(true);
 	const notification = useNotification();
+	const filteredData = useRef({
+		engineType: "",
+		engineId: "",
+		dashboardDuration: "",
+		customDateRange: { from: null, to: null },
+		SelectedDuration: {
+			label: "",
+			value: "",
+			dateRangeType: "",
+			dateRangeValue: 1,
+		},
+	});
 
+	/**
+	 * Fetches the audit logs from the API.
+	 * @param {number} limit - The limit of the logs to fetch.
+	 * @param {number} offset - The offset of the logs to fetch.
+	 * @returns {Promise<EventData[]>} - A promise that resolves with the fetched logs.
+	 */
 	const fetchLogs = async (limit: number, offset: number) => {
 		setLoading(true);
 		try {
@@ -83,13 +132,43 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
 			const catalogId =
 				window.location.hash.split("/")[catalogName === "Apps" ? 2 : 3];
+			const SelectedDuration = filteredData.current.SelectedDuration; // getting date range type like day/week/month
+			//start and end dates, if custom date range is selected
+			const startDate = new Date(
+				filteredData.current?.customDateRange?.from?.setUTCHours(
+					0,
+					0,
+					0,
+					0,
+				),
+			);
+			const endDate = new Date(
+				filteredData.current?.customDateRange?.to?.setUTCHours(
+					23,
+					59,
+					59,
+					999,
+				),
+			);
 			const response = await monolithStore.runQuery(
-				`AuditLogReport(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogName === "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}"}]);`,
+				`AuditLogReport(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogName === "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}", "dateRangeType": "${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue": ${SelectedDuration.dateRangeValue} ${SelectedDuration.dateRangeType === "CUSTOM" ? `,"startDate": "${startDate?.toISOString()}", "endDate": "${endDate?.toISOString()}"` : ""}}]);`,
 			);
 			const responseData = response.pixelReturn[0].output;
-			setLogs((responseData?.logs as EventData[]) || responseData || []);
+			setLogs(
+				(
+					responseData as unknown as {
+						logs: EventData[];
+						totalCount: number;
+					}
+				)?.logs ||
+					(responseData as unknown as EventData[]) ||
+					[],
+			);
 			setTotalCount(
-				responseData?.totalCount || responseData?.length || 0,
+				(responseData as unknown as { totalCount: number })
+					?.totalCount ||
+					(responseData as unknown as EventData[])?.length ||
+					0,
 			);
 		} catch (error) {
 			setLogs([]);
@@ -103,6 +182,11 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 		}
 	};
 
+	/**
+	 * Handles pagination change by updating page and rows per page state and fetching logs with the new offset.
+	 * @param {number} newPage - The new page number.
+	 * @param {number} newRowsPerPage - The new number of rows per page.
+	 */
 	const handlePaginationChange = (
 		newPage: number,
 		newRowsPerPage: number,
@@ -112,7 +196,7 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 		setRowsPerPage(newRowsPerPage);
 		fetchLogs(newRowsPerPage, offset);
 	};
-
+	//whenever there is a change in rowsperpage/page number, page then logs will be fetched again
 	useEffect(() => {
 		if (catalogName) {
 			setLogs([]);
@@ -132,7 +216,18 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 				contentElement.style.maxWidth = "";
 			}
 		};
-	}, [catalogName]);
+	}, [catalogName, rowsPerPage, page]);
+
+	/**
+	 * Updates the filtered data state with the new filter data and fetches logs with the new filtering options like start, end date,etc.
+	 * @param {object} filterData - The new filter data.
+	 */
+	const updateLogs = (filterData) => {
+		filteredData.current = {
+			...filterData,
+		};
+		fetchLogs(rowsPerPage, page * rowsPerPage);
+	};
 
 	return (
 		<>
@@ -141,7 +236,6 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 					<NavbarHeader />
 				</NavbarLeft>
 			)}
-
 			<Stack gap={2}>
 				<DashboardHeader>
 					<Typography variant="h6">
@@ -154,20 +248,25 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 					>
 						{/* Disabled for now */}
 						{/* <Select
-							variant="outlined"
-							size="small"
-							onChange={() => {}}
-							sx={{ minWidth: 120 }}
-							value={"Last 30 Days"}
-						>
-							<Menu.Item value="Last 30 Days">
-								Last 30 Days
-							</Menu.Item>
-							<Menu.Item value="Last 90 Days">
-								Last 90 Days
-							</Menu.Item>
-							<Menu.Item value="Last Year">Last Year</Menu.Item>
-						</Select> */}
+										variant="outlined"
+										size="small"
+										onChange={() => {}}
+										sx={{ minWidth: 120 }}
+										value={"Last 30 Days"}
+									>
+										<Menu.Item value="Last 30 Days">
+											Last 30 Days
+										</Menu.Item>
+										<Menu.Item value="Last 90 Days">
+											Last 90 Days
+										</Menu.Item>
+										<Menu.Item value="Last Year">Last Year</Menu.Item>
+									</Select> */}
+						<AuditLogFilter
+							updateLogs={updateLogs}
+							insightId={configStore.store.insightID}
+							parent={"client"}
+						/>
 						<Button
 							variant="contained"
 							color="primary"

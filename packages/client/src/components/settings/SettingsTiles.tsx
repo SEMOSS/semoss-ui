@@ -131,7 +131,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			? adminMode
 				? `AdminEngineInfo(engine='${id}');`
 				: `EngineInfo(engine='${id}');`
-			: type === "APP"
+			: type === "PROJECT"
 				? adminMode
 					? `AdminProjectInfo(project='${id}')`
 					: `ProjectInfo(project='${id}')`
@@ -158,7 +158,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
 			setDiscoverable(data.database_discoverable);
 			setGlobal(data.database_global);
-		} else if (type === "APP") {
+		} else if (type === "PROJECT") {
 			const data = engineInfo.data as {
 				project_global: boolean;
 				project_discoverable: boolean;
@@ -183,9 +183,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 					type === "STORAGE" ||
 					type === "MODEL" ||
 					type === "VECTOR" ||
+					type === "GUARDRAIL" ||
 					type === "FUNCTION"
 					? `DeleteEngine(engine=['${id}']);`
-					: type === "APP"
+					: type === "PROJECT"
 						? `DeleteProject(project=['${id}']);`
 						: "",
 			);
@@ -247,7 +248,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 					id,
 					!discoverable,
 				);
-			} else if (type === "APP") {
+			} else if (type === "PROJECT") {
 				response = await setProjectVisiblity(
 					adminMode,
 					id,
@@ -312,7 +313,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				type === "FUNCTION"
 			) {
 				response = await setEngineGlobal(adminMode, id, !global);
-			} else if (type === "APP") {
+			} else if (type === "PROJECT") {
 				response = await setProjectGlobal(adminMode, id, !global);
 			}
 

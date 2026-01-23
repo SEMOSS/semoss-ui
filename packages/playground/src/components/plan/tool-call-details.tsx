@@ -37,7 +37,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	 * Get all of the groups
 	 */
 	const getApps = usePixel<(Engine | App)[]>(
-		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"])`,
+		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION", "MODEL", "VECTOR"])`,
 		{
 			data: [],
 		},
@@ -95,10 +95,8 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 							tool_name: value,
 							title: toolbox.name,
 							_meta: {
-								map: {
-									SMSS_PROJECT_ID: toolbox.id,
-									SMSS_PROJECT_NAME: toolbox.name,
-								},
+								SMSS_PROJECT_ID: toolbox.id,
+								SMSS_PROJECT_NAME: toolbox.name,
 							},
 						});
 					}}

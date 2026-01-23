@@ -1,30 +1,41 @@
-import { Settings2Icon } from "lucide-react";
+import {
+	CheckIcon,
+	ListTodoIcon,
+	MessageCircleIcon,
+	Settings2Icon,
+	XIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
-	SidebarTrigger,
+	ScrollArea,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import background from "@/assets/img/background.png";
+import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
-	RoomOptions,
-	RoomWorkspace,
+	RoomInputMenuKnowledge,
+	RoomInputMenuToolbox,
+	RoomInputMenuUpload,
+	RoomInputMenuWorkspace,
 	workspaceToApp,
 } from "@/components";
+import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
-import { useChat, useRoot } from "@/hooks";
+import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { App, Workspace } from "@/types";
+import type { App, MCPConfig, Workspace } from "@/types";
 
 /**
  * The page to create a new room
@@ -34,9 +45,17 @@ import type { App, Workspace } from "@/types";
 export const NewRoomPage = observer(() => {
 	const { root } = useRoot();
 
+	useGlobalBreadcrumbs([
+		{
+			name: "Home",
+			path: "/",
+		},
+	]);
+
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [mode, setMode] = useState<{
 		type: "chat" | "plan" | "workspace";
 		workspace: App | null;
@@ -46,8 +65,13 @@ export const NewRoomPage = observer(() => {
 	});
 	const workspaceId = searchParams.get("workspaceId");
 
+	// Fetch workspace data based on URL param or selected workspace
+	const selectedWorkspaceId =
+		(mode.type === "workspace" ? mode.workspace?.project_id : null) ||
+		workspaceId;
+
 	const getWorkspace = usePixel<Workspace | null>(
-		workspaceId ? `GetWorkspace("${workspaceId}");` : null,
+		selectedWorkspaceId ? `GetWorkspace("${selectedWorkspaceId}");` : null,
 		{
 			data: null,
 		},
@@ -59,17 +83,58 @@ export const NewRoomPage = observer(() => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
-		mcp: [],
+		mcp: [...(root.theme.defaultTools || [])],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
 		workspace: null,
 	});
 
-	const [isMenuOpen, setIsMenuOpen] = useState(false);
-
 	/**
 	 * Functions
 	 */
+	/**
+	 * Handle tool selection
+	 * @param tool - selected tool
+	 */
+	const handleToolSelect = (tool: MCPConfig) => {
+		// Toggle tool in options
+		const tools = options.mcp.reduce(
+			(acc, curr) => {
+				acc[curr.id] = curr;
+				return acc;
+			},
+			{} as Record<string, MCPConfig>,
+		);
+
+		if (Object.hasOwn(tools, tool.id)) {
+			delete tools[tool.id];
+		} else {
+			tools[tool.id] = tool;
+		}
+
+		setOptions({
+			...options,
+			mcp: Object.values(tools),
+		});
+	};
+
+	/**
+	 * Handle workspace selection
+	 */
+	const handleWorkspaceSelect = (workspace: App | null) => {
+		if (workspace) {
+			setMode({
+				type: "workspace",
+				workspace,
+			});
+		} else {
+			setMode({
+				type: "chat",
+				workspace: null,
+			});
+		}
+	};
+
 	/**
 	 * Create a new room and ask the model
 	 *
@@ -87,23 +152,25 @@ export const NewRoomPage = observer(() => {
 			setIsLoading(true);
 
 			// create a new room
-			const roomId = await chat.createRoom(
-				prompt,
-				files,
-				mode.type === "plan" ? "planning" : "chat",
-				chat.models.selected.app_id,
-				mode.type === "workspace" && mode.workspace
-					? {
-							...options,
-							workspace: {
-								workspace_id: mode.workspace.project_id,
-							},
-						}
-					: options,
-			);
+			const room = await chat.createRoom();
+
+			// set the model
+			room.setModel(chat.models.selected);
+
+			// set the mode
+			room.setMode(mode.type === "plan" ? "planning" : "chat");
+
+			// update the options
+			await room.updateRoomOptions({
+				...options,
+				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
+			});
+
+			// ask the room
+			room.askMessage(prompt, files);
 
 			// go to the new room
-			navigate(`/room/${roomId}`);
+			navigate(`/room/${room.roomId}`);
 		} catch (error) {
 			toast.error(
 				`An error occurred while creating the room. Error: ${error.message}`,
@@ -116,78 +183,209 @@ export const NewRoomPage = observer(() => {
 	/**
 	 * Effects
 	 */
-	// if the workspaceId is passed in, use that to set the mode
+	// Handle workspace data loading
 	useEffect(() => {
-		if (getWorkspace.status !== "SUCCESS") {
+		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) {
 			return;
 		}
 
-		if (getWorkspace.data) {
+		// If workspaceId came from URL, update the mode
+		if (workspaceId) {
 			setMode({
 				type: "workspace",
 				workspace: workspaceToApp(getWorkspace.data),
 			});
 		}
-	}, [getWorkspace.status, getWorkspace.data]);
+
+		// Update options with workspace instructions and MCPs if available
+		setOptions((prev) => {
+			// Add workspace MCPs with fromWorkspace flag to the mcp array
+			const workspaceMCPs = (getWorkspace.data.mcp || []).map((mcp) => ({
+				...mcp,
+				fromWorkspace: true,
+			}));
+
+			return {
+				...prev,
+				instructions:
+					getWorkspace.data.system_prompt || prev.instructions,
+				mcp: workspaceMCPs,
+			};
+		});
+	}, [workspaceId, getWorkspace.status, getWorkspace.data]);
+
+	// Handle workspace data loading from RoomWorkspace component selection
+	useEffect(() => {
+		if (
+			mode.type !== "workspace" ||
+			!mode.workspace ||
+			getWorkspace.status !== "SUCCESS" ||
+			!getWorkspace.data
+		) {
+			return;
+		}
+
+		// Update options with workspace instructions if available
+		if (getWorkspace.data.system_prompt) {
+			setOptions((prev) => {
+				// Add workspace MCPs with fromWorkspace flag to the mcp array
+				const workspaceMCPs = (getWorkspace.data.mcp || []).map(
+					(mcp) => ({
+						...mcp,
+						fromWorkspace: true,
+					}),
+				);
+
+				return {
+					...prev,
+					instructions:
+						getWorkspace.data?.system_prompt || prev.instructions,
+					mcp: workspaceMCPs,
+				};
+			});
+		}
+	}, [mode.type, mode.workspace, getWorkspace.status, getWorkspace.data]);
+
+	// Clear instructions and workspace MCPs when switching away from workspace mode
+	useEffect(() => {
+		if (mode.type !== "workspace") {
+			setOptions((prev) => ({
+				...prev,
+				instructions: "",
+				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
+			}));
+		}
+	}, [mode.type, root.theme.defaultTools]);
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
-			<div className="absolute top-2 left-2 z-10 flex h-12.5 items-center px-4">
-				<SidebarTrigger />
-			</div>
 			<ResizablePanelGroup direction="horizontal">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
-						src={background}
+						src={root.theme.images.landing || landingImage}
 						alt="Background"
-						className="absolute inset-0 h-full w-full object-cover"
+						className="absolute inset-0 h-full w-full select-none object-cover"
 					/>
 					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
-						<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
-							<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-								Welcome
+						{root.theme.landing ? (
+							<div
+								className="mx-auto flex max-w-xl"
+								// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+								dangerouslySetInnerHTML={{
+									__html: root.theme.landing,
+								}}
+							/>
+						) : (
+							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
+								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
+									Welcome
+								</div>
+								{root.theme.description ? (
+									<div className="text-center text-muted-foreground text-sm leading-normal">
+										{root.theme.description}
+									</div>
+								) : null}
 							</div>
-							<div className="text-center text-muted-foreground text-sm leading-normal">
-								{root.theme.description}
-							</div>
-						</div>
+						)}
 
 						<RoomInput
+							className="max-h-64 min-h-48"
 							isLoading={
 								isLoading ||
-								(workspaceId &&
+								(mode.type === "workspace" &&
+									mode.workspace &&
 									getWorkspace.status !== "SUCCESS")
 							}
-							isDisabled={false}
-							minRows={4}
-							maxRows={8}
-							workspace={
-								<RoomWorkspace
-									mode={mode}
-									onModeChange={setMode}
-								/>
-							}
-							configuration={
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											aria-label="Open Configuration Menu"
-											className={`${isMenuOpen ? "text-primary" : ""}`}
-											disabled={isLoading}
-											variant="ghost"
-											size="icon-sm"
-											onClick={() => {
-												setIsMenuOpen(!isMenuOpen);
+							model={chat.models.selected}
+							setModel={(m) => {
+								chat.setSelectedModel(m);
+							}}
+							MenuComponent={observer(
+								({ addToken, onOpenChange, fileRef }) => (
+									<>
+										<DropdownMenuItem
+											onSelect={() => {
+												setMode({
+													type: "chat",
+													workspace: null,
+												});
+												onOpenChange(false);
+											}}
+										>
+											<MessageCircleIcon />
+											<span className="flex-1">Ask</span>
+											{mode.type === "chat" ? (
+												<div className="px-1">
+													<CheckIcon />
+												</div>
+											) : null}
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onSelect={() => {
+												setMode({
+													type: "plan",
+													workspace: null,
+												});
+												onOpenChange(false);
+											}}
+										>
+											<ListTodoIcon />
+											<span className="flex-1">Plan</span>
+
+											{mode.type === "plan" ? (
+												<div className="px-1">
+													<CheckIcon />
+												</div>
+											) : null}
+										</DropdownMenuItem>
+										<RoomInputMenuWorkspace
+											workspace={
+												mode.type === "workspace"
+													? mode.workspace
+													: null
+											}
+											onSelect={handleWorkspaceSelect}
+										/>
+										<DropdownMenuSeparator />
+										<RoomInputMenuUpload
+											fileRef={fileRef}
+											onSelect={() => onOpenChange(false)}
+										/>
+										<DropdownMenuSeparator />
+										<RoomInputMenuKnowledge
+											options={options}
+											onSelect={(tool) => {
+												handleToolSelect(tool);
+												addToken(`<${tool.name}>`);
+											}}
+										/>
+										<RoomInputMenuToolbox
+											options={options}
+											onSelect={(tool) => {
+												handleToolSelect(tool);
+												addToken(`<${tool.name}>`);
+											}}
+										/>
+										<DropdownMenuItem
+											onSelect={(e) => {
+												e.preventDefault();
+
+												setIsConfgurationOpen(
+													!isConfigurationOpen,
+												);
 											}}
 										>
 											<Settings2Icon />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>
-										Open Configuration Menu
-									</TooltipContent>
-								</Tooltip>
-							}
+											<span className="flex-1">
+												{isConfigurationOpen
+													? "Close"
+													: "Open"}{" "}
+												Settings
+											</span>
+										</DropdownMenuItem>
+									</>
+								),
+							)}
 							onPrompt={async (prompt, files) => {
 								await createRoom(prompt, files);
 
@@ -196,8 +394,7 @@ export const NewRoomPage = observer(() => {
 						/>
 					</div>
 				</ResizablePanel>
-
-				{isMenuOpen && (
+				{isConfigurationOpen && (
 					<>
 						<ResizableHandle />
 						<ResizablePanel
@@ -205,14 +402,51 @@ export const NewRoomPage = observer(() => {
 							defaultSize={25}
 						>
 							<div
-								className={`h-full w-full overflow-hidden rounded-lg border border-border bg-background shadow-sm`}
+								className={`relative h-full w-full overflow-hidden rounded-lg border border-input shadow-xs dark:bg-input/30`}
 							>
-								<RoomOptions
-									options={options}
-									setOptions={(o) => {
-										setOptions(o);
-									}}
-								/>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											className="absolute top-0 right-0 z-10"
+											variant="ghost"
+											size="icon-sm"
+											onClick={() => {
+												// close it
+												setIsConfgurationOpen(false);
+											}}
+										>
+											<XIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Close</TooltipContent>
+								</Tooltip>
+
+								<ScrollArea className="h-full w-full">
+									<RoomOptionsForm
+										model={chat.models.selected}
+										options={options}
+										onClose={(
+											success,
+											{ model, options },
+										) => {
+											if (success) {
+												if (model) {
+													chat.setSelectedModel(
+														model,
+													);
+												}
+
+												if (options) {
+													setOptions(options);
+												}
+
+												toast.success(
+													"Options updated",
+												);
+											}
+										}}
+									/>
+								</ScrollArea>
 							</div>
 						</ResizablePanel>
 					</>

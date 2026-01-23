@@ -63,19 +63,6 @@ const StyledModelAvatar = styled("div")<{ gradientBg: string }>(
 	}),
 );
 
-const StyledCardModelText = styled("p")({
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	whiteSpace: "nowrap",
-	margin: "2px 0 0",
-	alignSelf: "stretch",
-	fontSize: "14px",
-	fontWeight: "500",
-	lineHeight: "143%",
-	letterSpacing: "0.17px",
-	color: "#212121",
-});
-
 const StyledTypographyText = styled(Typography)(() => ({
 	display: "flex",
 	alignItems: "center",
@@ -99,13 +86,6 @@ const ModelTypeTile = styled(Typography)(() => ({
 	fontWeight: 600,
 }));
 
-const TitleRow = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	width: "100%",
-	gap: theme.spacing(1),
-}));
-
 const StyledCardContentSpan = styled("span")(() => ({
 	display: "block",
 }));
@@ -125,20 +105,6 @@ const DocsLinkButton = styled("button")(() => ({
 	"&:hover": {
 		opacity: 1,
 	},
-}));
-
-const DescriptionText = styled(Typography)(() => ({
-	fontSize: "11px",
-	lineHeight: 1.3,
-	color: "#555",
-	marginTop: "4px",
-	// Height should exactly match 3 lines to avoid cutting a partial line.
-	minHeight: "calc(3 * 1.3em)",
-	maxHeight: "calc(3 * 1.3em)",
-	overflow: "hidden",
-	display: "-webkit-box",
-	WebkitLineClamp: 3,
-	WebkitBoxOrient: "vertical",
 }));
 
 function hashString(str: string): number {
@@ -282,14 +248,20 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 						</ModelTypeTile>
 					)}
 				</Stack>
-				<TitleRow>
-					<StyledCardModelText ref={textRef}>
+				<div className="flex w-full items-center gap-2">
+					<p
+						ref={textRef}
+						className="mt-[2px] self-stretch overflow-hidden text-ellipsis whitespace-nowrap font-medium text-[#212121] text-sm leading-[143%] tracking-[0.17px]"
+					>
 						{model.display || model.name}
-					</StyledCardModelText>
-				</TitleRow>
-				<DescriptionText component="p" variant="caption">
+					</p>
+				</div>
+				<p
+					className="mt-1 line-clamp-3 text-[#555] text-[12px] leading-[1.3]"
+					title={model.description || ""}
+				>
 					{model.description}
-				</DescriptionText>
+				</p>
 			</StyledInnerBox>
 		</StyledFormTypeModelBox>
 	);

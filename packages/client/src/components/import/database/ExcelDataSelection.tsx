@@ -66,7 +66,7 @@ const StyledExpandMoreIcon = styled(Icon)<{ collapse?: boolean }>(
 	({ collapse }) => ({
 		transform: collapse ? "rotate(180deg)" : "rotate(0deg)",
 		transition: "transform 0.3s",
-	})
+	}),
 );
 
 const StyledInnerBox = styled(Box)(({ theme }) => ({
@@ -193,7 +193,6 @@ interface RangeOption {
 	value: "actual" | "custom" | "typed";
 }
 
-
 const ExcelDataSelection = ({
 	files,
 	fileName,
@@ -216,10 +215,18 @@ const ExcelDataSelection = ({
 
 	const [openModal, setOpenModal] = useState(false);
 	const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
-	const [selectedSheetKey, setSelectedSheetKey] = useState<string | null>(null);
-	const [selectedRangeOption, setSelectedRangeOption] = useState<Record<string, "actual" | "custom" | "typed">>({});
-	const [customRangeValues, setCustomRangeValues] = useState<Record<string, string>>({});
-	const [editedRanges, setEditedRanges] = useState<Record<string, string>>({});
+	const [selectedSheetKey, setSelectedSheetKey] = useState<string | null>(
+		null,
+	);
+	const [selectedRangeOption, setSelectedRangeOption] = useState<
+		Record<string, "actual" | "custom" | "typed">
+	>({});
+	const [customRangeValues, setCustomRangeValues] = useState<
+		Record<string, string>
+	>({});
+	const [editedRanges, setEditedRanges] = useState<Record<string, string>>(
+		{},
+	);
 
 	const { monolithStore } = useRootStore();
 
@@ -227,7 +234,7 @@ const ExcelDataSelection = ({
 		filePath: string,
 		sheetKey: string,
 		sheetName: string,
-		customRangeValues: string
+		customRangeValues: string,
 	) => {
 		setEditedRanges((prev) => ({
 			...prev,
@@ -258,11 +265,14 @@ const ExcelDataSelection = ({
 						description: "",
 						logicalName: [],
 					},
-				])
+				]),
 			);
 
 			const newRowEditableState = Object.fromEntries(
-				result.cleanHeaders.map((_: string, index: number) => [index, true])
+				result.cleanHeaders.map((_: string, index: number) => [
+					index,
+					true,
+				]),
 			);
 			setTableStates((prev) => ({
 				...prev,
@@ -282,8 +292,8 @@ const ExcelDataSelection = ({
 	// Setter for column metadata
 	const setColumnMetadata = (
 		updater: (
-			prev: Record<string, ColumnMetadata>
-		) => Record<string, ColumnMetadata>
+			prev: Record<string, ColumnMetadata>,
+		) => Record<string, ColumnMetadata>,
 	) => {
 		if (!selectedSheetKey) return;
 		setTableStates((prev) => ({
@@ -303,30 +313,37 @@ const ExcelDataSelection = ({
 				const range = Object.keys(file[sheetName])[0];
 				const parsedData =
 					tableStates[`${fileIndex}-${sheetName}`]?.cleanHeaders &&
-						tableStates[`${fileIndex}-${sheetName}`]?.dataTypes
+					tableStates[`${fileIndex}-${sheetName}`]?.dataTypes
 						? {
-							cleanHeaders:
-								tableStates[`${fileIndex}-${sheetName}`].cleanHeaders!,
-							dataTypes: tableStates[`${fileIndex}-${sheetName}`].dataTypes!,
-						}
+								cleanHeaders:
+									tableStates[`${fileIndex}-${sheetName}`]
+										.cleanHeaders!,
+								dataTypes:
+									tableStates[`${fileIndex}-${sheetName}`]
+										.dataTypes!,
+							}
 						: file[sheetName][range];
 				if (!parsedData) return;
 
 				newTableStates[`${fileIndex}-${sheetName}`] = {
 					rowEditableState: Object.fromEntries(
-						parsedData.cleanHeaders.map((_, index) => [index, true])
+						parsedData.cleanHeaders.map((_, index) => [
+							index,
+							true,
+						]),
 					),
 					columnMetadata: Object.fromEntries(
 						parsedData.cleanHeaders.map((header) => [
 							header,
 							{
 								alias: header,
-								dataType: parsedData.dataTypes?.[header] || "String",
+								dataType:
+									parsedData.dataTypes?.[header] || "String",
 								format: "",
 								description: "",
 								logicalName: [],
 							},
-						])
+						]),
 					),
 					collapseAll: true,
 					cleanHeaders: parsedData.cleanHeaders,
@@ -360,7 +377,7 @@ const ExcelDataSelection = ({
 	const handleNameChange = (
 		sheetKey: string,
 		column: string,
-		newValue: string
+		newValue: string,
 	) => {
 		setTableStates((prev) => ({
 			...prev,
@@ -399,13 +416,13 @@ const ExcelDataSelection = ({
 
 	const handleSelectAllToggle = (sheetKey: string) => {
 		const areAllSelected = Object.values(
-			tableStates[sheetKey].rowEditableState
+			tableStates[sheetKey].rowEditableState,
 		).every((row) => row);
 		const newState = Object.fromEntries(
 			Object.keys(tableStates[sheetKey].rowEditableState).map((key) => [
 				Number(key),
 				!areAllSelected,
-			])
+			]),
 		);
 		setTableStates((prev) => ({
 			...prev,
@@ -446,7 +463,10 @@ const ExcelDataSelection = ({
 		const typedEndColNum = colToNumber(typed.endCol);
 
 		// Check for inverted range
-		if (typedStartColNum > typedEndColNum || typed.startRow > typed.endRow) {
+		if (
+			typedStartColNum > typedEndColNum ||
+			typed.startRow > typed.endRow
+		) {
 			return false; // invalid inverted range
 		}
 
@@ -529,7 +549,9 @@ const ExcelDataSelection = ({
 					}
 
 					if (
-						Array.isArray(state.columnMetadata[header]?.logicalName) &&
+						Array.isArray(
+							state.columnMetadata[header]?.logicalName,
+						) &&
 						state.columnMetadata[header]!.logicalName!.length > 0
 					) {
 						logicalNamesMap[sheetName][editedRange][alias] =
@@ -556,20 +578,14 @@ const ExcelDataSelection = ({
 	return (
 		<>
 			{files.map((file, fileIndex) => (
-				<Box
-					key={fileName[fileIndex]}
-				>
-					<StyledHeaderWrapper
-						key={fileName[fileIndex]}
-					>
+				<Box key={fileName[fileIndex]}>
+					<StyledHeaderWrapper key={fileName[fileIndex]}>
 						<Stack direction={"row"}>
 							<img
 								src={CSV_UPLOAD_ICONS.FILE_EXCEL}
 								alt="Excel File"
 							/>
-							<StyledTypography
-								variant="h6"
-							>
+							<StyledTypography variant="h6">
 								{fileName[fileIndex]}
 							</StyledTypography>
 						</Stack>
@@ -584,22 +600,25 @@ const ExcelDataSelection = ({
 						const parsedData =
 							state?.cleanHeaders && state?.dataTypes
 								? {
-									cleanHeaders: state.cleanHeaders,
-									dataTypes: state.dataTypes,
-								}
+										cleanHeaders: state.cleanHeaders,
+										dataTypes: state.dataTypes,
+									}
 								: file[sheetName][range];
 
 						if (!state || !parsedData) return null;
 
 						return (
 							<StyledBodyWrapper key={sheetKey}>
-								<StyledSummaryHeader onClick={() => toggleCollapse(sheetKey)}>
-									<StyledTypographyTitle
-										variant="h6"
-									>
+								<StyledSummaryHeader
+									onClick={() => toggleCollapse(sheetKey)}
+								>
+									<StyledTypographyTitle variant="h6">
 										Sheet Name: {sheetName}
 									</StyledTypographyTitle>
-									<StyledExpandMoreIcon collapse={state.collapseAll} data-testid="expand-icon">
+									<StyledExpandMoreIcon
+										collapse={state.collapseAll}
+										data-testid="expand-icon"
+									>
 										<ExpandMore />
 									</StyledExpandMoreIcon>
 								</StyledSummaryHeader>
@@ -607,15 +626,25 @@ const ExcelDataSelection = ({
 								<Collapse in={state.collapseAll}>
 									<Box>
 										<StyledInnerBox>
-											<Stack direction="row" spacing={1} alignItems="center">
+											<Stack
+												direction="row"
+												spacing={1}
+												alignItems="center"
+											>
 												<StyledTypographyTitle variant="h6">
 													Table Name:
 												</StyledTypographyTitle>
 												<StyledTextField
 													size="small"
-													value={state.tableName ?? sheetName}
+													value={
+														state.tableName ??
+														sheetName
+													}
 													onChange={(e) =>
-														handleTableNameChange(sheetKey, e.target.value)
+														handleTableNameChange(
+															sheetKey,
+															e.target.value,
+														)
 													}
 													data-testid="table-name-input"
 												/>
@@ -625,10 +654,16 @@ const ExcelDataSelection = ({
 												size="small"
 												variant="text"
 												color="primary"
-												onClick={() => handleSelectAllToggle(sheetKey)}
+												onClick={() =>
+													handleSelectAllToggle(
+														sheetKey,
+													)
+												}
 												data-testid="select-all-button"
 											>
-												{Object.values(state.rowEditableState).every((v) => v)
+												{Object.values(
+													state.rowEditableState,
+												).every((v) => v)
 													? "Unselect All"
 													: "Select All"}
 											</StyledSelectAllButton>
@@ -638,129 +673,282 @@ const ExcelDataSelection = ({
 											<Stack spacing={1}>
 												<Stack>
 													{(() => {
-														const currentValue = editedRanges[sheetKey] ?? range;
+														const currentValue =
+															editedRanges[
+																sheetKey
+															] ?? range;
 														const optionValue =
-															selectedRangeOption[sheetKey] ??
-															(currentValue === range ? "actual" : "custom");
+															selectedRangeOption[
+																sheetKey
+															] ??
+															(currentValue ===
+															range
+																? "actual"
+																: "custom");
 
 														const customValue =
-															customRangeValues[sheetKey] ?? currentValue;
+															customRangeValues[
+																sheetKey
+															] ?? currentValue;
 
-														const isValidFormat = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i.test(customValue);
-														const isSameRange = customValue.toUpperCase() === range.toUpperCase();
+														const isValidFormat =
+															/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i.test(
+																customValue,
+															);
+														const isSameRange =
+															customValue.toUpperCase() ===
+															range.toUpperCase();
 														const showError =
-															optionValue === "custom" &&
+															optionValue ===
+																"custom" &&
 															(!isValidFormat ||
-																(!isSmallerRange(range, customValue) && !isSameRange));
+																(!isSmallerRange(
+																	range,
+																	customValue,
+																) &&
+																	!isSameRange));
 
-														const errorText = !isValidFormat
-															? "Invalid format. Use A1:H51 style."
-															: isSameRange
-																? "Range must differ from the actual range."
-																: !isSmallerRange(range, customValue)
-																	? `Range must be smaller than the actual rangeActual range: ${range} .`
-																	: "";
+														const errorText =
+															!isValidFormat
+																? "Invalid format. Use A1:H51 style."
+																: isSameRange
+																	? "Range must differ from the actual range."
+																	: !isSmallerRange(
+																				range,
+																				customValue,
+																			)
+																		? `Range must be smaller than the actual rangeActual range: ${range} .`
+																		: "";
 
 														return (
 															<StyledBox>
 																{/* Dropdown for selecting range type */}
-																<Autocomplete<RangeOption, false, false, false>
+																<Autocomplete<
+																	RangeOption,
+																	false,
+																	false,
+																	false
+																>
 																	size="small"
-																	freeSolo={false}
+																	freeSolo={
+																		false
+																	}
 																	fullWidth
 																	label="Selected Table"
-																	options={
-																		[
-																			{ label: range, value: "actual" },
-																			{ label: "Custom Range", value: "custom" },
-																		]
-																	}
+																	options={[
+																		{
+																			label: range,
+																			value: "actual",
+																		},
+																		{
+																			label: "Custom Range",
+																			value: "custom",
+																		},
+																	]}
 																	value={
-																		selectedRangeOption[sheetKey] === "custom"
-																			? { label: "Custom Range", value: "custom" }
-																			: { label: editedRanges[sheetKey] || range, value: "actual" }
+																		selectedRangeOption[
+																			sheetKey
+																		] ===
+																		"custom"
+																			? {
+																					label: "Custom Range",
+																					value: "custom",
+																				}
+																			: {
+																					label:
+																						editedRanges[
+																							sheetKey
+																						] ||
+																						range,
+																					value: "actual",
+																				}
 																	}
-																	onChange={async (_event, newValue: RangeOption | null) => {
-																		if (!newValue) return;
+																	onChange={async (
+																		_event,
+																		newValue: RangeOption | null,
+																	) => {
+																		if (
+																			!newValue
+																		)
+																			return;
 
-																		if (newValue.value === "custom") {
+																		if (
+																			newValue.value ===
+																			"custom"
+																		) {
 																			// Show empty textfield
-																			setSelectedRangeOption((prev) => ({
-																				...prev,
-																				[sheetKey]: "custom",
-																			}));
-																			setCustomRangeValues((prev) => ({
-																				...prev,
-																				[sheetKey]: "",
-																			}));
+																			setSelectedRangeOption(
+																				(
+																					prev,
+																				) => ({
+																					...prev,
+																					[sheetKey]:
+																						"custom",
+																				}),
+																			);
+																			setCustomRangeValues(
+																				(
+																					prev,
+																				) => ({
+																					...prev,
+																					[sheetKey]:
+																						"",
+																				}),
+																			);
 																		} else {
-																			setSelectedRangeOption((prev) => ({
-																				...prev,
-																				[sheetKey]: "actual",
-																			}));
-																			setEditedRanges((prev) => ({
-																				...prev,
-																				[sheetKey]: range,
-																			}));
-																			setCustomRangeValues((prev) => ({
-																				...prev,
-																				[sheetKey]: "",
-																			}));
-																			await handlePreviewRange(fileName[fileIndex], sheetKey, sheetName, range);
-
+																			setSelectedRangeOption(
+																				(
+																					prev,
+																				) => ({
+																					...prev,
+																					[sheetKey]:
+																						"actual",
+																				}),
+																			);
+																			setEditedRanges(
+																				(
+																					prev,
+																				) => ({
+																					...prev,
+																					[sheetKey]:
+																						range,
+																				}),
+																			);
+																			setCustomRangeValues(
+																				(
+																					prev,
+																				) => ({
+																					...prev,
+																					[sheetKey]:
+																						"",
+																				}),
+																			);
+																			await handlePreviewRange(
+																				fileName[
+																					fileIndex
+																				],
+																				sheetKey,
+																				sheetName,
+																				range,
+																			);
 																		}
 																	}}
-																	filterOptions={(options) => options}
-																	getOptionLabel={(option: RangeOption) => option?.label ?? String(option)}
-																	renderInput={(params) => (
+																	filterOptions={(
+																		options,
+																	) =>
+																		options
+																	}
+																	getOptionLabel={(
+																		option: RangeOption,
+																	) =>
+																		option?.label ??
+																		String(
+																			option,
+																		)
+																	}
+																	renderInput={(
+																		params,
+																	) => (
 																		<TextField
 																			{...params}
 																			label="Select Range"
 																			placeholder=""
 																			InputProps={{
 																				...params.InputProps,
-																				endAdornment: params.InputProps.endAdornment, // keeps dropdown arrow
+																				endAdornment:
+																					params
+																						.InputProps
+																						.endAdornment, // keeps dropdown arrow
 																			}}
 																		/>
 																	)}
 																/>
 																{/* Only show text field + preview if "Custom Range" is selected */}
-																{optionValue === "custom" && (
-																	<Stack spacing={1} mt={2}>
+																{optionValue ===
+																	"custom" && (
+																	<Stack
+																		spacing={
+																			1
+																		}
+																		mt={2}
+																	>
 																		<StyledTypographyTitle variant="h6">
-																			Custom Range
+																			Custom
+																			Range
 																		</StyledTypographyTitle>
-																		<Stack direction={"row"} spacing={1} alignItems={"center"} justifyContent="center">
+																		<Stack
+																			direction={
+																				"row"
+																			}
+																			spacing={
+																				1
+																			}
+																			alignItems={
+																				"center"
+																			}
+																			justifyContent="center"
+																		>
 																			<TextField
 																				size="medium"
-																				value={customValue}
-																				onChange={(e) =>
-																					setCustomRangeValues((prev) => ({
-																						...prev,
-																						[sheetKey]: e.target.value
-																							.toUpperCase()
-																							.replace(/\s+/g, ""),
-																					}))
+																				value={
+																					customValue
+																				}
+																				onChange={(
+																					e,
+																				) =>
+																					setCustomRangeValues(
+																						(
+																							prev,
+																						) => ({
+																							...prev,
+																							[sheetKey]:
+																								e.target.value
+																									.toUpperCase()
+																									.replace(
+																										/\s+/g,
+																										"",
+																									),
+																						}),
+																					)
 																				}
 																				placeholder="Enter range (e.g. A1:G20)"
 																				sx={{
 																					width: "100%",
-																					border: showError ? "1px solid #d32f2f" : undefined,
+																					border: showError
+																						? "1px solid #d32f2f"
+																						: undefined,
 																					borderRadius: 1,
-																					"& input": {
-																						height: "20px",
-																						boxSizing: "border-box",
-																					},
-																					"& fieldset": { border: showError ? "none" : undefined },
+																					"& input":
+																						{
+																							height: "20px",
+																							boxSizing:
+																								"border-box",
+																						},
+																					"& fieldset":
+																						{
+																							border: showError
+																								? "none"
+																								: undefined,
+																						},
 																				}}
 																			/>
 
 																			{(() => {
-																				const userTyped = customValue.trim().length > 0;
+																				const userTyped =
+																					customValue.trim()
+																						.length >
+																					0;
 																				const isSmaller =
-																					isValidFormat && isSmallerRange(range, customValue);
+																					isValidFormat &&
+																					isSmallerRange(
+																						range,
+																						customValue,
+																					);
 																				const enablePreview =
-																					userTyped && isValidFormat && (isSameRange || isSmaller);
+																					userTyped &&
+																					isValidFormat &&
+																					(isSameRange ||
+																						isSmaller);
 
 																				return !enablePreview ? (
 																					<Tooltip
@@ -786,7 +974,16 @@ const ExcelDataSelection = ({
 																						size="medium"
 																						variant="outlined"
 																						color="primary"
-																						onClick={() => handlePreviewRange(fileName[fileIndex], sheetKey, sheetName, customValue)}
+																						onClick={() =>
+																							handlePreviewRange(
+																								fileName[
+																									fileIndex
+																								],
+																								sheetKey,
+																								sheetName,
+																								customValue,
+																							)
+																						}
 																						data-testid="preview-button"
 																					>
 																						Preview
@@ -797,7 +994,9 @@ const ExcelDataSelection = ({
 
 																		{showError && (
 																			<StyledErrorTypography variant="body2">
-																				{errorText}
+																				{
+																					errorText
+																				}
 																			</StyledErrorTypography>
 																		)}
 																	</Stack>
@@ -829,81 +1028,125 @@ const ExcelDataSelection = ({
 												</Table.Head>
 
 												<Table.Body>
-													{state.cleanHeaders?.map((column, index) => (
-														<Table.Row key={column} data-testid={`column-row-${column}-${index}`}>
-															<StyledBaseTableCellName>
-																<StyedNameTextField
-																	fullWidth
-																	value={
-																		state.columnMetadata[column]?.alias ??
-																		column
-																	}
-																	onChange={(e) =>
-																		handleNameChange(
-																			sheetKey,
-																			column,
-																			e.target.value
-																		)
-																	}
-																	variant="outlined"
-																	size="small"
-																	disabled={!state.rowEditableState[index]}
-																	data-testid={`column-name-input-${column}-${index}`}
-																/>
-															</StyledBaseTableCellName>
-
-															<StyledBaseTableCell
-																sx={{
-																	width: "20%",
-																	pointerEvents: !state.rowEditableState[index]
-																		? "none"
-																		: "auto",
-																}}
+													{state.cleanHeaders?.map(
+														(column, index) => (
+															<Table.Row
+																key={column}
+																data-testid={`column-row-${column}-${index}`}
 															>
-																<Typography
-																	variant="h6"
+																<StyledBaseTableCellName>
+																	<StyedNameTextField
+																		fullWidth
+																		value={
+																			state
+																				.columnMetadata[
+																				column
+																			]
+																				?.alias ??
+																			column
+																		}
+																		onChange={(
+																			e,
+																		) =>
+																			handleNameChange(
+																				sheetKey,
+																				column,
+																				e
+																					.target
+																					.value,
+																			)
+																		}
+																		variant="outlined"
+																		size="small"
+																		disabled={
+																			!state
+																				.rowEditableState[
+																				index
+																			]
+																		}
+																		data-testid={`column-name-input-${column}-${index}`}
+																	/>
+																</StyledBaseTableCellName>
+
+																<StyledBaseTableCell
 																	sx={{
-																		fontSize: "14px",
-																		color: !state.rowEditableState[index]
-																			? "#9E9E9E"
-																			: "#212121",
+																		width: "20%",
+																		pointerEvents:
+																			!state
+																				.rowEditableState[
+																				index
+																			]
+																				? "none"
+																				: "auto",
 																	}}
-																	data-testid={`column-datatype-${column}-${index}`}
 																>
-																	{state.columnMetadata[column]?.dataType ||
-																		"STRING"}
-																</Typography>
-															</StyledBaseTableCell>
+																	<Typography
+																		variant="h6"
+																		sx={{
+																			fontSize:
+																				"14px",
+																			color: !state
+																				.rowEditableState[
+																				index
+																			]
+																				? "#9E9E9E"
+																				: "#212121",
+																		}}
+																		data-testid={`column-datatype-${column}-${index}`}
+																	>
+																		{state
+																			.columnMetadata[
+																			column
+																		]
+																			?.dataType ||
+																			"STRING"}
+																	</Typography>
+																</StyledBaseTableCell>
 
-															<StyledBaseTableCellIcon>
-																<IconButton
-																	size="small"
-																	onClick={() =>
-																		handleOpenModal(sheetKey, column)
-																	}
-																	disabled={!state.rowEditableState[index]}
-																	data-testid={`edit-button-${column}-${index}`}
-																>
-																	<CreateOutlined />
-																</IconButton>
-															</StyledBaseTableCellIcon>
+																<StyledBaseTableCellIcon>
+																	<IconButton
+																		size="small"
+																		onClick={() =>
+																			handleOpenModal(
+																				sheetKey,
+																				column,
+																			)
+																		}
+																		disabled={
+																			!state
+																				.rowEditableState[
+																				index
+																			]
+																		}
+																		data-testid={`edit-button-${column}-${index}`}
+																	>
+																		<CreateOutlined />
+																	</IconButton>
+																</StyledBaseTableCellIcon>
 
-															<StyledBaseTableCellIcon>
-																<IconButton
-																	onClick={() =>
-																		toggleRowEditState(sheetKey, index)
-																	}
-																	data-testid={`toggle-editable-button-${column}-${index}`}
-																>
-																	{state.rowEditableState[index] ? (
-																		<CloseIcon color="error" />
-																	) : (
-																		<AddIcon color="success" />
-																	)}
-																</IconButton>
-															</StyledBaseTableCellIcon>
-														</Table.Row>
-													))}
+																<StyledBaseTableCellIcon>
+																	<IconButton
+																		onClick={() =>
+																			toggleRowEditState(
+																				sheetKey,
+																				index,
+																			)
+																		}
+																		data-testid={`toggle-editable-button-${column}-${index}`}
+																	>
+																		{state
+																			.rowEditableState[
+																			index
+																		] ? (
+																			<CloseIcon color="error" />
+																		) : (
+																			<AddIcon color="success" />
+																		)}
+																	</IconButton>
+																</StyledBaseTableCellIcon>
+															</Table.Row>
+														),
+													)}
 												</Table.Body>
 											</Table>
 										</StyledTableContainer>
@@ -940,7 +1183,7 @@ const ExcelDataSelection = ({
 				selectedColumn={selectedColumn}
 				columnMetadata={
 					selectedSheetKey
-						? tableStates[selectedSheetKey]?.columnMetadata ?? {}
+						? (tableStates[selectedSheetKey]?.columnMetadata ?? {})
 						: {}
 				}
 				setColumnMetadata={setColumnMetadata}

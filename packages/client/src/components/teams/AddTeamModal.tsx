@@ -138,7 +138,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 	const [previousTeamName, setPreviousTeamName] = React.useState<
 		string | undefined
 	>(id);
-	const [previousType, setPreviousType] = React.useState<string | undefined>(
+	const [_previousType, setPreviousType] = React.useState<string | undefined>(
 		id,
 	);
 	const {
@@ -230,7 +230,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 					false,
 					data.TEAM_TYPE,
 				);
-				if (!response.data) {
+				if (response.data) {
 					onClose({
 						id: data.TEAM_NAME,
 						type: data.TEAM_TYPE,
