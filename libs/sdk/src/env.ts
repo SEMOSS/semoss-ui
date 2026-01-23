@@ -1,3 +1,5 @@
+import type { MCPToolRequest } from "./types";
+
 /**
  * Singleton object holding environment information
  */
@@ -7,13 +9,7 @@ const envStore: {
 	ACCESS_KEY: string;
 	SECRET_KEY: string;
 	CSRF: boolean;
-	TOOL: {
-		type: "MCP";
-		message: string;
-		id: string;
-		name: string;
-		parameters: Record<string, unknown>;
-	} | null;
+	TOOL: MCPToolRequest | null;
 } = {
 	APP: "",
 	MODULE: "",

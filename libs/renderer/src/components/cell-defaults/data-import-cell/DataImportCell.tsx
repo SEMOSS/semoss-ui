@@ -15,6 +15,7 @@ import { DATA_FRAME_TYPES } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
+	Checkbox,
 	IconButton,
 	InputAdornment,
 	Modal,
@@ -189,6 +190,9 @@ export interface DataImportCellDef extends CellDef<"data-import"> {
 		tableNames: string[];
 		joins: JoinObject[];
 		dataLimit: number;
+		enableBatching?: boolean;
+		batchSize?: number;
+		currentOffset?: number;
 		// TODO add filters and summaries
 		// filters: FilterObject[];
 		// summaries: FilterObject[];
@@ -217,6 +221,27 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 		const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
 			`MyEngines(engineTypes=['DATABASE']);`,
 		);
+
+		// Ensure offset starts at 0 when component first mounts with batching enabled
+		const hasInitialized = useRef(false);
+		useEffect(() => {
+			if (
+				!hasInitialized.current &&
+				cell.parameters.enableBatching &&
+				(cell.parameters.currentOffset ?? 0) !== 0
+			) {
+				hasInitialized.current = true;
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						queryId: cell.query.id,
+						cellId: cell.id,
+						path: "parameters.currentOffset",
+						value: 0,
+					},
+				});
+			}
+		}, []);
 
 		useEffect(() => {
 			if (myDbs.status !== "SUCCESS") {
@@ -572,11 +597,15 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 								<Editor
 									// value is appended to make pixel valid for copy / paste to other pixel cell
 									defaultValue={
-										cell.parameters.selectQuery.slice(
-											0,
-											-1,
-										) +
-										` | Import ( frame = [ CreateFrame ( frameType = [ "${cell.parameters.frameType}" ] , override = [ true ] ) .as ( [ "${cell.parameters.frameVariableName}" ] ) ] ) ; Frame ( frame = [ "${cell.parameters.frameVariableName}" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`
+										cell.parameters.selectQuery
+											.slice(0, -1)
+											.replace(
+												/\s*\|\s*Limit\s*\(\s*[^)]*\s*\)/,
+												"",
+											) +
+										(cell.parameters.enableBatching
+											? ` | Offset ( ${cell.parameters.currentOffset ?? 0} ) | Limit ( ${cell.parameters.batchSize ?? 100} ) | Import ( frame = [ CreateFrame ( frameType = [ "${cell.parameters.frameType}" ] , override = [ true ] ) .as ( [ "${cell.parameters.frameVariableName}" ] ) ] ) ; Frame ( frame = [ "${cell.parameters.frameVariableName}" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`
+											: ` | Import ( frame = [ CreateFrame ( frameType = [ "${cell.parameters.frameType}" ] , override = [ true ] ) .as ( [ "${cell.parameters.frameVariableName}" ] ) ] ) ; Frame ( frame = [ "${cell.parameters.frameVariableName}" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`)
 									}
 									language="pixel"
 									options={{
@@ -606,6 +635,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 							alignItems={"center"}
 							paddingTop={"0px"}
 							direction="row"
+							spacing={1}
 						>
 							<TextField
 								type="number"
@@ -613,6 +643,9 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 								label="Data Limit"
 								value={dataLimit}
 								onChange={handleDataLimitUpdate}
+								disabled={
+									cell.parameters.enableBatching ?? false
+								}
 								key={`data-limit-number`}
 							/>
 							<Button
@@ -679,6 +712,148 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 									});
 								}}
 							/>
+							<Tooltip
+								title={
+									cell.parameters.enableBatching
+										? "Disable Batching"
+										: "Enable Batching"
+								}
+							>
+								<Checkbox
+									checked={
+										cell.parameters.enableBatching ?? false
+									}
+									label={
+										cell.parameters.enableBatching
+											? ""
+											: "Enable Batching"
+									}
+									disabled={cell.isLoading}
+									onChange={(
+										e: React.ChangeEvent<HTMLInputElement>,
+									) => {
+										const isEnabling = e.target.checked;
+										state.dispatch({
+											message: ActionMessages.UPDATE_CELL,
+											payload: {
+												queryId: cell.query.id,
+												cellId: cell.id,
+												path: "parameters.enableBatching",
+												value: isEnabling,
+											},
+										});
+
+										// ALWAYS reset offset to 0 when toggling batching
+										state.dispatch({
+											message: ActionMessages.UPDATE_CELL,
+											payload: {
+												queryId: cell.query.id,
+												cellId: cell.id,
+												path: "parameters.currentOffset",
+												value: 0,
+											},
+										});
+
+										if (isEnabling) {
+											// Set initial batch size when enabling batching
+											state.dispatch({
+												message:
+													ActionMessages.UPDATE_CELL,
+												payload: {
+													queryId: cell.query.id,
+													cellId: cell.id,
+													path: "parameters.batchSize",
+													value: 100,
+												},
+											});
+										}
+									}}
+									sx={{
+										color: "text.secondary",
+									}}
+								/>
+							</Tooltip>
+							{cell.parameters.enableBatching && (
+								<>
+									<TextField
+										size="small"
+										title="Batch Size"
+										type="number"
+										placeholder="Batch Amount..."
+										value={cell.parameters.batchSize ?? 100}
+										disabled={cell.isLoading}
+										onChange={(e) => {
+											const inputValue = e.target.value;
+
+											// Allow empty string for deletion
+											if (inputValue === "") {
+												state.dispatch({
+													message:
+														ActionMessages.UPDATE_CELL,
+													payload: {
+														queryId: cell.query.id,
+														cellId: cell.id,
+														path: "parameters.batchSize",
+														value: "",
+													},
+												});
+												return;
+											}
+
+											const value = Number.parseInt(
+												inputValue,
+												10,
+											);
+											if (
+												!Number.isNaN(value) &&
+												value >= 0
+											) {
+												state.dispatch({
+													message:
+														ActionMessages.UPDATE_CELL,
+													payload: {
+														queryId: cell.query.id,
+														cellId: cell.id,
+														path: "parameters.batchSize",
+														value: value,
+													},
+												});
+											}
+										}}
+										sx={{ width: "120px" }}
+									/>
+									<TextField
+										size="small"
+										title="Current Offset"
+										type="number"
+										value={
+											cell.parameters.currentOffset ?? 0
+										}
+										disabled
+										sx={{ width: "80px" }}
+									/>
+									<Button
+										variant="outlined"
+										size="small"
+										onClick={() => {
+											state.dispatch({
+												message:
+													ActionMessages.UPDATE_CELL,
+												payload: {
+													queryId: cell.query.id,
+													cellId: cell.id,
+													path: "parameters.currentOffset",
+													value: 0,
+												},
+											});
+										}}
+										disabled={cell.isLoading}
+										sx={{ minWidth: "60px" }}
+									>
+										Reset
+									</Button>
+								</>
+							)}
 						</Stack>
 					)}
 				</Stack>

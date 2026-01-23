@@ -1,7 +1,8 @@
 import { Env } from "./env";
+import type { MCPToolRequest } from "./types";
 
 /**
- * Listener to messages on the window
+ * Listener to MCP tool messages on the window
  */
 (() => {
 	// only works in browser
@@ -17,13 +18,7 @@ import { Env } from "./env";
 
 					const eventData = event.data as {
 						type: "SMSS_INIT_TOOL";
-						tool: {
-							type: "MCP";
-							message: string;
-							id: string;
-							name: string;
-							parameters: Record<string, unknown>;
-						};
+						tool: MCPToolRequest;
 					};
 
 					Env.update({
@@ -33,7 +28,9 @@ import { Env } from "./env";
 							id: eventData.tool.id || "",
 							name: eventData.tool.name || "",
 							parameters: eventData.tool.parameters || {},
-						},
+							roomId: eventData.tool.roomId || "",
+							original_name: eventData.tool.original_name || "",
+						} satisfies MCPToolRequest,
 					});
 				} catch {
 					// noop

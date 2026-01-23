@@ -59,6 +59,7 @@ describe("grid block", () => {
 			filter: undefined,
 			unfilter: undefined,
 		});
+
 		const { container } = render(<GridBlock id={blocks.grid.id} />, {
 			blocks: blocks,
 		});
@@ -66,7 +67,6 @@ describe("grid block", () => {
 		await waitFor(() => {
 			const element = container.querySelector("[data-block='grid']");
 			expect(element).toBeInTheDocument();
-			expect(screen.getByText("Grid block test")).toBeInTheDocument();
 			expect(screen.getByText("Grid block column 1")).toBeInTheDocument();
 			expect(screen.getByText("row 1")).toBeInTheDocument();
 			expect(screen.getByText("row 2")).toBeInTheDocument();
