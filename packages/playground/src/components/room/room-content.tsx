@@ -46,6 +46,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
+	const [isScrollLocked, setIsScrollLocked] = useState(false);
 
 	/**
 	 * Functions
@@ -103,16 +104,22 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			setShowScrollup(false);
 		}
 
-		// show scroll down if near the bottom
-		if (
+		// Check if user is at the bottom
+		const isAtBottom =
 			scrollEle.scrollHeight -
 				scrollEle.scrollTop -
 				scrollEle.clientHeight <=
-			SCROLL_THRESHOLD
-		) {
+			SCROLL_THRESHOLD;
+
+		// show scroll down if not at bottom
+		if (isAtBottom) {
 			setShowScrolldown(false);
+			// Unlock scroll when user scrolls back to bottom
+			setIsScrollLocked(false);
 		} else {
 			setShowScrolldown(true);
+			// Lock scroll when user scrolls away from bottom
+			setIsScrollLocked(true);
 		}
 	}, [scrollEle]);
 
@@ -176,7 +183,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	 */
 	// biome-ignore lint/correctness/useExhaustiveDependencies:> needed to trigger scroll
 	useEffect(() => {
-		if (!scrollEle) {
+		if (!scrollEle || isScrollLocked) {
 			return;
 		}
 
@@ -186,6 +193,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	}, [
 		scrollEle,
 		scrollToTarget,
+		isScrollLocked,
 		room.history?.length || 0,
 		room.tail?.type === "RESPONSE"
 			? (room.tail as ResponseMessageStore)?.text.length
