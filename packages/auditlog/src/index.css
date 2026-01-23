@@ -2,3 +2,4 @@
 @import "@semoss/shared/globals.css";
 
 @source "./**/*.{ts,tsx}";
+@source "../../../libs/shared/src/**/*.{ts,tsx}";
