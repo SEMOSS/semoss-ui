@@ -213,6 +213,13 @@ export class RoomStore {
 	}
 
 	/**
+	 * Get the insightId of the roomId
+	 */
+	get insightId() {
+		return this._store.insightId;
+	}
+
+	/**
 	 * Indicator to check if the room is loading
 	 */
 	get isLoading() {
@@ -418,7 +425,9 @@ export class RoomStore {
 			};
 
 			// sync the insight ID
-			this._store.insightId = response.insightId;
+			runInAction(() => {
+				this._store.insightId = response.insightId;
+			});
 
 			// create the root
 			let root = null;
