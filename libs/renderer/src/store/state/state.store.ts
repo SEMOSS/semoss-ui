@@ -1022,7 +1022,10 @@ export class StateStore {
 		while (
 			this._store.blocks[
 				`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`
-			] || generatedBlockIds.includes(`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`)
+			] ||
+			generatedBlockIds.includes(
+				`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`,
+			)
 		) {
 			blockNum++;
 		}
@@ -1042,7 +1045,11 @@ export class StateStore {
 		if (json.widget === "page") {
 			return this.generatePageId();
 		}
-		return this.generateNonPageId(json.widget, isCommunityBlock, generatedBlockIds);
+		return this.generateNonPageId(
+			json.widget,
+			isCommunityBlock,
+			generatedBlockIds,
+		);
 	};
 
 	/**
@@ -1059,10 +1066,14 @@ export class StateStore {
 		parent?: Block["parent"],
 	) => {
 		// generate a new id
-		const id = this.generateBlockId(json, isCommunityBlock, generatedBlockIds);
+		const id = this.generateBlockId(
+			json,
+			isCommunityBlock,
+			generatedBlockIds,
+		);
 
 		generatedBlockIds.push(id);
-		
+
 		// create the block
 		const block = {
 			id: id,
@@ -1419,7 +1430,12 @@ export class StateStore {
 		}
 		const generatedBlockIds = [];
 		// generate the block
-		const block = this.generateBlock(json, isCommunity, {}, generatedBlockIds);
+		const block = this.generateBlock(
+			json,
+			isCommunity,
+			{},
+			generatedBlockIds,
+		);
 
 		// try to place it if position
 		if (!position) {

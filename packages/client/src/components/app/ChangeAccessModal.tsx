@@ -187,6 +187,29 @@ const TabPanel = (props: {
 		</div>
 	);
 };
+
+const ActionButton = ({ label, onClick }) => (
+	<Button
+		variant="outlined"
+		size="small"
+		sx={{ borderRadius: 10, px: 2, py: 0.5, fontSize: "13px" }}
+		onClick={onClick}
+	>
+		{label}
+	</Button>
+);
+
+const PendingButton = () => (
+	<Button
+		variant="outlined"
+		size="small"
+		sx={{ borderRadius: 10, px: 2, py: 0.5 }}
+		disabled
+	>
+		Pending Access
+	</Button>
+);
+
 interface ChangeAccessModalProps {
 	open: boolean;
 	onClose: (refresh?: boolean) => void;
@@ -207,7 +230,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 		onSuccess,
 		permission,
 	} = props;
-	const permissionDescriptions = PERMISSION_DESCRIPTION_MAP.APP;
+	const permissionDescriptions = PERMISSION_DESCRIPTION_MAP.PROJECT;
 	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const [tabValue, setTabValue] = useState(0);
@@ -402,28 +425,6 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 			});
 		}
 	};
-
-	const PendingButton = () => (
-		<Button
-			variant="outlined"
-			size="small"
-			sx={{ borderRadius: 10, px: 2, py: 0.5 }}
-			disabled
-		>
-			Pending Access
-		</Button>
-	);
-
-	const ActionButton = ({ label, onClick }) => (
-		<Button
-			variant="outlined"
-			size="small"
-			sx={{ borderRadius: 10, px: 2, py: 0.5, fontSize: "13px" }}
-			onClick={onClick}
-		>
-			{label}
-		</Button>
-	);
 
 	return (
 		<Box>
