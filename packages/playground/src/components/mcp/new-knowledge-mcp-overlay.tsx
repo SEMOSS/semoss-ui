@@ -118,6 +118,14 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 				filePaths=[${filePaths}]
 			);`);
 
+			await actions.run<
+				[
+					{
+						success: boolean;
+					},
+				]
+			>(`MakeEngineMCP("${engineId}");`);
+
 			// Success
 			toast.success(`Successfully created knowledge source "${name}"`);
 
