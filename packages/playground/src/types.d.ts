@@ -150,6 +150,8 @@ export interface ResponseTextPixelMessage extends AbstractPixelMessage {
 
 export type McpExecution = "auto" | "ask" | "disabled";
 
+export type McpDisplay = "inline" | "sidebar" | "hidden";
+
 interface ResponseToolPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TOOL";
 	thinking?: string;
@@ -162,6 +164,7 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 			SMSS_PROJECT_NAME: string;
 			SMSS_PROJECT_ID: string;
 			SMSS_MCP_EXECUTION: McpExecution;
+			SMSS_MCP_DISPLAY?: McpDisplay;
 		};
 
 		/**  Display of the tool **/
