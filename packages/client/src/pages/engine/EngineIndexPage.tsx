@@ -293,6 +293,14 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		};
 
 		/**
+		 * @desc Reset search and scroll when route type changes (navigating between catalogs)
+		 */
+		useEffect(() => {
+			setSearch("");
+			resetScroll();
+		}, [route.type, resetScroll]);
+
+		/**
 		 * @desc infinite scroll
 		 */
 		useEffect(() => {
