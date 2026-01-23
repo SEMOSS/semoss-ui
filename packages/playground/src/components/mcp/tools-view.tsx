@@ -132,7 +132,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 		}, [getMCP, tool.original_name]);
 
 		useEffect(() => {
-			const setURL = async () => {
+			const chooseUrl = async () => {
 				// Finish loading
 				if (
 					getAppInfo.status === "INITIAL" ||
@@ -200,7 +200,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 				setIsLoading(false);
 			};
 
-			setURL();
+			chooseUrl();
 		}, [app, tool, getAppInfo.status, getAppInfo.data, selectedTool]);
 
 		return (
