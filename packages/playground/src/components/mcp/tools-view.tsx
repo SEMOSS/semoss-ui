@@ -162,8 +162,6 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 					})
 				: undefined;
 
-		console.log(selectedTool, getMCP);
-
 		if (!app || !tool) {
 			return <div>No Tool</div>;
 		}

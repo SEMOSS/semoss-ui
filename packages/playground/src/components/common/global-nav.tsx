@@ -183,13 +183,6 @@ export const GlobalNav = observer(() => {
 
 		if (!scrollElement || !open) return;
 
-		console.log(
-			// scrollElementRef?.current,
-			scrollElement?.scrollTop,
-			savedScrollPosition,
-			open,
-		);
-
 		if (
 			savedScrollPosition > 0 &&
 			savedScrollPosition !== scrollElement.scrollTop

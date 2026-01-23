@@ -837,8 +837,6 @@ export class RoomStore {
 			dateCreated: "",
 		});
 
-		console.log(this.tail, "tail");
-
 		// get the parent message
 		const parentMessage = this.tail;
 		if (parentMessage instanceof InputMessageStore) {
