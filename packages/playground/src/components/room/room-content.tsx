@@ -387,7 +387,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					)}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={room.hasUnfinishedTools}
-					hideLoadingSpinner
 				/>
 			</div>
 		</div>
