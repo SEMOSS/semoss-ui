@@ -109,6 +109,7 @@ interface RoomStoreInterface {
 		 */
 		workspace?: {
 			workspace_id: string;
+			name?: string;
 		};
 	};
 

@@ -26,6 +26,21 @@ export const RoomPage = observer(() => {
 
 	const [room, setRoom] = useState<RoomStore | null>(null);
 
+	/**
+	 * Effects
+	 */
+	// set the breadcrumbs
+	const { setBreadcrumbs } = useGlobalBreadcrumbs([
+		{
+			name: "Home",
+			path: "/",
+		},
+		{
+			name: room?.metadata?.name || "Room",
+			path: `/room/${roomId}`,
+		},
+	]);
+
 	// load the room
 	useEffect(() => {
 		const loadRoom = async () => {
@@ -37,6 +52,28 @@ export const RoomPage = observer(() => {
 					room.setModel(chat.models.selected);
 				}
 
+				if (room.options.workspace)
+					setBreadcrumbs([
+						{
+							name: "Home",
+							path: "/",
+						},
+						{
+							name: "Workspace",
+							path: "/workspace",
+						},
+						{
+							name:
+								room.options.workspace?.name ||
+								room.options.workspace.workspace_id,
+							path: `/workspace/${room.options.workspace.workspace_id}`,
+						},
+						{
+							name: "Room",
+							path: `/room/${room.roomId}`,
+						},
+					]);
+
 				// set the room
 				setRoom(room);
 			} catch (e) {
@@ -47,22 +84,7 @@ export const RoomPage = observer(() => {
 		};
 
 		loadRoom();
-	}, [roomId, navigate, chat.loadRoom, chat.models.selected]);
-
-	/**
-	 * Effects
-	 */
-	// set the breadcrumbs
-	useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: room?.metadata?.name || "Room",
-			path: `/room/${roomId}`,
-		},
-	]);
+	}, [roomId, navigate, chat.loadRoom, chat.models.selected, setBreadcrumbs]);
 
 	// if there is no room, return null
 	if (!room) {
