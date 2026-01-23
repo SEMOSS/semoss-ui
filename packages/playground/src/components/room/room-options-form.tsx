@@ -1,17 +1,18 @@
 import { HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EngineSelect } from "@semoss/shared";
 import {
 	Badge,
 	Button,
 	Field,
+	FieldDescription,
 	FieldGroup,
 	FieldLabel,
+	FieldLegend,
 	FieldSeparator,
 	FieldSet,
 	Input,
-	ScrollArea,
 	Slider,
 	Textarea,
 	Tooltip,
@@ -19,87 +20,97 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components";
-import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 
-interface RoomOptionsProps {
+interface RoomOptionsFormProps {
+	/** Model of the room */
+	model: RoomStore["model"];
+
 	/** Options for the room */
 	options: RoomStore["options"];
 
 	/** Update options on change */
-	setOptions: (options: RoomStore["options"]) => void;
-
-	/** Update model on change */
-	setRoomModel: (modelId: string) => void;
+	onClose: (
+		success: boolean,
+		data?: { model?: RoomStore["model"]; options?: RoomStore["options"] },
+	) => void;
 }
 
-export const RoomOptions = observer((props: RoomOptionsProps) => {
-	const { options, setOptions, setRoomModel } = props;
+export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
+	({ model, options, onClose }) => {
+		const [updatedModel, setUpdatedModel] = useState(model);
+		const [updatedOptions, setUpdatedOptions] = useState(options);
 
-	/**
-	 * Library hooks
-	 */
-	const { chat } = useChat();
+		useEffect(() => {
+			setUpdatedModel(model);
+		}, [model]);
 
-	/**
-	 * State
-	 */
-	const [mCPOverlay, setMCPOverlay] = useState<{
-		type?: "KNOWLEDGE" | "TOOLBOX";
-		isOpen: boolean;
-	}>({
-		isOpen: false,
-	});
+		useEffect(() => {
+			setUpdatedOptions(options);
+		}, [options]);
 
-	// All MCPs are in the mcp array (workspace MCPs have fromWorkspace flag)
-	const knowledge = options.mcp.filter((mcp) => mcp.type === "VECTOR");
-	const toolbox = options.mcp.filter((mcp) => mcp.type !== "VECTOR");
+		/**
+		 * State
+		 */
+		const [mCPOverlay, setMCPOverlay] = useState<{
+			type?: "KNOWLEDGE" | "TOOLBOX";
+			isOpen: boolean;
+		}>({
+			isOpen: false,
+		});
 
-	/**
-	 * Functions
-	 */
-	const handleDeleteMCP = (mcp: MCPConfig) => {
-		// Don't allow deletion of workspace MCPs
-		if (mcp.fromWorkspace) {
-			return;
-		}
-
-		const updatedMCPs = options.mcp.filter(
-			(t) => !(t.id === mcp.id && t.type === mcp.type),
+		// All MCPs are in the mcp array (workspace MCPs have fromWorkspace flag)
+		const knowledge = updatedOptions.mcp.filter(
+			(mcp) => mcp.type === "VECTOR",
+		);
+		const toolbox = updatedOptions.mcp.filter(
+			(mcp) => mcp.type !== "VECTOR",
 		);
 
-		setOptions({
-			...options,
-			mcp: updatedMCPs,
-		});
-	};
+		/**
+		 * Functions
+		 */
+		const handleDeleteMCP = (mcp: MCPConfig) => {
+			// Don't allow deletion of workspace MCPs
+			if (mcp.fromWorkspace) {
+				return;
+			}
 
-	return (
-		<ScrollArea className="h-full w-full">
-			<form className="px-2 py-4">
+			const updatedMCPs = updatedOptions.mcp.filter(
+				(t) => !(t.id === mcp.id && t.type === mcp.type),
+			);
+
+			setUpdatedOptions((prev) => ({
+				...prev,
+				mcp: updatedMCPs,
+			}));
+		};
+
+		return (
+			<form className="p-4">
 				<FieldGroup>
 					<FieldSet>
+						<FieldLegend>Room Settings</FieldLegend>
+						<FieldDescription>
+							Update room settings and modify the behavior of the
+							chat
+						</FieldDescription>
 						<FieldGroup>
 							{ENABLE_MODEL_SELECT && (
 								<Field>
 									<FieldLabel>Model</FieldLabel>
 									<EngineSelect
-										name={
-											chat.models.selected?.app_name || ""
-										}
-										value={
-											chat.models.selected?.app_id || ""
-										}
+										name={updatedModel?.app_name || ""}
+										value={updatedModel?.app_id || ""}
 										engineTypes={["MODEL"]}
 										metaFilters={[
 											{ tag: "text-generation" },
 										]}
 										onChange={(v) => {
-											chat.setSelectedModel(v);
-											setRoomModel(v.app_id);
+											setUpdatedModel(v);
 										}}
 										popoverContentProps={{
 											align: "start",
@@ -107,22 +118,20 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 									/>
 								</Field>
 							)}
-
 							<Field>
 								<FieldLabel>Instructions</FieldLabel>
 								<Textarea
 									placeholder="Update Instructions"
 									className="h-64 resize-none overflow-y-auto"
-									value={options.instructions}
+									value={updatedOptions.instructions}
 									onChange={(e) => {
-										setOptions({
-											...options,
+										setUpdatedOptions((prev) => ({
+											...prev,
 											instructions: e.target.value,
-										});
+										}));
 									}}
 								/>
 							</Field>
-
 							<Field>
 								<FieldLabel
 									onClick={(event) => {
@@ -229,7 +238,6 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 									)}
 								</div>
 							</Field>
-
 							<Field>
 								<FieldLabel
 									onClick={(event) => {
@@ -242,7 +250,7 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 										});
 									}}
 								>
-									<div className="flex-1">MCPs</div>
+									<div className="flex-1">Toolbox</div>
 
 									<Tooltip>
 										<TooltipTrigger asChild>
@@ -352,10 +360,10 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 												? knowledge
 												: toolbox;
 
-										setOptions({
-											...options,
+										setUpdatedOptions((prev) => ({
+											...prev,
 											mcp: [...otherTypeMCPs, ...mcp],
-										});
+										}));
 									}
 
 									// close it
@@ -372,13 +380,13 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 								<Input
 									type="number"
 									placeholder="Update token length"
-									value={options.tokenLength}
+									value={updatedOptions.tokenLength}
 									onChange={(e) =>
-										setOptions({
-											...options,
+										setUpdatedOptions((prev) => ({
+											...prev,
 											tokenLength:
 												Number(e.target.value) || 0,
-										})
+										}))
 									}
 									min={0}
 									className="w-full"
@@ -388,25 +396,49 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 							<Field>
 								<FieldLabel>
 									Temperature (
-									{options.temperature?.toFixed(2)})
+									{updatedOptions.temperature?.toFixed(2)})
 								</FieldLabel>
 								<Slider
 									min={0}
 									max={1}
 									step={0.01}
-									value={[options.temperature]}
+									value={[updatedOptions.temperature]}
 									onValueChange={(value) =>
-										setOptions({
-											...options,
+										setUpdatedOptions((prev) => ({
+											...prev,
 											temperature: value[0],
-										})
+										}))
 									}
 								/>
 							</Field>
 						</FieldGroup>
 					</FieldSet>
+					<Field orientation="horizontal" className="justify-center">
+						<Button
+							type="button"
+							onClick={() => {
+								onClose(true, {
+									options: updatedOptions,
+									model: updatedModel,
+								});
+							}}
+						>
+							Save
+						</Button>
+						<Button
+							variant="outline"
+							type="button"
+							onClick={() => {
+								setUpdatedModel(model);
+								setUpdatedOptions(options);
+								onClose(false);
+							}}
+						>
+							Reset
+						</Button>
+					</Field>
 				</FieldGroup>
 			</form>
-		</ScrollArea>
-	);
-});
+		);
+	},
+);
