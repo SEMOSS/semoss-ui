@@ -19,7 +19,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { MCPOverlay } from "@/components";
+import { MCPOverlay, SaveWorkspaceDialog } from "@/components";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 
@@ -93,7 +93,13 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 			<form className="p-4">
 				<FieldGroup>
 					<FieldSet>
-						<FieldLegend>Room Settings</FieldLegend>
+						<FieldLegend className="flex w-full flex-1 items-center gap-2">
+							Room Settings
+							<SaveWorkspaceDialog
+								systemPrompt={options.instructions}
+								mcps={options.mcp}
+							/>
+						</FieldLegend>
 						<FieldDescription>
 							Update room settings and modify the behavior of the
 							chat

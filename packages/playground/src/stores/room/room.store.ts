@@ -109,6 +109,7 @@ interface RoomStoreInterface {
 		 */
 		workspace?: {
 			workspace_id: string;
+			name?: string;
 		};
 	};
 
@@ -835,8 +836,6 @@ export class RoomStore {
 			},
 			dateCreated: "",
 		});
-
-		console.log(this.tail, "tail");
 
 		// get the parent message
 		const parentMessage = this.tail;
