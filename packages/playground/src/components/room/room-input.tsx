@@ -20,16 +20,21 @@
 // 	MicIcon,
 // 	PaperclipIcon,
 // 	SendIcon,
+// 	SlidersHorizontalIcon,
 // 	SparklesIcon,
 // 	XIcon,
 // } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react"; //useEffect, useRef,
+// import { EngineSelect } from "@semoss/shared";
 // import {
 // 	Button,
 // 	ButtonGroup,
 // 	cn,
+// 	DropdownMenu,
+//	DropdownMenuContent,
+//	DropdownMenuTrigger,
 // 	Spinner,
 // 	Tooltip,
 // 	TooltipContent,
@@ -47,6 +52,9 @@ import {
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { usePromptAssist } from "@/hooks/usePromptAssist";
 
+// import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
+// import type { Engine } from "@/types";
+
 // const ENABLE_ATTACHMENT = import.meta.env.VITE_ENABLE_ATTACHMENT === "true";
 
 interface RoomInputProps {
@@ -56,14 +64,19 @@ interface RoomInputProps {
 	/** Track if it is loading */
 	isLoading?: boolean;
 
-	/** Workspace toggle */
-	workspace?: React.ReactNode;
+	/** Model of the room */
+	model: Engine | null;
 
-	/** Plugins plugins */
-	plugins?: React.ReactNode;
+	/** Update options on change */
+	setModel: (model: Engine | null) => void;
 
-	/** Configuration toggle */
-	configuration?: React.ReactNode;
+	/** Menu component */
+	MenuComponent: React.ComponentType<{
+		isOpen: boolean;
+		onOpenChange: (isOpen: boolean) => void;
+		fileRef: React.RefObject<HTMLInputElement>;
+		addToken: (token: string) => void;
+	}>;
 
 	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
@@ -79,15 +92,17 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 	({
 		className,
 		isLoading,
-		workspace = null,
-		plugins = null,
-		configuration = null,
+		model,
+		setModel,
+		MenuComponent,
 		onPrompt = () => null,
 		hasOutstandingTools = false,
 		hideLoadingSpinner = false,
 	}) => {
 		// const [isEmpty, setIsEmpty] = useState(true);
+		// const [menuOpen, setMenuOpen] = useState(false);
 
+		// const ref = useRef<HTMLDivElement>(null);
 		// const editorRef = useRef<LexicalEditor>(null);
 		// const fileRef = useRef<HTMLInputElement>(null);
 
@@ -362,7 +377,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										placeholder={
 											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
 												<SparklesIcon className="size-4" />
-												/ to add capability
+												/ to open menu
 											</div>
 										}
 										onDrop={(e) => {
@@ -393,11 +408,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											setIsDragging(false);
 										}}
 										onPaste={(e) => {
-											// Only handle file pasting if attachments are enabled
-											if (!ENABLE_ATTACHMENT) {
-												return;
-											}
-
 											// set the new files
 											const updated = Array.from(
 												e.clipboardData.files,
@@ -435,35 +445,96 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<FocusPlugin />
 						<EditorRefPlugin editorRef={editorRef} />
 						<EnterPlugin onEnter={() => promptModel()} />
-						{plugins}
-					</LexicalComposer> */}
-					{/* <div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
-						{workspace}
-					</div>
-					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
-						<ButtonGroup className="rounded-md bg-background">
-							{ENABLE_ATTACHMENT && (
+						{!isLoading && (
+							<MentionPlugin
+								trigger="/"
+								MenuComponent={({
+									isOpen,
+									onOpenChange,
+									menuPosition,
+									addToken,
+								}) => (
+									<DropdownMenu
+										open={isOpen}
+										onOpenChange={onOpenChange}
+									>
+										<DropdownMenuTrigger
+											style={{
+												position: "fixed",
+												top: menuPosition.top,
+												left: menuPosition.left,
+												width: 0,
+												height: 0,
+											}}
+										/>
+										<DropdownMenuContent
+											align="start"
+											className="w-72"
+										>
+											<MenuComponent
+												isOpen={isOpen}
+												onOpenChange={onOpenChange}
+												fileRef={fileRef}
+												addToken={addToken}
+											/>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								)}
+							/>
+						)}
+					</LexicalComposer>
+					{!isLoading && (
+						<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
+							<DropdownMenu
+								open={menuOpen}
+								onOpenChange={setMenuOpen}
+							>
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<Button
-											aria-label="Attach Documents"
-											disabled={isLoading}
-											variant="ghost"
-											size="icon-sm"
-											onClick={() => {
-												fileRef.current?.click();
-											}}
-										>
-											<PaperclipIcon />
-										</Button>
+										<DropdownMenuTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												disabled={isLoading}
+												aria-label="Open settings"
+											>
+												<SlidersHorizontalIcon />
+											</Button>
+										</DropdownMenuTrigger>
 									</TooltipTrigger>
 									<TooltipContent>
-										Attach Document
+										Open settings
 									</TooltipContent>
 								</Tooltip>
-							)}
-
-							{configuration}
+								<DropdownMenuContent
+									align="start"
+									className="w-72"
+								>
+									<MenuComponent
+										isOpen={menuOpen}
+										onOpenChange={setMenuOpen}
+										fileRef={fileRef}
+										addToken={() => null}
+									/>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					)}
+					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
+						<div className="flex flex-row items-center gap-1">
+							<EngineSelect
+								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+								name={model?.app_name || ""}
+								value={model?.app_id || ""}
+								engineTypes={["MODEL"]}
+								metaFilters={[{ tag: "text-generation" }]}
+								onChange={(v) => {
+									setModel(v);
+								}}
+								popoverContentProps={{
+									align: "start",
+								}}
+							/>
 
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -490,7 +561,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									{isListening ? "Stop Recording" : "Record"}
 								</TooltipContent>
 							</Tooltip>
-						</ButtonGroup>
+						</div>
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<span>

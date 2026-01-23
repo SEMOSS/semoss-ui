@@ -34,9 +34,9 @@ import {
 	InputMessageStore,
 	type ResponseMessageStore,
 	type RoomStore,
-	RootMessageStore,
 } from "@/stores";
 import { AppLogo } from "../common";
+import { RoomInlineTool } from "../room/room-inline-tool";
 import { ResponseMessageTool } from "./response-message-tool";
 
 const THINKING_MARKDOWN_COMPONENTS = {
@@ -229,13 +229,27 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						{message.text}
 					</Markdown>
 				) : null}
-				{message.tools.map((t) => (
-					<ResponseMessageTool
-						key={`tool-${t.id}`}
-						message={message}
-						tool={t}
-					/>
-				))}
+				{message.tools.map((t) => {
+					const isInlineToolOpen = room.isInlineToolOpen(
+						`message-${message.id}-tool-${t.id}`,
+					);
+
+					return (
+						<div
+							key={`tool-${t.id}`}
+							className="flex flex-col gap-2"
+						>
+							<ResponseMessageTool message={message} tool={t} />
+							{isInlineToolOpen && (
+								<RoomInlineTool
+									room={room}
+									message={message}
+									tool={t}
+								/>
+							)}
+						</div>
+					);
+				})}
 				{areToolsActive && (
 					<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
 						<CircleAlert className="size-4" />
@@ -300,8 +314,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							<TooltipTrigger asChild>
 								<Button
 									disabled={
-										inputMessage.parent instanceof
-											RootMessageStore ||
+										!inputMessage.parent?.parent ||
 										message.room.mode === "executing"
 									}
 									variant="ghost"
