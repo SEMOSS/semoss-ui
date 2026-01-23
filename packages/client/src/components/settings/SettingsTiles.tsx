@@ -183,6 +183,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 					type === "STORAGE" ||
 					type === "MODEL" ||
 					type === "VECTOR" ||
+					type === "GUARDRAIL" ||
 					type === "FUNCTION"
 					? `DeleteEngine(engine=['${id}']);`
 					: type === "PROJECT"

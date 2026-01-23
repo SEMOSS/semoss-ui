@@ -34,7 +34,7 @@ export const FileExplorerMenuItem: React.FC<FileExplorerMenuItemProps> = ({
 					// run it
 					await action(item);
 				} catch (e) {
-					toast.error(e);
+					toast.error(e.message);
 					console.error(e);
 				} finally {
 					setIsLoading(false);
