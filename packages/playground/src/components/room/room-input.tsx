@@ -1,44 +1,53 @@
-import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
-import { LexicalComposer } from "@lexical/react/LexicalComposer";
-import { ContentEditable } from "@lexical/react/LexicalContentEditable";
-import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
-import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
-import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
-import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
-import {
-	$createParagraphNode,
-	$createTextNode,
-	$getRoot,
-	type LexicalEditor,
-} from "lexical";
-import {
-	FileAudio2Icon,
-	FileIcon,
-	FileType2Icon,
-	FileVideoCameraIcon,
-	MicIcon,
-	PaperclipIcon,
-	SendIcon,
-	SparklesIcon,
-	XIcon,
-} from "lucide-react";
+// import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
+// import { LexicalComposer } from "@lexical/react/LexicalComposer";
+// import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+// import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
+// import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+// import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+// import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+// import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
+// import {
+// 	$createParagraphNode,
+// 	$createTextNode,
+// 	$getRoot,
+// 	type LexicalEditor,
+// } from "lexical";
+// import {
+// 	FileAudio2Icon,
+// 	FileIcon,
+// 	FileType2Icon,
+// 	FileVideoCameraIcon,
+// 	MicIcon,
+// 	PaperclipIcon,
+// 	SendIcon,
+// 	SparklesIcon,
+// 	XIcon,
+// } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react"; //useEffect, useRef,
+// import {
+// 	Button,
+// 	ButtonGroup,
+// 	cn,
+// 	Spinner,
+// 	Tooltip,
+// 	TooltipContent,
+// 	TooltipTrigger,
+// 	toast,
+// } from "@semoss/ui/next";
+// import { EnterPlugin, FocusPlugin } from "@/components";
 import {
-	Button,
-	ButtonGroup,
-	cn,
-	Spinner,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-	toast,
-} from "@semoss/ui/next";
-import { EnterPlugin, FocusPlugin } from "@/components";
+	MetricsDashboard,
+	OptimizeDialog,
+	PromptInputWrapper,
+	SettingsPanel,
+	TemplateLibrary,
+} from "@/components/PromptAssist";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { usePromptAssist } from "@/hooks/usePromptAssist";
 
-const ENABLE_ATTACHMENT = import.meta.env.VITE_ENABLE_ATTACHMENT === "true";
+// const ENABLE_ATTACHMENT = import.meta.env.VITE_ENABLE_ATTACHMENT === "true";
 
 interface RoomInputProps {
 	/** Classes to override */
@@ -77,188 +86,245 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		hasOutstandingTools = false,
 		hideLoadingSpinner = false,
 	}) => {
-		const [isEmpty, setIsEmpty] = useState(true);
+		// const [isEmpty, setIsEmpty] = useState(true);
 
-		const editorRef = useRef<LexicalEditor>(null);
-		const fileRef = useRef<HTMLInputElement>(null);
+		// const editorRef = useRef<LexicalEditor>(null);
+		// const fileRef = useRef<HTMLInputElement>(null);
 
-		const [isDragging, setIsDragging] = useState(false);
-		const [files, setFiles] = useState<File[]>([]);
+		// const [isDragging, setIsDragging] = useState(false);
+		// const [files, setFiles] = useState<File[]>([]);
 
-		const [canListen, setCanListen] = useState(false);
-		const [isListening, setIsListening] = useState(false);
+		// const [canListen, setCanListen] = useState(false);
+		// const [isListening, setIsListening] = useState(false);
 
-		const recognitionRef = useRef<SpeechRecognition | null>(null);
+		// const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-		useEffect(() => {
-			// Check if Speech Recognition is supported
-			const SpeechRecognition =
-				window.SpeechRecognition || window.webkitSpeechRecognition;
+		// useEffect(() => {
+		// 	// Check if Speech Recognition is supported
+		// 	const SpeechRecognition =
+		// 		window.SpeechRecognition || window.webkitSpeechRecognition;
 
-			if (SpeechRecognition) {
-				setCanListen(true);
+		// 	if (SpeechRecognition) {
+		// 		setCanListen(true);
 
-				const recognition = new SpeechRecognition();
-				recognition.continuous = true;
-				recognition.interimResults = true;
-				recognition.lang = "en-US";
+		// 		const recognition = new SpeechRecognition();
+		// 		recognition.continuous = true;
+		// 		recognition.interimResults = true;
+		// 		recognition.lang = "en-US";
 
-				recognition.onstart = () => {
-					setIsListening(true);
-				};
+		// 		recognition.onstart = () => {
+		// 			setIsListening(true);
+		// 		};
 
-				recognition.onresult = (event) => {
-					let transcript = "";
+		// 		recognition.onresult = (event) => {
+		// 			let transcript = "";
 
-					// get the final ones
-					for (
-						let i = event.resultIndex;
-						i < event.results.length;
-						i++
-					) {
-						if (event.results[i].isFinal) {
-							transcript += event.results[i][0].transcript;
-						}
-					}
+		// 			// get the final ones
+		// 			for (
+		// 				let i = event.resultIndex;
+		// 				i < event.results.length;
+		// 				i++
+		// 			) {
+		// 				if (event.results[i].isFinal) {
+		// 					transcript += event.results[i][0].transcript;
+		// 				}
+		// 			}
 
-					// trim to manually handle spaces
-					transcript = transcript.trim();
-					if (transcript) {
-						editorRef.current?.update(() => {
-							const root = $getRoot();
-							const currentText = root.getTextContent();
+		// 			// trim to manually handle spaces
+		// 			transcript = transcript.trim();
+		// 			if (transcript) {
+		// 				editorRef.current?.update(() => {
+		// 					const root = $getRoot();
+		// 					const currentText = root.getTextContent();
 
-							// clear existing content
-							root.clear();
+		// 					// clear existing content
+		// 					root.clear();
 
-							// create new paragraph with combined text
-							const paragraphNode = $createParagraphNode();
-							const textNode = $createTextNode(
-								currentText
-									? `${currentText} ${transcript}`
-									: transcript,
-							);
-							paragraphNode.append(textNode);
-							root.append(paragraphNode);
-						});
-					}
-				};
+		// 					// create new paragraph with combined text
+		// 					const paragraphNode = $createParagraphNode();
+		// 					const textNode = $createTextNode(
+		// 						currentText
+		// 							? `${currentText} ${transcript}`
+		// 							: transcript,
+		// 					);
+		// 					paragraphNode.append(textNode);
+		// 					root.append(paragraphNode);
+		// 				});
+		// 			}
+		// 		};
 
-				recognition.onerror = (event) => {
-					console.error(event);
+		// 		recognition.onerror = (event) => {
+		// 			console.error(event);
 
-					// turn off and focus on element
-					setIsListening(false);
-					editorRef.current?.focus();
-				};
+		// 			// turn off and focus on element
+		// 			setIsListening(false);
+		// 			editorRef.current?.focus();
+		// 		};
 
-				recognition.onend = () => {
-					// turn off and focus on element
-					setIsListening(false);
-					editorRef.current?.focus();
-				};
+		// 		recognition.onend = () => {
+		// 			// turn off and focus on element
+		// 			setIsListening(false);
+		// 			editorRef.current?.focus();
+		// 		};
 
-				recognitionRef.current = recognition;
-			} else {
-				setCanListen(false);
-			}
+		// 		recognitionRef.current = recognition;
+		// 	} else {
+		// 		setCanListen(false);
+		// 	}
 
-			return () => {
-				recognitionRef.current?.stop();
-			};
-		}, []);
+		// 	return () => {
+		// 		recognitionRef.current?.stop();
+		// 	};
+		// }, []);
 
-		// update editable
-		useEffect(() => {
-			editorRef.current?.setEditable(!isLoading);
-		}, [isLoading]);
+		// // update editable
+		// useEffect(() => {
+		// 	editorRef.current?.setEditable(!isLoading);
+		// }, [isLoading]);
 
-		/**
-		 * Prompt the model
-		 *
-		 * @param - input
-		 */
-		const promptModel = async () => {
-			let success = false;
+		// /**
+		//  * Prompt the model
+		//  *
+		//  * @param - input
+		//  */
+		// const promptModel = async () => {
+		// 	let success = false;
 
-			// store old options
+		// 	// store old options
 
-			let userInput = "";
-			editorRef.current?.getEditorState().read(() => {
-				const root = $getRoot();
-				userInput = root.getTextContent();
-			});
+		// 	let userInput = "";
+		// 	editorRef.current?.getEditorState().read(() => {
+		// 		const root = $getRoot();
+		// 		userInput = root.getTextContent();
+		// 	});
 
-			const userFiles = files;
+		// 	const userFiles = files;
 
-			// skip if there is no input, if loading, or if there are outstanding tools
-			if (!userInput || isLoading || hasOutstandingTools) {
-				return;
-			}
+		// 	// skip if there is no input, if loading, or if there are outstanding tools
+		// 	if (!userInput || isLoading || hasOutstandingTools) {
+		// 		return;
+		// 	}
 
-			try {
-				// clear out the input components
-				success = await onPrompt(userInput, userFiles);
-				if (!success) {
-					throw new Error(`Error processing chat`);
+		// 	try {
+		// 		// clear out the input components
+		// 		success = await onPrompt(userInput, userFiles);
+		// 		if (!success) {
+		// 			throw new Error(`Error processing chat`);
+		// 		}
+		// 	} catch (e) {
+		// 		toast.error(e.message);
+		// 	} finally {
+		// 		if (success) {
+		// 			// clear the files
+		// 			setFiles([]);
+
+		// 			// reset the view
+		// 			editorRef.current?.update(() => {
+		// 				const root = $getRoot();
+		// 				root.clear();
+
+		// 				const paragraphNode = $createParagraphNode();
+		// 				root.append(paragraphNode);
+		// 			});
+		// 		}
+		// 	}
+		// };
+
+		// /**
+		//  * Get an image for the file
+		//  */
+		// const getFileImage = (file: File): React.ReactNode => {
+		// 	if (file.type.startsWith("image/")) {
+		// 		const imageUrl = URL.createObjectURL(file);
+		// 		return (
+		// 			<img
+		// 				className="width-100"
+		// 				src={imageUrl}
+		// 				alt={file.name}
+		// 				onLoad={() => URL.revokeObjectURL(imageUrl)}
+		// 			/>
+		// 		);
+		// 	} else if (
+		// 		file.type.includes("text") ||
+		// 		file.type.includes("document")
+		// 	) {
+		// 		return (
+		// 			<FileType2Icon className="size-6 text-muted-foreground" />
+		// 		);
+		// 	} else if (file.type.includes("audio")) {
+		// 		return (
+		// 			<FileAudio2Icon className="size-6 text-muted-foreground" />
+		// 		);
+		// 	} else if (file.type.includes("video")) {
+		// 		return (
+		// 			<FileVideoCameraIcon className="size-6 text-muted-foreground" />
+		// 		);
+		// 	}
+
+		// 	return <FileIcon className="size-6 text-muted-foreground" />;
+		// };
+		const [prompt, setPrompt] = useState("");
+		const [showOptimizeDialog, setShowOptimizeDialog] = useState(false);
+		const promptAssistStore = usePromptAssist();
+
+		// Keyboard shortcuts
+		useKeyboardShortcuts({
+			onOptimize: () => {
+				if (prompt && prompt.length >= 10) {
+					setShowOptimizeDialog(true);
 				}
-			} catch (e) {
-				toast.error(e.message);
-			} finally {
-				if (success) {
-					// clear the files
-					setFiles([]);
-
-					// reset the view
-					editorRef.current?.update(() => {
-						const root = $getRoot();
-						root.clear();
-
-						const paragraphNode = $createParagraphNode();
-						root.append(paragraphNode);
-					});
+			},
+			onUndo: () => {
+				const previous = promptAssistStore.undo();
+				if (previous !== null) {
+					setPrompt(previous);
 				}
-			}
-		};
+			},
+			onRedo: () => {
+				const next = promptAssistStore.redo();
+				if (next !== null) {
+					setPrompt(next);
+				}
+			},
+			onToggleAssist: () => {
+				promptAssistStore.setEnabled(!promptAssistStore.config.enabled);
+			},
+		});
 
-		/**
-		 * Get an image for the file
-		 */
-		const getFileImage = (file: File): React.ReactNode => {
-			if (file.type.startsWith("image/")) {
-				const imageUrl = URL.createObjectURL(file);
-				return (
-					<img
-						className="width-100"
-						src={imageUrl}
-						alt={file.name}
-						onLoad={() => URL.revokeObjectURL(imageUrl)}
-					/>
-				);
-			} else if (
-				file.type.includes("text") ||
-				file.type.includes("document")
-			) {
-				return (
-					<FileType2Icon className="size-6 text-muted-foreground" />
-				);
-			} else if (file.type.includes("audio")) {
-				return (
-					<FileAudio2Icon className="size-6 text-muted-foreground" />
-				);
-			} else if (file.type.includes("video")) {
-				return (
-					<FileVideoCameraIcon className="size-6 text-muted-foreground" />
-				);
-			}
-
-			return <FileIcon className="size-6 text-muted-foreground" />;
+		const handleSubmit = () => {
+			if (!prompt.trim()) return;
+			// Submit logic here
+			console.log("Submitting prompt:", prompt);
+			promptAssistStore.addToHistory(prompt);
 		};
 
 		return (
 			<>
-				<div className="relative w-full">
-					<input
+				<div className="relative w-full space-y-4">
+					{/* Metrics Dashboard with Templates and Settings - Single Row */}
+					<div className="mb-2 flex items-center justify-between gap-3">
+						{promptAssistStore.config.enabled && prompt ? (
+							<MetricsDashboard store={promptAssistStore} />
+						) : (
+							<div />
+						)}
+						<div className="flex items-center gap-2">
+							<TemplateLibrary onSelect={setPrompt} />
+							<SettingsPanel store={promptAssistStore} />
+						</div>
+					</div>
+
+					{/* Prompt Input with embedded buttons */}
+					<PromptInputWrapper
+						value={prompt}
+						onChange={setPrompt}
+						onSubmit={handleSubmit}
+						promptAssistStore={promptAssistStore}
+						showOptimizeButton={true}
+						onOptimize={() => setShowOptimizeDialog(true)}
+						placeholder="Enter your prompt... (Cmd+Shift+O to optimize)"
+					/>
+					{/* <input
 						ref={fileRef}
 						type="file"
 						multiple={true}
@@ -268,8 +334,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							const updated = Array.from(e.target.files);
 							setFiles((prev) => [...prev, ...updated]);
 						}}
-					/>
-					<LexicalComposer
+					/> */}
+					{/* <LexicalComposer
 						initialConfig={{
 							namespace: "RoomInput",
 							theme: {},
@@ -370,8 +436,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<EditorRefPlugin editorRef={editorRef} />
 						<EnterPlugin onEnter={() => promptModel()} />
 						{plugins}
-					</LexicalComposer>
-					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
+					</LexicalComposer> */}
+					{/* <div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
 						{workspace}
 					</div>
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
@@ -461,9 +527,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								})()}
 							</TooltipContent>
 						</Tooltip>
-					</div>
+					</div> */}
 				</div>
-				{files.length > 0 ? (
+				{/* {files.length > 0 ? (
 					<div className="flex flex-row items-center gap-2 pt-4">
 						{files.map((f, fIdx) => {
 							const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
@@ -497,7 +563,15 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							);
 						})}
 					</div>
-				) : null}
+				) : null} */}
+				{/* Optimize Dialog */}
+				<OptimizeDialog
+					original={prompt}
+					open={showOptimizeDialog}
+					onClose={() => setShowOptimizeDialog(false)}
+					onApply={setPrompt}
+					promptAssistStore={promptAssistStore}
+				/>
 			</>
 		);
 	},

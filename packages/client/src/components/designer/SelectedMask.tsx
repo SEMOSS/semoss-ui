@@ -361,7 +361,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 	}, [designer.drag.active, local, handleDocumentMouseUp]);
 
 	if (!size) {
-		return <></>;
+		return <div/>;
 	}
 
 	if (designer.selectedBlocks.length > 1) {

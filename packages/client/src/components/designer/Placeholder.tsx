@@ -72,7 +72,7 @@ export const Placeholder = observer(() => {
 
 	// get the placeholder information
 	if (!designer.drag.placeholderAction || !designer.drag.placeholderSize) {
-		return <></>;
+		return <div/>;
 	}
 
 	return (
