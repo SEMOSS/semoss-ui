@@ -358,77 +358,106 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 											);
 											const isSelected =
 												tabNode.isSelected();
-											if (item?.icon?.component) {
+	
+										// Base test ID without suffix
+										const baseDataTestId =
+											formatToDataTestId(
+												`workspace-${tabNode.getName()}`,
+											);
+
+										// Ref callback to set data-testid based on ghost/original state
+										const DynamicDataTestId = (
+											el: HTMLElement | null,
+										) => {
+											if (el) {
+												// Check if this is a ghost/preview element during drag
+												const parent = el.parentElement;
+												const grandParent =
+													parent?.parentElement;
+
+												const isGhost =
+													parent?.classList.contains(
+														"flexlayout__tab_button_stamp",
+													) ||
+													grandParent?.classList.contains(
+														"flexlayout__tab_button_stamp",
+													);
+
+												// Determine suffix: ghost for drag preview, image for original
+												const suffix = isGhost
+													? "ghost"
+													: "image";
+												el.setAttribute(
+													"data-testid",
+													`${baseDataTestId}-${suffix}`,
+												);
+											}
+										};
+
+										if (item?.icon?.component) {
 												const Icon =
 													item.icon.component;
 
-												renderValues.content = (
-													<Tooltip
-														title={
-															item.icon.tooltip
-														}
+											renderValues.content = (
+												<Tooltip
+													title={item.icon.tooltip}
+												>
+													<IconButton
+														size={"small"}
+														color="default"
+														ref={DynamicDataTestId}
 													>
-														<IconButton
-															size={"small"}
-															color="default"
-															data-testId={formatToDataTestId(
-																`workspace-${tabNode.getName()}`,
-															)}
-														>
-															<Icon
-																color={
-																	isSelected
-																		? "primary"
-																		: "inherit"
-																}
-																fontSize="inherit"
-															/>
-														</IconButton>
-													</Tooltip>
-												);
-											} else if (item?.icon) {
-												const iconSrc = isSelected
-													? item.icon.active
-													: item.icon.default;
-												renderValues.content = (
-													<StyledLetTabImage
-														src={iconSrc}
-														alt={tabNode.getName()}
-														data-testId={formatToDataTestId(
-															`workspace-${tabNode.getName()}`,
-														)}
-													/>
-												);
-											}
-											return renderValues;
-										}}
-									/>
-									<StyledActions
-										direction="column"
-										justifyContent={"center"}
-									>
-										<Tooltip title={"Reset workspace"}>
-											<IconButton
-												size={"small"}
-												color="default"
-												onClick={() => {
-													resetWorkspace();
-												}}
-											>
-												<RestartAlt fontSize="inherit" />
-											</IconButton>
-										</Tooltip>
-									</StyledActions>
-								</>
-							) : null}
-						</StyledSpacer>
-					</StyledContent>
-				</StyledMain>
-				<WorkspaceOverlay />
-			</>
-		);
-	},
-);
+														<Icon
+															color={
+																isSelected
+																	? "primary"
+																	: "inherit"
+															}
+															fontSize="inherit"
+														/>
+													</IconButton>
+												</Tooltip>
+											);
+										} else if (item?.icon) {
+											const iconSrc = isSelected
+												? item.icon.active
+												: item.icon.default;
+											renderValues.content = (
+												<StyledLetTabImage
+													src={iconSrc}
+													alt={tabNode.getName()}
+													ref={DynamicDataTestId}
+												/>
+											);
+										}
+										return renderValues;
+									}}
+								/>
+								<StyledActions
+									direction="column"
+									justifyContent={"center"}
+								>
+									<Tooltip title={"Reset workspace"}>
+										<IconButton
+											size={"small"}
+											color="default"
+											onClick={() => {
+												resetWorkspace();
+											}}
+										>
+											<RestartAlt fontSize="inherit" />
+										</IconButton>
+									</Tooltip>
+								</StyledActions>
+							</>
+						) : null}
+					</StyledSpacer>
+				</StyledContent>
+			</StyledMain>
+			<WorkspaceOverlay />
+		</>
+	);
+});
 
 // NOTES: WE HAVE TO FIX ALOT HERE.
 // The code specific to blocks apps should not be here.
