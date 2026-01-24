@@ -173,11 +173,20 @@ export const NewRoomPage = observer(() => {
 			// set the mode
 			room.setMode(mode.type === "plan" ? "planning" : "chat");
 
-			// update the options
-			await room.updateRoomOptions({
+			const updated = {
 				...options,
 				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
-			});
+			};
+
+			// add workspace id
+			if (mode.type === "workspace" && mode.workspace) {
+				updated.workspace = {
+					workspace_id: mode.workspace.project_id,
+				};
+			}
+
+			// update the options
+			await room.updateRoomOptions(updated);
 
 			// ask the room
 			room.askMessage(prompt, files);
