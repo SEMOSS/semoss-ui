@@ -385,17 +385,7 @@ paramValues=[${JSON.stringify({
 		});
 
 		// Update room options with current modelId before running message
-		const optionsToSave = {
-			...room.options,
-			modelId: room.model.app_id,
-			mcp: room.options.mcp.filter((mcp) => !mcp?.fromWorkspace),
-		};
-
-		await room.runRoomPixel(
-			`UpdateRoomOptions(roomId=${JSON.stringify(room.roomId)}, roomOptions=[${JSON.stringify(
-				optionsToSave,
-			)}]);`,
-		);
+		await room.updateRoomOptions(room.options);
 
 		grandParentMessage.runMessage(rewrittenMessage);
 	};
