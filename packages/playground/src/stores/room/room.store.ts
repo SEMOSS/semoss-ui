@@ -462,6 +462,7 @@ export class RoomStore {
 						modelName: this._store.model?.app_name || "",
 					},
 					dateCreated: new Date().toISOString(),
+					tokens: 0,
 				} as ResponseTextPixelMessage);
 			} else if (this.mode === "planning") {
 				root = new PlanMessageStore(this, {
@@ -479,6 +480,7 @@ export class RoomStore {
 						modelName: this._store.model?.app_name || "",
 					},
 					dateCreated: new Date().toISOString(),
+					tokens: 0,
 				} as ResponseTextPixelMessage);
 			}
 
