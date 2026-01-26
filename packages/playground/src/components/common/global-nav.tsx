@@ -36,12 +36,15 @@ import {
 	useInfiniteScroll,
 	useSidebar,
 } from "@semoss/ui/next";
+import PromptIcon from "@/assets/img/Prompt_Library_Default.svg";
 import { useChat, useRoot } from "@/hooks";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
 
 const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
+const ENABLE_PROMPT_LIBRARY =
+	import.meta.env.VITE_ENABLE_PROMPT_LIBRARY === "true";
 
 const BUCKETS = [
 	"Today",
@@ -198,7 +201,28 @@ export const GlobalNav = observer(() => {
 							</Link>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
-
+					{ENABLE_PROMPT_LIBRARY && (
+						<SidebarMenuItem>
+							<SidebarMenuButton
+								asChild
+								isActive={
+									!!matchPath("/prompt-library", pathname)
+								}
+							>
+								<Link
+									to={"/prompt-library"}
+									aria-label={"Prompt Library"}
+								>
+									<img
+										src={PromptIcon}
+										alt="Prompt Library"
+										// className="mr-2 h-4 w-4"
+									/>
+									Prompt Library
+								</Link>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					)}
 					{ENABLE_WORKSPACE && (
 						<SidebarMenuItem>
 							<SidebarMenuButton
