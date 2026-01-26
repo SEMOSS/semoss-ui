@@ -1,81 +1,66 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+// ============================================
+// CONFIGURATION
+// ============================================
+const CHARS_PER_FRAME = 3; // Characters to reveal per animation frame
+const DEBOUNCE_MS = 8; // Batch updates when content streams too fast (125fps throttle)
+const MAX_BACKTRACK = 40; // Maximum characters to walk back for syntax safety
 
 // ============================================
 // SYNTAX-AWARE SAFE INDEX FINDER
 // ============================================
-const TICK_CHARS = 2;
-const TICK_MS = 25;
 const INCOMPLETE_MARKDOWN_PATTERNS: RegExp[] = [
-	// Code blocks (must check first - triple backticks)
 	/```[\s\S]*$/, // Unclosed code block
-
-	// Inline code
 	/`[^`]*$/, // Unclosed inline code
-
-	// Bold/Italic (asterisks)
 	/\*\*[^*]+$/, // Unclosed bold **
 	/(?<!\*)\*[^*]+$/, // Unclosed italic *
-
-	// Bold/Italic (underscores)
 	/__[^_]+$/, // Unclosed bold __
 	/(?<!_)_[^_\s][^_]*$/, // Unclosed italic _
-
-	// Links and images
 	/\[(?:[^\]]*)$/, // Unclosed link text [
 	/\]\([^)]*$/, // Unclosed link URL ](
 	/!\[(?:[^\]]*)$/, // Unclosed image alt ![
-
-	// Strikethrough
 	/~~[^~]+$/, // Unclosed strikethrough
 ];
 
 /**
- * Test if the given text has any incomplete markdown syntax.
- * @param text - the text to test
- * @returns true if incomplete markdown syntax is found, false otherwise
+ * Test if text has incomplete markdown syntax using early-exit matching.
  */
 function hasIncompleteMarkdown(text: string): boolean {
-	return INCOMPLETE_MARKDOWN_PATTERNS.some((pattern) => pattern.test(text));
+	for (const pattern of INCOMPLETE_MARKDOWN_PATTERNS) {
+		if (pattern.test(text)) return true;
+	}
+	return false;
 }
 
 /**
- * Find a safe index to cut off markdown text without leaving incomplete syntax.
- * @param fullText - the full markdown text
- * @param targetIndex - the desired cut-off index
- * @returns
+ * Find safe index using binary search + validation for faster backtracking.
  */
 function findSafeIndex(fullText: string, targetIndex: number): number {
-	// Don't exceed what we have
 	targetIndex = Math.min(targetIndex, fullText.length);
 
-	let candidate = targetIndex;
-
-	// Check if current slice has incomplete markdown
-	while (
-		candidate > 0 &&
-		hasIncompleteMarkdown(fullText.slice(0, candidate))
-	) {
-		// Walk back to find where the incomplete syntax started
-		candidate--;
+	// Fast path: if current position is safe, return it
+	if (!hasIncompleteMarkdown(fullText.slice(0, targetIndex))) {
+		return targetIndex;
 	}
 
-	// If we walked back too far (more than 50 chars),
-	// just use word boundary instead
-	if (targetIndex - candidate > 50) {
-		candidate = targetIndex;
-		// Find last safe word boundary
-		const slice = fullText.slice(0, targetIndex);
-		const lastSpace = Math.max(
-			slice.lastIndexOf(" "),
-			slice.lastIndexOf("\n"),
-		);
-		if (lastSpace > targetIndex - 20) {
-			candidate = lastSpace + 1;
+	// Binary search backwards to find safe point
+	let left = Math.max(0, targetIndex - MAX_BACKTRACK);
+	let right = targetIndex;
+	let safeIndex = left;
+
+	while (left <= right) {
+		const mid = Math.floor((left + right) / 2);
+		if (hasIncompleteMarkdown(fullText.slice(0, mid))) {
+			right = mid - 1;
+		} else {
+			safeIndex = mid;
+			left = mid + 1;
 		}
 	}
 
-	// Never go backwards from what's already displayed
-	return Math.max(1, candidate);
+	// Never go backwards
+	return Math.max(1, safeIndex);
 }
 
 interface UseMarkdownTypewriterReturn {
@@ -93,59 +78,100 @@ export function useMarkdownTypewriter(
 	const [renderedLength, setRenderedLength] = useState<number>(0);
 	const [isRunning, setIsRunning] = useState<boolean>(false);
 	const contentRef = useRef<string>(content);
+	const rafRef = useRef<number | null>(null);
+	const lastUpdateRef = useRef<number>(0);
+	const pendingCharsRef = useRef<number>(0);
 
 	// Keep content ref updated
 	useEffect(() => {
-		// reset if the content has a different start
 		const prev = contentRef.current;
 		if (!content.startsWith(prev) || content.length < prev.length) {
 			setRenderedLength(0);
 			setIsRunning(false);
 		}
-
 		contentRef.current = content;
 	}, [content]);
 
-	// Typewriter interval
+	// Memoize rendered string to prevent re-slicing
+	const rendered = useMemo(() => {
+		return content.slice(0, renderedLength);
+	}, [content, renderedLength]);
+
+	// requestAnimationFrame-based typewriter for smooth 60fps animation
 	useEffect(() => {
 		if (!isRunning) {
+			if (rafRef.current !== null) {
+				cancelAnimationFrame(rafRef.current);
+				rafRef.current = null;
+			}
 			return;
 		}
 
-		const interval = setInterval(() => {
+		const animate = (currentTime: number) => {
+			// Debounce updates based on elapsed time
+			if (currentTime - lastUpdateRef.current < DEBOUNCE_MS) {
+				rafRef.current = requestAnimationFrame(animate);
+				return;
+			}
+
+			lastUpdateRef.current = currentTime;
+			pendingCharsRef.current += CHARS_PER_FRAME;
+
 			setRenderedLength((prev) => {
 				const fullText = contentRef.current;
+				const target = prev + Math.floor(pendingCharsRef.current);
+				pendingCharsRef.current = 0;
 
-				if (prev >= fullText.length) {
-					return prev; // Caught up, wait for more content
+				if (target >= fullText.length) {
+					return fullText.length; // Caught up
 				}
 
-				// Calculate target (raw increment)
-				const rawTarget = prev + TICK_CHARS;
-
 				// Find syntax-safe index
-				const safeIndex = findSafeIndex(fullText, rawTarget);
+				const safeIndex = findSafeIndex(fullText, target);
 
-				// Ensure we always make progress
+				// Always progress at least 1 character
 				return Math.max(prev + 1, safeIndex);
 			});
-		}, TICK_MS);
 
-		return () => clearInterval(interval);
+			rafRef.current = requestAnimationFrame(animate);
+		};
+
+		rafRef.current = requestAnimationFrame(animate);
+
+		return () => {
+			if (rafRef.current !== null) {
+				cancelAnimationFrame(rafRef.current);
+				rafRef.current = null;
+			}
+		};
 	}, [isRunning]);
 
+	const start = useCallback(() => {
+		lastUpdateRef.current = performance.now();
+		pendingCharsRef.current = 0;
+		setIsRunning(true);
+	}, []);
+
+	const stop = useCallback(() => {
+		setIsRunning(false);
+	}, []);
+
+	const skipToEnd = useCallback(() => {
+		setRenderedLength(content.length);
+		setIsRunning(false);
+	}, [content]);
+
+	const reset = useCallback(() => {
+		setRenderedLength(0);
+		setIsRunning(false);
+	}, []);
+
 	return {
-		rendered: content.slice(0, renderedLength),
+		rendered,
 		isTyping: isRunning && renderedLength < content.length,
-		start: () => setIsRunning(true),
-		stop: () => setIsRunning(false),
-		skipToEnd: () => {
-			setRenderedLength(content.length);
-			setIsRunning(false);
-		},
-		reset: () => {
-			setRenderedLength(0);
-			setIsRunning(false);
-		},
+		start,
+		stop,
+		skipToEnd,
+		reset,
 	};
 }

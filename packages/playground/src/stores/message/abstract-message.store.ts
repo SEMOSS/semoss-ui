@@ -12,6 +12,11 @@ export abstract class AbstractMessageStore {
 	id: string = "";
 
 	/**
+	 * Unique react key for the message. Only should be used to render.
+	 */
+	readonly key: string;
+
+	/**
 	 * Is the message visible to the user
 	 */
 	visible: boolean = false;
@@ -62,6 +67,9 @@ export abstract class AbstractMessageStore {
 	 */
 	constructor(room: RoomStore, message: AbstractPixelMessage) {
 		this.room = room;
+
+		// set the key
+		this.key = `room-${room.roomId}-${Date.now()}-${Math.floor(Math.random() * 100000000)}`;
 
 		this.id = message.messageId;
 		this.visible = message.visible;
