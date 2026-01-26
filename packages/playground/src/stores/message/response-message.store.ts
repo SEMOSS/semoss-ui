@@ -219,22 +219,10 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	/**
 	 * Run a new user message and receive a response with streaming
 	 * @param inputMessage - input message to send
-	 * @param optionsToSave - optional room options to save before running the message
 	 */
-	runMessage = async (
-		inputMessage: InputMessageStore,
-		optionsToSave?: Record<string, unknown>,
-	) => {
+	runMessage = async (inputMessage: InputMessageStore) => {
 		const room = this.room;
 
-		// Update room options if provided
-		if (optionsToSave) {
-			await room.runRoomPixel(
-				`UpdateRoomOptions(roomId=${JSON.stringify(room.roomId)}, roomOptions=[${JSON.stringify(
-					optionsToSave,
-				)}]);`,
-			);
-		}
 		// Create a placeholder response message to show streaming content
 		const responseMessage = new ResponseMessageStore(room, {
 			messageId: "STREAMING_PLACEHOLDER_ID",
@@ -396,13 +384,20 @@ paramValues=[${JSON.stringify({
 			dateCreated: "",
 		});
 
+		// Update room options with current modelId before running message
 		const optionsToSave = {
 			...room.options,
 			modelId: room.model.app_id,
 			mcp: room.options.mcp.filter((mcp) => !mcp?.fromWorkspace),
 		};
 
-		grandParentMessage.runMessage(rewrittenMessage, optionsToSave);
+		await room.runRoomPixel(
+			`UpdateRoomOptions(roomId=${JSON.stringify(room.roomId)}, roomOptions=[${JSON.stringify(
+				optionsToSave,
+			)}]);`,
+		);
+
+		grandParentMessage.runMessage(rewrittenMessage);
 	};
 
 	/**

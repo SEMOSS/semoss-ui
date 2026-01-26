@@ -609,7 +609,7 @@ export class RoomStore {
 			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
 			const optionsToSave = {
 				...options,
-				modelId: this._store.modelId,
+				modelId: this._store.model.app_id,
 				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
 			};
 
