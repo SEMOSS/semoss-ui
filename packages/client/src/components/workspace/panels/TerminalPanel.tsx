@@ -56,7 +56,7 @@ export const TerminalPanel: React.FC = observer(() => {
 	const notification = useNotification();
 
 	const [history, setHistory] = useState<TerminalProps["history"]>([]);
-	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [_isLoading, setIsLoading] = useState<boolean>(false);
 	const { workspace } = useWorkspace();
 	const { monolithStore } = useRootStore();
 
@@ -147,7 +147,7 @@ export const TerminalPanel: React.FC = observer(() => {
 						(data as unknown)?.GeneralReactors || [];
 				}
 			})
-			.catch((err) => {
+			.catch((_err) => {
 				suggesstionsList.current = [];
 			});
 	}, [language]);
@@ -172,7 +172,7 @@ export const TerminalPanel: React.FC = observer(() => {
 			} else if (language === "SHELL") {
 				pixel = `Command("<encode>${cleaned}</encode>");`;
 			} else if (language === "PYTHON") {
-				pixel = `Py("<encode>${cleaned}</encode>");`;
+				pixel = `Py(code="<encode>${cleaned}</encode>", logs=true);`;
 			}
 
 			// run the pixel
