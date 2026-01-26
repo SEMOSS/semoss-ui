@@ -52,6 +52,11 @@ export abstract class AbstractMessageStore {
 	activeChildPosition: number = -1;
 
 	/**
+	 * Active Child Position
+	 */
+	tokens: number = 0;
+
+	/**
 	 * Set the message
 	 * @param id
 	 */
@@ -60,6 +65,7 @@ export abstract class AbstractMessageStore {
 
 		this.id = message.messageId;
 		this.visible = message.visible;
+		this.tokens = message.tokens;
 
 		makeObservable(this, {
 			room: observable,
@@ -75,6 +81,7 @@ export abstract class AbstractMessageStore {
 			connectParent: action,
 			addChild: action,
 			activateMessage: action,
+			tokens: observable,
 		});
 	}
 

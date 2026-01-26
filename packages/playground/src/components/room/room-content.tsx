@@ -386,6 +386,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						),
 					)}
 					onPrompt={handlePrompt}
+					tokensMax={chat.models.contextWindow}
+					tokensUsed={room.tokensUsed}
 					hasOutstandingTools={room.hasUnfinishedTools}
 				/>
 			</div>
