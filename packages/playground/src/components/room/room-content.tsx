@@ -5,7 +5,8 @@ import {
 	TriangleAlertIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { useCallback, useEffect, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
@@ -248,27 +249,35 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								return null;
 							}
 
-							return (
-								<React.Fragment key={m.id}>
-									{m.type === "INPUT" && (
-										<InputMessage room={room} message={m} />
-									)}
-									{m.type === "RESPONSE" && (
-										<ResponseMessage
-											room={room}
-											message={m}
-										/>
-									)}
-									{m.type === "PLAN" && (
-										<PlanMessage
-											message={m}
-											isLast={
-												mIdx === room.history.length - 1
-											}
-										/>
-									)}
-								</React.Fragment>
-							);
+							if (m.type === "INPUT") {
+								return (
+									<InputMessage
+										key={m.key}
+										room={room}
+										message={m}
+									/>
+								);
+							} else if (m.type === "RESPONSE") {
+								return (
+									<ResponseMessage
+										key={m.key}
+										room={room}
+										message={m}
+									/>
+								);
+							} else if (m.type === "PLAN") {
+								return (
+									<PlanMessage
+										key={m.key}
+										message={m}
+										isLast={
+											mIdx === room.history.length - 1
+										}
+									/>
+								);
+							}
+
+							return null;
 						})}
 					</div>
 					{room.error ? (
@@ -386,6 +395,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						),
 					)}
 					onPrompt={handlePrompt}
+					tokensMax={chat.models.contextWindow}
+					tokensUsed={room.tokensUsed}
 					hasOutstandingTools={room.hasUnfinishedTools}
 				/>
 			</div>

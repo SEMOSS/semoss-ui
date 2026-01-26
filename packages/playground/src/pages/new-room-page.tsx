@@ -460,24 +460,14 @@ export const NewRoomPage = observer(() => {
 									<RoomOptionsForm
 										model={chat.models.selected}
 										options={options}
-										onClose={(
-											success,
-											{ model, options },
-										) => {
-											if (success) {
-												if (model) {
-													chat.setSelectedModel(
-														model,
-													);
-												}
-
-												if (options) {
-													setOptions(options);
-												}
-
-												toast.success(
-													"Options updated",
-												);
+										onModelChange={(model) => {
+											if (model) {
+												chat.setSelectedModel(model);
+											}
+										}}
+										onOptionsChange={(options) => {
+											if (options) {
+												setOptions(options);
 											}
 										}}
 									/>
