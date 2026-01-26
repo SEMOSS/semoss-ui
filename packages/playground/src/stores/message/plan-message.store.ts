@@ -193,7 +193,7 @@ export class PlanMessageStore extends AbstractMessageStore {
 				},
 			]
 		>(`AskCOTRoom(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
@@ -237,7 +237,7 @@ paramValues=[${JSON.stringify({
 		>(
 			`
 COTConfirmation(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"],
 cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 );`,
@@ -299,7 +299,7 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 				},
 			]
 		>(`COTRoomResult(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"]
 );`);
 
@@ -420,7 +420,7 @@ roomId=["${room.roomId}"]
 			]
 		>(
 			`COTToolPrediction(
-                engine=["${room.modelId}"],
+                engine=["${room.model.app_id}"],
                 roomId=["${room.roomId}"],
                 stepNumber=["${step.step_number}"],
                 toolName=["${step.details.tool_name}"]
@@ -483,7 +483,7 @@ roomId=["${room.roomId}"]
 				},
 			]
 		>(`AddCOTLLMReasoning(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"],
 stepNumber=["${step.step_number}"]
 );`);
@@ -571,7 +571,7 @@ stepNumber=["${step.step_number}"]
 			]
 		>(
 			`AddCOTToolExecution(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId = ["${room.roomId}"],
 toolId = ["${tool.id}"],
 toolName=["${tool.name}"],

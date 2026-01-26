@@ -1,5 +1,6 @@
 import { action, makeObservable, observable, runInAction } from "mobx";
 import {
+	MCP_DISPLAY_SIDEBAR,
 	MCP_EXECUTION_ASK,
 	MCP_EXECUTION_AUTO,
 	TOOL_ERROR_PROMPT,
@@ -8,6 +9,7 @@ import type {
 	InputMediaPixelMessage,
 	InputTextPixelMessage,
 	InputToolExecPixelMessage,
+	McpDisplay,
 	McpExecution,
 	PixelMessage,
 	ResponseTextPixelMessage,
@@ -27,6 +29,7 @@ interface Tool {
 	/** meta data from the tool */
 	_meta: {
 		SMSS_MCP_EXECUTION: McpExecution;
+		SMSS_MCP_DISPLAY: McpDisplay;
 		SMSS_PROJECT_NAME: string;
 		SMSS_PROJECT_ID: string;
 	};
@@ -171,6 +174,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 					id: t.id,
 					_meta: {
 						SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
+						SMSS_MCP_DISPLAY: MCP_DISPLAY_SIDEBAR,
 						// On 12/16/25 we changed from _meta.map to just _meta, so support both
 						...(t._meta as { map?: Record<string, unknown> })?.map,
 						...t._meta,
@@ -237,13 +241,13 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			type: "RESPONSE_TEXT",
 			visible: true,
 			content: "",
-			modelId: this.model.id,
+			modelId: room.model.app_id,
 			paramMap: {
 				max_new_tokens: room.options.tokenLength,
 				temperature: room.options.temperature,
 			},
 			ornaments: {
-				modelName: this.model.name,
+				modelName: room.model.app_name,
 			},
 			dateCreated: new Date().toISOString(),
 		} as ResponseTextPixelMessage);
@@ -279,7 +283,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				]
 			>(
 				`AskPlayground(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
@@ -373,7 +377,7 @@ paramValues=[${JSON.stringify({
 			grandParentMessage instanceof PlanMessageStore === false
 		) {
 			throw new Error(
-				"Can only if the parent is a response, plan, or root message",
+				"Can only if the parent is a response or plan message",
 			);
 		}
 
@@ -384,7 +388,7 @@ paramValues=[${JSON.stringify({
 			visible: true,
 			inputUIPrompt: parentMessage.text,
 			mediaInputs: parentMessage.mediaInputs,
-			modelId: room.modelId,
+			modelId: room.model.app_id,
 			paramMap: {
 				max_new_tokens: room.options.tokenLength,
 				temperature: room.options.temperature,
@@ -394,7 +398,7 @@ paramValues=[${JSON.stringify({
 
 		const optionsToSave = {
 			...room.options,
-			modelId: room.modelId,
+			modelId: room.model.app_id,
 			mcp: room.options.mcp.filter((mcp) => !mcp?.fromWorkspace),
 		};
 
@@ -538,13 +542,13 @@ paramValues=[${JSON.stringify({
 				type: "RESPONSE_TEXT",
 				visible: true,
 				content: "",
-				modelId: this.model.id,
+				modelId: this.room.model.app_id,
 				paramMap: {
 					max_new_tokens: room.options.tokenLength,
 					temperature: room.options.temperature,
 				},
 				ornaments: {
-					modelName: this.model.name,
+					modelName: this.room.model.app_name,
 				},
 				dateCreated: new Date().toISOString(),
 			} as ResponseTextPixelMessage);
@@ -576,7 +580,7 @@ paramValues=[${JSON.stringify({
 				]
 			>(
 				`AddPlaygroundToolExecution(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId = ["${room.roomId}"],
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 toolId = ["${tool.id}"],

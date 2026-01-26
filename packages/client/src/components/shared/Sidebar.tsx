@@ -2,6 +2,7 @@ import {
 	AccountCircleRounded,
 	Functions as FunctionsIcon,
 	GridView as GridViewIcon,
+	GppGoodRounded as GuardrailIcon,
 	Home as HomeIcon,
 	Inventory2Outlined,
 	MenuOpenRounded,
@@ -47,6 +48,7 @@ const CATALOG_ROUTES = [
 		icon: <Inventory2Outlined />,
 		route: "/engine/storage",
 	},
+	{ text: "Guardrail", icon: <GuardrailIcon />, route: "/engine/guardrail" },
 ];
 
 const StyledNavHeader = styled(Stack)(({ theme }) => ({
