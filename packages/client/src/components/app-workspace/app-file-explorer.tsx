@@ -1,9 +1,11 @@
 import { CloudUploadIcon, HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useState } from "react";
 import { download, useInsight } from "@semoss/sdk/react";
 import { FileExplorer, FileExplorerItem, FlexLayout } from "@semoss/shared";
 import {
 	Button,
+	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -25,6 +27,8 @@ interface AppFileExplorerProps {
 export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 	({ layout, node, app }) => {
 		const insight = useInsight();
+
+		const [isPublishing, setIsPublishing] = useState(false);
 
 		/**
 		 * Add a node to the layout
@@ -129,6 +133,8 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 								size="icon-sm"
 								onClick={async () => {
 									try {
+										setIsPublishing(true);
+
 										// Seperate calls so we reload successfully compiled classes before publishing
 										await insight.actions.run(
 											`ReloadInsightClasses(project='${app}', release=false);`,
@@ -137,12 +143,22 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 										await insight.actions.run(
 											`PublishProject(project='${app}', release=true);`,
 										);
+
+										toast.success(
+											"Successfully compiled and published",
+										);
 									} catch (e) {
 										toast.error(`Error: ${e}`);
+									} finally {
+										setIsPublishing(false);
 									}
 								}}
 							>
-								<CloudUploadIcon className="size-3" />
+								{isPublishing ? (
+									<Spinner className="size-3" />
+								) : (
+									<CloudUploadIcon className="size-3" />
+								)}
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>

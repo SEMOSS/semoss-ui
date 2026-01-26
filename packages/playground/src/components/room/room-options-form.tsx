@@ -19,7 +19,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { MCPOverlay } from "@/components";
+import { MCPOverlay, SaveWorkspaceDialog } from "@/components";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 
@@ -42,7 +42,6 @@ interface RoomOptionsFormProps {
 export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 	({ model, options, onClose }) => {
 		const [updatedModel, setUpdatedModel] = useState(model);
-
 		const [updatedOptions, setUpdatedOptions] = useState(options);
 
 		useEffect(() => {
@@ -91,10 +90,16 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		};
 
 		return (
-			<form>
+			<form className="p-4">
 				<FieldGroup>
 					<FieldSet>
-						<FieldLegend>Room Settings</FieldLegend>
+						<FieldLegend className="flex w-full flex-1 items-center gap-2">
+							Room Settings
+							<SaveWorkspaceDialog
+								systemPrompt={options.instructions}
+								mcps={options.mcp}
+							/>
+						</FieldLegend>
 						<FieldDescription>
 							Update room settings and modify the behavior of the
 							chat
@@ -414,9 +419,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							</Field>
 						</FieldGroup>
 					</FieldSet>
-					<Field orientation="horizontal">
+					<Field orientation="horizontal" className="justify-center">
 						<Button
-							type="submit"
+							type="button"
 							onClick={() => {
 								onClose(true, {
 									options: updatedOptions,
@@ -424,16 +429,18 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 								});
 							}}
 						>
-							Submit
+							Save
 						</Button>
 						<Button
 							variant="outline"
 							type="button"
 							onClick={() => {
+								setUpdatedModel(model);
+								setUpdatedOptions(options);
 								onClose(false);
 							}}
 						>
-							Cancel
+							Reset
 						</Button>
 					</Field>
 				</FieldGroup>

@@ -1,9 +1,15 @@
-import { MoveDownIcon, MoveUpIcon, TriangleAlertIcon } from "lucide-react";
+import {
+	MoveDownIcon,
+	MoveUpIcon,
+	Settings2Icon,
+	TriangleAlertIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
+	DropdownMenuItem,
 	DropdownMenuSeparator,
 	ScrollArea,
 	Tooltip,
@@ -17,14 +23,14 @@ import {
 	RoomInput,
 	RoomInputMenuFileExplorer,
 	RoomInputMenuKnowledge,
-	RoomInputMenuSettings,
 	RoomInputMenuToolbox,
 	RoomInputMenuUpload,
 } from "@/components";
 import { useChat } from "@/hooks";
 import type { ResponseMessageStore, RoomStore } from "@/stores";
-import type { Engine, MCPConfig } from "@/types";
+import type { MCPConfig } from "@/types";
 
+const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 100;
 
 interface RoomContentProps {
@@ -40,15 +46,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
-
-	/**
-	 * Set the model
-	 * @param model - model
-	 */
-	const setModel = (model: Engine) => {
-		room.setModel(model);
-		chat.setSelectedModel(model);
-	};
+	const [isScrollLocked, setIsScrollLocked] = useState(false);
 
 	/**
 	 * Functions
@@ -106,16 +104,22 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			setShowScrollup(false);
 		}
 
-		// show scroll down if near the bottom
-		if (
+		// Check if user is at the bottom
+		const isAtBottom =
 			scrollEle.scrollHeight -
 				scrollEle.scrollTop -
 				scrollEle.clientHeight <=
-			SCROLL_THRESHOLD
-		) {
+			SCROLL_THRESHOLD;
+
+		// show scroll down if not at bottom
+		if (isAtBottom) {
 			setShowScrolldown(false);
+			// Unlock scroll when user scrolls back to bottom
+			setIsScrollLocked(false);
 		} else {
 			setShowScrolldown(true);
+			// Lock scroll when user scrolls away from bottom
+			setIsScrollLocked(true);
 		}
 	}, [scrollEle]);
 
@@ -179,7 +183,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	 */
 	// biome-ignore lint/correctness/useExhaustiveDependencies:> needed to trigger scroll
 	useEffect(() => {
-		if (!scrollEle) {
+		if (!scrollEle || isScrollLocked) {
 			return;
 		}
 
@@ -189,6 +193,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	}, [
 		scrollEle,
 		scrollToTarget,
+		isScrollLocked,
 		room.history?.length || 0,
 		room.tail?.type === "RESPONSE"
 			? (room.tail as ResponseMessageStore)?.text.length
@@ -246,12 +251,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							return (
 								<React.Fragment key={m.id}>
 									{m.type === "INPUT" && (
-										<InputMessage message={m} />
+										<InputMessage room={room} message={m} />
 									)}
 									{m.type === "RESPONSE" && (
 										<ResponseMessage
-											message={m}
 											room={room}
+											message={m}
 										/>
 									)}
 									{m.type === "PLAN" && (
@@ -324,7 +329,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					className="max-h-56 min-h-24"
 					isLoading={room.isLoading}
 					model={room.model}
-					setModel={setModel}
+					setModel={(model) => {
+						room.setModel(model);
+						chat.setSelectedModel(model);
+					}}
 					MenuComponent={observer(
 						({ addToken, onOpenChange, fileRef }) => (
 							<>
@@ -351,22 +359,29 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 										addToken(`<${tool.name}>`);
 									}}
 								/>
-								<RoomInputMenuSettings
-									model={room.model}
-									options={room.options}
-									onClose={(success, { model, options }) => {
-										if (success) {
-											if (model) {
-												setModel(model);
-											}
+								<DropdownMenuItem
+									onSelect={(e) => {
+										e.preventDefault();
 
-											if (options) {
-												room.setOptions(options);
-											}
-										}
+										// add to the sidebar
+										room.addSidebarNode(
+											ROOM_CONFIGURATION_ID,
+											{
+												type: "tab",
+												name: "Configuration",
+												component: "room-configuration",
+												config: {},
+												enableClose: true,
+											},
+										);
 										onOpenChange(false);
 									}}
-								/>
+								>
+									<Settings2Icon />
+									<span className="flex-1">
+										Edit Settings
+									</span>
+								</DropdownMenuItem>
 							</>
 						),
 					)}
@@ -374,7 +389,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tokensMax={chat.models.contextWindow}
 					tokensUsed={room.tokensUsed}
 					hasOutstandingTools={room.hasUnfinishedTools}
-					hideLoadingSpinner
 				/>
 			</div>
 		</div>
