@@ -487,15 +487,31 @@ export const EditEngineDetails = observer(() => {
 															: []
 													}
 													value={
-														(field.value as string[]) ||
-														[]
+														field.value &&
+														Array.isArray(
+															field.value,
+														)
+															? field.value.filter(
+																	(tag) =>
+																		typeof tag ===
+																			"string" &&
+																		tag.trim() !==
+																			"",
+																)
+															: []
 													}
-													onChange={(
-														event,
-														newValue,
-													) => {
+													onChange={(_, newValue) => {
+														// Filter out empty or whitespace-only tags
+														const filteredValue =
+															newValue.filter(
+																(tag) =>
+																	typeof tag ===
+																		"string" &&
+																	tag.trim() !==
+																		"",
+															);
 														field.onChange(
-															newValue,
+															filteredValue,
 														);
 													}}
 													data-testid={formatToDataTestId(

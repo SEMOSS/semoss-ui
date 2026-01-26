@@ -1,10 +1,11 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import type { Insight } from "@semoss/sdk/react";
+import { type Insight, runPixel } from "@semoss/sdk/react";
 import { MODEL_KEY } from "@/constants";
-import type { Engine } from "@/types";
+import type { Engine, MCPConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
 
-const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
+const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
+const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 
 interface ChatStoreInterface {
@@ -14,29 +15,29 @@ interface ChatStoreInterface {
 	isInitialized: boolean;
 
 	/**
-	 *  Track if the chat is loading
+	 * List of the models available
 	 */
-	isLoading: boolean;
+	models: {
+		/** The current model */
+		selected: Engine | null;
+
+		/** The current context window */
+		contextWindow?: number;
+	};
 
 	/**
-	 * Map of id to channel
+	 * Cached rooms
 	 */
 	rooms: Record<string, RoomStore>;
 
 	/**
-	 * Order of the rooms
+	 * Options related to the navbar
 	 */
-	order: string[];
-
-	/**
-	 * List of the models available
-	 */
-	models: {
-		/** All of the models */
-		options: Engine[];
-
-		/** The current model */
-		selected: string;
+	keys: {
+		/**
+		 * Counter to force re-render of the nav when the rooms change
+		 */
+		roomCounter: number;
 	};
 }
 
@@ -48,12 +49,13 @@ export class ChatStore {
 	private _error: Insight["error"];
 	private _store: ChatStoreInterface = {
 		isInitialized: false,
-		isLoading: false,
-		rooms: {},
-		order: [],
 		models: {
-			options: [],
-			selected: "",
+			selected: null,
+			contextWindow: undefined,
+		},
+		rooms: {},
+		keys: {
+			roomCounter: 0,
 		},
 	};
 
@@ -75,40 +77,17 @@ export class ChatStore {
 	}
 
 	/**
-	 * Get an indicator if the chat is loading
-	 */
-	get isLoading() {
-		return this._store.isLoading;
-	}
-
-	/**
-	 * Get the rooms from the store
-	 */
-	get rooms() {
-		return this._store.rooms;
-	}
-
-	/**
-	 * Get the order of the rooms
-	 */
-	get order() {
-		return this._store.order;
-	}
-
-	/**
-	 * Get the room from the store
-	 *
-	 * @param roomId - message to get
-	 */
-	getRoom(roomId: string): RoomStore | null {
-		return this._store.rooms[roomId];
-	}
-
-	/**
-	 * Get the active roomId
+	 * Get the models from the store
 	 */
 	get models() {
 		return this._store.models;
+	}
+
+	/**
+	 * Get keys to refresh different objects
+	 */
+	get keys() {
+		return this._store.keys;
 	}
 
 	/**
@@ -118,88 +97,58 @@ export class ChatStore {
 		try {
 			// set as initialized
 			Promise.all([
-				// get the room info
-				this.getRooms(),
-				// get the model info
-				this.getModels(),
+				// get the default model info
+				this.getDefaultModel(),
 			]).finally(() => {
 				runInAction(() => {
 					this._store.isInitialized = true;
 				});
 			});
-		} catch (_e) {
-		} finally {
-			// turn off the loading screen
-			this.setIsLoading(false);
+		} catch (e) {
+			console.error(e);
 		}
 	};
 
 	/**
-	 * Create a new room instance
+	 * Create a new room
 	 */
-	newRoom = (roomId: string): RoomStore => {
-		// create a new room
-		const room = new RoomStore(roomId);
+	createRoom = async (): Promise<RoomStore> => {
+		// create the room in a new insight
+		const { errors, pixelReturn, insightId } = await runPixel<
+			[
+				{
+					roomId: string;
+				},
+			]
+		>(`CreatePlaygroundRoom();`, "new");
 
-		// store the room
-		this._store.rooms[roomId] = room;
+		// throw errors
+		if (errors.length > 0) {
+			throw new Error(errors.join(""));
+		}
 
+		// get the output
+		const { output } = pixelReturn[0];
+
+		// get the new roomId
+		const roomId = output.roomId;
+
+		// create the room store
+		const room = new RoomStore(roomId, insightId);
+
+		// initialize the room
+		await room.initialize();
+
+		runInAction(() => {
+			// save it to the cache
+			this._store.rooms[roomId] = room;
+
+			// increment the roomCounter to force re-render of the nav
+			this._store.keys.roomCounter++;
+		});
+
+		// return the room
 		return room;
-	};
-
-	/**
-	 * Open a room
-	 *
-	 * @param modelId - modelId to open the room with
-	 * @param name - name of the room
-	 */
-	createRoom = async (modelId: string, name: string): Promise<RoomStore> => {
-		try {
-			// turn on the loading screen
-			this.setIsLoading(true);
-
-			// wait for the pixel to run
-			const { pixelReturn } =
-				await this._actions.run<
-					[
-						{
-							roomId: string;
-						},
-					]
-				>(`CreateRoom();`);
-
-			// throw errors
-			if (this._error) {
-				throw new Error(this._error.message);
-			}
-
-			// get the output
-			const { output } = pixelReturn[0];
-
-			// get the roomId
-			const roomId = output.roomId;
-
-			// register the room
-			const room = this.newRoom(roomId);
-
-			// set the initial data
-			room.setModel(modelId);
-			room.setMetadata({
-				name: name,
-				dateCreated: new Date().toDateString(),
-			});
-
-			runInAction(() => {
-				// add to the front
-				this._store.order.unshift(roomId);
-			});
-
-			// return the room
-			return room;
-		} finally {
-			// turn off the loading screen
-			this.setIsLoading(false);
-		}
 	};
 
 	/**
@@ -207,38 +156,60 @@ export class ChatStore {
 	 * @param roomId - Room to remove
 	 */
 	closeRoom = async (roomId: string): Promise<void> => {
-		try {
-			// remove from the order
-			const idx = this._store.order.indexOf(roomId);
-			if (idx > -1) {
-				this._store.order.splice(idx, 1);
-			}
+		// wait for the pixel to run
+		await this._actions.run<[boolean]>(
+			`RemoveUserRoom(roomId=["${roomId}"]);`,
+		);
 
-			// delete the room
+		// throw errors
+		if (this._error) {
+			throw new Error(this._error.message);
+		}
+
+		runInAction(() => {
+			// delete it from the cache
 			delete this._store.rooms[roomId];
 
-			// wait for the pixel to run
-			await this._actions.run<[boolean]>(
-				`CloseRoom(roomId=["${roomId}"]);`,
-			);
-
-			// throw errors
-			if (this._error) {
-				throw new Error(this._error.message);
-			}
-
-			return;
-		} catch (_e) {
-			// turn off the loading screen
-			this.setIsLoading(false);
-		}
+			// increment the roomCounter to force re-render of the nav
+			this._store.keys.roomCounter++;
+		});
 	};
 
 	/**
-	 * Get available models from the backend
+	 * Load a room from the store or create a new one
+	 * @param roomId - Room to remove
 	 */
-	setSelectedModel = async (modelIdArray: string): Promise<void> => {
-		this.models.selected = modelIdArray;
+	loadRoom = async (roomId: string): Promise<RoomStore> => {
+		// if it exists in the store utilize it.
+		if (this._store.rooms[roomId]) {
+			return this._store.rooms[roomId];
+		}
+
+		// create the room store
+		const room = new RoomStore(roomId);
+
+		// initialize the room
+		await room.initialize();
+
+		runInAction(() => {
+			// save it to the cache
+			this._store.rooms[roomId] = room;
+
+			// increment the roomCounter to force re-render of the nav
+			this._store.keys.roomCounter++;
+		});
+
+		// return the room
+		return room;
+	};
+
+	/**
+	 * Set the selected model
+	 */
+	setSelectedModel = (model: Engine): void => {
+		runInAction(() => {
+			this._store.models.selected = model;
+		});
 
 		// save to local storage
 		if (localStorage) {
@@ -247,161 +218,164 @@ export class ChatStore {
 				JSON.stringify(this.models.selected),
 			);
 		}
+
+		this.loadEngineContextWindow(model.app_id);
+	};
+
+	private loadEngineContextWindow = async (engineId: string) => {
+		runInAction(() => {
+			this._store.models.contextWindow = undefined;
+		});
+
+		const { pixelReturn } = await this._actions.run<[number | undefined]>(
+			`GetContextWindow(${JSON.stringify(engineId)});`,
+		);
+
+		// throw errors
+		if (this._error) {
+			throw new Error(this._error.message);
+		}
+
+		if (this.models.selected?.app_id === engineId) {
+			runInAction(() => {
+				this._store.models.contextWindow = pixelReturn[0].output;
+			});
+		}
+	};
+
+	/**
+	 * Add a new workspace
+	 */
+	addWorkspace = async (
+		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
+	): Promise<string> => {
+		try {
+			const mcp = data.mcp.map(
+				({ name, id, type }): MCPConfig => ({ name, id, type }),
+			);
+
+			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)})`;
+			const { pixelReturn } = await this._actions.run<[string]>(pixel);
+
+			// throw errors
+			if (this._error) {
+				throw new Error(this._error.message);
+			}
+
+			return pixelReturn[0].output;
+		} catch (e) {
+			throw e instanceof Error ? e : new Error(String(e));
+		}
+	};
+
+	/**
+	 * Edit a workspace
+	 */
+	editWorkspace = async (
+		workspaceId: string,
+		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
+	): Promise<string> => {
+		try {
+			const mcp = data.mcp.map(
+				({ name, id, type }): MCPConfig => ({ name, id, type }),
+			);
+
+			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)},name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)})`;
+			const { pixelReturn } = await this._actions.run<[string]>(pixel);
+
+			// throw errors
+			if (this._error || !pixelReturn[0].output) {
+				throw new Error(this._error.message);
+			}
+
+			return workspaceId;
+		} catch (e) {
+			throw e instanceof Error ? e : new Error(String(e));
+		}
+	};
+
+	deleteWorkspace = async (workspaceId: string) => {
+		try {
+			await this._actions.run(
+				`DeleteWorkspace(workspaceId=['${workspaceId}'])`,
+			);
+			// throw errors
+			if (this._error) {
+				throw new Error(this._error.message);
+			}
+
+			return;
+		} catch (e) {
+			console.error(e);
+		}
 	};
 
 	/**
 	 * Helpers
 	 */
 	/**
-	 * Get the current rooms
-	 */
-	private getRooms = async (): Promise<void> => {
-		try {
-			// turn on the loading screen
-			this.setIsLoading(true);
-
-			// clear the order info
-			this._store.order = [];
-
-			// wait for the pixel to run
-			const { pixelReturn } = await this._actions.run<
-				[
-					{
-						ROOM_ID: string;
-						ROOM_NAME: string;
-						DATE_CREATED: string;
-					}[],
-				]
-			>(`GetUserConversationRooms();`);
-
-			// throw errors
-			if (this._error) {
-				throw new Error(this._error.message);
-			}
-			// get the output
-			const { output } = pixelReturn[0];
-
-			// get the info
-			const order = [];
-
-			// create room objects for each one. This will not instantiate it.
-			for (const r of output) {
-				// check if it exists
-				let room = this.getRoom(r.ROOM_ID);
-
-				// create a new one if it doesn't
-				if (!room) {
-					room = this.newRoom(r.ROOM_ID);
-				}
-
-				room.setMetadata({
-					name: r.ROOM_NAME,
-					dateCreated: r.DATE_CREATED,
-				});
-
-				// store the order
-				order.push(r.ROOM_ID);
-			}
-
-			runInAction(() => {
-				// set the order
-				this._store.order = order;
-			});
-		} finally {
-			this.setIsLoading(false);
-		}
-	};
-
-	/**
 	 * Get available models from the backend
 	 */
-	private getModels = async (): Promise<void> => {
+	private getDefaultModel = async (): Promise<void> => {
 		// model selection is not enabled, set it to the default
 		if (!ENABLE_MODEL_SELECT) {
-			this._store.models = {
-				options: [],
-				selected: DEFAUlT_MODEL,
-			};
-
+			this.setSelectedModel({
+				app_id: DEFAUlT_MODEL_ID,
+				app_name: DEFAUlT_MODEL_NAME,
+				app_type: "MODEL",
+			});
 			return;
 		}
 
-		try {
-			// turn on the loading screen
-			this.setIsLoading(true);
+		// initially limit to 10 models
+		const { pixelReturn } = await this._actions.run<[Engine[]]>(
+			` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ] )`,
+		);
 
-			// clear the models
-			this._store.models = {
-				options: [],
-				selected: "",
-			};
+		// throw errors
+		if (this._error) {
+			throw new Error(this._error.message);
+		}
 
-			// wait for the pixel to run
-			const { pixelReturn } = await this._actions.run<[Engine[]]>(
-				` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ] )`,
-			);
+		runInAction(() => {
+			// get the output
+			const { output } = pixelReturn[0];
 
-			// throw errors
-			// throw errors
-			if (this._error) {
-				throw new Error(this._error.message);
+			// track if it was set from one of the options
+			let isSelected = false;
+
+			// set to default if it is an option
+			for (const m of output) {
+				if (m.app_id === DEFAUlT_MODEL_ID) {
+					this.setSelectedModel(m);
+					isSelected = true;
+					break;
+				}
 			}
 
-			runInAction(() => {
-				// get the output
-				const { output } = pixelReturn[0];
-				// store the models
-				this._store.models.options = output.map((m) => ({
-					...m,
-					app_name: m.app_name ? m.app_name.replace(/_/g, " ") : "",
-				}));
-
-				// track if it was set from one of the options
-				let isSelected = false;
-
-				// set to default if it is an option
-				for (const m of this._store.models.options) {
-					if (m.app_id === DEFAUlT_MODEL) {
-						this.setSelectedModel(m.app_id);
-						isSelected = true;
-						break;
-					}
-				}
-
-				// pull from local storage
-				try {
-					if (!isSelected) {
-						if (localStorage) {
-							const storedItem = localStorage.getItem(MODEL_KEY);
-							if (storedItem) {
-								const storedModel = JSON.parse(storedItem);
-								for (const m of this._store.models.options) {
-									if (storedModel === m.app_id) {
-										this.setSelectedModel(m.app_id);
-										isSelected = true;
-										break;
-									}
+			// check with local storage and try to set if it is one of them
+			try {
+				if (!isSelected) {
+					if (localStorage) {
+						const storedItem = localStorage.getItem(MODEL_KEY);
+						if (storedItem) {
+							const storedModel = JSON.parse(storedItem);
+							for (const m of output) {
+								if (storedModel === m.app_id) {
+									this.setSelectedModel(m);
+									isSelected = true;
+									break;
 								}
 							}
 						}
 					}
-				} catch {}
-
-				if (!isSelected && this._store.models.options.length > 0) {
-					this.setSelectedModel(this._store.models.options[0].app_id);
-					isSelected = true;
 				}
-			});
-		} finally {
-			this.setIsLoading(false);
-		}
-	};
+			} catch {}
 
-	/**
-	 * Set the isLoading boolean
-	 * @param isLoading - is it loading
-	 */
-	private setIsLoading = (isLoading: boolean): void => {
-		this._store.isLoading = isLoading;
+			if (!isSelected && output.length > 0) {
+				this.setSelectedModel(output[0]);
+				isSelected = true;
+			}
+		});
 	};
 }

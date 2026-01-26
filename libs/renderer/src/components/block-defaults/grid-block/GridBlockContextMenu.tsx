@@ -1,5 +1,5 @@
-import { Menu } from "@semoss/ui";
 import { observer } from "mobx-react-lite";
+import { Menu } from "@semoss/ui";
 import { useBlock, type useFrame } from "../../../hooks";
 import type { GridBlockDef } from "./GridBlock";
 import type { GridBlockColumn } from "./grid-block.types";

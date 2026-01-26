@@ -1,6 +1,7 @@
 import { CodeRounded, TerminalRounded } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	buildTable,
@@ -14,13 +15,13 @@ import {
 } from "@semoss/ui";
 import PythonLogo from "@/assets/img/Python-logo.svg";
 import RLogo from "@/assets/img/R-logo.svg";
-import { useWorkspace } from "@/hooks";
+import { useRootStore, useWorkspace } from "@/hooks";
 import { Panel } from "./Panel";
 
-const StyledImage = styled("img")(({ theme }) => ({
+const StyledImage = styled("img")({
 	height: "13px",
 	wdith: "13px",
-}));
+});
 
 const LANGUAGE = {
 	PIXEL: "Pixel",
@@ -57,9 +58,11 @@ export const TerminalPanel: React.FC = observer(() => {
 	const [history, setHistory] = useState<TerminalProps["history"]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const { workspace } = useWorkspace();
+	const { monolithStore } = useRootStore();
 
 	const [command, setCommand] = useState<string>("");
 	const [language, setLanguage] = useState("PIXEL");
+	const suggesstionsList = useRef([]);
 
 	/**
 	 * Get instructions based on the language
@@ -77,9 +80,77 @@ export const TerminalPanel: React.FC = observer(() => {
 		} else if (language === "R") {
 			instructions = `${prefix}\x1b[36mR\x1b[0m${postfix}`;
 		}
-
+		console.log("instructions", instructions);
 		return instructions;
 	};
+
+	const getSuggestions = async () => {
+		const suggestions = await runPixel("META|help();");
+		const suggestionsData = await suggestions;
+		const suggestionsJson: string =
+			suggestionsData?.pixelReturn[0]?.output || "";
+		const suggesstionsArray = suggestionsJson.split("\n");
+		const suggestionsIndexBased = suggesstionsArray
+			.map((item, index) => (item.indexOf(":") > -1 ? index : -1))
+			.filter((item) => item > -1);
+		// const suggesstionsArraySplitCount = (suggestionsIndexBased.length - 2  > 0) ? (suggestionsIndexBased.length - 2) * 2 : 2;
+		const suggesstionsSection = [];
+		const suggesstionsData = {};
+		for (let i = 0; i < suggestionsIndexBased.length - 1; i++) {
+			suggesstionsSection.push([
+				suggestionsIndexBased[i],
+				suggestionsIndexBased?.[i + 1] || -1,
+			]);
+			suggesstionsData[
+				suggesstionsArray[suggestionsIndexBased[i]]
+					.toString()
+					.trim()
+					.replaceAll(" ", "")
+					.replaceAll(":", "")
+			] = suggestionsIndexBased?.[i + 1]
+				? suggesstionsArray.slice(
+						suggestionsIndexBased[i] + 1,
+						suggestionsIndexBased?.[i + 1],
+					)
+				: suggesstionsArray.slice(suggestionsIndexBased[i] + 1);
+		}
+		Object.keys(suggesstionsData).forEach((key) => {
+			suggesstionsData[key] = suggesstionsData[key].flatMap((item) =>
+				item.split(" ").filter((innerItem) => innerItem.length > 0),
+			);
+		});
+		console.log(suggesstionsData, "Suggesstion");
+		//returning GeneralReactors for testing suggesstions
+		return (
+			suggesstionsData || {
+				GeneralReactors: [],
+			}
+		);
+	};
+	useEffect(() => {
+		getSuggestions()
+			.then((data) => {
+				if (language === "PIXEL") {
+					suggesstionsList.current =
+						(data as unknown)?.GeneralReactors || [];
+				} else if (language === "SHELL") {
+					suggesstionsList.current =
+						(data as unknown)?.TinkerFrameReactors || [];
+				} else if (language === "PYTHON") {
+					suggesstionsList.current =
+						(data as unknown)?.PythonFrameReactors || [];
+				} else if (language === "R") {
+					suggesstionsList.current =
+						(data as unknown)?.RFrameReactors || [];
+				} else {
+					suggesstionsList.current =
+						(data as unknown)?.GeneralReactors || [];
+				}
+			})
+			.catch((err) => {
+				suggesstionsList.current = [];
+			});
+	}, [language]);
 
 	/**
 	 * Run a command
@@ -90,7 +161,6 @@ export const TerminalPanel: React.FC = observer(() => {
 	const runCommand = async () => {
 		try {
 			setIsLoading(true);
-
 			const cleaned = command.trim();
 			if (!cleaned) {
 				throw new Error(`No Command`);
@@ -110,6 +180,7 @@ export const TerminalPanel: React.FC = observer(() => {
 			const response = await workspace.runWorkspacePixel(pixel);
 
 			const updatedHistory = [...history];
+			const insightId = response.insightId;
 			for (const r of response.pixelReturn) {
 				const { output, operationType, timeToRun } = r;
 
@@ -165,6 +236,23 @@ export const TerminalPanel: React.FC = observer(() => {
 					formatted = `\x1b[31mInvalid Syntax: ${output}\x1b[0m`;
 				} else if (operationType.indexOf("ERROR") > -1) {
 					formatted = `\x1b[31mError: ${output}\x1b[0m`;
+				} else if (operationType.indexOf("FILE_DOWNLOAD") > -1) {
+					monolithStore
+						.download(insightId, formatted as string)
+						.then(() => {
+							if (output && response.errors.length === 0) {
+								notification.add({
+									color: "success",
+									message: `file downloaded successfully`,
+								});
+							}
+						})
+						.catch(() => {
+							notification.add({
+								color: "error",
+								message: `Error occurred while trying to download`,
+							});
+						});
 				}
 
 				updatedHistory.push({
@@ -174,10 +262,11 @@ export const TerminalPanel: React.FC = observer(() => {
 						postfix,
 					),
 					command: command,
-					response:
+					response: colorizeJSON(
 						typeof formatted !== "string"
 							? JSON.stringify(formatted, null, 2)
 							: formatted,
+					),
 				});
 			}
 
@@ -193,6 +282,29 @@ export const TerminalPanel: React.FC = observer(() => {
 		} finally {
 			setIsLoading(false);
 		}
+	};
+	const colorizeJSON = (jsonString: string) => {
+		return jsonString
+			.replace(
+				/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g,
+				(match) => {
+					if (/:$/.test(match)) {
+						// key (yellow: 33m), (blue: 34m)
+						return `\x1b[34m${match}\x1b[0m`;
+					} else {
+						// string value (green)
+						return `\x1b[32m${match}\x1b[0m`;
+					}
+				},
+			)
+			.replace(/\b(true|false|null)\b/g, (match) => {
+				// boolean/null (magenta)
+				return `\x1b[35m${match}\x1b[0m`;
+			})
+			.replace(/:\s*"([^"]+)"/, (match) => {
+				// number (cyan)
+				return `\x1b[36m${match}\x1b[0m`;
+			});
 	};
 
 	return (
@@ -244,12 +356,14 @@ export const TerminalPanel: React.FC = observer(() => {
 				</>
 			}
 		>
-			<Terminal
-				loading={isLoading}
+			<Terminal //removing loading option from terminal as per request from ticket 1960
 				history={history}
 				instructions={getInstructions(language, "Running ")}
+				suggestions={suggesstionsList.current}
 				onRun={() => runCommand()}
-				onCommand={(c) => setCommand(c)}
+				onCommand={(c) => {
+					setCommand(c);
+				}}
 			/>
 		</Panel>
 	);

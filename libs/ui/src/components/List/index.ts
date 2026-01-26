@@ -7,7 +7,7 @@ import { ListItemText, type ListItemTextProps } from "./ListItemText";
 
 const ListNameSpace = Object.assign(List, {
 	Item: ListItem,
-	Icon: ListItemIcon,
+	ItemIcon: ListItemIcon,
 	ItemButton: ListItemButton,
 	ItemText: ListItemText,
 	ItemAvatar: ListItemAvatar,

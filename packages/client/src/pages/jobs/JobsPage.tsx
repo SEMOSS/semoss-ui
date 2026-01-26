@@ -9,17 +9,10 @@ import {
 } from "@mui/icons-material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useEffect, useMemo, useState } from "react";
+import { Navigate } from "react-router-dom";
 import { debounced, runPixel } from "@semoss/sdk/react";
-import {
-	Button,
-	Modal,
-	Search,
-	Stack,
-	Tabs,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
-import { useRootStore } from "@/hooks";
+import { Button, Search, Stack, Tabs, useNotification } from "@semoss/ui";
+import { useRootStore, useSettings } from "@/hooks";
 import { DeleteJobModal } from "./DeleteJobModal";
 import { JobBuilderModal } from "./JobBuilderModal";
 import { JobCard } from "./JobCard";
@@ -72,6 +65,7 @@ export function JobsPage() {
 	const [historyPage, setHistoryPage] = useState<number>(0);
 	const [historyRowsPerPage, setHistoryRowsPerPage] = useState<number>(5);
 	const [historyCount, setHistoryCount] = useState<number>(-1);
+	const { adminMode } = useSettings();
 
 	const getJobs = () => {
 		setJobsLoading(true);
@@ -81,72 +75,72 @@ export function JobsPage() {
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType[0];
 
-                if (type.indexOf('ERROR') > -1) {
-                    notification.add({
-                        color: 'error',
-                        message:
-                            'Something went wrong. Jobs could not be retrieved.',
-                    });
-                } else {
-                    const pixelJobs: Record<string, PixelReturnJob> =
-                        response.pixelReturn[0].output;
-                    const jobs: Job[] = [];
-                    Object.values(pixelJobs).forEach((job) => {
-                        // Job group is undefined for jobs made in the old ui
-                        if (!job.jobGroup || job.jobGroup === 'undefined') {
-                            // skip jobs made on the old ui since they aren't backwards compatable
-                            return;
-                        }
-                        // ui state is a legacy construct, this may not exist
-                        let uiState: JobUIState;
-                        try {
-                            if (job.uiState) {
-                                uiState = JSON.parse(job.uiState);
-                            }
-                        } catch (e) {
-                            console.log(e);
-                        }
+				if (type.indexOf("ERROR") > -1) {
+					notification.add({
+						color: "error",
+						message:
+							"Something went wrong. Jobs could not be retrieved.",
+					});
+				} else {
+					const pixelJobs: Record<string, PixelReturnJob> =
+						response.pixelReturn[0].output;
+					const jobs: Job[] = [];
+					Object.values(pixelJobs).forEach((job) => {
+						// Job group is undefined for jobs made in the old ui
+						if (!job.jobGroup || job.jobGroup === "undefined") {
+							// skip jobs made on the old ui since they aren't backwards compatable
+							return;
+						}
+						// ui state is a legacy construct, this may not exist
+						let uiState: JobUIState;
+						try {
+							if (job.uiState) {
+								uiState = JSON.parse(job.uiState);
+							}
+						} catch (e) {
+							console.log(e);
+						}
 
-                        let sendEmailJob: SendEmailJob;
-                        if (job.recipe) {
-                            sendEmailJob = convertSendEmailRecipeToJob(
-                                job.recipe,
-                            );
-                        }
-                        jobs.push({
-                            id: job.jobId,
-                            name: job.jobName,
-                            type: 'Custom',
-                            cronExpression: job.cronExpression,
-                            timeZone: job.cronTz,
-                            tags: (job?.jobTags ?? '')
-                                .split(',')
-                                .filter((tag) => !!tag),
-                            lastRun: job.PREV_FIRE_TIME,
-                            nextRun: job.NEXT_FIRE_TIME,
-                            ownerId: job.USER_ID,
-                            isActive: job.NEXT_FIRE_TIME !== 'INACTIVE',
-                            group: job.jobGroup,
-                            pixel: job.recipe,
-                            smtpHost: sendEmailJob?.smtpHost,
-                            smtpPort: sendEmailJob?.smtpPort,
-                            subject: sendEmailJob?.subject,
-                            jobType: uiState?.jobType,
-                            to: (sendEmailJob?.to ?? '')
-                                .split(',')
-                                .filter((to) => !!to),
-                            cc: (sendEmailJob?.cc ?? '')
-                                .split(',')
-                                .filter((cc) => !!cc),
-                            bcc: (sendEmailJob?.bcc ?? '')
-                                .split(',')
-                                .filter((bcc) => !!bcc),
-                            from: sendEmailJob?.from,
-                            message: sendEmailJob?.message,
-                            username: sendEmailJob?.username,
-                            password: sendEmailJob?.password,
-                        });
-                    });
+						let sendEmailJob: SendEmailJob;
+						if (job.recipe) {
+							sendEmailJob = convertSendEmailRecipeToJob(
+								job.recipe,
+							);
+						}
+						jobs.push({
+							id: job.jobId,
+							name: job.jobName,
+							type: "Custom",
+							cronExpression: job.cronExpression,
+							timeZone: job.cronTz,
+							tags: (job?.jobTags ?? "")
+								.split(",")
+								.filter((tag) => !!tag),
+							lastRun: job.PREV_FIRE_TIME,
+							nextRun: job.NEXT_FIRE_TIME,
+							ownerId: job.USER_ID,
+							isActive: job.NEXT_FIRE_TIME !== "INACTIVE",
+							group: job.jobGroup,
+							pixel: job.recipe,
+							smtpHost: sendEmailJob?.smtpHost,
+							smtpPort: sendEmailJob?.smtpPort,
+							subject: sendEmailJob?.subject,
+							jobType: uiState?.jobType,
+							to: (sendEmailJob?.to ?? "")
+								.split(",")
+								.filter((to) => !!to),
+							cc: (sendEmailJob?.cc ?? "")
+								.split(",")
+								.filter((cc) => !!cc),
+							bcc: (sendEmailJob?.bcc ?? "")
+								.split(",")
+								.filter((bcc) => !!bcc),
+							from: sendEmailJob?.from,
+							message: sendEmailJob?.message,
+							username: sendEmailJob?.username,
+							password: sendEmailJob?.password,
+						});
+					});
 
 					setJobs(jobs);
 				}
@@ -157,7 +151,7 @@ export function JobsPage() {
 	};
 
 	const deleteJob = (jobId: string[], jobGroup: string[]) => {
-		let pixel;
+		let pixel: string;
 		if (jobId.length > 1 && jobGroup.length > 1) {
 			pixel = `META | RemoveJobFromDB(jobId=${JSON.stringify(
 				jobId,
@@ -173,7 +167,6 @@ export function JobsPage() {
 				const type = response.pixelReturn[0].operationType;
 				const output = response.pixelReturn[0].output;
 				// Expecting output to have { success: string[], failed: string[] }
-				const successIds = output?.success || [];
 				const failedIds = output?.failed || [];
 
 				if (type.indexOf("ERROR") === -1) {
@@ -219,7 +212,7 @@ export function JobsPage() {
 		});
 		try {
 			await runPixel(pixel);
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
 				message: "Unable to pause jobs.",
@@ -236,7 +229,7 @@ export function JobsPage() {
 		});
 		try {
 			await runPixel(pixel);
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
 				message: "Unable to resume jobs.",
@@ -355,7 +348,7 @@ export function JobsPage() {
 											output["data"].values[valueIdx][
 												headers["SUCCESS"]
 											],
-										) == "true"
+										) === "true"
 									: false,
 								// appName: Object.prototype.hasOwnProperty.call(headers, 'APP_NAME') ? output['data'].values[valueIdx][headers.APP_NAME] : '',
 								jobTags: Object.hasOwn(headers, "JOB_TAG")
@@ -369,7 +362,7 @@ export function JobsPage() {
 											output["data"].values[valueIdx][
 												headers["IS_LATEST"]
 											],
-										) == "true"
+										) === "true"
 									: false,
 								//capture scheduler output
 								schedulerOutput: Object.hasOwn(
@@ -522,6 +515,9 @@ export function JobsPage() {
 		);
 		setJobsToDelete(rowsToBeDeleted);
 	};
+	if (!adminMode) {
+		return <Navigate to={"/settings"} />;
+	}
 
 	return (
 		<Stack spacing={2}>
@@ -610,7 +606,7 @@ export function JobsPage() {
 									pixel: "",
 									tags: [],
 									cronExpression: "0 0 12 * * *",
-									cronTz: "Eastern Standard Time",
+									cronTz: "US/Eastern",
 									smtpHost: "",
 									smtpPort: "",
 									subject: "",

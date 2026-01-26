@@ -31,12 +31,15 @@ export const run = async <O extends unknown[] | []>(
 	pixel: string,
 ) => {
 	// build the expression
-	const postData = {
+	let postData: Record<string, unknown> = {
 		expression: pixel,
 	};
 
 	if (insightID) {
-		postData["insightId"] = insightID;
+		postData = {
+			...postData,
+			insightId: insightID,
+		};
 	}
 	const response = await post<{
 		insightID: string;
@@ -207,22 +210,20 @@ export const registerUser = async (
 		phoneextension: phoneextension,
 		countrycode: countrycode,
 	};
-	return await post(`${Env.MODULE}/api/auth/createUser`, create, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
+	return await post(`${Env.MODULE}/api/auth/createUser`, create).catch(
+		(error) => {
+			if (
+				error.response &&
+				error.response.status === 401 &&
+				error.response.data &&
+				error.response.data.requirePwdChange
+			) {
+				return;
+			}
+			// throw the message
+			throw Error(error);
 		},
-	}).catch((error) => {
-		if (
-			error.response &&
-			error.response.status === 401 &&
-			error.response.data &&
-			error.response.data.requirePwdChange
-		) {
-			return;
-		}
-		// throw the message
-		throw Error(error);
-	});
+	);
 };
 
 export const monolithLogout = async (): Promise<boolean> => {
@@ -240,7 +241,7 @@ export const monolithOauth = async (provider: string): Promise<boolean> => {
 		throw Error(error);
 	});
 	//check if they are already logged in
-	if (response.data && response.data.name) {
+	if (response.data?.name) {
 		return true;
 	}
 	return new Promise((resolve) => {
@@ -248,7 +249,7 @@ export const monolithOauth = async (provider: string): Promise<boolean> => {
 		const popUpWindow = window.top.open(
 			url,
 			"_blank",
-			"height=600,width=400,top=300,left=" + 600,
+			`height=${600},width=${400},top=${300},left=${600}`,
 		);
 		// setup an interval to see if the popup window is closed or successful
 		const interval = setInterval(async () => {
@@ -272,7 +273,7 @@ export const monolithOauth = async (provider: string): Promise<boolean> => {
 					// close it
 					resolve(response);
 				}
-			} catch (err) {
+			} catch (_err: unknown) {
 				// do nothing
 				// this is to work around the blocked frame error that comes up
 			}
@@ -289,7 +290,7 @@ export const getLoginProperties = async () => {
 };
 
 export const modifyLoginProperties = async (provider, properties) => {
-	const url = `${Env.MODULE}/api/auth/modifyLoginProperties/` + provider;
+	const url = `${Env.MODULE}/api/auth/modifyLoginProperties/${provider}`;
 	const postData = {
 		modifications: JSON.stringify(properties),
 	};
@@ -303,34 +304,15 @@ export const modifyLoginProperties = async (provider, properties) => {
 	return response.data;
 };
 
-export const createAdminTheme = async (data: {
-	name: string;
-	json: any;
-	isActive: boolean;
-}) => {
-	const url = `${Env.MODULE}/api/themes/createAdminTheme`;
-	const postData = {
-		name: data.name,
-		json: JSON.stringify(data.json),
-		isActive: data.isActive,
-	};
-
-	const response = await post<boolean>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
-	return response.data;
-};
-
 export const getInsights = async () => {
 	console.error("needs to be added on BE");
 };
+
 export const getInsightUsers = async (
 	admin: boolean,
 	id: string,
 	user: string,
-	permission: string,
+	_permission: string,
 	offset?: number,
 	limit?: number,
 	projectid?: string,
@@ -385,7 +367,7 @@ export const getInsightUsersNoCredentials = async (
 export const addInsightUserPermissions = async (
 	admin: boolean,
 	id: string,
-	users: any[],
+	users: unknown[],
 	projectId: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/`;
@@ -414,7 +396,7 @@ export const addInsightUserPermissions = async (
 export const removeInsightUserPermissions = async (
 	admin: boolean,
 	id: string,
-	users: any[],
+	users: unknown[],
 	projectId,
 ) => {
 	let url = `${Env.MODULE}/api/auth/`;
@@ -442,7 +424,7 @@ export const removeInsightUserPermissions = async (
 export const editInsightUserPermissions = async (
 	admin: boolean,
 	id: string,
-	users: any[],
+	users: unknown[],
 	projectId: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/`;
@@ -527,6 +509,7 @@ export const uploadFile = async (
 	insightId: string | null,
 	projectId?: string | null,
 	path?: string | null,
+	type?: string | null,
 ) => {
 	let param = "";
 	if (insightId || projectId || path) {
@@ -540,7 +523,11 @@ export const uploadFile = async (
 			if (param.length > 0) {
 				param += "&";
 			}
-			param += `projectId=${projectId}`;
+			if (type === "engine") {
+				param += `engineId=${projectId}`;
+			} else {
+				param += `projectId=${projectId}`;
+			}
 		}
 		if (path) {
 			if (param.length > 0) {
@@ -565,11 +552,7 @@ export const uploadFile = async (
 			fileName: string;
 			fileLocation: string;
 		}[]
-	>(url, fd, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	>(url, fd, {});
 	return response.data;
 };
 
@@ -584,7 +567,7 @@ export const getApps = async (databaseId: string) => {
 export const getDBUsers = async (admin: boolean, appId: string) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) url += "admin/";
-	url += "app/getAppUsers?appId=" + appId;
+	url += `app/getAppUsers?appId=${appId}`;
 	const response = await get(url).catch((error) => {
 		throw Error(error);
 	});
@@ -689,15 +672,11 @@ export const deleteMember = async (
 	}
 	url += "user/deleteUser";
 
-	const response = await post<boolean>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	const response = await post<boolean>(url, postData, {});
 	return response;
 };
 
-export const editMemberInfo = async (admin: boolean, user: any) => {
+export const editMemberInfo = async (admin: boolean, user: unknown) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	const postData = {
 		user: JSON.stringify(user),
@@ -706,78 +685,127 @@ export const editMemberInfo = async (admin: boolean, user: any) => {
 		url += "admin/";
 	}
 	url += "user/editUser";
-	const response = await post<boolean>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	}).catch((e) => {
+	const response = await post<boolean>(
+		url,
+		processPostData(postData),
+		{},
+	).catch((e) => {
 		throw Error(e);
 	});
 	return response;
 };
 
-export const createUser = async (admin: boolean, user: any) => {
+export const createUser = async (
+	admin: boolean,
+	user: Record<string, unknown>,
+) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
 		url += "admin/";
 	}
 	url += "user/registerUser";
-	const newUserInfo = {};
+	let newUserInfo: Record<string, unknown> = {};
 	if (user.id) {
-		newUserInfo["userId"] = user.id;
+		newUserInfo = {
+			...newUserInfo,
+			userId: user.id,
+		};
 	}
 	if (user.type) {
-		newUserInfo["type"] = user.type;
+		newUserInfo = {
+			...newUserInfo,
+			type: user.type,
+		};
 	}
 	if (user.type === "NATIVE") {
-		newUserInfo["username"] = user.id;
+		newUserInfo = {
+			...newUserInfo,
+			username: user.id,
+		};
 	} else if (user.username) {
-		newUserInfo["username"] = user.username;
+		newUserInfo = {
+			...newUserInfo,
+			username: user.username,
+		};
 	}
 	if (user.password) {
-		newUserInfo["password"] = user.password;
+		newUserInfo = {
+			...newUserInfo,
+			password: user.password,
+		};
 	}
 	if (user.admin) {
-		newUserInfo["admin"] = user.admin;
+		newUserInfo = {
+			...newUserInfo,
+			admin: user.admin,
+		};
 	}
 	if (user.publisher) {
-		newUserInfo["publisher"] = user.publisher;
+		newUserInfo = {
+			...newUserInfo,
+			publisher: user.publisher,
+		};
 	}
 	if (user.exporter) {
-		newUserInfo["exporter"] = user.exporter;
+		newUserInfo = {
+			...newUserInfo,
+			exporter: user.exporter,
+		};
 	}
 	if (user.name) {
-		newUserInfo["name"] = user.name;
+		newUserInfo = {
+			...newUserInfo,
+			name: user.name,
+		};
 	}
 	if (user.email) {
-		newUserInfo["email"] = user.email;
+		newUserInfo = {
+			...newUserInfo,
+			type: user.type,
+		};
+		newUserInfo.email = user.email;
 	}
 	if (user.phone) {
-		newUserInfo["phone"] = user.phone;
+		newUserInfo = {
+			...newUserInfo,
+			phone: user.phone,
+		};
 	}
+
 	if (user.phoneextension) {
-		newUserInfo["phoneextension"] = user.phoneextension;
+		newUserInfo = {
+			...newUserInfo,
+			phoneextension: user.phoneextension,
+		};
 	}
 	if (user.model_usage_restriction) {
 		if (user.model_usage_restriction === "null") {
 			user.model_usage_restriction = null;
 		}
-		newUserInfo["modelUsageRestriction"] = user.model_usage_restriction;
+		newUserInfo = {
+			...newUserInfo,
+			modelUsageRestriction: user.model_usage_restriction,
+		};
 	}
 	if (user.model_usage_frequency) {
-		newUserInfo["modelUsageFrequency"] = user.model_usage_frequency;
+		newUserInfo = {
+			...newUserInfo,
+			modelUsageFrequency: user.model_usage_frequency,
+		};
 	}
 	if (user.model_max_tokens) {
-		newUserInfo["modelMaxTokens"] = user.model_max_tokens;
+		newUserInfo = {
+			...newUserInfo,
+			modelMaxTokens: user.model_max_tokens,
+		};
 	}
 	if (user.model_max_response_time) {
-		newUserInfo["modelMaxResponseTime"] = user.model_max_response_time;
+		newUserInfo = {
+			...newUserInfo,
+			modelMaxResponseTime: user.model_max_response_time,
+		};
 	}
-	const response = await post<boolean>(url, newUserInfo, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	const response = await post<boolean>(url, processPostData(newUserInfo), {});
 	return response;
 };
 
@@ -802,11 +830,14 @@ export const createUserAccessKey = async (
 	tokenDescription = "",
 ) => {
 	const url = `${Env.MODULE}/api/auth/user/createUserAccessKey`;
-	const body = {
+	let body: Record<string, unknown> = {
 		tokenName: tokenName,
 	};
 	if (tokenDescription) {
-		body["tokenDescription"] = tokenDescription;
+		body = {
+			...body,
+			tokenDescription: tokenDescription,
+		};
 	}
 	const response = await post<{
 		ACCESSKEY: string;
@@ -815,11 +846,7 @@ export const createUserAccessKey = async (
 		LASTUSED: string;
 		TOKENNAME: string;
 		TOKENDESCRIPTION?: string;
-	}>(url, body, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	}).catch((error) => {
+	}>(url, body, {}).catch((error) => {
 		throw Error(error);
 	});
 	return response.data;
@@ -830,12 +857,16 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
 	const body = {
 		accessKey: accessKey,
 	};
-	const response = await post<boolean>(url, body, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	}).catch((error) => {
+	const response = await post<boolean>(url, body, {}).catch((error) => {
 		throw Error(error);
 	});
 	return response.data;
+};
+
+const processPostData = (data: unknown) => {
+	const postRecordData: Record<string, unknown> = {};
+	Object.keys(data).forEach((item) => {
+		postRecordData[item] = data[item];
+	});
+	return postRecordData;
 };

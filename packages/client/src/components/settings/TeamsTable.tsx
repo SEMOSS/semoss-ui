@@ -1,28 +1,10 @@
-import { Add, Delete, Edit } from "@mui/icons-material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { styled, Table, Typography } from "@semoss/ui";
 import {
-	Button,
-	Checkbox,
-	IconButton,
-	styled,
-	Table,
-	Typography,
-} from "@semoss/ui";
+	getGroupsWithAccessToEngine,
+	getGroupsWithAccessToProject,
+} from "@/api/teams";
 import { AddTeamModal } from "@/components/teams/AddTeamModal";
-import { useEngine } from "@/hooks";
-
-const StyledAddButton = styled(Button)({
-	width: "150px",
-	borderRadius: "12px",
-	marginBottom: "16px",
-});
-
-const StyledButtonContainer = styled("div")({
-	display: "flex",
-	justifyContent: "flex-end",
-	width: "100%",
-	marginTop: "16px",
-});
 
 const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
 	borderRadius: "12px",
@@ -48,76 +30,85 @@ const StyledTableTitleDiv = styled("div")({
 	gap: "10px",
 });
 
-const StyledTableCell = styled(Table.Cell)({
-	paddingLeft: "16px",
-});
-
-const StyledCheckbox = styled(Checkbox)({
-	paddingBottom: "0px",
-});
-
-export const TeamsTable = () => {
-	const [teams, setTeams] = useState([
-		{
-			id: 1,
-			name: "Team 1",
-			permission: "Editor",
-			dateAdded: "2025-05-14 14:34:42",
-			limitType: "None",
-			limitValue: "-",
-			frequency: "-",
-		},
-		{
-			id: 2,
-			name: "Team 2",
-			permission: "Author",
-			dateAdded: "2025-05-15 10:00:00",
-			limitType: "None",
-			limitValue: "-",
-			frequency: "-",
-		},
-	]);
+export const TeamsTable = ({ type, id }) => {
+	const [teams, setTeams] = useState<any[]>([]);
+	useEffect(() => {
+		if (!type || !id) return;
+		const fetchTeams = async () => {
+			try {
+				let data: any[] = [];
+				if (type === "ENGINE") {
+					const result = await getGroupsWithAccessToEngine(
+						String(id),
+						100,
+						0,
+					);
+					data = Array.isArray(result) ? result : [];
+				} else if (type === "PROJECT") {
+					const result = await getGroupsWithAccessToProject(
+						String(id),
+						100,
+						0,
+					);
+					data = Array.isArray(result) ? result : [];
+				}
+				const permissionMap = {
+					1: "Author",
+					2: "Editor",
+					3: "Read-Only",
+				};
+				const mappedTeams = data.map((team, idx) => ({
+					id: team.ID || idx,
+					name: team.ID,
+					type: team.TYPE,
+					permission:
+						permissionMap[team.PERMISSION] || team.PERMISSION,
+					dateAdded: team.DATEADDED,
+				}));
+				setTeams(mappedTeams);
+			} catch (e) {
+				console.error(e);
+				setTeams([]);
+			}
+		};
+		fetchTeams();
+	}, [type, id]);
 	const [addModal, setAddModal] = useState(false);
 	const [nameOrder, setNameOrder] = useState<"asc" | "desc">("asc");
 	const [permissionOrder, setPermissionOrder] = useState<"asc" | "desc">(
 		"asc",
 	);
-	const { type } = useEngine();
+	const [page, setPage] = useState(0);
+	const [rowsPerPage, setRowsPerPage] = useState(5);
 
 	const handleNameSort = () => {
 		setNameOrder((prev) => (prev === "asc" ? "desc" : "asc"));
 		setTeams((prevTeams) =>
-			[...prevTeams].sort((a, b) =>
-				nameOrder === "asc"
-					? a.name.localeCompare(b.name)
-					: b.name.localeCompare(a.name),
-			),
+			[...prevTeams].sort((a, b) => {
+				const nameA = String(a.name);
+				const nameB = String(b.name);
+				return nameOrder === "asc"
+					? nameA.localeCompare(nameB)
+					: nameB.localeCompare(nameA);
+			}),
 		);
 	};
 
 	const handlePermissionSort = () => {
 		setPermissionOrder((prev) => (prev === "asc" ? "desc" : "asc"));
 		setTeams((prevTeams) =>
-			[...prevTeams].sort((a, b) =>
-				permissionOrder === "asc"
-					? a.permission.localeCompare(b.permission)
-					: b.permission.localeCompare(a.permission),
-			),
+			[...prevTeams].sort((a, b) => {
+				const permA = String(a.permission);
+				const permB = String(b.permission);
+				return permissionOrder === "asc"
+					? permA.localeCompare(permB)
+					: permB.localeCompare(permA);
+			}),
 		);
 	};
 
 	return (
 		<div>
-			<StyledButtonContainer>
-				<StyledAddButton
-					variant="contained"
-					startIcon={<Add />}
-					onClick={() => setAddModal(true)}
-					data-testid={"teams-settings-add-btn"}
-				>
-					Add Team
-				</StyledAddButton>
-			</StyledButtonContainer>
 			<AddTeamModal
 				type={type}
 				open={addModal}
@@ -132,9 +123,6 @@ export const TeamsTable = () => {
 				<StyledTeamTable>
 					<Table.Head>
 						<Table.Row>
-							<Table.Cell size="small" padding="checkbox">
-								<Checkbox />
-							</Table.Cell>
 							<Table.Cell size="small">
 								<Table.Sort
 									active={true}
@@ -144,6 +132,7 @@ export const TeamsTable = () => {
 									Name
 								</Table.Sort>
 							</Table.Cell>
+							<Table.Cell size="small">Group Type</Table.Cell>
 							<Table.Cell size="small">
 								<Table.Sort
 									active={true}
@@ -156,49 +145,37 @@ export const TeamsTable = () => {
 							<Table.Cell size="small">
 								Permission Date
 							</Table.Cell>
-							<Table.Cell size="small">
-								Model Limit Type
-							</Table.Cell>
-							<Table.Cell size="small">Limit Value</Table.Cell>
-							<Table.Cell size="small">Frequency</Table.Cell>
-							<Table.Cell size="small">Actions</Table.Cell>
 						</Table.Row>
 					</Table.Head>
 					<Table.Body>
-						{teams.map((team) => (
-							<Table.Row key={team.id}>
-								<StyledTableCell
-									size="medium"
-									padding="checkbox"
-								>
-									<StyledCheckbox />
-								</StyledTableCell>
-								<Table.Cell>{team.name}</Table.Cell>
-								<Table.Cell>{team.permission}</Table.Cell>
-								<Table.Cell>{team.dateAdded}</Table.Cell>
-								<Table.Cell>{team.limitType}</Table.Cell>
-								<Table.Cell>{team.limitValue}</Table.Cell>
-								<Table.Cell>{team.frequency}</Table.Cell>
-								<Table.Cell size="medium">
-									<IconButton>
-										<Edit />
-									</IconButton>
-									<IconButton>
-										<Delete />
-									</IconButton>
-								</Table.Cell>
-							</Table.Row>
-						))}
+						{teams
+							.slice(
+								page * rowsPerPage,
+								page * rowsPerPage + rowsPerPage,
+							)
+							.map((team) => (
+								<Table.Row key={team.id}>
+									<Table.Cell>{team.name}</Table.Cell>
+									<Table.Cell>{team.type}</Table.Cell>
+									<Table.Cell>{team.permission}</Table.Cell>
+									<Table.Cell>{team.dateAdded}</Table.Cell>
+								</Table.Row>
+							))}
 					</Table.Body>
 					<Table.Footer>
 						<Table.Row>
 							<Table.Pagination
-								page={0}
-								rowsPerPage={5}
+								page={page}
+								rowsPerPage={rowsPerPage}
 								rowsPerPageOptions={[5, 10, 20]}
 								count={teams.length}
-								onPageChange={() => {}}
-								onRowsPerPageChange={() => {}}
+								onPageChange={(_, newPage) => setPage(newPage)}
+								onRowsPerPageChange={(e) => {
+									setRowsPerPage(
+										parseInt(e.target.value, 10),
+									);
+									setPage(0);
+								}}
 							/>
 						</Table.Row>
 					</Table.Footer>

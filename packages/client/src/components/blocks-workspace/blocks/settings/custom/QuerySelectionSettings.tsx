@@ -133,7 +133,7 @@ export const QuerySelectionSettings = observer(
 					fullWidth
 					disableClearable={value === ""}
 					size="small"
-                    multiple={false}
+					multiple={false}
 					value={value}
 					options={Object.keys(queries)}
 					getOptionLabel={(id: string) => {

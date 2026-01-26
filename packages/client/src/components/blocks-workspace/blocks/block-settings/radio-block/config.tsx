@@ -91,20 +91,28 @@ const SettingAutocomplete = <D extends BlockDef>({
 	return (
 		<Autocomplete
 			fullWidth
-            multiple={false}
+			multiple={false}
 			options={options}
 			value={options.find((opt) => opt.value === selectedValue) || null}
 			onChange={(_, newValue) => {
-				setBlockData(typeof newValue === 'object' && newValue !== null ? newValue.value : undefined);
+				setBlockData(
+					typeof newValue === "object" && newValue !== null
+						? newValue.value
+						: undefined,
+				);
 			}}
-			getOptionLabel={(option) => typeof option === 'object' && option !== null ? option.label : ''}
+			getOptionLabel={(option) =>
+				typeof option === "object" && option !== null
+					? option.label
+					: ""
+			}
 			isOptionEqualToValue={(option, value) =>
-                typeof option === 'object' &&
-                option !== null &&
-                typeof value === 'object' &&
-                value !== null &&
-                'value' in option &&
-                'value' in value &&
+				typeof option === "object" &&
+				option !== null &&
+				typeof value === "object" &&
+				value !== null &&
+				"value" in option &&
+				"value" in value &&
 				option.value === value.value
 			}
 			renderInput={(params) => (
@@ -333,7 +341,7 @@ export const config: BlockSettingsConfig = {
 											Value
 										</Typography>
 									</Box>
-									<Box sx={{width: 40}} />
+									<Box sx={{ width: 40 }} />
 								</Box>
 
 								{/* Options */}
@@ -370,7 +378,7 @@ export const config: BlockSettingsConfig = {
 								{/* Current Value Selection */}
 								<BaseSettingSection label="Selected Value">
 									<Autocomplete
-                                        multiple={false}
+										multiple={false}
 										value={
 											configOptions.find(
 												(opt) =>
@@ -386,20 +394,27 @@ export const config: BlockSettingsConfig = {
 											if (newValue) {
 												setData(
 													"value",
-													typeof newValue === 'object' && newValue !== null ? newValue.value : undefined,
+													typeof newValue ===
+														"object" &&
+														newValue !== null
+														? newValue.value
+														: undefined,
 												);
 											}
 										}}
 										getOptionLabel={(option) =>
-											typeof option === 'object' && option !== null ? option.label : ''
+											typeof option === "object" &&
+											option !== null
+												? option.label
+												: ""
 										}
 										isOptionEqualToValue={(option, value) =>
-                                            typeof option === 'object' &&
-                                            option !== null &&
-                                            typeof value === 'object' &&
-                                            value !== null &&
-                                            'value' in option &&
-                                            'value' in value &&
+											typeof option === "object" &&
+											option !== null &&
+											typeof value === "object" &&
+											value !== null &&
+											"value" in option &&
+											"value" in value &&
 											option.value === value.value
 										}
 										renderInput={(params) => (

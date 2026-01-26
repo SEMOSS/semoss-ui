@@ -1,8 +1,8 @@
-import { MenuItem } from "../Menu";
+import { Menu } from "../Menu";
 import { Select, type SelectProps } from "./Select";
 
 const SelectNameSpace = Object.assign(Select, {
-	Item: MenuItem,
+	Item: Menu.Item,
 });
 
 export type { SelectProps };

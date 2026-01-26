@@ -23,8 +23,18 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import {
+	addEngineUserPermissions,
+	addProjectUserPermissions,
+	editEngineUserPermissions,
+	editProjectUserPermissions,
+	getEngineUsers,
+	getEngineUsersNoCredentials,
+	getProjectUsers,
+	getProjectUsersNoCredentials,
+} from "@/api";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
-import { useRootStore, useSettings } from "@/hooks";
+import { useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
 import { MembersAddOverlayUser } from "./MembersAddOverlayUser";
@@ -143,7 +153,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		setAddModalUser,
 		onChange = () => null,
 	} = props;
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -210,16 +219,16 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		const fetchUsers = async () => {
 			try {
 				let all = [];
-				if (type === "APP") {
+				if (type === "PROJECT") {
 					const [noCred, cred] = await Promise.all([
-						monolithStore.getProjectUsersNoCredentials(
+						getProjectUsersNoCredentials(
 							adminMode,
 							id,
 							AUTOCOMPLETE_LIMIT,
 							offset,
 							debouncedSearch || "",
 						),
-						monolithStore.getProjectUsers(
+						getProjectUsers(
 							adminMode,
 							id,
 							debouncedSearch || "",
@@ -237,14 +246,14 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 					type === "FUNCTION"
 				) {
 					const [noCred, cred] = await Promise.all([
-						monolithStore.getEngineUsersNoCredentials(
+						getEngineUsersNoCredentials(
 							adminMode,
 							id,
 							AUTOCOMPLETE_LIMIT,
 							offset,
 							debouncedSearch || "",
 						),
-						monolithStore.getEngineUsers(
+						getEngineUsers(
 							adminMode,
 							id,
 							debouncedSearch || "",
@@ -302,7 +311,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		try {
 			// construct requests for post data
 			const requests = members.map((m) => {
-				const json = {
+				let json: Record<string, unknown> = {
 					userid: m.id,
 					permission: validSetting(selectedRole)
 						? permissionPriorityMapper(selectedRole)?.permission
@@ -311,21 +320,32 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
 				// FOR MODELS
 				if (restriction !== "null") {
-					json["usageRestriction"] = restriction;
+					json = {
+						...json,
+						usageRestriction: restriction,
+					};
 				}
 
 				if (frequency) {
-					json["usageFrequency"] = frequency;
+					json = {
+						...json,
+						usageFrequency: frequency,
+					};
 				}
 
 				if (restriction === "token") {
-					json["maxTokens"] = Number(maxTokens);
+					json = {
+						...json,
+						maxTokens: Number(maxTokens),
+					};
 				}
 
 				if (restriction === "compute") {
-					json["maxResponseTime"] = Number(maxTime);
+					json = {
+						...json,
+						maxResponseTime: Number(maxTime),
+					};
 				}
-
 				return json;
 			});
 
@@ -338,7 +358,15 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				return;
 			}
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -346,13 +374,13 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await monolithStore.editEngineUserPermissions(
+				response = await editEngineUserPermissions(
 					adminMode,
 					id,
 					requests,
 				);
-			} else if (type === "APP") {
-				response = await monolithStore.editProjectUserPermissions(
+			} else if (type === "PROJECT") {
+				response = await editProjectUserPermissions(
 					adminMode,
 					id,
 					requests,
@@ -399,7 +427,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
 		try {
 			// construct requests for post data
-			let requests: any = null;
+			let requests: unknown[] = [];
 			if (type === "MODEL") {
 				requests = selectedMembers.map((m) => {
 					return {
@@ -444,7 +472,15 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				return;
 			}
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -452,16 +488,16 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await monolithStore.addEngineUserPermissions(
+				response = await addEngineUserPermissions(
 					adminMode,
 					id,
 					requests,
 				);
-			} else if (type === "APP") {
-				response = await monolithStore.addProjectUserPermissions(
+			} else if (type === "PROJECT") {
+				response = await addProjectUserPermissions(
 					adminMode,
 					id,
-					requests,
+					requests as string[],
 				);
 			}
 
@@ -525,8 +561,12 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 	}, [isScrollBottom]);
 
 	return (
-		<Modal open={open} maxWidth="lg">
-			<Modal.Title>
+		<Modal
+			open={open}
+			maxWidth="lg"
+			data-testid="members-add-overlay-modal"
+		>
+			<Modal.Title data-testid="members-add-overlay-modal-title">
 				{" "}
 				{user === null ? "Add Members" : "Edit Member"}
 			</Modal.Title>
@@ -564,14 +604,14 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 						isOptionEqualToValue={(option, value) => {
 							return option.id === value.id;
 						}}
-						onInputChange={(event, newValue) => {
+						onInputChange={(_event, newValue) => {
 							setSearch(newValue);
 							setOffset(0);
 							setInfiniteOn(true);
 							setRenderedMembers([]);
 							setSearchLoading(true);
 						}}
-						onChange={(event, newValue) => {
+						onChange={(_event, newValue) => {
 							setSelectedMembers(newValue || []);
 						}}
 						getOptionDisabled={(option) => !!option.permission}
@@ -619,9 +659,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 								}}
 							/>
 						)}
+						data-testid="members-add-overlay-autocomplete"
 					/>
 				)}
-				<StyledOuterBox>
+				<StyledOuterBox data-testid="members-add-overlay-outerbox">
 					{user === null &&
 						selectedMembers.map((user) => (
 							<MembersAddOverlayUser
@@ -660,7 +701,12 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 					)}
 				</StyledOuterBox>
 
-				<Typography variant="subtitle1">Permissions</Typography>
+				<Typography
+					variant="subtitle1"
+					data-testid="members-permissions"
+				>
+					Permissions
+				</Typography>
 				<StyledSelection>
 					<RadioGroup
 						label={""}
@@ -681,6 +727,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 												display: "flex",
 												fontSize: "16px",
 											}}
+											data-testid="author-role"
 										>
 											<Avatar
 												sx={{
@@ -693,6 +740,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 													backgroundColor:
 														"rgba(0, 0, 0, .5)",
 												}}
+												data-testid="author-role-avatar"
 											>
 												A
 											</Avatar>
@@ -721,6 +769,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 													userPermission,
 												)?.priority > 1
 											}
+											data-testid="author-role-radio"
 										/>
 									}
 								/>
@@ -733,6 +782,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 												display: "flex",
 												fontSize: "16px",
 											}}
+											data-testid="editor-role"
 										>
 											<Icon
 												sx={{
@@ -748,6 +798,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 													alignItems: "center", // Center the icon vertically
 													justifyContent: "center",
 												}}
+												data-testid="editor-role-icon"
 											>
 												<EditRounded />
 											</Icon>
@@ -776,6 +827,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 													userPermission,
 												)?.priority > 2
 											}
+											data-testid="editor-role-radio"
 										/>
 									}
 								/>
@@ -788,6 +840,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 												display: "flex",
 												fontSize: "16px",
 											}}
+											data-testid="readonly-role"
 										>
 											<Icon
 												sx={{
@@ -803,6 +856,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 													alignItems: "center", // Center the icon vertically
 													justifyContent: "center",
 												}}
+												data-testid="readonly-role-icon"
 											>
 												<RemoveRedEyeRounded />
 											</Icon>
@@ -831,6 +885,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 													userPermission,
 												)?.priority > 3
 											}
+											data-testid="readonly-role-radio"
 										/>
 									}
 								/>
@@ -841,7 +896,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
 				{type === "MODEL" && (
 					<>
-						<Typography variant="subtitle1">
+						<Typography
+							variant="subtitle1"
+							data-testid="model-limit-restrictions"
+						>
 							Model Limit Restrictions
 						</Typography>
 						<Stack direction={"column"} gap={1}>
@@ -852,13 +910,14 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 								onChange={(e) => {
 									setRestriction(e.target.value);
 								}}
+								data-testid="model-limit-restrictions-select"
 							>
 								{Object.entries(usageRestritctionTypes).map(
-									(option, i) => {
+									(option, _i) => {
 										return (
 											<Select.Item
 												value={option[0]}
-												key={i}
+												key={`usageRestrictionType-${option[0]}`}
 											>
 												{option[1]}
 											</Select.Item>
@@ -874,6 +933,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 									onChange={(e) => {
 										setMaxTokens(e.target.value);
 									}}
+									data-testid="model-max-tokens"
 								></TextField>
 							)}
 							{restriction === "compute" && (
@@ -885,13 +945,14 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 										onChange={(e) => {
 											setMaxTime(e.target.value);
 										}}
+										data-testid="model-max-response-time"
 									></TextField>
 									<Select label="Unit" value={unitTypes[0]}>
-										{unitTypes.map((option, i) => {
+										{unitTypes.map((option, _i) => {
 											return (
 												<Select.Item
 													value={option}
-													key={i}
+													key={`unitType-${option}`}
 												>
 													{option}
 												</Select.Item>
@@ -907,13 +968,14 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 									onChange={(e) => {
 										setFrequency(e.target.value);
 									}}
+									data-testid="model-frequency-select"
 								>
 									{Object.entries(frequencyTypes).map(
-										(option, i) => {
+										(option, _i) => {
 											return (
 												<Select.Item
 													value={option[0]}
-													key={i}
+													key={`frequencyType-${option[0]}`}
 												>
 													{option[1]}
 												</Select.Item>
@@ -930,6 +992,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				<Button
 					variant="outlined"
 					onClick={() => closeOverlay(type, false)}
+					data-testid="members-add-overlay-cancel-button"
 				>
 					Cancel
 				</Button>
@@ -941,6 +1004,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 						onClick={() => {
 							addMembers();
 						}}
+						data-testid="members-add-overlay-add-button"
 					>
 						Save
 					</Button>
@@ -954,6 +1018,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 						onClick={() => {
 							updateUser([user]);
 						}}
+						data-testid="members-add-overlay-update-button"
 					>
 						Update
 					</Button>

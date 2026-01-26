@@ -1,8 +1,8 @@
 import {
 	ListItemButton as MuiListItemButton,
-	type ListItemButtonProps as MuiListItemButtonProps,
 	type SxProps,
 } from "@mui/material";
+import type React from "react";
 
 export interface ListItemButtonProps {
 	/**
@@ -60,9 +60,9 @@ export interface ListItemButtonProps {
 	 */
 	sx?: SxProps;
 
-	onClick?: MuiListItemButtonProps["onClick"];
-	onMouseOver?: MuiListItemButtonProps["onMouseOver"];
-	onMouseLeave?: MuiListItemButtonProps["onMouseLeave"];
+	onClick?: React.MouseEventHandler<HTMLDivElement>;
+	onMouseOver?: React.MouseEventHandler<HTMLDivElement>;
+	onMouseLeave?: React.MouseEventHandler<HTMLDivElement>;
 }
 
 export const ListItemButton: React.FC<ListItemButtonProps> = (props) => {

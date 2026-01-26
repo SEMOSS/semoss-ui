@@ -7,6 +7,7 @@ import {
 	MenuOpenRounded,
 	Settings as SettingsIcon,
 	TokenRounded,
+	GppGoodRounded as GuardrailIcon
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
@@ -47,6 +48,7 @@ const CATALOG_ROUTES = [
 		icon: <Inventory2Outlined />,
 		route: "/engine/storage",
 	},
+	{ text: "Guardrail", icon: <GuardrailIcon />, route: "/engine/guardrail" },
 ];
 
 const StyledNavHeader = styled(Stack)(({ theme }) => ({
@@ -117,7 +119,7 @@ const StyledListItemButton = styled(List.ItemButton, {
 	backgroundColor: selected ? theme.palette.primary.selected : undefined,
 })) as unknown as typeof List.ItemButton;
 
-const StyledListItemIcon = styled(List.Icon)(() => ({
+const StyledListItemIcon = styled(List.ItemIcon)(() => ({
 	width: "28px",
 	minWidth: "auto",
 }));

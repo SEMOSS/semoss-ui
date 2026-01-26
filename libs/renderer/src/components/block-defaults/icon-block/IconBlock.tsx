@@ -1,6 +1,6 @@
 import { Badge } from "@mui/material";
 import { observer } from "mobx-react-lite";
-import { type CSSProperties, useState } from "react";
+import type { CSSProperties } from "react";
 import { iconMap } from "../../../constants";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef } from "../../../store";

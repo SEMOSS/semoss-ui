@@ -44,7 +44,7 @@ const ModalWrapper = styled(Box)<{ $visible: boolean }>(({ $visible }) => ({
 	minHeight: $visible ? "auto" : "1px",
 }));
 
-const ModalOverlay = styled(Box)(({ theme }) => ({
+const ModalOverlay = styled(Box)(() => ({
 	position: "absolute",
 	top: 0,
 	left: 0,
@@ -55,7 +55,7 @@ const ModalOverlay = styled(Box)(({ theme }) => ({
 	pointerEvents: "none",
 }));
 
-const ModalContainer = styled(Box)(({ theme }) => ({
+const ModalContainer = styled(Box)(() => ({
 	position: "relative",
 	zIndex: 2,
 	width: "fit-content",
@@ -111,6 +111,7 @@ const StyledFooterArea = styled(Box)(({ theme }) => ({
 
 const ModalContent: FC<{
 	data: ModalBlockDef["data"];
+	//biome-ignore lint/suspicious/noExplicitAny: slots's value can't be predicted
 	slots: Record<string, any>;
 	onClose?: () => void;
 	isStatic: boolean;
@@ -159,8 +160,7 @@ const ModalContent: FC<{
 });
 
 export const ModalBlock: BlockComponent = observer(({ id }) => {
-	const { attrs, data, slots, setData, listeners } =
-		useBlock<ModalBlockDef>(id);
+	const { attrs, data, slots, listeners } = useBlock<ModalBlockDef>(id);
 	const { state } = useBlocks();
 	const isStatic = state.mode === "static";
 
@@ -196,7 +196,7 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 
 	const handleClose = () => {
 		if (!isStatic) {
-			setData("open", "false");
+			listeners.onClose();
 		}
 	};
 
@@ -206,7 +206,7 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 		: open; // In interactive mode, show when query returns true
 
 	if (!shouldShowModal && !isStatic) {
-		return <></>;
+		return null;
 	}
 
 	// In static mode with design mode on, show as modal but without portal
@@ -231,19 +231,27 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 
 	// Non-Design Mode View - Simple view with preview button
 	return (
-		<>
+		<div>
 			<Box {...attrs}>
 				<MuiModal
 					open={shouldShowModal}
 					onClose={handleClose}
-					// TODO: Switch to parent page
-					container={() => document.getElementById("page-1")}
+					container={() => {
+						const elements = Array.from(
+							document.querySelectorAll('[id="page-1"]'),
+						);
+						return elements.at(-1) || elements[elements.length - 1];
+					}}
 					sx={{
+						position: "absolute",
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
 						zIndex: 1500,
-						"& .MuiBackdrop-root": {
+					}}
+					BackdropProps={{
+						style: {
+							position: "absolute",
 							backgroundColor: "rgba(0, 0, 0, 0.5)",
 						},
 					}}
@@ -256,6 +264,6 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 					/>
 				</MuiModal>
 			</Box>
-		</>
+		</div>
 	);
 });

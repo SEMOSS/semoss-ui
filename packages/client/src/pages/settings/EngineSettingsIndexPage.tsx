@@ -20,10 +20,10 @@ import {
 	Tooltip,
 	Typography,
 } from "@semoss/ui";
+import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard, EngineTileCard } from "@/components/engine";
 import { useAPI, usePixel, useRootStore, useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
-import { removeUnderscores } from "@/utility";
+import type { ENGINE_TYPES } from "@/types";
 
 export interface DBMember {
 	ID: string;
@@ -95,7 +95,7 @@ const reducer = (state, action) => {
  */
 interface EngineSettingsIndexPageProps {
 	/** Type of the page to render */
-	type: ALL_TYPES;
+	type: ENGINE_TYPES;
 }
 
 export const EngineSettingsIndexPage = (
@@ -112,16 +112,30 @@ export const EngineSettingsIndexPage = (
 
 	const [view, setView] = useState("tile");
 	const [search, setSearch] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [sort, setSort] = useState("ENGINENAME");
 	const [sortOrder, setSortOrder] = useState("ASC");
 	const [canCollect, setCanCollect] = useState(true);
 	const [offset, setOffset] = useState(0);
+	const [isSearching, setIsSearching] = useState(false);
 
 	//** amount of items to be loaded */
 	const limit = 8;
 
 	// To focus when getting new results
 	const searchbarRef = useRef(null);
+
+	useEffect(() => {
+		setIsSearching(true);
+		const timer = setTimeout(() => {
+			setDebouncedSearch(search);
+			setIsSearching(false);
+		}, 400);
+
+		return () => {
+			clearTimeout(timer);
+		};
+	}, [search]);
 
 	// get a list of the keys
 	const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -147,7 +161,7 @@ export const EngineSettingsIndexPage = (
 	const getFavoritedDatabases = usePixel(`
     MyEngines(metaKeys = ${JSON.stringify(
 		metaKeys,
-	)}, filterWord=["${search}"], sort=[{"${sort}" : "${sortOrder}"}], onlyFavorites=[true], engineTypes=["${type}"]);
+	)}, filterWord=["${debouncedSearch}"], sort=[{"${sort}" : "${sortOrder}"}], onlyFavorites=[true], engineTypes=["${type}"]);
     `);
 
 	useEffect(() => {
@@ -168,7 +182,7 @@ export const EngineSettingsIndexPage = (
 	const getEngines = useAPI([
 		"getEngines",
 		adminMode,
-		search,
+		debouncedSearch,
 		type,
 		offset,
 		limit,
@@ -182,7 +196,7 @@ export const EngineSettingsIndexPage = (
 			field: "databases",
 			value: [],
 		});
-	}, [adminMode, search, sort]);
+	}, [adminMode, debouncedSearch, sort]);
 
 	//** append data through infinite scroll */
 	useEffect(() => {
@@ -200,7 +214,7 @@ export const EngineSettingsIndexPage = (
 
 		const mutateListWithVotes = databases;
 
-		getEngines.data.forEach((db, i) => {
+		getEngines.data.forEach((db, _i) => {
 			mutateListWithVotes.push({
 				...db,
 				upvotes: db.upvotes ? db.upvotes : 0,
@@ -225,9 +239,8 @@ export const EngineSettingsIndexPage = (
 	 */
 	const favoriteDb = (db) => {
 		const favorite = !isFavorited(db.database_id);
-		monolithStore
-			.setEngineFavorite(db.database_id, favorite)
-			.then((response) => {
+		setEngineFavorite(db.database_id, favorite)
+			.then((_response) => {
 				if (!favorite) {
 					const newFavorites = favoritedDbs;
 					for (let i = newFavorites.length - 1; i >= 0; i--) {
@@ -281,7 +294,7 @@ export const EngineSettingsIndexPage = (
 
 		monolithStore.runQuery(pixelString).then((response) => {
 			const type = response.pixelReturn[0].operationType;
-			const pixelResponse = response.pixelReturn[0].output;
+			const _pixelResponse = response.pixelReturn[0].output;
 
 			if (type.indexOf("ERROR") === -1) {
 				const newDatabases = [];
@@ -292,7 +305,7 @@ export const EngineSettingsIndexPage = (
 						newCopy.upvotes = !db.hasUpvoted
 							? newCopy.upvotes + 1
 							: newCopy.upvotes - 1;
-						newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
+						newCopy.hasUpvoted = !db.hasUpvoted;
 
 						newDatabases.push(newCopy);
 					} else {
@@ -316,8 +329,7 @@ export const EngineSettingsIndexPage = (
 	 * @param db
 	 */
 	const setDbGlobal = (db) => {
-		monolithStore
-			.setEngineGlobal(adminMode, db.database_id, !db.database_global)
+		setEngineGlobal(adminMode, db.database_id, !db.database_global)
 			.then((response) => {
 				if (response.data.success) {
 					const newDatabases = [];
@@ -345,7 +357,10 @@ export const EngineSettingsIndexPage = (
 	};
 
 	//** infinite sroll variables */
-	let scrollEle, scrollTimeout, currentScroll, previousScroll;
+	let scrollEle: HTMLDivElement,
+		scrollTimeout: ReturnType<typeof setTimeout>,
+		currentScroll: number,
+		previousScroll: number;
 	const offsetRef = useRef(0);
 	offsetRef.current = offset;
 	const canCollectRef = useRef(true);
@@ -387,7 +402,7 @@ export const EngineSettingsIndexPage = (
 	return (
 		<>
 			<Backdrop
-				open={getEngines.status !== "SUCCESS"}
+				open={getEngines.status === "LOADING" || isSearching}
 				sx={{
 					backgroundColor: "rgba(255, 255, 255, 0.5)",
 					zIndex: 1501,
@@ -400,8 +415,18 @@ export const EngineSettingsIndexPage = (
 					spacing={1}
 				>
 					<CircularProgress />
-					<Typography variant="body2">Loading</Typography>
-					<Typography variant="caption">Databases</Typography>
+					<Typography variant="body2">
+						{isSearching ? "Searching" : "Loading"}
+					</Typography>
+					<Typography variant="caption">
+						{type === "DATABASE"
+							? "Databases"
+							: type === "MODEL"
+								? "Models"
+								: type === "VECTOR"
+									? "Vectors"
+									: "Engines"}
+					</Typography>
 				</Stack>
 			</Backdrop>
 			<StyledContainer>
@@ -413,7 +438,7 @@ export const EngineSettingsIndexPage = (
 						}}
 						size="small"
 						onClear={() => setSearch("")}
-						ref={searchbarRef}
+						inputRef={searchbarRef}
 					/>
 					<StyledSort
 						size={"small"}
@@ -434,7 +459,7 @@ export const EngineSettingsIndexPage = (
 						color="primary"
 					>
 						<ToggleButton
-							onClick={(e, v) => setSortOrder(v)}
+							onClick={(_e, v) => setSortOrder(v)}
 							value={"DESC"}
 							aria-label={"Descending Order"}
 						>
@@ -443,7 +468,7 @@ export const EngineSettingsIndexPage = (
 							</Tooltip>
 						</ToggleButton>
 						<ToggleButton
-							onClick={(e, v) => setSortOrder(v)}
+							onClick={(_e, v) => setSortOrder(v)}
 							value={"ASC"}
 							aria-label={"Ascending Order"}
 						>
@@ -459,7 +484,7 @@ export const EngineSettingsIndexPage = (
 						color="primary"
 					>
 						<ToggleButton
-							onClick={(e, v) => setView(v)}
+							onClick={(_e, v) => setView(v)}
 							value={"tile"}
 						>
 							<Tooltip title={"Tile View"}>
@@ -467,7 +492,7 @@ export const EngineSettingsIndexPage = (
 							</Tooltip>
 						</ToggleButton>
 						<ToggleButton
-							onClick={(e, v) => setView(v)}
+							onClick={(_e, v) => setView(v)}
 							value={"list"}
 						>
 							<Tooltip title={"List View"}>
@@ -477,12 +502,32 @@ export const EngineSettingsIndexPage = (
 					</ToggleButtonGroup>
 				</StyledSearchbarContainer>
 				<Grid container spacing={3}>
+					{databases.length === 0 &&
+					getEngines.status === "SUCCESS" &&
+					debouncedSearch ? (
+						<Grid item xs={12}>
+							<Typography
+								variant="body1"
+								sx={{ textAlign: "center", py: 4 }}
+							>
+								No{" "}
+								{type === "DATABASE"
+									? "databases"
+									: type === "MODEL"
+										? "models"
+										: type === "VECTOR"
+											? "vectors"
+											: "engines"}{" "}
+								found matching &quot;{debouncedSearch}&quot;
+							</Typography>
+						</Grid>
+					) : null}
 					{databases.length
-						? databases.map((db, i) => {
+						? databases.map((db, _i) => {
 								return (
 									<Grid
 										item
-										key={i}
+										key={`${db.database_name}`}
 										sm={view === "list" ? 12 : 12}
 										md={view === "list" ? 12 : 6}
 										lg={view === "list" ? 12 : 4}
@@ -503,17 +548,15 @@ export const EngineSettingsIndexPage = (
 												isFavorite={isFavorited(
 													db.database_id,
 												)}
-												favorite={(val) => {
+												favorite={(_val) => {
 													favoriteDb(db);
 												}}
-												onClick={(id) => {
+												onClick={(_id) => {
 													navigate(
 														`${db.database_id}`,
 														{
 															state: {
-																name: removeUnderscores(
-																	db.database_name,
-																),
+																name: db.database_name,
 																global: db.database_global,
 																permission:
 																	db.permission,
@@ -521,10 +564,10 @@ export const EngineSettingsIndexPage = (
 														},
 													);
 												}}
-												upvote={(val) => {
+												upvote={(_val) => {
 													upvoteDb(db);
 												}}
-												global={(val) => {
+												global={(_val) => {
 													setDbGlobal(db);
 												}}
 											/>
@@ -551,9 +594,7 @@ export const EngineSettingsIndexPage = (
 														`${db.database_id}`,
 														{
 															state: {
-																name: removeUnderscores(
-																	db.database_name,
-																),
+																name: db.database_name,
 																global: db.database_global,
 																permission:
 																	db.permission,

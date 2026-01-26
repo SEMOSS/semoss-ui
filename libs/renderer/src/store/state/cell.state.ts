@@ -434,7 +434,10 @@ export class CellState<D extends CellDef = CellDef> {
 	_update(path: string | null, value: unknown) {
 		if (!path) {
 			// set the value
-			this._store = value as CellStateStoreInterface<D>;
+			this._store = {
+				...this._store,
+				...(value as CellStateStoreInterface<D>),
+			};
 			return;
 		}
 

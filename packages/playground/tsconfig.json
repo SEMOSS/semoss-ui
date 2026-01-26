@@ -4,22 +4,25 @@
 		"lib": ["ES2022", "dom"],
 		"target": "es6",
 		"jsx": "react-jsx",
-		"types": ["vite/client"],
+		"types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
+
 		/* Modules */
 		"module": "esnext",
 		"moduleResolution": "bundler",
 		"allowSyntheticDefaultImports": true,
 		"resolveJsonModule": true,
+
 		/* Skip */
 		"skipLibCheck": true,
 		"allowJs": true,
 		"esModuleInterop": true,
 		"isolatedModules": true,
+
 		/* Lang and Env */
 		"paths": {
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["src"],
+	"include": ["vite-env.d.ts", "src", "../../libs/shared/src"],
 	"exclude": ["dist", "node_modules"]
 }
