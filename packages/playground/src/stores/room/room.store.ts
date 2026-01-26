@@ -325,6 +325,21 @@ export class RoomStore {
 	}
 
 	/**
+	 * Number of tokens used
+	 */
+	get tokensUsed() {
+		let currMessage = this.tail as AbstractMessageStore;
+		let tokensUsed = 0;
+		while (currMessage) {
+			tokensUsed += currMessage.tokens;
+			if (currMessage.type === "INPUT") break;
+			currMessage = currMessage.parent;
+		}
+
+		return tokensUsed;
+	}
+
+	/**
 	 * Get the most recent plan
 	 */
 	get plan(): PlanMessageStore | null {
@@ -447,6 +462,7 @@ export class RoomStore {
 						modelName: this._store.model?.app_name || "",
 					},
 					dateCreated: new Date().toISOString(),
+					tokens: 0,
 				} as ResponseTextPixelMessage);
 			} else if (this.mode === "planning") {
 				root = new PlanMessageStore(this, {
@@ -464,6 +480,7 @@ export class RoomStore {
 						modelName: this._store.model?.app_name || "",
 					},
 					dateCreated: new Date().toISOString(),
+					tokens: 0,
 				} as ResponseTextPixelMessage);
 			}
 
@@ -835,6 +852,7 @@ export class RoomStore {
 				temperature: this.options.temperature,
 			},
 			dateCreated: "",
+			tokens: 0,
 		});
 
 		// get the parent message
