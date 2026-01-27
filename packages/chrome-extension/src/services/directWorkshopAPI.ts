@@ -179,7 +179,15 @@ export class DirectWorkshopService {
 			console.log("Script list response:", data);
 
 			if (data.pixelReturn?.[0]?.output) {
-				const scripts = data.pixelReturn[0].output as ScriptFile[];
+				const output = data.pixelReturn[0].output;
+				
+				// Validate that output is an array
+				if (!Array.isArray(output)) {
+					console.warn("Expected array for script list, got:", typeof output, output);
+					return [];
+				}
+				
+				const scripts = output as ScriptFile[];
 				// Sort by last modified date (newest first)
 				return scripts.sort((a, b) => {
 					const dateA = new Date(a.lastModified).getTime();
@@ -247,6 +255,7 @@ export class DirectWorkshopService {
 		simplifiedHTML: string,
 		currentUrl: string,
 		actionHistory: string[] = [],
+		playgroundContext?: string,
 	): Promise<LLMAction> {
 		try {
 			// Log what we're sending to help debug
@@ -277,6 +286,7 @@ export class DirectWorkshopService {
 				simplifiedHTML,
 				currentUrl,
 				actionHistory,
+				playgroundContext,
 			);
 			const response = await this.callLLM(prompt);
 			return this.parseResponse(response);
@@ -299,6 +309,7 @@ export class DirectWorkshopService {
 		simplifiedHTML: string,
 		currentUrl: string,
 		actionHistory: string[],
+		playgroundContext?: string,
 	): string {
 		// Format previous actions with structured tags
 		let previousActionsString = "";
@@ -306,11 +317,18 @@ export class DirectWorkshopService {
 			previousActionsString = `You have already taken the following actions:\n${actionHistory.join("\n\n")}\n\n`;
 		}
 
+		// Include playground context if available
+		let playgroundContextString = "";
+		if (playgroundContext) {
+			playgroundContextString = `\n\nContext from Playground AI Response:\n${playgroundContext}\n\nYou can use the information from this context to help complete the task.\n`;
+		}
+
 		// Build clean, generic system message (like browser-extension)
 		const formattedActions = `1. click(elementId: number): Clicks on an element
-2. setValue(elementId: number, value: string): Focuses on and sets the value of an input element
-3. askUser(fieldName: string, question: string): Pause and ask the user for information (use this for sensitive fields like passwords or when you need specific user input)
-4. done(): Indicates the task is finished`;
+2. setValue(elementId: number, value: string): Types text into an input field. The browser will automatically submit if it's a search box.
+3. navigate(url: string): Opens a URL in a NEW tab and switches focus to it (use when user says "navigate to", "go to", or "open" a URL)
+4. askUser(fieldName: string, question: string): Pause and ask the user for information (use this for sensitive fields like passwords or when you need specific user information)
+5. done(): Indicates the task is finished`;
 
 		const systemMessage = `You are a browser automation assistant.
 
@@ -318,7 +336,15 @@ You can use the following tools:
 
 ${formattedActions}
 
-You will be given a task to perform and the current state of the DOM. You will also be given previous actions that you have taken. You may retry a failed action up to one time.
+You will be given a task to perform and the current state of the DOM. You will also be given previous actions that you have taken.
+
+CRITICAL RULES:
+- NEVER repeat the same action on the same element. Each action should only be performed ONCE.
+- When you see "navigate to [URL]" or "go to [URL]", use navigate(url) to open that URL.
+- After using setValue() on a search box, do NOT click a search button or try to "press Enter" - the search will submit automatically.
+- If you've already clicked or set a value on an element, move to the next step immediately.
+- Do NOT retry actions. If unsure what to do next, call done().
+- Videos on sites like YouTube auto-play when clicked, so do NOT look for a separate Play button.
 
 IMPORTANT: When you encounter sensitive fields (like password, username, API keys) or fields that require specific user information that you cannot guess, use the askUser() action to request this information from the user instead of making up values.
 
@@ -341,7 +367,7 @@ You must always include the <Thought> and <Action> open/close tags or else your 
 
 The user requests the following task:
 
-${userCommand}
+${userCommand}${playgroundContextString}
 
 ${previousActionsString}Current time: ${new Date().toLocaleString()}
 
@@ -496,6 +522,20 @@ ${simplifiedHTML}`;
 					type: "askUser",
 					fieldName,
 					question,
+					reason: thought,
+				};
+			}
+
+			case "navigate": {
+				// Parse navigate("url") or navigate('url')
+				const urlMatch = argsStr.match(/^\s*["'](.*)["']\s*$/);
+				if (!urlMatch) {
+					throw new Error(`Invalid navigate format: ${argsStr}`);
+				}
+				const url = urlMatch[1];
+				return {
+					type: "navigate",
+					url,
 					reason: thought,
 				};
 			}

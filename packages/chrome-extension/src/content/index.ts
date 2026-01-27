@@ -12,6 +12,108 @@ console.log("Document body exists:", !!document.body);
 let annotatedElements: HTMLElement[] = [];
 const elementIdToUniqueId: Map<number, string> = new Map();
 
+// Listen for playground chat events
+let isPlaygroundPage = false;
+
+// Check if current page is playground
+function checkIfPlayground() {
+	// Check if URL contains playground patterns
+	const url = window.location.href;
+	isPlaygroundPage = url.includes('/room/') || url.includes('playground');
+	
+	if (isPlaygroundPage) {
+		console.log("Playground page detected, enabling chat monitoring");
+		setupPlaygroundListeners();
+	}
+}
+
+// Check if extension context is still valid
+function isExtensionContextValid(): boolean {
+	try {
+		// Try to access extension API - will throw if context is invalidated
+		return !!chrome.runtime?.id;
+	} catch (e) {
+		return false;
+	}
+}
+
+// Setup listeners for playground chat events
+function setupPlaygroundListeners() {
+	// Listen for response messages (AI output)
+	window.addEventListener("playground-chat-response", ((event: CustomEvent) => {
+		console.log("Playground chat response:", event.detail);
+		
+		// Forward to extension background/panel
+		chrome.runtime.sendMessage({
+			type: "PLAYGROUND_CHAT_RESPONSE",
+			data: event.detail,
+		}).catch(err => {
+			console.log("Could not send to extension:", err);
+		});
+	}) as EventListener);
+
+	// Listen for message submissions (for mode switching and command automation)
+	window.addEventListener("playground-chat-submit", ((event: CustomEvent) => {
+		console.log("Playground chat submit:", event.detail);
+		
+		// Forward to extension background/panel
+		chrome.runtime.sendMessage({
+			type: "PLAYGROUND_CHAT_SUBMIT",
+			data: event.detail,
+		}).catch(err => {
+			console.log("Could not send to extension:", err);
+		});
+	}) as EventListener);
+	
+	// Listen for Playwright script execution requests from Playground
+	window.addEventListener("message", (event: MessageEvent) => {
+		// Only accept messages from same origin
+		if (event.origin !== window.location.origin) {
+			return;
+		}
+		
+		if (event.data && event.data.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
+			console.log("[CONTENT SCRIPT] Received Playwright script execution request:", event.data.script);
+			
+			// Check if extension context is still valid
+			console.log("[CONTENT SCRIPT] Checking extension validity - chrome.runtime.id:", chrome.runtime?.id);
+			
+			if (!isExtensionContextValid()) {
+				console.warn("[CONTENT SCRIPT] Extension context invalidated!");
+				alert("Chrome Extension was reloaded. Please refresh this page to execute Playwright scripts.");
+				return;
+			}
+			
+			console.log("[CONTENT SCRIPT] Extension context valid, sending message to background...");
+			
+			// Forward to extension panel
+			chrome.runtime.sendMessage({
+				type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
+				script: event.data.script,
+			}).then((response) => {
+				console.log("[CONTENT SCRIPT] Message sent successfully, response:", response);
+			}).catch(err => {
+				console.error("[CONTENT SCRIPT] Failed to send message:", err);
+			});
+		}
+	});
+	
+	console.log("Playground chat listeners setup complete");
+}
+
+// Check on initial load
+checkIfPlayground();
+
+// Monitor for SPA navigation changes using MutationObserver
+let lastUrl = window.location.href;
+new MutationObserver(() => {
+	const currentUrl = window.location.href;
+	if (currentUrl !== lastUrl) {
+		lastUrl = currentUrl;
+		setTimeout(checkIfPlayground, 500);
+	}
+}).observe(document, { subtree: true, childList: true });
+
 // Listen for messages from popup/background
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 	console.log("Content script received message:", message);

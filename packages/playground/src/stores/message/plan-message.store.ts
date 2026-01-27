@@ -1,10 +1,4 @@
-import {
-	action,
-	computed,
-	makeObservable,
-	observable,
-	runInAction,
-} from "mobx";
+import { makeObservable, observable, runInAction } from "mobx";
 import type {
 	InputToolExecPixelMessage,
 	PixelMessage,
@@ -60,21 +54,21 @@ export class PlanMessageStore extends AbstractMessageStore {
 	) {
 		super(room, message);
 
+		try {
+			this.plan = JSON.parse(message.content);
+		} catch {
+			console.error("ERROR Parsing Plan");
+		}
+
+		// set the model
+		this.model = {
+			id: message.modelId,
+			name: message.ornaments?.modelName || "AI",
+		};
+
 		makeObservable(this, {
 			plan: observable,
-			step: computed,
-			sync: action,
-			addStep: action,
-			updateStep: action,
-			removeStep: action,
-			runMessage: action,
-			confirmPlan: action,
-			saveToolExecution: action,
-			failStepExecution: action,
 		});
-
-		// sync the message (must be after makeObservable so sync action is registered)
-		this.sync(message);
 	}
 
 	/**
@@ -83,36 +77,6 @@ export class PlanMessageStore extends AbstractMessageStore {
 	get step(): PlanStep | null {
 		return this.plan.steps[this.executionIdx] || null;
 	}
-
-	/**
-	 * Sync store properties from the pixel message
-	 */
-	sync = (message: PixelMessage) => {
-		// type guard + specifics
-		if (message.type === "RESPONSE_TEXT") {
-			try {
-				this.plan = JSON.parse(message.content);
-			} catch {
-				console.error("ERROR Parsing Plan");
-			}
-		} else {
-			throw new Error(
-				`Invalid message object passed to ResponseMessageStore.update: ${JSON.stringify(message)}`,
-			);
-		}
-
-		// cast the types
-		message = message as ResponseTextPixelMessage;
-
-		// set the id
-		this.id = message.messageId;
-
-		// set the model that was used
-		this.model = {
-			id: message.modelId,
-			name: message.ornaments?.modelName || "AI",
-		};
-	};
 
 	/***
 	 * Add a new step to the plan
@@ -183,7 +147,7 @@ export class PlanMessageStore extends AbstractMessageStore {
 				},
 			]
 		>(`AskCOTRoom(
-engine=["${room.model.app_id}"],
+engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
@@ -197,8 +161,8 @@ paramValues=[${JSON.stringify({
 
 		const { output } = response.pixelReturn[0];
 
-		// sync the input message
-		inputMessage.sync(output.inputMessage);
+		// update the input's id
+		inputMessage.updateId(output.inputMessage.messageId);
 
 		// create the response and link to the input
 		const responseMessage = createMessageStore(
@@ -227,7 +191,7 @@ paramValues=[${JSON.stringify({
 		>(
 			`
 COTConfirmation(
-engine=["${room.model.app_id}"],
+engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 );`,
@@ -289,7 +253,7 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 				},
 			]
 		>(`COTRoomResult(
-engine=["${room.model.app_id}"],
+engine=["${room.modelId}"],
 roomId=["${room.roomId}"]
 );`);
 
@@ -410,7 +374,7 @@ roomId=["${room.roomId}"]
 			]
 		>(
 			`COTToolPrediction(
-                engine=["${room.model.app_id}"],
+                engine=["${room.modelId}"],
                 roomId=["${room.roomId}"],
                 stepNumber=["${step.step_number}"],
                 toolName=["${step.details.tool_name}"]
@@ -473,7 +437,7 @@ roomId=["${room.roomId}"]
 				},
 			]
 		>(`AddCOTLLMReasoning(
-engine=["${room.model.app_id}"],
+engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 stepNumber=["${step.step_number}"]
 );`);
@@ -561,7 +525,7 @@ stepNumber=["${step.step_number}"]
 			]
 		>(
 			`AddCOTToolExecution(
-engine=["${room.model.app_id}"],
+engine=["${room.modelId}"],
 roomId = ["${room.roomId}"],
 toolId = ["${tool.id}"],
 toolName=["${tool.name}"],

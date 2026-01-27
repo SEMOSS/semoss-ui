@@ -135,8 +135,15 @@ export class ScriptExecutor {
 		const tabKeys = Object.keys(script.steps).sort();
 
 		for (const tabKey of tabKeys) {
-			const stepGroups = script.steps[tabKey];
+			let stepGroups = script.steps[tabKey];
 
+			// Handle both formats: array of arrays OR single array
+			// If it's a single array of steps, wrap it in another array
+			if (stepGroups.length > 0 && !Array.isArray(stepGroups[0])) {
+				// Single array format - wrap it
+				stepGroups = [stepGroups as any] as ScriptStep[][];
+			}
+			
 			// Add a "switchTab" action before processing steps for new tabs
 			if (tabKey !== "tab-1") {
 				actions.push({

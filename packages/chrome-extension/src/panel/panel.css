@@ -650,3 +650,132 @@ body {
   text-align: center;
 }
 
+/* Playground Monitor Section */
+.playground-monitor-section {
+  margin-top: 24px;
+  padding: 16px;
+  background: #f0f9ff;
+  border: 2px solid #0ea5e9;
+  border-radius: 8px;
+}
+
+.playground-monitor-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #0c4a6e;
+}
+
+.playground-current,
+.playground-submitted {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #bae6fd;
+}
+
+.playground-current strong,
+.playground-submitted strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #0369a1;
+  font-size: 13px;
+}
+
+.playground-text {
+  padding: 8px;
+  background: #f8fafc;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #334155;
+  word-break: break-word;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.playground-timestamp {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #64748b;
+  text-align: right;
+}
+
+/* Playground Controls */
+.playground-controls {
+  margin: 12px 0;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.playground-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.playground-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.playground-toggle .toggle-text {
+  font-size: 14px;
+  color: #334155;
+  font-weight: 500;
+}
+
+.playground-pending {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding: 10px;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  border-radius: 6px;
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    border-color: #6ee7b7;
+  }
+  50% {
+    border-color: #10b981;
+  }
+}
+
+.playground-pending .pending-text {
+  font-size: 13px;
+  color: #065f46;
+  font-weight: 500;
+}
+
+.use-playground-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.use-playground-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.use-playground-btn:active {
+  transform: translateY(0);
+}
+
