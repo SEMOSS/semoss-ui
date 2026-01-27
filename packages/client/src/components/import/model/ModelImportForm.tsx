@@ -490,7 +490,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									/>
 								</Field>
 							);
-						case "boolean":
+						case "select":
 							return (
 								<Field>
 									<FieldLabel htmlFor={f.key}>
@@ -532,7 +532,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									</Select>
 								</Field>
 							);
-						case "select":
+						case "boolean":
 							return (
 								<div
 									key={f.key}
