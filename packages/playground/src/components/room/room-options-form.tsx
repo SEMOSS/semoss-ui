@@ -6,100 +6,106 @@ import {
 	Badge,
 	Button,
 	Field,
+	FieldDescription,
 	FieldGroup,
 	FieldLabel,
+	FieldLegend,
 	FieldSeparator,
 	FieldSet,
 	Input,
-	ScrollArea,
 	Slider,
 	Textarea,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { MCPOverlay } from "@/components";
-import { useChat } from "@/hooks";
+import { MCPOverlay, SaveWorkspaceDialog } from "@/components";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 
-interface RoomOptionsProps {
+interface RoomOptionsFormProps {
+	/** Model of the room */
+	model: RoomStore["model"];
+
+	/** Update model on change */
+	onModelChange: (model: RoomStore["model"]) => void;
+
 	/** Options for the room */
 	options: RoomStore["options"];
 
 	/** Update options on change */
-	setOptions: (options: RoomStore["options"]) => void;
-
-	/** Update model on change */
-	setRoomModel: (modelId: string) => void;
+	onOptionsChange: (options: Partial<RoomStore["options"]>) => void;
 }
 
-export const RoomOptions = observer((props: RoomOptionsProps) => {
-	const { options, setOptions, setRoomModel } = props;
-
-	/**
-	 * Library hooks
-	 */
-	const { chat } = useChat();
-
-	/**
-	 * State
-	 */
-	const [mCPOverlay, setMCPOverlay] = useState<{
-		type?: "KNOWLEDGE" | "TOOLBOX";
-		isOpen: boolean;
-	}>({
-		isOpen: false,
-	});
-
-	// All MCPs are in the mcp array (workspace MCPs have fromWorkspace flag)
-	const knowledge = options.mcp.filter((mcp) => mcp.type === "VECTOR");
-	const toolbox = options.mcp.filter((mcp) => mcp.type !== "VECTOR");
-
-	/**
-	 * Functions
-	 */
-	const handleDeleteMCP = (mcp: MCPConfig) => {
-		// Don't allow deletion of workspace MCPs
-		if (mcp.fromWorkspace) {
-			return;
-		}
-
-		const updatedMCPs = options.mcp.filter(
-			(t) => !(t.id === mcp.id && t.type === mcp.type),
-		);
-
-		setOptions({
-			...options,
-			mcp: updatedMCPs,
+export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
+	({
+		model,
+		onModelChange = () => null,
+		options,
+		onOptionsChange = () => null,
+	}) => {
+		/**
+		 * State
+		 */
+		const [mCPOverlay, setMCPOverlay] = useState<{
+			type?: "KNOWLEDGE" | "TOOLBOX";
+			isOpen: boolean;
+		}>({
+			isOpen: false,
 		});
-	};
 
-	return (
-		<ScrollArea className="h-full w-full">
-			<form className="px-2 py-4">
+		// All MCPs are in the mcp array (workspace MCPs have fromWorkspace flag)
+		const knowledge = options.mcp.filter((mcp) => mcp.type === "VECTOR");
+		const toolbox = options.mcp.filter((mcp) => mcp.type !== "VECTOR");
+
+		/**
+		 * Functions
+		 */
+		const handleDeleteMCP = (mcp: MCPConfig) => {
+			// Don't allow deletion of workspace MCPs
+			if (mcp.fromWorkspace) {
+				return;
+			}
+
+			const updatedMCPs = options.mcp.filter(
+				(t) => !(t.id === mcp.id && t.type === mcp.type),
+			);
+
+			onOptionsChange({
+				mcp: updatedMCPs,
+			});
+		};
+
+		return (
+			<form className="p-4">
 				<FieldGroup>
 					<FieldSet>
+						<FieldLegend className="flex w-full flex-1 items-center gap-2">
+							Room Settings
+							<SaveWorkspaceDialog
+								systemPrompt={options.instructions}
+								mcps={options.mcp}
+							/>
+						</FieldLegend>
+						<FieldDescription>
+							Update room settings and modify the behavior of the
+							chat
+						</FieldDescription>
 						<FieldGroup>
 							{ENABLE_MODEL_SELECT && (
 								<Field>
 									<FieldLabel>Model</FieldLabel>
 									<EngineSelect
-										name={
-											chat.models.selected?.app_name || ""
-										}
-										value={
-											chat.models.selected?.app_id || ""
-										}
+										name={model?.app_name || ""}
+										value={model?.app_id || ""}
 										engineTypes={["MODEL"]}
 										metaFilters={[
 											{ tag: "text-generation" },
 										]}
 										onChange={(v) => {
-											chat.setSelectedModel(v);
-											setRoomModel(v.app_id);
+											onModelChange(v);
 										}}
 										popoverContentProps={{
 											align: "start",
@@ -107,7 +113,6 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 									/>
 								</Field>
 							)}
-
 							<Field>
 								<FieldLabel>Instructions</FieldLabel>
 								<Textarea
@@ -115,14 +120,12 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 									className="h-64 resize-none overflow-y-auto"
 									value={options.instructions}
 									onChange={(e) => {
-										setOptions({
-											...options,
+										onOptionsChange({
 											instructions: e.target.value,
 										});
 									}}
 								/>
 							</Field>
-
 							<Field>
 								<FieldLabel
 									onClick={(event) => {
@@ -229,7 +232,6 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 									)}
 								</div>
 							</Field>
-
 							<Field>
 								<FieldLabel
 									onClick={(event) => {
@@ -242,7 +244,7 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 										});
 									}}
 								>
-									<div className="flex-1">MCPs</div>
+									<div className="flex-1">Toolbox</div>
 
 									<Tooltip>
 										<TooltipTrigger asChild>
@@ -352,8 +354,7 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 												? knowledge
 												: toolbox;
 
-										setOptions({
-											...options,
+										onOptionsChange({
 											mcp: [...otherTypeMCPs, ...mcp],
 										});
 									}
@@ -374,8 +375,7 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 									placeholder="Update token length"
 									value={options.tokenLength}
 									onChange={(e) =>
-										setOptions({
-											...options,
+										onOptionsChange({
 											tokenLength:
 												Number(e.target.value) || 0,
 										})
@@ -396,8 +396,7 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 									step={0.01}
 									value={[options.temperature]}
 									onValueChange={(value) =>
-										setOptions({
-											...options,
+										onOptionsChange({
 											temperature: value[0],
 										})
 									}
@@ -407,6 +406,6 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 					</FieldSet>
 				</FieldGroup>
 			</form>
-		</ScrollArea>
-	);
-});
+		);
+	},
+);
