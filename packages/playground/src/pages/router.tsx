@@ -9,6 +9,7 @@ import { MainLayout } from "./main-layout";
 import { NewRoomPage } from "./new-room-page";
 import { NewWorkspacePage } from "./new-workspace-page";
 import { RoomPage } from "./room-page";
+import { SETTINGS_ROUTES, SettingsLayout } from "./settings";
 import { WorkspaceDetailPage } from "./workspace-detail-page";
 import { WorkspacePage } from "./workspace-page";
 
@@ -59,6 +60,12 @@ const router = createHashRouter(
 										{
 											path: "workspace/:workspaceId/edit",
 											element: <EditWorkspacePage />,
+										},
+										{
+											path: "settings",
+											element: <SettingsLayout />,
+											errorElement: <ErrorPage />,
+											children: SETTINGS_ROUTES,
 										},
 										{
 											path: "*",

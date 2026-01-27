@@ -1,7 +1,7 @@
 "use client";
 
-import { EllipsisVerticalIcon, LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { CogIcon, EllipsisVerticalIcon, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Avatar,
@@ -67,6 +67,12 @@ export function NavUser() {
 						align="end"
 						sideOffset={4}
 					>
+						<DropdownMenuItem asChild>
+							<Link to="/settings">
+								<CogIcon />
+								Settings
+							</Link>
+						</DropdownMenuItem>
 						<DropdownMenuItem
 							onClick={async () => {
 								await actions.logout();
