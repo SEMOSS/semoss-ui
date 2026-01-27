@@ -24,6 +24,12 @@ declare namespace chrome.sidePanel {
 	}
 
 	function open(options: OpenOptions): Promise<void>;
-	function setOptions(options: { enabled?: boolean; path?: string; tabId?: number }): Promise<void>;
-	function getOptions(options: { tabId?: number }): Promise<{ enabled: boolean; path: string }>;
+	function setOptions(options: {
+		enabled?: boolean;
+		path?: string;
+		tabId?: number;
+	}): Promise<void>;
+	function getOptions(options: {
+		tabId?: number;
+	}): Promise<{ enabled: boolean; path: string }>;
 }

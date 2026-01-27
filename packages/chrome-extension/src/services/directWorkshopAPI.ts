@@ -180,13 +180,17 @@ export class DirectWorkshopService {
 
 			if (data.pixelReturn?.[0]?.output) {
 				const output = data.pixelReturn[0].output;
-				
+
 				// Validate that output is an array
 				if (!Array.isArray(output)) {
-					console.warn("Expected array for script list, got:", typeof output, output);
+					console.warn(
+						"Expected array for script list, got:",
+						typeof output,
+						output,
+					);
 					return [];
 				}
-				
+
 				const scripts = output as ScriptFile[];
 				// Sort by last modified date (newest first)
 				return scripts.sort((a, b) => {

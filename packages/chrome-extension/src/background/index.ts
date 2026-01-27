@@ -27,23 +27,38 @@ chrome.debugger.onDetach.addListener((source, reason) => {
 
 // Listen for messages from content script or popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-	console.log("[BACKGROUND] Received message:", message.type, "from:", sender.tab ? `tab ${sender.tab.id}` : "extension");
+	console.log(
+		"[BACKGROUND] Received message:",
+		message.type,
+		"from:",
+		sender.tab ? `tab ${sender.tab.id}` : "extension",
+	);
 
 	// Forward playground messages from content scripts to all extension pages (panel, popup, etc.)
 	// Only forward if message came from a tab (content script), not from extension itself
 	if (
 		sender.tab &&
 		(message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" ||
-		message.type === "PLAYGROUND_CHAT_RESPONSE" ||
-		message.type === "PLAYGROUND_CHAT_SUBMIT")
+			message.type === "PLAYGROUND_CHAT_RESPONSE" ||
+			message.type === "PLAYGROUND_CHAT_SUBMIT")
 	) {
-		console.log(`[BACKGROUND] Forwarding ${message.type} from tab ${sender.tab.id} to all extension contexts`);
+		console.log(
+			`[BACKGROUND] Forwarding ${message.type} from tab ${sender.tab.id} to all extension contexts`,
+		);
 		// Broadcast to all extension contexts (this won't trigger this listener again since sender.tab will be undefined)
-		chrome.runtime.sendMessage(message).then(() => {
-			console.log(`[BACKGROUND] Successfully broadcasted ${message.type}`);
-		}).catch((err) => {
-			console.error(`[BACKGROUND] Failed to broadcast ${message.type}:`, err);
-		});
+		chrome.runtime
+			.sendMessage(message)
+			.then(() => {
+				console.log(
+					`[BACKGROUND] Successfully broadcasted ${message.type}`,
+				);
+			})
+			.catch((err) => {
+				console.error(
+					`[BACKGROUND] Failed to broadcast ${message.type}:`,
+					err,
+				);
+			});
 		sendResponse({ success: true });
 		return true;
 	}

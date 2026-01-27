@@ -50,8 +50,12 @@ const PanelApp: React.FC = () => {
 		timestamp: number;
 	} | null>(null);
 	const [autoExecutePlayground, setAutoExecutePlayground] = useState(false);
-	const [pendingPlaygroundCommand, setPendingPlaygroundCommand] = useState<string | null>(null);
-	const [activeAutomationTabId, setActiveAutomationTabId] = useState<number | null>(null);
+	const [pendingPlaygroundCommand, setPendingPlaygroundCommand] = useState<
+		string | null
+	>(null);
+	const [activeAutomationTabId, setActiveAutomationTabId] = useState<
+		number | null
+	>(null);
 
 	const loadSettings = React.useCallback(async () => {
 		try {
@@ -102,23 +106,28 @@ const PanelApp: React.FC = () => {
 					modelName: message.data.modelName || "AI",
 					timestamp: message.data.timestamp,
 				});
-				
+
 				// Check if AI response is about playing/running scripts
-				const scriptPatterns = /play\s+(some\s+)?script|run\s+(a\s+)?script|execute\s+(a\s+)?script/i;
+				const scriptPatterns =
+					/play\s+(some\s+)?script|run\s+(a\s+)?script|execute\s+(a\s+)?script/i;
 				if (scriptPatterns.test(aiResponseText)) {
 					setMode("script");
-					setActionHistory([`🎮 Switched to Script Mode from Playground AI response`]);
+					setActionHistory([
+						`🎮 Switched to Script Mode from Playground AI response`,
+					]);
 					return;
 				}
-				
+
 				// Auto-populate command field with AI response for LLM mode
 				if (mode === "llm" && aiResponseText.trim()) {
 					setCommand(aiResponseText);
 					setPendingPlaygroundCommand(aiResponseText);
-					
+
 					// Auto-execute if enabled and not already running
 					if (autoExecutePlayground && !isRunning) {
-						setActionHistory([`🎮 Auto-executing from Playground AI: ${aiResponseText.substring(0, 100)}${aiResponseText.length > 100 ? '...' : ''}`]);
+						setActionHistory([
+							`🎮 Auto-executing from Playground AI: ${aiResponseText.substring(0, 100)}${aiResponseText.length > 100 ? "..." : ""}`,
+						]);
 						// Trigger command execution after a brief delay
 						setTimeout(() => {
 							if (commandInputRef.current) {
@@ -134,27 +143,39 @@ const PanelApp: React.FC = () => {
 				// Handle Playwright script execution request from Playground
 				const script = message.script;
 				console.log("Received script execution request:", script);
-				
-				setActionHistory([`🎬 Received script from Playground: ${script.name}`]);
+
+				setActionHistory([
+					`🎬 Received script from Playground: ${script.name}`,
+				]);
 				setMode("script");
-				
+
 				// Check if script content was provided
 				if (script.content) {
 					console.log("Script content included, using directly:", {
 						hasSteps: !!script.content.steps,
 						stepCount: script.content.steps?.length || 0,
-						scriptCont: script.content
+						scriptCont: script.content,
 					});
-					
+
 					// Use the provided script content directly
-					const scriptContent = JSON.stringify(script.content, null, 2);
+					const scriptContent = JSON.stringify(
+						script.content,
+						null,
+						2,
+					);
 					setScriptJson(scriptContent);
 					setJsonFormat("playwright");
-					setActionHistory((prev) => [...prev, `✅ Script loaded: ${script.name}`]);
-					
+					setActionHistory((prev) => [
+						...prev,
+						`✅ Script loaded: ${script.name}`,
+					]);
+
 					// Auto-execute the script
-					setActionHistory((prev) => [...prev, `▶️ Executing script...`]);
-					
+					setActionHistory((prev) => [
+						...prev,
+						`▶️ Executing script...`,
+					]);
+
 					// Trigger script execution with the content directly
 					setTimeout(async () => {
 						await executeScriptWithContent(scriptContent);
@@ -164,34 +185,50 @@ const PanelApp: React.FC = () => {
 					(async () => {
 						try {
 							setIsLoadingScript(true);
-							setActionHistory((prev) => [...prev, `🔄 Loading script from server: ${script.name}...`]);
-							
+							setActionHistory((prev) => [
+								...prev,
+								`🔄 Loading script from server: ${script.name}...`,
+							]);
+
 							const service = await createDirectWorkshopService();
 							if (!service) {
-								throw new Error("Workshop service not configured. Please configure Workshop credentials in the extension settings.");
+								throw new Error(
+									"Workshop service not configured. Please configure Workshop credentials in the extension settings.",
+								);
 							}
 
 							const scriptContent = await service.fetchScript(
 								script.projectId,
 								`version/assets/recordings/${script.name}`,
 							);
-							
+
 							setScriptJson(scriptContent);
 							setJsonFormat("playwright");
-							setActionHistory((prev) => [...prev, `✅ Script loaded: ${script.name}`]);
+							setActionHistory((prev) => [
+								...prev,
+								`✅ Script loaded: ${script.name}`,
+							]);
 							setIsLoadingScript(false);
-							
+
 							// Auto-execute the script
-							setActionHistory((prev) => [...prev, `▶️ Executing script...`]);
-							
+							setActionHistory((prev) => [
+								...prev,
+								`▶️ Executing script...`,
+							]);
+
 							// Trigger script execution
 							setTimeout(async () => {
 								await handleRunScript();
 							}, 500);
-							
 						} catch (error) {
-							const errorMsg = error instanceof Error ? error.message : String(error);
-							setActionHistory((prev) => [...prev, `❌ Failed to load/execute script: ${errorMsg}`]);
+							const errorMsg =
+								error instanceof Error
+									? error.message
+									: String(error);
+							setActionHistory((prev) => [
+								...prev,
+								`❌ Failed to load/execute script: ${errorMsg}`,
+							]);
 							setIsLoadingScript(false);
 						}
 					})();
@@ -242,29 +279,28 @@ const PanelApp: React.FC = () => {
 		setActionHistory([`🔄 Loading script: ${selectedScript}...`]);
 
 		try {
-			
-				// Load from project
-				if (!projectId.trim()) {
-					throw new Error("Project ID not configured");
-				}
-				
-				const service = await createDirectWorkshopService();
-				if (!service) {
-					throw new Error("Workshop service not configured");
-				}
+			// Load from project
+			if (!projectId.trim()) {
+				throw new Error("Project ID not configured");
+			}
 
-				const scriptContent = await service.fetchScript(
-					projectId,
-					selectedScript,
-				);
-				setScriptJson(scriptContent);
+			const service = await createDirectWorkshopService();
+			if (!service) {
+				throw new Error("Workshop service not configured");
+			}
 
-				const scriptFile = availableScripts.find(
-					(s) => s.path === selectedScript,
-				);
-				setActionHistory([
-					`✅ Loaded script: ${scriptFile?.name || selectedScript}`,
-				]);
+			const scriptContent = await service.fetchScript(
+				projectId,
+				selectedScript,
+			);
+			setScriptJson(scriptContent);
+
+			const scriptFile = availableScripts.find(
+				(s) => s.path === selectedScript,
+			);
+			setActionHistory([
+				`✅ Loaded script: ${scriptFile?.name || selectedScript}`,
+			]);
 		} catch (error) {
 			const errorMsg =
 				error instanceof Error ? error.message : String(error);
@@ -357,8 +393,6 @@ const PanelApp: React.FC = () => {
 
 	const executeScript = async (content: string) => {
 		console.log("scriptJSON in run Script", content);
-		
-
 
 		if (!content.trim()) {
 			setActionHistory(["❌ Please upload a script JSON file first"]);
@@ -410,7 +444,7 @@ const PanelApp: React.FC = () => {
 			}>;
 			if (jsonFormat === "playwright") {
 				console.log("script being sent to convertToActions", script);
-				
+
 				actions = await ScriptExecutor.convertToActions(
 					script as PlaywrightScript,
 				);
@@ -425,15 +459,15 @@ const PanelApp: React.FC = () => {
 			addToHistory(`✓ Creating new tab for script execution...`);
 			const newTab = await chrome.tabs.create({
 				active: true, // Make it active so user can see it
-				url: "about:blank"
+				url: "about:blank",
 			});
-			
+
 			if (!newTab.id) {
 				throw new Error("Failed to create new tab");
 			}
-			
+
 			addToHistory(`✓ New tab created`);
-			
+
 			// Wait for tab to be ready
 			await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -668,21 +702,22 @@ const PanelApp: React.FC = () => {
 
 	const handleRunCommand = async () => {
 		if (!command.trim()) return;
-		
+
 		// Clear pending playground command indicator
 		setPendingPlaygroundCommand(null);
 
 		// Check if command is about opening a new tab
 		const newTabPatterns = /(?:open|create|new)\s+(?:a\s+)?(?:new\s+)?tab/i;
-		const urlPattern = /(https?:\/\/[^\s]+)|(?:(?:go\s+to|navigate\s+to|open)\s+)([\w\-]+(?:\.[\w\-]+)+(?:\/[^\s]*)?)/i;
-		
+		const urlPattern =
+			/(https?:\/\/[^\s]+)|(?:(?:go\s+to|navigate\s+to|open)\s+)([\w-]+(?:\.[\w-]+)+(?:\/[^\s]*)?)/i;
+
 		if (newTabPatterns.test(command)) {
 			setIsRunning(true);
 			setActionHistory([`🔄 Opening new tab...`]);
-			
+
 			try {
 				let url = "https://www.google.com"; // Default URL
-				
+
 				// Try to extract URL from command
 				const urlMatch = command.match(urlPattern);
 				if (urlMatch) {
@@ -694,37 +729,42 @@ const PanelApp: React.FC = () => {
 						url = `https://${urlMatch[2]}`;
 					}
 				}
-				
+
 				// Create new tab with focus
 				const newTab = await chrome.tabs.create({ url, active: true });
-				
+
 				if (newTab && newTab.id) {
 					// Track this tab for subsequent automation
 					setActiveAutomationTabId(newTab.id);
-					
+
 					setActionHistory([
 						`✅ Opened new tab (ID: ${newTab.id})`,
 						`🌐 Navigated to: ${url}`,
 						`🎯 Focus switched to new tab - all subsequent actions will happen here`,
 					]);
-					
+
 					// Wait for page to load before continuing
 					let loadTimeout = 15;
 					while (loadTimeout > 0) {
 						const tabs = await chrome.tabs.query({});
-						const tab = tabs.find(t => t.id === newTab.id);
+						const tab = tabs.find((t) => t.id === newTab.id);
 						if (tab && tab.status === "complete") {
-							await new Promise(resolve => setTimeout(resolve, 500));
+							await new Promise((resolve) =>
+								setTimeout(resolve, 500),
+							);
 							break;
 						}
-						await new Promise(resolve => setTimeout(resolve, 500));
+						await new Promise((resolve) =>
+							setTimeout(resolve, 500),
+						);
 						loadTimeout--;
 					}
 				} else {
 					throw new Error("Failed to create new tab");
 				}
 			} catch (error) {
-				const errorMsg = error instanceof Error ? error.message : String(error);
+				const errorMsg =
+					error instanceof Error ? error.message : String(error);
 				setActionHistory([`❌ Error opening new tab: ${errorMsg}`]);
 			} finally {
 				setIsRunning(false);
@@ -763,34 +803,38 @@ const PanelApp: React.FC = () => {
 		setActionHistory([`Starting task: ${command}`]);
 
 		try {
-// Get tab for automation - use tracked tab if available
-		let tab: chrome.tabs.Tab | undefined;
-		if (activeAutomationTabId) {
-			// Use the tracked automation tab (e.g., from "open new tab" command)
-			const tabs = await chrome.tabs.query({});
-			tab = tabs.find((t) => t.id === activeAutomationTabId);
-			if (tab) {
-				addToHistory(`🎯 Using tracked tab (ID: ${activeAutomationTabId})`);
-				// Make sure it's active
-				await chrome.tabs.update(activeAutomationTabId, { active: true });
-			}
-		}
-		
-		if (!tab) {
-			// Fall back to current/inspected tab
-			if (chrome.devtools?.inspectedWindow) {
-				// Running in DevTools panel
-				const tabId = chrome.devtools.inspectedWindow.tabId;
+			// Get tab for automation - use tracked tab if available
+			let tab: chrome.tabs.Tab | undefined;
+			if (activeAutomationTabId) {
+				// Use the tracked automation tab (e.g., from "open new tab" command)
 				const tabs = await chrome.tabs.query({});
-				tab = tabs.find((t) => t.id === tabId);
-			} else {
-				// Running in popup/side panel
-				const [currentTab] = await chrome.tabs.query({
-					active: true,
-					currentWindow: true,
-				});
-				tab = currentTab;
+				tab = tabs.find((t) => t.id === activeAutomationTabId);
+				if (tab) {
+					addToHistory(
+						`🎯 Using tracked tab (ID: ${activeAutomationTabId})`,
+					);
+					// Make sure it's active
+					await chrome.tabs.update(activeAutomationTabId, {
+						active: true,
+					});
+				}
 			}
+
+			if (!tab) {
+				// Fall back to current/inspected tab
+				if (chrome.devtools?.inspectedWindow) {
+					// Running in DevTools panel
+					const tabId = chrome.devtools.inspectedWindow.tabId;
+					const tabs = await chrome.tabs.query({});
+					tab = tabs.find((t) => t.id === tabId);
+				} else {
+					// Running in popup/side panel
+					const [currentTab] = await chrome.tabs.query({
+						active: true,
+						currentWindow: true,
+					});
+					tab = currentTab;
+				}
 			}
 
 			if (!tab || !tab.id) {
@@ -832,7 +876,9 @@ const PanelApp: React.FC = () => {
 				// Use tracked automation tab if available, otherwise get current
 				if (activeAutomationTabId) {
 					const tabs = await chrome.tabs.query({});
-					currentTab = tabs.find((t) => t.id === activeAutomationTabId);
+					currentTab = tabs.find(
+						(t) => t.id === activeAutomationTabId,
+					);
 				} else if (chrome.devtools?.inspectedWindow) {
 					const tabId = chrome.devtools.inspectedWindow.tabId;
 					const tabs = await chrome.tabs.query({});
@@ -853,12 +899,11 @@ const PanelApp: React.FC = () => {
 					console.log("Page navigated, waiting for load...");
 					let loadTimeout = 10; // Max 10 seconds
 					// Determine which tab ID to monitor
-					const tabIdToMonitor = activeAutomationTabId || currentTab.id;
+					const tabIdToMonitor =
+						activeAutomationTabId || currentTab.id;
 					while (loadTimeout > 0) {
 						const tabs = await chrome.tabs.query({});
-						const tab = tabs.find(
-							(t) => t.id === tabIdToMonitor,
-						);
+						const tab = tabs.find((t) => t.id === tabIdToMonitor);
 						if (tab && tab.status === "complete") {
 							console.log("Page loaded!");
 							// Give content script a brief moment to initialize
@@ -994,7 +1039,7 @@ const PanelApp: React.FC = () => {
 				const playgroundContext = playgroundLastResponse
 					? `AI Response (${playgroundLastResponse.modelName}): ${playgroundLastResponse.text}`
 					: undefined;
-				
+
 				const action = await workshopService.getNextAction(
 					command,
 					html,
@@ -1034,23 +1079,31 @@ const PanelApp: React.FC = () => {
 						throw new Error("Navigate action requires a URL");
 					}
 					addToHistory(`🌐 Opening in new tab: ${action.url}`);
-					
+
 					// Create new tab with focus
-					const newTab = await chrome.tabs.create({ url: action.url, active: true });
-					
+					const newTab = await chrome.tabs.create({
+						url: action.url,
+						active: true,
+					});
+
 					if (newTab && newTab.id) {
 						// Track this tab for subsequent automation
 						setActiveAutomationTabId(newTab.id);
 						tab = newTab; // Update current tab reference
 						addToHistory(`✓ New tab opened (ID: ${newTab.id})`);
 						addToHistory(`🎯 Focus switched to new tab`);
-						
+
 						// Wait for page to load
 						let loadTimeout = 15; // Max 15 seconds
 						while (loadTimeout > 0) {
 							const tabs = await chrome.tabs.query({});
-							const currentTab = tabs.find((t) => t.id === newTab.id);
-							if (currentTab && currentTab.status === "complete") {
+							const currentTab = tabs.find(
+								(t) => t.id === newTab.id,
+							);
+							if (
+								currentTab &&
+								currentTab.status === "complete"
+							) {
 								addToHistory("✓ Page loaded");
 								// Give content script a moment to initialize
 								await new Promise((resolve) =>
@@ -1072,9 +1125,11 @@ const PanelApp: React.FC = () => {
 
 						previousUrl = action.url;
 					} else {
-						throw new Error("Failed to create new tab for navigation");
+						throw new Error(
+							"Failed to create new tab for navigation",
+						);
 					}
-					
+
 					continue; // Skip to next iteration
 				}
 
@@ -1118,11 +1173,12 @@ const PanelApp: React.FC = () => {
 
 				// Check for repeated setValue on same element - STOP IMMEDIATELY
 				if (action.type === "setValue") {
-					const previousSetValueOnSameElement = executedActions.filter(
-						(a) =>
-							a.type === "setValue" &&
-							a.elementId === action.elementId,
-					).length;
+					const previousSetValueOnSameElement =
+						executedActions.filter(
+							(a) =>
+								a.type === "setValue" &&
+								a.elementId === action.elementId,
+						).length;
 
 					if (previousSetValueOnSameElement >= 1) {
 						addToHistory(
@@ -1155,7 +1211,7 @@ const PanelApp: React.FC = () => {
 						break;
 					}
 				}
-				
+
 				// Additional check: detect action loops (same action type repeated 3+ times in a row)
 				if (executedActions.length >= 3) {
 					const lastThreeActions = executedActions.slice(-3);
@@ -1386,9 +1442,13 @@ const PanelApp: React.FC = () => {
 				{mode === "llm" && (
 					<div className="command-section">
 						{!hasSettings && (
-							<div className="warning-section" style={{ marginBottom: "16px" }}>
-								⚠️ API keys not configured. Please go to Settings to set
-								up your Workshop API credentials to use LLM mode.
+							<div
+								className="warning-section"
+								style={{ marginBottom: "16px" }}
+							>
+								⚠️ API keys not configured. Please go to Settings
+								to set up your Workshop API credentials to use
+								LLM mode.
 							</div>
 						)}
 						<label htmlFor={commandId}>Task Command:</label>
@@ -1413,14 +1473,18 @@ const PanelApp: React.FC = () => {
 								}
 							}}
 						/>
-						
+
 						{/* Playground Integration Controls */}
 						<div className="playground-controls">
 							<label className="playground-toggle">
 								<input
 									type="checkbox"
 									checked={autoExecutePlayground}
-									onChange={(e) => setAutoExecutePlayground(e.target.checked)}
+									onChange={(e) =>
+										setAutoExecutePlayground(
+											e.target.checked,
+										)
+									}
 									disabled={isRunning}
 								/>
 								<span className="toggle-text">
@@ -1682,7 +1746,10 @@ const PanelApp: React.FC = () => {
 						)}
 						{playgroundLastResponse && (
 							<div className="playground-submitted">
-								<strong>Latest AI Response ({playgroundLastResponse.modelName}):</strong>
+								<strong>
+									Latest AI Response (
+									{playgroundLastResponse.modelName}):
+								</strong>
 								<div className="playground-text">
 									{playgroundLastResponse.text}
 								</div>

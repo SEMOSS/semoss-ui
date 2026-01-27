@@ -3,7 +3,14 @@
 	"name": "Workshop Automation Assistant",
 	"description": "Browser automation using Workshop AI platform",
 	"version": "1.0.0",
-	"permissions": ["tabs", "activeTab", "storage", "debugger", "scripting", "sidePanel"],
+	"permissions": [
+		"tabs",
+		"activeTab",
+		"storage",
+		"debugger",
+		"scripting",
+		"sidePanel"
+	],
 	"host_permissions": ["http://*/*", "https://*/*"],
 	"icons": {
 		"16": "assets/icon-16.svg",

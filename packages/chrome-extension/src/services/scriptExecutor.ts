@@ -143,7 +143,7 @@ export class ScriptExecutor {
 				// Single array format - wrap it
 				stepGroups = [stepGroups as any] as ScriptStep[][];
 			}
-			
+
 			// Add a "switchTab" action before processing steps for new tabs
 			if (tabKey !== "tab-1") {
 				actions.push({
