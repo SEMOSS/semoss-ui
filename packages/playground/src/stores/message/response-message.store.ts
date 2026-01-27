@@ -2,6 +2,7 @@ import { action, makeObservable, observable, runInAction } from "mobx";
 import {
 	MCP_EXECUTION_ASK,
 	MCP_EXECUTION_AUTO,
+	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 } from "@/constants";
 import { ToolStore } from "@/stores";
@@ -437,9 +438,9 @@ paramValues=[${JSON.stringify({
 
 			// save the response
 			await this.saveToolExecution(tool, output);
-		} catch {
+		} catch (e) {
 			// mark the failure
-			await this.saveToolExecution(tool, TOOL_ERROR_PROMPT, "error");
+			await this.saveToolExecution(tool, e.toString(), "error");
 		}
 	};
 
@@ -455,6 +456,13 @@ paramValues=[${JSON.stringify({
 		toolStatus: "success" | "error" | "cancelled" = "success",
 	): Promise<void> => {
 		const room = this.room;
+
+		// wrap the message
+		if (toolStatus === "error") {
+			toolResponse = `${TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
+		} else if (toolStatus === "cancelled") {
+			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
+		}
 
 		// skip if the tool is already completed
 		if (tool.status === "SUCCESS" || tool.status === "CANCELLED") {
