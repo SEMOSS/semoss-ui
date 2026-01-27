@@ -93,11 +93,6 @@ export class ToolStore {
 	 */
 	display: McpDisplay = "sidebar";
 
-	/**
-	 * Parameters for the tool
-	 */
-	parameters: Record<string, unknown> = {};
-
 	constructor(
 		room: RoomStore,
 		message: ResponseMessageStore,
@@ -107,7 +102,6 @@ export class ToolStore {
 		this.message = message;
 		this.id = json.id;
 		this.json = json;
-		this.parameters = json.parameters || {};
 
 		// set the default display
 		this.display = json._meta.SMSS_MCP_UI?.displayLocation || "sidebar";
@@ -116,13 +110,11 @@ export class ToolStore {
 	}
 
 	/**
-	 * Update the parameters of the tool
+	 * Set the isOpen state
 	 */
-	updateParameters = (parameters: Partial<ToolStore["parameters"]>) => {
-		this.parameters = {
-			...this.parameters,
-			...parameters,
-		};
+	setIsOpen = (isOpen: boolean) => {
+		// set as open
+		this.isOpen = isOpen;
 	};
 
 	/**

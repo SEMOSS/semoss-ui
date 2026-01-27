@@ -47,7 +47,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		}
 
 		let isActive = false;
-		if (tool.display === "sidebar" && room.sidebar.isOpen) {
+		if (tool.display === "sidebar" && tool.isOpen && room.sidebar.isOpen) {
 			isActive = true;
 		} else if (tool.display === "inline" && tool.isOpen) {
 			isActive = true;
@@ -141,6 +141,9 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 										TOOL_CANCELLATION_PROMPT,
 										"cancelled",
 									);
+
+									// close it
+									tool.closeTool();
 								}}
 							>
 								Cancel

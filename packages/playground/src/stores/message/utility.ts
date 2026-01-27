@@ -3,6 +3,7 @@ import type { PixelMessage } from "@/types";
 import { InputMessageStore } from "./input-message.store";
 import { PlanMessageStore } from "./plan-message.store";
 import { ResponseMessageStore } from "./response-message.store";
+import { ToolExecutionMessageStore } from "./tool-execution-message.store";
 
 /**
  * Create a messageStore from a pixelMessage
@@ -12,7 +13,11 @@ import { ResponseMessageStore } from "./response-message.store";
 export const createMessageStore = (
 	room: RoomStore,
 	pixelMessage: PixelMessage,
-): ResponseMessageStore | InputMessageStore | PlanMessageStore => {
+):
+	| ResponseMessageStore
+	| InputMessageStore
+	| PlanMessageStore
+	| ToolExecutionMessageStore => {
 	// set data based on type
 	if (pixelMessage.type === "INPUT_TEXT") {
 		return new InputMessageStore(room, pixelMessage);
@@ -25,7 +30,7 @@ export const createMessageStore = (
 
 		return new ResponseMessageStore(room, pixelMessage);
 	} else if (pixelMessage.type === "INPUT_TOOL_EXEC") {
-		return new ResponseMessageStore(room, pixelMessage);
+		return new ToolExecutionMessageStore(room, pixelMessage);
 	} else if (pixelMessage.type === "RESPONSE_TOOL") {
 		return new ResponseMessageStore(room, pixelMessage);
 	}

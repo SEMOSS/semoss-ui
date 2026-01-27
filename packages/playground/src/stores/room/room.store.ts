@@ -14,6 +14,7 @@ import {
 	InputMessageStore,
 	PlanMessageStore,
 	ResponseMessageStore,
+	ToolExecutionMessageStore,
 	type ToolStore,
 } from "@/stores";
 import type {
@@ -40,11 +41,6 @@ interface RoomStoreInterface {
 	 *  Track if the room is loading
 	 */
 	isLoading: boolean;
-
-	/**
-	 *  Track whether the room has tools that need to be finished before the next message can be sent
-	 */
-	hasUnfinishedTools: boolean;
 
 	/**
 	 *  Track if the room has errored
@@ -141,7 +137,6 @@ export class RoomStore {
 		roomId: "",
 		insightId: "new",
 		isLoading: false,
-		hasUnfinishedTools: false,
 		mode: "chat",
 		metadata: {
 			name: "",
@@ -179,8 +174,8 @@ export class RoomStore {
 		makeAutoObservable(this);
 
 		// increment the counter whenever the model changes
-		this._store.sidebar.model.addChangeListener(() => {
-			this.tickSidebar();
+		this._store.sidebar.model.addChangeListener((action) => {
+			this.tickSidebar(action);
 		});
 	}
 
@@ -206,13 +201,6 @@ export class RoomStore {
 	 */
 	get isLoading() {
 		return this._store.isLoading;
-	}
-
-	/**
-	 * Indicator to check if the room is ready for the next message
-	 */
-	get hasUnfinishedTools() {
-		return this._store.hasUnfinishedTools;
 	}
 
 	/**
@@ -251,6 +239,10 @@ export class RoomStore {
 		const queue: AbstractMessageStore[] = [this._store.root];
 		while (queue.length > 0) {
 			const current = queue.shift();
+
+			if (!current) {
+				continue;
+			}
 
 			if (current.id === messageId) {
 				return current;
@@ -303,6 +295,21 @@ export class RoomStore {
 		}
 
 		return this._store.root;
+	}
+
+	/**
+	 * Indicator to check if the room is ready for the next message
+	 */
+	get hasUnfinishedTools(): boolean {
+		if (this.tail instanceof ResponseMessageStore) {
+			for (const tool of this.tail.tools) {
+				if (tool.status === "INITIAL" || tool.status === "LOADING") {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -465,14 +472,15 @@ export class RoomStore {
 					message:
 						| InputMessageStore
 						| ResponseMessageStore
-						| PlanMessageStore;
+						| PlanMessageStore
+						| ToolExecutionMessageStore;
 				}
 			> = {};
 
 			// store the last model
 			let activeModelId = this._store.model?.app_id;
 
-			// This is done as seperate loops because of INPUT_TOOL_EXEC
+			// This is done as seperate loops because of linking
 			for (const pixelMessage of messageOutput) {
 				if (
 					pixelMessage.type === "INPUT_TEXT" ||
@@ -500,6 +508,24 @@ export class RoomStore {
 					parent.message.addChild(m.message);
 				} else {
 					root.addChild(m.message);
+				}
+
+				// if its tool execution, update the corresponding tool
+				const toolExecMessage = m.message;
+				if (toolExecMessage instanceof ToolExecutionMessageStore) {
+					const parentToolExecMessage =
+						messages[m.parentMessageId].message;
+					if (parentToolExecMessage instanceof ResponseMessageStore) {
+						parentToolExecMessage.tools.forEach((tool) => {
+							if (tool.id === toolExecMessage.callId) {
+								// save the response
+								runInAction(() => {
+									tool.response = toolExecMessage.response;
+									tool.status = toolExecMessage.status;
+								});
+							}
+						});
+					}
 				}
 			}
 
@@ -576,16 +602,12 @@ export class RoomStore {
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
 			if (this.tail.type === "RESPONSE") {
-				runInAction(() => {
-					this.setHasUnfinishedTools(true);
-				});
 				this.tail.startToolExecution();
 			}
 		} catch (e) {
 			console.error(e);
 			runInAction(() => {
 				this.setIsLoading(false);
-				this.setHasUnfinishedTools(false);
 			});
 			throw new Error(e.message || "Error initializing room");
 		}
@@ -733,8 +755,16 @@ export class RoomStore {
 	/**
 	 * Increment the counter and close if there are no nodes
 	 */
-	tickSidebar = async (): Promise<void> => {
+	tickSidebar = async (action: FlexLayout.Action): Promise<void> => {
 		this._store.sidebar.counter += 1;
+
+		// if it is a delete
+		if (action.type === FlexLayout.Actions.DELETE_TAB) {
+			const tool = this.getTool(action.data.node);
+			if (tool) {
+				tool.setIsOpen(false);
+			}
+		}
 
 		// check if there are any tabs left
 		let hasTabs = false;
@@ -758,14 +788,6 @@ export class RoomStore {
 	 */
 	private setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
-	};
-
-	/**
-	 * Set the hasUnfinishedTools boolean
-	 * @param hasUnfinishedTools - is it ready
-	 */
-	setHasUnfinishedTools = (isReady: boolean): void => {
-		this._store.hasUnfinishedTools = isReady;
 	};
 
 	/**

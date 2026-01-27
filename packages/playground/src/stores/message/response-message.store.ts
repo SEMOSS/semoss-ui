@@ -22,10 +22,6 @@ import { PlanMessageStore } from "./plan-message.store";
  */
 export class ResponseMessageStore extends AbstractMessageStore {
 	readonly type = "RESPONSE";
-	readonly pixelMessageType:
-		| ResponseTextPixelMessage["type"]
-		| ResponseToolPixelMessage["type"]
-		| InputToolExecPixelMessage["type"];
 
 	/**
 	 *  Track if the message is thinking
@@ -84,13 +80,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 	constructor(
 		room: AbstractMessageStore["room"],
-		message:
-			| ResponseTextPixelMessage
-			| ResponseToolPixelMessage
-			| InputToolExecPixelMessage,
+		message: ResponseTextPixelMessage | ResponseToolPixelMessage,
 	) {
 		super(room, message);
-		this.pixelMessageType = message.type;
 
 		makeObservable(this, {
 			isThinking: observable,
@@ -140,28 +132,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 						parameters: t.arguments,
 					}),
 			);
-		} else if (message.type === "INPUT_TOOL_EXEC") {
-			const m = message;
-
-			// find the tool
-			const tool = this.tools.find((t) => t.id === m.tool_call_id);
-
-			if (!tool) {
-				return;
-			}
-
-			// save the response
-			runInAction(() => {
-				tool.response = m.inputPrompt;
-
-				if (m.tool_status === "success") {
-					tool.status = "SUCCESS";
-				} else if (m.tool_status === "cancelled") {
-					tool.status = "CANCELLED";
-				} else if (m.tool_status === "error") {
-					tool.status = "ERROR";
-				}
-			});
 		} else {
 			throw new Error(
 				`Invalid message object passed to ResponseMessageStore.update: ${JSON.stringify(message)}`,
@@ -432,7 +402,6 @@ paramValues=[${JSON.stringify({
 			this.toolAutoExecutionIdx >= this.tools.length
 		) {
 			// all tools have run
-			room.setHasUnfinishedTools(false);
 			return;
 		}
 
@@ -460,7 +429,7 @@ paramValues=[${JSON.stringify({
 		try {
 			// wait for the pixel to run
 			const response = await room.runRoomPixel<[string]>(
-				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.json.parameters)} ]);`,
 				false,
 			);
 
