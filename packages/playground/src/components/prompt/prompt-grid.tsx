@@ -1,7 +1,6 @@
 import { X } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { PromptDetailsModal } from "../../components/prompt/prompt-details-modal";
@@ -21,11 +20,10 @@ export type Prompt = {
 	metaKeys?: Record<string, string[]>;
 };
 
-// PromptLibrary currently passes PromptRow (Prompt + legacy fields).
-// PromptGrid can accept it as Prompt since it's a superset.
+type SelectedCategory = { label: string; value: string };
+
 interface PromptGridProps {
-	selectedCategory: { label: string; value: string };
-	suggestedPrompts: Prompt[];
+	selectedCategory: SelectedCategory;
 	globalPrompts: Prompt[];
 	myPrompts: Prompt[];
 	refresh: () => void | Promise<void>;
@@ -60,185 +58,221 @@ function useMediaQuery(query: string) {
 	return matches;
 }
 
-export const PromptGrid: React.FC<PromptGridProps> = observer(
-	({
-		selectedCategory,
-		suggestedPrompts, // kept for API compatibility (unused here)
-		globalPrompts,
+function getPromptText(p: Prompt): string {
+	return String(p.CONTEXT ?? "").trim();
+}
+
+export const PromptGrid = observer(function PromptGrid({
+	selectedCategory,
+	globalPrompts,
+	myPrompts,
+	refresh,
+	isTextFieldFocused = false,
+}: PromptGridProps) {
+	const isMobile = useMediaQuery("(max-width: 640px)");
+	const { actions } = useInsight();
+	const location = useLocation();
+
+	const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+	const [selectedPromptForDetails, setSelectedPromptForDetails] =
+		useState<Prompt | null>(null);
+
+	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+	const [currentPrompt, setCurrentPrompt] = useState<Prompt | null>(null);
+
+	const [snackbar, setSnackbar] = useState<{
+		open: boolean;
+		message: string;
+		severity: "success" | "error" | "info" | "warning";
+	}>({
+		open: false,
+		message: "",
+		severity: "success",
+	});
+
+	// auto-hide to match Snackbar autoHideDuration={6000}
+	useEffect(() => {
+		if (!snackbar.open) return;
+		const t = window.setTimeout(() => {
+			setSnackbar((prev) => ({ ...prev, open: false }));
+		}, 6000);
+		return () => window.clearTimeout(t);
+	}, [snackbar.open]);
+
+	const alertTone =
+		snackbar.severity === "success"
+			? "bg-emerald-600"
+			: snackbar.severity === "error"
+				? "bg-red-600"
+				: snackbar.severity === "warning"
+					? "bg-amber-600"
+					: "bg-slate-700";
+
+	const listToRender = useMemo(() => {
+		if (selectedCategory.label === "My Prompts") {
+			return myPrompts.length ? myPrompts : [];
+		}
+		return globalPrompts.length ? globalPrompts : [];
+	}, [
+		selectedCategory.label,
 		myPrompts,
-		refresh,
-		isTextFieldFocused = false,
-	}) => {
-		void suggestedPrompts;
+		myPrompts.length,
+		globalPrompts,
+		globalPrompts.length,
+	]);
 
-		const isMobile = useMediaQuery("(max-width: 640px)");
-		const { actions } = useInsight();
+	const handleEdit = (prompt: Prompt) => {
+		setCurrentPrompt(prompt);
+		setIsEditModalOpen(true);
+	};
 
-		const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-		const [selectedPromptForDetails, setSelectedPromptForDetails] =
-			useState<Prompt | null>(null);
+	const handleDelete = async (id: string) => {
+		const response = await actions.run<[boolean]>(
+			`DeletePrompt(map={"promptId":'${id}'});`,
+		);
 
-		const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-		const [currentPrompt, setCurrentPrompt] = useState<Prompt | null>(null);
+		const { output, operationType } = response.pixelReturn[0];
+		if ((operationType ?? "").includes("ERROR")) {
+			throw new Error(output as unknown as string);
+		}
 
-		const [snackbar, setSnackbar] = useState<{
-			open: boolean;
-			message: string;
-			severity: "success" | "error" | "info" | "warning";
-		}>({
-			open: false,
-			message: "",
+		console.log("output", output);
+
+		await refresh();
+		setSnackbar({
+			open: true,
+			message: "Prompt deleted successfully",
 			severity: "success",
 		});
+	};
 
-		// auto-hide to match Snackbar autoHideDuration={6000}
-		useEffect(() => {
-			if (!snackbar.open) return;
-			const t = window.setTimeout(() => {
-				setSnackbar((prev) => ({ ...prev, open: false }));
-			}, 6000);
-			return () => window.clearTimeout(t);
-		}, [snackbar.open]);
+	const handleSave = async (updatedPrompt: Prompt) => {
+		const title = (updatedPrompt?.TITLE ?? "").trim();
+		const text = getPromptText(updatedPrompt);
 
-		const handleEdit = (prompt: Prompt) => {
-			setCurrentPrompt(prompt);
-			setIsEditModalOpen(true);
-		};
-
-		const handleDelete = async (id: string) => {
-			const response = await actions.run<[boolean]>(
-				`DeleteMyPrompts([{"prompt_id":'${id}'}]);`,
-			);
-
-			const { output, operationType } = response.pixelReturn[0];
-			if ((operationType ?? "").indexOf("ERROR") > -1) {
-				throw new Error(output as unknown as string);
-			}
-
-			await refresh();
+		if (!title || !text) {
 			setSnackbar({
 				open: true,
-				message: "Prompt deleted successfully",
-				severity: "success",
+				message: "Title and prompt text required",
+				severity: "error",
 			});
+			return;
+		}
+
+		const map = {
+			id: String(updatedPrompt.ID),
+			title,
+			context: text,
 		};
 
-		const handleSave = async (updatedPrompt: Prompt) => {
-			const title = (updatedPrompt?.TITLE ?? "").trim();
-			const text = (
-				updatedPrompt?.INTENT ??
-				updatedPrompt?.CONTEXT ??
-				""
-			).trim();
+		const response = await actions.run<[boolean]>(
+			`UpdatePrompt(map=${JSON.stringify(map)});`,
+		);
 
-			if (!title || !text) {
-				setSnackbar({
-					open: true,
-					message: "Title and prompt text required",
-					severity: "error",
-				});
-				return;
-			}
+		const { output, operationType } = response.pixelReturn[0];
+		if ((operationType ?? "").includes("ERROR")) {
+			throw new Error(output as unknown as string);
+		}
 
-			const response = await actions.run<[boolean]>(
-				`EditMyPrompts([{"prompt_id":"${
-					updatedPrompt.ID
-				}","prompt_title":"${title.replace(/"/g, "'")}","prompt_text":"${text.replace(
-					/"/g,
-					"'",
-				)}","favorite_flag":"N"}]);`,
-			);
+		await refresh();
+		setIsEditModalOpen(false);
+		setSnackbar({
+			open: true,
+			message: "Prompt updated successfully",
+			severity: "success",
+		});
+	};
 
-			const { output, operationType } = response.pixelReturn[0];
-			if ((operationType ?? "").indexOf("ERROR") > -1) {
-				throw new Error(output as unknown as string);
-			}
+	const handleAddNew = (_newPrompt: Prompt) => {
+		setIsEditModalOpen(false);
+		setSnackbar({
+			open: true,
+			message: "New prompt created successfully",
+			severity: "success",
+		});
+	};
 
-			await refresh();
-			setIsEditModalOpen(false);
-			setSnackbar({
-				open: true,
-				message: "Prompt updated successfully",
-				severity: "success",
-			});
-		};
+	const handleCloseSnackbar = () => {
+		setSnackbar((prev) => ({ ...prev, open: false }));
+	};
 
-		// PromptLibrary handles creation; this keeps the old UX behavior if needed
-		const handleAddNew = (_newPrompt: Prompt) => {
-			setIsEditModalOpen(false);
-			setSnackbar({
-				open: true,
-				message: "New prompt created successfully",
-				severity: "success",
-			});
-		};
+	const handleShowDetails = (prompt: Prompt) => {
+		setSelectedPromptForDetails(prompt);
+		setIsDetailsModalOpen(true);
+	};
 
-		const handleCloseSnackbar = () => {
-			setSnackbar((prev) => ({ ...prev, open: false }));
-		};
+	const handleCloseDetails = () => {
+		setIsDetailsModalOpen(false);
+		setSelectedPromptForDetails(null);
+	};
 
-		const handleShowDetails = (prompt: Prompt) => {
-			setSelectedPromptForDetails(prompt);
-			setIsDetailsModalOpen(true);
-		};
+	const handleCopyFromModal = (text: string) => {
+		navigator.clipboard.writeText(text);
+		setSnackbar({
+			open: true,
+			message: "Successfully copied to clipboard",
+			severity: "success",
+		});
+	};
+	console.log("sample prompt:", myPrompts?.[0]);
+	return (
+		<>
+			{!isMobile && (
+				<div className="grid grid-cols-1 gap-0 sm:grid-cols-2 md:grid-cols-4">
+					{Array.isArray(listToRender) &&
+						listToRender.map((prompt) => (
+							<div key={prompt.ID} className="col-span-1">
+								<PromptCard
+									prompt={prompt}
+									category={selectedCategory.label}
+									onEdit={() => handleEdit(prompt)}
+									onDelete={() => handleDelete(prompt.ID)}
+									onShowDetails={
+										selectedCategory.label === "My Prompts"
+											? undefined
+											: () => handleShowDetails(prompt)
+									}
+								/>
+							</div>
+						))}
+				</div>
+			)}
 
-		const handleCloseDetails = () => {
-			setIsDetailsModalOpen(false);
-			setSelectedPromptForDetails(null);
-		};
+			{isMobile && location.pathname === "/prompt-library" && (
+				<div className="relative flex flex-col flex-nowrap gap-1 px-1">
+					{Array.isArray(listToRender) &&
+						listToRender.map((prompt) => (
+							<div
+								key={prompt.ID}
+								className="flex w-fit flex-[0_0_auto]"
+							>
+								<PromptCard
+									prompt={prompt}
+									category={selectedCategory.label}
+									onEdit={() => handleEdit(prompt)}
+									onDelete={() => handleDelete(prompt.ID)}
+									onShowDetails={
+										selectedCategory.label === "My Prompts"
+											? undefined
+											: () => handleShowDetails(prompt)
+									}
+								/>
+							</div>
+						))}
+				</div>
+			)}
 
-		const handleCopyFromModal = (text: string) => {
-			navigator.clipboard.writeText(text);
-			setSnackbar({
-				open: true,
-				message: "Successfully copied to clipboard",
-				severity: "success",
-			});
-		};
-
-		const location = useLocation();
-
-		const alertTone =
-			snackbar.severity === "success"
-				? "bg-emerald-600"
-				: snackbar.severity === "error"
-					? "bg-red-600"
-					: snackbar.severity === "warning"
-						? "bg-amber-600"
-						: "bg-slate-700";
-
-		const listToRender =
-			selectedCategory.label === "My Prompts" ? myPrompts : globalPrompts;
-
-		return (
-			<>
-				{!isMobile && (
-					<div className="grid grid-cols-1 gap-0 sm:grid-cols-2 md:grid-cols-4">
-						{Array.isArray(listToRender) &&
-							listToRender.map((prompt) => (
-								<div key={prompt.ID} className="col-span-1">
-									<PromptCard
-										prompt={prompt}
-										category={selectedCategory.label}
-										onEdit={() => handleEdit(prompt)}
-										onDelete={() => handleDelete(prompt.ID)}
-										onShowDetails={
-											selectedCategory.label ===
-											"My Prompts"
-												? undefined
-												: () =>
-														handleShowDetails(
-															prompt,
-														)
-										}
-									/>
-								</div>
-							))}
-					</div>
-				)}
-
-				{isMobile && location.pathname === "/prompt-library" && (
-					<div className="relative flex flex-col flex-nowrap gap-1 px-1">
+			{isMobile && location.pathname === "/" && (
+				<div
+					style={{
+						position: "fixed",
+						top: isTextFieldFocused ? "22%" : "40%",
+						width: "100%",
+						overflowX: "auto",
+					}}
+					className="prompt-grid-scroll"
+				>
+					<div className="left-0 flex flex-nowrap gap-1 px-1">
 						{Array.isArray(listToRender) &&
 							listToRender.map((prompt) => (
 								<div
@@ -262,92 +296,52 @@ export const PromptGrid: React.FC<PromptGridProps> = observer(
 									/>
 								</div>
 							))}
+						<div style={{ width: "20px", flexShrink: 0 }} />
 					</div>
-				)}
+				</div>
+			)}
 
-				{isMobile && location.pathname === "/" && (
-					<div
-						style={{
-							position: "fixed",
-							top: isTextFieldFocused ? "22%" : "40%",
-							width: "100%",
-							overflowX: "auto",
-						}}
-						className="prompt-grid-scroll"
-					>
-						<div className="left-0 flex flex-nowrap gap-1 px-1">
-							{Array.isArray(listToRender) &&
-								listToRender.map((prompt) => (
-									<div
-										key={prompt.ID}
-										className="flex w-fit flex-[0_0_auto]"
-									>
-										<PromptCard
-											prompt={prompt}
-											category={selectedCategory.label}
-											onEdit={() => handleEdit(prompt)}
-											onDelete={() =>
-												handleDelete(prompt.ID)
-											}
-											onShowDetails={
-												selectedCategory.label ===
-												"My Prompts"
-													? undefined
-													: () =>
-															handleShowDetails(
-																prompt,
-															)
-											}
-										/>
-									</div>
-								))}
-							<div style={{ width: "20px", flexShrink: 0 }} />
-						</div>
-					</div>
-				)}
+			<PromptDetailsModal
+				open={isDetailsModalOpen}
+				onClose={handleCloseDetails}
+				prompt={selectedPromptForDetails}
+				onUse={null}
+				onCopy={handleCopyFromModal}
+			/>
 
-				<PromptDetailsModal
-					open={isDetailsModalOpen}
-					onClose={handleCloseDetails}
-					prompt={selectedPromptForDetails}
-					onUse={null}
-					onCopy={handleCopyFromModal}
+			{isEditModalOpen && currentPrompt && (
+				<EditPromptModal
+					key={currentPrompt.ID}
+					prompt={currentPrompt}
+					open={isEditModalOpen}
+					onClose={() => setIsEditModalOpen(false)}
+					onSave={
+						(currentPrompt.ID || "").includes("new")
+							? handleAddNew
+							: handleSave
+					}
+					isNewPrompt={(currentPrompt.ID || "").includes("new")}
 				/>
+			)}
 
-				{isEditModalOpen && currentPrompt && (
-					<EditPromptModal
-						key={currentPrompt.ID}
-						prompt={currentPrompt}
-						open={isEditModalOpen}
-						onClose={() => setIsEditModalOpen(false)}
-						onSave={
-							(currentPrompt.ID || "").includes("new")
-								? handleAddNew
-								: handleSave
-						}
-						isNewPrompt={(currentPrompt.ID || "").includes("new")}
-					/>
-				)}
-
-				{snackbar.open && (
-					<div className="fixed top-4 right-4 z-50">
-						<output
-							className={`flex min-w-[260px] max-w-[420px] items-start justify-between gap-3 rounded-md ${alertTone} px-4 py-3 text-sm text-white shadow-lg`}
-							aria-live="polite"
+			{snackbar.open && (
+				<div className="fixed top-4 right-4 z-50">
+					<output
+						className={`flex min-w-[260px] max-w-[420px] items-start justify-between gap-3 rounded-md ${alertTone} px-4 py-3 text-sm text-white shadow-lg`}
+						aria-live="polite"
+					>
+						<div className="pr-1">{snackbar.message}</div>
+						<button
+							type="button"
+							onClick={handleCloseSnackbar}
+							className="rounded-sm p-1/2 opacity-90 hover:opacity-100"
+							aria-label="Close notification"
 						>
-							<div className="pr-1">{snackbar.message}</div>
-							<button
-								type="button"
-								onClick={handleCloseSnackbar}
-								className="rounded-sm p-1/2 opacity-90 hover:opacity-100"
-								aria-label="Close notification"
-							>
-								<X className="h-4 w-4" />
-							</button>
-						</output>
-					</div>
-				)}
-			</>
-		);
-	},
-);
+							<X className="h-4 w-4" />
+						</button>
+					</output>
+				</div>
+			)}
+		</>
+	);
+});

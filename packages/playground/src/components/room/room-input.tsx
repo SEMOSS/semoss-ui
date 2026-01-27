@@ -24,6 +24,9 @@ import {
 const ENABLE_ATTACHMENT = import.meta.env.VITE_ENABLE_ATTACHMENT === "true";
 
 interface RoomInputProps {
+	prompt: string;
+
+	onPromptChange: React.Dispatch<React.SetStateAction<string>>;
 	/** Track if it is loading */
 	isLoading: boolean;
 
@@ -51,6 +54,8 @@ interface RoomInputProps {
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
 	({
+		prompt,
+		onPromptChange,
 		isLoading,
 		isDisabled,
 		minRows = 2,
@@ -60,8 +65,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onPrompt = () => null,
 		clearInputOnPrompt = false,
 	}) => {
-		const [input, setInput] = useState("");
-		const isEmpty = input.trim().length === 0;
+		const isEmpty = prompt.trim().length === 0;
 
 		const fileRef = useRef<HTMLInputElement>(null);
 		const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -108,7 +112,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					// trim to manually handle spaces
 					transcript = transcript.trim();
 					if (transcript) {
-						setInput((prev) => {
+						onPromptChange((prev) => {
 							if (!prev) {
 								return transcript;
 							}
@@ -142,7 +146,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					recognitionRef.current.stop();
 				}
 			};
-		}, []);
+		}, [onPromptChange]);
 
 		/**
 		 * Prompt the model
@@ -152,7 +156,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const promptModel = async () => {
 			let success = false;
 			// store old options
-			const userInput = input;
+			const userInput = prompt;
 			const userFiles = files;
 			try {
 				// ignore if loading
@@ -162,7 +166,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 				// clear out the input components
 				if (clearInputOnPrompt) {
-					setInput("");
+					onPromptChange("");
 					setFiles([]);
 				}
 				success = await onPrompt(userInput, userFiles);
@@ -174,11 +178,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			} finally {
 				if (success) {
 					// clear the input + files
-					setInput("");
+					onPromptChange("");
 					setFiles([]);
 				} else if (!clearInputOnPrompt) {
 					// restore to original
-					setInput(userInput);
+					onPromptChange(userInput);
 					setFiles(userFiles);
 				}
 			}
@@ -254,7 +258,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<Textarea
 							ref={inputRef}
 							placeholder="What do you want to do today?"
-							value={input}
+							value={prompt}
 							disabled={isDisabled}
 							rows={minRows}
 							className={`w-full resize-none px-3 pt-3 pb-14${
@@ -268,7 +272,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								maxHeight: `${maxRows * 3}rem`,
 							}}
 							onChange={(e) => {
-								setInput(e.target.value);
+								onPromptChange(e.target.value);
 							}}
 							onDrop={(e) => {
 								e.preventDefault();

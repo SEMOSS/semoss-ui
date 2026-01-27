@@ -1,7 +1,7 @@
 import { Settings2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -41,6 +41,7 @@ export const NewRoomPage = observer(() => {
 	]);
 
 	const { chat } = useChat();
+	const location = useLocation();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	const [mode, setMode] = useState<{
@@ -77,6 +78,8 @@ export const NewRoomPage = observer(() => {
 	});
 
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+	const [promptText, setPromptText] = useState("");
 
 	/**
 	 * Functions
@@ -201,6 +204,15 @@ export const NewRoomPage = observer(() => {
 		}
 	}, [mode.type]);
 
+	useEffect(() => {
+		const prefill = (location.state as { description?: string } | null)
+			?.description;
+		if (!prefill) return;
+
+		setPromptText(prefill);
+		navigate(location.pathname, { replace: true, state: null });
+	}, [location.state, navigate, location.pathname]);
+
 	return (
 		<div className="relative h-full w-full overflow-hidden">
 			<ResizablePanelGroup direction="horizontal">
@@ -233,6 +245,8 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
+							prompt={promptText}
+							onPromptChange={setPromptText}
 							isLoading={
 								isLoading ||
 								(mode.type === "workspace" &&
