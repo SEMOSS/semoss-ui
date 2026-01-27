@@ -55,16 +55,6 @@ function useMediaQuery(query: string) {
 	return matches;
 }
 
-// function encodeHtmlEntities(text: string) {
-// 	return (text || "")
-// 		.replace(/&/g, "&amp;")
-// 		.replace(/</g, "&lt;")
-// 		.replace(/>/g, "&gt;")
-// 		.replace(/"/g, "&quot;")
-// 		.replace(/'/g, "&#039;")
-// 		.replace(/\n/g, "<br>");
-// }
-
 function formatCreatedAt(createdAt: Date | string | number | null | undefined) {
 	if (!createdAt) return "";
 
@@ -80,6 +70,11 @@ function formatCreatedAt(createdAt: Date | string | number | null | undefined) {
 	}).format(d);
 }
 
+function getDescription(prompt: PromptCardPrompt): string {
+	// CONTEXT is the prompt itself ("description")
+	return String(prompt.CONTEXT ?? "").trim();
+}
+
 export function PromptCard({
 	prompt,
 	onEdit,
@@ -89,8 +84,7 @@ export function PromptCard({
 }: PromptCardProps) {
 	const { ID, TITLE, DATE_CREATED } = prompt;
 
-	const description = String(prompt.INTENT ?? "");
-	console.log("description:", description);
+	const description = getDescription(prompt);
 
 	const tags = useMemo(() => {
 		const raw = prompt.tags;
@@ -145,13 +139,13 @@ export function PromptCard({
 		setSnackbar((s) => ({ ...s, open: false }));
 	};
 
-	const handleCardClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+	const handleCardClick = (e: React.MouseEvent<HTMLElement>) => {
 		const target = e.target as HTMLElement | null;
 		if (target?.closest?.(".card-actions")) return;
 		onShowDetails?.();
 	};
 
-	const handleCardKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+	const handleCardKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
 		if (e.key !== "Enter" && e.key !== " ") return;
 		e.preventDefault();
 		const target = e.target as HTMLElement | null;
@@ -228,11 +222,11 @@ export function PromptCard({
 		<>
 			{location.pathname === "/prompt-library" ? (
 				<>
-					<Button
-						tabIndex={0}
-						className={`flex h-[320px] cursor-pointer flex-col overflow-hidden rounded-lg border bg-white transition-[transform,box-shadow] duration-200 ${/* ... */ ""}`}
-						onClick={(e) => handleCardClick(e)}
-						onKeyDown={(e) => handleCardKeyDown(e)}
+					<button
+						type="button"
+						className={`flex h-[320px] cursor-pointer flex-col overflow-hidden rounded-lg border bg-white transition-[transform,box-shadow] duration-200 ${isHovered ? "-translate-y-0.5 border-slate-200 shadow-md" : "border-slate-100 shadow-sm"}`}
+						onClick={handleCardClick}
+						onKeyDown={handleCardKeyDown}
 						onMouseEnter={() => setIsHovered(true)}
 						onMouseLeave={() => setIsHovered(false)}
 					>
@@ -330,7 +324,7 @@ export function PromptCard({
 								<ArrowRight className="ml-2 h-4 w-4" />
 							</Button>
 						</div>
-					</Button>
+					</button>
 
 					{deleteDialogNode}
 					{snackbarNode}

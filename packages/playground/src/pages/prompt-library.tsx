@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Info, Plus, Search, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
@@ -10,8 +10,6 @@ import {
 } from "@semoss/ui/next";
 import { EditPromptModal } from "@/components/prompt/edit-prompt-modal";
 import { PromptGrid } from "@/components/prompt/prompt-grid";
-import { suggestedPrompts } from "@/components/prompt/suggested-prompts";
-import { usePixel } from "@/hooks";
 import menuIcon from "../assets/img/Prompt_Library_Default.svg";
 import BaseAppLayout from "../components/common/base-app-layout";
 import PromptCategories from "../components/prompt/prompt-categories";
@@ -29,80 +27,37 @@ export type Prompt = {
 	metaKeys?: Record<string, string[]>;
 };
 
-// Adapter type to keep existing PromptGrid + filters working
-type PromptRow = Prompt & {
-	prompt_title: string;
-	prompt_text: string;
-	prompt_category: string;
-};
-
 type SelectedCategory = { label: string; value: string };
 type UnknownRecord = Record<string, unknown>;
+type LoadStatus = "IDLE" | "LOADING" | "DONE" | "ERROR";
 
 function isRecord(v: unknown): v is UnknownRecord {
 	return typeof v === "object" && v !== null;
 }
 
-function getString(v: unknown, fallback = ""): string {
-	if (typeof v === "string") return v;
-	if (v === null || v === undefined) return fallback;
-	return String(v);
-}
+export function normalizePrompt(p: unknown): Prompt {
+	const obj = (p ?? {}) as Record<string, unknown>;
 
-function getBoolean(v: unknown, fallback = false): boolean {
-	if (typeof v === "boolean") return v;
-	return fallback;
-}
-
-function getNumber(v: unknown): number | undefined {
-	return typeof v === "number" && Number.isFinite(v) ? v : undefined;
-}
-
-function getStringArray(v: unknown): string[] {
-	if (!Array.isArray(v)) return [];
-	return v.map((x) => getString(x)).filter(Boolean);
-}
-
-function normalizePrompt(input: unknown): Prompt {
-	if (!isRecord(input)) {
-		return { ID: "", TITLE: "", GLOBAL: false, tags: [] };
-	}
+	const rawTags = obj["TAGS"] ?? obj["tags"];
+	const tags = Array.isArray(rawTags)
+		? rawTags.map(String).filter(Boolean)
+		: typeof rawTags === "string"
+			? rawTags
+					.split(",")
+					.map((s) => s.trim())
+					.filter(Boolean)
+			: [];
 
 	return {
-		ID: getString(input.ID ?? input.id),
-		TITLE: getString(input.TITLE ?? input.prompt_title),
-		CONTEXT:
-			typeof input.CONTEXT === "string"
-				? input.CONTEXT
-				: typeof input.prompt_context === "string"
-					? input.prompt_context
-					: undefined,
-		INTENT:
-			typeof input.INTENT === "string"
-				? input.INTENT
-				: typeof input.prompt_text === "string"
-					? input.prompt_text
-					: undefined,
-		VERSION: getNumber(input.VERSION),
-		CREATED_BY:
-			typeof input.CREATED_BY === "string"
-				? input.CREATED_BY
-				: typeof input.created_by === "string"
-					? input.created_by
-					: undefined,
-		DATE_CREATED: ((): string | Date | null => {
-			const v: unknown = input.DATE_CREATED ?? input.date_created;
-			if (typeof v === "string" || v instanceof Date) return v;
-			return undefined;
-		})(),
-		GLOBAL: getBoolean(input.GLOBAL ?? input.global, false),
-		tags: getStringArray(input.tags),
-		metaKeys: isRecord(input.metaKeys)
-			? (input.metaKeys as Record<string, string[]>)
-			: isRecord(input.metakeys)
-				? (input.metakeys as Record<string, string[]>)
-				: undefined,
-	};
+		ID: String(obj["ID"] ?? ""),
+		TITLE: String(obj["TITLE"] ?? ""),
+		CONTEXT: String(obj["CONTEXT"] ?? ""),
+		INTENT: String(obj["INTENT"] ?? ""),
+		VERSION: Number(obj["VERSION"] ?? 0),
+		CREATED_BY: String(obj["CREATED_BY"] ?? ""),
+		DATE_CREATED: String(obj["DATE_CREATED"] ?? ""),
+		tags,
+	} as Prompt;
 }
 
 function useMediaQuery(query: string) {
@@ -135,38 +90,10 @@ function useMediaQuery(query: string) {
 	return matches;
 }
 
-function getPromptCategory(p: Prompt) {
-	const mk = (p.metaKeys ?? {}) as Partial<
-		Record<
-			| "PROMPT_CATEGORY"
-			| "CATEGORY"
-			| "CATEGORY_LABEL"
-			| "DOMAIN"
-			| "USE_CASE",
-			string[]
-		>
-	>;
-
-	const candidates = [
-		mk.PROMPT_CATEGORY?.[0],
-		mk.CATEGORY?.[0],
-		mk.CATEGORY_LABEL?.[0],
-		mk.DOMAIN?.[0],
-		mk.USE_CASE?.[0],
-	].filter(Boolean) as string[];
-
-	if (candidates.length) return candidates[0];
-	return p.GLOBAL ? "Global Prompts" : "My Prompts";
-}
-
-function adaptPrompt(p: Prompt): PromptRow {
-	return {
-		...p,
-		prompt_title: p.TITLE ?? "",
-		prompt_text: String(p.INTENT ?? p.CONTEXT ?? ""),
-		prompt_category: getPromptCategory(p),
-		tags: Array.isArray(p.tags) ? p.tags : [],
-	};
+function isMinePrompt(p: Prompt, userId: string) {
+	// Safest default: only treat as "mine" when CREATED_BY matches current user.
+	// (Avoid misclassifying other users’ personal prompts as yours.)
+	return Boolean(userId) && Boolean(p.CREATED_BY) && p.CREATED_BY === userId;
 }
 
 export const PromptLibrary = observer(() => {
@@ -175,8 +102,10 @@ export const PromptLibrary = observer(() => {
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 	const [currentPrompt, setCurrentPrompt] = useState<Prompt | null>(null);
 
-	const [globalPrompts, setGlobalPrompts] = useState<PromptRow[]>([]);
-	const [categoryArray, setCategoryArray] = useState<string[]>([]);
+	const [allPrompts, setAllPrompts] = useState<Prompt[]>([]);
+	const [categoryArray, setCategoryArray] = useState<string[]>([
+		"My Prompts",
+	]);
 	const [selectedCategory, setSelectedCategory] = useState<SelectedCategory>({
 		label: "My Prompts",
 		value: "My Prompts",
@@ -184,6 +113,7 @@ export const PromptLibrary = observer(() => {
 
 	const [availableTags, setAvailableTags] = useState<string[]>([]);
 	const [isTagMenuOpen, setIsTagMenuOpen] = useState(false);
+	const [loadStatus, setLoadStatus] = useState<LoadStatus>("IDLE");
 
 	const isMobile = useMediaQuery("(max-width: 640px)");
 	const isSmallDevice = useMediaQuery(
@@ -202,89 +132,103 @@ export const PromptLibrary = observer(() => {
 	const auth = Object.keys(config.logins ?? {})[0] ?? "";
 	const userId = config.loginDetails?.[auth]?.id ?? "";
 
-	const {
-		data: myPromptsRaw,
-		refresh,
-		status,
-	} = usePixel<unknown[]>(`ListMyPrompts(user_id='${userId}');`, {
-		data: [],
-	});
+	const refreshPrompts = useCallback(async () => {
+		setLoadStatus("LOADING");
+		try {
+			const resultUnknown = (await actions.run(
+				`ListPrompt()`,
+			)) as unknown;
 
-	const myPrompts = useMemo<PromptRow[]>(() => {
-		const arr = Array.isArray(myPromptsRaw) ? myPromptsRaw : [];
-		return arr.map((p) => adaptPrompt(normalizePrompt(p)));
-	}, [myPromptsRaw]);
+			const pixelReturn = isRecord(resultUnknown)
+				? (resultUnknown as { pixelReturn?: unknown }).pixelReturn
+				: undefined;
+
+			const first = Array.isArray(pixelReturn)
+				? pixelReturn[0]
+				: undefined;
+			const output = isRecord(first)
+				? (first as { output?: unknown }).output
+				: undefined;
+			const rows = Array.isArray(output) ? output : [];
+
+			const normalized: Prompt[] = rows.map((p) => normalizePrompt(p));
+			const withTags = normalized.find((p) => (p.tags?.length ?? 0) > 0);
+			console.log("first prompt with tags:", {
+				id: withTags?.ID,
+				tags: withTags?.tags,
+			});
+
+			const tagSet = new Set<string>();
+			for (const p of normalized)
+				for (const t of p.tags ?? []) tagSet.add(t);
+
+			const tagsSorted = Array.from(tagSet)
+				.filter(Boolean)
+				.sort((a, b) => a.localeCompare(b));
+			console.log("tagsSorted:", tagsSorted);
+			console.log("categoryArray:", ["My Prompts", ...tagsSorted]);
+			setAllPrompts(normalized);
+			setAvailableTags(tagsSorted);
+			setCategoryArray(["My Prompts", ...tagsSorted]);
+			setLoadStatus("DONE");
+		} catch (e) {
+			// eslint-disable-next-line no-console
+			console.error("ListPrompt load failed:", e);
+			setLoadStatus("ERROR");
+		}
+	}, [actions]);
 
 	useEffect(() => {
-		const getPrompts = async () => {
-			try {
-				const resultUnknown = (await actions.run(
-					`ListPrompt()`,
-				)) as unknown;
+		void refreshPrompts();
+	}, [refreshPrompts]);
 
-				const pixelReturn = isRecord(resultUnknown)
-					? (resultUnknown as { pixelReturn?: unknown }).pixelReturn
-					: undefined;
+	const myPrompts = useMemo(
+		() => allPrompts.filter((p) => isMinePrompt(p, userId)),
+		[allPrompts, userId],
+	);
 
-				const first = Array.isArray(pixelReturn)
-					? pixelReturn[0]
-					: undefined;
-				const output = isRecord(first)
-					? (first as { output?: unknown }).output
-					: undefined;
-				const rows = Array.isArray(output) ? output : [];
+	const categoryPromptsSearched = useMemo(() => {
+		if (selectedCategory.label === "My Prompts") return [];
 
-				const adapted = rows.map((p) =>
-					adaptPrompt(normalizePrompt(p)),
+		const selectedTag = selectedCategory.label;
+		const lower = search.trim().toLowerCase();
+
+		return allPrompts
+			.filter(
+				(p) => Array.isArray(p.tags) && p.tags.includes(selectedTag),
+			)
+			.filter((p) => {
+				if (!lower) return true;
+				return (
+					(p.TITLE ?? "").toLowerCase().includes(lower) ||
+					String(p.INTENT ?? p.CONTEXT ?? "")
+						.toLowerCase()
+						.includes(lower)
 				);
-
-				console.log("adaptPrompt", adapted);
-
-				const nextCategorySet = new Set<string>(["My Prompts"]);
-				for (const p of adapted) {
-					if (
-						p.prompt_category &&
-						p.prompt_category !== "My Prompts"
-					) {
-						nextCategorySet.add(p.prompt_category);
-					}
-				}
-				const nextCategoryArray = Array.from(nextCategorySet);
-
-				const allTags = adapted.flatMap((p) =>
-					Array.isArray(p.tags) ? p.tags : [],
-				);
-				const uniqueTags = Array.from(new Set(allTags)).sort((a, b) =>
-					a.localeCompare(b),
-				);
-
-				setGlobalPrompts(adapted);
-				setCategoryArray(nextCategoryArray);
-				setAvailableTags(uniqueTags);
-			} catch (error) {
-				// eslint-disable-next-line no-console
-				console.error("Load failed:", error);
-			}
-		};
-
-		void getPrompts();
-	}, [actions]);
+			})
+			.filter((p) => {
+				if (selectedTags.length === 0) return true;
+				if (!Array.isArray(p.tags) || p.tags.length === 0) return false;
+				return selectedTags.some((t) => p.tags.includes(t));
+			});
+	}, [allPrompts, search, selectedCategory.label, selectedTags]);
 
 	const handleAddNew = async (newPrompt: Prompt) => {
 		try {
-			const title = (newPrompt.TITLE ?? "").replace(/"/g, "'");
-			const text = String(
-				newPrompt.INTENT ?? newPrompt.CONTEXT ?? "",
-			).replace(/"/g, "'");
+			const title = String(newPrompt.TITLE ?? "").replace(/"/g, "'");
+			const text = String(newPrompt.CONTEXT ?? "").replace(/"/g, "'");
+			const intent = String(newPrompt.INTENT ?? "").replace(/"/g, "'");
+			const tags = Array.isArray(newPrompt.tags)
+				? newPrompt.tags.map((t) => t.replace(/"/g, "'"))
+				: [];
 
 			const responseUnknown = (await actions.run(
-				`AddMyPrompts([{"prompt_title":"${title}","prompt_text":"${text}","favorite_flag":"N"}]);`,
+				`AddPrompt(map={"title":"${title}","context":"${text}","intent":"${intent}","tags":${JSON.stringify(tags)}});`,
 			)) as unknown;
 
 			const pixelReturn = isRecord(responseUnknown)
 				? (responseUnknown["pixelReturn"] as unknown)
 				: undefined;
-
 			const first = Array.isArray(pixelReturn)
 				? pixelReturn[0]
 				: undefined;
@@ -303,7 +247,8 @@ export const PromptLibrary = observer(() => {
 				throw new Error(output || "AddMyPrompts failed");
 			}
 
-			await refresh();
+			await refreshPrompts();
+			setSelectedCategory({ label: "My Prompts", value: "My Prompts" });
 		} finally {
 			setIsEditModalOpen(false);
 		}
@@ -311,6 +256,7 @@ export const PromptLibrary = observer(() => {
 
 	const handleButtonClick = ({ label, value }: SelectedCategory) => {
 		setIsTagMenuOpen(false);
+		setSelectedTags([]);
 
 		if (
 			selectedCategory.label === label &&
@@ -327,46 +273,27 @@ export const PromptLibrary = observer(() => {
 	};
 
 	const myPromptsSearched = useMemo(() => {
-		const lowerSearch = search.trim().toLowerCase();
+		const lower = search.trim().toLowerCase();
 		return myPrompts.filter((p) => {
-			if (!lowerSearch) return true;
+			if (!lower) return true;
 			return (
-				(p.prompt_title ?? "").toLowerCase().includes(lowerSearch) ||
-				(p.prompt_text ?? "").toLowerCase().includes(lowerSearch) ||
-				(p.CONTEXT ?? "").toLowerCase().includes(lowerSearch)
+				(p.TITLE ?? "").toLowerCase().includes(lower) ||
+				String(p.INTENT ?? p.CONTEXT ?? "")
+					.toLowerCase()
+					.includes(lower)
 			);
 		});
 	}, [myPrompts, search]);
 
-	const globalPromptsSearched = useMemo(() => {
-		const lowerSearch = search.trim().toLowerCase();
-
-		return globalPrompts
-			.filter(() => selectedCategory.label !== "My Prompts")
-			.filter((p) => p.prompt_category === selectedCategory.label)
-			.filter((p) => {
-				if (!lowerSearch) return true;
-				return (
-					(p.prompt_title ?? "")
-						.toLowerCase()
-						.includes(lowerSearch) ||
-					(p.prompt_text ?? "").toLowerCase().includes(lowerSearch) ||
-					(p.CONTEXT ?? "").toLowerCase().includes(lowerSearch)
-				);
-			})
-			.filter((p) => {
-				if (selectedTags.length === 0) return true;
-				if (!Array.isArray(p.tags) || p.tags.length === 0) return false;
-				return selectedTags.some((t) => p.tags.includes(t));
-			});
-	}, [globalPrompts, search, selectedCategory.label, selectedTags]);
-
+	// Only show the "Filter by Tags" menu when the selected tag has other tags available to refine by
 	const categoryHasTags = useMemo(() => {
 		if (selectedCategory.label === "My Prompts") return false;
-		return globalPrompts
-			.filter((p) => p.prompt_category === selectedCategory.label)
-			.some((p) => Array.isArray(p.tags) && p.tags.length > 0);
-	}, [globalPrompts, selectedCategory.label]);
+
+		const selected = selectedCategory.label;
+		return allPrompts
+			.filter((p) => p.tags?.includes(selected))
+			.some((p) => p.tags?.some((t) => t !== selected) ?? false);
+	}, [allPrompts, selectedCategory.label]);
 
 	const displayedTags = selectedTags.slice(0, 2);
 	const hiddenCount = Math.max(0, selectedTags.length - 2);
@@ -486,55 +413,62 @@ export const PromptLibrary = observer(() => {
 									{isTagMenuOpen && (
 										<div className="absolute z-10 mt-2 w-full rounded-md border border-border bg-background p-2 shadow-sm">
 											<div className="max-h-56 overflow-auto">
-												{availableTags.map((tag) => {
-													const checked =
-														selectedTags.includes(
-															tag,
-														);
-													return (
-														<label
-															key={tag}
-															className="flex cursor-pointer items-center justify-between rounded-sm px-2 py-1 text-sm hover:bg-muted"
-														>
-															<span
-																className={
-																	checked
-																		? "font-medium text-primary"
-																		: ""
-																}
+												{availableTags
+													.filter(
+														(t) =>
+															t !==
+															selectedCategory.label,
+													) // avoid selecting the category tag redundantly
+													.map((tag) => {
+														const checked =
+															selectedTags.includes(
+																tag,
+															);
+														return (
+															<label
+																key={tag}
+																className="flex cursor-pointer items-center justify-between rounded-sm px-2 py-1 text-sm hover:bg-muted"
 															>
-																{tag}
-															</span>
-															<input
-																type="checkbox"
-																checked={
-																	checked
-																}
-																onChange={(
-																	e,
-																) => {
-																	const next =
-																		e.target
-																			.checked
-																			? [
-																					...selectedTags,
-																					tag,
-																				]
-																			: selectedTags.filter(
-																					(
-																						t,
-																					) =>
-																						t !==
+																<span
+																	className={
+																		checked
+																			? "font-medium text-primary"
+																			: ""
+																	}
+																>
+																	{tag}
+																</span>
+																<input
+																	type="checkbox"
+																	checked={
+																		checked
+																	}
+																	onChange={(
+																		e,
+																	) => {
+																		const next =
+																			e
+																				.target
+																				.checked
+																				? [
+																						...selectedTags,
 																						tag,
-																				);
-																	setSelectedTags(
-																		next,
-																	);
-																}}
-															/>
-														</label>
-													);
-												})}
+																					]
+																				: selectedTags.filter(
+																						(
+																							t2,
+																						) =>
+																							t2 !==
+																							tag,
+																					);
+																		setSelectedTags(
+																			next,
+																		);
+																	}}
+																/>
+															</label>
+														);
+													})}
 											</div>
 
 											<div className="mt-2 flex items-center justify-between gap-2">
@@ -614,12 +548,12 @@ export const PromptLibrary = observer(() => {
 							<div className="mb-1 text-muted-foreground text-sm">
 								{selectedCategory.label === "My Prompts"
 									? myPromptsSearched.length
-									: globalPromptsSearched.length}{" "}
+									: categoryPromptsSearched.length}{" "}
 								prompts found
 							</div>
 
 							<div className="h-[25vh] overflow-auto pr-1">
-								{status === "LOADING" ? (
+								{loadStatus === "LOADING" ? (
 									<div className="flex h-full items-center justify-center">
 										<div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
 									</div>
@@ -630,11 +564,10 @@ export const PromptLibrary = observer(() => {
 											selectedCategory.label ===
 											"My Prompts"
 												? []
-												: globalPromptsSearched
+												: categoryPromptsSearched
 										}
-										refresh={refresh}
+										refresh={refreshPrompts}
 										myPrompts={myPromptsSearched}
-										suggestedPrompts={suggestedPrompts}
 									/>
 								)}
 							</div>
@@ -712,16 +645,14 @@ export const PromptLibrary = observer(() => {
 					<div className="mt-3 mb-2 text-muted-foreground text-sm">
 						{selectedCategory.label === "My Prompts"
 							? myPromptsSearched.length
-							: globalPromptsSearched.length}{" "}
+							: categoryPromptsSearched.length}{" "}
 						prompts found
 					</div>
 
 					<div
-						className={`overflow-auto pr-1 ${
-							isMobile ? "h-[25vh]" : "h-[calc(100vh-400px)]"
-						}`}
+						className={`overflow-auto pr-1 ${isMobile ? "h-[25vh]" : "h-[calc(100vh-400px)]"}`}
 					>
-						{status === "LOADING" ? (
+						{loadStatus === "LOADING" ? (
 							<div className="flex h-full items-center justify-center">
 								<div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
 							</div>
@@ -731,11 +662,10 @@ export const PromptLibrary = observer(() => {
 								globalPrompts={
 									selectedCategory.label === "My Prompts"
 										? []
-										: globalPromptsSearched
+										: categoryPromptsSearched
 								}
-								refresh={refresh}
+								refresh={refreshPrompts}
 								myPrompts={myPromptsSearched}
-								suggestedPrompts={suggestedPrompts}
 							/>
 						)}
 					</div>

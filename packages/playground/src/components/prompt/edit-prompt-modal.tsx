@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useId, useState } from "react";
 import { Button } from "@semoss/ui/next";
+import { ChipsInput } from "@/components/prompt/chips-input";
 import type { Prompt } from "@/components/prompt/prompt-grid";
 
 interface EditPromptModalProps {
@@ -19,10 +20,17 @@ export const EditPromptModal = ({
 	isNewPrompt = false,
 }: EditPromptModalProps) => {
 	const [editedPrompt, setEditedPrompt] = useState<Prompt>({ ...prompt });
+	const [isBeingEdited, setIsBeingEdited] = useState(false);
 
 	useEffect(() => {
+		if (!open) {
+			setIsBeingEdited(false);
+			return;
+		}
+		if (isBeingEdited) return;
+		console.log("Resetting editedPrompt from prop prompt");
 		setEditedPrompt({ ...prompt });
-	}, [prompt]);
+	}, [open, prompt, isBeingEdited]);
 
 	const handleChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -31,7 +39,6 @@ export const EditPromptModal = ({
 		setEditedPrompt((prev) => ({ ...prev, [name]: value }));
 	};
 
-	// This function sanitizes a string by removing trailing backslashes and whitespace
 	const sanitizeString = (str: string): string => {
 		let sanitized = str.trim();
 		while (sanitized.endsWith("\\")) {
@@ -40,22 +47,23 @@ export const EditPromptModal = ({
 		return sanitized;
 	};
 
-	// This function handles the form submission
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
 		const sanitizedPrompt: Prompt = {
 			...editedPrompt,
-			INTENT: sanitizeString(editedPrompt.INTENT),
+			CONTEXT: sanitizeString(editedPrompt.CONTEXT),
 			TITLE: sanitizeString(editedPrompt.TITLE),
 		};
 
+		console.log("Saving prompt:", sanitizedPrompt);
 		onSave(sanitizedPrompt);
 	};
 
+	const nameId = useId();
 	const contentId = useId();
-
-	if (!open) return null;
+	const intentId = useId();
+	const tagsId = useId();
 
 	return (
 		<div
@@ -64,7 +72,6 @@ export const EditPromptModal = ({
 			aria-modal="true"
 			aria-label={isNewPrompt ? "Create New Prompt" : "Edit Prompt"}
 			onMouseDown={(e) => {
-				// close on backdrop click
 				if (e.target === e.currentTarget) onClose();
 			}}
 		>
@@ -80,14 +87,51 @@ export const EditPromptModal = ({
 						<div className="flex flex-col gap-2">
 							<label
 								className="font-medium text-sm"
-								htmlFor="name"
+								htmlFor={nameId}
 							>
 								Name
 							</label>
 							<input
-								id={contentId}
+								id={nameId}
 								name="TITLE"
 								value={editedPrompt.TITLE ?? ""}
+								onChange={handleChange}
+								required
+								className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+							/>
+							<label
+								className="mt-4 font-medium text-sm"
+								htmlFor={contentId}
+							>
+								Prompt Content
+							</label>
+							<textarea
+								id={contentId}
+								name="CONTEXT"
+								value={editedPrompt.CONTEXT ?? ""}
+								onChange={(e) => {
+									const { name, value } = e.target;
+									setIsBeingEdited(true);
+									setEditedPrompt((prev) => ({
+										...prev,
+										[name]: value,
+									}));
+								}}
+								required
+								rows={8}
+								className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+							/>
+
+							<label
+								className="mt-4 font-medium text-sm"
+								htmlFor={intentId}
+							>
+								Intent
+							</label>
+							<input
+								id={intentId}
+								name="INTENT"
+								value={editedPrompt.INTENT ?? ""}
 								onChange={handleChange}
 								required
 								className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -95,18 +139,21 @@ export const EditPromptModal = ({
 
 							<label
 								className="mt-4 font-medium text-sm"
-								htmlFor="content"
+								htmlFor={tagsId}
 							>
-								Prompt Content
+								Tags
 							</label>
-							<textarea
-								id={contentId}
-								name="INTENT"
-								value={editedPrompt.INTENT ?? ""}
-								onChange={handleChange}
-								required
-								rows={8}
-								className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+							<ChipsInput
+								id={tagsId}
+								value={editedPrompt.tags || []}
+								onChange={(nextTags) => {
+									setIsBeingEdited(true);
+									setEditedPrompt((prev) => ({
+										...prev,
+										tags: nextTags,
+									}));
+								}}
+								placeholder="Add tags and press Enter"
 							/>
 						</div>
 					</div>
@@ -115,9 +162,12 @@ export const EditPromptModal = ({
 						<Button type="button" variant="ghost" onClick={onClose}>
 							Cancel
 						</Button>
-						<Button type="submit" variant="default">
+						<button
+							type="submit"
+							className="rounded-md bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+						>
 							{isNewPrompt ? "Create" : "Save Changes"}
-						</Button>
+						</button>
 					</div>
 				</form>
 			</div>
