@@ -20,9 +20,46 @@ import shikiLangYML from "@shikijs/langs/yml";
 import gitHubDark from "@shikijs/themes/github-dark";
 import minLight from "@shikijs/themes/min-light";
 import type * as React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "./theme-provider";
+
+// Create a singleton highlighter instance
+let highlighterInstance: Awaited<
+	ReturnType<typeof createHighlighterCore>
+> | null = null;
+
+const getHighlighter = async () => {
+	if (highlighterInstance) {
+		return highlighterInstance;
+	}
+
+	highlighterInstance = await createHighlighterCore({
+		themes: [gitHubDark, minLight],
+		langs: [
+			shikiLangTypescript,
+			shikiLangJavascript,
+			shikiLangHTML,
+			shikiLangCSS,
+			shikiLangPython,
+			shikiLangJSON,
+			shikiLangJava,
+			shikiLangJSX,
+			shikiLangTSX,
+			shikiLangMarkdown,
+			shikiLangXML,
+			shikiLangYAML,
+			shikiLangYML,
+			shikiLangSH,
+			shikiLangBash,
+			shikiLangCSV,
+			shikiLangTSV,
+		],
+		engine: createJavaScriptRegexEngine(),
+	});
+
+	return highlighterInstance;
+};
 
 function CodeContainer({
 	className,
@@ -75,7 +112,6 @@ function Code({ code, language, className, ...props }: CodeProps): JSX.Element {
 	const { theme } = useTheme();
 	// store the highlighted coe
 	const [highlightedHtml, setHighlightedHTML] = useState<string>("");
-	const highlighterRef = useRef(null);
 
 	// when it is a mounted, try to highlight
 	useEffect(() => {
@@ -87,29 +123,7 @@ function Code({ code, language, className, ...props }: CodeProps): JSX.Element {
 			}
 
 			// get the highlighter
-			highlighterRef.current = await createHighlighterCore({
-				themes: [gitHubDark, minLight],
-				langs: [
-					shikiLangTypescript,
-					shikiLangJavascript,
-					shikiLangHTML,
-					shikiLangCSS,
-					shikiLangPython,
-					shikiLangJSON,
-					shikiLangJava,
-					shikiLangJSX,
-					shikiLangTSX,
-					shikiLangMarkdown,
-					shikiLangXML,
-					shikiLangYAML,
-					shikiLangYML,
-					shikiLangSH,
-					shikiLangBash,
-					shikiLangCSV,
-					shikiLangTSV,
-				],
-				engine: createJavaScriptRegexEngine(),
-			});
+			const highlighter = await getHighlighter();
 
 			// set the theme
 			let activeTheme: "light" | "dark" = "dark";
@@ -123,7 +137,7 @@ function Code({ code, language, className, ...props }: CodeProps): JSX.Element {
 				activeTheme = theme;
 			}
 
-			const html = await highlighterRef.current.codeToHtml(code, {
+			const html = highlighter.codeToHtml(code, {
 				theme: activeTheme === "light" ? "min-light" : "github-dark",
 				lang: language,
 				structure: "inline",

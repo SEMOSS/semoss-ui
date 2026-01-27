@@ -21,6 +21,7 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 			name: string;
 			title: string;
 			parameters: Record<string, unknown>;
+			original_name: string;
 		};
 	} = useMemo(() => {
 		return node.getConfig();
