@@ -8,3 +8,4 @@ export * from "./room-input-menu-upload";
 export * from "./room-input-menu-workspace";
 export * from "./room-sidebar";
 export * from "./room-workspace";
+export * from "./room-workspace-creation";

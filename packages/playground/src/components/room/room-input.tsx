@@ -41,6 +41,7 @@ import {
 } from "@semoss/ui/next";
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import type { Engine } from "@/types";
+import { ContextChart } from "./context-chart";
 
 interface RoomInputProps {
 	/** Classes to override */
@@ -69,8 +70,9 @@ interface RoomInputProps {
 	/** Has outstanding tools */
 	hasOutstandingTools?: boolean;
 
-	/** Show loading spinner */
-	hideLoadingSpinner?: boolean;
+	/** Percentage of context used */
+	tokensMax?: number;
+	tokensUsed?: number;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
@@ -82,7 +84,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		MenuComponent,
 		onPrompt = () => null,
 		hasOutstandingTools = false,
-		hideLoadingSpinner = false,
+		tokensMax,
+		tokensUsed,
 	}) => {
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
@@ -198,7 +201,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				userInput = root.getTextContent();
 			});
 
-			const userFiles = files;
+			const userFiles = [...files];
 
 			// skip if there is no input, if loading, or if there are outstanding tools
 			if (!userInput || isLoading || hasOutstandingTools) {
@@ -206,27 +209,38 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 
 			try {
+				// clear the view
+				editorRef.current?.update(() => {
+					const root = $getRoot();
+					root.clear();
+
+					const paragraphNode = $createParagraphNode();
+					root.append(paragraphNode);
+				});
+
 				// clear out the input components
 				success = await onPrompt(userInput, userFiles);
 				if (!success) {
 					throw new Error(`Error processing chat`);
 				}
+
+				// clear the files
+				setFiles([]);
 			} catch (e) {
+				// throw the error
 				toast.error(e.message);
-			} finally {
-				if (success) {
-					// clear the files
-					setFiles([]);
 
-					// reset the view
-					editorRef.current?.update(() => {
-						const root = $getRoot();
-						root.clear();
+				// keep the files
+				setFiles(userFiles);
 
-						const paragraphNode = $createParagraphNode();
-						root.append(paragraphNode);
-					});
-				}
+				// keep the view
+				editorRef.current?.update(() => {
+					const root = $getRoot();
+					root.clear();
+
+					const textNode = $createTextNode(userInput);
+					root.append(textNode);
+				});
 			}
 		};
 
@@ -293,7 +307,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								<div className="relative">
 									<ContentEditable
 										className={cn(
-											`h-auto w-full overflow-y-auto rounded-md border border-input bg-background p-4 pb-14 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
+											`h-auto w-full overflow-y-auto rounded-md border border-input bg-transparent p-4 pb-14 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
 											isDragging
 												? "border-primary border-dashed"
 												: "hover:border-primary",
@@ -305,7 +319,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										placeholder={
 											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
 												<SparklesIcon className="size-4" />
-												/ to open menu
+												{isLoading
+													? "Thinking..."
+													: "/ to open menu"}
 											</div>
 										}
 										onDrop={(e) => {
@@ -413,7 +429,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						)}
 					</LexicalComposer>
 					{!isLoading && (
-						<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
+						<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
 							<DropdownMenu
 								open={menuOpen}
 								onOpenChange={setMenuOpen}
@@ -447,12 +463,17 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									/>
 								</DropdownMenuContent>
 							</DropdownMenu>
+							<ContextChart
+								tokensUsed={tokensUsed}
+								tokensMax={tokensMax}
+							/>
 						</div>
 					)}
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
 						<div className="flex flex-row items-center gap-1">
 							<EngineSelect
 								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+								disabled={isLoading}
 								name={model?.app_name || ""}
 								value={model?.app_id || ""}
 								engineTypes={["MODEL"]}
@@ -506,18 +527,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											promptModel();
 										}}
 									>
-										{isLoading && !hideLoadingSpinner ? (
-											<Spinner />
-										) : (
-											<SendIcon />
-										)}
+										{isLoading ? <Spinner /> : <SendIcon />}
 									</Button>
 								</span>
 							</TooltipTrigger>
 							<TooltipContent>
 								{(() => {
 									if (isLoading) {
-										return "Processing question";
+										return "Thinking";
 									} else if (isEmpty) {
 										return "Please enter a question";
 									} else if (hasOutstandingTools) {

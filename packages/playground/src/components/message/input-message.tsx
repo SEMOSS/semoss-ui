@@ -13,15 +13,18 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import type { InputMessageStore } from "@/stores";
+import type { InputMessageStore, RoomStore } from "@/stores";
 
 interface InputMessageProps {
+	/** Room */
+	room: RoomStore;
+
 	/** Message to render */
 	message: InputMessageStore;
 }
 
 export const InputMessage: React.FC<InputMessageProps> = observer(
-	({ message }) => {
+	({ room, message }) => {
 		const [selectedImage, setSelectedImage] = useState<
 			InputMessageStore["mediaInputs"][number] | null
 		>(null);
@@ -54,7 +57,23 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 										type="button"
 										key={`${info.fileName}`}
 										className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted"
-										onClick={() => setSelectedImage(info)}
+										onClick={() => {
+											// this will select if there or open if not
+											room.addSidebarNode(
+												`FILE--${info.fileLocation}`,
+												{
+													type: "tab",
+													name: info.fileName,
+													component:
+														"room-file-editor",
+													config: {
+														name: info.fileName,
+														path: info.fileLocation,
+													},
+													enableClose: true,
+												},
+											);
+										}}
 										aria-label={`View ${info.fileName}`}
 									>
 										{info.mimeType?.startsWith("image/") ? (

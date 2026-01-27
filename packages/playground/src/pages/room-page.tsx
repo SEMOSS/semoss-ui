@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
@@ -12,6 +12,7 @@ import {
 import { RoomContent, RoomSidebar } from "@/components";
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 import type { RoomStore } from "@/stores";
+import type { Engine } from "@/types";
 
 /**
  * The page for a room
@@ -24,7 +25,34 @@ export const RoomPage = observer(() => {
 	const { chat } = useChat();
 	const navigate = useNavigate();
 
+	/**
+	 * State
+	 */
 	const [room, setRoom] = useState<RoomStore | null>(null);
+	const selectedModelRef = useRef<Engine>(chat.models.selected);
+
+	/**
+	 * Library hooks
+	 */
+	// set the breadcrumbs
+	const { setBreadcrumbs } = useGlobalBreadcrumbs([
+		{
+			name: "Home",
+			path: "/",
+		},
+		{
+			name: room?.metadata?.name || "Room",
+			path: `/room/${roomId}`,
+		},
+	]);
+
+	/**
+	 * Effects
+	 */
+	// keep ref updated
+	useEffect(() => {
+		selectedModelRef.current = chat.models.selected;
+	}, [chat.models.selected]);
 
 	// load the room
 	useEffect(() => {
@@ -34,8 +62,32 @@ export const RoomPage = observer(() => {
 
 				// update the model based on the room
 				if (!room.model) {
-					room.setModel(chat.models.selected);
+					room.setModel(selectedModelRef.current);
+				} else {
+					chat.setSelectedModel(room.model);
 				}
+
+				if (room.options.workspace)
+					setBreadcrumbs([
+						{
+							name: "Home",
+							path: "/",
+						},
+						{
+							name: "Workspace",
+							path: "/workspace",
+						},
+						{
+							name:
+								room.options.workspace?.name ||
+								room.options.workspace.workspace_id,
+							path: `/workspace/${room.options.workspace.workspace_id}`,
+						},
+						{
+							name: "Room",
+							path: `/room/${room.roomId}`,
+						},
+					]);
 
 				// set the room
 				setRoom(room);
@@ -47,21 +99,12 @@ export const RoomPage = observer(() => {
 		};
 
 		loadRoom();
-	}, [roomId, navigate, chat.loadRoom, chat.models.selected]);
-
-	/**
-	 * Effects
-	 */
-	// set the breadcrumbs
-	useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: room?.metadata?.name || "Room",
-			path: `/room/${roomId}`,
-		},
+	}, [
+		roomId,
+		navigate,
+		chat.loadRoom,
+		chat.setSelectedModel,
+		setBreadcrumbs,
 	]);
 
 	// if there is no room, return null
