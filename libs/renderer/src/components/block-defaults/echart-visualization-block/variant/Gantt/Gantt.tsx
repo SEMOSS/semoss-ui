@@ -434,7 +434,13 @@ export const Gantt = observer(
 				},
 				xAxis: {
 					type: "time",
-					// name: 'Date',
+					name: option?.xAxis?.name,
+					nameLocation: "middle",
+					nameGap: 30,
+					nameTextStyle: {
+						fontSize: option.xAxis?.nameTextStyle?.fontSize,
+					},
+					fontSize: option?.xAxis?.nameTextStyle?.fontSize,
 					axisLabel: {
 						...option.xAxis?.axisLabel,
 						formatter: (value) =>
@@ -452,6 +458,13 @@ export const Gantt = observer(
 					type: "category",
 					data: resourceRows,
 					inverse: true,
+					nameLocation: "middle",
+					nameGap: 50,
+					name: option?.yAxis?.name,
+					nameTextStyle: {
+						fontSize: option.yAxis?.nameTextStyle?.fontSize,
+					},
+					fontSize: option?.yAxis?.nameTextStyle?.fontSize,
 					axisLabel: {
 						...option.yAxis?.axisLabel,
 						// margin: resourceRows.length > 1 ? 0 : 12,

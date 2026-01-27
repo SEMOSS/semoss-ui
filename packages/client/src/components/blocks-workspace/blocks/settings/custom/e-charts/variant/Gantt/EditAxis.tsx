@@ -122,10 +122,16 @@ export const EditAxis = observer(
 		useEffect(() => {
 			const axisStateData = { ...INITIAL_AXIS_STATE };
 			if (option[axis]) {
-				axisStateData.axistitle = option[axis].name ?? "";
+				axisStateData.axistitle =
+					option[axis].axisName ?? option[axis].name ?? "";
+				axisStateData.showAxisTitle =
+					option[axis].showAxisName ??
+					INITIAL_AXIS_STATE.showAxisTitle;
 				if (option[axis].axisLabel) {
 					axisStateData.labelFontSize =
 						option[axis].axisLabel.fontSize ?? 12;
+					axisStateData.axisTitleFontSize =
+						option[axis].nameTextStyle?.fontSize ?? 12;
 					axisStateData.rotate = option[axis].axisLabel.rotate ?? 0;
 					axisStateData.truncateCharCount =
 						option[axis].axisLabel.truncateCharCount ?? 0;
@@ -141,7 +147,7 @@ export const EditAxis = observer(
 				}
 			}
 			setAxisState((prevState) => ({ ...prevState, ...axisStateData }));
-		}, [option, axis]);
+		}, [axis]);
 
 		// Update chart data when axisState changes
 		useEffect(() => {
@@ -152,6 +158,8 @@ export const EditAxis = observer(
 
 		// Reset axis state
 		const resetToInitialState = () => {
+			option[axis].name = "";
+			option[axis].axisName = "";
 			setAxisState(INITIAL_AXIS_STATE);
 		};
 
@@ -188,17 +196,20 @@ export const EditAxis = observer(
 			const optionObj =
 				typeof value === "string" ? JSON.parse(value) : value;
 			const axisLabel = optionObj[axis]?.axisLabel ?? {};
-
 			if (optionObj[axis]) {
 				if (axisData.showAxisTitle) {
-					axisLabel.name = axisData.axistitle;
-					axisLabel.nameTextStyle = {
+					optionObj[axis].name = axisData.axistitle;
+					optionObj[axis].axisName = optionObj[axis].name;
+					optionObj[axis].showAxisName = true;
+					optionObj[axis].nameTextStyle = {
 						...optionObj[axis].nameTextStyle,
 						fontSize:
 							Number(axisData.axisTitleFontSize) || undefined,
 					};
 				} else {
-					axisLabel.name = "";
+					optionObj[axis].axisName = optionObj[axis].name;
+					optionObj[axis].showAxisName = false;
+					optionObj[axis].name = "";
 				}
 				axisLabel.fontSize =
 					Number(axisData.labelFontSize) || undefined;
@@ -337,7 +348,7 @@ export const EditAxis = observer(
 				<StyledAxisDiv>
 					<Switch
 						size="small"
-						defaultChecked={axisState.showAxisTitle ?? undefined}
+						checked={axisState.showAxisTitle}
 						onChange={(e: ChangeEvent<HTMLInputElement>) =>
 							handleInputChange(
 								e,
