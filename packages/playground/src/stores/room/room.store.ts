@@ -14,6 +14,7 @@ import {
 	InputMessageStore,
 	PlanMessageStore,
 	ResponseMessageStore,
+	type ToolStore,
 } from "@/stores";
 import type {
 	Engine,
@@ -130,25 +131,6 @@ interface RoomStoreInterface {
 		 */
 		counter: number;
 	};
-
-	/**
-	 * Inline tools that are open
-	 */
-	inlineTools: Map<
-		string,
-		{
-			/** Id of the app */
-			app: string;
-			/** Tool information */
-			tool: {
-				message: string;
-				id: string;
-				name: string;
-				title: string;
-				parameters: Record<string, unknown>;
-			};
-		}
-	>;
 }
 
 /**
@@ -186,7 +168,6 @@ export class RoomStore {
 			}),
 			counter: 0,
 		},
-		inlineTools: new Map(),
 	};
 
 	constructor(roomId: string, insightId: string = "new") {
@@ -370,13 +351,6 @@ export class RoomStore {
 	 */
 	get sidebar() {
 		return this._store.sidebar;
-	}
-
-	/**
-	 * Get the inline tools
-	 */
-	get inlineTools() {
-		return this._store.inlineTools;
 	}
 
 	/** Setters */
@@ -642,6 +616,33 @@ export class RoomStore {
 	};
 
 	/**
+	 * Get a tool by nodeId
+	 * @param nodeId - node id to check
+	 */
+	getTool = (nodeId: string): ToolStore => {
+		let current: AbstractMessageStore | null = this._store.root;
+
+		const queue: AbstractMessageStore[] = [current];
+		while (queue.length > 0) {
+			current = queue.shift();
+
+			if (current.type === "RESPONSE") {
+				const responseMessage = current as ResponseMessageStore;
+
+				for (const t of responseMessage.tools) {
+					if (t.nodeId === nodeId) {
+						return t;
+					}
+				}
+			}
+
+			queue.push(...current.children);
+		}
+
+		return null;
+	};
+
+	/**
 	 * Sidebar
 	 */
 	/**
@@ -748,57 +749,6 @@ export class RoomStore {
 			this.closeSidebar();
 		}
 	};
-
-	/**
-	 * Inline Tools
-	 */
-	/**
-	 * Check if an inline tool is open
-	 * @param nodeId - node id to check
-	 */
-	isInlineToolOpen = (nodeId: string): boolean => {
-		return this._store.inlineTools.has(nodeId);
-	};
-
-	/**
-	 * Add an inline tool
-	 * @param nodeId - unique id for the inline tool
-	 * @param options - tool configuration
-	 */
-	addInlineTool = (
-		nodeId: string,
-		options: {
-			app: string;
-			tool: {
-				message: string;
-				id: string;
-				name: string;
-				title: string;
-				parameters: Record<string, unknown>;
-			};
-		},
-	): void => {
-		this._store.inlineTools.set(nodeId, {
-			...options,
-		});
-	};
-
-	/**
-	 * Remove an inline tool
-	 * @param nodeId - node id to remove
-	 */
-	removeInlineTool = (nodeId: string): void => {
-		this._store.inlineTools.delete(nodeId);
-	};
-
-	/**
-	 * Get inline tool by nodeId
-	 * @param nodeId - node id
-	 */
-	getInlineTool = (nodeId: string) => {
-		return this._store.inlineTools.get(nodeId);
-	};
-
 	/**
 	 * Helpers
 	 */

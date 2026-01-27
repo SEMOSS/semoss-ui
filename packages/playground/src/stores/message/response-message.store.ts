@@ -4,12 +4,11 @@ import {
 	MCP_EXECUTION_AUTO,
 	TOOL_ERROR_PROMPT,
 } from "@/constants";
+import { ToolStore } from "@/stores";
 import type {
 	InputMediaPixelMessage,
 	InputTextPixelMessage,
 	InputToolExecPixelMessage,
-	McpDisplay,
-	McpExecution,
 	PixelMessage,
 	ResponseTextPixelMessage,
 	ResponseToolPixelMessage,
@@ -17,44 +16,6 @@ import type {
 import { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
 import { PlanMessageStore } from "./plan-message.store";
-
-interface Tool {
-	/** tool execution id */
-	id: string;
-
-	/**  title of tool **/
-	title: string;
-
-	/** meta data from the tool */
-	_meta: {
-		SMSS_MCP_EXECUTION: McpExecution;
-		SMSS_PROJECT_NAME: string;
-		SMSS_PROJECT_ID: string;
-		SMSS_MCP_UI?: {
-			loadingMessage?: string;
-			resourceURI?: string;
-			displayLocation?: McpDisplay;
-		};
-	};
-
-	/**  Name of function with app_id **/
-	name: string;
-
-	/**  Name of function in mcp json **/
-	original_name: string;
-
-	/** Parameters used in the tool */
-	parameters: Record<string, unknown>;
-
-	/** Response for the tool */
-	response: string;
-
-	/** If the tool execution was cancelled or errored */
-	tool_status?: "success" | "error" | "cancelled";
-
-	/** If the tool is currently executing */
-	is_executing: boolean;
-}
 
 /**
  * Response Message Store
@@ -84,16 +45,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	/**
 	 * Tools associated with the message
 	 */
-	tools: Tool[] = [];
-
-	/**
-	 * If this is input tool exec, the tool call id it is executing
-	 */
-	inputToolExecData: {
-		toolCallId: string;
-		inputPrompt: string;
-		toolStatus?: "success" | "error" | "cancelled";
-	} | null = null;
+	tools: ToolStore[] = [];
 
 	/**
 	 * Current execution index of the tool, used for auto execution
@@ -155,7 +107,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			continueToolExecution: action,
 			hasUnfinishedTools: action,
 			saveToolExecution: action,
-			markToolAsUsed: action,
 		});
 
 		// sync the message (must be after makeObservable so sync action is registered)
@@ -173,29 +124,44 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		} else if (message.type === "RESPONSE_TOOL") {
 			this.thinking = message.thinking || "";
 			this.tools = message.tool_responses.map(
-				(t): Tool => ({
-					id: t.id,
-					_meta: {
-						SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
-						// On 12/16/25 we changed from _meta.map to just _meta, so support both
-						...(t._meta as { map?: Record<string, unknown> })?.map,
-						...t._meta,
-					},
-					title: t.title,
-					name: t.name,
-					original_name: t.original_name,
-					parameters: t.arguments,
-					response: "",
-					tool_status: "success",
-					is_executing: false,
-				}),
+				(t) =>
+					new ToolStore(this.room, this, {
+						id: t.id,
+						_meta: {
+							SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
+							// On 12/16/25 we changed from _meta.map to just _meta, so support both
+							...(t._meta as { map?: Record<string, unknown> })
+								?.map,
+							...t._meta,
+						},
+						title: t.title,
+						name: t.name,
+						original_name: t.original_name,
+						parameters: t.arguments,
+					}),
 			);
 		} else if (message.type === "INPUT_TOOL_EXEC") {
-			this.inputToolExecData = {
-				toolCallId: message.tool_call_id,
-				inputPrompt: message.inputPrompt,
-				toolStatus: message.tool_status ?? "success", // default to success
-			};
+			const m = message;
+
+			// find the tool
+			const tool = this.tools.find((t) => t.id === m.tool_call_id);
+
+			if (!tool) {
+				return;
+			}
+
+			// save the response
+			runInAction(() => {
+				tool.response = m.inputPrompt;
+
+				if (m.tool_status === "success") {
+					tool.status = "SUCCESS";
+				} else if (m.tool_status === "cancelled") {
+					tool.status = "CANCELLED";
+				} else if (m.tool_status === "error") {
+					tool.status = "ERROR";
+				}
+			});
 		} else {
 			throw new Error(
 				`Invalid message object passed to ResponseMessageStore.update: ${JSON.stringify(message)}`,
@@ -404,7 +370,7 @@ paramValues=[${JSON.stringify({
 		toolName: string,
 	): ResponseMessageStore["tools"][number] | null => {
 		const tool = this.tools.find(
-			(tool) => tool.id === toolId && tool.name === toolName,
+			(tool) => tool.id === toolId && tool.json.name === toolName,
 		);
 
 		if (!tool) {
@@ -473,26 +439,28 @@ paramValues=[${JSON.stringify({
 		const tool = this.tools[this.toolAutoExecutionIdx];
 		if (!tool) {
 			return;
-		} else if (tool.response) {
+		} else if (tool.status === "SUCCESS" || tool.status === "CANCELLED") {
 			// already has a response, skip
 			this.toolAutoExecutionIdx += 1;
 			await this.runToolExecution();
 			return;
+		} else if (tool.status === "ERROR") {
+			return;
 		}
 
 		// only run if it is set to auto execute
-		if (tool._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
+		if (tool.json._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
 			return;
 		}
 
 		runInAction(() => {
-			tool.is_executing = true;
+			tool.status = "LOADING";
 		});
 
 		try {
 			// wait for the pixel to run
 			const response = await room.runRoomPixel<[string]>(
-				`RunMCPTool(project = [ "${tool._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
 				false,
 			);
 
@@ -510,18 +478,35 @@ paramValues=[${JSON.stringify({
 	 * Save a tool execution response
 	 * @param tool - tool to save
 	 * @param toolResponse - response of the tool
+	 * @param toolStatus - status of the tool
 	 */
 	saveToolExecution = async (
 		tool: ResponseMessageStore["tools"][number],
 		toolResponse: string,
-		status: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled" = "success",
 	): Promise<void> => {
 		const room = this.room;
 
-		if (tool.response) {
+		// skip if the tool is already completed
+		if (tool.status === "SUCCESS" || tool.status === "CANCELLED") {
 			// If this tool already has a response, this must be an outdated call, skip
 			return;
+		} else if (tool.status === "ERROR") {
+			return;
 		}
+
+		// save the response
+		runInAction(() => {
+			tool.response = toolResponse;
+
+			if (toolStatus === "success") {
+				tool.status = "SUCCESS";
+			} else if (toolStatus === "cancelled") {
+				tool.status = "CANCELLED";
+			} else if (toolStatus === "error") {
+				tool.status = "ERROR";
+			}
+		});
 
 		// if there is no responseMessage create it. This will hold it.
 		let responseMessage = this.toolResponseMessage;
@@ -551,13 +536,6 @@ paramValues=[${JSON.stringify({
 		}
 
 		try {
-			// save the response
-			runInAction(() => {
-				tool.response = toolResponse;
-				tool.tool_status = status;
-				tool.is_executing = false;
-			});
-
 			// turn on thinking
 			responseMessage.isThinking = true;
 
@@ -574,10 +552,10 @@ engine=["${room.model.app_id}"],
 roomId = ["${room.roomId}"],
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 toolId = ["${tool.id}"],
-toolName=["${tool.name}"],
+toolName=["${tool.json.name}"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
-mcpToolStatus=${JSON.stringify(status)}
+mcpToolStatus=${JSON.stringify(toolStatus)}
 );`,
 				(chunk) => {
 					runInAction(() => {
@@ -623,28 +601,5 @@ mcpToolStatus=${JSON.stringify(status)}
 				responseMessage.isThinking = false;
 			});
 		}
-	};
-
-	/**
-	 * Mark a tool as used. Should be called when reconstructing from an INPUT_TOOL_EXEC message
-	 * @param tool - tool to save
-	 * @param inputToolExecData - data from the input tool exec message
-	 */
-	markToolAsUsed = (
-		inputToolExecData: ResponseMessageStore["inputToolExecData"],
-	): void => {
-		// find the correct tool
-		const tool = this.tools.find(
-			(t) => t.id === inputToolExecData.toolCallId,
-		);
-		if (!tool) {
-			return;
-		}
-
-		// save the response
-		runInAction(() => {
-			tool.response = inputToolExecData.inputPrompt;
-			tool.tool_status = inputToolExecData.toolStatus ?? "success";
-		});
 	};
 }
