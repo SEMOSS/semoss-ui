@@ -12,6 +12,11 @@ interface RoomToolProps {
 	node: FlexLayout.TabNode;
 }
 
+/**
+ * Renders a tool inside a room
+ *
+ * @component
+ */
 export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 	const config: {
 		app: string;

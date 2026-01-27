@@ -31,7 +31,12 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		/**
 		 * Library hooks
 		 */
-		const toolExecutionMessage = useLoadingMessage(tool.is_executing);
+		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
+			tool.is_executing,
+			tool._meta.SMSS_MCP_UI?.loadingMessage
+				? [tool._meta.SMSS_MCP_UI.loadingMessage]
+				: [],
+		);
 
 		// this will render the component whenever the sidebar model changes
 		room.sidebar.counter;
@@ -73,7 +78,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		}
 
 		/**
-		 * Open tool in the default location based on SMSS_MCP_DISPLAY
+		 * Open tool in the default location based on SMSS_MCP_UI.displayLocation
 		 */
 		const openToolInDefaultLocation = () => {
 			// Already open somewhere - do nothing
@@ -93,9 +98,13 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				},
 			};
 
-			if (tool._meta.SMSS_MCP_DISPLAY === MCP_DISPLAY_HIDDEN) {
+			if (
+				tool._meta.SMSS_MCP_UI?.displayLocation === MCP_DISPLAY_HIDDEN
+			) {
 				//noop
-			} else if (tool._meta.SMSS_MCP_DISPLAY === MCP_DISPLAY_INLINE) {
+			} else if (
+				tool._meta.SMSS_MCP_UI?.displayLocation === MCP_DISPLAY_INLINE
+			) {
 				room.addInlineTool(nodeId, toolConfig);
 			} else {
 				// Default to sidebar
@@ -110,7 +119,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		};
 
 		// Don't render if hidden
-		if (tool._meta.SMSS_MCP_DISPLAY === MCP_DISPLAY_HIDDEN) {
+		if (tool._meta.SMSS_MCP_UI?.displayLocation === MCP_DISPLAY_HIDDEN) {
 			return null;
 		}
 
