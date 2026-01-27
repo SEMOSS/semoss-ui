@@ -432,6 +432,7 @@ paramValues=[${JSON.stringify({
 			const response = await room.runRoomPixel<[string]>(
 				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.json.parameters)} ]);`,
 				false,
+				false,
 			);
 
 			const { output } = response.pixelReturn[0];
