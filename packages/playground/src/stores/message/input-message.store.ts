@@ -69,5 +69,8 @@ export class InputMessageStore extends AbstractMessageStore {
 
 		// set the id
 		this.id = message.messageId;
+
+		// set tokens
+		this.tokens = message.tokens;
 	};
 }
