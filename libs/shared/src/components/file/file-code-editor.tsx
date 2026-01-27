@@ -1,7 +1,7 @@
 import type { OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
 import { lazy, Suspense, useRef, useState } from "react";
-import { useInsight, usePixel } from "@semoss/sdk/react";
+import { download, useInsight, usePixel } from "@semoss/sdk/react";
 import { Button, Muted, Spinner, Textarea, toast } from "@semoss/ui/next";
 import { MONACO_CONFIG, MONACO_EXT_LANGUAGE_MAPPING } from "./file.constants";
 import type { FileMode } from "./file.types";
@@ -78,7 +78,6 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 			// set the theme
 			if (config.theme) {
-				console.log("setting theme for", language);
 				monaco.editor.defineTheme(
 					`${language}-smss-theme`,
 					config.theme,
@@ -179,6 +178,17 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 			},
 		});
 
+		editor.addAction({
+			contextMenuGroupId: "1_modification",
+			contextMenuOrder: 1,
+			id: "download",
+			label: "Download",
+			keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyD],
+			run: async () => {
+				downloadFile();
+			},
+		});
+
 		// add the actions
 		editor.addAction({
 			contextMenuGroupId: "1_modification",
@@ -229,6 +239,43 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 			toast.success("Successfully saved file");
 		} catch (e) {
 			toast.error("Error saving file");
+
+			console.error(e);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	/**
+	 * Download the File
+	 */
+	const downloadFile = async () => {
+		try {
+			setIsLoading(true);
+
+			let pixel = "";
+			if (mode.type === "APP") {
+				pixel = `DownloadAppAsset(project=["${mode.app}"], filePath=["${path}"]);`;
+			} else if (mode.type === "ENGINE") {
+				pixel = `DownloadEngineAsset(engine=["${mode.engine}"], filePath=["${path}"]);`;
+			} else if (mode.type === "INSIGHT") {
+				pixel = `DownloadInsightAsset(filePath=["${path}"]);`;
+			}
+
+			if (!pixel) {
+				throw new Error("Error missing pixel to download file");
+			}
+
+			// save it
+			const { pixelReturn } = await insight.actions.run<[string]>(pixel);
+
+			// get the file key
+			const fileKey = pixelReturn[0].output;
+
+			// download the file
+			await download(insight.insightId, fileKey);
+		} catch (e) {
+			toast.error("Error downloading file");
 
 			console.error(e);
 		} finally {

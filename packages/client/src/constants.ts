@@ -44,6 +44,11 @@ export const PERMISSION_DESCRIPTION_MAP: Record<
 		editor: "Ability to add and remove files from the vector database, and all read-only permissions",
 		readonly: "Ability to query against the vector database",
 	},
+	GUARDRAIL: {
+		author: "Ability to hide or delete the guardrail, provision other authors, and all editor permissions",
+		editor: "Ability to edit the guardrail code, provision other users as editors and read-only users, and all read-only permissions",
+		readonly: "Ability to execute the guardrail",
+	},
 };
 
 export const MCP = {

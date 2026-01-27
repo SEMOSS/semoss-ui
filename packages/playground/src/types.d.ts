@@ -88,6 +88,7 @@ export interface AbstractPixelMessage {
 	parentMessageId?: string;
 	visible: boolean;
 	dateCreated: string;
+	tokens: number;
 }
 
 export interface InputTextPixelMessage extends AbstractPixelMessage {
@@ -141,6 +142,7 @@ export interface ResponseTextPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TEXT";
 	content: string;
 	modelId: string;
+	thinking?: string;
 	ornaments: {
 		PLAYGROUND_MESSAGE_TYPE?: "COT";
 		modelName?: string;
@@ -149,8 +151,11 @@ export interface ResponseTextPixelMessage extends AbstractPixelMessage {
 
 export type McpExecution = "auto" | "ask" | "disabled";
 
+export type McpDisplay = "inline" | "sidebar" | "hidden";
+
 interface ResponseToolPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TOOL";
+	thinking?: string;
 	tool_responses: {
 		/** tool execution id */
 		id: string;
@@ -160,6 +165,7 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 			SMSS_PROJECT_NAME: string;
 			SMSS_PROJECT_ID: string;
 			SMSS_MCP_EXECUTION: McpExecution;
+			SMSS_MCP_DISPLAY?: McpDisplay;
 		};
 
 		/**  Display of the tool **/

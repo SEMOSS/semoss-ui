@@ -1,9 +1,11 @@
 import { CloudUploadIcon, HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useInsight } from "@semoss/sdk/react";
+import { useState } from "react";
+import { download, useInsight } from "@semoss/sdk/react";
 import { FileExplorer, FileExplorerItem, FlexLayout } from "@semoss/shared";
 import {
 	Button,
+	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -25,6 +27,8 @@ interface AppFileExplorerProps {
 export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 	({ layout, node, app }) => {
 		const insight = useInsight();
+
+		const [isPublishing, setIsPublishing] = useState(false);
 
 		/**
 		 * Add a node to the layout
@@ -99,7 +103,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 						onSave: async (data, path) => {
 							try {
 								await insight.actions.run(
-									`SaveAsset(fileName=["${path}"], content=["<encode>${JSON.stringify(data, null, 2)}</encode>"], space=["${app}"]);CommitAsset(filePath=["${path}"], comment=["Save from editor"], space=["${app}"])`,
+									`SaveAppAssets(project=["${app}"], filePath=["${path}"], content=["<encode>${JSON.stringify(data, null, 2)}</encode>"]);`,
 								);
 								toast.success("Tool saved successfully");
 							} catch (e) {
@@ -129,6 +133,8 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 								size="icon-sm"
 								onClick={async () => {
 									try {
+										setIsPublishing(true);
+
 										// Seperate calls so we reload successfully compiled classes before publishing
 										await insight.actions.run(
 											`ReloadInsightClasses(project='${app}', release=false);`,
@@ -137,12 +143,22 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 										await insight.actions.run(
 											`PublishProject(project='${app}', release=true);`,
 										);
+
+										toast.success(
+											"Successfully compiled and published",
+										);
 									} catch (e) {
 										toast.error(`Error: ${e}`);
+									} finally {
+										setIsPublishing(false);
 									}
 								}}
 							>
-								<CloudUploadIcon className="size-3" />
+								{isPublishing ? (
+									<Spinner className="size-3" />
+								) : (
+									<CloudUploadIcon className="size-3" />
+								)}
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
@@ -150,33 +166,30 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 						</TooltipContent>
 					</Tooltip>
 				}
-				ItemComponent={({ item, refresh, onSelect, ...otherProps }) => {
+				onItemSelect={(item) => {
+					// don't open directories
+					if (item.type === "directory") {
+						return;
+					}
+
+					// this will select if there or open if not
+					addNode(`ENGINE_FILE--${item.path}`, {
+						type: "tab",
+						name: item.name,
+						component: "app-file-editor",
+						config: {
+							name: item.name,
+							path: item.path,
+						},
+						enableClose: true,
+					});
+				}}
+				ItemComponent={({ item, refresh, ...otherProps }) => {
 					return (
 						<FileExplorerItem
-							draggable={true}
+							draggable={item.type !== "directory"}
 							item={item}
 							refresh={refresh}
-							onSelect={() => {
-								// trigger the default
-								onSelect();
-
-								// don't open directories
-								if (item.type === "directory") {
-									return;
-								}
-
-								// this will select if there or open if not
-								addNode(`ENGINE_FILE--${item.path}`, {
-									type: "tab",
-									name: item.name,
-									component: "app-file-editor",
-									config: {
-										name: item.name,
-										path: item.path,
-									},
-									enableClose: true,
-								});
-							}}
 							onDragStart={(e) => {
 								// cannot drag directories
 								if (item.type === "directory") {
@@ -220,7 +233,8 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 														"/mcp/py_mcp.json",
 													);
 												} catch (e) {
-													toast.error(e);
+													toast.error(e.message);
+													console.error(e);
 												}
 											},
 										}
@@ -253,18 +267,46 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 										}
 									},
 								},
-								// item.path.endsWith(".zip")
-								// 	? {
-								// 			name: "Unzip",
-								// 			action: async () => {
-								// 				const pixel = "";
+								item.type !== "directory"
+									? {
+											name: "Download",
+											action: async (item) => {
+												// save it
+												const { pixelReturn } =
+													await insight.actions.run<
+														[string]
+													>(
+														`DownloadAppAsset(project=["${app}"], filePath=["${item.path}"]);`,
+													);
 
-								// 				await insight.actions.run(
-								// 					pixel,
-								// 				);
-								// 			},
-								// 		}
-								// 	: null,
+												// get the file key
+												const fileKey =
+													pixelReturn[0].output;
+
+												// download the file
+												await download(
+													insight.insightId,
+													fileKey,
+												);
+
+												refresh();
+											},
+										}
+									: null,
+								item.path.endsWith(".zip")
+									? {
+											name: "Unzip",
+											action: async () => {
+												const pixel = `UnzipFile(filePath=["${item.path}"], space=["${app}"])`;
+
+												await insight.actions.run(
+													pixel,
+												);
+
+												refresh();
+											},
+										}
+									: null,
 								{
 									name: "Delete",
 									action: async (item) => {
