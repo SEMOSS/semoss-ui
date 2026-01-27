@@ -9,6 +9,7 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useEffect } from "react";
 import {
 	Button,
 	Markdown,
@@ -17,22 +18,35 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { useMarkdownTypewriter } from "@/hooks";
 import {
 	InputMessageStore,
 	type ResponseMessageStore,
-	RootMessageStore,
+	type RoomStore,
 } from "@/stores";
+import { AppLogo } from "../common";
+import { RoomInlineTool } from "../room/room-inline-tool";
+import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
 
-// Styled components replaced with Tailwind classes inline
-
 interface ResponseMessageProps {
+	/** Room */
+	room: RoomStore;
+
 	/** Message to render */
 	message: ResponseMessageStore;
 }
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
-	({ message }) => {
+	({ room, message }) => {
+		const typewriter = useMarkdownTypewriter(message.text);
+
+		useEffect(() => {
+			if (message.isThinking) {
+				typewriter.start();
+			}
+		}, [message.isThinking, typewriter.start]);
+
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
 		if (message.parent instanceof InputMessageStore) {
@@ -86,32 +100,50 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			message.tools.some((tool) => !tool.response);
 
 		return (
-			<div className="group mb-0 flex w-full flex-col gap-2">
+			<div className="group mb-0 flex w-full flex-col gap-4">
 				<div className="group flex flex-row items-center gap-2">
-					<MessageCircleIcon className="size-4" />
+					{message.isThinking ? (
+						<div className="flex size-4 animate-spin items-center justify-center">
+							<AppLogo full={false} />
+						</div>
+					) : (
+						<MessageCircleIcon className="size-4" />
+					)}
 					<span className="mr-0.5 font-medium text-base">
 						{message.model.name ?? "Agent"}
 					</span>
 				</div>
-				{message.text ? (
-					<Markdown className="[&>*:first-child]:mt-0">
-						{message.text}
-					</Markdown>
-				) : null}
-				{message.tools.map((t) => (
-					<ResponseMessageTool
-						key={`tool-${t.id}`}
-						message={message}
-						tool={t}
-					/>
-				))}
+				<ResponseMessageThinking room={room} message={message} />
+				<Markdown className="[&>*:first-child]:mt-0">
+					{typewriter.isTyping ? typewriter.rendered : message.text}
+				</Markdown>
+				{message.tools.map((t) => {
+					const isInlineToolOpen = room.isInlineToolOpen(
+						`message-${message.id}-tool-${t.id}`,
+					);
+
+					return (
+						<div
+							key={`tool-${t.id}`}
+							className="flex flex-col gap-2"
+						>
+							<ResponseMessageTool message={message} tool={t} />
+							{isInlineToolOpen && (
+								<RoomInlineTool
+									room={room}
+									message={message}
+									tool={t}
+								/>
+							)}
+						</div>
+					);
+				})}
 				{areToolsActive && (
 					<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
 						<CircleAlert className="size-4" />
 						Please complete the tool(s) to proceed.
 					</p>
 				)}
-
 				<div className="-ml-2.5 flex flex-1 flex-row items-center justify-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
 					{inputMessage?.siblings.length > 1 && (
 						<>
@@ -170,8 +202,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							<TooltipTrigger asChild>
 								<Button
 									disabled={
-										inputMessage.parent instanceof
-											RootMessageStore ||
+										!inputMessage.parent?.parent ||
 										message.room.mode === "executing"
 									}
 									variant="ghost"
