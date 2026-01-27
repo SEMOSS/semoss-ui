@@ -17,6 +17,7 @@ import {
 import { EngineFileEditor } from "./engine-file-editor";
 import { EngineFileExplorer } from "./engine-file-explorer";
 import { EngineMcpEditor } from "./engine-mcp-editor";
+import { PlayArrowRounded } from "@mui/icons-material";
 
 const DEFAULT_BORDER_SIZE = 300;
 
@@ -59,8 +60,51 @@ export const EngineWorkspace: React.FC<EngineWorkspaceProps> = observer(
 				},
 			});
 		}, []);
+	// 	const runEngine = async () => {
+	// 	setIsLoading(true);
 
-		return (
+	// 	try {
+	// 		const { errors, pixelReturn } = await monolithStore.runQuery<
+	// 			[true]
+	// 		>(
+	// 			`CreateEngineFromTemplate(engine=['${engineId}'], map=[{"route":"", "file_path":"", "engine_id":""}])`,
+	// 		);
+
+	// 		const { operationType, output } = pixelReturn[0];
+	// 		const result: any = output;
+
+	// 		if (operationType.includes("ERROR")) {
+	// 			throw new Error(result);
+	// 		}
+
+	// 		if (errors.length > 0) {
+	// 			throw new Error(errors.join(""));
+	// 		}
+      
+    //   const reacter = await monolithStore.runQuery<
+	// 			[true]
+	// 		>(
+	// 			`ExecuteFunctionEngine(engine=['${output}'], map=[{"route":"", "file_path":"", "engine_id":""}])`,
+	// 		);
+    //   console.log(reacter,"testing")
+
+	// 		setResultValue(result);
+
+	// 		notification.add({
+	// 			color: "success",
+	// 			message: "Successfully saved the changes!",
+	// 		});
+	// 	} catch (e: any) {
+	// 		notification.add({
+	// 			color: "error",
+	// 			message: e.message,
+	// 		});
+	// 	} finally {
+	// 		setIsLoading(false);
+	// 	}
+	// };
+
+		return (			
 			<div className="relative h-full w-full overflow-hidden">
 				<div
 					className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 ${
@@ -95,6 +139,24 @@ export const EngineWorkspace: React.FC<EngineWorkspaceProps> = observer(
 									: "Maximize Sidebar"}
 							</TooltipContent>
 						</Tooltip>
+						{/* <Tooltip>
+        <TooltipTrigger asChild>
+            <Button
+                variant="default"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                    // runEngine();
+                }}
+            >
+                <PlayArrowRounded className="h-4 w-4" />
+                <span>Run</span>
+            </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+            Run Engine
+        </TooltipContent>
+    </Tooltip> */}
 					</div>
 					<div className="w-full flex-1 overflow-hidden rounded-md">
 						<div className="flexlayout__theme_smss relative h-full w-full overflow-hidden">

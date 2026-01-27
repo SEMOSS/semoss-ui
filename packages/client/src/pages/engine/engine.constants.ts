@@ -15,7 +15,6 @@ import { EngineQueryDataPage } from "./EngineQueryDataPage";
 import { EngineSettingsPage } from "./EngineSettingsPage";
 import { EngineSmssPage } from "./EngineSmssPage";
 import { EngineUsagePage } from "./EngineUsagePage";
-import { EngineConfigurePage } from '@/components/engine/EngineConfigurePage';
 import { EngineFileManagerPage } from "./engine-file-manager-page";
 
 export const ENGINE_ROUTES: {
@@ -75,12 +74,6 @@ export const ENGINE_ROUTES: {
 				component: EngineSettingsPage,
 				restrict: ["EDIT", "OWNER"],
 			},
-			{
-                name: 'Configure',
-                path: 'configure',
-                component: EngineConfigurePage,
-                restrict: ['OWNER'],
-            },
 			{
 				name: "SMSS",
 				path: "smss",

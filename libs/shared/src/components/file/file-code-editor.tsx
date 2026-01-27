@@ -2,7 +2,7 @@ import type { OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
 import { lazy, Suspense, useRef, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
-import { Muted, Spinner, toast } from "@semoss/ui/next";
+import { Button, Muted, Spinner, Textarea, toast } from "@semoss/ui/next";
 import { MONACO_CONFIG, MONACO_EXT_LANGUAGE_MAPPING } from "./file.constants";
 import type { FileMode } from "./file.types";
 
@@ -237,6 +237,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	};
 
 	return (
+		<>
 		<div className="relative flex h-full w-full flex-col items-center bg-background [&_.quick-input-widget]:mx-0!">
 			<Suspense
 				fallback={
@@ -274,5 +275,34 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				)}
 			</Suspense>
 		</div>
+		{/* <div className="mt-4 overflow-hidden rounded-2xl border border-border shadow-sm">
+    <div className="flex items-center justify-between bg-muted/40 px-4 py-1.5">
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Results
+        </span>
+        <Button
+            variant="outline"
+            size="sm"
+           // onClick={() => setResultValue("")}
+            className="h-8 gap-1.5"
+        >
+            <CachedRounded className="h-4 w-4" />
+            <span>Clear</span>
+        </Button>
+    </div>
+    <div className="p-4">
+        <Textarea
+            placeholder="Enter Input Here"
+            className="min-h-[60px] rounded-lg"
+            rows={2}
+           // value={resultValue}
+           // onChange={(e) => setResultValue(e.target.value)}
+        />
+        <p className="mt-2 text-xs text-muted-foreground">
+            If your code takes input, add it in the above box before running.
+        </p>
+    </div>
+</div> */}
+	</>
 	);
 };

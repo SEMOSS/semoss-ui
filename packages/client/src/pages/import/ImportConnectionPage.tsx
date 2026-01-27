@@ -207,49 +207,68 @@ export const ImportConnectionPage = () => {
 			return;
 		} else if (values.type === "FUNCTION") {
 			/** Function: START */
-            const fieldMap = values.fields as Record<string, any>;
-            const isLocalPython = fieldMap.FUNCTION_TYPE === 'LOCAL_PYTHON';
-            let pixel;
+			const fieldMap = values.fields as Record<string, any>;
+			const isLocalPython = fieldMap.FUNCTION_TYPE === "LOCAL_PYTHON";
+			let pixel;
 
-            if (isLocalPython) {
-                const functionDetails = {
-                    FUNCTION_NAME: 'main',
-                    FUNCTION_DESCRIPTION: fieldMap.FUNCTION_DESCRIPTION || '',
-                    FUNCTION_TYPE: fieldMap.FUNCTION_TYPE || '',
-                    FUNCTION_REQUIRED_PARAMETERS: ["shubham"],
-                        //fieldMap.FUNCTION_REQUIRED_PARAMETERS || '',
-                    FUNCTION_PARAMETERS: [{"ram":"uuu"}],//fieldMap.FUNCTION_PARAMETERS || '',
-                    PYTHON_FILE_NAME: fieldMap.PYTHON_FILE_NAME || '',
-                };
+			if (isLocalPython) {
+				const requiredParams =
+					fieldMap.FUNCTION_REQUIRED_PARAMETERS !== ""
+						? JSON.stringify([
+								fieldMap.FUNCTION_REQUIRED_PARAMETERS,
+							]).replace(/"/g, '\\"')
+						: [];
+				const functionParams = JSON.stringify([
+					{
+						parameterName: fieldMap.FUNCTION_PARAMETERS,
+						parameterType: "String",
+						parameterDescription:
+							fieldMap.FUNCTION_REQUIRED_PARAMETERS_DESCRIPTION ||
+							"",
+					},
+				]).replace(/"/g, '\\"');
+				const fileName = fieldMap.PYTHON_FILE_NAME
+					? fieldMap.PYTHON_FILE_NAME
+					: "main.py";
+				const content = fieldMap.CONTENT
+					? fieldMap.CONTENT
+					: "Test Function Content";
 
-                pixel = `
-                CreatePythonFunctionEngine(
-                    function=["${values.name}"],
-                    content=["${fieldMap.CONTENT}"],
-                    functionDetails=[${JSON.stringify(functionDetails)}]
-                );
-                `;
-            } else if (values.secondaryFields?.["FILE"]) {
-                const upload = await uploadFile(
-                    [values.secondaryFields["FILE"]],
-                    configStore.store.insightID,
-                );
+				pixel = `
+CreatePythonFunctionEngine(
+    function=["${values.name}"],
+    content=["${content}"],
+    functionDetails=[{
+        "FUNCTION_NAME":"${values.name}",
+        "FUNCTION_DESCRIPTION":"${fieldMap.FUNCTION_DESCRIPTION || ""}",
+        "FUNCTION_TYPE":"LOCAL_PYTHON",
+        "FUNCTION_REQUIRED_PARAMETERS":"${requiredParams}",
+        "FUNCTION_PARAMETERS":"${functionParams}",
+        "PYTHON_FILE_NAME":"${fileName}"
+    }]
+);
+				`;
+			} else if (values.secondaryFields?.["FILE"]) {
+				const upload = await uploadFile(
+					[values.secondaryFields["FILE"]],
+					configStore.store.insightID,
+				);
 
-                pixel = `
+				pixel = `
                     CreateRestFunctionEngine(
                         function=["${values.name}"],
                         functionDetails=[${JSON.stringify(values.fields)}],
                         filePaths=["${upload[0].fileLocation}"]
                     );
                     `;
-            } else {
-                pixel = `
+			} else {
+				pixel = `
                     CreateRestFunctionEngine(
                         function=["${values.name}"],
                         functionDetails=[${JSON.stringify(values.fields)}]
                     );
                     `;
-            }
+			}
 
 			monolithStore.runQuery(pixel).then((response) => {
 				const output = response.pixelReturn[0].output,

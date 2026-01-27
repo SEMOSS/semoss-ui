@@ -6,4 +6,5 @@ export interface PythonConfigValues {
     FUNCTION_DESCRIPTION: string;
     PYTHON_FILE_NAME: string;
     CONTENT: string;
+    FUNCTION_REQUIRED_PARAMETERS_DESCRIPTION: string;
 }
