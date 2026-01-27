@@ -88,6 +88,7 @@ export interface AbstractPixelMessage {
 	parentMessageId?: string;
 	visible: boolean;
 	dateCreated: string;
+	tokens: number;
 }
 
 export interface InputTextPixelMessage extends AbstractPixelMessage {

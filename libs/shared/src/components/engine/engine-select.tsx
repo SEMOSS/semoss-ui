@@ -23,6 +23,9 @@ interface EngineSelectProps {
 	/** css classes */
 	className?: string;
 
+	/** disabled */
+	disabled?: boolean;
+
 	/** Name of the selected engine */
 	name: string;
 
@@ -46,6 +49,7 @@ interface EngineSelectProps {
 
 export const EngineSelect = ({
 	className,
+	disabled,
 	name,
 	value,
 	onChange,
@@ -99,12 +103,13 @@ export const EngineSelect = ({
 	});
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover open={open && !disabled} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}
+					disabled={disabled}
 					className={cn(
 						`w-full justify-between overflow-hidden`,
 						className,
