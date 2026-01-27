@@ -1,111 +1,14 @@
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import { useEffect, useRef, useState } from "react";
-import { Box, Stack, styled, Tooltip, Typography } from "@semoss/ui";
+import {
+	Badge,
+	Button,
+	cn,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { formatToDataTestId } from "@/utility";
-
-const StyledFormTypeModelBox = styled(Box, {
-	shouldForwardProp: (prop) => prop !== "disabled",
-})<{
-	disabled: boolean;
-}>(({ disabled }) => {
-	return {
-		maxWidth: "215px",
-		borderRadius: "8px",
-		cursor: "pointer",
-		display: "block",
-		justifyContent: "center",
-		alignItems: "center",
-		border: "1px solid #C4C4C4",
-		padding: "16px",
-		backgroundColor: "#fff",
-		opacity: disabled ? 0.6 : 1,
-		position: "relative",
-		minHeight: "200px", // uniform card height assumption
-
-		"&:hover": {
-			cursor: disabled ? "auto" : "pointer",
-			border: disabled ? "1px solid #C4C4C4" : "1.5px solid #0471F0",
-			backgroundColor: disabled ? "white" : "#F5F9FE",
-		},
-	};
-});
-
-const StyledInnerBox = styled("div")<{ isModel?: boolean }>(
-	({ theme, isModel }) => ({
-		display: "flex",
-		alignItems: isModel ? "flex-start" : "center",
-		gap: theme.spacing(1),
-		flexDirection: isModel ? "column" : "row",
-	}),
-);
-
-// Replaces image with a colored avatar containing initials
-const StyledModelAvatar = styled("div")<{ gradientBg: string }>(
-	({ gradientBg }) => ({
-		display: "flex",
-		height: "40px",
-		width: "40px",
-		alignItems: "center",
-		justifyContent: "center",
-		fontWeight: 600,
-		fontSize: "14px",
-		color: "#212121",
-		borderRadius: "8px",
-		textTransform: "uppercase",
-		background: gradientBg,
-		boxShadow:
-			"0 0 0 1px rgba(0,0,0,0.08) inset, 0 2px 4px -1px rgba(0,0,0,0.12)",
-		transition: "filter 0.25s ease",
-		userSelect: "none",
-		WebkitFontSmoothing: "antialiased",
-		"&:hover": {
-			filter: "brightness(1.03)",
-		},
-	}),
-);
-
-const StyledTypographyText = styled(Typography)(() => ({
-	display: "flex",
-	alignItems: "center",
-	padding: "0 10px",
-	backgroundColor: "#EBEBEB",
-	borderRadius: "16px",
-	marginLeft: "auto !important",
-	fontSize: "13px",
-	color: "#212121",
-}));
-
-const ModelTypeTile = styled(Typography)(() => ({
-	display: "flex",
-	alignItems: "center",
-	padding: "0 10px",
-	backgroundColor: "#E8F4FF",
-	borderRadius: "16px",
-	marginLeft: "auto !important",
-	fontSize: "13px",
-	color: "#0471F0",
-	fontWeight: 600,
-}));
-
-const StyledCardContentSpan = styled("span")(() => ({
-	display: "block",
-}));
-
-const DocsLinkButton = styled("button")(() => ({
-	position: "absolute",
-	bottom: 8,
-	right: 8,
-	background: "transparent",
-	border: "none",
-	padding: 0,
-	fontSize: "12px",
-	cursor: "pointer",
-	color: "#0471F0",
-	opacity: 0.75,
-	textDecoration: "underline",
-	"&:hover": {
-		opacity: 1,
-	},
-}));
 
 function hashString(str: string): number {
 	let h = 0;
@@ -180,8 +83,14 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 	const avatarGradient = pickGradient(model.name);
 
 	const cardContent = (
-		<StyledFormTypeModelBox
-			disabled={model.disable || false}
+		// biome-ignore lint/a11y/useKeyWithClickEvents: <Usage of div is required here>
+		<div
+			className={cn(
+				"flex min-h-[200px] max-w-[215px] cursor-pointer flex-col justify-center rounded-lg border border-input bg-card p-4",
+				"hover:border-[1.5px] hover:border-primary hover:bg-primary/5",
+				model.disable &&
+					"cursor-auto opacity-60 hover:border hover:border-input hover:bg-card",
+			)}
 			onClick={() => {
 				if (!model.disable && onModelSelect) {
 					onModelSelect(model);
@@ -191,9 +100,68 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 				`importPageContent-connect-to-${model.name}-img`,
 			)}
 		>
+			<div className="flex flex-col items-start gap-1">
+				<div className="flex w-full flex-row items-center gap-2">
+					<div
+						className="flex h-10 w-10 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-[250ms] [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
+						style={{ background: avatarGradient }}
+					>
+						{initials}
+					</div>
+					{model.disable && (
+						<Badge variant="secondary">Coming Soon</Badge>
+					)}
+					{!model.disable && model.embedding && (
+						<Badge
+							variant="default"
+							data-testId={formatToDataTestId(
+								`importPageContent-${model.name}-embeddings-tag`,
+							)}
+						>
+							Embedding
+						</Badge>
+					)}
+					{!model.disable && model.image && (
+						<Badge
+							className="ml-auto rounded-2xl border-none bg-primary/10 px-2.5 font-semibold text-[13px] text-primary"
+							data-testId={formatToDataTestId(
+								`importPageContent-${model.name}-image-tag`,
+							)}
+						>
+							Image
+						</Badge>
+					)}
+					{!model.disable && model.audio && (
+						<Badge
+							className="ml-auto rounded-2xl border-none bg-primary/10 px-2.5 font-semibold text-[13px] text-primary"
+							data-testId={formatToDataTestId(
+								`importPageContent-${model.name}-audio-tag`,
+							)}
+						>
+							Audio
+						</Badge>
+					)}
+				</div>
+				<div className="flex w-full items-center gap-2">
+					<p
+						ref={textRef}
+						className="mt-[2px] self-stretch overflow-hidden text-ellipsis whitespace-nowrap font-medium text-secondary-foreground text-sm leading-[143%] tracking-[0.17px]"
+					>
+						{model.display || model.name}
+					</p>
+				</div>
+				<p
+					className="mt-1 line-clamp-3 text-[12px] text-muted-foreground leading-[1.3]"
+					title={model.description || ""}
+				>
+					{model.description}
+				</p>
+			</div>
 			{model.link && !model.disable && (
-				<DocsLinkButton
+				<Button
 					type="button"
+					variant="link"
+					className="flex justify-end text-sm"
 					onClick={(e) => {
 						e.stopPropagation();
 						window.open(
@@ -205,70 +173,17 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 					aria-label={`Open documentation for ${label}`}
 				>
 					Docs
-				</DocsLinkButton>
+				</Button>
 			)}
-			<StyledInnerBox isModel={true}>
-				<Stack direction="row" width={"100%"} spacing={1}>
-					<StyledModelAvatar gradientBg={avatarGradient}>
-						{initials}
-					</StyledModelAvatar>
-					{model.disable && (
-						<StyledTypographyText variant="body1">
-							Coming Soon
-						</StyledTypographyText>
-					)}
-					{!model.disable && model.embedding && (
-						<ModelTypeTile
-							variant="body1"
-							data-testId={formatToDataTestId(
-								`importPageContent-${model.name}-embeddings-tag`,
-							)}
-						>
-							Embeddings
-						</ModelTypeTile>
-					)}
-					{!model.disable && model.image && (
-						<ModelTypeTile
-							variant="body1"
-							data-testId={formatToDataTestId(
-								`importPageContent-${model.name}-image-tag`,
-							)}
-						>
-							Image
-						</ModelTypeTile>
-					)}
-					{!model.disable && model.audio && (
-						<ModelTypeTile
-							variant="body1"
-							data-testId={formatToDataTestId(
-								`importPageContent-${model.name}-audio-tag`,
-							)}
-						>
-							Audio
-						</ModelTypeTile>
-					)}
-				</Stack>
-				<div className="flex w-full items-center gap-2">
-					<p
-						ref={textRef}
-						className="mt-[2px] self-stretch overflow-hidden text-ellipsis whitespace-nowrap font-medium text-[#212121] text-sm leading-[143%] tracking-[0.17px]"
-					>
-						{model.display || model.name}
-					</p>
-				</div>
-				<p
-					className="mt-1 line-clamp-3 text-[#555] text-[12px] leading-[1.3]"
-					title={model.description || ""}
-				>
-					{model.description}
-				</p>
-			</StyledInnerBox>
-		</StyledFormTypeModelBox>
+		</div>
 	);
 
 	return isTruncated ? (
-		<Tooltip title={label} placement="bottom" arrow>
-			<StyledCardContentSpan>{cardContent}</StyledCardContentSpan>
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<span className="block">{cardContent}</span>
+			</TooltipTrigger>
+			<TooltipContent side="bottom">{label}</TooltipContent>
 		</Tooltip>
 	) : (
 		cardContent

@@ -4,17 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	Grid,
-	Stack,
-	styled,
-	TextField,
-	ToggleTabsGroup,
-	Typography,
-} from "@semoss/ui";
-import {
+	Muted,
+	P,
 	Spinner,
+	Tabs,
+	TabsList,
+	TabsTrigger,
 	toast,
-	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { setEngineFavorite, setEngineGlobal } from "@/api";
@@ -57,48 +53,6 @@ interface Engine {
 	hasUpvoted: boolean;
 }
 
-const StyledContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	height: "100%",
-	gap: theme.spacing(3),
-	paddingTop: theme.spacing(1),
-	paddingBottom: theme.spacing(1),
-}));
-
-const StyledContent = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	height: "100%",
-	flex: "1",
-	width: "100%",
-	gap: theme.spacing(3),
-}));
-
-const StyledSectionLabel = styled(Typography)(() => ({
-	size: "16px",
-	fontWeight: "500",
-}));
-
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
-	border: "1px",
-	minHeight: "42px",
-	color: theme.palette.secondary.light,
-	borderRadius: theme.shape.borderRadius,
-	alignItems: "center",
-	padding: "0px 3px",
-}));
-
-const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
-	height: "38px",
-	padding: "8px 11px",
-	"&.MuiTab-root": {
-		borderRadius: theme.shape.borderRadius,
-	},
-	"&.Mui-selected": {
-		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
-	},
-}));
-
 type MODE = "Mine" | "Discoverable";
 
 interface EngineIndexPageProps {
@@ -134,8 +88,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			return k.metakey;
 		});
 
-		const [search, setSearch] = useState("");
-		const debouncedSearch = useDebouncedValue(search);
+		//const [search, setSearch] = useState("");
+		//const debouncedSearch = useDebouncedValue(search);
 
 		// which view we are on
 		const [mode, setMode] = useState<MODE>("Mine");
@@ -156,7 +110,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						metaKeysDescription,
 					)}, metaFilters = [ ${JSON.stringify(
 						metaFilters,
-					)} ] , filterWord=["${search}"], onlyFavorites=[true], ${
+					)} ] , onlyFavorites=[true], ${
 						route ? `engineTypes=['${route.type}']` : ""
 					});`
 				: "",
@@ -170,7 +124,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 */
 		const getEngines = useIteratorPixel<Engine[], Engine>(
 			(limit, offset) =>
-				`${enginePrefix}(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} ${route ? `engineTypes=['${route.type}'], ` : ""} ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} userT = [true], limit=[${limit}], offset=[${offset}]);`,
+				`${enginePrefix}(${route ? `engineTypes=['${route.type}'], ` : ""} ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} userT = [true], limit=[${limit}], offset=[${offset}]);`,
 			(response) => {
 				// if its less than the limit, we know its the end
 				if (response.length < 15) {
@@ -187,7 +141,6 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			},
 			[
 				route.type,
-				debouncedSearch,
 				JSON.stringify(route.type),
 				JSON.stringify(metaFilters),
 			],
@@ -309,7 +262,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 		// if there is an error show this
 		if (getEngines.isError || getCatalogFilters.status === "ERROR") {
-			return <Typography variant="body1">ERROR</Typography>;
+			return <P>ERROR</P>;
 		}
 
 		// filter out the bookmarked models for All Models section, it is used not to show StyledSectionLabel for All Models section when there is no (nonBookmarked) model to show
@@ -321,30 +274,20 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		);
 
 		return (
-			<Stack direction="column" gap={2}>
-				<Stack>
-					<Stack
-						direction="row"
-						alignItems={"center"}
-						justifyContent={"space-between"}
-						spacing={4}
-					>
-						<Typography variant={"h4"}>
+			<div className="flex flex-col gap-4">
+				<div className="flex flex-col gap-2">
+					<div className="flex flex-row items-center justify-between gap-8">
+						<p className="font-semibold text-3xl leading-normal">
 							{route ? route.name : ""} Catalog
-						</Typography>
+						</p>
 
 						{configStore.isEngineOperationAvailable(
 							route.type,
 							"add",
 						) && (
-							<Stack
-								direction="row"
-								alignItems={"center"}
-								spacing={3}
-							>
+							<div className="flex flex-row items-center gap-6">
 								<Button
-									size={"large"}
-									variant={"contained"}
+									variant="default"
 									onClick={() => {
 										navigate(
 											`/engine/${route.type.toLowerCase()}/new`,
@@ -359,29 +302,17 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 								>
 									Add {route ? route.name : "Engine"}
 								</Button>
-							</Stack>
+							</div>
 						)}
-					</Stack>
-					<Stack
-						direction="row"
-						alignItems={"center"}
-						justifyContent={"space-between"}
-						spacing={4}
-						sx={{ paddingTop: "10px" }}
-					>
-						<Typography variant={"subtitle1"}>
+					</div>
+					<div className="flex flex-row items-center justify-between gap-8 pt-2.5">
+						<p className="font-weight-normal text-md text-muted-foreground leading-normal">
 							{route ? route.description : ""}
-						</Typography>
-					</Stack>
-				</Stack>
-				<TextField
-					size="small"
-					label="Search"
-					value={search}
-					data-testid={`engineIndexPage-searchBar-${route.name}`}
-					onChange={(e) => setSearch(e.target.value)}
-				/>
-				<StyledContainer>
+						</p>
+					</div>
+				</div>
+
+				<div className="flex h-full gap-6 pt-2 pb-2">
 					<Filterbox
 						type={route.type}
 						onChange={(filters: Record<string, unknown>) => {
@@ -389,54 +320,54 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						}}
 						filteredCatalogIds={[]}
 					/>
-					<StyledContent>
-						<Stack
-							direction="row"
-							alignItems={"center"}
-							justifyContent={"space-between"}
-						>
-							<StyledToggleTabsGroup
+					<div className="flex h-full w-full flex-1 flex-col gap-6">
+						<div className="flex flex-row items-center justify-between">
+							<Tabs
 								value={mode}
-								onChange={(_e, val) => {
+								onValueChange={(val) => {
 									setMode(val as MODE);
 								}}
 							>
-								<StyledToggleTabsGroupItem
-									value="Mine"
-									data-testid={formatToDataTestId(
-										`engineIndexPage-${route ? `${route.name}s` : "Engines"}-my-switch`,
-									)}
-									label={`My ${
-										route ? `${route.name}s` : "Engines"
-									}`}
-								/>
-								<StyledToggleTabsGroupItem
-									value="Discoverable"
-									data-testid={formatToDataTestId(
-										`engineIndexPage-${route ? `${route.name}s` : "Engines"}-discoverable-switch`,
-									)}
-									label={`Discoverable ${
-										route ? `${route.name}s` : "Engines"
-									}`}
-								/>
-							</StyledToggleTabsGroup>
-						</Stack>
+								<TabsList className="h-[42px] rounded-[10px] bg-(-muted--foreground) p-[3px]">
+									<TabsTrigger
+										value="Mine"
+										data-testid={formatToDataTestId(
+											`engineIndexPage-${route ? `${route.name}s` : "Engines"}-my-switch`,
+										)}
+										className="h-[38px] rounded-[10px] px-3 py-2 data-[state=active]:shadow-[0px_4px_4px_0px_rgba(0,0,0,0.05)]"
+									>
+										My{" "}
+										{route ? `${route.name}s` : "Engines"}
+									</TabsTrigger>
+									<TabsTrigger
+										value="Discoverable"
+										data-testid={formatToDataTestId(
+											`engineIndexPage-${route ? `${route.name}s` : "Engines"}-discoverable-switch`,
+										)}
+										className="h-[38px] rounded-[10px] px-3 py-2 data-[state=active]:shadow-[0px_4px_4px_0px_rgba(0,0,0,0.05)]"
+									>
+										Discoverable{" "}
+										{route ? `${route.name}s` : "Engines"}
+									</TabsTrigger>
+								</TabsList>
+							</Tabs>
+						</div>
 
 						{Object.entries(metaFilters).length === 0 &&
 							!isDiscoverable &&
 							getFavoritedEngines.data.length > 0 && (
-								<StyledSectionLabel variant="subtitle1">
+								<Muted className="font-medium text-base">
 									Bookmarked
-								</StyledSectionLabel>
+								</Muted>
 							)}
 
 						{!isDiscoverable &&
 						getFavoritedEngines.data.length &&
 						Object.entries(metaFilters).length === 0 ? (
-							<Grid container spacing={3}>
+							<div className="grid grid-cols-1 gap-6">
 								{getFavoritedEngines.data.map((db) => {
 									return (
-										<Grid item key={db.database_id} sm={12}>
+										<div key={db.database_id}>
 											<EngineLandscapeCard
 												name={db.database_name}
 												type={db.database_type}
@@ -478,22 +409,22 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 														: null
 												}
 											/>
-										</Grid>
+										</div>
 									);
 								})}
-							</Grid>
+							</div>
 						) : null}
 
 						{Object.entries(metaFilters).length === 0 &&
 							getEngines.data.length > 0 &&
 							nonBookmarked.length > 0 && (
-								<StyledSectionLabel variant="subtitle1">
+								<Muted className="font-medium text-base">
 									All {route.name}s
-								</StyledSectionLabel>
+								</Muted>
 							)}
 
 						{getEngines.data.length ? (
-							<Grid container spacing={3}>
+							<div className="grid grid-cols-1 gap-6">
 								{getEngines.data
 									.filter(
 										(db) =>
@@ -505,11 +436,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 									)
 									.map((db) => {
 										return (
-											<Grid
-												item
-												key={db.database_id}
-												sm={12}
-											>
+											<div key={db.database_id}>
 												<EngineLandscapeCard
 													name={db.database_name}
 													type={db.database_type}
@@ -563,24 +490,22 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 															: null
 													}
 												/>
-											</Grid>
+											</div>
 										);
 									})}
 
 								{getEngines.isLoading &&
 									getEngines.data.length > 0 && (
-										<Grid item sm={12}>
-											<div className="flex items-center justify-center py-2">
-												<Spinner className="size-4" />
-											</div>
-										</Grid>
+										<div className="flex items-center justify-center py-2">
+											<Spinner className="size-4" />
+										</div>
 									)}
-							</Grid>
+							</div>
 						) : null}
-					</StyledContent>
-				</StyledContainer>
+					</div>
+				</div>
 				<Help />
-			</Stack>
+			</div>
 		);
 	},
 );

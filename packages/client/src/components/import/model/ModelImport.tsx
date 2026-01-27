@@ -1,21 +1,29 @@
-import { FileUploadOutlined } from "@mui/icons-material";
+import { SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FileDropzone } from "@semoss/ui";
 import {
-	Box,
-	Breadcrumbs,
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 	Button,
-	FileDropzone,
-	Grid,
-	Link,
-	Modal,
-	Search,
-	Stack,
-	styled,
+	Dialog,
+	DialogContent,
+	DialogTitle,
+	H4,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	P,
 	Tabs,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
@@ -29,73 +37,10 @@ import {
 	MODEL_VERSIONS,
 } from "./model-import.constants";
 
-const StyledSearchbarContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	alignItems: "flex-start",
-	gap: theme.spacing(2),
-	marginTop: theme.spacing(3),
-}));
-
-const StyledStack = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-}));
-
-const UploadButton = styled(Button)(({ theme }) => ({
-	borderColor: theme.palette.action.disabled,
-	color: theme.palette.text.primary,
-	borderRadius: "12px",
-	alignSelf: "flex-start",
-}));
-
-const SubmitUploadButton = styled(Button)(({ theme }) => ({
-	borderColor: theme.palette.action.disabled,
-	color: theme.palette.background.default,
-	borderRadius: "12px",
-	alignSelf: "flex-start",
-}));
-
-const CloseButton = styled(Button)(({ theme }) => ({
-	borderColor: theme.palette.action.disabled,
-	color: theme.palette.secondary.dark,
-	borderRadius: "12px",
-	alignSelf: "flex-start",
-}));
-
-const StyledTab = styled(Tabs.Item)({
-	fontSize: "14px",
-	fontWeight: "500",
-	letterSpacing: "0.4px",
-	color: "rgba(0, 0, 0, 0.60)",
-});
-
-const StyledDropzoneField = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(2),
-	width: "100%",
-	height: "100%",
-}));
-
-const StyledTypographyDescription = styled(Typography)(({ theme }) => ({
-	marginBottom: theme.spacing(3),
-}));
-
-const StyledModelGrid = styled(Grid)(({ theme }) => ({
-	marginTop: theme.spacing(1),
-}));
-
-const StyledTabs = styled(Tabs)(({ theme }) => ({
-	marginTop: theme.spacing(1),
-}));
-
 export const ModelImport: React.FC = () => {
 	const navigate = useNavigate();
 
 	const { monolithStore, configStore } = useRootStore();
-	const notification = useNotification();
 
 	const [search, setSearch] = useState("");
 	const [importableModels, setImportableModels] =
@@ -153,18 +98,12 @@ export const ModelImport: React.FC = () => {
 			operationType = response.pixelReturn[0].operationType;
 
 		if (operationType.indexOf("ERROR") > -1) {
-			notification.add({
-				color: "error",
-				message: output,
-			});
+			toast.error(String(output));
 			setFormLoading(false);
 			return;
 		}
 
-		notification.add({
-			color: "success",
-			message: `ZIP uploaded successfully`,
-		});
+		toast.success("Model uploaded successfully!");
 
 		navigate(`/engine/model/${output.database_id}`);
 		setFormLoading(false);
@@ -181,270 +120,241 @@ export const ModelImport: React.FC = () => {
 		switch (selectedModel) {
 			case null:
 				return (
-					<Stack>
-						<StyledSearchbarContainer>
-							<Search
-								size="small"
-								value={search}
-								onChange={(e) => {
-									setSearch(e.target.value);
-								}}
-								fullWidth
-								data-testid={"model-search-bar"}
-							/>
-							<UploadButton
-								sx={{ lineHeight: 0.75 }}
-								size="large"
-								variant="outlined"
+					<div className="flex flex-col">
+						{/* Search Bar and Upload Button */}
+						<div className="mt-3 mb-4 flex w-full items-start gap-2">
+							<InputGroup className="flex-1 border-b-2 border-none">
+								<InputGroupAddon>
+									<SearchIcon className="size-4 text-muted-foreground" />
+								</InputGroupAddon>
+								<InputGroupInput
+									placeholder="Search"
+									value={search}
+									onChange={(e) => {
+										setSearch(e.target.value);
+									}}
+									data-testid="model-search-bar"
+								/>
+							</InputGroup>
+							<Button
+								size="sm"
+								variant="outline"
 								onClick={() => handleFileUpload(true)}
-								data-testid={"model-upload-file-button"}
+								data-testid="model-upload-file-button"
+								className="rounded-md"
 							>
-								<FileUploadOutlined fontSize="medium" />
-							</UploadButton>
-						</StyledSearchbarContainer>
+								<UploadIcon className="size-5" />
+							</Button>
+						</div>
 
 						{/* Add your model import flow components and logic here */}
 						{importableModels ? (
-							<Stack>
-								<StyledTabs
+							<div className="flex flex-col">
+								<Tabs
 									value={selectedProvider}
-									onChange={(_, newValue) => {
-										setSelectedProvider(
-											newValue.toString(),
-										);
+									onValueChange={(newValue) => {
+										setSelectedProvider(newValue);
 									}}
-									variant="scrollable"
-									sx={{
-										borderBottom: "2px solid #E0E0E0",
-										mb: 1,
-									}}
+									className="mt-1"
 								>
-									{importableModels.providers.map(
-										(provider) => (
-											<StyledTab
-												key={provider.name}
-												label={(() => {
-													const providerImage =
-														Custom_Model_Image.find(
-															(img) =>
-																img.name ===
-																provider.name,
-														)?.imgURL;
-													return (
-														<Box
-															sx={{
-																display: "flex",
-																alignItems:
-																	"center",
-																gap: 0.75,
-															}}
-														>
-															{providerImage && (
-																<img
-																	src={
-																		providerImage
-																	}
-																	alt={`${provider.name} logo`}
-																	style={{
-																		width: 20,
-																		height: 20,
-																		objectFit:
-																			"contain",
-																		borderRadius: 4,
-																		display:
-																			"block",
-																	}}
-																	onError={(
-																		e,
-																	) => {
-																		const target =
-																			e.currentTarget;
-																		target.onerror =
-																			null;
-																		target.style.display =
-																			"none";
-																		const fallback =
-																			document.createElement(
-																				"div",
-																			);
-																		fallback.textContent =
-																			(
-																				provider.name ||
-																				""
-																			)
-																				.split(
-																					/[^A-Za-z0-9]+/,
-																				)
-																				.map(
+									<TabsList className="mb-1 h-auto w-full justify-start overflow-x-auto rounded-lg bg-(--secondary) p-1">
+										{importableModels.providers.map(
+											(provider) => (
+												<TabsTrigger
+													key={provider.name}
+													value={provider.name}
+													data-testid={formatToDataTestId(
+														`connect-to-${provider.name}-tab`,
+													)}
+													className="rounded-md px-4 py-2 font-medium text-(--foreground) text-sm tracking-wide"
+												>
+													<div className="flex items-center gap-1.5">
+														{(() => {
+															const providerImage =
+																Custom_Model_Image.find(
+																	(img) =>
+																		img.name ===
+																		provider.name,
+																)?.imgURL;
+															return (
+																<>
+																	{providerImage && (
+																		<img
+																			src={
+																				providerImage
+																			}
+																			alt={`${provider.name} logo`}
+																			className="block h-5 w-5 rounded object-contain"
+																			onError={(
+																				e,
+																			) => {
+																				const target =
+																					e.currentTarget;
+																				target.onerror =
+																					null;
+																				target.style.display =
+																					"none";
+																				const fallback =
+																					document.createElement(
+																						"div",
+																					);
+																				fallback.textContent =
 																					(
-																						t,
-																					) =>
-																						t[0],
-																				)
-																				.join(
-																					"",
-																				)
-																				.slice(
-																					0,
-																					2,
-																				)
-																				.toUpperCase();
-																		fallback.style.width =
-																			"20px";
-																		fallback.style.height =
-																			"20px";
-																		fallback.style.display =
-																			"flex";
-																		fallback.style.alignItems =
-																			"center";
-																		fallback.style.justifyContent =
-																			"center";
-																		fallback.style.fontWeight =
-																			"600";
-																		fallback.style.fontSize =
-																			"12px";
-																		fallback.style.color =
-																			"#fff";
-																		fallback.style.borderRadius =
-																			"4px";
-																		// Simple pastel gradient based on hash
-																		let h = 0;
-																		for (
-																			let i = 0;
-																			i <
-																			provider
-																				.name
-																				.length;
-																			i++
-																		) {
-																			h =
-																				(h <<
-																					5) -
-																				h +
-																				provider.name.charCodeAt(
-																					i,
+																						provider.name ||
+																						""
+																					)
+																						.split(
+																							/[^A-Za-z0-9]+/,
+																						)
+																						.map(
+																							(
+																								t,
+																							) =>
+																								t[0],
+																						)
+																						.join(
+																							"",
+																						)
+																						.slice(
+																							0,
+																							2,
+																						)
+																						.toUpperCase();
+																				fallback.style.width =
+																					"20px";
+																				fallback.style.height =
+																					"20px";
+																				fallback.style.display =
+																					"flex";
+																				fallback.style.alignItems =
+																					"center";
+																				fallback.style.justifyContent =
+																					"center";
+																				fallback.style.fontWeight =
+																					"600";
+																				fallback.style.fontSize =
+																					"12px";
+																				fallback.style.color =
+																					"#fff";
+																				fallback.style.borderRadius =
+																					"4px";
+																				// Simple pastel gradient based on hash
+																				let h = 0;
+																				for (
+																					let i = 0;
+																					i <
+																					provider
+																						.name
+																						.length;
+																					i++
+																				) {
+																					h =
+																						(h <<
+																							5) -
+																						h +
+																						provider.name.charCodeAt(
+																							i,
+																						);
+																					h |= 0;
+																				}
+																				const base =
+																					Math.abs(
+																						h,
+																					) %
+																					360;
+																				const hue2 =
+																					(base +
+																						35) %
+																					360;
+																				fallback.style.background = `linear-gradient(135deg, hsl(${base} 45% 70%), hsl(${hue2} 40% 60%))`;
+																				target.parentNode.insertBefore(
+																					fallback,
+																					target.nextSibling,
 																				);
-																			h |= 0;
+																			}}
+																		/>
+																	)}
+																	<span className="pr-4 text-sm leading-none">
+																		{
+																			provider.name
 																		}
-																		const base =
-																			Math.abs(
-																				h,
-																			) %
-																			360;
-																		const hue2 =
-																			(base +
-																				35) %
-																			360;
-																		fallback.style.background = `linear-gradient(135deg, hsl(${base} 45% 70%), hsl(${hue2} 40% 60%))`;
-																		target.parentNode.insertBefore(
-																			fallback,
-																			target.nextSibling,
-																		);
-																	}}
-																/>
-															)}
-															<Typography
-																component="span"
-																variant="body2"
-																sx={{
-																	lineHeight: 1,
-																}}
-															>
-																{provider.name}
-															</Typography>
-														</Box>
+																	</span>
+																</>
+															);
+														})()}
+													</div>
+												</TabsTrigger>
+											),
+										)}
+									</TabsList>
+
+									<TabsContent value={selectedProvider}>
+										{/* Models Grid */}
+										<div className="mt-1 grid grid-cols-6 gap-x-1 gap-y-2">
+											<div>
+												{(() => {
+													const providerDocsLinkMap: Record<
+														string,
+														string
+													> = {
+														OpenAI: "https://platform.openai.com/docs/models",
+														"Azure OpenAI":
+															"https://learn.microsoft.com/azure/ai-services/openai/concepts/models",
+														"AWS Bedrock":
+															"https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html",
+														"Google Vertex AI":
+															"https://cloud.google.com/vertex-ai/docs/model-garden",
+														"NVIDIA NIM":
+															"https://build.nvidia.com/models",
+														"OpenAI-Compatible":
+															"https://platform.openai.com/docs/models",
+													};
+
+													const othersModel = {
+														name: "Others",
+														display: `Other ${selectedProvider} models`,
+														icon: selectedImage,
+														description: `Connect to any current or legacy ${selectedProvider} model not listed above by entering its name and credentials.`,
+														embedding: false,
+														disable: false,
+														link:
+															providerDocsLinkMap[
+																selectedProvider
+															] || undefined,
+													};
+
+													return (
+														<ModelTileCard
+															model={othersModel}
+															onModelSelect={() => {
+																setSelectedModel(
+																	"",
+																);
+															}}
+														/>
 													);
 												})()}
-												value={provider.name}
-												data-testid={formatToDataTestId(
-													`connect-to-${provider.name}-tab`,
-												)}
-											/>
-										),
-									)}
-								</StyledTabs>
-
-								{/* Models Grid */}
-								<StyledModelGrid
-									container
-									columns={6}
-									columnSpacing={1}
-									rowSpacing={2}
-								>
-									<Grid
-										key={""}
-										item
-										lg={1}
-										md={1}
-										xs={1}
-										xl={1}
-										sm={1}
-									>
-										{(() => {
-											const providerDocsLinkMap: Record<
-												string,
-												string
-											> = {
-												OpenAI: "https://platform.openai.com/docs/models",
-												"Azure OpenAI":
-													"https://learn.microsoft.com/azure/ai-services/openai/concepts/models",
-												"AWS Bedrock":
-													"https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html",
-												"Google Vertex AI":
-													"https://cloud.google.com/vertex-ai/docs/model-garden",
-												"NVIDIA NIM":
-													"https://build.nvidia.com/models",
-												"OpenAI-Compatible":
-													"https://platform.openai.com/docs/models",
-											};
-
-											const othersModel = {
-												name: "Others",
-												display: `Other ${selectedProvider} models`,
-												icon: selectedImage,
-												description: `Connect to any current or legacy ${selectedProvider} model not listed above by entering its name and credentials.`,
-												embedding: false,
-												disable: false,
-												link:
-													providerDocsLinkMap[
-														selectedProvider
-													] || undefined,
-											};
-
-											return (
-												<ModelTileCard
-													model={othersModel}
-													onModelSelect={() => {
-														setSelectedModel("");
-													}}
-												/>
-											);
-										})()}
-									</Grid>
-									{models.map((model) => (
-										<Grid
-											key={model.name}
-											item
-											lg={1}
-											md={1}
-											xs={1}
-											xl={1}
-											sm={1}
-										>
-											<ModelTileCard
-												model={model}
-												onModelSelect={(selected) => {
-													setSelectedModel(
-														selected.name,
-													);
-												}}
-											/>
-										</Grid>
-									))}
-								</StyledModelGrid>
-							</Stack>
+											</div>
+											{models.map((model) => (
+												<div key={model.name}>
+													<ModelTileCard
+														model={model}
+														onModelSelect={(
+															selected,
+														) => {
+															setSelectedModel(
+																selected.name,
+															);
+														}}
+													/>
+												</div>
+											))}
+										</div>
+									</TabsContent>
+								</Tabs>
+							</div>
 						) : null}
-					</Stack>
+					</div>
 				);
 			default: {
 				// Find the provider definition for the selected provider
@@ -495,112 +405,107 @@ export const ModelImport: React.FC = () => {
 
 	return (
 		<div>
-			<StyledStack>
-				<Breadcrumbs separator="/">
-					<Breadcrumbs.Item
-						//@ts-expect-error:
-						as={Link}
-						underline="none"
-						color="inherit"
-						variant="body1"
-						onClick={() => {
-							if (window.history.length > 1) {
-								navigate(-1);
-							} else {
-								navigate("/");
-							}
-						}}
-					>
-						Model Catalog
-					</Breadcrumbs.Item>
-					<Breadcrumbs.Item
-						//@ts-expect-error:
-						as={Link}
-						underline="none"
-						color="inherit"
-						variant="body1"
-						onClick={() => {
-							setSelectedModel(null);
-						}}
-					>
-						Connect to Model
-					</Breadcrumbs.Item>
-					{selectedModel !== null && (
-						<Breadcrumbs.Item
-							//@ts-expect-error:
-							as={Link}
-							underline="none"
-							color="inherit"
-							variant="body1"
-							onClick={() => {}}
-						>
-							{selectedModel
-								? selectedModel.toUpperCase()
-								: `Custom ${selectedProvider} Model`}
-						</Breadcrumbs.Item>
-					)}
-				</Breadcrumbs>
-				<Modal
-					open={isFileUploadModalOpen}
-					maxWidth="xl"
-					onClose={() => setIsFileUploadModalOpen(false)}
-					data-testid="model-zip-upload-modal"
-				>
-					<Modal.Content sx={{ width: "600px" }}>
-						<StyledDropzoneField>
-							<Typography
-								variant={"body1"}
-								data-testid="model-zip-upload-title"
+			<div className="flex flex-col gap-1">
+				<Breadcrumb className="mb-4">
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink
+								className="cursor-pointer"
+								onClick={() => {
+									if (window.history.length > 1) {
+										navigate(-1);
+									} else {
+										navigate("/");
+									}
+								}}
 							>
+								Model Catalog
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator>/</BreadcrumbSeparator>
+						<BreadcrumbItem>
+							<BreadcrumbLink
+								className="cursor-pointer"
+								onClick={() => {
+									setSelectedModel(null);
+								}}
+							>
+								Connect to Model
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						{selectedModel !== null && (
+							<>
+								<BreadcrumbSeparator>/</BreadcrumbSeparator>
+								<BreadcrumbItem>
+									<BreadcrumbPage>
+										{selectedModel
+											? selectedModel.toUpperCase()
+											: `Custom ${selectedProvider} Model`}
+									</BreadcrumbPage>
+								</BreadcrumbItem>
+							</>
+						)}
+					</BreadcrumbList>
+				</Breadcrumb>
+
+				{/* File Upload Modal */}
+				<Dialog
+					open={isFileUploadModalOpen}
+					onOpenChange={setIsFileUploadModalOpen}
+				>
+					<DialogContent
+						className="w-[600px]"
+						data-testid="model-zip-upload-modal"
+					>
+						<div className="flex h-full w-full flex-col gap-2">
+							<DialogTitle data-testid="model-zip-upload-title">
 								Zip File
-							</Typography>
+							</DialogTitle>
 							<FileDropzone
 								multiple={false}
 								onChange={(newValues) => {
 									setFiledata(newValues);
 								}}
 							/>
-							<Stack
-								spacing={2}
-								direction="row"
-								justifyContent="flex-end"
-							>
-								<CloseButton
-									size="small"
-									variant="text"
+							<div className="flex flex-row justify-end gap-2">
+								<Button
+									size="sm"
+									variant="ghost"
 									onClick={() =>
 										setIsFileUploadModalOpen(false)
 									}
 									data-testid="model-upload-close-button"
+									className="rounded-xl text-muted-foreground"
 								>
 									Close
-								</CloseButton>
-								<SubmitUploadButton
-									size="small"
-									variant="contained"
+								</Button>
+								<Button
+									size="sm"
+									variant="default"
 									disabled={!filedata || formLoading}
 									onClick={() => onSubmit(filedata)}
 									data-testid="model-upload-submit-button"
+									className="rounded-xl"
 								>
 									Upload
-								</SubmitUploadButton>
-							</Stack>
-						</StyledDropzoneField>
-					</Modal.Content>
-				</Modal>
-				<Typography variant="h4" data-testid="model-import-title">
+								</Button>
+							</div>
+						</div>
+					</DialogContent>
+				</Dialog>
+
+				<H4 className="mb-2" data-testid="model-import-title">
 					{selectedModel?.trim() || "Connect to Model Catalog"}
-				</Typography>
-				<StyledTypographyDescription
-					variant="body1"
-					color="textSecondary"
+				</H4>
+				<P
+					className="mb-3 text-muted-foreground"
 					data-testid="model-import-description"
 				>
 					{selectedModel?.trim()
 						? "Fill out all the model details in order to add the model to the catalog."
 						: "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape."}
-				</StyledTypographyDescription>
-			</StyledStack>
+				</P>
+			</div>
 			{view}
 		</div>
 	);

@@ -1,207 +1,44 @@
 import {
-	ArrowDropDown,
-	ArrowDropUp,
 	Bookmark,
-	BookmarkBorder,
-	LockOpenRounded,
-	LockRounded,
-	MoreVert,
-	Person,
+	BookmarkCheck,
+	ChevronDown,
+	ChevronUp,
+	LockKeyhole,
+	LockKeyholeOpen,
+	MoreVertical,
 	Star,
-	StarOutlineOutlined,
-} from "@mui/icons-material";
+	User,
+} from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import {
 	Avatar,
+	AvatarFallback,
+	Badge,
+	Button,
 	ButtonGroup,
 	Card,
-	Chip,
-	IconButton,
-	Menu,
-	Stack,
-	styled,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	CardAction,
+	CardContent,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	P,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+	toast,
+} from "@semoss/ui/next";
 import BRAIN from "@/assets/img/BRAIN.png";
 import GOOGLE from "@/assets/img/google.png";
 import { ENGINE_IMAGES } from "@/pages/import";
 import { formatToDataTestId } from "@/utility";
-
-const StyledCardImg = styled("img")({
-	display: "flex",
-	height: "20px",
-	width: "20px",
-	alignItems: "flex-start",
-	gap: "10px",
-	alignSelf: "stretch",
-	overflowClipMargin: "content-box",
-	overflow: "clip",
-	objectFit: "cover",
-});
-
-const StyledLandscapeCard = styled(Card)(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: "16px",
-	// boxShadow:
-	//     '0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)',
-	boxShadow: "0px 5px 24px 0px rgba(0, 0, 0, 0.08)",
-	"&:hover": {
-		cursor: "pointer",
-	},
-	borderRadius: theme.shape.borderRadius,
-	padding: "16px",
-	// height: '144px',
-}));
-
-const StyledLandscapeCardHeader = styled("div")({
-	display: "flex",
-	alignItems: "center",
-	gap: "10px",
-	alignSelf: "stretch",
-	height: "32px",
-});
-
-const StyledLandscapeCardImg = styled(Card.Media)(({ theme }) => ({
-	width: "32px",
-	height: "32px",
-	borderRadius: theme.shape.borderRadius,
-	justifyContent: "center",
-	alignItems: "center",
-}));
-
-const StyledLandscapeCardHeaderDiv = styled("div")({
-	display: "flex",
-	flexDirection: "row",
-	alignItems: "center",
-	flex: "1 0 0",
-	justifyContent: "space-between",
-	gap: "6px",
-});
-
-const StyledAvatar = styled(Avatar)({
-	display: "flex",
-	width: "20px",
-	height: "20px",
-	padding: "8px",
-	justifyContent: "center",
-	alignItems: "center",
-	gap: "10px",
-});
-
-const StyledPersonIcon = styled(Person)({
-	display: "flex",
-	alignItems: "flex-start",
-});
-
-const StyledPublishedByLabel = styled(Typography)({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	flex: "1 0 0",
-});
-
-const StyledLeftActions = styled("div")({
-	display: "flex",
-	alignItems: "center",
-	gap: "6px",
-	flex: "1 0 0",
-});
-
-const StyledButtonGroup = styled(ButtonGroup)(() => ({}));
-
-const StyledLockButton = styled(IconButton)({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "center",
-	gap: "10px",
-});
-
-const StyledTileCard = styled(Card)({
-	"&:hover": {
-		cursor: "pointer",
-	},
-});
-
-const StyledPlainTileCard = styled(StyledTileCard)({
-	height: "100%",
-});
-
-const StyledTileCardContent = styled(Card.Content)({
-	display: "flex",
-	padding: "0px 16px",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	alignSelf: "stretch",
-});
-
-const StyledCardImage = styled("img")({
-	display: "flex",
-	height: "134px",
-	alignItems: "flex-start",
-	gap: "10px",
-	alignSelf: "stretch",
-
-	overflowClipMargin: "content-box",
-	overflow: "clip",
-	objectFit: "cover",
-	width: "100%",
-	// aspectRatio: '1/1'
-});
-
-const StyledDbName = styled(Typography)({
-	display: "flex",
-	flexDirection: "column",
-	justifyContent: "center",
-	flex: "1 0 0",
-	alignSelf: "stretch",
-});
-
-const StyledPublishedByContainer = styled("div")({
-	display: "flex",
-	justifyContent: "center",
-	alignItems: "center",
-	gap: "4px",
-	alignSelf: "stretch",
-});
-
-const StyledCardDescription = styled(Typography)({
-	display: "block",
-	minHeight: "60px",
-	maxHeight: "60px",
-	maxWidth: "350px",
-	whiteSpace: "pre-wrap",
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-});
-
-const StyledTagChip = styled(Chip, {
-	shouldForwardProp: (prop) => prop !== "maxWidth",
-})<{ maxWidth?: string }>(({ maxWidth = "200px" }) => ({
-	maxWidth: maxWidth,
-	textOverflow: "ellipsis",
-}));
-
-const UnstyledVoteCount = styled(ButtonGroup.Item)(() => ({
-	"&:hover": {
-		backgroundColor: "transparent",
-		borderColor: "rgba(0, 0, 0, 0.54)",
-	},
-}));
-
-const StyledCardIconsDiv = styled("div")({
-	display: "flex",
-	justifyContent: "flex-end",
-	// marginTop: '8px',
-	flex: "1",
-	alignItems: "center",
-	gap: "8px",
-});
 
 /**
  * @name findDBImage
@@ -278,20 +115,11 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		date,
 		onClick,
 		favorite,
-		// isUpvoted,
-		// isGlobal,
-		// description,
-		// owner = "N/A",
-		// votes = "0",
-		// views = 'N/A',
-		// trending = 'N/A',
-		// upvote,
-		// global,
 	} = props;
 
 	/** Menu toggle state */
-	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-	const open = Boolean(anchorEl);
+	const [open, setOpen] = useState(false);
+	const [openTags, setOpenTags] = useState(false);
 	const formattedDate = new Date(date)
 		.toLocaleDateString("en-US", {
 			month: "short",
@@ -300,97 +128,106 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		})
 		.replace(",", "");
 
-	const notification = useNotification();
 	const navigate = useNavigate();
 
 	const copyId = (id: string) => {
 		try {
 			navigator.clipboard.writeText(id);
-			notification.add({
-				color: "success",
-				message: "Successfully copied to clipboard",
-			});
+			toast.success("Successfully copied to clipboard");
 		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+			toast.error(e.message);
 		}
 	};
-
+	console.log("tags", tag);
 	return (
-		<StyledLandscapeCard
+		<Card
 			onClick={() => onClick(id)}
 			data-testId={formatToDataTestId(
 				`genericEngineCards-${type}-${name}`,
 			)}
+			className="flex h-[80px] flex-col items-start justify-center gap-4 rounded-lg border bg-card p-4 shadow-md hover:cursor-pointer"
 		>
-			<StyledLandscapeCardHeader>
-				<StyledLandscapeCardImg
-					src="img"
-					image={findDBImage(type, sub_type)}
-				/>
-				<StyledLandscapeCardHeaderDiv>
-					<Typography variant={"body1"}>
-						<Typography variant={"body1"}>
-							<Typography variant="body1" noWrap={true}>
+			<div className="flex h-8 items-center gap-2.5 self-stretch">
+				<div className="flex size-8 items-center justify-center overflow-hidden rounded-lg bg-card">
+					<img
+						src={findDBImage(type, sub_type)}
+						alt={name}
+						className="size-full object-cover"
+					/>
+				</div>
+				<div className="flex flex-1 flex-row items-center justify-between gap-1.5">
+					<div className="flex flex-col justify-center">
+						<div className="flex flex-row items-center gap-2">
+							<P
+								className="max-w-[240px] truncate font-medium"
+								title={name}
+							>
 								{name}
-							</Typography>
-							{/* {formatDBName(name)} */}
-						</Typography>
-						{sub_type === "EMBEDDED" ? (
-							<StyledCardImg src={GOOGLE}></StyledCardImg>
-						) : null}
-					</Typography>
-					<Stack
-						direction="row"
-						alignItems="center"
-						spacing={0.5}
-						minHeight="32px"
-					>
-						{tag !== undefined &&
-							(Array.isArray(tag) ? (
-								<>
-									{/** biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation> */}
-									{tag.map((t, i) => {
-										if (i <= 2 && t !== "") {
-											return (
-												<StyledTagChip
-													maxWidth={
-														tag.length === 2
-															? "100px"
-															: tag.length === 1
-																? "200px"
-																: "75px"
-													}
-													key={`${id}${
-														// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-														i
-													}`}
-													label={t}
-												/>
-											);
-										}
+							</P>
 
-										return null;
-									})}
-									{tag.length > 3 ? (
-										<Typography variant="caption">
-											+{tag.length - 3}
-										</Typography>
-									) : null}
-								</>
-							) : tag !== "" ? (
-								<StyledTagChip key={`${id}0`} label={tag} />
-							) : null)}
-					</Stack>
-				</StyledLandscapeCardHeaderDiv>
-				<StyledCardIconsDiv>
-					<Stack>{formattedDate}</Stack>
-					<Stack direction="row" alignItems="center" gap={1}>
+							{sub_type === "EMBEDDED" && (
+								<img
+									src={GOOGLE}
+									alt="Google"
+									className="size-5 shrink-0 object-cover"
+								/>
+							)}
+						</div>
+					</div>
+					<div className="flex min-w-0 max-w-[260px] flex-shrink-0 items-center gap-1.5 overflow-hidden">
+						{Array.isArray(tag) &&
+							tag.slice(0, 2).map((t, i) => (
+								<Badge
+									key={`${id}`}
+									variant="outline"
+									title={t}
+								>
+									<span className="max-w-[20ch] truncate px-2 font-semibold text-xs">
+										{t}
+									</span>
+								</Badge>
+							))}
+
+						{Array.isArray(tag) && tag.length > 2 && (
+							<Popover open={openTags} onOpenChange={setOpenTags}>
+								<PopoverTrigger asChild>
+									<ul
+										className="cursor-pointer whitespace-nowrap text-muted-foreground text-xs"
+										onMouseEnter={() => setOpenTags(true)}
+										onMouseLeave={() => setOpenTags(false)}
+									>
+										+{tag.length - 2}
+									</ul>
+								</PopoverTrigger>
+
+								<PopoverContent
+									className="flex max-w-[220px] flex-wrap gap-1"
+									onMouseEnter={() => setOpenTags(true)}
+									onMouseLeave={() => setOpenTags(false)}
+								>
+									{tag.slice(2).map((t, i) => (
+										<Badge
+											key={`${id}`}
+											variant="outline"
+											className="max-w-[120px] shrink truncate"
+										>
+											{t}
+										</Badge>
+									))}
+								</PopoverContent>
+							</Popover>
+						)}
+					</div>
+				</div>
+				<div className="flex flex-1 items-center justify-end gap-2">
+					<span className="text-foreground text-sm">
+						{formattedDate}
+					</span>
+					<div className="flex flex-row items-center gap-1">
 						{!isDiscoverable && (
-							<IconButton
-								size={"small"}
+							<Button
+								variant="ghost"
+								size="icon-sm"
 								title={
 									isFavorite
 										? `Unbookmark ${name ? name : id}`
@@ -402,53 +239,49 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 								}}
 							>
 								{isFavorite ? (
-									<Bookmark color="primary" />
+									<BookmarkCheck className="size-4 text-primary" />
 								) : (
-									<BookmarkBorder />
-								)}{" "}
-							</IconButton>
+									<Bookmark className="size-4" />
+								)}
+							</Button>
 						)}
-						<IconButton
-							sx={{ mt: 0 }}
-							onClick={(e) => {
-								e.stopPropagation();
-								setAnchorEl(e.currentTarget);
-							}}
-						>
-							<MoreVert />
-						</IconButton>
-						<Menu
-							anchorEl={anchorEl}
-							open={open}
-							onClose={() => {
-								setAnchorEl(null);
-							}}
-						>
-							<Menu.Item
-								value="copy"
-								onClick={(event: React.MouseEvent) => {
-									copyId(id);
-									setAnchorEl(null);
-									event.stopPropagation();
-								}}
-							>
-								Copy ID
-							</Menu.Item>
-							<Menu.Item
-								value="dashboard"
-								onClick={(event: React.MouseEvent) => {
-									navigate(`${id}/dashboard`);
-									setAnchorEl(null);
-									event.stopPropagation();
-								}}
-							>
-								View Dashboard
-							</Menu.Item>
-						</Menu>
-					</Stack>
-				</StyledCardIconsDiv>
-			</StyledLandscapeCardHeader>
-		</StyledLandscapeCard>
+						<DropdownMenu open={open} onOpenChange={setOpen}>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									onClick={(e) => {
+										e.stopPropagation();
+									}}
+								>
+									<MoreVertical className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem
+									onClick={(event: React.MouseEvent) => {
+										copyId(id);
+										setOpen(false);
+										event.stopPropagation();
+									}}
+								>
+									Copy ID
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={(event: React.MouseEvent) => {
+										navigate(`${id}/dashboard`);
+										setOpen(false);
+										event.stopPropagation();
+									}}
+								>
+									View Dashboard
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				</div>
+			</div>
+		</Card>
 	);
 };
 
@@ -464,8 +297,6 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 		isUpvoted,
 		owner = "N/A",
 		votes = "0",
-		// views = 'N/A',
-		// trending = 'N/A',
 		onClick,
 		favorite,
 		upvote,
@@ -473,47 +304,39 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 	} = props;
 
 	return (
-		<StyledTileCard onClick={() => onClick(id)}>
-			{/* Use Card.Media instead, uses img tag */}
-			<Card.Media
-				src="img"
-				image={`${Env.MODULE}/api/e-${id}/image/download`}
-			/>
-			<StyledCardImage
+		<Card onClick={() => onClick(id)} className="h-full cursor-pointer p-0">
+			<img
 				src={`${Env.MODULE}/api/e-${id}/image/download`}
-				sx={{ height: "134px" }}
+				alt={name || id}
+				className="h-[134px] w-full object-cover"
 			/>
-			<Card.Header
-				title={
-					name ? (
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "row",
-								gap: "8px",
-							}}
-						>
-							<Typography variant={"body1"}>{name}</Typography>
-							{sub_type === "VERTEX" ? (
-								<StyledCardImg src={GOOGLE}></StyledCardImg>
-							) : null}
-						</div>
-					) : (
-						id
-					)
-				}
-				subheader={
-					<StyledPublishedByContainer>
-						<StyledAvatar>
-							<StyledPersonIcon />
-						</StyledAvatar>
-						<StyledPublishedByLabel variant={"caption"}>
-							Published by: {owner}
-						</StyledPublishedByLabel>
-					</StyledPublishedByContainer>
-				}
-				action={
-					<IconButton
+			<CardHeader>
+				<CardTitle>
+					<div className="flex flex-row items-center gap-2">
+						<P className="font-medium">{name || id}</P>
+						{sub_type === "VERTEX" && (
+							<img
+								src={GOOGLE}
+								alt="Google"
+								className="size-5 shrink-0 object-cover"
+							/>
+						)}
+					</div>
+				</CardTitle>
+				<div className="flex items-center justify-center gap-1 self-stretch">
+					<Avatar className="size-5">
+						<AvatarFallback className="bg-muted">
+							<User className="size-3" />
+						</AvatarFallback>
+					</Avatar>
+					<span className="flex flex-1 flex-col justify-center text-muted-foreground text-xs">
+						Published by: {owner}
+					</span>
+				</div>
+				<CardAction>
+					<Button
+						variant="ghost"
+						size="icon-sm"
 						title={
 							isFavorite
 								? `Unbookmark ${name ? name : id}`
@@ -529,97 +352,83 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 								: `Favorite ${name ? name : id}`
 						}
 					>
-						{isFavorite ? <Star /> : <StarOutlineOutlined />}
-					</IconButton>
-				}
-			/>
-			<Card.Content>
-				<StyledCardDescription variant={"body2"}>
+						{isFavorite ? (
+							<Star className="size-4 fill-primary text-primary" />
+						) : (
+							<Star className="size-4" />
+						)}
+					</Button>
+				</CardAction>
+			</CardHeader>
+			<CardContent>
+				<P className="line-clamp-3 min-h-[60px] max-w-[350px] whitespace-pre-wrap text-sm">
 					{description ? description : "No description available"}
-				</StyledCardDescription>
-				<Stack
-					direction="row"
-					alignItems="center"
-					spacing={0.5}
-					minHeight="32px"
-				>
-					{tag !== undefined &&
-						(Array.isArray(tag) ? (
-							<>
-								{/** biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation> */}
-								{tag.map((t, i) => {
-									if (i <= 2 && t !== "") {
-										return (
-											<StyledTagChip
-												maxWidth={
-													tag.length === 2
-														? "100px"
-														: tag.length === 1
-															? "200px"
-															: "75px"
-												}
-												key={`${id}${
-													// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-													i
-												}`}
-												label={t}
-											/>
-										);
-									}
+				</P>
+				<div className="flex min-w-0 max-w-[260px] flex-shrink-0 items-center gap-1.5 overflow-hidden">
+					{Array.isArray(tag) &&
+						tag.slice(0, 2).map((t, i) => (
+							<Badge key={`${id}`} variant="secondary">
+								{t}
+							</Badge>
+						))}
 
-									return null;
-								})}
-								{tag.length > 3 ? (
-									<Typography variant="caption">
-										+{tag.length - 3}
-									</Typography>
-								) : null}
-							</>
-						) : tag !== "" ? (
-							<StyledTagChip key={`${id}0`} label={tag} />
-						) : null)}
-				</Stack>
-			</Card.Content>
-			<Card.Actions>
-				<StyledLeftActions>
-					<StyledButtonGroup
-						size="small"
-						variant={"outlined"}
-						color="secondary"
+					{Array.isArray(tag) && tag.length > 2 && (
+						<Popover>
+							<PopoverTrigger asChild>
+								<span className="cursor-pointer whitespace-nowrap text-muted-foreground text-xs">
+									+{tag.length - 2}
+								</span>
+							</PopoverTrigger>
+
+							<PopoverContent className="flex max-w-[220px] flex-wrap gap-1">
+								{tag.slice(2).map((t, i) => (
+									<Badge
+										key={`${id}`}
+										variant="outline"
+										className="max-w-[120px] shrink truncate"
+									>
+										{t}
+									</Badge>
+								))}
+							</PopoverContent>
+						</Popover>
+					)}
+				</div>
+			</CardContent>
+			<CardFooter className="justify-between">
+				<ButtonGroup>
+					<Button
+						variant="outline"
+						size="sm"
+						className="border-border text-muted-foreground hover:bg-background"
+						title={
+							isUpvoted
+								? `Downvote ${name ? name : id}`
+								: `Upvote ${name ? name : id}`
+						}
+						onClick={(e) => {
+							e.stopPropagation();
+							upvote(isUpvoted);
+						}}
+						aria-label={
+							isUpvoted
+								? `Downvote ${name ? name : id}`
+								: `Upvote ${name ? name : id}`
+						}
 					>
-						<ButtonGroup.Item
-							sx={{
-								borderColor: "rgba(0, 0, 0, 0.54)",
-								color: "rgba(0, 0, 0, 0.60)",
-							}}
-							title={
-								isUpvoted
-									? `Downvote ${name ? name : id}`
-									: `Upvote ${name ? name : id}`
-							}
-							onClick={(e) => {
-								e.stopPropagation();
-								upvote(isUpvoted);
-							}}
-							aria-label={
-								isUpvoted
-									? `Downvote ${name ? name : id}`
-									: `Upvote ${name ? name : id}`
-							}
-						>
-							{isUpvoted ? <ArrowDropDown /> : <ArrowDropUp />}
-						</ButtonGroup.Item>
-						<UnstyledVoteCount
-							sx={{
-								borderColor: "rgba(0, 0, 0, 0.54)",
-								color: "rgba(0, 0, 0, 0.60)",
-							}}
-						>
-							{votes}
-						</UnstyledVoteCount>
-					</StyledButtonGroup>
-				</StyledLeftActions>
-				<StyledLockButton
+						{isUpvoted ? (
+							<ChevronDown className="size-4" />
+						) : (
+							<ChevronUp className="size-4" />
+						)}
+					</Button>
+					<div className="flex items-center border border-border border-l-0 bg-background px-3 text-muted-foreground text-sm hover:bg-background">
+						{votes}
+					</div>
+				</ButtonGroup>
+				<Button
+					variant="ghost"
+					size="icon-sm"
 					title={
 						isGlobal
 							? `Make ${name ? name : id} private`
@@ -636,10 +445,14 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 							: `Make ${name ? name : id} public`
 					}
 				>
-					{isGlobal ? <LockOpenRounded /> : <LockRounded />}
-				</StyledLockButton>
-			</Card.Actions>
-		</StyledTileCard>
+					{isGlobal ? (
+						<LockKeyholeOpen className="size-4" />
+					) : (
+						<LockKeyhole className="size-4" />
+					)}
+				</Button>
+			</CardFooter>
+		</Card>
 	);
 };
 
@@ -653,20 +466,15 @@ export interface PlainEngineCardProps {
 export const PlainEngineCard = (props) => {
 	const { id, name, onClick } = props;
 	return (
-		<StyledPlainTileCard onClick={onClick}>
-			<Card.Media
-				src="img"
-				image={`${Env.MODULE}/api/e-${id}/image/download`}
-			/>
-			<StyledCardImage
+		<Card onClick={onClick} className="h-full cursor-pointer p-0">
+			<img
 				src={`${Env.MODULE}/api/e-${id}/image/download`}
-				sx={{ height: "134px" }}
+				alt={name || id}
+				className="h-[134px] w-full object-cover"
 			/>
-			<StyledTileCardContent sx={{ marginTop: "8px" }}>
-				<StyledDbName variant={"body1"}>
-					{name ? name : id}
-				</StyledDbName>
-			</StyledTileCardContent>
-		</StyledPlainTileCard>
+			<CardContent className="mt-2 px-4">
+				<P className="font-medium">{name ? name : id}</P>
+			</CardContent>
+		</Card>
 	);
 };

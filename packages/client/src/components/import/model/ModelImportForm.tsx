@@ -1,23 +1,29 @@
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { FileDropzone, Switch } from "@semoss/ui";
 import {
-	Box,
 	Button,
-	Collapse,
-	Divider,
-	FileDropzone,
-	IconButton,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	Field,
+	FieldDescription,
+	FieldLabel,
+	H4,
+	Input,
+	Muted,
+	P,
 	Select,
-	Stack,
-	Switch,
-	styled,
-	TextArea,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Separator,
+	Textarea,
+	toast,
+} from "@semoss/ui/next";
 import { useRootStore, useStepper } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
@@ -43,14 +49,6 @@ interface ModelImportFormProps {
 	importableModelsCategory: CategoryTexts;
 }
 
-const StyledDropzoneField = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(2),
-	width: "100%",
-	height: "100%",
-}));
-
 export const ModelImportForm = (props: ModelImportFormProps) => {
 	const {
 		name,
@@ -63,7 +61,6 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 	const { monolithStore } = useRootStore();
 	const navigate = useNavigate();
-	const notification = useNotification();
 	const { isLoading, setIsLoading } = useStepper();
 
 	const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -137,17 +134,11 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 			setIsLoading(false);
 
 			if (operationType.indexOf("ERROR") > -1) {
-				notification.add({
-					color: "error",
-					message: output,
-				});
+				toast.error(String(output));
 				return;
 			}
 
-			notification.add({
-				color: "success",
-				message: `Successfully added LLM to catalog`,
-			});
+			toast.success("Successfully added LLM to catalog");
 			navigate(`/engine/model/${output.database_id}`);
 		});
 
@@ -201,10 +192,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 				operationType = response.pixelReturn[0].operationType;
 
 			if (operationType.indexOf("ERROR") > -1) {
-				notification.add({
-					color: "error",
-					message: output,
-				});
+				toast.error(String(output));
 				return;
 			}
 
@@ -293,58 +281,64 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 					switch (f.type) {
 						case "text":
 							return (
-								<TextField
-									label={f.label}
-									size="small"
-									variant="outlined"
-									required={f.required}
-									value={field.value ?? ""}
-									onChange={(v) => field.onChange(v)}
-									disabled={f.disabled || isLockedModel}
-									// helperText={
-									// 	errors?.[f.label]?.message.toString() ||
-									// 	f.helperText ||
-									// 	""
-									// }
-									helperText={
-										error?.message?.toString() ||
-										f.helperText ||
-										""
-									}
-									data-testId={formatToDataTestId(
-										`importForm-${f.label}-textField`,
-									)}
-									error={!!error}
-									inputProps={{
-										onFocus: () => {
+								<Field>
+									<FieldLabel htmlFor={f.key}>
+										{f.label}
+										{f.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<Input
+										id={f.key}
+										value={field.value ?? ""}
+										onChange={(e) =>
+											field.onChange(e.target.value)
+										}
+										disabled={f.disabled || isLockedModel}
+										autoComplete="off"
+										data-testId={formatToDataTestId(
+											`importForm-${f.label}-textField`,
+										)}
+										onFocus={() => {
 											_lastField.current = {
 												..._lastField.current,
 												lastFocussedField: field.name,
 												lastFocussedValue: field.value,
 												lastValidatedValue: field.value,
 											};
-										},
-										onBlur: () => {
+										}}
+										onBlur={() => {
 											if (f.rules?.custom_rules) {
 												_lastField.current.runValidate = true;
 												trigger(field.name);
 											}
-										},
-									}}
-								/>
+										}}
+									/>
+									{f.helperText && !error && (
+										<FieldDescription>
+											{f.helperText}
+										</FieldDescription>
+									)}
+								</Field>
 							);
 						case "file-upload":
 							return (
-								<StyledDropzoneField>
-									<Typography
+								<div
+									key={f.key}
+									className="flex h-full w-full flex-col gap-2"
+								>
+									<P
 										data-testid={`model-import-form-${f.label}-file-upload`}
-										variant={"body1"}
 									>
 										{f.label}
-									</Typography>
+									</P>
 									<FileDropzone
 										multiple={false}
-										value={field.value as File | File[]}
+										value={
+											field.value as File | File[] | null
+										}
 										disabled={false}
 										data-testid={formatToDataTestId(
 											`importForm-${field.name}-fileDropZone`,
@@ -363,62 +357,89 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 											};
 										}}
 									/>
-								</StyledDropzoneField>
+								</div>
 							);
 						case "url":
 							return (
-								<TextField
-									label={f.label}
-									variant="outlined"
-									size="small"
-									required={f.required}
-									value={field.value ?? ""}
-									onChange={(v) => field.onChange(v)}
-									disabled={f.disabled || isLockedModel}
-									data-testId={formatToDataTestId(
-										`model-importForm-${f.label}-url`,
-									)}
-								/>
+								<Field>
+									<FieldLabel htmlFor={f.key}>
+										{f.label}
+										{f.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<Input
+										id={f.key}
+										type="url"
+										value={field.value ?? ""}
+										onChange={(e) =>
+											field.onChange(e.target.value)
+										}
+										disabled={f.disabled || isLockedModel}
+										autoComplete="off"
+										data-testId={formatToDataTestId(
+											`model-importForm-${f.label}-url`,
+										)}
+									/>
+								</Field>
 							);
 						case "password":
 							return (
-								<TextField
-									label={f.label}
-									variant="outlined"
-									type="password"
-									size="small"
-									required={f.required}
-									value={field.value ?? ""}
-									onChange={(v) => field.onChange(v)}
-									helperText={f.helperText || ""}
-									disabled={f.disabled || isLockedModel}
-									data-testId={formatToDataTestId(
-										`model-importForm-${f.label}-password`,
+								<Field>
+									<FieldLabel htmlFor={f.key}>
+										{f.label}
+										{f.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<Input
+										id={f.key}
+										type="password"
+										value={field.value ?? ""}
+										onChange={(e) =>
+											field.onChange(e.target.value)
+										}
+										disabled={f.disabled || isLockedModel}
+										autoComplete="new-password"
+										data-testId={formatToDataTestId(
+											`model-importForm-${f.label}-password`,
+										)}
+									/>
+									{f.helperText && (
+										<FieldDescription>
+											{f.helperText}
+										</FieldDescription>
 									)}
-								/>
+								</Field>
 							);
 						case "number":
 							return (
-								<TextField
-									label={f.label}
-									variant="outlined"
-									type="text"
-									size="small"
-									required={f.required}
-									value={field.value ?? ""}
-									onChange={(v) => field.onChange(v)}
-									disabled={f.disabled || isLockedModel}
-									data-testId={formatToDataTestId(
-										`model-importForm-${f.label}`,
-									)}
-									helperText={
-										error?.message?.toString() ||
-										f.helperText ||
-										""
-									}
-									error={!!error}
-									inputProps={{
-										onFocus: () => {
+								<Field>
+									<FieldLabel htmlFor={f.key}>
+										{f.label}
+										{f.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<Input
+										id={f.key}
+										type="text"
+										value={field.value ?? ""}
+										onChange={(e) =>
+											field.onChange(e.target.value)
+										}
+										disabled={f.disabled || isLockedModel}
+										autoComplete="off"
+										data-testId={formatToDataTestId(
+											`model-importForm-${f.label}`,
+										)}
+										onFocus={() => {
 											_lastField.current = {
 												..._lastField.current,
 												lastFocussedField: field.name,
@@ -427,68 +448,94 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 												),
 												lastValidatedValue: field.value,
 											};
-										},
-										onBlur: () => {
+										}}
+										onBlur={() => {
 											if (f.rules?.custom_rules) {
 												_lastField.current.runValidate = true;
 												trigger(field.name);
 											}
-										},
-									}}
-								/>
+										}}
+									/>
+									{f.helperText && !error && (
+										<FieldDescription>
+											{f.helperText}
+										</FieldDescription>
+									)}
+								</Field>
 							);
 						case "textarea":
 							return (
-								<TextArea
-									label={f.label}
-									variant="outlined"
-									required={f.required}
-									value={field.value ?? ""}
-									onChange={(v) => field.onChange(v)}
-									rows={4}
-									disabled={f.disabled || isLockedModel}
-									data-testId={formatToDataTestId(
-										`model-importForm-${f.label}-textarea`,
-									)}
-								/>
+								<Field>
+									<FieldLabel htmlFor={f.key}>
+										{f.label}
+										{f.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<Textarea
+										id={f.key}
+										value={field.value ?? ""}
+										onChange={(e) =>
+											field.onChange(e.target.value)
+										}
+										rows={4}
+										disabled={f.disabled || isLockedModel}
+										autoComplete="off"
+										data-testId={formatToDataTestId(
+											`model-importForm-${f.label}-textarea`,
+										)}
+									/>
+								</Field>
 							);
 						case "select":
 							return (
-								<Select
-									fullWidth
-									size="small"
-									value={field.value ?? ""}
-									required={f.required}
-									label={f.label}
-									onChange={(e: unknown) =>
-										field.onChange(
-											(
-												e as {
-													target?: {
-														value?: unknown;
-													};
-												}
-											).target?.value ?? e,
-										)
-									}
-									disabled={f.disabled || isLockedModel}
-									data-testId={formatToDataTestId(
-										`model-importForm-${f.label}-select`,
-									)}
-								>
-									{(f.options || []).map((opt) => (
-										<Select.Item key={opt} value={opt}>
-											{opt}
-										</Select.Item>
-									))}
-								</Select>
+								<Field>
+									<FieldLabel htmlFor={f.key}>
+										{f.label}
+										{f.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<Select
+										value={field.value ?? ""}
+										onValueChange={(value) =>
+											field.onChange(value)
+										}
+										disabled={f.disabled || isLockedModel}
+									>
+										<SelectTrigger
+											id={f.key}
+											className="w-full"
+											data-testId={formatToDataTestId(
+												`model-importForm-${f.label}-select`,
+											)}
+										>
+											<SelectValue
+												placeholder={`Select ${f.label}`}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											{(f.options || []).map((opt) => (
+												<SelectItem
+													key={opt}
+													value={opt}
+												>
+													{opt}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</Field>
 							);
 						case "boolean":
 							return (
-								<Stack
-									direction="row"
-									alignItems="center"
-									spacing={2}
+								<div
+									key={f.key}
+									className="flex flex-row items-center gap-2"
 								>
 									<Switch
 										checked={!!field.value}
@@ -507,15 +554,14 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										required={f.required}
 										disabled={f.disabled || isLockedModel}
 									/>
-									<Typography
-										variant="body1"
+									<P
 										data-testId={formatToDataTestId(
 											`model-importForm-${f.label}-text`,
 										)}
 									>
 										{f.label}
-									</Typography>
-								</Stack>
+									</P>
+								</div>
 							);
 						default:
 							return null;
@@ -528,119 +574,87 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	return (
 		<form
 			onSubmit={handleSubmit(onSubmit)}
-			style={{ marginTop: "16px", marginBottom: "16px" }}
+			className="my-4"
+			autoComplete="off"
 		>
 			{Object.keys(grouped).map((category) => (
-				<Box
-					key={category}
-					sx={{
-						display: "flex",
-						gap: 4,
-						mb: 4,
-						flexDirection: "column",
-					}}
-				>
-					<Box
-						sx={{
-							display: "flex",
-							gap: 4,
-							alignItems: "flex-start",
-						}}
-					>
+				<div key={category} className="mb-4 flex flex-col gap-4">
+					<div className="flex items-start gap-4">
 						{/* Left: Category title + description */}
-						<Stack sx={{ flex: 1 }}>
-							<Typography
-								variant="h6"
-								data-testId={`model-importForm-category-title`}
-							>
+						<div className="flex flex-1 flex-col gap-1">
+							<H4 data-testId={`model-importForm-category-title`}>
 								{category}
-							</Typography>
-							<Typography
-								variant="body2"
+							</H4>
+							<Muted
 								data-testId={`model-importForm-category-description`}
-								color="textSecondary"
 							>
 								{importableModelsCategory[selectedProvider]?.[
 									category
 								] ?? "No description available."}
-							</Typography>
-						</Stack>
+							</Muted>
+						</div>
 
 						{/* Right: Fields under this category */}
-						<Stack spacing={2} sx={{ flex: 2 }}>
+						<div className="flex flex-[2] flex-col gap-2">
 							{grouped[category].map((f) => renderField(f))}
-						</Stack>
-					</Box>
-					<Divider sx={{ color: "secondary" }} />
-				</Box>
+						</div>
+					</div>
+					<Separator />
+				</div>
 			))}
 			{advanced.length > 0 && (
-				<Box sx={{ mt: 4 }}>
-					<Stack
-						direction="row"
-						alignItems="center"
-						justifyContent="space-between"
+				<div className="mt-4">
+					<Collapsible
+						open={advancedOpen}
+						onOpenChange={setAdvancedOpen}
 					>
-						<Typography
-							data-testId="model-advanced-settings-title"
-							variant="h6"
-						>
-							Advanced Settings
-						</Typography>
-						<IconButton
-							data-testId="model-advanced-settings-toggle"
-							onClick={() => setAdvancedOpen((prev) => !prev)}
-							size="small"
-						>
-							{advancedOpen ? <ExpandLess /> : <ExpandMore />}
-						</IconButton>
-					</Stack>
-					<Collapse in={advancedOpen}>
-						<Box
-							sx={{
-								display: "flex",
-								gap: 4,
-								mb: 4,
-								flexDirection: "column",
-							}}
-						>
-							<Box
-								sx={{
-									display: "flex",
-									gap: 4,
-									alignItems: "flex-start",
-								}}
-							>
-								{/* Left: Category title + description */}
-								<Stack sx={{ flex: 1 }}>
-									<Typography
-										data-testId="model-advanced-settings-description"
-										variant="body2"
-										color="textSecondary"
-									>
-										Add advanced settings here
-									</Typography>
-								</Stack>
+						<div className="flex flex-row items-center justify-between">
+							<H4 data-testId="model-advanced-settings-title">
+								Advanced Settings
+							</H4>
+							<CollapsibleTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									data-testId="model-advanced-settings-toggle"
+								>
+									{advancedOpen ? (
+										<ChevronUp className="size-4" />
+									) : (
+										<ChevronDown className="size-4" />
+									)}
+								</Button>
+							</CollapsibleTrigger>
+						</div>
+						<CollapsibleContent>
+							<div className="mb-4 flex flex-col gap-4">
+								<div className="flex items-start gap-4">
+									{/* Left: Category title + description */}
+									<div className="flex flex-1 flex-col gap-1">
+										<Muted data-testId="model-advanced-settings-description">
+											Add advanced settings here
+										</Muted>
+									</div>
 
-								{/* Right: Fields under this category */}
-								<Stack spacing={2} sx={{ flex: 2 }}>
-									{advanced.map((f) => renderField(f))}
-								</Stack>
-							</Box>
-						</Box>
-					</Collapse>
-				</Box>
+									{/* Right: Fields under this category */}
+									<div className="flex flex-[2] flex-col gap-2">
+										{advanced.map((f) => renderField(f))}
+									</div>
+								</div>
+							</div>
+						</CollapsibleContent>
+					</Collapsible>
+				</div>
 			)}
-			<Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4 }}>
+			<div className="mt-4 flex justify-end">
 				<Button
 					data-testId="model-importForm-connect-button"
 					type="submit"
-					variant="contained"
 					disabled={isLoading || !isValid}
 				>
 					Connect
 				</Button>
-			</Box>
+			</div>
 		</form>
 	);
 };

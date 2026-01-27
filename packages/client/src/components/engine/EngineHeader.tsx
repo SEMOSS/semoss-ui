@@ -1,61 +1,31 @@
-import { ContentCopyOutlined, SimCardDownload } from "@mui/icons-material";
+import { ChevronRight, Copy, Download } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-	Breadcrumbs,
+	Badge,
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 	Button,
-	Chip,
-	CircularProgress,
-	IconButton,
-	Modal,
-	Stack,
-	styled,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Spinner,
 	Tooltip,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { useEngine, useRootStore } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
-import { EditEngineDetails, EngineAccessButton } from ".";
-
-const StyledName = styled(Stack)(({ theme }) => ({
-	width: "100%",
-	paddingTop: theme.spacing(1),
-	paddingBottom: theme.spacing(1),
-}));
-
-const StyledInfo = styled("div")(({ theme }) => ({
-	display: "flex",
-	justifyContent: "space-between",
-	marginBottom: theme.spacing(4),
-	overflow: "hidden",
-}));
-
-const StyledInfoLeft = styled("div")(({ theme }) => ({
-	flex: 1,
-	display: "flex",
-	flexDirection: "column",
-	justifyContent: "space-between",
-	gap: theme.spacing(1),
-}));
-
-const StyledInfoRight = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-	width: "288px",
-}));
-
-const StyledInfoDescription = styled(Typography)(({ theme }) => ({
-	minHeight: "80px",
-	maxWidth: "699px",
-	maxHeight: "174px",
-	color: theme.palette.text.secondary,
-	textOverflow: "ellipsis",
-	overflow: "hidden",
-	whiteSpace: "normal",
-}));
+import { EditEngineDetails } from ".";
 
 /**
  * Engine Header
@@ -67,8 +37,6 @@ export const EngineHeader: React.FC = () => {
 	// Service for Axios calls
 	const { monolithStore } = useRootStore();
 
-	// notification
-	const notification = useNotification();
 	const [openExportModal, setOpenExportModal] = useState(false);
 
 	// export loading state
@@ -95,18 +63,14 @@ export const EngineHeader: React.FC = () => {
 				.download(insightId, output)
 				.then(() => {
 					if (output && response.errors.length === 0) {
-						notification.add({
-							color: "success",
-							message: `${formattedEngineType} engine downloaded successfully`,
-						});
+						toast.success(
+							`${formattedEngineType} engine download started`,
+						);
 					}
 					setExportLoading(false);
 				})
 				.catch(() => {
-					notification.add({
-						color: "error",
-						message: `${formattedEngineType} engine download failed`,
-					});
+					toast.error(`Failed to download ${formattedEngineType}`);
 					setExportLoading(false);
 				});
 		});
@@ -114,217 +78,198 @@ export const EngineHeader: React.FC = () => {
 	};
 
 	return (
-		<>
-			<Stack direction="column" spacing={1}>
-				<Breadcrumbs separator={"/"}>
-					<Breadcrumbs.Item
-						//@ts-expect-error: TODO FIX Type
-						as={Link}
-						to={`..`}
-						underline="none"
-						color="inherit"
-						variant="body1"
-					>
-						{name} Catalog
-					</Breadcrumbs.Item>
-					<Breadcrumbs.Item
-						//@ts-expect-error: TODO FIX Type
-						as={Link}
-						to={`.`}
-						underline="none"
-						color="text.disabled"
-						variant="body1"
+		<div className="flex w-full flex-col items-start gap-2 p-0">
+			<Breadcrumb>
+				<BreadcrumbList>
+					<BreadcrumbItem>
+						<BreadcrumbLink asChild>
+							<Link to={".."} className="text-inherit">
+								{name} Catalog
+							</Link>
+						</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator>
+						<ChevronRight />
+					</BreadcrumbSeparator>
+					<BreadcrumbItem>
+						<BreadcrumbPage>
+							<Link to={"."} className="text-muted-foreground">
+								{active.name}
+							</Link>
+						</BreadcrumbPage>
+					</BreadcrumbItem>
+				</BreadcrumbList>
+			</Breadcrumb>
+
+			<div className="flex w-full flex-row items-center gap-4">
+				{/* Image placeholder - space for engine/database icon */}
+				<div className="h-16 w-16 flex-shrink-0 rounded-lg bg-muted">
+					{/* Engine icon/image will go here */}
+				</div>
+
+				<div className="flex min-w-0 flex-1 flex-col gap-1">
+					<h1
+						className="overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[30px] text-foreground leading-normal"
+						data-testid="Title"
 					>
 						{active.name}
-					</Breadcrumbs.Item>
-				</Breadcrumbs>
-				<StyledName direction="column" spacing={0}>
-					<Stack direction="row" alignItems={"center"}>
-						<Typography variant="h4" data-testid="Title">
-							{active.name}
-						</Typography>
-						<Stack flex={1}> &nbsp;</Stack>
-						<Stack direction="row" spacing={2}>
-							<EngineAccessButton />
-							{active.role === "OWNER" && (
-								<Button
-									disabled={exportLoading}
-									startIcon={
-										exportLoading ? (
-											<CircularProgress size="1em" />
-										) : (
-											<SimCardDownload />
-										)
-									}
-									data-testid={formatToDataTestId(
-										`engineHeader-${name}-export-btn`,
-									)}
-									variant="outlined"
-									onClick={() => {
-										const engineType =
-											active.metadata.database_subtype;
-										if (engineType === "H2_DB") {
-											setOpenExportModal(true);
-										} else {
-											exportDB(false);
-										}
-									}}
-								>
-									Export
-								</Button>
-							)}
-							<EditEngineDetails />
-						</Stack>
-					</Stack>
-					<Modal
-						open={openExportModal}
-						maxWidth="sm"
-						fullWidth
-						onClose={() => setOpenExportModal(false)}
-						aria-labelledby="export-modal-title"
-						aria-describedby="export-modal-description"
-					>
-						<Modal.Title>
-							<Typography id={"export-modal-title"} variant="h6">
-								Export Engine
-							</Typography>
-						</Modal.Title>
-						<Modal.Content>
-							<Typography
-								id={"export-modal-description"}
-								variant="body1"
-								sx={{ mb: 2 }}
-							>
-								Do you want to export data along with the
-								database?
-							</Typography>
-						</Modal.Content>
-						<Modal.Actions>
-							<Button
-								variant="contained"
-								color="primary"
-								onClick={() => {
-									setOpenExportModal(false);
-									exportDB(true);
-								}}
-							>
-								Yes
-							</Button>
-							<Button
-								variant="outlined"
-								color="secondary"
-								onClick={() => {
-									setOpenExportModal(false);
-									exportDB(false);
-								}}
-							>
-								No
-							</Button>
-						</Modal.Actions>
-					</Modal>
-					<Stack
-						flex={1}
-						direction="row"
-						alignItems={"center"}
-						spacing={0.5}
-					>
-						<Typography
-							variant="body2"
+					</h1>
+					<div className="flex flex-row items-center gap-1">
+						<span
+							className="text-muted-foreground text-sm"
 							data-testid={`engineHeader-${name}-id`}
 						>
 							{active.id}
-						</Typography>
-						<IconButton
-							aria-label={`copy ${name} ID`}
-							size="small"
-							data-testid={`engineHeader-copy-${name}-id-btn`}
-							onClick={(e) => {
-								// prevent the default action
-								e.preventDefault();
+						</span>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									aria-label={`copy ${name} ID`}
+									data-testid={`engineHeader-copy-${name}-id-btn`}
+									onClick={(e) => {
+										// prevent the default action
+										e.preventDefault();
 
-								// copy
-								try {
-									navigator.clipboard.writeText(active.id);
+										// copy
+										try {
+											navigator.clipboard.writeText(
+												active.id,
+											);
 
-									notification.add({
-										color: "success",
-										message: "Successfully copied ID",
-									});
-								} catch (e) {
-									console.error(e);
+											toast.success(
+												"ID copied to clipboard",
+											);
+										} catch (e) {
+											console.error(e);
 
-									notification.add({
-										color: "error",
-										message: "Error copyng ID",
-									});
+											toast.error("Failed to copy ID");
+										}
+									}}
+								>
+									<Copy className="size-4" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Copy {name} ID</TooltipContent>
+						</Tooltip>
+					</div>
+				</div>
+
+				<div className="flex flex-shrink-0 flex-row gap-2">
+					{active.role === "OWNER" && (
+						<Button
+							disabled={exportLoading}
+							variant="ghost"
+							className="text-(--primary) hover:bg-transparent hover:text-(--primary)"
+							data-testid={formatToDataTestId(
+								`engineHeader-${name}-export-btn`,
+							)}
+							onClick={() => {
+								const engineType =
+									active.metadata.database_subtype;
+								if (engineType === "H2_DB") {
+									setOpenExportModal(true);
+								} else {
+									exportDB(false);
 								}
 							}}
 						>
-							<Tooltip title={`Copy ${name} ID`}>
-								<ContentCopyOutlined fontSize="inherit" />
-							</Tooltip>
-						</IconButton>
-					</Stack>
-				</StyledName>
-			</Stack>
-			<StyledInfo>
-				<StyledInfoLeft>
-					<StyledInfoDescription
-						variant={"subtitle1"}
+							{exportLoading ? (
+								<Spinner className="size-4" />
+							) : (
+								<Download className="size-4" />
+							)}
+							Export
+						</Button>
+					)}
+					<EditEngineDetails />
+				</div>
+			</div>
+
+			<Dialog open={openExportModal} onOpenChange={setOpenExportModal}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Export Engine</DialogTitle>
+						<DialogDescription>
+							Do you want to export data along with the database?
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setOpenExportModal(false);
+								exportDB(false);
+							}}
+						>
+							No
+						</Button>
+						<Button
+							onClick={() => {
+								setOpenExportModal(false);
+								exportDB(true);
+							}}
+						>
+							Yes
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<div className="mt-4 flex w-full justify-between gap-4">
+				<div className="flex flex-1 flex-col gap-4">
+					<p
+						className="overflow-hidden whitespace-normal text-muted-foreground"
 						data-testid="Description"
 					>
 						{(active.metadata.description as unknown as string) ||
 							""}
-					</StyledInfoDescription>
+					</p>
 
-					<Stack direction="row" spacing={1} flexWrap={"wrap"}>
+					<div className="flex flex-row flex-wrap gap-2">
 						{active.metadata.tag &&
 							(active.metadata.tag as string[]).map((tag, i) => {
 								if (tag === "") return null;
 								return (
-									<Chip
+									<Badge
 										key={tag}
-										label={tag}
-										color="default"
-										size="small"
-										variant="outlined"
+										variant="outline"
+										className="border-(--primary) text-(--primary)"
 										data-testid="tag-chip"
-									/>
+									>
+										{tag}
+									</Badge>
 								);
 							})}
-					</Stack>
-				</StyledInfoLeft>
-				<StyledInfoRight>
-					<Stack alignItems={"flex-end"} spacing={1}>
-						{active?.PERMISSIONGRANTEDBY ? (
-							<Typography
-								variant={"caption"}
-								color="disabled"
-								data-testid="PublishedBy"
-							>
-								{`Published by ${active.PERMISSIONGRANTEDBY}`}
-							</Typography>
-						) : (
-							<Typography
-								variant={"caption"}
-								color="disabled"
-								data-testid="CreatedBy"
-							>
-								{`Created by ${active.database_created_by}`}
-							</Typography>
-						)}
-						{active?.DATEADDED && (
-							<Typography
-								variant={"caption"}
-								color="disabled"
-								data-testid="DateAdded"
-							>
-								{`on ${active.DATEADDED}`}
-							</Typography>
-						)}
-					</Stack>
-				</StyledInfoRight>
-			</StyledInfo>
-		</>
+					</div>
+				</div>
+				<div className="flex flex-col items-end gap-1 text-right">
+					{active?.PERMISSIONGRANTEDBY ? (
+						<span
+							className="text-muted-foreground text-sm"
+							data-testid="PublishedBy"
+						>
+							Published by: {active.PERMISSIONGRANTEDBY}
+						</span>
+					) : (
+						<span
+							className="text-muted-foreground text-sm"
+							data-testid="CreatedBy"
+						>
+							Created by: {active.database_created_by}
+						</span>
+					)}
+					{active?.DATEADDED && (
+						<span
+							className="text-muted-foreground text-sm"
+							data-testid="DateAdded"
+						>
+							Updated {`on ${active.DATEADDED}`}
+						</span>
+					)}
+				</div>
+			</div>
+		</div>
 	);
 };
