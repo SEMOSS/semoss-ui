@@ -138,7 +138,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 			toast.error(e.message);
 		}
 	};
-	console.log("tags", tag);
 	return (
 		<Card
 			onClick={() => onClick(id)}

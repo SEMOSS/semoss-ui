@@ -445,7 +445,7 @@ export const Filterbox = (props: FilterboxProps) => {
 																key={
 																	filterOption.value
 																}
-																className={`mb-2 flex w-full items-center justify-between bg-transparent px-4 py-2 hover:bg-(--accent) ${
+																className={`mb-2 flex w-full items-center justify-between bg-transparent px-4 py-2 font-medium text-(--sidebar-foreground) text-sm hover:bg-(--accent) ${
 																	isSelected
 																		? "bg-(--accent) font-medium"
 																		: ""
@@ -470,7 +470,7 @@ export const Filterbox = (props: FilterboxProps) => {
 																}
 															>
 																<span
-																	className="text-sm"
+																	className={`text-(--sidebar-foreground) text-sm ${isSelected ? "font-medium" : "font-normal"}`}
 																	data-testid={formatToDataTestId(
 																		`filterbox-${filterOption.value}-filterBtn`,
 																	)}
@@ -479,6 +479,7 @@ export const Filterbox = (props: FilterboxProps) => {
 																		filterOption.value
 																	}
 																</span>
+
 																{filterOption.count && (
 																	<Avatar className="size-4">
 																		<AvatarFallback className="bg-secondary font-medium text-foreground text-xs">
@@ -497,7 +498,7 @@ export const Filterbox = (props: FilterboxProps) => {
 													<Button
 														type="button"
 														variant="ghost"
-														className="w-full px-4 py-2 text-left text-primary text-sm hover:text-primary/90"
+														className="text-(--primary) hover:bg-transparent hover:text-(--primary)"
 														onClick={() => {
 															const visibleFilters =
 																{

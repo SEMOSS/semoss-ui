@@ -12,6 +12,8 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
+	DialogFooter,
+	DialogHeader,
 	DialogTitle,
 	H4,
 	InputGroup,
@@ -457,40 +459,39 @@ export const ModelImport: React.FC = () => {
 						className="w-[600px]"
 						data-testid="model-zip-upload-modal"
 					>
-						<div className="flex h-full w-full flex-col gap-2">
-							<DialogTitle data-testid="model-zip-upload-title">
+						<DialogHeader>
+							<DialogTitle data-testid="model-zip-upload-header">
 								Zip File
 							</DialogTitle>
-							<FileDropzone
-								multiple={false}
-								onChange={(newValues) => {
-									setFiledata(newValues);
-								}}
-							/>
-							<div className="flex flex-row justify-end gap-2">
-								<Button
-									size="sm"
-									variant="ghost"
-									onClick={() =>
-										setIsFileUploadModalOpen(false)
-									}
-									data-testid="model-upload-close-button"
-									className="rounded-xl text-muted-foreground"
-								>
-									Close
-								</Button>
-								<Button
-									size="sm"
-									variant="default"
-									disabled={!filedata || formLoading}
-									onClick={() => onSubmit(filedata)}
-									data-testid="model-upload-submit-button"
-									className="rounded-xl"
-								>
-									Upload
-								</Button>
-							</div>
-						</div>
+						</DialogHeader>
+						<FileDropzone
+							multiple={false}
+							onChange={(newValues) => {
+								setFiledata(newValues);
+							}}
+							className="h-30"
+						/>
+						<DialogFooter>
+							<Button
+								size="sm"
+								variant="ghost"
+								onClick={() => setIsFileUploadModalOpen(false)}
+								data-testid="model-upload-close-button"
+								className="rounded-xl text-muted-foreground"
+							>
+								Close
+							</Button>
+							<Button
+								size="sm"
+								variant="default"
+								disabled={!filedata || formLoading}
+								onClick={() => onSubmit(filedata)}
+								data-testid="model-upload-submit-button"
+								className="rounded-xl"
+							>
+								Upload
+							</Button>
+						</DialogFooter>
 					</DialogContent>
 				</Dialog>
 

@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import { useEffect, useRef, useState } from "react";
 import {
 	Badge,
@@ -82,8 +81,21 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 	// Dynamic gradient based on model name for visual distinction
 	const avatarGradient = pickGradient(model.name);
 
+	const handleCardClick = () => {
+		if (!model.disable && onModelSelect) {
+			onModelSelect(model);
+		}
+	};
+
+	const handleCardKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault();
+			handleCardClick();
+		}
+	};
+
 	const cardContent = (
-		// biome-ignore lint/a11y/useKeyWithClickEvents: <Usage of div is required here>
+		// biome-ignore lint/a11y/useSemanticElements: <explanation>
 		<div
 			className={cn(
 				"flex min-h-[200px] max-w-[215px] cursor-pointer flex-col justify-center rounded-lg border border-input bg-card p-4",
@@ -91,14 +103,13 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 				model.disable &&
 					"cursor-auto opacity-60 hover:border hover:border-input hover:bg-card",
 			)}
-			onClick={() => {
-				if (!model.disable && onModelSelect) {
-					onModelSelect(model);
-				}
-			}}
+			onClick={handleCardClick}
+			onKeyDown={handleCardKeyDown}
 			data-testId={formatToDataTestId(
 				`importPageContent-connect-to-${model.name}-img`,
 			)}
+			role="button"
+			tabIndex={model.disable ? -1 : 0}
 		>
 			<div className="flex flex-col items-start gap-1">
 				<div className="flex w-full flex-row items-center gap-2">
@@ -169,6 +180,17 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 							"_blank",
 							"noopener,noreferrer",
 						);
+					}}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							e.stopPropagation();
+							window.open(
+								model.link as string,
+								"_blank",
+								"noopener,noreferrer",
+							);
+						}
 					}}
 					aria-label={`Open documentation for ${label}`}
 				>

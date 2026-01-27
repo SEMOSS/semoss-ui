@@ -2,7 +2,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { FileDropzone, Switch } from "@semoss/ui";
+import { FileDropzone } from "@semoss/ui";
 import {
 	Button,
 	Collapsible,
@@ -21,6 +21,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Separator,
+	Switch,
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
@@ -489,7 +490,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									/>
 								</Field>
 							);
-						case "select":
+						case "boolean":
 							return (
 								<Field>
 									<FieldLabel htmlFor={f.key}>
@@ -531,7 +532,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									</Select>
 								</Field>
 							);
-						case "boolean":
+						case "select":
 							return (
 								<div
 									key={f.key}
@@ -539,16 +540,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								>
 									<Switch
 										checked={!!field.value}
-										onChange={(e: unknown) => {
-											const checked = Boolean(
-												(
-													e as {
-														target?: {
-															checked?: unknown;
-														};
-													}
-												).target?.checked ?? e,
-											);
+										onCheckedChange={(checked) => {
 											field.onChange(checked);
 										}}
 										required={f.required}

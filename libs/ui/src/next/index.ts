@@ -45,6 +45,7 @@ export * from "./slider";
 export * from "./sonner";
 export * from "./spinner";
 export * from "./stepper";
+export * from "./switch";
 export * from "./table";
 export * from "./tabs";
 export * from "./textarea";
