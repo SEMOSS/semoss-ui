@@ -20,8 +20,8 @@ interface RoomToolProps {
 export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 	const config: {
 		app: string;
+		message: string;
 		tool: {
-			message: string;
 			id: string;
 			name: string;
 			title: string;
@@ -32,9 +32,16 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 		return node.getConfig();
 	}, [node]);
 
-	if (!config || !config.app || !config.tool) {
+	if (!config || !config.app || !config.message || !config.tool) {
 		return <div>No Tool</div>;
 	}
 
-	return <ToolsView room={room} app={config.app} tool={config.tool} />;
+	return (
+		<ToolsView
+			room={room}
+			app={config.app}
+			message={config.message}
+			tool={config.tool}
+		/>
+	);
 });

@@ -18,9 +18,11 @@ interface ToolsViewProps {
 	/** Id of the app */
 	app: string;
 
+	/** Id of the message */
+	message: string;
+
 	/** Connected tool */
 	tool: {
-		message: string;
 		id: string;
 		name: string;
 		parameters: Record<string, unknown>;
@@ -29,7 +31,7 @@ interface ToolsViewProps {
 }
 
 export const ToolsView: React.FC<ToolsViewProps> = observer(
-	({ room, app, tool }) => {
+	({ room, app, message, tool }) => {
 		/**
 		 * State
 		 */
@@ -104,7 +106,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 					type: "SMSS_INIT_TOOL",
 					tool: {
 						type: "MCP",
-						message: tool?.message || "",
+						message: message || "",
 						id: tool?.id || "",
 						name: tool?.name || "",
 						parameters: toJS(tool?.parameters || {}),
@@ -219,6 +221,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 					<ToolsDefaultView
 						room={room}
 						app={app}
+						message={message}
 						tool={tool}
 						mcp={selectedTool}
 					/>
