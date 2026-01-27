@@ -125,11 +125,7 @@ export const PromptGrid: React.FC<PromptGridProps> = observer(
 
 		const handleSave = async (updatedPrompt: Prompt) => {
 			const title = (updatedPrompt?.TITLE ?? "").trim();
-			const text = (
-				updatedPrompt?.INTENT ??
-				updatedPrompt?.CONTEXT ??
-				""
-			).trim();
+			const text = (updatedPrompt?.INTENT ?? "").trim();
 
 			if (!title || !text) {
 				setSnackbar({
@@ -140,14 +136,17 @@ export const PromptGrid: React.FC<PromptGridProps> = observer(
 				return;
 			}
 
+			const map = {
+				id: String(updatedPrompt.ID),
+				title,
+				context: text,
+			};
+
 			const response = await actions.run<[boolean]>(
-				`EditMyPrompts([{"prompt_id":"${
-					updatedPrompt.ID
-				}","prompt_title":"${title.replace(/"/g, "'")}","prompt_text":"${text.replace(
-					/"/g,
-					"'",
-				)}","favorite_flag":"N"}]);`,
+				`UpdatePrompt(map=${JSON.stringify(map)});`,
 			);
+
+			console.log("response", response);
 
 			const { output, operationType } = response.pixelReturn[0];
 			if ((operationType ?? "").indexOf("ERROR") > -1) {
@@ -208,7 +207,15 @@ export const PromptGrid: React.FC<PromptGridProps> = observer(
 						: "bg-slate-700";
 
 		const listToRender =
-			selectedCategory.label === "My Prompts" ? myPrompts : globalPrompts;
+			selectedCategory.label === "My Prompts"
+				? myPrompts.length
+					? myPrompts
+					: suggestedPrompts
+				: globalPrompts.length
+					? globalPrompts
+					: suggestedPrompts;
+
+		console.log("listToRender", listToRender);
 
 		return (
 			<>

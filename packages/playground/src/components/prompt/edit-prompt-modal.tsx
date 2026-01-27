@@ -86,8 +86,8 @@ export const EditPromptModal = ({
 							</label>
 							<input
 								id={contentId}
-								name="name"
-								value={editedPrompt.TITLE}
+								name="TITLE"
+								value={editedPrompt.TITLE ?? ""}
 								onChange={handleChange}
 								required
 								className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -101,8 +101,8 @@ export const EditPromptModal = ({
 							</label>
 							<textarea
 								id={contentId}
-								name="content"
-								value={editedPrompt.INTENT}
+								name="INTENT"
+								value={editedPrompt.INTENT ?? ""}
 								onChange={handleChange}
 								required
 								rows={8}

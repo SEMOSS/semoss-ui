@@ -238,6 +238,8 @@ export const PromptLibrary = observer(() => {
 					adaptPrompt(normalizePrompt(p)),
 				);
 
+				console.log("adaptPrompt", adapted);
+
 				const nextCategorySet = new Set<string>(["My Prompts"]);
 				for (const p of adapted) {
 					if (
