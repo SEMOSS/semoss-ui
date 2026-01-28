@@ -33,7 +33,7 @@ import {
 import logoImage from "@/assets/img/logo.svg";
 import { WorkspaceChatList, WorkspaceMCPList } from "@/components";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
-import { useChat } from "@/hooks/useChat";
+import { useChat } from "@/hooks/use-chat";
 import type { Workspace } from "@/types";
 
 /**
