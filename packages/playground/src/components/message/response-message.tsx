@@ -4,122 +4,30 @@ import {
 	CircleAlert,
 	CopyIcon,
 	MessageCircleIcon,
-	Quote,
 	RefreshCwIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useEffect } from "react";
 import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
 	Button,
-	H1,
-	H2,
-	H3,
-	H4,
 	Markdown,
-	P,
-	Separator,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useLoadingMessage } from "@/hooks/useLoadingMessage";
+import { useMarkdownTypewriter } from "@/hooks";
 import {
 	InputMessageStore,
 	type ResponseMessageStore,
 	type RoomStore,
-	RootMessageStore,
 } from "@/stores";
 import { AppLogo } from "../common";
+import { RoomInlineTool } from "../room/room-inline-tool";
+import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
-
-const THINKING_MARKDOWN_COMPONENTS = {
-	h1: ({ children, ...props }) => (
-		<H1 className="text-inherit text-sm" {...props}>
-			{children}
-		</H1>
-	),
-	h2: ({ children, ...props }) => (
-		<H2 className="mt-2 text-inherit text-sm" {...props}>
-			{children}
-		</H2>
-	),
-	h3: ({ children, ...props }) => (
-		<H3 className="mt-2 text-inherit text-sm" {...props}>
-			{children}
-		</H3>
-	),
-	h4: ({ children, ...props }) => (
-		<H4 className="mt-2 text-inherit text-sm" {...props}>
-			{children}
-		</H4>
-	),
-	h5: ({ children, ...props }) => (
-		<h5
-			className="mt-1 scroll-m-20 font-medium text-inherit text-sm tracking-tight"
-			{...props}
-		>
-			{children}
-		</h5>
-	),
-	h6: ({ children, ...props }) => (
-		<h6
-			className="mt-1 scroll-m-20 font-medium text-inherit text-sm tracking-tight"
-			{...props}
-		>
-			{children}
-		</h6>
-	),
-	p: ({ children, ...props }) => (
-		<P className="mt-1 text-inherit text-sm" {...props}>
-			{children}
-		</P>
-	),
-	a: ({ children, href, ...props }) => (
-		<a
-			href={href}
-			className="font-medium text-primary text-primary text-sm underline underline-offset-1"
-			target="_blank"
-			rel="noopener noreferrer"
-			{...props}
-		>
-			{children}
-		</a>
-	),
-	ul: ({ children, ...props }) => (
-		<ul
-			className="my-1 ml-4 list-disc text-inherit text-sm [&>li]:mt-1"
-			{...props}
-		>
-			{children}
-		</ul>
-	),
-	ol: ({ children, ...props }) => (
-		<ol
-			className="my-1 ml-4 list-decimal text-inherit text-sm [&>li]:mt-1"
-			{...props}
-		>
-			{children}
-		</ol>
-	),
-	li: ({ children, ...props }) => (
-		<li className="text-inherit text-sm" {...props}>
-			{children}
-		</li>
-	),
-	blockquote: ({ children, ...props }) => (
-		<Quote className="mt-1" {...props}>
-			{children}
-		</Quote>
-	),
-	hr: ({ ...props }) => <Separator className="mt-2 mb-1" {...props} />,
-};
 
 interface ResponseMessageProps {
 	/** Room */
@@ -131,9 +39,13 @@ interface ResponseMessageProps {
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 	({ room, message }) => {
-		const thinkingMessage = useLoadingMessage(room.isLoading);
+		const typewriter = useMarkdownTypewriter(message.text);
 
-		const [thinking, setThinking] = useState<string>("");
+		useEffect(() => {
+			if (message.isThinking) {
+				typewriter.start();
+			}
+		}, [message.isThinking, typewriter.start]);
 
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
@@ -201,41 +113,27 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						{message.model.name ?? "Agent"}
 					</span>
 				</div>
-				{(message.isThinking || message.thinking.length > 0) && (
-					<Accordion
-						type="single"
-						collapsible
-						className="rounded-lg border p-3 text-muted-foreground text-sm shadow-sm"
-						value={message.isThinking ? "thinking" : thinking}
-						onValueChange={(val) => setThinking(val || "")}
-					>
-						<AccordionItem value="thinking">
-							<AccordionTrigger className="p-0">
-								<span className="font-medium">Thinking</span>
-							</AccordionTrigger>
-							<AccordionContent className="pt-2">
-								<Markdown
-									className="[&>*:first-child]:mt-0"
-									components={THINKING_MARKDOWN_COMPONENTS}
-								>
-									{message.thinking || thinkingMessage}
-								</Markdown>
-							</AccordionContent>
-						</AccordionItem>
-					</Accordion>
-				)}
-				{message.text ? (
-					<Markdown className="[&>*:first-child]:mt-0">
-						{message.text}
-					</Markdown>
-				) : null}
-				{message.tools.map((t) => (
-					<ResponseMessageTool
-						key={`tool-${t.id}`}
-						message={message}
-						tool={t}
-					/>
-				))}
+				<ResponseMessageThinking room={room} message={message} />
+				<Markdown className="[&>*:first-child]:mt-0">
+					{typewriter.isTyping ? typewriter.rendered : message.text}
+				</Markdown>
+				{message.tools.map((t) => {
+					return (
+						<div
+							key={`tool-${t.id}`}
+							className="flex flex-col gap-2"
+						>
+							<ResponseMessageTool message={message} tool={t} />
+							{t.display === "inline" && t.isOpen && (
+								<RoomInlineTool
+									room={room}
+									message={message}
+									tool={t}
+								/>
+							)}
+						</div>
+					);
+				})}
 				{areToolsActive && (
 					<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
 						<CircleAlert className="size-4" />
@@ -300,8 +198,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							<TooltipTrigger asChild>
 								<Button
 									disabled={
-										inputMessage.parent instanceof
-											RootMessageStore ||
+										!inputMessage.parent?.parent ||
 										message.room.mode === "executing"
 									}
 									variant="ghost"
