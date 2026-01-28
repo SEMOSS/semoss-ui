@@ -31,7 +31,7 @@ interface RoomInlineToolProps {
 }
 
 export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
-	({ room, message, tool }) => {
+	({ room, message, tool, toolResponse }) => {
 		const [isMaximized, setIsMaximized] = useState(false);
 
 		return (
@@ -120,6 +120,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 							app={tool.json._meta.SMSS_PROJECT_ID}
 							message={message.id}
 							tool={tool.json}
+							toolResponse={toolResponse}
 						/>
 					</div>
 				</div>
