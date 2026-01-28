@@ -86,6 +86,19 @@ export const JobsTable = (props: {
 			headerName: "Name",
 			field: "name",
 			flex: 1,
+			renderCell: (params) => (
+				<div
+					style={{
+						width: "100%",
+						overflow: "hidden",
+						textOverflow: "ellipsis",
+						whiteSpace: "nowrap",
+					}}
+					title={params.value}
+				>
+					{params.value}
+				</div>
+			),
 		},
 		{
 			headerName: "Frequency",
