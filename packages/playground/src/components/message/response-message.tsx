@@ -231,7 +231,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										recordFeedback(true);
 									}}
 								>
-									<ThumbsUpIcon />
+									<ThumbsUpIcon
+										fill={
+											message.feedback?.rating === true
+												? "currentColor"
+												: "none"
+										}
+									/>
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
@@ -248,7 +254,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										recordFeedback(false);
 									}}
 								>
-									<ThumbsDownIcon />
+									<ThumbsDownIcon
+										fill={
+											message.feedback?.rating === false
+												? "currentColor"
+												: "none"
+										}
+									/>
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
