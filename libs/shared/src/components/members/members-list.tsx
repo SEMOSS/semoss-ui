@@ -105,7 +105,7 @@ export const MembersList = ({
 							totalMembers: number;
 					  }
 					| { members: []; totalMembers: number } = (await apiGet(
-					`/api/auth/project/${type === "PROJECT" ? "getProjectUsers" : "getEngineUsers"}?projectId=${id}&limit=${limit}${search !== "" ? `&userId=${search}` : ""}`,
+					`/api/auth/${type === "PROJECT" ? "project" : "engine"}/${type === "PROJECT" ? "getProjectUsers" : "getEngineUsers"}?${type === "PROJECT" ? "projectId" : "engineId"}=${id}&limit=${limit}${search !== "" ? `&userId=${search}` : ""}`,
 				)) as unknown as
 					| {
 							members: SETTINGS_PROVISIONED_USER[];

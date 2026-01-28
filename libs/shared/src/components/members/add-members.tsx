@@ -49,7 +49,7 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 	useEffect(() => {
 		// Fetch users based on searchKey and by default limits record to 5
 		apiGet(
-			"/api/auth/project/" +
+			`/api/auth/${type === "PROJECT" ? "project" : "engine"}/` +
 				usersUrl +
 				`?${typeId}=${id}&searchTerm=${searchKey}&limit=5`,
 		)
@@ -59,6 +59,19 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 			.catch((_error) => {});
 	}, [searchKey, typeId, id, usersUrl]);
 
+	function returnAccessTypeLabel(permission) {
+		switch (permission) {
+			case "can view":
+				return "READ_ONLY";
+			case "can edit":
+				return "EDIT";
+			case "owner":
+				return "OWNER";
+			default:
+				return "select access";
+		}
+	}
+
 	/**
 	 * Add selected members to the current project or engine.
 	 *
@@ -67,7 +80,7 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 	function addNewMembers() {
 		const selectedUserObj = selectedUsers.map((m) => ({
 			userid: m.id,
-			permission: selectedPermission,
+			permission: returnAccessTypeLabel(selectedPermission),
 			email: m.email,
 			name: m.name,
 			type: m.type,
@@ -75,9 +88,9 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 		}));
 
 		apiPost(
-			`/api/auth/project/${type === "PROJECT" ? "addProjectUserPermissions" : "addEngineUserPermissions"}`,
+			`/api/auth/${type === "PROJECT" ? "project" : "engine"}/${type === "PROJECT" ? "addProjectUserPermissions" : "addEngineUserPermissions"}`,
 			{
-				projectId: id,
+				[type === "PROJECT" ? "projectId" : "engineId"]: id,
 				userpermissions: selectedUserObj,
 			},
 		)
@@ -113,8 +126,9 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 	function resetAddMemberState() {
 		setSelectedUsers([]);
 		setSearchKey("");
+		setSelectedPermission("can view");
 	}
-
+	console.log(selectedUsers, "selectedUsers");
 	return (
 		<div className="position-relative w-full">
 			<Dialog
@@ -202,7 +216,7 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 														className="w-[120px]"
 													>
 														<div className="flex flex-column items-center gap-2">
-															can view{" "}
+															{selectedPermission}{" "}
 															<ChevronDown />
 														</div>
 													</Button>
@@ -297,10 +311,12 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 																"test.test.com"}
 														</span>
 													</span>
-													{selectedUsers.indexOf(
-														item.email,
-													) > -1 ? (
-														<span className="justify-end">
+													{selectedUsers.filter(
+														(selUser) =>
+															selUser?.email ===
+															item.email,
+													).length > 0 ? (
+														<span className="items-center justify-end">
 															Added
 														</span>
 													) : null}
