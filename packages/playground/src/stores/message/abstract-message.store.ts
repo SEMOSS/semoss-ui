@@ -83,6 +83,7 @@ export abstract class AbstractMessageStore {
 			activeChild: computed,
 			connectParent: action,
 			addChild: action,
+			removeChild: action,
 			activateMessage: action,
 			tokens: observable,
 		});
@@ -160,6 +161,44 @@ export abstract class AbstractMessageStore {
 
 		// set as the active message
 		message.activateMessage();
+	};
+
+	/**
+	 * Remove a child message
+	 */
+	removeChild = (message: AbstractMessageStore) => {
+		if (!message) {
+			return;
+		}
+
+		const index = this.children.findIndex(
+			(child) => child.id === message.id,
+		);
+		if (index === -1) {
+			return;
+		}
+
+		// remove the child
+		const [removed] = this.children.splice(index, 1);
+
+		// reset parent linkage on removed child
+		if (removed) {
+			removed.connectParent(null, -1);
+		}
+
+		// reindex remaining children
+		this.children.forEach((child, position) => {
+			child.position = position;
+		});
+
+		// update active child position
+		if (this.activeChildPosition === index) {
+			this.activeChildPosition = this.children.length
+				? Math.min(index, this.children.length - 1)
+				: -1;
+		} else if (this.activeChildPosition > index) {
+			this.activeChildPosition -= 1;
+		}
 	};
 
 	/**
