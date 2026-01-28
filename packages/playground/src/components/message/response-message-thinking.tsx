@@ -126,7 +126,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 				<Accordion
 					type="single"
 					collapsible
-					className="rounded-lg border p-3 text-muted-foreground text-sm shadow-sm"
+					className="rounded-lg border border-border p-3 text-muted-foreground text-sm shadow-sm"
 					value={message.isThinking ? "thinking" : thinking}
 					onValueChange={(val) => setThinking(val || "")}
 				>
@@ -141,7 +141,8 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 							>
 								{typewriter.isTyping
 									? typewriter.rendered
-									: message.thinking || thinkingMessage}
+									: message.thinking ||
+										thinkingMessage.loadingMessage}
 							</Markdown>
 						</AccordionContent>
 					</AccordionItem>
