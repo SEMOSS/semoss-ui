@@ -9,6 +9,8 @@ import {
 	PlanMessageStore,
 	ResponseMessageStore,
 	RootMessageStore,
+	ToolExecutionMessageStore,
+	type ToolStore,
 } from "@/stores";
 import type { MCPConfig, PixelMessage, Workspace } from "@/types";
 
@@ -33,11 +35,6 @@ interface RoomStoreInterface {
 	 *  Track if the room is loading
 	 */
 	isLoading: boolean;
-
-	/**
-	 *  Track whether the room has tools that need to be finished before the next message can be sent
-	 */
-	hasUnfinishedTools: boolean;
 
 	/**
 	 *  Track if the room has errored
@@ -103,6 +100,7 @@ interface RoomStoreInterface {
 		 */
 		workspace?: {
 			workspace_id: string;
+			name?: string;
 		};
 	};
 
@@ -134,7 +132,6 @@ export class RoomStore {
 		insightId: "new",
 		isInitialized: false,
 		isLoading: false,
-		hasUnfinishedTools: false,
 		mode: "chat",
 		metadata: {
 			name: "",
@@ -172,8 +169,8 @@ export class RoomStore {
 		makeAutoObservable(this);
 
 		// increment the counter whenever the model changes
-		this._store.sidebar.model.addChangeListener(() => {
-			this.tickSidebar();
+		this._store.sidebar.model.addChangeListener((action) => {
+			this.tickSidebar(action);
 		});
 	}
 
@@ -188,10 +185,10 @@ export class RoomStore {
 	}
 
 	/**
-	 * Indicator to chack if it is ready for use
+	 * Get the insightId of the roomId
 	 */
-	get isInitialized() {
-		return this._store.isInitialized;
+	get insightId() {
+		return this._store.insightId;
 	}
 
 	/**
@@ -199,13 +196,6 @@ export class RoomStore {
 	 */
 	get isLoading() {
 		return this._store.isLoading;
-	}
-
-	/**
-	 * Indicator to check if the room is ready for the next message
-	 */
-	get hasUnfinishedTools() {
-		return this._store.hasUnfinishedTools;
 	}
 
 	/**
@@ -244,6 +234,10 @@ export class RoomStore {
 		const queue: AbstractMessageStore[] = [this._store.root];
 		while (queue.length > 0) {
 			const current = queue.shift();
+
+			if (!current) {
+				continue;
+			}
 
 			if (current.id === messageId) {
 				return current;
@@ -296,6 +290,36 @@ export class RoomStore {
 		}
 
 		return this._store.root;
+	}
+
+	/**
+	 * Indicator to check if the room is ready for the next message
+	 */
+	get hasUnfinishedTools(): boolean {
+		if (this.tail instanceof ResponseMessageStore) {
+			for (const tool of this.tail.tools) {
+				if (tool.status === "INITIAL" || tool.status === "LOADING") {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Number of tokens used
+	 */
+	get tokensUsed() {
+		let currMessage = this.tail as AbstractMessageStore;
+		let tokensUsed = 0;
+		while (currMessage) {
+			tokensUsed += currMessage.tokens;
+			if (currMessage.type === "INPUT") break;
+			currMessage = currMessage.parent;
+		}
+
+		return tokensUsed;
 	}
 
 	/**
@@ -397,7 +421,50 @@ export class RoomStore {
 				OPTIONS?: RoomStoreInterface["options"];
 			};
 
-			const root = new RootMessageStore(this);
+			// sync the insight ID
+			runInAction(() => {
+				this._store.insightId = response.insightId;
+			});
+
+			// create the root
+			let root = null;
+			if (this.mode === "chat") {
+				root = new ResponseMessageStore(this, {
+					messageId: "ROOT_PLACEHOLDER_ID",
+					type: "RESPONSE_TEXT",
+					visible: false,
+					content: "",
+					modelId: this._store.model?.app_id || "",
+					paramMap: {
+						max_new_tokens: this._store.options.tokenLength,
+						temperature: this._store.options.temperature,
+					},
+					ornaments: {
+						modelName: this._store.model?.app_name || "",
+					},
+					dateCreated: new Date().toISOString(),
+					tokens: 0,
+				} as ResponseTextPixelMessage);
+			} else if (this.mode === "planning") {
+				root = new PlanMessageStore(this, {
+					messageId: "ROOT_PLACEHOLDER_ID",
+					type: "RESPONSE_TEXT",
+					visible: false,
+					content: "",
+					modelId: this._store.model?.app_id || "",
+					paramMap: {
+						max_new_tokens: this._store.options.tokenLength,
+						temperature: this._store.options.temperature,
+					},
+					ornaments: {
+						PLAYGROUND_MESSAGE_TYPE: "COT",
+						modelName: this._store.model?.app_name || "",
+					},
+					dateCreated: new Date().toISOString(),
+					tokens: 0,
+				} as ResponseTextPixelMessage);
+			}
+
 			const messages: Record<
 				string,
 				{
@@ -405,14 +472,15 @@ export class RoomStore {
 					message:
 						| InputMessageStore
 						| ResponseMessageStore
-						| PlanMessageStore;
+						| PlanMessageStore
+						| ToolExecutionMessageStore;
 				}
 			> = {};
 
 			// store the last model
 			let activeModelId = this._store.modelId;
 
-			// This is done as seperate loops because of INPUT_TOOL_EXEC
+			// This is done as seperate loops because of linking
 			for (const pixelMessage of messageOutput) {
 				if (
 					pixelMessage.type === "INPUT_TEXT" ||
@@ -440,6 +508,24 @@ export class RoomStore {
 					parent.message.addChild(m.message);
 				} else {
 					root.addChild(m.message);
+				}
+
+				// if its tool execution, update the corresponding tool
+				const toolExecMessage = m.message;
+				if (toolExecMessage instanceof ToolExecutionMessageStore) {
+					const parentToolExecMessage =
+						messages[m.parentMessageId].message;
+					if (parentToolExecMessage instanceof ResponseMessageStore) {
+						parentToolExecMessage.tools.forEach((tool) => {
+							if (tool.id === toolExecMessage.callId) {
+								// save the response
+								runInAction(() => {
+									tool.response = toolExecMessage.response;
+									tool.status = toolExecMessage.status;
+								});
+							}
+						});
+					}
 				}
 			}
 
@@ -511,16 +597,12 @@ export class RoomStore {
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
 			if (this.tail.type === "RESPONSE") {
-				runInAction(() => {
-					this.setHasUnfinishedTools(true);
-				});
 				this.tail.startToolExecution();
 			}
 		} catch (e) {
 			console.error(e);
 			runInAction(() => {
 				this.setIsLoading(false);
-				this.setHasUnfinishedTools(false);
 			});
 			throw new Error(e.message || "Error initializing room");
 		}
@@ -548,6 +630,33 @@ export class RoomStore {
 		} catch (e) {
 			throw new Error(e.message || "Error updating room options");
 		}
+	};
+
+	/**
+	 * Get a tool by nodeId
+	 * @param nodeId - node id to check
+	 */
+	getTool = (nodeId: string): ToolStore => {
+		let current: AbstractMessageStore | null = this._store.root;
+
+		const queue: AbstractMessageStore[] = [current];
+		while (queue.length > 0) {
+			current = queue.shift();
+
+			if (current.type === "RESPONSE") {
+				const responseMessage = current as ResponseMessageStore;
+
+				for (const t of responseMessage.tools) {
+					if (t.nodeId === nodeId) {
+						return t;
+					}
+				}
+			}
+
+			queue.push(...current.children);
+		}
+
+		return null;
 	};
 
 	/**
@@ -641,8 +750,16 @@ export class RoomStore {
 	/**
 	 * Increment the counter and close if there are no nodes
 	 */
-	tickSidebar = async (): Promise<void> => {
+	tickSidebar = async (action: FlexLayout.Action): Promise<void> => {
 		this._store.sidebar.counter += 1;
+
+		// if it is a delete
+		if (action.type === FlexLayout.Actions.DELETE_TAB) {
+			const tool = this.getTool(action.data.node);
+			if (tool) {
+				tool.setIsOpen(false);
+			}
+		}
 
 		// check if there are any tabs left
 		let hasTabs = false;
@@ -657,7 +774,6 @@ export class RoomStore {
 			this.closeSidebar();
 		}
 	};
-
 	/**
 	 * Helpers
 	 */
@@ -718,6 +834,7 @@ export class RoomStore {
 				temperature: this.options.temperature,
 			},
 			dateCreated: "",
+			tokens: 0,
 		});
 
 		// get the parent message

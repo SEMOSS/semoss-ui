@@ -1,6 +1,7 @@
 import { MoveDownIcon, TriangleAlertIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { useEffect } from "react";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
@@ -41,6 +42,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		room.history?.length || 0,
 	);
 	const loadingMessage = useLoadingMessage(room.isLoading);
+	const { chat } = useChat();
+	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
+	const [showScrollup, setShowScrollup] = useState(false);
+	const [showScrolldown, setShowScrolldown] = useState(false);
+	const [isScrollLocked, setIsScrollLocked] = useState(false);
 
 	/**
 	 * Functions
@@ -54,6 +60,85 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 		return true;
 	};
+
+	/**
+	 * Handle tool selection
+	 * @param tool - selected tool
+	 */
+	const handleToolSelect = (tool: MCPConfig) => {
+		// Toggle tool in options
+		const tools = room.options.mcp.reduce(
+			(acc, curr) => {
+				acc[curr.id] = curr;
+				return acc;
+			},
+			{} as Record<string, typeof tool>,
+		);
+
+		if (Object.hasOwn(tools, tool.id)) {
+			delete tools[tool.id];
+		} else {
+			tools[tool.id] = tool;
+		}
+
+		room.setOptions({
+			...room.options,
+			mcp: Object.values(tools),
+		});
+	};
+
+	/**
+	 * Handle scroll events to detect user scrolling
+	 */
+	const handleScroll = useCallback(() => {
+		if (!scrollEle) {
+			setShowScrolldown(false);
+			setShowScrollup(false);
+			return;
+		}
+
+		// show scroll up if near the top
+		if (scrollEle.scrollTop > SCROLL_THRESHOLD) {
+			setShowScrollup(true);
+		} else {
+			setShowScrollup(false);
+		}
+
+		// Check if user is at the bottom
+		const isAtBottom =
+			scrollEle.scrollHeight -
+				scrollEle.scrollTop -
+				scrollEle.clientHeight <=
+			SCROLL_THRESHOLD;
+
+		// show scroll down if not at bottom
+		if (isAtBottom) {
+			setShowScrolldown(false);
+			// Unlock scroll when user scrolls back to bottom
+			setIsScrollLocked(false);
+		} else {
+			setShowScrolldown(true);
+			// Lock scroll when user scrolls away from bottom
+			setIsScrollLocked(true);
+		}
+	}, [scrollEle]);
+
+	/**
+	 * Scroll to target position based on direction
+	 */
+	const scrollToTarget = useCallback(
+		(target: number = 0) => {
+			if (!scrollEle) {
+				return;
+			}
+
+			scrollEle.scrollTo({
+				top: target,
+				behavior: "smooth",
+			});
+		},
+		[scrollEle],
+	);
 
 	/**
 	 * Effects
@@ -93,6 +178,61 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
+	/**
+	 * Auto-scroll when dependency changes (new messages added)
+	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies:> needed to trigger scroll
+	useEffect(() => {
+		if (!scrollEle || isScrollLocked) {
+			return;
+		}
+
+		requestAnimationFrame(() => {
+			scrollToTarget(scrollEle.scrollHeight);
+		});
+	}, [
+		scrollEle,
+		scrollToTarget,
+		isScrollLocked,
+		room.history?.length || 0,
+		room.tail?.type === "RESPONSE"
+			? (room.tail as ResponseMessageStore)?.text.length
+			: 0,
+	]);
+
+	/**
+	 * Set up scroll event listener
+	 */
+	useEffect(() => {
+		if (!scrollEle) {
+			return;
+		}
+
+		// Throttle scroll events for better performance
+		let ticking = false;
+
+		const throttledHandleScroll = () => {
+			if (!ticking) {
+				requestAnimationFrame(() => {
+					handleScroll();
+					ticking = false;
+				});
+				ticking = true;
+			}
+		};
+
+		scrollEle.addEventListener("scroll", throttledHandleScroll, {
+			passive: true,
+		});
+
+		// Initial check
+		handleScroll();
+
+		return () => {
+			scrollEle.removeEventListener("scroll", throttledHandleScroll);
+		};
+	}, [scrollEle, handleScroll]);
+
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
@@ -106,24 +246,35 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								return null;
 							}
 
-							return (
-								<React.Fragment key={m.id}>
-									{m.type === "INPUT" && (
-										<InputMessage message={m} />
-									)}
-									{m.type === "RESPONSE" && (
-										<ResponseMessage message={m} />
-									)}
-									{m.type === "PLAN" && (
-										<PlanMessage
-											message={m}
-											isLast={
-												mIdx === room.history.length - 1
-											}
-										/>
-									)}
-								</React.Fragment>
-							);
+							if (m.type === "INPUT") {
+								return (
+									<InputMessage
+										key={m.key}
+										room={room}
+										message={m}
+									/>
+								);
+							} else if (m.type === "RESPONSE") {
+								return (
+									<ResponseMessage
+										key={m.key}
+										room={room}
+										message={m}
+									/>
+								);
+							} else if (m.type === "PLAN") {
+								return (
+									<PlanMessage
+										key={m.key}
+										message={m}
+										isLast={
+											mIdx === room.history.length - 1
+										}
+									/>
+								);
+							}
+
+							return null;
 						})}
 
 						{room.isLoading ? (
@@ -185,8 +336,9 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						</>
 					}
 					onPrompt={handlePrompt}
+					tokensMax={chat.models.contextWindow}
+					tokensUsed={room.tokensUsed}
 					hasOutstandingTools={room.hasUnfinishedTools}
-					hideLoadingSpinner
 				/>
 			</div>
 		</div>

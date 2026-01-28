@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { RoomOptions } from "@/components";
+import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
 
 interface RoomConfigurationProps {
@@ -10,15 +11,22 @@ interface RoomConfigurationProps {
 export const RoomConfiguration = observer((props: RoomConfigurationProps) => {
 	const { room } = props;
 
-	return (
-		<RoomOptions
-			options={room.options}
-			setOptions={(o) => {
-				room.setOptions(o);
-			}}
-			setRoomModel={(modelId) => {
-				room.setModel(modelId);
-			}}
-		/>
-	);
-});
+		return (
+			<RoomOptionsForm
+				model={room.model}
+				options={room.options}
+				onModelChange={(model) => {
+					if (model) {
+						room.setModel(model);
+						chat.setSelectedModel(model);
+					}
+				}}
+				onOptionsChange={(options) => {
+					if (options) {
+						room.setOptions(options);
+					}
+				}}
+			/>
+		);
+	},
+);

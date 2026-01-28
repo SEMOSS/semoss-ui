@@ -28,14 +28,20 @@ interface RoomToolProps {
 	room: RoomStore;
 }
 
+/**
+ * Renders a tool inside a room
+ *
+ * @component
+ */
 export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 	const config: {
 		app: string;
+		message: string;
 		tool: {
-			message: string;
 			id: string;
 			name: string;
 			parameters: Record<string, unknown>;
+			original_name: string;
 		};
 	} = useMemo(() => {
 		return node.getConfig();
@@ -180,7 +186,7 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 		checkPortal();
 	}, [config, config?.app, getAppInfo.status, getAppInfo.data]);
 
-	if (!config) {
+	if (!config || !config.app || !config.message || !config.tool) {
 		return <div>No Tool</div>;
 	}
 

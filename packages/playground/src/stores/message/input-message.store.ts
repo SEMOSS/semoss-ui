@@ -7,9 +7,6 @@ import { AbstractMessageStore } from "./abstract-message.store";
  */
 export class InputMessageStore extends AbstractMessageStore {
 	readonly type = "INPUT";
-	readonly pixelMessageType:
-		| InputTextPixelMessage["type"]
-		| InputMediaPixelMessage["type"];
 
 	/**
 	 * Text associated with the message
@@ -32,7 +29,6 @@ export class InputMessageStore extends AbstractMessageStore {
 		message: InputTextPixelMessage | InputMediaPixelMessage,
 	) {
 		super(room, message);
-		this.pixelMessageType = message.type;
 
 		this.text = message.inputUIPrompt;
 		this.mediaInputs = message.mediaInputs;
@@ -42,4 +38,30 @@ export class InputMessageStore extends AbstractMessageStore {
 			mediaInputs: observable,
 		});
 	}
+
+	/**
+	 * Sync store properties from the pixel message
+	 */
+	sync = (message: PixelMessage) => {
+		if (message.type === "INPUT_TEXT") {
+			this.text = message.inputUIPrompt;
+			this.mediaInputs = message.mediaInputs;
+		} else if (message.type === "INPUT_MEDIA") {
+			this.text = message.inputUIPrompt;
+			this.mediaInputs = message.mediaInputs;
+		} else {
+			throw new Error(
+				`Invalid message object passed to InputMessageStore.update: ${JSON.stringify(message)}`,
+			);
+		}
+
+		// cast the types
+		message = message as InputMediaPixelMessage | InputMediaPixelMessage;
+
+		// set the id
+		this.id = message.messageId;
+
+		// set tokens
+		this.tokens = message.tokens;
+	};
 }

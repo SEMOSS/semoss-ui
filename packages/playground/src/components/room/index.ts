@@ -8,3 +8,4 @@ export * from "./room-input-menu-plugin";
 export * from "./room-options";
 export * from "./room-sidebar";
 export * from "./room-workspace";
+export * from "./room-workspace-creation";

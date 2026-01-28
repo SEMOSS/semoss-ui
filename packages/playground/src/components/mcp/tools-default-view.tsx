@@ -116,6 +116,24 @@ interface MCPTool {
 		};
 		required?: string[];
 		additionalProperties?: boolean;
+	}
+}
+
+interface ToolsDefaultViewProps {
+	/** Room */
+	room: RoomStore;
+
+	/** Id of the app */
+	app: string;
+
+	/** Id of the message */
+	message: string;
+
+	/** Connected tool */
+	tool: {
+		id: string;
+		name: string;
+		parameters: Record<string, unknown>;
 	};
 }
 
@@ -143,6 +161,18 @@ export const DynamicForm = observer(
 		const [data, setData] = useState<Record<string, unknown>>(
 			formData || {},
 		);
+	}
+)
+
+export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
+	({ room, app, message, tool, mcp }) => {
+		const properties = mcp?.inputSchema?.properties || {};
+		const required = mcp?.inputSchema?.required || [];
+		const name = mcp?.name || "";
+		const description = mcp?.description || "";
+		const [data, setData] = useState<Record<string, unknown>>(() => {
+			return tool?.parameters;
+		});
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
 

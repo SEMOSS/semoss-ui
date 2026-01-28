@@ -9,6 +9,7 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useEffect } from "react";
 import {
 	Button,
 	Markdown,
@@ -17,14 +18,16 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { useMarkdownTypewriter } from "@/hooks";
 import {
 	InputMessageStore,
 	type ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
+import { AppLogo } from "../common";
+import { RoomInlineTool } from "../room/room-inline-tool";
+import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
-
-// Styled components replaced with Tailwind classes inline
 
 interface ResponseMessageProps {
 	/** Message to render */
@@ -32,7 +35,15 @@ interface ResponseMessageProps {
 }
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
-	({ message }) => {
+	({ room, message }) => {
+		const typewriter = useMarkdownTypewriter(message.text);
+
+		useEffect(() => {
+			if (message.isThinking) {
+				typewriter.start();
+			}
+		}, [message.isThinking, typewriter.start]);
+
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
 		if (message.parent instanceof InputMessageStore) {
@@ -93,18 +104,27 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						{message.model.name ?? "Agent"}
 					</span>
 				</div>
-				{message.text ? (
-					<Markdown className="[&>*:first-child]:mt-0">
-						{message.text}
-					</Markdown>
-				) : null}
-				{message.tools.map((t) => (
-					<ResponseMessageTool
-						key={`tool-${t.id}`}
-						message={message}
-						tool={t}
-					/>
-				))}
+				<ResponseMessageThinking room={room} message={message} />
+				<Markdown className="[&>*:first-child]:mt-0">
+					{typewriter.isTyping ? typewriter.rendered : message.text}
+				</Markdown>
+				{message.tools.map((t) => {
+					return (
+						<div
+							key={`tool-${t.id}`}
+							className="flex flex-col gap-2"
+						>
+							<ResponseMessageTool message={message} tool={t} />
+							{t.display === "inline" && t.isOpen && (
+								<RoomInlineTool
+									room={room}
+									message={message}
+									tool={t}
+								/>
+							)}
+						</div>
+					);
+				})}
 				{areToolsActive && (
 					<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
 						<CircleAlert className="size-4" />
