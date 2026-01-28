@@ -118,17 +118,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					{typewriter.isTyping ? typewriter.rendered : message.text}
 				</Markdown>
 				{message.tools.map((t) => {
-					const isInlineToolOpen = room.isInlineToolOpen(
-						`message-${message.id}-tool-${t.id}`,
-					);
-
 					return (
 						<div
 							key={`tool-${t.id}`}
 							className="flex flex-col gap-2"
 						>
 							<ResponseMessageTool message={message} tool={t} />
-							{isInlineToolOpen && (
+							{t.display === "inline" && t.isOpen && (
 								<RoomInlineTool
 									room={room}
 									message={message}

@@ -43,6 +43,15 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 		activeNode = node;
 	}
 
+	let activeTool = null;
+	if (activeNode) {
+		if (activeNode.getComponent() !== "room-tool") {
+			return;
+		}
+
+		activeTool = room.getTool(activeNode.getId());
+	}
+
 	return (
 		<div className="relative h-full w-full overflow-hidden">
 			<div
@@ -56,7 +65,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
 				<div className="absolute top-0 right-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pr-2">
-					{activeNode?.getComponent() === "room-tool" && (
+					{activeTool && (
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
@@ -66,28 +75,21 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 									onClick={(e) => {
 										e.stopPropagation();
 
-										if (!activeNode) {
+										if (!activeTool) {
 											return;
 										}
-
-										const nodeId = activeNode.getId();
-
-										// remove from sidebar
-										room.removeSidebarNode(nodeId);
-
-										const config = activeNode.getConfig();
 
 										// turn off maximized state
 										setIsMaximized(false);
 
 										// add to inline
-										room.addInlineTool(nodeId, config);
+										activeTool.openTool("inline");
 									}}
 								>
 									<PanelBottomIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Open Inline</TooltipContent>
+							<TooltipContent>Open in-line</TooltipContent>
 						</Tooltip>
 					)}
 

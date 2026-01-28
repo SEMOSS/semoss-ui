@@ -102,9 +102,11 @@ interface ToolsDefaultViewProps {
 	/** Id of the app */
 	app: string;
 
+	/** Id of the message */
+	message: string;
+
 	/** Connected tool */
 	tool: {
-		message: string;
 		id: string;
 		name: string;
 		parameters: Record<string, unknown>;
@@ -115,7 +117,7 @@ interface ToolsDefaultViewProps {
 }
 
 export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
-	({ room, app, tool, mcp }) => {
+	({ room, app, message, tool, mcp }) => {
 		const properties = mcp?.inputSchema?.properties || {};
 		const required = mcp?.inputSchema?.required || [];
 		const name = mcp?.name || "";
@@ -140,12 +142,12 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			);
 			const { output } = response.pixelReturn[0];
 
-			const message = room.getMessage(tool.message);
-			if (!message || message instanceof ResponseMessageStore !== true) {
+			const m = room.getMessage(message);
+			if (!m || m instanceof ResponseMessageStore !== true) {
 				setIsSubmitting(false);
 				return;
 			}
-			room.processTool(message.id, tool.id, tool.name, output);
+			room.processTool(m.id, tool.id, tool.name, output);
 			setIsSubmitting(false);
 		};
 
