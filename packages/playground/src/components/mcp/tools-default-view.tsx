@@ -567,7 +567,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 								<Textarea
 									readOnly
 									className="w-full resize-none"
-									value={toolResponse.repeat(50)}
+									value={toolResponse}
 								/>
 							</div>
 						) : (
