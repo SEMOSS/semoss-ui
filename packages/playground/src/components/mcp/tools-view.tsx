@@ -228,6 +228,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						message={message}
 						tool={tool}
 						mcp={selectedTool}
+						toolResponse={toolResponse}
 					/>
 				)}
 			</div>
