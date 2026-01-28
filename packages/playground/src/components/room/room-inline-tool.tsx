@@ -25,6 +25,9 @@ interface RoomInlineToolProps {
 
 	/** Tool to render */
 	tool: ResponseMessageStore["tools"][number];
+
+	/** Response to the tool */
+	toolResponse?: string;
 }
 
 export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(

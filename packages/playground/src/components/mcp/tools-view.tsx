@@ -28,10 +28,13 @@ interface ToolsViewProps {
 		parameters: Record<string, unknown>;
 		original_name: string;
 	};
+
+	/** Response to the tool */
+	toolResponse?: string;
 }
 
 export const ToolsView: React.FC<ToolsViewProps> = observer(
-	({ room, app, message, tool }) => {
+	({ room, app, message, tool, toolResponse }) => {
 		/**
 		 * State
 		 */
@@ -112,6 +115,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						parameters: toJS(tool?.parameters || {}),
 						roomId: room.roomId,
 						original_name: selectedTool?.original_name || "",
+						tool_response: toolResponse,
 					} satisfies MCPToolRequest,
 				},
 				"*",
