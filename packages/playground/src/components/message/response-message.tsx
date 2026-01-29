@@ -172,11 +172,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									room={room}
 									message={message}
 									tool={t}
-									toolResponse={
-										t.status === "SUCCESS"
-											? t.response
-											: undefined
-									}
 								/>
 							)}
 						</div>

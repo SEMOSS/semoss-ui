@@ -25,13 +25,10 @@ interface RoomInlineToolProps {
 
 	/** Tool to render */
 	tool: ResponseMessageStore["tools"][number];
-
-	/** Response to the tool */
-	toolResponse?: string;
 }
 
 export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
-	({ room, message, tool, toolResponse }) => {
+	({ room, message, tool }) => {
 		const [isMaximized, setIsMaximized] = useState(false);
 
 		return (
@@ -120,7 +117,11 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 							app={tool.json._meta.SMSS_PROJECT_ID}
 							message={message.id}
 							tool={tool.json}
-							toolResponse={toolResponse}
+							toolResponse={
+								tool.status === "SUCCESS"
+									? tool.response
+									: undefined
+							}
 						/>
 					</div>
 				</div>
