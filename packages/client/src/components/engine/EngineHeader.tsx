@@ -92,11 +92,7 @@ export const EngineHeader: React.FC = () => {
 						<ChevronRight />
 					</BreadcrumbSeparator>
 					<BreadcrumbItem>
-						<BreadcrumbPage>
-							<Link to={"."} className="text-muted-foreground">
-								{active.name}
-							</Link>
-						</BreadcrumbPage>
+						<BreadcrumbPage>{active.name}</BreadcrumbPage>
 					</BreadcrumbItem>
 				</BreadcrumbList>
 			</Breadcrumb>

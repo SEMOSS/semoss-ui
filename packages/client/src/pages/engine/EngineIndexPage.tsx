@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	Muted,
 	P,
 	Spinner,
 	Tabs,
@@ -328,13 +327,12 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 									setMode(val as MODE);
 								}}
 							>
-								<TabsList className="h-[42px] rounded-[10px] bg-(-muted--foreground) p-[3px]">
+								<TabsList>
 									<TabsTrigger
 										value="Mine"
 										data-testid={formatToDataTestId(
 											`engineIndexPage-${route ? `${route.name}s` : "Engines"}-my-switch`,
 										)}
-										className="h-[38px] rounded-[10px] px-3 py-2 data-[state=active]:shadow-[0px_4px_4px_0px_rgba(0,0,0,0.05)]"
 									>
 										My{" "}
 										{route ? `${route.name}s` : "Engines"}
@@ -344,7 +342,6 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 										data-testid={formatToDataTestId(
 											`engineIndexPage-${route ? `${route.name}s` : "Engines"}-discoverable-switch`,
 										)}
-										className="h-[38px] rounded-[10px] px-3 py-2 data-[state=active]:shadow-[0px_4px_4px_0px_rgba(0,0,0,0.05)]"
 									>
 										Discoverable{" "}
 										{route ? `${route.name}s` : "Engines"}
@@ -356,9 +353,9 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						{Object.entries(metaFilters).length === 0 &&
 							!isDiscoverable &&
 							getFavoritedEngines.data.length > 0 && (
-								<Muted className="font-medium text-base">
+								<p className="font-medium text-sm">
 									Bookmarked
-								</Muted>
+								</p>
 							)}
 
 						{!isDiscoverable &&
@@ -418,9 +415,9 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						{Object.entries(metaFilters).length === 0 &&
 							getEngines.data.length > 0 &&
 							nonBookmarked.length > 0 && (
-								<Muted className="font-medium text-base">
+								<p className="font-medium text-sm">
 									All {route.name}s
-								</Muted>
+								</p>
 							)}
 
 						{getEngines.data.length ? (
