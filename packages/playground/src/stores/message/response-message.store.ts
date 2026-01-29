@@ -281,7 +281,7 @@ paramValues=[${JSON.stringify({
 	 * @param feedbackText
 	 */
 	recordFeedback = async (
-		rating: boolean,
+		rating: boolean | null,
 		feedbackText = "",
 	): Promise<void> => {
 		const room = this.room;
@@ -294,10 +294,15 @@ paramValues=[${JSON.stringify({
 			);
 
 			// save the feedback to the message's state
-			this.feedback = {
-				rating,
-				feedbackText,
-			};
+			runInAction(() => {
+				this.feedback =
+					rating === null
+						? null
+						: {
+								rating,
+								feedbackText,
+							};
+			});
 		} finally {
 			// noop
 		}
