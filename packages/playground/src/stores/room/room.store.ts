@@ -889,6 +889,7 @@ export class RoomStore {
 	runRoomPixel = async <O extends [] | unknown[]>(
 		pixel: string,
 		showLoading: boolean = true,
+		setErrorOnFail: boolean = true,
 	): Promise<{
 		errors: string[];
 		insightId: string;
@@ -920,9 +921,11 @@ export class RoomStore {
 			});
 			return response;
 		} catch (e) {
-			runInAction(() => {
-				this._store.error = e;
-			});
+			if (setErrorOnFail) {
+				runInAction(() => {
+					this._store.error = e;
+				});
+			}
 			throw e;
 		} finally {
 			if (showLoading) {

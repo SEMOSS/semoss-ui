@@ -2,6 +2,7 @@ import { action, makeObservable, observable, runInAction } from "mobx";
 import {
 	MCP_EXECUTION_ASK,
 	MCP_EXECUTION_AUTO,
+	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 } from "@/constants";
 import { ToolStore } from "@/stores";
@@ -249,12 +250,15 @@ paramValues=[${JSON.stringify({
 			inputMessage.sync(output.inputMessage);
 			responseMessage.sync(output.responseMessage);
 
-			// TODO: clean up
-
 			// start running tools if there are any
 			responseMessage.startToolExecution();
 
 			return response;
+		} catch (e) {
+			// remove as a child
+			this.removeChild(responseMessage);
+
+			throw e;
 		} finally {
 			runInAction(() => {
 				// turn off thinking
@@ -431,15 +435,16 @@ paramValues=[${JSON.stringify({
 			const response = await room.runRoomPixel<[string]>(
 				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.json.parameters)} ]);`,
 				false,
+				false,
 			);
 
 			const { output } = response.pixelReturn[0];
 
 			// save the response
 			await this.saveToolExecution(tool, output);
-		} catch {
+		} catch (e) {
 			// mark the failure
-			await this.saveToolExecution(tool, TOOL_ERROR_PROMPT, "error");
+			await this.saveToolExecution(tool, e.toString(), "error");
 		}
 	};
 
@@ -455,6 +460,13 @@ paramValues=[${JSON.stringify({
 		toolStatus: "success" | "error" | "cancelled" = "success",
 	): Promise<void> => {
 		const room = this.room;
+
+		// wrap the message
+		if (toolStatus === "error") {
+			toolResponse = `${TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
+		} else if (toolStatus === "cancelled") {
+			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
+		}
 
 		// skip if the tool is already completed
 		if (tool.status === "SUCCESS" || tool.status === "CANCELLED") {
@@ -564,6 +576,17 @@ mcpToolStatus=${JSON.stringify(toolStatus)}
 				// clear it
 				this.toolResponseMessage = null;
 			}
+		} catch (e) {
+			// set error status
+			tool.status = "ERROR";
+
+			// remove as a child
+			this.removeChild(responseMessage);
+
+			// clear it
+			this.toolResponseMessage = null;
+
+			throw e;
 		} finally {
 			runInAction(() => {
 				// turn off thinking
