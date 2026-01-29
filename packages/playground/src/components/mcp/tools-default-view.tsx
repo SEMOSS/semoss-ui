@@ -1,7 +1,6 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: unknown values for json */
-
 import { Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import type React from "react";
 import { useEffect, useState } from "react";
 import {
 	Badge,
@@ -23,7 +22,9 @@ import {
 	Textarea,
 } from "@semoss/ui/next";
 import { ResponseMessageStore, type RoomStore } from "@/stores";
+import type { MCPTool } from "@/types";
 
+//TODO: Move to a separate file
 interface JSONEditorProps {
 	value: unknown;
 	onChange: (v: unknown) => void;
@@ -56,7 +57,7 @@ const JSONEditor = ({ value, onChange }: JSONEditorProps) => {
 				rows={8}
 				className="w-full font-mono text-sm"
 			/>
-			{error && <p className="text-red-500 text-sm">{error}</p>}
+			{error && <p className="text-destructive text-sm">{error}</p>}
 			<div className="flex gap-2">
 				<Button
 					type="button"
@@ -94,55 +95,36 @@ const JSONEditor = ({ value, onChange }: JSONEditorProps) => {
 	);
 };
 
-interface MCPTool {
-	name: string;
-	description?: string;
-	inputSchema?: {
-		type: "object";
-		properties?: {
-			[key: string]: {
-				type?: string;
-				description?: string;
-				enum?: string[];
-				items?: any;
-				minimum?: number;
-				maximum?: number;
-				minLength?: number;
-				maxLength?: number;
-				pattern?: string;
-				format?: string;
-				default?: any;
-			};
-		};
-		required?: string[];
-		additionalProperties?: boolean;
-	};
-}
-
-interface DynamicFormProps {
-	tool: MCPTool;
-	formData: Record<string, any>;
+interface ToolsDefaultViewProps {
+	/** Room */
 	room: RoomStore;
-	config: {
-		app: string;
-		tool: {
-			message: string;
-			id: string;
-			name: string;
-			parameters: Record<string, unknown>;
-		};
+
+	/** Id of the app */
+	app: string;
+
+	/** Id of the message */
+	message: string;
+
+	/** Connected tool */
+	tool: {
+		id: string;
+		name: string;
+		parameters: Record<string, unknown>;
 	};
+
+	/** MCP */
+	mcp: MCPTool;
 }
 
-export const DynamicForm = observer(
-	({ tool, formData, config, room }: DynamicFormProps) => {
-		const properties = tool?.inputSchema?.properties || {};
-		const required = tool?.inputSchema?.required || [];
-		const name = tool?.name || "";
-		const description = tool?.description || "";
-		const [data, setData] = useState<Record<string, unknown>>(
-			formData || {},
-		);
+export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
+	({ room, app, message, tool, mcp }) => {
+		const properties = mcp?.inputSchema?.properties || {};
+		const required = mcp?.inputSchema?.required || [];
+		const name = mcp?.name || "";
+		const description = mcp?.description || "";
+		const [data, setData] = useState<Record<string, unknown>>(() => {
+			return tool?.parameters;
+		});
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
 
@@ -153,24 +135,33 @@ export const DynamicForm = observer(
 		// Tool Execution
 		const handleSubmit = async () => {
 			setIsSubmitting(true);
-			const response = await room.runRoomPixel<[string]>(
-				`RunMCPTool(project = [ "${config.app}" ], function=[ "${
-					tool.name
-				}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
-			);
-			const { output } = response.pixelReturn[0];
-
-			const message = room.getMessage(config.tool.message);
-			if (!message || message instanceof ResponseMessageStore !== true) {
-				setIsSubmitting(false);
-				return;
+			let success = false;
+			let output = "";
+			try {
+				const response = await room.runRoomPixel<[string]>(
+					`RunMCPTool(project = [ "${app}" ], function=[ "${
+						mcp.name
+					}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
+					false,
+					false,
+				);
+				output = response.pixelReturn[0].output;
+				success = true;
+			} catch (error) {
+				output = error.toString();
+				success = false;
 			}
-			room.processTool(
-				message.id,
-				config.tool.id,
-				config.tool.name,
-				output,
-			);
+			const m = room.getMessage(message);
+			if (!m || m instanceof ResponseMessageStore !== true) {
+			} else {
+				room.processTool(
+					m.id,
+					tool.id,
+					tool.name,
+					output,
+					success ? "success" : "error",
+				);
+			}
 			setIsSubmitting(false);
 		};
 
@@ -180,9 +171,24 @@ export const DynamicForm = observer(
 				.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
 				.join(" "); // Join with spaces for better readability
 
-		const renderField = (fieldName: string, fieldSchema: any) => {
+		const renderField = (
+			fieldName: string,
+			fieldSchema: {
+				type?: string;
+				enum?: string[];
+				items?: unknown;
+				minimum?: number;
+				maximum?: number;
+				minLength?: number;
+				maxLength?: number;
+				pattern?: string;
+				format?: string;
+				default?: unknown;
+				description?: string;
+			},
+		) => {
 			const isRequired = required.includes(fieldName);
-			const value = (data[fieldName] ?? "") as any;
+			const value = data[fieldName] ?? "";
 			const displayName = capitalizeWords(fieldName);
 
 			switch (fieldSchema.type) {
@@ -197,7 +203,7 @@ export const DynamicForm = observer(
 									>
 										{displayName}
 										{isRequired && (
-											<span className="text-red-500">
+											<span className="text-destructive">
 												{" "}
 												*
 											</span>
@@ -252,7 +258,7 @@ export const DynamicForm = observer(
 									>
 										{displayName}
 										{isRequired && (
-											<span className="text-red-500">
+											<span className="text-destructive">
 												{" "}
 												*
 											</span>
@@ -292,7 +298,10 @@ export const DynamicForm = observer(
 								>
 									{displayName}
 									{isRequired && (
-										<span className="text-red-500"> *</span>
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
 									)}
 								</Label>
 								<Badge variant="outline" className="text-xs">
@@ -327,7 +336,10 @@ export const DynamicForm = observer(
 								>
 									{displayName}
 									{isRequired && (
-										<span className="text-red-500"> *</span>
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
 									)}
 								</Label>
 								<Badge variant="outline" className="text-xs">
@@ -378,7 +390,7 @@ export const DynamicForm = observer(
 									>
 										{displayName}
 										{isRequired && (
-											<span className="text-red-500">
+											<span className="text-destructive">
 												{" "}
 												*
 											</span>
@@ -410,7 +422,10 @@ export const DynamicForm = observer(
 								>
 									{displayName}
 									{isRequired && (
-										<span className="text-red-500"> *</span>
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
 									)}
 								</Label>
 								<Badge variant="outline" className="text-xs">
@@ -459,7 +474,10 @@ export const DynamicForm = observer(
 								>
 									{displayName}
 									{isRequired && (
-										<span className="text-red-500"> *</span>
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
 									)}
 								</Label>
 								<Badge variant="outline" className="text-xs">
@@ -489,7 +507,10 @@ export const DynamicForm = observer(
 								>
 									{displayName}
 									{isRequired && (
-										<span className="text-red-500"> *</span>
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
 									)}
 								</Label>
 								<Badge variant="outline" className="text-xs">
