@@ -258,12 +258,15 @@ paramValues=[${JSON.stringify({
 			inputMessage.sync(output.inputMessage);
 			responseMessage.sync(output.responseMessage);
 
-			// TODO: clean up
-
 			// start running tools if there are any
 			responseMessage.startToolExecution();
 
 			return response;
+		} catch (e) {
+			// remove as a child
+			this.removeChild(responseMessage);
+
+			throw e;
 		} finally {
 			runInAction(() => {
 				// turn off thinking
@@ -584,6 +587,17 @@ mcpToolStatus=${JSON.stringify(toolStatus)}
 				// clear it
 				this.toolResponseMessage = null;
 			}
+		} catch (e) {
+			// set error status
+			tool.status = "ERROR";
+
+			// remove as a child
+			this.removeChild(responseMessage);
+
+			// clear it
+			this.toolResponseMessage = null;
+
+			throw e;
 		} finally {
 			runInAction(() => {
 				// turn off thinking
