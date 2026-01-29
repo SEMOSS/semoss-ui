@@ -41,7 +41,7 @@ export const RoomInputMenuToolbox: React.FC<RoomInputMenuToolboxProps> =
 		const [search, setSearch] = React.useState("");
 
 		const debouncedSearch = useDebouncedValue(search);
-
+		const mcps = options.mcp.filter((a) => a.type !== "VECTOR");
 		/**
 		 * Get all of the toolboxes with lazy loading
 		 */
@@ -98,7 +98,7 @@ export const RoomInputMenuToolbox: React.FC<RoomInputMenuToolboxProps> =
 				<DropdownMenuSubTrigger>
 					<HammerIcon />
 					<span className="flex-1">Add Toolbox</span>
-					<Badge variant="outline">{options.mcp.length}</Badge>
+					<Badge variant="outline">{mcps.length}</Badge>
 				</DropdownMenuSubTrigger>
 				<DropdownMenuSubContent className="w-72 p-0">
 					<Command shouldFilter={false} className="w-full">

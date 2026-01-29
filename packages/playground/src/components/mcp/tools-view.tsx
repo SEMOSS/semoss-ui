@@ -24,6 +24,7 @@ interface ToolsViewProps {
 		id: string;
 		name: string;
 		parameters: Record<string, unknown>;
+		original_name: string;
 	};
 }
 
@@ -157,7 +158,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 		const selectedTool =
 			getMCP.status === "SUCCESS"
 				? getMCP.data.tools.find((t) => {
-						return t.name === tool.name;
+						return t.name === tool.original_name;
 					})
 				: undefined;
 

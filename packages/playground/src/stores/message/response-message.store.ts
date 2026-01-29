@@ -209,6 +209,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		// set the id
 		this.id = message.messageId;
 
+		// set tokens
+		this.tokens = message.tokens;
+
 		// set the model that was used
 		this.model = {
 			id: message.modelId,
@@ -238,6 +241,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				modelName: room.model.app_name,
 			},
 			dateCreated: new Date().toISOString(),
+			tokens: 0,
 		} as ResponseTextPixelMessage);
 
 		try {
@@ -382,6 +386,7 @@ paramValues=[${JSON.stringify({
 				temperature: room.options.temperature,
 			},
 			dateCreated: "",
+			tokens: parentMessage.tokens,
 		});
 
 		grandParentMessage.runMessage(rewrittenMessage);
@@ -532,6 +537,7 @@ paramValues=[${JSON.stringify({
 				ornaments: {
 					modelName: this.room.model.app_name,
 				},
+				tokens: 0,
 				dateCreated: new Date().toISOString(),
 			} as ResponseTextPixelMessage);
 
