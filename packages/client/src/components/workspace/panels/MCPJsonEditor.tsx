@@ -48,6 +48,7 @@ type MCPJsonEditorProps = {
 		initialData: MCPJsonData;
 		onSave?: (data: MCPJsonData, path: string) => void;
 		path: string;
+		name: string;
 	};
 };
 
@@ -474,11 +475,9 @@ const FunctionCard = memo<{
 FunctionCard.displayName = "FunctionCard";
 
 export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
-	const { initialData, onSave, path } = dataMap;
+	const { initialData, onSave, path, name } = dataMap;
 	const { workspace } = useWorkspace();
 	const notification = useNotification();
-
-	const activeTabName = path.split("/").pop() + " (UI Editor)";
 
 	// Data state
 	const [data, setData] = useState<MCPJsonData>(initialData);
@@ -578,17 +577,11 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 
 						if (isModified) {
 							model.doAction(
-								FlexLayout.Actions.renameTab(
-									id,
-									`${activeTabName}*`,
-								),
+								FlexLayout.Actions.renameTab(id, `${name}*`),
 							);
 						} else {
 							model.doAction(
-								FlexLayout.Actions.renameTab(
-									id,
-									`${activeTabName}`,
-								),
+								FlexLayout.Actions.renameTab(id, `${name}`),
 							);
 						}
 					}
@@ -600,7 +593,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				});
 			}
 		},
-		[workspace.model, path, activeTabName, notification],
+		[workspace.model, path, name, notification],
 	);
 
 	const updateTool = useCallback((index: number, value: Partial<MCPTool>) => {
@@ -901,7 +894,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 	]);
 
 	// Filter and search logic - Show all tools including deleted ones
-	const visibleTools = useMemo(() => data.tools, [data.tools]);
+	const visibleTools = useMemo(() => data.tools || [], [data.tools]);
 
 	const filteredTools = useMemo(() => {
 		if (!debouncedSearch.trim()) {
@@ -1024,7 +1017,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 			<Card className="mb-5 w-full gap-2 rounded-lg bg-zinc-100 p-4">
 				<h3 className="mb-3 font-semibold text-base">Meta Data</h3>
 				<div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3">
-					{Object.entries(data._meta).map(([key, value]) => (
+					{Object.entries(data?._meta).map(([key, value]) => (
 						<div key={key} className="flex flex-col gap-1">
 							<Label
 								htmlFor={key}

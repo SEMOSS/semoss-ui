@@ -16,7 +16,7 @@ export interface PixelCommand {
 /**
  * All types used in the app
  */
-export type ALL_TYPES = "APP" | ENGINE_TYPES;
+export type ALL_TYPES = ENGINE_TYPES | "PROJECT";
 
 /**
  * Engine types used in the app
@@ -26,7 +26,8 @@ export type ENGINE_TYPES =
 	| "STORAGE"
 	| "MODEL"
 	| "VECTOR"
-	| "FUNCTION";
+	| "FUNCTION"
+	| "GUARDRAIL";
 
 export type Join<K, P> = K extends string | number
 	? P extends string | number
@@ -100,5 +101,5 @@ export interface EventData {
 	engineType: string;
 	userId: string;
 	sessionId: string;
-	spanId:string
+	spanId: string;
 }

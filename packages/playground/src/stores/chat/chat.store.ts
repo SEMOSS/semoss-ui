@@ -1,8 +1,8 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { type Insight, runPixel, upload } from "@semoss/sdk/react";
+import { type Insight, runPixel } from "@semoss/sdk/react";
 import { MODEL_KEY } from "@/constants";
 import type { Engine, MCPConfig, Workspace } from "@/types";
-import type { RoomStore } from "../room";
+import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
@@ -20,7 +20,15 @@ interface ChatStoreInterface {
 	models: {
 		/** The current model */
 		selected: Engine | null;
+
+		/** The current context window */
+		contextWindow?: number;
 	};
+
+	/**
+	 * Cached rooms
+	 */
+	rooms: Record<string, RoomStore>;
 
 	/**
 	 * Options related to the navbar
@@ -43,7 +51,9 @@ export class ChatStore {
 		isInitialized: false,
 		models: {
 			selected: null,
+			contextWindow: undefined,
 		},
+		rooms: {},
 		keys: {
 			roomCounter: 0,
 		},
@@ -101,17 +111,8 @@ export class ChatStore {
 
 	/**
 	 * Create a new room
-	 *
-	 * @param modelId - modelId to open the room with
-	 * @param name - name of the room
 	 */
-	createRoom = async (
-		prompt: string,
-		files: File[],
-		mode: RoomStore["mode"],
-		modelId: string,
-		options: RoomStore["options"],
-	): Promise<string> => {
+	createRoom = async (mode: "planning" | "chat"): Promise<RoomStore> => {
 		// create the room in a new insight
 		const { errors, pixelReturn, insightId } = await runPixel<
 			[
@@ -132,73 +133,28 @@ export class ChatStore {
 		// get the new roomId
 		const roomId = output.roomId;
 
-		// upload any files
-		let uploaded = [];
-		if (files.length > 0) {
-			uploaded = await upload(files, insightId, "", "");
-		}
+		// create the room store
+		const room = new RoomStore(roomId, insightId);
 
-		let pixel = ``;
+		// set the model
+		room.setModel(this.models.selected);
 
-		// set the options
-		pixel += `UpdateRoomOptions(roomId=${JSON.stringify(roomId)}, roomOptions=[${JSON.stringify(
-			options,
-		)}]);`;
+		// set the mode
+		room.setMode(mode);
 
-		// run the first message
-		if (mode === "chat") {
-			pixel += `AskPlayground(
-engine=["${modelId}"],
-roomId=["${roomId}"],
-command=["<encode>${prompt}</encode>"],
-${options.instructions ? `context=["<encode>${options.instructions}</encode>"],` : `context=[],`}
-${uploaded.length ? `image=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "image=[],"}
-paramValues=[${JSON.stringify({
-				max_new_tokens: options.tokenLength,
-				temperature: options.temperature,
-			})}]
-);`;
-		} else if (mode === "planning") {
-			pixel += `AskCOTRoom(
-engine=["${modelId}"],
-roomId=["${roomId}"],
-command=["<encode>${prompt}</encode>"],
-${options.instructions ? `context=["<encode>${options.instructions}</encode>"],` : `context=[],`}
-${uploaded.length ? `image=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "image=[],"}
-paramValues=[${JSON.stringify({
-				max_new_tokens: options.tokenLength,
-				temperature: options.temperature,
-			})}]
-);`;
-		}
+		// initialize the room
+		await room.initialize();
 
-		// link the workspace if it is there
-		if (options.workspace?.workspace_id) {
-			pixel += `SetRoomWorkspace(roomId=${JSON.stringify(roomId)}, workspaceId=${JSON.stringify(options.workspace?.workspace_id)});`;
-		}
-
-		// clean up
-		pixel += `DropInsight();`;
-
-		const response = await runPixel<
-			[
-				{
-					roomId: string;
-				},
-			]
-		>(pixel, insightId);
-
-		if (response.errors.length > 0) {
-			throw new Error(response.errors.join(""));
-		}
-
-		// increment the roomCounter to force re-render of the nav
 		runInAction(() => {
+			// save it to the cache
+			this._store.rooms[roomId] = room;
+
+			// increment the roomCounter to force re-render of the nav
 			this._store.keys.roomCounter++;
 		});
 
 		// return the room
-		return roomId;
+		return room;
 	};
 
 	/**
@@ -216,17 +172,50 @@ paramValues=[${JSON.stringify({
 			throw new Error(this._error.message);
 		}
 
-		// increment the roomCounter to force re-render of the nav
 		runInAction(() => {
+			// delete it from the cache
+			delete this._store.rooms[roomId];
+
+			// increment the roomCounter to force re-render of the nav
 			this._store.keys.roomCounter++;
 		});
 	};
 
 	/**
-	 * Get available models from the backend
+	 * Load a room from the store or create a new one
+	 * @param roomId - Room to remove
 	 */
-	setSelectedModel = async (model: Engine): Promise<void> => {
-		this.models.selected = model;
+	loadRoom = async (roomId: string): Promise<RoomStore> => {
+		// if it exists in the store utilize it.
+		if (this._store.rooms[roomId]) {
+			return this._store.rooms[roomId];
+		}
+
+		// create the room store
+		const room = new RoomStore(roomId);
+
+		// initialize the room
+		await room.initialize();
+
+		runInAction(() => {
+			// save it to the cache
+			this._store.rooms[roomId] = room;
+
+			// increment the roomCounter to force re-render of the nav
+			this._store.keys.roomCounter++;
+		});
+
+		// return the room
+		return room;
+	};
+
+	/**
+	 * Set the selected model
+	 */
+	setSelectedModel = (model: Engine): void => {
+		runInAction(() => {
+			this._store.models.selected = model;
+		});
 
 		// save to local storage
 		if (localStorage) {
@@ -234,6 +223,29 @@ paramValues=[${JSON.stringify({
 				MODEL_KEY,
 				JSON.stringify(this.models.selected),
 			);
+		}
+
+		this.loadEngineContextWindow(model.app_id);
+	};
+
+	private loadEngineContextWindow = async (engineId: string) => {
+		runInAction(() => {
+			this._store.models.contextWindow = undefined;
+		});
+
+		const { pixelReturn } = await this._actions.run<[number | undefined]>(
+			`GetContextWindow(${JSON.stringify(engineId)});`,
+		);
+
+		// throw errors
+		if (this._error) {
+			throw new Error(this._error.message);
+		}
+
+		if (this.models.selected?.app_id === engineId) {
+			runInAction(() => {
+				this._store.models.contextWindow = pixelReturn[0].output;
+			});
 		}
 	};
 

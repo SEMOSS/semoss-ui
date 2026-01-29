@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { STATE_VERSION, Variable } from "@semoss/renderer";
+import { STATE_VERSION, type Variable } from "@semoss/renderer";
 import { Breadcrumbs, Stack, Typography } from "@semoss/ui";
 import { AddAppModal, AppTemplates, NewAppModal } from "../../components/app";
 import CreateAppSection from "../../components/landing/CreateAppSection";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { useRootStore } from "../../hooks";
-import { BASE_APP_QUERIES, BASE_APP_VARIABLES, BASE_PAGE_BLOCKS } from "./app.constants";
+import {
+	BASE_APP_QUERIES,
+	BASE_APP_VARIABLES,
+	BASE_PAGE_BLOCKS,
+} from "./app.constants";
 
 export const CreateAppPage = () => {
 	const navigate = useNavigate();
@@ -32,7 +36,10 @@ export const CreateAppPage = () => {
 		navigate(`/app/${appId}/edit`);
 	};
 
-	const isRestricted = !configStore.isEngineOperationAvailable("APP", "add");
+	const isRestricted = !configStore.isEngineOperationAvailable(
+		"PROJECT",
+		"add",
+	);
 	if (isRestricted) {
 		return <Navigate to="/" replace />;
 	}

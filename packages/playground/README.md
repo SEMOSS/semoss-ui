@@ -19,9 +19,9 @@ Note: If you have a custom setup, create a `.env.local` to configure your enviro
 
 # Notes on Naming
 
-1. "WORKSPACE" = Collection of "MCPs"
+1. "WORKSPACE" = Collection of "Toolbox, Knowledge, Prompt"
 
-2. "MCP" = Collection of "Tools"
+2. "Toolbox" = Collection of "Tools"
 
 # Unit Testing with Vitest
 

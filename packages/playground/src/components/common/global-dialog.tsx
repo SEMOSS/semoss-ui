@@ -24,7 +24,7 @@ export const GlobalDialog: React.FC = observer(() => {
 
 	return (
 		<Dialog open={visible}>
-			<DialogContent className="max-w-4xl" showCloseButton={false}>
+			<DialogContent className="sm:max-w-4xl" showCloseButton={false}>
 				<DialogHeader>
 					<DialogTitle>{root.theme.dialog.title}</DialogTitle>
 				</DialogHeader>
