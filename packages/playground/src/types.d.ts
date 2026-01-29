@@ -88,6 +88,7 @@ export interface AbstractPixelMessage {
 	parentMessageId?: string;
 	visible: boolean;
 	dateCreated: string;
+	tokens: number;
 }
 
 export interface InputTextPixelMessage extends AbstractPixelMessage {
@@ -150,6 +151,8 @@ export interface ResponseTextPixelMessage extends AbstractPixelMessage {
 
 export type McpExecution = "auto" | "ask" | "disabled";
 
+export type McpDisplay = "inline" | "sidebar" | "hidden";
+
 interface ResponseToolPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TOOL";
 	thinking?: string;
@@ -162,6 +165,11 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 			SMSS_PROJECT_NAME: string;
 			SMSS_PROJECT_ID: string;
 			SMSS_MCP_EXECUTION: McpExecution;
+			SMSS_MCP_UI?: {
+				loadingMessage?: string;
+				displayLocation?: McpDisplay;
+				resourceURI?: string;
+			};
 		};
 
 		/**  Display of the tool **/
@@ -248,6 +256,16 @@ export interface MCPTool {
 	};
 	title?: string;
 	original_name: string;
+	description?: string;
+	title?: string;
+	_meta: {
+		generated_on: string;
+		SMSS_MCP_UI?: {
+			loadingMessage?: string;
+			resourceURI?: string;
+			displayLocation?: McpDisplay;
+		};
+	};
 }
 
 export interface ToolStructure {
@@ -258,12 +276,5 @@ export interface ToolStructure {
 		SMSS_ENGINE_TYPE: string;
 		SMSS_ENGINE_ID: string;
 	};
-	tools: Tool[];
-}
-
-export interface Tool extends MCPTool {
-	name: string;
-	description: string;
-	_meta: { generated_on: string };
-	title: string;
+	tools: MCPTool[];
 }
