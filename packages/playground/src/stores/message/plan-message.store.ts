@@ -584,7 +584,7 @@ toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
 ${message.id ? `parentMessageId=["${message.id}"]` : ""},
 mcpToolStatus=${JSON.stringify(toolStatus)},
-toolParameterValues=[${JSON.stringify({ ...toolParameters, tvbTest: "tvbValue" })}]
+toolParameterValues=[${JSON.stringify(toolParameters)}]
 );`,
 		);
 

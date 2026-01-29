@@ -163,6 +163,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 					tool.name,
 					output,
 					success ? "success" : "error",
+					data,
 				);
 			}
 			setIsSubmitting(false);

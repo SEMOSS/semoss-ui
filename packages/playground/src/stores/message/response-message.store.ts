@@ -543,7 +543,7 @@ toolName=["${tool.json.name}"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
 mcpToolStatus=${JSON.stringify(toolStatus)},
-toolParameterValues=[${JSON.stringify({ ...toolParameters, tvbTest: "tvbValue" })}]
+toolParameterValues=[${JSON.stringify(toolParameters)}]
 );`,
 				(chunk) => {
 					runInAction(() => {
