@@ -165,13 +165,9 @@ export const NewRoomPage = observer(() => {
 			setIsLoading(true);
 
 			// create a new room
-			const room = await chat.createRoom();
-
-			// set the model
-			room.setModel(chat.models.selected);
-
-			// set the mode
-			room.setMode(mode.type === "plan" ? "planning" : "chat");
+			const room = await chat.createRoom(
+				mode.type === "plan" ? "planning" : "chat",
+			);
 
 			const updated = {
 				...options,

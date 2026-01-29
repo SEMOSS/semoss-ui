@@ -112,7 +112,7 @@ export class ChatStore {
 	/**
 	 * Create a new room
 	 */
-	createRoom = async (): Promise<RoomStore> => {
+	createRoom = async (mode: "planning" | "chat"): Promise<RoomStore> => {
 		// create the room in a new insight
 		const { errors, pixelReturn, insightId } = await runPixel<
 			[
@@ -135,6 +135,12 @@ export class ChatStore {
 
 		// create the room store
 		const room = new RoomStore(roomId, insightId);
+
+		// set the model
+		room.setModel(this.models.selected);
+
+		// set the mode
+		room.setMode(mode);
 
 		// initialize the room
 		await room.initialize();
