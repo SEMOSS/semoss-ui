@@ -20,6 +20,9 @@ interface ChatStoreInterface {
 	models: {
 		/** The current model */
 		selected: Engine | null;
+
+		/** The current context window */
+		contextWindow?: number;
 	};
 
 	/**
@@ -48,6 +51,7 @@ export class ChatStore {
 		isInitialized: false,
 		models: {
 			selected: null,
+			contextWindow: undefined,
 		},
 		rooms: {},
 		keys: {
@@ -108,7 +112,7 @@ export class ChatStore {
 	/**
 	 * Create a new room
 	 */
-	createRoom = async (): Promise<RoomStore> => {
+	createRoom = async (mode: "planning" | "chat"): Promise<RoomStore> => {
 		// create the room in a new insight
 		const { errors, pixelReturn, insightId } = await runPixel<
 			[
@@ -131,6 +135,12 @@ export class ChatStore {
 
 		// create the room store
 		const room = new RoomStore(roomId, insightId);
+
+		// set the model
+		room.setModel(this.models.selected);
+
+		// set the mode
+		room.setMode(mode);
 
 		// initialize the room
 		await room.initialize();
@@ -213,6 +223,29 @@ export class ChatStore {
 				MODEL_KEY,
 				JSON.stringify(this.models.selected),
 			);
+		}
+
+		this.loadEngineContextWindow(model.app_id);
+	};
+
+	private loadEngineContextWindow = async (engineId: string) => {
+		runInAction(() => {
+			this._store.models.contextWindow = undefined;
+		});
+
+		const { pixelReturn } = await this._actions.run<[number | undefined]>(
+			`GetContextWindow(${JSON.stringify(engineId)});`,
+		);
+
+		// throw errors
+		if (this._error) {
+			throw new Error(this._error.message);
+		}
+
+		if (this.models.selected?.app_id === engineId) {
+			runInAction(() => {
+				this._store.models.contextWindow = pixelReturn[0].output;
+			});
 		}
 	};
 
