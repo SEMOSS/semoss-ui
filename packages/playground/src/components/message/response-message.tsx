@@ -10,9 +10,10 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
 	Button,
+	Code,
 	Markdown,
 	Tooltip,
 	TooltipContent,
@@ -55,20 +56,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		}
 
 		/**
-		 * Copy the text
-		 * @param text - text to copy
-		 */
-		const copyMessage = (text: string) => {
-			try {
-				navigator.clipboard.writeText(text);
-
-				toast.success("Successfully copied to clipboard");
-			} catch (e) {
-				toast.error(e.message);
-			}
-		};
-
-		/**
 		 * Record the feedback
 		 * @param rating - positive or negative
 		 */
@@ -102,6 +89,58 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			message.type === "RESPONSE" &&
 			message.tools.some((tool) => !tool.response);
 
+		const markdownComponents = useMemo(() => {
+			return {
+				code: ({ children, className, ...props }) => {
+					const match = /language-(\w+)/.exec(className || "");
+					const code = children as string;
+
+					let lang: string = "";
+					if (match?.[1]) {
+						lang = match[1];
+					}
+
+					return (
+						<div className="group/response-markdown relative">
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										className="absolute top-0 right-0 bg-background opacity-0 transition-opacity group-hover/response-markdown:opacity-100"
+										variant="ghost"
+										size="icon"
+										disabled={!code}
+										onClick={() => {
+											try {
+												navigator.clipboard.writeText(
+													code,
+												);
+
+												toast.success(
+													"Successfully copied to clipboard",
+												);
+											} catch (e) {
+												toast.error(e.message);
+											}
+										}}
+									>
+										<CopyIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									Copy Code
+								</TooltipContent>
+							</Tooltip>
+							<Code
+								code={code}
+								lang={lang || undefined}
+								{...props}
+							/>
+						</div>
+					);
+				},
+			};
+		}, []);
+
 		return (
 			<div className="group mb-0 flex w-full flex-col gap-4">
 				<div className="group flex flex-row items-center gap-2">
@@ -117,7 +156,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					</span>
 				</div>
 				<ResponseMessageThinking room={room} message={message} />
-				<Markdown className="[&>*:first-child]:mt-0">
+				<Markdown
+					components={markdownComponents}
+					className="[&>*:first-child]:mt-0"
+				>
 					{typewriter.isTyping ? typewriter.rendered : message.text}
 				</Markdown>
 				{message.tools.map((t) => {
@@ -281,7 +323,17 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											return;
 										}
 
-										copyMessage(message.text);
+										try {
+											navigator.clipboard.writeText(
+												message.text,
+											);
+
+											toast.success(
+												"Successfully copied to clipboard",
+											);
+										} catch (e) {
+											toast.error(e.message);
+										}
 									}}
 								>
 									<CopyIcon />
