@@ -458,6 +458,7 @@ paramValues=[${JSON.stringify({
 		tool: ResponseMessageStore["tools"][number],
 		toolResponse: string,
 		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolParameters: Record<string, unknown> = {},
 	): Promise<void> => {
 		const room = this.room;
 
@@ -479,7 +480,12 @@ paramValues=[${JSON.stringify({
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
-
+			if (Object.keys(toolParameters).length > 0) {
+				tool.json.parameters = {
+					...tool.json.parameters,
+					...toolParameters,
+				};
+			}
 			if (toolStatus === "success") {
 				tool.status = "SUCCESS";
 			} else if (toolStatus === "cancelled") {
@@ -536,7 +542,8 @@ toolId = ["${tool.id}"],
 toolName=["${tool.json.name}"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
-mcpToolStatus=${JSON.stringify(toolStatus)}
+mcpToolStatus=${JSON.stringify(toolStatus)},
+toolParameterValues=[${JSON.stringify({ ...toolParameters, tvbTest: "tvbValue" })}]
 );`,
 				(chunk) => {
 					runInAction(() => {

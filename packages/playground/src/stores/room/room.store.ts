@@ -857,6 +857,7 @@ export class RoomStore {
 		toolName: string,
 		toolResponse: string,
 		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolParameters: Record<string, unknown> = {},
 	): Promise<void> => {
 		try {
 			const message = this.getMessage(messageId);
@@ -871,10 +872,21 @@ export class RoomStore {
 
 			if (this.mode === "executing") {
 				// save the tool execution
-				await this.plan?.saveToolExecution(message, tool, toolResponse);
+				await this.plan?.saveToolExecution(
+					message,
+					tool,
+					toolResponse,
+					toolStatus,
+					toolParameters,
+				);
 			} else {
 				// save the response with the tool
-				await message.saveToolExecution(tool, toolResponse, toolStatus);
+				await message.saveToolExecution(
+					tool,
+					toolResponse,
+					toolStatus,
+					toolParameters,
+				);
 			}
 		} catch (e) {
 			console.error(e);
