@@ -5,6 +5,7 @@ import {
 	CopyIcon,
 	MessageCircleIcon,
 	RefreshCwIcon,
+	SkipForwardIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
 } from "lucide-react";
@@ -140,137 +141,163 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						Please complete the tool(s) to proceed.
 					</p>
 				)}
-				<div className="-ml-2.5 flex flex-1 flex-row items-center justify-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-					{inputMessage?.siblings.length > 1 && (
-						<>
+				<div className="-ml-2.5 flex flex-1 flex-row items-center justify-start">
+					<div className="flex flex-row items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+						{inputMessage?.siblings.length > 1 && (
+							<>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											disabled={
+												!inputMessage.previousSibling
+											}
+											onClick={() => {
+												if (
+													!inputMessage.previousSibling
+												) {
+													return;
+												}
+
+												inputMessage.previousSibling.activateMessage();
+											}}
+										>
+											<ArrowLeftIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">
+										Previous Message
+									</TooltipContent>
+								</Tooltip>
+								<span className="text-muted-foreground text-xs">
+									{inputMessage.position + 1}/
+									{inputMessage.siblings.length}
+								</span>
+
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											disabled={!inputMessage.nextSibling}
+											onClick={() => {
+												if (!inputMessage.nextSibling) {
+													return;
+												}
+
+												inputMessage.nextSibling.activateMessage();
+											}}
+										>
+											<ArrowRightIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">
+										Next Message
+									</TooltipContent>
+								</Tooltip>
+							</>
+						)}
+
+						{inputMessage && (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
+										disabled={
+											!inputMessage.parent?.parent ||
+											message.room.mode === "executing"
+										}
 										variant="ghost"
 										size="icon"
-										disabled={!inputMessage.previousSibling}
 										onClick={() => {
-											if (!inputMessage.previousSibling) {
-												return;
-											}
-
-											inputMessage.previousSibling.activateMessage();
+											rewriteMessage();
 										}}
 									>
-										<ArrowLeftIcon />
+										<RefreshCwIcon />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
-									Previous Message
+									Rewrite Message
 								</TooltipContent>
 							</Tooltip>
-							<span className="text-muted-foreground text-xs">
-								{inputMessage.position + 1}/
-								{inputMessage.siblings.length}
-							</span>
+						)}
 
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon"
-										disabled={!inputMessage.nextSibling}
-										onClick={() => {
-											if (!inputMessage.nextSibling) {
-												return;
-											}
-
-											inputMessage.nextSibling.activateMessage();
-										}}
-									>
-										<ArrowRightIcon />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent side="bottom">
-									Next Message
-								</TooltipContent>
-							</Tooltip>
-						</>
-					)}
-
-					{inputMessage && (
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
-									disabled={
-										!inputMessage.parent?.parent ||
-										message.room.mode === "executing"
-									}
 									variant="ghost"
 									size="icon"
 									onClick={() => {
-										rewriteMessage();
+										recordFeedback(true);
 									}}
 								>
-									<RefreshCwIcon />
+									<ThumbsUpIcon />
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
-								Rewrite Message
+								Share Positive Feedback
+							</TooltipContent>
+						</Tooltip>
+
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => {
+										recordFeedback(false);
+									}}
+								>
+									<ThumbsDownIcon />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								Share Negative Feedback
+							</TooltipContent>
+						</Tooltip>
+
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									disabled={!message.text}
+									onClick={() => {
+										if (!message.text) {
+											return;
+										}
+
+										copyMessage(message.text);
+									}}
+								>
+									<CopyIcon />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								Copy Response
+							</TooltipContent>
+						</Tooltip>
+					</div>
+
+					<div className="flex-1" />
+
+					{typewriter.isTyping && !message.isThinking && (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									disabled={!message.text}
+									onClick={() => typewriter.skipToEnd()}
+								>
+									<SkipForwardIcon />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								Fast Forward to End
 							</TooltipContent>
 						</Tooltip>
 					)}
-
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => {
-									recordFeedback(true);
-								}}
-							>
-								<ThumbsUpIcon />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							Share Positive Feedback
-						</TooltipContent>
-					</Tooltip>
-
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => {
-									recordFeedback(false);
-								}}
-							>
-								<ThumbsDownIcon />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							Share Negative Feedback
-						</TooltipContent>
-					</Tooltip>
-
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								disabled={!message.text}
-								onClick={() => {
-									if (!message.text) {
-										return;
-									}
-
-									copyMessage(message.text);
-								}}
-							>
-								<CopyIcon />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							Copy Response
-						</TooltipContent>
-					</Tooltip>
 				</div>
 			</div>
 		);

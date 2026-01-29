@@ -135,19 +135,33 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		// Tool Execution
 		const handleSubmit = async () => {
 			setIsSubmitting(true);
-			const response = await room.runRoomPixel<[string]>(
-				`RunMCPTool(project = [ "${app}" ], function=[ "${
-					mcp.name
-				}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
-			);
-			const { output } = response.pixelReturn[0];
-
+			let success = false;
+			let output = "";
+			try {
+				const response = await room.runRoomPixel<[string]>(
+					`RunMCPTool(project = [ "${app}" ], function=[ "${
+						mcp.name
+					}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
+					false,
+					false,
+				);
+				output = response.pixelReturn[0].output;
+				success = true;
+			} catch (error) {
+				output = error.toString();
+				success = false;
+			}
 			const m = room.getMessage(message);
 			if (!m || m instanceof ResponseMessageStore !== true) {
-				setIsSubmitting(false);
-				return;
+			} else {
+				room.processTool(
+					m.id,
+					tool.id,
+					tool.name,
+					output,
+					success ? "success" : "error",
+				);
 			}
-			room.processTool(m.id, tool.id, tool.name, output);
 			setIsSubmitting(false);
 		};
 

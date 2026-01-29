@@ -6,7 +6,6 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Button, Spinner } from "@semoss/ui/next";
-import { TOOL_CANCELLATION_PROMPT } from "@/constants";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore } from "@/stores";
 
@@ -138,7 +137,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 									e.stopPropagation();
 									message.saveToolExecution(
 										tool,
-										TOOL_CANCELLATION_PROMPT,
+										"",
 										"cancelled",
 									);
 
