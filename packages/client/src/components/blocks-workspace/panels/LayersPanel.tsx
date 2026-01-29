@@ -65,10 +65,10 @@ const customCollisionDetection = (args) => {
 const StyledMenu = styled("div")(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
-	height: "auto",
+	height: "100%",
 	maxHeight: "100%",
 	width: "100%",
-	paddingTop: theme.spacing(1),
+	paddingTop: theme.spacing(0.5),
 }));
 
 const StyledMenuHeader = styled("div")(({ theme }) => ({
@@ -218,6 +218,22 @@ const StyledTypography = styled(Typography)(() => ({
 	lineHeight: "150%",
 	fontWeight: 500,
 	letterSpacing: "0.15px",
+}));
+
+const StyledPagesContainer = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "column",
+	height: "30%",
+	width: "100%",
+	minHeight: "120px",
+	overflow: "hidden",
+}));
+
+const StyledPageScroll = styled("div")(({ theme }) => ({
+	flex: 1,
+	overflow: "auto",
+	width: "100%",
+	paddingBottom: theme.spacing(1),
 }));
 
 const StyledHomePageDiv = styled("div")(() => ({
@@ -1374,8 +1390,8 @@ export const LayersPanel = observer(
 						height: "100%",
 					}}
 				>
-					<Grid item xs={12} width={"100%"} height={"100%"}>
-						<Grid item xs={12}>
+					<Grid item xs={12} width={"100%"} sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+						<Grid item xs={12} sx={{ display: "flex", flexDirection: "column", flex: "0 0 140px", minHeight: "80px", maxHeight: "230px", overflow: "hidden" }}>
 							<StyledMenu>
 								<StyledMenuHeader>
 									<Stack
@@ -1402,7 +1418,7 @@ export const LayersPanel = observer(
 										</Stack>
 									</Stack>
 								</StyledMenuHeader>
-								<StyledMenuScroll>
+								<StyledPageScroll>
 									{allPages?.length ? (
 										allPages.map((page) =>
 											renderPage(page.id),
@@ -1414,13 +1430,11 @@ export const LayersPanel = observer(
 											</Typography>
 										</StyledTreeItemMessage>
 									)}
-								</StyledMenuScroll>
+								</StyledPageScroll>
 							</StyledMenu>
 						</Grid>
-						<Grid item xs={12} height={"1%"}>
-							<Divider />
-						</Grid>
-						<Grid item xs={12} height={"69%"}>
+						<Divider sx={{ margin: 0 }} />
+						<Grid item xs={12} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
 							<DndContext
 								sensors={sensors}
 								collisionDetection={customCollisionDetection}
