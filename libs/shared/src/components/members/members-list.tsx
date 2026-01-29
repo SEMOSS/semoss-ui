@@ -60,6 +60,7 @@ export const MembersList = ({
 	const [limit, setLimit] = useState<number>(5);
 	const [totalMembers, setTotalMembers] = useState<number>(0);
 	const [idsToDelete, setIdsToDelete] = useState<string[]>([]);
+	const [userDataLoading, setUserDataLoading] = useState<boolean>(false);
 	const membersListId = `members-table-list-container-${isAddMember ? "add-member" : "default"}`;
 	const apiCallTriggerId = `triggerAPICall-${isAddMember ? "add-member" : "default"}`;
 	const notification = useNotification();
@@ -99,6 +100,7 @@ export const MembersList = ({
 		async function fetchUserData() {
 			// Fetch user data based on type and id
 			try {
+				setUserDataLoading(true);
 				const response:
 					| {
 							members: SETTINGS_PROVISIONED_USER[];
@@ -115,8 +117,14 @@ export const MembersList = ({
 				console.log(response.members, "membersresponse");
 				setUserData(response?.members || []);
 				setTotalMembers(response?.totalMembers || 0);
+				setTimeout(() => {
+					setUserDataLoading(false);
+				}, 100);
 			} catch (error) {
 				console.error("Error fetching user data:", error);
+				setUserDataLoading(false);
+			} finally {
+				setUserDataLoading(false);
 			}
 		}
 		fetchUserData();
@@ -200,75 +208,81 @@ export const MembersList = ({
 											{user.email}
 										</span>
 									</span>
-									<DropdownMenu>
-										<DropdownMenuTrigger
-											asChild
-											className="flex h-auto items-center"
-										>
-											<Button
-												variant="outline"
-												size="default"
-												className="w-[120px]"
+									{user.permission !== "OWNER" ? (
+										<DropdownMenu>
+											<DropdownMenuTrigger
+												asChild
+												className="flex h-auto items-center"
 											>
-												<div className="flex flex-column items-center justify-between gap-2">
-													<span className="flex">
-														{returnAccessType(
-															user.permission,
-														)}{" "}
-													</span>
-													<ChevronDown />
-												</div>
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent>
-											<DropdownMenuRadioGroup>
-												<DropdownMenuCheckboxItem
-													key={`can-view-${user.email}`}
-													checked={
-														returnAccessType(
-															user.permission,
-														) === "can view"
-													}
-													onCheckedChange={() => {
-														updateUserPermission(
-															user.id,
-															"READ_ONLY",
-														);
-													}}
+												<Button
+													variant="outline"
+													size="default"
+													className="w-[120px]"
 												>
-													can view
-												</DropdownMenuCheckboxItem>
-												<DropdownMenuCheckboxItem
-													key={`can-edit-${user.email}`}
-													checked={
-														returnAccessType(
-															user.permission,
-														) === "can edit"
-													}
-													onCheckedChange={() => {
-														updateUserPermission(
-															user.id,
-															"EDIT",
-														);
-													}}
-												>
-													can edit
-												</DropdownMenuCheckboxItem>
-												{user.permission === "OWNER" ? (
+													<div className="flex flex-column items-center justify-between gap-2">
+														<span className="flex">
+															{returnAccessType(
+																user.permission,
+															)}{" "}
+														</span>
+														<ChevronDown />
+													</div>
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent>
+												<DropdownMenuRadioGroup>
 													<DropdownMenuCheckboxItem
-														key={`owner-${user.email}`}
+														key={`can-view-${user.email}`}
 														checked={
 															returnAccessType(
 																user.permission,
-															) === "owner"
+															) === "can view"
 														}
+														onCheckedChange={() => {
+															updateUserPermission(
+																user.id,
+																"READ_ONLY",
+															);
+														}}
 													>
-														owner
+														can view
 													</DropdownMenuCheckboxItem>
-												) : null}
-											</DropdownMenuRadioGroup>
-										</DropdownMenuContent>
-									</DropdownMenu>
+													<DropdownMenuCheckboxItem
+														key={`can-edit-${user.email}`}
+														checked={
+															returnAccessType(
+																user.permission,
+															) === "can edit"
+														}
+														onCheckedChange={() => {
+															updateUserPermission(
+																user.id,
+																"EDIT",
+															);
+														}}
+													>
+														can edit
+													</DropdownMenuCheckboxItem>
+													{/* {user.permission === "OWNER" ? (
+														<DropdownMenuCheckboxItem
+															key={`owner-${user.email}`}
+															checked={
+																returnAccessType(
+																	user.permission,
+																) === "owner"
+															}
+														>
+															owner
+														</DropdownMenuCheckboxItem>
+													) : null} */}
+												</DropdownMenuRadioGroup>
+											</DropdownMenuContent>
+										</DropdownMenu>
+									) : (
+										<Muted className="w-[120px] px-4 py-2">
+											Owner
+										</Muted>
+									)}
 									<Button
 										variant="outline"
 										size="icon-sm"
@@ -285,6 +299,10 @@ export const MembersList = ({
 									</Button>
 								</div>
 							))
+						) : userDataLoading ? (
+							<div className="flex h-full w-full items-center justify-center">
+								Loading...
+							</div>
 						) : (
 							<div className="flex h-full w-full items-center justify-center">
 								<Muted>No members found</Muted>
