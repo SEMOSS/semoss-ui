@@ -47,11 +47,6 @@ VITE_THEME="{}"
 # Model configuration
 VITE_DEFAUlT_MODEL_ID=""
 VITE_DEFAUlT_MODEL_NAME=""
-
-# Feature flags
-VITE_ENABLE_MODEL_SELECT=true
-VITE_ENABLE_ATTACHMENT=true
-VITE_ENABLE_WORKSPACE=true
 ```
 
 ### Environment File Precedence

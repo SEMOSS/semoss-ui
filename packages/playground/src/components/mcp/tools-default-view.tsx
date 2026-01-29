@@ -102,9 +102,11 @@ interface ToolsDefaultViewProps {
 	/** Id of the app */
 	app: string;
 
+	/** Id of the message */
+	message: string;
+
 	/** Connected tool */
 	tool: {
-		message: string;
 		id: string;
 		name: string;
 		parameters: Record<string, unknown>;
@@ -115,7 +117,7 @@ interface ToolsDefaultViewProps {
 }
 
 export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
-	({ room, app, tool, mcp }) => {
+	({ room, app, message, tool, mcp }) => {
 		const properties = mcp?.inputSchema?.properties || {};
 		const required = mcp?.inputSchema?.required || [];
 		const name = mcp?.name || "";
@@ -133,19 +135,33 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		// Tool Execution
 		const handleSubmit = async () => {
 			setIsSubmitting(true);
-			const response = await room.runRoomPixel<[string]>(
-				`RunMCPTool(project = [ "${app}" ], function=[ "${
-					mcp.name
-				}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
-			);
-			const { output } = response.pixelReturn[0];
-
-			const message = room.getMessage(tool.message);
-			if (!message || message instanceof ResponseMessageStore !== true) {
-				setIsSubmitting(false);
-				return;
+			let success = false;
+			let output = "";
+			try {
+				const response = await room.runRoomPixel<[string]>(
+					`RunMCPTool(project = [ "${app}" ], function=[ "${
+						mcp.name
+					}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
+					false,
+					false,
+				);
+				output = response.pixelReturn[0].output;
+				success = true;
+			} catch (error) {
+				output = error.toString();
+				success = false;
 			}
-			room.processTool(message.id, tool.id, tool.name, output);
+			const m = room.getMessage(message);
+			if (!m || m instanceof ResponseMessageStore !== true) {
+			} else {
+				room.processTool(
+					m.id,
+					tool.id,
+					tool.name,
+					output,
+					success ? "success" : "error",
+				);
+			}
 			setIsSubmitting(false);
 		};
 

@@ -1,5 +1,5 @@
 import { action, computed, makeObservable, observable } from "mobx";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import type { RoomStore } from "@/stores";
 import type { AbstractPixelMessage, PixelMessage } from "@/types";
 
 /**
@@ -29,12 +29,7 @@ export abstract class AbstractMessageStore {
 	/**
 	 * Track if it is an root, input, or response message
 	 */
-	abstract type: "ROOT" | "PLAN" | "INPUT" | "RESPONSE";
-
-	/**
-	 * Track its pixelMessageType
-	 */
-	abstract pixelMessageType: PixelMessage["type"];
+	abstract type: "ROOT" | "PLAN" | "INPUT" | "RESPONSE" | "TOOL_EXECUTION";
 
 	/**
 	 * Parent of the message
@@ -88,6 +83,7 @@ export abstract class AbstractMessageStore {
 			activeChild: computed,
 			connectParent: action,
 			addChild: action,
+			removeChild: action,
 			activateMessage: action,
 			tokens: observable,
 		});
@@ -157,20 +153,6 @@ export abstract class AbstractMessageStore {
 		// store it
 		this.children.push(message);
 
-		// if the child is an INPUT_TOOL_EXEC, find the related tool message and mark its response
-		if (message.pixelMessageType === "INPUT_TOOL_EXEC") {
-			let currentMessage: AbstractMessageStore | null = this;
-			while (currentMessage !== null) {
-				if (currentMessage.pixelMessageType === "RESPONSE_TOOL") break;
-				currentMessage = currentMessage.parent;
-			}
-			if (currentMessage !== null) {
-				(currentMessage as ResponseMessageStore).markToolAsUsed(
-					(message as ResponseMessageStore).inputToolExecData,
-				);
-			}
-		}
-
 		// last idx is the position
 		const position = this.children.length - 1;
 
@@ -182,16 +164,47 @@ export abstract class AbstractMessageStore {
 	};
 
 	/**
+	 * Remove a child message
+	 */
+	removeChild = (message: AbstractMessageStore) => {
+		if (!message) {
+			return;
+		}
+
+		const index = this.children.findIndex(
+			(child) => child.id === message.id,
+		);
+		if (index === -1) {
+			return;
+		}
+
+		// remove the child
+		const [removed] = this.children.splice(index, 1);
+
+		// reset parent linkage on removed child
+		if (removed) {
+			removed.connectParent(null, -1);
+		}
+
+		// reindex remaining children
+		this.children.forEach((child, position) => {
+			child.position = position;
+		});
+
+		// update active child position
+		if (this.activeChildPosition === index) {
+			this.activeChildPosition = this.children.length
+				? Math.min(index, this.children.length - 1)
+				: -1;
+		} else if (this.activeChildPosition > index) {
+			this.activeChildPosition -= 1;
+		}
+	};
+
+	/**
 	 * Set the current message as active
 	 */
 	activateMessage = () => {
 		this.parent.activeChildPosition = this.position;
-		if (this.room.tail) {
-			this.room.setHasUnfinishedTools(
-				(
-					this.room.tail as ResponseMessageStore
-				).hasUnfinishedTools?.() ?? false,
-			);
-		}
 	};
 }
