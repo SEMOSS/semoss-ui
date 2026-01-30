@@ -1,4 +1,4 @@
-import { Copy, RefreshCw, Send } from "lucide-react";
+import { Copy, Pencil, RefreshCw, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { runPixel } from "@semoss/sdk/react";
@@ -210,7 +210,7 @@ export const EngineModelChatPage = () => {
 				maxTokens={maxTokens}
 				setMaxTokens={setMaxTokens}
 			/>
-			<div className="flex h-[840px] flex-1 flex-col overflow-hidden">
+			<div className="flex flex-1 flex-col overflow-hidden">
 				<Card className="h-full gap-4 p-6">
 					<div className="flex h-full flex-col gap-4 overflow-hidden">
 						<div className="flex flex-row items-center justify-between">
@@ -242,7 +242,7 @@ export const EngineModelChatPage = () => {
 								</AlertDescription>
 							</Alert>
 						)}
-						<div className="flex max-h-fit flex-1 flex-col overflow-hidden rounded-lg border border-border bg-transparent">
+						<div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-transparent">
 							<div className="flex items-center justify-between bg-primary/10 p-2">
 								<P className="font-medium">Chat History</P>
 								{messages.length > 0 && (
@@ -267,10 +267,15 @@ export const EngineModelChatPage = () => {
 											Initializing chat session...
 										</Muted>
 									) : messages.length === 0 ? (
-										<Muted className="mt-4 block text-center">
-											Start a conversation by typing a
-											message below
-										</Muted>
+										<div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-4">
+											<div className="flex h-[40px] w-[40px] items-center justify-center rounded-[10px] bg-(--muted)">
+												<Pencil className="h-6 w-6 text-(--foreground)" />
+											</div>
+											<Muted className="text-center">
+												Start Conversation by typing a
+												message
+											</Muted>
+										</div>
 									) : (
 										messages.map((message) => (
 											<div key={message.id}>
