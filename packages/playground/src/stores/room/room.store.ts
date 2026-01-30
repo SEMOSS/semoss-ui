@@ -513,20 +513,35 @@ export class RoomStore {
 				// if its tool execution, update the corresponding tool
 				const toolExecMessage = m.message;
 				if (toolExecMessage instanceof ToolExecutionMessageStore) {
-					const parentToolExecMessage =
-						messages[m.parentMessageId].message;
-					if (parentToolExecMessage instanceof ResponseMessageStore) {
-						parentToolExecMessage.tools.forEach((tool) => {
-							if (tool.id === toolExecMessage.callId) {
-								// save the response
-								runInAction(() => {
-									tool.response = toolExecMessage.response;
-									tool.status = toolExecMessage.status;
-									tool.executedParameters =
-										toolExecMessage.executedParameters;
-								});
-							}
-						});
+					// Run up the chain to find the message containing the tool
+					// (because it can go reponse_tool -> input_tool_exec -> input_tool_exec)
+					let toolExecMessageParent: AbstractMessageStore =
+						toolExecMessage.parent;
+					while (toolExecMessageParent) {
+						if (
+							toolExecMessageParent instanceof
+							ResponseMessageStore
+						) {
+							// We've found the parent response message, now find the tool
+							toolExecMessageParent.tools.forEach((tool) => {
+								if (tool.id === toolExecMessage.callId) {
+									// save the response
+									runInAction(() => {
+										tool.response =
+											toolExecMessage.response;
+										tool.status = toolExecMessage.status;
+										tool.executedParameters =
+											toolExecMessage.executedParameters;
+									});
+								}
+							});
+							// Break because we've found the right parent
+							break;
+						} else {
+							// keep going up the chain
+							toolExecMessageParent =
+								toolExecMessageParent.parent;
+						}
 					}
 				}
 			}
