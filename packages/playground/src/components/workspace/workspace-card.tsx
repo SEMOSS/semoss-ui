@@ -1,6 +1,6 @@
 import { Ellipsis, SquarePen } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
 	Button,
 	Card,
@@ -20,7 +20,6 @@ import type { Workspace } from "@/types";
 
 interface WorkspaceCardProps {
 	workspace: Pick<Workspace, "workspace_id" | "name" | "description">;
-	onEditClick: () => void;
 	onDeleteClick: () => void;
 }
 
@@ -30,30 +29,19 @@ interface WorkspaceCardProps {
  * @component
  */
 export const WorkspaceCard = observer(
-	({ onEditClick, workspace, onDeleteClick }: WorkspaceCardProps) => {
+	({ workspace, onDeleteClick }: WorkspaceCardProps) => {
 		/**
 		 * Library Hooks
 		 */
 		const navigate = useNavigate();
 		const { root } = useRoot();
 
-		/**
-		 * Functions
-		 */
-		const createRoom = () => {
-			navigate(`/new?workspaceId=${workspace.workspace_id}`);
-		};
-
-		/**
-		 * View Workspace Details
-		 */
-		const viewDetails = () => {
-			navigate(`/workspace/${workspace.workspace_id}`);
-		};
 		return (
 			<Card
 				className="cursor-pointer gap-0 bg-background p-0"
-				onClick={() => viewDetails()}
+				onClick={() => {
+					navigate(`/workspace/${workspace.workspace_id}`);
+				}}
 			>
 				<CardContent className="flex flex-col gap-4 p-6">
 					<div className="flex justify-between">
@@ -78,10 +66,14 @@ export const WorkspaceCard = observer(
 									<DropdownMenuItem
 										onClick={(e) => {
 											e.stopPropagation();
-											onEditClick();
 										}}
+										asChild
 									>
-										Edit
+										<Link
+											to={`/workspace/${workspace.workspace_id}/edit`}
+										>
+											Edit
+										</Link>
 									</DropdownMenuItem>
 									<DropdownMenuItem
 										onClick={(e) => {
@@ -118,7 +110,9 @@ export const WorkspaceCard = observer(
 						size="sm"
 						onClick={(e) => {
 							e.stopPropagation();
-							createRoom();
+							navigate(
+								`/new?workspaceId=${workspace.workspace_id}`,
+							);
 						}}
 						variant="outline"
 					>

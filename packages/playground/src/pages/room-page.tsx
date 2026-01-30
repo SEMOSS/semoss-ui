@@ -1,6 +1,7 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { InsightProvider } from "@semoss/sdk/react";
 import {
 	ResizableHandle,
 	ResizablePanel,
@@ -8,9 +9,10 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { Room, RoomSidebar } from "@/components";
+import { RoomContent, RoomSidebar } from "@/components";
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
-import { RoomStore } from "@/stores";
+import type { RoomStore } from "@/stores";
+import type { Engine } from "@/types";
 
 /**
  * The page for a room
@@ -18,61 +20,95 @@ import { RoomStore } from "@/stores";
  * @component
  */
 export const RoomPage = observer(() => {
-	const { chat } = useChat();
-
-	const navigate = useNavigate();
-
 	// set the get the room based on the params
 	const { roomId } = useParams();
-
-	// create the room
-	const room = useMemo(() => {
-		if (!roomId) {
-			return null;
-		}
-
-		return new RoomStore(roomId);
-	}, [roomId]);
+	const { chat } = useChat();
+	const navigate = useNavigate();
 
 	/**
-	 * Effects
+	 * State
 	 */
+	const [room, setRoom] = useState<RoomStore | null>(null);
+	const selectedModelRef = useRef<Engine>(chat.models.selected);
 
-	// load the room
-	useEffect(() => {
-		if (!room || room.isInitialized) {
-			return;
-		}
-
-		// if it doesn't load successfully, go back to home
-		room.initialize().catch((e) => {
-			toast.error(e.message);
-
-			navigate("/");
-		});
-	}, [room, navigate]);
-
+	/**
+	 * Library hooks
+	 */
 	// set the breadcrumbs
-	useGlobalBreadcrumbs([
+	const { setBreadcrumbs } = useGlobalBreadcrumbs([
 		{
 			name: "Home",
 			path: "/",
 		},
 		{
-			name: room?.isInitialized
-				? room.metadata.name || "Room"
-				: "Loading",
+			name: room?.metadata?.name || "Room",
 			path: `/room/${roomId}`,
 		},
 	]);
 
-	if (!room && chat.isInitialized) {
-		// if the chat is initialized and there is no room, the room id is invalid - go back to home
-		return <Navigate to="/" replace={true} />;
-	}
+	/**
+	 * Effects
+	 */
+	// keep ref updated
+	useEffect(() => {
+		selectedModelRef.current = chat.models.selected;
+	}, [chat.models.selected]);
 
-	if (!room || !room.isInitialized) {
-		// room is valid, but not initialized yet
+	// load the room
+	useEffect(() => {
+		const loadRoom = async () => {
+			try {
+				const room = await chat.loadRoom(roomId);
+
+				// update the model based on the room
+				if (!room.model) {
+					room.setModel(selectedModelRef.current);
+				} else {
+					chat.setSelectedModel(room.model);
+				}
+
+				if (room.options.workspace)
+					setBreadcrumbs([
+						{
+							name: "Home",
+							path: "/",
+						},
+						{
+							name: "Workspace",
+							path: "/workspace",
+						},
+						{
+							name:
+								room.options.workspace?.name ||
+								room.options.workspace.workspace_id,
+							path: `/workspace/${room.options.workspace.workspace_id}`,
+						},
+						{
+							name: "Room",
+							path: `/room/${room.roomId}`,
+						},
+					]);
+
+				// set the room
+				setRoom(room);
+			} catch (e) {
+				// if it doesn't load successfully, go back to home
+				toast.error(e.message);
+				navigate("/");
+			}
+		};
+
+		loadRoom();
+	}, [
+		roomId,
+		navigate,
+		chat.loadRoom,
+		chat.setSelectedModel,
+		setBreadcrumbs,
+	]);
+
+	// if there is no room, return null
+	if (!room) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
 				<Spinner />
@@ -81,26 +117,28 @@ export const RoomPage = observer(() => {
 	}
 
 	return (
-		<div className="flex h-full w-full flex-col overflow-hidden">
-			<ResizablePanelGroup
-				direction="horizontal"
-				className="w-full flex-1 overflow-hidden"
-			>
-				<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
-					<Room room={room} />
-				</ResizablePanel>
-				{room.sidebar.isOpen && (
-					<>
-						<ResizableHandle />
-						<ResizablePanel
-							className={"relative p-2"}
-							defaultSize={70}
-						>
-							<RoomSidebar room={room} />
-						</ResizablePanel>
-					</>
-				)}
-			</ResizablePanelGroup>
-		</div>
+		<InsightProvider key={roomId} options={{ insightId: room.insightId }}>
+			<div className="flex h-full w-full flex-col overflow-hidden">
+				<ResizablePanelGroup
+					direction="horizontal"
+					className="w-full flex-1 overflow-hidden"
+				>
+					<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
+						<RoomContent room={room} />
+					</ResizablePanel>
+					{room.sidebar.isOpen && (
+						<>
+							<ResizableHandle />
+							<ResizablePanel
+								className={"relative p-2"}
+								defaultSize={70}
+							>
+								<RoomSidebar room={room} />
+							</ResizablePanel>
+						</>
+					)}
+				</ResizablePanelGroup>
+			</div>
+		</InsightProvider>
 	);
 });

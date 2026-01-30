@@ -56,7 +56,7 @@ const StyledShowMore = styled(Typography)(({ theme }) => {
 export interface FilterboxProps {
 	/** Determined to get metakeys for Engines/App */
 	type:
-		| "APP"
+		| "PROJECT"
 		| "MODEL"
 		| "FUNCTION"
 		| "VECTOR"
@@ -115,7 +115,7 @@ export const Filterbox = (props: FilterboxProps) => {
 	];
 
 	const list =
-		type === "APP"
+		type === "PROJECT"
 			? configStore.store.config.projectMetaKeys
 			: configStore.store.config.databaseMetaKeys;
 
@@ -172,7 +172,7 @@ export const Filterbox = (props: FilterboxProps) => {
 		}[]
 	>(
 		metaKeys.length > 0
-			? type === "APP"
+			? type === "PROJECT"
 				? `GetProjectMetaValues(metaKeys=${JSON.stringify(
 						metaKeys.filter((mk) => mk),
 					)}${
@@ -386,7 +386,6 @@ export const Filterbox = (props: FilterboxProps) => {
 					}
 				>
 					<List.ItemText
-						disableTypography
 						primary={
 							<Typography variant="h6">Filter By</Typography>
 						}
@@ -446,7 +445,6 @@ export const Filterbox = (props: FilterboxProps) => {
 										}
 									>
 										<List.ItemText
-											disableTypography
 											primary={
 												<Typography variant={"h6"}>
 													{toTitleCase(
@@ -476,7 +474,8 @@ export const Filterbox = (props: FilterboxProps) => {
 														.toLowerCase()
 														.includes(
 															filterSearch.toLowerCase(),
-														)
+														) &&
+													filterOption.value !== ""
 												) {
 													shownListItems += 1;
 													return (
@@ -534,7 +533,6 @@ export const Filterbox = (props: FilterboxProps) => {
 																	}}
 																>
 																	<List.ItemText
-																		disableTypography
 																		primary={
 																			<Typography
 																				variant="body1"
