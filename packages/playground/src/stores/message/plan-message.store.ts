@@ -525,8 +525,8 @@ stepNumber=["${step.step_number}"]
 		message: ResponseMessageStore,
 		tool: ResponseMessageStore["tools"][number],
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
-		toolParameters: Record<string, unknown> = {},
+		toolStatus: "success" | "error" | "cancelled",
+		executedParameters: Record<string, unknown>,
 	) => {
 		const step = this.step;
 		if (!step) {
@@ -550,12 +550,7 @@ stepNumber=["${step.step_number}"]
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
-			if (Object.keys(toolParameters).length > 0) {
-				tool.json.parameters = {
-					...tool.json.parameters,
-					...toolParameters,
-				};
-			}
+			tool.executedParameters = executedParameters;
 			if (toolStatus === "success") {
 				tool.status = "SUCCESS";
 			} else if (toolStatus === "cancelled") {
@@ -584,7 +579,7 @@ toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
 ${message.id ? `parentMessageId=["${message.id}"]` : ""},
 mcpToolStatus=${JSON.stringify(toolStatus)},
-toolParameterValues=[${JSON.stringify(toolParameters)}]
+toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 );`,
 		);
 

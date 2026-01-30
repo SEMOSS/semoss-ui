@@ -522,6 +522,8 @@ export class RoomStore {
 								runInAction(() => {
 									tool.response = toolExecMessage.response;
 									tool.status = toolExecMessage.status;
+									tool.executedParameters =
+										toolExecMessage.executedParameters;
 								});
 							}
 						});
@@ -850,14 +852,15 @@ export class RoomStore {
 	 * @param toolName - name of the tool
 	 * @param toolResponse - response from the tool
 	 * @param toolStatus - status of the tool execution
+	 * @param executedParameters - parameters used by the tool
 	 */
 	processTool = async (
 		messageId: string,
 		toolId: string,
 		toolName: string,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
-		toolParameters: Record<string, unknown> = {},
+		toolStatus: "success" | "error" | "cancelled",
+		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {
 			const message = this.getMessage(messageId);
@@ -877,7 +880,7 @@ export class RoomStore {
 					tool,
 					toolResponse,
 					toolStatus,
-					toolParameters,
+					executedParameters,
 				);
 			} else {
 				// save the response with the tool
@@ -885,7 +888,7 @@ export class RoomStore {
 					tool,
 					toolResponse,
 					toolStatus,
-					toolParameters,
+					executedParameters,
 				);
 			}
 		} catch (e) {

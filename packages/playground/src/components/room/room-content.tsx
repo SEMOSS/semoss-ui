@@ -172,7 +172,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tool.name,
 					tool.response,
 					tool.tool_status,
-					tool.parameters || {},
+					tool.executedParameters,
 				);
 			} catch {
 				// noop

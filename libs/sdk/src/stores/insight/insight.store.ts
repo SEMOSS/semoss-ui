@@ -633,7 +633,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		sendMCPResponseToPlayground: (
 			mcpToolResponse: string,
 			mcpToolStatus: MCPToolResponse["tool_status"] = "success",
-			parameters: Record<string, unknown> = {},
+			executedParameters: Record<string, unknown> = {},
 		) => {
 			if (!Env.TOOL) {
 				throw new Error("No MCP tool execution context found");
@@ -657,7 +657,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						response: mcpToolResponse,
 						roomId: Env.TOOL.roomId,
 						tool_status: mcpToolStatus,
-						parameters: parameters,
+						executedParameters: executedParameters,
 					} satisfies MCPToolResponse,
 				},
 				"*",

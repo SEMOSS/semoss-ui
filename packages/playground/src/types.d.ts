@@ -136,6 +136,7 @@ export interface InputToolExecPixelMessage extends AbstractPixelMessage {
 	ornaments: {
 		modelName?: string;
 	};
+	tool_parameter_values?: Record<string, unknown>;
 }
 
 export interface ResponseTextPixelMessage extends AbstractPixelMessage {
