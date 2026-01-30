@@ -140,7 +140,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		const hasBeenExecuted = toolResponse !== undefined;
 
 		/*
-		 * Stet
+		 * State
 		 */
 		const [data, setData] = useState<Record<string, unknown>>(() => {
 			return hasBeenExecuted ? executedParameters : tool?.parameters;
