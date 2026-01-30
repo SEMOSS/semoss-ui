@@ -148,6 +148,13 @@ export interface ResponseTextPixelMessage extends AbstractPixelMessage {
 		PLAYGROUND_MESSAGE_TYPE?: "COT";
 		modelName?: string;
 	};
+	feedback?: {
+		rating: boolean;
+		feedbackText: string;
+		messageId: string;
+		messageType: "RESPONSE_TEXT";
+		feedbackDate: string; // YYYY-MM-DD HH:MM:SS
+	};
 }
 
 export type McpExecution = "auto" | "ask" | "disabled";
