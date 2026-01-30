@@ -1,4 +1,4 @@
-import { SearchIcon, UploadIcon } from "lucide-react";
+import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileDropzone } from "@semoss/ui";
@@ -38,6 +38,59 @@ import {
 	type ImportableModels,
 	MODEL_VERSIONS,
 } from "./model-import.constants";
+
+/**
+ * Helper component to display provider icon with fallback to initials
+ */
+const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
+	const [imageError, setImageError] = useState(false);
+
+	const providerImage = Custom_Model_Image.find(
+		(img) => img.name === provider,
+	)?.imgURL;
+
+	// Generate fallback initials
+	const getInitials = (name: string) => {
+		return name
+			.split(/[^A-Za-z0-9]+/)
+			.map((t) => t[0])
+			.join("")
+			.slice(0, 2)
+			.toUpperCase();
+	};
+
+	// Generate gradient background based on provider name
+	const getGradient = (name: string) => {
+		let hash = 0;
+		for (let i = 0; i < name.length; i++) {
+			hash = (hash << 5) - hash + name.charCodeAt(i);
+			hash |= 0;
+		}
+		const base = Math.abs(hash) % 360;
+		const hue2 = (base + 35) % 360;
+		return `linear-gradient(135deg, hsl(${base} 45% 70%), hsl(${hue2} 40% 60%))`;
+	};
+
+	if (!providerImage || imageError) {
+		return (
+			<div
+				className="flex size-5 shrink-0 items-center justify-center rounded font-semibold text-[10px] text-white"
+				style={{ background: getGradient(provider) }}
+			>
+				{getInitials(provider)}
+			</div>
+		);
+	}
+
+	return (
+		<img
+			src={providerImage}
+			alt={`${provider} logo`}
+			className="size-5 shrink-0 rounded object-contain"
+			onError={() => setImageError(true)}
+		/>
+	);
+};
 
 export const ModelImport: React.FC = () => {
 	const navigate = useNavigate();
@@ -159,7 +212,7 @@ export const ModelImport: React.FC = () => {
 									}}
 									className="mt-1"
 								>
-									<TabsList className="mb-1 h-auto w-full justify-start overflow-x-auto rounded-lg bg-(--secondary) p-1">
+									<TabsList>
 										{importableModels.providers.map(
 											(provider) => (
 												<TabsTrigger
@@ -168,123 +221,14 @@ export const ModelImport: React.FC = () => {
 													data-testid={formatToDataTestId(
 														`connect-to-${provider.name}-tab`,
 													)}
-													className="rounded-md px-4 py-2 font-medium text-(--foreground) text-sm tracking-wide"
+													className="flex h-[32px] items-center gap-2 px-2 py-1"
 												>
-													<div className="flex items-center gap-1.5">
-														{(() => {
-															const providerImage =
-																Custom_Model_Image.find(
-																	(img) =>
-																		img.name ===
-																		provider.name,
-																)?.imgURL;
-															return (
-																<>
-																	{providerImage && (
-																		<img
-																			src={
-																				providerImage
-																			}
-																			alt={`${provider.name} logo`}
-																			className="block h-5 w-5 rounded object-contain"
-																			onError={(
-																				e,
-																			) => {
-																				const target =
-																					e.currentTarget;
-																				target.onerror =
-																					null;
-																				target.style.display =
-																					"none";
-																				const fallback =
-																					document.createElement(
-																						"div",
-																					);
-																				fallback.textContent =
-																					(
-																						provider.name ||
-																						""
-																					)
-																						.split(
-																							/[^A-Za-z0-9]+/,
-																						)
-																						.map(
-																							(
-																								t,
-																							) =>
-																								t[0],
-																						)
-																						.join(
-																							"",
-																						)
-																						.slice(
-																							0,
-																							2,
-																						)
-																						.toUpperCase();
-																				fallback.style.width =
-																					"20px";
-																				fallback.style.height =
-																					"20px";
-																				fallback.style.display =
-																					"flex";
-																				fallback.style.alignItems =
-																					"center";
-																				fallback.style.justifyContent =
-																					"center";
-																				fallback.style.fontWeight =
-																					"600";
-																				fallback.style.fontSize =
-																					"12px";
-																				fallback.style.color =
-																					"#fff";
-																				fallback.style.borderRadius =
-																					"4px";
-																				// Simple pastel gradient based on hash
-																				let h = 0;
-																				for (
-																					let i = 0;
-																					i <
-																					provider
-																						.name
-																						.length;
-																					i++
-																				) {
-																					h =
-																						(h <<
-																							5) -
-																						h +
-																						provider.name.charCodeAt(
-																							i,
-																						);
-																					h |= 0;
-																				}
-																				const base =
-																					Math.abs(
-																						h,
-																					) %
-																					360;
-																				const hue2 =
-																					(base +
-																						35) %
-																					360;
-																				fallback.style.background = `linear-gradient(135deg, hsl(${base} 45% 70%), hsl(${hue2} 40% 60%))`;
-																				target.parentNode.insertBefore(
-																					fallback,
-																					target.nextSibling,
-																				);
-																			}}
-																		/>
-																	)}
-																	<span className="pr-4 text-sm leading-none">
-																		{
-																			provider.name
-																		}
-																	</span>
-																</>
-															);
-														})()}
-													</div>
+													<ProviderIcon
+														provider={provider.name}
+													/>
+													<span className="text-sm leading-none">
+														{provider.name}
+													</span>
 												</TabsTrigger>
 											),
 										)}
@@ -399,6 +343,7 @@ export const ModelImport: React.FC = () => {
 						advanced={advanced}
 						selectedProvider={selectedProvider}
 						importableModelsCategory={importableModelsCategory}
+						onBack={() => setSelectedModel(null)}
 					/>
 				);
 			}
@@ -424,20 +369,30 @@ export const ModelImport: React.FC = () => {
 								Model Catalog
 							</BreadcrumbLink>
 						</BreadcrumbItem>
-						<BreadcrumbSeparator>/</BreadcrumbSeparator>
+						<BreadcrumbSeparator>
+							<ChevronRight />
+						</BreadcrumbSeparator>
 						<BreadcrumbItem>
-							<BreadcrumbLink
-								className="cursor-pointer"
-								onClick={() => {
-									setSelectedModel(null);
-								}}
-							>
-								Connect to Model
-							</BreadcrumbLink>
+							{selectedModel === null ? (
+								<BreadcrumbPage>
+									Connect to Model
+								</BreadcrumbPage>
+							) : (
+								<BreadcrumbLink
+									className="cursor-pointer"
+									onClick={() => {
+										setSelectedModel(null);
+									}}
+								>
+									Connect to Model
+								</BreadcrumbLink>
+							)}
 						</BreadcrumbItem>
 						{selectedModel !== null && (
 							<>
-								<BreadcrumbSeparator>/</BreadcrumbSeparator>
+								<BreadcrumbSeparator>
+									<ChevronRight />
+								</BreadcrumbSeparator>
 								<BreadcrumbItem>
 									<BreadcrumbPage>
 										{selectedModel

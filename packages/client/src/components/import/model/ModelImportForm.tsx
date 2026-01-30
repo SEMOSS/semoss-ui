@@ -44,6 +44,10 @@ interface ModelImportFormProps {
 	 * callback invoked when form is submitted with values
 	 */
 	onComplete?: (data: Record<string, unknown>) => void;
+	/**
+	 * callback invoked when Back button is clicked
+	 */
+	onBack?: () => void;
 
 	selectedProvider: string;
 
@@ -56,6 +60,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		fields,
 		advanced,
 		onComplete,
+		onBack,
 		selectedProvider,
 		importableModelsCategory,
 	} = props;
@@ -638,13 +643,24 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 					</Collapsible>
 				</div>
 			)}
-			<div className="mt-4 flex justify-end">
+			<div className="mt-4 flex justify-end gap-[16px]">
+				<Button
+					data-testId="model-importForm-back-button"
+					variant="secondary"
+					type="button"
+					className="text-(--secondary-foreground)"
+					onClick={onBack}
+				>
+					Back
+				</Button>
 				<Button
 					data-testId="model-importForm-connect-button"
+					variant="default"
+					className="flex w-[147px] items-center gap-2 px-4 py-2"
 					type="submit"
 					disabled={isLoading || !isValid}
 				>
-					Connect
+					Create Model
 				</Button>
 			</div>
 		</form>

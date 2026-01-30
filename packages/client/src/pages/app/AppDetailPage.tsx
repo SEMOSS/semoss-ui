@@ -545,117 +545,116 @@ export const AppDetailPage = () => {
 									</span>
 								</div>
 							</div>
-
-							<Tabs
-								value={selectedTab}
-								onValueChange={setSelectedTab}
-							>
-								<TabsList className="h-[42px] w-full rounded-t-[10px] rounded-b-none bg-(--secondary)">
-									{visibleTabs.map((tab) => (
-										<TabsTrigger
-											key={tab}
-											value={tab}
-											className="h-[38px] flex-1 rounded-lg px-2 text-[14px]"
-										>
-											{tab}
-										</TabsTrigger>
-									))}
-								</TabsList>
-
-								<TabsContent
-									value="Overview"
-									className="flex w-full flex-col flex-wrap gap-6 bg-card p-1"
+							<div className="flex flex-col rounded-lg bg-(--muted)">
+								<Tabs
+									value={selectedTab}
+									onValueChange={setSelectedTab}
+									className="gap-0 bg-transparent"
 								>
-									<Overview appInfo={appInfo} />
-								</TabsContent>
+									<TabsList className="gap-2">
+										{visibleTabs.map((tab) => (
+											<TabsTrigger key={tab} value={tab}>
+												{tab}
+											</TabsTrigger>
+										))}
+									</TabsList>
 
-								<TabsContent
-									value="Access Control"
-									className="flex w-full flex-col flex-wrap gap-6 bg-card p-1"
-								>
-									<AccessControl
-										appInfo={appInfo}
-										appId={appId}
-										fetchUserSpecificData={
-											fetchUserSpecificData
-										}
-										permission={permission}
-									/>
-								</TabsContent>
+									<TabsContent
+										value="Overview"
+										className="flex w-full flex-col flex-wrap bg-(--card)"
+									>
+										<Overview appInfo={appInfo} />
+									</TabsContent>
 
-								<TabsContent
-									value="Dependencies"
-									className="flex w-full flex-col flex-wrap gap-6 bg-card p-1"
-								>
-									<div className="w-full p-6">
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-2 font-semibold text-xl">
-												Dependencies
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<Info className="h-[15px] w-[15px] cursor-pointer text-muted-foreground" />
-													</TooltipTrigger>
-													<TooltipContent>
-														{appInfo?.project_type ===
-														"CODE"
-															? "Add/Remove dependencies using the Edit Icon"
-															: "Add/Remove dependencies using the Variables Tab"}
-													</TooltipContent>
-												</Tooltip>
+									<TabsContent
+										value="Access Control"
+										className="flex w-full flex-col flex-wrap bg-(--card)"
+									>
+										<AccessControl
+											appInfo={appInfo}
+											appId={appId}
+											fetchUserSpecificData={
+												fetchUserSpecificData
+											}
+											permission={permission}
+										/>
+									</TabsContent>
+
+									<TabsContent
+										value="Dependencies"
+										className="flex w-full flex-col flex-wrap bg-(--card)"
+									>
+										<div className="w-full p-6">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2 font-semibold text-xl">
+													Dependencies
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Info className="h-[15px] w-[15px] cursor-pointer text-muted-foreground" />
+														</TooltipTrigger>
+														<TooltipContent>
+															{appInfo?.project_type ===
+															"CODE"
+																? "Add/Remove dependencies using the Edit Icon"
+																: "Add/Remove dependencies using the Variables Tab"}
+														</TooltipContent>
+													</Tooltip>
+												</div>
+
+												{appInfo?.project_type ===
+													"CODE" &&
+													permission === "author" && (
+														<Button
+															size="icon-sm"
+															variant="ghost"
+															onClick={() =>
+																setIsEditDependenciesModalOpen(
+																	true,
+																)
+															}
+															data-testid="appDetail-edit-btn"
+														>
+															<Edit />
+														</Button>
+													)}
 											</div>
 
-											{appInfo?.project_type === "CODE" &&
-												permission === "author" && (
-													<Button
-														size="icon-sm"
-														variant="ghost"
-														onClick={() =>
-															setIsEditDependenciesModalOpen(
-																true,
-															)
-														}
-														data-testid="appDetail-edit-btn"
-													>
-														<Edit />
-													</Button>
-												)}
+											<Dependencies
+												dependencies={dependencies}
+											/>
 										</div>
+									</TabsContent>
 
-										<Dependencies
-											dependencies={dependencies}
-										/>
-									</div>
-								</TabsContent>
-
-								<TabsContent
-									value="Settings"
-									className="flex w-full flex-col flex-wrap gap-6 bg-card p-1"
-								>
-									<SettingsContext.Provider
-										value={{
-											adminMode: false,
-										}}
+									<TabsContent
+										value="Settings"
+										className="flex w-full flex-col flex-wrap bg-(--card)"
 									>
-										<SettingsTab id={appId} />
-									</SettingsContext.Provider>
-								</TabsContent>
+										<SettingsContext.Provider
+											value={{
+												adminMode: false,
+											}}
+										>
+											<SettingsTab id={appId} />
+										</SettingsContext.Provider>
+									</TabsContent>
 
-								<TabsContent
-									value="SMSS"
-									className="flex w-full flex-col flex-wrap gap-6 bg-card p-1"
-								>
-									<SettingsContext.Provider
-										value={{
-											adminMode: false,
-										}}
+									<TabsContent
+										value="SMSS"
+										className="flex w-full flex-col flex-wrap bg-(--card)"
 									>
-										<UpdateSMSS
-											type={"PROJECT"}
-											id={appId}
-										/>
-									</SettingsContext.Provider>
-								</TabsContent>
-							</Tabs>
+										<SettingsContext.Provider
+											value={{
+												adminMode: false,
+											}}
+										>
+											<UpdateSMSS
+												type={"PROJECT"}
+												id={appId}
+											/>
+										</SettingsContext.Provider>
+									</TabsContent>
+								</Tabs>
+							</div>
 						</div>
 					</div>
 				</div>
