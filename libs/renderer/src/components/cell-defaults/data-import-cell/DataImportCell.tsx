@@ -200,7 +200,18 @@ export interface DataImportCellDef extends CellDef<"data-import"> {
 
 export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 	(props) => {
-		const editorRef = useRef(null);
+		const editorRef = useRef<{
+			layout: (dimensions: { width: number; height: number }) => void;
+			getContainerDomNode: () => { clientWidth: number };
+			onDidContentSizeChange: (callback: () => void) => void;
+			addAction: (action: {
+				id: string;
+				label: string;
+				keybindings: number[];
+				run: (editor: { getValue: () => string }) => void;
+			}) => void;
+			getContentHeight: () => number;
+		} | null>(null);
 		const [showStyledView, setShowStyledView] = useState(true);
 		const { cell, isExpanded } = props;
 		const { state } = useBlocks();
@@ -208,13 +219,17 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 		const [isDataImportModalOpen, setIsDataImportModalOpen] =
 			useState(false);
 
-		const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState({
+		const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState<{
+			loading: boolean;
+			ids: string[];
+			display: Record<string, string>;
+		}>({
 			loading: true,
-			display: {},
 			ids: [],
+			display: {},
 		});
 		const [dataLimit, setDataLimit] = useState(
-			cell.parameters.dataLimit || null,
+			cell.parameters.dataLimit === -1 ? "" : cell.parameters.dataLimit,
 		);
 
 		const myDbs = usePixel<{ engine_id: string; engine_name: string }[]>(
@@ -243,13 +258,21 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 		}, []);
 
 		useEffect(() => {
+			// Sync local dataLimit state with cell parameters when they change
+			const newDataLimit =
+				cell.parameters.dataLimit === -1
+					? ""
+					: cell.parameters.dataLimit;
+			setDataLimit(newDataLimit);
+		}, [cell.parameters.dataLimit]);
+
+		useEffect(() => {
 			if (myDbs.status !== "SUCCESS") {
 				return;
 			}
 
 			const dbIds: string[] = [];
-			const dbDisplay = {};
-
+			const dbDisplay: Record<string, string> = {};
 			myDbs.data.forEach((db) => {
 				dbIds.push(db.engine_id);
 				dbDisplay[db.engine_id] = db.engine_name;
@@ -279,7 +302,32 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 		 * @param editor - editor that mounted
 		 * @param monaco - monaco instance
 		 */
-		const handleEditorMount = (editor, monaco) => {
+		const handleEditorMount = (
+			editor: {
+				layout: (dimensions: { width: number; height: number }) => void;
+				getContainerDomNode: () => { clientWidth: number };
+				onDidContentSizeChange: (callback: () => void) => void;
+				addAction: (action: {
+					id: string;
+					label: string;
+					keybindings: number[];
+					run: (editor: { getValue: () => string }) => void;
+				}) => void;
+				getContentHeight: () => number;
+			},
+			monaco: {
+				editor: {
+					defineTheme: (name: string, theme: unknown) => void;
+					setTheme: (name: string) => void;
+				};
+				KeyMod: {
+					CtrlCmd: number;
+				};
+				KeyCode: {
+					Enter: number;
+				};
+			},
+		) => {
 			editorRef.current = editor;
 
 			// add on change
@@ -346,6 +394,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 		 * Resize the editor
 		 */
 		const resizeEditor = () => {
+			if (!editorRef.current) return;
 			// set the initial height
 			let height = 0;
 
@@ -371,7 +420,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 		 * @param newValue - newValue
 		 * @returns
 		 */
-		const handleEditorChange = (newValue: string) => {
+		const handleEditorChange = (newValue: string | undefined) => {
 			if (cell.isLoading) {
 				return;
 			}
@@ -401,17 +450,48 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 		const handleDataLimitUpdate = (
 			e: React.ChangeEvent<HTMLInputElement>,
 		) => {
+			const inputValue = e.target.value;
+
+			// Handle empty string - set to -1 (no limit)
+			if (inputValue === "") {
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						path: "parameters.dataLimit",
+						queryId: cell.query.id,
+						cellId: cell.id,
+						value: -1,
+					},
+				});
+				const updatedSelectQuery = updateDataLimit(
+					cell.parameters.selectQuery,
+				);
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						path: "parameters.selectQuery",
+						queryId: cell.query.id,
+						cellId: cell.id,
+						value: updatedSelectQuery,
+					},
+				});
+				setDataLimit("");
+				return;
+			}
+
 			let value = parseInt(e.target.value, 10);
 			if (Number.isNaN(value)) {
-				value = -1;
-			} else {
-				if (value <= 0) {
-					value = 1;
-				}
-				if (value >= 10000) {
-					value = 10000;
-				}
+				return; // Don't update if invalid
 			}
+
+			// Clamp value between 1 and 10000
+			if (value <= 0) {
+				value = 1;
+			}
+			if (value >= 10000) {
+				value = 10000;
+			}
+
 			state.dispatch({
 				message: ActionMessages.UPDATE_CELL,
 				payload: {
@@ -433,7 +513,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 					value: updatedSelectQuery,
 				},
 			});
-			setDataLimit(value === -1 ? null : value);
+			setDataLimit(value);
 		};
 		const updateFrameType = (e: React.ChangeEvent<HTMLInputElement>) => {
 			const value = e.target.value;
@@ -554,7 +634,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 													>
 														{
 															JOIN_ICONS[
-																join.joinType
+																join.joinType as keyof typeof JOIN_ICONS
 															]
 														}
 													</StyledIconButton>
@@ -636,17 +716,19 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 							direction="row"
 							spacing={1}
 						>
-							<TextField
-								type="number"
-								size="small"
-								label="Data Limit"
-								value={dataLimit}
-								onChange={handleDataLimitUpdate}
-								disabled={
-									cell.parameters.enableBatching ?? false
-								}
-								key={`data-limit-number`}
-							/>
+							{!cell.parameters.enableBatching && (
+								<StyledTextField
+									type="number"
+									size="small"
+									placeholder="Data Limit"
+									value={dataLimit}
+									onChange={handleDataLimitUpdate}
+									disabled={
+										cell.parameters.enableBatching ?? false
+									}
+									key={`data-limit-number`}
+								/>
+							)}
 							<Button
 								variant={"text"}
 								color={"primary"}
@@ -729,9 +811,10 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 									}
 									disabled={cell.isLoading}
 									onChange={(
-										e: React.ChangeEvent<HTMLInputElement>,
+										_event: React.SyntheticEvent,
+										checked: boolean,
 									) => {
-										const isEnabling = e.target.checked;
+										const isEnabling = checked;
 										state.dispatch({
 											message: ActionMessages.UPDATE_CELL,
 											payload: {
@@ -860,7 +943,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 					<DataImportFormModal
 						setIsDataImportModalOpen={setIsDataImportModalOpen}
 						query={cell.query}
-						previousCellId={null}
+						previousCellId={undefined}
 						editMode={true}
 						cell={cell}
 					/>

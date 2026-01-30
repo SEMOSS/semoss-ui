@@ -46,6 +46,7 @@ export { FilterDataCellConfig } from "./components/cell-defaults/filter-data-cel
 export { QueryImportCellConfig } from "./components/cell-defaults/query-import-cell";
 export { UnFilterDataCellConfig } from "./components/cell-defaults/unfilter-data-cell";
 export { DataImportFormModal } from "./components/shared/DataImportFormModal";
+export { QueryImportFormModal } from "./components/shared/QueryImportFormModal";
 // HOOKS
 export {
 	useBlock,

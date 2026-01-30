@@ -1,7 +1,7 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import {
 	CropFree,
 	DriveFileRenameOutlineRounded,
+	Edit,
 	KeyboardArrowDown,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
@@ -12,12 +12,12 @@ import { MonacoEditor } from "@semoss/shared";
 import {
 	Button,
 	Checkbox,
-	FormControlLabel,
 	InputAdornment,
 	Select,
 	Stack,
 	styled,
 	TextField,
+	Tooltip,
 } from "@semoss/ui";
 import { useBlocks } from "../../../hooks";
 import {
@@ -25,7 +25,7 @@ import {
 	type CellComponent,
 	type CellDef,
 } from "../../../store";
-import { DatabaseTables } from "./DatabaseTables";
+import { QueryImportFormModal } from "../../shared/QueryImportFormModal";
 
 const StyledSelect = styled(Select)(({ theme }) => ({
 	"& .MuiSelect-select": {
@@ -94,14 +94,29 @@ export interface QueryImportCellDef extends CellDef<"query-import"> {
 // TODO:: Refactor height to account for Layout
 export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 	(props) => {
-		const editorRef = useRef(null);
+		const editorRef = useRef<{
+			layout: (dimensions: { width: number; height: number }) => void;
+			getContainerDomNode: () => { clientWidth: number };
+			onDidContentSizeChange: (callback: () => void) => void;
+			addAction: (action: {
+				id: string;
+				label: string;
+				keybindings: number[];
+				run: (editor: { getValue: () => string }) => void;
+			}) => void;
+			getContentHeight: () => number;
+		} | null>(null);
 
 		const { cell, isExpanded } = props;
 		const { state } = useBlocks();
 
-		const [showTables, setShowTables] = useState(false);
-
-		const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState({
+		const [isQueryImportModalOpen, setIsQueryImportModalOpen] =
+			useState(false);
+		const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState<{
+			loading: boolean;
+			ids: string[];
+			display: Record<string, string>;
+		}>({
 			loading: true,
 			ids: [],
 			display: {},
@@ -130,15 +145,24 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 					},
 				});
 			}
-		}, []);
+		}, [
+			cell,
+			cell.query.id,
+			cell.parameters.enableBatching,
+			cell.parameters.currentOffset,
+			state,
+		]);
 
+		// After user databases are loaded, set the database ids and names
+		// If no database is selected in the cell, set the first database as default
+		// biome-ignore lint/correctness/useExhaustiveDependencies: state.dispatch is a function, not a depdency
 		useEffect(() => {
 			if (myDbs.status !== "SUCCESS") {
 				return;
 			}
 
 			const dbIds: string[] = [];
-			const dbDisplay = {};
+			const dbDisplay: Record<string, string> = {};
 			myDbs.data.forEach((db) => {
 				dbIds.push(db.engine_id);
 				dbDisplay[db.engine_id] = db.engine_name;
@@ -160,7 +184,13 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 					},
 				});
 			}
-		}, [myDbs.status, myDbs.data]);
+		}, [
+			cell.parameters.databaseId,
+			cell.id,
+			cell.query.id,
+			myDbs.status,
+			myDbs.data,
+		]);
 
 		/**
 		 * Handle mounting of the editor
@@ -168,7 +198,32 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 		 * @param editor - editor that mounted
 		 * @param monaco - monaco instance
 		 */
-		const handleEditorMount = (editor, monaco) => {
+		const handleEditorMount = (
+			editor: {
+				layout: (dimensions: { width: number; height: number }) => void;
+				getContainerDomNode: () => { clientWidth: number };
+				onDidContentSizeChange: (callback: () => void) => void;
+				addAction: (action: {
+					id: string;
+					label: string;
+					keybindings: number[];
+					run: (editor: { getValue: () => string }) => void;
+				}) => void;
+				getContentHeight: () => number;
+			},
+			monaco: {
+				editor: {
+					defineTheme: (name: string, theme: unknown) => void;
+					setTheme: (name: string) => void;
+				};
+				KeyMod: {
+					CtrlCmd: number;
+				};
+				KeyCode: {
+					Enter: number;
+				};
+			},
+		) => {
 			editorRef.current = editor;
 
 			// add on change
@@ -261,6 +316,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 		 * Resize the editor
 		 */
 		const resizeEditor = () => {
+			if (!editorRef.current) return;
 			// set the initial height
 			let height = 0;
 
@@ -286,8 +342,8 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 		 * @param newValue - newValue
 		 * @returns
 		 */
-		const handleEditorChange = (newValue: string) => {
-			if (cell.isLoading) {
+		const handleEditorChange = (newValue: string | undefined) => {
+			if (cell.isLoading || newValue === undefined) {
 				return;
 			}
 
@@ -302,6 +358,10 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 			});
 		};
 
+		const openEditModal = () => {
+			setIsQueryImportModalOpen(true);
+		};
+
 		return (
 			<StyledContent>
 				<Stack direction="column" spacing={1}>
@@ -314,8 +374,8 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 								<StyledSelect
 									size={"small"}
 									variant="standard"
-									disabled={cell.isLoading}
-									title={"Select Database"}
+									disabled={true}
+									title={"Database Not Editable"}
 									value={cell.parameters.databaseId}
 									SelectProps={{
 										IconComponent: KeyboardArrowDown,
@@ -353,19 +413,12 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 								<Button
 									variant={"text"}
 									color={"secondary"}
-									onClick={() => {
-										setShowTables(!showTables);
-									}}
+									onClick={openEditModal}
+									startIcon={<Edit />}
 								>
-									{showTables ? "Hide" : "Show"} Available
-									Columns
+									Edit
 								</Button>
 							</Stack>
-							{showTables && cell.parameters.databaseId ? (
-								<DatabaseTables
-									databaseId={cell.parameters.databaseId}
-								/>
-							) : null}
 						</Stack>
 					)}
 					<div>
@@ -373,12 +426,12 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 							<MonacoEditor
 								value={cell.parameters.selectQuery}
 								defaultValue="--SELECT * FROM..."
-								language="sql" /** TODO: language support? can we tell this from the database type? */
+								language="sql"
 								options={{
 									scrollbar: {
 										alwaysConsumeMouseWheel: false,
 									},
-									readOnly: false,
+									readOnly: true,
 									minimap: { enabled: false },
 									automaticLayout: true,
 									scrollBeyondLastLine: false,
@@ -399,8 +452,8 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 							direction="row"
 							alignItems={"center"}
 							justifyContent={"flex-end"}
-							spacing={2}
-							sx={{ flexWrap: "nowrap" }}
+							spacing={1}
+							paddingTop={"0px"}
 						>
 							<StyledSelect
 								size={"small"}
@@ -411,7 +464,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 									IconComponent: KeyboardArrowDown,
 									style: {
 										height: "30px",
-										width: "120px",
+										width: "140px",
 									},
 									startAdornment: (
 										<InputAdornment position="start">
@@ -465,77 +518,72 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 								}}
 								sx={{ width: "150px" }}
 							/>
-							<FormControlLabel
-								control={
-									<Checkbox
-										checked={
-											cell.parameters.enableBatching ??
-											false
-										}
-										disabled={cell.isLoading}
-										label="Enable Batching"
-										onChange={(
-											e: React.ChangeEvent<HTMLInputElement>,
-										) => {
-											const isEnabling = e.target.checked;
-
-											state.dispatch({
-												message:
-													ActionMessages.UPDATE_CELL,
-												payload: {
-													queryId: cell.query.id,
-													cellId: cell.id,
-													path: "parameters.enableBatching",
-													value: isEnabling,
-												},
-											});
-
-											// ALWAYS reset offset to 0 when toggling batching
-											state.dispatch({
-												message:
-													ActionMessages.UPDATE_CELL,
-												payload: {
-													queryId: cell.query.id,
-													cellId: cell.id,
-													path: "parameters.currentOffset",
-													value: 0,
-												},
-											});
-
-											if (isEnabling) {
-												// Set initial batch size when enabling batching
-												state.dispatch({
-													message:
-														ActionMessages.UPDATE_CELL,
-													payload: {
-														queryId: cell.query.id,
-														cellId: cell.id,
-														path: "parameters.batchSize",
-														value: 100,
-													},
-												});
-											}
-										}}
-										sx={{
-											color: "text.secondary",
-											paddingLeft: "4px",
-										}}
-									/>
+							<Tooltip
+								title={
+									cell.parameters.enableBatching
+										? "Disable Batching"
+										: "Enable Batching"
 								}
-								label=""
-								sx={{
-									color: "text.secondary",
-									marginRight: 0,
-									marginLeft: 0,
-									gap: 0,
-									"& .MuiFormControlLabel-label": {
-										fontSize: "14px",
-									},
-								}}
-							/>
+							>
+								<Checkbox
+									checked={
+										cell.parameters.enableBatching ?? false
+									}
+									label={
+										cell.parameters.enableBatching
+											? ""
+											: "Enable Batching"
+									}
+									disabled={cell.isLoading}
+									onChange={(
+										_event: React.SyntheticEvent,
+										checked: boolean,
+									) => {
+										const isEnabling = checked;
+										state.dispatch({
+											message: ActionMessages.UPDATE_CELL,
+											payload: {
+												queryId: cell.query.id,
+												cellId: cell.id,
+												path: "parameters.enableBatching",
+												value: isEnabling,
+											},
+										});
+
+										// ALWAYS reset offset to 0 when toggling batching
+										state.dispatch({
+											message: ActionMessages.UPDATE_CELL,
+											payload: {
+												queryId: cell.query.id,
+												cellId: cell.id,
+												path: "parameters.currentOffset",
+												value: 0,
+											},
+										});
+
+										if (isEnabling) {
+											// Set initial batch size when enabling batching
+											state.dispatch({
+												message:
+													ActionMessages.UPDATE_CELL,
+												payload: {
+													queryId: cell.query.id,
+													cellId: cell.id,
+													path: "parameters.batchSize",
+													value: 100,
+												},
+											});
+										}
+									}}
+									sx={{
+										color: "text.secondary",
+									}}
+								/>
+							</Tooltip>
 							{cell.parameters.enableBatching && (
 								<>
-									<StyledTextField
+									<TextField
+										size="small"
 										title="Batch Size"
 										type="number"
 										placeholder="Batch Amount..."
@@ -581,7 +629,8 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 										}}
 										sx={{ width: "120px" }}
 									/>
-									<StyledTextField
+									<TextField
+										size="small"
 										title="Current Offset"
 										type="number"
 										value={
@@ -615,6 +664,14 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 						</Stack>
 					)}
 				</Stack>
+				{isQueryImportModalOpen && (
+					<QueryImportFormModal
+						setIsQueryImportModalOpen={setIsQueryImportModalOpen}
+						query={cell.query}
+						cell={cell}
+						editMode={true}
+					/>
+				)}
 			</StyledContent>
 		);
 	},

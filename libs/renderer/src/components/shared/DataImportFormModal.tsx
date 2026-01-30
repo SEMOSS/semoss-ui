@@ -1,24 +1,18 @@
 import {
-	AddBox,
-	CalendarViewMonth,
-	ControlPointDuplicateRounded,
-	FilterListRounded,
-	JoinFull,
-	JoinInner,
-	JoinLeft,
-	JoinRight,
-	Warning,
+	CropFree,
+	DriveFileRenameOutlineRounded,
+	KeyboardArrowDown,
 } from "@mui/icons-material";
-import { Checkbox, TableContainer } from "@mui/material";
+import { Box, TableContainer } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
-import { runPixel, usePixel } from "@semoss/sdk/react";
+import { DATA_FRAME_TYPES, runPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	IconButton,
+	Checkbox,
+	InputAdornment,
 	Menu,
-	type MenuProps,
 	Modal,
 	Select,
 	Stack,
@@ -38,38 +32,11 @@ import {
 } from "../../store";
 import { DefaultCells } from "../cell-defaults";
 import { CodeCellConfig } from "../cell-defaults/code-cell";
-import { DataImportCellConfig } from "../cell-defaults/data-import-cell";
-
-// import { usePixel, useRootStore } from "hooks";
-
-// import { DefaultCells } from '@/components/cell-defaults';
-// import { DataImportCellConfig } from '../cell-defaults/data-import-cell';
-// import { CodeCellConfig } from '../cell-defaults/code-cell';
-// import { LoadingScreen } from '@/components/ui';
-
-const StyledDivSecondaryKeyLabel = styled("div")(() => ({
-	backgroundColor: "#EBEBEB",
-	padding: "3px, 4px, 3px, 4px",
-	width: "37px",
-	height: "24px",
-	borderRadius: "3px",
-	display: "inline-block",
-	marginLeft: "7px",
-	paddingTop: "3px",
-	textAlign: "center",
-}));
-
-const StyledDivPrimaryKeyLabel = styled("div")(() => ({
-	backgroundColor: "#F1E9FB",
-	padding: "3px, 4px, 3px, 4px",
-	width: "37px",
-	height: "24px",
-	borderRadius: "3px",
-	display: "inline-block",
-	marginLeft: "7px",
-	paddingTop: "3px",
-	textAlign: "center",
-}));
+import {
+	DataImportCellConfig,
+	type DataImportCellDef,
+} from "../cell-defaults/data-import-cell";
+import { DatabaseAccordions } from "../cell-defaults/query-import-cell/DatabaseAccordions";
 
 const StyledDivFitContent = styled("div")(() => ({
 	width: "fit-content",
@@ -77,40 +44,13 @@ const StyledDivFitContent = styled("div")(() => ({
 	display: "flex",
 }));
 
-const StyledIconButtonMargins = styled(IconButton)(() => ({
-	marginLeft: "7.5px",
-	marginRight: "7.5px",
-}));
-
 const StyledSelectMinWidth = styled(Select)(() => ({
 	minWidth: "220px",
-}));
-
-const StyledButtonEditColumns = styled(Button)(() => ({
-	marginRight: "15px",
-}));
-
-const StyledDivCenterFlex = styled("div")(() => ({
-	alignItems: "center",
-	display: "flex",
-}));
-
-const StyledTypographyMarginRight = styled(Typography)(() => ({
-	marginBottom: "-1.5px",
-	marginRight: "15px",
 }));
 
 const StyledModalActionsUnpadded = styled(Modal.Actions)(() => ({
 	display: "flex",
 	justifyContent: "flex-end",
-	padding: "0px",
-}));
-
-const StyledMarginModalActions = styled(Modal.Actions)(() => ({
-	display: "flex",
-	justifyContent: "flex-start",
-	marginBottom: "15px",
-	marginTop: "15px",
 	padding: "0px",
 }));
 
@@ -134,13 +74,6 @@ const StyledModalTitleWrapper = styled(Modal.Title)(() => ({
 	marginTop: "25px",
 }));
 
-const StyledModalTitleUnpaddedWrapper = styled(Modal.Title)(() => ({
-	justifyContent: "space-between",
-	alignContent: "center",
-	display: "flex",
-	padding: "0px",
-}));
-
 const ScrollTableSetContainer = styled(TableContainer)(() => ({
 	maxHeight: "350px",
 	overflowY: "scroll",
@@ -157,94 +90,81 @@ const StyledTableTitle = styled(Typography)(() => ({
 	marginBottom: "20px",
 }));
 
-const FlexWrapper = styled("div")(() => ({
-	marginTop: "15px",
+const StyledEditColumnsWrapper = styled("div")<{ showPreview: boolean }>(
+	({ showPreview }) => ({
+		height: showPreview ? "65%" : "100%",
+		display: "flex",
+		flexDirection: "column",
+		overflow: "auto",
+		transition: "height 0.3s ease",
+		paddingRight: "8px",
+	}),
+);
+
+const StyledPreviewWrapper = styled("div")(() => ({
+	height: "35%",
 	display: "flex",
-	padding: "0px",
+	flexDirection: "column",
+	overflow: "hidden",
+	marginTop: "16px",
 }));
 
-const FlexTableCell = styled("div")(() => ({
-	alignItems: "center",
+const StyledSplitContainer = styled("div")(({ theme }) => ({
+	display: "grid",
+	gridTemplateColumns: "400px 1fr",
+	gap: theme.spacing(2),
+	flex: 1,
+	overflow: "hidden",
+}));
+
+const StyledColumnsSection = styled("div")(({ theme }) => ({
 	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(1),
+	overflow: "hidden",
+	overflowY: "auto",
+	borderRight: `1px solid ${theme.palette.divider}`,
+	paddingRight: theme.spacing(2),
+	paddingLeft: theme.spacing(2),
 }));
 
-const StyledTableTitleBlueBubble = styled(Typography)(({ theme }) => ({
-	backgroundColor: theme.palette.primary.selected,
-	padding: "7.5px 17.5px",
-	borderRadius: "10px",
-	width: "fit-content",
+const StyledEditorSection = styled("div")(({ theme }) => ({
 	display: "flex",
-	marginTop: "0px",
-	marginLeft: "0px",
-	marginBottom: "15px",
-	alignItems: "center",
+	flexDirection: "column",
+	gap: theme.spacing(1),
+	overflow: "hidden",
+	overflowY: "auto",
+	paddingBottom: theme.spacing(2),
 }));
 
-const SingleTableWrapper = styled("div")(() => ({
-	marginRight: "12.5px",
-	marginBottom: "60px",
-	marginLeft: "12.5px",
-}));
-
-// const CheckAllIconButton = styled(IconButton)(() => ({
-//     marginLeft: "-10px",
-// }));
-
-const AliasWarningIcon = styled(Tooltip)(() => ({
-	marginLeft: "10px",
-	color: "goldenrod",
-}));
-
-const TableIconButton = styled(Tooltip)(({ theme }) => ({
-	color: theme.palette.primary.main,
-	marginLeft: "-3px",
-	marginRight: "7px",
-}));
-
-const ColumnNameText = styled(Typography)(() => ({
-	fontWeight: "bold",
-}));
-
-const StyledMenu = styled((props: MenuProps) => (
-	<Menu
-		anchorOrigin={{
-			horizontal: "left",
-			vertical: "bottom",
-		}}
-		transformOrigin={{
-			horizontal: "left",
-			vertical: "top",
-		}}
-		{...props}
-	/>
-))(({ theme }) => ({
-	"& .MuiPaper-root": {
-		marginTop: theme.spacing(1),
-	},
-	".MuiList-root": {
-		padding: 0,
+const StyledSelect = styled(Select)(({ theme }) => ({
+	"& .MuiSelect-select": {
+		color: theme.palette.text.secondary,
+		display: "flex",
+		gap: theme.spacing(1),
+		alignItems: "center",
+		textOverflow: "ellipsis",
+		overflow: "hidden",
+		whiteSpace: "nowrap",
+		"&:focus": {
+			backgroundColor: "inherit !important",
+		},
 	},
 }));
 
-const StyledMenuItem = styled(Menu.Item)(() => ({
-	textTransform: "capitalize",
+const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
+	display: "flex",
+	gap: theme.spacing(1),
+	color: theme.palette.text.secondary,
 }));
 
-const StyledJoinDiv = styled("div")(({ theme }) => ({
-	borderRadius: "12px",
-	padding: "4px 12px",
-	fontSize: "14px",
-	color: "black",
-	border: "none",
-	cursor: "default",
-	backgroundColor: theme.palette.primary.selected,
-}));
-
-const StyledJoinTypography = styled(Typography)(({ theme }) => ({
-	cursor: "default",
-	marginLeft: "12.5px",
-	marginRight: "12.5px",
-	color: theme.palette.secondary.dark,
+const StyledTextField = styled(TextField)(({ theme }) => ({
+	"& .MuiInputBase-root": {
+		color: theme.palette.text.secondary,
+		display: "flex",
+		gap: theme.spacing(1),
+		height: "30px",
+	},
 }));
 
 type JoinElement = {
@@ -270,11 +190,6 @@ interface TableInterface {
 	name: string;
 }
 
-interface NewFormData {
-	databaseSelect: string;
-	tables: TableInterface[];
-}
-
 type FormValues = {
 	databaseSelect: string;
 	joins: JoinElement[];
@@ -283,26 +198,21 @@ type FormValues = {
 
 const IMPORT_MODAL_WIDTHS = {
 	small: "600px",
-	medium: "1150px",
-	large: "1150px",
-};
-
-const SQL_COLUMN_TYPES = ["DATE", "NUMBER", "STRING", "TIMESTAMP"];
-
-const JOIN_ICONS = {
-	inner: <JoinInner />,
-	"right.outer": <JoinRight />,
-	"left.outer": <JoinLeft />,
-	outer: <JoinFull />,
+	medium: "1550px",
+	large: "1550px",
 };
 
 export const DataImportFormModal = observer(
 	(props: {
 		query?: QueryState;
 		previousCellId?: string;
-		setIsDataImportModalOpen?;
+		setIsDataImportModalOpen: (open: boolean) => void;
 		editMode?: boolean;
-		cell?;
+		cell?: {
+			id: string;
+			query: QueryState;
+			parameters: DataImportCellDef["parameters"];
+		};
 	}): JSX.Element => {
 		const {
 			query,
@@ -312,112 +222,153 @@ export const DataImportFormModal = observer(
 			cell,
 		} = props;
 
-		const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-		const [joinTypeSelectIndex, setJoinTypeSelectIndex] = useState(-1);
 		const { state, notebook } = useBlocks();
 
 		const {
 			control: formControl,
-			setValue: formSetValue,
 			reset: formReset,
 			handleSubmit: formHandleSubmit,
 			watch: dataImportwatch,
 		} = useForm<FormValues>();
 
 		const watchedTables = dataImportwatch("tables");
-		const watchedJoins = dataImportwatch("joins");
-		const [userDatabases, setUserDatabases] = useState(null);
+		const [userDatabases, setUserDatabases] = useState<{
+			ids: string[];
+			display: Record<string, string>;
+		}>({ ids: [], display: {} });
 		const [importModalPixelWidth, setImportModalPixelWidth] =
 			useState<string>(IMPORT_MODAL_WIDTHS.small);
-		const [databaseTableHeaders, setDatabaseTableHeaders] = useState([]);
+		const [databaseTableHeaders, setDatabaseTableHeaders] = useState<
+			string[]
+		>([]);
 		const [selectedDatabaseId, setSelectedDatabaseId] = useState(
 			cell ? cell.parameters.databaseId : null,
 		);
-		const getDatabases = usePixel("META | GetDatabaseList ( ) ;"); // making repeat network calls, move to load data modal open
-		const [databaseTableRows, setDatabaseTableRows] = useState([]);
-		const [tableNames, setTableNames] = useState<string[]>([]);
+		const [databaseTableRows, setDatabaseTableRows] = useState<unknown[][]>(
+			[],
+		);
+		const [_tableNames, setTableNames] = useState<string[]>([]);
 		const [isDatabaseLoading, setIsDatabaseLoading] =
 			useState<boolean>(false);
 		const [showPreview, setShowTablePreview] = useState<boolean>(false);
-		const [showEditColumns, setShowEditColumns] = useState<boolean>(true);
-		const [tableEdgesObject, setTableEdgesObject] = useState(null);
+		const [previewError, setPreviewError] = useState<string | null>(null);
 		const [aliasesCountObj, setAliasesCountObj] = useState({});
-		// const { monolithStore } = useRootStore();
 		const aliasesCountObjRef = useRef({});
-		const [tableEdges, setTableEdges] = useState({}); //
+
 		const [rootTable, setRootTable] = useState(
 			cell ? cell.parameters.rootTable : null,
 		);
 		const [dataLimit, setDataLimit] = useState(
-			cell ? cell.parameters.dataLimit : -1,
+			cell && cell.parameters.dataLimit !== -1
+				? cell.parameters.dataLimit
+				: "",
+		);
+
+		// Frame Inputs
+		const [frameType, setFrameType] = useState(
+			cell?.parameters?.frameType || "GRID",
+		);
+		const [frameVariableName, setFrameVariableName] = useState(
+			cell?.parameters?.frameVariableName || null,
+		);
+
+		// Batching Inputs
+		const [enableBatching, setEnableBatching] = useState(
+			cell?.parameters?.enableBatching ?? false,
+		);
+		const [batchSize, setBatchSize] = useState<number | "">(
+			cell?.parameters?.batchSize ?? 100,
 		);
 
 		const [checkedColumnsCount, setCheckedColumnsCount] = useState(0);
-		const [selectedTableNames, setSelectedTableNames] = useState(new Set());
-		const [shownTables, setShownTables] = useState(new Set());
-		const [joinsSet, setJoinsSet] = useState(new Set());
+		const [_shownTables, setShownTables] = useState(new Set());
+		const [selectedColumnsData, setSelectedColumnsData] = useState<{
+			[tableName: string]: {
+				columnName: string;
+				columnType: string;
+				alias: string;
+			}[];
+		}>({});
+
 		const pixelStringRef = useRef<string>("");
 		const pixelPartialRef = useRef<string>("");
-		const [isInitLoadComplete, setIsInitLoadComplete] = useState(false);
-		const [isJoinSelectOpen, setIsJoinSelectOpen] = useState(false);
+		const [_isInitLoadComplete, setIsInitLoadComplete] = useState(false);
+
 		const [initEditPrepopulateComplete, setInitEditPrepopulateComplete] =
-			useState(editMode ? false : true);
+			useState(false);
 
 		const { fields: newTableFields } = useFieldArray({
 			control: formControl,
 			name: "tables",
 		});
 
-		const {
-			fields: joinElements,
-			append: appendJoinElement,
-			remove: removeJoinElement,
-		} = useFieldArray({
-			control: formControl,
-			name: "joins",
-		});
-
 		const notification = useNotification();
-		/** Select all the rows from a Table */
-		const [isAllSelected, setIsAllSelected] = useState<boolean>(false);
+
+		const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
+			`MyEngines(engineTypes=['DATABASE']);`,
+		);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: retrieveDatabaseTablesAndEdges is a function
 		useEffect(() => {
-			if (editMode)
+			if (editMode && cell?.parameters.databaseId) {
 				retrieveDatabaseTablesAndEdges(cell.parameters.databaseId);
-		}, []);
+			}
+		}, [editMode, cell?.parameters.databaseId]);
+
+		useEffect(() => {
+			const count = Object.values(selectedColumnsData).reduce(
+				(total, columns) => total + columns.length,
+				0,
+			);
+			setCheckedColumnsCount(count);
+		}, [selectedColumnsData]);
 
 		useEffect(() => {
 			setShowTablePreview(false);
-			setShowEditColumns(true);
-		}, [selectedDatabaseId]);
-
+			setPreviewError(null);
+		}, []);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: prepoulateFormForEdit is a function
 		useEffect(() => {
 			if (
 				editMode &&
-				checkedColumnsCount == 0 &&
-				cell.parameters.databaseId == selectedDatabaseId &&
+				checkedColumnsCount === 0 &&
+				cell?.parameters.databaseId === selectedDatabaseId &&
 				newTableFields.length &&
 				!initEditPrepopulateComplete
 			) {
 				prepoulateFormForEdit(cell);
 			}
-		}, [newTableFields]);
+		}, [
+			editMode,
+			checkedColumnsCount,
+			cell,
+			cell?.parameters.databaseId,
+			selectedDatabaseId,
+			newTableFields,
+			initEditPrepopulateComplete,
+		]);
 
+		// After user databases are loaded, set the database ids and names
+		// If no database is selected in the cell, set the first database as default
 		useEffect(() => {
-			if (getDatabases.status !== "SUCCESS") {
+			if (myDbs.status !== "SUCCESS") {
 				return;
 			}
-			setUserDatabases(getDatabases.data);
-		}, [getDatabases.status, getDatabases.data]);
 
+			const dbIds: string[] = [];
+			const dbDisplay: Record<string, string> = {};
+			myDbs.data?.forEach((db) => {
+				dbIds.push(db.app_id);
+				dbDisplay[db.app_id] = db.app_name;
+			});
+			setUserDatabases({
+				// loading: false,
+				ids: dbIds,
+				display: dbDisplay,
+			});
+		}, [myDbs.status, myDbs.data]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: retrievePreviewData is a functions
 		useEffect(() => {
-			if (!editMode || initEditPrepopulateComplete) {
-				setJoinsStackHandler();
-				updateSelectedTables();
-			}
-		}, [checkedColumnsCount]);
-
-		useEffect(() => {
-			if (showPreview) {
+			if (showPreview && checkedColumnsCount > 0) {
 				retrievePreviewData();
 			}
 		}, [
@@ -427,20 +378,39 @@ export const DataImportFormModal = observer(
 			selectedDatabaseId,
 		]);
 
+		const handleDataLimitUpdate = (
+			e: React.ChangeEvent<HTMLInputElement>,
+		) => {
+			const inputValue = e.target.value;
+
+			// Handle empty string - set to -1 (no limit)
+			if (inputValue === "") {
+				setDataLimit("");
+				return;
+			}
+
+			let value = parseInt(inputValue, 10);
+			if (Number.isNaN(value)) {
+				return; // Don't update if invalid
+			}
+
+			// Clamp value between 1 and 10000
+			if (value <= 0) {
+				value = 1;
+			}
+			if (value >= 10000) {
+				value = 10000;
+			}
+
+			setDataLimit(value);
+		};
+
 		const getSelectedColumnNames = () => {
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
+			const pixelColumnNames: string[] = [];
 
-			watchedTables.forEach((tableObject) => {
-				const currTableColumns = tableObject.columns;
-
-				currTableColumns.forEach((columnObject) => {
-					if (columnObject.checked) {
-						pixelTables.add(columnObject.tableName);
-						pixelColumnNames.push(
-							`${columnObject.tableName}__${columnObject.columnName}`,
-						);
-					}
+			Object.keys(selectedColumnsData).forEach((tableName) => {
+				selectedColumnsData[tableName].forEach((column) => {
+					pixelColumnNames.push(`${tableName}__${column.columnName}`);
 				});
 			});
 
@@ -448,17 +418,11 @@ export const DataImportFormModal = observer(
 		};
 
 		const getColumnAliases = () => {
-			const pixelTables = new Set();
-			const pixelColumnAliases = [];
+			const pixelColumnAliases: string[] = [];
 
-			watchedTables.forEach((tableObject) => {
-				const currTableColumns = tableObject.columns;
-
-				currTableColumns.forEach((columnObject) => {
-					if (columnObject.checked) {
-						pixelTables.add(columnObject.tableName);
-						pixelColumnAliases.push(columnObject.userAlias);
-					}
+			Object.keys(selectedColumnsData).forEach((tableName) => {
+				selectedColumnsData[tableName].forEach((column) => {
+					pixelColumnAliases.push(column.alias);
 				});
 			});
 
@@ -474,24 +438,29 @@ export const DataImportFormModal = observer(
 				};
 
 				if (widget === DataImportCellConfig.widget) {
+					const currTableNamesSet = retrieveSelectedTableNames();
+					const currTableNames = Array.from(currTableNamesSet);
+
 					config.parameters = {
 						...DefaultCells[widget].parameters,
-						frameVariableName: `FRAME_${Math.floor(
-							Math.random() * 100000,
-						)}`,
+						frameVariableName: frameVariableName,
+						frameType: frameType,
 						databaseId: selectedDatabaseId,
-						joins: watchedJoins,
 						selectQuery: pixelPartialRef.current,
-						tableNames: Array.from(selectedTableNames),
+						tableNames: currTableNames,
 						selectedColumns: getSelectedColumnNames(),
 						columnAliases: getColumnAliases(),
 						rootTable: rootTable,
-						// filters: filters,
+						enableBatching: enableBatching,
+						batchSize: batchSize,
+						currentOffset: 0,
+						dataLimit: dataLimit === "" ? -1 : dataLimit,
 					};
 				}
 
 				if (
 					previousCellId &&
+					query &&
 					state.queries[query.id].cells[previousCellId].widget ===
 						widget &&
 					widget === CodeCellConfig.widget
@@ -508,8 +477,8 @@ export const DataImportFormModal = observer(
 				const newCellId = (await state.dispatch({
 					message: ActionMessages.NEW_CELL,
 					payload: {
-						queryId: query.id,
-						previousCellId: previousCellId,
+						queryId: query?.id ?? "",
+						previousCellId: previousCellId ?? "",
 						config: config as Omit<CellStateConfig, "id">,
 					},
 				})) as string;
@@ -517,64 +486,17 @@ export const DataImportFormModal = observer(
 				state.dispatch({
 					message: ActionMessages.ADD_VARIABLE,
 					payload: {
-						id: `${query.id}--${newCellId}`,
+						id: `${query?.id}--${newCellId}`,
 						type: "cell",
-						to: query.id,
+						to: query?.id,
 						cellId: newCellId,
 					},
 				});
 
-				notebook.selectCell(query.id, newCellId);
+				notebook.selectCell(query?.id ?? "", newCellId);
 			} catch (e) {
 				console.error(e);
 			}
-		};
-
-		/**
-		 * Handles the event when a user clicks the "Select All" button in the Data Import Form Modal.
-		 * If the user clicks the button when all columns are already selected, it unselects all columns.
-		 * If the user clicks the button when no columns are selected, it selects all columns.
-		 * @param {number} tableIndex The index of the table in the watchedTables array.
-		 */
-		const addAllTableColumnsHandler = (tableIndex: number) => {
-			setShownTables(new Set(tableNames));
-			setRootTable(watchedTables[tableIndex].name);
-			// Check if all columns are currently selected. If they are, set allChecked to false.
-			// If not, set allChecked to true.
-			const allChecked = !isAllSelected;
-			const updatedColumns = watchedTables[tableIndex].columns.map(
-				(column) => ({
-					...column,
-					checked: allChecked,
-				}),
-			);
-
-			const freshAliasCountObj = {};
-			updatedColumns.forEach((column) => {
-				if (allChecked) {
-					// If all columns are being selected, increment the alias count for this column's alias.
-					const alias = column.userAlias;
-					if (alias in freshAliasCountObj) {
-						freshAliasCountObj[alias] += 1;
-					} else {
-						freshAliasCountObj[alias] = 1;
-					}
-				}
-			});
-
-			// Update the aliasesCountObj state variable with the new alias count object.
-			setAliasesCountObj(freshAliasCountObj);
-			aliasesCountObjRef.current = { ...freshAliasCountObj };
-
-			// Update the form value for the columns of the table at the given index with the updated columns array.
-			formSetValue(`tables.${tableIndex}.columns`, updatedColumns, {
-				shouldDirty: true,
-				shouldValidate: true,
-			});
-
-			setCheckedColumnsCount(allChecked ? updatedColumns.length : 0);
-			setIsAllSelected(allChecked);
-			setJoinsStackHandler();
 		};
 
 		const updateSubmitDispatches = () => {
@@ -585,8 +507,8 @@ export const DataImportFormModal = observer(
 			state.dispatch({
 				message: ActionMessages.UPDATE_CELL,
 				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
+					queryId: cell?.query.id ?? "",
+					cellId: cell?.id ?? "",
 					path: "parameters.tableNames",
 					value: currTableNames,
 				},
@@ -595,8 +517,8 @@ export const DataImportFormModal = observer(
 			state.dispatch({
 				message: ActionMessages.UPDATE_CELL,
 				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
+					queryId: cell?.query.id ?? "",
+					cellId: cell?.id ?? "",
 					path: "parameters.selectedColumns",
 					value: currSelectedColumns,
 				},
@@ -605,8 +527,8 @@ export const DataImportFormModal = observer(
 			state.dispatch({
 				message: ActionMessages.UPDATE_CELL,
 				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
+					queryId: cell?.query.id ?? "",
+					cellId: cell?.id ?? "",
 					path: "parameters.columnAliases",
 					value: getColumnAliases(),
 				},
@@ -615,18 +537,8 @@ export const DataImportFormModal = observer(
 			state.dispatch({
 				message: ActionMessages.UPDATE_CELL,
 				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
-					path: "parameters.joins",
-					value: joinElements,
-				},
-			});
-
-			state.dispatch({
-				message: ActionMessages.UPDATE_CELL,
-				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
+					queryId: cell?.query.id ?? "",
+					cellId: cell?.id ?? "",
 					path: "parameters.rootTable",
 					value: rootTable,
 				},
@@ -635,8 +547,8 @@ export const DataImportFormModal = observer(
 			state.dispatch({
 				message: ActionMessages.UPDATE_CELL,
 				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
+					queryId: cell?.query.id ?? "",
+					cellId: cell?.id ?? "",
 					path: "parameters.selectQuery",
 					value: pixelPartialRef.current,
 				},
@@ -645,8 +557,8 @@ export const DataImportFormModal = observer(
 			state.dispatch({
 				message: ActionMessages.UPDATE_CELL,
 				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
+					queryId: cell?.query.id ?? "",
+					cellId: cell?.id ?? "",
 					path: "parameters.databaseId",
 					value: selectedDatabaseId,
 				},
@@ -655,16 +567,76 @@ export const DataImportFormModal = observer(
 			state.dispatch({
 				message: ActionMessages.UPDATE_CELL,
 				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
-					path: "parameters.joins",
-					value: watchedJoins,
+					queryId: cell?.query.id ?? "",
+					cellId: cell?.id ?? "",
+					path: "parameters.dataLimit",
+					value: dataLimit === "" ? -1 : dataLimit,
+				},
+			});
+
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					queryId: cell?.query.id ?? "",
+					cellId: cell?.id ?? "",
+					path: "parameters.frameType",
+					value: frameType,
+				},
+			});
+
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					queryId: cell?.query.id ?? "",
+					cellId: cell?.id ?? "",
+					path: "parameters.frameVariableName",
+					value: frameVariableName,
+				},
+			});
+
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					queryId: cell?.query.id ?? "",
+					cellId: cell?.id ?? "",
+					path: "parameters.enableBatching",
+					value: enableBatching,
+				},
+			});
+
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					queryId: cell?.query.id ?? "",
+					cellId: cell?.id ?? "",
+					path: "parameters.batchSize",
+					value: batchSize,
+				},
+			});
+
+			// Always reset offset to 0 when importing
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					queryId: query?.id ?? "",
+					cellId: cell?.id ?? "",
+					path: "parameters.currentOffset",
+					value: 0,
+				},
+			});
+
+			// Run the cell
+			state.dispatch({
+				message: ActionMessages.RUN_CELL,
+				payload: {
+					queryId: query?.id ?? "",
+					cellId: cell?.id ?? "",
 				},
 			});
 		};
 
-		/** New Submit for Import Data --- empty */
-		const onImportDataSubmit = (data: NewFormData) => {
+		/** Submit handler for data import form */
+		const onImportDataSubmit = (data: FormValues) => {
 			console.log("submitted data", data);
 			if (editMode) {
 				retrievePreviewData();
@@ -685,12 +657,11 @@ export const DataImportFormModal = observer(
 		};
 
 		/** Get Database Information for Data Import Modal */
-		const retrieveDatabaseTablesAndEdges = async (databaseId) => {
+		const retrieveDatabaseTablesAndEdges = async (databaseId: string) => {
 			setIsDatabaseLoading(true);
 			const pixelString = `META|GetDatabaseTableStructure(database=[ "${databaseId}" ]);META|GetDatabaseMetamodel( database=[ "${databaseId}" ], options=["dataTypes","positions"]);`;
 
 			runPixel(pixelString).then((pixelResponse) => {
-				// TODO: FIX TYPES
 				const responseTableStructure = pixelResponse.pixelReturn[0]
 					.output as string[][];
 				const isResponseTableStructureGood =
@@ -698,22 +669,7 @@ export const DataImportFormModal = observer(
 						"ERROR",
 					) === -1;
 
-				const responseTableEdgesStructure = pixelResponse.pixelReturn[1]
-					.output as {
-					edges: {
-						relation: string;
-						source: string;
-						sourceColumn: string;
-						target: string;
-						targetColumn: string;
-					}[];
-				};
-				const isResponseTableEdgesStructureGood =
-					pixelResponse.pixelReturn[1].operationType.indexOf(
-						"ERROR",
-					) === -1;
-
-				let newTableNames = [];
+				let newTableNames: string[] = [];
 
 				if (isResponseTableStructureGood) {
 					// Extract unique table names without using a Set
@@ -728,7 +684,7 @@ export const DataImportFormModal = observer(
 					);
 
 					const tableColumnsObject = responseTableStructure.reduce(
-						(acc, ele) => {
+						(acc: Record<string, unknown[]>, ele) => {
 							const tableName = ele[0];
 							const columnName = ele[1];
 							const columnType = ele[2];
@@ -759,9 +715,15 @@ export const DataImportFormModal = observer(
 									(tableName, tableIdx) => ({
 										id: tableIdx,
 										name: tableName,
-										columns: tableColumnsObject[
-											tableName
-										].map((colObj, colIdx) => ({
+										columns: (
+											tableColumnsObject[
+												tableName
+											] as Array<{
+												columnName: string;
+												columnType: string;
+												userAlias: string;
+											}>
+										).map((colObj, colIdx) => ({
 											id: colIdx,
 											tableName: tableName,
 											columnName: colObj.columnName,
@@ -785,110 +747,16 @@ export const DataImportFormModal = observer(
 					});
 				}
 
-				if (isResponseTableEdgesStructureGood) {
-					const newEdgesDict =
-						responseTableEdgesStructure.edges.reduce((acc, ele) => {
-							const source = ele.source;
-							const target = ele.target;
-							const sourceColumn = ele.sourceColumn;
-							const targetColumn = ele.targetColumn;
-
-							if (!acc[source]) {
-								acc[source] = {
-									[target]: {
-										sourceColumn,
-										targetColumn,
-									},
-								};
-							} else {
-								acc[source][target] = {
-									sourceColumn,
-									targetColumn,
-								};
-							}
-
-							if (!acc[target]) {
-								acc[target] = {
-									[source]: {
-										sourceColumn: targetColumn,
-										targetColumn: sourceColumn,
-									},
-								};
-							} else {
-								acc[target][source] = {
-									sourceColumn: targetColumn,
-									targetColumn: sourceColumn,
-								};
-							}
-							return acc;
-						}, {});
-
-					setTableEdgesObject(newEdgesDict);
-				} else {
-					console.error("Error retrieving database edges");
-					notification.add({
-						color: "error",
-						message: `Error retrieving database tables`,
-					});
-				}
-
-				const o = pixelResponse.pixelReturn[1].output as {
-					edges: {
-						relation: string;
-						source: string;
-						sourceColumn: string;
-						target: string;
-						targetColumn: string;
-					}[];
-				};
-				const edges = o.edges;
-
-				const newTableEdges = {};
-				edges.forEach((edge) => {
-					if (newTableEdges[edge.source]) {
-						newTableEdges[edge.source][edge.target] = edge.relation;
-					} else {
-						newTableEdges[edge.source] = {
-							[edge.target]: edge.relation,
-						};
-					}
-					if (newTableEdges[edge.target]) {
-						newTableEdges[edge.target][edge.source] = edge.relation;
-					} else {
-						newTableEdges[edge.target] = {
-							[edge.source]: edge.relation,
-						};
-					}
-				});
-				setTableEdges(newTableEdges);
 				setIsDatabaseLoading(false);
 				setImportModalPixelWidth(IMPORT_MODAL_WIDTHS.large);
-
 				setTableNames(newTableNames);
-				// shown tables filtered only on init load of edit mode
-				if (editMode && !isInitLoadComplete) {
-					const newEdges = [
-						rootTable,
-						...(newTableEdges[rootTable]
-							? Object.keys(newTableEdges[rootTable])
-							: []),
-					];
-					setShownTables(new Set(newEdges));
-				} else {
-					setShownTables(new Set(newTableNames));
-				}
-
-				if (!editMode || isInitLoadComplete) {
-					setAliasesCountObj({});
-					aliasesCountObjRef.current = {};
-					removeJoinElement();
-					setJoinsSet(new Set());
-				}
+				setShownTables(new Set(newTableNames));
+				setAliasesCountObj({});
+				aliasesCountObjRef.current = {};
 			});
 
 			setAliasesCountObj({});
 			aliasesCountObjRef.current = {};
-			removeJoinElement();
 			setIsInitLoadComplete(true);
 		};
 
@@ -898,60 +766,37 @@ export const DataImportFormModal = observer(
 		const updatePixelRef = async (): Promise<void> => {
 			try {
 				const databaseId = selectedDatabaseId;
-				const pixelTables: Set<string> = new Set();
 				const pixelColumnNames: string[] = [];
 				const pixelColumnAliases: string[] = [];
-				const pixelJoins: string[] = [];
-				watchedTables?.forEach((tableObject) => {
-					const currTableColumns = tableObject.columns;
-					currTableColumns?.forEach((columnObject) => {
-						if (columnObject.checked) {
-							pixelTables.add(columnObject.tableName);
-							pixelColumnNames.push(
-								`${columnObject.tableName}__${columnObject.columnName}`,
-							);
-							pixelColumnAliases.push(columnObject.userAlias);
-						}
+
+				// Build pixel column names and aliases from selectedColumnsData
+				Object.keys(selectedColumnsData).forEach((tableName) => {
+					selectedColumnsData[tableName].forEach((column) => {
+						pixelColumnNames.push(
+							`${tableName}__${column.columnName}`,
+						);
+						pixelColumnAliases.push(column.alias);
 					});
 				});
 
-				watchedJoins?.forEach((joinEle) => {
-					pixelJoins.push(
-						`( ${joinEle.leftTable} , ${joinEle.joinType}.join , ${joinEle.rightTable} )`,
-					);
-				});
+				const limitValue = dataLimit === "" ? -1 : dataLimit;
 
 				let pixelStringPart1 = `Database ( database = [ "${databaseId}" ] )`;
-				pixelStringPart1 += ` | Select ( ${pixelColumnNames.join(
-					" , ",
-				)} )`;
-				pixelStringPart1 += `.as ( [ ${pixelColumnAliases.join(
-					" , ",
-				)} ] )`;
-				if (pixelJoins.length > 0) {
-					pixelStringPart1 += ` | Join ( ${pixelJoins.join(
-						" , ",
-					)} ) `;
-				}
-				pixelStringPart1 += ` | Distinct ( false ) | Limit ( ${dataLimit} )`;
-
-				const combinedJoinString =
-					pixelJoins.length > 0
-						? `| Join ( ${pixelJoins.join(" , ")} ) `
-						: "";
+				pixelStringPart1 += ` | Select ( ${pixelColumnNames.join(" , ")} )`;
+				pixelStringPart1 += `.as ( [ ${pixelColumnAliases.join(" , ")} ] )`;
+				pixelStringPart1 += ` | Distinct ( false ) | Limit ( ${limitValue} )`;
 
 				const reactorPixel = `Database ( database = [ "${databaseId}" ] ) | Select ( ${pixelColumnNames.join(
 					" , ",
 				)} ) .as ( [ ${pixelColumnAliases.join(
 					" , ",
-				)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( ${dataLimit} ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
+				)} ] ) | Distinct ( false ) | Limit ( ${limitValue} ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
 
 				pixelStringRef.current = reactorPixel;
-				pixelPartialRef.current = pixelStringPart1 + ";";
+				pixelPartialRef.current = `${pixelStringPart1};`;
 			} catch {
 				setIsDatabaseLoading(false);
 				setShowTablePreview(false);
-				setShowEditColumns(true);
 
 				notification.add({
 					color: "error",
@@ -961,20 +806,11 @@ export const DataImportFormModal = observer(
 		};
 
 		const retrieveSelectedColumnNames = () => {
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
-			const pixelColumnAliases = [];
+			const pixelColumnNames: string[] = [];
 
-			watchedTables?.forEach((tableObject) => {
-				const currTableColumns = tableObject.columns;
-				currTableColumns.forEach((columnObject) => {
-					if (columnObject.checked) {
-						pixelTables.add(columnObject.tableName);
-						pixelColumnNames.push(
-							`${columnObject.tableName}__${columnObject.columnName}`,
-						);
-						pixelColumnAliases.push(columnObject.userAlias);
-					}
+			Object.keys(selectedColumnsData).forEach((tableName) => {
+				selectedColumnsData[tableName].forEach((column) => {
+					pixelColumnNames.push(`${tableName}__${column.columnName}`);
 				});
 			});
 
@@ -982,103 +818,46 @@ export const DataImportFormModal = observer(
 		};
 
 		const retrieveSelectedTableNames = () => {
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
-			const pixelColumnAliases = [];
-
-			watchedTables?.forEach((tableObject) => {
-				const currTableColumns = tableObject.columns;
-				currTableColumns.forEach((columnObject) => {
-					if (columnObject.checked) {
-						pixelTables.add(columnObject.tableName);
-						pixelColumnNames.push(
-							`${columnObject.tableName}__${columnObject.columnName}`,
-						);
-						pixelColumnAliases.push(columnObject.userAlias);
-					}
-				});
-			});
+			const pixelTables = new Set(Object.keys(selectedColumnsData));
 
 			return pixelTables;
 		};
 
-		const updateSelectedTables = () => {
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
-			const pixelColumnAliases = [];
-
-			watchedTables?.forEach((tableObject) => {
-				const currTableColumns = tableObject.columns;
-				currTableColumns.forEach((columnObject) => {
-					if (columnObject.checked) {
-						pixelTables.add(columnObject.tableName);
-						pixelColumnNames.push(
-							`${columnObject.tableName}__${columnObject.columnName}`,
-						);
-						pixelColumnAliases.push(columnObject.userAlias);
-					}
-				});
-			});
-
-			setSelectedTableNames(pixelTables);
-		};
-
 		const retrievePreviewData = async () => {
 			setIsDatabaseLoading(true);
+			setPreviewError(null);
 			const databaseId = selectedDatabaseId;
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
-			const pixelColumnAliases = [];
-			const pixelJoins = [];
+			const pixelColumnNames: string[] = [];
+			const pixelColumnAliases: string[] = [];
 
 			try {
-				watchedTables?.forEach((tableObject) => {
-					const currTableColumns = tableObject.columns;
-					currTableColumns?.forEach((columnObject) => {
-						if (columnObject.checked) {
-							pixelTables.add(columnObject.tableName);
-							pixelColumnNames.push(
-								`${columnObject.tableName}__${columnObject.columnName}`,
-							);
-							pixelColumnAliases.push(columnObject.userAlias);
-						}
+				// Build column names and aliases from selectedColumnsData
+				Object.keys(selectedColumnsData).forEach((tableName) => {
+					selectedColumnsData[tableName].forEach((column) => {
+						pixelColumnNames.push(
+							`${tableName}__${column.columnName}`,
+						);
+						pixelColumnAliases.push(column.alias);
 					});
 				});
 
-				watchedJoins?.forEach((joinEle) => {
-					pixelJoins.push(
-						`( ${joinEle.leftTable} , ${joinEle.joinType}.join , ${joinEle.rightTable} )`,
-					);
-				});
-
 				let pixelStringPart1 = `Database ( database = [ "${databaseId}" ] )`;
-				pixelStringPart1 += ` | Select ( ${pixelColumnNames.join(
-					" , ",
-				)} )`;
-				pixelStringPart1 += `.as ( [ ${pixelColumnAliases.join(
-					" , ",
-				)} ] )`;
-				if (pixelJoins.length > 0) {
-					pixelStringPart1 += ` | Join ( ${pixelJoins.join(
-						" , ",
-					)} ) `;
-				}
-				pixelStringPart1 += ` | Distinct ( false ) | Limit ( ${dataLimit} )`;
+				pixelStringPart1 += ` | Select ( ${pixelColumnNames.join(" , ")} )`;
+				pixelStringPart1 += `.as ( [ ${pixelColumnAliases.join(" , ")} ] )`;
 
-				const combinedJoinString =
-					pixelJoins.length > 0
-						? `| Join ( ${pixelJoins.join(" , ")} ) `
-						: "";
+				pixelStringPart1 += ` | Distinct ( false ) | Limit ( -1 )`;
 
+				// Build pixel query for preview (always use -1 for no limit in preview)
 				const reactorPixel = `Database ( database = [ "${databaseId}" ] ) | Select ( ${pixelColumnNames.join(
 					" , ",
 				)} ) .as ( [ ${pixelColumnAliases.join(
 					" , ",
-				)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( ${dataLimit} ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
+				)} ] ) | Distinct ( false ) | Limit ( -1 ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "data_import_preview_frame" ] ) ] ) ; META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
 
 				pixelStringRef.current = reactorPixel;
-				pixelPartialRef.current = pixelStringPart1 + ";";
+				pixelPartialRef.current = `${pixelStringPart1};`;
 
+				// Execute the pixel to get preview data
 				runPixel(reactorPixel).then((response) => {
 					const type = response.pixelReturn[0]?.operationType;
 
@@ -1088,18 +867,19 @@ export const DataImportFormModal = observer(
 							headers: string[];
 						};
 					};
+
 					const tableHeadersData = o.data?.headers;
 					const tableRowsData = o.data?.values;
 
-					if (type.indexOf("ERROR") != -1) {
-						console.error("Error retrieving database tables");
+					if (type.indexOf("ERROR") !== -1) {
+						const error = response.pixelReturn[0]?.output;
+						console.error(`${error}`);
+						setPreviewError(`${error}`);
 						notification.add({
 							color: "error",
-							message: `Error retrieving database tables`,
+							message: `${error}`,
 						});
 						setIsDatabaseLoading(false);
-						setShowTablePreview(false);
-						setShowEditColumns(true);
 						return;
 					}
 
@@ -1107,275 +887,212 @@ export const DataImportFormModal = observer(
 					setDatabaseTableRows(tableRowsData);
 					setIsDatabaseLoading(false);
 				});
-			} catch {
+			} catch (error) {
+				console.error("Error in preview:", error);
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Error retrieving database tables";
+				setPreviewError(errorMessage);
 				setIsDatabaseLoading(false);
-				setShowTablePreview(false);
-				setShowEditColumns(true);
 
 				notification.add({
 					color: "error",
-					message: `Error retrieving database tables`,
+					message: errorMessage,
 				});
 			}
 		};
 
-		/** Helper Function Update Alias Tracker Object*/
-		const updateAliasCountObj = (
-			isBeingAdded,
-			newAlias,
-			oldAlias = null,
+		/** Handler for adding a single column */
+		const handleAddColumn = (
+			tableName: string,
+			columnName: string,
+			columnType: string,
 		) => {
-			const newAliasesCountObj = { ...aliasesCountObj };
-			if (isBeingAdded) {
-				if (newAliasesCountObj[newAlias] > 0) {
-					newAliasesCountObj[newAlias] =
-						newAliasesCountObj[newAlias] + 1;
-				} else {
-					newAliasesCountObj[newAlias] = 1;
-				}
-			} else {
-				if (newAliasesCountObj[newAlias] > 0) {
-					newAliasesCountObj[newAlias] =
-						newAliasesCountObj[newAlias] - 1;
-				} else {
-					newAliasesCountObj[newAlias] = 0;
-				}
+			// SINGLE TABLE SELECTION: Clear all other tables when selecting from a new table
+			const currentSelectedTable = Object.keys(selectedColumnsData)[0];
+			let newSelectedColumns = { ...selectedColumnsData };
+
+			// If selecting from a different table, clear existing selections
+			if (currentSelectedTable && currentSelectedTable !== tableName) {
+				newSelectedColumns = {};
 			}
 
-			if (newAliasesCountObj[newAlias] < 1) {
-				delete newAliasesCountObj[newAlias];
-			}
-			if (oldAlias != null) {
-				if (newAliasesCountObj[oldAlias] > 0) {
-					newAliasesCountObj[oldAlias] =
-						newAliasesCountObj[oldAlias] - 1;
-				} else {
-					newAliasesCountObj[oldAlias] = 0;
-				}
-
-				if (newAliasesCountObj[oldAlias] < 1) {
-					delete newAliasesCountObj[oldAlias];
-				}
+			if (!newSelectedColumns[tableName]) {
+				newSelectedColumns[tableName] = [];
 			}
 
-			setAliasesCountObj(newAliasesCountObj);
-			aliasesCountObjRef.current = { ...newAliasesCountObj };
+			// Check if column already exists
+			const exists = newSelectedColumns[tableName].some(
+				(col) => col.columnName === columnName,
+			);
 
-			updatePixelRef(); // may be unnecessary
+			if (!exists) {
+				newSelectedColumns[tableName].push({
+					columnName,
+					columnType,
+					alias: columnName,
+				});
+				setSelectedColumnsData(newSelectedColumns);
+
+				// Update rootTable to track the selected table
+				if (!rootTable || rootTable !== tableName) {
+					setRootTable(tableName);
+				}
+			}
+		};
+		const handleAddAllColumns = (
+			tableName: string,
+			columns: { columnName: string; columnType: string }[],
+		) => {
+			// SINGLE TABLE SELECTION: Clear all other tables when selecting from a new table
+			const newSelectedColumns: {
+				[tableName: string]: {
+					columnName: string;
+					columnType: string;
+					alias: string;
+				}[];
+			} = {};
+
+			newSelectedColumns[tableName] = columns.map((col) => ({
+				columnName: col.columnName,
+				columnType: col.columnType,
+				alias: col.columnName,
+			}));
+
+			setSelectedColumnsData(newSelectedColumns);
+
+			// Update rootTable to track the selected table
+			setRootTable(tableName);
 		};
 
-		/** Find Joinable Tables */
-		const findAllJoinableTables = (rootTableName) => {
-			const joinableTables = tableEdges[rootTableName]
-				? Object.keys(tableEdges[rootTableName])
-				: [];
-			const newShownTables = new Set([...joinableTables, rootTableName]);
-			setShownTables(newShownTables);
-		};
-
-		/** Checkbox Handler */
-		const checkBoxHandler = (tableIndex, columnIndex) => {
-			const columnObject = watchedTables[tableIndex].columns[columnIndex];
-			updateAliasCountObj(columnObject?.checked, columnObject.userAlias);
-			if (columnObject?.checked) {
-				if (checkedColumnsCount == 0) {
-					findAllJoinableTables(watchedTables[tableIndex].name);
-					setRootTable(watchedTables[tableIndex].name);
+		/** Handler for removing a column */
+		const handleRemoveColumn = (tableName: string, columnName: string) => {
+			const newSelectedColumns = { ...selectedColumnsData };
+			if (newSelectedColumns[tableName]) {
+				newSelectedColumns[tableName] = newSelectedColumns[
+					tableName
+				].filter((col) => col.columnName !== columnName);
+				if (newSelectedColumns[tableName].length === 0) {
+					delete newSelectedColumns[tableName];
 				}
-				setCheckedColumnsCount(checkedColumnsCount + 1);
-			} else if (columnObject?.checked == false) {
-				if (checkedColumnsCount == 1) {
-					setShownTables(new Set(tableNames));
+				setSelectedColumnsData(newSelectedColumns);
+
+				// Reset rootTable if no tables have selected columns
+				if (Object.keys(newSelectedColumns).length === 0) {
 					setRootTable(null);
 				}
-				setCheckedColumnsCount(checkedColumnsCount - 1);
 			}
-			setJoinsStackHandler();
-			// After unselecting a row, check if all are selected or not
-			const tables = dataImportwatch("tables");
-			const totalColumns = tables[tableIndex].columns.length;
-			const selectedCount = tables[tableIndex].columns.filter(
-				(col) => col.checked,
-			).length;
+		};
 
-			if (selectedCount === totalColumns) {
-				setIsAllSelected(true);
+		/** Handler for updating a column alias */
+		const handleAliasChange = (
+			tableName: string,
+			columnName: string,
+			newAlias: string,
+		) => {
+			const newSelectedColumns = { ...selectedColumnsData };
+			if (newSelectedColumns[tableName]) {
+				const column = newSelectedColumns[tableName].find(
+					(col) => col.columnName === columnName,
+				);
+				if (column) {
+					column.alias = newAlias;
+					setSelectedColumnsData(newSelectedColumns);
+				}
+			}
+		};
+
+		/** Handler for clearing a table */
+		const handleClearTable = (tableName: string) => {
+			const newSelectedColumns = { ...selectedColumnsData };
+			delete newSelectedColumns[tableName];
+			setSelectedColumnsData(newSelectedColumns);
+
+			// Reset rootTable if no tables have selected columns
+			if (Object.keys(newSelectedColumns).length === 0) {
+				setRootTable(null);
 			}
 		};
 
 		/** Pre-Populate form For Edit  */
-		const prepoulateFormForEdit = (cell) => {
-			const tablesWithCheckedBoxes = new Set();
-			const checkedColumns = new Set();
-			const columnAliasMap = {};
-			const newAliasesCountObj = {};
+		const prepoulateFormForEdit = (cell: {
+			id: string;
+			query: QueryState;
+			parameters: DataImportCellDef["parameters"];
+		}) => {
+			const newSelectedColumnsData: {
+				[tableName: string]: {
+					columnName: string;
+					columnType: string;
+					alias: string;
+				}[];
+			} = {};
+			const newAliasesCountObj: Record<string, number> = {};
 
-			setCheckedColumnsCount(cell.parameters.selectedColumns.length);
+			// Build selectedColumnsData from cell parameters
 			cell.parameters.selectedColumns?.forEach(
-				(selectedColumnTableCombinedString, idx) => {
+				(selectedColumnTableCombinedString: string, idx: number) => {
 					const [currTableName, currColumnName] =
 						selectedColumnTableCombinedString.split("__");
 					const currColumnAlias = cell.parameters.columnAliases[idx];
-					tablesWithCheckedBoxes.add(currTableName);
-					checkedColumns.add(selectedColumnTableCombinedString);
-					columnAliasMap[selectedColumnTableCombinedString] =
-						currColumnAlias;
+
+					// Find the column type from newTableFields
+					let columnType = "STRING"; // default
+					const tableField = newTableFields.find(
+						(t) => t.name === currTableName,
+					);
+					if (tableField) {
+						const column = watchedTables
+							?.find((t) => t.name === currTableName)
+							?.columns?.find(
+								(c) => c.columnName === currColumnName,
+							);
+						if (column) {
+							columnType = column.columnType;
+						}
+					}
+
+					// Initialize table array if it doesn't exist
+					if (!newSelectedColumnsData[currTableName]) {
+						newSelectedColumnsData[currTableName] = [];
+					}
+
+					// Add column to selectedColumnsData
+					newSelectedColumnsData[currTableName].push({
+						columnName: currColumnName,
+						columnType: columnType,
+						alias: currColumnAlias,
+					});
+
+					// Update alias count
 					newAliasesCountObj[currColumnAlias || currColumnName] = 1;
 				},
 			);
 
+			// Set the populated data
+			setSelectedColumnsData(newSelectedColumnsData);
 			setAliasesCountObj({ ...newAliasesCountObj });
 			aliasesCountObjRef.current = { ...newAliasesCountObj };
 
-			let totalColumnsToCheck = 0;
-			let totalCheckedColumns = 0;
-
-			if (newTableFields) {
-				newTableFields?.forEach((newTableObj, tableIdx) => {
-					if (tablesWithCheckedBoxes.has(newTableObj.name)) {
-						const watchedTableColumns =
-							watchedTables[tableIdx].columns;
-						// Count total columns in this table
-						totalColumnsToCheck += watchedTableColumns.length;
-
-						watchedTableColumns?.forEach(
-							(tableColumnObj, columnIdx) => {
-								const columnName = `${tableColumnObj.tableName}__${tableColumnObj.columnName}`;
-								if (checkedColumns.has(columnName)) {
-									const columnAlias =
-										columnAliasMap[columnName];
-									formSetValue(
-										`tables.${tableIdx}.columns.${columnIdx}.checked`,
-										true,
-									);
-									totalCheckedColumns += 1;
-									formSetValue(
-										`tables.${tableIdx}.columns.${columnIdx}.userAlias`,
-										columnAlias,
-									);
-								}
-							},
-						);
-					}
-					// If all columns in the table are checked, set isAllSelected to true.
-					// Otherwise, set isAllSelected to false.
-					// We do this by comparing the total number of columns in the table
-					// (totalColumnsToCheck) to the total number of columns that are checked
-					// (totalCheckedColumns). If the two values are equal, then all columns
-					// are checked. If not, then some columns are not checked.
-					if (
-						totalCheckedColumns === totalColumnsToCheck &&
-						totalColumnsToCheck > 0
-					) {
-						setIsAllSelected(true);
-					} else {
-						setIsAllSelected(false);
-					}
-				});
+			// Set rootTable from cell parameters
+			if (cell.parameters.rootTable) {
+				setRootTable(cell.parameters.rootTable);
 			}
 
-			const newJoinsSet = new Set();
-			cell.parameters.joins?.forEach((joinObject) => {
-				appendJoinElement(joinObject);
-				const joinsSetString1 = `${joinObject.leftTable}:${joinObject.rightTable}`;
-				const joinsSetString2 = `${joinObject.rightTable}:${joinObject.leftTable}`;
-				newJoinsSet.add(joinsSetString1);
-				newJoinsSet.add(joinsSetString2);
-			});
+			// Set checkedColumnsCount
+			setCheckedColumnsCount(cell.parameters.selectedColumns.length);
 
-			setJoinsSet(newJoinsSet);
-			setCheckedColumnsCount(checkedColumns.size);
-
+			// Set pixel ref
 			const loadedQueryString = cell.parameters.selectQuery;
 			pixelPartialRef.current = loadedQueryString;
-		};
 
-		const checkTableForSelectedColumns = (tableName) => {
-			for (let i = 0; i < watchedTables.length; i++) {
-				const currTable = watchedTables[i];
-				if (currTable.name == tableName) {
-					const currTableColumns = currTable.columns;
-					for (let j = 0; j < currTableColumns.length; j++) {
-						const currColumn = currTableColumns[j];
-						if (currColumn.checked == true) return true;
-					}
-				}
-			}
-			return false;
-		};
-
-		const setJoinsStackHandler = () => {
-			if (checkedColumnsCount < 2) {
-				removeJoinElement();
-				setJoinsSet(new Set());
-			} else {
-				const leftTable = rootTable;
-				const rightTables =
-					tableEdgesObject[rootTable] &&
-					tableEdgesObject &&
-					Object.entries(tableEdgesObject[rootTable]);
-
-				rightTables?.forEach((entry, joinIdx) => {
-					console.log(joinIdx);
-					const rightTable = entry[0];
-					const leftKey = entry[1]["sourceColumn"];
-					const rightKey = entry[1]["targetColumn"];
-
-					const leftTableContainsCheckedColumns =
-						checkTableForSelectedColumns(leftTable);
-					const rightTableContainsCheckedColumns =
-						checkTableForSelectedColumns(rightTable);
-
-					const defaultJoinType = "inner";
-
-					const joinsSetString = `${leftTable}:${rightTable}`;
-					if (
-						leftTableContainsCheckedColumns &&
-						rightTableContainsCheckedColumns &&
-						joinsSet.has(joinsSetString) == false
-					) {
-						appendJoinElement({
-							leftTable: leftTable,
-							rightTable: rightTable,
-							joinType: defaultJoinType,
-							leftKey: leftKey,
-							rightKey: rightKey,
-						});
-						addToJoinsSetHelper(joinsSetString);
-					} else if (
-						leftTableContainsCheckedColumns == false ||
-						(rightTableContainsCheckedColumns == false &&
-							joinsSet.has(joinsSetString))
-					) {
-						joinsSet.delete(joinsSetString);
-						joinElements.some((ele, idx) => {
-							if (
-								leftTable == ele.leftTable &&
-								rightTable == ele.rightTable &&
-								defaultJoinType == ele.joinType &&
-								leftKey == ele.leftKey &&
-								rightKey == ele.rightKey
-							) {
-								removeJoinElement(idx);
-								return true;
-							} else {
-								return false;
-							}
-						});
-					}
-				});
-			}
-
+			// Mark prepopulation as complete
 			setInitEditPrepopulateComplete(true);
 		};
 
-		const addToJoinsSetHelper = (newJoinSet) => {
-			const joinsSetCopy = new Set(joinsSet);
-			joinsSetCopy.add(newJoinSet);
-			setJoinsSet(joinsSetCopy);
-		};
 		return (
-			<Modal open={true} maxWidth="lg">
+			<Modal open={true} maxWidth="xl">
 				<Modal.Content sx={{ width: importModalPixelWidth }}>
 					<form onSubmit={formHandleSubmit(onImportDataSubmit)}>
 						<StyledModalTitleWrapper>
@@ -1396,24 +1113,33 @@ export const DataImportFormModal = observer(
 												retrieveDatabaseTablesAndEdges(
 													e.target.value,
 												);
-												setShowEditColumns(true);
 												setShowTablePreview(false);
 												setImportModalPixelWidth(
 													IMPORT_MODAL_WIDTHS.medium,
 												);
+												// Reset edit mode prepopulation and clear selected columns when changing database
+												if (editMode) {
+													setInitEditPrepopulateComplete(
+														true,
+													);
+													setSelectedColumnsData({});
+													setCheckedColumnsCount(0);
+													setRootTable(null);
+												}
 											}}
 											label={"Select Database"}
 											value={field.value || ""}
 											size={"small"}
-											disabled={editMode}
 										>
-											{userDatabases?.map(
-												(ele, dbIndex) => (
+											{userDatabases?.ids?.map(
+												(databaseId, dbIndex) => (
 													<Menu.Item
-														value={ele.database_id}
-														key={dbIndex}
+														value={databaseId}
+														key={`${dbIndex}-${databaseId}`}
 													>
-														{ele.app_name}
+														{userDatabases.display[
+															databaseId
+														] ?? ""}
 													</Menu.Item>
 												),
 											)}
@@ -1421,15 +1147,7 @@ export const DataImportFormModal = observer(
 									)}
 								/>
 							</StyledDivFitContent>
-							{/* <IconButton disabled={true}>
-                                <KeyboardArrowDown />
-                            </IconButton> */}
 						</StyledModalTitleWrapper>
-
-						{isDatabaseLoading && (
-							// <LoadingScreen.Trigger description="Awaiting database response..." />
-							<>LOADING....</>
-						)}
 
 						{!selectedDatabaseId && (
 							<StyledPaddedStack spacing={1} direction="column">
@@ -1442,523 +1160,394 @@ export const DataImportFormModal = observer(
 							</StyledPaddedStack>
 						)}
 
-						{selectedDatabaseId && !isDatabaseLoading && (
-							<StyledPaddedStack spacing={1} direction="column">
-								<StyledModalTitleUnpaddedWrapper>
-									<StyledDivCenterFlex>
-										<StyledTypographyMarginRight variant="h6">
-											Data
-										</StyledTypographyMarginRight>
-									</StyledDivCenterFlex>
-									<div>
-										<StyledButtonEditColumns
-											variant="text"
-											color="primary"
-											size="medium"
-											onClick={() => {
-												if (!showEditColumns) {
-													setShowEditColumns(true);
-													setShowTablePreview(false);
-												}
-											}}
-										>
-											Edit Columns
-										</StyledButtonEditColumns>
-										<Button
-											variant="outlined"
-											color="primary"
-											size="medium"
-											disabled={
-												!checkedColumnsCount ||
-												Object.values(
-													aliasesCountObj,
-												).some((key: number) => key > 1)
-											}
-											onClick={() => {
-												if (!showPreview) {
-													setShowTablePreview(true);
-													setShowEditColumns(false);
-												}
-											}}
-										>
-											Preview
-										</Button>
-									</div>
-								</StyledModalTitleUnpaddedWrapper>
-
-								{showEditColumns && (
+						{selectedDatabaseId && (
+							<StyledPaddedStack
+								spacing={1}
+								direction="column"
+								sx={{
+									height: "600px",
+									display: "flex",
+									flexDirection: "column",
+								}}
+							>
+								<StyledEditColumnsWrapper
+									showPreview={showPreview}
+								>
 									<StyledTableSetWrapper>
-										<StyledTableTitle variant="h6">
-											Available Tables / Columns
-										</StyledTableTitle>
-										<ScrollTableSetContainer>
-											{newTableFields.map(
-												(table, tableIndex) => (
-													<div
-														key={`${table.name}-${tableIndex}`}
+										<StyledSplitContainer>
+											<StyledColumnsSection>
+												<Typography variant="subtitle2">
+													Available Columns
+												</Typography>
+												<DatabaseAccordions
+													databaseId={
+														selectedDatabaseId
+													}
+													mode="data-available"
+													onAddColumn={
+														handleAddColumn
+													}
+													onAddAllColumns={
+														handleAddAllColumns
+													}
+													selectedTableName={
+														rootTable
+													}
+												/>
+											</StyledColumnsSection>
+											<StyledEditorSection>
+												<Stack
+													spacing={1}
+													direction={"row"}
+													alignItems="center"
+													justifyContent={
+														"space-between"
+													}
+												>
+													<Typography
+														variant="subtitle2"
+														sx={{ mb: 2 }}
 													>
-														{shownTables.has(
-															table.name,
-														) && (
-															<SingleTableWrapper
-																key={`${table.name}-${tableIndex}`}
-															>
-																<FlexWrapper>
-																	<StyledTableTitleBlueBubble variant="body1">
-																		<TableIconButton
-																			title={
-																				"Table"
-																			}
-																			placement="top"
-																		>
-																			<CalendarViewMonth />
-																		</TableIconButton>
-																		{
-																			table.name
-																		}
-																	</StyledTableTitleBlueBubble>
-																</FlexWrapper>
-																<Table size="small">
-																	<Table.Body>
-																		<Table.Row>
-																			<Table.Cell>
-																				<Checkbox
-																					checked={
-																						isAllSelected
-																					} // Checked if all rows are selected
-																					indeterminate={
-																						checkedColumnsCount >
-																							0 &&
-																						checkedColumnsCount <
-																							watchedTables[
-																								tableIndex
-																							]
-																								.columns
-																								.length
-																					}
-																					onChange={() =>
-																						addAllTableColumnsHandler(
-																							tableIndex,
-																						)
-																					} // Handle the toggle of "select all"
-																				/>
-																			</Table.Cell>
-																			<Table.Cell>
-																				<ColumnNameText variant="body1">
-																					Fields
-																				</ColumnNameText>
-																			</Table.Cell>
-																			<Table.Cell>
-																				<ColumnNameText variant="body1">
-																					Alias
-																				</ColumnNameText>
-																			</Table.Cell>
-																			<Table.Cell>
-																				<ColumnNameText variant="body1">
-																					Field
-																					Type
-																				</ColumnNameText>
-																			</Table.Cell>
-																		</Table.Row>
-
-																		{table.columns.map(
-																			(
-																				column,
-																				columnIndex,
-																			) => (
-																				<Table.Row
-																					key={`${column.columnName}-${columnIndex}`}
-																				>
-																					<Table.Cell>
-																						<Controller
-																							name={`tables.${tableIndex}.columns.${columnIndex}.checked`}
-																							control={
-																								formControl
-																							}
-																							render={({
-																								field,
-																							}) => (
-																								<Checkbox
-																									checked={
-																										field.value
-																									}
-																									id={`checkbox-${column.columnName}-${columnIndex}`}
-																									onChange={(
-																										e,
-																									) => {
-																										field.onChange(
-																											e,
-																										);
-																										checkBoxHandler(
-																											tableIndex,
-																											columnIndex,
-																										);
-																									}}
-																								/>
-																							)}
-																						/>
-																					</Table.Cell>
-																					<Table.Cell>
-																						{
-																							column.columnName
-																						}
-																						{column.columnName ==
-																							"ID" && (
-																							<StyledDivPrimaryKeyLabel>
-																								PK
-																							</StyledDivPrimaryKeyLabel>
-																						)}
-																						{column.columnName.includes(
-																							"_ID",
-																						) && (
-																							<StyledDivSecondaryKeyLabel>
-																								FK
-																							</StyledDivSecondaryKeyLabel>
-																						)}
-																					</Table.Cell>
-																					<Table.Cell>
-																						<FlexTableCell>
-																							<Controller
-																								name={`tables.${tableIndex}.columns.${columnIndex}.userAlias`}
-																								control={
-																									formControl
-																								}
-																								render={({
-																									field,
-																								}) => (
-																									<TextField
-																										type="text"
-																										variant="outlined"
-																										size="small"
-																										value={
-																											field.value
-																										}
-																										onChange={(
-																											e,
-																										) => {
-																											if (
-																												watchedTables[
-																													tableIndex
-																												]
-																													.columns[
-																													columnIndex
-																												]
-																													.checked
-																											) {
-																												updateAliasCountObj(
-																													true,
-																													e
-																														.target
-																														.value,
-																													field.value,
-																												);
-																											}
-																											field.onChange(
-																												e
-																													.target
-																													.value,
-																											);
-																										}}
-																									/>
-																								)}
-																							/>
-																							{watchedTables[
-																								tableIndex
-																							]
-																								.columns[
-																								columnIndex
-																							]
-																								.checked &&
-																								aliasesCountObj[
-																									watchedTables[
-																										tableIndex
-																									]
-																										.columns[
-																										columnIndex
-																									]
-																										.userAlias
-																								] >
-																									1 && (
-																									<AliasWarningIcon title="Duplicate Alias Name">
-																										<Warning />
-																									</AliasWarningIcon>
-																								)}
-																						</FlexTableCell>
-																					</Table.Cell>
-
-																					<Table.Cell>
-																						<Controller
-																							name={`tables.${tableIndex}.columns.${columnIndex}.columnType`}
-																							control={
-																								formControl
-																							}
-																							render={({
-																								field,
-																							}) => (
-																								<StyledSelectMinWidth
-																									onChange={(
-																										e,
-																									) => {
-																										field.onChange(
-																											e
-																												.target
-																												.value,
-																										);
-																									}}
-																									value={
-																										field.value ||
-																										""
-																									}
-																									size={
-																										"small"
-																									}
-																									disabled // TODO enable after adding to form and cell config
-																								>
-																									{SQL_COLUMN_TYPES.map(
-																										(
-																											ele,
-																											eleIdx,
-																										) => (
-																											<Menu.Item
-																												value={
-																													ele
-																												}
-																												key={
-																													eleIdx
-																												}
-																											>
-																												{
-																													ele
-																												}
-																											</Menu.Item>
-																										),
-																									)}
-																								</StyledSelectMinWidth>
-																							)}
-																						/>
-																					</Table.Cell>
-																				</Table.Row>
-																			),
-																		)}
-																	</Table.Body>
-																</Table>
-															</SingleTableWrapper>
+														Selected Columns (
+														{checkedColumnsCount})
+													</Typography>
+													<Stack
+														spacing={1}
+														direction={"row"}
+														alignItems="center"
+														justifyContent={"end"}
+													>
+														{!enableBatching && (
+															<StyledTextField
+																type="number"
+																placeholder="Data Limit"
+																value={
+																	dataLimit
+																}
+																onChange={
+																	handleDataLimitUpdate
+																}
+																sx={{
+																	width: "130px",
+																}}
+															/>
 														)}
-													</div>
-												),
-											)}
-										</ScrollTableSetContainer>
+
+														<StyledSelect
+															size={"small"}
+															title={
+																"Select Type"
+															}
+															value={frameType}
+															SelectProps={{
+																IconComponent:
+																	KeyboardArrowDown,
+																style: {
+																	height: "30px",
+																	width: "140px",
+																},
+																startAdornment:
+																	(
+																		<InputAdornment position="start">
+																			<CropFree />
+																		</InputAdornment>
+																	),
+															}}
+															onChange={(e) =>
+																setFrameType(
+																	e.target
+																		.value as
+																		| "NATIVE"
+																		| "PY"
+																		| "R"
+																		| "GRID",
+																)
+															}
+														>
+															{Object.values(
+																DATA_FRAME_TYPES,
+															).map(
+																(frame, i) => (
+																	<StyledSelectItem
+																		key={`${i}-${frame.value}`}
+																		value={
+																			frame.value
+																		}
+																	>
+																		{
+																			frame.display
+																		}
+																	</StyledSelectItem>
+																),
+															)}
+														</StyledSelect>
+														<StyledTextField
+															title="Set Frame Variable Name"
+															value={
+																frameVariableName
+															}
+															placeholder="Frame Name"
+															InputProps={{
+																startAdornment:
+																	(
+																		<DriveFileRenameOutlineRounded />
+																	),
+															}}
+															onChange={(e) =>
+																setFrameVariableName(
+																	e.target
+																		.value,
+																)
+															}
+															sx={{
+																width: "160px",
+															}}
+														/>
+														<Box
+															sx={{
+																display: "flex",
+																alignItems:
+																	"center",
+																minWidth:
+																	"180px",
+															}}
+														>
+															<Tooltip
+																title={
+																	enableBatching
+																		? "Disable Batching"
+																		: "Enable Batching"
+																}
+															>
+																<Checkbox
+																	checked={
+																		enableBatching
+																	}
+																	label={
+																		enableBatching
+																			? ""
+																			: "Enable Batching"
+																	}
+																	onChange={(
+																		_event,
+																		checked,
+																	) => {
+																		setEnableBatching(
+																			checked,
+																		);
+																		setDataLimit(
+																			"",
+																		);
+																	}}
+																	sx={{
+																		color: "text.secondary",
+																	}}
+																/>
+															</Tooltip>
+															{enableBatching && (
+																<StyledTextField
+																	title="Batch Size"
+																	type="number"
+																	placeholder="Batch Amount..."
+																	value={
+																		batchSize
+																	}
+																	onChange={(
+																		e,
+																	) => {
+																		const inputValue =
+																			e
+																				.target
+																				.value;
+																		if (
+																			inputValue ===
+																			""
+																		) {
+																			setBatchSize(
+																				"",
+																			);
+																			return;
+																		}
+																		const value =
+																			Number.parseInt(
+																				inputValue,
+																				10,
+																			);
+																		if (
+																			!Number.isNaN(
+																				value,
+																			) &&
+																			value >=
+																				0
+																		) {
+																			setBatchSize(
+																				value,
+																			);
+																		}
+																	}}
+																	sx={{
+																		width: "130px",
+																	}}
+																/>
+															)}
+														</Box>
+													</Stack>
+												</Stack>
+												<DatabaseAccordions
+													databaseId={
+														selectedDatabaseId
+													}
+													mode="data-selected"
+													selectedColumns={
+														selectedColumnsData
+													}
+													onRemoveColumn={
+														handleRemoveColumn
+													}
+													onAliasChange={
+														handleAliasChange
+													}
+													onClearTable={
+														handleClearTable
+													}
+												/>
+											</StyledEditorSection>
+										</StyledSplitContainer>
 									</StyledTableSetWrapper>
-								)}
+								</StyledEditColumnsWrapper>
 
 								{showPreview && (
-									<StyledTableSetWrapper>
-										<StyledTableTitle variant="h6">
-											Preview
-										</StyledTableTitle>
-										<ScrollTableSetContainer>
-											<Table stickyHeader size={"small"}>
-												<Table.Body>
-													<Table.Row>
-														{databaseTableHeaders.map(
-															(h, hIdx) => (
-																<Table.Cell
-																	key={hIdx}
-																>
-																	<strong>
-																		{h}
-																	</strong>
-																</Table.Cell>
-															),
-														)}
-													</Table.Row>
-													{databaseTableRows.map(
-														(r, rIdx) => (
-															<Table.Row
-																key={rIdx}
-															>
-																{r.map(
+									<StyledPreviewWrapper>
+										<StyledTableSetWrapper
+											style={{
+												height: "100%",
+												display: "flex",
+												flexDirection: "column",
+											}}
+										>
+											<StyledTableTitle variant="h6">
+												Preview
+											</StyledTableTitle>
+											{isDatabaseLoading && (
+												<Box
+													sx={{
+														display: "flex",
+														justifyContent:
+															"center",
+														alignItems: "center",
+														minHeight: "200px",
+													}}
+												>
+													<Typography variant="body1">
+														LOADING....
+													</Typography>
+												</Box>
+											)}
+											{checkedColumnsCount === 0 ? (
+												<Box
+													sx={{
+														padding: "16px",
+														backgroundColor:
+															"#F5F5F5",
+														border: "1px solid #E0E0E0",
+														borderRadius: "4px",
+														margin: "0 16px 16px 16px",
+														textAlign: "center",
+													}}
+												>
+													<Typography
+														variant="body2"
+														color="textSecondary"
+													>
+														Select columns to view
+														preview
+													</Typography>
+												</Box>
+											) : previewError ? (
+												<Box
+													sx={{
+														padding: "16px",
+														backgroundColor:
+															"#FEF2F2",
+														border: "1px solid #FCA5A5",
+														borderRadius: "4px",
+														margin: "0 16px 16px 16px",
+													}}
+												>
+													<Typography
+														variant="body2"
+														color="error"
+													>
+														<strong>Error:</strong>{" "}
+														{previewError}
+													</Typography>
+												</Box>
+											) : (
+												<ScrollTableSetContainer
+													style={{ flex: 1 }}
+												>
+													<Table
+														stickyHeader
+														size={"small"}
+													>
+														<Table.Body>
+															<Table.Row>
+																{databaseTableHeaders.map(
 																	(
-																		v,
-																		vIdx,
+																		h,
+																		hIdx,
 																	) => (
 																		<Table.Cell
-																			key={`${rIdx}-${vIdx}`}
+																			key={`${hIdx}-${h}`}
 																		>
-																			{v}
+																			<strong>
+																				{
+																					h
+																				}
+																			</strong>
 																		</Table.Cell>
 																	),
 																)}
 															</Table.Row>
-														),
-													)}
-												</Table.Body>
-											</Table>
-										</ScrollTableSetContainer>
-									</StyledTableSetWrapper>
+															{databaseTableRows.map(
+																(r, rIdx) => (
+																	<Table.Row
+																		key={`${rIdx}-${r}`}
+																	>
+																		{r.map(
+																			(
+																				v,
+																				vIdx,
+																			) => (
+																				<Table.Cell
+																					key={`${rIdx}-${r}-${vIdx}-${v}`}
+																				>
+																					{typeof v ===
+																						"object" &&
+																					v !==
+																						null
+																						? JSON.stringify(
+																								v,
+																							)
+																						: String(
+																								v ??
+																									"",
+																							)}
+																				</Table.Cell>
+																			),
+																		)}
+																	</Table.Row>
+																),
+															)}
+														</Table.Body>
+													</Table>
+												</ScrollTableSetContainer>
+											)}
+										</StyledTableSetWrapper>
+									</StyledPreviewWrapper>
 								)}
 							</StyledPaddedStack>
 						)}
-
-						{joinElements.map((join, joinIndex) => (
-							<StyledPaddedStack
-								spacing={1}
-								direction="column"
-								key={joinIndex}
-							>
-								<StyledModalTitleUnpaddedWrapper>
-									<StyledDivCenterFlex>
-										<StyledTypographyMarginRight variant="h6">
-											Join
-										</StyledTypographyMarginRight>
-
-										<Tooltip title="Left Table">
-											<StyledJoinDiv>
-												{join.leftTable}
-											</StyledJoinDiv>
-										</Tooltip>
-
-										<Tooltip
-											title={`${"Select Join Type"}`}
-										>
-											<StyledIconButtonMargins
-												size="small"
-												color="secondary"
-												onClick={(e) => {
-													setAnchorEl(
-														e.currentTarget,
-													);
-													setJoinTypeSelectIndex(
-														joinIndex,
-													);
-													setIsJoinSelectOpen(true);
-												}}
-											>
-												{
-													JOIN_ICONS[
-														watchedJoins[joinIndex]
-															.joinType
-													]
-												}
-											</StyledIconButtonMargins>
-										</Tooltip>
-
-										{/* Join Select Menu */}
-										<StyledMenu
-											anchorEl={anchorEl}
-											open={isJoinSelectOpen}
-											onClose={() => {
-												setAnchorEl(null);
-												setIsJoinSelectOpen(false);
-												setJoinTypeSelectIndex(-1);
-											}}
-										>
-											<StyledMenuItem
-												value={"Inner Join"}
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinTypeSelectIndex}.joinType`,
-														"inner",
-													);
-												}}
-											>
-												Inner Join
-											</StyledMenuItem>
-											<StyledMenuItem
-												value={"Left Join"}
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinTypeSelectIndex}.joinType`,
-														"left.outer",
-													);
-												}}
-											>
-												Left Join
-											</StyledMenuItem>
-											<StyledMenuItem
-												value={"Right Join"}
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinTypeSelectIndex}.joinType`,
-														"right.outer",
-													);
-												}}
-											>
-												Right Join
-											</StyledMenuItem>
-											<StyledMenuItem
-												value={"Outer Join"}
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinTypeSelectIndex}.joinType`,
-														"outer",
-													);
-												}}
-											>
-												Outer Join
-											</StyledMenuItem>
-										</StyledMenu>
-
-										<Tooltip title="Right Table">
-											<StyledJoinDiv>
-												{join.rightTable}
-											</StyledJoinDiv>
-										</Tooltip>
-
-										<StyledJoinTypography variant="body1">
-											where
-										</StyledJoinTypography>
-
-										<Tooltip title="Left Key">
-											<StyledJoinDiv>
-												{join.leftKey}
-											</StyledJoinDiv>
-										</Tooltip>
-
-										<StyledJoinTypography variant="body1">
-											=
-										</StyledJoinTypography>
-
-										<Tooltip title="Right Key">
-											<StyledJoinDiv>
-												{join.rightKey}
-											</StyledJoinDiv>
-										</Tooltip>
-									</StyledDivCenterFlex>
-								</StyledModalTitleUnpaddedWrapper>
-							</StyledPaddedStack>
-						))}
-
-						<StyledMarginModalActions>
-							<Button
-								variant="outlined"
-								color="primary"
-								size="medium"
-								disabled
-								startIcon={<FilterListRounded />}
-								onClick={() => {
-									// create addFilterHandler
-								}}
-							>
-								Add Filter
-							</Button>
-							<Button
-								variant="outlined"
-								color="primary"
-								size="medium"
-								disabled
-								startIcon={<ControlPointDuplicateRounded />}
-								onClick={() => {
-									// create addSummaryHandler
-								}}
-							>
-								Add Summary
-							</Button>
-						</StyledMarginModalActions>
 
 						<StyledModalActionsUnpadded>
 							<Button
@@ -1971,15 +1560,34 @@ export const DataImportFormModal = observer(
 								Cancel
 							</Button>
 							<Button
+								variant="outlined"
+								color="primary"
+								size="medium"
+								disabled={
+									!checkedColumnsCount ||
+									Object.values(aliasesCountObj).some(
+										(key) => (key as number) > 1,
+									)
+								}
+								onClick={() => {
+									setShowTablePreview(!showPreview);
+								}}
+							>
+								{showPreview ? "Hide Preview" : "Show Preview"}
+							</Button>
+							<Button
 								type="submit"
 								variant="contained"
 								color="primary"
 								disabled={
 									!checkedColumnsCount ||
 									Object.values(aliasesCountObj).some(
-										(key: number) => key > 1,
+										(key) => (key as number) > 1,
 									) ||
-									aliasesCountObj[""] > 0
+									(aliasesCountObj as Record<string, number>)[
+										""
+									] > 0 ||
+									!frameVariableName?.trim()
 								}
 							>
 								{editMode ? "Update Cell" : "Import"}

@@ -18,6 +18,7 @@ import {
 	DefaultCells,
 	type NewCellAction,
 	QueryImportCellConfig,
+	QueryImportFormModal,
 	type QueryState,
 	TransformationCells,
 	useBlocks,
@@ -85,8 +86,9 @@ interface AddCellOption {
 	defaultCellType?: DefaultCellDefinitions["widget"];
 	options?: {
 		display: string;
-		defaultCellType: DefaultCellDefinitions["widget"];
+		defaultCellType?: DefaultCellDefinitions["widget"] | null;
 		disabled?: boolean;
+		modalType?: string;
 	}[];
 	disabled?: boolean;
 }
@@ -104,10 +106,12 @@ const DataImportDropdownOptions = [
 	{
 		display: "From Data Catalog",
 		defaultCellType: null,
+		modalType: "data-import",
 	},
 	{
 		display: "Custom Import (SQL)",
-		defaultCellType: "query-import",
+		defaultCellType: null,
+		modalType: "query-import",
 	},
 	{
 		display: "From CSV",
@@ -171,7 +175,7 @@ const AddCellOptions: Record<string, AddCellOption> = {
 					></path>
 				</g>
 				<defs>
-					<clipPath id="clip0_2378_103062">
+					<clipPath id={`clip0_2378_103062`}>
 						<rect width="24" height="24" fill="#666666"></rect>
 					</clipPath>
 				</defs>
@@ -216,6 +220,8 @@ export const NotebookAddCell = observer(
 		const [selectedAddCell, setSelectedAddCell] = useState<string>("");
 		const [isDataImportModalOpen, setIsDataImportModalOpen] =
 			useState<boolean>(false);
+		const [isQueryImportModalOpen, setIsQueryImportModalOpen] =
+			useState<boolean>(false);
 		const open = Boolean(anchorEl);
 		const { query, previousCellId = "" } = props;
 		const { state, notebook } = useBlocks();
@@ -257,7 +263,7 @@ export const NotebookAddCell = observer(
 			});
 
 			return categories;
-		}, [TransformationCells]);
+		}, []);
 
 		/**
 		 * filters transformations based on search term
@@ -283,7 +289,9 @@ export const NotebookAddCell = observer(
 		 * @description - sets search term in state
 		 * @param event
 		 */
-		const handleSearchChange = (event) => {
+		const handleSearchChange = (
+			event: React.ChangeEvent<HTMLInputElement>,
+		) => {
 			setSearchQuery(event.target.value);
 		};
 
@@ -365,7 +373,7 @@ export const NotebookAddCell = observer(
 				>
 					<StyledBorderDiv>
 						{AddCellOptions &&
-							Object.entries(AddCellOptions).map((add, i) => {
+							Object.entries(AddCellOptions).map((add, _i) => {
 								const value = add[1];
 								return (
 									<StyledButton
@@ -382,10 +390,12 @@ export const NotebookAddCell = observer(
 												setAnchorEl(e.currentTarget);
 												setSelectedAddCell(add[0]);
 											} else {
-												appendCell(
-													value.defaultCellType,
-												);
-												setSelectedAddCell(add[0]);
+												if (value.defaultCellType) {
+													appendCell(
+														value.defaultCellType,
+													);
+													setSelectedAddCell(add[0]);
+												}
 											}
 										}}
 										sx={{
@@ -430,7 +440,7 @@ export const NotebookAddCell = observer(
 					>
 						{selectedAddCell === "data" && // Ensure we are showing the options for "Data"
 							DataOptions.map(
-								({ display, defaultCellType }, index) => {
+								({ display, defaultCellType }, _index) => {
 									return (
 										<StyledMenuItem
 											key={`${query.id}-${previousCellId}-${display}`}
@@ -488,7 +498,7 @@ export const NotebookAddCell = observer(
 									{filteredCategories.map(
 										(
 											{ category, transformations },
-											index,
+											_index,
 										) => (
 											<MenuSectionRoot
 												key={`${query.id}-${previousCellId}-${category}`}
@@ -509,7 +519,7 @@ export const NotebookAddCell = observer(
 												{transformations.map(
 													(
 														transformation,
-														tIndex,
+														_tIndex,
 													) => (
 														<StyledMenuItem
 															value={
@@ -543,14 +553,16 @@ export const NotebookAddCell = observer(
 						{selectedAddCell === "others" &&
 							Array.from(
 								AddCellOptions[selectedAddCell]?.options || [],
-								({ display, defaultCellType }, index) => {
+								({ display, defaultCellType }, _index) => {
 									return (
 										<StyledMenuItem
 											key={`${query.id}-${previousCellId}-${display}`}
 											value={display}
 											onClick={() => {
-												appendCell(defaultCellType);
-												setAnchorEl(null);
+												if (defaultCellType) {
+													appendCell(defaultCellType);
+													setAnchorEl(null);
+												}
 											}}
 										>
 											{display}
@@ -565,8 +577,13 @@ export const NotebookAddCell = observer(
 									AddCellOptions[selectedAddCell]?.options ||
 										[],
 									(
-										{ display, defaultCellType, disabled },
-										index,
+										{
+											display,
+											defaultCellType,
+											disabled,
+											modalType,
+										},
+										_index,
 									) => {
 										return (
 											<StyledMenuItem
@@ -575,9 +592,18 @@ export const NotebookAddCell = observer(
 												disabled={disabled}
 												onClick={() => {
 													if (!defaultCellType) {
-														setIsDataImportModalOpen(
-															true,
-														);
+														if (
+															modalType ===
+															"query-import"
+														) {
+															setIsQueryImportModalOpen(
+																true,
+															);
+														} else {
+															setIsDataImportModalOpen(
+																true,
+															);
+														}
 													} else {
 														appendCell(
 															defaultCellType,
@@ -602,6 +628,21 @@ export const NotebookAddCell = observer(
 					>
 						<DataImportFormModal
 							setIsDataImportModalOpen={setIsDataImportModalOpen}
+							query={query}
+							previousCellId={previousCellId}
+							cell={null}
+							editMode={false}
+						/>
+					</Modal>
+				)}
+				{isQueryImportModalOpen && (
+					<Modal
+						open={setIsQueryImportModalOpen as unknown as boolean}
+					>
+						<QueryImportFormModal
+							setIsQueryImportModalOpen={
+								setIsQueryImportModalOpen
+							}
 							query={query}
 							previousCellId={previousCellId}
 							cell={null}
