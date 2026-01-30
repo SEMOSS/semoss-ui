@@ -4,32 +4,23 @@ import {
 	CircleAlert,
 	CopyIcon,
 	MessageCircleIcon,
-	Quote,
 	RefreshCwIcon,
+	SkipForwardIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useEffect, useMemo } from "react";
 import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
 	Button,
-	H1,
-	H2,
-	H3,
-	H4,
+	Code,
 	Markdown,
-	P,
-	Separator,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useLoadingMessage } from "@/hooks/useLoadingMessage";
+import { useMarkdownTypewriter } from "@/hooks";
 import {
 	InputMessageStore,
 	type ResponseMessageStore,
@@ -37,89 +28,8 @@ import {
 } from "@/stores";
 import { AppLogo } from "../common";
 import { RoomInlineTool } from "../room/room-inline-tool";
+import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
-
-const THINKING_MARKDOWN_COMPONENTS = {
-	h1: ({ children, ...props }) => (
-		<H1 className="text-inherit text-sm" {...props}>
-			{children}
-		</H1>
-	),
-	h2: ({ children, ...props }) => (
-		<H2 className="mt-2 text-inherit text-sm" {...props}>
-			{children}
-		</H2>
-	),
-	h3: ({ children, ...props }) => (
-		<H3 className="mt-2 text-inherit text-sm" {...props}>
-			{children}
-		</H3>
-	),
-	h4: ({ children, ...props }) => (
-		<H4 className="mt-2 text-inherit text-sm" {...props}>
-			{children}
-		</H4>
-	),
-	h5: ({ children, ...props }) => (
-		<h5
-			className="mt-1 scroll-m-20 font-medium text-inherit text-sm tracking-tight"
-			{...props}
-		>
-			{children}
-		</h5>
-	),
-	h6: ({ children, ...props }) => (
-		<h6
-			className="mt-1 scroll-m-20 font-medium text-inherit text-sm tracking-tight"
-			{...props}
-		>
-			{children}
-		</h6>
-	),
-	p: ({ children, ...props }) => (
-		<P className="mt-1 text-inherit text-sm" {...props}>
-			{children}
-		</P>
-	),
-	a: ({ children, href, ...props }) => (
-		<a
-			href={href}
-			className="font-medium text-primary text-primary text-sm underline underline-offset-1"
-			target="_blank"
-			rel="noopener noreferrer"
-			{...props}
-		>
-			{children}
-		</a>
-	),
-	ul: ({ children, ...props }) => (
-		<ul
-			className="my-1 ml-4 list-disc text-inherit text-sm [&>li]:mt-1"
-			{...props}
-		>
-			{children}
-		</ul>
-	),
-	ol: ({ children, ...props }) => (
-		<ol
-			className="my-1 ml-4 list-decimal text-inherit text-sm [&>li]:mt-1"
-			{...props}
-		>
-			{children}
-		</ol>
-	),
-	li: ({ children, ...props }) => (
-		<li className="text-inherit text-sm" {...props}>
-			{children}
-		</li>
-	),
-	blockquote: ({ children, ...props }) => (
-		<Quote className="mt-1" {...props}>
-			{children}
-		</Quote>
-	),
-	hr: ({ ...props }) => <Separator className="mt-2 mb-1" {...props} />,
-};
 
 interface ResponseMessageProps {
 	/** Room */
@@ -131,29 +41,19 @@ interface ResponseMessageProps {
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 	({ room, message }) => {
-		const thinkingMessage = useLoadingMessage(room.isLoading);
+		const typewriter = useMarkdownTypewriter(message.text);
 
-		const [thinking, setThinking] = useState<string>("");
+		useEffect(() => {
+			if (message.isThinking) {
+				typewriter.start();
+			}
+		}, [message.isThinking, typewriter.start]);
 
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
 		if (message.parent instanceof InputMessageStore) {
 			inputMessage = message.parent;
 		}
-
-		/**
-		 * Copy the text
-		 * @param text - text to copy
-		 */
-		const copyMessage = (text: string) => {
-			try {
-				navigator.clipboard.writeText(text);
-
-				toast.success("Successfully copied to clipboard");
-			} catch (e) {
-				toast.error(e.message);
-			}
-		};
 
 		/**
 		 * Record the feedback
@@ -187,6 +87,58 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			message.type === "RESPONSE" &&
 			message.tools.some((tool) => !tool.response);
 
+		const markdownComponents = useMemo(() => {
+			return {
+				code: ({ children, className, ...props }) => {
+					const match = /language-(\w+)/.exec(className || "");
+					const code = children as string;
+
+					let lang: string = "";
+					if (match?.[1]) {
+						lang = match[1];
+					}
+
+					return (
+						<div className="group/response-markdown relative">
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										className="absolute top-0 right-0 bg-background opacity-0 transition-opacity group-hover/response-markdown:opacity-100"
+										variant="ghost"
+										size="icon"
+										disabled={!code}
+										onClick={() => {
+											try {
+												navigator.clipboard.writeText(
+													code,
+												);
+
+												toast.success(
+													"Successfully copied to clipboard",
+												);
+											} catch (e) {
+												toast.error(e.message);
+											}
+										}}
+									>
+										<CopyIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									Copy Code
+								</TooltipContent>
+							</Tooltip>
+							<Code
+								code={code}
+								lang={lang || undefined}
+								{...props}
+							/>
+						</div>
+					);
+				},
+			};
+		}, []);
+
 		return (
 			<div className="group mb-0 flex w-full flex-col gap-4">
 				<div className="group flex flex-row items-center gap-2">
@@ -201,46 +153,21 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						{message.model.name ?? "Agent"}
 					</span>
 				</div>
-				{(message.isThinking || message.thinking.length > 0) && (
-					<Accordion
-						type="single"
-						collapsible
-						className="rounded-lg border p-3 text-muted-foreground text-sm shadow-sm"
-						value={message.isThinking ? "thinking" : thinking}
-						onValueChange={(val) => setThinking(val || "")}
-					>
-						<AccordionItem value="thinking">
-							<AccordionTrigger className="p-0">
-								<span className="font-medium">Thinking</span>
-							</AccordionTrigger>
-							<AccordionContent className="pt-2">
-								<Markdown
-									className="[&>*:first-child]:mt-0"
-									components={THINKING_MARKDOWN_COMPONENTS}
-								>
-									{message.thinking || thinkingMessage}
-								</Markdown>
-							</AccordionContent>
-						</AccordionItem>
-					</Accordion>
-				)}
-				{message.text ? (
-					<Markdown className="[&>*:first-child]:mt-0">
-						{message.text}
-					</Markdown>
-				) : null}
+				<ResponseMessageThinking room={room} message={message} />
+				<Markdown
+					components={markdownComponents}
+					className="[&>*:first-child]:mt-0"
+				>
+					{typewriter.isTyping ? typewriter.rendered : message.text}
+				</Markdown>
 				{message.tools.map((t) => {
-					const isInlineToolOpen = room.isInlineToolOpen(
-						`message-${message.id}-tool-${t.id}`,
-					);
-
 					return (
 						<div
 							key={`tool-${t.id}`}
 							className="flex flex-col gap-2"
 						>
 							<ResponseMessageTool message={message} tool={t} />
-							{isInlineToolOpen && (
+							{t.display === "inline" && t.isOpen && (
 								<RoomInlineTool
 									room={room}
 									message={message}
@@ -256,137 +183,173 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						Please complete the tool(s) to proceed.
 					</p>
 				)}
-				<div className="-ml-2.5 flex flex-1 flex-row items-center justify-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-					{inputMessage?.siblings.length > 1 && (
-						<>
+				<div className="-ml-2.5 flex flex-1 flex-row items-center justify-start">
+					<div className="flex flex-row items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+						{inputMessage?.siblings.length > 1 && (
+							<>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											disabled={
+												!inputMessage.previousSibling
+											}
+											onClick={() => {
+												if (
+													!inputMessage.previousSibling
+												) {
+													return;
+												}
+
+												inputMessage.previousSibling.activateMessage();
+											}}
+										>
+											<ArrowLeftIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">
+										Previous Message
+									</TooltipContent>
+								</Tooltip>
+								<span className="text-muted-foreground text-xs">
+									{inputMessage.position + 1}/
+									{inputMessage.siblings.length}
+								</span>
+
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											disabled={!inputMessage.nextSibling}
+											onClick={() => {
+												if (!inputMessage.nextSibling) {
+													return;
+												}
+
+												inputMessage.nextSibling.activateMessage();
+											}}
+										>
+											<ArrowRightIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">
+										Next Message
+									</TooltipContent>
+								</Tooltip>
+							</>
+						)}
+
+						{inputMessage && (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
+										disabled={
+											!inputMessage.parent?.parent ||
+											message.room.mode === "executing"
+										}
 										variant="ghost"
 										size="icon"
-										disabled={!inputMessage.previousSibling}
 										onClick={() => {
-											if (!inputMessage.previousSibling) {
-												return;
-											}
-
-											inputMessage.previousSibling.activateMessage();
+											rewriteMessage();
 										}}
 									>
-										<ArrowLeftIcon />
+										<RefreshCwIcon />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
-									Previous Message
+									Rewrite Message
 								</TooltipContent>
 							</Tooltip>
-							<span className="text-muted-foreground text-xs">
-								{inputMessage.position + 1}/
-								{inputMessage.siblings.length}
-							</span>
+						)}
 
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon"
-										disabled={!inputMessage.nextSibling}
-										onClick={() => {
-											if (!inputMessage.nextSibling) {
-												return;
-											}
-
-											inputMessage.nextSibling.activateMessage();
-										}}
-									>
-										<ArrowRightIcon />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent side="bottom">
-									Next Message
-								</TooltipContent>
-							</Tooltip>
-						</>
-					)}
-
-					{inputMessage && (
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
-									disabled={
-										!inputMessage.parent?.parent ||
-										message.room.mode === "executing"
-									}
 									variant="ghost"
 									size="icon"
 									onClick={() => {
-										rewriteMessage();
+										recordFeedback(true);
 									}}
 								>
-									<RefreshCwIcon />
+									<ThumbsUpIcon />
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
-								Rewrite Message
+								Share Positive Feedback
+							</TooltipContent>
+						</Tooltip>
+
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => {
+										recordFeedback(false);
+									}}
+								>
+									<ThumbsDownIcon />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								Share Negative Feedback
+							</TooltipContent>
+						</Tooltip>
+
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									disabled={!message.text}
+									onClick={() => {
+										if (!message.text) {
+											return;
+										}
+
+										try {
+											navigator.clipboard.writeText(
+												message.text,
+											);
+
+											toast.success(
+												"Successfully copied to clipboard",
+											);
+										} catch (e) {
+											toast.error(e.message);
+										}
+									}}
+								>
+									<CopyIcon />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								Copy Response
+							</TooltipContent>
+						</Tooltip>
+					</div>
+
+					<div className="flex-1" />
+
+					{typewriter.isTyping && !message.isThinking && (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									disabled={!message.text}
+									onClick={() => typewriter.skipToEnd()}
+								>
+									<SkipForwardIcon />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								Fast Forward to End
 							</TooltipContent>
 						</Tooltip>
 					)}
-
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => {
-									recordFeedback(true);
-								}}
-							>
-								<ThumbsUpIcon />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							Share Positive Feedback
-						</TooltipContent>
-					</Tooltip>
-
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => {
-									recordFeedback(false);
-								}}
-							>
-								<ThumbsDownIcon />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							Share Negative Feedback
-						</TooltipContent>
-					</Tooltip>
-
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								disabled={!message.text}
-								onClick={() => {
-									if (!message.text) {
-										return;
-									}
-
-									copyMessage(message.text);
-								}}
-							>
-								<CopyIcon />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							Copy Response
-						</TooltipContent>
-					</Tooltip>
 				</div>
 			</div>
 		);

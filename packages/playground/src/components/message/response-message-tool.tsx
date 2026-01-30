@@ -2,16 +2,10 @@ import {
 	AlertTriangleIcon,
 	CheckIcon,
 	HammerIcon,
-	Loader2Icon,
 	XCircleIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { Button } from "@semoss/ui/next";
-import {
-	MCP_DISPLAY_HIDDEN,
-	MCP_DISPLAY_INLINE,
-	TOOL_CANCELLATION_PROMPT,
-} from "@/constants";
+import { Button, Spinner } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore } from "@/stores";
 
@@ -31,40 +25,40 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		/**
 		 * Library hooks
 		 */
-		const toolExecutionMessage = useLoadingMessage(tool.is_executing);
+		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
+			tool.status === "LOADING",
+			tool.json._meta.SMSS_MCP_UI?.loadingMessage
+				? [tool.json._meta.SMSS_MCP_UI.loadingMessage]
+				: [],
+		);
 
 		// this will render the component whenever the sidebar model changes
 		room.sidebar.counter;
-
-		/**
-		 * Constants
-		 */
-		const nodeId = `message-${message.id}-tool-${tool.id}`;
-
-		// track if it is active in sidebar
-		const isActiveInSidebar =
-			room.sidebar.isOpen && !!room.sidebar.model.getNodeById(nodeId);
-
-		// track if it is active inline
-		const isActiveInline = room.isInlineToolOpen(nodeId);
 
 		// TODO: if the plan is executing, only the execution step is enabled
 		let isDisabled = false;
 		if (room.mode === "executing") {
 			isDisabled =
 				room.plan?.step?.details.stepType !== "tool_call" ||
-				room.plan?.step?.details.tool_name !== tool.name ||
+				room.plan?.step?.details.tool_name !== tool.json.name ||
 				room.plan?.step?.details._meta.SMSS_PROJECT_ID !==
-					tool._meta.SMSS_PROJECT_ID;
+					tool.json._meta.SMSS_PROJECT_ID;
+		}
+
+		let isActive = false;
+		if (tool.display === "sidebar" && tool.isOpen && room.sidebar.isOpen) {
+			isActive = true;
+		} else if (tool.display === "inline" && tool.isOpen) {
+			isActive = true;
 		}
 
 		// icon
 		let icon = null;
-		if (tool.is_executing) {
-			icon = <Loader2Icon className="animate-spin" />;
-		} else if (tool.tool_status === "error") {
+		if (tool.status === "LOADING") {
+			icon = <Spinner />;
+		} else if (tool.status === "ERROR") {
 			icon = <AlertTriangleIcon />;
-		} else if (tool.tool_status === "cancelled") {
+		} else if (tool.status === "CANCELLED") {
 			icon = <XCircleIcon />;
 		} else if (tool.response) {
 			icon = <CheckIcon />;
@@ -72,44 +66,8 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			icon = <HammerIcon />;
 		}
 
-		/**
-		 * Open tool in the default location based on SMSS_MCP_DISPLAY
-		 */
-		const openToolInDefaultLocation = () => {
-			// Already open somewhere - do nothing
-			if (isActiveInSidebar || isActiveInline) {
-				return;
-			}
-
-			const toolConfig = {
-				app: tool._meta.SMSS_PROJECT_ID,
-				tool: {
-					message: message.id,
-					id: tool.id,
-					name: tool.name,
-					title: tool.title,
-					parameters: tool.parameters,
-				},
-			};
-
-			if (tool._meta.SMSS_MCP_DISPLAY === MCP_DISPLAY_HIDDEN) {
-				//noop
-			} else if (tool._meta.SMSS_MCP_DISPLAY === MCP_DISPLAY_INLINE) {
-				room.addInlineTool(nodeId, toolConfig);
-			} else {
-				// Default to sidebar
-				room.addSidebarNode(nodeId, {
-					type: "tab",
-					name: tool.title,
-					component: "room-tool",
-					config: toolConfig,
-					enableClose: true,
-				});
-			}
-		};
-
 		// Don't render if hidden
-		if (tool._meta.SMSS_MCP_DISPLAY === MCP_DISPLAY_HIDDEN) {
+		if (tool.display === "hidden") {
 			return null;
 		}
 
@@ -119,20 +77,20 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					className={`group/toolcard flex w-full flex-row items-center gap-5 rounded-lg border border-border bg-primary-foreground p-4 text-left shadow-sm ${
 						isDisabled
 							? "cursor-not-allowed opacity-50"
-							: `cursor-pointer hover:bg-accent ${isActiveInSidebar || isActiveInline ? "border-primary" : ""}`
+							: `cursor-pointer hover:bg-accent ${isActive ? "border-primary" : ""}`
 					}`}
 				>
 					<button
 						type="button"
 						disabled={isDisabled}
 						className="flex flex-1 flex-row items-center gap-5 text-left"
-						onClick={() => openToolInDefaultLocation()}
+						onClick={() => tool.openTool()}
 					>
 						<div className="flex items-center gap-2">
 							<div
 								className={`flex size-9 flex-col items-center justify-center overflow-hidden rounded p-2 ${
-									tool.tool_status === "error" ||
-									tool.tool_status === "cancelled"
+									tool.status === "ERROR" ||
+									tool.status === "CANCELLED"
 										? "bg-destructive/10 text-destructive"
 										: "bg-primary/10 text-primary"
 								}`}
@@ -143,25 +101,26 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						<div className="flex-1">
 							<div
 								className="truncate text-base"
-								title={tool.title}
+								title={tool.json.title}
 							>
-								{tool.title}
+								{tool.json.title}
 							</div>
 							<div
 								className="truncate text-muted-foreground text-sm"
-								title={tool.title}
+								title={tool.json.title}
 							>
 								{/* {tool.title} */}
-								{tool.tool_status === "error"
+								{tool.status === "ERROR"
 									? "Failed to execute tool"
-									: tool.tool_status === "cancelled"
+									: tool.status === "CANCELLED"
 										? "Tool execution cancelled"
 										: tool.response
 											? "Completed"
-											: tool._meta.SMSS_MCP_EXECUTION ===
+											: tool.json._meta
+														.SMSS_MCP_EXECUTION ===
 													"ask"
 												? "Click to open"
-												: tool.is_executing
+												: tool.status === "LOADING"
 													? toolExecutionMessage
 													: "This tool is set to auto-execute"}
 							</div>
@@ -178,9 +137,12 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 									e.stopPropagation();
 									message.saveToolExecution(
 										tool,
-										TOOL_CANCELLATION_PROMPT,
+										"",
 										"cancelled",
 									);
+
+									// close it
+									tool.closeTool();
 								}}
 							>
 								Cancel
