@@ -157,6 +157,10 @@ export class ToolStore {
 					tool: this.json,
 					toolResponse:
 						this.status === "SUCCESS" ? this.response : undefined,
+					executedParameters:
+						this.status === "SUCCESS"
+							? this.executedParameters
+							: undefined,
 				},
 				enableClose: true,
 			});

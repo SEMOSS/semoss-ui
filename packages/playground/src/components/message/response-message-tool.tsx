@@ -71,10 +71,6 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			return null;
 		}
 
-		if (tool.response) {
-			console.log(tool.response, JSON.stringify(tool.executedParameters));
-		}
-
 		return (
 			<div className="flex flex-col gap-2">
 				<div

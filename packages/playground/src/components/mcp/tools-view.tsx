@@ -31,10 +31,13 @@ interface ToolsViewProps {
 
 	/** Response to the tool */
 	toolResponse?: string;
+
+	/** Parameters that were executed */
+	executedParameters?: Record<string, unknown>;
 }
 
 export const ToolsView: React.FC<ToolsViewProps> = observer(
-	({ room, app, message, tool, toolResponse }) => {
+	({ room, app, message, tool, toolResponse, executedParameters }) => {
 		/**
 		 * State
 		 */
@@ -229,6 +232,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						tool={tool}
 						mcp={selectedTool}
 						toolResponse={toolResponse}
+						executedParameters={executedParameters}
 					/>
 				)}
 			</div>

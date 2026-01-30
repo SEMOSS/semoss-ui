@@ -28,9 +28,10 @@ import type { MCPTool } from "@/types";
 interface JSONEditorProps {
 	value: unknown;
 	onChange: (v: unknown) => void;
+	disabled?: boolean;
 }
 
-const JSONEditor = ({ value, onChange }: JSONEditorProps) => {
+const JSONEditor = ({ value, onChange, disabled }: JSONEditorProps) => {
 	const [text, setText] = useState(() => {
 		try {
 			return JSON.stringify(value ?? {}, null, 2);
@@ -56,41 +57,46 @@ const JSONEditor = ({ value, onChange }: JSONEditorProps) => {
 				onChange={(e) => setText(e.target.value)}
 				rows={8}
 				className="w-full font-mono text-sm"
+				disabled={disabled}
 			/>
 			{error && <p className="text-destructive text-sm">{error}</p>}
-			<div className="flex gap-2">
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					onClick={() => {
-						try {
-							const parsed = text.trim() ? JSON.parse(text) : {};
-							onChange(parsed);
-							setError(null);
-						} catch (err) {
-							setError((err as Error).message);
-						}
-					}}
-				>
-					Apply
-				</Button>
-				<Button
-					type="button"
-					variant="ghost"
-					size="sm"
-					onClick={() => {
-						try {
-							setText(JSON.stringify(value ?? {}, null, 2));
-							setError(null);
-						} catch (_) {
-							setText("");
-						}
-					}}
-				>
-					Reset
-				</Button>
-			</div>
+			{!disabled && (
+				<div className="flex gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => {
+							try {
+								const parsed = text.trim()
+									? JSON.parse(text)
+									: {};
+								onChange(parsed);
+								setError(null);
+							} catch (err) {
+								setError((err as Error).message);
+							}
+						}}
+					>
+						Apply
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						onClick={() => {
+							try {
+								setText(JSON.stringify(value ?? {}, null, 2));
+								setError(null);
+							} catch (_) {
+								setText("");
+							}
+						}}
+					>
+						Reset
+					</Button>
+				</div>
+			)}
 		</div>
 	);
 };
@@ -115,22 +121,36 @@ interface ToolsDefaultViewProps {
 	/** Response to the tool, if already completed */
 	toolResponse?: string;
 
+	/** Parameters that were executed */
+	executedParameters?: Record<string, unknown>;
+
 	/** MCP */
 	mcp: MCPTool;
 }
 
 export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
-	({ room, app, message, tool, mcp, toolResponse }) => {
+	({ room, app, message, tool, mcp, toolResponse, executedParameters }) => {
+		/*
+		 * Constants
+		 */
 		const properties = mcp?.inputSchema?.properties || {};
 		const required = mcp?.inputSchema?.required || [];
 		const name = mcp?.name || "";
 		const description = mcp?.description || "";
+		const hasBeenExecuted = toolResponse !== undefined;
+
+		/*
+		 * Stet
+		 */
 		const [data, setData] = useState<Record<string, unknown>>(() => {
-			return tool?.parameters;
+			return hasBeenExecuted ? executedParameters : tool?.parameters;
 		});
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
 
+		/*
+		 * Functions
+		 */
 		const handleChange = (field: string, value: unknown) => {
 			setData((prev) => ({ ...prev, [field]: value }));
 		};
@@ -191,7 +211,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 				description?: string;
 			},
 		) => {
-			const isRequired = required.includes(fieldName);
+			const isRequired = required.includes(fieldName) && !hasBeenExecuted;
 			const value = data[fieldName] ?? "";
 			const displayName = capitalizeWords(fieldName);
 
@@ -225,6 +245,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 									onValueChange={(val) =>
 										handleChange(fieldName, val)
 									}
+									disabled={hasBeenExecuted}
 								>
 									<SelectTrigger className="w-full">
 										<SelectValue
@@ -284,6 +305,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 									placeholder={`Enter ${displayName}`}
 									rows={4}
 									className="w-full"
+									disabled={hasBeenExecuted}
 								/>
 								{fieldSchema.description && (
 									<p className="text-muted-foreground text-sm">
@@ -320,6 +342,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 								}
 								placeholder={`Enter ${displayName}`}
 								className="w-full"
+								disabled={hasBeenExecuted}
 							/>
 							{fieldSchema.description && (
 								<p className="text-muted-foreground text-sm">
@@ -364,6 +387,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 								min={fieldSchema.minimum}
 								max={fieldSchema.maximum}
 								className="w-full"
+								disabled={hasBeenExecuted}
 							/>
 							{fieldSchema.description && (
 								<p className="text-muted-foreground text-sm">
@@ -385,6 +409,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 								onCheckedChange={(checked) =>
 									handleChange(fieldName, checked)
 								}
+								disabled={toolResponse !== undefined}
 							/>
 							<div className="space-y-1">
 								<div className="flex items-center gap-2">
@@ -454,6 +479,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 								placeholder="Enter comma-separated values"
 								rows={2}
 								className="w-full"
+								disabled={hasBeenExecuted}
 							/>
 							{fieldSchema.description && (
 								<p className="text-muted-foreground text-sm">
@@ -491,6 +517,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 							<JSONEditor
 								value={obj}
 								onChange={(v) => handleChange(fieldName, v)}
+								disabled={hasBeenExecuted}
 							/>
 							{fieldSchema.description && (
 								<p className="text-muted-foreground text-sm">
@@ -535,6 +562,10 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			}
 		};
 
+		/*
+		 * Constants
+		 */
+
 		// Separate required and optional fields
 		const requiredFields = Object.entries(properties).filter(
 			([fieldName]) => required.includes(fieldName),
@@ -558,21 +589,46 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 					</CardHeader>
 					<CardContent className="max-h-[60vh] overflow-y-auto">
 						{toolResponse ? (
-							<div className="flex h-full flex-col space-y-1">
-								<Label
-									htmlFor="tool-response"
-									className="shrink-0 font-semibold"
-								>
-									Result
-								</Label>
-								<Textarea
-									readOnly
-									className="w-full resize-none"
-									value={toolResponse}
-								/>
+							<div className="space-y-4">
+								<div className="flex h-full flex-col space-y-2">
+									<Label
+										htmlFor="tool-response"
+										className="shrink-0 font-semibold"
+									>
+										Result
+									</Label>
+									<Textarea
+										readOnly
+										className="w-full resize-none"
+										value={toolResponse}
+									/>
+								</div>
+								{Object.keys(properties).length > 0 && ( // todo: this logic
+									<>
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											onClick={() =>
+												setShowOptional(!showOptional)
+											}
+											className="w-full"
+										>
+											{`${showOptional ? "Hide" : "Show"} Parameters (${Object.keys(properties).length})`}
+										</Button>
+										{showOptional &&
+											Object.entries(properties).map(
+												([fieldName, fieldSchema]) =>
+													renderField(
+														fieldName,
+														fieldSchema,
+													),
+											)}
+									</>
+								)}
 							</div>
 						) : (
-							<form onSubmit={handleSubmit} className="space-y-6">
+							<form onSubmit={handleSubmit}>
 								<div className="space-y-4">
 									{/* Required fields */}
 									{requiredFields.map(
@@ -594,9 +650,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 												}
 												className="w-full"
 											>
-												{showOptional ? "Hide" : "Show"}{" "}
-												Optional Fields (
-												{optionalFields.length})
+												{`${showOptional ? "Hide" : "Show"} Optional Fields (${optionalFields.length})`}
 											</Button>
 
 											{showOptional &&
