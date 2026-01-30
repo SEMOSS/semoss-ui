@@ -31,11 +31,6 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 	({ room, message, tool }) => {
 		const [isMaximized, setIsMaximized] = useState(false);
 
-		/**
-		 * Constants
-		 */
-		const nodeId = `message-${message.id}-tool-${tool.id}`;
-
 		return (
 			<div className="relative h-[60vh] w-full overflow-hidden">
 				{/* Backdrop for maximized state */}
@@ -60,31 +55,11 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 									onClick={(e) => {
 										e.stopPropagation();
 
-										// remove from inline
-										room.removeInlineTool(nodeId);
-
 										// turn off maximized state
 										setIsMaximized(false);
 
-										// add to sidebar
-										room.addSidebarNode(nodeId, {
-											type: "tab",
-											name: tool.title,
-											component: "room-tool",
-											config: {
-												app: tool._meta.SMSS_PROJECT_ID,
-												tool: {
-													message: message.id,
-													id: tool.id,
-													name: tool.name,
-													title: tool.title,
-													parameters: tool.parameters,
-													original_name:
-														tool.original_name,
-												},
-											},
-											enableClose: true,
-										});
+										// open the tool
+										tool.openTool("sidebar");
 									}}
 								>
 									<PanelRightIcon />
@@ -126,8 +101,8 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 										// turn off maximized state when closing sidebar
 										setIsMaximized(false);
 
-										// remove from inline
-										room.removeInlineTool(nodeId);
+										// close the tool
+										tool.closeTool();
 									}}
 								>
 									<XIcon />
@@ -139,14 +114,14 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 					<div className="w-full flex-1 overflow-hidden">
 						<ToolsView
 							room={room}
-							app={tool._meta.SMSS_PROJECT_ID}
-							tool={{
-								message: message.id,
-								id: tool.id,
-								name: tool.name,
-								parameters: tool.parameters,
-								original_name: tool.original_name,
-							}}
+							app={tool.json._meta.SMSS_PROJECT_ID}
+							message={message.id}
+							tool={tool.json}
+							toolResponse={
+								tool.status === "SUCCESS"
+									? tool.response
+									: undefined
+							}
 						/>
 					</div>
 				</div>
