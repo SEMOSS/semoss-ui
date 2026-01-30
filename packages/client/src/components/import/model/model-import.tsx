@@ -29,8 +29,6 @@ import {
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
-import { ModelImportForm } from "./ModelImportForm";
-import { ModelTileCard } from "./ModelTileCard";
 import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
 import {
 	Custom_Model_Image,
@@ -38,6 +36,8 @@ import {
 	type ImportableModels,
 	MODEL_VERSIONS,
 } from "./model-import.constants";
+import { ModelImportForm } from "./model-import-form";
+import { ModelTileCard } from "./model-tile-card";
 
 /**
  * Helper component to display provider icon with fallback to initials

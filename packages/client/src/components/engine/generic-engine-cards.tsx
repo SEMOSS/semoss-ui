@@ -30,9 +30,9 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 	P,
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import BRAIN from "@/assets/img/BRAIN.png";
@@ -119,7 +119,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 
 	/** Menu toggle state */
 	const [open, setOpen] = useState(false);
-	const [openTags, setOpenTags] = useState(false);
 	const formattedDate = new Date(date)
 		.toLocaleDateString("en-US", {
 			month: "short",
@@ -174,48 +173,42 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 						</div>
 					</div>
 					<div className="flex min-w-0 max-w-[260px] flex-shrink-0 items-center gap-1.5 overflow-hidden">
-						{Array.isArray(tag) &&
-							tag.slice(0, 2).map((t, i) => (
-								<Badge
-									key={`${id}`}
-									variant="outline"
-									title={t}
-								>
-									<span className="max-w-[20ch] truncate px-2 font-semibold text-xs">
-										{t}
-									</span>
-								</Badge>
-							))}
-
-						{Array.isArray(tag) && tag.length > 2 && (
-							<Popover open={openTags} onOpenChange={setOpenTags}>
-								<PopoverTrigger asChild>
-									<ul
-										className="cursor-pointer whitespace-nowrap text-muted-foreground text-xs"
-										onMouseEnter={() => setOpenTags(true)}
-										onMouseLeave={() => setOpenTags(false)}
-									>
-										+{tag.length - 2}
-									</ul>
-								</PopoverTrigger>
-
-								<PopoverContent
-									className="flex max-w-[220px] flex-wrap gap-1"
-									onMouseEnter={() => setOpenTags(true)}
-									onMouseLeave={() => setOpenTags(false)}
-								>
-									{tag.slice(2).map((t, i) => (
+						{tag !== undefined &&
+							(Array.isArray(tag) ? (
+								<>
+									{tag.slice(0, 2).map((t, i) => (
 										<Badge
 											key={`${id}`}
 											variant="outline"
-											className="max-w-[120px] shrink truncate"
+											title={t}
 										>
-											{t}
+											<span className="max-w-[20ch] truncate px-2 font-semibold text-xs">
+												{t}
+											</span>
 										</Badge>
 									))}
-								</PopoverContent>
-							</Popover>
-						)}
+									{tag.length > 2 && (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span className="cursor-pointer whitespace-nowrap text-muted-foreground text-xs">
+													+{tag.length - 2}
+												</span>
+											</TooltipTrigger>
+											<TooltipContent>
+												<span className="max-w-[300px]">
+													{tag.slice(2).join(", ")}
+												</span>
+											</TooltipContent>
+										</Tooltip>
+									)}
+								</>
+							) : tag !== "" ? (
+								<Badge variant="outline" title={tag}>
+									<span className="max-w-[20ch] truncate px-2 font-semibold text-xs">
+										{tag}
+									</span>
+								</Badge>
+							) : null)}
 					</div>
 				</div>
 				<div className="flex flex-1 items-center justify-end gap-2">
@@ -364,34 +357,32 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 					{description ? description : "No description available"}
 				</P>
 				<div className="flex min-w-0 max-w-[260px] flex-shrink-0 items-center gap-1.5 overflow-hidden">
-					{Array.isArray(tag) &&
-						tag.slice(0, 2).map((t, i) => (
-							<Badge key={`${id}`} variant="secondary">
-								{t}
-							</Badge>
-						))}
-
-					{Array.isArray(tag) && tag.length > 2 && (
-						<Popover>
-							<PopoverTrigger asChild>
-								<span className="cursor-pointer whitespace-nowrap text-muted-foreground text-xs">
-									+{tag.length - 2}
-								</span>
-							</PopoverTrigger>
-
-							<PopoverContent className="flex max-w-[220px] flex-wrap gap-1">
-								{tag.slice(2).map((t, i) => (
-									<Badge
-										key={`${id}`}
-										variant="outline"
-										className="max-w-[120px] shrink truncate"
-									>
+					{tag !== undefined &&
+						(Array.isArray(tag) ? (
+							<>
+								{tag.slice(0, 2).map((t, i) => (
+									<Badge key={`${id}`} variant="secondary">
 										{t}
 									</Badge>
 								))}
-							</PopoverContent>
-						</Popover>
-					)}
+								{tag.length > 2 && (
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<span className="cursor-pointer whitespace-nowrap text-muted-foreground text-xs">
+												+{tag.length - 2}
+											</span>
+										</TooltipTrigger>
+										<TooltipContent>
+											<span className="max-w-[300px]">
+												{tag.slice(2).join(", ")}
+											</span>
+										</TooltipContent>
+									</Tooltip>
+								)}
+							</>
+						) : tag !== "" ? (
+							<Badge variant="secondary">{tag}</Badge>
+						) : null)}
 				</div>
 			</CardContent>
 			<CardFooter className="justify-between">
