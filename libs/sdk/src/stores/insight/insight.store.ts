@@ -73,7 +73,7 @@ interface InsightStoreInterface {
 
 export class InsightStore {
 	private _store: InsightStoreInterface = {
-		insightId: "",
+		insightId: "new",
 		isInitialized: false,
 		isAuthorized: false,
 		isReady: false,
@@ -160,6 +160,11 @@ export class InsightStore {
 		 * Defaults to false
 		 */
 		disableRoom?: boolean;
+
+		/**
+		 * Connect this insight to an existing insight ID
+		 */
+		insightId?: string;
 	}): Promise<{
 		tool: (typeof Env)["TOOL"] | null;
 	}> => {
@@ -175,7 +180,14 @@ export class InsightStore {
 					? options.python
 					: false,
 			disableRoom: options?.disableRoom || false,
+			insightId: options?.insightId || "",
 		};
+
+		// set the insight
+		this._store.insightId = "";
+		if (merged.insightId) {
+			this._store.insightId = merged.insightId;
+		}
 
 		// save the initial appId
 		this._store.options.appId = "";
@@ -380,7 +392,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		// create the new insight
 		const { insightId, errors } = await runPixel<[Record<string, unknown>]>(
 			pixel,
-			"new",
+			this._store.insightId,
 		);
 
 		// log errors if it exists
