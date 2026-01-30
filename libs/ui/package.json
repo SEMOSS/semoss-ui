@@ -29,6 +29,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@base-ui/react": "^1.1.0",
     "@mui/x-date-pickers": "6.8.0",
     "@mui/x-tree-view": "^6.17.0",
     "@radix-ui/react-accordion": "^1.2.12",
