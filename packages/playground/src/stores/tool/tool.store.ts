@@ -150,6 +150,8 @@ export class ToolStore {
 					app: this.json._meta.SMSS_PROJECT_ID,
 					message: this.message.id,
 					tool: this.json,
+					toolResponse:
+						this.status === "SUCCESS" ? this.response : undefined,
 				},
 				enableClose: true,
 			});
