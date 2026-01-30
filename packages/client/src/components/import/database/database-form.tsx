@@ -32,8 +32,8 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
-import DataSelection from "./DataSelection";
-import ExcelDataSelection from "./ExcelDataSelection";
+import DataSelection from "./data-selection";
+import ExcelDataSelection from "./excel-data-selection";
 import { MetaModelConnections } from "./MetaModelConnections";
 import { MetaModelType } from "./MetaModelType";
 import TableViewSelector from "./TableViewModel";
