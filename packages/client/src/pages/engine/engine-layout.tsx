@@ -247,29 +247,35 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		>
 			<div className="flex flex-col gap-4">
 				<EngineHeader />
-				<div className="flex flex-col">
+				<div className="flex flex-col rounded-lg bg-(--muted)">
 					{tabs.length > 0 && (
-						<Tabs
-							value={
-								activeTabIdx !== -1
-									? tabs[activeTabIdx].path
-									: undefined
-							}
-						>
-							<TabsList className="h-[42px] w-full rounded-t-[10px] rounded-b-none bg-(--secondary)">
-								{tabs.map((t, idx) => (
-									<TabsTrigger
-										key={t.path}
-										value={t.path}
-										onClick={() => navigate(`${t.path}`)}
-										data-testid={`engineLayout-${t.name}-tab`}
-										className="h-[38px] flex-1 rounded-lg px-4 text-[14px]"
-									>
-										{t.name}
-									</TabsTrigger>
-								))}
-							</TabsList>
-						</Tabs>
+						<div>
+							<Tabs
+								value={
+									activeTabIdx !== -1
+										? tabs[activeTabIdx].path
+										: undefined
+								}
+								className="gap-0 bg-transparent"
+							>
+								<div className="w-[80%]">
+									<TabsList className="gap-2">
+										{tabs.map((t, idx) => (
+											<TabsTrigger
+												key={t.path}
+												value={t.path}
+												onClick={() =>
+													navigate(`${t.path}`)
+												}
+												data-testid={`engineLayout-${t.name}-tab`}
+											>
+												{t.name}
+											</TabsTrigger>
+										))}
+									</TabsList>
+								</div>
+							</Tabs>
+						</div>
 					)}
 					<div className="w-full bg-(--card) p-4">
 						<Outlet />

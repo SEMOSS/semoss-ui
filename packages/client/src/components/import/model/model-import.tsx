@@ -1,7 +1,9 @@
-import { SearchIcon, UploadIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+import { FileUploadOutlined } from "@mui/icons-material";
+import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileDropzone } from "@semoss/ui";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -12,9 +14,6 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	H4,
 	InputGroup,
 	InputGroupAddon,
@@ -29,8 +28,6 @@ import {
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
-import { ModelImportForm } from "./ModelImportForm";
-import { ModelTileCard } from "./ModelTileCard";
 import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
 import {
 	Custom_Model_Image,
@@ -38,6 +35,61 @@ import {
 	type ImportableModels,
 	MODEL_VERSIONS,
 } from "./model-import.constants";
+import { ModelImportForm } from "./model-import-form";
+import { ModelTileCard } from "./model-tile-card";
+
+/**
+ * Helper component to display provider icon with fallback to initials
+ */
+const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
+	const [imageError, setImageError] = useState(false);
+
+	const providerImage = Custom_Model_Image.find(
+		(img) => img.name === provider,
+	)?.imgURL;
+
+	// Generate fallback initials
+	const getInitials = (name: string) => {
+		return name
+			.split(/[^A-Za-z0-9]+/)
+			.map((t) => t[0])
+			.join("")
+			.slice(0, 2)
+			.toUpperCase();
+	};
+
+	// Generate gradient background based on provider name
+	const getGradient = (name: string) => {
+		let hash = 0;
+		for (let i = 0; i < name.length; i++) {
+			hash = (hash << 5) - hash + name.charCodeAt(i);
+			hash |= 0;
+		}
+		const base = Math.abs(hash) % 360;
+		const hue2 = (base + 35) % 360;
+		return `linear-gradient(135deg, hsl(${base} 45% 70%), hsl(${hue2} 40% 60%))`;
+	};
+
+	if (!providerImage || imageError) {
+		return (
+			<div
+				className="flex size-5 shrink-0 items-center justify-center rounded font-semibold text-[10px] text-white"
+				style={{ background: getGradient(provider) }}
+			>
+				{getInitials(provider)}
+			</div>
+		);
+	}
+
+	return (
+		<img
+			src={providerImage}
+			alt={`${provider} logo`}
+			className="size-5 shrink-0 rounded object-contain"
+			onError={() => setImageError(true)}
+		/>
+	);
+};
 
 export const ModelImport: React.FC = () => {
 	const navigate = useNavigate();
@@ -54,6 +106,7 @@ export const ModelImport: React.FC = () => {
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [formLoading, setFormLoading] = useState(false);
 	const [filedata, setFiledata] = useState(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	/**
 	 * Any initialization logic for the model import flow - fetch importable models
@@ -87,6 +140,32 @@ export const ModelImport: React.FC = () => {
 	const handleFileUpload = (flag: boolean) => {
 		// Open or close the file upload modal based on the provided flag
 		setIsFileUploadModalOpen(flag);
+	};
+
+	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+	};
+
+	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const files = e.dataTransfer.files;
+		if (files && files.length > 0) {
+			const file = files[0];
+			if (file.name.endsWith(".zip")) {
+				setFiledata(file);
+			} else {
+				toast.error("Please upload a ZIP file");
+			}
+		}
+	};
+
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = e.target.files;
+		if (files && files.length > 0) {
+			setFiledata(files[0]);
+		}
 	};
 
 	const onSubmit = async (data) => {
@@ -159,7 +238,7 @@ export const ModelImport: React.FC = () => {
 									}}
 									className="mt-1"
 								>
-									<TabsList className="mb-1 h-auto w-full justify-start overflow-x-auto rounded-lg bg-(--secondary) p-1">
+									<TabsList>
 										{importableModels.providers.map(
 											(provider) => (
 												<TabsTrigger
@@ -168,123 +247,14 @@ export const ModelImport: React.FC = () => {
 													data-testid={formatToDataTestId(
 														`connect-to-${provider.name}-tab`,
 													)}
-													className="rounded-md px-4 py-2 font-medium text-(--foreground) text-sm tracking-wide"
+													className="flex h-[32px] items-center gap-2 px-2 py-1"
 												>
-													<div className="flex items-center gap-1.5">
-														{(() => {
-															const providerImage =
-																Custom_Model_Image.find(
-																	(img) =>
-																		img.name ===
-																		provider.name,
-																)?.imgURL;
-															return (
-																<>
-																	{providerImage && (
-																		<img
-																			src={
-																				providerImage
-																			}
-																			alt={`${provider.name} logo`}
-																			className="block h-5 w-5 rounded object-contain"
-																			onError={(
-																				e,
-																			) => {
-																				const target =
-																					e.currentTarget;
-																				target.onerror =
-																					null;
-																				target.style.display =
-																					"none";
-																				const fallback =
-																					document.createElement(
-																						"div",
-																					);
-																				fallback.textContent =
-																					(
-																						provider.name ||
-																						""
-																					)
-																						.split(
-																							/[^A-Za-z0-9]+/,
-																						)
-																						.map(
-																							(
-																								t,
-																							) =>
-																								t[0],
-																						)
-																						.join(
-																							"",
-																						)
-																						.slice(
-																							0,
-																							2,
-																						)
-																						.toUpperCase();
-																				fallback.style.width =
-																					"20px";
-																				fallback.style.height =
-																					"20px";
-																				fallback.style.display =
-																					"flex";
-																				fallback.style.alignItems =
-																					"center";
-																				fallback.style.justifyContent =
-																					"center";
-																				fallback.style.fontWeight =
-																					"600";
-																				fallback.style.fontSize =
-																					"12px";
-																				fallback.style.color =
-																					"#fff";
-																				fallback.style.borderRadius =
-																					"4px";
-																				// Simple pastel gradient based on hash
-																				let h = 0;
-																				for (
-																					let i = 0;
-																					i <
-																					provider
-																						.name
-																						.length;
-																					i++
-																				) {
-																					h =
-																						(h <<
-																							5) -
-																						h +
-																						provider.name.charCodeAt(
-																							i,
-																						);
-																					h |= 0;
-																				}
-																				const base =
-																					Math.abs(
-																						h,
-																					) %
-																					360;
-																				const hue2 =
-																					(base +
-																						35) %
-																					360;
-																				fallback.style.background = `linear-gradient(135deg, hsl(${base} 45% 70%), hsl(${hue2} 40% 60%))`;
-																				target.parentNode.insertBefore(
-																					fallback,
-																					target.nextSibling,
-																				);
-																			}}
-																		/>
-																	)}
-																	<span className="pr-4 text-sm leading-none">
-																		{
-																			provider.name
-																		}
-																	</span>
-																</>
-															);
-														})()}
-													</div>
+													<ProviderIcon
+														provider={provider.name}
+													/>
+													<span className="text-sm leading-none">
+														{provider.name}
+													</span>
 												</TabsTrigger>
 											),
 										)}
@@ -292,7 +262,7 @@ export const ModelImport: React.FC = () => {
 
 									<TabsContent value={selectedProvider}>
 										{/* Models Grid */}
-										<div className="mt-1 grid grid-cols-6 gap-x-1 gap-y-2">
+										<div className="mt-1 grid grid-cols-6 gap-2">
 											<div>
 												{(() => {
 													const providerDocsLinkMap: Record<
@@ -399,6 +369,7 @@ export const ModelImport: React.FC = () => {
 						advanced={advanced}
 						selectedProvider={selectedProvider}
 						importableModelsCategory={importableModelsCategory}
+						onBack={() => setSelectedModel(null)}
 					/>
 				);
 			}
@@ -424,20 +395,30 @@ export const ModelImport: React.FC = () => {
 								Model Catalog
 							</BreadcrumbLink>
 						</BreadcrumbItem>
-						<BreadcrumbSeparator>/</BreadcrumbSeparator>
+						<BreadcrumbSeparator>
+							<ChevronRight />
+						</BreadcrumbSeparator>
 						<BreadcrumbItem>
-							<BreadcrumbLink
-								className="cursor-pointer"
-								onClick={() => {
-									setSelectedModel(null);
-								}}
-							>
-								Connect to Model
-							</BreadcrumbLink>
+							{selectedModel === null ? (
+								<BreadcrumbPage>
+									Connect to Model
+								</BreadcrumbPage>
+							) : (
+								<BreadcrumbLink
+									className="cursor-pointer"
+									onClick={() => {
+										setSelectedModel(null);
+									}}
+								>
+									Connect to Model
+								</BreadcrumbLink>
+							)}
 						</BreadcrumbItem>
 						{selectedModel !== null && (
 							<>
-								<BreadcrumbSeparator>/</BreadcrumbSeparator>
+								<BreadcrumbSeparator>
+									<ChevronRight />
+								</BreadcrumbSeparator>
 								<BreadcrumbItem>
 									<BreadcrumbPage>
 										{selectedModel
@@ -459,39 +440,73 @@ export const ModelImport: React.FC = () => {
 						className="w-[600px]"
 						data-testid="model-zip-upload-modal"
 					>
-						<DialogHeader>
-							<DialogTitle data-testid="model-zip-upload-header">
+						<div className="flex h-full w-full flex-col gap-4">
+							<P
+								className="text-base"
+								data-testid="model-zip-upload-title"
+							>
 								Zip File
-							</DialogTitle>
-						</DialogHeader>
-						<FileDropzone
-							multiple={false}
-							onChange={(newValues) => {
-								setFiledata(newValues);
-							}}
-							className="h-30"
-						/>
-						<DialogFooter>
-							<Button
-								size="sm"
-								variant="ghost"
-								onClick={() => setIsFileUploadModalOpen(false)}
-								data-testid="model-upload-close-button"
-								className="rounded-xl text-muted-foreground"
+							</P>
+							<div
+								className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
+								onClick={() => fileInputRef.current?.click()}
+								onDragOver={handleDragOver}
+								onDrop={handleDrop}
 							>
-								Close
-							</Button>
-							<Button
-								size="sm"
-								variant="default"
-								disabled={!filedata || formLoading}
-								onClick={() => onSubmit(filedata)}
-								data-testid="model-upload-submit-button"
-								className="rounded-xl"
-							>
-								Upload
-							</Button>
-						</DialogFooter>
+								<input
+									ref={fileInputRef}
+									type="file"
+									accept=".zip"
+									className="hidden"
+									onChange={handleFileChange}
+									multiple={false}
+								/>
+								{filedata ? (
+									<div className="text-center">
+										<P className="font-medium text-foreground">
+											{filedata.name}
+										</P>
+										<P className="text-muted-foreground text-sm">
+											Click or drag to replace
+										</P>
+									</div>
+								) : (
+									<div className="text-center">
+										<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+										<P className="font-medium text-foreground">
+											Drop your file here or click to
+											browse
+										</P>
+										<P className="text-muted-foreground text-sm">
+											Supports ZIP files only
+										</P>
+									</div>
+								)}
+							</div>
+							<div className="flex flex-row justify-end gap-2">
+								<Button
+									size="sm"
+									variant="ghost"
+									onClick={() =>
+										setIsFileUploadModalOpen(false)
+									}
+									data-testid="model-upload-close-button"
+									className="rounded-xl"
+								>
+									Close
+								</Button>
+								<Button
+									size="sm"
+									variant="default"
+									disabled={!filedata || formLoading}
+									onClick={() => onSubmit(filedata)}
+									data-testid="model-upload-submit-button"
+									className="rounded-xl"
+								>
+									Upload
+								</Button>
+							</div>
+						</div>
 					</DialogContent>
 				</Dialog>
 

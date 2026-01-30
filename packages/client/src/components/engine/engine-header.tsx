@@ -23,8 +23,11 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import BRAIN from "@/assets/img/BRAIN.png";
 import { useEngine, useRootStore } from "@/hooks";
+import { ENGINE_IMAGES } from "@/pages/import";
 import { formatToDataTestId } from "@/utility";
+import { Placeholder } from "../designer/Placeholder";
 import { EditEngineDetails } from ".";
 
 /**
@@ -41,6 +44,18 @@ export const EngineHeader: React.FC = () => {
 
 	// export loading state
 	const [exportLoading, setExportLoading] = useState(false);
+
+	const findDBImage = (appType: string, appSubType: string) => {
+		const obj = ENGINE_IMAGES[appType]?.find(
+			(ele) => ele.name === appSubType,
+		);
+
+		if (!obj) {
+			return BRAIN;
+		}
+
+		return obj.icon;
+	};
 
 	/**
 	 * @name exportDB
@@ -92,11 +107,7 @@ export const EngineHeader: React.FC = () => {
 						<ChevronRight />
 					</BreadcrumbSeparator>
 					<BreadcrumbItem>
-						<BreadcrumbPage>
-							<Link to={"."} className="text-muted-foreground">
-								{active.name}
-							</Link>
-						</BreadcrumbPage>
+						<BreadcrumbPage>{active.name}</BreadcrumbPage>
 					</BreadcrumbItem>
 				</BreadcrumbList>
 			</Breadcrumb>
@@ -104,7 +115,14 @@ export const EngineHeader: React.FC = () => {
 			<div className="flex w-full flex-row items-center gap-4">
 				{/* Image placeholder - space for engine/database icon */}
 				<div className="h-16 w-16 flex-shrink-0 rounded-lg bg-muted">
-					{/* Engine icon/image will go here */}
+					<img
+						src={findDBImage(
+							type,
+							active.metadata.database_subtype as string,
+						)}
+						alt={name}
+						className="size-full object-cover"
+					/>
 				</div>
 
 				<div className="flex min-w-0 flex-1 flex-col gap-1">
