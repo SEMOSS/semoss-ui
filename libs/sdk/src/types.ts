@@ -36,6 +36,7 @@ export interface MCPToolRequest {
 	roomId: string;
 	original_name: string;
 	tool_response?: string;
+	executedParameters?: Record<string, unknown>;
 }
 
 export interface MCPToolResponse {
