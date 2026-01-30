@@ -1,4 +1,4 @@
-import { Pencil, WandIcon, XIcon } from "lucide-react";
+import { Pencil, XIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -10,9 +10,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Label,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { MarkdownEditor } from "@/components/common";
@@ -60,7 +57,7 @@ export const EditEngineDetails = observer(() => {
 	//const [selectedModel, setSelectedModel] = useState<string>("");
 
 	// show hide model selection
-	const [canShowModels, setCanShowModels] = useState<boolean>(false);
+	//const [canShowModels, setCanShowModels] = useState<boolean>(false);
 
 	// track model generation state
 	//const [generateLoading, setGenerateLoading] = useState<boolean>(false);
