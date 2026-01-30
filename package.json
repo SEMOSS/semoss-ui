@@ -33,5 +33,14 @@
   "engines": {
     "pnpm": "~10.13.0",
     "node": ">=24.4.0 <25"
+  },
+  "pnpm": {
+      "overrides": {
+          "@remix-run/router": "1.23.2",
+          "vega-functions": "6.1.1",
+          "vega-parser>vega-functions": "6.1.1",
+          "vega-view>vega-functions": "6.1.1",
+          "vega>vega-functions": "6.1.1"
+      }
   }
 }
