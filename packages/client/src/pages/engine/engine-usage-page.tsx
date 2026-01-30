@@ -1,12 +1,11 @@
 import {
-	Code,
-	Link,
-	LoadingScreen,
+	CodeContainer,
+	H4,
 	Markdown,
-	Stack,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	P,
+	Spinner,
+	toast,
+} from "@semoss/ui/next";
 import { useEngine, usePixel } from "@/hooks";
 
 /**
@@ -15,7 +14,6 @@ import { useEngine, usePixel } from "@/hooks";
 export const EngineUsagePage = () => {
 	// get the database information
 	const { active } = useEngine();
-	const notification = useNotification();
 
 	// get the engine info
 	const GetEngineUsage = usePixel<{
@@ -32,51 +30,47 @@ export const EngineUsagePage = () => {
 		try {
 			await navigator.clipboard.writeText(text);
 
-			notification.add({
-				color: "success",
-				message: "Successfully copied code",
-			});
+			toast.success("Code copied to clipboard");
 		} catch (_e) {
-			notification.add({
-				color: "error",
-				message: "Unable to copy code",
-			});
+			toast.error("Failed to copy code to clipboard");
 		}
 	};
 
 	// show a loading screen when it is pending
 	if (GetEngineUsage.status !== "SUCCESS") {
-		return <LoadingScreen.Trigger description="Loading Usage" />;
+		return (
+			<div className="flex h-full flex-col items-center justify-center gap-4">
+				<Spinner className="size-8" />
+				<P className="text-muted-foreground">Loading Usage</P>
+			</div>
+		);
 	}
 
 	return (
-		<Stack spacing={2}>
-			<Typography variant={"h6"} fontWeight="regular">
-				Test in the terminal
-			</Typography>
-			<Typography variant="body1">
+		<div className="flex flex-col gap-4">
+			<H4 className="font-normal">Test in the terminal</H4>
+			<P>
 				Click{" "}
-				<Link
+				<a
 					href="../../legacy/dist/#!/embed-terminal"
 					rel="noopener noreferrer"
 					target="_blank"
+					className="text-primary underline underline-offset-4 hover:text-primary/80"
 				>
 					here
-				</Link>{" "}
+				</a>{" "}
 				to go to the terminal and test the commands
-			</Typography>
+			</P>
 
-			<Typography variant={"h6"} fontWeight="regular">
-				Use in Code
-			</Typography>
+			<H4 className="font-normal">Use in Code</H4>
 			{Object.keys(GetEngineUsage.data).length === 0 ? (
-				<Stack p={4} alignItems={"center"} justifyContent={"center"}>
-					No Details
-				</Stack>
+				<div className="flex items-center justify-center p-8">
+					<P className="text-muted-foreground">No Details</P>
+				</div>
 			) : (
 				""
 			)}
-			{Object.keys(GetEngineUsage.data).map((key, idx) => {
+			{Object.keys(GetEngineUsage.data).map((key) => {
 				const { code, label } = GetEngineUsage.data[key];
 
 				if (!code) {
@@ -84,24 +78,24 @@ export const EngineUsagePage = () => {
 				}
 
 				return (
-					<Stack key={idx} direction="column" spacing={1}>
-						<Typography variant={"subtitle1"}>{label}</Typography>
+					<div key={key} className="flex flex-col gap-2">
+						<P className="font-semibold">{label}</P>
 						<Markdown
 							components={{
 								pre: ({ children }) => {
 									return (
-										<Code.Container>
+										<CodeContainer>
 											{children}
-										</Code.Container>
+										</CodeContainer>
 									);
 								},
 							}}
 						>
 							{code}
 						</Markdown>
-					</Stack>
+					</div>
 				);
 			})}
-		</Stack>
+		</div>
 	);
 };

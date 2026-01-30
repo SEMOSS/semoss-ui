@@ -28,6 +28,7 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 			parameters: Record<string, unknown>;
 			original_name: string;
 		};
+		toolResponse?: string;
 	} = useMemo(() => {
 		return node.getConfig();
 	}, [node]);
@@ -42,6 +43,7 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 			app={config.app}
 			message={config.message}
 			tool={config.tool}
+			toolResponse={config.toolResponse}
 		/>
 	);
 });
