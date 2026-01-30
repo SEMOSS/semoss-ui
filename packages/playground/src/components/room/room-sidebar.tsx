@@ -45,11 +45,9 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 
 	let activeTool = null;
 	if (activeNode) {
-		if (activeNode.getComponent() !== "room-tool") {
-			return;
+		if (activeNode.getComponent() === "room-tool") {
+			activeTool = room.getTool(activeNode.getId());
 		}
-
-		activeTool = room.getTool(activeNode.getId());
 	}
 
 	return (

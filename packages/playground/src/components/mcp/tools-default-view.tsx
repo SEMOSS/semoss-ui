@@ -112,12 +112,15 @@ interface ToolsDefaultViewProps {
 		parameters: Record<string, unknown>;
 	};
 
+	/** Response to the tool, if already completed */
+	toolResponse?: string;
+
 	/** MCP */
 	mcp: MCPTool;
 }
 
 export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
-	({ room, app, message, tool, mcp }) => {
+	({ room, app, message, tool, mcp, toolResponse }) => {
 		const properties = mcp?.inputSchema?.properties || {};
 		const required = mcp?.inputSchema?.required || [];
 		const name = mcp?.name || "";
@@ -135,19 +138,33 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		// Tool Execution
 		const handleSubmit = async () => {
 			setIsSubmitting(true);
-			const response = await room.runRoomPixel<[string]>(
-				`RunMCPTool(project = [ "${app}" ], function=[ "${
-					mcp.name
-				}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
-			);
-			const { output } = response.pixelReturn[0];
-
+			let success = false;
+			let output = "";
+			try {
+				const response = await room.runRoomPixel<[string]>(
+					`RunMCPTool(project = [ "${app}" ], function=[ "${
+						mcp.name
+					}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
+					false,
+					false,
+				);
+				output = response.pixelReturn[0].output;
+				success = true;
+			} catch (error) {
+				output = error.toString();
+				success = false;
+			}
 			const m = room.getMessage(message);
 			if (!m || m instanceof ResponseMessageStore !== true) {
-				setIsSubmitting(false);
-				return;
+			} else {
+				room.processTool(
+					m.id,
+					tool.id,
+					tool.name,
+					output,
+					success ? "success" : "error",
+				);
 			}
-			room.processTool(m.id, tool.id, tool.name, output);
 			setIsSubmitting(false);
 		};
 
@@ -539,64 +556,87 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 						)}
 					</CardHeader>
 					<CardContent className="max-h-[60vh] overflow-y-auto">
-						<form onSubmit={handleSubmit} className="space-y-6">
-							<div className="space-y-4">
-								{/* Required fields */}
-								{requiredFields.map(
-									([fieldName, fieldSchema]) =>
-										renderField(fieldName, fieldSchema),
-								)}
+						{toolResponse ? (
+							<div className="flex h-full flex-col space-y-1">
+								<Label
+									htmlFor="tool-response"
+									className="shrink-0 font-semibold"
+								>
+									Result
+								</Label>
+								<Textarea
+									readOnly
+									className="w-full resize-none"
+									value={toolResponse}
+								/>
+							</div>
+						) : (
+							<form onSubmit={handleSubmit} className="space-y-6">
+								<div className="space-y-4">
+									{/* Required fields */}
+									{requiredFields.map(
+										([fieldName, fieldSchema]) =>
+											renderField(fieldName, fieldSchema),
+									)}
 
-								{/* Optional fields toggle */}
-								{optionalFields.length > 0 && (
-									<>
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={() =>
-												setShowOptional(!showOptional)
-											}
-											className="w-full"
-										>
-											{showOptional ? "Hide" : "Show"}{" "}
-											Optional Fields (
-											{optionalFields.length})
-										</Button>
+									{/* Optional fields toggle */}
+									{optionalFields.length > 0 && (
+										<>
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												onClick={() =>
+													setShowOptional(
+														!showOptional,
+													)
+												}
+												className="w-full"
+											>
+												{showOptional ? "Hide" : "Show"}{" "}
+												Optional Fields (
+												{optionalFields.length})
+											</Button>
 
-										{showOptional &&
-											optionalFields.map(
-												([fieldName, fieldSchema]) =>
-													renderField(
+											{showOptional &&
+												optionalFields.map(
+													([
 														fieldName,
 														fieldSchema,
-													),
-											)}
-									</>
-								)}
-							</div>
-						</form>
+													]) =>
+														renderField(
+															fieldName,
+															fieldSchema,
+														),
+												)}
+										</>
+									)}
+								</div>
+							</form>
+						)}
 					</CardContent>
-					<CardFooter>
-						<Button
-							type="button"
-							className="w-full"
-							size="lg"
-							onClick={() => {
-								handleSubmit();
-							}}
-							disabled={isSubmitting}
-						>
-							{isSubmitting ? (
-								<>
-									<Loader2 className="animate-spin" />
-									Executing...
-								</>
-							) : (
-								"Execute Tool"
-							)}
-						</Button>
-					</CardFooter>
+					{!toolResponse && (
+						<CardFooter>
+							<Button
+								type="button"
+								className="w-full"
+								size="lg"
+								onClick={() => {
+									handleSubmit();
+								}}
+								disabled={isSubmitting}
+							>
+								{isSubmitting ? (
+									<>
+										<Loader2 className="animate-spin" />
+										Executing...
+									</>
+								) : (
+									"Execute Tool"
+								)}
+							</Button>
+						</CardFooter>
+					)}
 				</Card>
 			</div>
 		);

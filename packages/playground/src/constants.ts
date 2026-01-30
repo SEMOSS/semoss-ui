@@ -23,5 +23,16 @@ export const LOADING_MESSAGES = [
 	"Nearly ready...",
 ] as const;
 
-export const TOOL_CANCELLATION_PROMPT = `This tool execution was intentionally cancelled by the user. The AI assistant should inform the user of the tool's cancellation and ask the user for further instructions. The AI assistant may mention alternative tools or actions to take next, but should not take any further actions or select any further tools without user input.`;
-export const TOOL_ERROR_PROMPT = `This tool execution failed due to an unexpected error. The AI assistant should inform the user of the tool's failure and ask the user for further instructions. The AI assistant may mention alternative tools or actions to take next, but should not take any further actions or select any further tools without user input.`;
+export const TOOL_CANCELLATION_PROMPT = `The user chose not to execute this tool. This could be for various reasons (wrong parameters, unnecessary step, privacy concerns, timing, manual preference, etc.). You should:
+1. Acknowledge their decision without assuming why
+2. Ask if they need anything else or if the current state meets their needs  
+3. If they want to continue, ask how they'd prefer to proceed
+4. Avoid immediately re-suggesting the same tool unless they indicate the issue was just with parameters
+5. If this tool has been declined repeatedly, consider it may not fit their workflow preferences
+6. Wait for explicit user input before taking any further actions or executing tools`;
+
+export const TOOL_ERROR_PROMPT = `This tool execution failed due to an unexpected error. You should:
+1. Inform the user of the failure and briefly explain what went wrong
+2. If the error cause is clear and you know how to fix it (e.g., incorrect parameter, missing dependency), you may attempt one corrective action
+3. If the error is unclear or complex, ask the user for guidance and suggest alternative approaches
+4. Always explain your reasoning before taking any corrective actions`;
