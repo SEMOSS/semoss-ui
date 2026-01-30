@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { DatabasePageContent } from "@/components/import/database/DatabasePageContent";
+import { DatabasePageContent } from "@/components/import/database/database-page-content";
 import { FunctionImport } from "@/components/import/function/FunctionImport";
 import { GuardrailImport } from "@/components/import/guardrail/GuardrailImport";
 import { StorageImport } from "@/components/import/storage/StorageImport";

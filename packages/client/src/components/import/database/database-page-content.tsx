@@ -14,6 +14,7 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
+	H4,
 	Input,
 	P,
 	Tabs,
@@ -24,7 +25,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
-import { DatabaseForm } from "./DatabaseForm";
+import { DatabaseForm } from "./database-form";
 import {
 	CATEGORY_DESCRIPTIONS,
 	DATABASE_CONNECTION,
@@ -222,7 +223,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 									: navigate("/")
 							}
 							data-testid="breadcrumb-catalog"
-							className="cursor-pointer text-foreground hover:text-foreground"
+							className="cursor-pointer"
 						>
 							{name} Catalog
 						</BreadcrumbLink>
@@ -238,8 +239,8 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 							data-testid="breadcrumb-page"
 							className={
 								selectedDatabase
-									? "cursor-pointer text-foreground hover:text-foreground"
-									: "cursor-default text-muted-foreground"
+									? "cursor-pointer text-muted-foreground hover:text-foreground"
+									: "cursor-default text-foreground"
 							}
 						>
 							Connect To Database
@@ -251,7 +252,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 							<BreadcrumbItem>
 								<span
 									data-testid="breadcrumb-selected-database"
-									className="text-muted-foreground"
+									className="text-foreground"
 								>
 									{selectedDatabase.name}
 								</span>
@@ -378,12 +379,12 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					data-testid="database-page"
 				>
 					<div className="flex flex-col gap-3">
-						<h1
-							className="font-semibold text-3xl text-foreground tracking-tight"
+						<H4
+							className="font-semibold text-foreground tracking-tight"
 							data-testid="page-title"
 						>
 							{pageTitle}
-						</h1>
+						</H4>
 						<P
 							className="max-w-5xl text-base text-muted-foreground leading-relaxed"
 							data-testid="page-description"

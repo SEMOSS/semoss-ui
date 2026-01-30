@@ -213,7 +213,7 @@ export const DatabaseForm = ({
 					return;
 				}
 				setConnectionViewModel(true);
-				setConnectionValues(response?.pixelReturn?.[0]?.output || null);
+				setConnectionValues((response?.pixelReturn?.[0]?.output as ConnectionValuesType) || null);
 			} catch {
 				toast.error("Error from ExternalJdbcTablesAndViews");
 				setLoading(false);
