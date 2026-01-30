@@ -1,136 +1,27 @@
-import { CopyAll, Refresh, Send } from "@mui/icons-material";
+import { Copy, RefreshCw, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Alert,
+	AlertDescription,
 	Avatar,
-	Box,
+	AvatarFallback,
 	Button,
-	CircularProgress,
-	Divider,
-	IconButton,
+	Card,
+	H4,
 	Markdown,
-	Paper,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+	Muted,
+	P,
+	ScrollArea,
+	Separator,
+	Spinner,
+	Textarea,
+} from "@semoss/ui/next";
 import { FeedbackButtons } from "@/components/engine/FeedbackButtons";
 import { EngineModelTestSidebar } from "@/components/settings";
 import { useEngine, useRootStore } from "@/hooks";
 import { extractInitials } from "@/utility/general";
-
-const StyledLayout = styled("div")(({ theme }) => ({
-	display: "flex",
-	height: "100%",
-	gap: theme.spacing(2),
-}));
-
-const StyledContainer = styled("div")(() => ({
-	flex: 1,
-	display: "flex",
-	flexDirection: "column",
-	overflow: "hidden",
-	height: "840px",
-}));
-
-const StyledPaper = styled(Paper)(({ theme }) => ({
-	padding: theme.spacing(3),
-	height: "100%",
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(2),
-}));
-
-const StyledMessagesBox = styled("div")(({ theme }) => ({
-	border: `1px solid ${theme.palette.divider}`,
-	borderRadius: theme.shape.borderRadius,
-	backgroundColor: "transparent",
-	flex: 1,
-	display: "flex",
-	flexDirection: "column",
-	maxHeight: "fit-content",
-	overflow: "hidden",
-}));
-
-const StyledMessagesContainer = styled("div")(() => ({
-	overflowY: "auto",
-	backgroundColor: "transparent",
-	minHeight: "300px",
-	maxHeight: "80%",
-}));
-
-const StyledMessageBubble = styled("div")<{ isUser: boolean }>(
-	({ theme, isUser }) => ({
-		padding: theme.spacing(2),
-		marginBottom: theme.spacing(1),
-		borderRadius: theme.shape.borderRadius,
-		backgroundColor: isUser ? theme.palette.grey[100] : "transparent",
-		color: theme.palette.text.primary,
-		alignSelf: isUser ? "flex-end" : "flex-start",
-		maxWidth: "100%",
-		wordWrap: "break-word",
-		margin: theme.spacing(1, 1),
-	}),
-);
-
-const StyledInputContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "flex-end",
-	margin: theme.spacing(1, 1),
-	maxWidth: "100%",
-	"& .MuiInputBase-root": {
-		padding: "0% 1%",
-	},
-}));
-
-const StyledForm = styled("form")(() => ({
-	width: "100%",
-	height: "5%",
-}));
-
-const StyledSendButton = styled(IconButton)(({ theme }) => ({
-	padding: 0,
-	"&:hover": {
-		backgroundColor: "transparent",
-		color: theme.palette.primary.main,
-	},
-}));
-
-const StyledRewriteButton = styled(Button)(({ theme }) => ({
-	color: "black",
-	opacity: 0.7,
-	...theme.typography.caption,
-}));
-
-const StyledDivider = styled(Divider)({
-	marginTop: 5,
-	marginBottom: 1.5,
-});
-
-const StyledChatTitle = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	marginBottom: theme.spacing(2),
-	padding: theme.spacing(1, 1),
-	background: theme.palette.primary.selected,
-}));
-
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
-	"&&": {
-		marginRight: theme.spacing(1),
-		backgroundColor: theme.palette.primary.main,
-		color: theme.palette.primary.contrastText,
-		float: "inline-start",
-		bottom: "0.5em",
-		fontSize: "small",
-		height: "2.5em",
-		width: "2.5em",
-	},
-}));
 
 interface Message {
 	id: string;
@@ -310,7 +201,7 @@ export const EngineModelChatPage = () => {
 	};
 
 	return (
-		<StyledLayout>
+		<div className="flex h-full gap-2">
 			<EngineModelTestSidebar
 				selectedModel={selectedModel}
 				setSelectedModel={setSelectedModel}
@@ -319,243 +210,221 @@ export const EngineModelChatPage = () => {
 				maxTokens={maxTokens}
 				setMaxTokens={setMaxTokens}
 			/>
-			<StyledContainer>
-				<StyledPaper variant="elevation" elevation={2} square>
-					<Stack
-						spacing={2}
-						sx={{ height: "100%", overflow: "hidden" }}
-					>
-						<Stack
-							direction="row"
-							justifyContent="space-between"
-							alignItems="center"
-						>
-							<Typography variant="h4">
-								Chat with the Model
-							</Typography>
-						</Stack>
-						<Typography
-							variant="body1"
-							sx={{ marginBottom: "20px" }}
-						>
+			<div className="flex h-[840px] flex-1 flex-col overflow-hidden">
+				<Card className="h-full gap-4 p-6">
+					<div className="flex h-full flex-col gap-4 overflow-hidden">
+						<div className="flex flex-row items-center justify-between">
+							<H4>Chat with the Model</H4>
+						</div>
+						<P className="mb-5">
 							Test and interact with this LLM model. Ask
 							questions, experiment with different prompts, and
 							adjust parameters to see how the model responds.
 							Chat history is not retained across sessions.
-						</Typography>
+						</P>
 						{error && (
-							<Alert
-								severity="error"
-								onClose={() => setError("")}
-							>
-								{error}
+							<Alert variant="destructive">
+								<AlertDescription>
+									<div className="flex items-center justify-between">
+										<span>{error}</span>
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											onClick={() => setError("")}
+											className="ml-2"
+										>
+											<span className="sr-only">
+												Close
+											</span>
+											×
+										</Button>
+									</div>
+								</AlertDescription>
 							</Alert>
 						)}
-						<StyledMessagesBox>
-							<StyledChatTitle>
-								<Typography variant="subtitle1">
-									Chat History
-								</Typography>
+						<div className="flex max-h-fit flex-1 flex-col overflow-hidden rounded-lg border border-border bg-transparent">
+							<div className="flex items-center justify-between bg-primary/10 p-2">
+								<P className="font-medium">Chat History</P>
 								{messages.length > 0 && (
 									<Button
-										variant="text"
-										startIcon={<Refresh />}
-										size="small"
+										variant="ghost"
+										size="sm"
 										onClick={() => {
 											setMessages([]);
 											createNewInsight();
 										}}
 										disabled={isLoading || isInsightLoading}
 									>
+										<RefreshCw className="size-4" />
 										Clear Chat
 									</Button>
 								)}
-							</StyledChatTitle>
-							<StyledMessagesContainer>
-								{isInsightLoading ? (
-									<Typography
-										variant="body2"
-										color="secondary"
-										sx={{ textAlign: "center", mt: 4 }}
-									>
-										Initializing chat session...
-									</Typography>
-								) : messages.length === 0 ? (
-									<Typography
-										variant="body2"
-										color="secondary"
-										sx={{ textAlign: "center", mt: 4 }}
-									>
-										Start a conversation by typing a message
-										below
-									</Typography>
-								) : (
-									messages.map((message, index) => (
-										<div key={message.id}>
-											<StyledMessageBubble
-												isUser={message.isUser}
-											>
-												{message.isUser && (
-													<StyledAvatar>
-														{extractInitials(
-															configStore.store
-																.user.name,
-														)}
-													</StyledAvatar>
-												)}
-												{!message.isUser && (
-													<Typography
-														variant="subtitle2"
-														sx={{ mb: 2 }}
-													>
-														Response
-													</Typography>
-												)}
-												<div>
-													<Markdown>
-														{message.content}
-													</Markdown>
-												</div>
-												{!message.isUser && (
-													<StyledDivider></StyledDivider>
-												)}
-												{message.tokens && (
-													<Stack
-														direction="row"
-														justifyContent="space-between"
-														alignItems="center"
-														sx={{ mt: 1 }}
-													>
-														<Typography
-															variant="caption"
-															sx={{
-																opacity: 0.7,
-															}}
-														>
-															Tokens:{" "}
-															{message.tokens}
-														</Typography>
-														<Divider
-															orientation="vertical"
-															flexItem
-														/>
-														<StyledRewriteButton
-															variant="text"
-															startIcon={
-																<Refresh />
-															}
-															size="small"
-															onClick={() =>
-																handleRewrite(
-																	message.id,
-																)
-															}
-															disabled={
-																isLoading ||
-																isInsightLoading
-															}
-														>
-															Rewrite
-														</StyledRewriteButton>
-														<Box
-															sx={{ flexGrow: 1 }}
-														/>
-														<FeedbackButtons
-															messageId={
-																message.id
-															}
-															onFeedbackCall={
-																handleFeedback
-															}
-															initialValue={
-																feedbackMap[
-																	message.id
-																] || null
-															}
-														/>
-														<IconButton
-															size="small"
-															onClick={() =>
-																navigator.clipboard.writeText(
-																	message.content,
-																)
-															}
-															aria-label="Copy tokens to clipboard"
-														>
-															<CopyAll
-																fontSize="small"
-																sx={{
-																	opacity: 0.7,
-																}}
+							</div>
+							<ScrollArea className="max-h-[80%] min-h-[300px] flex-1">
+								<div className="bg-transparent">
+									{isInsightLoading ? (
+										<Muted className="mt-4 block text-center">
+											Initializing chat session...
+										</Muted>
+									) : messages.length === 0 ? (
+										<Muted className="mt-4 block text-center">
+											Start a conversation by typing a
+											message below
+										</Muted>
+									) : (
+										messages.map((message) => (
+											<div key={message.id}>
+												<div
+													className={`m-2 mb-2 max-w-full break-words rounded-lg p-4 ${
+														message.isUser
+															? "self-end bg-muted"
+															: "self-start bg-transparent"
+													}`}
+												>
+													{message.isUser && (
+														<Avatar className="float-left mr-2 mb-2 size-10 bg-primary text-primary-foreground text-sm">
+															<AvatarFallback>
+																{extractInitials(
+																	configStore
+																		.store
+																		.user
+																		.name,
+																)}
+															</AvatarFallback>
+														</Avatar>
+													)}
+													{!message.isUser && (
+														<P className="mb-4 font-semibold">
+															Response
+														</P>
+													)}
+													<div>
+														<Markdown>
+															{message.content}
+														</Markdown>
+													</div>
+													{!message.isUser && (
+														<Separator className="mt-1 mb-1.5" />
+													)}
+													{message.tokens && (
+														<div className="mt-2 flex flex-row items-center justify-between">
+															<Muted>
+																Tokens:{" "}
+																{message.tokens}
+															</Muted>
+															<Separator
+																orientation="vertical"
+																className="h-4"
 															/>
-														</IconButton>
-													</Stack>
-												)}
-											</StyledMessageBubble>
+															<Button
+																variant="ghost"
+																size="sm"
+																onClick={() =>
+																	handleRewrite(
+																		message.id,
+																	)
+																}
+																disabled={
+																	isLoading ||
+																	isInsightLoading
+																}
+																className="text-foreground/70 text-xs"
+															>
+																<RefreshCw className="size-4" />
+																Rewrite
+															</Button>
+															<div className="flex-1" />
+															<FeedbackButtons
+																messageId={
+																	message.id
+																}
+																onFeedbackCall={
+																	handleFeedback
+																}
+																initialValue={
+																	feedbackMap[
+																		message
+																			.id
+																	] || null
+																}
+															/>
+															<Button
+																variant="ghost"
+																size="icon-sm"
+																onClick={() =>
+																	navigator.clipboard.writeText(
+																		message.content,
+																	)
+																}
+																aria-label="Copy tokens to clipboard"
+															>
+																<Copy className="size-4 opacity-70" />
+															</Button>
+														</div>
+													)}
+												</div>
+											</div>
+										))
+									)}
+									{isLoading && (
+										<div className="m-2 mb-2 max-w-full self-start break-words rounded-lg bg-transparent p-4">
+											<div className="flex items-center gap-2">
+												<Spinner className="size-5" />
+												<Muted className="inline">
+													Generating response...
+												</Muted>
+											</div>
 										</div>
-									))
-								)}
-								{isLoading && (
-									<StyledMessageBubble isUser={false}>
-										<CircularProgress size={20} />
-										<Typography
-											variant="body2"
-											sx={{ ml: 1, display: "inline" }}
-										>
-											Generating response...
-										</Typography>
-									</StyledMessageBubble>
-								)}
-								<div ref={chatEndRef} />
-							</StyledMessagesContainer>
-							<StyledForm onSubmit={handleSubmit(sendMessage)}>
-								<StyledInputContainer>
+									)}
+									<div ref={chatEndRef} />
+								</div>
+							</ScrollArea>
+							<form
+								onSubmit={handleSubmit(sendMessage)}
+								className="h-[5%] w-full"
+							>
+								<div className="m-2 flex max-w-full items-end">
 									<Controller
 										name="prompt"
 										control={control}
 										render={({ field }) => (
-											<TextField
-												{...field}
-												maxRows={4}
-												placeholder="Ask a question..."
-												variant="outlined"
-												fullWidth
-												disabled={
-													isLoading ||
-													isInsightLoading
-												}
-												size="small"
-												InputProps={{
-													endAdornment: (
-														<StyledSendButton
-															type="submit"
-															disabled={
-																isLoading ||
-																!promptValue?.trim() ||
-																isInsightLoading
-															}
-															aria-label="Send message"
-															disableRipple={true}
-														>
-															{isLoading ? (
-																<CircularProgress
-																	size={20}
-																/>
-															) : (
-																<Send />
-															)}
-														</StyledSendButton>
-													),
-												}}
-											/>
+											<div className="relative w-full">
+												<Textarea
+													{...field}
+													placeholder="Ask a question..."
+													disabled={
+														isLoading ||
+														isInsightLoading
+													}
+													className="max-h-32 min-h-[44px] resize-none pr-12"
+												/>
+												<Button
+													type="submit"
+													variant="ghost"
+													size="icon-sm"
+													disabled={
+														isLoading ||
+														!promptValue?.trim() ||
+														isInsightLoading
+													}
+													aria-label="Send message"
+													className="absolute right-2 bottom-2 hover:bg-transparent hover:text-primary"
+												>
+													{isLoading ? (
+														<Spinner className="size-5" />
+													) : (
+														<Send className="size-5" />
+													)}
+												</Button>
+											</div>
 										)}
 									/>
-								</StyledInputContainer>
-							</StyledForm>
-						</StyledMessagesBox>
-					</Stack>
-				</StyledPaper>
-			</StyledContainer>
-		</StyledLayout>
+								</div>
+							</form>
+						</div>
+					</div>
+				</Card>
+			</div>
+		</div>
 	);
 };
