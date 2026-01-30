@@ -1,6 +1,6 @@
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
-import type * as React from "react";
+import * as React from "react";
 import { cn } from "@/lib/utils";
 
 function DropdownMenu({
@@ -20,16 +20,20 @@ function DropdownMenuPortal({
 	);
 }
 
-function DropdownMenuTrigger({
-	...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
+const DropdownMenuTrigger = React.forwardRef<
+	HTMLButtonElement,
+	React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>
+>(({ ...props }, ref) => {
 	return (
 		<DropdownMenuPrimitive.Trigger
+			ref={ref}
 			data-slot="dropdown-menu-trigger"
 			{...props}
 		/>
 	);
-}
+});
+
+DropdownMenuTrigger.displayName = "DropdownMenuTrigger";
 
 function DropdownMenuContent({
 	className,

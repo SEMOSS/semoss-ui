@@ -222,18 +222,20 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 											},
 										}
 									: null,
-								// item.path.endsWith(".zip")
-								// 	? {
-								// 			name: "Unzip",
-								// 			action: async () => {
-								// 				const pixel = "";
+								item.path.endsWith(".zip")
+									? {
+											name: "Unzip",
+											action: async () => {
+												const pixel = `UnzipFile(filePath=["${item.path}"], space=["${engine}"])`;
 
-								// 				await insight.actions.run(
-								// 					pixel,
-								// 				);
-								// 			},
-								// 		}
-								// 	: null,
+												await insight.actions.run(
+													pixel,
+												);
+
+												refresh();
+											},
+										}
+									: null,
 								{
 									name: "Delete",
 									action: async (item) => {
