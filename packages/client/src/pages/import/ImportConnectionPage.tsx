@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, styled, useNotification } from "@semoss/ui";
 import { uploadFile } from "@/api";
@@ -20,10 +19,6 @@ export const ImportConnectionPage = () => {
 	const navigate = useNavigate();
 	const notification = useNotification();
 	const { steps, setIsLoading } = useStepper();
-
-	// File Uploads Database
-	const [predictDataTypes, setPredictDataTypes] = React.useState(null);
-	const [metamodel, setMetamodel] = React.useState(null);
 
 	/**
 	 *
@@ -207,48 +202,8 @@ export const ImportConnectionPage = () => {
 			return;
 		} else if (values.type === "FUNCTION") {
 			/** Function: START */
-			const fieldMap = values.fields as Record<string, any>;
-			const isLocalPython = fieldMap.FUNCTION_TYPE === "LOCAL_PYTHON";
 			let pixel;
-
-			if (isLocalPython) {
-				const requiredParams =
-					fieldMap.FUNCTION_REQUIRED_PARAMETERS !== ""
-						? JSON.stringify([
-								fieldMap.FUNCTION_REQUIRED_PARAMETERS,
-							]).replace(/"/g, '\\"')
-						: [];
-				const functionParams = JSON.stringify([
-					{
-						parameterName: fieldMap.FUNCTION_PARAMETERS,
-						parameterType: "String",
-						parameterDescription:
-							fieldMap.FUNCTION_REQUIRED_PARAMETERS_DESCRIPTION ||
-							"",
-					},
-				]).replace(/"/g, '\\"');
-				const fileName = fieldMap.PYTHON_FILE_NAME
-					? fieldMap.PYTHON_FILE_NAME
-					: "main.py";
-				const content = fieldMap.CONTENT
-					? fieldMap.CONTENT
-					: "Test Function Content";
-
-				pixel = `
-CreatePythonFunctionEngine(
-    function=["${values.name}"],
-    content=["${content}"],
-    functionDetails=[{
-        "FUNCTION_NAME":"${values.name}",
-        "FUNCTION_DESCRIPTION":"${fieldMap.FUNCTION_DESCRIPTION || ""}",
-        "FUNCTION_TYPE":"LOCAL_PYTHON",
-        "FUNCTION_REQUIRED_PARAMETERS":"${requiredParams}",
-        "FUNCTION_PARAMETERS":"${functionParams}",
-        "PYTHON_FILE_NAME":"${fileName}"
-    }]
-);
-				`;
-			} else if (values.secondaryFields?.["FILE"]) {
+			if (values.secondaryFields?.["FILE"]) {
 				const upload = await uploadFile(
 					[values.secondaryFields["FILE"]],
 					configStore.store.insightID,

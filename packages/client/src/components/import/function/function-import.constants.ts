@@ -5,6 +5,7 @@ import AWS_TRANSCRIBE from "@/assets/img/AWS_TRANSCRIBE.png";
 import AZURE_SPEECH_TO_TEXT from "@/assets/img/AZURE_SPEECH_TO_TEXT.png";
 import GOOGLE_OCR from "@/assets/img/GOOGLE_OCR.png";
 import GOOGLE_SPEECH_TO_TEXT from "@/assets/img/GOOGLE_SPEECH_TO_TEXT.png";
+import PythonLogo from "@/assets/img/Python-logo.svg";
 import RESTAPI from "@/assets/img/rest-api.svg";
 
 export const FUNCTION_CONNECTIONS = {
@@ -897,6 +898,100 @@ export const FUNCTION_CONNECTIONS = {
 					type: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "PYTHON",
+			disable: false,
+			icon: PythonLogo,
+			description: "Create and run custom Python functions",
+			link: "https://www.python.org/",
+			fields: [
+				{
+					key: "FUNCTION_TYPE",
+					label: "Function Type",
+					value: "LOCAL_PYTHON",
+					type: "text",
+					disabled: true,
+					hidden: false,
+					required: true,
+					category: "General",
+				},
+				{
+					key: "NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+					category: "General",
+				},
+				{
+					key: "FUNCTION_PARAMETERS",
+					label: "Function Parameters",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_REQUIRED_PARAMETERS",
+					label: "Function Required Parameters",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_REQUIRED_PARAMETERS_DESCRIPTION",
+					label: "Function Required Parameters Description",
+					value: "",
+					type: "textarea",
+					disabled: false,
+					required: false,
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_DESCRIPTION",
+					label: "Description",
+					value: "",
+					type: "textarea",
+					disabled: false,
+					required: true,
+					category: "General",
+				},
+				{
+					key: "PYTHON_FILE_NAME",
+					label: "Python File Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					category: "Settings",
+				},
+				{
+					key: "CONTENT",
+					label: "Content",
+					value: "",
+					type: "textarea",
+					disabled: false,
+					required: false,
 					category: "Settings",
 				},
 			],

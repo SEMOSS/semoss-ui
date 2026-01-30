@@ -21,8 +21,6 @@ import {
 import { uploadFile } from "@/api";
 import { useRootStore, useStepper } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
-import type { PythonConfigValues } from "../engine/engine.types";
-import { PythonConfiguration } from "../engine/PythonConfiguration";
 
 const StyledFlexEnd = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -95,17 +93,6 @@ export const ImportForm = (props) => {
 		useState(false);
 
 	const watchedFieldRef = useRef({});
-
-	const [pythonValues, setPythonValues] = useState<PythonConfigValues>({
-		FUNCTION_TYPE: "LOCAL_PYTHON",
-		NAME: "",
-		FUNCTION_PARAMETERS: "",
-		FUNCTION_REQUIRED_PARAMETERS: "",
-		FUNCTION_DESCRIPTION: "",
-		PYTHON_FILE_NAME: "",
-		CONTENT: "",
-		FUNCTION_REQUIRED_PARAMETERS_DESCRIPTION: "",
-	});
 
 	//** Using onsubmit mode to stop field validation onChange -> limit pixel calls */
 	const {
@@ -570,19 +557,13 @@ export const ImportForm = (props) => {
 					connectionDetails[f.fieldName] = fieldValue;
 				}
 			});
-			const isLocalPython = fields.some((f) => f.fieldName === "PYTHON");
 
 			const formVals = {
 				// 'MODEL' | "VECTOR" | "FUNCTION" | "STORAGE" | "DATABASE"
 				type: steps[0].data,
 				// Name of engine
-				name: isLocalPython ? pythonValues.NAME : data.NAME,
-				fields: isLocalPython
-					? {
-							...connectionDetails,
-							...pythonValues,
-						}
-					: connectionDetails,
+				name:  data.NAME,
+				fields:connectionDetails,
 				secondaryFields: secondaryFields,
 			};
 
@@ -1084,16 +1065,6 @@ export const ImportForm = (props) => {
 														}}
 													/>
 												</StyledDropzoneField>
-											);
-										} else if (
-											val.options.component ===
-											"python-configuration"
-										) {
-											return (
-												<PythonConfiguration
-													value={pythonValues}
-													onChange={setPythonValues}
-												></PythonConfiguration>
 											);
 										}
 									}}

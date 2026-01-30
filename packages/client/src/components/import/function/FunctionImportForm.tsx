@@ -1,4 +1,7 @@
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import {
+	ExpandLess,
+	ExpandMore,
+} from "@mui/icons-material";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +20,7 @@ import {
 	Select,
 	Stack,
 	styled,
+	TextArea,
 	TextField,
 	Typography,
 	useNotification,
@@ -116,10 +120,49 @@ export const FunctionForm = ({
 		const { FILE, ...newFormData } = formData;
 
 		setLoading(true);
-		let pixel = `CreateRestFunctionEngine(function=["${
-			formData.NAME
-		}"],functionDetails=[${JSON.stringify(newFormData)}]);`;
-		if (FILE !== "") {
+		let pixel = "";
+		if (title === "PYTHON") {
+			const requiredParams =
+				formData.FUNCTION_REQUIRED_PARAMETERS !== ""
+					? JSON.stringify([
+							formData.FUNCTION_REQUIRED_PARAMETERS,
+						]).replace(/"/g, '\\"')
+					: "[]";
+			const functionParams = JSON.stringify([
+				{
+					parameterName: formData.FUNCTION_PARAMETERS,
+					parameterType: "String",
+					parameterDescription:
+						formData.FUNCTION_REQUIRED_PARAMETERS_DESCRIPTION || "",
+				},
+			]).replace(/"/g, '\\"');
+			const fileName = formData.PYTHON_FILE_NAME
+				? formData.PYTHON_FILE_NAME
+				: "main.py";
+			const content = formData.CONTENT
+				? formData.CONTENT
+				: "Test Function Content";
+
+			pixel = `
+CreatePythonFunctionEngine(
+    function=["${formData.NAME}"],
+    content=["${content}"],
+    functionDetails=[{
+        "FUNCTION_NAME":"${formData.NAME}",
+        "FUNCTION_DESCRIPTION":"${formData.FUNCTION_DESCRIPTION || ""}",
+        "FUNCTION_TYPE":"LOCAL_PYTHON",
+        "FUNCTION_REQUIRED_PARAMETERS":"${requiredParams}",
+        "FUNCTION_PARAMETERS":"${functionParams}",
+        "PYTHON_FILE_NAME":"${fileName}"
+    }]
+);
+		`;
+		} else {
+			pixel = `CreateRestFunctionEngine(function=["${
+				formData.NAME
+			}"],functionDetails=[${JSON.stringify(newFormData)}]);`;
+		}
+		if (FILE !== "" && title !== "PYTHON") {
 			try {
 				const uploadedFiles = await uploadFile(
 					[FILE.name],
@@ -558,6 +601,24 @@ export const FunctionForm = ({
 										}}
 									/>
 								)}
+								data-testid={`function-form-input-${val.key}`}
+							/>
+						);
+					case "textarea":
+						return (
+							<TextArea
+								{...field}
+								type="text"
+								fullWidth
+								size="small"
+								minRows={4}
+								maxRows={10}
+								label={val.label}
+								disabled={val.disabled}
+								required={val?.required}
+								// @ts-expect-error TODO FIX
+								error={!!error}
+								helperText={getHelperText(error, val)}
 								data-testid={`function-form-input-${val.key}`}
 							/>
 						);

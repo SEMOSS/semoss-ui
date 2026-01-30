@@ -100,7 +100,6 @@ import WEVIATE from "@/assets/img/WEVIATE.png";
 import ZIP from "@/assets/img/ZIP.png";
 //Vector
 import MICROSOFT from "@/assets/loginProviders/microsoft.png";
-import PythonLogo from '@/assets/img/Python-logo.svg';
 
 // TODO: Get rid of this and throw it into Connection Options
 export const stepsOne = [
@@ -6558,23 +6557,6 @@ export const CONNECTION_OPTIONS = {
 					},
 				],
 			},
-			{
-                name: 'PYTHON',
-                disable: false,
-                icon: PythonLogo,
-                fields: [
-                    {
-                        fieldName: 'PYTHON',
-                        label: '',
-                        defaultValue: null,
-                        options: {
-                            component: 'python-configuration',
-                        },
-                        disabled: true,
-                        rules: {},
-                    },
-                ],
-            },
 		],
 		"File Uploads": [
 			{

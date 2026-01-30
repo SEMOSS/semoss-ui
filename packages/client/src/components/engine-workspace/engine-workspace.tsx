@@ -17,7 +17,6 @@ import {
 import { EngineFileEditor } from "./engine-file-editor";
 import { EngineFileExplorer } from "./engine-file-explorer";
 import { EngineMcpEditor } from "./engine-mcp-editor";
-import { PlayArrowRounded } from "@mui/icons-material";
 
 const DEFAULT_BORDER_SIZE = 300;
 
@@ -60,51 +59,53 @@ export const EngineWorkspace: React.FC<EngineWorkspaceProps> = observer(
 				},
 			});
 		}, []);
-	// 	const runEngine = async () => {
-	// 	setIsLoading(true);
 
-	// 	try {
-	// 		const { errors, pixelReturn } = await monolithStore.runQuery<
-	// 			[true]
-	// 		>(
-	// 			`CreateEngineFromTemplate(engine=['${engineId}'], map=[{"route":"", "file_path":"", "engine_id":""}])`,
-	// 		);
+		// TODO : Implement Run Engine Functionality once backend is ready
+		// 	const runEngine = async () => {
+		// 	setIsLoading(true);
 
-	// 		const { operationType, output } = pixelReturn[0];
-	// 		const result: any = output;
+		// 	try {
+		// 		const { errors, pixelReturn } = await monolithStore.runQuery<
+		// 			[true]
+		// 		>(
+		// 			`CreateEngineFromTemplate(engine=['${engineId}'], map=[{"route":"", "file_path":"", "engine_id":""}])`,
+		// 		);
 
-	// 		if (operationType.includes("ERROR")) {
-	// 			throw new Error(result);
-	// 		}
+		// 		const { operationType, output } = pixelReturn[0];
+		// 		const result: any = output;
 
-	// 		if (errors.length > 0) {
-	// 			throw new Error(errors.join(""));
-	// 		}
-      
-    //   const reacter = await monolithStore.runQuery<
-	// 			[true]
-	// 		>(
-	// 			`ExecuteFunctionEngine(engine=['${output}'], map=[{"route":"", "file_path":"", "engine_id":""}])`,
-	// 		);
-    //   console.log(reacter,"testing")
+		// 		if (operationType.includes("ERROR")) {
+		// 			throw new Error(result);
+		// 		}
 
-	// 		setResultValue(result);
+		// 		if (errors.length > 0) {
+		// 			throw new Error(errors.join(""));
+		// 		}
 
-	// 		notification.add({
-	// 			color: "success",
-	// 			message: "Successfully saved the changes!",
-	// 		});
-	// 	} catch (e: any) {
-	// 		notification.add({
-	// 			color: "error",
-	// 			message: e.message,
-	// 		});
-	// 	} finally {
-	// 		setIsLoading(false);
-	// 	}
-	// };
+		//   const reacter = await monolithStore.runQuery<
+		// 			[true]
+		// 		>(
+		// 			`ExecuteFunctionEngine(engine=['${output}'], map=[{"route":"", "file_path":"", "engine_id":""}])`,
+		// 		);
+		//   console.log(reacter,"testing")
 
-		return (			
+		// 		setResultValue(result);
+
+		// 		notification.add({
+		// 			color: "success",
+		// 			message: "Successfully saved the changes!",
+		// 		});
+		// 	} catch (e: any) {
+		// 		notification.add({
+		// 			color: "error",
+		// 			message: e.message,
+		// 		});
+		// 	} finally {
+		// 		setIsLoading(false);
+		// 	}
+		// };
+
+		return (
 			<div className="relative h-full w-full overflow-hidden">
 				<div
 					className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 ${

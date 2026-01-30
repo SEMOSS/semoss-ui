@@ -2,7 +2,7 @@ import type { OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
 import { lazy, Suspense, useRef, useState } from "react";
 import { download, useInsight, usePixel } from "@semoss/sdk/react";
-import { Button, Muted, Spinner, Textarea, toast } from "@semoss/ui/next";
+import {Muted, Spinner, toast } from "@semoss/ui/next";
 import { MONACO_CONFIG, MONACO_EXT_LANGUAGE_MAPPING } from "./file.constants";
 import type { FileMode } from "./file.types";
 
@@ -322,7 +322,8 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				)}
 			</Suspense>
 		</div>
-		{/* <div className="mt-4 overflow-hidden rounded-2xl border border-border shadow-sm">
+		{// TODO : Implement Run Engine Functionality once backend is ready
+		/* <div className="mt-4 overflow-hidden rounded-2xl border border-border shadow-sm">
     <div className="flex items-center justify-between bg-muted/40 px-4 py-1.5">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Results

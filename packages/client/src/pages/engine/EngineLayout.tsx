@@ -110,19 +110,6 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		},
 	);
 
-	//check the python function
-    const isPythonFunction = useMemo(() => {
-    return (
-      getEngineMetadata.status === "SUCCESS" &&
-      route.type === "FUNCTION" &&
-      getEngineMetadata?.data?.database_subtype === "LOCAL_PYTHON"
-    );
-  }, [
-    getEngineMetadata.status,
-    getEngineMetadata?.data?.database_subtype,
-    route.type,
-  ]);
-
 	// convert the data into an object
 	const values = useMemo(() => {
 		if (getEngineMetadata.status !== "SUCCESS") {
@@ -176,15 +163,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 
 		// check the permission
 		const permission = getUserEnginePermission.data.permission;
-
-		// get the routes based on permission
-		let filteredTabs = route.specific.filter((t) =>{
-			const hasPermission = t.restrict ? t.restrict.indexOf(permission) > -1 : true;
-		if (t.name === "Configure" && !isPythonFunction) {
-          return false;
-        }
-		return hasPermission;
-	});
+    	let filteredTabs = route.specific.filter((t) =>
+			t.restrict ? t.restrict.indexOf(permission) > -1 : true,
+		);
 
 		// additional filtering for DATABASE type engines - hide Query tab unless database is SQL
 		if (route.type === "DATABASE") {
@@ -201,7 +182,6 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		return filteredTabs;
 	}, [
 		route,
-		isPythonFunction,
 		getUserEnginePermission.status,
 		getUserEnginePermission.data
 			? getUserEnginePermission.data.permission
