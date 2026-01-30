@@ -6,9 +6,9 @@ import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { SettingsContext } from "@/contexts";
 import { AuditLogsDashboard } from "../AuditLogsDashboard";
 import { ImportPage } from "../import";
-import { EngineIndexPage } from "./EngineIndexPage";
-import { EngineLayout } from "./EngineLayout";
 import { ENGINE_ROUTES } from "./engine.constants";
+import { EngineIndexPage } from "./engine-index-page";
+import { EngineLayout } from "./engine-layout";
 
 export const EngineRouter = observer(() => {
 	return (
