@@ -151,7 +151,6 @@ export const DatabaseStructureBrowser: React.FC<
 }) => {
 	// trying to put "Expand All/Collapse All" button in sync with expand/collapse icons
 	const allExpanded = searchedStructure.length > 0 && searchedStructure.every((t) => !!expandedTables[t.table]);
-	console.log('allExpanded:', allExpanded);
 	const handleTableHeaderClick = (
 		tableName: string,
 		event: React.MouseEvent,
