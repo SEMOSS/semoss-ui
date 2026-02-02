@@ -2,6 +2,7 @@ import { action, makeObservable, observable, runInAction } from "mobx";
 import {
 	MCP_EXECUTION_ASK,
 	MCP_EXECUTION_AUTO,
+	NUM_CONCURRENT_AUTO_EXECUTIONS,
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 } from "@/constants";
@@ -43,11 +44,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 * Tools associated with the message
 	 */
 	tools: ToolStore[] = [];
-
-	/**
-	 * Current execution index of the tool, used for auto execution
-	 */
-	toolAutoExecutionIdx: number = 0;
 
 	/**
 	 * Response to an execution
@@ -96,7 +92,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			recordFeedback: action,
 			rewriteMessage: action,
 			getTool: action,
-			startToolExecution: action,
 			continueToolExecution: action,
 			hasUnfinishedTools: action,
 			saveToolExecution: action,
@@ -259,7 +254,7 @@ paramValues=[${JSON.stringify({
 			responseMessage.sync(output.responseMessage);
 
 			// start running tools if there are any
-			responseMessage.startToolExecution();
+			responseMessage.continueToolExecution();
 
 			return response;
 		} catch (e) {
@@ -375,34 +370,6 @@ paramValues=[${JSON.stringify({
 	 */
 
 	/**
-	 * Start executing from the first step
-	 */
-	startToolExecution = async (): Promise<void> => {
-		// reset it
-		this.toolAutoExecutionIdx = 0;
-		this.toolResponseMessage = null;
-
-		await this.runToolExecution();
-	};
-
-	/**
-	 * Continue executing the tools from the current tool
-	 *
-	 * @param current - current tool that was executed
-	 */
-	continueToolExecution = async (
-		current: ResponseMessageStore["tools"][number],
-	): Promise<void> => {
-		const currentIdx = this.tools.findIndex((t) => t.id === current.id);
-
-		if (currentIdx === this.toolAutoExecutionIdx) {
-			// we just finished this tool, move to the next
-			this.toolAutoExecutionIdx += 1;
-			await this.runToolExecution();
-		}
-	};
-
-	/**
 	 * Check if all tools have been completed
 	 * @returns if all tools have been completed
 	 */
@@ -411,44 +378,52 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Run a tool if possible
+	 * Run tools associated with the message
 	 */
-	private runToolExecution = async (): Promise<void> => {
-		const room = this.room;
+	continueToolExecution = () => {
+		// Find the tools that can be run
+		let numRunningTools: number = 0;
+		const toolsToRun: ToolStore[] = [];
+		this.tools.forEach((tool) => {
+			if (tool.json._meta.SMSS_MCP_EXECUTION === MCP_EXECUTION_AUTO) {
+				if (tool.status === "INITIAL") {
+					toolsToRun.push(tool);
+				} else if (tool.status === "LOADING") {
+					numRunningTools++;
+				}
+			}
+		});
 
-		// skip if the index is out of bounds
+		// If we are able to run more tools right now, run some
+		const numToolsToRun = NUM_CONCURRENT_AUTO_EXECUTIONS - numRunningTools;
+		if (numToolsToRun > 0) {
+			toolsToRun.slice(0, numToolsToRun).forEach((tool) => {
+				this.runToolExecution(tool);
+			});
+		}
+	};
+
+	/**
+	 * Run a tool
+	 */
+	private runToolExecution = async (tool: ToolStore): Promise<void> => {
 		if (
-			this.toolAutoExecutionIdx < 0 ||
-			this.toolAutoExecutionIdx >= this.tools.length
+			!tool ||
+			tool.status !== "INITIAL" ||
+			tool.json._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO
 		) {
-			// all tools have run
+			// skip
 			return;
 		}
 
-		const tool = this.tools[this.toolAutoExecutionIdx];
-		if (!tool) {
-			return;
-		} else if (tool.status === "SUCCESS" || tool.status === "CANCELLED") {
-			// already has a response, skip
-			this.toolAutoExecutionIdx += 1;
-			await this.runToolExecution();
-			return;
-		} else if (tool.status === "ERROR") {
-			return;
-		}
-
-		// only run if it is set to auto execute
-		if (tool.json._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
-			return;
-		}
-
+		// mark as loading
 		runInAction(() => {
 			tool.status = "LOADING";
 		});
 
 		try {
 			// wait for the pixel to run
-			const response = await room.runRoomPixel<[string]>(
+			const response = await this.room.runRoomPixel<[string]>(
 				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.json.parameters)} ]);`,
 				false,
 				false,
@@ -581,13 +556,13 @@ mcpToolStatus=${JSON.stringify(toolStatus)}
 				typeof output.responseMessage === "string"
 			) {
 				// Keep executing tools
-				await this.continueToolExecution(tool);
+				this.continueToolExecution();
 			} else {
 				// create the response and link to the message
 				responseMessage.sync(output.responseMessage);
 
 				// start running tools if there are any
-				responseMessage.startToolExecution();
+				responseMessage.continueToolExecution();
 
 				// clear it
 				this.toolResponseMessage = null;

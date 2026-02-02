@@ -617,7 +617,7 @@ export class RoomStore {
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
 			if (this.tail.type === "RESPONSE") {
-				this.tail.startToolExecution();
+				this.tail.continueToolExecution();
 			}
 		} catch (e) {
 			console.error(e);

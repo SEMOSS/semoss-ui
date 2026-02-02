@@ -36,3 +36,5 @@ export const TOOL_ERROR_PROMPT = `This tool execution failed due to an unexpecte
 2. If the error cause is clear and you know how to fix it (e.g., incorrect parameter, missing dependency), you may attempt one corrective action
 3. If the error is unclear or complex, ask the user for guidance and suggest alternative approaches
 4. Always explain your reasoning before taking any corrective actions`;
+
+export const NUM_CONCURRENT_AUTO_EXECUTIONS = 3;
