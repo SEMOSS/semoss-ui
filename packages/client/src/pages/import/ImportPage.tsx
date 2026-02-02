@@ -3,7 +3,6 @@ import { DatabasePageContent } from "@/components/import/database/DatabasePageCo
 import { FunctionImport } from "@/components/import/function/FunctionImport";
 import {
 	GuardrailImport,
-	GuardrailImport,
 } from "@/components/import/guardrail/GuardrailImport";
 import { StorageImport } from "@/components/import/storage/StorageImport";
 import { VectorImport } from "@/components/import/vector/VectorImport";
