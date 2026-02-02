@@ -24,7 +24,7 @@ interface PromptCardProps {
 	onEdit: () => void;
 	onDelete: () => void;
 	category: string;
-	onShowDetails?: () => void;
+	onShowDetails?: (prompt: Prompt) => void;
 }
 
 function useMediaQuery(query: string) {
@@ -140,17 +140,19 @@ export function PromptCard({
 	};
 
 	const handleCardClick = (e: React.MouseEvent<HTMLElement>) => {
-		const target = e.target as HTMLElement | null;
-		if (target?.closest?.(".card-actions")) return;
-		onShowDetails?.();
+		if ((e.target as HTMLElement).closest(".card-actions")) return;
+
+		onShowDetails?.(prompt);
 	};
 
 	const handleCardKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
-		if (e.key !== "Enter" && e.key !== " ") return;
-		e.preventDefault();
-		const target = e.target as HTMLElement | null;
-		if (target?.closest?.(".card-actions")) return;
-		onShowDetails?.();
+		if (
+			(e.key !== "Enter" && e.key !== " ") ||
+			(e.target as HTMLElement).closest(".card-actions")
+		)
+			return;
+
+		onShowDetails?.(prompt);
 	};
 
 	const displayTime = useMemo(
@@ -217,7 +219,6 @@ export function PromptCard({
 			</div>
 		</div>
 	) : null;
-
 	return (
 		<>
 			{location.pathname === "/prompt-library" ? (

@@ -227,10 +227,8 @@ export const PromptGrid = observer(function PromptGrid({
 									category={selectedCategory.label}
 									onEdit={() => handleEdit(prompt)}
 									onDelete={() => handleDelete(prompt.ID)}
-									onShowDetails={
-										selectedCategory.label === "My Prompts"
-											? undefined
-											: () => handleShowDetails(prompt)
+									onShowDetails={() =>
+										handleShowDetails(prompt)
 									}
 								/>
 							</div>
@@ -251,10 +249,8 @@ export const PromptGrid = observer(function PromptGrid({
 									category={selectedCategory.label}
 									onEdit={() => handleEdit(prompt)}
 									onDelete={() => handleDelete(prompt.ID)}
-									onShowDetails={
-										selectedCategory.label === "My Prompts"
-											? undefined
-											: () => handleShowDetails(prompt)
+									onShowDetails={() =>
+										handleShowDetails(prompt)
 									}
 								/>
 							</div>
@@ -284,14 +280,8 @@ export const PromptGrid = observer(function PromptGrid({
 										category={selectedCategory.label}
 										onEdit={() => handleEdit(prompt)}
 										onDelete={() => handleDelete(prompt.ID)}
-										onShowDetails={
-											selectedCategory.label ===
-											"My Prompts"
-												? undefined
-												: () =>
-														handleShowDetails(
-															prompt,
-														)
+										onShowDetails={() =>
+											handleShowDetails(prompt)
 										}
 									/>
 								</div>
