@@ -2,6 +2,7 @@ import { action, makeObservable, observable, runInAction } from "mobx";
 import {
 	MCP_EXECUTION_ASK,
 	MCP_EXECUTION_AUTO,
+	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 } from "@/constants";
 import { ToolStore } from "@/stores";
@@ -56,12 +57,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	/**
 	 * Feedback provided by the user; only applicable to messages provided via the LLM
 	 */
-	rating: {
+	feedback: {
 		/** Sentiment */
-		positive: boolean;
+		rating: boolean;
 
-		/** Associated comment */
-		comment: string;
+		/** Comment, unused for now */
+		feedbackText: string;
 	} | null = null;
 
 	/**
@@ -89,7 +90,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			thinking: observable,
 			text: observable,
 			tools: observable,
-			rating: observable,
+			feedback: observable,
 			sync: action,
 			runMessage: action,
 			recordFeedback: action,
@@ -155,6 +156,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			id: message.modelId,
 			name: message.ornaments?.modelName || "AI",
 		};
+
+		// set feedback if there
+		if (message.type === "RESPONSE_TEXT" && message.feedback) {
+			this.feedback = {
+				rating: message.feedback.rating,
+				feedbackText: message.feedback.feedbackText,
+			};
+		}
 	};
 
 	/**
@@ -249,12 +258,15 @@ paramValues=[${JSON.stringify({
 			inputMessage.sync(output.inputMessage);
 			responseMessage.sync(output.responseMessage);
 
-			// TODO: clean up
-
 			// start running tools if there are any
 			responseMessage.startToolExecution();
 
 			return response;
+		} catch (e) {
+			// remove as a child
+			this.removeChild(responseMessage);
+
+			throw e;
 		} finally {
 			runInAction(() => {
 				// turn off thinking
@@ -266,23 +278,31 @@ paramValues=[${JSON.stringify({
 	/**
 	 * Record Feedback
 	 * @param rating
-	 * @param comment
+	 * @param feedbackText
 	 */
-	recordFeedback = async (rating: boolean, comment = ""): Promise<void> => {
+	recordFeedback = async (
+		rating: boolean | null,
+		feedbackText = "",
+	): Promise<void> => {
 		const room = this.room;
 
 		try {
 			// wait for the pixel to run
 			await room.runRoomPixel<[boolean]>(
-				`SubmitLlmFeedback(messageId = ["${this.id}"], feedbackText=["${comment}"], rating=[${rating}], roomId=["${room.roomId}"]);`,
+				`SubmitLlmFeedback(messageId=${JSON.stringify(this.id)}, feedbackText=${JSON.stringify(feedbackText)}, rating=${JSON.stringify(rating)}, roomId=${JSON.stringify(room.roomId)});`,
 				false,
 			);
 
 			// save the feedback to the message's state
-			this.rating = {
-				positive: rating,
-				comment: comment,
-			};
+			runInAction(() => {
+				this.feedback =
+					rating === null
+						? null
+						: {
+								rating,
+								feedbackText,
+							};
+			});
 		} finally {
 			// noop
 		}
@@ -431,15 +451,16 @@ paramValues=[${JSON.stringify({
 			const response = await room.runRoomPixel<[string]>(
 				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.json.parameters)} ]);`,
 				false,
+				false,
 			);
 
 			const { output } = response.pixelReturn[0];
 
 			// save the response
 			await this.saveToolExecution(tool, output);
-		} catch {
+		} catch (e) {
 			// mark the failure
-			await this.saveToolExecution(tool, TOOL_ERROR_PROMPT, "error");
+			await this.saveToolExecution(tool, e.toString(), "error");
 		}
 	};
 
@@ -455,6 +476,13 @@ paramValues=[${JSON.stringify({
 		toolStatus: "success" | "error" | "cancelled" = "success",
 	): Promise<void> => {
 		const room = this.room;
+
+		// wrap the message
+		if (toolStatus === "error") {
+			toolResponse = `${TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
+		} else if (toolStatus === "cancelled") {
+			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
+		}
 
 		// skip if the tool is already completed
 		if (tool.status === "SUCCESS" || tool.status === "CANCELLED") {
@@ -564,6 +592,17 @@ mcpToolStatus=${JSON.stringify(toolStatus)}
 				// clear it
 				this.toolResponseMessage = null;
 			}
+		} catch (e) {
+			// set error status
+			tool.status = "ERROR";
+
+			// remove as a child
+			this.removeChild(responseMessage);
+
+			// clear it
+			this.toolResponseMessage = null;
+
+			throw e;
 		} finally {
 			runInAction(() => {
 				// turn off thinking

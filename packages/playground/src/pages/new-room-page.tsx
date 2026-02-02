@@ -97,8 +97,10 @@ export const NewRoomPage = observer(() => {
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
 		mcp: [...(root.theme.defaultTools || [])],
-		tokenLength: TOKEN_LENGTH,
-		temperature: TEMPERATURE,
+		tokenLength:
+			root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
+		temperature:
+			root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
 		workspace: null,
 	});
 
@@ -165,13 +167,9 @@ export const NewRoomPage = observer(() => {
 			setIsLoading(true);
 
 			// create a new room
-			const room = await chat.createRoom();
-
-			// set the model
-			room.setModel(chat.models.selected);
-
-			// set the mode
-			room.setMode(mode.type === "plan" ? "planning" : "chat");
+			const room = await chat.createRoom(
+				mode.type === "plan" ? "planning" : "chat",
+			);
 
 			const updated = {
 				...options,
@@ -287,10 +285,12 @@ export const NewRoomPage = observer(() => {
 			setOptions((prev) => ({
 				...prev,
 				instructions: "",
+				temperature: root.theme.defaultRoomSettings.temperature,
+				tokenLength: root.theme.defaultRoomSettings.tokenLength,
 				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
 			}));
 		}
-	}, [mode.type, root.theme.defaultTools]);
+	}, [mode.type, root.theme.defaultTools, root.theme.defaultRoomSettings]);
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">

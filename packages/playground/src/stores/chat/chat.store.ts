@@ -59,8 +59,11 @@ export class ChatStore {
 		},
 	};
 
-	constructor(actions: Insight["actions"]) {
+	private _defaultModel?: Engine;
+
+	constructor(actions: Insight["actions"], defaultModel?: Engine) {
 		this._actions = actions;
+		this._defaultModel = defaultModel;
 
 		// make it observable
 		makeAutoObservable(this);
@@ -112,7 +115,7 @@ export class ChatStore {
 	/**
 	 * Create a new room
 	 */
-	createRoom = async (): Promise<RoomStore> => {
+	createRoom = async (mode: "planning" | "chat"): Promise<RoomStore> => {
 		// create the room in a new insight
 		const { errors, pixelReturn, insightId } = await runPixel<
 			[
@@ -135,6 +138,12 @@ export class ChatStore {
 
 		// create the room store
 		const room = new RoomStore(roomId, insightId);
+
+		// set the model
+		room.setModel(this.models.selected);
+
+		// set the mode
+		room.setMode(mode);
 
 		// initialize the room
 		await room.initialize();
@@ -317,11 +326,14 @@ export class ChatStore {
 	 * Get available models from the backend
 	 */
 	private getDefaultModel = async (): Promise<void> => {
+		const defaultModelId = this._defaultModel?.app_id || DEFAUlT_MODEL_ID;
+		const defaultModelName =
+			this._defaultModel?.app_name || DEFAUlT_MODEL_NAME;
 		// model selection is not enabled, set it to the default
 		if (!ENABLE_MODEL_SELECT) {
 			this.setSelectedModel({
-				app_id: DEFAUlT_MODEL_ID,
-				app_name: DEFAUlT_MODEL_NAME,
+				app_id: defaultModelId,
+				app_name: defaultModelName,
 				app_type: "MODEL",
 			});
 			return;
@@ -345,11 +357,13 @@ export class ChatStore {
 			let isSelected = false;
 
 			// set to default if it is an option
-			for (const m of output) {
-				if (m.app_id === DEFAUlT_MODEL_ID) {
-					this.setSelectedModel(m);
-					isSelected = true;
-					break;
+			if (defaultModelId) {
+				for (const m of output) {
+					if (m.app_id === defaultModelId) {
+						this.setSelectedModel(m);
+						isSelected = true;
+						break;
+					}
 				}
 			}
 
