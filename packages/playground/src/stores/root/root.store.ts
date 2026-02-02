@@ -69,7 +69,7 @@ export class RootStore {
 				footerItems: [],
 			},
 			dialog: undefined,
-			toolAutoExecutionLimit: 3,
+			toolAutoExecutionLimit: null,
 			defaultRoomSettings: {
 				model: undefined,
 				temperature: TEMPERATURE,

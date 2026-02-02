@@ -380,9 +380,6 @@ paramValues=[${JSON.stringify({
 	 * Run tools associated with the message
 	 */
 	continueToolExecution = () => {
-		// TODO: fetch this from theme
-		const NUM_CONCURRENT_AUTO_EXECUTIONS = 3;
-
 		// Find the tools that can be run
 		let numRunningTools: number = 0;
 		const toolsToRun: ToolStore[] = [];
@@ -396,8 +393,10 @@ paramValues=[${JSON.stringify({
 			}
 		});
 
-		// If we are able to run more tools right now, run some
-		const numToolsToRun = NUM_CONCURRENT_AUTO_EXECUTIONS - numRunningTools;
+		const toolLimit = this.room.theme.toolAutoExecutionLimit;
+		// Check how many tools can be run. If toolLimit is null or undefined, run all tools
+		const numToolsToRun =
+			toolLimit > 0 ? toolLimit - numRunningTools : toolsToRun.length;
 		if (numToolsToRun > 0) {
 			toolsToRun.slice(0, numToolsToRun).forEach((tool) => {
 				this.runToolExecution(tool);

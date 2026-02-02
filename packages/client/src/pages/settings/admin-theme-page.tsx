@@ -204,6 +204,7 @@ export const AdminThemePage: React.FC = () => {
 						headerItems: [],
 						footerItems: [],
 					},
+					toolAutoExecutionLimit: null,
 					defaultTools: [],
 				},
 			};
