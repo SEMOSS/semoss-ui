@@ -1,15 +1,20 @@
+import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
 	P,
 	Spinner,
 	Tabs,
 	TabsList,
 	TabsTrigger,
 	toast,
+	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { setEngineFavorite, setEngineGlobal } from "@/api";
@@ -87,8 +92,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			return k.metakey;
 		});
 
-		//const [search, setSearch] = useState("");
-		//const debouncedSearch = useDebouncedValue(search);
+		const [search, setSearch] = useState("");
+		const debouncedSearch = useDebouncedValue(search);
 
 		// which view we are on
 		const [mode, setMode] = useState<MODE>("Mine");
@@ -109,7 +114,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						metaKeysDescription,
 					)}, metaFilters = [ ${JSON.stringify(
 						metaFilters,
-					)} ] , onlyFavorites=[true], ${
+					)} ], filterWord=["${search}"], onlyFavorites=[true], ${
 						route ? `engineTypes=['${route.type}']` : ""
 					});`
 				: "",
@@ -123,7 +128,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 */
 		const getEngines = useIteratorPixel<Engine[], Engine>(
 			(limit, offset) =>
-				`${enginePrefix}(${route ? `engineTypes=['${route.type}'], ` : ""} ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} userT = [true], limit=[${limit}], offset=[${offset}]);`,
+				`${enginePrefix}(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} ${route ? `engineTypes=['${route.type}'], ` : ""} ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} userT = [true], limit=[${limit}], offset=[${offset}]);`,
 			(response) => {
 				// if its less than the limit, we know its the end
 				if (response.length < 15) {
@@ -309,6 +314,18 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							{route ? route.description : ""}
 						</p>
 					</div>
+
+					<InputGroup className="flex-1 border-b-2 border-none">
+						<InputGroupAddon>
+							<SearchIcon className="size-4 text-muted-foreground" />
+						</InputGroupAddon>
+						<InputGroupInput
+							placeholder="Search"
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							data-testid="search-bar"
+						/>
+					</InputGroup>
 				</div>
 
 				<div className="flex h-full gap-6 pt-2 pb-2">
