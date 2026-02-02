@@ -2,7 +2,6 @@ import { action, makeObservable, observable, runInAction } from "mobx";
 import {
 	MCP_EXECUTION_ASK,
 	MCP_EXECUTION_AUTO,
-	NUM_CONCURRENT_AUTO_EXECUTIONS,
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 } from "@/constants";
@@ -381,6 +380,9 @@ paramValues=[${JSON.stringify({
 	 * Run tools associated with the message
 	 */
 	continueToolExecution = () => {
+		// TODO: fetch this from theme
+		const NUM_CONCURRENT_AUTO_EXECUTIONS = 3;
+
 		// Find the tools that can be run
 		let numRunningTools: number = 0;
 		const toolsToRun: ToolStore[] = [];
