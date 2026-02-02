@@ -10,6 +10,8 @@ import {
 } from "@semoss/ui/next";
 import { EditPromptModal } from "@/components/prompt/edit-prompt-modal";
 import { PromptGrid } from "@/components/prompt/prompt-grid";
+import { canViewPrompt } from "@/lib/prompt-access";
+import { getCurrentUser } from "@/mocks/getCurrentUser";
 import menuIcon from "../assets/img/Prompt_Library_Default.svg";
 import BaseAppLayout from "../components/common/base-app-layout";
 import PromptCategories from "../components/prompt/prompt-categories";
@@ -56,6 +58,10 @@ export function normalizePrompt(p: unknown): Prompt {
 		VERSION: Number(obj["VERSION"] ?? 0),
 		CREATED_BY: String(obj["CREATED_BY"] ?? ""),
 		DATE_CREATED: String(obj["DATE_CREATED"] ?? ""),
+		metaKeys: isRecord(obj["metaKeys"])
+			? (obj["metaKeys"] as Record<string, unknown[]>)
+			: {},
+		GLOBAL: Boolean(obj["GLOBAL"] ?? false),
 		tags,
 	} as Prompt;
 }
@@ -131,6 +137,28 @@ export const PromptLibrary = observer(() => {
 
 	const auth = Object.keys(config.logins ?? {})[0] ?? "";
 	const userId = config.loginDetails?.[auth]?.id ?? "";
+	const mockMetaUser = getCurrentUser();
+
+	const currentUser = useMemo(
+		() => ({ userId, metaMap: mockMetaUser.metaMap }),
+		[userId, mockMetaUser.metaMap],
+	);
+
+	console.log("PromptLibrary currentUser:", currentUser);
+
+	const visiblePrompts = useMemo(
+		() => allPrompts.filter((p) => canViewPrompt(currentUser, p)),
+		[allPrompts, currentUser],
+	);
+
+	console.log("PromptLibrary visiblePrompts:", visiblePrompts);
+
+	const myPrompts = useMemo(
+		() => visiblePrompts.filter((p) => isMinePrompt(p, userId)),
+		[visiblePrompts, userId],
+	);
+
+	console.log("PromptLibrary myPrompts:", myPrompts);
 
 	const refreshPrompts = useCallback(async () => {
 		setLoadStatus("LOADING");
@@ -165,8 +193,7 @@ export const PromptLibrary = observer(() => {
 			const tagsSorted = Array.from(tagSet)
 				.filter(Boolean)
 				.sort((a, b) => a.localeCompare(b));
-			console.log("tagsSorted:", tagsSorted);
-			console.log("categoryArray:", ["My Prompts", ...tagsSorted]);
+
 			setAllPrompts(normalized);
 			setAvailableTags(tagsSorted);
 			setCategoryArray(["My Prompts", ...tagsSorted]);
@@ -181,11 +208,6 @@ export const PromptLibrary = observer(() => {
 	useEffect(() => {
 		void refreshPrompts();
 	}, [refreshPrompts]);
-
-	const myPrompts = useMemo(
-		() => allPrompts.filter((p) => isMinePrompt(p, userId)),
-		[allPrompts, userId],
-	);
 
 	const categoryPromptsSearched = useMemo(() => {
 		if (selectedCategory.label === "My Prompts") return [];
