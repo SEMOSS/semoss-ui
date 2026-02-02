@@ -15,11 +15,9 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import { runPixel, usePixel } from "@semoss/sdk/react";
+import { MonacoEditor } from "@semoss/shared";
 import { useNotification } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
-
-// Reduce Initial Bundle
-const Editor = lazy(() => import("@monaco-editor/react"));
 
 interface CodeEditorSettingsProps<D extends BlockDef = BlockDef> {
 	/**
@@ -387,7 +385,7 @@ export const CodeEditorSettings = observer(
 					<>Loading...</>
 				)}
 				<Suspense fallback={<>...</>}>
-					<Editor
+					<MonacoEditor
 						width="100%"
 						height="100%"
 						value={value}
