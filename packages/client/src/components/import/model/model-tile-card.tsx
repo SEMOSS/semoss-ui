@@ -98,7 +98,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 		// biome-ignore lint/a11y/useSemanticElements: <explanation>
 		<div
 			className={cn(
-				"flex min-h-[200px] max-w-[215px] cursor-pointer flex-col justify-center rounded-lg border border-input bg-card p-4",
+				"flex min-h-[204px] max-w-[215px] cursor-pointer flex-col justify-between rounded-lg border border-input bg-card p-4",
 				"hover:border-[1.5px] hover:border-primary hover:bg-primary/5",
 				model.disable &&
 					"cursor-auto opacity-60 hover:border hover:border-input hover:bg-card",
@@ -114,49 +114,51 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 			<div className="flex flex-col items-start gap-1">
 				<div className="flex w-full flex-row items-center gap-2">
 					<div
-						className="flex h-10 w-10 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-[250ms] [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
+						className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-[250ms] [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
 						style={{ background: avatarGradient }}
 					>
 						{initials}
 					</div>
-					{model.disable && (
-						<Badge variant="secondary">Coming Soon</Badge>
-					)}
-					{!model.disable && model.embedding && (
-						<Badge
-							variant="default"
-							data-testId={formatToDataTestId(
-								`importPageContent-${model.name}-embeddings-tag`,
-							)}
-						>
-							Embedding
-						</Badge>
-					)}
-					{!model.disable && model.image && (
-						<Badge
-							className="ml-auto rounded-2xl border-none bg-primary/10 px-2.5 font-semibold text-[13px] text-primary"
-							data-testId={formatToDataTestId(
-								`importPageContent-${model.name}-image-tag`,
-							)}
-						>
-							Image
-						</Badge>
-					)}
-					{!model.disable && model.audio && (
-						<Badge
-							className="ml-auto rounded-2xl border-none bg-primary/10 px-2.5 font-semibold text-[13px] text-primary"
-							data-testId={formatToDataTestId(
-								`importPageContent-${model.name}-audio-tag`,
-							)}
-						>
-							Audio
-						</Badge>
-					)}
+					<div className="flex flex-wrap items-center gap-1">
+						{model.disable && (
+							<Badge variant="secondary">Coming Soon</Badge>
+						)}
+						{!model.disable && model.embedding && (
+							<Badge
+								variant="default"
+								data-testId={formatToDataTestId(
+									`importPageContent-${model.name}-embeddings-tag`,
+								)}
+							>
+								Embedding
+							</Badge>
+						)}
+						{!model.disable && model.image && (
+							<Badge
+								className="rounded-2xl border-none bg-primary/10 px-2.5 font-semibold text-[13px] text-primary"
+								data-testId={formatToDataTestId(
+									`importPageContent-${model.name}-image-tag`,
+								)}
+							>
+								Image
+							</Badge>
+						)}
+						{!model.disable && model.audio && (
+							<Badge
+								className="rounded-2xl border-none bg-primary/10 px-2.5 font-semibold text-[13px] text-primary"
+								data-testId={formatToDataTestId(
+									`importPageContent-${model.name}-audio-tag`,
+								)}
+							>
+								Audio
+							</Badge>
+						)}
+					</div>
 				</div>
 				<div className="flex w-full items-center gap-2">
 					<p
 						ref={textRef}
-						className="mt-[2px] self-stretch overflow-hidden text-ellipsis whitespace-nowrap font-medium text-secondary-foreground text-sm leading-[143%] tracking-[0.17px]"
+						className="mt-1 self-stretch overflow-hidden text-ellipsis whitespace-nowrap font-medium text-secondary-foreground text-sm leading-[143%] tracking-[0.17px]"
 					>
 						{model.display || model.name}
 					</p>
@@ -172,7 +174,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 				<Button
 					type="button"
 					variant="link"
-					className="flex justify-end text-sm"
+					className="mt-2 flex justify-end p-0 text-sm"
 					onClick={(e) => {
 						e.stopPropagation();
 						window.open(

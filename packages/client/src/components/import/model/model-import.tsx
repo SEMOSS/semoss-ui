@@ -1,7 +1,9 @@
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+import { FileUploadOutlined } from "@mui/icons-material";
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileDropzone } from "@semoss/ui";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -12,9 +14,6 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	H4,
 	InputGroup,
 	InputGroupAddon,
@@ -107,6 +106,7 @@ export const ModelImport: React.FC = () => {
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [formLoading, setFormLoading] = useState(false);
 	const [filedata, setFiledata] = useState(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	/**
 	 * Any initialization logic for the model import flow - fetch importable models
@@ -140,6 +140,32 @@ export const ModelImport: React.FC = () => {
 	const handleFileUpload = (flag: boolean) => {
 		// Open or close the file upload modal based on the provided flag
 		setIsFileUploadModalOpen(flag);
+	};
+
+	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+	};
+
+	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const files = e.dataTransfer.files;
+		if (files && files.length > 0) {
+			const file = files[0];
+			if (file.name.endsWith(".zip")) {
+				setFiledata(file);
+			} else {
+				toast.error("Please upload a ZIP file");
+			}
+		}
+	};
+
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = e.target.files;
+		if (files && files.length > 0) {
+			setFiledata(files[0]);
+		}
 	};
 
 	const onSubmit = async (data) => {
@@ -236,7 +262,7 @@ export const ModelImport: React.FC = () => {
 
 									<TabsContent value={selectedProvider}>
 										{/* Models Grid */}
-										<div className="mt-1 grid grid-cols-6 gap-x-1 gap-y-2">
+										<div className="mt-1 grid grid-cols-6 gap-2">
 											<div>
 												{(() => {
 													const providerDocsLinkMap: Record<
@@ -414,39 +440,73 @@ export const ModelImport: React.FC = () => {
 						className="w-[600px]"
 						data-testid="model-zip-upload-modal"
 					>
-						<DialogHeader>
-							<DialogTitle data-testid="model-zip-upload-header">
+						<div className="flex h-full w-full flex-col gap-4">
+							<P
+								className="text-base"
+								data-testid="model-zip-upload-title"
+							>
 								Zip File
-							</DialogTitle>
-						</DialogHeader>
-						<FileDropzone
-							multiple={false}
-							onChange={(newValues) => {
-								setFiledata(newValues);
-							}}
-							className="h-30"
-						/>
-						<DialogFooter>
-							<Button
-								size="sm"
-								variant="ghost"
-								onClick={() => setIsFileUploadModalOpen(false)}
-								data-testid="model-upload-close-button"
-								className="rounded-xl text-muted-foreground"
+							</P>
+							<div
+								className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
+								onClick={() => fileInputRef.current?.click()}
+								onDragOver={handleDragOver}
+								onDrop={handleDrop}
 							>
-								Close
-							</Button>
-							<Button
-								size="sm"
-								variant="default"
-								disabled={!filedata || formLoading}
-								onClick={() => onSubmit(filedata)}
-								data-testid="model-upload-submit-button"
-								className="rounded-xl"
-							>
-								Upload
-							</Button>
-						</DialogFooter>
+								<input
+									ref={fileInputRef}
+									type="file"
+									accept=".zip"
+									className="hidden"
+									onChange={handleFileChange}
+									multiple={false}
+								/>
+								{filedata ? (
+									<div className="text-center">
+										<P className="font-medium text-foreground">
+											{filedata.name}
+										</P>
+										<P className="text-muted-foreground text-sm">
+											Click or drag to replace
+										</P>
+									</div>
+								) : (
+									<div className="text-center">
+										<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+										<P className="font-medium text-foreground">
+											Drop your file here or click to
+											browse
+										</P>
+										<P className="text-muted-foreground text-sm">
+											Supports ZIP files only
+										</P>
+									</div>
+								)}
+							</div>
+							<div className="flex flex-row justify-end gap-2">
+								<Button
+									size="sm"
+									variant="ghost"
+									onClick={() =>
+										setIsFileUploadModalOpen(false)
+									}
+									data-testid="model-upload-close-button"
+									className="rounded-xl"
+								>
+									Close
+								</Button>
+								<Button
+									size="sm"
+									variant="default"
+									disabled={!filedata || formLoading}
+									onClick={() => onSubmit(filedata)}
+									data-testid="model-upload-submit-button"
+									className="rounded-xl"
+								>
+									Upload
+								</Button>
+							</div>
+						</div>
 					</DialogContent>
 				</Dialog>
 
