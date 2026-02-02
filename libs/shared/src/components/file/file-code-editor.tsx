@@ -3,8 +3,11 @@ import type * as monaco from "monaco-editor";
 import { Suspense, useRef, useState } from "react";
 import { download, useInsight, usePixel } from "@semoss/sdk/react";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
-import { MonacoEditor } from "../monaco";
-import { MONACO_CONFIG, MONACO_EXT_LANGUAGE_MAPPING } from "./file.constants";
+import {
+	MONACO_CONFIG,
+	MONACO_EXT_LANGUAGE_MAPPING,
+	MonacoEditor,
+} from "../monaco";
 import type { FileMode } from "./file.types";
 
 interface FileCodeEditorProps {
