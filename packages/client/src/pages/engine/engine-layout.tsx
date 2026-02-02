@@ -1,4 +1,4 @@
-import { type SyntheticEvent, useMemo } from "react";
+import { useMemo } from "react";
 import {
 	matchPath,
 	Navigate,
@@ -9,37 +9,11 @@ import {
 	useResolvedPath,
 } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
-import { LoadingScreen, Stack, styled, ToggleTabsGroup } from "@semoss/ui";
+import { Spinner, Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { EngineHeader } from "@/components/engine";
 import { EngineContext } from "@/contexts";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import type { ENGINE_ROUTES } from "./engine.constants";
-
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
-	alignItems: "center",
-	padding: "0px 3px",
-	height: "42px",
-	width: "100%",
-	borderTopLeftRadius: theme.shape.borderRadiusLg,
-	borderTopRightRadius: theme.shape.borderRadiusLg,
-	borderBottomRightRadius: 0,
-	borderBottomLeftRadius: 0,
-	background: theme.palette.primary.selected,
-}));
-
-const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
-	height: "38px",
-	"&.Mui-selected": {
-		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
-		borderRadius: "12px",
-	},
-}));
-
-const StyledContent = styled("div")(({ theme }) => ({
-	width: "100%",
-	padding: theme.spacing(2),
-	background: theme.palette.background.paper,
-}));
 
 interface EngineLayoutProps {
 	/** Rotue to render */
@@ -221,17 +195,32 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 
 	// show a loading screen when it is pending
 	if (getUserEnginePermission.status !== "SUCCESS") {
-		return <LoadingScreen.Trigger description="Checking Access" />;
+		return (
+			<div>
+				<Spinner className="size-8" />
+				<p className="text-muted-foreground">Checking Access</p>
+			</div>
+		);
 	}
 
 	// show a loading screen when it is pending
 	if (getEngineMetadata.status !== "SUCCESS") {
-		return <LoadingScreen.Trigger description="Opening Engine" />;
+		return (
+			<div>
+				<Spinner className="size-8" />
+				<p className="text-muted-foreground">Opening Engine</p>
+			</div>
+		);
 	}
 
 	// show a loading screen when checking database category for DATABASE engines
 	if (route.type === "DATABASE" && getDatabaseCategory.status !== "SUCCESS") {
-		return <LoadingScreen.Trigger description="Loading Database Info" />;
+		return (
+			<div>
+				<Spinner className="size-8" />
+				<p className="text-muted-foreground">Loading Database Info</p>
+			</div>
+		);
 	}
 
 	return (
@@ -256,39 +245,43 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 				},
 			}}
 		>
-			<Stack direction="column" spacing={2}>
+			<div className="flex flex-col gap-4">
 				<EngineHeader />
-				<Stack direction="column" spacing={0}>
+				<div className="flex flex-col rounded-lg bg-(--muted)">
 					{tabs.length > 0 && (
-						<StyledToggleTabsGroup
-							boxSx={{
-								width: "100%",
-							}}
-							value={activeTabIdx}
-							onChange={(_e: SyntheticEvent, idx: number) => {
-								// get the specific route
-								const r = tabs[idx];
-
-								// navigate to it
-								navigate(`${r.path}`);
-							}}
-						>
-							{tabs.map((t, _tIdx) => {
-								return (
-									<StyledToggleTabsGroupItem
-										key={t.path}
-										label={t.name}
-										data-testid={`engineLayout-${t.name}-tab`}
-									/>
-								);
-							})}
-						</StyledToggleTabsGroup>
+						<div>
+							<Tabs
+								value={
+									activeTabIdx !== -1
+										? tabs[activeTabIdx].path
+										: undefined
+								}
+								className="gap-0 bg-transparent"
+							>
+								<div className="w-[80%]">
+									<TabsList className="gap-2">
+										{tabs.map((t, idx) => (
+											<TabsTrigger
+												key={t.path}
+												value={t.path}
+												onClick={() =>
+													navigate(`${t.path}`)
+												}
+												data-testid={`engineLayout-${t.name}-tab`}
+											>
+												{t.name}
+											</TabsTrigger>
+										))}
+									</TabsList>
+								</div>
+							</Tabs>
+						</div>
 					)}
-					<StyledContent>
+					<div className="w-full bg-(--card) p-4">
 						<Outlet />
-					</StyledContent>
-				</Stack>
-			</Stack>
+					</div>
+				</div>
+			</div>
 		</EngineContext.Provider>
 	);
 };
