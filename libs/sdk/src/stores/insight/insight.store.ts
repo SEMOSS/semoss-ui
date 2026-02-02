@@ -684,7 +684,11 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 			if (Env.TOOL) {
 				try {
-					this.actions.sendMCPResponseToPlayground(output);
+					this.actions.sendMCPResponseToPlayground(
+						output,
+						"success",
+						parameters,
+					);
 				} catch (e) {
 					console.warn(
 						`Failed to send MCP response to playground${e.message ? `: ${e.message}` : ""}`,
