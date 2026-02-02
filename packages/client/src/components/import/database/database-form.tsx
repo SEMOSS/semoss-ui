@@ -34,9 +34,9 @@ import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import DataSelection from "./data-selection";
 import ExcelDataSelection from "./excel-data-selection";
-import { MetaModelConnections } from "./MetaModelConnections";
-import { MetaModelType } from "./MetaModelType";
-import TableViewSelector from "./TableViewModel";
+import { MetaModelConnections } from "./meta-model-connections";
+import { MetaModelType } from "./meta-model-type";
+import TableViewSelector from "./table-view-model";
 
 export interface ParsedResult {
 	headers: string[];
@@ -1360,8 +1360,8 @@ export const DatabaseForm = ({
 					data-testid="model-zip-upload-modal"
 				>
 					<TableViewSelector
-						tables={filteredTables}
-						views={filteredViews}
+						tables={filteredTables as string[]}
+						views={filteredViews as string[] | undefined}
 						onApply={handleApply}
 						onClose={() => setConnectionViewModel(false)}
 					/>

@@ -9,7 +9,7 @@ import {
 } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@xyflow/react/dist/style.css";
-import { Button } from "@semoss/ui";
+import { Button } from "@semoss/ui/next";
 import { MetamodelContext } from "@/contexts";
 import type { ColumnOption, Property } from "../import/database/MetamodelTypes";
 import {
@@ -18,10 +18,10 @@ import {
 	nodeIdsEqual,
 	updateColumnProperties,
 } from "../import/database/MetamodelUtils";
-import { Editmetamodel } from "./Editmetamodel";
-import EditTable from "./Edittable";
-import { FloatingEdge } from "./FloatingEdge";
-import { MetamodelNode } from "./MetamodelNode";
+import { Editmetamodel } from "./edit-meta-model";
+import EditTable from "./edit-table";
+import { FloatingEdge } from "./floating-edge";
+import { MetamodelNode } from "./meta-model-node";
 
 // TYPES & CONSTANTS
 
@@ -32,6 +32,7 @@ const edgeTypes = {
 const nodeTypes = {
 	metamodel: MetamodelNode,
 };
+
 export type MetamodelNodeType = Node<
 	React.ComponentProps<typeof MetamodelNode>["data"]
 >;
@@ -165,7 +166,7 @@ export const Metamodel = (props: MetamodelProps) => {
 					openEditTable: openEditTable,
 				},
 			})),
-		[isEditable],
+		[isEditable, openEditForColumn, openEditTable],
 	);
 
 	const initialFlowNodes = useMemo<MetamodelNodeType[]>(
@@ -269,7 +270,13 @@ export const Metamodel = (props: MetamodelProps) => {
 				});
 			});
 		},
-		[columnToEdit, callback, closeEditModal, onMetaModelUpdate],
+		[
+			columnToEdit,
+			callback,
+			closeEditModal,
+			onMetaModelUpdate,
+			setFlowNodes,
+		],
 	);
 
 	const applyReplaceColumnsForNode = useCallback(
@@ -369,7 +376,7 @@ export const Metamodel = (props: MetamodelProps) => {
 				});
 			});
 		},
-		[availableColumnNames, callback, onMetaModelUpdate],
+		[availableColumnNames, callback, onMetaModelUpdate, setFlowNodes],
 	);
 
 	const updateData = useCallback((nodeData, action: string) => {
@@ -442,16 +449,6 @@ export const Metamodel = (props: MetamodelProps) => {
 		for (const node of data.nodes) {
 			for (const col of node.data.properties) {
 				payloadObj.dataTypeMap[col.name] = col.type;
-				// temp[node.data.name].push(col.name);
-				// if (idx === 0) {
-				// no-op to skip pushing in the first column bc nodeProp does not accept the first column !!! Need to figure out why?
-				// } else {
-				// if (node.data.properties.length <= 1) {
-				//     // no-op
-				// } else {
-				//     temp.push(col.name);
-				// }
-				// }
 			}
 			payloadObj.metamodel.nodeProp[node.data.name] = [];
 		}
@@ -596,10 +593,11 @@ export const Metamodel = (props: MetamodelProps) => {
 		isEditable,
 		dataSourceId,
 		injectIsAction,
-		nodeIdsEqual,
-		edgeIdsEqual,
 		onMetaModelUpdate,
 		data.edges,
+		flowNodes,
+		setFlowNodes,
+		setFlowEdges,
 	]);
 
 	useEffect(() => {
@@ -619,30 +617,34 @@ export const Metamodel = (props: MetamodelProps) => {
 				updateData: updateData,
 			}}
 		>
-			<ReactFlow
-				nodes={flowNodes}
-				edges={flowEdges}
-				nodeTypes={nodeTypes}
-				edgeTypes={edgeTypes}
-				fitView={true}
-				onNodesChange={onFlowNodesChange}
-				onEdgesChange={onFlowEdgesChange}
-				defaultViewport={{ x: 70, y: 50, zoom: 1 }}
-			>
-				<MiniMap />
-				<Controls showInteractive={false} />
-			</ReactFlow>
-
-			{callback && (
-				<Button
-					onClick={() => {
-						onSubmit();
-					}}
-					data-testid="metamodel-apply-btn"
+			<div className="relative h-full w-full">
+				<ReactFlow
+					nodes={flowNodes}
+					edges={flowEdges}
+					nodeTypes={nodeTypes}
+					edgeTypes={edgeTypes}
+					fitView={true}
+					onNodesChange={onFlowNodesChange}
+					onEdgesChange={onFlowEdgesChange}
+					defaultViewport={{ x: 70, y: 50, zoom: 1 }}
 				>
-					Apply
-				</Button>
-			)}
+					<MiniMap />
+					<Controls showInteractive={false} />
+				</ReactFlow>
+
+				{callback && (
+					<div className="absolute bottom-4 left-4 z-10">
+						<Button
+							onClick={onSubmit}
+							data-testid="metamodel-apply-btn"
+							variant="default"
+							className="shadow-lg"
+						>
+							Apply
+						</Button>
+					</div>
+				)}
+			</div>
 
 			<Editmetamodel
 				open={openEditColumnModal}
