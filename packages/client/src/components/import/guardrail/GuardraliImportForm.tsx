@@ -86,7 +86,8 @@ export const GuardrailForm = ({
     setFocus,
     formState,
     getValues,
-    trigger,
+    setError,
+    clearErrors,
   } = useForm({
     mode: "onChange",
     reValidateMode: "onChange",
@@ -104,6 +105,9 @@ export const GuardrailForm = ({
   const advancedFields = advanced;
   const categoryDescriptions = categoryDescription;
   const [loading, setLoading] = useState(false);
+  const debounceTimeoutsRef = useRef<
+		Record<string, ReturnType<typeof setTimeout>>
+	>({});
 
   //  Group fields by category
   const grouped = defaultFields.reduce((acc, f) => {
@@ -112,12 +116,6 @@ export const GuardrailForm = ({
     return acc;
   }, {});
 
-  const _lastField = useRef({
-    lastFocussedField: "",
-    lastFocussedValue: "",
-    lastValidatedValue: "",
-    runValidate: false,
-  });
 
   const dynamicFieldsToWatch = useMemo(() => {
     const f2w = [];
@@ -211,7 +209,7 @@ export const GuardrailForm = ({
   const onFormSubmit = async (formData) => {
     setLoading(true);
     const pixel = `CreateGuardrailEngine(guardrail=["${
-      formData.NAME
+      formData.MODEL_NAME
     }"],guardrailDetails=[${JSON.stringify(formData)}])`;
 
     monolithStore.runQuery(pixel).then(async (response) => {
@@ -452,36 +450,8 @@ export const GuardrailForm = ({
       control={control}
       rules={{
         required: val?.required,
-        validate: {
-          ...(val.rules?.custom_rules
-            ? {
-                checkField: async (fieldVal) => {
-                  if (!_lastField.current.runValidate) return true;
-
-                  try {
-                    let validStatus: Promise<boolean> | null;
-                    if (
-                      _lastField.current.lastFocussedField === val.fieldName &&
-                      _lastField.current.lastValidatedValue !== fieldVal
-                    ) {
-                      validStatus = validateFormField(val, fieldVal);
-                    }
-                    return validStatus;
-                  } finally {
-                    _lastField.current.runValidate = false;
-                  }
-                },
-              }
-            : {}),
-        },
-        pattern: {
-          ...(val?.rules?.pattern && {
-            value: val?.rules?.pattern.value,
-            message: val?.rules?.pattern.message,
-          }),
-        },
       }}
-      render={({ field, fieldState: { invalid, error }, formState }) => {
+      render={({ field, fieldState: { invalid, error } }) => {
         switch (val.component) {
           case "text":
             return (
@@ -494,47 +464,63 @@ export const GuardrailForm = ({
                 required={val?.required}
                 size="small"
                 sx={{ display: val.hidden ? "none" : "block" }}
-                //error={!!error}
-                inputProps={{
-                  onFocus: () => {
-                    _lastField.current = {
-                      ..._lastField.current,
-                      lastFocussedField: val.fieldName,
-                      lastFocussedValue: field.value,
-                      lastValidatedValue: field.value,
-                    };
-                  },
-                  onBlur: () => {
-                    if (val.rules?.custom_rules) {
-                      _lastField.current.runValidate = true;
-                      trigger(val.fieldName);
-                    }
-                  },
-                }}
-                helperText={
-                  invalid
-                    ? error?.type === "checkField"
-                      ? val.rules.custom_rules.message
-                      : error?.message
-                    : val.helperText
-                }
+                helperText={getHelperText(error, val)}
                 error={invalid}
-                //helperText={getHelperText(error, val)}
                 data-testid={`guardrail-form-input-${val.key}`}
-                // onChange={(e) =>
-                // 	handleFieldValidation(
-                // 		e,
-                // 		val,
-                // 		field,
-                // 		validateFormField,
-                // 		setError,
-                // 		clearErrors,
-                // 	)
-                // }
-                onChange={(value) => {
-                  field.onChange(value);
-                  checkForDynamicFieldChange();
-                }}
+                onChange={(v) => {
+										field.onChange(v);
+										if (val.rules?.custom_rules) {
+											if (
+												debounceTimeoutsRef.current[
+													val.key
+												]
+											) {
+												clearTimeout(
+													debounceTimeoutsRef.current[
+														val.key
+													],
+												);
+											}
+											debounceTimeoutsRef.current[val.key] =
+												setTimeout(async () => {
+													const value =
+														v.target.value;
+													if (value === "") {
+														setError(val.key, {});
+														return;
+													}
+													if (
+														!val.rules.pattern.value.test(
+															value,
+														)
+													) {
+														setError(val.key, {
+															message:
+																val.rules.pattern
+																	.message ||
+																"Invalid characters in input.",
+														});
+														return;
+													}
+													const isValid =
+														await validateFormField(
+															val,
+															value,
+														);
+													if (!isValid) {
+														setError(val.key, {
+															message:
+																val.rules
+																	?.custom_rules
+																	?.message ||
+																"Invalid value.",
+														});
+													} else {
+														clearErrors(val.key);
+													}
+												}, 300);
+										}
+									}}
               />
             );
 

@@ -18,7 +18,7 @@ export const GUARDRAIL_CONNECTION = {
 				"Leverage Gliner to implement advanced guardrail capabilities, ensuring safe and compliant AI interactions through content filtering and moderation.",
 			fields: [
 				{
-					key: "NAME",
+					key: "MODEL_NAME",
 					label: "Catalog Name",
 					value: "",
 					component: "text",
@@ -42,7 +42,7 @@ export const GUARDRAIL_CONNECTION = {
 					key: "NER_LABELS",
 					label: "NER Labels",
 					value: "",
-					component: "text",
+					component: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -75,7 +75,7 @@ export const GUARDRAIL_CONNECTION = {
 				"Utilize Detoxify to enhance your AI systems with robust content moderation capabilities, ensuring safe and responsible interactions by filtering harmful or inappropriate content effectively.",
 			fields: [
 				{
-					key: "NAME",
+					key: "MODEL_NAME",
 					label: "Catalog Name",
 					value: "",
 					component: "text",
@@ -108,6 +108,400 @@ export const GUARDRAIL_CONNECTION = {
 					key: "GUARDRAIL_TYPE",
 					label: "Guardrail Type",
 					value: "EMBEDDED_DETOXIFY",
+					component: "text",
+					disabled: true,
+					required: false,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "Perspective API",
+			disable: true,
+			description:
+				"Detects and scores toxic, abusive, and harassing language in text.",
+			fields: [
+				{
+					key: "MODEL_NAME",
+					label: "Catalog Name",
+					value: "",
+					component: "text",
+					disabled: false,
+					required: true,
+					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "LABELS",
+					label: "Labels",
+					value: "",
+					component: "tags",
+					disabled: false,
+					required: false,
+					category: "General",
+				},
+				{
+					key: "DEFAULT_THRESHOLD",
+					label: "Default Threshold",
+					value: "",
+					component: "number",
+					disabled: false,
+					required: false,
+					category: "Settings",
+				},
+				{
+					key: "GUARDRAIL_TYPE",
+					label: "Guardrail Type",
+					value: "EMBEDDED_PERSPECTIVE_API",
+					component: "text",
+					disabled: true,
+					required: false,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "OpenAI Moderation",
+			disable: true,
+			description:
+				"Classifies content to identify policy-violating or unsafe text.",
+			fields: [
+				{
+					key: "MODEL_NAME",
+					label: "Catalog Name",
+					value: "",
+					component: "text",
+					disabled: false,
+					required: true,
+					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "CATEGORIES",
+					label: "Categories",
+					value: "",
+					component: "tags",
+					disabled: false,
+					required: false,
+					category: "General",
+				},
+				{
+					key: "DEFAULT_THRESHOLD",
+					label: "Default Threshold",
+					value: "",
+					component: "number",
+					disabled: false,
+					required: false,
+					category: "Settings",
+				},
+				{
+					key: "GUARDRAIL_TYPE",
+					label: "Guardrail Type",
+					value: "EMBEDDED_OPENAI_MODERATION",
+					component: "text",
+					disabled: true,
+					required: false,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "Microsoft Content Moderation",
+			disable: true,
+			description:
+				"Classifies content to identify policy-violating or unsafe text.",
+			fields: [
+				{
+					key: "MODEL_NAME",
+					label: "Catalog Name",
+					value: "",
+					component: "text",
+					disabled: false,
+					required: true,
+					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "CATEGORIES",
+					label: "Categories",
+					value: "",
+					component: "tags",
+					disabled: false,
+					required: false,
+					category: "General",
+				},
+				{
+					key: "DEFAULT_THRESHOLD",
+					label: "Default Threshold",
+					value: "",
+					component: "number",
+					disabled: false,
+					required: false,
+					category: "Settings",
+				},
+				{
+					key: "GUARDRAIL_TYPE",
+					label: "Guardrail Type",
+					value: "EMBEDDED_MICROSOFT_CONTENT_MODERATION",
+					component: "text",
+					disabled: true,
+					required: false,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "NVIDIA NEMO GUARDRAILS",
+			disable: true,
+			description:
+				"Classifies content to identify policy-violating or unsafe text.",
+			fields: [
+				{
+					key: "MODEL_NAME",
+					label: "Catalog Name",
+					value: "",
+					component: "text",
+					disabled: false,
+					required: true,
+					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "RULES",
+					label: "Rules",
+					value: "",
+					component: "text",
+					disabled: false,
+					required: false,
+					category: "General",
+				},
+				{
+					key: "ACTION",
+					label: "Action",
+					value: "",
+					component: "text",
+					disabled: false,
+					required: false,
+					category: "General",
+				},
+				{
+					key: "DEFAULT_THRESHOLD",
+					label: "Default Threshold",
+					value: "",
+					component: "number",
+					disabled: false,
+					required: false,
+					category: "Settings",
+				},
+				{
+					key: "GUARDRAIL_TYPE",
+					label: "Guardrail Type",
+					value: "EMBEDDED_NVIDIA_NEMO",
+					component: "text",
+					disabled: true,
+					required: false,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "REBUFF (Prompt Injection)",
+			disable: true,
+			description:
+				"Detects and scores toxic, abusive, and harassing language in text.",
+			fields: [
+				{
+					key: "MODEL_NAME",
+					label: "Catalog Name",
+					value: "",
+					component: "text",
+					disabled: false,
+					required: true,
+					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "ACTION",
+					label: "Action",
+					value: "",
+					component: "tags",
+					disabled: false,
+					required: false,
+					category: "General",
+					helperText:
+						"Defines what the system should do when this guardrail is triggered (e.g., block, mask, warn, or log).",
+				},
+				{
+					key: "DEFAULT_THRESHOLD",
+					label: "Default Threshold",
+					value: "",
+					component: "number",
+					disabled: false,
+					required: false,
+					category: "Settings",
+				},
+				{
+					key: "GUARDRAIL_TYPE",
+					label: "Guardrail Type",
+					value: "EMBEDDED_REBUFF",
+					component: "text",
+					disabled: true,
+					required: false,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "Lakera Guard",
+			disable: true,
+			description:
+				" Provides real-time content moderation to ensure safe and compliant AI interactions.",
+			fields: [
+				{
+					key: "MODEL_NAME",
+					label: "Catalog Name",
+					value: "",
+					component: "text",
+					disabled: false,
+					required: true,
+					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "CATEGORIES",
+					label: "Categories",
+					value: "",
+					component: "tags",
+					disabled: false,
+					required: false,
+					category: "General",
+				},
+				{
+					key: "DEFAULT_THRESHOLD",
+					label: "Default Threshold",
+					value: "",
+					component: "number",
+					disabled: false,
+					required: false,
+					category: "Settings",
+				},
+				{
+					key: "GUARDRAIL_TYPE",
+					label: "Guardrail Type",
+					value: "EMBEDDED_LAKERA_GUARD",
+					component: "text",
+					disabled: true,
+					required: false,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "PromptGuard (META)",
+			disable: true,
+			description:
+				"Classifies content to identify policy-violating or unsafe text.",
+			fields: [
+				{
+					key: "MODEL_NAME",
+					label: "Catalog Name",
+					value: "",
+					component: "text",
+					disabled: false,
+					required: true,
+					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "DEFAULT_THRESHOLD",
+					label: "Default Threshold",
+					value: "",
+					component: "number",
+					disabled: false,
+					required: false,
+					category: "Settings",
+				},
+				{
+					key: "GUARDRAIL_TYPE",
+					label: "Guardrail Type",
+					value: "EMBEDDED_PROMPTGUARD_META",
 					component: "text",
 					disabled: true,
 					required: false,

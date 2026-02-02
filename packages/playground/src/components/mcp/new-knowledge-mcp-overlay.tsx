@@ -2,7 +2,7 @@ import { FileIcon, XIcon } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
-import { type Engine, EngineSelect } from "@semoss/shared";
+import { type Engine, EngineSelect, NewEngineInput } from "@semoss/shared";
 import {
 	Button,
 	Dialog,
@@ -90,7 +90,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 				]
 			>(`CreateVectorDatabaseEngine(
 				database=["${name}"],
-				conDetails=[{"VECTOR_TYPE": "FAISS", "EMBEDDER_ENGINE_ID": "${embeddingEngine.app_id}","DESCRIPTION":"${description}"."TAGS":""}]
+				conDetails=[{"VECTOR_TYPE": "FAISS", "EMBEDDER_ENGINE_ID": "${embeddingEngine.app_id}","DESCRIPTION":"${description}","TAGS":""}]
 			);`);
 
 			const engineId =
@@ -117,6 +117,14 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 				engine=["${engineId}"],
 				filePaths=[${filePaths}]
 			);`);
+
+			await actions.run<
+				[
+					{
+						success: boolean;
+					},
+				]
+			>(`MakeEngineMCP("${engineId}");`);
 
 			// Success
 			toast.success(`Successfully created knowledge source "${name}"`);
@@ -155,10 +163,9 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 					<FieldGroup>
 						<Field>
 							<FieldLabel>Name</FieldLabel>
-							<Input
-								placeholder="Enter Name"
+							<NewEngineInput
 								value={name}
-								onChange={(e) => setName(e.target.value)}
+								onChange={(v) => setName(v)}
 								disabled={isLoading}
 								required
 							/>

@@ -1006,7 +1006,9 @@ export const LayersPanel = observer(
 							)}
 						</StyledHomePageChildDiv>
 						<StyledRouteText variant="subtitle1">
-							{id === "page-1"? "/page-1": `/${block.data.route as string}`}
+							{id === "page-1"
+								? "/page-1"
+								: `/${block.data.route as string}`}
 						</StyledRouteText>
 					</StyledHomePageDiv>
 					{id !== "page-1" && pageHovered === block.id && (
