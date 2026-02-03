@@ -394,9 +394,8 @@ paramValues=[${JSON.stringify({
 		});
 
 		const toolLimit = this.room.theme.toolAutoExecutionLimit;
-		// Check how many tools can be run. If toolLimit is null or undefined, run all tools
-		const numToolsToRun =
-			toolLimit > 0 ? toolLimit - numRunningTools : toolsToRun.length;
+		// Check how many tools can be run. If toolLimit is null or undefined, then limit to 5
+		const numToolsToRun = (toolLimit > 0 ? toolLimit : 5) - numRunningTools;
 		if (numToolsToRun > 0) {
 			toolsToRun.slice(0, numToolsToRun).forEach((tool) => {
 				this.runToolExecution(tool);
