@@ -673,9 +673,7 @@ export const DatabaseForm = ({
 	) => {
 		const files = e.target.files;
 		if (files && files?.length > 0) {
-			const fileArray = Array.isArray(files)
-				? Array.from(files)
-				: [files[0]];
+			const fileArray =  Array.from(files);
 			field.onChange(fileArray);
 			onFileUpload(fileArray);
 		}

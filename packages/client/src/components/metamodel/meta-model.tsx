@@ -271,11 +271,7 @@ export const Metamodel = (props: MetamodelProps) => {
 			});
 		},
 		[
-			columnToEdit,
-			callback,
-			closeEditModal,
-			onMetaModelUpdate,
-			setFlowNodes,
+			columnToEdit, callback, closeEditModal, onMetaModelUpdate
 		],
 	);
 
@@ -376,7 +372,7 @@ export const Metamodel = (props: MetamodelProps) => {
 				});
 			});
 		},
-		[availableColumnNames, callback, onMetaModelUpdate, setFlowNodes],
+		[availableColumnNames, callback, onMetaModelUpdate],
 	);
 
 	const updateData = useCallback((nodeData, action: string) => {
@@ -593,11 +589,10 @@ export const Metamodel = (props: MetamodelProps) => {
 		isEditable,
 		dataSourceId,
 		injectIsAction,
+		nodeIdsEqual,
+		edgeIdsEqual,
 		onMetaModelUpdate,
 		data.edges,
-		flowNodes,
-		setFlowNodes,
-		setFlowEdges,
 	]);
 
 	useEffect(() => {
