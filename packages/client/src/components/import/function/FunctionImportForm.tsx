@@ -1,53 +1,36 @@
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { FileDropzone } from "@semoss/ui";
 import {
-	Autocomplete,
-	Box,
 	Button,
 	Checkbox,
-	Divider,
-	FileDropzone,
-	FormControlLabel,
-	IconButton,
-	LoadingScreen,
-	Menu,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	Field,
+	FieldDescription,
+	FieldLabel,
+	H4,
+	Input,
+	Label,
+	Muted,
+	P,
 	RadioGroup,
+	RadioGroupItem,
 	Select,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Separator,
+	Spinner,
+	Textarea,
+	toast,
+} from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
-
-const StyledBox = styled(Box)({
-	marginBottom: "32px",
-	marginTop: "16px",
-});
-
-const StyledFlexEnd = styled("div")(({ theme }) => ({
-	display: "flex",
-	justifyContent: "flex-end",
-	gap: theme.spacing(1),
-	marginTop: theme.spacing(2),
-}));
-
-const StyledSubmitButton = styled(Button)({
-	textTransform: "capitalize",
-	minWidth: "128px",
-});
-
-const AdvancedHeader = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	justifyContent: "space-between",
-	alignItems: "center",
-	padding: theme.spacing(2, 0),
-}));
 
 export interface ParsedResult {
 	headers: string[];
@@ -69,6 +52,7 @@ export const FunctionForm = ({
 	fields,
 	advanced,
 	categoryDescription,
+	onBack,
 }) => {
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
@@ -98,7 +82,6 @@ export const FunctionForm = ({
 
 	const watchedFieldRef = useRef({});
 	const { monolithStore, configStore } = useRootStore();
-	const notification = useNotification();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -127,10 +110,7 @@ export const FunctionForm = ({
 				);
 
 				if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
-					notification.add({
-						color: "error",
-						message: "Upload failed or returned invalid response.",
-					});
+					toast.error("Upload failed or returned invalid response.");
 					setLoading(false);
 					return;
 				}
@@ -139,10 +119,7 @@ export const FunctionForm = ({
 					`,filePaths=["${FILE.name}"]` + ");",
 				);
 			} catch {
-				notification.add({
-					color: "error",
-					message: "Upload failed or returned invalid response.",
-				});
+				toast.error("Upload failed or returned invalid response.");
 			}
 		}
 		monolithStore.runQuery(pixel).then(async (response) => {
@@ -150,19 +127,15 @@ export const FunctionForm = ({
 				operationType = response.pixelReturn[0].operationType;
 
 			if (operationType.indexOf("ERROR") > -1) {
-				notification.add({
-					color: "error",
-					message: pixelOutput,
-				});
+				toast.error(pixelOutput as string);
 				setLoading(false);
 				return;
 			}
-			notification.add({
-				color: "success",
-				message: `Successfully added function database to catalog`,
-			});
+			toast.success("Successfully added function database to catalog");
 
-			navigate(`/engine/function/${pixelOutput.database_id}`);
+			navigate(
+				`/engine/function/${(pixelOutput as { database_id: string }).database_id}`,
+			);
 			setLoading(false);
 		});
 	};
@@ -217,7 +190,7 @@ export const FunctionForm = ({
 		const operationType = response.pixelReturn[0].operationType;
 
 		if (operationType.includes("ERROR")) {
-			notification.add({ color: "error", message: output });
+			toast.error(output as string);
 			return;
 		}
 
@@ -232,7 +205,7 @@ export const FunctionForm = ({
 					f.key === key
 						? {
 								...f,
-								options: output.map((opt) => ({
+								options: (output as unknown[]).map((opt) => ({
 									display: opt[f.optionRule.optionDisplay],
 									value: opt[f.optionRule.optionValue],
 								})),
@@ -255,11 +228,11 @@ export const FunctionForm = ({
 		const operationType = response.pixelReturn[0].operationType;
 
 		if (operationType.includes("ERROR")) {
-			notification.add({ color: "error", message: output });
+			toast.error(output as string);
 			return false;
 		}
 
-		if (output.exists) {
+		if ((output as { exists: boolean }).exists) {
 			setFocus(field.key);
 			setIsValidDatabaseName(true);
 			return false;
@@ -300,33 +273,37 @@ export const FunctionForm = ({
 				switch (val.type) {
 					case "text":
 						return (
-							<TextField
-								{...field}
-								fullWidth
-								label={val.label}
-								disabled={val.disabled}
-								variant="outlined"
-								required={val?.required}
-								size="small"
-								sx={{ display: val.hidden ? "none" : "block" }}
-								// @ts-expect-error TODO FIX
-								error={!!error}
-								helperText={getHelperText(error, val)}
-								data-testid={`function-form-input-${val.key}`}
-								onChange={(e) => {
-									field.onChange(e);
-									if (val.rules?.custom) {
-										if (
-											debounceTimeoutsRef.current[val.key]
-										) {
-											clearTimeout(
+							<Field className={val.hidden ? "hidden" : ""}>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val?.required && (
+										<span className="text-destructive">
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Input
+									{...field}
+									id={val.key}
+									disabled={val.disabled}
+									data-testid={`function-form-input-${val.key}`}
+									onChange={(e) => {
+										field.onChange(e);
+										if (val.rules?.custom) {
+											if (
 												debounceTimeoutsRef.current[
 													val.key
-												],
-											);
-										}
-										debounceTimeoutsRef.current[val.key] =
-											setTimeout(async () => {
+												]
+											) {
+												clearTimeout(
+													debounceTimeoutsRef.current[
+														val.key
+													],
+												);
+											}
+											debounceTimeoutsRef.current[
+												val.key
+											] = setTimeout(async () => {
 												const value = e.target.value;
 												if (
 													!val.rules.pattern.value.test(
@@ -351,123 +328,209 @@ export const FunctionForm = ({
 													clearErrors(val.key);
 												}
 											}, 300);
-									}
-								}}
-							/>
+										}
+									}}
+								/>
+								{error ? (
+									<FieldDescription className="text-destructive">
+										{error.message ||
+											(val.rules?.pattern?.message ??
+												val.helperText)}
+									</FieldDescription>
+								) : (
+									val.helperText && (
+										<FieldDescription>
+											{val.helperText}
+										</FieldDescription>
+									)
+								)}
+							</Field>
 						);
 
 					case "password":
 						return (
-							<TextField
-								{...field}
-								type="password"
-								fullWidth
-								size="small"
-								label={val.label}
-								disabled={val.disabled}
-								required={val?.required}
-								// @ts-expect-error TODO FIX
-								error={!!error}
-								helperText={getHelperText(error, val)}
-								data-testid={`function-form-input-${val.key}`}
-							/>
+							<Field>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val?.required && (
+										<span className="text-destructive">
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Input
+									{...field}
+									id={val.key}
+									type="password"
+									disabled={val.disabled}
+									data-testid={`function-form-input-${val.key}`}
+									autoComplete="new-password"
+								/>
+								{error ? (
+									<FieldDescription className="text-destructive">
+										{error.message ||
+											(val.rules?.pattern?.message ??
+												val.helperText)}
+									</FieldDescription>
+								) : (
+									val.helperText && (
+										<FieldDescription>
+											{val.helperText}
+										</FieldDescription>
+									)
+								)}
+							</Field>
 						);
 
 					case "number":
 						return (
-							<TextField
-								{...field}
-								type="number"
-								fullWidth
-								label={val.label}
-								size="small"
-								disabled={val.disabled}
-								required={val?.required}
-								sx={{ display: val.hidden ? "none" : "block" }}
-								// @ts-expect-error TODO FIX
-								error={!!error}
-								helperText={getHelperText(error, val)}
-								data-testid={`function-form-input-${val.key}`}
-							/>
+							<Field className={val.hidden ? "hidden" : ""}>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val?.required && (
+										<span className="text-destructive">
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Input
+									{...field}
+									id={val.key}
+									type="number"
+									disabled={val.disabled}
+									data-testid={`function-form-input-${val.key}`}
+								/>
+								{error ? (
+									<FieldDescription className="text-destructive">
+										{error.message ||
+											(val.rules?.pattern?.message ??
+												val.helperText)}
+									</FieldDescription>
+								) : (
+									val.helperText && (
+										<FieldDescription>
+											{val.helperText}
+										</FieldDescription>
+									)
+								)}
+							</Field>
 						);
 
 					case "select":
 						return (
-							<Select
-								{...field}
-								fullWidth
-								label={val.label}
-								disabled={val.disabled}
-								size="small"
-								required={val?.required}
-								sx={{ display: val.hidden ? "none" : "block" }}
-								error={!!error}
-								helperText={getHelperText(error, val)}
-								onChange={(e) => {
-									field.onChange(e);
-									checkForDisplayRulesSet(
-										field,
-										e.target.value,
-									);
-								}}
-								data-testid={`function-form-input-${val.key}`}
-							>
-								{(Array.isArray(val?.options)
-									? val && Array.isArray(val.options)
-										? val.options
-										: []
-									: []
-								).map((opt) => (
-									<Menu.Item
-										key={opt.value}
-										value={opt.value}
-										data-testid={`function-form-option-${val.key}-${opt.value}`}
+							<Field className={val.hidden ? "hidden" : ""}>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val?.required && (
+										<span className="text-destructive">
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Select
+									value={field.value || ""}
+									onValueChange={(value) => {
+										field.onChange(value);
+										checkForDisplayRulesSet(field, value);
+									}}
+									disabled={val.disabled}
+								>
+									<SelectTrigger
+										id={val.key}
+										className="w-full"
+										data-testid={`function-form-input-${val.key}`}
 									>
-										{opt.display}
-									</Menu.Item>
-								))}
-							</Select>
+										<SelectValue
+											placeholder={`Select ${val.label}`}
+										/>
+									</SelectTrigger>
+									<SelectContent>
+										{(Array.isArray(val?.options)
+											? val && Array.isArray(val.options)
+												? val.options
+												: []
+											: []
+										).map((opt) => (
+											<SelectItem
+												key={opt.value}
+												value={opt.value}
+												data-testid={`function-form-option-${val.key}-${opt.value}`}
+											>
+												{opt.display}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								{error ? (
+									<FieldDescription className="text-destructive">
+										{error.message ||
+											(val.rules?.pattern?.message ??
+												val.helperText)}
+									</FieldDescription>
+								) : (
+									val.helperText && (
+										<FieldDescription>
+											{val.helperText}
+										</FieldDescription>
+									)
+								)}
+							</Field>
 						);
 
 					case "radio":
 						return (
-							<RadioGroup
-								row
-								value={field.value || ""}
-								onChange={(e) => field.onChange(e.target.value)}
-								data-testid={`function-form-input-${val.key}`}
-								sx={{ display: val.hidden ? "none" : "block" }}
-							>
-								{val.options.options.map((opt) => (
-									<FormControlLabel
-										key={opt.value}
-										value={opt.value}
-										control={
-											<RadioGroup.Item
+							<Field className={val.hidden ? "hidden" : ""}>
+								<FieldLabel>
+									{val.label}
+									{val?.required && (
+										<span className="text-destructive">
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<RadioGroup
+									value={field.value || ""}
+									onValueChange={(value) =>
+										field.onChange(value)
+									}
+									className="flex flex-row gap-4"
+									data-testid={`function-form-input-${val.key}`}
+								>
+									{val.options.options.map((opt) => (
+										<div
+											key={opt.value}
+											className="flex items-center gap-2"
+										>
+											<RadioGroupItem
+												value={opt.value}
+												id={`${val.key}-${opt.value}`}
 												data-testid={`function-form-radio-${val.key}-${opt.value}`}
-												label={""}
 											/>
-										}
-										label={opt.display}
-									/>
-								))}
+											<Label
+												htmlFor={`${val.key}-${opt.value}`}
+												className="cursor-pointer"
+											>
+												{opt.display}
+											</Label>
+										</div>
+									))}
+								</RadioGroup>
 								{error && (
-									<Typography variant="caption" color="error">
-										{getHelperText(error, val)}
-									</Typography>
+									<FieldDescription className="text-destructive">
+										{error.message ||
+											(val.rules?.pattern?.message ??
+												val.helperText)}
+									</FieldDescription>
 								)}
-							</RadioGroup>
+							</Field>
 						);
 
 					case "file-upload":
 						return (
-							<>
-								<Typography
-									variant={"body1"}
-									data-testid="function-zip-upload-title"
-								>
+							<div className="flex flex-col gap-2">
+								<P data-testid="function-zip-upload-title">
 									{val.label}
-								</Typography>
+								</P>
 								<FileDropzone
 									multiple={false}
 									value={field.value as File | File[]}
@@ -482,84 +545,96 @@ export const FunctionForm = ({
 									data-testid={`function-form-input-${val.key}`}
 								/>
 								{error && (
-									<Typography
-										variant="body1"
-										color="error"
+									<P
+										className="text-destructive text-sm"
 										data-testid={`function-form-error-${val.key}`}
 									>
-										{getHelperText(error, val)}
-									</Typography>
+										{error.message ||
+											(val.rules?.pattern?.message ??
+												val.helperText)}
+									</P>
 								)}
-							</>
+							</div>
 						);
 					case "checkbox":
 						return (
-							<>
+							<div
+								className={`flex items-center gap-2 ${val.hidden ? "hidden" : ""}`}
+							>
 								<Checkbox
-									required={val?.required}
-									label={val.label}
-									disabled={val.disabled}
+									id={val.key}
 									checked={field.value ? field.value : false}
-									onChange={(value) => field.onChange(value)}
+									onCheckedChange={(value) =>
+										field.onChange(value)
+									}
+									disabled={val.disabled}
 									data-testid={`function-form-input-${val.key}`}
-									sx={{
-										display: val.hidden ? "none" : "block",
-									}}
 								/>
+								<Label
+									htmlFor={val.key}
+									className="cursor-pointer"
+								>
+									{val.label}
+									{val?.required && (
+										<span className="text-destructive">
+											*
+										</span>
+									)}
+								</Label>
 								{error && (
-									<Typography
-										variant="body1"
-										color="error"
-										sx={{ mt: 0.5, display: "block" }}
+									<P
+										className="text-destructive text-sm"
 										data-testid={`function-form-error-${val.key}`}
 									>
 										{error.message}
-									</Typography>
+									</P>
 								)}
-							</>
+							</div>
 						);
 					case "tags":
 						return (
-							<Autocomplete
-								multiple
-								freeSolo
-								size="small"
-								options={val.options?.options || []}
-								value={field.value || []}
-								onChange={(_, newValue) => {
-									// Filter out empty or whitespace-only tags
-									const filteredValue = newValue.filter(
-										(tag) =>
-											typeof tag === "string" &&
-											tag.trim() !== "",
-									);
-									field.onChange(filteredValue);
-								}}
-								renderInput={(params) => (
-									<TextField
-										{...params}
-										fullWidth
-										label={val.label}
-										placeholder='Press "Enter" to add tag'
-										variant="outlined"
-										required={val?.required}
-										// @ts-expect-error TODO FIX
-										error={!!error}
-										helperText={getHelperText(error, val)}
-										disabled={val.disabled}
-										sx={{
-											display: val.hidden
-												? "none"
-												: "block",
-										}}
-										inputProps={{
-											...params.inputProps,
-											required: false,
-										}}
-									/>
+							<Field className={val.hidden ? "hidden" : ""}>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val?.required && (
+										<span className="text-destructive">
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Textarea
+									{...field}
+									id={val.key}
+									placeholder='Press "Enter" to add tag'
+									disabled={val.disabled}
+									value={
+										Array.isArray(field.value)
+											? field.value.join(", ")
+											: field.value || ""
+									}
+									onChange={(e) => {
+										const tags = e.target.value
+											.split(",")
+											.map((tag) => tag.trim())
+											.filter((tag) => tag !== "");
+										field.onChange(tags);
+									}}
+									data-testid={`function-form-input-${val.key}`}
+								/>
+								{error ? (
+									<FieldDescription className="text-destructive">
+										{error.message ||
+											(val.rules?.pattern?.message ??
+												val.helperText)}
+									</FieldDescription>
+								) : (
+									val.helperText && (
+										<FieldDescription>
+											{val.helperText}
+										</FieldDescription>
+									)
 								)}
-								data-testid={`function-form-input-${val.key}`}
-							/>
+							</Field>
 						);
 
 					default:
@@ -568,117 +643,123 @@ export const FunctionForm = ({
 			}}
 		/>
 	);
-	const getHelperText = (error, val) => {
-		if (!error) return val.helperText || "";
-		if (error.type === "checkField" && val.rules?.custom?.message) {
-			return val.rules.custom.message;
-		}
-		return error.message;
-	};
+
 	if (loading) {
-		return <LoadingScreen.Trigger description="Loading..." />;
+		return (
+			<div className="flex h-full items-center justify-center">
+				<Spinner />
+			</div>
+		);
 	}
 
 	return (
 		<form onSubmit={handleSubmit(onFormSubmit)} data-testid="function-form">
-			<Typography variant="h4" data-testid="function-form-title">
-				{title}
-			</Typography>
-			<Typography
-				variant="body1"
-				color="textSecondary"
-				data-testid="function-form-description"
-				sx={{ marginTop: "4px" }}
-			>
+			<H4 data-testid="function-form-title">{title}</H4>
+			<Muted className="mt-1" data-testid="function-form-description">
 				{description}
-			</Typography>
-			<StyledBox data-testid="function-form-box">
-				<Stack rowGap={4}>
+			</Muted>
+			<div className="mt-8 mb-8" data-testid="function-form-box">
+				<div className="flex flex-col gap-4">
 					{Object.keys(grouped).map((category) => (
-						<Box
+						<div
 							key={category}
-							sx={{
-								display: "flex",
-								gap: 4,
-								mb: 4,
-								flexDirection: "column",
-							}}
+							className="mb-4 flex flex-col gap-4"
 						>
-							<Box
-								sx={{
-									display: "flex",
-									gap: 4,
-									alignItems: "flex-start",
-								}}
-							>
-								<Stack sx={{ flex: 1 }}>
-									<Typography
-										variant="h6"
-										data-testId={`function-importForm-category-title`}
-									>
+							<div className="flex items-start gap-4">
+								<div className="flex flex-1 flex-col gap-1">
+									<H4 data-testId="function-importForm-category-title">
 										{category}
-									</Typography>
-									<Typography
-										variant="body2"
-										data-testId={`model-importForm-category-description`}
-										color="textSecondary"
-									>
+									</H4>
+									<Muted data-testId="model-importForm-category-description">
 										{categoryDescriptions[category] ??
 											"No description available."}
-									</Typography>
-								</Stack>
-								<Stack spacing={2} sx={{ flex: 2 }}>
+									</Muted>
+								</div>
+								<div className="flex flex-[2] flex-col gap-2">
 									{grouped[category].map((f) =>
 										renderControllerField(f),
 									)}
-								</Stack>
-							</Box>
-							<Divider sx={{ color: "secondary" }} />
-						</Box>
+								</div>
+							</div>
+							<Separator />
+						</div>
 					))}
 					{advancedFields?.length ? (
-						<>
-							<AdvancedHeader data-testid="function-form-advanced-header">
-								<Typography variant="h6">
-									ADVANCED SETTINGS
-								</Typography>
-								<IconButton
-									onClick={() =>
-										setOpenAdvanced(!openAdvanced)
-									}
-									data-testid="function-form-advanced-toggle"
-								>
-									{openAdvanced ? (
-										<ExpandLess />
-									) : (
-										<ExpandMore />
-									)}
-								</IconButton>
-							</AdvancedHeader>
-							{/* {openAdvanced &&
-								advancedFields?.map((val) => (
-									<div
-										key={val.key}
-										data-testid={`function-form-field-${val.key}`}
-									>
-										{renderControllerField(val)}
+						<div className="mt-4">
+							<Collapsible
+								open={openAdvanced}
+								onOpenChange={setOpenAdvanced}
+							>
+								<div className="flex flex-row items-center justify-between py-2">
+									<H4 data-testid="function-form-advanced-header">
+										ADVANCED SETTINGS
+									</H4>
+									<CollapsibleTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											data-testid="function-form-advanced-toggle"
+										>
+											{openAdvanced ? (
+												<ChevronUp className="size-4" />
+											) : (
+												<ChevronDown className="size-4" />
+											)}
+										</Button>
+									</CollapsibleTrigger>
+								</div>
+								<CollapsibleContent>
+									<div className="mb-4 flex flex-col gap-4">
+										<div className="flex items-start gap-4">
+											<div className="flex flex-1 flex-col gap-1">
+												<Muted>
+													Add advanced settings here
+												</Muted>
+											</div>
+											<div className="flex flex-[2] flex-col gap-2">
+												{advancedFields.map((val) => (
+													<div
+														key={val.key}
+														data-testid={`function-form-field-${val.key}`}
+													>
+														{renderControllerField(
+															val,
+														)}
+													</div>
+												))}
+											</div>
+										</div>
 									</div>
-								))} */}
-						</>
+								</CollapsibleContent>
+							</Collapsible>
+						</div>
 					) : null}
-				</Stack>
+				</div>
 
-				<StyledFlexEnd data-testid="function-form-actions">
-					<StyledSubmitButton
+				<div
+					className="mt-8 flex justify-end gap-2"
+					data-testid="function-form-actions"
+				>
+					<Button
+						data-testId="model-importForm-back-button"
+						variant="secondary"
+						type="button"
+						className="text-(--secondary-foreground)"
+						onClick={onBack}
+					>
+						Back
+					</Button>
+					<Button
 						type="submit"
-						variant="contained"
+						variant="default"
 						data-testid="function-form-submit"
 						disabled={!formState.isValid || isValidDatabaseName}
+						className="min-w-[128px] capitalize"
 					>
-						Connect
-					</StyledSubmitButton>
-				</StyledFlexEnd>
-			</StyledBox>
+						Creat Function
+					</Button>
+				</div>
+			</div>
 		</form>
 	);
 };

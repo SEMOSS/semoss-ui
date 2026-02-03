@@ -1,84 +1,38 @@
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+
 import { FileUploadOutlined } from "@mui/icons-material";
+import { SearchIcon, UploadIcon } from "lucide-react";
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-	Box,
-	Breadcrumbs,
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 	Button,
-	FileDropzone,
-	Grid,
-	Link,
-	LoadingScreen,
-	Modal,
-	Search,
-	Stack,
-	styled,
+	Dialog,
+	DialogContent,
+	H4,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	P,
+	Spinner,
 	Tabs,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { FunctionForm } from "./FunctionImportForm";
 import { FunctionTitleCard } from "./FunctionTitleCard";
 import { FUNCTION_CONNECTIONS } from "./function-import.constants";
-
-const StyledContainer = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	width: "auto",
-});
-
-const StyledSearchbarContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	alignItems: "flex-start",
-	gap: theme.spacing(2),
-}));
-
-const StyledStack = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-}));
-
-const StyledTab = styled(Tabs.Item)(() => ({
-	fontSize: "14px",
-	fontWeight: 500,
-	letterSpacing: "0.4px",
-	color: "rgba(0, 0, 0, 0.60)",
-}));
-
-const UploadButton = styled(Button)(({ theme }) => ({
-	borderColor: theme.palette.action.disabled,
-	color: theme.palette.text.primary,
-	borderRadius: "12px",
-	alignSelf: "flex-start",
-}));
-
-const StyledDropzoneField = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(2),
-	width: "100%",
-	height: "100%",
-}));
-
-const SubmitUploadButton = styled(Button)(({ theme }) => ({
-	borderColor: theme.palette.action.disabled,
-	color: theme.palette.background.default,
-	borderRadius: "12px",
-	alignSelf: "flex-start",
-}));
-
-const CloseButton = styled(Button)(({ theme }) => ({
-	borderColor: theme.palette.action.disabled,
-	color: theme.palette.secondary.dark,
-	borderRadius: "12px",
-	alignSelf: "flex-start",
-}));
 
 interface functionCatalog {
 	fields: [];
@@ -92,15 +46,15 @@ interface functionCatalog {
 export const FunctionImport: React.FC<{ name: string }> = ({ name }) => {
 	const navigate = useNavigate();
 	const { monolithStore, configStore } = useRootStore();
-	const notification = useNotification();
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
-	const [selectedTab, setSelectedTab] = useState(0);
+	const [selectedTab, setSelectedTab] = useState("0");
 	const [selectedDatabase, setSelectedDatabase] =
 		useState<functionCatalog | null>(null);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
-	const [filedata, setFiledata] = useState(null);
+	const [filedata, setFiledata] = useState<File | null>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const FunctionOptions = FUNCTION_CONNECTIONS;
 	const CategoryDescription = FUNCTION_CONNECTIONS.description;
@@ -116,11 +70,12 @@ export const FunctionImport: React.FC<{ name: string }> = ({ name }) => {
 	}, []);
 
 	const DatabasesForTab = useMemo(() => {
-		return FunctionOptions[tabLabels[selectedTab]] || [];
+		const selectedIndex = Number.parseInt(selectedTab);
+		return FunctionOptions[tabLabels[selectedIndex]] || [];
 	}, [selectedTab, tabLabels, FunctionOptions]);
 
 	if (loading) {
-		return <LoadingScreen.Trigger description="Loading..." />;
+		return <Spinner />;
 	}
 
 	const onSubmit = async (data) => {
@@ -132,10 +87,7 @@ export const FunctionImport: React.FC<{ name: string }> = ({ name }) => {
 			);
 
 			if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
-				notification.add({
-					color: "error",
-					message: "Upload failed or returned invalid response.",
-				});
+				toast.error("Upload failed or returned invalid response.");
 				setFiledata(null);
 				return;
 			}
@@ -147,21 +99,17 @@ export const FunctionImport: React.FC<{ name: string }> = ({ name }) => {
 				const response = await monolithStore.runQuery(pixelString);
 				const { output, operationType } = response.pixelReturn[0];
 				if (operationType.includes("ERROR")) {
-					notification.add({ color: "error", message: output });
+					toast.error(output as string);
 					setFiledata(null);
 					return;
 				}
-				notification.add({
-					color: "success",
-					message: "Successfully Created Function Database",
-				});
-				navigate(`/engine/function/${output.database_id}`);
+				toast.success("Successfully Created Function Database");
+				navigate(
+					`/engine/function/${(output as { database_id: string }).database_id}`,
+				);
 			}
 		} catch {
-			notification.add({
-				color: "error",
-				message: "Upload failed or returned invalid response.",
-			});
+			toast.error("Upload failed or returned invalid response.");
 			setFiledata(null);
 		} finally {
 			setLoading(false);
@@ -169,65 +117,62 @@ export const FunctionImport: React.FC<{ name: string }> = ({ name }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<Breadcrumbs separator="/" data-testid="breadcrumbs">
-			<Breadcrumbs.Item
-				// @ts-expect-error TODO FIX
-				as={Link}
-				underline="none"
-				color="inherit"
-				variant="body1"
-				onClick={() =>
-					window.history.length > 1 ? navigate(-1) : navigate("/")
-				}
-				data-testid="breadcrumb-catalog"
-			>
-				{name} Catalog
-			</Breadcrumbs.Item>
-
-			<Breadcrumbs.Item
-				// @ts-expect-error TODO FIX
-				as={Link}
-				underline="none"
-				color={selectedDatabase ? "inherit" : "text.disabled"}
-				variant="body1"
-				onClick={() => {
-					if (selectedDatabase) {
-						setSelectedDatabase(null);
-					}
-				}}
-				sx={{ cursor: selectedDatabase ? "pointer" : "default" }}
-				data-testid="breadcrumb-page"
-			>
-				Connect to Function Database
-			</Breadcrumbs.Item>
-
-			{selectedDatabase && (
-				<Breadcrumbs.Item
-					// @ts-expect-error TODO FIX
-					as={Link}
-					underline="none"
-					color="text.disabled"
-					variant="body1"
-					data-testid="breadcrumb-selected-function"
-				>
-					{selectedDatabase.name}
-				</Breadcrumbs.Item>
-			)}
-		</Breadcrumbs>
+		<Breadcrumb data-testid="breadcrumbs">
+			<BreadcrumbList>
+				<BreadcrumbItem>
+					<BreadcrumbLink
+						className="cursor-pointer"
+						onClick={() =>
+							window.history.length > 1
+								? navigate(-1)
+								: navigate("/")
+						}
+						data-testid="breadcrumb-catalog"
+					>
+						{name} Catalog
+					</BreadcrumbLink>
+				</BreadcrumbItem>
+				<BreadcrumbSeparator>/</BreadcrumbSeparator>
+				<BreadcrumbItem>
+					{selectedDatabase ? (
+						<BreadcrumbLink
+							className="cursor-pointer"
+							onClick={() => {
+								setSelectedDatabase(null);
+							}}
+							data-testid="breadcrumb-page"
+						>
+							Connect to Function Database
+						</BreadcrumbLink>
+					) : (
+						<BreadcrumbPage data-testid="breadcrumb-page">
+							Connect to Function Database
+						</BreadcrumbPage>
+					)}
+				</BreadcrumbItem>
+				{selectedDatabase && (
+					<>
+						<BreadcrumbSeparator>/</BreadcrumbSeparator>
+						<BreadcrumbItem>
+							<BreadcrumbPage data-testid="breadcrumb-selected-function">
+								{selectedDatabase.name}
+							</BreadcrumbPage>
+						</BreadcrumbItem>
+					</>
+				)}
+			</BreadcrumbList>
+		</Breadcrumb>
 	);
 
 	const renderDatabaseGrid = (Databases: functionCatalog[]) => (
-		<Grid
-			container
-			columns={6}
-			columnSpacing={2}
-			rowSpacing={2}
+		<div
+			className="mt-1 grid grid-cols-6 gap-2"
 			data-testid="function-grid"
 		>
 			{Databases.filter((v) =>
 				v.name.toLowerCase().includes(search.toLowerCase()),
 			).map((v) => (
-				<Grid key={v.id} item lg={1} md={1} xs={1} xl={1} sm={1}>
+				<div key={v.id}>
 					<FunctionTitleCard
 						selectedFunction={{
 							...v,
@@ -237,9 +182,9 @@ export const FunctionImport: React.FC<{ name: string }> = ({ name }) => {
 							setSelectedDatabase(v);
 						}}
 					/>
-				</Grid>
+				</div>
 			))}
-		</Grid>
+		</div>
 	);
 
 	const handleFileUpload = (flag: boolean) => {
@@ -247,55 +192,102 @@ export const FunctionImport: React.FC<{ name: string }> = ({ name }) => {
 		setIsFileUploadModalOpen(flag);
 	};
 
+	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const file = event.target.files?.[0];
+		if (file) {
+			setFiledata(file);
+		}
+	};
+
+	const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+		event.preventDefault();
+	};
+
+	const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+		event.preventDefault();
+		const file = event.dataTransfer.files?.[0];
+		if (file && file.name.endsWith(".zip")) {
+			setFiledata(file);
+		}
+	};
+
 	return (
 		<>
 			{renderBreadcrumbs()}
-			<Modal
+			<Dialog
 				open={isFileUploadModalOpen}
-				maxWidth="xl"
-				onClose={() => setIsFileUploadModalOpen(false)}
-				data-testid="function-zip-upload-modal"
+				onOpenChange={setIsFileUploadModalOpen}
 			>
-				<Modal.Content sx={{ width: "600px" }}>
-					<StyledDropzoneField>
-						<Typography
-							variant={"body1"}
+				<DialogContent
+					className="w-[600px]"
+					data-testid="function-zip-upload-modal"
+				>
+					<div className="flex h-full w-full flex-col gap-4">
+						<P
+							className="text-base"
 							data-testid="function-zip-upload-title"
 						>
 							Zip File
-						</Typography>
-						<FileDropzone
-							multiple={false}
-							onChange={(newValues) => {
-								setFiledata(newValues);
-							}}
-						/>
-						<Stack
-							spacing={2}
-							direction="row"
-							justifyContent="flex-end"
+						</P>
+						<div
+							className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
+							onClick={() => fileInputRef.current?.click()}
+							onDragOver={handleDragOver}
+							onDrop={handleDrop}
 						>
-							<CloseButton
-								size="small"
-								variant="text"
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept=".zip"
+								className="hidden"
+								onChange={handleFileChange}
+								multiple={false}
+							/>
+							{filedata ? (
+								<div className="text-center">
+									<P className="font-medium text-foreground">
+										{filedata.name}
+									</P>
+									<P className="text-muted-foreground text-sm">
+										Click or drag to replace
+									</P>
+								</div>
+							) : (
+								<div className="text-center">
+									<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+									<P className="font-medium text-foreground">
+										Drop your file here or click to browse
+									</P>
+									<P className="text-muted-foreground text-sm">
+										Supports ZIP files only
+									</P>
+								</div>
+							)}
+						</div>
+						<div className="flex flex-row justify-end gap-2">
+							<Button
+								size="sm"
+								variant="ghost"
 								onClick={() => setIsFileUploadModalOpen(false)}
 								data-testid="function-upload-close-button"
+								className="rounded-xl"
 							>
 								Close
-							</CloseButton>
-							<SubmitUploadButton
-								size="small"
-								variant="contained"
-								disabled={!filedata}
+							</Button>
+							<Button
+								size="sm"
+								variant="default"
+								disabled={!filedata || loading}
 								onClick={() => onSubmit(filedata)}
 								data-testid="function-upload-submit-button"
+								className="rounded-xl"
 							>
 								Upload
-							</SubmitUploadButton>
-						</Stack>
-					</StyledDropzoneField>
-				</Modal.Content>
-			</Modal>
+							</Button>
+						</div>
+					</div>
+				</DialogContent>
+			</Dialog>
 			{selectedDatabase ? (
 				<div data-testid="function-form-wrapper">
 					<FunctionForm
@@ -304,74 +296,86 @@ export const FunctionImport: React.FC<{ name: string }> = ({ name }) => {
 						fields={selectedDatabase.fields}
 						advanced={selectedDatabase.advanced}
 						categoryDescription={CategoryDescription}
+						onBack={() => setSelectedDatabase(null)}
 					/>
 				</div>
 			) : (
-				<Stack direction="column" gap={2} data-testid="function-page">
-					<StyledStack>
-						<Typography
-							variant="h4"
-							sx={{ fontWeight: 500 }}
-							data-testid="page-title"
-						>
+				<div
+					className="flex flex-col gap-4"
+					data-testid="function-page"
+				>
+					<div className="flex flex-col gap-2">
+						<H4 className="font-medium" data-testid="page-title">
 							{pageTitle}
-						</Typography>
-						<Typography
-							variant="body1"
-							color="textSecondary"
+						</H4>
+						<p
+							className="text-[16px] text-muted-foreground"
 							data-testid="page-description"
 						>
 							{pageDescription}
-						</Typography>
-					</StyledStack>
+						</p>
+					</div>
 
-					<StyledContainer>
-						<StyledSearchbarContainer>
-							<Search
-								size="small"
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-								fullWidth
-								data-testid="search-box"
-							/>
-							<UploadButton
-								sx={{ lineHeight: 0.75 }}
-								size="large"
-								variant="outlined"
+					<div className="flex flex-col">
+						<div className="mt-3 mb-4 flex w-full items-start gap-2">
+							<InputGroup className="flex-1 border-b-2 border-none">
+								<InputGroupAddon>
+									<SearchIcon className="size-4 text-muted-foreground" />
+								</InputGroupAddon>
+								<InputGroupInput
+									placeholder="Search"
+									value={search}
+									onChange={(e) => {
+										setSearch(e.target.value);
+									}}
+									data-testid="search-bar"
+								/>
+							</InputGroup>
+							<Button
+								size="sm"
+								variant="outline"
 								onClick={() => handleFileUpload(true)}
-								data-testid={"function-upload-file-button"}
+								data-testid="function-upload-file-button"
 							>
-								<FileUploadOutlined fontSize="medium" />
-							</UploadButton>
-						</StyledSearchbarContainer>
+								<UploadIcon className="size-5" />
+							</Button>
+						</div>
 
-						<Box sx={{ width: "100%" }}>
+						<div className="w-full">
 							<Tabs
 								value={selectedTab}
-								onChange={(_, newValue) =>
-									setSelectedTab(newValue)
-								}
-								variant="scrollable"
-								sx={{
-									mt: 2,
-									borderBottom: "2px solid #E0E0E0",
-								}}
+								onValueChange={setSelectedTab}
+								className="w-full"
 								data-testid="tabs"
 							>
-								{tabLabels.map((label) => (
-									<StyledTab
+								<TabsList data-testid="tabs-list">
+									{tabLabels.map((label, index) => (
+										<TabsTrigger
+											key={label}
+											value={index.toString()}
+											data-testid={`tab-${label.toLowerCase()}`}
+										>
+											{label}
+										</TabsTrigger>
+									))}
+								</TabsList>
+								{tabLabels.map((label, index) => (
+									<TabsContent
 										key={label}
-										label={label}
-										data-testid={`tab-${label.toLowerCase()}`}
-									/>
+										value={index.toString()}
+										className="mt-[14px]"
+									>
+										<div className="">
+											{renderDatabaseGrid(
+												DatabasesForTab,
+											)}
+										</div>
+									</TabsContent>
 								))}
 							</Tabs>
-							<Box sx={{ mt: 4 }}>
-								{renderDatabaseGrid(DatabasesForTab)}
-							</Box>
-						</Box>
-					</StyledContainer>
-				</Stack>
+						</div>
+					</div>
+				</div>
 			)}
 		</>
 	);

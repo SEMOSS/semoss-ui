@@ -1,52 +1,6 @@
-import {
-	AutoGraph,
-	DownloadForOffline,
-	RemoveRedEyeOutlined,
-	Star,
-} from "@mui/icons-material";
-import {
-	Card,
-	CustomPaletteOptions,
-	Grid,
-	Icon,
-	styled,
-	Typography,
-} from "@semoss/ui";
+import { Download, Eye, Star, TrendingUp } from "lucide-react";
+import { Card, Small } from "@semoss/ui/next";
 import { usePixel } from "@/hooks";
-
-const StyledCard = styled(Card)(({ theme }) => ({
-	borderRadius: "12px",
-	background: theme.palette.background.paper,
-	boxShadow: `0px 4px 4px 0px rgba(0, 0, 0, 0.04)`,
-}));
-
-const StyledCardImageContainer = styled("div")(({ theme }) => {
-	return {
-		display: "flex",
-		justifyContent: "center",
-		alignItems: "center",
-		width: theme.spacing(7.5),
-		height: theme.spacing(7.5),
-		borderRadius: theme.spacing(0.75),
-		backgroundColor: theme.palette.primaryContrast["50"],
-	};
-});
-
-const StyledCardContent = styled("div")(({ theme }) => ({
-	gap: "10px",
-	display: "flex",
-	alignItems: "center",
-	alignSelf: "stretch",
-	padding: theme.spacing(2),
-}));
-
-const StyledCardDetailsContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	flex: "1 0 0",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: theme.spacing(0.5),
-}));
 
 interface DatabaseStatisticsProps {
 	id: string;
@@ -78,77 +32,70 @@ export const DatabaseStatistics = (props: DatabaseStatisticsProps) => {
 	}
 
 	return (
-		<Grid container spacing={3}>
-			<Grid item sm={12} md={6} lg={4} xl={3}>
-				<StyledCard>
-					<StyledCardContent>
-						<StyledCardImageContainer>
-							<Icon color="primary">
-								<RemoveRedEyeOutlined />
-							</Icon>
-						</StyledCardImageContainer>
+		<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+			<Card className="rounded-xl bg-card shadow-sm">
+				<div className="flex items-center gap-2.5 self-stretch p-2">
+					<div className="flex h-[60px] w-[60px] items-center justify-center rounded-md bg-primary/10">
+						<Eye className="h-6 w-6 text-primary" />
+					</div>
 
-						<StyledCardDetailsContainer>
-							<Typography variant="caption">Views</Typography>
-							<Typography variant="caption">
-								{data.totalViews}
-							</Typography>
-						</StyledCardDetailsContainer>
-					</StyledCardContent>
-				</StyledCard>
-			</Grid>
-			<Grid item sm={12} md={6} lg={4} xl={3}>
-				<StyledCard>
-					<StyledCardContent>
-						<StyledCardImageContainer>
-							<Icon color="primary">
-								<DownloadForOffline />
-							</Icon>
-						</StyledCardImageContainer>
+					<div className="flex flex-1 flex-col items-start gap-1">
+						<Small className="text-muted-foreground">Views</Small>
+						<Small className="text-foreground">
+							{data.totalViews}
+						</Small>
+					</div>
+				</div>
+			</Card>
 
-						<StyledCardDetailsContainer>
-							<Typography variant="caption">Downloads</Typography>
-							<Typography variant="caption">N/A</Typography>
-						</StyledCardDetailsContainer>
-					</StyledCardContent>
-				</StyledCard>
-			</Grid>
-			<Grid item sm={12} md={6} lg={4} xl={3}>
-				<StyledCard>
-					<StyledCardContent>
-						<StyledCardImageContainer>
-							<Icon color="primary">
-								<AutoGraph />
-							</Icon>
-						</StyledCardImageContainer>
+			<Card className="rounded-xl bg-card shadow-sm">
+				<div className="flex items-center gap-2.5 self-stretch p-2">
+					<div className="flex h-[60px] w-[60px] items-center justify-center rounded-md bg-primary/10">
+						<Download className="h-6 w-6 text-primary" />
+					</div>
 
-						<StyledCardDetailsContainer>
-							<Typography variant="caption">Insights</Typography>
-							<Typography variant="caption">
-								{data.usedIn.length}
-							</Typography>
-						</StyledCardDetailsContainer>
-					</StyledCardContent>
-				</StyledCard>
-			</Grid>
-			<Grid item sm={12} md={6} lg={4} xl={3}>
-				<StyledCard>
-					<StyledCardContent>
-						<StyledCardImageContainer>
-							<Icon color="primary">
-								<Star />
-							</Icon>
-						</StyledCardImageContainer>
+					<div className="flex flex-1 flex-col items-start gap-1">
+						<Small className="text-muted-foreground">
+							Downloads
+						</Small>
+						<Small className="text-foreground">N/A</Small>
+					</div>
+				</div>
+			</Card>
 
-						<StyledCardDetailsContainer>
-							<Typography variant="caption">Usability</Typography>
-							<Typography variant="caption">
-								{data.usabilityScore}/10
-							</Typography>
-						</StyledCardDetailsContainer>
-					</StyledCardContent>
-				</StyledCard>
-			</Grid>
-		</Grid>
+			<Card className="rounded-xl bg-card shadow-sm">
+				<div className="flex items-center gap-2.5 self-stretch p-2">
+					<div className="flex h-[60px] w-[60px] items-center justify-center rounded-md bg-primary/10">
+						<TrendingUp className="h-6 w-6 text-primary" />
+					</div>
+
+					<div className="flex flex-1 flex-col items-start gap-1">
+						<Small className="text-muted-foreground">
+							Insights
+						</Small>
+						<Small className="text-foreground">
+							{data.usedIn.length}
+						</Small>
+					</div>
+				</div>
+			</Card>
+
+			<Card className="rounded-xl bg-card shadow-sm">
+				<div className="flex items-center gap-2.5 self-stretch p-2">
+					<div className="flex h-[60px] w-[60px] items-center justify-center rounded-md bg-primary/10">
+						<Star className="h-6 w-6 text-primary" />
+					</div>
+
+					<div className="flex flex-1 flex-col items-start gap-1">
+						<Small className="text-muted-foreground">
+							Usability
+						</Small>
+						<Small className="text-foreground">
+							{data.usabilityScore}/10
+						</Small>
+					</div>
+				</div>
+			</Card>
+		</div>
 	);
 };

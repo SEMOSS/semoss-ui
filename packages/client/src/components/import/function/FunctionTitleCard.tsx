@@ -1,143 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, Stack, styled, Tooltip, Typography } from "@semoss/ui";
+import {
+	Badge,
+	Button,
+	cn,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { formatToDataTestId } from "@/utility";
-
-const StyledFormTypeFunctionBox = styled(Box, {
-	shouldForwardProp: (prop) => prop !== "disabled",
-})<{
-	disabled: boolean;
-}>(({ disabled }) => {
-	return {
-		maxWidth: "215px",
-		borderRadius: "8px",
-		cursor: "pointer",
-		display: "block",
-		justifyContent: "center",
-		alignItems: "center",
-		border: "1px solid #C4C4C4",
-		padding: "16px",
-		backgroundColor: "#fff",
-		opacity: disabled ? 0.6 : 1,
-		position: "relative",
-		minHeight: "200px", // uniform card height assumption
-
-		"&:hover": {
-			cursor: disabled ? "auto" : "pointer",
-			border: disabled ? "1px solid #C4C4C4" : "1.5px solid #0471F0",
-			backgroundColor: disabled ? "white" : "#F5F9FE",
-		},
-	};
-});
-
-const StyledInnerBox = styled("div")<{ isFunction?: boolean }>(
-	({ theme, isFunction }) => ({
-		display: "flex",
-		alignItems: isFunction ? "flex-start" : "center",
-		gap: theme.spacing(1),
-		flexDirection: isFunction ? "column" : "row",
-	}),
-);
-
-// Replaces image with a colored avatar containing initials
-const StyledFunctionAvatar = styled("div")<{ gradientBg: string }>(
-	({ gradientBg }) => ({
-		display: "flex",
-		height: "40px",
-		width: "40px",
-		alignItems: "center",
-		justifyContent: "center",
-		fontWeight: 600,
-		fontSize: "14px",
-		color: "#212121",
-		borderRadius: "8px",
-		textTransform: "uppercase",
-		background: gradientBg,
-		boxShadow:
-			"0 0 0 1px rgba(0,0,0,0.08) inset, 0 2px 4px -1px rgba(0,0,0,0.12)",
-		transition: "filter 0.25s ease",
-		userSelect: "none",
-		WebkitFontSmoothing: "antialiased",
-		"&:hover": {
-			filter: "brightness(1.03)",
-		},
-	}),
-);
-
-const StyledCardImage = styled("img")<{ isDatabase?: boolean }>(
-	({ isDatabase }) => ({
-		display: "flex",
-		height: "30px",
-		width: "30px",
-		objectFit: "cover",
-		borderRadius: isDatabase ? "8px" : "inherit",
-	}),
-);
-
-const StyledCardFunctionText = styled("p")({
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	whiteSpace: "nowrap",
-	margin: "2px 0 0",
-	alignSelf: "stretch",
-	fontSize: "14px",
-	fontWeight: "500",
-	lineHeight: "143%",
-	letterSpacing: "0.17px",
-	color: "#212121",
-});
-
-const StyledTypographyText = styled(Typography)(() => ({
-	display: "flex",
-	alignItems: "center",
-	padding: "0 10px",
-	backgroundColor: "#EBEBEB",
-	borderRadius: "16px",
-	marginLeft: "auto !important",
-	fontSize: "13px",
-	color: "#212121",
-}));
-
-const TitleRow = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	width: "100%",
-	gap: theme.spacing(1),
-}));
-
-const StyledCardContentSpan = styled("span")(() => ({
-	display: "block",
-}));
-
-const DocsLinkButton = styled("button")(() => ({
-	position: "absolute",
-	bottom: 8,
-	right: 8,
-	background: "transparent",
-	border: "none",
-	padding: 0,
-	fontSize: "12px",
-	cursor: "pointer",
-	color: "#0471F0",
-	opacity: 0.75,
-	textDecoration: "underline",
-	"&:hover": {
-		opacity: 1,
-	},
-}));
-
-const DescriptionText = styled(Typography)(() => ({
-	fontSize: "11px",
-	lineHeight: 1.3,
-	color: "#555",
-	marginTop: "4px",
-	// Height should exactly match 3 lines to avoid cutting a partial line.
-	minHeight: "calc(3 * 1.3em)",
-	maxHeight: "calc(3 * 1.3em)",
-	overflow: "hidden",
-	display: "-webkit-box",
-	WebkitLineClamp: 3,
-	WebkitBoxOrient: "vertical",
-}));
 
 function hashString(str: string): number {
 	let h = 0;
@@ -206,21 +76,78 @@ export const FunctionTitleCard: React.FC<FunctionTileCardProps> = ({
 	// Dynamic gradient based on function name for visual distinction
 	const avatarGradient = pickGradient(selectedFunction.name);
 
+	const handleCardClick = () => {
+		if (!selectedFunction.disable && onModelSelect) {
+			onModelSelect(selectedFunction);
+		}
+	};
+
+	const handleCardKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault();
+			handleCardClick();
+		}
+	};
+
 	const cardContent = (
-		<StyledFormTypeFunctionBox
-			disabled={selectedFunction.disable || false}
-			onClick={() => {
-				if (!selectedFunction.disable && onModelSelect) {
-					onModelSelect(selectedFunction);
-				}
-			}}
+		// biome-ignore lint/a11y/useSemanticElements: <explanation>
+		<div
+			className={cn(
+				"flex min-h-[204px] max-w-[215px] cursor-pointer flex-col justify-between rounded-lg border border-input bg-card p-4",
+				"hover:border-[1.5px] hover:border-primary hover:bg-primary/5",
+				selectedFunction.disable &&
+					"cursor-auto opacity-60 hover:border hover:border-input hover:bg-card",
+			)}
+			onClick={handleCardClick}
+			onKeyDown={handleCardKeyDown}
 			data-testId={formatToDataTestId(
 				`importPageContent-connect-to-${selectedFunction.name}-img`,
 			)}
+			role="button"
+			tabIndex={selectedFunction.disable ? -1 : 0}
 		>
+			<div className="flex flex-col items-start gap-1">
+				<div className="flex w-full flex-row items-center gap-2">
+					{selectedFunction.icon ? (
+						<img
+							src={selectedFunction.icon}
+							alt={initials}
+							className="flex h-[30px] w-[30px] shrink-0 rounded-lg object-cover"
+						/>
+					) : (
+						<div
+							className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-[250ms] [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
+							style={{ background: avatarGradient }}
+						>
+							{initials}
+						</div>
+					)}
+					<div className="flex flex-wrap items-center gap-1">
+						{selectedFunction.disable && (
+							<Badge variant="secondary">Coming Soon</Badge>
+						)}
+					</div>
+				</div>
+				<div className="flex w-full items-center gap-2">
+					<p
+						ref={textRef}
+						className="mt-1 self-stretch overflow-hidden text-ellipsis whitespace-nowrap font-medium text-secondary-foreground text-sm leading-[143%] tracking-[0.17px]"
+					>
+						{selectedFunction.display || selectedFunction.name}
+					</p>
+				</div>
+				<p
+					className="mt-1 line-clamp-3 text-[12px] text-muted-foreground leading-[1.3]"
+					title={selectedFunction.description || ""}
+				>
+					{selectedFunction.description}
+				</p>
+			</div>
 			{selectedFunction.link && !selectedFunction.disable && (
-				<DocsLinkButton
+				<Button
 					type="button"
+					variant="link"
+					className="mt-2 flex justify-end p-0 text-sm"
 					onClick={(e) => {
 						e.stopPropagation();
 						window.open(
@@ -229,44 +156,31 @@ export const FunctionTitleCard: React.FC<FunctionTileCardProps> = ({
 							"noopener,noreferrer",
 						);
 					}}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							e.stopPropagation();
+							window.open(
+								selectedFunction.link as string,
+								"_blank",
+								"noopener,noreferrer",
+							);
+						}
+					}}
 					aria-label={`Open documentation for ${label}`}
 				>
 					Docs
-				</DocsLinkButton>
+				</Button>
 			)}
-			<StyledInnerBox isFunction={true}>
-				<Stack direction="row" width={"100%"} spacing={1}>
-					{selectedFunction.icon ? (
-						<StyledCardImage
-							src={selectedFunction.icon}
-							alt={initials}
-						/>
-					) : (
-						<StyledFunctionAvatar gradientBg={avatarGradient}>
-							{initials}
-						</StyledFunctionAvatar>
-					)}
-					{selectedFunction.disable && (
-						<StyledTypographyText variant="body1">
-							Coming Soon
-						</StyledTypographyText>
-					)}
-				</Stack>
-				<TitleRow>
-					<StyledCardFunctionText ref={textRef}>
-						{selectedFunction.display || selectedFunction.name}
-					</StyledCardFunctionText>
-				</TitleRow>
-				<DescriptionText component="p" variant="caption">
-					{selectedFunction.description}
-				</DescriptionText>
-			</StyledInnerBox>
-		</StyledFormTypeFunctionBox>
+		</div>
 	);
 
 	return isTruncated ? (
-		<Tooltip title={label} placement="bottom" arrow>
-			<StyledCardContentSpan>{cardContent}</StyledCardContentSpan>
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<span className="block">{cardContent}</span>
+			</TooltipTrigger>
+			<TooltipContent side="bottom">{label}</TooltipContent>
 		</Tooltip>
 	) : (
 		cardContent
