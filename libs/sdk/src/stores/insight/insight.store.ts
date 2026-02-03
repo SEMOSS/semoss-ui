@@ -6,6 +6,9 @@ import {
 	oauth,
 	runPixel,
 	upload,
+	uploadApp,
+	uploadEngine,
+	uploadInsight,
 } from "../../api";
 import { Env } from "../../env";
 import type { MCPToolResponse, Script } from "../../types";
@@ -70,7 +73,7 @@ interface InsightStoreInterface {
 
 export class InsightStore {
 	private _store: InsightStoreInterface = {
-		insightId: "",
+		insightId: "new",
 		isInitialized: false,
 		isAuthorized: false,
 		isReady: false,
@@ -157,6 +160,11 @@ export class InsightStore {
 		 * Defaults to false
 		 */
 		disableRoom?: boolean;
+
+		/**
+		 * Connect this insight to an existing insight ID
+		 */
+		insightId?: string;
 	}): Promise<{
 		tool: (typeof Env)["TOOL"] | null;
 	}> => {
@@ -172,7 +180,14 @@ export class InsightStore {
 					? options.python
 					: false,
 			disableRoom: options?.disableRoom || false,
+			insightId: options?.insightId || "",
 		};
+
+		// set the insight
+		this._store.insightId = "";
+		if (merged.insightId) {
+			this._store.insightId = merged.insightId;
+		}
 
 		// save the initial appId
 		this._store.options.appId = "";
@@ -315,6 +330,7 @@ export class InsightStore {
 					theme: {
 						playground: {},
 					},
+					systemDate: "",
 				},
 			};
 
@@ -376,7 +392,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		// create the new insight
 		const { insightId, errors } = await runPixel<[Record<string, unknown>]>(
 			pixel,
-			"new",
+			this._store.insightId,
 		);
 
 		// log errors if it exists
@@ -614,7 +630,10 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 * Send a MCP tool response to the playground
 		 * @param mcpToolResponse - response to send
 		 */
-		sendMCPResponseToPlayground: (mcpToolResponse: string) => {
+		sendMCPResponseToPlayground: (
+			mcpToolResponse: string,
+			mcpToolStatus: MCPToolResponse["tool_status"] = "success",
+		) => {
 			if (!Env.TOOL) {
 				throw new Error("No MCP tool execution context found");
 			} else if (
@@ -636,6 +655,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						name: Env.TOOL.name,
 						response: mcpToolResponse,
 						roomId: Env.TOOL.roomId,
+						tool_status: mcpToolStatus,
 					} satisfies MCPToolResponse,
 				},
 				"*",
@@ -656,7 +676,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			);
 
 			const { output, operationType } = pixelReturn[0];
-			if (!output || !operationType.indexOf("MCP_TOOL_EXECUTION")) {
+			if (!output || operationType.indexOf("MCP_TOOL_EXECUTION") < 0) {
 				throw new Error("Error running MCP tool");
 			}
 
@@ -711,6 +731,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
+		 * @deprecated use uploadInsight from sdk/api/insight
 		 * Upload a file to the project space
 		 *
 		 * @param files- file objects to upload
@@ -765,6 +786,84 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 			// throw an error
 			throw new Error("No download");
+		},
+
+		/**
+		 * App
+		 */
+		/**
+		 * Upload file(s) to an app
+		 * @param appId
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadApp: async (
+			appId: string,
+			path: string,
+			files: File | File[],
+		) => {
+			try {
+				return await uploadApp(
+					appId,
+					path,
+					files,
+					this._store.insightId,
+				);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
+		},
+		/**
+		 * Engine
+		 */
+		/**
+		 * Upload file(s) to an engine
+		 * @param engineId
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadEngine: async (
+			engineId: string,
+			path: string,
+			files: File | File[],
+		) => {
+			try {
+				return await uploadEngine(
+					engineId,
+					path,
+					files,
+					this._store.insightId,
+				);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
+		},
+		/**
+		 * Insight
+		 */
+		/**
+		 * Upload file(s) to an insight
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadInsight: async (path: string, files: File | File[]) => {
+			try {
+				return await uploadInsight(this._store.insightId, path, files);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
 		},
 	};
 }

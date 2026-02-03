@@ -12,13 +12,13 @@
         "test:coverage": "vitest --coverage --watch=false"
     },
     "dependencies": {
+        "@lexical/react": "^0.39.0",
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",
         "@tailwindcss/vite": "^4.1.14",
         "dayjs": "1.11.8",
-        "docx": "^9.5.1",
-        "file-saver": "^2.0.5",
+        "lexical": "^0.39.0",
         "lucide-react": "^0.545.0",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",

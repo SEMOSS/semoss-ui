@@ -24,6 +24,12 @@ export interface TextFieldProps {
 	required?: boolean;
 
 	/**
+	 * If `true`, the input will show as error state.
+	 * @default false
+	 */
+	error?: boolean;
+
+	/**
 	 * Callback that is triggered when the value changes.
 	 */
 	onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
