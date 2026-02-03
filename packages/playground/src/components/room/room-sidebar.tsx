@@ -3,7 +3,6 @@ import {
 	FolderTreeIcon,
 	HammerIcon,
 	MonitorXIcon,
-	PanelBottomIcon,
 	Settings2Icon,
 	TvMinimalIcon,
 	XIcon,
@@ -36,20 +35,6 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 	// this will render the component whenever the sidebar model changes
 	room.sidebar.counter;
 
-	// get the node and do a type check
-	let activeNode: FlexLayout.TabNode | null = null;
-	const node = room.sidebar.model.getActiveTabset()?.getSelectedNode();
-	if (node instanceof FlexLayout.TabNode) {
-		activeNode = node;
-	}
-
-	let activeTool = null;
-	if (activeNode) {
-		if (activeNode.getComponent() === "room-tool") {
-			activeTool = room.getTool(activeNode.getId());
-		}
-	}
-
 	return (
 		<div className="relative h-full w-full overflow-hidden">
 			<div
@@ -63,34 +48,6 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
 				<div className="absolute top-0 right-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pr-2">
-					{activeTool && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									type="button"
-									size="icon-sm"
-									variant="ghost"
-									onClick={(e) => {
-										e.stopPropagation();
-
-										if (!activeTool) {
-											return;
-										}
-
-										// turn off maximized state
-										setIsMaximized(false);
-
-										// add to inline
-										activeTool.openTool("inline");
-									}}
-								>
-									<PanelBottomIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>Open in-line</TooltipContent>
-						</Tooltip>
-					)}
-
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button

@@ -1,8 +1,9 @@
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
-	CircleAlert,
 	CopyIcon,
+	FileTextIcon,
+	MegaphoneIcon,
 	MessageCircleIcon,
 	RefreshCwIcon,
 	SkipForwardIcon,
@@ -27,9 +28,7 @@ import {
 	type RoomStore,
 } from "@/stores";
 import { AppLogo } from "../common";
-import { RoomInlineTool } from "../room/room-inline-tool";
 import { ResponseMessageThinking } from "./response-message-thinking";
-import { ResponseMessageTool } from "./response-message-tool";
 
 interface ResponseMessageProps {
 	/** Room */
@@ -84,10 +83,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				toast.error(e.message);
 			}
 		};
-
-		const areToolsActive =
-			message.type === "RESPONSE" &&
-			message.tools.some((tool) => !tool.response);
 
 		const markdownComponents = useMemo(() => {
 			return {
@@ -162,29 +157,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				>
 					{typewriter.isTyping ? typewriter.rendered : message.text}
 				</Markdown>
-				{message.tools.map((t) => {
-					return (
-						<div
-							key={`tool-${t.id}`}
-							className="flex flex-col gap-2"
-						>
-							<ResponseMessageTool message={message} tool={t} />
-							{t.display === "inline" && t.isOpen && (
-								<RoomInlineTool
-									room={room}
-									message={message}
-									tool={t}
-								/>
-							)}
-						</div>
-					);
-				})}
-				{areToolsActive && (
-					<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
-						<CircleAlert className="size-4" />
-						Please complete the tool(s) to proceed.
-					</p>
-				)}
 				<div className="-ml-2.5 flex flex-1 flex-row items-center justify-start">
 					<div className="flex flex-row items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
 						{inputMessage?.siblings.length > 1 && (
@@ -343,6 +315,24 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								Copy Response
 							</TooltipContent>
 						</Tooltip>
+
+						<Button
+							variant="ghost"
+							size="sm"
+							className="gap-2 whitespace-nowrap"
+						>
+							<FileTextIcon className="size-4" />
+							<span>Appendencies &amp; Forms</span>
+						</Button>
+
+						<Button
+							variant="ghost"
+							size="sm"
+							className="gap-2 whitespace-nowrap"
+						>
+							<MegaphoneIcon className="size-4" />
+							<span>Communication Plan for Stakeholders</span>
+						</Button>
 					</div>
 
 					<div className="flex-1" />
