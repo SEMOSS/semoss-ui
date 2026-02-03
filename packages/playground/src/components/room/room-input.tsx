@@ -42,35 +42,21 @@ import {
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import type { Engine } from "@/types";
 import { ContextChart } from "./context-chart";
+import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
 
 interface RoomInputProps {
-	/** Classes to override */
 	className?: string;
-
-	/** Track if it is loading */
 	isLoading?: boolean;
-
-	/** Model of the room */
 	model: Engine | null;
-
-	/** Update options on change */
 	setModel: (model: Engine | null) => void;
-
-	/** Menu component */
 	MenuComponent: React.ComponentType<{
 		isOpen: boolean;
 		onOpenChange: (isOpen: boolean) => void;
 		fileRef: React.RefObject<HTMLInputElement>;
 		addToken: (token: string) => void;
 	}>;
-
-	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
-
-	/** Has outstanding tools */
 	hasOutstandingTools?: boolean;
-
-	/** Percentage of context used */
 	tokensMax?: number;
 	tokensUsed?: number;
 }
@@ -89,6 +75,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 	}) => {
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
+		const [inputText, setInputText] = useState("");
 
 		const ref = useRef<HTMLDivElement>(null);
 		const editorRef = useRef<LexicalEditor>(null);
@@ -102,10 +89,34 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
 
+		// Bridge setInput() (PromptOptimizer) -> Lexical editor content
+		const setInputFromOptimizer: React.Dispatch<React.SetStateAction<string>> = (
+			nextValue,
+		) => {
+			setInputText((prev) => {
+				const next =
+					typeof nextValue === "function"
+						? (nextValue as (p: string) => string)(prev)
+						: nextValue;
+
+				editorRef.current?.update(() => {
+					const root = $getRoot();
+					root.clear();
+
+					const paragraphNode = $createParagraphNode();
+					if (next?.length) {
+						paragraphNode.append($createTextNode(next));
+					}
+					root.append(paragraphNode);
+				});
+				editorRef.current?.focus();
+				return next;
+			});
+		};
+
 		useEffect(() => {
-			// Check if Speech Recognition is supported
 			const SpeechRecognition =
-				window.SpeechRecognition || window.webkitSpeechRecognition;
+				window.SpeechRecognition || (window as any).webkitSpeechRecognition;
 
 			if (SpeechRecognition) {
 				setCanListen(true);
@@ -119,36 +130,26 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					setIsListening(true);
 				};
 
-				recognition.onresult = (event) => {
+				recognition.onresult = (event: SpeechRecognitionEvent) => {
 					let transcript = "";
 
-					// get the final ones
-					for (
-						let i = event.resultIndex;
-						i < event.results.length;
-						i++
-					) {
+					for (let i = event.resultIndex; i < event.results.length; i++) {
 						if (event.results[i].isFinal) {
 							transcript += event.results[i][0].transcript;
 						}
 					}
 
-					// trim to manually handle spaces
 					transcript = transcript.trim();
 					if (transcript) {
 						editorRef.current?.update(() => {
 							const root = $getRoot();
 							const currentText = root.getTextContent();
 
-							// clear existing content
 							root.clear();
 
-							// create new paragraph with combined text
 							const paragraphNode = $createParagraphNode();
 							const textNode = $createTextNode(
-								currentText
-									? `${currentText} ${transcript}`
-									: transcript,
+								currentText ? `${currentText} ${transcript}` : transcript,
 							);
 							paragraphNode.append(textNode);
 							root.append(paragraphNode);
@@ -156,16 +157,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					}
 				};
 
-				recognition.onerror = (event) => {
+				recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
 					console.error(event);
-
-					// turn off and focus on element
 					setIsListening(false);
 					editorRef.current?.focus();
 				};
 
 				recognition.onend = () => {
-					// turn off and focus on element
 					setIsListening(false);
 					editorRef.current?.focus();
 				};
@@ -180,20 +178,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			};
 		}, []);
 
-		// update editable
 		useEffect(() => {
 			editorRef.current?.setEditable(!isLoading);
 		}, [isLoading]);
 
-		/**
-		 * Prompt the model
-		 *
-		 * @param - input
-		 */
 		const promptModel = async () => {
 			let success = false;
-
-			// store old options
 
 			let userInput = "";
 			editorRef.current?.getEditorState().read(() => {
@@ -203,50 +193,39 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 			const userFiles = [...files];
 
-			// skip if there is no input, if loading, or if there are outstanding tools
 			if (!userInput || isLoading || hasOutstandingTools) {
 				return;
 			}
 
 			try {
-				// clear the view
 				editorRef.current?.update(() => {
 					const root = $getRoot();
 					root.clear();
-
 					const paragraphNode = $createParagraphNode();
 					root.append(paragraphNode);
 				});
 
-				// clear out the input components
 				success = await onPrompt(userInput, userFiles);
 				if (!success) {
 					throw new Error(`Error processing chat`);
 				}
 
-				// clear the files
 				setFiles([]);
-			} catch (e) {
-				// throw the error
-				toast.error(e.message);
+			} catch (e: any) {
+				toast.error(e?.message ?? "Error processing chat");
 
-				// keep the files
 				setFiles(userFiles);
 
-				// keep the view
 				editorRef.current?.update(() => {
 					const root = $getRoot();
 					root.clear();
-
-					const textNode = $createTextNode(userInput);
-					root.append(textNode);
+					const paragraphNode = $createParagraphNode();
+					paragraphNode.append($createTextNode(userInput));
+					root.append(paragraphNode);
 				});
 			}
 		};
 
-		/**
-		 * Get an image for the file
-		 */
 		const getFileImage = (file: File): React.ReactNode => {
 			if (file.type.startsWith("image/")) {
 				const imageUrl = URL.createObjectURL(file);
@@ -258,21 +237,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						onLoad={() => URL.revokeObjectURL(imageUrl)}
 					/>
 				);
-			} else if (
-				file.type.includes("text") ||
-				file.type.includes("document")
-			) {
-				return (
-					<FileType2Icon className="size-6 text-muted-foreground" />
-				);
+			} else if (file.type.includes("text") || file.type.includes("document")) {
+				return <FileType2Icon className="size-6 text-muted-foreground" />;
 			} else if (file.type.includes("audio")) {
-				return (
-					<FileAudio2Icon className="size-6 text-muted-foreground" />
-				);
+				return <FileAudio2Icon className="size-6 text-muted-foreground" />;
 			} else if (file.type.includes("video")) {
-				return (
-					<FileVideoCameraIcon className="size-6 text-muted-foreground" />
-				);
+				return <FileVideoCameraIcon className="size-6 text-muted-foreground" />;
 			}
 
 			return <FileIcon className="size-6 text-muted-foreground" />;
@@ -287,8 +257,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						multiple={true}
 						hidden
 						onChange={(e) => {
-							// set the new files
-							const updated = Array.from(e.target.files);
+							const updated = Array.from(e.target.files ?? []);
 							setFiles((prev) => [...prev, ...updated]);
 						}}
 					/>
@@ -319,50 +288,30 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										placeholder={
 											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
 												<SparklesIcon className="size-4" />
-												{isLoading
-													? "Thinking..."
-													: "/ to open menu"}
+												{isLoading ? "Thinking..." : "/ to open menu"}
 											</div>
 										}
 										onDrop={(e) => {
 											e.preventDefault();
 
-											// set the new files
-											const updated = Array.from(
-												e.dataTransfer.files,
-											);
-											setFiles((prev) => [
-												...prev,
-												...updated,
-											]);
-
-											// turn off dragging
+											const updated = Array.from(e.dataTransfer.files ?? []);
+											setFiles((prev) => [...prev, ...updated]);
 											setIsDragging(false);
 										}}
 										onDragOver={(e) => {
 											e.preventDefault();
-
-											// turn on dragging
 											setIsDragging(true);
 										}}
 										onDragLeave={(e) => {
 											e.preventDefault();
-
-											// turn off dragging
 											setIsDragging(false);
 										}}
 										onPaste={(e) => {
-											// set the new files
-											const updated = Array.from(
-												e.clipboardData.files,
-											);
+											const updated = Array.from(e.clipboardData.files ?? []);
 
 											if (updated.length > 0) {
 												e.preventDefault();
-												setFiles((prev) => [
-													...prev,
-													...updated,
-												]);
+												setFiles((prev) => [...prev, ...updated]);
 											}
 										}}
 									/>
@@ -373,14 +322,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<OnChangePlugin
 							onChange={(editorState) => {
 								editorState.read(() => {
-									// get the root
 									const root = $getRoot();
-
-									// set empty state
-									setIsEmpty(
-										root.getTextContent().trim().length ===
-											0,
-									);
+									const text = root.getTextContent();
+									setInputText(text);
+									setIsEmpty(text.trim().length === 0);
 								});
 							}}
 						/>
@@ -392,17 +337,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						{!isLoading && (
 							<MentionPlugin
 								trigger="/"
-								MenuComponent={({
-									isOpen,
-									onOpenChange,
-									menuPosition,
-									addToken,
-								}) => (
-									<DropdownMenu
-										open={isOpen}
-										onOpenChange={onOpenChange}
-									>
-										{/* Invisible trigger positioned at the cursor */}
+								MenuComponent={({ isOpen, onOpenChange, menuPosition, addToken }) => (
+									<DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
 										<DropdownMenuTrigger
 											style={{
 												position: "fixed",
@@ -412,10 +348,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												height: 0,
 											}}
 										/>
-										<DropdownMenuContent
-											align="start"
-											className="w-72"
-										>
+										<DropdownMenuContent align="start" className="w-72">
 											<MenuComponent
 												isOpen={isOpen}
 												onOpenChange={onOpenChange}
@@ -430,10 +363,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					</LexicalComposer>
 					{!isLoading && (
 						<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
-							<DropdownMenu
-								open={menuOpen}
-								onOpenChange={setMenuOpen}
-							>
+							<DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<DropdownMenuTrigger asChild>
@@ -447,14 +377,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											</Button>
 										</DropdownMenuTrigger>
 									</TooltipTrigger>
-									<TooltipContent>
-										Open settings
-									</TooltipContent>
+									<TooltipContent>Open settings</TooltipContent>
 								</Tooltip>
-								<DropdownMenuContent
-									align="start"
-									className="w-72"
-								>
+								<DropdownMenuContent align="start" className="w-72">
 									<MenuComponent
 										isOpen={menuOpen}
 										onOpenChange={setMenuOpen}
@@ -463,13 +388,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									/>
 								</DropdownMenuContent>
 							</DropdownMenu>
-							<ContextChart
-								tokensUsed={tokensUsed}
-								tokensMax={tokensMax}
-							/>
+
+							<ContextChart tokensUsed={tokensUsed} tokensMax={tokensMax} />
 						</div>
 					)}
-					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
+					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center">
 						<div className="flex flex-row items-center gap-1">
 							<EngineSelect
 								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
@@ -507,45 +430,46 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										/>
 									</Button>
 								</TooltipTrigger>
+								<TooltipContent>{isListening ? "Stop Recording" : "Record"}</TooltipContent>
+							</Tooltip>
+						</div>
+
+						<div className="flex flex-row items-center gap-1">
+							<PromptOptimizer
+								input={inputText}
+								setInput={setInputFromOptimizer}
+								disabled={Boolean(isLoading || hasOutstandingTools)}
+								modelId={model?.app_id || undefined}
+							/>
+
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<span>
+										<Button
+											variant="default"
+											aria-label="Ask the AI"
+											disabled={isLoading || isEmpty || hasOutstandingTools}
+											onClick={() => {
+												promptModel();
+											}}
+										>
+											{isLoading ? <Spinner /> : <SendIcon />}
+										</Button>
+									</span>
+								</TooltipTrigger>
 								<TooltipContent>
-									{isListening ? "Stop Recording" : "Record"}
+									{(() => {
+										if (isLoading) return "Thinking";
+										if (isEmpty) return "Please enter a question";
+										if (hasOutstandingTools) return "Please complete the tool(s) to proceed";
+										return "Ask";
+									})()}
 								</TooltipContent>
 							</Tooltip>
 						</div>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span>
-									<Button
-										variant="default"
-										aria-label="Ask the AI"
-										disabled={
-											isLoading ||
-											isEmpty ||
-											hasOutstandingTools
-										}
-										onClick={() => {
-											promptModel();
-										}}
-									>
-										{isLoading ? <Spinner /> : <SendIcon />}
-									</Button>
-								</span>
-							</TooltipTrigger>
-							<TooltipContent>
-								{(() => {
-									if (isLoading) {
-										return "Thinking";
-									} else if (isEmpty) {
-										return "Please enter a question";
-									} else if (hasOutstandingTools) {
-										return "Please complete the tool(s) to proceed";
-									}
-									return "Ask";
-								})()}
-							</TooltipContent>
-						</Tooltip>
 					</div>
 				</div>
+
 				{files.length > 0 ? (
 					<div className="flex flex-row items-center gap-2 pt-4">
 						{files.map((f, fIdx) => {
@@ -560,13 +484,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													variant="ghost"
 													size={"icon-sm"}
 													onClick={() => {
-														const updated = [
-															...files,
-														];
-
-														// remove it
+														const updated = [...files];
 														updated.splice(fIdx, 1);
-
 														setFiles(updated);
 													}}
 												>
