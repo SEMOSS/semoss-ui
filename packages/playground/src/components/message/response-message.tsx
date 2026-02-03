@@ -136,6 +136,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			};
 		}, []);
 
+		const hasText = message.text.trim().length > 0;
+		const hasTools = message.tools.length > 0;
+		if (!hasText && hasTools) {
+			return null;
+		}
+
 		return (
 			<div className="group mb-0 flex w-full flex-col gap-4">
 				<div className="group flex flex-row items-center gap-2">

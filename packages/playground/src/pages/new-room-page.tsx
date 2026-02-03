@@ -1,5 +1,6 @@
 import {
   CheckIcon,
+  HelpCircle,
   ListTodoIcon,
   MessageCircleIcon,
   Settings2Icon,
@@ -31,6 +32,7 @@ import {
   RoomInputMenuWorkspace,
   workspaceToApp,
 } from "@/components";
+import { FaqDialog } from "@/components/common/faq-dialog";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
@@ -55,6 +57,7 @@ export const NewRoomPage = observer(() => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
+  const [isFaqOpen, setIsFaqOpen] = useState(false);
   const [mode, setMode] = useState<{
     type: "chat" | "plan" | "workspace";
     workspace: App | null;
@@ -317,6 +320,15 @@ export const NewRoomPage = observer(() => {
                     {root.theme.description}
                   </div>
                 ) : null}
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setIsFaqOpen(true)}
+                >
+                  <HelpCircle className="size-4" />
+                  Frequently Asked Questions
+                </Button>
               </div>
             )}
 
@@ -465,6 +477,7 @@ export const NewRoomPage = observer(() => {
           </>
         )}
       </ResizablePanelGroup>
+      <FaqDialog open={isFaqOpen} onOpenChange={setIsFaqOpen} />
     </div>
   );
 });
