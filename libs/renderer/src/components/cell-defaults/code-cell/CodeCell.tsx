@@ -1,7 +1,8 @@
 import { Code, KeyboardArrowDown } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
+import { MonacoDiffEditor, MonacoEditor } from "@semoss/shared";
 import {
 	Button,
 	Markdown,
@@ -38,14 +39,6 @@ const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
 	gap: theme.spacing(1),
 	color: theme.palette.text.secondary,
 }));
-
-// Reduce Initial Bundle
-const Editor = lazy(() => import("@monaco-editor/react"));
-const DiffEditor = lazy(() =>
-	import("@monaco-editor/react").then((module) => ({
-		default: module.DiffEditor,
-	})),
-);
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
@@ -131,7 +124,7 @@ const EditorLanguages = {
 const EditorLineHeight = 19;
 // TODO:: Refactor height to account for Layout
 export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
-const editorRef = useRef(null);
+	const editorRef = useRef(null);
 	const monacoRef = useRef(null);
 	const selectionRef = useRef(null);
 	const LLMReturnRef = useRef("");
@@ -156,17 +149,17 @@ const editorRef = useRef(null);
 	const [allFunctions, setAllFunctions] = useState([]);
 	const [modelId, setModelId] = useState(agentModelEngine);
 	useEffect(() => {
-      async function fetchData() {
-        const response = await runPixel(`HelpJson();`);
-        const outputKeys = Object.keys(response.pixelReturn[0].output);
-        const allOutputs = outputKeys.map((key) => ({
-          key,
-          value: response.pixelReturn[0].output[key],
-        }));
-        setAllFunctions(allOutputs);
-      }
-      fetchData();
-    }, []);
+		async function fetchData() {
+			const response = await runPixel(`HelpJson();`);
+			const outputKeys = Object.keys(response.pixelReturn[0].output);
+			const allOutputs = outputKeys.map((key) => ({
+				key,
+				value: response.pixelReturn[0].output[key],
+			}));
+			setAllFunctions(allOutputs);
+		}
+		fetchData();
+	}, []);
 	/**
 	 * Ask a LLM a question to generate a response
 	 * @param prompt - prompt passed to the LLM
@@ -469,166 +462,188 @@ const editorRef = useRef(null);
 				completionItemProviders = {
 					...completionItemProviders,
 					pixel: monaco.languages.registerCompletionItemProvider(
-                        language,
-                        {
-                            provideCompletionItems: async (model, position) => {
-                                // getWordUntilPosition doesn't track when words are led by special characters
-                                // we need to chack for wrapping curly brackets manually to know what to replace
-                                const word =
-                                    model.getWordUntilPosition(position);
-                                const languageFunctions =
-                                    allFunctions.find(f => f.key.toLowerCase() === 'General'.toLowerCase())?.value || []; // General is name for key for reactors 
+						language,
+						{
+							provideCompletionItems: async (model, position) => {
+								// getWordUntilPosition doesn't track when words are led by special characters
+								// we need to chack for wrapping curly brackets manually to know what to replace
+								const word =
+									model.getWordUntilPosition(position);
+								const languageFunctions =
+									allFunctions.find(
+										(f) =>
+											f.key.toLowerCase() ===
+											"General".toLowerCase(),
+									)?.value || []; // General is name for key for reactors
 
-                                //trigger reactor suggestions
-                                if (word.word !== "") {
-                                    const suggestions = languageFunctions.map(reactor => ({
-                                label: {
-                                    label: reactor,
-                                    description: "Reactor"
-                                },
-                                kind: monaco.languages.CompletionItemKind.Function,
-                                insertText: reactor + "();",
-                                range: {
-                                    startLineNumber: position.lineNumber,
-                                    endLineNumber: position.lineNumber,
-                                    startColumn: word.startColumn,
-                                    endColumn: word.endColumn,
-                                },
-                            }));
-                            return { suggestions };
-                                }
+								//trigger reactor suggestions
+								if (word.word !== "") {
+									const suggestions = languageFunctions.map(
+										(reactor) => ({
+											label: {
+												label: reactor,
+												description: "Reactor",
+											},
+											kind: monaco.languages
+												.CompletionItemKind.Function,
+											insertText: reactor + "();",
+											range: {
+												startLineNumber:
+													position.lineNumber,
+												endLineNumber:
+													position.lineNumber,
+												startColumn: word.startColumn,
+												endColumn: word.endColumn,
+											},
+										}),
+									);
+									return { suggestions };
+								}
 
-                                // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
-                                const specialCharacterStartRange = {
-                                    startLineNumber: position.lineNumber,
-                                    endLineNumber: position.lineNumber,
-                                    startColumn: word.startColumn - 2,
-                                    endColumn: word.startColumn,
-                                };
-                                const preceedingTwoCharacters =
-                                    model.getValueInRange(
-                                        specialCharacterStartRange,
-                                    );
-                                const replaceRangeStartBuffer =
-                                    preceedingTwoCharacters === "{{" ? 2 : 1;
-                                // python editor will automatically add closed bracket when you type a start one
-                                // need to replace the closed brackets appropriately
-                                const specialCharacterEndRange = {
-                                    startLineNumber: position.lineNumber,
-                                    endLineNumber: position.lineNumber,
-                                    startColumn: word.endColumn,
-                                    endColumn: word.endColumn + 2,
-                                };
-                                const followingTwoCharacters =
-                                    model.getValueInRange(
-                                        specialCharacterEndRange,
-                                    );
-                                const replaceRangeEndBuffer =
-                                    followingTwoCharacters === "}}"
-                                        ? 2
-                                        : followingTwoCharacters == "} " ||
-                                            followingTwoCharacters == "}"
-                                            ? 1
-                                            : 0;
+								// triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
+								const specialCharacterStartRange = {
+									startLineNumber: position.lineNumber,
+									endLineNumber: position.lineNumber,
+									startColumn: word.startColumn - 2,
+									endColumn: word.startColumn,
+								};
+								const preceedingTwoCharacters =
+									model.getValueInRange(
+										specialCharacterStartRange,
+									);
+								const replaceRangeStartBuffer =
+									preceedingTwoCharacters === "{{" ? 2 : 1;
+								// python editor will automatically add closed bracket when you type a start one
+								// need to replace the closed brackets appropriately
+								const specialCharacterEndRange = {
+									startLineNumber: position.lineNumber,
+									endLineNumber: position.lineNumber,
+									startColumn: word.endColumn,
+									endColumn: word.endColumn + 2,
+								};
+								const followingTwoCharacters =
+									model.getValueInRange(
+										specialCharacterEndRange,
+									);
+								const replaceRangeEndBuffer =
+									followingTwoCharacters === "}}"
+										? 2
+										: followingTwoCharacters == "} " ||
+												followingTwoCharacters == "}"
+											? 1
+											: 0;
 
-                                // compose range that we want to replace with the suggestion
-                                const replaceRange = {
-                                    startLineNumber: position.lineNumber,
-                                    endLineNumber: position.lineNumber,
-                                    startColumn:
-                                        word.startColumn -
-                                        replaceRangeStartBuffer,
-                                    endColumn:
-                                        word.endColumn + replaceRangeEndBuffer,
-                                };
+								// compose range that we want to replace with the suggestion
+								const replaceRange = {
+									startLineNumber: position.lineNumber,
+									endLineNumber: position.lineNumber,
+									startColumn:
+										word.startColumn -
+										replaceRangeStartBuffer,
+									endColumn:
+										word.endColumn + replaceRangeEndBuffer,
+								};
 
-                                return {
-                                    suggestions:
-                                        generateSuggestions(replaceRange),
-                                };
-                            },
-                            triggerCharacters: ["{"],
-                        },
-                    ),
+								return {
+									suggestions:
+										generateSuggestions(replaceRange),
+								};
+							},
+							triggerCharacters: ["{"],
+						},
+					),
 				};
 			} else {
 				completionItemProviders = {
-                    ...completionItemProviders,
-                    [language]: monaco.languages.registerCompletionItemProvider(
-                        language,
-                        {
-                            provideCompletionItems: async (model, position) => {
-                                const word = model.getWordUntilPosition(position);
-                                const languageFunctions =
-                                    allFunctions.find(f => f.key.toLowerCase() === language.toLowerCase())?.value || [];
+					...completionItemProviders,
+					[language]: monaco.languages.registerCompletionItemProvider(
+						language,
+						{
+							provideCompletionItems: async (model, position) => {
+								const word =
+									model.getWordUntilPosition(position);
+								const languageFunctions =
+									allFunctions.find(
+										(f) =>
+											f.key.toLowerCase() ===
+											language.toLowerCase(),
+									)?.value || [];
 
-                                if (word.word !== "") {
-                                    const suggestions = languageFunctions.map(fn => ({
-                                        label: {
-                                            label: fn,
-                                            description: "Function"
-                                        },
-                                        kind: monaco.languages.CompletionItemKind.Function,
-                                        insertText: fn + "()",
-                                        range: {
-                                            startLineNumber: position.lineNumber,
-                                            endLineNumber: position.lineNumber,
-                                            startColumn: word.startColumn,
-                                            endColumn: word.endColumn,
-                                        },
-                                    }));
-                                    return { suggestions };
-                                }
-                                const specialCharacterStartRange = {
-                                    startLineNumber: position.lineNumber,
-                                    endLineNumber: position.lineNumber,
-                                    startColumn: word.startColumn - 2,
-                                    endColumn: word.startColumn,
-                                };
-                                const preceedingTwoCharacters =
-                                    model.getValueInRange(
-                                        specialCharacterStartRange,
-                                    );
-                                const replaceRangeStartBuffer =
-                                    preceedingTwoCharacters === "{{" ? 2 : 1;
+								if (word.word !== "") {
+									const suggestions = languageFunctions.map(
+										(fn) => ({
+											label: {
+												label: fn,
+												description: "Function",
+											},
+											kind: monaco.languages
+												.CompletionItemKind.Function,
+											insertText: fn + "()",
+											range: {
+												startLineNumber:
+													position.lineNumber,
+												endLineNumber:
+													position.lineNumber,
+												startColumn: word.startColumn,
+												endColumn: word.endColumn,
+											},
+										}),
+									);
+									return { suggestions };
+								}
+								const specialCharacterStartRange = {
+									startLineNumber: position.lineNumber,
+									endLineNumber: position.lineNumber,
+									startColumn: word.startColumn - 2,
+									endColumn: word.startColumn,
+								};
+								const preceedingTwoCharacters =
+									model.getValueInRange(
+										specialCharacterStartRange,
+									);
+								const replaceRangeStartBuffer =
+									preceedingTwoCharacters === "{{" ? 2 : 1;
 
-                                const specialCharacterEndRange = {
-                                    startLineNumber: position.lineNumber,
-                                    endLineNumber: position.lineNumber,
-                                    startColumn: word.endColumn,
-                                    endColumn: word.endColumn + 2,
-                                };
-                                const followingTwoCharacters =
-                                    model.getValueInRange(
-                                        specialCharacterEndRange,
-                                    );
-                                const replaceRangeEndBuffer =
-                                    followingTwoCharacters === "}}"
-                                        ? 2
-                                        : followingTwoCharacters == "} " ||
-                                            followingTwoCharacters == "}"
-                                            ? 1
-                                            : 0;
+								const specialCharacterEndRange = {
+									startLineNumber: position.lineNumber,
+									endLineNumber: position.lineNumber,
+									startColumn: word.endColumn,
+									endColumn: word.endColumn + 2,
+								};
+								const followingTwoCharacters =
+									model.getValueInRange(
+										specialCharacterEndRange,
+									);
+								const replaceRangeEndBuffer =
+									followingTwoCharacters === "}}"
+										? 2
+										: followingTwoCharacters == "} " ||
+												followingTwoCharacters == "}"
+											? 1
+											: 0;
 
-                                const replaceRange = {
-                                    startLineNumber: position.lineNumber,
-                                    endLineNumber: position.lineNumber,
-                                    startColumn:
-                                        word.startColumn -
-                                        replaceRangeStartBuffer,
-                                    endColumn:
-                                        word.endColumn + replaceRangeEndBuffer,
-                                };
+								const replaceRange = {
+									startLineNumber: position.lineNumber,
+									endLineNumber: position.lineNumber,
+									startColumn:
+										word.startColumn -
+										replaceRangeStartBuffer,
+									endColumn:
+										word.endColumn + replaceRangeEndBuffer,
+								};
 
-                                const variableSuggestions =
-                                    generateSuggestions(replaceRange);
+								const variableSuggestions =
+									generateSuggestions(replaceRange);
 
-                                return { suggestions: variableSuggestions };
-                            },
-                            triggerCharacters: ["{", ...'abcdefghijklmnopqrstuvwxyz'.split('')],
-                        },
-                    ),
-                };
+								return { suggestions: variableSuggestions };
+							},
+							triggerCharacters: [
+								"{",
+								..."abcdefghijklmnopqrstuvwxyz".split(""),
+							],
+						},
+					),
+				};
 			}
 		});
 
@@ -680,155 +695,166 @@ const editorRef = useRef(null);
 	};
 
 	useEffect(() => {
-        setModelId(agentModelEngine);
-        setCount((count) => count + 1);
-    }, [agentModelEngine]);
+		setModelId(agentModelEngine);
+		setCount((count) => count + 1);
+	}, [agentModelEngine]);
 
 	return (
 		<StyledContent>
 			{LLMLoading && <div>Loading...</div>}
 
 			<Stack direction="row" spacing={1}>
-				{allFunctions.length > 0 && (<StyledContainer>
-					{!isExpanded ? (
-						<Suspense fallback={<>...</>}>
-							{EDITOR_TYPE[cell.parameters.type].language ===
-								"Markdown" && cell.isExecuted ? (
-								<Markdown>
-									{typeof cell.parameters.code === "string"
-										? cell.parameters.code
-										: cell.parameters.code.join("\n")}
-								</Markdown>
-							) : (
-								<Editor
-									width="100%"
-									height={getHeight()}
-									language={
-										EDITOR_TYPE[cell.parameters.type]
-											.language
-									}
-									value={
-										typeof cell.parameters.code === "string"
-											? cell.parameters.code
-											: cell.parameters.code.join("\n")
-									}
-									options={{
-										scrollbar: {
-											alwaysConsumeMouseWheel: false,
-										},
-										lineNumbers: "on",
-										readOnly: false,
-										minimap: { enabled: false },
-										automaticLayout: true,
-										scrollBeyondLastLine: false,
-										lineHeight: EDITOR_LINE_HEIGHT,
-										overviewRulerBorder: false,
-										wordWrap: "on",
-										glyphMargin: false,
-										folding: false,
-										lineNumbersMinChars: 2,
-									}}
-									onChange={handleChange}
-									onMount={handleMount}
-								/>
-							)}
-						</Suspense>
-					) : diffEditMode ? (
-						<>
+				{allFunctions.length > 0 && (
+					<StyledContainer>
+						{!isExpanded ? (
 							<Suspense fallback={<>...</>}>
-								<DiffEditor
-									width="100%"
-									height={getHeight()}
-									original={oldContentDiffEdit}
-									modified={newContentDiffEdit}
-									language={
-										EDITOR_TYPE[cell.parameters.type].value
-									}
-									options={{
-										// lineNumbers: 'on',
-										readOnly: true,
-										minimap: { enabled: false },
-										automaticLayout: true,
-										scrollBeyondLastLine: false,
-										lineHeight: EDITOR_LINE_HEIGHT,
-										overviewRulerBorder: false,
-										wordWrap: "on",
-									}}
-									onMount={handleDiffEditorMount}
-								/>
-							</Suspense>
-							<Stack
-								direction="row"
-								alignItems={"center"}
-								justifyContent={"center"}
-								margin={1}
-							>
-								<Button
-									title="Accept changes"
-									size="small"
-									color="primary"
-									variant="contained"
-									onClick={acceptDiffEditHandler}
-								>
-									Keep
-								</Button>
-								<Button
-									title="Reject changes"
-									size="small"
-									color="primary"
-									variant="text"
-									onClick={rejectDiffEditHandler}
-								>
-									Reject
-								</Button>
-							</Stack>
-						</>
-					) : (
-						<Suspense fallback={<>...</>}>
-							{EDITOR_TYPE[cell.parameters.type].language ===
-								"Markdown" && cell.isExecuted ? (
-								<Markdown>
-									{typeof cell.parameters.code === "string"
-										? cell.parameters.code
-										: cell.parameters.code.join("\n")}
-								</Markdown>
-							) : (
-								<Editor
-									key={count}
-									width="100%"
-									height={getHeight()}
-									language={
-										EDITOR_TYPE[cell.parameters.type]
-											.language
-									}
-									value={
-										typeof cell.parameters.code === "string"
+								{EDITOR_TYPE[cell.parameters.type].language ===
+									"Markdown" && cell.isExecuted ? (
+									<Markdown>
+										{typeof cell.parameters.code ===
+										"string"
 											? cell.parameters.code
-											: cell.parameters.code.join("\n")
-									}
-									options={{
-										scrollbar: {
-											alwaysConsumeMouseWheel: false,
-										},
-										lineNumbers: "on",
-										readOnly: false,
-										minimap: { enabled: false },
-										automaticLayout: true,
-										scrollBeyondLastLine: false,
-										lineHeight: EDITOR_LINE_HEIGHT,
-										overviewRulerBorder: false,
-										wordWrap: "on",
-										glyphMargin: false,
-										folding: false,
-										lineNumbersMinChars: 2,
-									}}
-									onChange={handleChange}
-									onMount={handleMount}
-								/>
-							)}
-						</Suspense>
-					)}
-				</StyledContainer>)}
+											: cell.parameters.code.join("\n")}
+									</Markdown>
+								) : (
+									<MonacoEditor
+										width="100%"
+										height={getHeight()}
+										language={
+											EDITOR_TYPE[cell.parameters.type]
+												.language
+										}
+										value={
+											typeof cell.parameters.code ===
+											"string"
+												? cell.parameters.code
+												: cell.parameters.code.join(
+														"\n",
+													)
+										}
+										options={{
+											scrollbar: {
+												alwaysConsumeMouseWheel: false,
+											},
+											lineNumbers: "on",
+											readOnly: false,
+											minimap: { enabled: false },
+											automaticLayout: true,
+											scrollBeyondLastLine: false,
+											lineHeight: EDITOR_LINE_HEIGHT,
+											overviewRulerBorder: false,
+											wordWrap: "on",
+											glyphMargin: false,
+											folding: false,
+											lineNumbersMinChars: 2,
+										}}
+										onChange={handleChange}
+										onMount={handleMount}
+									/>
+								)}
+							</Suspense>
+						) : diffEditMode ? (
+							<>
+								<Suspense fallback={<>...</>}>
+									<MonacoDiffEditor
+										width="100%"
+										height={getHeight()}
+										original={oldContentDiffEdit}
+										modified={newContentDiffEdit}
+										language={
+											EDITOR_TYPE[cell.parameters.type]
+												.value
+										}
+										options={{
+											// lineNumbers: 'on',
+											readOnly: true,
+											minimap: { enabled: false },
+											automaticLayout: true,
+											scrollBeyondLastLine: false,
+											lineHeight: EDITOR_LINE_HEIGHT,
+											overviewRulerBorder: false,
+											wordWrap: "on",
+										}}
+										onMount={handleDiffEditorMount}
+									/>
+								</Suspense>
+								<Stack
+									direction="row"
+									alignItems={"center"}
+									justifyContent={"center"}
+									margin={1}
+								>
+									<Button
+										title="Accept changes"
+										size="small"
+										color="primary"
+										variant="contained"
+										onClick={acceptDiffEditHandler}
+									>
+										Keep
+									</Button>
+									<Button
+										title="Reject changes"
+										size="small"
+										color="primary"
+										variant="text"
+										onClick={rejectDiffEditHandler}
+									>
+										Reject
+									</Button>
+								</Stack>
+							</>
+						) : (
+							<Suspense fallback={<>...</>}>
+								{EDITOR_TYPE[cell.parameters.type].language ===
+									"Markdown" && cell.isExecuted ? (
+									<Markdown>
+										{typeof cell.parameters.code ===
+										"string"
+											? cell.parameters.code
+											: cell.parameters.code.join("\n")}
+									</Markdown>
+								) : (
+									<MonacoEditor
+										key={count}
+										width="100%"
+										height={getHeight()}
+										language={
+											EDITOR_TYPE[cell.parameters.type]
+												.language
+										}
+										value={
+											typeof cell.parameters.code ===
+											"string"
+												? cell.parameters.code
+												: cell.parameters.code.join(
+														"\n",
+													)
+										}
+										options={{
+											scrollbar: {
+												alwaysConsumeMouseWheel: false,
+											},
+											lineNumbers: "on",
+											readOnly: false,
+											minimap: { enabled: false },
+											automaticLayout: true,
+											scrollBeyondLastLine: false,
+											lineHeight: EDITOR_LINE_HEIGHT,
+											overviewRulerBorder: false,
+											wordWrap: "on",
+											glyphMargin: false,
+											folding: false,
+											lineNumbersMinChars: 2,
+										}}
+										onChange={handleChange}
+										onMount={handleMount}
+									/>
+								)}
+							</Suspense>
+						)}
+					</StyledContainer>
+				)}
 				{/* {isExpanded && ( */}
 				<Stack direction="row" sx={{ paddingLeft: "10px" }}>
 					<StyledSelect
