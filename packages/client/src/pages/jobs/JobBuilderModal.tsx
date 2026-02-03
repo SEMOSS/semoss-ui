@@ -23,7 +23,7 @@ import { JobCustomFrequencyBuilder } from "./JobCustomFrequencyBuilder";
 import { JobStandardFrequencyBuilder } from "./JobStandardFrequencyBuilder";
 import { JobTypesBuilder } from "./JobTypesBuilder";
 import { JobTypeCustomJob, JobTypeSendEmail, timezones } from "./job.constants";
-import type { JobBuilder } from "./job.types";
+import type { Job, JobBuilder } from "./job.types";
 import { getEncodeByJobType } from "./job.utils";
 
 const emptyBuilder: JobBuilder = {
@@ -51,8 +51,9 @@ export const JobBuilderModal = (props: {
 	close: () => void;
 	getJobs: () => void;
 	initialBuilder?: JobBuilder;
+	jobs: Job[];
 }) => {
-	const { isOpen, close, getJobs, initialBuilder } = props;
+	const { isOpen, close, getJobs, initialBuilder, jobs } = props;
 	const notification = useNotification();
 
 	const [frequencyType, setFrequencyType] = useState<"custom" | "standard">(
@@ -73,6 +74,19 @@ export const JobBuilderModal = (props: {
 	const isEditMode = useMemo(() => {
 		return !!builder.id;
 	}, [builder.id]);
+
+	const isDuplicateName: boolean = useMemo(() => {
+		if (!builder.name.trim()) {
+			return false;
+		}
+		// Check if job name exists in the jobs list
+		// If in edit mode, exclude the current job being edited
+		return jobs.some(
+			(job) =>
+				job.name.toLowerCase() === builder.name.toLowerCase() &&
+				(!isEditMode || job.id !== builder.id),
+		);
+	}, [builder.name, jobs, isEditMode, builder.id]);
 
 	useEffect(() => {
 		const builderToSet = initialBuilder ? initialBuilder : emptyBuilder;
@@ -312,6 +326,12 @@ export const JobBuilderModal = (props: {
 						onChange={(e) =>
 							setBuilderField("name", e.target.value)
 						}
+						error={isDuplicateName}
+						helperText={
+							isDuplicateName
+								? "A job with this name already exists"
+								: ""
+						}
 					/>
 					<JobTypesBuilder
 						builder={builder}
@@ -387,7 +407,8 @@ export const JobBuilderModal = (props: {
 							isLoading ||
 							!isBaseFormValid ||
 							!isCronExpressionValid ||
-							!hasChanges
+							!hasChanges ||
+							isDuplicateName
 						}
 						onClick={() => {
 							isEditMode ? updateJob() : addJob();

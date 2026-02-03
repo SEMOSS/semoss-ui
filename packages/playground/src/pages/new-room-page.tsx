@@ -44,7 +44,6 @@ import type { App, MCPConfig, Workspace } from "@/types";
  */
 export const NewRoomPage = observer(() => {
 	const { root } = useRoot();
-
 	useGlobalBreadcrumbs([
 		{
 			name: "Home",
@@ -64,17 +63,31 @@ export const NewRoomPage = observer(() => {
 		workspace: null,
 	});
 	const workspaceId = searchParams.get("workspaceId");
+	const knowledgeId = searchParams.get("knowledgeId");
 
 	// Fetch workspace data based on URL param or selected workspace
 	const selectedWorkspaceId =
-		(mode.type === "workspace" ? mode.workspace?.project_id : null) ||
-		workspaceId;
-
+		mode.type === "workspace"
+			? mode.workspace?.project_id
+			: mode.type === "chat"
+				? workspaceId
+				: null;
 	const getWorkspace = usePixel<Workspace | null>(
 		selectedWorkspaceId ? `GetWorkspace("${selectedWorkspaceId}");` : null,
 		{
 			data: null,
 		},
+	);
+
+	// Fetch knowledge vector engine if knowledgeId is provided
+	const getKnowledge = usePixel<{
+		app_id: string;
+		app_name: string;
+	} | null>(
+		knowledgeId
+			? `MyEngines( engine=["${knowledgeId}"], engineTypes=['VECTOR'],  metaFilters=[{}], userT = [true], limit=[15], offset=[0]);`
+			: null,
+		{ data: null },
 	);
 
 	/**
@@ -84,8 +97,10 @@ export const NewRoomPage = observer(() => {
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
 		mcp: [...(root.theme.defaultTools || [])],
-		tokenLength: TOKEN_LENGTH,
-		temperature: TEMPERATURE,
+		tokenLength:
+			root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
+		temperature:
+			root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
 		workspace: null,
 	});
 
@@ -152,19 +167,24 @@ export const NewRoomPage = observer(() => {
 			setIsLoading(true);
 
 			// create a new room
-			const room = await chat.createRoom();
+			const room = await chat.createRoom(
+				mode.type === "plan" ? "planning" : "chat",
+			);
 
-			// set the model
-			room.setModel(chat.models.selected);
-
-			// set the mode
-			room.setMode(mode.type === "plan" ? "planning" : "chat");
-
-			// update the options
-			await room.updateRoomOptions({
+			const updated = {
 				...options,
 				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
-			});
+			};
+
+			// add workspace id
+			if (mode.type === "workspace" && mode.workspace) {
+				updated.workspace = {
+					workspace_id: mode.workspace.project_id,
+				};
+			}
+
+			// update the options
+			await room.updateRoomOptions(updated);
 
 			// ask the room
 			room.askMessage(prompt, files);
@@ -196,8 +216,21 @@ export const NewRoomPage = observer(() => {
 				workspace: workspaceToApp(getWorkspace.data),
 			});
 		}
+	}, [workspaceId, getWorkspace.status, getWorkspace.data]);
 
-		// Update options with workspace instructions and MCPs if available
+	// Handle workspace data loading from RoomWorkspace component selection
+	useEffect(() => {
+		if (
+			mode.type !== "workspace" ||
+			!mode.workspace ||
+			getWorkspace.status !== "SUCCESS" ||
+			!getWorkspace.data ||
+			mode?.workspace?.project_id !== getWorkspace?.data?.workspace_id
+		) {
+			return;
+		}
+
+		// Sync options
 		setOptions((prev) => {
 			// Add workspace MCPs with fromWorkspace flag to the mcp array
 			const workspaceMCPs = (getWorkspace.data.mcp || []).map((mcp) => ({
@@ -208,43 +241,43 @@ export const NewRoomPage = observer(() => {
 			return {
 				...prev,
 				instructions:
-					getWorkspace.data.system_prompt || prev.instructions,
+					getWorkspace.data?.system_prompt || prev.instructions,
 				mcp: workspaceMCPs,
 			};
 		});
-	}, [workspaceId, getWorkspace.status, getWorkspace.data]);
+	}, [mode.type, mode.workspace, getWorkspace.status, getWorkspace.data]);
 
-	// Handle workspace data loading from RoomWorkspace component selection
+	// Handle knowledge vector engine from URL parameter
 	useEffect(() => {
-		if (
-			mode.type !== "workspace" ||
-			!mode.workspace ||
-			getWorkspace.status !== "SUCCESS" ||
-			!getWorkspace.data
-		) {
+		if (getKnowledge.status !== "SUCCESS" || !getKnowledge.data?.[0]) {
 			return;
 		}
 
-		// Update options with workspace instructions if available
-		if (getWorkspace.data.system_prompt) {
-			setOptions((prev) => {
-				// Add workspace MCPs with fromWorkspace flag to the mcp array
-				const workspaceMCPs = (getWorkspace.data.mcp || []).map(
-					(mcp) => ({
-						...mcp,
-						fromWorkspace: true,
-					}),
-				);
+		// Add the knowledge MCP to options
+		setOptions((prev) => {
+			// Check if this knowledge MCP already exists
+			const existingMcp = prev.mcp.find(
+				(mcp) => mcp.id === knowledgeId && mcp.type === "VECTOR",
+			);
 
-				return {
-					...prev,
-					instructions:
-						getWorkspace.data?.system_prompt || prev.instructions,
-					mcp: workspaceMCPs,
-				};
-			});
-		}
-	}, [mode.type, mode.workspace, getWorkspace.status, getWorkspace.data]);
+			// If it already exists, don't add it again
+			if (existingMcp) {
+				return prev;
+			}
+
+			// Add the knowledge MCP
+			const knowledgeMcp = {
+				id: knowledgeId,
+				type: "VECTOR" as const,
+				name: getKnowledge.data[0].app_name || knowledgeId,
+			};
+
+			return {
+				...prev,
+				mcp: [...prev.mcp, knowledgeMcp],
+			};
+		});
+	}, [knowledgeId, getKnowledge.status, getKnowledge.data]);
 
 	// Clear instructions and workspace MCPs when switching away from workspace mode
 	useEffect(() => {
@@ -252,10 +285,12 @@ export const NewRoomPage = observer(() => {
 			setOptions((prev) => ({
 				...prev,
 				instructions: "",
+				temperature: root.theme.defaultRoomSettings.temperature,
+				tokenLength: root.theme.defaultRoomSettings.tokenLength,
 				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
 			}));
 		}
-	}, [mode.type, root.theme.defaultTools]);
+	}, [mode.type, root.theme.defaultTools, root.theme.defaultRoomSettings]);
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
@@ -289,7 +324,7 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
-							className="max-h-64 min-h-48"
+							className="max-h-64 min-h-48 bg-background"
 							isLoading={
 								isLoading ||
 								(mode.type === "workspace" &&
@@ -425,24 +460,14 @@ export const NewRoomPage = observer(() => {
 									<RoomOptionsForm
 										model={chat.models.selected}
 										options={options}
-										onClose={(
-											success,
-											{ model, options },
-										) => {
-											if (success) {
-												if (model) {
-													chat.setSelectedModel(
-														model,
-													);
-												}
-
-												if (options) {
-													setOptions(options);
-												}
-
-												toast.success(
-													"Options updated",
-												);
+										onModelChange={(model) => {
+											if (model) {
+												chat.setSelectedModel(model);
+											}
+										}}
+										onOptionsChange={(options) => {
+											if (options) {
+												setOptions(options);
 											}
 										}}
 									/>

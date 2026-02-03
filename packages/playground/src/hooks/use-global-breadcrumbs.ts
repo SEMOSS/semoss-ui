@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { RootStore } from "@/stores";
-import { useRoot } from "./useRoot";
+import { useRoot } from "./use-root";
 
 interface useGlobalBreadcrumbsReturn {
 	setBreadcrumbs: (breadcrumbs: RootStore["breadcrumbs"]) => void;
