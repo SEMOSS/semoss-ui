@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import {
-	ComputerIcon,
+	HelpCircle,
 	MoreVertical,
 	PencilIcon,
 	Search,
@@ -48,10 +48,9 @@ import {
 } from "@semoss/ui/next";
 import { useChat, useRoot } from "@/hooks";
 import { AppLogo } from "./app-logo";
+import { FaqDialog } from "./faq-dialog";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
-
-const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
 
 const BUCKETS = [
 	"Favorites",
@@ -72,6 +71,7 @@ export const GlobalNav = observer(() => {
 
 	const { root } = useRoot();
 	const [search, setSearch] = useState("");
+	const [isFaqOpen, setIsFaqOpen] = useState(false);
 	const { chat } = useChat();
 	const { open } = useSidebar();
 	const { pathname } = useLocation();
@@ -326,29 +326,21 @@ export const GlobalNav = observer(() => {
 							asChild
 							isActive={!!matchPath("/new", pathname)}
 						>
-							<Link to={"/new"} aria-label={"New Chat"}>
+							<Link to={"/new"} aria-label={"New Question"}>
 								<SquarePenIcon />
-								New
+								New Question
 							</Link>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
-
-					{ENABLE_WORKSPACE && (
-						<SidebarMenuItem>
-							<SidebarMenuButton
-								asChild
-								isActive={!!matchPath("/workspace", pathname)}
-							>
-								<Link
-									to={"/workspace"}
-									aria-label={"Workspace"}
-								>
-									<ComputerIcon />
-									Workspaces
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-					)}
+					<SidebarMenuItem>
+						<SidebarMenuButton
+							aria-label="Frequently Asked Questions"
+							onClick={() => setIsFaqOpen(true)}
+						>
+							<HelpCircle />
+							Frequently Asked Questions
+						</SidebarMenuButton>
+					</SidebarMenuItem>
 					{root.theme.sidebar.headerItems.map((item) => (
 						<GlobalNavItem
 							key={item.path}
@@ -596,6 +588,7 @@ export const GlobalNav = observer(() => {
 				<NavUser />
 			</SidebarFooter>
 			<SidebarRail />
+			<FaqDialog open={isFaqOpen} onOpenChange={setIsFaqOpen} />
 		</Sidebar>
 	);
 });

@@ -161,6 +161,79 @@ export class ChatStore {
 	};
 
 	/**
+	 * Duplicate a room
+	 */
+	duplicateRoom = async (roomId: string): Promise<string> => {
+		if (!roomId) {
+			throw new Error("Room ID is required");
+		}
+
+		const { errors, pixelReturn } = await runPixel<
+			[
+				| {
+						roomId?: string;
+						ROOM_ID?: string;
+						newRoomId?: string;
+						duplicatedRoomId?: string;
+						NEW_ROOM_ID?: string;
+						DUPLICATED_ROOM_ID?: string;
+				  }
+				| string,
+			]
+		>(`DuplicateRoom(roomId=["${roomId}"]);`, "new");
+
+		// throw errors
+		if (errors.length > 0) {
+			throw new Error(errors.join(""));
+		}
+
+		const output = pixelReturn[0]?.output;
+		const additionalOutput = pixelReturn[0]?.additionalOutput;
+		const uuidPattern =
+			/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g;
+		const extractIds = (value: unknown): string[] => {
+			if (!value) {
+				return [];
+			}
+			if (typeof value === "string") {
+				return value.match(uuidPattern) ?? [];
+			}
+			if (Array.isArray(value)) {
+				return value.flatMap((entry) => extractIds(entry));
+			}
+			if (typeof value === "object") {
+				return Object.values(value as Record<string, unknown>).flatMap(
+					(entry) => extractIds(entry),
+				);
+			}
+
+			return [];
+		};
+		const explicitOutput =
+			typeof output === "string"
+				? output
+				: output?.newRoomId ||
+					output?.duplicatedRoomId ||
+					output?.NEW_ROOM_ID ||
+					output?.DUPLICATED_ROOM_ID ||
+					output?.roomId ||
+					output?.ROOM_ID;
+		const candidates = [
+			...(explicitOutput ? extractIds(explicitOutput) : []),
+			...extractIds(output),
+			...extractIds(additionalOutput),
+		];
+		const uniqueCandidates = Array.from(new Set(candidates));
+		const duplicatedRoomId = uniqueCandidates.find((id) => id !== roomId);
+
+		if (!duplicatedRoomId) {
+			throw new Error("DuplicateRoom did not return a new roomId");
+		}
+
+		return duplicatedRoomId;
+	};
+
+	/**
 	 * Remove an room from the remove and all of the related messages
 	 * @param roomId - Room to remove
 	 */
