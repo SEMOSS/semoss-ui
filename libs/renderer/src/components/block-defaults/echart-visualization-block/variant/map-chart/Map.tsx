@@ -41,9 +41,6 @@ export const Map: BlockComponent = observer(({ id }) => {
 		selector: getSelector(data, data?.aggregate),
 	});
 
-	/* -----------------------------------------
-     BASE MAP OPTION (NEVER MUTATE THIS)
-  ------------------------------------------ */
 	const baseOption = {
 		tooltip: {
 			trigger: "item",
@@ -68,10 +65,7 @@ export const Map: BlockComponent = observer(({ id }) => {
 			},
 		],
 	};
-
-	/* -----------------------------------------
-     REGISTER MAP ONCE
-  ------------------------------------------ */
+	
 	useEffect(() => {
 		const worldJson = fetchWorldMap("");
 		echarts.registerMap("world", worldJson);
