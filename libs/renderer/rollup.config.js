@@ -52,6 +52,7 @@ export default defineConfig({
 		"@mui/material",
 		/@semoss\/sdk/,
 		"@semoss/ui",
+		"@semoss/shared",
 		"mobx",
 		"mobx-react-lite",
 		"react",
