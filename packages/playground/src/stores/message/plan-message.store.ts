@@ -23,8 +23,6 @@ import { createMessageStore } from "./utility";
  */
 export class PlanMessageStore extends AbstractMessageStore {
 	readonly type = "PLAN";
-	readonly pixelMessageType: ResponseTextPixelMessage["type"] =
-		"RESPONSE_TEXT";
 
 	/**
 	 * Text associated with the message
@@ -183,7 +181,7 @@ export class PlanMessageStore extends AbstractMessageStore {
 				},
 			]
 		>(`AskCOTRoom(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
@@ -227,7 +225,7 @@ paramValues=[${JSON.stringify({
 		>(
 			`
 COTConfirmation(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"],
 cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 );`,
@@ -289,7 +287,7 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 				},
 			]
 		>(`COTRoomResult(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"]
 );`);
 
@@ -410,7 +408,7 @@ roomId=["${room.roomId}"]
 			]
 		>(
 			`COTToolPrediction(
-                engine=["${room.modelId}"],
+                engine=["${room.model.app_id}"],
                 roomId=["${room.roomId}"],
                 stepNumber=["${step.step_number}"],
                 toolName=["${step.details.tool_name}"]
@@ -473,7 +471,7 @@ roomId=["${room.roomId}"]
 				},
 			]
 		>(`AddCOTLLMReasoning(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"],
 stepNumber=["${step.step_number}"]
 );`);
@@ -538,8 +536,9 @@ stepNumber=["${step.step_number}"]
 		}
 
 		if (
-			step.details._meta.SMSS_PROJECT_ID !== tool._meta.SMSS_PROJECT_ID ||
-			step.details.tool_name !== tool.name
+			step.details._meta.SMSS_PROJECT_ID !==
+				tool.json._meta.SMSS_PROJECT_ID ||
+			step.details.tool_name !== tool.json.name
 		) {
 			return;
 		}
@@ -561,11 +560,11 @@ stepNumber=["${step.step_number}"]
 			]
 		>(
 			`AddCOTToolExecution(
-engine=["${room.modelId}"],
+engine=["${room.model.app_id}"],
 roomId = ["${room.roomId}"],
-toolId = ["${tool.id}"],
-toolName=["${tool.name}"],
-toolPredictedArguments=["<encode>${JSON.stringify(tool.parameters)}</encode>"],
+toolId = ["${tool.json.id}"],
+toolName=["${tool.json.name}"],
+toolPredictedArguments=["<encode>${JSON.stringify(tool.json.parameters)}</encode>"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
 ${message.id ? `parentMessageId=["${message.id}"]` : ""}
