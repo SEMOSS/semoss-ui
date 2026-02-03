@@ -1,12 +1,10 @@
-import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import {
-	type BlockDef,
-	type EchartVisualizationBlockConfig,
-	type EchartVisualizationBlockDef,
-	getValueByPath,
-	type PathValue,
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import type {
+	BlockDef,
+	EchartVisualizationBlockConfig,
+	EchartVisualizationBlockDef,
+	PathValue,
 } from "@semoss/renderer";
 import {
 	Button,
@@ -72,8 +70,9 @@ export const EditAxis = observer(
 		const option = data.option;
 
 		const [axisState, setAxisState] = useState(INITIAL_AXIS_STATE);
-		const [axisDataUpdated, setAxisDataUpdated] =
-			useState<"initial" | "updated">("initial");
+		const [axisDataUpdated, setAxisDataUpdated] = useState<
+			"initial" | "updated"
+		>("initial");
 
 		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -139,7 +138,7 @@ export const EditAxis = observer(
 
 		const updateChartData = () => {
 			if (!option?.[axis]) return;
-		
+
 			const optionObj = {
 				...option,
 				[axis]: {
@@ -150,9 +149,9 @@ export const EditAxis = observer(
 				},
 				graphic: [...(option.graphic ?? [])],
 			};
-		
+
 			const updatedGraphics = buildAxisTitleGraphic(optionObj);
-		
+
 			runStateUpdateCustom({
 				...optionObj,
 				[axis]: {
@@ -179,8 +178,6 @@ export const EditAxis = observer(
 			}
 		}, [JSON.stringify(axisState), axisDataUpdated]);
 
-		/* ---------------- handlers ---------------- */
-
 		const handleInputChange = (
 			e: ChangeEvent<HTMLInputElement> | any,
 			key: keyof typeof INITIAL_AXIS_STATE,
@@ -200,8 +197,6 @@ export const EditAxis = observer(
 			setAxisState(INITIAL_AXIS_STATE);
 			setAxisDataUpdated("updated");
 		};
-
-		/* ---------------- render ---------------- */
 
 		return (
 			<StyledAxis>
@@ -246,10 +241,7 @@ export const EditAxis = observer(
 								type="number"
 								value={axisState.axisTitleFontSize}
 								onChange={(e) =>
-									handleInputChange(
-										e,
-										"axisTitleFontSize",
-									)
+									handleInputChange(e, "axisTitleFontSize")
 								}
 							/>
 						</StyledAxisColDiv>
@@ -264,9 +256,7 @@ export const EditAxis = observer(
 						size="small"
 						type="number"
 						value={axisState.labelFontSize}
-						onChange={(e) =>
-							handleInputChange(e, "labelFontSize")
-						}
+						onChange={(e) => handleInputChange(e, "labelFontSize")}
 					/>
 				</StyledAxisColDiv>
 
@@ -296,9 +286,7 @@ export const EditAxis = observer(
 						min={0}
 						max={360}
 						valueLabelDisplay="on"
-						onChange={(e, v) =>
-							handleInputChange(e, "rotate", v)
-						}
+						onChange={(e, v) => handleInputChange(e, "rotate", v)}
 					/>
 					<StyledAxisSpan>
 						<span>0</span>
