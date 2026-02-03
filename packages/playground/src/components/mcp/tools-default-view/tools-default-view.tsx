@@ -1,7 +1,8 @@
 import { Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Card,
@@ -16,7 +17,7 @@ import {
 import { ResponseMessageStore, type RoomStore, type ToolStore } from "@/stores";
 import { ToolField } from "./tool-field";
 
-interface ToolsDefaultViewProps {
+export interface ToolsDefaultViewProps {
 	/** Room */
 	room: RoomStore;
 
@@ -36,15 +37,50 @@ interface ToolsDefaultViewProps {
 	executedParameters?: Record<string, unknown>;
 }
 
+interface FieldSchema {
+	type?: string;
+	enum?: string[];
+	items?: unknown;
+	minimum?: number;
+	maximum?: number;
+	minLength?: number;
+	maxLength?: number;
+	pattern?: string;
+	format?: string;
+	default?: unknown;
+	description?: string;
+}
+
 export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 	({ room, app, message, tool, toolResponse, executedParameters }) => {
-		const mcp = undefined;
+		/*
+		 * Library hooks
+		 */
+		const getMCP = usePixel<{
+			tools: {
+				name: string;
+				inputSchema: {
+					properties: Record<string, FieldSchema>;
+					required: string[];
+				};
+			}[];
+		}>(`GetMCPTools(project=["${app}"]);`, {
+			data: {
+				tools: [
+					{
+						name: "",
+						inputSchema: {
+							properties: {},
+							required: [],
+						},
+					},
+				],
+			},
+		});
 
 		/*
 		 * Constants
 		 */
-		const properties = mcp?.inputSchema?.properties || {};
-		const required = mcp?.inputSchema?.required || [];
 		const title = tool?.title || "";
 		const description = tool?.description || "";
 		const hasBeenExecuted = toolResponse !== undefined;
@@ -57,6 +93,10 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		});
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
+		const [required, setRequired] = useState<string[]>([]);
+		const [properties, setProperties] = useState<
+			Record<string, FieldSchema>
+		>({});
 
 		/*
 		 * Functions
@@ -99,22 +139,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			setIsSubmitting(false);
 		};
 
-		const renderField = (
-			fieldName: string,
-			fieldSchema: {
-				type?: string;
-				enum?: string[];
-				items?: unknown;
-				minimum?: number;
-				maximum?: number;
-				minLength?: number;
-				maxLength?: number;
-				pattern?: string;
-				format?: string;
-				default?: unknown;
-				description?: string;
-			},
-		) => {
+		const renderField = (fieldName: string, fieldSchema: FieldSchema) => {
 			const isRequired = required.includes(fieldName) && !hasBeenExecuted;
 			const value = data[fieldName] ?? "";
 
@@ -129,6 +154,23 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 				/>
 			);
 		};
+
+		/*
+		 * Effects
+		 */
+
+		// Load tool schema
+		useEffect(() => {
+			if (getMCP.status === "SUCCESS" && tool?.original_name) {
+				const foundTool = getMCP.data.tools.find(
+					(t) => t.name === tool.original_name,
+				);
+				if (foundTool) {
+					setProperties(foundTool.inputSchema.properties);
+					setRequired(foundTool.inputSchema.required);
+				}
+			}
+		}, [getMCP, tool.original_name]);
 
 		/*
 		 * Constants
