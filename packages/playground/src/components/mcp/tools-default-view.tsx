@@ -135,7 +135,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		 */
 		const properties = mcp?.inputSchema?.properties || {};
 		const required = mcp?.inputSchema?.required || [];
-		const name = mcp?.name || "";
+		const name = mcp?.title || mcp?.name || "";
 		const description = mcp?.description || "";
 		const hasBeenExecuted = toolResponse !== undefined;
 
