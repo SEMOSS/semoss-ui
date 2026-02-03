@@ -125,6 +125,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 						name: t.name,
 						original_name: t.original_name,
 						parameters: t.arguments,
+						description: t.description,
 					}),
 			);
 		} else {

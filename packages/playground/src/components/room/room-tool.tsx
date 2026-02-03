@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import type { FlexLayout } from "@semoss/shared";
 import { ToolsView } from "@/components";
-import type { RoomStore } from "@/stores";
+import type { RoomStore, ToolStore } from "@/stores";
 
 interface RoomToolProps {
 	/** Room info */
@@ -21,13 +21,7 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 	const config: {
 		app: string;
 		message: string;
-		tool: {
-			id: string;
-			name: string;
-			title: string;
-			parameters: Record<string, unknown>;
-			original_name: string;
-		};
+		tool: ToolStore["json"];
 		toolResponse?: string;
 		executedParameters?: Record<string, unknown>;
 	} = useMemo(() => {

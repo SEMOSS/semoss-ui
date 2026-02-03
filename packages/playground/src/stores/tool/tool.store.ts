@@ -39,6 +39,9 @@ export class ToolStore {
 		/**  title of tool **/
 		title: string;
 
+		/**  description of tool **/
+		description?: string;
+
 		/** meta data from the tool */
 		_meta: {
 			SMSS_MCP_EXECUTION: McpExecution;
@@ -70,6 +73,7 @@ export class ToolStore {
 		name: "",
 		original_name: "",
 		parameters: {},
+		description: "",
 	};
 
 	/**
