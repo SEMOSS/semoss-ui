@@ -10,6 +10,7 @@ import {
 	useState,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import { MonacoEditor } from "@semoss/shared";
 import {
 	Accordion,
 	Box,
@@ -30,8 +31,6 @@ import github from "../../assets/img/github.png";
 import google from "../../assets/img/google.png";
 import ms from "../../assets/img/ms.png";
 import other from "../../assets/img/other.png";
-
-const Editor = lazy(() => import("@monaco-editor/react"));
 
 const SOCIAL = {
 	google: {
@@ -357,7 +356,7 @@ export const ConfigurationsPage = () => {
 				</StyledTitle>
 				<StyledDivider />
 				<Suspense fallback={<>...</>}>
-					<Editor
+					<MonacoEditor
 						height="60vh"
 						defaultLanguage="javascript"
 						defaultValue={defaultTyping}

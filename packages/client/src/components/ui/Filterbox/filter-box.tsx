@@ -1,57 +1,18 @@
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import { ChevronDown, ChevronUp, Search as SearchIcon } from "lucide-react";
 import { useEffect, useReducer, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
 	Avatar,
-	Collapse,
-	Divider,
-	List,
-	Search,
-	styled,
-	Typography,
-} from "@semoss/ui";
+	AvatarFallback,
+	Button,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	Input,
+	Separator,
+} from "@semoss/ui/next";
 import { usePixel, useRootStore } from "@/hooks";
 import { formatToDataTestId, removeUnderscores, toTitleCase } from "@/utility";
-
-const StyledFilter = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	height: "fit-content",
-	width: "352px",
-	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
-	background: theme.palette.background.paper,
-}));
-
-const StyledFilterList = styled(List)(({ theme }) => ({
-	width: "100%",
-	borderRadius: theme.shape.borderRadius,
-	gap: theme.spacing(2),
-}));
-
-const StyledFilterSearchContainer = styled("div")(({ theme }) => ({
-	marginTop: theme.spacing(2),
-	marginLeft: theme.spacing(2),
-	marginRight: theme.spacing(2),
-}));
-
-const StyledAvatarCount = styled(Avatar)(({ theme }) => ({
-	width: theme.spacing(4),
-	height: theme.spacing(4),
-	fontSize: theme.spacing(1.75),
-	fontWeight: 500,
-	color: theme.palette.text.primary,
-	background: theme.palette.secondary.main,
-}));
-
-const StyledShowMore = styled(Typography)(({ theme }) => {
-	return {
-		color: theme.palette.primary.main,
-		"&:hover": {
-			color: theme.palette.primaryContrast["900"],
-			cursor: "pointer",
-		},
-	};
-});
 
 export interface FilterboxProps {
 	/** Determined to get metakeys for Engines/App */
@@ -367,139 +328,128 @@ export const Filterbox = (props: FilterboxProps) => {
 		// Update query params in the URL
 		setSearchParams(constructedFilters);
 	};
+
 	return (
-		<StyledFilter>
-			<StyledFilterList dense={true}>
-				<List.Item
-					secondaryAction={
-						<List.ItemButton
-							onClick={() => {
-								setFilterByVisibility(!filterByVisibility);
-							}}
-						>
-							{filterByVisibility ? (
-								<ExpandLess />
-							) : (
-								<ExpandMore />
-							)}
-						</List.ItemButton>
-					}
+		<div className="flex h-fit w-[352px] flex-col bg-card shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
+			<div className="w-full">
+				<Collapsible
+					open={filterByVisibility}
+					onOpenChange={setFilterByVisibility}
 				>
-					<List.ItemText
-						primary={
-							<Typography variant="h6">Filter By</Typography>
-						}
-					/>
-				</List.Item>
+					<div className="flex items-center justify-between p-4">
+						<h6 className="flex-1 font-semibold text-lg">
+							Filter By
+						</h6>
+						<CollapsibleTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								onClick={() =>
+									setFilterByVisibility(!filterByVisibility)
+								}
+							>
+								{filterByVisibility ? (
+									<ChevronUp className="size-4" />
+								) : (
+									<ChevronDown className="size-4" />
+								)}
+							</Button>
+						</CollapsibleTrigger>
+					</div>
 
-				<Collapse in={filterByVisibility}>
-					{/* Is there any filters */}
-					{Object.entries(filterOptions).length ? (
-						<StyledFilterSearchContainer>
-							<Search
-								size={"small"}
-								placeholder={"Search by..."}
-								value={filterSearch}
-								onChange={(e) => {
-									dispatch({
-										type: "field",
-										field: "filterSearch",
-										value: e.target.value,
-									});
-								}}
-								sx={{ width: "100%" }}
-								data-testid={`filterbox-search`}
-							/>
-						</StyledFilterSearchContainer>
-					) : null}
+					<CollapsibleContent>
+						{/* Is there any filters */}
+						{Object.entries(filterOptions).length ? (
+							<div className="mx-2 mt-2">
+								<div className="relative">
+									<SearchIcon className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+									<Input
+										placeholder="Search by..."
+										value={filterSearch}
+										onChange={(e) => {
+											dispatch({
+												type: "field",
+												field: "filterSearch",
+												value: e.target.value,
+											});
+										}}
+										className="w-full border-none pl-9"
+										data-testid="filterbox-search"
+									/>
+								</div>
+							</div>
+						) : null}
 
-					{type !== "BROWSETEMPLATES" &&
-						Object.entries(filterOptions).map((entries, i) => {
-							const totalFilters =
-								Object.entries(filterOptions).length;
-							const list = entries[1];
-							let shownListItems = 0; // for show more
-							return (
-								<div key={entries[0]}>
-									<List.Item
-										secondaryAction={
-											<List.ItemButton
-												onClick={() => {
-													setShowCollapsible(
-														(set) => ({
-															...set,
-															[entries[0]]:
-																!set[
-																	entries[0]
-																],
-														}),
-													);
-												}}
-											>
-												{showCollapsible[entries[0]] ? (
-													<ExpandLess />
-												) : (
-													<ExpandMore />
-												)}
-											</List.ItemButton>
-										}
-									>
-										<List.ItemText
-											primary={
-												<Typography variant={"h6"}>
-													{toTitleCase(
-														removeUnderscores(
-															entries[0],
-														),
-													)}
-												</Typography>
+						{type !== "BROWSETEMPLATES" &&
+							Object.entries(filterOptions).map((entries, i) => {
+								const totalFilters =
+									Object.entries(filterOptions).length;
+								const list = entries[1];
+								let shownListItems = 0; // for show more
+								return (
+									<div key={entries[0]} className="px-6 py-2">
+										<Collapsible
+											open={showCollapsible[entries[0]]}
+											onOpenChange={(open) =>
+												setShowCollapsible((prev) => ({
+													...prev,
+													[entries[0]]: open,
+												}))
 											}
-										/>
-									</List.Item>
-									<Collapse
-										// biome-ignore lint/suspicious/noArrayIndexKey: This is a list of filters, and the index is the best key we have
-										key={i}
-										in={showCollapsible[entries[0]]}
-									>
-										{list.map((filterOption) => {
-											if (
-												shownListItems > 4 &&
-												!filterVisibility[entries[0]]
-													.open
-											) {
-												return null;
-											} else {
-												if (
-													filterOption.value
-														.toLowerCase()
-														.includes(
-															filterSearch.toLowerCase(),
-														) &&
-													filterOption.value !== ""
-												) {
-													shownListItems += 1;
-													return (
-														<List.Item
-															disableGutters
-															key={
-																filterOption.value
-															}
-														>
-															<List.ItemButton
-																disableGutters
-																sx={{
-																	paddingLeft:
-																		"16px",
-																	paddingRight:
-																		"16px",
-																}}
-																selected={
-																	filterVisibility[
-																		entries[0]
-																	].value.indexOf(
-																		filterOption.value,
-																	) > -1
+										>
+											<CollapsibleTrigger asChild>
+												<Button
+													type="button"
+													variant="default"
+													className="flex w-full items-center justify-between bg-transparent p-2 text-(--foreground) hover:bg-accent"
+												>
+													<h6 className="font-semibold text-base">
+														{toTitleCase(
+															removeUnderscores(
+																entries[0],
+															),
+														)}
+													</h6>
+												</Button>
+											</CollapsibleTrigger>
+
+											<CollapsibleContent>
+												{list.map((filterOption) => {
+													if (
+														shownListItems > 4 &&
+														!filterVisibility[
+															entries[0]
+														].open
+													) {
+														return null;
+													}
+													if (
+														filterOption.value
+															.toLowerCase()
+															.includes(
+																filterSearch.toLowerCase(),
+															)
+													) {
+														shownListItems += 1;
+														const isSelected =
+															filterVisibility[
+																entries[0]
+															].value.indexOf(
+																filterOption.value,
+															) > -1;
+
+														return (
+															<Button
+																type="button"
+																variant="ghost"
+																key={
+																	filterOption.value
 																}
+																className={`mb-2 flex w-full items-center justify-between bg-transparent px-4 py-2 font-medium text-(--sidebar-foreground) text-sm hover:bg-(--accent) ${
+																	isSelected
+																		? "bg-(--accent) font-medium"
+																		: ""
+																}`}
 																onClick={() => {
 																	dispatch({
 																		type: "field",
@@ -514,84 +464,64 @@ export const Filterbox = (props: FilterboxProps) => {
 																	handleFiltersSideEffects();
 																}}
 																aria-label={
-																	filterVisibility[
-																		entries[0]
-																	].value.indexOf(
-																		filterOption.value,
-																	) > -1
+																	isSelected
 																		? `Unfilter ${filterOption.value}`
 																		: `Filter ${filterOption.value}`
 																}
 															>
-																<div
-																	style={{
-																		width: "100%",
-																		display:
-																			"flex",
-																		justifyContent:
-																			"space-between",
-																	}}
+																<span
+																	className={`text-(--sidebar-foreground) text-sm ${isSelected ? "font-medium" : "font-normal"}`}
+																	data-testid={formatToDataTestId(
+																		`filterbox-${filterOption.value}-filterBtn`,
+																	)}
 																>
-																	<List.ItemText
-																		primary={
-																			<Typography
-																				variant="body1"
-																				data-testid={formatToDataTestId(
-																					`filterbox-${filterOption.value}-filterBtn`,
-																				)}
-																			>
-																				{
-																					filterOption.value
-																				}
-																			</Typography>
-																		}
-																	/>
-																	{filterOption.count && (
-																		<StyledAvatarCount
-																			variant={
-																				"rounded"
-																			}
-																		>
+																	{
+																		filterOption.value
+																	}
+																</span>
+
+																{filterOption.count && (
+																	<Avatar className="size-4">
+																		<AvatarFallback className="bg-secondary font-medium text-foreground text-xs">
 																			{
 																				filterOption.count
 																			}
-																		</StyledAvatarCount>
-																	)}
-																</div>
-															</List.ItemButton>
-														</List.Item>
-													);
-												}
-												return null;
-											}
-										})}
-										{shownListItems > 4 && (
-											<List.Item
-												onClick={() => {
-													const visibleFilters = {
-														...filterVisibility,
-													};
-													visibleFilters[entries[0]] =
-														{
-															open:
-																!visibleFilters[
+																		</AvatarFallback>
+																	</Avatar>
+																)}
+															</Button>
+														);
+													}
+													return null;
+												})}
+												{shownListItems > 4 && (
+													<Button
+														type="button"
+														variant="ghost"
+														className="text-(--primary) hover:bg-transparent hover:text-(--primary)"
+														onClick={() => {
+															const visibleFilters =
+																{
+																	...filterVisibility,
+																};
+															visibleFilters[
+																entries[0]
+															] = {
+																open:
+																	!visibleFilters[
+																		entries[0]
+																	].open,
+																value: visibleFilters[
 																	entries[0]
-																].open,
-															value: visibleFilters[
-																entries[0]
-															].value,
-															search: visibleFilters[
-																entries[0]
-															].search,
-														};
-													setFilterVisibility(
-														visibleFilters,
-													);
-												}}
-											>
-												<div>
-													<StyledShowMore
-														variant={"body1"}
+																].value,
+																search: visibleFilters[
+																	entries[0]
+																].search,
+															};
+															setFilterVisibility(
+																visibleFilters,
+															);
+														}}
 													>
 														Show{" "}
 														{filterVisibility[
@@ -599,25 +529,21 @@ export const Filterbox = (props: FilterboxProps) => {
 														].open
 															? "Less"
 															: "More"}
-													</StyledShowMore>
-												</div>
-											</List.Item>
+													</Button>
+												)}
+											</CollapsibleContent>
+										</Collapsible>
+										{i + 1 !== totalFilters && (
+											<div className="w-full">
+												<Separator />
+											</div>
 										)}
-									</Collapse>
-									{i + 1 !== totalFilters && (
-										<div
-											style={{
-												width: "100%",
-											}}
-										>
-											<Divider></Divider>
-										</div>
-									)}
-								</div>
-							);
-						})}
-				</Collapse>
-			</StyledFilterList>
-		</StyledFilter>
+									</div>
+								);
+							})}
+					</CollapsibleContent>
+				</Collapsible>
+			</div>
+		</div>
 	);
 };

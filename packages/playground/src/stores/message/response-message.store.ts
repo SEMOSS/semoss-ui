@@ -57,12 +57,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	/**
 	 * Feedback provided by the user; only applicable to messages provided via the LLM
 	 */
-	rating: {
+	feedback: {
 		/** Sentiment */
-		positive: boolean;
+		rating: boolean;
 
-		/** Associated comment */
-		comment: string;
+		/** Comment, unused for now */
+		feedbackText: string;
 	} | null = null;
 
 	/**
@@ -90,7 +90,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			thinking: observable,
 			text: observable,
 			tools: observable,
-			rating: observable,
+			feedback: observable,
 			sync: action,
 			runMessage: action,
 			recordFeedback: action,
@@ -156,6 +156,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			id: message.modelId,
 			name: message.ornaments?.modelName || "AI",
 		};
+
+		// set feedback if there
+		if (message.type === "RESPONSE_TEXT" && message.feedback) {
+			this.feedback = {
+				rating: message.feedback.rating,
+				feedbackText: message.feedback.feedbackText,
+			};
+		}
 	};
 
 	/**
@@ -270,23 +278,31 @@ paramValues=[${JSON.stringify({
 	/**
 	 * Record Feedback
 	 * @param rating
-	 * @param comment
+	 * @param feedbackText
 	 */
-	recordFeedback = async (rating: boolean, comment = ""): Promise<void> => {
+	recordFeedback = async (
+		rating: boolean | null,
+		feedbackText = "",
+	): Promise<void> => {
 		const room = this.room;
 
 		try {
 			// wait for the pixel to run
 			await room.runRoomPixel<[boolean]>(
-				`SubmitLlmFeedback(messageId = ["${this.id}"], feedbackText=["${comment}"], rating=[${rating}], roomId=["${room.roomId}"]);`,
+				`SubmitLlmFeedback(messageId=${JSON.stringify(this.id)}, feedbackText=${JSON.stringify(feedbackText)}, rating=${JSON.stringify(rating)}, roomId=${JSON.stringify(room.roomId)});`,
 				false,
 			);
 
 			// save the feedback to the message's state
-			this.rating = {
-				positive: rating,
-				comment: comment,
-			};
+			runInAction(() => {
+				this.feedback =
+					rating === null
+						? null
+						: {
+								rating,
+								feedbackText,
+							};
+			});
 		} finally {
 			// noop
 		}

@@ -1,18 +1,9 @@
 import { observer } from "mobx-react-lite";
-import { Chip, Markdown, Stack, styled } from "@semoss/ui";
+import { Badge, Markdown } from "@semoss/ui/next";
 import { DatabaseStatistics } from "@/components/database/DatabaseStatistics";
 import { Section } from "@/components/ui";
 import { useEngine, useRootStore } from "@/hooks";
 import { removeUnderscores } from "@/utility";
-
-const StyledPage = styled("div")(() => ({
-	position: "relative",
-	zIndex: "0",
-}));
-
-const StyledMarkdownContainer = styled(Stack)(() => ({
-	overflow: "scroll",
-}));
 
 export const EngineOverviewPage = observer(() => {
 	const { type, active } = useEngine();
@@ -30,19 +21,21 @@ export const EngineOverviewPage = observer(() => {
 	);
 
 	return (
-		<StyledPage>
+		<div className="relative z-0">
 			<Section>
 				<Section.Header data-testid="engine-overview-header">
 					Details
 				</Section.Header>
 				{active.metadata.markdown ? (
-					<StyledMarkdownContainer>
+					<div className="overflow-scroll">
 						<Markdown data-testid="engine-overview-markdown">
 							{active.metadata.markdown as string}
 						</Markdown>
-					</StyledMarkdownContainer>
+					</div>
 				) : (
-					<div> No Markdown available</div>
+					<div className="text-muted-foreground">
+						No Markdown available
+					</div>
 				)}
 			</Section>
 			{engineMetaKeys.map((k) => {
@@ -62,25 +55,22 @@ export const EngineOverviewPage = observer(() => {
 						k.display_options === "multi-select" ||
 						k.display_options === "multi-typeahead" ||
 						k.display_options === "select-box" ? (
-							<Stack
-								direction={"row"}
-								spacing={1}
-								flexWrap={"wrap"}
-							>
+							<div className="flex flex-row flex-wrap gap-2">
 								{(active.metadata[k.metakey] as string[]).map(
 									(tag) => {
 										if (tag === "") return null;
 										return (
-											<Chip
+											<Badge
 												key={tag}
-												label={tag}
-												color={"primary"}
+												variant="default"
 												data-testid="tag-chip"
-											></Chip>
+											>
+												{tag}
+											</Badge>
 										);
 									},
 								)}
-							</Stack>
+							</div>
 						) : (
 							String(active.metadata[k.metakey] || "")
 						)}
@@ -93,6 +83,6 @@ export const EngineOverviewPage = observer(() => {
 					<DatabaseStatistics id={active.id} />
 				</Section>
 			)}
-		</StyledPage>
+		</div>
 	);
 });
