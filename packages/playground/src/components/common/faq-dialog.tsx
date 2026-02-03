@@ -49,6 +49,19 @@ export const FaqDialog = ({ open, onOpenChange }: FaqDialogProps) => {
 				},
 			],
 		},
+		{
+			title: "Documentation",
+			items: [
+				{
+					label: "What documents are required for issuer application?",
+					roomId: "2e2d83ad-48f0-4d0b-bbea-ab3a70801ffb",
+				},
+				{
+					label: "How do I submit required financial statements?",
+					roomId: "2adb0730-a623-4668-9437-486727b850a7",
+				},
+			],
+		},
 	] as const;
 
 	const handleDuplicateRoom = async (roomId: string) => {
