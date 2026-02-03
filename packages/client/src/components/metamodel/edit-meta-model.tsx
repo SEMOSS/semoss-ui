@@ -203,34 +203,34 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 	};
 
 	const EditForm = (
-		<div className="flex flex-col gap-4 p-4">
+		<div className="space-y-4">
 			<Field>
-				<FieldLabel className="mb-2 block text-xs">
-					Column name
-				</FieldLabel>
+				<FieldLabel className="mb-1.5 text-sm">Column name</FieldLabel>
 				<Input
-					placeholder="Edit column name"
+					placeholder="Enter column name"
 					value={singleNameVal}
 					onChange={(e) => handleColumnNameChange(e.target.value)}
 					className="w-full"
+					data-testid="edit-metamodel-column-name"
 				/>
 				{columnNameError && (
-					<P className="mt-1 block text-destructive text-xs">
+					<P className="mt-1 text-destructive text-xs">
 						{columnNameError}
 					</P>
 				)}
 			</Field>
 
 			<Field>
-				<FieldLabel className="mb-2 block text-xs">
-					Column Type
-				</FieldLabel>
+				<FieldLabel className="mb-1.5 text-sm">Column Type</FieldLabel>
 				<Select
 					value={typeVal || typesList[0]}
 					onValueChange={(value) => setTypeVal(value)}
 				>
-					<SelectTrigger className="w-full">
-						<SelectValue placeholder="Select column type" />
+					<SelectTrigger
+						className="w-full"
+						data-testid="edit-metamodel-column-type"
+					>
+						<SelectValue placeholder="Select type" />
 					</SelectTrigger>
 					<SelectContent>
 						{typesList.map((type) => (
@@ -246,88 +246,100 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 
 	return (
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-			<DialogContent className="max-w-[600px] overflow-y-auto">
-				<DialogHeader>
-					<DialogTitle className="pr-8">
+			<DialogContent
+				className="max-w-[600px] p-0"
+				data-testid="edit-metamodel-modal"
+			>
+				{/* Header */}
+				<DialogHeader className="relative px-6 py-4">
+					<DialogTitle className="pr-8 font-semibold text-lg">
 						{isEdit ? `Edit ${initialName}` : "Add column"}
 					</DialogTitle>
 					<Button
 						variant="ghost"
 						size="icon"
 						onClick={onClose}
-						className="absolute top-3.5 right-2 h-8 w-8"
+						className="absolute top-3.5 right-4 size-8"
+						data-testid="edit-metamodel-close-btn"
 					>
 						<X className="size-4" />
 					</Button>
 				</DialogHeader>
 
+				{/* Content */}
 				{isEdit ? (
 					<Tabs
 						value={activeTab}
 						onValueChange={setActiveTab}
 						className="w-full"
 					>
-						<TabsList className="mb-4 ml-0 w-full justify-start border-border border-b bg-transparent p-0">
+						<TabsList className="h-auto w-full justify-start rounded-none border-border border-b bg-transparent p-0 px-6">
 							<TabsTrigger
 								value="edit"
-								className="rounded-none border-transparent border-b-2 px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+								className="relative rounded-none border-transparent border-b-2 bg-transparent px-4 py-3 font-medium text-muted-foreground text-sm shadow-none transition-colors hover:text-foreground data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+								data-testid="edit-metamodel-tab-edit"
 							>
 								Edit
 							</TabsTrigger>
 							<TabsTrigger
 								value="description"
-								className="rounded-none border-transparent border-b-2 px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+								className="relative rounded-none border-transparent border-b-2 bg-transparent px-4 py-3 font-medium text-muted-foreground text-sm shadow-none transition-colors hover:text-foreground data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+								data-testid="edit-metamodel-tab-description"
 							>
 								Description
 							</TabsTrigger>
 							<TabsTrigger
 								value="logical-names"
-								className="rounded-none border-transparent border-b-2 px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+								className="relative rounded-none border-transparent border-b-2 bg-transparent px-4 py-3 font-medium text-muted-foreground text-sm shadow-none transition-colors hover:text-foreground data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+								data-testid="edit-metamodel-tab-logical-names"
 							>
 								Logical Names
 							</TabsTrigger>
 							<TabsTrigger
 								value="sample-instances"
 								disabled
-								className="rounded-none border-transparent border-b-2 px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+								className="relative rounded-none border-transparent border-b-2 bg-transparent px-4 py-3 font-medium text-muted-foreground/50 text-sm shadow-none data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+								data-testid="edit-metamodel-tab-sample-instances"
 							>
 								Sample Instances
 							</TabsTrigger>
 						</TabsList>
 
-						<TabsContent value="edit" className="p-0">
-							{EditForm}
-						</TabsContent>
+						<div className="px-6 py-5">
+							<TabsContent value="edit" className="m-0">
+								{EditForm}
+							</TabsContent>
 
-						<TabsContent
-							value="description"
-							className="min-h-[120px] p-4"
-						>
-							<Field>
-								<FieldLabel className="mb-2 block text-xs">
-									Description
-								</FieldLabel>
-								<Textarea
-									value={description}
-									onChange={(e) =>
-										setDescription(e.target.value)
-									}
-									rows={3}
-									className="min-h-[80px] w-full resize-y"
-								/>
-							</Field>
-						</TabsContent>
+							<TabsContent value="description" className="m-0">
+								<Field>
+									<FieldLabel className="mb-1.5 text-sm">
+										Description
+									</FieldLabel>
+									<Textarea
+										value={description}
+										onChange={(e) =>
+											setDescription(e.target.value)
+										}
+										placeholder="Enter description"
+										rows={4}
+										className="min-h-[100px] w-full resize-y"
+										data-testid="edit-metamodel-description"
+									/>
+								</Field>
+							</TabsContent>
 
-						<TabsContent value="logical-names" className="p-4">
-							<Field>
-								<div className="mb-2 max-h-[200px] overflow-auto rounded-md border border-border">
+							<TabsContent
+								value="logical-names"
+								className="m-0 space-y-3"
+							>
+								<div className="max-h-[200px] overflow-auto rounded-md border border-border">
 									<Table>
-										<TableHeader className="bg-primary/10">
+										<TableHeader className="sticky top-0 bg-muted/50">
 											<TableRow>
-												<TableHead className="font-semibold text-primary">
+												<TableHead className="h-10 font-medium">
 													Name
 												</TableHead>
-												<TableHead className="w-20 font-semibold text-primary">
+												<TableHead className="h-10 w-16 text-center font-medium">
 													Action
 												</TableHead>
 											</TableRow>
@@ -337,25 +349,25 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 												<TableRow>
 													<TableCell
 														colSpan={2}
-														className="text-center text-muted-foreground"
+														className="h-20 text-center text-muted-foreground text-sm"
 													>
-														No logical names added.
+														No logical names added
 													</TableCell>
 												</TableRow>
 											) : (
 												logicalNames.map((item) => (
 													<TableRow
 														key={item.id}
-														data-testid={`engineMetadata-logicalname-${item.id}-btn`}
+														data-testid={`engineMetadata-logicalname-${item.id}-row`}
 													>
-														<TableCell className="text-muted-foreground">
+														<TableCell className="py-2">
 															{item.name}
 														</TableCell>
-														<TableCell className="border-border border-l">
+														<TableCell className="border-border border-l py-1 text-center">
 															<Button
 																variant="ghost"
 																size="icon"
-																className="h-8 w-8"
+																className="size-8"
 																onClick={() =>
 																	handleRemoveLogicalName(
 																		item.id,
@@ -373,47 +385,67 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 									</Table>
 								</div>
 
-								<div className="mt-2 flex items-center gap-2">
-									<Input
-										placeholder="Add logical name"
-										value={newLogicalName}
-										onChange={(e) => {
-											setNewLogicalName(e.target.value);
-											if (logicalNameError)
-												setLogicalNameError("");
-										}}
-										className="flex-1"
-									/>
-									<Button
-										variant="default"
-										size="icon"
-										onClick={handleAddLogicalName}
-										disabled={!newLogicalName.trim()}
-										data-testid="engineMetadata-logicalname-add"
-									>
-										<Plus className="size-4" />
-									</Button>
+								<div className="space-y-1">
+									<div className="flex gap-2">
+										<Input
+											placeholder="Add logical name"
+											value={newLogicalName}
+											onChange={(e) => {
+												setNewLogicalName(
+													e.target.value,
+												);
+												if (logicalNameError)
+													setLogicalNameError("");
+											}}
+											onKeyDown={(e) => {
+												if (
+													e.key === "Enter" &&
+													newLogicalName.trim()
+												) {
+													handleAddLogicalName();
+												}
+											}}
+											className="flex-1"
+											data-testid="edit-metamodel-logical-name-input"
+										/>
+										<Button
+											variant="default"
+											size="icon"
+											onClick={handleAddLogicalName}
+											disabled={!newLogicalName.trim()}
+											className="size-9 shrink-0"
+											data-testid="engineMetadata-logicalname-add"
+										>
+											<Plus className="size-4" />
+										</Button>
+									</div>
+
+									{logicalNameError && (
+										<P className="text-destructive text-xs">
+											{logicalNameError}
+										</P>
+									)}
 								</div>
+							</TabsContent>
 
-								{logicalNameError && (
-									<P className="mt-1 block text-destructive text-xs">
-										{logicalNameError}
+							<TabsContent
+								value="sample-instances"
+								className="m-0"
+							>
+								<div className="flex h-24 items-center justify-center rounded-md border border-border border-dashed">
+									<P className="text-muted-foreground text-sm">
+										Sample instances coming soon
 									</P>
-								)}
-							</Field>
-						</TabsContent>
-
-						<TabsContent value="sample-instances" className="p-4">
-							<P className="text-muted-foreground">
-								Sample Instances feature comes here!
-							</P>
-						</TabsContent>
+								</div>
+							</TabsContent>
+						</div>
 					</Tabs>
 				) : (
-					<div className="p-4">{EditForm}</div>
+					<div className="px-6 py-5">{EditForm}</div>
 				)}
 
-				<DialogFooter className="gap-2">
+				{/* Footer */}
+				<DialogFooter className="border-border border-t px-6 py-3">
 					<Button
 						variant="outline"
 						onClick={onClose}

@@ -589,6 +589,23 @@ export const MetaModelType = observer(
 			}
 		}, [nodes, selectedNodeIds]);
 
+		useEffect(() => {
+			if (!showFullScreenModal) return;
+
+			const interval = setInterval(() => {
+				// Find all portal content and force high z-index
+				const portals = document.querySelectorAll(
+					'[data-radix-select-content], [data-radix-dropdown-menu-content], [data-radix-dialog-content], [data-radix-popper-content-wrapper], [role="dialog"], [role="listbox"]',
+				);
+
+				portals.forEach((portal) => {
+					(portal as HTMLElement).style.zIndex = "9999";
+				});
+			}, 100);
+
+			return () => clearInterval(interval);
+		}, [showFullScreenModal]);
+
 		// RENDER
 		return (
 			<div className="h-full w-full">
@@ -724,6 +741,7 @@ export const MetaModelType = observer(
 																		checked as boolean,
 																	)
 																}
+																className="[&[data-state=checked]_svg]:text-white [&_svg]:text-white"
 															/>
 															<Label
 																htmlFor="select-all-nodes"
@@ -759,6 +777,7 @@ export const MetaModelType = observer(
 																					n.id,
 																				)
 																			}
+																			className="[&[data-state=checked]_svg]:text-white [&_svg]:text-white"
 																		/>
 																		<Label
 																			htmlFor={`node-${n.id}`}

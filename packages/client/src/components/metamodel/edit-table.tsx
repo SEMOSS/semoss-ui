@@ -222,7 +222,7 @@ const EditTable: React.FC<EditTableProps> = ({
 
 					<TabsContent value="columns" className="mt-4 space-y-4">
 						<Field>
-							<FieldLabel className="mb-2 block font-medium text-sm">
+							<FieldLabel className="block font-medium text-sm">
 								Table
 							</FieldLabel>
 							<Input
@@ -233,7 +233,7 @@ const EditTable: React.FC<EditTableProps> = ({
 						</Field>
 
 						<Field>
-							<FieldLabel className="mb-2 block font-medium text-sm">
+							<FieldLabel className="block font-medium text-sm">
 								Add or Remove Columns
 							</FieldLabel>
 
@@ -310,7 +310,7 @@ const EditTable: React.FC<EditTableProps> = ({
 
 					<TabsContent value="settings" className="mt-4 space-y-4">
 						<Field>
-							<FieldLabel className="mb-2 block font-medium text-sm">
+							<FieldLabel className="block font-medium text-sm">
 								Table Alias
 							</FieldLabel>
 							<Input
@@ -322,7 +322,7 @@ const EditTable: React.FC<EditTableProps> = ({
 						</Field>
 
 						<Field>
-							<FieldLabel className="mb-2 block font-medium text-sm">
+							<FieldLabel className="block font-medium text-sm">
 								Description
 							</FieldLabel>
 							<Textarea
