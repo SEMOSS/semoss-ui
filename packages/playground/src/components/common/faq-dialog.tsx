@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ChevronRightIcon, CircleHelpIcon } from "lucide-react";
 import {
 	Button,
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
-	Separator,
 	toast,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
@@ -89,41 +89,56 @@ export const FaqDialog = ({ open, onOpenChange }: FaqDialogProps) => {
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-2xl">
-				<DialogHeader>
-					<DialogTitle>Frequently Asked Questions</DialogTitle>
-				</DialogHeader>
-				<div className="space-y-6 py-4">
+			<DialogContent className="overflow-hidden p-0 sm:max-w-2xl [&>button]:text-white/80 [&>button]:hover:text-white">
+				<div className="bg-[#12355b] px-6 py-4">
+					<DialogHeader className="flex flex-row items-center justify-between space-y-0">
+						<div className="flex items-center gap-3">
+							<span className="flex size-7 items-center justify-center rounded-full border border-white/30 bg-white/10">
+								<CircleHelpIcon className="size-4 text-white" />
+							</span>
+							<DialogTitle className="text-lg text-white">
+								Frequently Asked Questions
+							</DialogTitle>
+						</div>
+					</DialogHeader>
+				</div>
+				<div className="space-y-6 px-6 py-5">
+					<p className="text-sm text-slate-600">
+						Click on any question below to get a detailed response from
+						the PolicyWise agent.
+					</p>
 					{sections.map((section, sectionIndex) => (
 						<div key={section.title} className="space-y-3">
-							<div className="font-semibold text-foreground text-sm">
+							<div className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
 								{section.title}
 							</div>
 							<div className="flex flex-col gap-2">
 								{section.items.map((item) => (
 									<Button
 										key={item.roomId}
-										variant="ghost"
-										className="h-auto w-full justify-start whitespace-normal text-left"
+										variant="outline"
+										className="h-auto w-full justify-between gap-3 rounded-lg border-slate-200 bg-white px-4 py-3 text-left text-slate-900 shadow-sm hover:bg-slate-50"
 										disabled={isDuplicating}
 										onClick={() =>
 											handleDuplicateRoom(item.roomId)
 										}
 									>
-										<span className="flex-1 text-sm">
+										<span className="flex-1 whitespace-normal text-sm">
 											{item.label}
 										</span>
 										{isDuplicating &&
 										activeRoomId === item.roomId ? (
-											<span className="text-muted-foreground text-xs">
+											<span className="text-xs text-slate-400">
 												Opening...
 											</span>
-										) : null}
+										) : (
+											<ChevronRightIcon className="size-4 text-slate-400" />
+										)}
 									</Button>
 								))}
 							</div>
 							{sectionIndex < sections.length - 1 ? (
-								<Separator />
+								<div className="pt-2" />
 							) : null}
 						</div>
 					))}
