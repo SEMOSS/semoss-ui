@@ -64,8 +64,7 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
 						sx={{ fontWeight: 700 }}
 						noWrap
 					>
-						{configStore.theme.landingPageName ||
-							configStore.theme.name}
+						PolicyWise
 					</Typography>
 				</StyledNavbarHeaderLink>
 			) : (

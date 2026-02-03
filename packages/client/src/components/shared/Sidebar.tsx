@@ -204,7 +204,7 @@ export const Sidebar: React.FC = observer(() => {
 						<img src={configStore.theme.logo} alt="theme-icon" />
 					) : null}
 					<Typography variant="h6" sx={{ fontWeight: 700 }}>
-						{configStore.theme.name}
+						PolicyWise
 					</Typography>
 				</StyledNavHeaderLink>
 
