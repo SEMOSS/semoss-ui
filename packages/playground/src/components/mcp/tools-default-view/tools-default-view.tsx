@@ -99,6 +99,17 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		>({});
 
 		/*
+		 * Constants
+		 */
+		// Separate required and optional fields
+		const requiredFields = Object.entries(properties).filter(
+			([fieldName]) => required.includes(fieldName),
+		);
+		const optionalFields = Object.entries(properties).filter(
+			([fieldName]) => !required.includes(fieldName),
+		);
+
+		/*
 		 * Functions
 		 */
 		const handleChange = (field: string, value: unknown) => {
@@ -139,21 +150,22 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			setIsSubmitting(false);
 		};
 
-		const renderField = (fieldName: string, fieldSchema: FieldSchema) => {
-			const isRequired = required.includes(fieldName) && !hasBeenExecuted;
-			const value = data[fieldName] ?? "";
-
-			return (
+		// Render a group of fields
+		const renderFields = (
+			fields: [string, FieldSchema][],
+			required: boolean,
+		) =>
+			fields.map(([fieldName, fieldSchema]) => (
 				<ToolField
+					key={fieldName}
 					fieldName={fieldName}
 					fieldSchema={fieldSchema}
-					required={isRequired}
+					required={required && !hasBeenExecuted}
 					disabled={hasBeenExecuted}
-					value={value}
+					value={data[fieldName] ?? ""}
 					onChange={(val) => handleChange(fieldName, val)}
 				/>
-			);
-		};
+			));
 
 		/*
 		 * Effects
@@ -172,18 +184,6 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			}
 		}, [getMCP, tool.original_name]);
 
-		/*
-		 * Constants
-		 */
-
-		// Separate required and optional fields
-		const requiredFields = Object.entries(properties).filter(
-			([fieldName]) => required.includes(fieldName),
-		);
-		const optionalFields = Object.entries(properties).filter(
-			([fieldName]) => !required.includes(fieldName),
-		);
-
 		return (
 			<div className="flex h-full w-full flex-col items-center justify-center overflow-auto p-4">
 				<Card className="h-full w-full">
@@ -198,8 +198,8 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 						)}
 					</CardHeader>
 					<CardContent className="max-h-[60vh] overflow-y-auto">
-						{toolResponse ? (
-							<div className="space-y-4">
+						<div className="space-y-4">
+							{toolResponse && (
 								<div className="flex h-full flex-col space-y-2">
 									<Label
 										htmlFor="tool-response"
@@ -213,41 +213,23 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 										value={toolResponse}
 									/>
 								</div>
-								{Object.keys(properties).length > 0 && ( // todo: this logic
-									<>
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={() =>
-												setShowOptional(!showOptional)
-											}
-											className="w-full"
-										>
-											{`${showOptional ? "Hide" : "Show"} Parameters (${Object.keys(properties).length})`}
-										</Button>
-										{showOptional &&
-											Object.entries(properties).map(
-												([fieldName, fieldSchema]) =>
-													renderField(
-														fieldName,
-														fieldSchema,
-													),
-											)}
-									</>
-								)}
-							</div>
-						) : (
-							<form onSubmit={handleSubmit}>
-								<div className="space-y-4">
-									{/* Required fields */}
-									{requiredFields.map(
-										([fieldName, fieldSchema]) =>
-											renderField(fieldName, fieldSchema),
-									)}
-
-									{/* Optional fields toggle */}
-									{optionalFields.length > 0 && (
+							)}
+							{getMCP.status === "ERROR" ? (
+								<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+									<div className="text-destructive">
+										<p className="font-semibold text-lg">
+											Failed to load tool schema
+										</p>
+										<p className="text-muted-foreground text-sm">
+											Unable to retrieve tool
+											configuration. Please try again
+											later.
+										</p>
+									</div>
+								</div>
+							) : getMCP.status === "SUCCESS" ? (
+								toolResponse ? (
+									Object.keys(properties).length > 0 && (
 										<>
 											<Button
 												type="button"
@@ -260,27 +242,57 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 												}
 												className="w-full"
 											>
-												{`${showOptional ? "Hide" : "Show"} Optional Fields (${optionalFields.length})`}
+												{`${showOptional ? "Hide" : "Show"} Parameters (${Object.keys(properties).length})`}
 											</Button>
-
 											{showOptional &&
-												optionalFields.map(
-													([
-														fieldName,
-														fieldSchema,
-													]) =>
-														renderField(
-															fieldName,
-															fieldSchema,
-														),
+												renderFields(
+													Object.entries(properties),
+													false,
 												)}
 										</>
-									)}
+									)
+								) : (
+									<form onSubmit={handleSubmit}>
+										{/* Required fields */}
+										{renderFields(requiredFields, true)}
+
+										{/* Optional fields toggle */}
+										{optionalFields.length > 0 && (
+											<>
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													onClick={() =>
+														setShowOptional(
+															!showOptional,
+														)
+													}
+													className="w-full"
+												>
+													{`${showOptional ? "Hide" : "Show"} Optional Fields (${optionalFields.length})`}
+												</Button>
+
+												{showOptional &&
+													renderFields(
+														optionalFields,
+														false,
+													)}
+											</>
+										)}
+									</form>
+								)
+							) : (
+								<div className="flex flex-col items-center justify-center gap-2 py-12">
+									<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+									<p className="text-muted-foreground text-sm">
+										Loading tool schema...
+									</p>
 								</div>
-							</form>
-						)}
+							)}
+						</div>
 					</CardContent>
-					{!toolResponse && (
+					{!toolResponse && getMCP.status === "SUCCESS" && (
 						<CardFooter>
 							<Button
 								type="button"
