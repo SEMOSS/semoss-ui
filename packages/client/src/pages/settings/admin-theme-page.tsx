@@ -1,7 +1,8 @@
 import { PlusIcon, TrashIcon } from "lucide-react";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import type { ThemeMap } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared";
 import {
 	Button,
 	Dialog,
@@ -28,8 +29,6 @@ import {
 	setActiveAdminTheme,
 } from "@/api/theme";
 import { useAPI, useSettings } from "@/hooks";
-
-const Editor = lazy(() => import("@monaco-editor/react"));
 
 export const AdminThemePage: React.FC = () => {
 	const { adminMode } = useSettings();
@@ -331,7 +330,7 @@ export const AdminThemePage: React.FC = () => {
 							</div>
 						}
 					>
-						<Editor
+						<MonacoEditor
 							width={"100%"}
 							height={"100%"}
 							options={{
