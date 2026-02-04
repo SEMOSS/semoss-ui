@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { type Insight, runPixel } from "@semoss/sdk/react";
+import { type Insight, runPixel, Env } from "@semoss/sdk/react";
 import { MODEL_KEY } from "@/constants";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
@@ -167,6 +167,11 @@ export class ChatStore {
 		if (!roomId) {
 			throw new Error("Room ID is required");
 		}
+		     // create the room in a new insight
+        if (!Env.APP) {
+            throw new Error("APP environment variable is not set");
+        }
+ 
 
 		const { errors, pixelReturn } = await runPixel<
 			[
@@ -180,15 +185,15 @@ export class ChatStore {
 				  }
 				| string,
 			]
-		>(`DuplicateRoom(roomId=["${roomId}"]);`, "new");
+		>(`SetContext("${Env.APP}");DuplicateRoom(roomId=["${roomId}"]);`, "new");
 
 		// throw errors
 		if (errors.length > 0) {
 			throw new Error(errors.join(""));
 		}
 
-		const output = pixelReturn[0]?.output;
-		const additionalOutput = pixelReturn[0]?.additionalOutput;
+		const output = pixelReturn[1]?.output;
+		const additionalOutput = pixelReturn[1]?.additionalOutput;
 		const uuidPattern =
 			/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g;
 		const extractIds = (value: unknown): string[] => {
