@@ -1,33 +1,7 @@
-export interface Theme {
-	/** Name of the app */
-	name: string;
-
-	/** Description of the app */
-	description: string;
-
-	/** Styles of the app */
-	styles: {
-		backgroundColor: string;
-		primaryColor: string;
-	};
-
-	/** Images throughout app */
-	images: {
-		logo: string;
-	};
-
-	/**
-	 * Custom CSS to override default styles
-	 */
-	overrides: {
-		"main-layout": React.CSSProperties;
-	};
-}
-
 export interface Engine {
 	app_id: string;
 	app_name: string;
-	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION";
+	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
 	description?: string;
 }
 
@@ -64,7 +38,7 @@ export interface Instructions {
 
 export interface MCP {
 	/** Type of the mcp */
-	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL";
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL" | "VECTOR";
 
 	/** Id of the mcp */
 	id: string;
@@ -79,7 +53,10 @@ export interface MCP {
 	tags: string[];
 }
 
-export type MCPConfig = Pick<MCP, "type" | "id" | "name">;
+export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
+	/** Flag to indicate if this MCP comes from a workspace */
+	fromWorkspace?: boolean;
+};
 
 /**
  * Item from the prompt library
@@ -111,6 +88,7 @@ export interface AbstractPixelMessage {
 	parentMessageId?: string;
 	visible: boolean;
 	dateCreated: string;
+	tokens: number;
 }
 
 export interface InputTextPixelMessage extends AbstractPixelMessage {
@@ -152,7 +130,9 @@ export interface InputToolExecPixelMessage extends AbstractPixelMessage {
 	visible: false;
 	tool_call_id: string;
 	tool_name: string;
+	tool_status: "error" | "cancelled" | "success";
 	modelId: string;
+	inputPrompt: string;
 	ornaments: {
 		modelName?: string;
 	};
@@ -162,34 +142,51 @@ export interface ResponseTextPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TEXT";
 	content: string;
 	modelId: string;
+	thinking?: string;
 	ornaments: {
 		PLAYGROUND_MESSAGE_TYPE?: "COT";
 		modelName?: string;
+	};
+	feedback?: {
+		rating: boolean;
+		feedbackText: string;
+		messageId: string;
+		messageType: "RESPONSE_TEXT";
+		feedbackDate: string; // YYYY-MM-DD HH:MM:SS
 	};
 }
 
 export type McpExecution = "auto" | "ask" | "disabled";
 
+export type McpDisplay = "inline" | "sidebar" | "hidden";
+
 interface ResponseToolPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TOOL";
+	thinking?: string;
 	tool_responses: {
 		/** tool execution id */
 		id: string;
 
 		/** meta data from the tool */
 		_meta: {
-			map: {
-				SMSS_PROJECT_NAME: string;
-				SMSS_PROJECT_ID: string;
-				SMSS_MCP_EXECUTION: McpExecution;
+			SMSS_PROJECT_NAME: string;
+			SMSS_PROJECT_ID: string;
+			SMSS_MCP_EXECUTION: McpExecution;
+			SMSS_MCP_UI?: {
+				loadingMessage?: string;
+				displayLocation?: McpDisplay;
+				resourceURI?: string;
 			};
 		};
 
 		/**  Display of the tool **/
 		title: string;
 
-		/**  Name of function **/
+		/**  Name of function with app_id **/
 		name: string;
+
+		/**  Name of function in mcp json **/
+		original_name: string;
 
 		/** THIS IS A STRING, but ONLY in playground we parse as an app */
 		/** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
@@ -228,10 +225,8 @@ export interface PlanStep {
 				rationaleForStep: string;
 				title: string;
 				_meta: {
-					map: {
-						SMSS_PROJECT_NAME: string;
-						SMSS_PROJECT_ID: string;
-					};
+					SMSS_PROJECT_NAME: string;
+					SMSS_PROJECT_ID: string;
 				};
 		  }
 		| {
@@ -267,6 +262,17 @@ export interface MCPTool {
 		type: "object";
 	};
 	title?: string;
+	original_name: string;
+	description?: string;
+	title?: string;
+	_meta: {
+		generated_on: string;
+		SMSS_MCP_UI?: {
+			loadingMessage?: string;
+			resourceURI?: string;
+			displayLocation?: McpDisplay;
+		};
+	};
 }
 
 export interface ToolStructure {
@@ -277,12 +283,5 @@ export interface ToolStructure {
 		SMSS_ENGINE_TYPE: string;
 		SMSS_ENGINE_ID: string;
 	};
-	tools: Tool[];
-}
-
-export interface Tool extends MCPTool {
-	name: string;
-	description: string;
-	_meta: { generated_on: string };
-	title: string;
+	tools: MCPTool[];
 }

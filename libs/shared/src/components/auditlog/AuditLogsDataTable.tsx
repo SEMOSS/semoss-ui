@@ -1,5 +1,7 @@
 import {
 	CircleX as Cancel,
+	ChevronLeft,
+	ChevronRight,
 	CircleCheck as CircleCheckIcon,
 	Filter,
 	Search,
@@ -22,7 +24,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Sheet,
-	SheetClose,
 	SheetContent,
 	Table,
 	TableBody,
@@ -35,6 +36,7 @@ import { AuditLogsDetailDrawer } from "./AuditLogsDetailDrawer";
 import type { EventData } from "./common";
 import { TimeDateFormatter } from "./common";
 
+//filter state basic structre
 interface FilterState {
 	engineType: string[];
 	engineName: string[];
@@ -43,6 +45,7 @@ interface FilterState {
 	tokenRange: string[];
 }
 
+//table data props
 interface AuditLogsDataTableProps {
 	logs: EventData[];
 	totalCount?: number;
@@ -50,7 +53,7 @@ interface AuditLogsDataTableProps {
 	rowsPerPage: number;
 	onPaginationChange: (page: number, rowsPerPage: number) => void;
 }
-
+//truncate text when maxlength is reached
 const ellipsed = (text: string | null, maxLength = 50) => {
 	if (!text) return "";
 	return text.length > maxLength
@@ -64,7 +67,7 @@ const STATUS_LABEL_CONVERSION = {
 	true: "Success",
 	false: "Failed",
 };
-
+//handling table data and work with table related events
 export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	logs = [],
 	totalCount = 0,
@@ -73,27 +76,27 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	onPaginationChange,
 }) => {
 	// State Management
-	const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
-	const [drawerOpen, setDrawerOpen] = useState(false);
-	const [searchQuery, setSearchQuery] = useState("");
+	const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null); //setting event when row clicked, and event will have all the rowdata
+	const [drawerOpen, setDrawerOpen] = useState(false); //drawer show or close
+	const [searchQuery, setSearchQuery] = useState(""); //user searched query
 	const [appliedFilters, setAppliedFilters] = useState<FilterState>({
 		engineType: [],
 		engineName: [],
 		status: [],
 		latencyRange: [],
 		tokenRange: [],
-	});
+	}); //after clicking on popover apply button, values from tempFilters will be added to here
 	const [tempFilters, setTempFilters] = useState<FilterState>({
 		engineType: [],
 		engineName: [],
 		status: [],
 		latencyRange: [],
 		tokenRange: [],
-	});
+	}); //table column level filters for enginetype, name,etc
 	const [popoverColumn, setPopoverColumn] = useState<
 		keyof FilterState | null
-	>(null);
-	const [popoverOpen, setPopoverOpen] = useState(false);
+	>(null); //set the popover column, so popover will display over respective column
+	const [popoverOpen, setPopoverOpen] = useState(false); //show popover open or not
 
 	// Generate Filter Options (same logic as before)
 	const filterOptions = useMemo(() => {
@@ -150,7 +153,11 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					log.sessionId?.toLowerCase().includes(query) ||
 					log.request?.toLowerCase().includes(query) ||
 					log.response?.toLowerCase().includes(query) ||
-					log.latency?.toString().toLowerCase().includes(query) ||
+					log.latency
+						?.toString()
+						.concat("ms")
+						.toLowerCase()
+						.includes(query) || //additng latency search with milliseconds option
 					log.tokens?.toString().toLowerCase().includes(query),
 			);
 		}
@@ -205,7 +212,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		// ...apply filters...
 		return filtered;
 	}, [logs, searchQuery, appliedFilters]);
-
+	//show the filtered total count in the table based on the records
 	const filteredTotalCount = useMemo(() => {
 		return filtersApplied || searchQuery.trim().length > 0
 			? filteredLogs.length
@@ -221,18 +228,18 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		},
 		[appliedFilters],
 	);
-
+	//handle the popover close event gracefully
 	const handlePopoverClose = useCallback(() => {
 		setPopoverOpen(false);
 		setPopoverColumn(null);
 		setTempFilters({ ...appliedFilters });
 	}, [appliedFilters]);
-
+	//apply the selected values in the filter
 	const handleApplyFilters = useCallback(() => {
 		setAppliedFilters({ ...tempFilters });
 		handlePopoverClose();
 	}, [tempFilters, handlePopoverClose]);
-
+	//in every filter popover, this function will clear selected options
 	const handleClearFilterPopover = useCallback(() => {
 		if (popoverColumn) {
 			setTempFilters((prev) => ({
@@ -241,7 +248,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			}));
 		}
 	}, [popoverColumn]);
-
+	//IF Select all is not active and only few options are selected, then this will handle respective filters in search
 	const handleMultiSelectFilter = useCallback(
 		(filterType: keyof FilterState, value: string) => {
 			setTempFilters((prev) => ({
@@ -253,7 +260,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		},
 		[],
 	);
-
+	//Handle select all filter in the every custom popover filter, and when applied all values are added in search
 	const handleSelectAll = useCallback(
 		(filterType: keyof FilterState, allOptions: string[]) => {
 			setTempFilters((prev) => {
@@ -267,7 +274,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		},
 		[],
 	);
-
+	//Clicking on Clear all filters in near to search dropdown will clear all the filters applied
 	const handleClearAllFilters = useCallback(() => {
 		setSearchQuery("");
 		const clearedFilters: FilterState = {
@@ -280,12 +287,12 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		setAppliedFilters(clearedFilters);
 		setTempFilters(clearedFilters);
 	}, []);
-
+	//onclick drawer has to open, it is handled here
 	const handleRowClick = useCallback((event: EventData) => {
 		setSelectedEvent(event);
 		setDrawerOpen(true);
 	}, []);
-
+	//handle drawer close by settingg timeout
 	const handleDrawerClose = useCallback(() => {
 		setDrawerOpen(false);
 		setTimeout(() => {
@@ -299,7 +306,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		},
 		[onPaginationChange, rowsPerPage],
 	);*/
-
+	//handle rows per page dropdown value
 	const handleChangeRowsPerPage = useCallback(
 		(value: string) => {
 			const newRowsPerPage = parseInt(value, 10);
@@ -307,7 +314,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		},
 		[onPaginationChange],
 	);
-
+	//getting filters count based on applied filters state
 	const getActiveFiltersCount = useCallback(
 		(column?: keyof FilterState) => {
 			if (column) {
@@ -325,6 +332,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	);
 
 	const totalActiveFilters = getActiveFiltersCount() + (searchQuery ? 1 : 0);
+	//Render popover content of Filter options like model, status ,etc
 	//biome-ignore lint/correctness/useExhaustiveDependencies : not adding functions as dependencies
 	const renderPopoverContent = useCallback(
 		(filterName: keyof FilterState) => {
@@ -344,13 +352,13 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						</Button>
 					</PopoverTrigger>
 					{popoverColumn === filterName ? (
-						<PopoverContent className="w-128">
+						<PopoverContent className="w-56">
 							{/* Render filter options for filterType */}
 							{/* ...custom filter UI... */}
 							<div className="flex flex-col gap-2">
 								<div
 									key={`${filterName}SelectAll`}
-									className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+									className="flex flex-row items-center gap-4 overflow-x-auto"
 								>
 									<Checkbox
 										checked={
@@ -389,7 +397,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 									Object.hasOwn(filtered, "value") ? (
 										<div
 											key={`${filtered.value}`}
-											className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+											className="items-cemter flex flex-row gap-4 overflow-x-auto"
 										>
 											<Checkbox
 												checked={tempFilters?.[
@@ -410,7 +418,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 									) : (
 										<div
 											key={`${filtered}`}
-											className="flex flex-row items-center justify-between gap-2 overflow-x-auto"
+											className="flex flex-row items-center gap-4 overflow-x-auto"
 										>
 											<Checkbox
 												checked={tempFilters?.[
@@ -717,7 +725,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						Rows per page:
 					</label>
 					<Select
-						// className="ml-4 rounded border px-2 py-1 text-sm"
 						value={rowsPerPage.toString()}
 						onValueChange={(value: string) => {
 							handleChangeRowsPerPage(value);
@@ -726,7 +733,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					>
 						<SelectTrigger
 							id={"rows-per-page"}
-							className="w-[80px]"
+							className="w-[80px] border-transparent text-sm"
 						>
 							<SelectValue />
 						</SelectTrigger>
@@ -738,7 +745,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							))}
 						</SelectContent>
 					</Select>
-					{filteredTotalCount}
 					<span className="mx-2 text-sm">
 						{/**
 							Checking for the case like , if a user searches on 2 or 3rd pages, then the filtered records might not have much records, so 
@@ -751,18 +757,16 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						{Math.ceil(filteredTotalCount / rowsPerPage)}
 					</span>
 					<Button
-						variant="outline"
-						className="border-b"
+						variant="ghost"
 						disabled={page === 0}
 						onClick={() =>
 							onPaginationChange(page - 1, rowsPerPage)
 						}
 					>
-						Prev
+						<ChevronLeft />
 					</Button>
 					<Button
-						variant="outline"
-						className="border-b"
+						variant="ghost"
 						disabled={
 							page + 1 >=
 							Math.ceil(filteredTotalCount / rowsPerPage)
@@ -771,7 +775,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							onPaginationChange(page + 1, rowsPerPage)
 						}
 					>
-						Next
+						<ChevronRight />
 					</Button>
 				</div>
 			</div>
@@ -790,18 +794,18 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					</span>
 				)}
 			</div>
-
+			{/** sheet open/close when user clicks on the row in auditlog table */}
 			<Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
 				<SheetContent
 					side="right"
-					className="transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
+					className="min-w-[500px] transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
 				>
 					<AuditLogsDetailDrawer
 						logDetails={selectedEvent}
 						handleDrawerClose={handleDrawerClose}
 					/>
 				</SheetContent>
-				<SheetClose />
+				{/* <SheetClose /> */}
 			</Sheet>
 		</>
 	);

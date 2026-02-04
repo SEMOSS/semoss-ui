@@ -548,7 +548,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
                 enablePublishing();
               }}
               disabled={
-                !configStore.isEngineOperationAvailable("APP", "access")
+                !configStore.isEngineOperationAvailable("PROJECT", "access")
               }
             />
           </ColumnBox>
@@ -571,7 +571,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
                 size="small"
                 disabled={
                   !portalDetails.project_has_portal ||
-                  !configStore.isEngineOperationAvailable("APP", "access")
+                  !configStore.isEngineOperationAvailable("PROJECT", "access")
                 }
                 onClick={() => {
                   publish();
@@ -716,7 +716,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 						rules={{}}
 						disabled={
 							!configStore.isEngineOperationAvailable(
-								"APP",
+								"PROJECT",
 								"access",
 							) || isLoading
 						}
@@ -726,7 +726,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 								value={field.value}
 								disabled={
 									!configStore.isEngineOperationAvailable(
-										"APP",
+										"PROJECT",
 										"access",
 									) || isLoading
 								}

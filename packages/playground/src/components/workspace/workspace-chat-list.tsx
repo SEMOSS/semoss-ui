@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { useIteratorPixel } from "@semoss/sdk/react";
-import { ScrollArea, Spinner, useInfiniteScroll } from "@semoss/ui/next";
+import { Muted, ScrollArea, Spinner, useInfiniteScroll } from "@semoss/ui/next";
 
-export interface WorkspaceChatListProps {
+interface WorkspaceChatListProps {
 	/**
 	 * List of chats associated with the workspace
 	 */
@@ -68,7 +68,7 @@ export const WorkspaceChatList = ({
 
 	if (getWorkspaceRooms.isError) {
 		return (
-			<div className="px-2 py-4 text-center text-destructive text-sm">
+			<div className="flex h-full w-full items-center justify-center">
 				Error: ${getWorkspaceRooms.error?.message}
 			</div>
 		);
@@ -76,8 +76,8 @@ export const WorkspaceChatList = ({
 
 	if (getWorkspaceRooms.data.length === 0) {
 		return (
-			<div className="px-2 py-4 text-center text-muted-foreground text-sm">
-				No chats
+			<div className="flex h-full w-full items-center justify-center">
+				<Muted>No chats found</Muted>
 			</div>
 		);
 	}
