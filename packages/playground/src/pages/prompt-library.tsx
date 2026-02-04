@@ -12,35 +12,52 @@ import { EditPromptModal } from "@/components/prompt/edit-prompt-modal";
 import { PromptGrid } from "@/components/prompt/prompt-grid";
 import { canViewPrompt } from "@/lib/prompt-access";
 import { getCurrentUser } from "@/mocks/getCurrentUser";
+import type { Prompt } from "@/types/prompt";
 import menuIcon from "../assets/img/Prompt_Library_Default.svg";
 import BaseAppLayout from "../components/common/base-app-layout";
 import PromptCategories from "../components/prompt/prompt-categories";
 
-export type Prompt = {
-	ID: string;
-	TITLE: string;
-	CONTEXT?: string;
-	INTENT?: string;
-	VERSION?: number;
-	CREATED_BY?: string;
-	DATE_CREATED?: string | Date | undefined;
-	GLOBAL?: boolean;
-	tags?: string[];
-	metaKeys?: Record<string, string[]>;
-};
-
 type SelectedCategory = { label: string; value: string };
 type UnknownRecord = Record<string, unknown>;
 type LoadStatus = "IDLE" | "LOADING" | "DONE" | "ERROR";
+type UserMeta = Record<string, unknown>;
+type MetaMap = Record<string, string[]>;
 
 function isRecord(v: unknown): v is UnknownRecord {
 	return typeof v === "object" && v !== null;
 }
 
-export function normalizePrompt(p: unknown): Prompt {
+function hasNativeMeta(x: unknown): x is { NATIVE: { meta: UserMeta } } {
+	return (
+		typeof x === "object" &&
+		x !== null &&
+		"NATIVE" in x &&
+		typeof (x as any).NATIVE === "object" &&
+		(x as any).NATIVE !== null &&
+		"meta" in (x as any).NATIVE &&
+		typeof (x as any).NATIVE.meta === "object" &&
+		(x as any).NATIVE.meta !== null
+	);
+}
+
+const normalizeToMetaMap = (meta: unknown): MetaMap | null => {
+	if (typeof meta !== "object" || meta === null) return null;
+
+	const out: MetaMap = {};
+	for (const [k, v] of Object.entries(meta as Record<string, unknown>)) {
+		if (Array.isArray(v) && v.every((s) => typeof s === "string"))
+			out[k] = v;
+		else if (typeof v === "string")
+			out[k] = [v]; // optional normalization
+		else return null; // fail fast if shape doesn’t match
+	}
+	return out;
+};
+
+function normalizePrompt(p: unknown): Prompt {
 	const obj = (p ?? {}) as Record<string, unknown>;
 
-	const rawTags = obj["TAGS"] ?? obj["tags"];
+	const rawTags = obj["tags"];
 	const tags = Array.isArray(rawTags)
 		? rawTags.map(String).filter(Boolean)
 		: typeof rawTags === "string"
@@ -50,20 +67,29 @@ export function normalizePrompt(p: unknown): Prompt {
 					.filter(Boolean)
 			: [];
 
+	const rawMetaKeys = obj["metaKeys"];
+	const metaKeys =
+		typeof rawMetaKeys === "object" && rawMetaKeys !== null
+			? (normalizeToMetaMap(rawMetaKeys) ?? {})
+			: {};
+
+	const createdByRaw = obj["created_by"];
+	const dateCreatedRaw = obj["date_created"];
+
 	return {
-		ID: String(obj["ID"] ?? ""),
-		TITLE: String(obj["TITLE"] ?? ""),
-		CONTEXT: String(obj["CONTEXT"] ?? ""),
-		INTENT: String(obj["INTENT"] ?? ""),
-		VERSION: Number(obj["VERSION"] ?? 0),
-		CREATED_BY: String(obj["CREATED_BY"] ?? ""),
-		DATE_CREATED: String(obj["DATE_CREATED"] ?? ""),
-		metaKeys: isRecord(obj["metaKeys"])
-			? (obj["metaKeys"] as Record<string, unknown[]>)
-			: {},
-		GLOBAL: Boolean(obj["GLOBAL"] ?? false),
+		id: String(obj["id"] ?? ""),
+		title: String(obj["title"] ?? ""),
+		context: String(obj["context"] ?? ""),
+		intent: String(obj["intent"] ?? ""),
+		version: Number(obj["version"] ?? 0),
+
+		createdBy: createdByRaw == null ? "" : String(createdByRaw),
+		dateCreated: dateCreatedRaw == null ? "" : String(dateCreatedRaw),
+
+		global: Boolean(obj["global"] ?? false),
 		tags,
-	} as Prompt;
+		metaKeys,
+	};
 }
 
 function useMediaQuery(query: string) {
@@ -97,9 +123,7 @@ function useMediaQuery(query: string) {
 }
 
 function isMinePrompt(p: Prompt, userId: string) {
-	// Safest default: only treat as "mine" when CREATED_BY matches current user.
-	// (Avoid misclassifying other users’ personal prompts as yours.)
-	return Boolean(userId) && Boolean(p.CREATED_BY) && p.CREATED_BY === userId;
+	return Boolean(userId) && Boolean(p.createdBy) && p.createdBy === userId;
 }
 
 export const PromptLibrary = observer(() => {
@@ -121,6 +145,8 @@ export const PromptLibrary = observer(() => {
 	const [isTagMenuOpen, setIsTagMenuOpen] = useState(false);
 	const [loadStatus, setLoadStatus] = useState<LoadStatus>("IDLE");
 
+	const [userMetaKeys, setUserMetaKeys] = useState<MetaMap>({});
+
 	const isMobile = useMediaQuery("(max-width: 640px)");
 	const isSmallDevice = useMediaQuery(
 		"(max-width: 320px) and (max-height: 568px)",
@@ -137,11 +163,12 @@ export const PromptLibrary = observer(() => {
 
 	const auth = Object.keys(config.logins ?? {})[0] ?? "";
 	const userId = config.loginDetails?.[auth]?.id ?? "";
-	const mockMetaUser = getCurrentUser();
+
+	console.log("PromptLibrary userMetaKeys:", userMetaKeys);
 
 	const currentUser = useMemo(
-		() => ({ userId, metaMap: mockMetaUser.metaMap }),
-		[userId, mockMetaUser.metaMap],
+		() => ({ userId, metaMap: userMetaKeys }),
+		[userId, userMetaKeys],
 	);
 
 	console.log("PromptLibrary currentUser:", currentUser);
@@ -180,11 +207,6 @@ export const PromptLibrary = observer(() => {
 			const rows = Array.isArray(output) ? output : [];
 
 			const normalized: Prompt[] = rows.map((p) => normalizePrompt(p));
-			const withTags = normalized.find((p) => (p.tags?.length ?? 0) > 0);
-			console.log("first prompt with tags:", {
-				id: withTags?.ID,
-				tags: withTags?.tags,
-			});
 
 			const tagSet = new Set<string>();
 			for (const p of normalized)
@@ -206,6 +228,39 @@ export const PromptLibrary = observer(() => {
 	}, [actions]);
 
 	useEffect(() => {
+		const getUserMetaKeys = async () => {
+			try {
+				const resultUnknown = (await actions.run(
+					`GetUserInfo()`,
+				)) as unknown;
+
+				const pixelReturn = isRecord(resultUnknown)
+					? (resultUnknown as { pixelReturn?: unknown }).pixelReturn
+					: undefined;
+
+				const first = Array.isArray(pixelReturn)
+					? pixelReturn[0]
+					: undefined;
+
+				const outputUnknown = isRecord(first)
+					? (first as { output?: unknown }).output
+					: undefined;
+
+				if (!hasNativeMeta(outputUnknown)) return;
+
+				const meta = (outputUnknown as any)?.NATIVE?.meta;
+				const metaMap = normalizeToMetaMap(meta);
+				if (metaMap === null) return;
+				setUserMetaKeys(metaMap);
+			} catch (e) {
+				console.error("GetUserInfo failed:", e);
+			}
+		};
+
+		getUserMetaKeys();
+	}, []);
+
+	useEffect(() => {
 		void refreshPrompts();
 	}, [refreshPrompts]);
 
@@ -222,8 +277,8 @@ export const PromptLibrary = observer(() => {
 			.filter((p) => {
 				if (!lower) return true;
 				return (
-					(p.TITLE ?? "").toLowerCase().includes(lower) ||
-					String(p.INTENT ?? p.CONTEXT ?? "")
+					(p.title ?? "").toLowerCase().includes(lower) ||
+					String(p.intent ?? p.context ?? "")
 						.toLowerCase()
 						.includes(lower)
 				);
@@ -237,9 +292,9 @@ export const PromptLibrary = observer(() => {
 
 	const handleAddNew = async (newPrompt: Prompt) => {
 		try {
-			const title = String(newPrompt.TITLE ?? "").replace(/"/g, "'");
-			const text = String(newPrompt.CONTEXT ?? "").replace(/"/g, "'");
-			const intent = String(newPrompt.INTENT ?? "").replace(/"/g, "'");
+			const title = String(newPrompt.title ?? "").replace(/"/g, "'");
+			const text = String(newPrompt.context ?? "").replace(/"/g, "'");
+			const intent = String(newPrompt.intent ?? "").replace(/"/g, "'");
 			const tags = Array.isArray(newPrompt.tags)
 				? newPrompt.tags.map((t) => t.replace(/"/g, "'"))
 				: [];
@@ -299,8 +354,8 @@ export const PromptLibrary = observer(() => {
 		return myPrompts.filter((p) => {
 			if (!lower) return true;
 			return (
-				(p.TITLE ?? "").toLowerCase().includes(lower) ||
-				String(p.INTENT ?? p.CONTEXT ?? "")
+				(p.title ?? "").toLowerCase().includes(lower) ||
+				String(p.intent ?? p.context ?? "")
 					.toLowerCase()
 					.includes(lower)
 			);
@@ -528,14 +583,14 @@ export const PromptLibrary = observer(() => {
 							className="h-10 whitespace-nowrap"
 							onClick={() => {
 								setCurrentPrompt({
-									ID: "new",
-									TITLE: "",
-									CONTEXT: "",
-									INTENT: "",
-									VERSION: 1,
-									CREATED_BY: userId,
-									DATE_CREATED: new Date(),
-									GLOBAL: false,
+									id: "new",
+									title: "",
+									context: "",
+									intent: "",
+									version: 1,
+									createdBy: userId,
+									dateCreated: new Date(),
+									global: false,
 									tags: [],
 									metaKeys: {},
 								});

@@ -1,28 +1,15 @@
 import { Copy, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useId, useMemo, useState } from "react";
-import type { Prompt } from "./prompt-grid";
+import type { Prompt } from "@/types/prompt";
 
 interface PromptDetailsModalProps {
 	open: boolean;
 	onClose: () => void;
-	prompt: PromptWithDetails | null;
+	prompt: Prompt | null;
 	onUse: (promptText: string) => void; // kept for compatibility (not used here)
 	onCopy: (text: string) => void;
 }
-
-// Extend whatever `Prompt` is with the fields this modal reads
-type PromptWithDetails = Prompt & {
-	ID?: string | number;
-	TITLE?: string | null;
-	INTENT?: unknown;
-	CONTEXT?: unknown;
-	DATE_CREATED?: Date | string | number | null;
-	CREATED_BY?: unknown;
-	VERSION?: unknown;
-	GLOBAL?: unknown;
-	tags?: unknown;
-};
 
 function useMediaQuery(query: string) {
 	const [matches, setMatches] = useState<boolean>(() => {
@@ -74,14 +61,14 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 	const isMobile = useMediaQuery("(max-width: 640px)");
 	const dialogTitleId = useId();
 
-	const createdValue = prompt?.DATE_CREATED ?? null;
+	const createdValue = prompt?.dateCreated ?? null;
 
 	const createdText = useMemo(() => formatDate(createdValue), [createdValue]);
 
 	const promptText = useMemo(() => {
-		const raw = prompt?.INTENT ?? prompt?.CONTEXT ?? "";
+		const raw = prompt?.intent ?? prompt?.context ?? "";
 		return String(raw);
-	}, [prompt?.INTENT, prompt?.CONTEXT]);
+	}, [prompt?.intent, prompt?.context]);
 
 	const tags = useMemo(() => {
 		const raw = prompt?.tags;
@@ -102,13 +89,13 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 
 	if (!open || !prompt) return null;
 
-	const title = String(prompt.TITLE ?? "");
+	const title = String(prompt.title ?? "");
 	const createdBy =
-		typeof prompt.CREATED_BY === "string" ? prompt.CREATED_BY : "";
-	const version = typeof prompt.VERSION === "number" ? prompt.VERSION : null;
+		typeof prompt.createdBy === "string" ? prompt.createdBy : "";
+	const version = typeof prompt.version === "number" ? prompt.version : null;
 	const scope =
-		typeof prompt.GLOBAL === "boolean"
-			? prompt.GLOBAL
+		typeof prompt.global === "boolean"
+			? prompt.global
 				? "Global"
 				: "My Prompts"
 			: "";
@@ -208,14 +195,14 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 
 						<div className="h-px bg-slate-200" />
 
-						{prompt.CONTEXT ? (
+						{prompt.context ? (
 							<div>
 								<div className="mb-2 font-semibold text-slate-900 text-sm">
-									Context
+									context
 								</div>
 								<div className="max-h-[250px] overflow-y-auto rounded-md border border-slate-200 bg-slate-50 p-3">
 									<div className="whitespace-pre-wrap text-slate-600 text-sm leading-6">
-										{String(prompt.CONTEXT)}
+										{String(prompt.context)}
 									</div>
 								</div>
 							</div>
@@ -253,7 +240,7 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 								<div className="flex flex-wrap gap-2">
 									{tags.map((tag) => (
 										<span
-											key={`${String(prompt.ID ?? "prompt")}:${tag}`}
+											key={`${String(prompt.id ?? "prompt")}:${tag}`}
 											className="inline-flex items-center rounded-md bg-sky-100 px-2 py-1 font-medium text-sky-700 text-xs"
 										>
 											{tag}

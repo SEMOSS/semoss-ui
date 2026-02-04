@@ -3,7 +3,7 @@ import type React from "react";
 import { useId, useMemo, useState } from "react";
 import { Button } from "@semoss/ui/next";
 import { usePixel } from "@/hooks";
-import type { Prompt } from "@/types";
+import type { Prompt } from "@/types/prompt";
 
 interface PromptLibraryComponentProps {
 	/** Callback triggered when the tool modal is closed */
@@ -11,16 +11,16 @@ interface PromptLibraryComponentProps {
 }
 
 type TagMeta = {
-	METAKEY: "tag";
-	METAVALUE: string;
+	metaKey: "tag";
+	metaValue: string;
 	count: number;
 };
 
 // Use the shape this component reads, while still being assignable to `Prompt`
 type PromptRow = Prompt & {
-	ID: string;
-	TITLE?: string | null;
-	INTENT?: string | null;
+	id: string;
+	title?: string | null;
+	intent?: string | null;
 	tags?: string[] | null;
 };
 
@@ -47,8 +47,8 @@ export const PromptLibraryComponent: React.FC<PromptLibraryComponentProps> = ({
 		const q = search.trim().toLowerCase();
 
 		return prompts.filter((p) => {
-			const title = String(p?.TITLE ?? "").toLowerCase();
-			const intent = String(p?.INTENT ?? "").toLowerCase();
+			const title = String(p?.title ?? "").toLowerCase();
+			const intent = String(p?.intent ?? "").toLowerCase();
 
 			const matchesSearch = !q || title.includes(q) || intent.includes(q);
 
@@ -129,10 +129,10 @@ export const PromptLibraryComponent: React.FC<PromptLibraryComponentProps> = ({
 									<option value="">All</option>
 									{tagOptions.map((t) => (
 										<option
-											key={t.METAVALUE}
-											value={t.METAVALUE}
+											key={t.metaValue}
+											value={t.metaValue}
 										>
-											{t.METAVALUE}
+											{t.metaValue}
 										</option>
 									))}
 								</select>
@@ -163,7 +163,7 @@ export const PromptLibraryComponent: React.FC<PromptLibraryComponentProps> = ({
 
 										return (
 											<button
-												key={p.ID}
+												key={p.id}
 												type="button"
 												onClick={() => onClose(true, p)}
 												className="flex h-[130px] w-full cursor-pointer flex-col gap-2 rounded-md border border-transparent bg-slate-50 p-3 text-left hover:border-[#b18950]"
@@ -171,13 +171,13 @@ export const PromptLibraryComponent: React.FC<PromptLibraryComponentProps> = ({
 												<div className="flex items-start gap-2">
 													<div className="min-w-0 flex-1">
 														<div className="truncate font-semibold text-slate-900 text-sm">
-															{p.TITLE}
+															{p.title}
 														</div>
 
 														<div className="mt-1 flex flex-wrap gap-1">
 															{tags.map((t) => (
 																<span
-																	key={`${p.ID}:${t}`}
+																	key={`${p.id}:${t}`}
 																	className="inline-flex items-center rounded-md bg-sky-100 px-2 py-0.5 font-medium text-sky-700 text-xs"
 																>
 																	{t}
@@ -188,7 +188,7 @@ export const PromptLibraryComponent: React.FC<PromptLibraryComponentProps> = ({
 												</div>
 
 												<div className="line-clamp-3 h-[60px] text-slate-600 text-xs leading-5">
-													{p.INTENT}
+													{p.intent}
 												</div>
 											</button>
 										);

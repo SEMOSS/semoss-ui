@@ -8,19 +8,10 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import type { Prompt } from "./prompt-grid";
-
-type PromptCardPrompt = Prompt & {
-	ID: string | number;
-	TITLE?: string | null;
-	CONTEXT?: unknown;
-	INTENT?: unknown;
-	tags?: unknown;
-	DATE_CREATED?: Date | string | number | null;
-};
+import type { Prompt } from "@/types/prompt";
 
 interface PromptCardProps {
-	prompt: PromptCardPrompt;
+	prompt: Prompt;
 	onEdit: () => void;
 	onDelete: () => void;
 	category: string;
@@ -70,9 +61,9 @@ function formatCreatedAt(createdAt: Date | string | number | null | undefined) {
 	}).format(d);
 }
 
-function getDescription(prompt: PromptCardPrompt): string {
-	// CONTEXT is the prompt itself ("description")
-	return String(prompt.CONTEXT ?? "").trim();
+function getDescription(prompt: Prompt): string {
+	// context is the prompt itself ("description")
+	return String(prompt.context ?? "").trim();
 }
 
 export function PromptCard({
@@ -82,7 +73,7 @@ export function PromptCard({
 	category,
 	onShowDetails,
 }: PromptCardProps) {
-	const { ID, TITLE, DATE_CREATED } = prompt;
+	const { id, title, dateCreated } = prompt;
 
 	const description = getDescription(prompt);
 
@@ -156,8 +147,8 @@ export function PromptCard({
 	};
 
 	const displayTime = useMemo(
-		() => formatCreatedAt(DATE_CREATED ?? null),
-		[DATE_CREATED],
+		() => formatCreatedAt(dateCreated ?? null),
+		[dateCreated],
 	);
 
 	const snackbarNode = snackbar.open ? (
@@ -194,7 +185,7 @@ export function PromptCard({
 					Delete Prompt
 				</div>
 				<div className="px-4 py-4 text-muted-foreground text-sm">
-					Are you sure you want to delete {String(TITLE ?? "")}? This
+					Are you sure you want to delete {String(title ?? "")}? This
 					action cannot be undone.
 				</div>
 				<div className="flex items-center justify-end gap-2 border-border border-t px-4 py-3">
@@ -235,7 +226,7 @@ export function PromptCard({
 							<div className="mb-1 flex items-start justify-between gap-3">
 								<div className="min-w-0 flex-1">
 									<div className="mb-1 line-clamp-2 font-medium text-[16px] text-slate-800 leading-[1.2]">
-										{String(TITLE ?? "")}
+										{String(title ?? "")}
 									</div>
 
 									{category === "My Prompts" &&
@@ -249,7 +240,7 @@ export function PromptCard({
 										<div className="mb-1 flex flex-wrap gap-1">
 											{tags.slice(0, 3).map((tag) => (
 												<span
-													key={`${String(ID)}:${tag}`}
+													key={`${String(id)}:${tag}`}
 													className="inline-flex h-5 items-center rounded-md bg-sky-100 px-2 font-medium text-[11px] text-sky-700"
 												>
 													{tag}
@@ -341,7 +332,7 @@ export function PromptCard({
 					}}
 				>
 					<Button
-						key={ID}
+						key={id}
 						variant="outline"
 						onClick={() =>
 							navigate("/", {
@@ -355,14 +346,14 @@ export function PromptCard({
 					>
 						<div className="w-full text-left">
 							<div className="mb-1 font-semibold text-sm">
-								{String(TITLE ?? "")}
+								{String(title ?? "")}
 							</div>
 
 							{tags.length > 0 ? (
 								<div className="mb-1 flex flex-wrap gap-1">
 									{tags.slice(0, 3).map((tag) => (
 										<span
-											key={`${String(ID)}:${tag}:home`}
+											key={`${String(id)}:${tag}:home`}
 											className="inline-flex h-4 items-center rounded-md bg-sky-100 px-1.5 font-medium text-[9px] text-sky-700"
 										>
 											{tag}
@@ -382,7 +373,7 @@ export function PromptCard({
 														.slice(3)
 														.map((tag) => (
 															<span
-																key={`${String(ID)}:${tag}:more`}
+																key={`${String(id)}:${tag}:more`}
 																className="inline-flex h-5 items-center rounded-md bg-sky-100 px-2 font-medium text-[11px] text-sky-700"
 															>
 																{tag}

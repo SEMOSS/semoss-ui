@@ -2,7 +2,7 @@ import type React from "react";
 import { useEffect, useId, useState } from "react";
 import { Button } from "@semoss/ui/next";
 import { ChipsInput } from "@/components/prompt/chips-input";
-import type { Prompt } from "@/components/prompt/prompt-grid";
+import type { Prompt } from "@/types/prompt";
 
 interface EditPromptModalProps {
 	prompt: Prompt;
@@ -52,8 +52,8 @@ export const EditPromptModal = ({
 
 		const sanitizedPrompt: Prompt = {
 			...editedPrompt,
-			CONTEXT: sanitizeString(editedPrompt.CONTEXT),
-			TITLE: sanitizeString(editedPrompt.TITLE),
+			context: sanitizeString(editedPrompt.context),
+			title: sanitizeString(editedPrompt.title),
 		};
 
 		console.log("Saving prompt:", sanitizedPrompt);
@@ -93,8 +93,8 @@ export const EditPromptModal = ({
 							</label>
 							<input
 								id={nameId}
-								name="TITLE"
-								value={editedPrompt.TITLE ?? ""}
+								name="title"
+								value={editedPrompt.title ?? ""}
 								onChange={handleChange}
 								required
 								className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -107,8 +107,8 @@ export const EditPromptModal = ({
 							</label>
 							<textarea
 								id={contentId}
-								name="CONTEXT"
-								value={editedPrompt.CONTEXT ?? ""}
+								name="context"
+								value={editedPrompt.context ?? ""}
 								onChange={(e) => {
 									const { name, value } = e.target;
 									setIsBeingEdited(true);
@@ -131,7 +131,7 @@ export const EditPromptModal = ({
 							<input
 								id={intentId}
 								name="INTENT"
-								value={editedPrompt.INTENT ?? ""}
+								value={editedPrompt.intent ?? ""}
 								onChange={handleChange}
 								required
 								className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"

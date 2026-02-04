@@ -1,8 +1,8 @@
 type MetaMap = Record<string, string[]>;
 
 type PromptLike = {
-	CREATED_BY?: string;
-	GLOBAL?: boolean;
+	createdBy?: string;
+	global?: boolean;
 	metaKeys?: MetaMap;
 };
 
@@ -29,8 +29,8 @@ const matchesMetaMap = (required: MetaMap, user: MetaMap): boolean => {
 };
 
 export const canViewPrompt = (user: UserLike, prompt: PromptLike): boolean => {
-	if (prompt.CREATED_BY && prompt.CREATED_BY === user.userId) return true;
-	if (!prompt.GLOBAL) return false;
+	if (prompt.createdBy && prompt.createdBy === user.userId) return true;
+	if (!prompt.global) return false;
 
 	const required = prompt.metaKeys ?? {};
 	if (hasNoRequirements(required)) return true;

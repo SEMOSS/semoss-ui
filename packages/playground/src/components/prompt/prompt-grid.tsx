@@ -3,22 +3,10 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
+import type { Prompt } from "@/types/prompt";
 import { PromptDetailsModal } from "../../components/prompt/prompt-details-modal";
 import { EditPromptModal } from "./edit-prompt-modal";
 import { PromptCard } from "./prompt-card";
-
-export type Prompt = {
-	ID: string;
-	TITLE: string;
-	CONTEXT?: string;
-	INTENT?: string;
-	VERSION?: number;
-	CREATED_BY?: string;
-	DATE_CREATED?: string | Date | null;
-	GLOBAL?: boolean;
-	tags?: string[];
-	metaKeys?: Record<string, string[]>;
-};
 
 type SelectedCategory = { label: string; value: string };
 
@@ -59,7 +47,7 @@ function useMediaQuery(query: string) {
 }
 
 function getPromptText(p: Prompt): string {
-	return String(p.CONTEXT ?? "").trim();
+	return String(p.context ?? "").trim();
 }
 
 export const PromptGrid = observer(function PromptGrid({
@@ -127,6 +115,7 @@ export const PromptGrid = observer(function PromptGrid({
 	};
 
 	const handleDelete = async (id: string) => {
+		console.log("id", id);
 		const response = await actions.run<[boolean]>(
 			`DeletePrompt(map={"promptId":'${id}'});`,
 		);
@@ -147,7 +136,7 @@ export const PromptGrid = observer(function PromptGrid({
 	};
 
 	const handleSave = async (updatedPrompt: Prompt) => {
-		const title = (updatedPrompt?.TITLE ?? "").trim();
+		const title = (updatedPrompt?.title ?? "").trim();
 		const text = getPromptText(updatedPrompt);
 
 		if (!title || !text) {
@@ -160,7 +149,7 @@ export const PromptGrid = observer(function PromptGrid({
 		}
 
 		const map = {
-			id: String(updatedPrompt.ID),
+			id: String(updatedPrompt.id),
 			title,
 			context: text,
 		};
@@ -221,12 +210,12 @@ export const PromptGrid = observer(function PromptGrid({
 				<div className="grid grid-cols-1 gap-0 sm:grid-cols-2 md:grid-cols-4">
 					{Array.isArray(listToRender) &&
 						listToRender.map((prompt) => (
-							<div key={prompt.ID} className="col-span-1">
+							<div key={prompt.id} className="col-span-1">
 								<PromptCard
 									prompt={prompt}
 									category={selectedCategory.label}
 									onEdit={() => handleEdit(prompt)}
-									onDelete={() => handleDelete(prompt.ID)}
+									onDelete={() => handleDelete(prompt.id)}
 									onShowDetails={() =>
 										handleShowDetails(prompt)
 									}
@@ -241,14 +230,14 @@ export const PromptGrid = observer(function PromptGrid({
 					{Array.isArray(listToRender) &&
 						listToRender.map((prompt) => (
 							<div
-								key={prompt.ID}
+								key={prompt.id}
 								className="flex w-fit flex-[0_0_auto]"
 							>
 								<PromptCard
 									prompt={prompt}
 									category={selectedCategory.label}
 									onEdit={() => handleEdit(prompt)}
-									onDelete={() => handleDelete(prompt.ID)}
+									onDelete={() => handleDelete(prompt.id)}
 									onShowDetails={() =>
 										handleShowDetails(prompt)
 									}
@@ -272,14 +261,14 @@ export const PromptGrid = observer(function PromptGrid({
 						{Array.isArray(listToRender) &&
 							listToRender.map((prompt) => (
 								<div
-									key={prompt.ID}
+									key={prompt.id}
 									className="flex w-fit flex-[0_0_auto]"
 								>
 									<PromptCard
 										prompt={prompt}
 										category={selectedCategory.label}
 										onEdit={() => handleEdit(prompt)}
-										onDelete={() => handleDelete(prompt.ID)}
+										onDelete={() => handleDelete(prompt.id)}
 										onShowDetails={() =>
 											handleShowDetails(prompt)
 										}
@@ -301,16 +290,16 @@ export const PromptGrid = observer(function PromptGrid({
 
 			{isEditModalOpen && currentPrompt && (
 				<EditPromptModal
-					key={currentPrompt.ID}
+					key={currentPrompt.id}
 					prompt={currentPrompt}
 					open={isEditModalOpen}
 					onClose={() => setIsEditModalOpen(false)}
 					onSave={
-						(currentPrompt.ID || "").includes("new")
+						(currentPrompt.id || "").includes("new")
 							? handleAddNew
 							: handleSave
 					}
-					isNewPrompt={(currentPrompt.ID || "").includes("new")}
+					isNewPrompt={(currentPrompt.id || "").includes("new")}
 				/>
 			)}
 

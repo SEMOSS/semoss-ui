@@ -61,16 +61,16 @@ export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
 /**
  * Item from the prompt library
  */
-export interface Prompt {
-	ID: string;
-	CREATED_BY: string;
-	DATE_CREATED: string;
-	VERSION: number;
-	INTENT: string;
-	TITLE: string;
-	CONTEXT: string;
-	tags: string[];
-}
+// export interface Prompt {
+// 	ID: string;
+// 	CREATED_BY: string;
+// 	DATE_CREATED: string;
+// 	VERSION: number;
+// 	INTENT: string;
+// 	TITLE: string;
+// 	CONTEXT: string;
+// 	tags: string[];
+// }
 
 /**
  * Messages from the backend
