@@ -1,7 +1,7 @@
 export interface Engine {
 	app_id: string;
 	app_name: string;
-	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION";
+	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
 	description?: string;
 }
 
@@ -146,6 +146,13 @@ export interface ResponseTextPixelMessage extends AbstractPixelMessage {
 	ornaments: {
 		PLAYGROUND_MESSAGE_TYPE?: "COT";
 		modelName?: string;
+	};
+	feedback?: {
+		rating: boolean;
+		feedbackText: string;
+		messageId: string;
+		messageType: "RESPONSE_TEXT";
+		feedbackDate: string; // YYYY-MM-DD HH:MM:SS
 	};
 }
 

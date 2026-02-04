@@ -123,7 +123,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 	({ room, app, message, tool, mcp, toolResponse }) => {
 		const properties = mcp?.inputSchema?.properties || {};
 		const required = mcp?.inputSchema?.required || [];
-		const name = mcp?.name || "";
+		const name = mcp?.title || mcp?.name || "";
 		const description = mcp?.description || "";
 		const [data, setData] = useState<Record<string, unknown>>(() => {
 			return tool?.parameters;

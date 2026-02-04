@@ -60,10 +60,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		 * @param rating - positive or negative
 		 */
 		const recordFeedback = async (rating: boolean) => {
+			const isDeleting = message.feedback?.rating === rating;
 			try {
-				await message.recordFeedback(rating);
-
-				toast.success("Successfully saved feedback");
+				await message.recordFeedback(isDeleting ? null : rating);
+				if (!isDeleting) {
+					toast.success("Thank you for the feedback!");
+				}
 			} catch (e) {
 				toast.error(e.message);
 			}
@@ -273,11 +275,17 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										recordFeedback(true);
 									}}
 								>
-									<ThumbsUpIcon />
+									<ThumbsUpIcon
+										fill={
+											message.feedback?.rating === true
+												? "currentColor"
+												: "none"
+										}
+									/>
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
-								Share Positive Feedback
+								Good response
 							</TooltipContent>
 						</Tooltip>
 
@@ -290,11 +298,17 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										recordFeedback(false);
 									}}
 								>
-									<ThumbsDownIcon />
+									<ThumbsDownIcon
+										fill={
+											message.feedback?.rating === false
+												? "currentColor"
+												: "none"
+										}
+									/>
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
-								Share Negative Feedback
+								Poor response
 							</TooltipContent>
 						</Tooltip>
 

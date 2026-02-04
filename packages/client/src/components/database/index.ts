@@ -1,4 +1,4 @@
-export * from "../engine/EditEngineDetails";
+export * from "../engine/edit-engine-details";
 export * from "./ColumnDataTypeIcon";
 export * from "./DatabaseStatistics";
 export * from "./DatabaseStructureBrowser";
