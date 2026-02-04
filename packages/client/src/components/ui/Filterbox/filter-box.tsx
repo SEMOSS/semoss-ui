@@ -246,7 +246,7 @@ export const Filterbox = (props: FilterboxProps) => {
 
 		// 2) Clean up searchParams: preserve order, keys, and other valid keys (tag, domain, etc.)
 		if (searchParams.size > 0) {
-			const keys = [...new Set([...searchParams.keys()])]; // unique keys in original order
+			const keys = Array.from(new Set(searchParams.keys())); // unique keys in original order
 			const newParams = new URLSearchParams();
 			let hasInvalid = false;
 
@@ -410,6 +410,13 @@ export const Filterbox = (props: FilterboxProps) => {
 															),
 														)}
 													</h6>
+													{showCollapsible[
+														entries[0]
+													] ? (
+														<ChevronUp className="size-4" />
+													) : (
+														<ChevronDown className="size-4" />
+													)}
 												</Button>
 											</CollapsibleTrigger>
 
