@@ -72,33 +72,40 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 const StyledTypography = styled(Typography)(({ theme }) => ({
 	color: theme.palette.text.primary,
 }));
-//Initial y axis state for maintaining, restoring y axis fields
-const INITIAL_YAXIS_STATE = {
-	showAxis: true, //yaxis show/hide
-	yaxistitle: "", //y axis title value
-	showAxisTitle: true, // yaxis title hide/show
-	yaxisTitleFontSize: 12, // yaxis title fontsize
-	showYAxisLineTicks: false, // show/hide y axis ticks
-	showYAxisLabels: true, // show/hide y axis labels
-	labelFontSize: 12, // to change label font size
-	rotate: 0, // to rotate label values from 0 to 360
-	rotateLabelMinValue: 0, // rotating degree min value
-	rotateLabelMaxValue: 360, // rotating degree max value
-	showYAxisZoom: true, // show y axis zoom slider
-	truncateCharCount: 0, // truncate character count for y axis title
-	axisGap: 25, // gap between axis and axis title
-};
+
 //Changing the Y axis styling like title, rotate and changing the labels
 export const EditYAxis = observer(
 	<D extends BlockDef = BlockDef>({ option, id, path }) => {
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
-		const [yaxisState, setYaxisState] = useState(INITIAL_YAXIS_STATE);
 		const [yAxisDataUpdated, setYAxisDataUpdated] = useState<
 			"initial" | "updated"
 		>("initial");
 		const [value, setValue] = useState(data.option);
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		// Store the initial value of yAxis.name in a ref to persist it across renders
+		const initialXAxisNameRef = useRef(data.option.yAxis["name"]);
+
+		// Use the initial value from the ref
+		const storedValue = initialXAxisNameRef.current;
+		//Initial y axis state for maintaining, restoring y axis fields
+		const INITIAL_YAXIS_STATE = {
+			showAxis: true, //yaxis show/hide
+			yaxistitle: storedValue, //y axis title value
+			showAxisTitle: true, // yaxis title hide/show
+			yaxisTitleFontSize: 12, // yaxis title fontsize
+			showYAxisLineTicks: false, // show/hide y axis ticks
+			showYAxisLabels: true, // show/hide y axis labels
+			labelFontSize: 12, // to change label font size
+			rotate: 0, // to rotate label values from 0 to 360
+			rotateLabelMinValue: 0, // rotating degree min value
+			rotateLabelMaxValue: 360, // rotating degree max value
+			showYAxisZoom: true, // show y axis zoom slider
+			truncateCharCount: 0, // truncate character count for y axis title
+			axisGap: 25, // gap between axis and axis title
+		};
+
+		const [yaxisState, setYaxisState] = useState(INITIAL_YAXIS_STATE);
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
 			return computed(() => {
