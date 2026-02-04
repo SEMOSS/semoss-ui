@@ -1,78 +1,51 @@
 import { RotateCw } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import { AuditLogsDataTable, AuditLogsTimeline } from "@semoss/shared";
 import {
-	Button,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Skeleton,
-} from "@semoss/ui/next";
+	AuditLogFilter,
+	AuditLogsDataTable,
+	AuditLogsTimeline,
+} from "@semoss/shared";
+import { useNotification } from "@semoss/ui";
+import { Button, Skeleton } from "@semoss/ui/next";
 import { useUserRootStore } from "@/hooks/useUserRootStore";
-import { ENGINE_TYPES, type EventData } from "./common/utility";
+import type { EventData } from "./common/utility";
 
-const initialAcc = {
-	APP: [],
-	MODEL: [],
-	DATABASE: [],
-	VECTOR: [],
-	FUNCTION: [],
-	STORAGE: [],
-};
+/**
+ * This component displays the audit logs.
+ *
+ * @param {string} catalogName - The name of the catalog.
+ */
 
 export const AuditLogPage = ({ catalogName }) => {
-	const { insightId } = useInsight();
+	const { insightId } = useInsight(); // fetching insight id for access
 	const [logs, setLogs] = useState<EventData[]>([]);
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(10);
 	const [totalCount, setTotalCount] = useState(0);
 	const [loading, setLoading] = useState<boolean>(true);
 	const rootStore = useUserRootStore(insightId);
-	const [engineDetails, setEngineDetails] = useState({ ...initialAcc });
-	const [engineSelectionDetails, setEngineSelectionDetails] = useState({
+	const notification = useNotification();
+	const filteredData = useRef({
 		engineType: "",
 		engineId: "",
+		dashboardDuration: "",
+		customDateRange: { from: null, to: null },
+		SelectedDuration: {
+			label: "",
+			value: "",
+			dateRangeType: "",
+			dateRangeValue: 1,
+		},
 	});
 
-	useEffect(() => {
-		async function getMyEngines() {
-			if (insightId) {
-				const response = await runPixel(`MyEngines();`, insightId);
-				const responseData = response.pixelReturn[0].output;
-				const enginesDropdown = (
-					responseData as Array<{
-						database_id: string;
-						app_type: string;
-						app_name: string;
-					}>
-				).reduce(
-					(acc, engine) => {
-						// Only accept known app_types
-						if (Object.hasOwn(acc, engine.app_type)) {
-							acc[engine.app_type] = [
-								...acc[engine.app_type],
-								{
-									value: engine.database_id,
-									label: engine.app_name,
-								},
-							];
-						}
-						return acc;
-					},
-					{ ...initialAcc },
-				);
-				setEngineDetails(enginesDropdown);
-			}
-		}
-		getMyEngines();
-	}, [insightId]);
-
-	// const notification = useNotification();
-
+	/**
+	 * Fetches audit logs from the API.
+	 *
+	 * @param {number} limit - The limit of the logs to fetch.
+	 * @param {number} offset - The offset of the logs to fetch.
+	 */
 	const fetchLogs = async (limit: number, offset: number) => {
 		setLoading(true);
 		try {
@@ -85,11 +58,28 @@ export const AuditLogPage = ({ catalogName }) => {
 			const ss = String(date.getSeconds()).padStart(2, "0");
 
 			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-			const catalogId = engineSelectionDetails.engineId ?? null;
-			// window.location.hash.split("/")[catalogName === "Apps" ? 2 : 3];
-			catalogName = engineSelectionDetails.engineType;
+			const catalogId = filteredData.current.engineId ?? null;
+			catalogName = filteredData.current.engineType;
+			console.log(catalogName, "catalogName");
+			const startDate = new Date(
+				filteredData.current?.customDateRange?.from?.setUTCHours(
+					0,
+					0,
+					0,
+					0,
+				),
+			);
+			const endDate = new Date(
+				filteredData.current?.customDateRange?.to?.setUTCHours(
+					23,
+					59,
+					59,
+					999,
+				),
+			);
+			const SelectedDuration = filteredData.current.SelectedDuration;
 			const response = await runPixel(
-				`AuditLogReport(paramValues=[{"userId": "${rootStore?.user?.id}", "${catalogName === "APP" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}"}]);`,
+				`AuditLogReport(paramValues=[{"userId": "${rootStore?.user?.id}","projectId" : "${catalogName === "APP" ? catalogId : ""}","engineId": "${catalogName === "APP" ? "" : catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}","dateRangeType": "${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue": ${SelectedDuration.dateRangeValue} ${SelectedDuration.dateRangeType === "CUSTOM" ? `,"startDate": "${startDate?.toISOString()}", "endDate": "${endDate?.toISOString()}"` : ""}}]);`,
 				insightId,
 			);
 			const responseData = response.pixelReturn[0].output as {
@@ -119,6 +109,11 @@ export const AuditLogPage = ({ catalogName }) => {
 		}
 	};
 
+	/**
+	 * Handles pagination change by updating page and rows per page state and fetching logs with the new offset.
+	 * @param {number} newPage - The new page number.
+	 * @param {number} newRowsPerPage - The new number of rows per page.
+	 */
 	const handlePaginationChange = (
 		newPage: number,
 		newRowsPerPage: number,
@@ -134,7 +129,7 @@ export const AuditLogPage = ({ catalogName }) => {
 		if (
 			!catalogName ||
 			!rootStore?.user?.id ||
-			!engineSelectionDetails.engineId
+			!filteredData.current?.engineId
 		) {
 			setLogs([]);
 			setLoading(false);
@@ -143,7 +138,7 @@ export const AuditLogPage = ({ catalogName }) => {
 		if (
 			catalogName &&
 			rootStore?.user?.id &&
-			engineSelectionDetails.engineId
+			filteredData.current?.engineId
 		) {
 			setLogs([]);
 			fetchLogs(rowsPerPage, page * rowsPerPage);
@@ -162,78 +157,18 @@ export const AuditLogPage = ({ catalogName }) => {
 				contentElement.style.maxWidth = "";
 			}
 		};
-	}, [
-		catalogName,
-		rowsPerPage,
-		page,
-		rootStore?.user?.id,
-		engineSelectionDetails.engineId,
-	]);
+	}, [catalogName, rowsPerPage, page, rootStore?.user?.id]);
 
-	const renderFilterSection = useCallback(() => {
-		return (
-			<div className="flex gap-2">
-				<div className="min-w-[100px]">
-					<Select
-						value={engineSelectionDetails.engineType}
-						onValueChange={(value) =>
-							setEngineSelectionDetails({
-								...engineSelectionDetails,
-								engineType: value,
-								engineId: "",
-							})
-						}
-					>
-						<SelectTrigger className="min-w-[180px]">
-							<SelectValue placeholder="Select Engine Type" />
-						</SelectTrigger>
-						<SelectContent>
-							{ENGINE_TYPES.map((engineType) => (
-								<SelectItem
-									value={engineType}
-									key={`${engineType}Selection`}
-								>
-									{engineType}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-				<div className="min-w-[100px]">
-					<Select
-						value={engineSelectionDetails.engineId}
-						onValueChange={(value) => {
-							setEngineSelectionDetails({
-								...engineSelectionDetails,
-								engineId: value,
-							});
-						}}
-					>
-						<SelectTrigger className="min-w-[180px]">
-							<SelectValue placeholder={`Select Engine`} />
-						</SelectTrigger>
-						<SelectContent>
-							{engineSelectionDetails.engineType &&
-							engineDetails[engineSelectionDetails.engineType]
-								.length > 0
-								? engineDetails[
-										engineSelectionDetails.engineType
-									].map((engine) => (
-										<SelectItem
-											value={engine.value}
-											key={engine.value}
-										>
-											{engine.label}
-										</SelectItem>
-									))
-								: null}
-						</SelectContent>
-					</Select>
-				</div>
-			</div>
-		);
-	}, [engineSelectionDetails, engineDetails]);
-
+	/**
+	 * Updates the filtered data state with the new filter data and fetches logs with the new offset.
+	 * @param {object} filterData - The new filter data.
+	 */
+	const updateLogs = (filterData) => {
+		filteredData.current = {
+			...filterData,
+		};
+		fetchLogs(rowsPerPage, page * rowsPerPage);
+	};
 	return (
 		<div className="flex flex-col gap-4 px-8 py-8">
 			<div className="flex w-full items-center py-4">
@@ -257,12 +192,26 @@ export const AuditLogPage = ({ catalogName }) => {
 							</Menu.Item>
 							<Menu.Item value="Last Year">Last Year</Menu.Item>
 						</Select> */}
-					{renderFilterSection()}
+					<AuditLogFilter
+						updateLogs={updateLogs}
+						insightId={insightId}
+					/>
 					<Button
 						variant="default"
-						onClick={() =>
-							fetchLogs(rowsPerPage, page * rowsPerPage)
-						}
+						onClick={() => {
+							if (
+								filteredData.current.engineId &&
+								filteredData.current.engineType
+							)
+								fetchLogs(rowsPerPage, page * rowsPerPage);
+							else {
+								notification.add({
+									color: "info",
+									message:
+										"Please select Engine Type and Engine to fetch logs",
+								});
+							}
+						}}
 					>
 						<RotateCw className="mr-2 h-4 w-4" />
 						Refresh

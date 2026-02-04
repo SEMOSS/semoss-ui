@@ -24,6 +24,7 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	TreeView,
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
@@ -41,6 +42,11 @@ interface FileExplorerProps {
 	headerActions?: React.ReactNode;
 
 	/**
+	 * Callback when an item is selected
+	 */
+	onItemSelect?: (item: FileItem) => void;
+
+	/**
 	 * Override for the file item component
 	 */
 	ItemComponent?: typeof FileExplorerItem;
@@ -49,6 +55,7 @@ interface FileExplorerProps {
 export const FileExplorer: React.FC<FileExplorerProps> = ({
 	mode,
 	headerActions = null,
+	onItemSelect = () => null,
 	ItemComponent = FileExplorerItem,
 }) => {
 	const insight = useInsight();
@@ -62,6 +69,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	const [isUploading, setIsUploading] = useState(false);
 
 	const [isNewFile, setIsNewFile] = useState(false);
+	const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
 
 	const debouncedSearch = useDebouncedValue(search);
 
@@ -199,8 +207,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 													.reverse()
 													.join("/");
 
-												console.log(crumbs, newPath);
-
+												setExpandedPaths([]);
 												setPath(newPath);
 												setSearch("");
 											}}
@@ -220,7 +227,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							type="search"
 							placeholder="Search"
 							value={search}
-							onChange={(e) => setSearch(e.target.value)}
+							onChange={(e) => {
+								setSearch(e.target.value);
+								setExpandedPaths([]);
+							}}
 							onFocus={() => setIsSearchActive(true)}
 							onBlur={() => setIsSearchActive(false)}
 						/>
@@ -279,7 +289,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 			<Separator className="my-1" />
 
-			<ScrollArea className="[&>div>div]:!block h-full min-h-0 w-full min-w-0 flex-1">
+			<ScrollArea className="[&>div>div]:block! h-full min-h-0 w-full min-w-0 flex-1">
 				{(getFiles.status === "LOADING" || isUploading) && (
 					<div className="flex items-center justify-center py-16">
 						<Spinner />
@@ -294,26 +304,42 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 					</div>
 				)}
 
-				{getFiles.status === "SUCCESS" &&
-					!isUploading &&
-					getFiles.data.map((i) => {
-						return (
-							<ItemComponent
-								key={i.path}
-								item={i}
-								refresh={() => getFiles.refresh()}
-								onSelect={() => {
-									if (i.type === "directory") {
-										// set the new path
-										setPath(i.path);
+				{getFiles.status === "SUCCESS" && !isUploading && (
+					<TreeView<FileItem>
+						className="w-full"
+						expanded={expandedPaths}
+						onExpandChange={(e) => {
+							setExpandedPaths(e);
+						}}
+						onItemSelect={(item) => {
+							if (item.type === "directory") {
+								setExpandedPaths((prev) => {
+									return prev.filter((p) =>
+										p.startsWith(item.path),
+									);
+								});
+								setPath(item.path);
+								setSearch("");
+								return;
+							}
 
-										// clear the search
-										setSearch("");
-									}
-								}}
-							/>
-						);
-					})}
+							// select if an item
+							onItemSelect(item);
+						}}
+					>
+						{getFiles.data.map((i) => {
+							return (
+								<ItemComponent
+									key={i.path}
+									mode={mode}
+									item={i}
+									refresh={() => getFiles.refresh()}
+									ItemComponent={ItemComponent}
+								/>
+							);
+						})}
+					</TreeView>
+				)}
 			</ScrollArea>
 
 			{isDragging && (
