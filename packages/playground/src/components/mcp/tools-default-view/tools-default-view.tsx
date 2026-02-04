@@ -83,13 +83,14 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		 */
 		const title = tool?.title || "";
 		const description = tool?.description || "";
-		const hasBeenExecuted = toolResponse !== undefined;
 
 		/*
 		 * State
 		 */
 		const [data, setData] = useState<Record<string, unknown>>(() => {
-			return hasBeenExecuted ? executedParameters : tool?.parameters;
+			return toolResponse === undefined
+				? tool?.parameters
+				: executedParameters;
 		});
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
@@ -97,11 +98,13 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		const [properties, setProperties] = useState<
 			Record<string, FieldSchema>
 		>({});
+		const [response, setResponse] = useState<string>(toolResponse);
 
 		/*
 		 * Constants
 		 */
 		// Separate required and optional fields
+		const hasBeenExecuted = response !== undefined;
 		const requiredFields = Object.entries(properties).filter(
 			([fieldName]) => required.includes(fieldName),
 		);
@@ -146,6 +149,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 					success ? "success" : "error",
 					data,
 				);
+				setResponse(output);
 			}
 			setIsSubmitting(false);
 		};
@@ -199,7 +203,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 					</CardHeader>
 					<CardContent className="max-h-[60vh] overflow-y-auto">
 						<div className="space-y-4">
-							{toolResponse && (
+							{hasBeenExecuted && (
 								<div className="flex h-full flex-col space-y-2">
 									<Label
 										htmlFor="tool-response"
@@ -210,7 +214,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 									<Textarea
 										readOnly
 										className="w-full resize-none"
-										value={toolResponse}
+										value={response}
 									/>
 								</div>
 							)}
@@ -228,7 +232,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 									</div>
 								</div>
 							) : getMCP.status === "SUCCESS" ? (
-								toolResponse ? (
+								hasBeenExecuted ? (
 									Object.keys(properties).length > 0 && (
 										<>
 											<Button
@@ -292,7 +296,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 							)}
 						</div>
 					</CardContent>
-					{!toolResponse && getMCP.status === "SUCCESS" && (
+					{!hasBeenExecuted && getMCP.status === "SUCCESS" && (
 						<CardFooter>
 							<Button
 								type="button"
