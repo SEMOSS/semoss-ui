@@ -10,7 +10,7 @@ import {
 	UnfoldVertical,
 	X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Button,
 	Collapsible,
@@ -56,6 +56,7 @@ const DataSelection = ({
 	onImport,
 	onCancel,
 }: DataSelectionProps) => {
+	const containerRef = useRef<HTMLDivElement>(null);
 	const [openModal, setOpenModal] = useState(false);
 	const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
 	const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(
@@ -72,6 +73,47 @@ const DataSelection = ({
 		Record<number, boolean>[]
 	>([]);
 	const [tableNames, setTableNames] = useState<string[]>(tableName);
+
+	// Comprehensive scroll to top on component mount
+	useEffect(() => {
+		// Scroll window
+		window.scrollTo(0, 0);
+
+		// Scroll document body
+		document.body.scrollTop = 0;
+		document.documentElement.scrollTop = 0;
+
+		// Scroll container ref if exists
+		if (containerRef.current) {
+			containerRef.current.scrollIntoView({
+				behavior: "auto",
+				block: "start",
+			});
+		}
+
+		// Find and scroll all parent scrollable containers
+		const scrollableParents = [];
+		let parent = containerRef.current?.parentElement;
+
+		while (parent) {
+			const hasOverflow = getComputedStyle(parent).overflow;
+			const hasOverflowY = getComputedStyle(parent).overflowY;
+
+			if (
+				hasOverflow === "auto" ||
+				hasOverflow === "scroll" ||
+				hasOverflowY === "auto" ||
+				hasOverflowY === "scroll"
+			) {
+				scrollableParents.push(parent);
+			}
+			parent = parent.parentElement;
+		}
+
+		scrollableParents.forEach((element) => {
+			element.scrollTop = 0;
+		});
+	}, []);
 
 	// Initialize column metadata and row states for each file
 	useEffect(() => {
@@ -200,7 +242,7 @@ const DataSelection = ({
 	const isAnyTableNameInvalid = tableNames.some((name) => !name?.trim());
 
 	return (
-		<>
+		<div ref={containerRef}>
 			{files.map((parsedData, fileIdx) => (
 				<div key={fileName[fileIdx]} className="mb-4">
 					{/* Header Section */}
@@ -518,7 +560,7 @@ const DataSelection = ({
 					}
 				/>
 			)}
-		</>
+		</div>
 	);
 };
 
