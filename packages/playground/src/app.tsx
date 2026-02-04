@@ -16,7 +16,7 @@ export const App = () => {
 				<div className="absolute inset-0 h-screen w-screen overflow-hidden">
 					<Router />
 				</div>
-				<Toaster />
+				<Toaster position="top-center" />
 			</ThemeProvider>
 		</InsightProvider>
 	);

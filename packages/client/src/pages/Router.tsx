@@ -7,7 +7,6 @@ import { AuthenticatedLayout } from "./AuthenticatedLayout";
 import {
 	AppCatalogPage,
 	AppDetailPage,
-	AppMarketplacePage,
 	CreateAppPage,
 	EditAppPage,
 	NewPromptBuilderAppPage,
@@ -43,10 +42,6 @@ export const Router = observer(() => {
 					<Route path="app/*">
 						<Route index element={<AppCatalogPage />} />
 						<Route path="new" element={<CreateAppPage />} />
-						<Route
-							path="new/template"
-							element={<AppMarketplacePage />}
-						/>
 						<Route
 							path="new/prompt"
 							element={<NewPromptBuilderAppPage />}

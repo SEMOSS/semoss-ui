@@ -65,6 +65,7 @@ export const TextSettingsMask = observer(() => {
 			return;
 		}
 		// get the current style of the block
+		// biome-ignore lint/suspicious/noExplicitAny: suppressed as part of merge
 		const blockStyle: any = block.data.style;
 		if (blockStyle) {
 			const { fontFamily: ff, fontSize: fs } = blockStyle;
