@@ -6,7 +6,7 @@ import {
 	runPixelAsync,
 	uploadInsight,
 } from "@semoss/sdk/react";
-import { FlexLayout } from "@semoss/shared";
+import { FlexLayout, type ThemeMap } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import {
 	type AbstractMessageStore,
@@ -133,6 +133,7 @@ interface RoomStoreInterface {
  * Manage the room
  */
 export class RoomStore {
+	private _theme: ThemeMap["playground"];
 	private _store: RoomStoreInterface = {
 		roomId: "",
 		insightId: "new",
@@ -165,7 +166,12 @@ export class RoomStore {
 		},
 	};
 
-	constructor(roomId: string, insightId: string = "new") {
+	constructor(
+		theme: ThemeMap["playground"],
+		roomId: string,
+		insightId: string = "new",
+	) {
+		this._theme = theme;
 		// register the roomId, insightId, and actions
 		this._store.roomId = roomId;
 		this._store.insightId = insightId;
@@ -194,6 +200,13 @@ export class RoomStore {
 	 */
 	get insightId() {
 		return this._store.insightId;
+	}
+
+	/**
+	 * Get the theme
+	 */
+	get theme() {
+		return this._theme;
 	}
 
 	/**
@@ -513,18 +526,33 @@ export class RoomStore {
 				// if its tool execution, update the corresponding tool
 				const toolExecMessage = m.message;
 				if (toolExecMessage instanceof ToolExecutionMessageStore) {
-					const parentToolExecMessage =
-						messages[m.parentMessageId].message;
-					if (parentToolExecMessage instanceof ResponseMessageStore) {
-						parentToolExecMessage.tools.forEach((tool) => {
-							if (tool.id === toolExecMessage.callId) {
-								// save the response
-								runInAction(() => {
-									tool.response = toolExecMessage.response;
-									tool.status = toolExecMessage.status;
-								});
-							}
-						});
+					// Run up the chain to find the message containing the tool
+					// (because it can go reponse_tool -> input_tool_exec -> input_tool_exec)
+					let toolExecMessageParent: AbstractMessageStore =
+						toolExecMessage.parent;
+					while (toolExecMessageParent) {
+						if (
+							toolExecMessageParent instanceof
+							ResponseMessageStore
+						) {
+							// We've found the parent response message, now find the tool
+							toolExecMessageParent.tools.forEach((tool) => {
+								if (tool.id === toolExecMessage.callId) {
+									// save the response
+									runInAction(() => {
+										tool.response =
+											toolExecMessage.response;
+										tool.status = toolExecMessage.status;
+									});
+								}
+							});
+							// Break because we've found the right parent
+							break;
+						} else {
+							// keep going up the chain
+							toolExecMessageParent =
+								toolExecMessageParent.parent;
+						}
 					}
 				}
 			}
@@ -602,7 +630,7 @@ export class RoomStore {
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
 			if (this.tail.type === "RESPONSE") {
-				this.tail.startToolExecution();
+				this.tail.continueToolExecution();
 			}
 		} catch (e) {
 			console.error(e);
@@ -889,6 +917,7 @@ export class RoomStore {
 	runRoomPixel = async <O extends [] | unknown[]>(
 		pixel: string,
 		showLoading: boolean = true,
+		setErrorOnFail: boolean = true,
 	): Promise<{
 		errors: string[];
 		insightId: string;
@@ -920,9 +949,11 @@ export class RoomStore {
 			});
 			return response;
 		} catch (e) {
-			runInAction(() => {
-				this._store.error = e;
-			});
+			if (setErrorOnFail) {
+				runInAction(() => {
+					this._store.error = e;
+				});
+			}
 			throw e;
 		} finally {
 			if (showLoading) {
