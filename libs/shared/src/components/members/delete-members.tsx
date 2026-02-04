@@ -7,6 +7,7 @@ import {
 	DialogDescription,
 	DialogFooter,
 	DialogTitle,
+	toast,
 } from "@semoss/ui/next";
 import { apiPost } from "../utility/api";
 
@@ -30,10 +31,11 @@ export const DeleteMembersOverlay = ({
 }) => {
 	const notification = useNotification();
 	const usersUrl =
-		type === "PROJECT"
+		type === "PROJECT" || type === "WORKSPACE"
 			? "removeProjectUserPermissions"
 			: "removeEngineUserPermissions";
-	const typeId = type === "PROJECT" ? "projectId" : "engineId";
+	const typeId =
+		type === "PROJECT" || type === "WORKSPACE" ? "projectId" : "engineId";
 
 	/**
 	 * Delete the selected members from the app or engine.
@@ -47,20 +49,33 @@ export const DeleteMembersOverlay = ({
 			ids: idsToDelete,
 		})
 			.then(() => {
-				notification.add({
-					id: "success",
-					color: "success",
-					message: "Selected members have been deleted successfully.",
-				});
+				if (type === "WORKSPACE") {
+					toast.success(
+						"Selected members have been deleted successfully.",
+					);
+				} else {
+					notification.add({
+						id: "success",
+						color: "success",
+						message:
+							"Selected members have been deleted successfully.",
+					});
+				}
 				onClose();
 			})
 			.catch(() => {
-				notification.add({
-					id: "error",
-					color: "error",
-					message:
+				if (type === "WORKSPACE") {
+					toast.error(
 						"There was an error deleting the selected members.",
-				});
+					);
+				} else {
+					notification.add({
+						id: "error",
+						color: "error",
+						message:
+							"There was an error deleting the selected members.",
+					});
+				}
 				onClose();
 			});
 	}

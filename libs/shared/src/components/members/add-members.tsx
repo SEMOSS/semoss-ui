@@ -12,6 +12,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 	Input,
+	toast,
 } from "@semoss/ui/next";
 import { apiGet, apiPost } from "../utility/api";
 import { returnAccessType } from "./common";
@@ -42,14 +43,15 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 	const [popupOpen, setPopupOpen] = useState<boolean>(false);
 	const notification = useNotification();
 	const usersUrl =
-		type === "PROJECT"
+		type === "PROJECT" || type === "WORKSPACE"
 			? "getProjectUsersNoCredentials"
 			: "getEngineUsersNoCredentials";
-	const typeId = type === "PROJECT" ? "projectId" : "engineId";
+	const typeId =
+		type === "PROJECT" || type === "WORKSPACE" ? "projectId" : "engineId";
 	useEffect(() => {
 		// Fetch users based on searchKey and by default limits record to 5
 		apiGet(
-			`/api/auth/${type === "PROJECT" ? "project" : "engine"}/` +
+			`/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/` +
 				usersUrl +
 				`?${typeId}=${id}&searchTerm=${searchKey}&limit=5`,
 		)
@@ -88,20 +90,28 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 		}));
 
 		apiPost(
-			`/api/auth/${type === "PROJECT" ? "project" : "engine"}/${type === "PROJECT" ? "addProjectUserPermissions" : "addEngineUserPermissions"}`,
+			`/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/${type === "PROJECT" || type === "WORKSPACE" ? "addProjectUserPermissions" : "addEngineUserPermissions"}`,
 			{
-				[type === "PROJECT" ? "projectId" : "engineId"]: id,
+				[type === "PROJECT" || type === "WORKSPACE"
+					? "projectId"
+					: "engineId"]: id,
 				userpermissions: selectedUserObj,
 			},
 		)
 			.then((response) => {
 				if (response?.success) {
-					notification.add({
-						id: "success",
-						color: "success",
-						message:
+					if (type === "WORKSPACE") {
+						toast.success(
 							"Selected members have been added successfully.",
-					});
+						);
+					} else {
+						notification.add({
+							id: "success",
+							color: "success",
+							message:
+								"Selected members have been added successfully.",
+						});
+					}
 					setSelectedUsers([]);
 					setSearchKey("");
 					// Close the overlay
@@ -110,11 +120,18 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 			})
 			.catch((error) => {
 				console.error("Error adding new members:", error);
-				notification.add({
-					id: "error",
-					color: "error",
-					message: "There was an error adding the selected members.",
-				});
+				if (type === "WORKSPACE") {
+					toast.error(
+						"There was an error adding the selected members.",
+					);
+				} else {
+					notification.add({
+						id: "error",
+						color: "error",
+						message:
+							"There was an error adding the selected members.",
+					});
+				}
 				setSelectedUsers([]);
 				setSearchKey("");
 				onClose(true);

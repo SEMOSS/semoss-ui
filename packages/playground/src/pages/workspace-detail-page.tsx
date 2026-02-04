@@ -261,7 +261,9 @@ export const WorkspaceDetailPage = observer(() => {
 						value="members"
 						className="w-full overflow-hidden rounded-md"
 					>
-						{tab === "members" && <MembersTable />}
+						{tab === "members" && (
+							<MembersTable id={workspaceId} type="WORKSPACE" />
+						)}
 					</TabsContent>
 				</Tabs>
 			</div>

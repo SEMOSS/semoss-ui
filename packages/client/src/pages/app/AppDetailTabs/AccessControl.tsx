@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
+import { MembersTable } from "@semoss/shared";
 import { Box, Stack, styled, Typography } from "@semoss/ui";
 import {
-	MembersTable,
+	// MembersTable,
 	PendingMembersTable,
 	SettingsTiles,
 } from "@/components/settings";

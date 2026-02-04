@@ -23,7 +23,8 @@ interface MembersProps {
 		| "STORAGE"
 		| "MODEL"
 		| "VECTOR"
-		| "FUNCTION";
+		| "FUNCTION"
+		| "WORKSPACE";
 	onChange?: () => void;
 }
 
@@ -53,7 +54,7 @@ export const MembersTable = ({ id, type, onChange }: MembersProps) => {
 	}, [openAddMembers]);
 
 	return (
-		<div className="w-full py-4">
+		<div className="h-full w-full py-4">
 			{/* Header Section */}
 			<div className="flex flex-column gap-[10px] rounded-xl rounded-br-none rounded-bl-none border-gray-200 border-b bg-[#f4f4f4] p-4 align-start">
 				<div className="flex h-[36px] w-full flex-column gap-2">
