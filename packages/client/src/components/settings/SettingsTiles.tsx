@@ -1,23 +1,22 @@
+import LockIcon from "@mui/icons-material/Lock";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import type { AxiosResponse } from "axios";
-import { EyeOff, LockKeyhole } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
+	Alert,
+	Box,
 	Button,
-	Card,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	P,
-	Spinner,
+	Grid,
+	LoadingScreen,
+	Modal,
+	Paper,
+	Stack,
 	Switch,
+	styled,
 	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-	toast,
-} from "@semoss/ui/next";
+	Typography,
+	useNotification,
+} from "@semoss/ui";
 import {
 	setEngineGlobal,
 	setEngineVisiblity,
@@ -28,6 +27,55 @@ import databaseIcon from "@/assets/img/databaseIcon.png";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { formatToDataTestId } from "@/utility";
+
+const StyledAlert = styled(Alert, {
+	shouldForwardProp: (prop) => prop !== "setBounds",
+})<{ setBounds?: boolean }>(({ theme, setBounds }) => ({
+	width: "100%",
+	height: "100%",
+	display: "flex",
+	padding: "16px",
+	alignItems: "flex-start",
+	gap: "16px",
+	flex: "1 0 0",
+	alignSelf: "stretch",
+	borderRadius: "12px",
+	color: theme.palette.text.primary,
+	background: theme.palette.background.paper,
+	border: `1px solid ${theme.palette.secondary.main}`,
+	".MuiAlert-action": {
+		paddingRight: "8px",
+	},
+	...(setBounds && {
+		height: theme.spacing(13),
+		width: "600px",
+	}),
+}));
+
+const StyledGrid = styled(Grid)(() => ({
+	flex: "1",
+}));
+
+const StyledWidth = () => ({
+	width: "100%",
+});
+
+const StyledBlock = styled(Box)({
+	display: "flex",
+	alignItems: "flex-start",
+	gap: "8px",
+});
+
+const StyledIcon = styled("span")(({ theme }) => ({
+	color: theme.palette.secondary.dark,
+	width: "20px",
+	height: "20px",
+	"& svg": {
+		fontSize: theme.typography.pxToRem(16),
+		width: "20px",
+		height: "20px",
+	},
+}));
 
 interface SettingsTilesProps {
 	/**
@@ -57,48 +105,16 @@ interface SettingsTilesProps {
 	condensed?: boolean;
 
 	/**
-	 * direction: stack tiles vertically or horizontally
+	 * diection: stack tiles vertically or horizontally
 	 */
 	direction?: "column" | "row";
 }
-
-const AlertTile = ({
-	icon,
-	title,
-	description,
-	action,
-	setBounds,
-	testId,
-}: {
-	icon: React.ReactNode;
-	title: string;
-	description: string;
-	action: React.ReactNode;
-	setBounds?: boolean;
-	testId?: string;
-}) => (
-	<div
-		className={`flex w-full flex-1 items-start gap-4 self-stretch rounded-xl border border--card-foreground p-4 bg-card${setBounds ? "h-[104px] max-w-[600px]" : "h-full"}
-			`}
-		data-testid={testId}
-	>
-		<div className="flex flex-1 items-start gap-2">
-			<span className="h-5 w-5 text-secondary-foreground [&_svg]:h-5 [&_svg]:w-5">
-				{icon}
-			</span>
-			<div>
-				<P className="font-medium">{title}</P>
-				<P className="text-muted-foreground text-sm">{description}</P>
-			</div>
-		</div>
-		<div className="pr-2">{action}</div>
-	</div>
-);
 
 export const SettingsTiles = (props: SettingsTilesProps) => {
 	const { id, type, name, condensed, onDelete, direction = "column" } = props;
 
 	const { monolithStore, configStore } = useRootStore();
+	const notification = useNotification();
 	const { adminMode } = useSettings();
 
 	const [deleteModal, setDeleteModal] = useState(false);
@@ -179,15 +195,24 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			const output = response.pixelReturn[0].output;
 
 			if (operationType.indexOf("ERROR") === -1) {
-				toast.success(`Successfully deleted ${name}`);
+				notification.add({
+					color: "success",
+					message: `Successfully deleted ${name}`,
+				});
 
 				// go back to page before
 				onDelete();
 			} else {
-				toast.error(String(output));
+				notification.add({
+					color: "error",
+					message: output,
+				});
 			}
 		} catch (e) {
-			toast.error(String(e));
+			notification.add({
+				color: "error",
+				message: String(e),
+			});
 		} finally {
 			// stop the loading screen
 			setLoading(false);
@@ -238,20 +263,25 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
 			if (response.data.success || response.data) {
 				setDiscoverable(!discoverable);
-				toast.success(
-					`Successfully made ${name} ${
+				notification.add({
+					color: "success",
+					message: `Successfully made ${name} ${
 						discoverable ? "undiscoverable" : "discoverable"
 					}`,
-				);
+				});
 			} else {
-				toast.error(
-					`Error making ${name} ${
+				notification.add({
+					color: "error",
+					message: `Error making ${name} ${
 						discoverable ? "undiscoverable" : "discoverable"
 					}`,
-				);
+				});
 			}
 		} catch (e) {
-			toast.error(String(e));
+			notification.add({
+				color: "error",
+				message: String(e),
+			});
 		} finally {
 			// stop the loading screen
 			setLoading(false);
@@ -295,18 +325,23 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			if (response.data.success) {
 				setGlobal(!global);
 
-				toast.success(
-					`Successfully made ${name} ${
-						global ? "private" : "public"
+				notification.add({
+					color: "success",
+					message: `Successfully made ${name} ${
+						global ? "non-global" : "global"
 					}`,
-				);
+				});
 			} else {
-				toast.error(
-					`Error making ${name} ${global ? "private" : "public"}`,
-				);
+				notification.add({
+					color: "error",
+					message: `Error making ${name} ${global ? "non-global" : "global"}`,
+				});
 			}
 		} catch (e) {
-			toast.error(String(e));
+			notification.add({
+				color: "error",
+				message: String(e),
+			});
 		} finally {
 			// stop the loading screen
 			setLoading(false);
@@ -315,25 +350,17 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
 	/** LOADING */
 	if (loading) {
-		return (
-			<div className="flex h-full flex-col items-center justify-center gap-4">
-				<Spinner className="size-8" />
-				<P className="text-muted-foreground">Deleting...</P>
-			</div>
-		);
+		return <LoadingScreen.Trigger description="Deleting..." />;
 	}
 
 	if (condensed) {
 		return (
-			<Card className="w-full">
-				<div
-					className={`flex ${direction === "column" ? "flex-col" : "flex-row"} gap-0`}
-				>
-					<AlertTile
+			<Paper sx={StyledWidth}>
+				<Stack direction={direction}>
+					<StyledAlert
 						setBounds={direction === "column"}
-						icon={<LockKeyhole data-testid="lock-icon" />}
-						title="Private"
-						description="No one outside of the specified member group can access"
+						sx={StyledWidth}
+						icon={false}
 						action={
 							<Switch
 								title={
@@ -351,63 +378,100 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								data-testid={formatToDataTestId(
 									`settingsTiles-make-${name}-public-private-switch`,
 								)}
-								onCheckedChange={() => {
+								onChange={() => {
 									changeGlobal();
 								}}
-							/>
+							></Switch>
 						}
-					/>
+					>
+						<Alert.Title>
+							<StyledBlock>
+								{/* Single Lock Icon on the left */}
+								<StyledIcon data-testid="lock-icon">
+									<LockIcon />
+								</StyledIcon>
+
+								{/* Text Stack on the right */}
+								<Box>
+									<Typography
+										variant="body1"
+										fontWeight="medium"
+										data-testid="private-text"
+									>
+										Private
+									</Typography>
+									<Typography
+										variant="body2"
+										data-testid="private-description"
+									>
+										No one outside of the specified member
+										group can access
+									</Typography>
+								</Box>
+							</StyledBlock>
+						</Alert.Title>
+					</StyledAlert>
 					{global ? (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<div>
-									<AlertTile
-										setBounds={direction === "column"}
-										icon={
-											<EyeOff data-testid="non-discoverable-icon" />
+						<Tooltip
+							title={`An ${name} does not need to be discoverable and public.`}
+							placement="top"
+						>
+							<StyledAlert
+								setBounds={direction === "column"}
+								sx={StyledWidth}
+								icon={false}
+								action={
+									<Switch
+										title={
+											discoverable
+												? `Make ${name} non-discoverable`
+												: `Make ${name} discoverable`
 										}
-										title="Non Discoverable"
-										description={`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
-										action={
-											<Switch
-												title={
-													discoverable
-														? `Make ${name} non-discoverable`
-														: `Make ${name} discoverable`
-												}
-												disabled={
-													global ||
-													!configStore.isEngineOperationAvailable(
-														type,
-														"discoverable",
-													)
-												}
-												data-testid={formatToDataTestId(
-													`settingsTiles-${name}-makeDiscoverable-switch`,
-												)}
-												checked={!discoverable}
-												onCheckedChange={() => {
-													changeDiscoverable();
-												}}
-											/>
+										disabled={
+											global ||
+											!configStore.isEngineOperationAvailable(
+												type,
+												"discoverable",
+											)
 										}
-									/>
-								</div>
-							</TooltipTrigger>
-							<TooltipContent>
-								An {name} does not need to be discoverable and
-								public.
-							</TooltipContent>
+										data-testid={formatToDataTestId(
+											`settingsTiles-${name}-makeDiscoverable-switch`,
+										)}
+										checked={!discoverable}
+										onChange={() => {
+											changeDiscoverable();
+										}}
+									></Switch>
+								}
+							>
+								<Alert.Title>
+									<StyledBlock>
+										{/* Single Lock Icon on the left */}
+										<StyledIcon>
+											<VisibilityOffIcon data-testid="non-discoverable-icon" />
+										</StyledIcon>
+										{/* Text Stack on the right */}
+										<Box data-testid="discoverable-text">
+											<Typography
+												variant="body1"
+												fontWeight="medium"
+											>
+												Non Discoverable
+											</Typography>
+											<Typography variant="body2">
+												{`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
+											</Typography>
+										</Box>
+									</StyledBlock>
+								</Alert.Title>
+							</StyledAlert>
 						</Tooltip>
 					) : (
-						<AlertTile
+						<StyledAlert
 							setBounds={direction === "column"}
-							icon={
-								<EyeOff data-testid="non-discoverable-icon" />
-							}
-							title="Non Discoverable"
-							description={`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
-							testId={formatToDataTestId(
+							sx={StyledWidth}
+							icon={false}
+							data-testid={formatToDataTestId(
 								`settingsTiles-${name}-makeDiscoverable-switch`,
 							)}
 							action={
@@ -428,28 +492,43 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										)
 									}
 									checked={!discoverable}
-									onCheckedChange={() => {
+									onChange={() => {
 										changeDiscoverable();
 									}}
-								/>
+								></Switch>
 							}
-						/>
+						>
+							<Alert.Title>
+								<StyledBlock>
+									{/* Single Lock Icon on the left */}
+									<StyledIcon>
+										<VisibilityOffIcon data-testid="non-discoverable-icon" />
+									</StyledIcon>
+
+									{/* Text Stack on the right */}
+									<Box data-testid="discoverable-text">
+										<Typography
+											variant="body1"
+											fontWeight="medium"
+										>
+											Non Discoverable
+										</Typography>
+										<Typography variant="body2">
+											{`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
+										</Typography>
+									</Box>
+								</StyledBlock>
+							</Alert.Title>
+						</StyledAlert>
 					)}
-					<AlertTile
+					<StyledAlert
 						setBounds={direction === "column"}
-						icon={
-							<img
-								src={databaseIcon}
-								alt="Database Icon"
-								className="mt-0.5 h-[22px] w-[22px]"
-								data-testid="database-icon"
-							/>
-						}
-						title={`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
-						description={`Delete ${name} from catalog.`}
+						sx={StyledWidth}
+						icon={false}
 						action={
 							<Button
-								variant="destructive"
+								variant="contained"
+								color="error"
 								disabled={
 									!configStore.isEngineOperationAvailable(
 										type,
@@ -464,57 +543,111 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								Delete
 							</Button>
 						}
-					/>
-					<Dialog open={deleteModal} onOpenChange={setDeleteModal}>
-						<DialogContent>
-							<DialogHeader>
-								<DialogTitle>Are you sure?</DialogTitle>
-								<DialogDescription>
-									This action is irreversable. This will
-									permanentely delete this {name}.
-								</DialogDescription>
-							</DialogHeader>
-							<DialogFooter>
-								<Button
-									variant="outline"
-									onClick={() => setDeleteModal(false)}
-									data-testid={formatToDataTestId(
-										`settingsTiles-${name}-confirmCancel-btn`,
-									)}
-								>
-									Cancel
-								</Button>
-								<Button
-									variant="destructive"
-									data-testid={formatToDataTestId(
-										`settingsTiles-${name}-confirmDelete-btn`,
-									)}
-									onClick={() => deleteWorkflow()}
-								>
-									Delete
-								</Button>
-							</DialogFooter>
-						</DialogContent>
-					</Dialog>
-				</div>
-			</Card>
+					>
+						<Alert.Title>
+							<StyledBlock>
+								{/* Single Lock Icon on the left */}
+								<img
+									src={databaseIcon}
+									alt="Database Icon"
+									style={{
+										width: "22px",
+										height: "22px",
+										marginTop: "2px",
+									}}
+									data-testid="database-icon"
+								/>
+
+								{/* Text Stack on the right */}
+								<Box data-testid="delete-vector-text">
+									<Typography variant="body2">
+										Users cannot request access to this
+										database if private
+										{`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
+									</Typography>
+									<Typography variant="body2">
+										{`Delete ${name} from catalog.`}
+									</Typography>
+								</Box>
+							</StyledBlock>
+						</Alert.Title>
+					</StyledAlert>
+					<Modal open={deleteModal}>
+						<Modal.Title>Are you sure?</Modal.Title>
+						<Modal.Content>
+							This action is irreversable. This will permanentely
+							delete this {name}.
+						</Modal.Content>
+						<Modal.Actions>
+							<Button
+								onClick={() => setDeleteModal(false)}
+								data-testid={formatToDataTestId(
+									`settingsTiles-${name}-confirmCancel-btn`,
+								)}
+							>
+								Cancel
+							</Button>
+							<Button
+								color={"error"}
+								variant={"contained"}
+								data-testid={formatToDataTestId(
+									`settingsTiles-${name}-confirmDelete-btn`,
+								)}
+								onClick={() => deleteWorkflow()}
+							>
+								Delete
+							</Button>
+						</Modal.Actions>
+					</Modal>
+					{/* <StyledAlert
+                        setBounds={direction === 'column'}
+                        sx={{ width: '100%' }}
+                        icon={false}
+                        action={
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={() => setCloseEngineModal(true)}
+                            >
+                                Close
+                            </Button>
+                        }
+                    >
+                        <Alert.Title>
+                            <Typography variant="body1">Close Engine</Typography>
+                        </Alert.Title>
+                        <Typography variant="body2">
+                            {`Close ${name}'s engine.`}
+                        </Typography>
+                    </StyledAlert>
+                    <Modal open={closeEngineModal}>
+                        <Modal.Title>Are you sure?</Modal.Title>
+                        <Modal.Content>
+                            This action will close the engine for {name}.
+                        </Modal.Content>
+                        <Modal.Actions>
+                            <Button onClick={() => setCloseEngineModal(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                color={'primary'}
+                                variant={'contained'}
+                                onClick={() => closeEngine()}
+                            >
+                                Close
+                            </Button>
+                        </Modal.Actions>
+                    </Modal> */}
+				</Stack>
+			</Paper>
 		);
 	} else {
 		return (
-			<div className="flex-1">
-				<div
-					className={`grid gap-6 ${
-						direction === "row"
-							? "grid-cols-1 md:grid-cols-3"
-							: "grid-cols-1"
-					}`}
-				>
-					<AlertTile
+			<StyledGrid container spacing={3}>
+				<Grid item xs={direction === "row" ? 4 : 12}>
+					<StyledAlert
 						setBounds={direction === "column"}
-						icon={<LockKeyhole data-testid="lock-icon" />}
-						title="Private"
-						description="No one outside of the specified member group can access"
-						testId="private-text"
+						icon={false}
 						action={
 							<Switch
 								title={
@@ -532,61 +665,98 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								data-testid={formatToDataTestId(
 									`settingsTiles-make-${name}-public-private-switch`,
 								)}
-								onCheckedChange={() => {
+								onChange={() => {
 									changeGlobal();
 								}}
-							/>
+							></Switch>
 						}
-					/>
-					{global ? (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<div>
-									<AlertTile
-										setBounds={direction === "column"}
-										icon={
-											<EyeOff data-testid="non-discoverable-icon" />
+					>
+						<Alert.Title>
+							<StyledBlock>
+								{/* Single Lock Icon on the left */}
+								<StyledIcon>
+									<LockIcon data-testid="lock-icon" />
+								</StyledIcon>
+
+								{/* Text Stack on the right */}
+								<Box data-testid="private-text">
+									<Typography
+										variant="body1"
+										fontWeight="medium"
+									>
+										Private
+									</Typography>
+									<Typography variant="body2">
+										No one outside of the specified member
+										group can access
+									</Typography>
+								</Box>
+							</StyledBlock>
+						</Alert.Title>
+					</StyledAlert>
+				</Grid>
+				{global ? (
+					<Tooltip
+						title={`An ${name} does not need to be discoverable and public.`}
+						placement="top"
+					>
+						<Grid item xs={direction === "row" ? 4 : 12}>
+							<StyledAlert
+								setBounds={direction === "column"}
+								icon={false}
+								action={
+									<Switch
+										disabled={
+											global ||
+											!configStore.isEngineOperationAvailable(
+												type,
+												"discoverable",
+											)
 										}
-										title="Non Discoverable"
-										description={`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
-										testId="discoverable-text"
-										action={
-											<Switch
-												disabled={
-													global ||
-													!configStore.isEngineOperationAvailable(
-														type,
-														"discoverable",
-													)
-												}
-												title={
-													discoverable
-														? `Make ${name} non-discoverable`
-														: `Make ${name} discoverable`
-												}
-												checked={!discoverable}
-												data-testid={formatToDataTestId(
-													`settingsTiles-${name}-makeDiscoverable-switch`,
-												)}
-												onCheckedChange={() => {
-													changeDiscoverable();
-												}}
-											/>
+										title={
+											discoverable
+												? `Make ${name} non-discoverable`
+												: `Make ${name} discoverable`
 										}
-									/>
-								</div>
-							</TooltipTrigger>
-							<TooltipContent>
-								An {name} does not need to be discoverable and
-								public.
-							</TooltipContent>
-						</Tooltip>
-					) : (
-						<AlertTile
+										checked={!discoverable}
+										data-testid={formatToDataTestId(
+											`settingsTiles-${name}-makeDiscoverable-switch`,
+										)}
+										onChange={() => {
+											changeDiscoverable();
+										}}
+									></Switch>
+								}
+							>
+								<Alert.Title>
+									<StyledBlock>
+										{/* Single Lock Icon on the left */}
+										<StyledIcon>
+											<VisibilityOffIcon data-testid="non-discoverable-icon" />
+										</StyledIcon>
+
+										{/* Text Stack on the right */}
+										<Box data-testid="discoverable-text">
+											<Typography
+												variant="body1"
+												fontWeight="medium"
+											>
+												Non Discoverable
+											</Typography>
+											<Typography variant="body2">
+												{`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
+											</Typography>
+										</Box>
+									</StyledBlock>
+								</Alert.Title>
+							</StyledAlert>
+						</Grid>
+					</Tooltip>
+				) : (
+					<Grid item xs={direction === "row" ? 4 : 12}>
+						<StyledAlert
 							setBounds={direction === "column"}
-							icon={<EyeOff />}
-							title="Non Discoverable"
-							description={`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
+							icon={false}
 							action={
 								<Switch
 									disabled={
@@ -605,84 +775,117 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									data-testid={formatToDataTestId(
 										`settingsTiles-${name}-makeDiscoverable-switch`,
 									)}
-									onCheckedChange={() => {
+									onChange={() => {
 										changeDiscoverable();
 									}}
-								/>
+								></Switch>
 							}
-						/>
-					)}
-					{onDelete ? (
-						<>
-							<AlertTile
-								setBounds={direction === "column"}
-								icon={
+						>
+							<Alert.Title>
+								<StyledBlock>
+									{/* Single Lock Icon on the left */}
+									<StyledIcon>
+										<VisibilityOffIcon />
+									</StyledIcon>
+
+									{/* Text Stack on the right */}
+									<Box>
+										<Typography
+											variant="body1"
+											fontWeight="medium"
+										>
+											Non Discoverable
+										</Typography>
+										<Typography variant="body2">
+											{`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
+										</Typography>
+									</Box>
+								</StyledBlock>
+							</Alert.Title>
+						</StyledAlert>
+					</Grid>
+				)}
+				{onDelete ? (
+					<Grid item xs={direction === "row" ? 4 : 12}>
+						<StyledAlert
+							setBounds={direction === "column"}
+							icon={false}
+							action={
+								<Button
+									variant="contained"
+									color="error"
+									onClick={() => setDeleteModal(true)}
+									data-testid={formatToDataTestId(
+										`settingsTiles-${name}-delete-btn`,
+									)}
+									disabled={
+										!configStore.isEngineOperationAvailable(
+											type,
+											"delete",
+										)
+									}
+								>
+									Delete
+								</Button>
+							}
+						>
+							<Alert.Title>
+								<StyledBlock>
+									{/* Single Lock Icon on the left */}
 									<img
 										src={databaseIcon}
 										alt="Database Icon"
-										className="mt-0.5 h-[18px] w-[18px]"
+										style={{
+											width: 18,
+											height: 18,
+											marginTop: "2px",
+										}}
 									/>
-								}
-								title={`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
-								description={`Delete ${name} from catalog.`}
-								action={
-									<Button
-										variant="destructive"
-										onClick={() => setDeleteModal(true)}
-										data-testid={formatToDataTestId(
-											`settingsTiles-${name}-delete-btn`,
-										)}
-										disabled={
-											!configStore.isEngineOperationAvailable(
-												type,
-												"delete",
-											)
-										}
-									>
-										Delete
-									</Button>
-								}
-							/>
-							<Dialog
-								open={deleteModal}
-								onOpenChange={setDeleteModal}
-							>
-								<DialogContent>
-									<DialogHeader>
-										<DialogTitle>Are you sure?</DialogTitle>
-										<DialogDescription>
-											This action is irreversable. This
-											will permanentely delete this {name}
-											.
-										</DialogDescription>
-									</DialogHeader>
-									<DialogFooter>
-										<Button
-											variant="outline"
-											onClick={() =>
-												setDeleteModal(false)
-											}
-											data-testid={formatToDataTestId(
-												`settingsTiles-${name}-confirmCancel-btn`,
-											)}
+
+									{/* Text Stack on the right */}
+									<Box>
+										<Typography
+											variant="body1"
+											fontWeight="medium"
 										>
-											Cancel
-										</Button>
-										<Button
-											variant="destructive"
-											data-testid={formatToDataTestId(
-												`settingsTiles-${name}-confirmDelete-btn`,
-											)}
-											onClick={() => deleteWorkflow()}
-										>
-											Delete
-										</Button>
-									</DialogFooter>
-								</DialogContent>
-							</Dialog>
-						</>
-					) : null}
-				</div>
+											{`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
+										</Typography>
+										<Typography variant="body2">
+											{`Delete ${name} from catalog.`}
+										</Typography>
+									</Box>
+								</StyledBlock>
+							</Alert.Title>
+						</StyledAlert>
+						<Modal open={deleteModal}>
+							<Modal.Title>Are you sure?</Modal.Title>
+							<Modal.Content>
+								This action is irreversable. This will
+								permanentely delete this {name}.
+							</Modal.Content>
+							<Modal.Actions>
+								<Button
+									onClick={() => setDeleteModal(false)}
+									data-testid={formatToDataTestId(
+										`settingsTiles-${name}-confirmCancel-btn`,
+									)}
+								>
+									Cancel
+								</Button>
+								<Button
+									color={"error"}
+									variant={"contained"}
+									data-testid={formatToDataTestId(
+										`settingsTiles-${name}-confirmDelete-btn`,
+									)}
+									onClick={() => deleteWorkflow()}
+								>
+									Delete
+								</Button>
+							</Modal.Actions>
+						</Modal>
+					</Grid>
+				) : null}
 				{/* <Grid item>
                     <StyledAlert
                         setBounds={direction === 'column'}
@@ -725,7 +928,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         </Modal.Actions>
                     </Modal>
                 </Grid> */}
-			</div>
+			</StyledGrid>
 		);
 	}
 };

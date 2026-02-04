@@ -1,43 +1,28 @@
+import {
+	ClearRounded,
+	EditRounded,
+	RemoveRedEyeRounded,
+} from "@mui/icons-material";
 import type { AxiosResponse } from "axios";
-import { Edit, Eye, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
+	Autocomplete,
 	Avatar,
-	AvatarFallback,
+	Box,
 	Button,
 	Card,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-	Dialog,
-	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	Field,
-	Input,
-	Label,
-	P,
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
+	Icon,
+	IconButton,
+	Modal,
 	RadioGroup,
-	RadioGroupItem,
 	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Spinner,
-	toast,
-} from "@semoss/ui/next";
+	Stack,
+	styled,
+	TextField,
+	Typography,
+	useNotification,
+} from "@semoss/ui";
 import {
 	addEngineUserPermissions,
 	addProjectUserPermissions,
@@ -54,6 +39,37 @@ import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
 import { MembersAddOverlayUser } from "./MembersAddOverlayUser";
 import type { SETTINGS_ROLE } from "./settings.types";
+
+const StyledModal = styled(Modal.Content)(({ theme }) => ({
+	maxWidth: "50rem",
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(1),
+}));
+
+const StyledSelection = styled("div")(({ theme }) => ({
+	backgroundColor: "rgba(0,0,0,.03)",
+	borderRadius: theme.shape.borderRadius,
+	padding: theme.spacing(1),
+}));
+
+const StyledCard = styled(Card)({
+	borderRadius: "12px",
+});
+
+const StyledCardHeader = styled(Card.Header)({
+	color: "#000",
+	width: "100%",
+});
+
+const StyledOuterBox = styled("div")(({ theme }) => ({
+	flexShrink: "0",
+	display: "flex",
+	flexDirection: "column",
+	maxHeight: "200px",
+	overflow: "auto",
+	gap: theme.spacing(1),
+}));
 
 const Setting_Role_Values: SETTINGS_ROLE[] = ["Author", "Editor", "Read-Only"];
 
@@ -137,11 +153,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		setAddModalUser,
 		onChange = () => null,
 	} = props;
+	const notification = useNotification();
 	const { adminMode } = useSettings();
 
 	/** Add Member State */
 	const [selectedMembers, setSelectedMembers] = useState([]);
-	const [commandOpen, setCommandOpen] = useState(false);
 
 	const [selectedRole, setSelectedRole] = useState<SETTINGS_ROLE>(null);
 	const [search, setSearch] = useState<string>("");
@@ -266,7 +282,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				}
 			} catch (e) {
 				if (!cancelled) {
-					toast.error(String(e));
+					notification.add({
+						color: "error",
+						message: String(e),
+					});
 					setSearchLoading(false);
 				}
 			}
@@ -331,7 +350,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 			});
 
 			if (requests.length === 0) {
-				toast.warning("No permissions to change");
+				notification.add({
+					color: "warning",
+					message: `No permissions to change`,
+				});
+
 				return;
 			}
 
@@ -370,14 +393,25 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
 			// ignore if there is no response
 			if (response.data.success) {
-				toast.success("Successfully updated user permissions");
+				notification.add({
+					color: "success",
+					message: "Successfully updated user permissions",
+				});
+
 				success = true;
+
 				onChange();
 			} else {
-				toast.error("Error changing user permissions");
+				notification.add({
+					color: "error",
+					message: `Error changing user permissions`,
+				});
 			}
 		} catch (e) {
-			toast.error(String(e));
+			notification.add({
+				color: "error",
+				message: String(e),
+			});
 		} finally {
 			closeOverlay(type, success);
 		}
@@ -430,7 +464,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 			}
 
 			if (requests.length === 0) {
-				toast.warning("No permissions to change");
+				notification.add({
+					color: "warning",
+					message: `No permissions to change`,
+				});
+
 				return;
 			}
 
@@ -469,13 +507,23 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
 			// ignore if there is no response
 			if (response.data.success) {
-				toast.success("Successfully added member permissions");
+				notification.add({
+					color: "success",
+					message: "Successfully added member permissions",
+				});
+
 				success = true;
 			} else {
-				toast.error("Error changing user permissions");
+				notification.add({
+					color: "error",
+					message: `Error changing user permissions`,
+				});
 			}
 		} catch (e) {
-			toast.error(String(e));
+			notification.add({
+				color: "error",
+				message: String(e),
+			});
 		} finally {
 			// close the overlay
 			closeOverlay(type, success);
@@ -512,483 +560,470 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		}
 	}, [isScrollBottom]);
 
-	const removeMember = (userId: string) => {
-		const filtered = selectedMembers.filter((val) => val.id !== userId);
-		setSelectedMembers(filtered);
-	};
-
 	return (
-		<Dialog open={open} onOpenChange={() => closeOverlay(type, false)}>
-			<DialogContent
-				className="flex h-fit max-h-[90vh] flex-col gap-4 overflow-auto sm:max-w-2xl"
-				data-testid="members-add-overlay-modal"
-			>
-				<DialogHeader>
-					<DialogTitle data-testid="members-add-overlay-modal-title">
-						{user === null ? "Add Members" : "Edit Member"}
-					</DialogTitle>
-				</DialogHeader>
-
-				<div className="flex flex-col gap-4">
-					{user === null && (
-						<Popover
-							open={commandOpen}
-							onOpenChange={setCommandOpen}
-						>
-							<PopoverTrigger asChild>
-								<Button
-									variant="outline"
-									role="combobox"
-									className="w-full justify-between"
-									data-testid="members-add-overlay-autocomplete"
-								>
-									{selectedMembers.length === 0
-										? "Search users"
-										: selectedMembers.length === 1
-											? selectedMembers[0].name
-											: `${selectedMembers.length} members selected`}
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-[600px] p-0">
-								<Command shouldFilter={false}>
-									<CommandInput
-										placeholder="Search users..."
-										value={search}
-										onValueChange={(value) => {
-											setSearch(value);
-											setOffset(0);
-											setInfiniteOn(true);
-											setRenderedMembers([]);
-											setSearchLoading(true);
-										}}
-									/>
-									<CommandList
-										onScroll={({ currentTarget }) => {
-											setIsScrollBottom(
-												nearBottom({
-													scrollHeight:
-														currentTarget.scrollHeight,
-													scrollTop:
-														currentTarget.scrollTop,
-													clientHeight:
-														currentTarget.clientHeight,
-												}),
-											);
+		<Modal
+			open={open}
+			maxWidth="lg"
+			data-testid="members-add-overlay-modal"
+		>
+			<Modal.Title data-testid="members-add-overlay-modal-title">
+				{" "}
+				{user === null ? "Add Members" : "Edit Member"}
+			</Modal.Title>
+			<StyledModal>
+				{user === null && (
+					<Autocomplete
+						label="Search"
+						loading={isLoading || searchLoading}
+						multiple={true}
+						freeSolo={false}
+						filterOptions={(x) => x}
+						options={renderedMembers ? renderedMembers : []}
+						includeInputInList={true}
+						limitTags={2}
+						ListboxProps={{
+							onScroll: ({ target }) =>
+								setIsScrollBottom(
+									nearBottom(
+										target as {
+											scrollHeight?: number;
+											scrollTop?: number;
+											clientHeight?: number;
+										},
+									),
+								),
+						}}
+						getLimitTagsText={() =>
+							` +${selectedMembers.length - 2}`
+						}
+						value={selectedMembers}
+						inputValue={search}
+						getOptionLabel={(option) => {
+							return `${option.name}`;
+						}}
+						isOptionEqualToValue={(option, value) => {
+							return option.id === value.id;
+						}}
+						onInputChange={(_event, newValue) => {
+							setSearch(newValue);
+							setOffset(0);
+							setInfiniteOn(true);
+							setRenderedMembers([]);
+							setSearchLoading(true);
+						}}
+						onChange={(_event, newValue) => {
+							setSelectedMembers(newValue || []);
+						}}
+						getOptionDisabled={(option) => !!option.permission}
+						renderOption={(props, option) => {
+							const { ...optionProps } = props;
+							const hasPermission = !!option.permission;
+							return (
+								<li key={option.id} {...optionProps}>
+									<div
+										style={{
+											maxWidth: "85%",
+											overflow: "hidden",
 										}}
 									>
-										{isLoading ? (
-											<div className="flex items-center justify-center p-4">
-												<Spinner />
-											</div>
-										) : (
-											<>
-												<CommandEmpty>
-													No users found.
-												</CommandEmpty>
-												<CommandGroup>
-													{renderedMembers.map(
-														(option) => {
-															const hasPermission =
-																!!option.permission;
-															const isSelected =
-																selectedMembers.some(
-																	(m) =>
-																		m.id ===
-																		option.id,
-																);
-															return (
-																<CommandItem
-																	key={
-																		option.id
-																	}
-																	disabled={
-																		hasPermission
-																	}
-																	onSelect={() => {
-																		if (
-																			!hasPermission
-																		) {
-																			if (
-																				isSelected
-																			) {
-																				removeMember(
-																					option.id,
-																				);
-																			} else {
-																				setSelectedMembers(
-																					[
-																						...selectedMembers,
-																						option,
-																					],
-																				);
-																			}
-																		}
-																	}}
-																	className="justify-between"
-																>
-																	<div className="max-w-[85%] overflow-hidden">
-																		<MembersAddOverlayUser
-																			name={
-																				option.name
-																			}
-																			id={
-																				option.id
-																			}
-																			email={
-																				option.email
-																			}
-																			type={
-																				option.type
-																			}
-																		/>
-																	</div>
-																	{hasPermission && (
-																		<span className="whitespace-nowrap text-muted-foreground text-xs">
-																			Already
-																			Added
-																		</span>
-																	)}
-																	{isSelected &&
-																		!hasPermission && (
-																			<span className="text-primary text-xs">
-																				✓
-																			</span>
-																		)}
-																</CommandItem>
-															);
-														},
-													)}
-												</CommandGroup>
-											</>
-										)}
-									</CommandList>
-								</Command>
-							</PopoverContent>
-						</Popover>
-					)}
+										<MembersAddOverlayUser
+											name={option.name}
+											id={option.id}
+											email={option.email}
+											type={option.type}
+										/>
+									</div>
 
-					<div
-						className="flex max-h-[200px] flex-col gap-4 overflow-auto"
-						data-testid="members-add-overlay-outerbox"
-					>
-						{user === null &&
-							selectedMembers.map((selectedUser) => (
-								<MembersAddOverlayUser
-									key={selectedUser.id}
-									name={selectedUser.name}
-									id={selectedUser.id}
-									email={selectedUser.email}
-									type={selectedUser.type}
-									action={
-										<Button
-											variant="ghost"
-											size="icon"
-											onClick={() => {
-												removeMember(selectedUser.id);
+									{hasPermission && (
+										<div
+											style={{
+												whiteSpace: "nowrap",
+												display: "inline-block",
+												fontSize: "12px",
 											}}
 										>
-											<X className="h-4 w-4" />
-										</Button>
-									}
-								/>
-							))}
-
-						{user !== null && (
+											Already Added
+										</div>
+									)}
+								</li>
+							);
+						}}
+						renderInput={(params) => (
+							<TextField
+								{...params}
+								variant="outlined"
+								placeholder="Search users"
+								InputProps={{
+									...params.InputProps,
+									startAdornment: null,
+								}}
+							/>
+						)}
+						data-testid="members-add-overlay-autocomplete"
+					/>
+				)}
+				<StyledOuterBox data-testid="members-add-overlay-outerbox">
+					{user === null &&
+						selectedMembers.map((user) => (
 							<MembersAddOverlayUser
 								key={user.id}
 								name={user.name}
 								id={user.id}
 								email={user.email}
 								type={user.type}
-							/>
-						)}
-					</div>
+								action={
+									<IconButton
+										size="small"
+										onClick={() => {
+											// remove any selected users from the array
+											const filtered =
+												selectedMembers.filter(
+													(val) => val.id !== user.id,
+												);
 
-					<div className="flex flex-col gap-2">
-						<P
-							className="font-medium"
-							data-testid="members-permissions"
-						>
-							Permissions
-						</P>
-						<div className="rounded-lg bg-muted/30 p-4">
-							<RadioGroup
-								value={selectedRole}
-								onValueChange={(val) => {
-									if (val) {
-										setSelectedRole(val as SETTINGS_ROLE);
-									}
-								}}
-								className="flex flex-col gap-4"
-							>
-								<Card className="rounded-xl">
-									<CardHeader className="pb-3">
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-3">
-												<Avatar className="h-5 w-5 font-bold text-xs">
-													<AvatarFallback className="bg-black/50 text-white">
-														A
-													</AvatarFallback>
-												</Avatar>
-												<div className="flex flex-col">
-													<CardTitle
-														className="text-base"
-														data-testid="author-role"
-													>
-														Author
-													</CardTitle>
-													<CardDescription className="text-sm">
-														{PERMISSION_DESCRIPTION_MAP[
-															type
-														].author ||
-															`Error: update key in test-editor.constants to "${name}"`}
-													</CardDescription>
-												</div>
-											</div>
-											<RadioGroupItem
-												value="Author"
-												disabled={
-													!adminMode &&
-													permissionPriorityMapper(
-														userPermission,
-													)?.priority > 1
-												}
-												data-testid="author-role-radio"
-											/>
-										</div>
-									</CardHeader>
-								</Card>
-
-								<Card className="rounded-xl">
-									<CardHeader className="pb-3">
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-3">
-												<div className="flex h-6 w-6 items-center justify-center text-black/50">
-													<Edit className="h-5 w-5" />
-												</div>
-												<div className="flex flex-col">
-													<CardTitle
-														className="text-base"
-														data-testid="editor-role"
-													>
-														Editor
-													</CardTitle>
-													<CardDescription className="text-sm">
-														{PERMISSION_DESCRIPTION_MAP[
-															type
-														].editor ||
-															`Error: update key in test-editor.constants to "${name}"`}
-													</CardDescription>
-												</div>
-											</div>
-											<RadioGroupItem
-												value="Editor"
-												disabled={
-													!adminMode &&
-													permissionPriorityMapper(
-														userPermission,
-													)?.priority > 2
-												}
-												data-testid="editor-role-radio"
-											/>
-										</div>
-									</CardHeader>
-								</Card>
-
-								<Card className="rounded-xl">
-									<CardHeader className="pb-3">
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-3">
-												<div className="flex h-6 w-6 items-center justify-center text-black/50">
-													<Eye className="h-5 w-5" />
-												</div>
-												<div className="flex flex-col">
-													<CardTitle
-														className="text-base"
-														data-testid="readonly-role"
-													>
-														Read-Only
-													</CardTitle>
-													<CardDescription className="text-sm">
-														{PERMISSION_DESCRIPTION_MAP[
-															type
-														].readonly ||
-															`Error: update key in test-editor.constants to "${name}"`}
-													</CardDescription>
-												</div>
-											</div>
-											<RadioGroupItem
-												value="Read-Only"
-												disabled={
-													!adminMode &&
-													permissionPriorityMapper(
-														userPermission,
-													)?.priority > 3
-												}
-												data-testid="readonly-role-radio"
-											/>
-										</div>
-									</CardHeader>
-								</Card>
-							</RadioGroup>
-						</div>
-					</div>
-
-					{type === "MODEL" && (
-						<>
-							<P
-								className="font-medium"
-								data-testid="model-limit-restrictions"
-							>
-								Model Limit Restrictions
-							</P>
-							<div className="flex flex-col gap-4">
-								<Field>
-									<Label>Limit Type</Label>
-									<Select
-										value={restriction}
-										onValueChange={(value) => {
-											setRestriction(value);
+											setSelectedMembers(filtered);
 										}}
 									>
-										<SelectTrigger data-testid="model-limit-restrictions-select">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{Object.entries(
-												usageRestritctionTypes,
-											).map((option) => {
-												return (
-													<SelectItem
-														value={option[0]}
-														key={`usageRestrictionType-${option[0]}`}
-													>
-														{option[1]}
-													</SelectItem>
-												);
-											})}
-										</SelectContent>
-									</Select>
-								</Field>
-								{restriction === "token" && (
-									<Field>
-										<Label>Max Tokens</Label>
-										<Input
-											value={maxTokens}
-											type="number"
-											onChange={(e) => {
-												setMaxTokens(e.target.value);
-											}}
-											data-testid="model-max-tokens"
-										/>
-									</Field>
-								)}
-								{restriction === "compute" && (
-									<div className="flex gap-4">
-										<Field className="flex-1">
-											<Label>Max Response Time</Label>
-											<Input
-												value={maxTime}
-												type="number"
-												onChange={(e) => {
-													setMaxTime(e.target.value);
-												}}
-												data-testid="model-max-response-time"
-											/>
-										</Field>
-										<Field className="w-40">
-											<Label>Unit</Label>
-											<Select value={unitTypes[0]}>
-												<SelectTrigger>
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													{unitTypes.map((option) => {
-														return (
-															<SelectItem
-																value={option}
-																key={`unitType-${option}`}
-															>
-																{option}
-															</SelectItem>
-														);
-													})}
-												</SelectContent>
-											</Select>
-										</Field>
-									</div>
-								)}
-								{restriction !== "null" && (
-									<Field>
-										<Label>Frequency</Label>
-										<Select
-											value={frequency}
-											onValueChange={(value) => {
-												setFrequency(value);
-											}}
-										>
-											<SelectTrigger data-testid="model-frequency-select">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												{Object.entries(
-													frequencyTypes,
-												).map((option) => {
-													return (
-														<SelectItem
-															value={option[0]}
-															key={`frequencyType-${option[0]}`}
-														>
-															{option[1]}
-														</SelectItem>
-													);
-												})}
-											</SelectContent>
-										</Select>
-									</Field>
-								)}
-							</div>
-						</>
-					)}
-				</div>
-
-				<DialogFooter>
-					<Button
-						variant="outline"
-						onClick={() => closeOverlay(type, false)}
-						data-testid="members-add-overlay-cancel-button"
-					>
-						Cancel
-					</Button>
-					{user === null && (
-						<Button
-							variant="default"
-							disabled={
-								!selectedRole || selectedMembers.length < 1
-							}
-							onClick={() => {
-								addMembers();
-							}}
-							data-testid="members-add-overlay-add-button"
-						>
-							Save
-						</Button>
-					)}
+										<ClearRounded fontSize="small" />
+									</IconButton>
+								}
+							/>
+						))}
 
 					{user !== null && (
-						<Button
-							variant="default"
-							disabled={!selectedRole}
-							onClick={() => {
-								updateUser([user]);
-							}}
-							data-testid="members-add-overlay-update-button"
-						>
-							Update
-						</Button>
+						<MembersAddOverlayUser
+							key={user.id}
+							name={user.name}
+							id={user.id}
+							email={user.email}
+							type={user.type}
+						/>
 					)}
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</StyledOuterBox>
+
+				<Typography
+					variant="subtitle1"
+					data-testid="members-permissions"
+				>
+					Permissions
+				</Typography>
+				<StyledSelection>
+					<RadioGroup
+						label={""}
+						value={selectedRole}
+						onChange={(e) => {
+							const val = e.target.value;
+							if (val) {
+								setSelectedRole(val as SETTINGS_ROLE);
+							}
+						}}
+					>
+						<Stack spacing={1}>
+							<StyledCard>
+								<StyledCardHeader
+									title={
+										<Box
+											sx={{
+												display: "flex",
+												fontSize: "16px",
+											}}
+											data-testid="author-role"
+										>
+											<Avatar
+												sx={{
+													width: "20px",
+													height: "20px",
+													mt: "6px",
+													marginRight: "12px",
+													fontSize: "12px",
+													fontWeight: "bold",
+													backgroundColor:
+														"rgba(0, 0, 0, .5)",
+												}}
+												data-testid="author-role-avatar"
+											>
+												A
+											</Avatar>
+											Author
+										</Box>
+									}
+									sx={{ color: "#000" }}
+									subheader={
+										<Box
+											sx={{
+												marginLeft: "30px",
+											}}
+										>
+											{PERMISSION_DESCRIPTION_MAP[type]
+												.author ||
+												`Error: update key in test-editor.constants to "${name}"`}
+										</Box>
+									}
+									action={
+										<RadioGroup.Item
+											value="Author"
+											label=""
+											disabled={
+												!adminMode &&
+												permissionPriorityMapper(
+													userPermission,
+												)?.priority > 1
+											}
+											data-testid="author-role-radio"
+										/>
+									}
+								/>
+							</StyledCard>
+							<StyledCard>
+								<Card.Header
+									title={
+										<Box
+											sx={{
+												display: "flex",
+												fontSize: "16px",
+											}}
+											data-testid="editor-role"
+										>
+											<Icon
+												sx={{
+													width: "24px",
+													height: "24px",
+													mt: "6px",
+													marginRight: "12px",
+													fontSize: "12px",
+													fontWeight: "bold",
+													color: "rgba(0, 0, 0, .5)",
+													maxWidth: "24px",
+													display: "flex", // Ensure the icon is displayed properly
+													alignItems: "center", // Center the icon vertically
+													justifyContent: "center",
+												}}
+												data-testid="editor-role-icon"
+											>
+												<EditRounded />
+											</Icon>
+											Editor
+										</Box>
+									}
+									sx={{ color: "#000" }}
+									subheader={
+										<Box
+											sx={{
+												marginLeft: "30px",
+											}}
+										>
+											{PERMISSION_DESCRIPTION_MAP[type]
+												.editor ||
+												`Error: update key in test-editor.constants to "${name}"`}
+										</Box>
+									}
+									action={
+										<RadioGroup.Item
+											value="Editor"
+											label=""
+											disabled={
+												!adminMode &&
+												permissionPriorityMapper(
+													userPermission,
+												)?.priority > 2
+											}
+											data-testid="editor-role-radio"
+										/>
+									}
+								/>
+							</StyledCard>
+							<StyledCard>
+								<Card.Header
+									title={
+										<Box
+											sx={{
+												display: "flex",
+												fontSize: "16px",
+											}}
+											data-testid="readonly-role"
+										>
+											<Icon
+												sx={{
+													width: "24px",
+													height: "24px",
+													mt: "0px",
+													marginRight: "12px",
+													fontSize: "24px",
+													fontWeight: "bold",
+													color: "rgba(0, 0, 0, .5)",
+													maxWidth: "24px",
+													display: "flex", // Ensure the icon is displayed properly
+													alignItems: "center", // Center the icon vertically
+													justifyContent: "center",
+												}}
+												data-testid="readonly-role-icon"
+											>
+												<RemoveRedEyeRounded />
+											</Icon>
+											Read-Only
+										</Box>
+									}
+									sx={{ color: "#000" }}
+									subheader={
+										<Box
+											sx={{
+												marginLeft: "30px",
+											}}
+										>
+											{PERMISSION_DESCRIPTION_MAP[type]
+												.readonly ||
+												`Error: update key in test-editor.constants to "${name}"`}
+										</Box>
+									}
+									action={
+										<RadioGroup.Item
+											value="Read-Only"
+											label=""
+											disabled={
+												!adminMode &&
+												permissionPriorityMapper(
+													userPermission,
+												)?.priority > 3
+											}
+											data-testid="readonly-role-radio"
+										/>
+									}
+								/>
+							</StyledCard>
+						</Stack>
+					</RadioGroup>
+				</StyledSelection>
+
+				{type === "MODEL" && (
+					<>
+						<Typography
+							variant="subtitle1"
+							data-testid="model-limit-restrictions"
+						>
+							Model Limit Restrictions
+						</Typography>
+						<Stack direction={"column"} gap={1}>
+							<Select
+								label="Limit Type"
+								defaultValue={restriction}
+								value={restriction}
+								onChange={(e) => {
+									setRestriction(e.target.value);
+								}}
+								data-testid="model-limit-restrictions-select"
+							>
+								{Object.entries(usageRestritctionTypes).map(
+									(option, _i) => {
+										return (
+											<Select.Item
+												value={option[0]}
+												key={`usageRestrictionType-${option[0]}`}
+											>
+												{option[1]}
+											</Select.Item>
+										);
+									},
+								)}
+							</Select>
+							{restriction === "token" && (
+								<TextField
+									label="Max Tokens"
+									value={maxTokens}
+									type="number"
+									onChange={(e) => {
+										setMaxTokens(e.target.value);
+									}}
+									data-testid="model-max-tokens"
+								></TextField>
+							)}
+							{restriction === "compute" && (
+								<Stack direction={"row"} gap={1}>
+									<TextField
+										label="Max Response Time"
+										value={maxTime}
+										type="number"
+										onChange={(e) => {
+											setMaxTime(e.target.value);
+										}}
+										data-testid="model-max-response-time"
+									></TextField>
+									<Select label="Unit" value={unitTypes[0]}>
+										{unitTypes.map((option, _i) => {
+											return (
+												<Select.Item
+													value={option}
+													key={`unitType-${option}`}
+												>
+													{option}
+												</Select.Item>
+											);
+										})}
+									</Select>
+								</Stack>
+							)}
+							{restriction !== "null" && (
+								<Select
+									label="Frequency"
+									value={frequency}
+									onChange={(e) => {
+										setFrequency(e.target.value);
+									}}
+									data-testid="model-frequency-select"
+								>
+									{Object.entries(frequencyTypes).map(
+										(option, _i) => {
+											return (
+												<Select.Item
+													value={option[0]}
+													key={`frequencyType-${option[0]}`}
+												>
+													{option[1]}
+												</Select.Item>
+											);
+										},
+									)}
+								</Select>
+							)}
+						</Stack>
+					</>
+				)}
+			</StyledModal>
+			<Modal.Actions>
+				<Button
+					variant="outlined"
+					onClick={() => closeOverlay(type, false)}
+					data-testid="members-add-overlay-cancel-button"
+				>
+					Cancel
+				</Button>
+				{user === null && (
+					<Button
+						variant={"contained"}
+						color="primary"
+						disabled={!selectedRole || selectedMembers.length < 1}
+						onClick={() => {
+							addMembers();
+						}}
+						data-testid="members-add-overlay-add-button"
+					>
+						Save
+					</Button>
+				)}
+
+				{user !== null && (
+					<Button
+						variant={"contained"}
+						color="primary"
+						disabled={!selectedRole}
+						onClick={() => {
+							updateUser([user]);
+						}}
+						data-testid="members-add-overlay-update-button"
+					>
+						Update
+					</Button>
+				)}
+			</Modal.Actions>
+		</Modal>
 	);
 };

@@ -1,5 +1,26 @@
-import { Avatar, AvatarFallback, P } from "@semoss/ui/next";
+import { Avatar, Stack, styled, Typography } from "@semoss/ui";
 import { extractInitials } from "@/utility/general";
+
+const StyledUser = styled(Stack)(({ theme }) => ({
+	paddingTop: theme.spacing(1),
+	paddingRight: theme.spacing(2),
+	paddingBottom: theme.spacing(1),
+	paddingLeft: theme.spacing(2),
+}));
+
+const StyledAvatar = styled(Avatar)({
+	height: "32px",
+	width: "32px",
+});
+
+// TODO:Refactor when Typography coloris updated
+const StyledPrimaryText = styled(Typography)(({ theme }) => ({
+	color: theme.palette.text.primary,
+}));
+
+const StyledSecondaryText = styled(Typography)(({ theme }) => ({
+	color: theme.palette.text.secondary,
+}));
 
 interface MembersAddOverlayUserProps {
 	/**
@@ -34,48 +55,67 @@ export const MembersAddOverlayUser = (props: MembersAddOverlayUserProps) => {
 	const initials = extractInitials(name);
 
 	return (
-		<div className="grid grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-2">
-			<Avatar className="h-8 w-8">
-				<AvatarFallback>{initials}</AvatarFallback>
-			</Avatar>
-			<div className="flex min-w-0 flex-col gap-0">
-				<P
-					className="max-w-[150px] truncate text-foreground"
+		<StyledUser direction="row" alignItems={"center"} spacing={1}>
+			<StyledAvatar variant="circular">{initials}</StyledAvatar>
+			<Stack direction={"column"} spacing={0} flex={1}>
+				<StyledPrimaryText
+					variant="body1"
+					noWrap={true}
 					title={`Name: ${name}`}
 				>
 					{name || <>&nbsp;</>}
-				</P>
-				<div className="grid grid-cols-[auto_1fr_auto_1fr_auto_1fr] items-center gap-x-2 gap-y-0">
-					<P
-						className="whitespace-nowrap text-muted-foreground text-sm"
+				</StyledPrimaryText>
+				<Stack
+					flex={1}
+					direction={"row"}
+					alignItems={"center"}
+					spacing={2}
+				>
+					<Stack
+						direction={"row"}
+						alignItems={"center"}
+						spacing={1}
+						width={"150px"}
 						title={`User Id: ${id}`}
 					>
-						ID:
-					</P>
-					<P className="truncate text-foreground text-sm">
-						{id || <>&nbsp;</>}
-					</P>
-					<P
-						className="whitespace-nowrap text-muted-foreground text-sm"
+						<StyledSecondaryText variant="body2" noWrap={true}>
+							User ID:
+						</StyledSecondaryText>
+						<StyledPrimaryText variant="body2" noWrap={true}>
+							{id || <>&nbsp;</>}
+						</StyledPrimaryText>
+					</Stack>
+					<Stack
+						flex={1}
+						direction={"row"}
+						alignItems={"center"}
+						spacing={1}
 						title={`Email: ${email}`}
 					>
-						Email:
-					</P>
-					<P className="truncate text-foreground text-sm">
-						{email || <>&nbsp;</>}
-					</P>
-					<P
-						className="whitespace-nowrap text-muted-foreground text-sm"
+						<StyledSecondaryText variant="body2" noWrap={true}>
+							Email:
+						</StyledSecondaryText>
+						<StyledPrimaryText variant="body2" noWrap={true}>
+							{email || <>&nbsp;</>}
+						</StyledPrimaryText>
+					</Stack>
+					<Stack
+						direction={"row"}
+						alignItems={"center"}
+						spacing={1}
+						width={"200px"}
 						title={`Type: ${type}`}
 					>
-						Type:
-					</P>
-					<P className="truncate text-foreground text-sm">
-						{type || <>&nbsp;</>}
-					</P>
-				</div>
-			</div>
+						<StyledSecondaryText variant="body2" noWrap={true}>
+							Type:
+						</StyledSecondaryText>
+						<StyledPrimaryText variant="body2" noWrap={true}>
+							{type || <>&nbsp;</>}
+						</StyledPrimaryText>
+					</Stack>
+				</Stack>
+			</Stack>
 			{action}
-		</div>
+		</StyledUser>
 	);
 };
