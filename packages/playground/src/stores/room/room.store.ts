@@ -543,6 +543,8 @@ export class RoomStore {
 										tool.response =
 											toolExecMessage.response;
 										tool.status = toolExecMessage.status;
+										tool.executedParameters =
+											toolExecMessage.executedParameters;
 									});
 								}
 							});
@@ -878,13 +880,15 @@ export class RoomStore {
 	 * @param toolName - name of the tool
 	 * @param toolResponse - response from the tool
 	 * @param toolStatus - status of the tool execution
+	 * @param executedParameters - parameters used by the tool
 	 */
 	processTool = async (
 		messageId: string,
 		toolId: string,
 		toolName: string,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled",
+		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {
 			const message = this.getMessage(messageId);
@@ -899,10 +903,21 @@ export class RoomStore {
 
 			if (this.mode === "executing") {
 				// save the tool execution
-				await this.plan?.saveToolExecution(message, tool, toolResponse);
+				await this.plan?.saveToolExecution(
+					message,
+					tool,
+					toolResponse,
+					toolStatus,
+					executedParameters,
+				);
 			} else {
 				// save the response with the tool
-				await message.saveToolExecution(tool, toolResponse, toolStatus);
+				await message.saveToolExecution(
+					tool,
+					toolResponse,
+					toolStatus,
+					executedParameters,
+				);
 			}
 		} catch (e) {
 			console.error(e);
