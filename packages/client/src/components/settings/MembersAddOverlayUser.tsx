@@ -1,4 +1,4 @@
-import { extractInitials } from "@/utility/general";
+import { extractInitials } from '@/utility/general';
 import { Avatar, Stack, styled, Typography } from "@semoss/ui";
 
 const StyledUser = styled(Stack)(({ theme }) => ({
