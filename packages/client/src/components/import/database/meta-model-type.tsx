@@ -1,10 +1,15 @@
+/** biome-ignore-all lint/correctness/useUniqueElementIds: <explanation> */
 import {
-	AcUnit,
-	Create,
-	FitScreen,
-	Refresh,
-	TableRows,
-} from "@mui/icons-material";
+	ChevronLeft,
+	ChevronRight,
+	ChevronsLeft,
+	ChevronsRight,
+	Edit,
+	Maximize2,
+	RefreshCw,
+	Snowflake,
+	Table as TableIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import {
@@ -16,23 +21,31 @@ import {
 	useState,
 } from "react";
 import {
-	Box,
+	Badge,
 	Button,
 	Checkbox,
-	Chip,
-	Divider,
-	FormControl,
-	IconButton,
-	List,
-	Menu,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	Label,
+	P,
 	Select,
-	Stack,
-	styled,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Separator,
 	Table,
-	Typography,
-} from "@semoss/ui";
+	TableBody,
+	TableCell,
+	TableFooter,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@semoss/ui/next";
 import { Metamodel } from "@/components/metamodel";
-import CreateConnection from "@/components/metamodel/CreateConnection";
+import CreateConnection from "@/components/metamodel/create-connection";
 import { Section } from "@/components/ui";
 import type {
 	Edge,
@@ -62,107 +75,6 @@ import {
 } from "./MetamodelUtils";
 import { PortalModal } from "./portal";
 
-const StyledPage = styled("div")(() => ({
-	position: "relative",
-	zIndex: "0",
-	padding: "16px",
-}));
-
-const StyledMetamodelContainer = styled("section")<{
-	showFullScreenModal: boolean;
-}>(({ showFullScreenModal }) => ({
-	height: showFullScreenModal ? "calc(100vh - 150px)" : "calc(100vh - 340px)",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	transition: "height 0.3s ease",
-}));
-
-const StyledTableContainer = styled(Table.Container)(() => ({
-	height: "396px",
-}));
-
-const StyledOuterContainer = styled(Box)(() => ({
-	height: "100%",
-	width: "100%",
-}));
-
-const StyledInnerContainer = styled(Box)<{
-	showFullScreenModal: boolean;
-}>(({ showFullScreenModal, theme }) => ({
-	position: "relative",
-	flex: 1,
-	width: "100%",
-	backgroundColor: theme.palette.background.paper,
-	border: "1px solid white",
-	borderRadius: "16px",
-	transition: "all 220ms ease",
-	overflow: "visible",
-	margin: "16px 0",
-	height: showFullScreenModal ? "100vh" : "auto",
-}));
-
-const StyledMenuItem = styled(Menu.Item)(() => ({
-	display: "flex",
-	alignItems: "center",
-}));
-
-const StyledList = styled(Box)(() => ({
-	maxHeight: 200,
-	overflow: "auto",
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: "text.secondary",
-	marginTop: theme.spacing(1),
-	marginBottom: theme.spacing(2),
-}));
-
-const StyledHeader = styled(Typography)(({ theme }) => ({
-	marginTop: theme.spacing(2),
-}));
-
-const StyledMenuContainer = styled(Box)(() => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	padding: "8px 16px",
-	width: "360px",
-}));
-
-const StyledMenuHeader = styled(Box)(() => ({
-	display: "flex",
-	alignItems: "center",
-	fontSize: "14px",
-}));
-
-const OuterBox = styled(Box)(() => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	gap: 2,
-}));
-
-const StyledFormControl = styled(FormControl)(() => ({
-	display: "flex",
-	alignItems: "center",
-	width: "100%",
-	mb: 2,
-}));
-
-const StyledStack = styled(Stack)(() => ({
-	display: "flex",
-	alignItems: "center",
-}));
-
-const StyledIconButton = styled(IconButton)(() => ({
-	padding: 0,
-}));
-
-const SectionHeader = styled(Section.Header)(() => ({
-	marginBottom: 0,
-}));
-
 export const MetaModelType = observer(
 	({ parsedData, onImport, onCancel }: MetaModelTypeProps) => {
 		// State
@@ -182,8 +94,7 @@ export const MetaModelType = observer(
 		const [counter, setCounter] = useState(0);
 		const [openCreateConnectionModal, setopenCreateConnectionModal] =
 			useState(false);
-		const [anchorNodesMenu, setAnchorNodesMenu] =
-			useState<HTMLElement | null>(null);
+		const [anchorNodesMenu, setAnchorNodesMenu] = useState(false);
 		const [showFullScreenModal, setShowFullScreenModal] = useState(false);
 
 		// Refs
@@ -191,6 +102,7 @@ export const MetaModelType = observer(
 		const originalParentRef = useRef<HTMLElement | null>(null);
 		const originalNextSiblingRef = useRef<Node | null>(null);
 		const didInitRef = useRef<Record<number, boolean>>({});
+		const selectAllCheckboxRef = useRef<HTMLButtonElement>(null);
 
 		// Derived Values
 		const parsed = parsedData?.[selectedDataIndex];
@@ -309,16 +221,15 @@ export const MetaModelType = observer(
 		);
 
 		// Handlers
-		const handleNodesMenuOpen = useCallback(
-			(e: React.MouseEvent<HTMLElement>) =>
-				setAnchorNodesMenu(e.currentTarget),
-			[],
-		);
+		// const handleNodesMenuOpen = useCallback(
+		// 	() => setAnchorNodesMenu(true),
+		// 	[],
+		// );
 
-		const handleNodesMenuClose = useCallback(
-			() => setAnchorNodesMenu(null),
-			[],
-		);
+		// const handleNodesMenuClose = useCallback(
+		// 	() => setAnchorNodesMenu(false),
+		// 	[],
+		// );
 
 		const handleSelectAll = useCallback(
 			(isChecked: boolean) => {
@@ -544,7 +455,8 @@ export const MetaModelType = observer(
 		);
 
 		const handleDataSourceChange = useCallback(
-			(newIndex: number) => {
+			(newIndex: string) => {
+				const indexNum = Number(newIndex);
 				setFlowStates((prev) => {
 					const savedState = {
 						...prev,
@@ -556,7 +468,7 @@ export const MetaModelType = observer(
 					return savedState;
 				});
 
-				setSelectedDataIndex(newIndex);
+				setSelectedDataIndex(indexNum);
 				setSelectedNode(null);
 				setColumnPage(0);
 			},
@@ -659,62 +571,103 @@ export const MetaModelType = observer(
 			}
 		}, [flow.nodes, selectedDataIndex, updateSelectedNodeIds]);
 
+		useEffect(() => {
+			if (selectAllCheckboxRef.current) {
+				const checkbox = selectAllCheckboxRef.current.querySelector(
+					'input[type="checkbox"]',
+				);
+				if (checkbox) {
+					const isIndeterminate =
+						Array.isArray(nodes) &&
+						nodes.length > 0 &&
+						selectedNodeIds.length > 0 &&
+						selectedNodeIds.length < nodes.length;
+
+					(checkbox as HTMLInputElement).indeterminate =
+						isIndeterminate;
+				}
+			}
+		}, [nodes, selectedNodeIds]);
+
+		useEffect(() => {
+			if (!showFullScreenModal) return;
+
+			const interval = setInterval(() => {
+				// Find all portal content and force high z-index
+				const portals = document.querySelectorAll(
+					'[data-radix-select-content], [data-radix-dropdown-menu-content], [data-radix-dialog-content], [data-radix-popper-content-wrapper], [role="dialog"], [role="listbox"]',
+				);
+
+				portals.forEach((portal) => {
+					(portal as HTMLElement).style.zIndex = "9999";
+				});
+			}, 100);
+
+			return () => clearInterval(interval);
+		}, [showFullScreenModal]);
+
 		// RENDER
 		return (
-			<StyledOuterContainer>
-				<StyledHeader variant="h5">Define Metamodal</StyledHeader>
-				<StyledTypography variant="body2" fontWeight="regular">
+			<div className="h-full w-full">
+				<P className="mt-4 font-semibold text-xl">Define Metamodel</P>
+				<P className="mt-2 mb-4 font-normal text-muted-foreground">
 					Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
 					do eiusmod tempor incididunt ut labore et dolore magna
 					aliqua. Ut enim ad minim veniam, quis nostrud exercitation
 					ullamco laboris nisi ut aliquip ex ea commodo consequat.
-				</StyledTypography>
+				</P>
 				<div ref={portalHostRef}>
-					<StyledInnerContainer
-						showFullScreenModal={showFullScreenModal}
+					<div
+						className={`relative m-4 flex-1 overflow-visible rounded-2xl border border-white bg-card transition-all duration-200 ease-in ${
+							showFullScreenModal ? "h-screen" : "h-auto"
+						}`}
 					>
-						<StyledPage>
+						<div className="relative z-0 p-4">
 							<Section>
-								<OuterBox>
+								<div className="flex items-center justify-between gap-2">
 									{parsedData && parsedData.length > 0 && (
-										<StyledFormControl>
+										<div className="mb-4 flex w-full items-center">
 											<Select
-												fullWidth
-												value={selectedDataIndex}
-												onChange={(e) =>
-													handleDataSourceChange(
-														Number(e.target.value),
-													)
-												}
-												size="small"
-											>
-												{parsedData.map(
-													(data, index) => (
-														<Menu.Item
-															key={getDataSourceKey(
-																data,
-																index,
-															)}
-															value={index}
-															data-testid={`engineMetadata-datasource-${index}-btn`}
-														>
-															{getDisplayName(
-																data,
-															)}
-														</Menu.Item>
-													),
+												value={String(
+													selectedDataIndex,
 												)}
-											</Select>
-										</StyledFormControl>
-									)}
-									<SectionHeader
-										actions={
-											<StyledStack
-												direction="row"
-												spacing={2}
+												onValueChange={
+													handleDataSourceChange
+												}
 											>
+												<SelectTrigger className="w-full">
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													{parsedData.map(
+														(data, index) => (
+															<SelectItem
+																key={getDataSourceKey(
+																	data,
+																	index,
+																)}
+																value={String(
+																	index,
+																)}
+																data-testid={`engineMetadata-datasource-${index}-btn`}
+															>
+																{getDisplayName(
+																	data,
+																)}
+															</SelectItem>
+														),
+													)}
+												</SelectContent>
+											</Select>
+										</div>
+									)}
+									<Section.Header
+										actions={
+											<div className="flex flex-row items-center gap-4">
 												{!showFullScreenModal && (
-													<StyledIconButton
+													<Button
+														variant="ghost"
+														size="icon"
 														onClick={() =>
 															setShowFullScreenModal(
 																true,
@@ -722,161 +675,179 @@ export const MetaModelType = observer(
 														}
 														data-testid="engineMetadata-fullscreen-btn"
 														title="Full Screen"
+														className="p-0"
 													>
-														<FitScreen />
-													</StyledIconButton>
+														<Maximize2 className="size-4" />
+													</Button>
 												)}
 
-												<StyledIconButton
-													onClick={
-														handleNodesMenuOpen
-													}
-													title="Select tables"
-													data-testid="engineMetadata-tablelist-btn"
-												>
-													<TableRows />
-												</StyledIconButton>
-
-												<Menu
-													anchorEl={anchorNodesMenu}
-													open={Boolean(
-														anchorNodesMenu,
-													)}
-													onClose={
-														handleNodesMenuClose
+												<DropdownMenu
+													open={anchorNodesMenu}
+													onOpenChange={
+														setAnchorNodesMenu
 													}
 												>
-													<StyledMenuContainer>
-														<StyledMenuHeader>
-															Tables
-														</StyledMenuHeader>
-													</StyledMenuContainer>
+													<DropdownMenuTrigger
+														asChild
+													>
+														<Button
+															variant="ghost"
+															size="icon"
+															title="Select tables"
+															data-testid="engineMetadata-tablelist-btn"
+															className="p-0"
+														>
+															<TableIcon className="size-4" />
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent
+														align="end"
+														className="w-[360px]"
+													>
+														{/* Header */}
+														<div className="flex items-center justify-between px-4 py-2">
+															<P className="text-sm">
+																Tables
+															</P>
+														</div>
 
-													<Divider />
-													<StyledMenuItem>
-														<Checkbox
-															onChange={(
-																e: React.ChangeEvent<HTMLInputElement>,
-															) =>
-																handleSelectAll(
-																	e.target
-																		.checked,
-																)
+														<Separator className="my-1" />
+
+														{/* Select All */}
+														<DropdownMenuItem
+															onSelect={(e) =>
+																e.preventDefault()
 															}
-															checked={
-																Array.isArray(
-																	nodes,
-																) &&
-																nodes.length >
-																	0 &&
-																selectedNodeIds.length ===
-																	nodes.length
-															}
-															checkboxProps={{
-																size: "small",
-																indeterminate:
+															className="flex items-center gap-2"
+														>
+															<Checkbox
+																ref={
+																	selectAllCheckboxRef
+																}
+																id="select-all-nodes"
+																checked={
 																	Array.isArray(
 																		nodes,
 																	) &&
 																	nodes.length >
 																		0 &&
-																	selectedNodeIds.length >
-																		0 &&
-																	selectedNodeIds.length <
-																		nodes.length,
-															}}
-														/>
-														<List.ItemText primary="Select All" />
-													</StyledMenuItem>
+																	selectedNodeIds.length ===
+																		nodes.length
+																}
+																onCheckedChange={(
+																	checked,
+																) =>
+																	handleSelectAll(
+																		checked as boolean,
+																	)
+																}
+																className="[&[data-state=checked]_svg]:text-white [&_svg]:text-white"
+															/>
+															<Label
+																htmlFor="select-all-nodes"
+																className="cursor-pointer font-normal"
+															>
+																Select All
+															</Label>
+														</DropdownMenuItem>
 
-													<StyledList>
-														{(nodes ?? []).map(
-															(n) => (
-																<StyledMenuItem
-																	key={n.id}
-																	data-testid={`engineMetadata-table-${n.id}-btn`}
-																>
-																	<Checkbox
-																		onChange={() =>
-																			handleToggleSelectNode(
+														{/* Scrollable list */}
+														<div className="max-h-[200px] overflow-auto">
+															{(nodes ?? []).map(
+																(n) => (
+																	<DropdownMenuItem
+																		key={
+																			n.id
+																		}
+																		onSelect={(
+																			e,
+																		) =>
+																			e.preventDefault()
+																		}
+																		className="flex items-center gap-2"
+																		data-testid={`engineMetadata-table-${n.id}-btn`}
+																	>
+																		<Checkbox
+																			id={`node-${n.id}`}
+																			checked={selectedNodeIds.includes(
 																				n.id,
-																			)
-																		}
-																		checked={selectedNodeIds.includes(
-																			n.id,
-																		)}
-																		checkboxProps={{
-																			size: "small",
-																		}}
-																	/>
-																	<List.ItemText
-																		primary={
-																			n
-																				.data
-																				.name
-																		}
-																	/>
-																</StyledMenuItem>
-															),
-														)}
-													</StyledList>
-												</Menu>
+																			)}
+																			onCheckedChange={() =>
+																				handleToggleSelectNode(
+																					n.id,
+																				)
+																			}
+																			className="[&[data-state=checked]_svg]:text-white [&_svg]:text-white"
+																		/>
+																		<Label
+																			htmlFor={`node-${n.id}`}
+																			className="cursor-pointer font-normal"
+																		>
+																			{
+																				n
+																					.data
+																					.name
+																			}
+																		</Label>
+																	</DropdownMenuItem>
+																),
+															)}
+														</div>
+													</DropdownMenuContent>
+												</DropdownMenu>
 
-												<StyledIconButton
-													data-testid={
-														"engineMetadata-refresh-btn"
-													}
+												<Button
+													variant="ghost"
+													size="icon"
+													data-testid="engineMetadata-refresh-btn"
 													title="Reset"
 													onClick={
 														handleRefreshMetamodel
 													}
+													className="p-0"
 												>
-													<Refresh />
-												</StyledIconButton>
+													<RefreshCw className="size-4" />
+												</Button>
 												<Button
-													startIcon={<AcUnit />}
-													variant="outlined"
-													data-testid={
-														"engineMetadata-createrelationship-btn"
-													}
+													variant="outline"
+													data-testid="engineMetadata-createrelationship-btn"
 													onClick={() =>
 														setopenCreateConnectionModal(
 															true,
 														)
 													}
+													className="gap-2"
 												>
+													<Snowflake className="size-4" />
 													Create Relationship
 												</Button>
 												<Button
-													variant="outlined"
+													variant="outline"
 													onClick={handleSave}
-													data-testid={
-														"engineMetadata-save-btn"
-													}
+													data-testid="engineMetadata-save-btn"
 												>
 													Save
 												</Button>
 												{!showFullScreenModal && (
 													<Button
-														variant="outlined"
-														color="secondary"
+														variant="outline"
 														onClick={onCancel}
-														data-testid={
-															"engineMetadata-cancel-btn"
-														}
+														data-testid="engineMetadata-cancel-btn"
 													>
 														Cancel
 													</Button>
 												)}
-											</StyledStack>
+											</div>
 										}
-									></SectionHeader>
-								</OuterBox>
-								<Stack spacing={2}>
-									<StyledMetamodelContainer
-										showFullScreenModal={
+									/>
+								</div>
+								<div className="flex flex-col gap-4">
+									<section
+										className={`flex items-center justify-center transition-[height] duration-300 ease-in ${
 											showFullScreenModal
-										}
+												? "h-[calc(100vh-150px)]"
+												: "h-[calc(100vh-340px)]"
+										}`}
 									>
 										<Metamodel
 											key={`metamodel-${selectedDataIndex}-${counter}`}
@@ -895,8 +866,8 @@ export const MetaModelType = observer(
 											resetKey={counter}
 											columnOptions={columnOptions}
 										/>
-									</StyledMetamodelContainer>
-								</Stack>
+									</section>
+								</div>
 							</Section>
 
 							{selectedNode && (
@@ -905,127 +876,243 @@ export const MetaModelType = observer(
 										<Section.Header>
 											Description
 										</Section.Header>
-										<Typography variant="body2">
-											{description}
-										</Typography>
+										<P className="text-sm">{description}</P>
 									</Section>
 
 									<Section>
 										<Section.Header>
 											Logical Names
 										</Section.Header>
-										<Stack
-											direction="row"
-											spacing={1}
-											flexWrap="wrap"
-										>
+										<div className="flex flex-row flex-wrap gap-2">
 											{logicalNames.map((logicalName) => (
-												<Chip
+												<Badge
 													key={logicalName}
-													label={logicalName}
-													color="primary"
-													size="small"
+													variant="default"
+													className="text-xs"
 													data-testid={`logicalName-${logicalName}`}
-												/>
+												>
+													{logicalName}
+												</Badge>
 											))}
-										</Stack>
+										</div>
 									</Section>
 
 									<Section>
 										<Section.Header>Columns</Section.Header>
-										<StyledTableContainer>
-											<Table stickyHeader>
-												<Table.Head>
-													<Table.Row>
-														<Table.Cell>
+										<div className="h-[396px] overflow-auto">
+											<Table>
+												<TableHeader className="sticky top-0">
+													<TableRow>
+														<TableHead className="w-[50px]">
 															{" "}
-														</Table.Cell>
-														<Table.Cell>
+														</TableHead>
+														<TableHead>
 															Name
-														</Table.Cell>
-														<Table.Cell>
+														</TableHead>
+														<TableHead>
 															Type
-														</Table.Cell>
-													</Table.Row>
-												</Table.Head>
-												<Table.Body>
+														</TableHead>
+													</TableRow>
+												</TableHeader>
+												<TableBody>
 													{columnRows.map(
 														(
 															property: Property,
 															idx: number,
 														) => (
-															<Table.Row
+															<TableRow
 																key={
 																	property.id
 																}
 															>
-																<Table.Cell>
-																	<IconButton
+																<TableCell>
+																	<Button
+																		variant="ghost"
+																		size="icon"
 																		disabled
 																	>
-																		<Create />
-																	</IconButton>
-																</Table.Cell>
-																<Table.Cell>
+																		<Edit className="size-4" />
+																	</Button>
+																</TableCell>
+																<TableCell>
 																	{
 																		property.name
 																	}
-																</Table.Cell>
-																<Table.Cell>
+																</TableCell>
+																<TableCell>
 																	{
 																		property.type
 																	}
-																</Table.Cell>
-															</Table.Row>
+																</TableCell>
+															</TableRow>
 														),
 													)}
-												</Table.Body>
-												<Table.Footer>
-													<Table.Row>
-														<Table.Pagination
-															page={columnPage}
-															rowsPerPage={
-																columnVisibleRows
-															}
-															count={
-																selectedNode
-																	.data
-																	.properties
-																	.length
-															}
-															rowsPerPageOptions={[
-																5, 10, 25,
-															]}
-															onPageChange={(
-																e,
-																newPage,
-															) =>
-																setColumnPage(
-																	newPage,
-																)
-															}
-															onRowsPerPageChange={(
-																e,
-															) => {
-																setColumnVisibleRows(
-																	Number(
-																		e.target
-																			.value,
-																	),
-																);
-																setColumnPage(
-																	0,
-																);
-															}}
-														/>
-													</Table.Row>
-												</Table.Footer>
+												</TableBody>
+												<TableFooter>
+													<TableRow>
+														<TableCell
+															colSpan={3}
+															className="py-2"
+														>
+															<div className="flex items-center justify-between">
+																<div className="flex items-center gap-2">
+																	<P className="text-muted-foreground text-sm">
+																		Rows per
+																		page:
+																	</P>
+																	<Select
+																		value={String(
+																			columnVisibleRows,
+																		)}
+																		onValueChange={(
+																			value,
+																		) => {
+																			setColumnVisibleRows(
+																				Number(
+																					value,
+																				),
+																			);
+																			setColumnPage(
+																				0,
+																			);
+																		}}
+																	>
+																		<SelectTrigger className="h-8 w-[70px]">
+																			<SelectValue />
+																		</SelectTrigger>
+																		<SelectContent>
+																			<SelectItem value="5">
+																				5
+																			</SelectItem>
+																			<SelectItem value="10">
+																				10
+																			</SelectItem>
+																			<SelectItem value="25">
+																				25
+																			</SelectItem>
+																		</SelectContent>
+																	</Select>
+																</div>
+
+																<div className="flex items-center gap-2">
+																	<P className="text-muted-foreground text-sm">
+																		{columnPage *
+																			columnVisibleRows +
+																			1}
+																		-
+																		{Math.min(
+																			(columnPage +
+																				1) *
+																				columnVisibleRows,
+																			selectedNode
+																				.data
+																				.properties
+																				.length,
+																		)}{" "}
+																		of{" "}
+																		{
+																			selectedNode
+																				.data
+																				.properties
+																				.length
+																		}
+																	</P>
+																	<div className="flex gap-1">
+																		<Button
+																			variant="outline"
+																			size="icon"
+																			className="h-8 w-8"
+																			onClick={() =>
+																				setColumnPage(
+																					0,
+																				)
+																			}
+																			disabled={
+																				columnPage ===
+																				0
+																			}
+																		>
+																			<ChevronsLeft className="size-4" />
+																		</Button>
+																		<Button
+																			variant="outline"
+																			size="icon"
+																			className="h-8 w-8"
+																			onClick={() =>
+																				setColumnPage(
+																					columnPage -
+																						1,
+																				)
+																			}
+																			disabled={
+																				columnPage ===
+																				0
+																			}
+																		>
+																			<ChevronLeft className="size-4" />
+																		</Button>
+																		<Button
+																			variant="outline"
+																			size="icon"
+																			className="h-8 w-8"
+																			onClick={() =>
+																				setColumnPage(
+																					columnPage +
+																						1,
+																				)
+																			}
+																			disabled={
+																				(columnPage +
+																					1) *
+																					columnVisibleRows >=
+																				selectedNode
+																					.data
+																					.properties
+																					.length
+																			}
+																		>
+																			<ChevronRight className="size-4" />
+																		</Button>
+																		<Button
+																			variant="outline"
+																			size="icon"
+																			className="h-8 w-8"
+																			onClick={() =>
+																				setColumnPage(
+																					Math.ceil(
+																						selectedNode
+																							.data
+																							.properties
+																							.length /
+																							columnVisibleRows,
+																					) -
+																						1,
+																				)
+																			}
+																			disabled={
+																				(columnPage +
+																					1) *
+																					columnVisibleRows >=
+																				selectedNode
+																					.data
+																					.properties
+																					.length
+																			}
+																		>
+																			<ChevronsRight className="size-4" />
+																		</Button>
+																	</div>
+																</div>
+															</div>
+														</TableCell>
+													</TableRow>
+												</TableFooter>
 											</Table>
-										</StyledTableContainer>
+										</div>
 									</Section>
 								</>
 							)}
-						</StyledPage>
+						</div>
 						<CreateConnection
 							open={openCreateConnectionModal}
 							onClose={() => setopenCreateConnectionModal(false)}
@@ -1038,14 +1125,14 @@ export const MetaModelType = observer(
 							onEditConnection={handleEditConnection}
 							onDeleteConnection={handleDeleteConnection}
 						/>
-					</StyledInnerContainer>
+					</div>
 				</div>
 				<PortalModal
 					open={showFullScreenModal}
 					onClose={() => setShowFullScreenModal(false)}
 					contentId={portalContentId}
 				/>
-			</StyledOuterContainer>
+			</div>
 		);
 	},
 );

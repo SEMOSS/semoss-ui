@@ -6,7 +6,7 @@ import {
 	runPixelAsync,
 	uploadInsight,
 } from "@semoss/sdk/react";
-import { FlexLayout } from "@semoss/shared";
+import { FlexLayout, type ThemeMap } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import {
 	type AbstractMessageStore,
@@ -133,6 +133,7 @@ interface RoomStoreInterface {
  * Manage the room
  */
 export class RoomStore {
+	private _theme: ThemeMap["playground"];
 	private _store: RoomStoreInterface = {
 		roomId: "",
 		insightId: "new",
@@ -165,7 +166,12 @@ export class RoomStore {
 		},
 	};
 
-	constructor(roomId: string, insightId: string = "new") {
+	constructor(
+		theme: ThemeMap["playground"],
+		roomId: string,
+		insightId: string = "new",
+	) {
+		this._theme = theme;
 		// register the roomId, insightId, and actions
 		this._store.roomId = roomId;
 		this._store.insightId = insightId;
@@ -194,6 +200,13 @@ export class RoomStore {
 	 */
 	get insightId() {
 		return this._store.insightId;
+	}
+
+	/**
+	 * Get the theme
+	 */
+	get theme() {
+		return this._theme;
 	}
 
 	/**
@@ -617,7 +630,7 @@ export class RoomStore {
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
 			if (this.tail.type === "RESPONSE") {
-				this.tail.startToolExecution();
+				this.tail.continueToolExecution();
 			}
 		} catch (e) {
 			console.error(e);
