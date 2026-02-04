@@ -73,7 +73,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						roomId: room.roomId,
 						original_name: tool.original_name || "",
 						tool_response: toolResponse,
-						executedParameters: executedParameters,
+						executedParameters: toJS(executedParameters || {}),
 					} satisfies MCPToolRequest,
 				},
 				"*",
