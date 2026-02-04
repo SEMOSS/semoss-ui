@@ -1,4 +1,13 @@
-import { Create, FitScreen, TableRows } from "@mui/icons-material";
+/** biome-ignore-all lint/correctness/useUniqueElementIds: <explanation> */
+import {
+	ChevronLeft,
+	ChevronRight,
+	ChevronsLeft,
+	ChevronsRight,
+	Edit,
+	Maximize2,
+	Table as TableIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import {
@@ -10,21 +19,31 @@ import {
 	useState,
 } from "react";
 import {
-	Box,
+	Badge,
 	Button,
 	Checkbox,
-	Chip,
-	Divider,
-	IconButton,
-	List,
-	Menu,
-	Stack,
-	styled,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	Label,
+	P,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Separator,
 	Table,
-	Typography,
-} from "@semoss/ui";
+	TableBody,
+	TableCell,
+	TableFooter,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@semoss/ui/next";
 import { Metamodel } from "@/components/metamodel";
-import CreateConnection from "@/components/metamodel/CreateConnection";
+import CreateConnection from "@/components/metamodel/create-connection";
 import { Section } from "@/components/ui";
 import type {
 	Edge,
@@ -40,81 +59,6 @@ import {
 	transformMetaToParsed,
 } from "./MetamodelUtils";
 import { PortalModal } from "./portal";
-
-const StyledPage = styled("div")(() => ({
-	position: "relative",
-	zIndex: "0",
-	padding: "16px",
-}));
-
-const StyledMetamodelContainer = styled("section")<{
-	showFullScreenModal: boolean;
-}>(({ showFullScreenModal }) => ({
-	height: showFullScreenModal ? "calc(100vh - 150px)" : "calc(100vh - 360px)",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	transition: "height 0.3s ease",
-}));
-
-const StyledTableContainer = styled(Table.Container)(() => ({
-	height: "396px",
-}));
-const StyledOuterContainer = styled(Box)(() => ({
-	height: "100%",
-	width: "100%",
-}));
-
-const StyledInnerContainer = styled(Box)<{
-	showFullScreenModal: boolean;
-}>(({ showFullScreenModal, theme }) => ({
-	position: "relative",
-	flex: 1,
-	width: "100%",
-	backgroundColor: theme.palette.background.paper,
-	border: "1px solid white",
-	borderRadius: 2,
-	transition: "all 220ms ease",
-	overflow: "visible",
-	margin: "16px 0",
-	height: showFullScreenModal ? "100vh" : "auto",
-}));
-
-const StyledMenuItem = styled(Menu.Item)(() => ({
-	display: "flex",
-	alignItems: "center",
-	gap: 1,
-}));
-
-const StyledDivider = styled(Divider)(({ theme }) => ({
-	border: `1px solid ${theme.palette.secondary.border}`,
-}));
-
-const StyledList = styled(Box)(() => ({
-	maxHeight: 200,
-	overflow: "auto",
-}));
-
-const StyledHeader = styled(Typography)(({ theme }) => ({
-	marginTop: theme.spacing(2),
-}));
-
-const StyledMenuContainer = styled(Box)(() => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	padding: "8px 16px",
-}));
-
-const StyledMenuHeader = styled(Box)(() => ({
-	display: "flex",
-	alignItems: "center",
-}));
-
-const StyledButton = styled(Button)(() => ({
-	textTransform: "none",
-	minWidth: "auto",
-}));
 
 export const MetaModelConnections = observer(
 	({
@@ -132,7 +76,6 @@ export const MetaModelConnections = observer(
 			);
 		const [columnPage, setColumnPage] = useState<number>(0);
 		const [columnVisibleRows, setColumnVisibleRows] = useState<number>(5);
-		// const [counter, setCounter] = useState(0);
 		const [openCreateConnectionModal, setopenCreateConnectionModal] =
 			useState(false);
 		const [flow, setFlow] = useState<FlowData>({
@@ -140,8 +83,7 @@ export const MetaModelConnections = observer(
 			edges: [],
 		});
 		const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
-		const [anchorNodesMenu, setAnchorNodesMenu] =
-			useState<HTMLElement | null>(null);
+		const [anchorNodesMenu, setAnchorNodesMenu] = useState(false);
 		const [showFullScreenModal, setShowFullScreenModal] = useState(false);
 		const portalHostRef = useRef<HTMLDivElement | null>(null);
 		const originalParentRef = useRef<HTMLElement | null>(null);
@@ -269,9 +211,8 @@ export const MetaModelConnections = observer(
 				(p: { name: string }): string => p.name,
 			) || [];
 
-		const handleNodesMenuOpen = (e: React.MouseEvent<HTMLElement>) =>
-			setAnchorNodesMenu(e.currentTarget);
-		const handleNodesMenuClose = () => setAnchorNodesMenu(null);
+		// const handleNodesMenuOpen = () => setAnchorNodesMenu(true);
+		const handleNodesMenuClose = () => setAnchorNodesMenu(false);
 
 		const attachConnectionsToNodes = (
 			nodesInput: (MetamodelNode | FlowNode)[],
@@ -386,6 +327,7 @@ export const MetaModelConnections = observer(
 				};
 			});
 		};
+
 		const handleCreateConnection = ({
 			parentTable,
 			childTable,
@@ -570,19 +512,23 @@ export const MetaModelConnections = observer(
 		}, [flow, nodes]);
 
 		return (
-			<StyledOuterContainer>
-				<StyledHeader variant="h5">Define Metamodal</StyledHeader>
+			<div className="h-full w-full">
+				<P className="mt-4 font-semibold text-xl">Define Metamodel</P>
 				<div ref={portalHostRef}>
-					<StyledInnerContainer
-						showFullScreenModal={showFullScreenModal}
+					<div
+						className={`relative m-4 flex-1 overflow-visible rounded-sm border border-white bg-card transition-all duration-200 ease-in ${
+							showFullScreenModal ? "h-screen" : "h-auto"
+						}`}
 					>
-						<StyledPage>
+						<div className="relative z-0 p-4">
 							<Section>
 								<Section.Header
 									actions={
-										<Stack direction="row" spacing={1}>
+										<div className="flex flex-row items-center gap-2">
 											{!showFullScreenModal && (
-												<IconButton
+												<Button
+													variant="ghost"
+													size="icon"
 													onClick={() =>
 														setShowFullScreenModal(
 															true,
@@ -590,97 +536,141 @@ export const MetaModelConnections = observer(
 													}
 													data-testid="engineMetadata-refresh-btn"
 												>
-													<FitScreen />
-												</IconButton>
+													<Maximize2 className="size-4" />
+												</Button>
 											)}
 
-											<IconButton
-												onClick={handleNodesMenuOpen}
-												title="Select tables"
+											<DropdownMenu
+												open={anchorNodesMenu}
+												onOpenChange={
+													setAnchorNodesMenu
+												}
 											>
-												<TableRows />
-											</IconButton>
-
-											<Menu
-												anchorEl={anchorNodesMenu}
-												open={Boolean(anchorNodesMenu)}
-												onClose={handleNodesMenuClose}
-											>
-												<StyledMenuContainer>
-													<StyledMenuHeader>
-														Tables
-													</StyledMenuHeader>
-
-													<StyledButton
-														size="small"
-														variant="text"
-														onClick={handleClearAll}
+												<DropdownMenuTrigger asChild>
+													<Button
+														variant="ghost"
+														size="icon"
+														title="Select tables"
+														data-testid="select-tables-dropdown"
 													>
-														Clear
-													</StyledButton>
-												</StyledMenuContainer>
-
-												<Divider />
-												<StyledMenuItem>
-													<Checkbox
-														onChange={(
-															e: React.ChangeEvent<HTMLInputElement>,
-														) =>
-															handleSelectAll(
-																e.target
-																	.checked,
-															)
-														}
-														checked={
-															Array.isArray(
-																nodes,
-															) &&
-															nodes.length > 0 &&
-															selectedNodeIds.length ===
-																nodes.length
-														}
-													/>
-													<List.ItemText primary="Select All" />
-												</StyledMenuItem>
-
-												<StyledList>
-													{(nodes ?? []).map((n) => (
-														<StyledMenuItem
-															key={n.id}
+														<TableIcon className="size-4" />
+													</Button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent
+													align="end"
+													className="w-64"
+												>
+													{/* Header with Clear button */}
+													<div className="flex items-center justify-between px-4 py-2">
+														<P className="font-medium">
+															Tables
+														</P>
+														<Button
+															variant="ghost"
+															size="sm"
+															onClick={
+																handleClearAll
+															}
+															className="h-auto px-2 py-1 text-xs"
 														>
-															<Checkbox
-																onChange={() =>
-																	handleToggleSelectNode(
-																		n.id,
-																	)
-																}
-																checked={selectedNodeIds.includes(
-																	n.id,
-																)}
-															/>
-															<List.ItemText
-																primary={
-																	n.data.name
-																}
-															/>
-														</StyledMenuItem>
-													))}
-												</StyledList>
-											</Menu>
+															Clear
+														</Button>
+													</div>
 
-											<StyledDivider />
-										</Stack>
+													<Separator className="my-1" />
+
+													{/* Select All */}
+													<DropdownMenuItem
+														onSelect={(e) =>
+															e.preventDefault()
+														}
+														className="flex items-center gap-2"
+													>
+														<Checkbox
+															id="select-all-nodes"
+															checked={
+																Array.isArray(
+																	nodes,
+																) &&
+																nodes.length >
+																	0 &&
+																selectedNodeIds.length ===
+																	nodes.length
+															}
+															onCheckedChange={(
+																checked,
+															) =>
+																handleSelectAll(
+																	checked as boolean,
+																)
+															}
+														/>
+														<Label
+															htmlFor="select-all-nodes"
+															className="cursor-pointer font-normal"
+														>
+															Select All
+														</Label>
+													</DropdownMenuItem>
+
+													{/* Scrollable list */}
+													<div className="max-h-[200px] overflow-auto">
+														{(nodes ?? []).map(
+															(n) => (
+																<DropdownMenuItem
+																	key={n.id}
+																	onSelect={(
+																		e,
+																	) =>
+																		e.preventDefault()
+																	}
+																	className="flex items-center gap-2"
+																>
+																	<Checkbox
+																		id={`node-${n.id}`}
+																		checked={selectedNodeIds.includes(
+																			n.id,
+																		)}
+																		onCheckedChange={() =>
+																			handleToggleSelectNode(
+																				n.id,
+																			)
+																		}
+																	/>
+																	<Label
+																		htmlFor={`node-${n.id}`}
+																		className="cursor-pointer font-normal"
+																	>
+																		{
+																			n
+																				.data
+																				.name
+																		}
+																	</Label>
+																</DropdownMenuItem>
+															),
+														)}
+													</div>
+												</DropdownMenuContent>
+											</DropdownMenu>
+
+											<Separator
+												orientation="vertical"
+												className="h-6"
+											/>
+										</div>
 									}
-								></Section.Header>
+								/>
 
-								<Stack spacing={2}>
-									<StyledMetamodelContainer
-										showFullScreenModal={
+								<div className="flex flex-col gap-4">
+									<section
+										className={`flex items-center justify-center transition-[height] duration-300 ease-in ${
 											showFullScreenModal
-										}
+												? "h-[calc(100vh-150px)]"
+												: "h-[calc(100vh-360px)]"
+										}`}
 									>
 										<Metamodel
-											//key={`metamodel-${counter}`}
 											nodes={flow.nodes}
 											edges={flow.edges}
 											selectedNode={selectedNode}
@@ -693,8 +683,8 @@ export const MetaModelConnections = observer(
 												handleMetaModelUpdate
 											}
 										/>
-									</StyledMetamodelContainer>
-								</Stack>
+									</section>
+								</div>
 							</Section>
 
 							{selectedNode && (
@@ -703,126 +693,242 @@ export const MetaModelConnections = observer(
 										<Section.Header>
 											Description
 										</Section.Header>
-										<Typography variant="body2">
-											{description}
-										</Typography>
+										<P className="text-sm">{description}</P>
 									</Section>
 
 									<Section>
 										<Section.Header>
 											Logical Names
 										</Section.Header>
-										<Stack
-											direction="row"
-											spacing={1}
-											flexWrap="wrap"
-										>
+										<div className="flex flex-row flex-wrap gap-2">
 											{logicalNames.map((logicalName) => (
-												<Chip
+												<Badge
 													key={logicalName}
-													label={logicalName}
-													color="primary"
-													size="small"
-												/>
+													variant="default"
+													className="text-xs"
+												>
+													{logicalName}
+												</Badge>
 											))}
-										</Stack>
+										</div>
 									</Section>
 
 									<Section>
 										<Section.Header>Columns</Section.Header>
-										<StyledTableContainer>
-											<Table stickyHeader>
-												<Table.Head>
-													<Table.Row>
-														<Table.Cell>
+										<div className="h-[396px] overflow-auto">
+											<Table>
+												<TableHeader className="sticky top-0">
+													<TableRow>
+														<TableHead className="w-[50px]">
 															{" "}
-														</Table.Cell>
-														<Table.Cell>
+														</TableHead>
+														<TableHead>
 															Name
-														</Table.Cell>
-														<Table.Cell>
+														</TableHead>
+														<TableHead>
 															Type
-														</Table.Cell>
-													</Table.Row>
-												</Table.Head>
-												<Table.Body>
+														</TableHead>
+													</TableRow>
+												</TableHeader>
+												<TableBody>
 													{columnRows.map(
 														(
 															property: Property,
 															idx: number,
 														) => (
-															<Table.Row
+															<TableRow
 																key={
 																	property.id
 																}
 															>
-																<Table.Cell>
-																	<IconButton
+																<TableCell>
+																	<Button
+																		variant="ghost"
+																		size="icon"
 																		disabled
 																	>
-																		<Create />
-																	</IconButton>
-																</Table.Cell>
-																<Table.Cell>
+																		<Edit className="size-4" />
+																	</Button>
+																</TableCell>
+																<TableCell>
 																	{
 																		property.name
 																	}
-																</Table.Cell>
-																<Table.Cell>
+																</TableCell>
+																<TableCell>
 																	{
 																		property.type
 																	}
-																</Table.Cell>
-															</Table.Row>
+																</TableCell>
+															</TableRow>
 														),
 													)}
-												</Table.Body>
-												<Table.Footer>
-													<Table.Row>
-														<Table.Pagination
-															page={columnPage}
-															rowsPerPage={
-																columnVisibleRows
-															}
-															count={
-																selectedNode
-																	.data
-																	.properties
-																	.length
-															}
-															rowsPerPageOptions={[
-																5, 10, 25,
-															]}
-															onPageChange={(
-																e,
-																newPage,
-															) =>
-																setColumnPage(
-																	newPage,
-																)
-															}
-															onRowsPerPageChange={(
-																e,
-															) => {
-																setColumnVisibleRows(
-																	Number(
-																		e.target
-																			.value,
-																	),
-																);
-																setColumnPage(
-																	0,
-																);
-															}}
-														/>
-													</Table.Row>
-												</Table.Footer>
+												</TableBody>
+												<TableFooter>
+													<TableRow>
+														<TableCell
+															colSpan={3}
+															className="py-2"
+														>
+															<div className="flex items-center justify-between">
+																<div className="flex items-center gap-2">
+																	<P className="text-muted-foreground text-sm">
+																		Rows per
+																		page:
+																	</P>
+																	<Select
+																		value={String(
+																			columnVisibleRows,
+																		)}
+																		onValueChange={(
+																			value,
+																		) => {
+																			setColumnVisibleRows(
+																				Number(
+																					value,
+																				),
+																			);
+																			setColumnPage(
+																				0,
+																			);
+																		}}
+																	>
+																		<SelectTrigger className="h-8 w-[70px]">
+																			<SelectValue />
+																		</SelectTrigger>
+																		<SelectContent>
+																			<SelectItem value="5">
+																				5
+																			</SelectItem>
+																			<SelectItem value="10">
+																				10
+																			</SelectItem>
+																			<SelectItem value="25">
+																				25
+																			</SelectItem>
+																		</SelectContent>
+																	</Select>
+																</div>
+
+																<div className="flex items-center gap-2">
+																	<P className="text-muted-foreground text-sm">
+																		{columnPage *
+																			columnVisibleRows +
+																			1}
+																		-
+																		{Math.min(
+																			(columnPage +
+																				1) *
+																				columnVisibleRows,
+																			selectedNode
+																				.data
+																				.properties
+																				.length,
+																		)}{" "}
+																		of{" "}
+																		{
+																			selectedNode
+																				.data
+																				.properties
+																				.length
+																		}
+																	</P>
+																	<div className="flex gap-1">
+																		<Button
+																			variant="outline"
+																			size="icon"
+																			className="h-8 w-8"
+																			onClick={() =>
+																				setColumnPage(
+																					0,
+																				)
+																			}
+																			disabled={
+																				columnPage ===
+																				0
+																			}
+																		>
+																			<ChevronsLeft className="size-4" />
+																		</Button>
+																		<Button
+																			variant="outline"
+																			size="icon"
+																			className="h-8 w-8"
+																			onClick={() =>
+																				setColumnPage(
+																					columnPage -
+																						1,
+																				)
+																			}
+																			disabled={
+																				columnPage ===
+																				0
+																			}
+																		>
+																			<ChevronLeft className="size-4" />
+																		</Button>
+																		<Button
+																			variant="outline"
+																			size="icon"
+																			className="h-8 w-8"
+																			onClick={() =>
+																				setColumnPage(
+																					columnPage +
+																						1,
+																				)
+																			}
+																			disabled={
+																				(columnPage +
+																					1) *
+																					columnVisibleRows >=
+																				selectedNode
+																					.data
+																					.properties
+																					.length
+																			}
+																		>
+																			<ChevronRight className="size-4" />
+																		</Button>
+																		<Button
+																			variant="outline"
+																			size="icon"
+																			className="h-8 w-8"
+																			onClick={() =>
+																				setColumnPage(
+																					Math.ceil(
+																						selectedNode
+																							.data
+																							.properties
+																							.length /
+																							columnVisibleRows,
+																					) -
+																						1,
+																				)
+																			}
+																			disabled={
+																				(columnPage +
+																					1) *
+																					columnVisibleRows >=
+																				selectedNode
+																					.data
+																					.properties
+																					.length
+																			}
+																		>
+																			<ChevronsRight className="size-4" />
+																		</Button>
+																	</div>
+																</div>
+															</div>
+														</TableCell>
+													</TableRow>
+												</TableFooter>
 											</Table>
-										</StyledTableContainer>
+										</div>
 									</Section>
 								</>
 							)}
-						</StyledPage>
+						</div>
 						<CreateConnection
 							open={openCreateConnectionModal}
 							onClose={() => setopenCreateConnectionModal(false)}
@@ -832,31 +938,24 @@ export const MetaModelConnections = observer(
 							onEditConnection={handleEditConnection}
 							onDeleteConnection={handleDeleteConnection}
 						/>
-					</StyledInnerContainer>
+					</div>
 				</div>
 				<PortalModal
 					open={showFullScreenModal}
 					onClose={() => setShowFullScreenModal(false)}
 					contentId={portalContentId}
 				/>
-				<Stack direction="row" spacing={2} justifyContent="flex-end">
-					<Button
-						variant="outlined"
-						onClick={handleImportConnections}
-					>
+				<div className="flex flex-row justify-end gap-4">
+					<Button variant="outline" onClick={handleImportConnections}>
 						Import
 					</Button>
 					{!showFullScreenModal && (
-						<Button
-							variant="outlined"
-							color="secondary"
-							onClick={onCancel}
-						>
+						<Button variant="outline" onClick={onCancel}>
 							Cancel
 						</Button>
 					)}
-				</Stack>
-			</StyledOuterContainer>
+				</div>
+			</div>
 		);
 	},
 );
