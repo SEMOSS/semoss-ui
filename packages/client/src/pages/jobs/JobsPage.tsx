@@ -687,6 +687,7 @@ export function JobsPage() {
 				initialBuilder={initalBuilderState}
 				close={() => setInitialBuilderState(null)}
 				getJobs={getJobs}
+				jobs={jobs}
 			/>
 		</Stack>
 	);

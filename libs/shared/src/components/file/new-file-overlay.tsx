@@ -111,7 +111,11 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 					);
 				} else if (mode.type === "INSIGHT") {
 					await insight.actions.uploadInsight(path, data.files);
+				} else {
+					throw new Error("Unknown mode type");
 				}
+
+				toast.success("Successfully uploaded file(s)");
 			} else if (data.action === "add_file") {
 				if (!data.name.trim()) {
 					toast.error("Please enter a name for the file");
@@ -128,6 +132,8 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 
 				// run it
 				await insight.actions.run(pixel);
+
+				toast.success("Successfully created file");
 			} else if (data.action === "add_directory") {
 				if (!data.name.trim()) {
 					toast.error("Please enter a name for the directory");
@@ -144,14 +150,18 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 
 				// run it
 				await insight.actions.run(pixel);
+
+				toast.success("Successfully created directory");
 			} else {
 				throw new Error("Unknown action");
 			}
 
+			// reset the data
+			resetForm();
+
 			onClose(true);
 		} catch (e) {
-			toast.error(e);
-
+			toast.error(e.message);
 			console.error(e);
 		} finally {
 			setIsLoading(false);

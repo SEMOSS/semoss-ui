@@ -2,7 +2,7 @@ import { Close, MoreSharp, WarningRounded } from "@mui/icons-material";
 import { JsonViewer } from "@textea/json-viewer";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
 	ActionMessages,
 	BLOCK_TYPE_INPUT,
@@ -16,6 +16,7 @@ import {
 	type VariableType,
 	type VariableWithId,
 } from "@semoss/renderer";
+import { MonacoEditor } from "@semoss/shared";
 import {
 	Alert,
 	Box,
@@ -37,8 +38,6 @@ import {
 	isOutputJSON,
 	splitAtPeriod,
 } from "../../utility";
-
-const Editor = lazy(() => import("@monaco-editor/react"));
 
 const StyledPlaceholder = styled("div")(() => ({
 	height: "10vh",
@@ -250,8 +249,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 	} | null>(null);
 	const [showPreview, setShowPreview] = useState<boolean>(false);
 
-	const [_monaco, setMonaco] = useState(null);
-
 	const [variableInputValue, setVariableInputValue] = useState(null);
 	const inputVariableTypeList = ["string", "number", "JSON", "date", "array"];
 
@@ -433,7 +430,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		} else if (variableType === "JSON" || variableType === "array") {
 			return (
 				<Suspense fallback={<>...</>}>
-					<Editor
+					<MonacoEditor
 						width={"100%"}
 						height={"10vh"}
 						language={"json"}
@@ -445,7 +442,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 								? JSON.stringify(variableInputValue)
 								: variableInputValue
 						}
-					></Editor>
+					/>
 				</Suspense>
 			);
 		} else if (variableType === "date") {
@@ -717,12 +714,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		variableInputValue,
 		alreadyAliased,
 	]);
-
-	useEffect(() => {
-		import("monaco-editor").then((mon) => {
-			setMonaco(mon);
-		});
-	}, []);
 
 	useEffect(() => {
 		if (variable?.id) {
