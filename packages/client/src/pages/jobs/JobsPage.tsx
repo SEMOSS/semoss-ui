@@ -1,22 +1,30 @@
-
-import { useEffect, useMemo, useState, useRef } from "react";
-import { useRootStore, useSettings } from "@/hooks";
-import { Navigate, useNavigate } from "react-router-dom";
 import {
 	Add,
 	Bedtime,
 	Delete,
 	DeleteOutline,
 	ErrorRounded,
-	PlayArrowSharp,
 	Pause,
+	PlayArrowSharp,
 } from "@mui/icons-material";
+import AlarmOnIcon from "@mui/icons-material/AlarmOn";
+import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import SearchIcon from "@mui/icons-material/Search";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
-import AlarmOnIcon from '@mui/icons-material/AlarmOn';
-import SearchIcon from '@mui/icons-material/Search';
-import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import { debounced, runPixel } from "@semoss/sdk/react";
-import { Button, Search, Stack, Tabs, useNotification, styled, Box, ToggleTabsGroup } from "@semoss/ui";
+import {
+	Box,
+	Button,
+	Search,
+	Stack,
+	styled,
+	Tabs,
+	ToggleTabsGroup,
+	useNotification,
+} from "@semoss/ui";
+import { useRootStore, useSettings } from "@/hooks";
 import { DeleteJobModal } from "./DeleteJobModal";
 import { JobCard } from "./JobCard";
 import { JobHistory } from "./JobHistory";
@@ -65,7 +73,9 @@ export function JobsPage() {
 	const [searchValue, setSearchValue] = useState("");
 
 	const [selectedJobTab, setSelectedJobTab] = useState(jobsTabs[0]);
-	const [selectedHistoryTab, setSelectedHistoryTab] = useState(historyTabs[0]);
+	const [selectedHistoryTab, setSelectedHistoryTab] = useState(
+		historyTabs[0],
+	);
 	const [selectedTable, setSelectedTable] = useState(tables[0]);
 	const [failedJobCount, setFailedJobCount] = useState<number>(0);
 
@@ -521,7 +531,9 @@ export function JobsPage() {
 	}, [rowSelectionModel]);
 
 	const filteredHistory = useMemo(() => {
-		const searchedHistory = history.filter((job) => job.jobName.includes(searchValue));
+		const searchedHistory = history.filter((job) =>
+			job.jobName.includes(searchValue),
+		);
 		if (selectedHistoryTab === "Success") {
 			return searchedHistory.filter((job) => job.success === true);
 		} else if (selectedHistoryTab === "Failed") {
@@ -547,17 +559,20 @@ export function JobsPage() {
 	}, [historySearchBuffer, debouncedGetHistory]);
 
 	useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (searchRef.current && !searchRef.current.contains(event.target)) {
-                setSearchOpen(false);
-            }
-        };
+		const handleClickOutside = (event) => {
+			if (
+				searchRef.current &&
+				!searchRef.current.contains(event.target)
+			) {
+				setSearchOpen(false);
+			}
+		};
 
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, [searchRef]);
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [searchRef]);
 
 	const deleteMutlipleJobs = () => {
 		setDeleteMultiple(true);
@@ -572,7 +587,7 @@ export function JobsPage() {
 
 	return (
 		<Stack spacing={2}>
-			<hr style={{ border: "1px solid #E0E0E0"}}/>
+			<hr style={{ border: "1px solid #E0E0E0" }} />
 			<Stack direction="row" spacing={3}>
 				<JobCard
 					title="Active Jobs"
@@ -605,7 +620,11 @@ export function JobsPage() {
 				/>
 			</Stack>
 			<StyledBox>
-				<Stack direction="row" width="100%" justifyContent="space-between">
+				<Stack
+					direction="row"
+					width="100%"
+					justifyContent="space-between"
+				>
 					<StyledToggleTabsGroup
 						value={selectedTable}
 						onChange={(_, value: string) => {
@@ -629,7 +648,9 @@ export function JobsPage() {
 							<>
 								<span>
 									<Button
-										disabled={selectedActiveJobs.length === 0}
+										disabled={
+											selectedActiveJobs.length === 0
+										}
 										variant="outlined"
 										startIcon={<Pause />}
 										size="medium"
@@ -641,7 +662,9 @@ export function JobsPage() {
 								</span>
 								<span>
 									<Button
-										disabled={selectedPausedJobs.length === 0}
+										disabled={
+											selectedPausedJobs.length === 0
+										}
 										variant="outlined"
 										startIcon={<PlayArrowSharp />}
 										size="medium"
@@ -653,7 +676,9 @@ export function JobsPage() {
 								</span>
 								<span>
 									<Button
-										disabled={rowSelectionModel.length === 0}
+										disabled={
+											rowSelectionModel.length === 0
+										}
 										variant="outlined"
 										startIcon={<DeleteOutline />}
 										size="medium"
@@ -669,7 +694,7 @@ export function JobsPage() {
 										variant="contained"
 										startIcon={<Add />}
 										onClick={() =>
-											 navigate("/settings/add-new-job")
+											navigate("/settings/add-new-job")
 										}
 										data-testid={"jobsPage-add-btn"}
 									>
@@ -695,7 +720,18 @@ export function JobsPage() {
 						)}
 					</Stack>
 				</Stack>
-				<Stack border={"1px solid #E0E0E0"} borderRadius="8px 8px 0 0" mt={2} flex={1} direction="row" justifyContent="space-between" alignItems="center" spacing={2} padding={1} sx={{ position: 'relative' }}>
+				<Stack
+					border={"1px solid #E0E0E0"}
+					borderRadius="8px 8px 0 0"
+					mt={2}
+					flex={1}
+					direction="row"
+					justifyContent="space-between"
+					alignItems="center"
+					spacing={2}
+					padding={1}
+					sx={{ position: "relative" }}
+				>
 					{selectedTable === "Jobs" && (
 						<Tabs
 							value={selectedJobTab}
@@ -703,7 +739,7 @@ export function JobsPage() {
 								setSelectedJobTab(value);
 							}}
 							color="primary"
-					    >
+						>
 							<Tabs.Item value="All" label="All" />
 							<Tabs.Item value="Active" label="Active" />
 							<Tabs.Item value="Inactive" label="Inactive" />
@@ -716,7 +752,7 @@ export function JobsPage() {
 								setSelectedHistoryTab(value);
 							}}
 							color="primary"
-					    >
+						>
 							<Tabs.Item value="All" label="All" />
 							<Tabs.Item value="Success" label="Success" />
 							<Tabs.Item value="Failed" label="Failed" />
@@ -724,7 +760,8 @@ export function JobsPage() {
 					)}
 					<Stack direction="row" spacing={2} alignItems="center">
 						{!searchOpen && (
-							<SearchIcon color="action"
+							<SearchIcon
+								color="action"
 								onClick={() => {
 									setSearchOpen(!searchOpen);
 								}}
@@ -735,11 +772,14 @@ export function JobsPage() {
 								<Search
 									size="small"
 									value={searchValue}
-									onChange={(e) => setSearchValue(e.target.value)}
+									onChange={(e) =>
+										setSearchValue(e.target.value)
+									}
 								/>
 							</div>
 						)}
-						<FilterAltIcon color="action" 
+						<FilterAltIcon
+							color="action"
 							onClick={() => {
 								setFilterOpen(!filterOpen);
 							}}
@@ -747,52 +787,70 @@ export function JobsPage() {
 						{filterOpen && (
 							<Box
 								sx={{
-									position: 'absolute',
-									top: '100%',
+									position: "absolute",
+									top: "100%",
 									right: 0,
 									zIndex: 1000,
-									backgroundColor: 'background.paper',
-									border: '1px solid #E0E0E0',
+									backgroundColor: "background.paper",
+									border: "1px solid #E0E0E0",
 									borderRadius: 1,
 									padding: 2,
 									minWidth: 200,
-									boxShadow: 2
+									boxShadow: 2,
 								}}
 							>
 								<Stack spacing={1}>
 									<Button
-										variant={selectedJobTab === 'Active' ? 'contained' : 'outlined'}
+										variant={
+											selectedJobTab === "Active"
+												? "contained"
+												: "outlined"
+										}
 										size="small"
 										fullWidth
 										onClick={() => {
-											setSelectedTable('Jobs');
-											setSelectedJobTab('Active');
+											setSelectedTable("Jobs");
+											setSelectedJobTab("Active");
 											setFilterOpen(false);
 										}}
 										startIcon={<AlarmOnIcon />}
 									>
-										Active Jobs ({jobs.filter((job) => job.isActive).length})
+										Active Jobs (
+										{
+											jobs.filter((job) => job.isActive)
+												.length
+										}
+										)
 									</Button>
 									<Button
-										variant={selectedJobTab === 'Inactive' ? 'contained' : 'outlined'}
+										variant={
+											selectedJobTab === "Inactive"
+												? "contained"
+												: "outlined"
+										}
 										size="small"
 										fullWidth
 										onClick={() => {
-											setSelectedTable('Jobs');
-											setSelectedJobTab('Inactive');
+											setSelectedTable("Jobs");
+											setSelectedJobTab("Inactive");
 											setFilterOpen(false);
 										}}
 										startIcon={<Bedtime />}
 									>
-										Inactive Jobs ({jobs.filter((job) => !job.isActive).length})
+										Inactive Jobs (
+										{
+											jobs.filter((job) => !job.isActive)
+												.length
+										}
+										)
 									</Button>
 									<Button
 										variant="outlined"
 										size="small"
 										fullWidth
 										onClick={() => {
-											setSelectedTable('History');
-											setSelectedHistoryTab('Failed');
+											setSelectedTable("History");
+											setSelectedHistoryTab("Failed");
 											setFilterOpen(false);
 										}}
 										startIcon={<ErrorRounded />}
@@ -827,7 +885,7 @@ export function JobsPage() {
 							getHistory({ rowsPerPage })
 						}
 						onSearchChange={setHistorySearchBuffer}
-					/>	
+					/>
 				)}
 			</StyledBox>
 			<DeleteJobModal
