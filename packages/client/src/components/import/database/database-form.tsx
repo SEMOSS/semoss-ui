@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -83,11 +83,6 @@ export const DatabaseForm = ({
 		useState<boolean>(false);
 	const [formData, setFormData] = useState({});
 	const fileInputRef = useRef<HTMLInputElement>(null);
-
-	const onFileUpload = (files: File | File[]) => {
-		const fileArray = Array.isArray(files) ? files : [files];
-		setValue("FILE_UPLOAD", fileArray);
-	};
 
 	const updateStepBasedOnMetaModel = (METAMODEL_TYPE) => {
 		if (
@@ -199,9 +194,7 @@ export const DatabaseForm = ({
 		if (selectedTab === "Connections") {
 			setFormData(formData);
 			const pixel = `
-            ExternalJdbcTablesAndViews(conDetails=[${JSON.stringify(
-				formData,
-			)}]);
+            ExternalJdbcTablesAndViews(conDetails=[${JSON.stringify(formData)}]);
            
         `;
 			try {
@@ -213,7 +206,10 @@ export const DatabaseForm = ({
 					return;
 				}
 				setConnectionViewModel(true);
-				setConnectionValues((response?.pixelReturn?.[0]?.output as ConnectionValuesType) || null);
+				setConnectionValues(
+					(response?.pixelReturn?.[0]
+						?.output as ConnectionValuesType) || null,
+				);
 			} catch {
 				toast.error("Error from ExternalJdbcTablesAndViews");
 				setLoading(false);
@@ -222,12 +218,15 @@ export const DatabaseForm = ({
 			return;
 		}
 		try {
-			const uploadedFiles = await uploadFile(
+			const uploadedFilesResponse = await uploadFile(
 				formData.FILE_UPLOAD,
 				configStore.store.insightID,
 			);
 
-			if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
+			if (
+				!uploadedFilesResponse ||
+				!Array.isArray(uploadedFilesResponse)
+			) {
 				toast.error("Upload failed or returned invalid response.");
 				setValue("DATABASE_TYPE", formData.DATABASE_TYPE);
 				setValue("METAMODEL_TYPE", formData.METAMODEL_TYPE);
@@ -241,18 +240,18 @@ export const DatabaseForm = ({
 				formData.METAMODEL_TYPE === "fromScratch"
 			) {
 				if (title === "Excel") {
-					pixelExpressions = uploadedFiles.map(
+					pixelExpressions = uploadedFilesResponse.map(
 						(file) =>
 							`PredictExcelDataTypes(filePath=["${file.fileLocation}"])`,
 					);
 				} else {
-					pixelExpressions = uploadedFiles.map(
+					pixelExpressions = uploadedFilesResponse.map(
 						(file) =>
 							`PredictDataTypes(filePath=["${file.fileLocation}"], delimiter=["${formData.DELIMITER}"], rowCount=[false])`,
 					);
 				}
 			} else if (formData.METAMODEL_TYPE === "asSuggestedMetaModel") {
-				pixelExpressions = uploadedFiles.map(
+				pixelExpressions = uploadedFilesResponse.map(
 					(file) =>
 						`PredictMetamodel(filePath=["${file.fileLocation}"], delimiter=["${formData.DELIMITER}"], rowCount=[false])`,
 				);
@@ -261,7 +260,7 @@ export const DatabaseForm = ({
 				setLoading(false);
 				return;
 			} else {
-				pixelExpressions = uploadedFiles.map(
+				pixelExpressions = uploadedFilesResponse.map(
 					(file) =>
 						`UploadDatabase(filePath=["${file.fileLocation}"],space=[""])`,
 				);
@@ -667,16 +666,47 @@ export const DatabaseForm = ({
 		}
 	};
 
+	// NEW: Helper functions for incremental file upload
+	const onFileUpload = (
+		files: File | File[],
+		fieldOnChange: (value: File[]) => void,
+	) => {
+		const fileArray = Array.isArray(files) ? files : [files];
+
+		// Get current files from form
+		const currentFiles = watch("FILE_UPLOAD") || [];
+		const existingFileNames = currentFiles.map((f: File) => f.name);
+		const newFiles = fileArray.filter(
+			(f) => !existingFileNames.includes(f.name),
+		);
+		const combined = [...currentFiles, ...newFiles];
+
+		// Update form value with validation
+		fieldOnChange(combined);
+	};
+
+	const removeFile = (
+		index: number,
+		fieldOnChange: (value: File[]) => void,
+	) => {
+		const currentFiles = watch("FILE_UPLOAD") || [];
+		const updated = currentFiles.filter((_, i) => i !== index);
+
+		// Update form value with validation
+		fieldOnChange(updated);
+	};
+
 	const handleFileChange = (
 		e: React.ChangeEvent<HTMLInputElement>,
-		field,
+		fieldOnChange: (value: File[]) => void,
 	) => {
 		const files = e.target.files;
 		if (files && files?.length > 0) {
-			const fileArray =  Array.from(files);
-			field.onChange(fileArray);
-			onFileUpload(fileArray);
+			const fileArray = Array.from(files);
+			onFileUpload(fileArray, fieldOnChange);
 		}
+		// Reset input value to allow re-selecting the same file
+		e.target.value = "";
 	};
 
 	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -684,14 +714,16 @@ export const DatabaseForm = ({
 		e.stopPropagation();
 	};
 
-	const handleDrop = (e: React.DragEvent<HTMLDivElement>, field) => {
+	const handleDrop = (
+		e: React.DragEvent<HTMLDivElement>,
+		fieldOnChange: (value: File[]) => void,
+	) => {
 		e.preventDefault();
 		e.stopPropagation();
 		const files = e.dataTransfer.files;
 		if (files && files?.length > 0) {
 			const fileArray = Array.from(files);
-			field.onChange(fileArray);
-			onFileUpload(fileArray);
+			onFileUpload(fileArray, fieldOnChange);
 		}
 	};
 
@@ -703,6 +735,18 @@ export const DatabaseForm = ({
 			rules={{
 				required: val?.required,
 				pattern: val.rules?.pattern,
+				validate:
+					val.type === "file-upload" || val.type === "zip-upload"
+						? (value) => {
+								if (
+									val.required &&
+									(!value || value.length === 0)
+								) {
+									return "File upload is required";
+								}
+								return true;
+							}
+						: undefined,
 			}}
 			render={({ field, fieldState: { error } }) => {
 				switch (val.type) {
@@ -926,14 +970,24 @@ export const DatabaseForm = ({
 								className="flex flex-col gap-2"
 								data-testid={`database-form-field-${val.key}`}
 							>
-								<P>{val.label}</P>
+								<P>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</P>
 								<div
 									className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
 									onClick={() =>
 										fileInputRef.current?.click()
 									}
 									onDragOver={handleDragOver}
-									onDrop={(e) => handleDrop(e, field)}
+									onDrop={(e) =>
+										handleDrop(e, field.onChange)
+									}
 								>
 									<input
 										ref={fileInputRef}
@@ -946,35 +1000,76 @@ export const DatabaseForm = ({
 										multiple={val.type === "file-upload"}
 										className="hidden"
 										onChange={(e) =>
-											handleFileChange(e, field)
+											handleFileChange(e, field.onChange)
 										}
 										disabled={val.disabled}
 										data-testid={`database-form-input-${val.key}`}
 									/>
-									{field.value && field.value?.length > 0 ? (
-										<div className="text-center">
-											<P className="font-medium text-foreground">
-												{field.value?.length} file(s)
-												selected
-											</P>
-											<P className="text-muted-foreground text-sm">
-												Click or drag to replace
-											</P>
-										</div>
-									) : (
-										<div className="text-center">
-											<P className="font-medium text-foreground">
-												Drop your file here or click to
-												browse
-											</P>
-											<P className="text-muted-foreground text-sm">
-												{val.options?.extensions
-													? `Supports ${val.options.extensions.join(", ")} files`
-													: "All file types supported"}
-											</P>
-										</div>
-									)}
+									<div className="text-center">
+										<P className="font-medium text-foreground">
+											Drop your file here or click to
+											browse
+										</P>
+										<P className="text-muted-foreground text-sm">
+											{val.options?.extensions
+												? `Supports ${val.options.extensions.join(", ")} files`
+												: "All file types supported"}
+										</P>
+									</div>
 								</div>
+
+								{/* File List - Using field.value */}
+								{field.value && field.value?.length > 0 && (
+									<div className="mt-2 flex flex-col gap-2">
+										<P className="font-medium text-foreground text-sm">
+											{field.value.length} file(s)
+											selected:
+										</P>
+										<div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
+											{field.value.map((file, index) => (
+												<div
+													key={`${file.name}-${index}`}
+													className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
+													data-testid={`uploaded-file-item-${index}`}
+												>
+													<div className="flex min-w-0 flex-1 items-center gap-2">
+														<div className="min-w-0 flex-1">
+															<P className="truncate text-foreground text-sm">
+																{file.name}
+															</P>
+															<P className="text-muted-foreground text-xs">
+																{(
+																	file.size /
+																	1024
+																).toFixed(
+																	2,
+																)}{" "}
+																KB
+															</P>
+														</div>
+													</div>
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														onClick={(e) => {
+															e.stopPropagation();
+															removeFile(
+																index,
+																field.onChange,
+															);
+														}}
+														className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+														data-testid={`remove-file-btn-${index}`}
+													>
+														<X className="size-4" />
+													</Button>
+												</div>
+											))}
+										</div>
+									</div>
+								)}
+
 								{error && (
 									<P
 										className="text-destructive text-sm"
@@ -1121,7 +1216,7 @@ export const DatabaseForm = ({
 		return (
 			<div className="flex h-screen items-center justify-center">
 				<div className="flex flex-col items-center gap-4">
-					<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+					<div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
 					<P>Loading...</P>
 				</div>
 			</div>
@@ -1174,9 +1269,7 @@ export const DatabaseForm = ({
 		setConnectionViewModel(false);
 		const filter = [...output.tables, ...output.views];
 		setLoading(true);
-		const pixel = `ExternalJdbcSchema(conDetails=[${JSON.stringify(
-			formData,
-		)}], filters=${JSON.stringify(filter)})`;
+		const pixel = `ExternalJdbcSchema(conDetails=[${JSON.stringify(formData)}], filters=${JSON.stringify(filter)})`;
 
 		try {
 			const response = await monolithStore.runQuery(pixel);
@@ -1224,7 +1317,10 @@ export const DatabaseForm = ({
 									<H4 data-testid="database-importForm-category-title">
 										{category}
 									</H4>
-									<Muted data-testid="database-importForm-category-description" className="text-base">
+									<Muted
+										data-testid="database-importForm-category-description"
+										className="text-base"
+									>
 										{categoryDescriptions[category] ??
 											"No description available."}
 									</Muted>
@@ -1267,7 +1363,10 @@ export const DatabaseForm = ({
 									<div className="mb-4 flex flex-col gap-4">
 										<div className="flex items-start gap-4">
 											<div className="flex flex-1 flex-col gap-1">
-												<Muted data-testid="database-advanced-settings-description" className="text-base">
+												<Muted
+													data-testid="database-advanced-settings-description"
+													className="text-base"
+												>
 													Configure advanced database
 													settings
 												</Muted>
