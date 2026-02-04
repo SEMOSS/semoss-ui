@@ -65,6 +65,9 @@ importers:
       '@semoss/sdk':
         specifier: workspace:*
         version: link:../sdk
+      '@semoss/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@semoss/ui':
         specifier: workspace:*
         version: link:../ui
@@ -90,9 +93,6 @@ importers:
         specifier: ^6.3.0
         version: 6.30.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
-      '@monaco-editor/react':
-        specifier: ^4.5.1
-        version: 4.7.0(monaco-editor@0.45.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@rollup/plugin-commonjs':
         specifier: 28.0.6
         version: 28.0.6(rollup@4.44.2)
@@ -150,9 +150,6 @@ importers:
       echarts-for-react:
         specifier: ^3.0.2
         version: 3.0.5(echarts@5.6.0)(react@18.3.1)
-      monaco-editor:
-        specifier: ^0.45.0
-        version: 0.45.0
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -664,9 +661,6 @@ importers:
       '@mdi/js':
         specifier: ^6.9.96
         version: 6.9.96
-      '@monaco-editor/react':
-        specifier: ^4.5.1
-        version: 4.7.0(monaco-editor@0.45.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@mui/icons-material':
         specifier: 6.0.0
         version: 6.0.0(@mui/material@6.0.0(@emotion/react@11.14.0(@types/react@18.3.1)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.1)(react@18.3.1)
@@ -718,9 +712,6 @@ importers:
       mobx-react-lite:
         specifier: ^3.4.0
         version: 3.4.3(mobx@6.3.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      monaco-editor:
-        specifier: ^0.45.0
-        version: 0.45.0
       node-sql-parser:
         specifier: ^4.17.0
         version: 4.18.0
