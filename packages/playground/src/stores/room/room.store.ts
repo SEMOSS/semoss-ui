@@ -1046,9 +1046,18 @@ export class RoomStore {
 			}
 
 			// get the final result
-			return await getPixelAsyncResult<O>(jobId);
+			const result = await getPixelAsyncResult<O>(jobId);
+
+			if (result.errors.length > 0) {
+				throw new Error(result.errors.join(""));
+			}
+
+			return result;
 		} catch (e) {
 			console.error(e);
+
+			// show the error
+			this._store.error = e;
 		} finally {
 			this.setIsLoading(false);
 		}

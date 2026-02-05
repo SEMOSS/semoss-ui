@@ -467,7 +467,10 @@ export const NewRoomPage = observer(() => {
 										}}
 										onOptionsChange={(options) => {
 											if (options) {
-												setOptions(options);
+												setOptions((prev) => ({
+													...prev,
+													...options,
+												}));
 											}
 										}}
 									/>
