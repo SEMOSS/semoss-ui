@@ -166,9 +166,16 @@ export const NewRoomPage = observer(() => {
 			// turn the loading screen
 			setIsLoading(true);
 
+			// determine the workspace ID to pass
+			const workspaceIdToPass =
+				mode.type === "workspace" && mode.workspace
+					? mode.workspace.project_id
+					: undefined;
+
 			// create a new room
 			const room = await chat.createRoom(
 				mode.type === "plan" ? "planning" : "chat",
+				workspaceIdToPass,
 			);
 
 			const updated = {
