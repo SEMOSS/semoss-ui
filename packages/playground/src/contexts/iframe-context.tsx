@@ -15,6 +15,8 @@ import {
 interface IframeContextValue {
 	/** Ref to map of active child refs, keyed by iframeKey */
 	activeFrameMapRef: RefObject<Map<string, RefObject<HTMLDivElement>>>;
+	/** Map of iframe refs, one per iframeKey (stable and never changes) */
+	iframeRefsMap: RefObject<Map<string, RefObject<HTMLIFrameElement>>>;
 	/** Map of complete frame state (ref, src, position data) keyed by iframeKey */
 	frameMapState: Map<
 		string,
@@ -25,6 +27,7 @@ interface IframeContextValue {
 			top: number;
 			width: number;
 			height: number;
+			onLoad?: () => void;
 		}
 	>;
 	/** Activate a child component (stores ref and calculates position) */
@@ -32,6 +35,7 @@ interface IframeContextValue {
 		iframeKey: string,
 		targetRef: RefObject<HTMLDivElement>,
 		src: string,
+		onLoad?: () => void,
 	) => void;
 	/** Handle child component unmount */
 	onUnmount: (
@@ -57,6 +61,10 @@ export const IframeProvider = ({ children }: PropsWithChildren) => {
 	const activeFrameMapRef = useRef<Map<string, RefObject<HTMLDivElement>>>(
 		new Map(),
 	);
+	/** Ref to map of iframe refs, one per iframeKey (stable and never changes) */
+	const iframeRefsMap = useRef<Map<string, RefObject<HTMLIFrameElement>>>(
+		new Map(),
+	);
 	/** Complete frame state per iframeKey (ref, src, and position data). activeRef is null when child is inactive. */
 	const [frameMapState, setFrameMapState] = useState<
 		Map<
@@ -68,6 +76,7 @@ export const IframeProvider = ({ children }: PropsWithChildren) => {
 				top: number;
 				width: number;
 				height: number;
+				onLoad?: () => void;
 			}
 		>
 	>(new Map());
@@ -88,18 +97,35 @@ export const IframeProvider = ({ children }: PropsWithChildren) => {
 	 */
 
 	/**
+	 * Get or create an iframe ref for an iframeKey.
+	 * Once created, the ref never changes for that iframeKey.
+	 * Creates a plain ref object (not using useRef hook inside callback).
+	 * @param iframeKey - The iframeKey to get/create a ref for
+	 * @returns RefObject<HTMLIFrameElement> - Stable ref for the iframe
+	 */
+	const getOrCreateIframeRef = useCallback((iframeKey: string) => {
+		if (!iframeRefsMap.current.has(iframeKey)) {
+			// Create a plain ref object instead of calling useRef inside callback
+			iframeRefsMap.current.set(iframeKey, { current: null });
+		}
+		return iframeRefsMap.current.get(iframeKey);
+	}, []);
+
+	/**
 	 * Update frame state: position, ref, and src for an iframeKey.
 	 * If targetRef is provided, calculates position relative to container.
 	 * If targetRef is null, sets position to 0x0 (hidden).
 	 * @param iframeKey - The iframeKey to update
 	 * @param targetRef - The child element (null if unmounting)
 	 * @param src - The src URL (optional, only updates if provided)
+	 * @param onLoad - Optional onLoad callback for the iframe (optional, only updates if provided)
 	 */
 	const updateFrameState = useCallback(
 		(
 			iframeKey: string,
 			targetRef: RefObject<HTMLDivElement> | null,
 			src?: string,
+			onLoad?: () => void,
 		) => {
 			if (targetRef?.current && containerRef.current) {
 				const rect = targetRef.current.getBoundingClientRect();
@@ -114,6 +140,7 @@ export const IframeProvider = ({ children }: PropsWithChildren) => {
 						width: rect.width,
 						height: rect.height,
 						src: src ?? newPositions.get(iframeKey)?.src,
+						onLoad: onLoad ?? newPositions.get(iframeKey)?.onLoad,
 					});
 					return newPositions;
 				});
@@ -127,6 +154,7 @@ export const IframeProvider = ({ children }: PropsWithChildren) => {
 						width: 0,
 						height: 0,
 						src: src ?? newPositions.get(iframeKey)?.src,
+						onLoad: onLoad ?? newPositions.get(iframeKey)?.onLoad,
 					});
 					return newPositions;
 				});
@@ -140,12 +168,14 @@ export const IframeProvider = ({ children }: PropsWithChildren) => {
 	 * @param iframeKey - The unique key of the child to activate
 	 * @param targetRef - The DOM reference of the child element
 	 * @param src - The src URL this child will display
+	 * @param onLoad - Optional onLoad callback for the iframe
 	 */
 	const activate = useCallback(
 		(
 			iframeKey: string,
 			targetRef: RefObject<HTMLDivElement>,
 			src: string,
+			onLoad?: () => void,
 		) => {
 			// Clear any pending cleanup timeout for this key
 			const existingTimeout = cleanupTimeouts.current.get(iframeKey);
@@ -154,10 +184,13 @@ export const IframeProvider = ({ children }: PropsWithChildren) => {
 				cleanupTimeouts.current.delete(iframeKey);
 			}
 
+			// Ensure iframe ref exists for this key
+			getOrCreateIframeRef(iframeKey);
+
 			activeFrameMapRef.current.set(iframeKey, targetRef);
-			updateFrameState(iframeKey, targetRef, src);
+			updateFrameState(iframeKey, targetRef, src, onLoad);
 		},
-		[updateFrameState],
+		[updateFrameState, getOrCreateIframeRef],
 	);
 
 	/**
@@ -303,7 +336,13 @@ export const IframeProvider = ({ children }: PropsWithChildren) => {
 
 	return (
 		<IframeContext.Provider
-			value={{ activeFrameMapRef, frameMapState, activate, onUnmount }}
+			value={{
+				activeFrameMapRef,
+				iframeRefsMap,
+				frameMapState,
+				activate,
+				onUnmount,
+			}}
 		>
 			<div ref={containerRef} className="relative">
 				{children}
@@ -320,10 +359,12 @@ export const IframeProvider = ({ children }: PropsWithChildren) => {
 							key={iframeKey}
 						>
 							<iframe
+								ref={iframeRefsMap.current.get(iframeKey)}
 								width="100%"
 								height="100%"
 								src={frameState.src}
 								title={frameState.src}
+								onLoad={frameState.onLoad}
 							/>
 						</div>
 					),
