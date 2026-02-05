@@ -125,6 +125,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 						name: t.name,
 						original_name: t.original_name,
 						parameters: t.arguments,
+						description: t.description,
 					}),
 			);
 		} else {
@@ -432,10 +433,20 @@ paramValues=[${JSON.stringify({
 			const { output } = response.pixelReturn[0];
 
 			// save the response
-			await this.saveToolExecution(tool, output);
+			await this.saveToolExecution(
+				tool,
+				output,
+				"success",
+				tool.json.parameters,
+			);
 		} catch (e) {
 			// mark the failure
-			await this.saveToolExecution(tool, e.toString(), "error");
+			await this.saveToolExecution(
+				tool,
+				e.toString(),
+				"error",
+				tool.json.parameters,
+			);
 		}
 	};
 
@@ -448,7 +459,8 @@ paramValues=[${JSON.stringify({
 	saveToolExecution = async (
 		tool: ResponseMessageStore["tools"][number],
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled",
+		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		const room = this.room;
 
@@ -470,7 +482,7 @@ paramValues=[${JSON.stringify({
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
-
+			tool.executedParameters = executedParameters;
 			if (toolStatus === "success") {
 				tool.status = "SUCCESS";
 			} else if (toolStatus === "cancelled") {
@@ -527,7 +539,8 @@ toolId = ["${tool.id}"],
 toolName=["${tool.json.name}"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
-mcpToolStatus=${JSON.stringify(toolStatus)}
+mcpToolStatus=${JSON.stringify(toolStatus)},
+toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 );`,
 				(chunk) => {
 					runInAction(() => {

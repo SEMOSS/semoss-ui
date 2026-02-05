@@ -27,8 +27,7 @@ import BRAIN from "@/assets/img/BRAIN.png";
 import { useEngine, useRootStore } from "@/hooks";
 import { ENGINE_IMAGES } from "@/pages/import";
 import { formatToDataTestId } from "@/utility";
-import { Placeholder } from "../designer/Placeholder";
-import { EditEngineDetails } from ".";
+import { EditEngineDetails, EngineAccessButton } from ".";
 
 /**
  * Engine Header
@@ -68,7 +67,7 @@ export const EngineHeader: React.FC = () => {
 		}"], includeData="${includeData ? "true" : "false"}" );`;
 
 		monolithStore.runQuery(pixel).then((response) => {
-			const output = response.pixelReturn[0].output,
+			const output = response.pixelReturn[0].output as string,
 				insightId = response.insightId;
 
 			const formattedEngineType =
@@ -175,6 +174,7 @@ export const EngineHeader: React.FC = () => {
 				</div>
 
 				<div className="flex flex-shrink-0 flex-row gap-2">
+					<EngineAccessButton />
 					{active.role === "OWNER" && (
 						<Button
 							disabled={exportLoading}
