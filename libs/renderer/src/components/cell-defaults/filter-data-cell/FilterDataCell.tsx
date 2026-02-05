@@ -327,8 +327,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 				const flushBuffer = () => {
 					const trimmed = buffer.trim();
 					if (!trimmed) return;
-					const isGroup =
-						trimmed.includes("AND") || trimmed.includes("OR");
+					const isGroup = /(?:^|\s)(?:AND|OR)(?:\s|$)/.test(trimmed);
 					parts.push(
 						isGroup ? buildGroup(trimmed) : parseRule(trimmed),
 					);

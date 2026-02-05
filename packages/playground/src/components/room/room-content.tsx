@@ -172,6 +172,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tool.name,
 					tool.response,
 					tool.tool_status,
+					tool.executedParameters,
 				);
 			} catch {
 				// noop
@@ -314,13 +315,13 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							)}
 						</div>
 						{room.error ? (
-							<div className="flex items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+							<div className="mx-auto flex w-screen max-w-4xl items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
 								<span>
-									Unable to process request. Please check your
-									connection, copy your message, and refresh.
+									{room.error.message ||
+										"Unable to process request. Please check your connection, copy your message, and refresh."}
 								</span>
 							</div>
 						) : null}

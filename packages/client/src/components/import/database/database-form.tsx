@@ -1,59 +1,42 @@
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import {
-	Autocomplete,
-	Box,
 	Button,
 	Checkbox,
-	Divider,
-	FileDropzone,
-	FormControlLabel,
-	IconButton,
-	LoadingScreen,
-	Menu,
-	Modal,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	Dialog,
+	DialogContent,
+	Field,
+	FieldDescription,
+	FieldLabel,
+	H4,
+	Input,
+	Label,
+	Muted,
+	P,
 	RadioGroup,
+	RadioGroupItem,
 	Select,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Separator,
+	toast,
+} from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
-import DataSelection from "./DataSelection";
-import ExcelDataSelection from "./ExcelDataSelection";
-import { MetaModelConnections } from "./MetaModelConnections";
-import { MetaModelType } from "./MetaModelType";
-import TableViewSelector from "./TableViewModel";
-
-const StyledBox = styled(Box)({
-	marginBottom: "32px",
-	marginTop: "16px",
-});
-
-const StyledFlexEnd = styled("div")(({ theme }) => ({
-	display: "flex",
-	justifyContent: "flex-end",
-	gap: theme.spacing(1),
-	marginTop: theme.spacing(2),
-}));
-
-const StyledSubmitButton = styled(Button)({
-	textTransform: "capitalize",
-	minWidth: "128px",
-});
-
-const AdvancedHeader = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	justifyContent: "space-between",
-	alignItems: "center",
-	padding: theme.spacing(2, 0),
-}));
+import DataSelection from "./data-selection";
+import ExcelDataSelection from "./excel-data-selection";
+import { MetaModelConnections } from "./meta-model-connections";
+import { MetaModelType } from "./meta-model-type";
+import TableViewSelector from "./table-view-model";
 
 export interface ParsedResult {
 	headers: string[];
@@ -86,11 +69,9 @@ export const DatabaseForm = ({
 	const [excelfileName, setExcelFileName] = useState<string[]>([]);
 	const [tableName, setTableName] = useState<string[]>([]);
 	const [filePath, setFilePath] = useState<string>();
-	const [uploadedFile, setUploadedFile] = useState<File[]>([]);
 	const [formValues, setFormValues] = useState({});
 	const [isValidDatabaseName, setIsValidDatabaseName] =
 		useState<boolean>(false);
-	const [dropzoneKey, setDropzoneKey] = useState(Date.now());
 	type ConnectionValuesType = {
 		tables?: unknown[];
 		views?: unknown[];
@@ -101,11 +82,7 @@ export const DatabaseForm = ({
 	const [connectionViewModel, setConnectionViewModel] =
 		useState<boolean>(false);
 	const [formData, setFormData] = useState({});
-
-	const onFileUpload = (files: File | File[]) => {
-		const fileArray = Array.isArray(files) ? files : [files];
-		setValue("FILE_UPLOAD", fileArray);
-	};
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const updateStepBasedOnMetaModel = (METAMODEL_TYPE) => {
 		if (
@@ -142,7 +119,6 @@ export const DatabaseForm = ({
 
 	const watchedFieldRef = useRef({});
 	const { monolithStore, configStore } = useRootStore();
-	const notification = useNotification();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -164,25 +140,23 @@ export const DatabaseForm = ({
 								),
 							},
 						};
-					} else {
-						return {
-							...f,
-							options: {
-								...f.options,
-								options:
-									fields.find(
-										(orig) => orig.key === "METAMODEL_TYPE",
-									)?.options.options || f.options.options,
-							},
-						};
 					}
+					return {
+						...f,
+						options: {
+							...f.options,
+							options:
+								fields.find(
+									(orig) => orig.key === "METAMODEL_TYPE",
+								)?.options.options || f.options.options,
+						},
+					};
 				}
 				return f;
 			}),
 		);
 	}, [databaseType, fields]);
 
-	//  Group fields by category
 	const grouped = defaultFields.reduce((acc, f) => {
 		if (!acc[f.category]) acc[f.category] = [];
 		acc[f.category].push(f);
@@ -220,42 +194,40 @@ export const DatabaseForm = ({
 		if (selectedTab === "Connections") {
 			setFormData(formData);
 			const pixel = `
-            ExternalJdbcTablesAndViews(conDetails=[${JSON.stringify(
-				formData,
-			)}]);
+            ExternalJdbcTablesAndViews(conDetails=[${JSON.stringify(formData)}]);
            
         `;
 			try {
 				const response = await monolithStore.runQuery(pixel);
 				const { output, operationType } = response.pixelReturn[0];
 				if (operationType.includes("ERROR")) {
-					notification.add({ color: "error", message: output });
+					toast.error(output as string);
 					setLoading(false);
 					return;
 				}
 				setConnectionViewModel(true);
-				setConnectionValues(response?.pixelReturn?.[0]?.output || null);
+				setConnectionValues(
+					(response?.pixelReturn?.[0]
+						?.output as ConnectionValuesType) || null,
+				);
 			} catch {
-				notification.add({
-					color: "error",
-					message: "Error from ExternalJdbcTablesAndViews",
-				});
+				toast.error("Error from ExternalJdbcTablesAndViews");
 				setLoading(false);
 			}
 			setLoading(false);
 			return;
 		}
 		try {
-			const uploadedFiles = await uploadFile(
+			const uploadedFilesResponse = await uploadFile(
 				formData.FILE_UPLOAD,
 				configStore.store.insightID,
 			);
 
-			if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
-				notification.add({
-					color: "error",
-					message: "Upload failed or returned invalid response.",
-				});
+			if (
+				!uploadedFilesResponse ||
+				!Array.isArray(uploadedFilesResponse)
+			) {
+				toast.error("Upload failed or returned invalid response.");
 				setValue("DATABASE_TYPE", formData.DATABASE_TYPE);
 				setValue("METAMODEL_TYPE", formData.METAMODEL_TYPE);
 				return;
@@ -268,31 +240,27 @@ export const DatabaseForm = ({
 				formData.METAMODEL_TYPE === "fromScratch"
 			) {
 				if (title === "Excel") {
-					pixelExpressions = uploadedFiles.map(
+					pixelExpressions = uploadedFilesResponse.map(
 						(file) =>
 							`PredictExcelDataTypes(filePath=["${file.fileLocation}"])`,
 					);
 				} else {
-					pixelExpressions = uploadedFiles.map(
+					pixelExpressions = uploadedFilesResponse.map(
 						(file) =>
 							`PredictDataTypes(filePath=["${file.fileLocation}"], delimiter=["${formData.DELIMITER}"], rowCount=[false])`,
 					);
 				}
 			} else if (formData.METAMODEL_TYPE === "asSuggestedMetaModel") {
-				pixelExpressions = uploadedFiles.map(
+				pixelExpressions = uploadedFilesResponse.map(
 					(file) =>
 						`PredictMetamodel(filePath=["${file.fileLocation}"], delimiter=["${formData.DELIMITER}"], rowCount=[false])`,
 				);
 			} else if (formData.METAMODEL_TYPE === "frompropFile") {
-				notification.add({
-					color: "error",
-					message: "Prop File is not implemented.",
-				});
-
+				toast.error("Prop File is not implemented.");
 				setLoading(false);
 				return;
 			} else {
-				pixelExpressions = uploadedFiles.map(
+				pixelExpressions = uploadedFilesResponse.map(
 					(file) =>
 						`UploadDatabase(filePath=["${file.fileLocation}"],space=[""])`,
 				);
@@ -331,10 +299,7 @@ export const DatabaseForm = ({
 			setParsedData(parsedResults);
 			updateStepBasedOnMetaModel(formData.METAMODEL_TYPE);
 		} catch {
-			notification.add({
-				color: "error",
-				message: "An error occurred during upload.",
-			});
+			toast.error("An error occurred during upload.");
 		} finally {
 			setLoading(false);
 		}
@@ -351,11 +316,8 @@ export const DatabaseForm = ({
 		try {
 			const payloads = Array.isArray(payload) ? payload : [payload];
 
-			if (!payloads || payloads.length === 0) {
-				notification.add({
-					color: "error",
-					message: "Data is missing or invalid.",
-				});
+			if (!payloads || payloads?.length === 0) {
+				toast.error("Data is missing or invalid.");
 				setLoading(false);
 				return;
 			}
@@ -434,28 +396,18 @@ export const DatabaseForm = ({
 				`${pixelCommands.join("")}SetDatabaseMetadata(database=[${JSON.stringify(formValuesLocal.DATABASE_NAME)}], meta=[${JSON.stringify(meta)}]);`,
 			);
 
-			if (response.errors.length > 0) {
-				notification.add({
-					color: "error",
-					message: response.errors.join(""),
-				});
-
+			if (response.errors?.length > 0) {
+				toast.error(response.errors.join(""));
 				return;
 			}
 
 			const databaseId = response.pixelReturn[0].output.database_id;
 
-			notification.add({
-				color: "success",
-				message: "Successfully created database",
-			});
+			toast.success("Successfully created database");
 
 			navigate(`/engine/database/${databaseId}`);
 		} catch {
-			notification.add({
-				color: "error",
-				message: "An error occurred while submitting the metamodel.",
-			});
+			toast.error("An error occurred while submitting the metamodel.");
 		} finally {
 			setLoading(false);
 		}
@@ -486,28 +438,20 @@ export const DatabaseForm = ({
 			if (hasError) {
 				response.pixelReturn.forEach((res) => {
 					if (res.operationType.includes("ERROR")) {
-						notification.add({
-							color: "error",
-							message: res.output,
-						});
+						toast.error(res.output);
 					}
 				});
 			} else {
-				notification.add({
-					color: "success",
-					message: "Successfully Created Database",
-				});
+				toast.success("Successfully Created Database");
 			}
 			navigate(`/engine/database/${output.database_id}`);
 		} catch {
-			notification.add({
-				color: "error",
-				message: "An error occurred while processing the request.",
-			});
+			toast.error("An error occurred while processing the request.");
 		} finally {
 			setLoading(false);
 		}
 	};
+
 	const submitTablePixel = async (payloadObject, formValues) => {
 		setLoading(true);
 		let pixel = payloadObject
@@ -529,24 +473,15 @@ export const DatabaseForm = ({
 			const response = await monolithStore.runQuery(pixel);
 			const { output, operationType } = response.pixelReturn[0];
 			if (operationType.includes("ERROR")) {
-				notification.add({
-					color: "error",
-					message: output,
-				});
+				toast.error(output);
 				return;
 			}
 
-			notification.add({
-				color: "success",
-				message: "Successfully created database",
-			});
+			toast.success("Successfully created database");
 
 			navigate(`/engine/database/${output.database_id}`);
 		} catch {
-			notification.add({
-				color: "error",
-				message: "An error occurred while processing the request.",
-			});
+			toast.error("An error occurred while processing the request.");
 		} finally {
 			setLoading(false);
 		}
@@ -554,7 +489,6 @@ export const DatabaseForm = ({
 
 	const handleCancel = () => {
 		setStep("fileupload");
-		setUploadedFile(uploadedFile);
 	};
 
 	const submitConnections = async (
@@ -597,19 +531,13 @@ export const DatabaseForm = ({
 			const response = await monolithStore.runQuery(pixel);
 			const { output, operationType } = response.pixelReturn[0];
 			if (operationType.includes("ERROR")) {
-				notification.add({ color: "error", message: output });
+				toast.error(output);
 				return;
 			}
-			notification.add({
-				color: "success",
-				message: "Successfully created database.",
-			});
+			toast.success("Successfully created database.");
 			navigate(`/engine/database/${output.database_id}`);
 		} catch {
-			notification.add({
-				color: "error",
-				message: "An error occurred while processing the request.",
-			});
+			toast.error("An error occurred while processing the request.");
 		} finally {
 			setLoading(false);
 		}
@@ -665,7 +593,7 @@ export const DatabaseForm = ({
 		const operationType = response.pixelReturn[0].operationType;
 
 		if (operationType.includes("ERROR")) {
-			notification.add({ color: "error", message: output });
+			toast.error(output);
 			return;
 		}
 
@@ -706,7 +634,7 @@ export const DatabaseForm = ({
 		const operationType = response.pixelReturn[0].operationType;
 
 		if (operationType.includes("ERROR")) {
-			notification.add({ color: "error", message: output });
+			toast.error(output);
 			return false;
 		}
 
@@ -738,6 +666,67 @@ export const DatabaseForm = ({
 		}
 	};
 
+	// NEW: Helper functions for incremental file upload
+	const onFileUpload = (
+		files: File | File[],
+		fieldOnChange: (value: File[]) => void,
+	) => {
+		const fileArray = Array.isArray(files) ? files : [files];
+
+		// Get current files from form
+		const currentFiles = watch("FILE_UPLOAD") || [];
+		const existingFileNames = currentFiles.map((f: File) => f.name);
+		const newFiles = fileArray.filter(
+			(f) => !existingFileNames.includes(f.name),
+		);
+		const combined = [...currentFiles, ...newFiles];
+
+		// Update form value with validation
+		fieldOnChange(combined);
+	};
+
+	const removeFile = (
+		index: number,
+		fieldOnChange: (value: File[]) => void,
+	) => {
+		const currentFiles = watch("FILE_UPLOAD") || [];
+		const updated = currentFiles.filter((_, i) => i !== index);
+
+		// Update form value with validation
+		fieldOnChange(updated);
+	};
+
+	const handleFileChange = (
+		e: React.ChangeEvent<HTMLInputElement>,
+		fieldOnChange: (value: File[]) => void,
+	) => {
+		const files = e.target.files;
+		if (files && files?.length > 0) {
+			const fileArray = Array.from(files);
+			onFileUpload(fileArray, fieldOnChange);
+		}
+		// Reset input value to allow re-selecting the same file
+		e.target.value = "";
+	};
+
+	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+	};
+
+	const handleDrop = (
+		e: React.DragEvent<HTMLDivElement>,
+		fieldOnChange: (value: File[]) => void,
+	) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const files = e.dataTransfer.files;
+		if (files && files?.length > 0) {
+			const fileArray = Array.from(files);
+			onFileUpload(fileArray, fieldOnChange);
+		}
+	};
+
 	const renderControllerField = (val) => (
 		<Controller
 			key={val.key}
@@ -746,250 +735,466 @@ export const DatabaseForm = ({
 			rules={{
 				required: val?.required,
 				pattern: val.rules?.pattern,
+				validate:
+					val.type === "file-upload" || val.type === "zip-upload"
+						? (value) => {
+								if (
+									val.required &&
+									(!value || value.length === 0)
+								) {
+									return "File upload is required";
+								}
+								return true;
+							}
+						: undefined,
 			}}
 			render={({ field, fieldState: { error } }) => {
 				switch (val.type) {
 					case "text":
 						return (
-							<TextField
-								{...field}
-								fullWidth
-								label={val.label}
-								disabled={val.disabled}
-								variant="outlined"
-								required={val?.required}
-								sx={{ display: val.hidden ? "none" : "block" }}
-								// @ts-expect-error TODO FIX
-								error={!!error}
-								helperText={getHelperText(error, val)}
-								data-testid={`database-form-input-${val.key}`}
-								onChange={(e) =>
-									handleFieldValidation(
-										e,
-										val,
-										field,
-										validateFormField,
-										setError,
-										clearErrors,
-									)
-								}
-							/>
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`database-form-field-${val.key}`}
+							>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Input
+									{...field}
+									id={val.key}
+									disabled={val.disabled}
+									autoComplete="off"
+									data-testid={`database-form-input-${val.key}`}
+									onChange={(e) =>
+										handleFieldValidation(
+											e,
+											val,
+											field,
+											validateFormField,
+											setError,
+											clearErrors,
+										)
+									}
+								/>
+								{error && (
+									<FieldDescription className="text-destructive">
+										{getHelperText(error, val)}
+									</FieldDescription>
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
 						);
 
 					case "password":
 						return (
-							<TextField
-								{...field}
-								type="password"
-								fullWidth
-								label={val.label}
-								disabled={val.disabled}
-								required={val?.required}
-								// @ts-expect-error TODO FIX
-								error={!!error}
-								helperText={getHelperText(error, val)}
-								data-testid={`database-form-input-${val.key}`}
-							/>
+							<Field
+								data-testid={`database-form-field-${val.key}`}
+							>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Input
+									{...field}
+									id={val.key}
+									type="password"
+									disabled={val.disabled}
+									autoComplete="new-password"
+									data-testid={`database-form-input-${val.key}`}
+								/>
+								{error && (
+									<FieldDescription className="text-destructive">
+										{getHelperText(error, val)}
+									</FieldDescription>
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
 						);
 
 					case "number":
 						return (
-							<TextField
-								{...field}
-								type="number"
-								fullWidth
-								label={val.label}
-								disabled={val.disabled}
-								required={val?.required}
-								sx={{ display: val.hidden ? "none" : "block" }}
-								// @ts-expect-error TODO FIX
-								error={!!error}
-								helperText={getHelperText(error, val)}
-								data-testid={`database-form-input-${val.key}`}
-							/>
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`database-form-field-${val.key}`}
+							>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Input
+									{...field}
+									id={val.key}
+									type="number"
+									disabled={val.disabled}
+									autoComplete="off"
+									data-testid={`database-form-input-${val.key}`}
+								/>
+								{error && (
+									<FieldDescription className="text-destructive">
+										{getHelperText(error, val)}
+									</FieldDescription>
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
 						);
 
 					case "select":
 						return (
-							<Select
-								{...field}
-								fullWidth
-								label={val.label}
-								disabled={val.disabled}
-								required={val?.required}
-								sx={{ display: val.hidden ? "none" : "block" }}
-								error={!!error}
-								helperText={getHelperText(error, val)}
-								onChange={(e) => {
-									field.onChange(e);
-									checkForDisplayRulesSet(
-										field,
-										e.target.value,
-									);
-								}}
-								data-testid={`database-form-input-${val.key}`}
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`database-form-field-${val.key}`}
 							>
-								{val?.options?.options?.map((opt) => (
-									<Menu.Item
-										key={opt.value}
-										value={opt.value}
-										data-testid={`database-form-option-${val.key}-${opt.value}`}
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Select
+									value={field.value}
+									onValueChange={(value) => {
+										field.onChange(value);
+										checkForDisplayRulesSet(field, value);
+									}}
+									disabled={val.disabled}
+								>
+									<SelectTrigger
+										id={val.key}
+										className="w-full"
+										data-testid={`database-form-input-${val.key}`}
 									>
-										{opt.display}
-									</Menu.Item>
-								))}
-							</Select>
+										<SelectValue
+											placeholder={`Select ${val.label}`}
+										/>
+									</SelectTrigger>
+									<SelectContent>
+										{val?.options?.options?.map((opt) => (
+											<SelectItem
+												key={opt.value}
+												value={opt.value}
+												data-testid={`database-form-option-${val.key}-${opt.value}`}
+											>
+												{opt.display}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								{error && (
+									<FieldDescription className="text-destructive">
+										{getHelperText(error, val)}
+									</FieldDescription>
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
 						);
 
 					case "radio":
 						return (
-							<RadioGroup
-								row
-								value={field.value || ""}
-								onChange={(e) => field.onChange(e.target.value)}
-								data-testid={`database-form-input-${val.key}`}
-								sx={{ display: val.hidden ? "none" : "block" }}
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`database-form-field-${val.key}`}
 							>
-								{val.options.options.map((opt) => (
-									<FormControlLabel
-										key={opt.value}
-										value={opt.value}
-										control={
-											<RadioGroup.Item
+								<FieldLabel>{val.label}</FieldLabel>
+								<RadioGroup
+									value={field.value || ""}
+									onValueChange={field.onChange}
+									className="flex flex-row gap-4"
+									data-testid={`database-form-input-${val.key}`}
+								>
+									{val.options.options.map((opt) => (
+										<div
+											key={opt.value}
+											className="flex items-center gap-2"
+										>
+											<RadioGroupItem
+												value={opt.value}
+												id={`${val.key}-${opt.value}`}
 												data-testid={`database-form-radio-${val.key}-${opt.value}`}
-												label={""}
 											/>
-										}
-										label={opt.display}
-									/>
-								))}
+											<Label
+												htmlFor={`${val.key}-${opt.value}`}
+												className="cursor-pointer font-normal"
+											>
+												{opt.display}
+											</Label>
+										</div>
+									))}
+								</RadioGroup>
 								{error && (
-									<Typography variant="caption" color="error">
+									<FieldDescription className="text-destructive">
 										{getHelperText(error, val)}
-									</Typography>
+									</FieldDescription>
 								)}
-							</RadioGroup>
+							</Field>
 						);
 
 					case "file-upload":
-						return (
-							<>
-								<FileDropzone
-									multiple
-									key={dropzoneKey}
-									value={field.value || []}
-									disabled={val.disabled}
-									extensions={val.options?.extensions || []}
-									onChange={(files) => {
-										field.onChange(files);
-										onFileUpload(files);
-										setDropzoneKey(Date.now()); // Reset dropzone
-									}}
-									data-testid={`database-form-input-${val.key}`}
-								/>
-								{error && (
-									<Typography
-										variant="body1"
-										color="error"
-										data-testid={`database-form-error-${val.key}`}
-									>
-										{getHelperText(error, val)}
-									</Typography>
-								)}
-							</>
-						);
-
 					case "zip-upload":
 						return (
-							<>
-								<FileDropzone
-									multiple
-									value={field.value || []}
-									disabled={val.disabled}
-									onChange={(newValues) =>
-										field.onChange(newValues)
+							<div
+								className="flex flex-col gap-2"
+								data-testid={`database-form-field-${val.key}`}
+							>
+								<P>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</P>
+								<div
+									className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
+									onClick={() =>
+										fileInputRef.current?.click()
 									}
-									data-testid={`database-form-input-${val.key}`}
-								/>
+									onDragOver={handleDragOver}
+									onDrop={(e) =>
+										handleDrop(e, field.onChange)
+									}
+								>
+									<input
+										ref={fileInputRef}
+										type="file"
+										accept={
+											val.options?.extensions?.join(
+												",",
+											) || "*"
+										}
+										multiple={val.type === "file-upload"}
+										className="hidden"
+										onChange={(e) =>
+											handleFileChange(e, field.onChange)
+										}
+										disabled={val.disabled}
+										data-testid={`database-form-input-${val.key}`}
+									/>
+									<div className="text-center">
+										<P className="font-medium text-foreground">
+											Drop your file here or click to
+											browse
+										</P>
+										<P className="text-muted-foreground text-sm">
+											{val.options?.extensions
+												? `Supports ${val.options.extensions.join(", ")} files`
+												: "All file types supported"}
+										</P>
+									</div>
+								</div>
+
+								{/* File List - Using field.value */}
+								{field.value && field.value?.length > 0 && (
+									<div className="mt-2 flex flex-col gap-2">
+										<P className="font-medium text-foreground text-sm">
+											{field.value.length} file(s)
+											selected:
+										</P>
+										<div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
+											{field.value.map((file, index) => (
+												<div
+													key={`${file.name}-${index}`}
+													className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
+													data-testid={`uploaded-file-item-${index}`}
+												>
+													<div className="flex min-w-0 flex-1 items-center gap-2">
+														<div className="min-w-0 flex-1">
+															<P className="truncate text-foreground text-sm">
+																{file.name}
+															</P>
+															<P className="text-muted-foreground text-xs">
+																{(
+																	file.size /
+																	1024
+																).toFixed(
+																	2,
+																)}{" "}
+																KB
+															</P>
+														</div>
+													</div>
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														onClick={(e) => {
+															e.stopPropagation();
+															removeFile(
+																index,
+																field.onChange,
+															);
+														}}
+														className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+														data-testid={`remove-file-btn-${index}`}
+													>
+														<X className="size-4" />
+													</Button>
+												</div>
+											))}
+										</div>
+									</div>
+								)}
+
 								{error && (
-									<Typography
-										variant="caption"
-										color="error"
+									<P
+										className="text-destructive text-sm"
 										data-testid={`database-form-error-${val.key}`}
 									>
 										{getHelperText(error, val)}
-									</Typography>
+									</P>
 								)}
-							</>
+							</div>
 						);
 
 					case "checkbox":
 						return (
-							<>
+							<div
+								className={
+									val.hidden
+										? "hidden"
+										: "flex flex-row items-center gap-2"
+								}
+								data-testid={`database-form-field-${val.key}`}
+							>
 								<Checkbox
-									required={val?.required}
-									label={val.label}
+									id={val.key}
+									checked={field.value || false}
+									onCheckedChange={field.onChange}
 									disabled={val.disabled}
-									checked={field.value ? field.value : false}
-									onChange={(value) => field.onChange(value)}
 									data-testid={`database-form-input-${val.key}`}
-									sx={{
-										display: val.hidden ? "none" : "block",
-									}}
 								/>
+								<Label
+									htmlFor={val.key}
+									className="cursor-pointer font-normal"
+								>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</Label>
 								{error && (
-									<Typography
-										variant="body1"
-										color="error"
-										sx={{ mt: 0.5, display: "block" }}
+									<P
+										className="text-destructive text-sm"
 										data-testid={`database-form-error-${val.key}`}
 									>
 										{error.message}
-									</Typography>
+									</P>
 								)}
-							</>
+							</div>
 						);
+
 					case "tags":
 						return (
-							<Autocomplete
-								multiple
-								freeSolo
-								options={val.options?.options || []}
-								value={field.value || []}
-								onChange={(_, newValue) => {
-									// Filter out empty or whitespace-only tags
-									const filteredValue = newValue.filter(
-										(tag) =>
-											typeof tag === "string" &&
-											tag.trim() !== "",
-									);
-									field.onChange(filteredValue);
-								}}
-								renderInput={(params) => (
-									<TextField
-										{...params}
-										fullWidth
-										label={val.label}
-										placeholder='Press "Enter" to add tag'
-										variant="outlined"
-										required={val?.required}
-										// @ts-expect-error TODO FIX
-										error={!!error}
-										helperText={getHelperText(error, val)}
-										disabled={val.disabled}
-										sx={{
-											display: val.hidden
-												? "none"
-												: "block",
-										}}
-										inputProps={{
-											...params.inputProps,
-											required: false,
-										}}
-									/>
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`database-form-field-${val.key}`}
+							>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Input
+									id={val.key}
+									placeholder='Press "Enter" to add tag'
+									disabled={val.disabled}
+									data-testid={`database-form-input-${val.key}`}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											e.preventDefault();
+											const value =
+												e.currentTarget.value.trim();
+											if (value) {
+												const currentTags =
+													field.value || [];
+												field.onChange([
+													...currentTags,
+													value,
+												]);
+												e.currentTarget.value = "";
+											}
+										}
+									}}
+								/>
+								{field.value && field.value?.length > 0 && (
+									<div className="flex flex-wrap gap-2">
+										{field.value.map((tag, index) => (
+											<span
+												key={index}
+												className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm"
+											>
+												{tag}
+												<button
+													type="button"
+													onClick={() => {
+														const newTags =
+															field.value.filter(
+																(_, i) =>
+																	i !== index,
+															);
+														field.onChange(newTags);
+													}}
+													className="text-muted-foreground hover:text-foreground"
+												>
+													×
+												</button>
+											</span>
+										))}
+									</div>
 								)}
-								data-testid={`database-form-input-${val.key}`}
-							/>
+								{error && (
+									<FieldDescription className="text-destructive">
+										{getHelperText(error, val)}
+									</FieldDescription>
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
 						);
 
 					default:
@@ -998,6 +1203,7 @@ export const DatabaseForm = ({
 			}}
 		/>
 	);
+
 	const getHelperText = (error, val) => {
 		if (!error) return val.helperText || "";
 		if (error.type === "checkField" && val.rules?.custom?.message) {
@@ -1005,9 +1211,18 @@ export const DatabaseForm = ({
 		}
 		return error.message;
 	};
+
 	if (loading) {
-		return <LoadingScreen.Trigger description="Loading..." />;
+		return (
+			<div className="flex h-screen items-center justify-center">
+				<div className="flex flex-col items-center gap-4">
+					<div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+					<P>Loading...</P>
+				</div>
+			</div>
+		);
 	}
+
 	function transformStructure(dbObject) {
 		const result = {
 			headers: [],
@@ -1018,24 +1233,17 @@ export const DatabaseForm = ({
 			positions: {},
 		};
 
-		dbObject.tables.forEach((table, index) => {
-			// Extract clean column names and types
-			const columnMap = {};
+		dbObject.tables.forEach((table) => {
 			table.columns.forEach((col, i) => {
-				columnMap[col] = table.type[i]?.toLowerCase() || "string";
 				result.dataTypes[col] =
 					table.type[i]?.toLowerCase() || "string";
 			});
 
-			// Add to nodeProp
 			result.nodeProp[table.table] = table.columns;
-
-			// Add headers
 			result.headers.push(...table.columns);
 		});
 
-		// Add relationships
-		if (dbObject.relationships && dbObject.relationships.length > 0) {
+		if (dbObject.relationships && dbObject.relationships?.length > 0) {
 			result.relation = dbObject.relationships.map((r) => ({
 				fromTable: r.fromTable,
 				fromCol: r.fromCol,
@@ -1044,7 +1252,6 @@ export const DatabaseForm = ({
 			}));
 		}
 
-		// Remove duplicates
 		result.headers = [...new Set(result.headers)];
 		result.cleanHeaders = result.headers.map(
 			(h) => h.charAt(0).toUpperCase() + h.slice(1).toLowerCase(),
@@ -1057,13 +1264,12 @@ export const DatabaseForm = ({
 	const filteredTables =
 		(connectionValues as { tables?: unknown[] } | null)?.tables ?? [];
 	const filteredViews = connectionValues?.views;
+
 	const handleApply = async (output) => {
 		setConnectionViewModel(false);
 		const filter = [...output.tables, ...output.views];
 		setLoading(true);
-		const pixel = `ExternalJdbcSchema(conDetails=[${JSON.stringify(
-			formData,
-		)}], filters=${JSON.stringify(filter)})`;
+		const pixel = `ExternalJdbcSchema(conDetails=[${JSON.stringify(formData)}], filters=${JSON.stringify(filter)})`;
 
 		try {
 			const response = await monolithStore.runQuery(pixel);
@@ -1071,136 +1277,131 @@ export const DatabaseForm = ({
 			const parsedOutput = transformStructure(output);
 			setParsedData([parsedOutput]);
 			if (operationType.includes("ERROR")) {
-				notification.add({
-					color: "error",
-					message: output,
-				});
+				toast.error(output);
 				return;
 			}
 			setStep("connections");
 		} catch {
-			notification.add({
-				color: "error",
-				message: "An error occurred while processing the request.",
-			});
+			toast.error("An error occurred while processing the request.");
 		} finally {
 			setLoading(false);
 		}
 	};
+
 	return (
 		<>
 			{step === "fileupload" && (
 				<form
 					onSubmit={handleSubmit(onFormSubmit)}
 					data-testid="database-form"
+					className="my-4"
+					autoComplete="off"
 				>
-					<Typography variant="h4" data-testid="database-form-title">
-						{title}
-					</Typography>
-					<Typography
-						variant="body1"
-						color="textSecondary"
-						data-testid="database-form-description"
-						sx={{ marginTop: "4px" }}
-					>
-						{description}
-					</Typography>
-					<StyledBox data-testid="database-form-box">
-						<Stack rowGap={4}>
-							{Object.keys(grouped).map((category) => (
-								<Box
-									key={category}
-									sx={{
-										display: "flex",
-										gap: 4,
-										mb: 4,
-										flexDirection: "column",
-									}}
-								>
-									<Box
-										sx={{
-											display: "flex",
-											gap: 4,
-											alignItems: "flex-start",
-										}}
+					<div className="mb-6">
+						<H4 data-testid="database-form-title">{title}</H4>
+						<Muted
+							className="mt-1 text-base"
+							data-testid="database-form-description"
+						>
+							{description}
+						</Muted>
+					</div>
+
+					{Object.keys(grouped).map((category) => (
+						<div
+							key={category}
+							className="mb-4 flex flex-col gap-4"
+						>
+							<div className="flex items-start gap-4">
+								<div className="flex flex-1 flex-col gap-1">
+									<H4 data-testid="database-importForm-category-title">
+										{category}
+									</H4>
+									<Muted
+										data-testid="database-importForm-category-description"
+										className="text-base"
 									>
-										<Stack sx={{ flex: 1 }}>
-											<Typography
-												variant="h6"
-												data-testId={`database-importForm-category-title`}
-											>
-												{category}
-											</Typography>
-											<Typography
-												variant="body2"
-												data-testId={`model-importForm-category-description`}
-												color="textSecondary"
-											>
-												{categoryDescriptions[
-													category
-												] ??
-													"No description available."}
-											</Typography>
-										</Stack>
-										<Stack spacing={2} sx={{ flex: 2 }}>
-											{grouped[category].map((f) =>
-												renderControllerField(f),
-											)}
-										</Stack>
-									</Box>
-									<Divider sx={{ color: "secondary" }} />
-								</Box>
-							))}
-							{advancedFields?.length ? (
-								<>
-									<AdvancedHeader data-testid="database-form-advanced-header">
-										<Typography variant="h6">
-											ADVANCED SETTINGS
-										</Typography>
-										<IconButton
-											onClick={() =>
-												setOpenAdvanced(!openAdvanced)
-											}
-											data-testid="database-form-advanced-toggle"
+										{categoryDescriptions[category] ??
+											"No description available."}
+									</Muted>
+								</div>
+								<div className="flex flex-[2] flex-col gap-2 py-2">
+									{grouped[category].map((f) =>
+										renderControllerField(f),
+									)}
+								</div>
+							</div>
+							<Separator />
+						</div>
+					))}
+
+					{advancedFields?.length > 0 && (
+						<div className="mt-4">
+							<Collapsible
+								open={openAdvanced}
+								onOpenChange={setOpenAdvanced}
+							>
+								<div className="flex flex-row items-center justify-between">
+									<H4 data-testid="database-advanced-settings-title">
+										Advanced Settings
+									</H4>
+									<CollapsibleTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											data-testid="database-advanced-settings-toggle"
 										>
 											{openAdvanced ? (
-												<ExpandLess />
+												<ChevronUp className="size-4" />
 											) : (
-												<ExpandMore />
+												<ChevronDown className="size-4" />
 											)}
-										</IconButton>
-									</AdvancedHeader>
-									{openAdvanced &&
-										advancedFields?.map((val) => (
-											<div
-												key={val.key}
-												data-testid={`database-form-field-${val.key}`}
-											>
-												{renderControllerField(val)}
+										</Button>
+									</CollapsibleTrigger>
+								</div>
+								<CollapsibleContent>
+									<div className="mb-4 flex flex-col gap-4">
+										<div className="flex items-start gap-4">
+											<div className="flex flex-1 flex-col gap-1">
+												<Muted
+													data-testid="database-advanced-settings-description"
+													className="text-base"
+												>
+													Configure advanced database
+													settings
+												</Muted>
 											</div>
-										))}
-								</>
-							) : null}
-						</Stack>
+											<div className="flex flex-[2] flex-col gap-2">
+												{advancedFields.map((f) =>
+													renderControllerField(f),
+												)}
+											</div>
+										</div>
+									</div>
+								</CollapsibleContent>
+							</Collapsible>
+						</div>
+					)}
 
-						<StyledFlexEnd data-testid="database-form-actions">
-							<StyledSubmitButton
-								type="submit"
-								variant="contained"
-								data-testid="database-form-submit"
-								disabled={
-									!formState.isValid || isValidDatabaseName
-								}
-							>
-								Next
-							</StyledSubmitButton>
-						</StyledFlexEnd>
-					</StyledBox>
+					<div className="mt-4 flex justify-end">
+						<Button
+							data-testid="database-form-connect-button"
+							type="submit"
+							disabled={
+								loading ||
+								!formState.isValid ||
+								isValidDatabaseName
+							}
+						>
+							Connect
+						</Button>
+					</div>
 				</form>
 			)}
+
 			{step === "table" &&
 				parsedData &&
-				parsedData.length > 0 &&
+				parsedData?.length > 0 &&
 				(title === "Excel" ? (
 					<ExcelDataSelection
 						files={parsedData}
@@ -1222,7 +1423,7 @@ export const DatabaseForm = ({
 					/>
 				))}
 
-			{step === "metaModel" && parsedData && parsedData.length > 0 && (
+			{step === "metaModel" && parsedData && parsedData?.length > 0 && (
 				<MetaModelType
 					parsedData={parsedData}
 					onImport={(payload: ParsedResult | ParsedResult[]) =>
@@ -1231,8 +1432,10 @@ export const DatabaseForm = ({
 					onCancel={handleCancel}
 				/>
 			)}
+
 			{step === "propFile" && <div>Prop file logic UI goes here</div>}
-			{step === "connections" && parsedData && parsedData.length > 0 && (
+
+			{step === "connections" && parsedData && parsedData?.length > 0 && (
 				<MetaModelConnections
 					parsedData={parsedData}
 					onImport={(payload: ParsedResult | ParsedResult[]) =>
@@ -1244,22 +1447,23 @@ export const DatabaseForm = ({
 					onCancel={handleCancel}
 				/>
 			)}
-			<Modal
+
+			<Dialog
 				open={connectionViewModel}
-				maxWidth="xl"
-				onClose={() => setConnectionViewModel(false)}
-				data-testid="model-zip-upload-modal"
+				onOpenChange={setConnectionViewModel}
 			>
-				<Modal.Content sx={{ width: "100%" }}>
-					{/* <StyledDropzoneField> */}
+				<DialogContent
+					className="max-w-7xl"
+					data-testid="model-zip-upload-modal"
+				>
 					<TableViewSelector
-						tables={filteredTables}
-						views={filteredViews}
+						tables={filteredTables as string[]}
+						views={filteredViews as string[] | undefined}
 						onApply={handleApply}
 						onClose={() => setConnectionViewModel(false)}
 					/>
-				</Modal.Content>
-			</Modal>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 };

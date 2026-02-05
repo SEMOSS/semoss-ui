@@ -1,37 +1,22 @@
-import { ArrowCircleDown, Create } from "@mui/icons-material";
+import { Download, Pencil } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+	Badge,
 	Button,
-	Chip,
-	IconButton,
-	Stack,
-	styled,
+	P,
 	Table,
-	Typography,
-} from "@semoss/ui";
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@semoss/ui/next";
 import { Metamodel } from "@/components/metamodel";
 import { Section } from "@/components/ui";
 import { useEngine, usePixel, useRootStore } from "@/hooks";
-import { SyncChangesModal } from "./SyncChangesModal";
-
-const StyledPage = styled("div")(() => ({
-	position: "relative",
-	zIndex: "0",
-}));
-
-const StyledMetamodelContainer = styled("section")(({ theme }) => ({
-	height: "55vh",
-	width: "100%",
-	borderWidth: "1px",
-	borderStyle: "solid",
-	borderRadius: theme.shape.borderRadius,
-}));
-
-const StyledTableContainer = styled(Table.Container)(() => ({
-	height: "396px",
-}));
+import { SyncChangesModal } from "./sync-changes-modal";
 
 export const EngineMetadataPage = observer(() => {
 	const { active } = useEngine();
@@ -286,26 +271,18 @@ export const EngineMetadataPage = observer(() => {
 	const onSubmit = () => {
 		const payloadObj = {
 			metamodel: {
-				relation: [
-					// { fromTable: 'id', toTable: 'Drug', relName: 'id_Drug' },
-				],
-				nodeProp: {
-					// tableName: [ // 'colname' EXCLUDING THE FIRST COLUMN
-					// ],
-				},
+				relation: [],
+				nodeProp: {},
 			},
-			dataTypeMap: {
-				// colName: type,
-			},
-			newHeaders: {}, // oldColName: newColName
-			additionalDataTypes: {}, // colName: specificFormat
-			descriptionMap: {}, // colName: description
-			logicalNamesMap: {}, // colName/alias: logicalName
+			dataTypeMap: {},
+			newHeaders: {},
+			additionalDataTypes: {},
+			descriptionMap: {},
+			logicalNamesMap: {},
 			position: [{}],
 			nodes: customNodes,
 		};
 
-		// build metamodel relation for each table
 		for (const edge of customEdges) {
 			const relName = `${edge.source}_${edge.target}`;
 			payloadObj.metamodel.relation.push({
@@ -315,9 +292,6 @@ export const EngineMetadataPage = observer(() => {
 			});
 		}
 
-		// build metamodel node prop
-
-		// build dataTypeMap for each table
 		for (const node of customNodes) {
 			for (const col of node.data.properties) {
 				payloadObj.dataTypeMap[col.name] = col.type;
@@ -330,39 +304,41 @@ export const EngineMetadataPage = observer(() => {
 	};
 
 	return (
-		<StyledPage>
+		<div className="relative z-0">
 			<Section>
 				<Section.Header
 					actions={
-						<Stack direction="row" spacing={2}>
+						<div className="flex gap-2">
 							<Button
-								variant="outlined"
+								variant="outline"
 								onClick={() => refreshData(true)}
+								data-testid="engineMetadata-refresh-btn"
 							>
 								Refresh Data
 							</Button>
 							<Button
-								startIcon={<ArrowCircleDown />}
-								variant="outlined"
+								variant="outline"
 								onClick={printMeta}
-								data-testid={"engineMetadata-print-btn"}
+								data-testid="engineMetadata-print-btn"
 							>
+								<Download className="mr-2 size-4" />
 								Print Metadata
 							</Button>
 							<Button
 								disabled={canSave}
-								variant="outlined"
+								variant="outline"
 								onClick={() => onSubmit()}
+								data-testid="engineMetadata-save-btn"
 							>
 								Save
 							</Button>
-						</Stack>
+						</div>
 					}
 				>
 					Metamodel
 				</Section.Header>
-				<Stack spacing={2}>
-					<StyledMetamodelContainer>
+				<div className="flex flex-col gap-4">
+					<section className="h-[55vh] w-full rounded-lg border border-border">
 						<Metamodel
 							nodes={customNodes ?? defaultNodes}
 							edges={customEdges ?? defaultEdges}
@@ -370,44 +346,46 @@ export const EngineMetadataPage = observer(() => {
 							onSelectNode={setSelectedNode}
 							isInteractive={true}
 						/>
-					</StyledMetamodelContainer>
-				</Stack>
+					</section>
+				</div>
 			</Section>
 
 			{selectedNode && (
 				<>
 					<Section>
 						<Section.Header>Description</Section.Header>
-						<Typography variant="body2">{description}</Typography>
+						<P className="text-foreground text-sm">{description}</P>
 					</Section>
 
 					<Section>
 						<Section.Header>Logical Names</Section.Header>
-						<Stack direction="row" spacing={1} flexWrap="wrap">
+						<div className="flex flex-wrap gap-2">
 							{logical.map((name) => (
-								<Chip
+								<Badge
 									key={name}
-									label={name}
-									color="primary"
-									size="small"
-								/>
+									variant="default"
+									className="text-xs"
+									data-testid={`logical-name-${name}`}
+								>
+									{name}
+								</Badge>
 							))}
-						</Stack>
+						</div>
 					</Section>
 
 					<Section>
 						<Section.Header>Columns</Section.Header>
-						<StyledTableContainer>
-							<Table stickyHeader>
-								<Table.Head>
-									<Table.Row>
-										<Table.Cell />
-										<Table.Cell>Name</Table.Cell>
-										<Table.Cell>Description</Table.Cell>
-										<Table.Cell>Logical Names</Table.Cell>
-									</Table.Row>
-								</Table.Head>
-								<Table.Body>
+						<div className="h-[396px] overflow-auto rounded-md border border-border">
+							<Table>
+								<TableHeader className="sticky top-0 bg-background">
+									<TableRow>
+										<TableHead className="w-12" />
+										<TableHead>Name</TableHead>
+										<TableHead>Description</TableHead>
+										<TableHead>Logical Names</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
 									{columnRows.map((property) => {
 										const desc =
 											getDatabaseMetamodel.data
@@ -418,66 +396,106 @@ export const EngineMetadataPage = observer(() => {
 												?.logicalNames?.[property.id] ||
 											[];
 										return (
-											<Table.Row
+											<TableRow
 												key={`${property}--${property.id}`}
+												data-testid={`column-row-${property.id}`}
 											>
-												<Table.Cell>
-													<IconButton disabled>
-														<Create />
-													</IconButton>
-												</Table.Cell>
-												<Table.Cell>
-													{property.name}
-												</Table.Cell>
-												<Table.Cell>
-													<Typography variant="caption">
-														{desc}
-													</Typography>
-												</Table.Cell>
-												<Table.Cell>
-													<Stack
-														direction="row"
-														spacing={1}
-														flexWrap="wrap"
+												<TableCell>
+													<Button
+														variant="ghost"
+														size="icon"
+														disabled
+														className="h-8 w-8"
 													>
+														<Pencil className="size-4" />
+													</Button>
+												</TableCell>
+												<TableCell className="font-medium">
+													{property.name}
+												</TableCell>
+												<TableCell>
+													<P className="text-muted-foreground text-xs">
+														{desc}
+													</P>
+												</TableCell>
+												<TableCell>
+													<div className="flex flex-wrap gap-1">
 														{logic.map((ln) => (
-															<Chip
+															<Badge
 																key={ln}
-																label={ln}
-																color="primary"
-																size="small"
-															/>
+																variant="default"
+																className="text-xs"
+															>
+																{ln}
+															</Badge>
 														))}
-													</Stack>
-												</Table.Cell>
-											</Table.Row>
+													</div>
+												</TableCell>
+											</TableRow>
 										);
 									})}
-								</Table.Body>
-								<Table.Footer>
-									<Table.Row>
-										<Table.Pagination
-											page={columnPage}
-											count={
-												selectedNode?.data?.properties
-													?.length || 0
-											}
-											rowsPerPage={columnVisibleRows}
-											rowsPerPageOptions={[7, 10, 25]}
-											onPageChange={(e, v) =>
-												setColumnPage(v)
-											}
-											onRowsPerPageChange={(e) =>
-												setColumnVisibleRows(
-													e.target
-														.value as unknown as number,
-												)
-											}
-										/>
-									</Table.Row>
-								</Table.Footer>
+								</TableBody>
 							</Table>
-						</StyledTableContainer>
+						</div>
+						{/* Pagination */}
+						<div className="mt-2 flex items-center justify-end gap-4">
+							<div className="flex items-center gap-2">
+								<P className="text-muted-foreground text-sm">
+									Rows per page:
+								</P>
+								<select
+									value={columnVisibleRows}
+									onChange={(e) =>
+										setColumnVisibleRows(
+											Number(e.target.value),
+										)
+									}
+									className="rounded-md border border-border bg-background px-2 py-1 text-sm"
+								>
+									<option value={7}>7</option>
+									<option value={10}>10</option>
+									<option value={25}>25</option>
+								</select>
+							</div>
+							<P className="text-muted-foreground text-sm">
+								{columnPage * columnVisibleRows + 1}-
+								{Math.min(
+									(columnPage + 1) * columnVisibleRows,
+									selectedNode?.data?.properties?.length || 0,
+								)}{" "}
+								of {selectedNode?.data?.properties?.length || 0}
+							</P>
+							<div className="flex gap-1">
+								<Button
+									variant="outline"
+									size="icon"
+									className="h-8 w-8"
+									onClick={() =>
+										setColumnPage(
+											Math.max(0, columnPage - 1),
+										)
+									}
+									disabled={columnPage === 0}
+								>
+									‹
+								</Button>
+								<Button
+									variant="outline"
+									size="icon"
+									className="h-8 w-8"
+									onClick={() =>
+										setColumnPage(columnPage + 1)
+									}
+									disabled={
+										(columnPage + 1) * columnVisibleRows >=
+										(selectedNode?.data?.properties
+											?.length || 0)
+									}
+								>
+									›
+								</Button>
+							</div>
+						</div>
 					</Section>
 				</>
 			)}
@@ -485,30 +503,34 @@ export const EngineMetadataPage = observer(() => {
 			{selectedNode && getData.status === "SUCCESS" && (
 				<Section>
 					<Section.Header>Data</Section.Header>
-					<StyledTableContainer>
-						<Table stickyHeader>
-							<Table.Head>
-								<Table.Row>
+					<div className="h-[396px] overflow-auto rounded-md border border-border">
+						<Table>
+							<TableHeader className="sticky top-0 bg-background">
+								<TableRow>
 									{getData.data.data.headers.map((h) => (
-										<Table.Cell key={h}>
+										<TableHead key={h}>
 											{h.replace(/_/g, " ")}
-										</Table.Cell>
+										</TableHead>
 									))}
-								</Table.Row>
-							</Table.Head>
-							<Table.Body>
-								{getData.data.data.values.map((row) => (
-									<Table.Row key={`row-${row}`}>
-										{row.map((val) => (
-											<Table.Cell key={`val-${val}`}>
-												{val}
-											</Table.Cell>
-										))}
-									</Table.Row>
-								))}
-							</Table.Body>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{getData.data.data.values.map(
+									(row, rowIndex) => (
+										<TableRow key={`row-${rowIndex}`}>
+											{row.map((val, colIndex) => (
+												<TableCell
+													key={`val-${rowIndex}-${colIndex}`}
+												>
+													{val}
+												</TableCell>
+											))}
+										</TableRow>
+									),
+								)}
+							</TableBody>
 						</Table>
-					</StyledTableContainer>
+					</div>
 				</Section>
 			)}
 
@@ -519,6 +541,6 @@ export const EngineMetadataPage = observer(() => {
 				tables={tabledata}
 				views={viewdata}
 			/>
-		</StyledPage>
+		</div>
 	);
 });

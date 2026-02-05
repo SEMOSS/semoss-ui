@@ -122,6 +122,11 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 									? tool.response
 									: undefined
 							}
+							executedParameters={
+								tool.status === "SUCCESS"
+									? tool.executedParameters
+									: undefined
+							}
 						/>
 					</div>
 				</div>
