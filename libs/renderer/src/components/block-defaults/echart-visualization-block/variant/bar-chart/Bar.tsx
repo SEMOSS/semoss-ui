@@ -134,11 +134,23 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 	const receiveValueswithCorrections = useCallback(
 		(resultData: unknown) => {
 			let frameDataIndex = 0;
+
+			// Check if xAxis name exists
+			if (!resultData["xAxis"]["name"] || resultData["xAxis"]["name"].length === 0) {
+				// If xAxis name is not present, clear xAxis data
+				resultData["xAxis"]["data"] = [];
+				return resultData;
+			}
+			
 			//setting xaxis data
-			resultData["xAxis"]["data"] = frameData.data?.values?.map((item) => {
-				const value = item[frameDataIndex];
-				return typeof value === "number" && !isNaN(value) ? value : null; // Replace NaN with null
-			});
+			resultData["xAxis"]["data"] = frameData.data?.values?.map(
+				(item) => {
+					const value = item[frameDataIndex];
+					return typeof value === "number" && !isNaN(value)
+						? parseFloat(value.toFixed(2)) // Round to 2 decimal places
+						: null; // Replace NaN with null
+				},
+			);
 
 			if (resultData["xAxis"]["name"]?.length > 0) {
 				const optionSeriesLength = frameData.data.headers.length;
@@ -151,7 +163,10 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 				) {
 					if (
 						resultData["series"][seriesIdx] !== undefined &&
-						Object.hasOwn(resultData["series"][seriesIdx], "data") &&
+						Object.hasOwn(
+							resultData["series"][seriesIdx],
+							"data",
+						) &&
 						!Object.hasOwn(
 							resultData["series"][seriesIdx],
 							"toggleTrendLineObject",
@@ -161,7 +176,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 							frameData.data?.values?.map((item) => null); // Set to null directly
 					}
 				}
-				
+
 				// Setting new values to series
 				let i;
 				for (i = frameDataIndex; i < optionSeriesLength; i++) {
@@ -174,33 +189,41 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 						)
 					) {
 						resultData["series"][i - 1]["data"] =
-						frameData.data?.values?.map((item) => {
-							const value = item[i];
-							return typeof value === "number" && isNaN(value) ? null : value; // Replace NaN with null
-						});
+							frameData.data?.values?.map((item) => {
+								const value = item[i];
+								return typeof value === "number" &&
+									!isNaN(value)
+									? parseFloat(value.toFixed(2)) // Round to 2 decimal places
+									: null; // Replace NaN with null
+							});
 					}
 				}
 
 				// Filter series based on yAxis.name array
-				const yAxisNames = resultData["yAxis"]["name"]; 
-				
-				resultData["series"] = resultData["series"].filter((seriesItem) =>
-					yAxisNames.includes(seriesItem.name) || seriesItem.toggleTrendLineObject === true
+				const yAxisNames = resultData["yAxis"]["name"];
+
+				resultData["series"] = resultData["series"].filter(
+					(seriesItem) =>
+						yAxisNames.includes(seriesItem.name) ||
+						seriesItem.toggleTrendLineObject === true,
 				);
 
 				// Ensure the series array length matches the yAxisNames length
 				if (resultData["series"].length > yAxisNames.length) {
-				
 					// Separate series with toggleTrendLineObject === true
 					const trendLineSeries = resultData["series"].filter(
-						(seriesItem) => seriesItem.toggleTrendLineObject === true
+						(seriesItem) =>
+							seriesItem.toggleTrendLineObject === true,
 					);
-				
+
 					// Slice only the remaining series to match yAxisNames length
-					const otherSeries = resultData["series"].filter(
-						(seriesItem) => seriesItem.toggleTrendLineObject !== true
-					).slice(0, yAxisNames.length);
-				
+					const otherSeries = resultData["series"]
+						.filter(
+							(seriesItem) =>
+								seriesItem.toggleTrendLineObject !== true,
+						)
+						.slice(0, yAxisNames.length);
+
 					// Combine the sliced series with the trend line series
 					resultData["series"] = [...otherSeries, ...trendLineSeries];
 				}
