@@ -30,9 +30,9 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
-import { FunctionForm } from "./FunctionImportForm";
-import { FunctionTitleCard } from "./FunctionTitleCard";
 import { FUNCTION_CONNECTIONS } from "./function-import.constants";
+import { FunctionForm } from "./function-import-form";
+import { FunctionTitleCard } from "./function-title-card";
 
 interface functionCatalog {
 	fields: [];
@@ -296,7 +296,6 @@ export const FunctionImport: React.FC<{ name: string }> = ({ name }) => {
 						fields={selectedDatabase.fields}
 						advanced={selectedDatabase.advanced}
 						categoryDescription={CategoryDescription}
-						onBack={() => setSelectedDatabase(null)}
 					/>
 				</div>
 			) : (

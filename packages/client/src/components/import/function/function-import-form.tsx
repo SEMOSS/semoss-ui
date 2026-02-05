@@ -52,7 +52,6 @@ export const FunctionForm = ({
 	fields,
 	advanced,
 	categoryDescription,
-	onBack,
 }) => {
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
@@ -741,22 +740,13 @@ export const FunctionForm = ({
 					data-testid="function-form-actions"
 				>
 					<Button
-						data-testId="model-importForm-back-button"
-						variant="secondary"
-						type="button"
-						className="text-(--secondary-foreground)"
-						onClick={onBack}
-					>
-						Back
-					</Button>
-					<Button
 						type="submit"
 						variant="default"
 						data-testid="function-form-submit"
 						disabled={!formState.isValid || isValidDatabaseName}
 						className="min-w-[128px] capitalize"
 					>
-						Creat Function
+						Connect
 					</Button>
 				</div>
 			</div>
