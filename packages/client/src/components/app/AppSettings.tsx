@@ -7,16 +7,15 @@ import {
 	PublishedWithChanges,
 	ToggleOff,
 } from "@mui/icons-material";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Env } from "@semoss/sdk/react";
 import {
 	Avatar,
-	Button,
 	Divider,
 	FileDropzone,
 	IconButton,
-	InputAdornment,
 	LoadingScreen,
 	Paper,
 	Stack,
@@ -27,6 +26,13 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import {
+	Button,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	Markdown,
+} from "@semoss/ui/next";
 import { setProjectPortal, uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
@@ -70,6 +76,7 @@ const StyledRightSwitch = styled(Switch)(({ theme }) => ({
 const StyledRightButton = styled(Button)(({ theme }) => ({
 	marginLeft: "auto",
 	paddingRight: theme.spacing(1),
+	borderColor: theme.palette.primary.main,
 }));
 
 const StyledCardDiv = styled("div")(({ theme }) => ({
@@ -164,8 +171,9 @@ const StyledPersonIcon = styled(Person)(() => ({
 	alignItems: "flex-start",
 }));
 
-const StyledPublishedIcon = styled(PublishedWithChanges)(() => ({
+const StyledPublishedIcon = styled(PublishedWithChanges)(({ theme }) => ({
 	marginRight: "5px",
+	color: theme.palette.primary.main,
 }));
 
 const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
@@ -237,6 +245,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [openMcp, setOpenMcp] = useState(false);
 
 	const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
 		defaultValues: {
@@ -248,7 +257,121 @@ export const AppSettings = (props: AppSettingsProps) => {
 
 	const admin = configStore.store.user.admin;
 
-	const mcpUrl = `${Env.MODULE}/api/ext/mcp/${id}/comms`;
+	const mcpUrl = `${window.location.origin}${Env.MODULE}/api/ext/mcp/${id}/comms`;
+
+	const MCP_USAGE = [
+		{
+			Label: "VS Code (MCP Integration)",
+			usage: [
+				"Install an MCP-compatible extension in VS Code (like Continue or similar)",
+				"Open the extension settings and add a new MCP server",
+				"Replace <app-or-engine-id> and <accesskey:secretkey>",
+				"Save settings and reload VS Code",
+				"You can now use MCP tools directly inside VS Code",
+			],
+			code:
+				'```json\n{\n  "name": "backend-mcp",\n  "command": "npx",\n  "args": [\n    "mcp-remote",\n     "' +
+				mcpUrl +
+				'",\n    "--header",\n    "Authorization:Bearer <accesskey:secretkey>"\n  ]\n}\n```',
+		},
+		{
+			Label: "Claude Desktop (MCP Server Connection)",
+			usage: [
+				"Open Claude Desktop settings",
+				"Go to Developer or MCP Servers section",
+				"Add a new MCP server configuration",
+				"Replace <app-or-engine-id> and <accesskey:secretkey>",
+				"Restart Claude to load the MCP tools",
+			],
+			code:
+				'```json\n{\n  "mcpServers": {\n    "backend-mcp": {\n      "command": "npx",\n      "args": [\n        "mcp-remote",\n        "' +
+				mcpUrl +
+				'",\n        "--header",\n        "Authorization:Bearer <accesskey:secretkey>"\n      ]\n    }\n  }\n}\n```',
+		},
+		{
+			Label: "Claude with custom backend and MCP (Best for AI Tooling)",
+			description:
+				"Use Claude through the Anthropic API with your own backend acting as a bridge to the MCP server. This gives you full control over authentication, logging, and which MCP tools Claude is allowed to use.",
+			usage: [
+				"Use Claude via the Anthropic API instead of Claude Desktop",
+				"Define MCP tools in your backend as callable functions",
+				"When Claude requests a tool, your backend calls the MCP server",
+				"Replace <app-or-engine-id> and <accesskey:secretkey> in the MCP URL",
+				"Return the MCP response back to Claude as the tool result",
+				"This setup is ideal for production AI applications",
+			],
+			code:
+				'```javascript\n// Example: Claude tool handler calling MCP\nimport fetch from "node-fetch";\n\nconst MCP_URL = "' +
+				mcpUrl +
+				'";\n\nexport async function callMcpTool() {\n  const res = await fetch(MCP_URL, {\n    method: "POST",\n    headers: {\n      "Authorization": "Bearer <accesskey:secretkey>",\n      "Content-Type": "application/json"\n    },\n    body: JSON.stringify({\n      jsonrpc: "2.0",\n      id: 1,\n      method: "tools/list",\n      params: {}\n    })\n  });\n\n  return await res.json();\n}\n```',
+		},
+		{
+			Label: "OpenAI Codex / CLI Tools (MCP Connection)",
+			usage: [
+				"Ensure Node.js is installed",
+				"Replace <app-or-engine-id> and <accesskey:secretkey>",
+				"Run this before starting your Codex-based workflow",
+				"This allows Codex tools to communicate with your MCP server",
+			],
+			code:
+				'```bash\nnpx mcp-remote \\\n  "' +
+				mcpUrl +
+				'" \\\n  --header "Authorization: Bearer <accesskey:secretkey>"\n```',
+		},
+		{
+			Label: "Terminal Command (npx mcp-remote)",
+			usage: [
+				"Make sure Node.js (v18+) is installed",
+				"Replace <app-or-engine-id> and <accesskey:secretkey>",
+				"Run this command in your terminal",
+				"This connects your local tool directly to the MCP server",
+			],
+			code:
+				'```bash\nnpx mcp-remote \\\n  "' +
+				mcpUrl +
+				'"  \\\n  --header "Authorization: Bearer <accesskey:secretkey>"\n```',
+		},
+		{
+			Label: "cURL Command (Manual MCP JSON-RPC Request)",
+			usage: [
+				"Replace <app-or-engine-id> and <accesskey:secretkey>",
+				"Run in Terminal or Command Prompt",
+				"Useful for testing if MCP server is reachable",
+				"Confirms authentication and API response",
+			],
+			code:
+				'```bash\ncurl -X POST \\\n  "' +
+				mcpUrl +
+				'" \\\n  -H "Authorization: Bearer <accesskey:secretkey>" \\\n  -H "Content-Type: application/json" \\\n  -d \'{\n    "jsonrpc": "2.0",\n    "id": 1,\n    "method": "tools/list",\n    "params": {}\n  }\'\n```',
+		},
+		{
+			Label: "JavaScript (Node.js — fetch / axios)",
+			usage: [
+				"Replace <app-or-engine-id> and <accesskey:secretkey>",
+				"Use fetch (Node 18+) or axios (older Node versions)",
+				"Install axios if needed: npm install axios",
+				"Use inside backend services or scripts",
+				"Ideal when MCP is part of a JS application workflow",
+			],
+			code:
+				'```javascript\n// Using fetch (Node 18+)\nconst url = "' +
+				mcpUrl +
+				'";\n\nawait fetch(url, {\n  method: "POST",\n  headers: {\n    "Authorization": "Bearer <accesskey:secretkey>",\n    "Content-Type": "application/json"\n  },\n  body: JSON.stringify({\n    jsonrpc: "2.0",\n    id: 1,\n    method: "tools/list",\n    params: {}\n  })\n});\n\n// OR using axios\nimport axios from "axios";\n\nawait axios.post(\n  url,\n  {\n    jsonrpc: "2.0",\n    id: 1,\n    method: "tools/list",\n    params: {}\n  },\n  {\n    headers: {\n      Authorization: "Bearer <accesskey:secretkey>"\n    }\n  }\n);\n```',
+		},
+		{
+			Label: "Python (requests)",
+			usage: [
+				"Install requests: pip install requests",
+				"Replace URL and credentials",
+				"Run as a Python script or backend service",
+				"Ideal for automation or backend workflows",
+			],
+			code:
+				'```python\nimport requests\n\nurl = "' +
+				mcpUrl +
+				'"\n\nheaders = {\n    "Authorization": "Bearer <accesskey:secretkey>",\n    "Content-Type": "application/json"\n}\n\npayload = {\n    "jsonrpc": "2.0",\n    "id": 1,\n    "method": "tools/list",\n    "params": {}\n}\n\nrequests.post(url, json=payload, headers=headers)\n```',
+		},
+	];
 
 	const [portalReactors, setPortalReactors] = useState<{
 		reactors: string[];
@@ -541,10 +664,10 @@ export const AppSettings = (props: AppSettingsProps) => {
 	 * Copy text and add it to the clipboard
 	 * @param text - text to copy
 	 */
-	const copy = async (text: string) => {
+	const copyCode = async (text: string) => {
 		try {
-			await navigator.clipboard.writeText(text);
-
+			const cleanCode = text.replace(/```[a-z]*\n|```/g, "");
+			await navigator.clipboard.writeText(cleanCode);
 			notification.add({
 				color: "success",
 				message: "Successfully copied to clipboard",
@@ -607,7 +730,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 
 							<StyledRightButton
 								disabled={!portalDetails.project_has_portal}
-								variant="outlined"
+								variant="outline"
 								onClick={() => {
 									publish();
 								}}
@@ -728,8 +851,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 									</Typography>
 
 									<StyledRightButton
-										variant="outlined"
-										startIcon={<StyledPublishedIcon />}
+										variant="outline"
 										disabled={
 											!portalDetails.project_has_portal ||
 											!configStore.isEngineOperationAvailable(
@@ -741,7 +863,10 @@ export const AppSettings = (props: AppSettingsProps) => {
 											publish();
 										}}
 									>
-										Publish
+										<StyledPublishedIcon />
+										<span className="text-[#0471F0]">
+											Publish
+										</span>
 									</StyledRightButton>
 								</StyledSubRow>
 
@@ -779,7 +904,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 								Custom reactors created for the portal.
 							</StyledListItemHeader>
 							<Button
-								variant="contained"
+								variant="default"
 								onClick={() => {
 									recompileReactors({ release: null });
 								}}
@@ -787,7 +912,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 								Compile Changes on This Instance
 							</Button>
 							<Button
-								variant="contained"
+								variant="default"
 								onClick={() => {
 									recompileReactors({ release: true });
 								}}
@@ -850,32 +975,94 @@ export const AppSettings = (props: AppSettingsProps) => {
 					</StyledCardDiv>
 				</StyledCardContainer>
 				<StyledCardContainer>
-					<StyledCardDiv>
-						<TextField
-							label="MCP URL"
-							size="small"
-							value={mcpUrl}
-							fullWidth={true}
-							slotProps={{
-								input: {
-									endAdornment: (
-										<InputAdornment position="end">
-											<IconButton
-												aria-label="copy"
-												color="default"
-												size="small"
-												onClick={() =>
-													copy(`{{${mcpUrl}}}`)
-												}
-											>
-												<ContentCopy fontSize="small" />
-											</IconButton>
-										</InputAdornment>
-									),
-								},
-							}}
-						/>
-					</StyledCardDiv>
+					<div className="block shrink-0 grow basis-0 p-4">
+						<Collapsible open={openMcp} onOpenChange={setOpenMcp}>
+							<div className="flex flex-row items-center justify-between">
+								<div className="flex w-[19.75rem] flex-col items-start pb-2">
+									<Typography variant="h6">
+										MCP Usage
+									</Typography>
+								</div>
+								<CollapsibleTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										data-testid="database-mcp-usage-toggle"
+									>
+										{openMcp ? (
+											<ChevronUp className="size-4" />
+										) : (
+											<ChevronDown className="size-4" />
+										)}
+									</Button>
+								</CollapsibleTrigger>
+							</div>
+							<CollapsibleContent>
+								<div className="space-y-6">
+									{MCP_USAGE.map((item) => (
+										<div
+											key={item.Label}
+											className="rounded-2xl border border-base p-6 shadow-xs"
+										>
+											<div className="grid gap-8 md:grid-cols-2">
+												{/* LEFT SIDE */}
+												<div>
+													<Typography variant="h6">
+														{item.Label}
+													</Typography>
+
+													{item.description && (
+														<Typography variant="body2">
+															{item.description}
+														</Typography>
+													)}
+
+													<ul className="mt-3 list-disc space-y-1 pl-5 text-gray-700 text-sm">
+														{item.usage.map(
+															(point) => (
+																<li key={point}>
+																	{point}
+																</li>
+															),
+														)}
+													</ul>
+												</div>
+
+												{/* RIGHT SIDE */}
+												<div className="relative">
+													<IconButton
+														aria-label="copy"
+														color="default"
+														size="small"
+														className="!absolute !text-xs top-2 right-2"
+														onClick={() =>
+															copyCode(item.code)
+														}
+													>
+														<ContentCopy fontSize="small" />
+													</IconButton>
+
+													<Markdown
+														components={{
+															pre: ({
+																children,
+															}) => (
+																<div className="max-h-64 overflow-x-auto overflow-y-auto rounded-xl border border-base bg-gray-50 p-4 text-sm shadow-xs">
+																	{children}
+																</div>
+															),
+														}}
+													>
+														{item.code}
+													</Markdown>
+												</div>
+											</div>
+										</div>
+									))}
+								</div>
+							</CollapsibleContent>
+						</Collapsible>
+					</div>
 				</StyledCardContainer>
 
 				<StyledCardContainer>
@@ -917,7 +1104,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 							<Stack alignItems={"center"}>
 								<Button
 									type="submit"
-									variant={"contained"}
+									variant={"default"}
 									disabled={isLoading || !uploadFile}
 									onClick={editApp}
 								>
