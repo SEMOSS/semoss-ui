@@ -243,6 +243,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 					type === "STORAGE" ||
 					type === "MODEL" ||
 					type === "VECTOR" ||
+					type === "GUARDRAIL" ||
 					type === "FUNCTION"
 				) {
 					const [noCred, cred] = await Promise.all([
@@ -372,6 +373,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				type === "STORAGE" ||
 				type === "MODEL" ||
 				type === "VECTOR" ||
+				type === "GUARDRAIL" ||
 				type === "FUNCTION"
 			) {
 				response = await editEngineUserPermissions(
@@ -486,6 +488,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				type === "STORAGE" ||
 				type === "MODEL" ||
 				type === "VECTOR" ||
+				type === "GUARDRAIL" ||
 				type === "FUNCTION"
 			) {
 				response = await addEngineUserPermissions(

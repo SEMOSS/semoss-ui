@@ -209,6 +209,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 		type === "STORAGE" ||
 		type === "MODEL" ||
 		type === "VECTOR" ||
+		type === "GUARDRAIL" ||
 		type === "FUNCTION"
 			? `GetEngineUserAccessRequest(engine='${id}');`
 			: type === "PROJECT"
@@ -270,6 +271,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 				type === "STORAGE" ||
 				type === "MODEL" ||
 				type === "VECTOR" ||
+				type === "GUARDRAIL" ||
 				type === "FUNCTION"
 			) {
 				response = await approveEngineUserAccessRequest(
@@ -362,6 +364,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 				type === "STORAGE" ||
 				type === "MODEL" ||
 				type === "VECTOR" ||
+				type === "GUARDRAIL" ||
 				type === "FUNCTION"
 			) {
 				response = await denyEngineUserAccessRequest(
