@@ -7,14 +7,14 @@ import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { ENGINE_TYPES, Role } from "@/types";
 import { EngineFilePage } from "./EngineFilePage";
-import { EngineMetadataPage } from "./EngineMetadataPage";
 import { EngineQAPage } from "./EngineQAPage";
-import { EngineQueryDataPage } from "./EngineQueryDataPage";
 import { EngineSettingsPage } from "./EngineSettingsPage";
 import { EngineSmssPage } from "./EngineSmssPage";
 import { EngineFileManagerPage } from "./engine-file-manager-page";
+import { EngineMetadataPage } from "./engine-metadata-page";
 import { EngineModelChatPage } from "./engine-model-chat-page";
 import { EngineOverviewPage } from "./engine-overview-page";
+import { EngineQueryDataPage } from "./engine-query-data-page";
 import { EngineUsagePage } from "./engine-usage-page";
 
 export const ENGINE_ROUTES: {
@@ -293,6 +293,12 @@ export const ENGINE_ROUTES: {
 				restrict: false,
 			},
 			{
+				name: "Usage",
+				path: "usage",
+				component: EngineUsagePage,
+				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+			},
+			{
 				name: "Access Control",
 				path: "access-control",
 				component: EngineSettingsPage,
@@ -303,6 +309,12 @@ export const ENGINE_ROUTES: {
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
+			},
+			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["OWNER", "EDIT"],
 			},
 		],
 	},
