@@ -333,6 +333,7 @@ export const MembersTable = (props: MembersTableProps) => {
 		type === "STORAGE" ||
 		type === "MODEL" ||
 		type === "VECTOR" ||
+		type === "GUARDRAIL" ||
 		type === "FUNCTION"
 	) {
 		getUserDataApi = ["getUserEnginePermission", id];
@@ -501,6 +502,7 @@ export const MembersTable = (props: MembersTableProps) => {
 				type === "STORAGE" ||
 				type === "MODEL" ||
 				type === "VECTOR" ||
+				type === "GUARDRAIL" ||
 				type === "FUNCTION"
 			) {
 				response = await editEngineUserPermissions(
@@ -1254,8 +1256,8 @@ export const MembersTable = (props: MembersTableProps) => {
 																				"access",
 																			) ||
 																			userPermission ===
-																				"Read-Only" || 	
-																			disableActionsForEditorAuthor	
+																				"Read-Only" ||
+																			disableActionsForEditorAuthor
 																		}
 																	>
 																		<Delete></Delete>

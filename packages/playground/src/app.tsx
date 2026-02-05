@@ -5,6 +5,8 @@ import { Router } from "@/pages";
 // use the environment variable to set the module
 Env.update({
 	MODULE: import.meta.env.MODULE || "/Monolith",
+	ACCESS_KEY: import.meta.env.ACCESS_KEY,
+	SECRET_KEY: import.meta.env.SECRET_KEY,
 });
 
 export const App = () => {
@@ -14,7 +16,7 @@ export const App = () => {
 				<div className="absolute inset-0 h-screen w-screen overflow-hidden">
 					<Router />
 				</div>
-				<Toaster />
+				<Toaster position="top-center" />
 			</ThemeProvider>
 		</InsightProvider>
 	);

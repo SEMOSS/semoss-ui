@@ -127,6 +127,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			type === "STORAGE" ||
 			type === "MODEL" ||
 			type === "VECTOR" ||
+			type === "GUARDRAIL" ||
 			type === "FUNCTION"
 			? adminMode
 				? `AdminEngineInfo(engine='${id}');`
@@ -149,6 +150,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			type === "STORAGE" ||
 			type === "MODEL" ||
 			type === "VECTOR" ||
+			type === "GUARDRAIL" ||
 			type === "FUNCTION"
 		) {
 			const data = engineInfo.data as {
@@ -183,6 +185,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 					type === "STORAGE" ||
 					type === "MODEL" ||
 					type === "VECTOR" ||
+					type === "GUARDRAIL" ||
 					type === "FUNCTION"
 					? `DeleteEngine(engine=['${id}']);`
 					: type === "PROJECT"
@@ -240,6 +243,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				type === "STORAGE" ||
 				type === "MODEL" ||
 				type === "VECTOR" ||
+				type === "GUARDRAIL" ||
 				type === "FUNCTION"
 			) {
 				response = await setEngineVisiblity(
@@ -309,6 +313,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				type === "STORAGE" ||
 				type === "MODEL" ||
 				type === "VECTOR" ||
+				type === "GUARDRAIL" ||
 				type === "FUNCTION"
 			) {
 				response = await setEngineGlobal(adminMode, id, !global);
