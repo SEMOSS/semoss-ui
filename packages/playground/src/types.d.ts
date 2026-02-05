@@ -136,6 +136,7 @@ export interface InputToolExecPixelMessage extends AbstractPixelMessage {
 	ornaments: {
 		modelName?: string;
 	};
+	tool_parameter_values?: Record<string, unknown>;
 }
 
 export interface ResponseTextPixelMessage extends AbstractPixelMessage {
@@ -191,6 +192,9 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 		/** THIS IS A STRING, but ONLY in playground we parse as an app */
 		/** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
 		arguments: Record<string, unknown>;
+
+		/**  description of tool **/
+		description: string;
 	}[];
 	modelId: string;
 	ornaments: {

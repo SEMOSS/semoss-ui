@@ -42,6 +42,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 			type === "STORAGE" ||
 			type === "MODEL" ||
 			type === "VECTOR" ||
+			type === "GUARDRAIL" ||
 			type === "FUNCTION"
 			? adminMode
 				? `AdminGetEngineSMSS(engine=['${id}'])`
