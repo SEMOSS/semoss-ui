@@ -18,10 +18,16 @@ export class ToolExecutionMessageStore extends AbstractMessageStore {
 	 */
 	status: "INITIAL" | "LOADING" | "CANCELLED" | "SUCCESS" | "ERROR" =
 		"INITIAL";
+
 	/**
 	 * Response for the tool
 	 */
 	response: string = "";
+
+	/**
+	 * Parameters used by the tool
+	 */
+	executedParameters: Record<string, unknown> = {};
 
 	constructor(
 		room: AbstractMessageStore["room"],
@@ -61,6 +67,8 @@ export class ToolExecutionMessageStore extends AbstractMessageStore {
 				} else if (m.tool_status === "error") {
 					this.status = "ERROR";
 				}
+
+				this.executedParameters = m.tool_parameter_values ?? {};
 			});
 		} else {
 			throw new Error(

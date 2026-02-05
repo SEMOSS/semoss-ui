@@ -4,9 +4,10 @@ import {
 	KeyboardArrowDown,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { DATA_FRAME_TYPES } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
+import { MonacoEditor } from "@semoss/shared";
 import {
 	Button,
 	Checkbox,
@@ -45,9 +46,6 @@ const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
 	gap: theme.spacing(1),
 	color: theme.palette.text.secondary,
 }));
-
-// Reduce Initial Bundle
-const Editor = lazy(() => import("@monaco-editor/react"));
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
@@ -373,7 +371,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 					)}
 					<StyledContainer>
 						<Suspense fallback={<>...</>}>
-							<Editor
+							<MonacoEditor
 								value={cell.parameters.selectQuery}
 								defaultValue="--SELECT * FROM..."
 								language="sql" /** TODO: language support? can we tell this from the database type? */

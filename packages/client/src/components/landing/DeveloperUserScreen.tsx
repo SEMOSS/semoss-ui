@@ -15,8 +15,8 @@ import {
 	BASE_APP_VARIABLES,
 	BASE_PAGE_BLOCKS,
 } from "../../pages/app/app.constants";
-import CreateAppSection from "./CreateAppSection";
 import { FanFavoritesSection } from "./FanFavoritesSection";
+import { LandingHeader } from "./landing-header";
 
 const StyledAppCard = styled("div")({
 	display: "flex",
@@ -56,36 +56,6 @@ export const DeveloperUserScreen = observer(() => {
 		return <Navigate to="/" replace />;
 	}
 
-	/**
-	 * @name setupApp
-	 *
-	 * @description Sets initial app meta based on tile click,
-	 * in order to open the modal and gather more meta
-	 *
-	 * @param type - What type of app is user trying to create
-	 * @returns void
-	 */
-	const setupApp = (type: "blocks" | "code" | "agent"): void => {
-		if (type === "blocks") {
-			setNewAppOptions({
-				type: "blocks",
-				state: {
-					version: STATE_VERSION,
-					variables: BASE_APP_VARIABLES as Record<string, Variable>,
-					queries: BASE_APP_QUERIES,
-					blocks: BASE_PAGE_BLOCKS,
-					executionOrder: [],
-				},
-			});
-		} else if (type === "code") {
-			setNewAppOptions({
-				type: "code",
-			});
-		} else if (type === "agent") {
-			navigate("/app/new/prompt");
-		}
-	};
-
 	return (
 		<Stack direction="column" spacing={3}>
 			<BannerSection
@@ -96,7 +66,7 @@ export const DeveloperUserScreen = observer(() => {
 				}
 				link={{
 					label: "Browse Templates",
-					to: "/app/new/template",
+					to: "/app/new",
 				}}
 			/>
 			<StyledAppCard>
@@ -144,7 +114,31 @@ export const DeveloperUserScreen = observer(() => {
 						}}
 					/>
 				) : null}
-				<CreateAppSection setupApp={setupApp} />
+				<LandingHeader
+					onCreate={(type) => {
+						if (type === "blocks") {
+							setNewAppOptions({
+								type: "blocks",
+								state: {
+									version: STATE_VERSION,
+									variables: BASE_APP_VARIABLES as Record<
+										string,
+										Variable
+									>,
+									queries: BASE_APP_QUERIES,
+									blocks: BASE_PAGE_BLOCKS,
+									executionOrder: [],
+								},
+							});
+						} else if (type === "code") {
+							setNewAppOptions({
+								type: "code",
+							});
+						} else if (type === "agent") {
+							navigate("/app/new/prompt");
+						}
+					}}
+				/>
 			</StyledAppCard>
 
 			<FanFavoritesSection />
