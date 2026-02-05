@@ -166,7 +166,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		 */
 		const downloadResponse = async (format: string) => {
 			try {
-				await message.downloadResponse(format);
+				await message.downloadResponse(format as "word" | "pdf");
 				toast.success(
 					`Response downloaded successfully as ${format.toUpperCase()}`,
 				);
@@ -382,6 +382,22 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								Copy Response
 							</TooltipContent>
 						</Tooltip>
+
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									disabled={!message.text}
+									onClick={() => setIsDownloadDialogOpen(true)}
+								>
+									<DownloadIcon />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								Download Response
+							</TooltipContent>
+						</Tooltip>
 					</div>
 
 					<div className="flex-1" />
@@ -403,23 +419,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							</TooltipContent>
 						</Tooltip>
 					)}
-
-					{/* Separate Tooltip for Download Button */}
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								disabled={!message.text}
-								onClick={() => setIsDownloadDialogOpen(true)}
-							>
-								<DownloadIcon />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							Download Response
-						</TooltipContent>
-					</Tooltip>
 				</div>
 
 				<Dialog

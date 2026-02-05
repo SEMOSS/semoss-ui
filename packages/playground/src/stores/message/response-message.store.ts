@@ -1,4 +1,5 @@
 import { action, makeObservable, observable, runInAction } from "mobx";
+import { download } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_ASK,
 	MCP_EXECUTION_AUTO,
@@ -303,54 +304,41 @@ paramValues=[${JSON.stringify({
 		}
 	};
 
-	/**
-	 * Download the response as a Word document
-	 */
-	downloadResponse = async (format: string = "word"): Promise<void> => {
-		if (!this.text) {
-			throw new Error("No content to download");
-		}
+/**
+ * Download the response as a Word or PDF document
+ */
+downloadResponse = async (format: "word" | "pdf") => {
+    if (!this.text) throw new Error("No content to download");
 
-		try {
-			// Create a new document
-			const doc = new Document({
-				sections: [
-					{
-						properties: {},
-						children: [
-							new Paragraph({
-								children: [
-									new TextRun({
-										text: this.text,
-										size: 24, // 12pt font (size is in half-points)
-									}),
-								],
-							}),
-						],
-					},
-				],
-			});
+    let pixelCommand: string;
+    let fileName: string;
 
-			// Generate and download the document
-			const now = new Date();
-			const dateStr = now.toLocaleDateString("en-CA"); // YYYY-MM-DD format
-			const timeStr = now
-				.toLocaleTimeString("en-US", {
-					hour12: true,
-					hour: "2-digit",
-					minute: "2-digit",
-				})
-				.replace(":", "-")
-				.replace(" ", "_");
+    if (format === "word") {
+        fileName = "Elsa_Output.docx";
+        pixelCommand = `ToDocx(html=["<encode>${this.text}</encode>"], fileName=["Elsa_Output"]);`;
+    } else if (format === "pdf") {
+        fileName = "Elsa_Output.pdf"; 
+        pixelCommand = `ToPdf(html=["<encode>${this.text}</encode>"], fileName=["Elsa_Output"]);`;
+    } else {
+        throw new Error(`Unsupported format: ${format}`);
+    }
 
-			const fileName = `Elsa_output_${dateStr}_${timeStr}.docx`;
-			const blob = await Packer.toBlob(doc);
-			saveAs(blob, fileName);
-		} catch (error) {
-			console.error("Error downloading response:", error);
-			throw new Error("Failed to download response");
-		}
-	};
+    const resp = await this.room.runRoomPixel<any>(pixelCommand, false);
+
+    console.log("✅ Response received:", resp);
+
+    if (resp?.pixelReturn?.[0]) {
+        const { operationType, output } = resp.pixelReturn[0];
+        
+        if (operationType?.includes("FILE_DOWNLOAD")) {
+            download(this.room.insightId, output);
+        } else {
+            throw new Error(`Failed to generate ${format.toUpperCase()} file`);
+        }
+    } else {
+        throw new Error("No response received from server");
+    }
+};
 
 	/**
 	 * Rewrite a message and generate a new sibling
