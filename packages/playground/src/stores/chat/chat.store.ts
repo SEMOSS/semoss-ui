@@ -1,5 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { type Insight, runPixel } from "@semoss/sdk/react";
+import type { ThemeMap } from "@semoss/shared";
 import { MODEL_KEY } from "@/constants";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
@@ -45,6 +46,7 @@ interface ChatStoreInterface {
  * Manage the chat
  */
 export class ChatStore {
+	private _theme: ThemeMap["playground"];
 	private _actions: Insight["actions"];
 	private _error: Insight["error"];
 	private _store: ChatStoreInterface = {
@@ -59,7 +61,8 @@ export class ChatStore {
 		},
 	};
 
-	constructor(actions: Insight["actions"]) {
+	constructor(theme: ThemeMap["playground"], actions: Insight["actions"]) {
+		this._theme = theme;
 		this._actions = actions;
 
 		// make it observable
@@ -134,7 +137,7 @@ export class ChatStore {
 		const roomId = output.roomId;
 
 		// create the room store
-		const room = new RoomStore(roomId, insightId);
+		const room = new RoomStore(this._theme, roomId, insightId);
 
 		// set the model
 		room.setModel(this.models.selected);
@@ -192,7 +195,7 @@ export class ChatStore {
 		}
 
 		// create the room store
-		const room = new RoomStore(roomId);
+		const room = new RoomStore(this._theme, roomId);
 
 		// initialize the room
 		await room.initialize();
@@ -323,11 +326,16 @@ export class ChatStore {
 	 * Get available models from the backend
 	 */
 	private getDefaultModel = async (): Promise<void> => {
+		const defaultModelId =
+			this._theme.defaultRoomSettings.model?.app_id || DEFAUlT_MODEL_ID;
+		const defaultModelName =
+			this._theme.defaultRoomSettings.model?.app_name ||
+			DEFAUlT_MODEL_NAME;
 		// model selection is not enabled, set it to the default
 		if (!ENABLE_MODEL_SELECT) {
 			this.setSelectedModel({
-				app_id: DEFAUlT_MODEL_ID,
-				app_name: DEFAUlT_MODEL_NAME,
+				app_id: defaultModelId,
+				app_name: defaultModelName,
 				app_type: "MODEL",
 			});
 			return;
@@ -351,11 +359,13 @@ export class ChatStore {
 			let isSelected = false;
 
 			// set to default if it is an option
-			for (const m of output) {
-				if (m.app_id === DEFAUlT_MODEL_ID) {
-					this.setSelectedModel(m);
-					isSelected = true;
-					break;
+			if (defaultModelId) {
+				for (const m of output) {
+					if (m.app_id === defaultModelId) {
+						this.setSelectedModel(m);
+						isSelected = true;
+						break;
+					}
 				}
 			}
 

@@ -45,11 +45,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	tools: ToolStore[] = [];
 
 	/**
-	 * Current execution index of the tool, used for auto execution
-	 */
-	toolAutoExecutionIdx: number = 0;
-
-	/**
 	 * Response to an execution
 	 */
 	toolResponseMessage: ResponseMessageStore | null = null;
@@ -57,12 +52,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	/**
 	 * Feedback provided by the user; only applicable to messages provided via the LLM
 	 */
-	rating: {
+	feedback: {
 		/** Sentiment */
-		positive: boolean;
+		rating: boolean;
 
-		/** Associated comment */
-		comment: string;
+		/** Comment, unused for now */
+		feedbackText: string;
 	} | null = null;
 
 	/**
@@ -90,13 +85,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			thinking: observable,
 			text: observable,
 			tools: observable,
-			rating: observable,
+			feedback: observable,
 			sync: action,
 			runMessage: action,
 			recordFeedback: action,
 			rewriteMessage: action,
 			getTool: action,
-			startToolExecution: action,
 			continueToolExecution: action,
 			hasUnfinishedTools: action,
 			saveToolExecution: action,
@@ -131,6 +125,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 						name: t.name,
 						original_name: t.original_name,
 						parameters: t.arguments,
+						description: t.description,
 					}),
 			);
 		} else {
@@ -156,6 +151,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			id: message.modelId,
 			name: message.ornaments?.modelName || "AI",
 		};
+
+		// set feedback if there
+		if (message.type === "RESPONSE_TEXT" && message.feedback) {
+			this.feedback = {
+				rating: message.feedback.rating,
+				feedbackText: message.feedback.feedbackText,
+			};
+		}
 	};
 
 	/**
@@ -251,7 +254,7 @@ paramValues=[${JSON.stringify({
 			responseMessage.sync(output.responseMessage);
 
 			// start running tools if there are any
-			responseMessage.startToolExecution();
+			responseMessage.continueToolExecution();
 
 			return response;
 		} catch (e) {
@@ -270,23 +273,31 @@ paramValues=[${JSON.stringify({
 	/**
 	 * Record Feedback
 	 * @param rating
-	 * @param comment
+	 * @param feedbackText
 	 */
-	recordFeedback = async (rating: boolean, comment = ""): Promise<void> => {
+	recordFeedback = async (
+		rating: boolean | null,
+		feedbackText = "",
+	): Promise<void> => {
 		const room = this.room;
 
 		try {
 			// wait for the pixel to run
 			await room.runRoomPixel<[boolean]>(
-				`SubmitLlmFeedback(messageId = ["${this.id}"], feedbackText=["${comment}"], rating=[${rating}], roomId=["${room.roomId}"]);`,
+				`SubmitLlmFeedback(messageId=${JSON.stringify(this.id)}, feedbackText=${JSON.stringify(feedbackText)}, rating=${JSON.stringify(rating)}, roomId=${JSON.stringify(room.roomId)});`,
 				false,
 			);
 
 			// save the feedback to the message's state
-			this.rating = {
-				positive: rating,
-				comment: comment,
-			};
+			runInAction(() => {
+				this.feedback =
+					rating === null
+						? null
+						: {
+								rating,
+								feedbackText,
+							};
+			});
 		} finally {
 			// noop
 		}
@@ -359,34 +370,6 @@ paramValues=[${JSON.stringify({
 	 */
 
 	/**
-	 * Start executing from the first step
-	 */
-	startToolExecution = async (): Promise<void> => {
-		// reset it
-		this.toolAutoExecutionIdx = 0;
-		this.toolResponseMessage = null;
-
-		await this.runToolExecution();
-	};
-
-	/**
-	 * Continue executing the tools from the current tool
-	 *
-	 * @param current - current tool that was executed
-	 */
-	continueToolExecution = async (
-		current: ResponseMessageStore["tools"][number],
-	): Promise<void> => {
-		const currentIdx = this.tools.findIndex((t) => t.id === current.id);
-
-		if (currentIdx === this.toolAutoExecutionIdx) {
-			// we just finished this tool, move to the next
-			this.toolAutoExecutionIdx += 1;
-			await this.runToolExecution();
-		}
-	};
-
-	/**
 	 * Check if all tools have been completed
 	 * @returns if all tools have been completed
 	 */
@@ -395,44 +378,53 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Run a tool if possible
+	 * Run tools associated with the message
 	 */
-	private runToolExecution = async (): Promise<void> => {
-		const room = this.room;
+	continueToolExecution = () => {
+		// Find the tools that can be run
+		let numRunningTools: number = 0;
+		const toolsToRun: ToolStore[] = [];
+		this.tools.forEach((tool) => {
+			if (tool.json._meta.SMSS_MCP_EXECUTION === MCP_EXECUTION_AUTO) {
+				if (tool.status === "INITIAL") {
+					toolsToRun.push(tool);
+				} else if (tool.status === "LOADING") {
+					numRunningTools++;
+				}
+			}
+		});
 
-		// skip if the index is out of bounds
+		const toolLimit = this.room.theme.toolAutoExecutionLimit;
+		// Check how many tools can be run. If toolLimit is null or undefined, then limit to 5
+		const numToolsToRun = (toolLimit > 0 ? toolLimit : 5) - numRunningTools;
+		if (numToolsToRun > 0) {
+			toolsToRun.slice(0, numToolsToRun).forEach((tool) => {
+				this.runToolExecution(tool);
+			});
+		}
+	};
+
+	/**
+	 * Run a tool
+	 */
+	private runToolExecution = async (tool: ToolStore): Promise<void> => {
 		if (
-			this.toolAutoExecutionIdx < 0 ||
-			this.toolAutoExecutionIdx >= this.tools.length
+			!tool ||
+			tool.status !== "INITIAL" ||
+			tool.json._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO
 		) {
-			// all tools have run
+			// skip
 			return;
 		}
 
-		const tool = this.tools[this.toolAutoExecutionIdx];
-		if (!tool) {
-			return;
-		} else if (tool.status === "SUCCESS" || tool.status === "CANCELLED") {
-			// already has a response, skip
-			this.toolAutoExecutionIdx += 1;
-			await this.runToolExecution();
-			return;
-		} else if (tool.status === "ERROR") {
-			return;
-		}
-
-		// only run if it is set to auto execute
-		if (tool.json._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
-			return;
-		}
-
+		// mark as loading
 		runInAction(() => {
 			tool.status = "LOADING";
 		});
 
 		try {
 			// wait for the pixel to run
-			const response = await room.runRoomPixel<[string]>(
+			const response = await this.room.runRoomPixel<[string]>(
 				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.json.parameters)} ]);`,
 				false,
 				false,
@@ -441,10 +433,20 @@ paramValues=[${JSON.stringify({
 			const { output } = response.pixelReturn[0];
 
 			// save the response
-			await this.saveToolExecution(tool, output);
+			await this.saveToolExecution(
+				tool,
+				output,
+				"success",
+				tool.json.parameters,
+			);
 		} catch (e) {
 			// mark the failure
-			await this.saveToolExecution(tool, e.toString(), "error");
+			await this.saveToolExecution(
+				tool,
+				e.toString(),
+				"error",
+				tool.json.parameters,
+			);
 		}
 	};
 
@@ -457,7 +459,8 @@ paramValues=[${JSON.stringify({
 	saveToolExecution = async (
 		tool: ResponseMessageStore["tools"][number],
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled",
+		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		const room = this.room;
 
@@ -479,7 +482,7 @@ paramValues=[${JSON.stringify({
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
-
+			tool.executedParameters = executedParameters;
 			if (toolStatus === "success") {
 				tool.status = "SUCCESS";
 			} else if (toolStatus === "cancelled") {
@@ -536,7 +539,8 @@ toolId = ["${tool.id}"],
 toolName=["${tool.json.name}"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
-mcpToolStatus=${JSON.stringify(toolStatus)}
+mcpToolStatus=${JSON.stringify(toolStatus)},
+toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 );`,
 				(chunk) => {
 					runInAction(() => {
@@ -565,13 +569,13 @@ mcpToolStatus=${JSON.stringify(toolStatus)}
 				typeof output.responseMessage === "string"
 			) {
 				// Keep executing tools
-				await this.continueToolExecution(tool);
+				this.continueToolExecution();
 			} else {
 				// create the response and link to the message
 				responseMessage.sync(output.responseMessage);
 
 				// start running tools if there are any
-				responseMessage.startToolExecution();
+				responseMessage.continueToolExecution();
 
 				// clear it
 				this.toolResponseMessage = null;
