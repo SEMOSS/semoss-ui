@@ -841,13 +841,21 @@ export class RoomStore {
 				.data;
 		}
 
+		// ensure only images move forward from here
+		const isUploadedImage = (m) => {
+			if (m.mimeType) return m.mimeType.startsWith("image/");
+			return /\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(m.fileName);
+		};
+
+		const uploadedImages = uploaded.filter(isUploadedImage);
+
 		// create the input message
 		const inputMessage = new InputMessageStore(this, {
 			messageId: "ASK_PLACEHOLDER_ID",
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: prompt,
-			mediaInputs: uploaded,
+			mediaInputs: uploadedImages,
 			modelId: this.model?.app_id,
 			paramMap: {
 				max_new_tokens: this.options.tokenLength,
