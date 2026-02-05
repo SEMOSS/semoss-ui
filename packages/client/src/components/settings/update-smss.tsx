@@ -1,6 +1,7 @@
 import { LockIcon, RefreshCwIcon, UnlockIcon } from "lucide-react";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
+import { MonacoEditor } from "@semoss/shared";
 import {
 	Button,
 	Label,
@@ -17,8 +18,6 @@ import {
 } from "@/api";
 import { useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
-
-const Editor = lazy(() => import("@monaco-editor/react"));
 
 interface UpdateSMSSFormProps {
 	/**
@@ -43,6 +42,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 			type === "STORAGE" ||
 			type === "MODEL" ||
 			type === "VECTOR" ||
+			type === "GUARDRAIL" ||
 			type === "FUNCTION"
 			? adminMode
 				? `AdminGetEngineSMSS(engine=['${id}'])`
@@ -170,7 +170,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 					</div>
 				)}
 				{getSMSS.status === "SUCCESS" && (
-					<Editor
+					<MonacoEditor
 						width={"100%"}
 						height={"100%"}
 						options={{
