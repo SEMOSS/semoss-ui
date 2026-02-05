@@ -115,15 +115,21 @@ export class ChatStore {
 	/**
 	 * Create a new room
 	 */
-	createRoom = async (mode: "planning" | "chat"): Promise<RoomStore> => {
+	createRoom = async (
+		mode: "planning" | "chat",
+		workspaceId?: string,
+	): Promise<RoomStore> => {
 		// create the room in a new insight
+		const pixel = workspaceId
+			? `CreatePlaygroundRoom(workspaceId=${JSON.stringify(workspaceId)});`
+			: `CreatePlaygroundRoom();`;
 		const { errors, pixelReturn, insightId } = await runPixel<
 			[
 				{
 					roomId: string;
 				},
 			]
-		>(`CreatePlaygroundRoom();`, "new");
+		>(pixel, "new");
 
 		// throw errors
 		if (errors.length > 0) {
