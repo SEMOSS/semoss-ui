@@ -115,9 +115,8 @@ export const PromptGrid = observer(function PromptGrid({
 	};
 
 	const handleDelete = async (id: string) => {
-		console.log("id", id);
 		const response = await actions.run<[boolean]>(
-			`DeletePrompt(map={"promptId":'${id}'});`,
+			`DeletePrompt(promptId='${id}');`,
 		);
 
 		const { output, operationType } = response.pixelReturn[0];
