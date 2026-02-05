@@ -104,7 +104,7 @@ export const FunctionForm = ({
 		if (FILE !== "") {
 			try {
 				const uploadedFiles = await uploadFile(
-					[FILE.name],
+					[FILE],
 					configStore.store.insightID,
 				);
 
@@ -115,10 +115,12 @@ export const FunctionForm = ({
 				}
 				pixel = pixel.replace(
 					");",
-					`,filePaths=["${FILE.name}"]` + ");",
+					`,filePaths=["${uploadedFiles[0].fileLocation}"]` + ");",
 				);
 			} catch {
 				toast.error("Upload failed or returned invalid response.");
+				setLoading(false);
+				return;
 			}
 		}
 		monolithStore.runQuery(pixel).then(async (response) => {
