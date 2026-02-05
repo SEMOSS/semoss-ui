@@ -43,7 +43,7 @@ interface functionCatalog {
 	disable: boolean;
 }
 
-export const FunctionImport: React.FC<{ name: string }> = ({ name }) => {
+export const FunctionImport = ({ name }: { name: string }) => {
 	const navigate = useNavigate();
 	const { monolithStore, configStore } = useRootStore();
 	const [loading, setLoading] = useState(false);

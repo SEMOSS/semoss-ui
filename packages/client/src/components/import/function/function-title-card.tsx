@@ -46,10 +46,10 @@ interface FunctionTileCardProps {
 	onModelSelect?: (selectedFunction: Function) => void;
 }
 
-export const FunctionTitleCard: React.FC<FunctionTileCardProps> = ({
+export const FunctionTitleCard = ({
 	selectedFunction,
 	onModelSelect,
-}) => {
+}: FunctionTileCardProps) => {
 	const textRef = useRef<HTMLParagraphElement>(null);
 	const [isTruncated, setIsTruncated] = useState(false);
 	const label = selectedFunction.display || selectedFunction.name;
