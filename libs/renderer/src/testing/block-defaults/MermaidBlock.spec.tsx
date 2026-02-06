@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { MermaidBlock } from "../../components/block-defaults/mermaid-block/MermaidBlock.tsx";
-import { render, screen } from "../utils";
+import { render, screen, waitFor } from "../utils";
 
 const blockIds = {
 	mermaid: "mermaid",
@@ -39,7 +39,7 @@ const blocks = {
 	},
 	invalidMermaid: {
 		data: {
-			text: "graph TD;\nA-->B;\nA-->C;\nB-->D;\nC-->D;\nF--",
+			text: "graph TD;\nA-->B;\nA-->C;\nB-->D;\nC-->D;\nF--\n",
 		},
 		id: "invalidMermaid",
 		widget: "mermaid",
@@ -79,39 +79,58 @@ describe("Mermaid block", () => {
 	});
 
 	test("displays error message for missing graph header", async () => {
-		// const { container } = render(
-		// 	<MermaidBlock id={blockIds.invalidHeader} />,
-		// 	{
-		// 		blocks: blocks,
-		// 	},
-		// );
-		// console.log("testing here")
-		// const element = container.querySelector("[data-block='invalidHeader']");
-		// expect(element).toBeInTheDocument();
-		// const mermaidElement = screen.queryByText(/graph TD;/);
-		// expect(mermaidElement).not.toBeInTheDocument();
-		// expect(element).toHaveTextContent("A-->B; A-->C; B-->D; C-->D;");
-		// const errorElement = await screen.findByRole("alert");
-		// expect(errorElement).toBeInTheDocument();
-		// expect(errorElement).toHaveTextContent(/invalid mermaid syntax/i);
+		const { container } = render(
+			<MermaidBlock id={blockIds.invalidHeader} />,
+			{
+				blocks: blocks,
+			},
+		);
+
+		const element = container.querySelector("[data-block='invalidHeader']");
+		expect(element).toBeInTheDocument();
+
+		const mermaidElement = screen.queryByText(/graph TD;/);
+		expect(mermaidElement).not.toBeInTheDocument();
+		expect(element).toHaveTextContent("A-->B; A-->C; B-->D; C-->D;");
+
+		// Wait for async validation to complete
+		await waitFor(
+			() => {
+				const errorElement = screen.getByRole("alert");
+				expect(errorElement).toBeInTheDocument();
+				expect(errorElement).toHaveTextContent(
+					/invalid mermaid syntax/i,
+				);
+			},
+			{ timeout: 3000 },
+		);
 	});
 
 	test("displays error message for invalid mermaid syntax", async () => {
-		// const { container } = render(
-		// 	<MermaidBlock id={blockIds.invalidMermaid} />,
-		// 	{
-		// 		blocks: blocks,
-		// 	},
-		// );
-		// const element = container.querySelector(
-		// 	"[data-block='invalidMermaid']",
-		// );
-		// expect(element).toBeInTheDocument();
-		// expect(element).toHaveTextContent(
-		// 	"graph TD; A-->B; A-->C; B-->D; C-->D; F--",
-		// );
-		// const errorElement = await screen.findByRole("alert");
-		// expect(errorElement).toBeInTheDocument();
-		// expect(errorElement).toHaveTextContent(/invalid mermaid syntax/i);
+		const { container } = render(
+			<MermaidBlock id={blockIds.invalidMermaid} />,
+			{
+				blocks: blocks,
+			},
+		);
+
+		const element = container.querySelector(
+			"[data-block='invalidMermaid']",
+		);
+		expect(element).toBeInTheDocument();
+		expect(element).toHaveTextContent(
+			"graph TD; A-->B; A-->C; B-->D; C-->D; F--",
+		);
+
+		await waitFor(
+			() => {
+				const errorElement = screen.getByRole("alert");
+				expect(errorElement).toBeInTheDocument();
+				expect(errorElement).toHaveTextContent(
+					/invalid mermaid syntax/i,
+				);
+			},
+			{ timeout: 3000 },
+		);
 	});
 });

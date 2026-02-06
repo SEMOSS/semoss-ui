@@ -293,6 +293,12 @@ export const ENGINE_ROUTES: {
 				restrict: false,
 			},
 			{
+				name: "Usage",
+				path: "usage",
+				component: EngineUsagePage,
+				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+			},
+			{
 				name: "Access Control",
 				path: "access-control",
 				component: EngineSettingsPage,
@@ -303,6 +309,12 @@ export const ENGINE_ROUTES: {
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
+			},
+			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["OWNER", "EDIT"],
 			},
 		],
 	},
