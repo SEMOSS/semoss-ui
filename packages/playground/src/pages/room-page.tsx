@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
+	Button,
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
@@ -10,6 +11,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { RoomContent, RoomSidebar } from "@/components";
+import { RoomAuditLogs } from "@/components/room/RoomAuditLogs"; // NEWLY ADDED IMPORT
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine } from "@/types";
@@ -29,6 +31,7 @@ export const RoomPage = observer(() => {
 	 * State
 	 */
 	const [room, setRoom] = useState<RoomStore | null>(null);
+	const [viewMode, setViewMode] = useState<"room" | "audit_logs">("room"); // NEWLY ADDED STATE
 	const selectedModelRef = useRef<Engine>(chat.models.selected);
 
 	/**
@@ -123,8 +126,31 @@ export const RoomPage = observer(() => {
 					direction="horizontal"
 					className="w-full flex-1 overflow-hidden"
 				>
-					<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
-						<RoomContent room={room} />
+					<ResizablePanel className="flex h-full w-full flex-col overflow-hidden">
+						{" "}
+						{/* Removed p-2 */}
+						<div className="flex flex-shrink-0 justify-start space-x-2 p-2">
+							{" "}
+							{/* Re-added p-2, removed mb-2 */}
+							<Button onClick={() => setViewMode("room")}>
+								Room Content
+							</Button>
+							<Button
+								onClick={() => setViewMode("audit_logs")}
+								disabled={!roomId}
+							>
+								Audit Logs
+							</Button>
+						</div>
+						<div className="h-full flex-1 overflow-y-auto p-2">
+							{" "}
+							{/* Added p-2 */}
+							{viewMode === "room" ? (
+								<RoomContent room={room} />
+							) : (
+								<RoomAuditLogs room={room} />
+							)}
+						</div>
 					</ResizablePanel>
 					{room.sidebar.isOpen && (
 						<>
