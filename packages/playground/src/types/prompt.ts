@@ -8,5 +8,5 @@ export type Prompt = {
 	dateCreated?: string | Date | undefined;
 	global?: boolean;
 	tags?: string[];
-	metaKeys?: Record<string, string[]>;
+	metaMap?: Record<string, string[]>;
 };

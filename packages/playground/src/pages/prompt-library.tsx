@@ -178,40 +178,47 @@ export const PromptLibrary = observer(() => {
 
 	console.log("PromptLibrary myPrompts:", myPrompts);
 
-const refreshPrompts = useCallback(async () => {
-	setLoadStatus("LOADING");
-	try {
-		const resultUnknown = (await actions.run(`ListPrompt()`)) as unknown;
+	const refreshPrompts = useCallback(async () => {
+		setLoadStatus("LOADING");
+		try {
+			const resultUnknown = (await actions.run(
+				`ListPrompt()`,
+			)) as unknown;
 
-		const pixelReturn = isRecord(resultUnknown)
-			? (resultUnknown as { pixelReturn?: unknown }).pixelReturn
-			: undefined;
+			const pixelReturn = isRecord(resultUnknown)
+				? (resultUnknown as { pixelReturn?: unknown }).pixelReturn
+				: undefined;
 
-		const first = Array.isArray(pixelReturn) ? pixelReturn[0] : undefined;
-		const output = isRecord(first) ? (first as { output?: unknown }).output : undefined;
-		const rows = Array.isArray(output) ? output : [];
+			const first = Array.isArray(pixelReturn)
+				? pixelReturn[0]
+				: undefined;
+			const output = isRecord(first)
+				? (first as { output?: unknown }).output
+				: undefined;
+			const rows = Array.isArray(output) ? output : [];
 
-		const normalized: Prompt[] = rows.map((p) => normalizePrompt(p));
+			const normalized: Prompt[] = rows.map((p) => normalizePrompt(p));
 
-		const visible = normalized.filter((p) => canSeePrompt(p, userId));
+			const visible = normalized.filter((p) => canSeePrompt(p, userId));
 
-		const tagSet = new Set<string>();
-		for (const p of visible) for (const t of p.tags ?? []) tagSet.add(t);
+			const tagSet = new Set<string>();
+			for (const p of visible)
+				for (const t of p.tags ?? []) tagSet.add(t);
 
-		const tagsSorted = Array.from(tagSet)
-			.filter(Boolean)
-			.sort((a, b) => a.localeCompare(b));
+			const tagsSorted = Array.from(tagSet)
+				.filter(Boolean)
+				.sort((a, b) => a.localeCompare(b));
 
-		setAllPrompts(normalized);
-		setAvailableTags(tagsSorted);
-		setCategoryArray(["My Prompts", ...tagsSorted]);
-		setLoadStatus("DONE");
-	} catch (e) {
-		console.error("ListPrompt load failed:", e);
-		setLoadStatus("ERROR");
-	}
-}, [actions, userId]);
-console.log('all prompts', allPrompts);
+			setAllPrompts(normalized);
+			setAvailableTags(tagsSorted);
+			setCategoryArray(["My Prompts", ...tagsSorted]);
+			setLoadStatus("DONE");
+		} catch (e) {
+			console.error("ListPrompt load failed:", e);
+			setLoadStatus("ERROR");
+		}
+	}, [actions, userId]);
+	console.log("all prompts", allPrompts);
 	// useEffect(() => {
 	// 	const getUserMetaKeys = async () => {
 	// 		try {
@@ -249,47 +256,61 @@ console.log('all prompts', allPrompts);
 		void refreshPrompts();
 	}, [refreshPrompts]);
 
-const categoryPromptsSearched = useMemo(() => {
-	if (selectedCategory.label === "My Prompts") return [];
+	const categoryPromptsSearched = useMemo(() => {
+		if (selectedCategory.label === "My Prompts") return [];
 
-	const selectedTag = selectedCategory.label;
-	const lower = search.trim().toLowerCase();
+		const selectedTag = selectedCategory.label;
+		const lower = search.trim().toLowerCase();
 
-	return visiblePrompts
-		.filter((p) => Array.isArray(p.tags) && p.tags.includes(selectedTag))
-		.filter((p) => {
-			if (!lower) return true;
-			return (
-				(p.title ?? "").toLowerCase().includes(lower) ||
-				String(p.intent ?? p.context ?? "").toLowerCase().includes(lower)
-			);
-		})
-		.filter((p) => {
-			if (selectedTags.length === 0) return true;
-			if (!Array.isArray(p.tags) || p.tags.length === 0) return false;
-			return selectedTags.some((t) => p.tags.includes(t));
-		});
-}, [visiblePrompts, search, selectedCategory.label, selectedTags]);
+		return visiblePrompts
+			.filter(
+				(p) => Array.isArray(p.tags) && p.tags.includes(selectedTag),
+			)
+			.filter((p) => {
+				if (!lower) return true;
+				return (
+					(p.title ?? "").toLowerCase().includes(lower) ||
+					String(p.intent ?? p.context ?? "")
+						.toLowerCase()
+						.includes(lower)
+				);
+			})
+			.filter((p) => {
+				if (selectedTags.length === 0) return true;
+				if (!Array.isArray(p.tags) || p.tags.length === 0) return false;
+				return selectedTags.some((t) => p.tags.includes(t));
+			});
+	}, [visiblePrompts, search, selectedCategory.label, selectedTags]);
 
 	const handleAddNew = async (newPrompt: Prompt) => {
 		try {
-			const title = String(newPrompt.title ?? "").replace(/"/g, "'");
-			const text = String(newPrompt.context ?? "").replace(/"/g, "'");
-			const intent = String(newPrompt.intent ?? "").replace(/"/g, "'");
-			const tags = Array.isArray(newPrompt.tags)
-				? newPrompt.tags.map((t) => t.replace(/"/g, "'"))
-				: [];
+			const payload = {
+				// prompt fields
+				id: String(newPrompt.id ?? "new"),
+				title: String(newPrompt.title ?? "").trim(),
+				context: String(newPrompt.context ?? "").trim(),
+				intent: String(newPrompt.intent ?? "").trim(),
+				version: Number(newPrompt.version ?? 1),
+
+				created_by: String(newPrompt.createdBy ?? userId ?? ""),
+				date_created:
+					newPrompt.dateCreated instanceof Date
+						? newPrompt.dateCreated.toISOString()
+						: String(newPrompt.dateCreated ?? new Date().toISOString()),
+
+				global: Boolean(newPrompt.global ?? false),
+				tags: Array.isArray(newPrompt.tags) ? newPrompt.tags : [],
+				metaMap: newPrompt.metaMap ?? {},
+			};
 
 			const responseUnknown = (await actions.run(
-				`AddPrompt(map={"title":"${title}","context":"${text}","intent":"${intent}","tags":${JSON.stringify(tags)}});`,
+				`AddPrompt(map=${JSON.stringify(payload)});`,
 			)) as unknown;
 
 			const pixelReturn = isRecord(responseUnknown)
 				? (responseUnknown["pixelReturn"] as unknown)
 				: undefined;
-			const first = Array.isArray(pixelReturn)
-				? pixelReturn[0]
-				: undefined;
+			const first = Array.isArray(pixelReturn) ? pixelReturn[0] : undefined;
 
 			const operationType =
 				isRecord(first) && typeof first["operationType"] === "string"
@@ -302,7 +323,7 @@ const categoryPromptsSearched = useMemo(() => {
 					: "";
 
 			if (operationType.includes("ERROR")) {
-				throw new Error(output || "AddMyPrompts failed");
+				throw new Error(output || "AddPrompt failed");
 			}
 
 			await refreshPrompts();
@@ -572,7 +593,7 @@ const categoryPromptsSearched = useMemo(() => {
 									dateCreated: new Date(),
 									global: false,
 									tags: [],
-									metaKeys: {},
+									metaMap: {},
 								});
 								setIsEditModalOpen(true);
 							}}

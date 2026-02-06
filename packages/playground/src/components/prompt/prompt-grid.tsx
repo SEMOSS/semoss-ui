@@ -46,10 +46,6 @@ function useMediaQuery(query: string) {
 	return matches;
 }
 
-function getPromptText(p: Prompt): string {
-	return String(p.context ?? "").trim();
-}
-
 export const PromptGrid = observer(function PromptGrid({
 	selectedCategory,
 	globalPrompts,
@@ -135,10 +131,10 @@ export const PromptGrid = observer(function PromptGrid({
 	};
 
 	const handleSave = async (updatedPrompt: Prompt) => {
-		const title = (updatedPrompt?.title ?? "").trim();
-		const text = getPromptText(updatedPrompt);
 
-		if (!title || !text) {
+		console.log('updated prompt', updatedPrompt);
+
+		if (!updatedPrompt.title || !updatedPrompt.context) {
 			setSnackbar({
 				open: true,
 				message: "Title and prompt text required",
@@ -147,14 +143,24 @@ export const PromptGrid = observer(function PromptGrid({
 			return;
 		}
 
-		const map = {
-			id: String(updatedPrompt.id),
-			title,
-			context: text,
+		const payload = {
+			id: String(updatedPrompt.id ?? "new"),
+			title: String(updatedPrompt.title ?? "").trim(),
+			context: String(updatedPrompt.context ?? "").trim(),
+			intent: String(updatedPrompt.intent ?? "").trim(),
+			version: Number(updatedPrompt.version ?? 1),
+			created_by: String(updatedPrompt.createdBy ?? ""), // this should theoretically have a userId to fall back on, but the edit could not happen if it wasn't the user's card anyway
+			date_created: 
+				updatedPrompt.dateCreated instanceof Date
+					? updatedPrompt.dateCreated.toISOString()
+					: String(updatedPrompt.dateCreated ?? new Date().toISOString()),
+			global: Boolean(updatedPrompt.global ?? false),
+			tags: Array.isArray(updatedPrompt.tags) ? updatedPrompt.tags : [],
+			metaMap: updatedPrompt.metaMap ?? {}
 		};
 
 		const response = await actions.run<[boolean]>(
-			`UpdatePrompt(map=${JSON.stringify(map)});`,
+			`UpdatePrompt(map=${JSON.stringify(payload)});`,
 		);
 
 		const { output, operationType } = response.pixelReturn[0];
