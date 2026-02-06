@@ -79,6 +79,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		setError,
 		clearErrors,
 		setFocus,
+		trigger,
 		formState: { isValid },
 	} = useForm({
 		mode: "onChange",
@@ -311,20 +312,6 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										data-testId={formatToDataTestId(
 											`importForm-${f.label}-textField`,
 										)}
-										onFocus={() => {
-											_lastField.current = {
-												..._lastField.current,
-												lastFocussedField: field.name,
-												lastFocussedValue: field.value,
-												lastValidatedValue: field.value,
-											};
-										}}
-										onBlur={() => {
-											if (f.rules?.custom_rules) {
-												_lastField.current.runValidate = true;
-											trigger(field.name);
-										}
-									}}
 									/>
 									<FieldDescription className={errors?.[f.key] ? "text-destructive" : ""}>
 										{getHelperText(errors?.[f.key], f)}

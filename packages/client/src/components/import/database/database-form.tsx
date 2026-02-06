@@ -520,7 +520,6 @@ export const DatabaseForm = ({
 			setLoading(false);
 		}
 	};
-	//biome-ignore lint/correctness/useExhaustiveDependencies: this functional dependencies cannot be added
 	useEffect(() => {
 		resolvedFields.forEach((f) => {
 			let pixel = f.pixel;
