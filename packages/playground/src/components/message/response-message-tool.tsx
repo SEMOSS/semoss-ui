@@ -7,7 +7,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { Button, Spinner } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
-import type { ResponseMessageStore } from "@/stores";
+import type { ResponseMessageStore, ToolStore } from "@/stores";
 
 // Styled component replaced with Tailwind classes inline
 interface ResponseMessageToolProps {
@@ -15,7 +15,7 @@ interface ResponseMessageToolProps {
 	message: ResponseMessageStore;
 
 	/** Tool to render */
-	tool: ResponseMessageStore["tools"][number];
+	tool: ToolStore;
 }
 
 export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
@@ -139,6 +139,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 										tool,
 										"",
 										"cancelled",
+										{},
 									);
 
 									// close it

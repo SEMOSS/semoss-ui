@@ -69,6 +69,7 @@ export class RootStore {
 				footerItems: [],
 			},
 			dialog: undefined,
+			toolAutoExecutionLimit: null,
 			defaultRoomSettings: {
 				model: undefined,
 				temperature: TEMPERATURE,
@@ -185,6 +186,9 @@ export class RootStore {
 				...this._store.theme.defaultRoomSettings,
 				...(theme?.defaultRoomSettings || {}),
 			},
+			toolAutoExecutionLimit:
+				theme?.toolAutoExecutionLimit ||
+				this._store.theme.toolAutoExecutionLimit,
 			defaultTools: [
 				...new Map(
 					[

@@ -85,6 +85,20 @@ export interface ThemeMap {
 		};
 
 		/**
+		 * The default settings for new rooms
+		 */
+		defaultRoomSettings?: {
+			model?: Engine;
+			temperature?: number;
+			tokenLength?: number;
+		};
+
+		/**
+		 * The number of tools that should be auto-executed at once
+		 */
+		toolAutoExecutionLimit?: number;
+
+		/**
 		 * Default tools to show in the room
 		 */
 		defaultTools: {
