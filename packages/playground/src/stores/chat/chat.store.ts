@@ -120,16 +120,16 @@ export class ChatStore {
 		workspaceId?: string,
 	): Promise<RoomStore> => {
 		// create the room in a new insight
-		const pixel = workspaceId
-			? `CreatePlaygroundRoom(workspaceId=${JSON.stringify(workspaceId)});`
-			: `CreatePlaygroundRoom();`;
 		const { errors, pixelReturn, insightId } = await runPixel<
 			[
 				{
 					roomId: string;
 				},
 			]
-		>(pixel, "new");
+		>(
+			`CreatePlaygroundRoom(${workspaceId ? `workspaceId=${JSON.stringify(workspaceId)}` : ""})`,
+			"new",
+		);
 
 		// throw errors
 		if (errors.length > 0) {
