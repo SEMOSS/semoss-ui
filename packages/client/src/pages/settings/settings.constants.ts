@@ -87,6 +87,22 @@ export const SETTINGS_ROUTES: {
 		history: ["function", "function/<id>"],
 	},
 	{
+		title: "Guardrail Settings",
+		path: "guardrail",
+		description: "View and edit settings for guardrails",
+		icon: mdiDatabase,
+		history: ["guardrail"],
+		admin: true,
+	},
+	{
+		title: "Guardrail Settings",
+		path: "guardrail/:id",
+		description:
+			"View member permissions, pending requests, and all other viewable settings pertaining to the guardrail",
+		icon: mdiDatabase,
+		history: ["guardrail", "guardrail/<id>"],
+	},
+	{
 		title: "Model Settings",
 		path: "model",
 		description: "View and edit settings for models",

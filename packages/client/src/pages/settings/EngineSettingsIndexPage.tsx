@@ -5,7 +5,7 @@ import {
 	SpaceDashboardOutlined,
 } from "@mui/icons-material";
 import { useEffect, useReducer, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import {
 	Backdrop,
 	CircularProgress,
@@ -96,12 +96,14 @@ const reducer = (state, action) => {
 interface EngineSettingsIndexPageProps {
 	/** Type of the page to render */
 	type: ENGINE_TYPES;
+
+	skipGuardrailCheck?: boolean;
 }
 
 export const EngineSettingsIndexPage = (
 	props: EngineSettingsIndexPageProps,
 ) => {
-	const { type } = props;
+	const { type, skipGuardrailCheck = false } = props;
 
 	const { adminMode } = useSettings();
 	const { configStore, monolithStore } = useRootStore();
@@ -398,6 +400,10 @@ export const EngineSettingsIndexPage = (
 			scrollEle.removeEventListener("scroll", scrollAll);
 		};
 	}, [scrollEle]);
+
+	if (!adminMode && type === "GUARDRAIL" && !skipGuardrailCheck) {
+		return <Navigate to="/settings" />;
+	}
 
 	return (
 		<>

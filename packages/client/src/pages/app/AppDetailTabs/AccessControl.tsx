@@ -54,6 +54,7 @@ export const AccessControl = ({
 							direction="row"
 							name={appInfo?.project_name || "app"}
 							id={appId}
+							skipGuardrailCheck={true}
 							onDelete={() => {
 								navigate("/settings/app");
 							}}
