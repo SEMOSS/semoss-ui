@@ -1,6 +1,6 @@
 export * from "../engine/edit-engine-details";
 export * from "./ColumnDataTypeIcon";
-export * from "./DatabaseStatistics";
+export * from "./database-statistics";
 export * from "./database-structure-browser";
 export * from "./QueryActions";
 export * from "./query-results-panel";

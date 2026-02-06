@@ -3,7 +3,7 @@ import { DatabasePageContent } from "@/components/import/database/database-page-
 import { FunctionImport } from "@/components/import/function/function-import";
 import { GuardrailImport } from "@/components/import/guardrail/GuardrailImport";
 import { StorageImport } from "@/components/import/storage/StorageImport";
-import { VectorImport } from "@/components/import/vector/VectorImport";
+import { VectorImport } from "@/components/import/vector/vector-import";
 import type { ENGINE_TYPES } from "@/types";
 import { ModelImport } from "../../components/import/model/model-import";
 import { ImportLayout } from "./ImportLayout";

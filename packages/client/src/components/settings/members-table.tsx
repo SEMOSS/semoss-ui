@@ -1,196 +1,51 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: Complex interdependencies in this file make exhaustive deps impractical
-import { Add, Delete, Edit } from "@mui/icons-material";
-import SearchIcon from "@mui/icons-material/Search";
 import type { AxiosResponse } from "axios";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	ArrowDown,
+	ArrowUp,
+	Pencil,
+	Plus,
+	Search as SearchIcon,
+	Trash2,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Avatar,
-	AvatarGroup,
-	Box,
+	AvatarFallback,
 	Button,
 	Checkbox,
-	IconButton,
+	H4,
+	Input,
+	P,
 	RadioGroup,
-	Search,
+	RadioGroupItem,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Skeleton,
-	Stack,
-	styled,
 	Table,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TableBody,
+	TableCell,
+	TableFooter,
+	TableHead,
+	TableHeader,
+	TableRow,
+	toast,
+} from "@semoss/ui/next";
 import { editEngineUserPermissions, editProjectUserPermissions } from "@/api";
 import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
-import { MembersAddOverlay } from "./MembersAddOverlay";
-import { MembersDeleteOverlay } from "./MembersDeleteOverlay";
+import { MembersAddOverlay } from "./members-add-overlay";
+import { MembersDeleteOverlay } from "./members-delete-overlay";
 import type {
 	SETTINGS_PROVISIONED_USER,
 	SETTINGS_ROLE,
 } from "./settings.types";
 import { UserPopover } from "./UserPopover";
-
-const AvatarWrapper = styled("div")({
-	display: "inline-block",
-	width: "50px",
-});
-
-const StyledMemberContent = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: theme.spacing(3.125),
-	flexShrink: "0",
-}));
-
-const StyledMemberInnerContent = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: theme.spacing(2.5),
-	alignSelf: "stretch",
-}));
-
-const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
-	borderRadius: "12px",
-	border: `1px solid ${theme.palette.secondary.border}`,
-}));
-
-const StyledMemberLoading = styled("div")({
-	position: "relative",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-});
-
-const StyledMemberTable = styled(Table)(({ theme }) => ({
-	backgroundColor: theme.palette.background.paper,
-}));
-
-const StyledTableTitleContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	alignSelf: "stretch",
-	boxShadow: "0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset",
-	backgroundColor: theme.palette.background.paper,
-}));
-
-const StyledTableTitleDiv = styled("div")(({ theme }) => ({
-	display: "flex",
-	padding: theme.spacing(1.5, 3, 1.5, 2),
-	alignItems: "center",
-	gap: theme.spacing(1.25),
-}));
-
-const StyledTableTitleMemberContainer = styled("div")({
-	display: "flex",
-	alignItems: "flex-start",
-	flex: "1 0 0",
-});
-
-const StyledAvatarGroupContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "130px",
-	height: "56px",
-	padding: theme.spacing(1.25, 2),
-	flexDirection: "column",
-	justifyContent: "center",
-	alignItems: "center",
-	gap: theme.spacing(1.25),
-}));
-
-const StyledTableTitleMemberCountContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	height: "56px",
-	padding: theme.spacing(0.75, 2, 0.75, 1),
-	flexDirection: "column",
-	justifyContent: "center",
-	alignItems: "center",
-	gap: theme.spacing(1.25),
-	backround: "red",
-}));
-
-const StyledTableTitleMemberCount = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-});
-
-const StyledSearchButtonContainer = styled("div")({
-	display: "flex",
-	alignItems: "center",
-	// gap: '10px',
-});
-
-const StyledDeleteSelectedContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	padding: theme.spacing(1.25, 1, 1.25, 2),
-	flexDirection: "column",
-	justifyContent: "center",
-	alignItems: "center",
-	gap: theme.spacing(1.25),
-}));
-
-const StyledAddMemberContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	padding: theme.spacing(1.25, 3, 1.25, 1),
-	flexDirection: "column",
-	justifyContent: "center",
-	alignItems: "center",
-	gap: theme.spacing(1.25),
-}));
-
-const StyledNoMembersDiv = styled("div")(({ theme }) => ({
-	width: "100%",
-	height: "503px",
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-	justifyContent: "center",
-	alignItems: "center",
-}));
-
-const StyledTableCell = styled(Table.Cell)(({ theme }) => ({
-	paddingLeft: theme.spacing(2),
-}));
-
-const StyledCheckbox = styled(Checkbox)({
-	paddingBottom: 0,
-});
-
-const StyledCenteredBox = styled(Box)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(1),
-}));
-
-const StyledNameStack = styled(Stack)({
-	alignItems: "center",
-	flex: 1,
-});
-
-const StyledSelectedTableRow = styled(Table.Row)(({ theme }) => ({
-	backgroundColor: theme.palette.primary.selected, // light blue, adjust as needed
-}));
-
-const StyledRadioGroup = styled(RadioGroup)({
-	flexWrap: "nowrap",
-});
-
-const StyledCell = styled(Table.Cell)({
-	whiteSpace: "nowrap",
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-});
-
-const StyledFooter = styled(Table.Footer)({
-	display: "flex",
-	justifyContent: "flex-end",
-});
 
 const formatValue = (input: string) => {
 	if (input !== undefined) {
@@ -261,7 +116,6 @@ export const MembersTable = (props: MembersTableProps) => {
 	const { id, type, onChange = () => null } = props;
 
 	const { configStore } = useRootStore();
-	const notification = useNotification();
 	const { adminMode } = useSettings();
 
 	/** Member Table State */
@@ -301,8 +155,6 @@ export const MembersTable = (props: MembersTableProps) => {
 	/** Add Member State */
 	const [addMembersModal, setAddMembersModal] = useState<boolean>(false);
 	const [addModalUser, setAddModalUser] = useState<User | null>(null);
-
-	const memberSearchRef = useRef(undefined);
 
 	// get the api
 	let getMembersApi: Parameters<typeof useAPI>[0] = null;
@@ -480,10 +332,7 @@ export const MembersTable = (props: MembersTableProps) => {
 			});
 
 			if (requests.length === 0) {
-				notification.add({
-					color: "warning",
-					message: `No permissions to change`,
-				});
+				toast.warning(`No permissions to change`);
 
 				return;
 			}
@@ -524,10 +373,7 @@ export const MembersTable = (props: MembersTableProps) => {
 
 			// ignore if there is no response
 			if (response.data.success) {
-				notification.add({
-					color: "success",
-					message: "Successfully updated user permissions",
-				});
+				toast.success("Successfully updated user permissions");
 
 				// refresh the members
 				getMembers.refresh();
@@ -536,16 +382,10 @@ export const MembersTable = (props: MembersTableProps) => {
 
 				onChange();
 			} else {
-				notification.add({
-					color: "error",
-					message: `Error changing user permissions`,
-				});
+				toast.error(`Error changing user permissions`);
 			}
 		} catch (e) {
-			notification.add({
-				color: "error",
-				message: String(e),
-			});
+			toast.error(String(e));
 		}
 	};
 
@@ -559,10 +399,7 @@ export const MembersTable = (props: MembersTableProps) => {
 	) => {
 		// notify if no members
 		if (selectedMembers.length === 0) {
-			notification.add({
-				color: "warning",
-				message: `No permissions to change`,
-			});
+			toast.warning(`No permissions to change`);
 
 			return;
 		}
@@ -575,10 +412,9 @@ export const MembersTable = (props: MembersTableProps) => {
 			allAuthors.length > 0 &&
 			authorsToDelete.length === allAuthors.length
 		) {
-			notification.add({
-				color: "error",
-				message: `You cannot delete all the admins(Authors) from the table.`,
-			});
+			toast.error(
+				`You cannot delete all the admins(Authors) from the table.`,
+			);
 			return;
 		}
 
@@ -662,7 +498,7 @@ export const MembersTable = (props: MembersTableProps) => {
 		setNameOrder((prev) => (prev === "asc" ? "desc" : "asc"));
 	};
 	/**
-	 * Handle Table Sorting Logic for Pames
+	 * Handle Table Sorting Logic for Permissions
 	 *
 	 */
 	const handlePermissionSort = () => {
@@ -684,8 +520,12 @@ export const MembersTable = (props: MembersTableProps) => {
 		const avatarList = [];
 		while (i < 5 && i < renderedMembers.length) {
 			avatarList.push(
-				<Avatar key={i}>
-					{(renderedMembers[i].name || " ").charAt(0).toUpperCase()}
+				<Avatar key={i} className="size-8">
+					<AvatarFallback>
+						{(renderedMembers[i].name || " ")
+							.charAt(0)
+							.toUpperCase()}
+					</AvatarFallback>
 				</Avatar>,
 			);
 
@@ -694,6 +534,7 @@ export const MembersTable = (props: MembersTableProps) => {
 
 		return avatarList;
 	}, [renderedMembers.length]);
+
 	const isLastAuthor = (user) => {
 		const authors = allAuthors.filter(
 			(m) =>
@@ -708,60 +549,58 @@ export const MembersTable = (props: MembersTableProps) => {
 	};
 
 	return (
-		<StyledMemberContent>
-			<StyledMemberInnerContent>
-				<StyledTableContainer>
-					<StyledTableTitleContainer>
-						<StyledTableTitleDiv>
-							<Typography
-								variant={"h6"}
-								data-testid="permissions-title"
-							>
-								Permissions
-							</Typography>
-						</StyledTableTitleDiv>
-						<StyledTableTitleMemberContainer>
+		<div className="flex w-full shrink-0 flex-col items-start gap-[25px]">
+			<div className="flex flex-col items-start gap-5 self-stretch">
+				<div className="w-full rounded-xl border border-border">
+					<div className="flex items-center self-stretch rounded-t-xl bg-background shadow-[0px_-1px_0px_0px_rgba(0,0,0,0.12)_inset]">
+						<div className="flex items-center gap-2.5 p-3 px-6 py-3">
+							<H4 data-testid="permissions-title">Permissions</H4>
+						</div>
+						<div className="flex flex-1 items-start">
 							{Avatars.length > 0 ? (
-								<StyledAvatarGroupContainer>
-									<AvatarGroup
-										spacing={"small"}
-										variant={"circular"}
-										max={4}
-										total={totalMembers}
+								<div className="flex h-14 w-[130px] flex-col items-center justify-center gap-2.5 px-4 py-2.5">
+									<div
+										className="-space-x-2 flex"
 										data-testid="membersTable-avatarGroup"
 									>
-										{Avatars.map((el) => {
-											return el;
+										{Avatars.slice(0, 4).map((el, idx) => {
+											// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+											return <div key={idx}>{el}</div>;
 										})}
-									</AvatarGroup>
-								</StyledAvatarGroupContainer>
+										{totalMembers > 4 && (
+											<Avatar className="size-8">
+												<AvatarFallback>
+													+{totalMembers - 4}
+												</AvatarFallback>
+											</Avatar>
+										)}
+									</div>
+								</div>
 							) : null}
-							<StyledTableTitleMemberCountContainer>
-								<StyledTableTitleMemberCount>
-									<Typography
-										variant={"caption"}
-										data-testid="membersTable-memberCount"
-									>
+							<div className="flex h-14 flex-col items-center justify-center gap-2.5 px-4 py-1.5">
+								<div className="flex flex-col items-start">
+									<P data-testid="membersTable-memberCount">
 										{totalMembers} member
-									</Typography>
-								</StyledTableTitleMemberCount>
-							</StyledTableTitleMemberCountContainer>
-						</StyledTableTitleMemberContainer>
-						<IconButton
+									</P>
+								</div>
+							</div>
+						</div>
+						<Button
+							variant="ghost"
+							size="icon"
 							onClick={() => {
 								//setIsSearch(!isSearch);
 							}}
 							data-testid="membersTable-filterIcon"
 						>
 							<img src={FilteredIcon} alt="Filter" />
-						</IconButton>
-						<StyledSearchButtonContainer>
+						</Button>
+						<div className="flex items-center">
 							{isSearch ? (
-								<Search
+								<Input
 									autoFocus={true}
-									inputRef={memberSearchRef}
 									placeholder="Search Members"
-									size="small"
+									className="h-8 w-[200px]"
 									value={search}
 									data-testid={`membersTables-searchMembers-searchBar}`}
 									onChange={(e) => {
@@ -769,27 +608,28 @@ export const MembersTable = (props: MembersTableProps) => {
 									}}
 								/>
 							) : (
-								<IconButton
+								<Button
+									variant="ghost"
+									size="icon"
 									onClick={() => {
 										setIsSearch(!isSearch);
 									}}
 									data-testid="membersTable-searchIcon"
 								>
-									<SearchIcon />
-								</IconButton>
+									<SearchIcon className="size-4" />
+								</Button>
 							)}
-						</StyledSearchButtonContainer>
+						</div>
 						{configStore.isEngineOperationAvailable(
 							type,
 							"access",
 						) && (
 							<>
-								<StyledDeleteSelectedContainer>
+								<div className="flex flex-col items-center justify-center gap-2.5 px-2 px-4 py-2.5 py-2.5">
 									{selectedMembers.length > 0 && (
 										<Button
 											disabled={isLoading}
-											variant={"outlined"}
-											color="error"
+											variant={"outline"}
 											onClick={() =>
 												openDeleteMembersModal(
 													selectedMembers,
@@ -800,165 +640,153 @@ export const MembersTable = (props: MembersTableProps) => {
 											Delete Selected
 										</Button>
 									)}
-								</StyledDeleteSelectedContainer>
-								<StyledAddMemberContainer>
+								</div>
+								<div className="flex flex-col items-center justify-center gap-2.5 px-2 px-6 py-2.5 py-2.5">
 									<Button
 										disabled={
 											isLoading ||
 											userPermission === "Read-Only"
 										}
-										variant={"contained"}
 										data-testid={`membersTables-addMembers-btn`}
 										onClick={() => {
 											openAddMembersModal();
 										}}
 									>
-										<StyledCenteredBox>
-											<Add />
+										<div className="flex items-center gap-2">
+											<Plus className="size-4" />
 											Add Members
-										</StyledCenteredBox>
+										</div>
 									</Button>
-								</StyledAddMemberContainer>
+								</div>
 							</>
 						)}
-					</StyledTableTitleContainer>
+					</div>
 
 					{isLoading ? (
-						<StyledMemberLoading>
-							<StyledMemberTable>
-								<Table.Body>
-									{[...Array(rowsPerPage)].map((item) => (
-										<Table.Row key={item}>
-											<Table.Cell
-												size="medium"
-												padding="checkbox"
-											>
-												<Skeleton
-													variant="rectangular"
-													width={20}
-													height={20}
-												/>
-											</Table.Cell>
-											<Table.Cell size="medium">
-												<Skeleton
-													variant="text"
-													width={160}
-													height={35}
-												/>
-											</Table.Cell>
-											<Table.Cell size="medium">
-												<Skeleton
-													variant="text"
-													width={240}
-													height={35}
-												/>
-											</Table.Cell>
-											<Table.Cell size="medium">
-												<Skeleton
-													variant="text"
-													width={160}
-													height={35}
-												/>
-											</Table.Cell>
-											<Table.Cell size="medium">
-												<Skeleton
-													variant="text"
-													width={80}
-													height={35}
-												/>
-											</Table.Cell>
-										</Table.Row>
-									))}
-								</Table.Body>
-							</StyledMemberTable>
-						</StyledMemberLoading>
+						<div className="relative flex items-center justify-center">
+							<Table className="bg-background">
+								<TableBody>
+									{[...Array(rowsPerPage)].map(
+										(item, idx) => (
+											// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+											<TableRow key={idx}>
+												<TableCell className="w-12">
+													<Skeleton className="h-5 w-5" />
+												</TableCell>
+												<TableCell>
+													<Skeleton className="h-9 w-40" />
+												</TableCell>
+												<TableCell>
+													<Skeleton className="h-9 w-60" />
+												</TableCell>
+												<TableCell>
+													<Skeleton className="h-9 w-40" />
+												</TableCell>
+												<TableCell>
+													<Skeleton className="h-9 w-20" />
+												</TableCell>
+											</TableRow>
+										),
+									)}
+								</TableBody>
+							</Table>
+						</div>
 					) : (
-						<Box>
+						<div>
 							{hasMembers ? (
 								<>
-									<Box sx={{ overflowX: "auto" }}>
-										<StyledMemberTable>
-											<Table.Head>
-												<Table.Row>
-													<StyledCell
-														size="small"
-														padding="checkbox"
-													>
-														<Checkbox
-															disabled={
-																userPermission ===
-																"Read-Only"
-															}
-															checked={
-																selectedMembers.length ===
-																	renderedMembers.length &&
-																renderedMembers.length >
-																	0
-															}
-															onChange={() => {
-																if (
-																	selectedMembers.length !==
-																	renderedMembers.length
-																) {
-																	setSelectedMembers(
-																		renderedMembers,
-																	);
-																} else {
-																	setSelectedMembers(
-																		[],
-																	);
+									<div className="overflow-x-auto">
+										<Table className="bg-background">
+											<TableHeader>
+												<TableRow>
+													<TableHead className="w-12">
+														<TableCell className="p-2 pr-0 pl-2">
+															<Checkbox
+																disabled={
+																	userPermission ===
+																	"Read-Only"
 																}
-															}}
-														/>
-													</StyledCell>
-													<StyledCell size="small">
-														<Table.Sort
-															active={true} // sort icon is always visible
-															direction={
-																nameOrder
-															} // direction of the icon, up is asc
+																checked={
+																	selectedMembers.length ===
+																		renderedMembers.length &&
+																	renderedMembers.length >
+																		0
+																}
+																onCheckedChange={() => {
+																	if (
+																		selectedMembers.length !==
+																		renderedMembers.length
+																	) {
+																		setSelectedMembers(
+																			renderedMembers,
+																		);
+																	} else {
+																		setSelectedMembers(
+																			[],
+																		);
+																	}
+																}}
+															/>
+														</TableCell>
+													</TableHead>
+													<TableHead>
+														<Button
+															variant="ghost"
+															size="sm"
 															onClick={() =>
 																handleNameSort()
 															}
+															className="h-8 gap-1"
 														>
 															Name
-														</Table.Sort>
-													</StyledCell>
-													<StyledCell size="small">
-														<Table.Sort
-															active={true}
-															direction={
-																permissionOrder
-															}
+															{nameOrder ===
+															"asc" ? (
+																<ArrowUp className="size-4" />
+															) : (
+																<ArrowDown className="size-4" />
+															)}
+														</Button>
+													</TableHead>
+													<TableHead>
+														<Button
+															variant="ghost"
+															size="sm"
 															onClick={() =>
 																handlePermissionSort()
 															}
+															className="h-8 gap-1"
 														>
 															Permission
-														</Table.Sort>
-													</StyledCell>
-													<StyledCell size="small">
+															{permissionOrder ===
+															"asc" ? (
+																<ArrowUp className="size-4" />
+															) : (
+																<ArrowDown className="size-4" />
+															)}
+														</Button>
+													</TableHead>
+													<TableHead>
 														Permission Date
-													</StyledCell>
+													</TableHead>
 													{type === "MODEL" && (
 														<>
-															<StyledCell size="small">
+															<TableHead>
 																Model Limit Type
-															</StyledCell>
-															<StyledCell size="small">
+															</TableHead>
+															<TableHead>
 																Limit Value
-															</StyledCell>
-															<StyledCell size="small">
+															</TableHead>
+															<TableHead>
 																Frequency
-															</StyledCell>
+															</TableHead>
 														</>
 													)}
-													<StyledCell size="small">
+													<TableHead>
 														Actions
-													</StyledCell>
-												</Table.Row>
-											</Table.Head>
-											<Table.Body>
+													</TableHead>
+												</TableRow>
+											</TableHeader>
+											<TableBody>
 												{sortedMembers.map((_x, i) => {
 													const user =
 														sortedMembers[i];
@@ -978,11 +806,6 @@ export const MembersTable = (props: MembersTableProps) => {
 													}
 
 													if (user) {
-														const RowComponent =
-															isSelected
-																? StyledSelectedTableRow
-																: Table.Row;
-
 														// Determine if this row represents an Author-level user
 														const targetPermission =
 															permissionPriorityMapper(
@@ -997,14 +820,16 @@ export const MembersTable = (props: MembersTableProps) => {
 															!adminMode;
 
 														return (
-															<RowComponent
+															<TableRow
 																key={user.id}
+																data-state={
+																	isSelected
+																		? "selected"
+																		: undefined
+																}
 															>
-																<StyledTableCell
-																	size="medium"
-																	padding="checkbox"
-																>
-																	<StyledCheckbox
+																<TableCell className="pl-4">
+																	<Checkbox
 																		disabled={
 																			userPermission ===
 																			"Read-Only"
@@ -1012,7 +837,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																		checked={
 																			isSelected
 																		}
-																		onChange={() => {
+																		onCheckedChange={() => {
 																			if (
 																				isSelected
 																			) {
@@ -1044,11 +869,12 @@ export const MembersTable = (props: MembersTableProps) => {
 																			}
 																		}}
 																	/>
-																</StyledTableCell>
-																<StyledCell>
-																	<StyledCenteredBox>
-																		<StyledNameStack
-																			direction="row"
+																</TableCell>
+																<TableCell>
+																	<div className="flex items-center gap-2">
+																		{/** biome-ignore lint/a11y/noStaticElementInteractions: <explanation> */}
+																		<div
+																			className="flex flex-1 items-center gap-2"
 																			onMouseEnter={(
 																				event,
 																			) => {
@@ -1065,120 +891,144 @@ export const MembersTable = (props: MembersTableProps) => {
 																			aria-owns="mouse-over-popover"
 																			aria-haspopup="true"
 																		>
-																			<AvatarWrapper>
-																				<Avatar>
-																					{user.name[0].toUpperCase()}
+																			<div className="inline-block w-[50px]">
+																				<Avatar className="size-8">
+																					<AvatarFallback>
+																						{user.name[0].toUpperCase()}
+																					</AvatarFallback>
 																				</Avatar>
-																			</AvatarWrapper>
+																			</div>
 																			{
 																				user.name
 																			}
-																		</StyledNameStack>
-																	</StyledCenteredBox>
-																</StyledCell>
-																<StyledCell size="medium">
-																	<StyledRadioGroup
-																		row
-																		defaultValue={
+																		</div>
+																	</div>
+																</TableCell>
+																<TableCell>
+																	<RadioGroup
+																		value={
 																			permissionPriorityMapper(
 																				user.permission,
 																			)
 																				?.permission
 																		}
-																		onChange={(
-																			e,
+																		onValueChange={(
+																			value,
 																		) => {
 																			updateSelectedUsers(
 																				[
 																					user,
 																				],
 																				permissionPriorityMapper(
-																					e
-																						.target
-																						.value,
+																					value,
 																				)
 																					?.permission,
 																			);
 																		}}
+																		className="flex flex-row flex-nowrap gap-3"
 																	>
-																		<RadioGroup.Item
-																			value="Author"
-																			label="Author"
-																			disabled={
-																				(!configStore.isEngineOperationAvailable(
-																					type,
-																					"access",
-																				) ||
-																					permissionPriorityMapper(
-																						userPermission,
-																					)
-																						.priority >
-																						1) &&
-																				!adminMode
-																			}
-																			data-testid="author"
-																		/>
-																		<RadioGroup.Item
-																			value="Editor"
-																			label="Editor"
-																			disabled={
-																				isLastAuthor(
-																					user,
-																				) ||
-																				(((userPermission ===
-																					"Editor" &&
-																					user.permission ===
-																						"OWNER") ||
-																					!configStore.isEngineOperationAvailable(
+																		<div className="flex items-center gap-2">
+																			<RadioGroupItem
+																				value="Author"
+																				id={`${user.id}-author`}
+																				disabled={
+																					(!configStore.isEngineOperationAvailable(
 																						type,
 																						"access",
 																					) ||
-																					permissionPriorityMapper(
-																						userPermission,
-																					)
-																						?.priority >
-																						2) &&
-																					!adminMode)
-																			}
-																			data-testid="editor"
-																		/>
-																		<RadioGroup.Item
-																			value="Read-Only"
-																			label="Read-Only"
-																			disabled={
-																				isLastAuthor(
-																					user,
-																				) ||
-																				(((userPermission ===
-																					"Editor" &&
-																					user.permission ===
-																						"OWNER") ||
-																					!configStore.isEngineOperationAvailable(
-																						type,
-																						"access",
-																					) ||
-																					permissionPriorityMapper(
-																						userPermission,
-																					)
-																						?.priority >=
-																						3 ||
-																					readOnlyRestricted(
+																						permissionPriorityMapper(
+																							userPermission,
+																						)
+																							.priority >
+																							1) &&
+																					!adminMode
+																				}
+																				data-testid="author"
+																			/>
+																			<label
+																				htmlFor={`${user.id}-author`}
+																				className="text-sm"
+																			>
+																				Author
+																			</label>
+																		</div>
+																		<div className="flex items-center gap-2">
+																			<RadioGroupItem
+																				value="Editor"
+																				id={`${user.id}-editor`}
+																				disabled={
+																					isLastAuthor(
 																						user,
-																					)) &&
-																					!adminMode)
-																			}
-																			data-testid="readOnly"
-																		/>
-																	</StyledRadioGroup>
-																</StyledCell>
-																<StyledCell>
+																					) ||
+																					(((userPermission ===
+																						"Editor" &&
+																						user.permission ===
+																							"OWNER") ||
+																						!configStore.isEngineOperationAvailable(
+																							type,
+																							"access",
+																						) ||
+																						permissionPriorityMapper(
+																							userPermission,
+																						)
+																							?.priority >
+																							2) &&
+																						!adminMode)
+																				}
+																				data-testid="editor"
+																			/>
+																			<label
+																				htmlFor={`${user.id}-editor`}
+																				className="text-sm"
+																			>
+																				Editor
+																			</label>
+																		</div>
+																		<div className="flex items-center gap-2">
+																			<RadioGroupItem
+																				value="Read-Only"
+																				id={`${user.id}-readonly`}
+																				disabled={
+																					isLastAuthor(
+																						user,
+																					) ||
+																					(((userPermission ===
+																						"Editor" &&
+																						user.permission ===
+																							"OWNER") ||
+																						!configStore.isEngineOperationAvailable(
+																							type,
+																							"access",
+																						) ||
+																						permissionPriorityMapper(
+																							userPermission,
+																						)
+																							?.priority >=
+																							3 ||
+																						readOnlyRestricted(
+																							user,
+																						)) &&
+																						!adminMode)
+																				}
+																				data-testid="readOnly"
+																			/>
+																			<label
+																				htmlFor={`${user.id}-readonly`}
+																				className="text-sm"
+																			>
+																				Read-Only
+																			</label>
+																		</div>
+																	</RadioGroup>
+																</TableCell>
+																<TableCell>
 																	{user?.date_added ??
 																		"Not Available"}
-																</StyledCell>
+																</TableCell>
 																{type ===
 																	"MODEL" && (
 																	<>
-																		<StyledCell>
+																		<TableCell>
 																			{(
 																				user as User
 																			)
@@ -1193,8 +1043,8 @@ export const MembersTable = (props: MembersTableProps) => {
 																				: formatValue(
 																						"null",
 																					)}
-																		</StyledCell>
-																		<StyledCell>
+																		</TableCell>
+																		<TableCell>
 																			{(
 																				user as User
 																			)
@@ -1208,94 +1058,218 @@ export const MembersTable = (props: MembersTableProps) => {
 																				?.usage_restriction ===
 																				"token" &&
 																				`${(user as User)?.max_tokens?.toLocaleString()}`}
-																		</StyledCell>
-																		<StyledCell>
+																		</TableCell>
+																		<TableCell>
 																			{formatValue(
 																				(
 																					user as User
 																				)
 																					?.usage_frequency,
 																			)}
-																		</StyledCell>
+																		</TableCell>
 																	</>
 																)}
-																<StyledCell size="medium">
-																	<IconButton
-																		onClick={() => {
-																			setAddMembersModal(
-																				true,
-																			);
+																<TableCell>
+																	<div className="flex gap-1">
+																		<Button
+																			variant="ghost"
+																			size="icon"
+																			onClick={() => {
+																				setAddMembersModal(
+																					true,
+																				);
 
-																			setAddModalUser(
-																				user,
-																			);
-																		}}
-																		disabled={
-																			!configStore.isEngineOperationAvailable(
-																				type,
-																				"access",
-																			) ||
-																			userPermission ===
-																				"Read-Only" ||
-																			disableActionsForEditorAuthor
-																		}
-																	>
-																		<Edit />
-																	</IconButton>
-																	<IconButton
-																		onClick={() => {
-																			openDeleteMembersModal(
-																				[
+																				setAddModalUser(
 																					user,
-																				],
-																			);
-																		}}
-																		disabled={
-																			!configStore.isEngineOperationAvailable(
-																				type,
-																				"access",
-																			) ||
-																			userPermission ===
-																				"Read-Only" ||
-																			disableActionsForEditorAuthor
-																		}
-																	>
-																		<Delete></Delete>
-																	</IconButton>
-																</StyledCell>
-															</RowComponent>
+																				);
+																			}}
+																			disabled={
+																				!configStore.isEngineOperationAvailable(
+																					type,
+																					"access",
+																				) ||
+																				userPermission ===
+																					"Read-Only" ||
+																				disableActionsForEditorAuthor
+																			}
+																		>
+																			<Pencil className="size-4" />
+																		</Button>
+																		<Button
+																			variant="ghost"
+																			size="icon"
+																			onClick={() => {
+																				openDeleteMembersModal(
+																					[
+																						user,
+																					],
+																				);
+																			}}
+																			disabled={
+																				!configStore.isEngineOperationAvailable(
+																					type,
+																					"access",
+																				) ||
+																				userPermission ===
+																					"Read-Only" ||
+																				disableActionsForEditorAuthor
+																			}
+																		>
+																			<Trash2 className="size-4" />
+																		</Button>
+																	</div>
+																</TableCell>
+															</TableRow>
 														);
 													}
 
 													return null;
 												})}
-											</Table.Body>
-										</StyledMemberTable>
-									</Box>
-									<StyledFooter>
-										<Table.Row>
-											<Table.Pagination
-												disabled={isLoading}
-												onPageChange={(_e, v) => {
-													setPage(v);
-													setSelectedMembers([]);
-												}}
-												page={page}
-												rowsPerPage={rowsPerPage}
-												rowsPerPageOptions={[5, 10, 20]}
-												onRowsPerPageChange={(e) => {
-													// set the new limit
-													setRowsPerPage(
-														parseInt(
-															e.target.value,
-															10,
-														),
-													);
-												}}
-												count={totalMembers}
-											/>
-										</Table.Row>
-									</StyledFooter>
+											</TableBody>
+										</Table>
+									</div>
+									<TableFooter>
+										<TableRow>
+											<TableCell
+												colSpan={
+													type === "MODEL" ? 8 : 5
+												}
+											>
+												<div className="flex items-center justify-end gap-4 px-2">
+													<div className="flex items-center gap-2">
+														<span className="text-sm">
+															Rows per page:
+														</span>
+														<Select
+															disabled={isLoading}
+															value={String(
+																rowsPerPage,
+															)}
+															onValueChange={(
+																value,
+															) => {
+																setRowsPerPage(
+																	parseInt(
+																		value,
+																		10,
+																	),
+																);
+															}}
+														>
+															<SelectTrigger className="h-8 w-[70px]">
+																<SelectValue />
+															</SelectTrigger>
+															<SelectContent>
+																<SelectItem value="5">
+																	5
+																</SelectItem>
+																<SelectItem value="10">
+																	10
+																</SelectItem>
+																<SelectItem value="20">
+																	20
+																</SelectItem>
+															</SelectContent>
+														</Select>
+													</div>
+													<div className="text-sm">
+														{page * rowsPerPage + 1}
+														-
+														{Math.min(
+															(page + 1) *
+																rowsPerPage,
+															totalMembers,
+														)}{" "}
+														of {totalMembers}
+													</div>
+													<div className="flex gap-1">
+														<Button
+															variant="outline"
+															size="icon-sm"
+															onClick={() =>
+																setPage(0)
+															}
+															disabled={
+																page === 0 ||
+																isLoading
+															}
+														>
+															{"<<"}
+														</Button>
+														<Button
+															variant="outline"
+															size="icon-sm"
+															onClick={() =>
+																setPage(
+																	Math.max(
+																		0,
+																		page -
+																			1,
+																	),
+																)
+															}
+															disabled={
+																page === 0 ||
+																isLoading
+															}
+														>
+															{"<"}
+														</Button>
+														<Button
+															variant="outline"
+															size="icon-sm"
+															onClick={() =>
+																setPage(
+																	Math.min(
+																		Math.ceil(
+																			totalMembers /
+																				rowsPerPage,
+																		) - 1,
+																		page +
+																			1,
+																	),
+																)
+															}
+															disabled={
+																page >=
+																	Math.ceil(
+																		totalMembers /
+																			rowsPerPage,
+																	) -
+																		1 ||
+																isLoading
+															}
+														>
+															{">"}
+														</Button>
+														<Button
+															variant="outline"
+															size="icon-sm"
+															onClick={() =>
+																setPage(
+																	Math.ceil(
+																		totalMembers /
+																			rowsPerPage,
+																	) - 1,
+																)
+															}
+															disabled={
+																page >=
+																	Math.ceil(
+																		totalMembers /
+																			rowsPerPage,
+																	) -
+																		1 ||
+																isLoading
+															}
+														>
+															{">>"}
+														</Button>
+													</div>
+												</div>
+											</TableCell>
+										</TableRow>
+									</TableFooter>
 									<UserPopover
 										hoveredUser={
 											hoveredUser
@@ -1316,17 +1290,14 @@ export const MembersTable = (props: MembersTableProps) => {
 									/>
 								</>
 							) : (
-								<StyledNoMembersDiv>
-									<Typography variant={"body2"}>
-										No members
-									</Typography>
+								<div className="flex h-[503px] w-full flex-col items-center justify-center gap-2">
+									<P>No members</P>
 									{configStore.isEngineOperationAvailable(
 										type,
 										"access",
 									) && (
 										<Button
 											disabled={isLoading}
-											variant={"contained"}
 											data-testid={`membersTables-addMembers-btn`}
 											onClick={() => {
 												setAddModalUser(null);
@@ -1336,12 +1307,12 @@ export const MembersTable = (props: MembersTableProps) => {
 											Add Members
 										</Button>
 									)}
-								</StyledNoMembersDiv>
+								</div>
 							)}
-						</Box>
+						</div>
 					)}
-				</StyledTableContainer>
-			</StyledMemberInnerContent>
+				</div>
+			</div>
 			<MembersDeleteOverlay
 				type={type}
 				id={id}
@@ -1389,6 +1360,6 @@ export const MembersTable = (props: MembersTableProps) => {
 				}}
 				onChange={() => onChange()}
 			/>
-		</StyledMemberContent>
+		</div>
 	);
 };
