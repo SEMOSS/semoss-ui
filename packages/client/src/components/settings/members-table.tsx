@@ -118,7 +118,7 @@ export const MembersTable = (props: MembersTableProps) => {
 	const { configStore } = useRootStore();
 	const { adminMode } = useSettings();
 
-	/** Member Table State */
+	/** Member Table States */
 	const [page, setPage] = useState<number>(0);
 	const [rowsPerPage, setRowsPerPage] = useState<number>(5);
 	const [search, setSearch] = useState<string>("");
