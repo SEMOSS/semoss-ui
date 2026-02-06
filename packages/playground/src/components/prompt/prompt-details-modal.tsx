@@ -198,7 +198,7 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 						{prompt.context ? (
 							<div>
 								<div className="mb-2 font-semibold text-slate-900 text-sm">
-									context
+									Prompt Content
 								</div>
 								<div className="max-h-[250px] overflow-y-auto rounded-md border border-slate-200 bg-slate-50 p-3">
 									<div className="whitespace-pre-wrap text-slate-600 text-sm leading-6">
@@ -211,12 +211,12 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 						<div>
 							<div className="mb-2 flex items-center justify-between">
 								<div className="font-semibold text-slate-900 text-sm">
-									Prompt Text
+									Intent
 								</div>
 								<button
 									type="button"
 									onClick={handleCopy}
-									aria-label="Copy prompt text"
+									aria-label="Copy intent"
 									className="rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
 								>
 									<Copy className="h-4 w-4" />

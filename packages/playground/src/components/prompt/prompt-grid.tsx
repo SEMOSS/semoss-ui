@@ -137,7 +137,7 @@ export const PromptGrid = observer(function PromptGrid({
 		if (!updatedPrompt.title || !updatedPrompt.context) {
 			setSnackbar({
 				open: true,
-				message: "Title and prompt text required",
+				message: "Title and prompt content required",
 				severity: "error",
 			});
 			return;
@@ -212,10 +212,10 @@ export const PromptGrid = observer(function PromptGrid({
 	return (
 		<>
 			{!isMobile && (
-				<div className="grid grid-cols-1 gap-0 sm:grid-cols-2 md:grid-cols-4">
+				  <div className="grid grid-cols-4 gap-0 items-stretch justify-items-stretch">
 					{Array.isArray(listToRender) &&
 						listToRender.map((prompt) => (
-							<div key={prompt.id} className="col-span-1">
+							<div key={prompt.id} className="h-full">
 								<PromptCard
 									prompt={prompt}
 									category={selectedCategory.label}
@@ -252,7 +252,7 @@ export const PromptGrid = observer(function PromptGrid({
 				</div>
 			)}
 
-			{isMobile && location.pathname === "/" && (
+			{/* {isMobile && location.pathname === "/" && (
 				<div
 					style={{
 						position: "fixed",
@@ -283,7 +283,7 @@ export const PromptGrid = observer(function PromptGrid({
 						<div style={{ width: "20px", flexShrink: 0 }} />
 					</div>
 				</div>
-			)}
+			)} */}
 
 			<PromptDetailsModal
 				open={isDetailsModalOpen}

@@ -216,7 +216,9 @@ export function PromptCard({
 				<>
 					<button
 						type="button"
-						className={`flex h-[320px] cursor-pointer flex-col overflow-hidden rounded-lg border bg-white transition-[transform,box-shadow] duration-200 ${isHovered ? "-translate-y-0.5 border-slate-200 shadow-md" : "border-slate-100 shadow-sm"}`}
+						className={`flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-lg border bg-white transition-[transform,box-shadow] duration-200 ${
+							isHovered ? "-translate-y-0.5 border-slate-200 shadow-md" : "border-slate-100 shadow-sm"
+						}`}
 						onClick={handleCardClick}
 						onKeyDown={handleCardKeyDown}
 						onMouseEnter={() => setIsHovered(true)}
@@ -229,12 +231,12 @@ export function PromptCard({
 										{String(title ?? "")}
 									</div>
 
-									{category === "My Prompts" &&
+									{/* {category === "My Prompts" &&
 									displayTime ? (
 										<div className="mb-1 text-[12px] text-slate-500">
 											Created on: {displayTime}
 										</div>
-									) : null}
+									) : null} */}
 
 									{tags.length > 0 ? (
 										<div className="mb-1 flex flex-wrap gap-1">
@@ -323,7 +325,7 @@ export function PromptCard({
 				</>
 			) : null}
 
-			{location.pathname === "/" ? (
+			{/* {location.pathname === "/" ? (
 				<div
 					className="flex min-w-[100px] flex-wrap justify-center gap-0"
 					style={{
@@ -391,7 +393,7 @@ export function PromptCard({
 					{deleteDialogNode}
 					{snackbarNode}
 				</div>
-			) : null}
+			) : null} */}
 		</>
 	);
 }
