@@ -1,8 +1,8 @@
-import { MoreSharp, WarningRounded } from "@mui/icons-material";
+import { Close, MoreSharp, WarningRounded } from "@mui/icons-material";
 import { JsonViewer } from "@textea/json-viewer";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
 	ActionMessages,
 	BLOCK_TYPE_INPUT,
@@ -16,10 +16,13 @@ import {
 	type VariableType,
 	type VariableWithId,
 } from "@semoss/renderer";
+import { MonacoEditor } from "@semoss/shared";
 import {
 	Alert,
+	Box,
 	Button,
 	Icon,
+	IconButton,
 	Popover,
 	Select,
 	Stack,
@@ -28,6 +31,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import PreviewButton from "../../assets/img/PreviewRounded.png";
 // TODO: MOVE TO SDK/UTILITY LIB
 import {
 	capitalizeFirstLetter,
@@ -35,21 +39,31 @@ import {
 	splitAtPeriod,
 } from "../../utility";
 
-const Editor = lazy(() => import("@monaco-editor/react"));
-
 const StyledPlaceholder = styled("div")(() => ({
 	height: "10vh",
 	width: "100%",
 }));
 
 const StyledStack = styled(Stack)(() => ({
-	width: "500px",
+	width: "444px",
+	"& .MuiStack-root": {
+		marginTop: "0px",
+		gap: "0px",
+	},
 }));
 
 const StyledPopover = styled(Popover)(({ theme }) => ({
 	padding: theme.spacing(2),
 	marginLeft: theme.spacing(2),
-	maxHeight: "80vh",
+	"& .MuiPopover-paper": {
+		maxWidth: "none",
+		borderRadius: "12px",
+		maxHeight: "none",
+	},
+	width: "444px",
+	height: "396px",
+	left: "10px",
+	position: "absolute",
 }));
 
 const QueryPreviewContainer = styled(Stack)(() => ({
@@ -60,6 +74,106 @@ const QueryPreviewContainer = styled(Stack)(() => ({
 
 const _StyledImg = styled("img")(({ theme }) => ({
 	maxWidth: theme.spacing(5),
+}));
+
+const StyledTypography = styled(Typography)(() => ({
+	color: "#212121",
+	fontSize: "20px",
+	fontWeight: "500",
+	lineHeight: "160%",
+}));
+
+const StyledStackVariable = styled(Stack)(() => ({
+	padding: "8px 16px",
+	gap: "8px",
+	"& .MuiStack-root": {
+		marginTop: "0px",
+	},
+}));
+
+const StyledTypographyVariable = styled(Typography)(() => ({
+	color: "#666",
+	fontSize: "14px",
+	fontWeight: "400",
+	lineHeight: "143%",
+}));
+
+const StyledButtonPreview = styled(Button)(() => ({
+	color: "#0471F0",
+	fontSize: "14px",
+	fontWeight: "500",
+	lineHeight: "24px",
+	letterSpacing: "0.4px",
+	bottom: "8px",
+	minWidth: "auto",
+	display: "flex",
+	gap: "6px",
+	alignItems: "center",
+	justifyContent: "flex-start",
+	whiteSpace: "nowrap",
+	svg: {
+		display: "inline-block",
+		verticalAlign: "middle",
+	},
+	span: {
+		display: "inline-block",
+	},
+	width: "100%",
+	"& .MuiButton-startIcon, & .MuiButton-label, & > span": {
+		display: "inline-flex !important",
+		alignItems: "center",
+		gap: "8px !important",
+	},
+	top: "1px",
+}));
+
+const StyledStackFooter = styled(Stack)(() => ({
+	padding: "8px 16px",
+}));
+
+const StyledTypographyName = styled(Typography)(() => ({
+	color: "#212121",
+	fontSize: "16px",
+	fontWeight: "400",
+	lineHeight: "24px",
+	letterSpacing: "0.15px",
+}));
+
+const StyledTypographyId = styled(Typography)(() => ({
+	color: "#666",
+	fontSize: "14px",
+	fontWeight: "400",
+	lineHeight: "21px",
+	letterSpacing: "0.17px",
+}));
+
+const StyledStackModel = styled(Stack)(() => ({
+	position: "relative",
+	left: "6px",
+}));
+
+const StyledSpan = styled("span")(() => ({
+	color: "#999",
+}));
+
+const StyledPreviewSpan = styled("span")(() => ({
+	position: "relative",
+	top: "1px",
+}));
+
+const StyledCancelButton = styled(Button)(() => ({
+	color: "#212121",
+	fontFamily: "Inter",
+	fontSize: "14px",
+	fontWeight: "500",
+	lineHeight: "24px",
+	letterSpacing: "0.4px",
+}));
+
+const StyledLabelBox = styled(Box)(() => ({
+	"& .MuiFormLabel-root.MuiInputLabel-root": {
+		top: "6px",
+	},
 }));
 
 interface AddVariablePopoverProps {
@@ -133,8 +247,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		app_type: string;
 		app_subtype;
 	} | null>(null);
-
-	const [_monaco, setMonaco] = useState(null);
+	const [showPreview, setShowPreview] = useState<boolean>(false);
 
 	const [variableInputValue, setVariableInputValue] = useState(null);
 	const inputVariableTypeList = ["string", "number", "JSON", "date", "array"];
@@ -292,7 +405,9 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		if (variableType === "string") {
 			return (
 				<TextField
+					placeholder={"Add Value"}
 					variant="outlined"
+					size="small"
 					onChange={(e) =>
 						setVariableInputValue(e.target.value.toString())
 					}
@@ -304,6 +419,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 				<TextField
 					variant="outlined"
 					type="number"
+					size="small"
+					placeholder="Add Value"
 					onChange={(e) => {
 						setVariableInputValue(parseInt(e.target.value));
 					}}
@@ -313,7 +430,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		} else if (variableType === "JSON" || variableType === "array") {
 			return (
 				<Suspense fallback={<>...</>}>
-					<Editor
+					<MonacoEditor
 						width={"100%"}
 						height={"10vh"}
 						language={"json"}
@@ -325,7 +442,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 								? JSON.stringify(variableInputValue)
 								: variableInputValue
 						}
-					></Editor>
+					/>
 				</Suspense>
 			);
 		} else if (variableType === "date") {
@@ -333,6 +450,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 				<TextField
 					type="date"
 					variant="outlined"
+					size="small"
+					placeholder="Add Value"
 					onChange={(e) =>
 						setVariableInputValue(e.target.value.toString())
 					}
@@ -343,14 +462,34 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 			return (
 				<Select
 					disabled={!variableType}
+					size="small"
 					value={
-						(variableType === "cell" ||
+						variableType === "cell" ||
 						variableType === "query" ||
 						variableType === "block" ||
 						variableType === "LLM Comparison"
 							? variablePointer
-							: engine) ?? ""
+							: (engine ?? "")
 					}
+					SelectProps={{
+						displayEmpty: true,
+						renderValue: (value) => {
+							if (!value || value === "") {
+								return <StyledSpan>Add Value</StyledSpan>;
+							}
+							if (
+								variableType === "cell" ||
+								variableType === "query" ||
+								variableType === "block" ||
+								variableType === "LLM Comparison"
+							) {
+								return String(value);
+							}
+							const eng =
+								(value as { app_name?: string }) || engine;
+							return eng?.app_name ?? String(eng);
+						},
+					}}
 					onChange={(e) => {
 						const val = e.target.value as unknown;
 						if (
@@ -359,16 +498,16 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 							variableType === "block" ||
 							variableType === "LLM Comparison"
 						) {
-							const p = val as string;
-							setVariablePointer(p);
+							setVariablePointer(val as string);
 						} else {
-							const p = val as {
-								app_id: string;
-								app_name: string;
-								app_type: string;
-								app_subtype: string;
-							};
-							setEngine(p);
+							setEngine(
+								val as {
+									app_id: string;
+									app_name: string;
+									app_type: string;
+									app_subtype: string;
+								},
+							);
 						}
 					}}
 				>
@@ -430,7 +569,11 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 						},
 					};
 
-					return <Renderer state={s} />;
+					return (
+						<StyledLabelBox>
+							<Renderer state={s} />
+						</StyledLabelBox>
+					);
 				} else if (variableType === "query") {
 					const query = state.getQuery(variablePointer);
 
@@ -501,19 +644,19 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 					);
 				} else {
 					return (
-						<Stack direction="row" alignItems="center">
+						<StyledStackModel direction="row" alignItems="center">
 							<Icon>
 								<MoreSharp />
 							</Icon>
 							<Stack direction="column">
-								<Typography variant="body2">
+								<StyledTypographyName variant="body2">
 									{engine.app_name}
-								</Typography>
-								<Typography variant="caption">
+								</StyledTypographyName>
+								<StyledTypographyId variant="body2">
 									{engine.app_id}
-								</Typography>
+								</StyledTypographyId>
 							</Stack>
-						</Stack>
+						</StyledStackModel>
 					);
 				}
 			} else if (
@@ -573,12 +716,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 	]);
 
 	useEffect(() => {
-		import("monaco-editor").then((mon) => {
-			setMonaco(mon);
-		});
-	}, []);
-
-	useEffect(() => {
 		if (variable?.id) {
 			setVariableName(variable.id);
 			setVariableType(variable.type);
@@ -620,6 +757,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 
 	return (
 		<StyledPopover
+			marginThreshold={60}
 			id={"variable-popover"}
 			open={open}
 			onClose={() => {
@@ -630,78 +768,156 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 
 				onClose();
 			}}
+			anchorOrigin={{
+				vertical: "center",
+				horizontal: "right",
+			}}
+			transformOrigin={{
+				vertical: "bottom",
+				horizontal: "left",
+			}}
 			anchorEl={anchorEl}
 		>
 			<StyledStack
 				direction={"column"}
-				gap={1}
-				padding={2}
-				className="add-variable-popover__content"
+				className="add-variable-popover__content max-h-[90vh] overflow-hidden"
 			>
-				<Typography variant={"h6"}>
-					{variable ? "Edit" : "Create"} Variable
-				</Typography>
-				{variable && (
-					<Alert icon={<WarningRounded />} severity={"warning"}>
-						<Alert.Title>
-							If this variable is actively being used, editing it
-							may result in errors throughout your sheets.
-						</Alert.Title>
-					</Alert>
-				)}
-				<Stack direction="column" mt={1} gap={1}>
-					<Typography variant={"body1"}>Variable Name</Typography>
-					<TextField
-						placeholder={"Name"}
-						value={variableName}
-						error={alreadyAliased}
-						onChange={(e) => {
-							setVariableName(e.target.value);
-						}}
-						helperText={
-							alreadyAliased ? (
-								<Typography variant={"caption"} color={"error"}>
-									This is not a unique alias
-								</Typography>
-							) : (
-								""
-							)
-						}
-					/>
-					<Typography variant={"body1"}>Type</Typography>
-					<Select
-						value={variableType}
-						onChange={(e) => {
-							const val = e.target.value as VariableType;
-							setEngine(null);
-							setVariableInputValue(null);
-							setVariablePointer("");
-							setVariableType(val);
+				<StyledStackVariable
+					direction="row"
+					justifyContent={"space-between"}
+					alignItems={"center"}
+				>
+					<StyledTypography variant={"h6"}>
+						{variable ? "Edit" : "Create"} Variable
+					</StyledTypography>
+					<IconButton
+						size="small"
+						onClick={() => {
+							onClose();
 						}}
 					>
-						{VARIABLE_TYPES.map((val) => {
-							return (
-								<Select.Item key={val} value={val}>
-									{capitalizeFirstLetter(val)}
-								</Select.Item>
-							);
-						})}
-					</Select>
-					<Typography variant={"body1"}>Value</Typography>
-					{input}
-					<Typography variant={"h6"}>Preview</Typography>
-					{preview}
-				</Stack>
-				<Stack direction={"row"} justifyContent={"flex-end"}>
-					<Button
+						<Close />
+					</IconButton>
+				</StyledStackVariable>
+				<div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto pr-1">
+					{variable && (
+						<Alert icon={<WarningRounded />} severity={"warning"}>
+							<Alert.Title>
+								If this variable is actively being used, editing
+								it may result in errors throughout your sheets.
+							</Alert.Title>
+						</Alert>
+					)}
+					<Stack direction="column" mt={1} gap={1}>
+						<StyledStackVariable direction="column">
+							<StyledTypographyVariable variant={"body2"}>
+								Variable Name
+							</StyledTypographyVariable>
+							<TextField
+								placeholder={"Name"}
+								value={variableName}
+								error={alreadyAliased}
+								onChange={(e) => {
+									setVariableName(e.target.value);
+								}}
+								size="small"
+								helperText={
+									alreadyAliased ? (
+										<Typography
+											variant={"caption"}
+											color={"error"}
+										>
+											This is not a unique alias
+										</Typography>
+									) : (
+										""
+									)
+								}
+							/>
+						</StyledStackVariable>
+						<StyledStackVariable direction="column">
+							<StyledTypographyVariable variant={"body2"}>
+								Type
+							</StyledTypographyVariable>
+							<Select
+								value={variableType}
+								onChange={(e) => {
+									const val = e.target.value as VariableType;
+									setEngine(null);
+									setVariableInputValue(null);
+									setVariablePointer("");
+									setVariableType(val);
+								}}
+								SelectProps={{
+									displayEmpty: true,
+									renderValue: (value) => {
+										console.log(value, "value");
+										if (!value || value === "") {
+											return (
+												<StyledSpan>
+													Select Type
+												</StyledSpan>
+											);
+										}
+										return capitalizeFirstLetter(
+											value as string,
+										);
+									},
+								}}
+								size="small"
+							>
+								{VARIABLE_TYPES.map((val) => {
+									return (
+										<Select.Item key={val} value={val}>
+											{capitalizeFirstLetter(val)}
+										</Select.Item>
+									);
+								})}
+							</Select>
+						</StyledStackVariable>
+						<StyledStackVariable direction="column">
+							<StyledTypographyVariable variant={"body2"}>
+								Value
+							</StyledTypographyVariable>
+							{input}
+						</StyledStackVariable>
+						<StyledStackVariable
+							direction="column"
+							sx={{
+								background: showPreview ? "#F5F9FE" : "none",
+							}}
+						>
+							<StyledButtonPreview
+								onClick={() => setShowPreview(!showPreview)}
+							>
+								<img
+									src={PreviewButton}
+									alt="Expand/Collapse"
+									style={{
+										width: 20,
+										height: 20,
+									}}
+								/>
+								<StyledPreviewSpan>Preview</StyledPreviewSpan>
+							</StyledButtonPreview>
+						</StyledStackVariable>
+						<StyledStackVariable>
+							{showPreview && preview}
+						</StyledStackVariable>
+					</Stack>
+				</div>
+				<StyledStackFooter
+					direction={"row"}
+					justifyContent={"flex-end"}
+				>
+					<StyledCancelButton
 						variant={"text"}
-						color={"primary"}
 						onClick={() => {
 							onClose();
 						}}
 					>
 						Cancel
-					</Button>
+					</StyledCancelButton>
 					<Button
 						color="primary"
 						variant={"contained"}
@@ -872,7 +1088,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 					>
 						{variable ? "Save" : "Add"}
 					</Button>
-				</Stack>
+				</StyledStackFooter>
 			</StyledStack>
 		</StyledPopover>
 	);
