@@ -31,6 +31,8 @@ import type { MCPToolRequest } from "./types";
 							roomId: eventData.tool.roomId || "",
 							original_name: eventData.tool.original_name || "",
 							tool_response: eventData.tool.tool_response,
+							executedParameters:
+								eventData.tool.executedParameters,
 						} satisfies MCPToolRequest,
 					});
 				} catch {
