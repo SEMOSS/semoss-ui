@@ -18,7 +18,7 @@ import PromptCategories from "../components/prompt/prompt-categories";
 type SelectedCategory = { label: string; value: string };
 type UnknownRecord = Record<string, unknown>;
 type LoadStatus = "IDLE" | "LOADING" | "DONE" | "ERROR";
-type UserMeta = Record<string, unknown>;
+// type UserMeta = Record<string, unknown>;
 type MetaMap = Record<string, string[]>;
 
 function isRecord(v: unknown): v is UnknownRecord {
@@ -86,7 +86,7 @@ function normalizePrompt(p: unknown): Prompt {
 
 		global: Boolean(obj["global"] ?? false),
 		tags,
-		metaKeys,
+		metaMap: metaKeys,
 	};
 }
 
@@ -196,7 +196,6 @@ export const PromptLibrary = observer(() => {
 				? (first as { output?: unknown }).output
 				: undefined;
 
-				console.log('output', output)
 			const rows = Array.isArray(output) ? output : [];
 
 			const normalized: Prompt[] = rows.map((p) => normalizePrompt(p));
@@ -220,7 +219,7 @@ export const PromptLibrary = observer(() => {
 			setLoadStatus("ERROR");
 		}
 	}, [actions, userId]);
-	
+
 	// useEffect(() => {
 	// 	const getUserMetaKeys = async () => {
 	// 		try {
@@ -298,7 +297,10 @@ export const PromptLibrary = observer(() => {
 				date_created:
 					newPrompt.dateCreated instanceof Date
 						? newPrompt.dateCreated.toISOString()
-						: String(newPrompt.dateCreated ?? new Date().toISOString()),
+						: String(
+								newPrompt.dateCreated ??
+									new Date().toISOString(),
+							),
 
 				global: Boolean(newPrompt.global ?? false),
 				tags: Array.isArray(newPrompt.tags) ? newPrompt.tags : [],
@@ -312,7 +314,9 @@ export const PromptLibrary = observer(() => {
 			const pixelReturn = isRecord(responseUnknown)
 				? (responseUnknown["pixelReturn"] as unknown)
 				: undefined;
-			const first = Array.isArray(pixelReturn) ? pixelReturn[0] : undefined;
+			const first = Array.isArray(pixelReturn)
+				? pixelReturn[0]
+				: undefined;
 
 			const operationType =
 				isRecord(first) && typeof first["operationType"] === "string"

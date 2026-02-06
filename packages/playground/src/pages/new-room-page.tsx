@@ -63,8 +63,10 @@ export const NewRoomPage = observer(() => {
 		type: "chat",
 		workspace: null,
 	});
-	const initialPrefill = (location.state as { description?: string } | null)?.description ?? "";
+	const initialPrefill =
+		(location.state as { description?: string } | null)?.description ?? "";
 	const [promptText, setPromptText] = useState(initialPrefill);
+	const [inputResetKey, setInputResetKey] = useState(0);
 	const workspaceId = searchParams.get("workspaceId");
 	const knowledgeId = searchParams.get("knowledgeId");
 
@@ -295,11 +297,24 @@ export const NewRoomPage = observer(() => {
 		}
 	}, [mode.type, root.theme.defaultTools, root.theme.defaultRoomSettings]);
 
-useEffect(() => {
-  // Clear state once (prevents re-prefill on back/refresh)
-  if (!initialPrefill) return;
-  navigate(location.pathname, { replace: true, state: null });
-}, []);
+	// Clear state once (prevents re-prefill on back/refresh)
+	useEffect(() => {
+		if (!initialPrefill) return;
+		navigate(location.pathname, { replace: true, state: null });
+	}, [initialPrefill, navigate, location.pathname]);
+
+	// listen for navbar-triggered resets
+	useEffect(() => {
+		const state = location.state as { clearPromptToken?: number } | null;
+		const token = state?.clearPromptToken;
+		if (!token) return;
+
+		setPromptText("");
+		setInputResetKey((k) => k + 1);
+
+		// clear state so refresh/back doesn't re-clear
+		navigate(location.pathname, { replace: true, state: null });
+	}, [location.state, navigate, location.pathname]);
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
@@ -333,6 +348,7 @@ useEffect(() => {
 						)}
 
 						<RoomInput
+							resetKey={inputResetKey}
 							prompt={promptText}
 							onPromptChange={setPromptText}
 							className="max-h-64 min-h-48 bg-background"

@@ -326,13 +326,17 @@ export const GlobalNav = observer(() => {
 
 					<SidebarMenuItem>
 						<SidebarMenuButton
-							asChild
+							type="button"
+							aria-label="New Chat"
 							isActive={!!matchPath("/new", pathname)}
+							onClick={() => {
+								navigate("/new", {
+									state: { clearPromptToken: Date.now() },
+								});
+							}}
 						>
-							<Link to={"/new"} aria-label={"New Chat"}>
-								<SquarePenIcon />
-								New
-							</Link>
+							<SquarePenIcon />
+							New
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 					{ENABLE_PROMPT_LIBRARY && (

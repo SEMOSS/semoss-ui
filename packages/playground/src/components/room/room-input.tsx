@@ -39,7 +39,12 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { EnterPlugin, FocusPlugin, MentionPlugin, PromptSyncPlugin } from "@/components";
+import {
+	EnterPlugin,
+	FocusPlugin,
+	MentionPlugin,
+	PromptSyncPlugin,
+} from "@/components";
 import type { Engine } from "@/types";
 import { ContextChart } from "./context-chart";
 
@@ -78,6 +83,8 @@ interface RoomInputProps {
 	/** Percentage of context used */
 	tokensMax?: number;
 	tokensUsed?: number;
+
+	resetKey?: string | number;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
@@ -93,6 +100,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		hasOutstandingTools = false,
 		tokensMax,
 		tokensUsed,
+		resetKey,
 	}) => {
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
@@ -191,6 +199,17 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		useEffect(() => {
 			editorRef.current?.setEditable(!isLoading);
 		}, [isLoading]);
+
+		// reset local UI state when New button is clicked
+		useEffect(() => {
+			setFiles([]);
+			setIsEmpty(true);
+			setMenuOpen(false);
+
+			// optionally stop speech recognition
+			// recognitionRef.current?.stop();
+			// setIsListening(false);
+		}, [resetKey]);
 
 		/**
 		 * Prompt the model
@@ -300,23 +319,24 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						}}
 					/>
 					<LexicalComposer
-						  initialConfig={{
-						namespace: "RoomInput",
-						theme: {},
-						nodes: [],
-						editorState: () => {
-						if (!prompt) return;
-						const root = $getRoot();
-						root.clear();
-						const p = $createParagraphNode();
-						p.append($createTextNode(prompt));
-						root.append(p);
-						root.selectEnd();
-						},
-						onError: (error) => {
-						console.error(error);
-						},
-					}}
+						key={resetKey}
+						initialConfig={{
+							namespace: "RoomInput",
+							theme: {},
+							nodes: [],
+							editorState: () => {
+								if (!prompt) return;
+								const root = $getRoot();
+								root.clear();
+								const p = $createParagraphNode();
+								p.append($createTextNode(prompt));
+								root.append(p);
+								root.selectEnd();
+							},
+							onError: (error) => {
+								console.error(error);
+							},
+						}}
 					>
 						<PromptSyncPlugin prompt={prompt} />
 						<PlainTextPlugin
@@ -391,14 +411,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							onChange={(editorState) => {
 								editorState.read(() => {
 									// get the root
-									const root = $getRoot()
+									const root = $getRoot();
 									const nextText = root.getTextContent();
 
 									// set empty state
-									setIsEmpty(
-										nextText.trim().length ===
-											0,
-									);
+									setIsEmpty(nextText.trim().length === 0);
 
 									if (nextText !== prompt) {
 										onPromptChange(nextText);
