@@ -141,7 +141,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 					header.replace("Average_", ""),
 				);
 				//format the data points to match the echart specification
-				resultData["xAxis"]["data"] = valuesDataSet.map((x) => x[0]);
+				resultData["xAxis"]["data"] = valuesDataSet.map((x) => parseFloat(x[0]).toFixed(2));
 				valuesDataSet.map((x) => x.shift());
 				headersDataSet.shift();
 				const yAxisListLength =
@@ -154,12 +154,13 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 						resultData["series"][index] = {};
 					}
 
-					resultData["series"][index]["data"] = valuesDataSet.map(
-						(x) => {
-							const value = x[index];
-							return value === "NaN" ? null : value; // Replace "NaN" with null
-						},
-					);
+					resultData["series"][index]["data"] = valuesDataSet.map((x) => {
+						const value = x[index];
+						if (value === "NaN") {
+							return null; // Replace "NaN" with null
+						}
+						return parseFloat(value).toFixed(2); // Round to 2 decimal places
+					});
 					resultData["series"][index]["name"] = headersDataSet[index];
 					resultData["series"][index]["type"] = "line";
 				}
@@ -176,7 +177,9 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 				data.option["_state"]?.["fields"]["tooltip"].map((x, index) => {
 					customTooltipData.push({
 						name: x,
-						data: valuesDataSet.map((y) => y[index]),
+						data: valuesDataSet.map((y) =>
+							parseFloat(y[index]).toFixed(2), // Round tooltip data to 2 decimal places
+						),
 					});
 				});
 				if (!Object.hasOwn(resultData["tooltip"], "formatter")) {
@@ -185,7 +188,9 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 						(x, index) => {
 							customTooltipData.push({
 								name: x,
-								data: valuesDataSet.map((y) => y[index]),
+								data: valuesDataSet.map((y) =>
+									parseFloat(y[index]).toFixed(2), // Round tooltip data to 2 decimal places
+								),
 							});
 						},
 					);
@@ -200,7 +205,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 							params.forEach((param) => {
 								let { value, seriesName, color } = param;
 								if (!isNaN(value) && value !== undefined) {
-									value = value.toFixed(1);
+									value = parseFloat(value).toFixed(2);
 								}
 								formatterStringArr.push(
 									`<span style="color:${color}">\u25CF</span> Average of ${seriesName}:<strong> ${value}</strong><br>`,
