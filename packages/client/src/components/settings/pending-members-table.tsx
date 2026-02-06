@@ -424,7 +424,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 							) : (
 								<div>
 									{renderedMembers.length ? (
-										<Table className="bg-background">
+										<Table className="mb-2 bg-background">
 											<TableHeader>
 												<TableRow className="bg-background">
 													<TableHead
@@ -478,13 +478,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 													<TableHead>ID</TableHead>
 													<TableHead>Name</TableHead>
 													<TableHead>
-														<div className="flex flex-row justify-between">
-															Request Date
-															<Separator />
-															<span className="text-muted-foreground">
-																<Plus className="size-4" />
-															</span>
-														</div>
+														Request Date
 													</TableHead>
 													<TableHead>
 														Permission

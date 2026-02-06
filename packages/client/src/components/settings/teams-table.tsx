@@ -101,7 +101,7 @@ export const TeamsTable = ({ type, id }) => {
 	};
 
 	return (
-		<div>
+		<div className="rounded-xl">
 			<AddTeamModal
 				type={type}
 				open={addModal}
@@ -113,7 +113,7 @@ export const TeamsTable = ({ type, id }) => {
 						<H4>Teams</H4>
 					</div>
 				</div>
-				<Table className="bg-background">
+				<Table className="mb-[0.5px] rounded-b-xl bg-background">
 					<TableHeader>
 						<TableRow>
 							<TableHead className="p-0">

@@ -696,7 +696,7 @@ export const MembersTable = (props: MembersTableProps) => {
 							{hasMembers ? (
 								<>
 									<div className="overflow-x-auto">
-										<Table className="bg-background">
+										<Table className="mb-[0.5px] rounded-xl bg-background">
 											<TableHeader>
 												<TableRow>
 													<TableHead className="w-12">
@@ -1126,150 +1126,164 @@ export const MembersTable = (props: MembersTableProps) => {
 													return null;
 												})}
 											</TableBody>
+											<TableFooter>
+												<TableRow>
+													<TableCell
+														colSpan={
+															type === "MODEL"
+																? 8
+																: 5
+														}
+													>
+														<div className="flex items-center justify-end gap-4 px-2">
+															<div className="flex items-center gap-2">
+																<span className="text-sm">
+																	Rows per
+																	page:
+																</span>
+																<Select
+																	disabled={
+																		isLoading
+																	}
+																	value={String(
+																		rowsPerPage,
+																	)}
+																	onValueChange={(
+																		value,
+																	) => {
+																		setRowsPerPage(
+																			parseInt(
+																				value,
+																				10,
+																			),
+																		);
+																	}}
+																>
+																	<SelectTrigger className="h-8 w-[70px]">
+																		<SelectValue />
+																	</SelectTrigger>
+																	<SelectContent>
+																		<SelectItem value="5">
+																			5
+																		</SelectItem>
+																		<SelectItem value="10">
+																			10
+																		</SelectItem>
+																		<SelectItem value="20">
+																			20
+																		</SelectItem>
+																	</SelectContent>
+																</Select>
+															</div>
+															<div className="text-sm">
+																{page *
+																	rowsPerPage +
+																	1}
+																-
+																{Math.min(
+																	(page + 1) *
+																		rowsPerPage,
+																	totalMembers,
+																)}{" "}
+																of{" "}
+																{totalMembers}
+															</div>
+															<div className="flex gap-1">
+																<Button
+																	variant="outline"
+																	size="icon-sm"
+																	onClick={() =>
+																		setPage(
+																			0,
+																		)
+																	}
+																	disabled={
+																		page ===
+																			0 ||
+																		isLoading
+																	}
+																>
+																	{"<<"}
+																</Button>
+																<Button
+																	variant="outline"
+																	size="icon-sm"
+																	onClick={() =>
+																		setPage(
+																			Math.max(
+																				0,
+																				page -
+																					1,
+																			),
+																		)
+																	}
+																	disabled={
+																		page ===
+																			0 ||
+																		isLoading
+																	}
+																>
+																	{"<"}
+																</Button>
+																<Button
+																	variant="outline"
+																	size="icon-sm"
+																	onClick={() =>
+																		setPage(
+																			Math.min(
+																				Math.ceil(
+																					totalMembers /
+																						rowsPerPage,
+																				) -
+																					1,
+																				page +
+																					1,
+																			),
+																		)
+																	}
+																	disabled={
+																		page >=
+																			Math.ceil(
+																				totalMembers /
+																					rowsPerPage,
+																			) -
+																				1 ||
+																		isLoading
+																	}
+																>
+																	{">"}
+																</Button>
+																<Button
+																	variant="outline"
+																	size="icon-sm"
+																	onClick={() =>
+																		setPage(
+																			Math.ceil(
+																				totalMembers /
+																					rowsPerPage,
+																			) -
+																				1,
+																		)
+																	}
+																	disabled={
+																		page >=
+																			Math.ceil(
+																				totalMembers /
+																					rowsPerPage,
+																			) -
+																				1 ||
+																		isLoading
+																	}
+																>
+																	{">>"}
+																</Button>
+															</div>
+														</div>
+													</TableCell>
+												</TableRow>
+											</TableFooter>
 										</Table>
 									</div>
-									<TableFooter>
-										<TableRow>
-											<TableCell
-												colSpan={
-													type === "MODEL" ? 8 : 5
-												}
-											>
-												<div className="flex items-center justify-end gap-4 px-2">
-													<div className="flex items-center gap-2">
-														<span className="text-sm">
-															Rows per page:
-														</span>
-														<Select
-															disabled={isLoading}
-															value={String(
-																rowsPerPage,
-															)}
-															onValueChange={(
-																value,
-															) => {
-																setRowsPerPage(
-																	parseInt(
-																		value,
-																		10,
-																	),
-																);
-															}}
-														>
-															<SelectTrigger className="h-8 w-[70px]">
-																<SelectValue />
-															</SelectTrigger>
-															<SelectContent>
-																<SelectItem value="5">
-																	5
-																</SelectItem>
-																<SelectItem value="10">
-																	10
-																</SelectItem>
-																<SelectItem value="20">
-																	20
-																</SelectItem>
-															</SelectContent>
-														</Select>
-													</div>
-													<div className="text-sm">
-														{page * rowsPerPage + 1}
-														-
-														{Math.min(
-															(page + 1) *
-																rowsPerPage,
-															totalMembers,
-														)}{" "}
-														of {totalMembers}
-													</div>
-													<div className="flex gap-1">
-														<Button
-															variant="outline"
-															size="icon-sm"
-															onClick={() =>
-																setPage(0)
-															}
-															disabled={
-																page === 0 ||
-																isLoading
-															}
-														>
-															{"<<"}
-														</Button>
-														<Button
-															variant="outline"
-															size="icon-sm"
-															onClick={() =>
-																setPage(
-																	Math.max(
-																		0,
-																		page -
-																			1,
-																	),
-																)
-															}
-															disabled={
-																page === 0 ||
-																isLoading
-															}
-														>
-															{"<"}
-														</Button>
-														<Button
-															variant="outline"
-															size="icon-sm"
-															onClick={() =>
-																setPage(
-																	Math.min(
-																		Math.ceil(
-																			totalMembers /
-																				rowsPerPage,
-																		) - 1,
-																		page +
-																			1,
-																	),
-																)
-															}
-															disabled={
-																page >=
-																	Math.ceil(
-																		totalMembers /
-																			rowsPerPage,
-																	) -
-																		1 ||
-																isLoading
-															}
-														>
-															{">"}
-														</Button>
-														<Button
-															variant="outline"
-															size="icon-sm"
-															onClick={() =>
-																setPage(
-																	Math.ceil(
-																		totalMembers /
-																			rowsPerPage,
-																	) - 1,
-																)
-															}
-															disabled={
-																page >=
-																	Math.ceil(
-																		totalMembers /
-																			rowsPerPage,
-																	) -
-																		1 ||
-																isLoading
-															}
-														>
-															{">>"}
-														</Button>
-													</div>
-												</div>
-											</TableCell>
-										</TableRow>
-									</TableFooter>
 									<UserPopover
 										hoveredUser={
 											hoveredUser
