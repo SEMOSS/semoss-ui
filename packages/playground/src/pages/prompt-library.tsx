@@ -10,8 +10,6 @@ import {
 } from "@semoss/ui/next";
 import { EditPromptModal } from "@/components/prompt/edit-prompt-modal";
 import { PromptGrid } from "@/components/prompt/prompt-grid";
-import { canViewPrompt } from "@/lib/prompt-access";
-import { getCurrentUser } from "@/mocks/getCurrentUser";
 import type { Prompt } from "@/types/prompt";
 import menuIcon from "../assets/img/Prompt_Library_Default.svg";
 import BaseAppLayout from "../components/common/base-app-layout";
@@ -27,18 +25,18 @@ function isRecord(v: unknown): v is UnknownRecord {
 	return typeof v === "object" && v !== null;
 }
 
-function hasNativeMeta(x: unknown): x is { NATIVE: { meta: UserMeta } } {
-	return (
-		typeof x === "object" &&
-		x !== null &&
-		"NATIVE" in x &&
-		typeof (x as any).NATIVE === "object" &&
-		(x as any).NATIVE !== null &&
-		"meta" in (x as any).NATIVE &&
-		typeof (x as any).NATIVE.meta === "object" &&
-		(x as any).NATIVE.meta !== null
-	);
-}
+// function hasNativeMeta(x: unknown): x is { NATIVE: { meta: UserMeta } } {
+// 	return (
+// 		typeof x === "object" &&
+// 		x !== null &&
+// 		"NATIVE" in x &&
+// 		typeof (x as any).NATIVE === "object" &&
+// 		(x as any).NATIVE !== null &&
+// 		"meta" in (x as any).NATIVE &&
+// 		typeof (x as any).NATIVE.meta === "object" &&
+// 		(x as any).NATIVE.meta !== null
+// 	);
+// }
 
 const normalizeToMetaMap = (meta: unknown): MetaMap | null => {
 	if (typeof meta !== "object" || meta === null) return null;
@@ -126,6 +124,10 @@ function isMinePrompt(p: Prompt, userId: string) {
 	return Boolean(userId) && Boolean(p.createdBy) && p.createdBy === userId;
 }
 
+function canSeePrompt(p: Prompt, userId: string) {
+	return Boolean(p.global) || (Boolean(userId) && p.createdBy === userId);
+}
+
 export const PromptLibrary = observer(() => {
 	const [search, setSearch] = useState("");
 	const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -145,8 +147,6 @@ export const PromptLibrary = observer(() => {
 	const [isTagMenuOpen, setIsTagMenuOpen] = useState(false);
 	const [loadStatus, setLoadStatus] = useState<LoadStatus>("IDLE");
 
-	const [userMetaKeys, setUserMetaKeys] = useState<MetaMap>({});
-
 	const isMobile = useMediaQuery("(max-width: 640px)");
 	const isSmallDevice = useMediaQuery(
 		"(max-width: 320px) and (max-height: 568px)",
@@ -164,18 +164,9 @@ export const PromptLibrary = observer(() => {
 	const auth = Object.keys(config.logins ?? {})[0] ?? "";
 	const userId = config.loginDetails?.[auth]?.id ?? "";
 
-	console.log("PromptLibrary userMetaKeys:", userMetaKeys);
-
-	const currentUser = useMemo(
-		() => ({ userId, metaMap: userMetaKeys }),
-		[userId, userMetaKeys],
-	);
-
-	console.log("PromptLibrary currentUser:", currentUser);
-
 	const visiblePrompts = useMemo(
-		() => allPrompts.filter((p) => canViewPrompt(currentUser, p)),
-		[allPrompts, currentUser],
+		() => allPrompts.filter((p) => canSeePrompt(p, userId)),
+		[allPrompts, userId],
 	);
 
 	console.log("PromptLibrary visiblePrompts:", visiblePrompts);
@@ -187,108 +178,98 @@ export const PromptLibrary = observer(() => {
 
 	console.log("PromptLibrary myPrompts:", myPrompts);
 
-	const refreshPrompts = useCallback(async () => {
-		setLoadStatus("LOADING");
-		try {
-			const resultUnknown = (await actions.run(
-				`ListPrompt()`,
-			)) as unknown;
+const refreshPrompts = useCallback(async () => {
+	setLoadStatus("LOADING");
+	try {
+		const resultUnknown = (await actions.run(`ListPrompt()`)) as unknown;
 
-			const pixelReturn = isRecord(resultUnknown)
-				? (resultUnknown as { pixelReturn?: unknown }).pixelReturn
-				: undefined;
+		const pixelReturn = isRecord(resultUnknown)
+			? (resultUnknown as { pixelReturn?: unknown }).pixelReturn
+			: undefined;
 
-			const first = Array.isArray(pixelReturn)
-				? pixelReturn[0]
-				: undefined;
-			const output = isRecord(first)
-				? (first as { output?: unknown }).output
-				: undefined;
-			const rows = Array.isArray(output) ? output : [];
+		const first = Array.isArray(pixelReturn) ? pixelReturn[0] : undefined;
+		const output = isRecord(first) ? (first as { output?: unknown }).output : undefined;
+		const rows = Array.isArray(output) ? output : [];
 
-			const normalized: Prompt[] = rows.map((p) => normalizePrompt(p));
+		const normalized: Prompt[] = rows.map((p) => normalizePrompt(p));
 
-			const tagSet = new Set<string>();
-			for (const p of normalized)
-				for (const t of p.tags ?? []) tagSet.add(t);
+		const visible = normalized.filter((p) => canSeePrompt(p, userId));
 
-			const tagsSorted = Array.from(tagSet)
-				.filter(Boolean)
-				.sort((a, b) => a.localeCompare(b));
+		const tagSet = new Set<string>();
+		for (const p of visible) for (const t of p.tags ?? []) tagSet.add(t);
 
-			setAllPrompts(normalized);
-			setAvailableTags(tagsSorted);
-			setCategoryArray(["My Prompts", ...tagsSorted]);
-			setLoadStatus("DONE");
-		} catch (e) {
-			// eslint-disable-next-line no-console
-			console.error("ListPrompt load failed:", e);
-			setLoadStatus("ERROR");
-		}
-	}, [actions]);
+		const tagsSorted = Array.from(tagSet)
+			.filter(Boolean)
+			.sort((a, b) => a.localeCompare(b));
 
-	useEffect(() => {
-		const getUserMetaKeys = async () => {
-			try {
-				const resultUnknown = (await actions.run(
-					`GetUserInfo()`,
-				)) as unknown;
+		setAllPrompts(normalized);
+		setAvailableTags(tagsSorted);
+		setCategoryArray(["My Prompts", ...tagsSorted]);
+		setLoadStatus("DONE");
+	} catch (e) {
+		console.error("ListPrompt load failed:", e);
+		setLoadStatus("ERROR");
+	}
+}, [actions, userId]);
+console.log('all prompts', allPrompts);
+	// useEffect(() => {
+	// 	const getUserMetaKeys = async () => {
+	// 		try {
+	// 			const resultUnknown = (await actions.run(
+	// 				`GetUserInfo()`,
+	// 			)) as unknown;
 
-				const pixelReturn = isRecord(resultUnknown)
-					? (resultUnknown as { pixelReturn?: unknown }).pixelReturn
-					: undefined;
+	// 			const pixelReturn = isRecord(resultUnknown)
+	// 				? (resultUnknown as { pixelReturn?: unknown }).pixelReturn
+	// 				: undefined;
 
-				const first = Array.isArray(pixelReturn)
-					? pixelReturn[0]
-					: undefined;
+	// 			const first = Array.isArray(pixelReturn)
+	// 				? pixelReturn[0]
+	// 				: undefined;
 
-				const outputUnknown = isRecord(first)
-					? (first as { output?: unknown }).output
-					: undefined;
+	// 			const outputUnknown = isRecord(first)
+	// 				? (first as { output?: unknown }).output
+	// 				: undefined;
 
-				if (!hasNativeMeta(outputUnknown)) return;
+	// 			if (!hasNativeMeta(outputUnknown)) return;
 
-				const meta = (outputUnknown as any)?.NATIVE?.meta;
-				const metaMap = normalizeToMetaMap(meta);
-				if (metaMap === null) return;
-				setUserMetaKeys(metaMap);
-			} catch (e) {
-				console.error("GetUserInfo failed:", e);
-			}
-		};
+	// 			const meta = (outputUnknown as any)?.NATIVE?.meta;
+	// 			const metaMap = normalizeToMetaMap(meta);
+	// 			if (metaMap === null) return;
+	// 			setUserMetaKeys(metaMap);
+	// 		} catch (e) {
+	// 			console.error("GetUserInfo failed:", e);
+	// 		}
+	// 	};
 
-		getUserMetaKeys();
-	}, []);
+	// 	getUserMetaKeys();
+	// }, []);
 
 	useEffect(() => {
 		void refreshPrompts();
 	}, [refreshPrompts]);
 
-	const categoryPromptsSearched = useMemo(() => {
-		if (selectedCategory.label === "My Prompts") return [];
+const categoryPromptsSearched = useMemo(() => {
+	if (selectedCategory.label === "My Prompts") return [];
 
-		const selectedTag = selectedCategory.label;
-		const lower = search.trim().toLowerCase();
+	const selectedTag = selectedCategory.label;
+	const lower = search.trim().toLowerCase();
 
-		return allPrompts
-			.filter(
-				(p) => Array.isArray(p.tags) && p.tags.includes(selectedTag),
-			)
-			.filter((p) => {
-				if (!lower) return true;
-				return (
-					(p.title ?? "").toLowerCase().includes(lower) ||
-					String(p.intent ?? p.context ?? "")
-						.toLowerCase()
-						.includes(lower)
-				);
-			})
-			.filter((p) => {
-				if (selectedTags.length === 0) return true;
-				if (!Array.isArray(p.tags) || p.tags.length === 0) return false;
-				return selectedTags.some((t) => p.tags.includes(t));
-			});
-	}, [allPrompts, search, selectedCategory.label, selectedTags]);
+	return visiblePrompts
+		.filter((p) => Array.isArray(p.tags) && p.tags.includes(selectedTag))
+		.filter((p) => {
+			if (!lower) return true;
+			return (
+				(p.title ?? "").toLowerCase().includes(lower) ||
+				String(p.intent ?? p.context ?? "").toLowerCase().includes(lower)
+			);
+		})
+		.filter((p) => {
+			if (selectedTags.length === 0) return true;
+			if (!Array.isArray(p.tags) || p.tags.length === 0) return false;
+			return selectedTags.some((t) => p.tags.includes(t));
+		});
+}, [visiblePrompts, search, selectedCategory.label, selectedTags]);
 
 	const handleAddNew = async (newPrompt: Prompt) => {
 		try {
@@ -362,15 +343,14 @@ export const PromptLibrary = observer(() => {
 		});
 	}, [myPrompts, search]);
 
-	// Only show the "Filter by Tags" menu when the selected tag has other tags available to refine by
 	const categoryHasTags = useMemo(() => {
 		if (selectedCategory.label === "My Prompts") return false;
 
 		const selected = selectedCategory.label;
-		return allPrompts
+		return visiblePrompts
 			.filter((p) => p.tags?.includes(selected))
 			.some((p) => p.tags?.some((t) => t !== selected) ?? false);
-	}, [allPrompts, selectedCategory.label]);
+	}, [visiblePrompts, selectedCategory.label]);
 
 	const displayedTags = selectedTags.slice(0, 2);
 	const hiddenCount = Math.max(0, selectedTags.length - 2);

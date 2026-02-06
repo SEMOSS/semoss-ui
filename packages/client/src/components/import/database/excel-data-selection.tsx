@@ -112,7 +112,8 @@ const ExcelDataSelection = ({
 			const pixelExpression = `META|PredictExcelRangeMetadata(filePath=["${filePath}"], sheetName=["${sheetName}"], sheetRange=["${customRangeValues}"]);`;
 			const response = await monolithStore.runQuery(pixelExpression);
 
-			const result: ParsedResult = response.pixelReturn[0].output as ParsedResult;
+			const result: ParsedResult = response.pixelReturn[0]
+				.output as ParsedResult;
 
 			if (!result?.cleanHeaders || !result?.dataTypes) {
 				return;

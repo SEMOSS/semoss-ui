@@ -159,7 +159,10 @@ export const StorageForm = ({
 					f.key === key
 						? {
 								...f,
-								options: (Array.isArray(output) ? output : []).map((opt) => ({
+								options: (Array.isArray(output)
+									? output
+									: []
+								).map((opt) => ({
 									display: opt[f.optionRule.optionDisplay],
 									value: opt[f.optionRule.optionValue],
 								})),

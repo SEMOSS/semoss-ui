@@ -25,11 +25,11 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
-import { DatabaseForm } from "./database-form";
 import {
 	CATEGORY_DESCRIPTIONS,
 	DATABASE_CONNECTION,
 } from "./database.constants";
+import { DatabaseForm } from "./database-form";
 
 interface database {
 	fields: [];

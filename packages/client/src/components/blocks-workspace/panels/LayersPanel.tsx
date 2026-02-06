@@ -416,7 +416,9 @@ export const LayersPanel = observer(
 					if (!blk) return;
 					out.push(id);
 					for (const s in blk.slots) {
-						blk.slots[s]?.children?.forEach((cid: string) => visit(cid));
+						blk.slots[s]?.children?.forEach((cid: string) =>
+							visit(cid),
+						);
 					}
 				};
 				visit(rootId);
@@ -439,7 +441,9 @@ export const LayersPanel = observer(
 				}
 				// After expansion renders, scroll the matched item into view
 				setTimeout(() => {
-					const el = accordionRefs.current[matchId] as HTMLElement | null;
+					const el = accordionRefs.current[
+						matchId
+					] as HTMLElement | null;
 					if (el) {
 						scrollIntoView(el, { block: "center" });
 					}
@@ -1390,8 +1394,29 @@ export const LayersPanel = observer(
 						height: "100%",
 					}}
 				>
-					<Grid item xs={12} width={"100%"} sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
-						<Grid item xs={12} sx={{ display: "flex", flexDirection: "column", flex: "0 0 140px", minHeight: "80px", maxHeight: "230px", overflow: "hidden" }}>
+					<Grid
+						item
+						xs={12}
+						width={"100%"}
+						sx={{
+							display: "flex",
+							flexDirection: "column",
+							height: "100%",
+							minHeight: 0,
+						}}
+					>
+						<Grid
+							item
+							xs={12}
+							sx={{
+								display: "flex",
+								flexDirection: "column",
+								flex: "0 0 140px",
+								minHeight: "80px",
+								maxHeight: "230px",
+								overflow: "hidden",
+							}}
+						>
 							<StyledMenu>
 								<StyledMenuHeader>
 									<Stack
@@ -1434,7 +1459,17 @@ export const LayersPanel = observer(
 							</StyledMenu>
 						</Grid>
 						<Divider sx={{ margin: 0 }} />
-						<Grid item xs={12} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+						<Grid
+							item
+							xs={12}
+							sx={{
+								flex: 1,
+								display: "flex",
+								flexDirection: "column",
+								minHeight: 0,
+								overflow: "hidden",
+							}}
+						>
 							<DndContext
 								sensors={sensors}
 								collisionDetection={customCollisionDetection}

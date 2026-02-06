@@ -270,9 +270,7 @@ export const Metamodel = (props: MetamodelProps) => {
 				});
 			});
 		},
-		[
-			columnToEdit, callback, closeEditModal, onMetaModelUpdate
-		],
+		[columnToEdit, callback, closeEditModal, onMetaModelUpdate],
 	);
 
 	const applyReplaceColumnsForNode = useCallback(
