@@ -1,6 +1,5 @@
 import {
 	Cached,
-	ContentCopy,
 	InsertLink,
 	Person,
 	Publish,
@@ -10,12 +9,10 @@ import {
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Env } from "@semoss/sdk/react";
 import {
 	Avatar,
 	Divider,
 	FileDropzone,
-	IconButton,
 	LoadingScreen,
 	Paper,
 	Stack,
@@ -31,11 +28,12 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
-	Markdown,
+	Large,
 } from "@semoss/ui/next";
 import { setProjectPortal, uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { McpUsage } from "../shared/mcp-usage";
 
 const StyledAppSettings = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -256,122 +254,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 	const uploadFile = watch("PROJECT_UPLOAD");
 
 	const admin = configStore.store.user.admin;
-
-	const mcpUrl = `${window.location.origin}${Env.MODULE}/api/ext/mcp/${id}/comms`;
-
-	const MCP_USAGE = [
-		{
-			Label: "VS Code (MCP Integration)",
-			usage: [
-				"Install an MCP-compatible extension in VS Code (like Continue or similar)",
-				"Open the extension settings and add a new MCP server",
-				"Replace <app-or-engine-id> and <accesskey:secretkey>",
-				"Save settings and reload VS Code",
-				"You can now use MCP tools directly inside VS Code",
-			],
-			code:
-				'```json\n{\n  "name": "backend-mcp",\n  "command": "npx",\n  "args": [\n    "mcp-remote",\n     "' +
-				mcpUrl +
-				'",\n    "--header",\n    "Authorization:Bearer <accesskey:secretkey>"\n  ]\n}\n```',
-		},
-		{
-			Label: "Claude Desktop (MCP Server Connection)",
-			usage: [
-				"Open Claude Desktop settings",
-				"Go to Developer or MCP Servers section",
-				"Add a new MCP server configuration",
-				"Replace <app-or-engine-id> and <accesskey:secretkey>",
-				"Restart Claude to load the MCP tools",
-			],
-			code:
-				'```json\n{\n  "mcpServers": {\n    "backend-mcp": {\n      "command": "npx",\n      "args": [\n        "mcp-remote",\n        "' +
-				mcpUrl +
-				'",\n        "--header",\n        "Authorization:Bearer <accesskey:secretkey>"\n      ]\n    }\n  }\n}\n```',
-		},
-		{
-			Label: "Claude with custom backend and MCP (Best for AI Tooling)",
-			description:
-				"Use Claude through the Anthropic API with your own backend acting as a bridge to the MCP server. This gives you full control over authentication, logging, and which MCP tools Claude is allowed to use.",
-			usage: [
-				"Use Claude via the Anthropic API instead of Claude Desktop",
-				"Define MCP tools in your backend as callable functions",
-				"When Claude requests a tool, your backend calls the MCP server",
-				"Replace <app-or-engine-id> and <accesskey:secretkey> in the MCP URL",
-				"Return the MCP response back to Claude as the tool result",
-				"This setup is ideal for production AI applications",
-			],
-			code:
-				'```javascript\n// Example: Claude tool handler calling MCP\nimport fetch from "node-fetch";\n\nconst MCP_URL = "' +
-				mcpUrl +
-				'";\n\nexport async function callMcpTool() {\n  const res = await fetch(MCP_URL, {\n    method: "POST",\n    headers: {\n      "Authorization": "Bearer <accesskey:secretkey>",\n      "Content-Type": "application/json"\n    },\n    body: JSON.stringify({\n      jsonrpc: "2.0",\n      id: 1,\n      method: "tools/list",\n      params: {}\n    })\n  });\n\n  return await res.json();\n}\n```',
-		},
-		{
-			Label: "OpenAI Codex / CLI Tools (MCP Connection)",
-			usage: [
-				"Ensure Node.js is installed",
-				"Replace <app-or-engine-id> and <accesskey:secretkey>",
-				"Run this before starting your Codex-based workflow",
-				"This allows Codex tools to communicate with your MCP server",
-			],
-			code:
-				'```bash\nnpx mcp-remote \\\n  "' +
-				mcpUrl +
-				'" \\\n  --header "Authorization: Bearer <accesskey:secretkey>"\n```',
-		},
-		{
-			Label: "Terminal Command (npx mcp-remote)",
-			usage: [
-				"Make sure Node.js (v18+) is installed",
-				"Replace <app-or-engine-id> and <accesskey:secretkey>",
-				"Run this command in your terminal",
-				"This connects your local tool directly to the MCP server",
-			],
-			code:
-				'```bash\nnpx mcp-remote \\\n  "' +
-				mcpUrl +
-				'"  \\\n  --header "Authorization: Bearer <accesskey:secretkey>"\n```',
-		},
-		{
-			Label: "cURL Command (Manual MCP JSON-RPC Request)",
-			usage: [
-				"Replace <app-or-engine-id> and <accesskey:secretkey>",
-				"Run in Terminal or Command Prompt",
-				"Useful for testing if MCP server is reachable",
-				"Confirms authentication and API response",
-			],
-			code:
-				'```bash\ncurl -X POST \\\n  "' +
-				mcpUrl +
-				'" \\\n  -H "Authorization: Bearer <accesskey:secretkey>" \\\n  -H "Content-Type: application/json" \\\n  -d \'{\n    "jsonrpc": "2.0",\n    "id": 1,\n    "method": "tools/list",\n    "params": {}\n  }\'\n```',
-		},
-		{
-			Label: "JavaScript (Node.js — fetch / axios)",
-			usage: [
-				"Replace <app-or-engine-id> and <accesskey:secretkey>",
-				"Use fetch (Node 18+) or axios (older Node versions)",
-				"Install axios if needed: npm install axios",
-				"Use inside backend services or scripts",
-				"Ideal when MCP is part of a JS application workflow",
-			],
-			code:
-				'```javascript\n// Using fetch (Node 18+)\nconst url = "' +
-				mcpUrl +
-				'";\n\nawait fetch(url, {\n  method: "POST",\n  headers: {\n    "Authorization": "Bearer <accesskey:secretkey>",\n    "Content-Type": "application/json"\n  },\n  body: JSON.stringify({\n    jsonrpc: "2.0",\n    id: 1,\n    method: "tools/list",\n    params: {}\n  })\n});\n\n// OR using axios\nimport axios from "axios";\n\nawait axios.post(\n  url,\n  {\n    jsonrpc: "2.0",\n    id: 1,\n    method: "tools/list",\n    params: {}\n  },\n  {\n    headers: {\n      Authorization: "Bearer <accesskey:secretkey>"\n    }\n  }\n);\n```',
-		},
-		{
-			Label: "Python (requests)",
-			usage: [
-				"Install requests: pip install requests",
-				"Replace URL and credentials",
-				"Run as a Python script or backend service",
-				"Ideal for automation or backend workflows",
-			],
-			code:
-				'```python\nimport requests\n\nurl = "' +
-				mcpUrl +
-				'"\n\nheaders = {\n    "Authorization": "Bearer <accesskey:secretkey>",\n    "Content-Type": "application/json"\n}\n\npayload = {\n    "jsonrpc": "2.0",\n    "id": 1,\n    "method": "tools/list",\n    "params": {}\n}\n\nrequests.post(url, json=payload, headers=headers)\n```',
-		},
-	];
 
 	const [portalReactors, setPortalReactors] = useState<{
 		reactors: string[];
@@ -659,26 +541,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 			setIsLoading(false);
 		}
 	});
-
-	/**
-	 * Copy text and add it to the clipboard
-	 * @param text - text to copy
-	 */
-	const copyCode = async (text: string) => {
-		try {
-			const cleanCode = text.replace(/```[a-z]*\n|```/g, "");
-			await navigator.clipboard.writeText(cleanCode);
-			notification.add({
-				color: "success",
-				message: "Successfully copied to clipboard",
-			});
-		} catch (_e) {
-			notification.add({
-				color: "error",
-				message: "Unable to copy to clipboard",
-			});
-		}
-	};
 
 	if (condensed) {
 		return (
@@ -979,15 +841,13 @@ export const AppSettings = (props: AppSettingsProps) => {
 						<Collapsible open={openMcp} onOpenChange={setOpenMcp}>
 							<div className="flex flex-row items-center justify-between">
 								<div className="flex w-[19.75rem] flex-col items-start pb-2">
-									<Typography variant="h6">
-										MCP Usage
-									</Typography>
+									<Large>MCP Usage</Large>
 								</div>
 								<CollapsibleTrigger asChild>
 									<Button
 										variant="ghost"
 										size="icon"
-										data-testid="database-mcp-usage-toggle"
+										data-testid="mcp-usage-toggle"
 									>
 										{openMcp ? (
 											<ChevronUp className="size-4" />
@@ -998,68 +858,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 								</CollapsibleTrigger>
 							</div>
 							<CollapsibleContent>
-								<div className="space-y-6">
-									{MCP_USAGE.map((item) => (
-										<div
-											key={item.Label}
-											className="rounded-2xl border border-base p-6 shadow-xs"
-										>
-											<div className="grid gap-8 md:grid-cols-2">
-												{/* LEFT SIDE */}
-												<div>
-													<Typography variant="h6">
-														{item.Label}
-													</Typography>
-
-													{item.description && (
-														<Typography variant="body2">
-															{item.description}
-														</Typography>
-													)}
-
-													<ul className="mt-3 list-disc space-y-1 pl-5 text-gray-700 text-sm">
-														{item.usage.map(
-															(point) => (
-																<li key={point}>
-																	{point}
-																</li>
-															),
-														)}
-													</ul>
-												</div>
-
-												{/* RIGHT SIDE */}
-												<div className="relative">
-													<IconButton
-														aria-label="copy"
-														color="default"
-														size="small"
-														className="!absolute !text-xs top-2 right-2"
-														onClick={() =>
-															copyCode(item.code)
-														}
-													>
-														<ContentCopy fontSize="small" />
-													</IconButton>
-
-													<Markdown
-														components={{
-															pre: ({
-																children,
-															}) => (
-																<div className="max-h-64 overflow-x-auto overflow-y-auto rounded-xl border border-base bg-gray-50 p-4 text-sm shadow-xs">
-																	{children}
-																</div>
-															),
-														}}
-													>
-														{item.code}
-													</Markdown>
-												</div>
-											</div>
-										</div>
-									))}
-								</div>
+								<McpUsage id={id}></McpUsage>
 							</CollapsibleContent>
 						</Collapsible>
 					</div>
