@@ -900,7 +900,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 									);
 								}}
 							/>
-							<Stack alignItems={"center"}>
+							<Stack alignItems={"center"} className="m-4">
 								<Button
 									type="submit"
 									variant={"default"}
