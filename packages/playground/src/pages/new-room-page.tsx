@@ -63,6 +63,8 @@ export const NewRoomPage = observer(() => {
 		type: "chat",
 		workspace: null,
 	});
+	const initialPrefill = (location.state as { description?: string } | null)?.description ?? "";
+	const [promptText, setPromptText] = useState(initialPrefill);
 	const workspaceId = searchParams.get("workspaceId");
 	const knowledgeId = searchParams.get("knowledgeId");
 
@@ -293,14 +295,11 @@ export const NewRoomPage = observer(() => {
 		}
 	}, [mode.type, root.theme.defaultTools, root.theme.defaultRoomSettings]);
 
-	useEffect(() => {
-		const prefill = (location.state as { description?: string } | null)
-			?.description;
-		if (!prefill) return;
-
-		setPromptText(prefill);
-		navigate(location.pathname, { replace: true, state: null });
-	}, [location.state, navigate, location.pathname]);
+useEffect(() => {
+  // Clear state once (prevents re-prefill on back/refresh)
+  if (!initialPrefill) return;
+  navigate(location.pathname, { replace: true, state: null });
+}, []);
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
@@ -334,6 +333,8 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
+							prompt={promptText}
+							onPromptChange={setPromptText}
 							className="max-h-64 min-h-48 bg-background"
 							isLoading={
 								isLoading ||

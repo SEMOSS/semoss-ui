@@ -195,6 +195,8 @@ export const PromptLibrary = observer(() => {
 			const output = isRecord(first)
 				? (first as { output?: unknown }).output
 				: undefined;
+
+				console.log('output', output)
 			const rows = Array.isArray(output) ? output : [];
 
 			const normalized: Prompt[] = rows.map((p) => normalizePrompt(p));
@@ -218,7 +220,7 @@ export const PromptLibrary = observer(() => {
 			setLoadStatus("ERROR");
 		}
 	}, [actions, userId]);
-	console.log("all prompts", allPrompts);
+	
 	// useEffect(() => {
 	// 	const getUserMetaKeys = async () => {
 	// 		try {

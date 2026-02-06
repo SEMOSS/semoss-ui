@@ -39,11 +39,16 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
+import { EnterPlugin, FocusPlugin, MentionPlugin, PromptSyncPlugin } from "@/components";
 import type { Engine } from "@/types";
 import { ContextChart } from "./context-chart";
 
 interface RoomInputProps {
+	/** Prompt and prompt change */
+	prompt: string;
+
+	onPromptChange: React.Dispatch<React.SetStateAction<string>>;
+
 	/** Classes to override */
 	className?: string;
 
@@ -77,6 +82,8 @@ interface RoomInputProps {
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
 	({
+		prompt,
+		onPromptChange,
 		className,
 		isLoading,
 		model,
@@ -293,15 +300,25 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						}}
 					/>
 					<LexicalComposer
-						initialConfig={{
-							namespace: "RoomInput",
-							theme: {},
-							nodes: [],
-							onError: (error) => {
-								console.error(error);
-							},
-						}}
+						  initialConfig={{
+						namespace: "RoomInput",
+						theme: {},
+						nodes: [],
+						editorState: () => {
+						if (!prompt) return;
+						const root = $getRoot();
+						root.clear();
+						const p = $createParagraphNode();
+						p.append($createTextNode(prompt));
+						root.append(p);
+						root.selectEnd();
+						},
+						onError: (error) => {
+						console.error(error);
+						},
+					}}
 					>
+						<PromptSyncPlugin prompt={prompt} />
 						<PlainTextPlugin
 							contentEditable={
 								<div className="relative">
@@ -374,13 +391,18 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							onChange={(editorState) => {
 								editorState.read(() => {
 									// get the root
-									const root = $getRoot();
+									const root = $getRoot()
+									const nextText = root.getTextContent();
 
 									// set empty state
 									setIsEmpty(
-										root.getTextContent().trim().length ===
+										nextText.trim().length ===
 											0,
 									);
+
+									if (nextText !== prompt) {
+										onPromptChange(nextText);
+									}
 								});
 							}}
 						/>
