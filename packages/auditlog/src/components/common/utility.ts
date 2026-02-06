@@ -1,3 +1,4 @@
+//Event data object structure will have all the details about when the user clicks on table row
 export interface EventData {
 	startTime: string;
 	endTime: string;
@@ -13,6 +14,12 @@ export interface EventData {
 	sessionId: string;
 	spanId: string;
 }
+/**
+ * A function to format a timestamp into a date and time string.
+ * @param {string | number | null | undefined} timeStamp - The timestamp to be formatted.
+ * @returns {{date: string, time: string}} - An object containing the date and time strings.
+ * @return {{date: "", time: ""}} when the date is not valid
+ */
 export const TimeDateFormatter = (
 	timeStamp: string | number | null | undefined,
 ) => {
@@ -52,12 +59,3 @@ export const TimeDateFormatter = (
 		return { date: "", time: "" };
 	}
 };
-
-export const ENGINE_TYPES = [
-	"APP",
-	"MODEL",
-	"DATABASE",
-	"VECTOR",
-	"FUNCTION",
-	"STORAGE",
-];
