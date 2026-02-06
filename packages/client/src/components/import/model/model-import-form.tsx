@@ -638,7 +638,6 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 					variant="default"
 					className="flex w-[147px] items-center gap-2 px-4 py-2"
 					type="submit"
-					variant="contained"
 					disabled={isLoading || !isValid || isValidDatabaseName}
 				>
 					Connect
