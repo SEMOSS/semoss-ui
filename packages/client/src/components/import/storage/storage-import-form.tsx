@@ -169,7 +169,6 @@ export const StorageForm = ({
 			);
 		}
 	};
-	};
 
 	const validateFormField = async (field, userInput) => {
 		if (!field.rules?.custom?.value) return true;
