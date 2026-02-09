@@ -2,7 +2,6 @@ import LockIcon from "@mui/icons-material/Lock";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import type { AxiosResponse } from "axios";
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
 import {
 	Alert,
 	Box,
@@ -109,8 +108,6 @@ interface SettingsTilesProps {
 	 * diection: stack tiles vertically or horizontally
 	 */
 	direction?: "column" | "row";
-	
-	skipGuardrailCheck?: boolean;
 }
 
 export const SettingsTiles = (props: SettingsTilesProps) => {
@@ -121,7 +118,6 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		condensed,
 		onDelete,
 		direction = "column",
-		skipGuardrailCheck = false,
 	} = props;
 
 	const { monolithStore, configStore } = useRootStore();
@@ -366,10 +362,6 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 	/** LOADING */
 	if (loading) {
 		return <LoadingScreen.Trigger description="Deleting..." />;
-	}
-
-	if (!adminMode && type === "GUARDRAIL" && !skipGuardrailCheck) {
-		return <Navigate to="/settings" />;
 	}
 
 	if (condensed) {

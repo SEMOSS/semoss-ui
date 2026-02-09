@@ -34,7 +34,6 @@ export const EngineSettingsPage = () => {
 					id={active.id}
 					name={name}
 					direction="row"
-					skipGuardrailCheck={true}
 					onDelete={() => {
 						navigate(`/engine/${path}`);
 					}}

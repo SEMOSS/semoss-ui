@@ -92,7 +92,6 @@ export const SETTINGS_ROUTES: {
 		description: "View and edit settings for guardrails",
 		icon: mdiDatabase,
 		history: ["guardrail"],
-		admin: true,
 	},
 	{
 		title: "Guardrail Settings",
