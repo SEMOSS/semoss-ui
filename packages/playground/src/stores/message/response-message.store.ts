@@ -427,13 +427,17 @@ paramValues=[${JSON.stringify({
 
 		try {
 			// wait for the pixel to run
-			const response = await this.room.runRoomPixel<[string]>(
+			const response = await this.room.runRoomPixel<[unknown]>(
 				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.json.parameters)} ]);`,
 				false,
 				false,
 			);
 
-			const { output } = response.pixelReturn[0];
+			const rawOutput = response.pixelReturn[0].output;
+			const output =
+				typeof rawOutput === "string"
+					? rawOutput
+					: JSON.stringify(rawOutput);
 
 			// save the response
 			await this.saveToolExecution(
