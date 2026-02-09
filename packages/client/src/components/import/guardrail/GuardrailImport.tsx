@@ -1,84 +1,37 @@
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+
 import { FileUploadOutlined } from "@mui/icons-material";
+import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-	Box,
-	Breadcrumbs,
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 	Button,
-	FileDropzone,
-	Grid,
-	Link,
-	LoadingScreen,
-	Modal,
-	Search,
-	Stack,
-	styled,
+	Dialog,
+	DialogContent,
+	H4,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	P,
 	Tabs,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { GuardrailTitleCard } from "./GuardrailTitleCard";
 import { GuardrailForm } from "./GuardraliImportForm";
 import { GUARDRAIL_CONNECTION } from "./guardrail-import.constants";
-
-const StyledContainer = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	width: "auto",
-});
-
-const StyledSearchbarContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	alignItems: "flex-start",
-	gap: theme.spacing(2),
-}));
-
-const StyledStack = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-}));
-
-const StyledTab = styled(Tabs.Item)(() => ({
-	fontSize: "14px",
-	fontWeight: 500,
-	letterSpacing: "0.4px",
-	color: "rgba(0, 0, 0, 0.60)",
-}));
-
-const UploadButton = styled(Button)(({ theme }) => ({
-	borderColor: theme.palette.action.disabled,
-	color: theme.palette.text.primary,
-	borderRadius: "12px",
-	alignSelf: "flex-start",
-}));
-
-const StyledDropzoneField = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(2),
-	width: "100%",
-	height: "100%",
-}));
-
-const SubmitUploadButton = styled(Button)(({ theme }) => ({
-	borderColor: theme.palette.action.disabled,
-	color: theme.palette.background.default,
-	borderRadius: "12px",
-	alignSelf: "flex-start",
-}));
-
-const CloseButton = styled(Button)(({ theme }) => ({
-	borderColor: theme.palette.action.disabled,
-	color: theme.palette.secondary.dark,
-	borderRadius: "12px",
-	alignSelf: "flex-start",
-}));
 
 interface guardrail {
 	fields: [];
@@ -92,23 +45,23 @@ interface guardrail {
 export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 	const navigate = useNavigate();
 	const { monolithStore, configStore } = useRootStore();
-	const notification = useNotification();
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
-	const [selectedTab, setSelectedTab] = useState(0);
+	const [selectedTab, setSelectedTab] = useState("");
 	const [selectedDatabase, setSelectedDatabase] = useState<guardrail | null>(
 		null,
 	);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [filedata, setFiledata] = useState(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const GuardrailOptions = GUARDRAIL_CONNECTION;
 	const CategoryDescription = GUARDRAIL_CONNECTION.description;
 
 	const pageTitle = "Connect to Guardrail Database";
 	const pageDescription =
-		"In a platform where safe and reliable interactions are critical, connecting to guardrails allows you to seamlessly integrate predefined or custom safety rules into your workflows. Whether you’re a developer, data engineer, or product owner, this page helps you explore, configure, and apply guardrails to maintain controlled and secure platform operations.";
+		"In a platform where safe and reliable interactions are critical, connecting to guardrails allows you to seamlessly integrate predefined or custom safety rules into your workflows. Whether you're a developer, data engineer, or product owner, this page helps you explore, configure, and apply guardrails to maintain controlled and secure platform operations.";
 
 	const tabLabels = useMemo(() => {
 		return Object.keys(GuardrailOptions).filter(
@@ -120,12 +73,15 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 	}, [GuardrailOptions]);
 
 	const DatabasesForTab = useMemo(() => {
-		return GuardrailOptions[tabLabels[selectedTab]] || [];
-	}, [selectedTab, tabLabels, GuardrailOptions, allDatabases]);
+		return GuardrailOptions[selectedTab] || [];
+	}, [selectedTab, GuardrailOptions, allDatabases]);
 
-	if (loading) {
-		return <LoadingScreen.Trigger description="Loading..." />;
-	}
+	// Set initial tab
+	useEffect(() => {
+		if (tabLabels.length > 0 && !selectedTab) {
+			setSelectedTab(tabLabels[0]);
+		}
+	}, [tabLabels]);
 
 	const onSubmit = async (data) => {
 		setLoading(true);
@@ -136,10 +92,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 			);
 
 			if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
-				notification.add({
-					color: "error",
-					message: "Upload failed or returned invalid response.",
-				});
+				toast.error("Upload failed or returned invalid response.");
 				setFiledata(null);
 				return;
 			}
@@ -151,87 +104,108 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 				const response = await monolithStore.runQuery(pixelString);
 				const { output, operationType } = response.pixelReturn[0];
 				if (operationType.includes("ERROR")) {
-					notification.add({ color: "error", message: output });
+					toast.error(String(output));
 					setFiledata(null);
 					return;
 				}
-				notification.add({
-					color: "success",
-					message: "Successfully Created Guardrail Database",
-				});
+				toast.success("Successfully Created Guardrail Database");
 				navigate(`/engine/guardrail/${output.database_id}`);
 			}
 		} catch {
-			notification.add({
-				color: "error",
-				message: "Upload failed or returned invalid response.",
-			});
+			toast.error("Upload failed or returned invalid response.");
 			setFiledata(null);
 		} finally {
 			setLoading(false);
 		}
 	};
 
+	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+	};
+
+	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const files = e.dataTransfer.files;
+		if (files && files.length > 0) {
+			const file = files[0];
+			if (file.name.endsWith(".zip")) {
+				setFiledata(file);
+			} else {
+				toast.error("Please upload a ZIP file");
+			}
+		}
+	};
+
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = e.target.files;
+		if (files && files.length > 0) {
+			setFiledata(files[0]);
+		}
+	};
+
 	const renderBreadcrumbs = () => (
-		<Breadcrumbs separator="/" data-testid="breadcrumbs">
-			<Breadcrumbs.Item
-				// @ts-expect-error TODO FIX
-				as={Link}
-				underline="none"
-				color="inherit"
-				variant="body1"
-				onClick={() =>
-					window.history.length > 1 ? navigate(-1) : navigate("/")
-				}
-				data-testid="breadcrumb-catalog"
-			>
-				{name} Catalog
-			</Breadcrumbs.Item>
-
-			<Breadcrumbs.Item
-				// @ts-expect-error TODO FIX
-				as={Link}
-				underline="none"
-				color={selectedDatabase ? "inherit" : "text.disabled"}
-				variant="body1"
-				onClick={() => {
-					if (selectedDatabase) {
-						setSelectedDatabase(null);
-					}
-				}}
-				sx={{ cursor: selectedDatabase ? "pointer" : "default" }}
-				data-testid="breadcrumb-page"
-			>
-				Connect to Guardrail
-			</Breadcrumbs.Item>
-
-			{selectedDatabase && (
-				<Breadcrumbs.Item
-					// @ts-expect-error TODO FIX
-					as={Link}
-					underline="none"
-					color="text.disabled"
-					variant="body1"
-					data-testid="breadcrumb-selected-storage"
-				>
-					{selectedDatabase.name}
-				</Breadcrumbs.Item>
-			)}
-		</Breadcrumbs>
+		<Breadcrumb className="mb-4">
+			<BreadcrumbList>
+				<BreadcrumbItem>
+					<BreadcrumbLink
+						className="cursor-pointer"
+						onClick={() =>
+							window.history.length > 1
+								? navigate(-1)
+								: navigate("/")
+						}
+						data-testid="breadcrumb-catalog"
+					>
+						{name} Catalog
+					</BreadcrumbLink>
+				</BreadcrumbItem>
+				<BreadcrumbSeparator>
+					<ChevronRight />
+				</BreadcrumbSeparator>
+				<BreadcrumbItem>
+					{selectedDatabase ? (
+						<BreadcrumbLink
+							className="cursor-pointer"
+							onClick={() => {
+								setSelectedDatabase(null);
+							}}
+							data-testid="breadcrumb-page"
+						>
+							Connect to Guardrail
+						</BreadcrumbLink>
+					) : (
+						<BreadcrumbPage data-testid="breadcrumb-page">
+							Connect to Guardrail
+						</BreadcrumbPage>
+					)}
+				</BreadcrumbItem>
+				{selectedDatabase && (
+					<>
+						<BreadcrumbSeparator>
+							<ChevronRight />
+						</BreadcrumbSeparator>
+						<BreadcrumbItem>
+							<BreadcrumbPage data-testid="breadcrumb-selected-storage">
+								{selectedDatabase.name}
+							</BreadcrumbPage>
+						</BreadcrumbItem>
+					</>
+				)}
+			</BreadcrumbList>
+		</Breadcrumb>
 	);
 
 	const renderDatabaseGrid = (Databases: guardrail[]) => (
-		<Grid
-			container
-			columns={6}
-			columnSpacing={2}
-			rowSpacing={2}
+		<div
+			className="mt-4 grid grid-cols-6 gap-2"
 			data-testid="guardrail-grid"
 		>
 			{Databases.filter((v) =>
 				v.name.toLowerCase().includes(search.toLowerCase()),
 			).map((v) => (
-				<Grid key={v.id} item lg={1} md={1} xs={1} xl={1} sm={1}>
+				<div key={v.id}>
 					<GuardrailTitleCard
 						guardrail={{
 							...v,
@@ -241,9 +215,9 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 							setSelectedDatabase(v);
 						}}
 					/>
-				</Grid>
+				</div>
 			))}
-		</Grid>
+		</div>
 	);
 
 	const handleFileUpload = (flag: boolean) => {
@@ -251,55 +225,95 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 		setIsFileUploadModalOpen(flag);
 	};
 
+	if (loading) {
+		return (
+			<div className="flex min-h-screen items-center justify-center">
+				<div className="flex flex-col items-center gap-2">
+					<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+					<P className="text-muted-foreground">Loading...</P>
+				</div>
+			</div>
+		);
+	}
+
 	return (
-		<>
+		<div>
 			{renderBreadcrumbs()}
-			<Modal
+			{/* File Upload Modal */}
+			<Dialog
 				open={isFileUploadModalOpen}
-				maxWidth="xl"
-				onClose={() => setIsFileUploadModalOpen(false)}
-				data-testid="guardrail-zip-upload-modal"
+				onOpenChange={setIsFileUploadModalOpen}
 			>
-				<Modal.Content sx={{ width: "600px" }}>
-					<StyledDropzoneField>
-						<Typography
-							variant={"body1"}
+				<DialogContent
+					className="w-[600px]"
+					data-testid="guardrail-zip-upload-modal"
+				>
+					<div className="flex h-full w-full flex-col gap-4">
+						<P
+							className="text-base"
 							data-testid="guardrail-zip-upload-title"
 						>
 							Zip File
-						</Typography>
-						<FileDropzone
-							multiple={false}
-							onChange={(newValues) => {
-								setFiledata(newValues);
-							}}
-						/>
-						<Stack
-							spacing={2}
-							direction="row"
-							justifyContent="flex-end"
+						</P>
+						<div
+							className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
+							onClick={() => fileInputRef.current?.click()}
+							onDragOver={handleDragOver}
+							onDrop={handleDrop}
 						>
-							<CloseButton
-								size="small"
-								variant="text"
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept=".zip"
+								className="hidden"
+								onChange={handleFileChange}
+								multiple={false}
+							/>
+							{filedata ? (
+								<div className="text-center">
+									<P className="font-medium text-foreground">
+										{filedata.name}
+									</P>
+									<P className="text-muted-foreground text-sm">
+										Click or drag to replace
+									</P>
+								</div>
+							) : (
+								<div className="text-center">
+									<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+									<P className="font-medium text-foreground">
+										Drop your file here or click to browse
+									</P>
+									<P className="text-muted-foreground text-sm">
+										Supports ZIP files only
+									</P>
+								</div>
+							)}
+						</div>
+						<div className="flex flex-row justify-end gap-2">
+							<Button
+								size="sm"
+								variant="ghost"
 								onClick={() => setIsFileUploadModalOpen(false)}
 								data-testid="guardrail-upload-close-button"
+								className="rounded-xl"
 							>
 								Close
-							</CloseButton>
-							<SubmitUploadButton
-								size="small"
-								variant="contained"
-								disabled={!filedata}
+							</Button>
+							<Button
+								size="sm"
+								variant="default"
+								disabled={!filedata || loading}
 								onClick={() => onSubmit(filedata)}
 								data-testid="guardrail-upload-submit-button"
+								className="rounded-xl"
 							>
 								Upload
-							</SubmitUploadButton>
-						</Stack>
-					</StyledDropzoneField>
-				</Modal.Content>
-			</Modal>
+							</Button>
+						</div>
+					</div>
+				</DialogContent>
+			</Dialog>
 			{selectedDatabase ? (
 				<div data-testid="guardrail-form-wrapper">
 					<GuardrailForm
@@ -312,72 +326,77 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 					/>
 				</div>
 			) : (
-				<Stack direction="column" gap={2} data-testid="guardrail-page">
-					<StyledStack>
-						<Typography
-							variant="h4"
-							sx={{ fontWeight: 500 }}
-							data-testid="page-title"
-						>
+				<div
+					className="flex flex-col gap-2"
+					data-testid="guardrail-page"
+				>
+					<div className="flex flex-col gap-1">
+						<H4 className="font-medium" data-testid="page-title">
 							{pageTitle}
-						</Typography>
-						<Typography
-							variant="body1"
-							color="textSecondary"
+						</H4>
+						<P
+							className="text-muted-foreground"
 							data-testid="page-description"
 						>
 							{pageDescription}
-						</Typography>
-					</StyledStack>
+						</P>
+					</div>
 
-					<StyledContainer>
-						<StyledSearchbarContainer>
-							<Search
-								size="small"
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-								fullWidth
-								data-testid="search-box"
-							/>
-							<UploadButton
-								sx={{ lineHeight: 0.75 }}
-								size="large"
-								variant="outlined"
+					<div className="flex w-auto flex-col items-start">
+						<div className="mt-3 mb-4 flex w-full items-start gap-2">
+							<InputGroup className="flex-1 border-b-2 border-none">
+								<InputGroupAddon>
+									<SearchIcon className="size-4 text-muted-foreground" />
+								</InputGroupAddon>
+								<InputGroupInput
+									placeholder="Search"
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+									data-testid="search-box"
+								/>
+							</InputGroup>
+							<Button
+								size="sm"
+								variant="outline"
 								onClick={() => handleFileUpload(true)}
-								data-testid={"guardrail-upload-file-button"}
+								data-testid="guardrail-upload-file-button"
+								className="rounded-md"
 							>
-								<FileUploadOutlined fontSize="medium" />
-							</UploadButton>
-						</StyledSearchbarContainer>
+								<UploadIcon className="size-5" />
+							</Button>
+						</div>
 
-						<Box sx={{ width: "100%" }}>
+						<div className="w-full">
 							<Tabs
 								value={selectedTab}
-								onChange={(_, newValue) =>
+								onValueChange={(newValue) =>
 									setSelectedTab(newValue)
 								}
-								variant="scrollable"
-								sx={{
-									mt: 2,
-									borderBottom: "2px solid #E0E0E0",
-								}}
-								data-testid="tabs"
+								className="mt-1"
 							>
+								<TabsList data-testid="tabs">
+									{tabLabels.map((label) => (
+										<TabsTrigger
+											key={label}
+											value={label}
+											data-testid={`tab-${label.toLowerCase()}`}
+											className="text-sm"
+										>
+											{label}
+										</TabsTrigger>
+									))}
+								</TabsList>
+
 								{tabLabels.map((label) => (
-									<StyledTab
-										key={label}
-										label={label}
-										data-testid={`tab-${label.toLowerCase()}`}
-									/>
+									<TabsContent key={label} value={label}>
+										{renderDatabaseGrid(DatabasesForTab)}
+									</TabsContent>
 								))}
 							</Tabs>
-							<Box sx={{ mt: 4 }}>
-								{renderDatabaseGrid(DatabasesForTab)}
-							</Box>
-						</Box>
-					</StyledContainer>
-				</Stack>
+						</div>
+					</div>
+				</div>
 			)}
-		</>
+		</div>
 	);
 };

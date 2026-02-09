@@ -1,143 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, Stack, styled, Tooltip, Typography } from "@semoss/ui";
+import {
+	Badge,
+	Button,
+	cn,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { formatToDataTestId } from "@/utility";
-
-const StyledFormTypeGuardrailBox = styled(Box, {
-	shouldForwardProp: (prop) => prop !== "disabled",
-})<{
-	disabled: boolean;
-}>(({ disabled }) => {
-	return {
-		maxWidth: "215px",
-		borderRadius: "8px",
-		cursor: "pointer",
-		display: "block",
-		justifyContent: "center",
-		alignItems: "center",
-		border: "1px solid #C4C4C4",
-		padding: "16px",
-		backgroundColor: "#fff",
-		opacity: disabled ? 0.6 : 1,
-		position: "relative",
-		minHeight: "200px", // uniform card height assumption
-
-		"&:hover": {
-			cursor: disabled ? "auto" : "pointer",
-			border: disabled ? "1px solid #C4C4C4" : "1.5px solid #0471F0",
-			backgroundColor: disabled ? "white" : "#F5F9FE",
-		},
-	};
-});
-
-const StyledInnerBox = styled("div")<{ isGuardrail?: boolean }>(
-	({ theme, isGuardrail }) => ({
-		display: "flex",
-		alignItems: isGuardrail ? "flex-start" : "center",
-		gap: theme.spacing(1),
-		flexDirection: isGuardrail ? "column" : "row",
-	}),
-);
-
-// Replaces image with a colored avatar containing initials
-const StyledGuardrailAvatar = styled("div")<{ gradientBg: string }>(
-	({ gradientBg }) => ({
-		display: "flex",
-		height: "40px",
-		width: "40px",
-		alignItems: "center",
-		justifyContent: "center",
-		fontWeight: 600,
-		fontSize: "14px",
-		color: "#212121",
-		borderRadius: "8px",
-		textTransform: "uppercase",
-		background: gradientBg,
-		boxShadow:
-			"0 0 0 1px rgba(0,0,0,0.08) inset, 0 2px 4px -1px rgba(0,0,0,0.12)",
-		transition: "filter 0.25s ease",
-		userSelect: "none",
-		WebkitFontSmoothing: "antialiased",
-		"&:hover": {
-			filter: "brightness(1.03)",
-		},
-	}),
-);
-
-const StyledCardImage = styled("img")<{ isDatabase?: boolean }>(
-	({ isDatabase }) => ({
-		display: "flex",
-		height: "30px",
-		width: "30px",
-		objectFit: "cover",
-		borderRadius: isDatabase ? "8px" : "inherit",
-	}),
-);
-
-const StyledCardGuardrailText = styled("p")({
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	whiteSpace: "nowrap",
-	margin: "2px 0 0",
-	alignSelf: "stretch",
-	fontSize: "14px",
-	fontWeight: "500",
-	lineHeight: "143%",
-	letterSpacing: "0.17px",
-	color: "#212121",
-});
-
-const StyledTypographyText = styled(Typography)(() => ({
-	display: "flex",
-	alignItems: "center",
-	padding: "0 10px",
-	backgroundColor: "#EBEBEB",
-	borderRadius: "16px",
-	marginLeft: "auto !important",
-	fontSize: "13px",
-	color: "#212121",
-}));
-
-const TitleRow = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	width: "100%",
-	gap: theme.spacing(1),
-}));
-
-const StyledCardContentSpan = styled("span")(() => ({
-	display: "block",
-}));
-
-const DocsLinkButton = styled("button")(() => ({
-	position: "absolute",
-	bottom: 8,
-	right: 8,
-	background: "transparent",
-	border: "none",
-	padding: 0,
-	fontSize: "12px",
-	cursor: "pointer",
-	color: "#0471F0",
-	opacity: 0.75,
-	textDecoration: "underline",
-	"&:hover": {
-		opacity: 1,
-	},
-}));
-
-const DescriptionText = styled(Typography)(() => ({
-	fontSize: "11px",
-	lineHeight: 1.3,
-	color: "#555",
-	marginTop: "4px",
-	// Height should exactly match 3 lines to avoid cutting a partial line.
-	minHeight: "calc(3 * 1.3em)",
-	maxHeight: "calc(3 * 1.3em)",
-	overflow: "hidden",
-	display: "-webkit-box",
-	WebkitLineClamp: 3,
-	WebkitBoxOrient: "vertical",
-}));
 
 function hashString(str: string): number {
 	let h = 0;
@@ -206,21 +76,76 @@ export const GuardrailTitleCard: React.FC<GuardrailTileCardProps> = ({
 	// Dynamic gradient based on guardrail name for visual distinction
 	const avatarGradient = pickGradient(guardrail.name);
 
+	const handleCardClick = () => {
+		if (!guardrail.disable && onGuardrailSelect) {
+			onGuardrailSelect(guardrail);
+		}
+	};
+
+	const handleCardKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault();
+			handleCardClick();
+		}
+	};
+
 	const cardContent = (
-		<StyledFormTypeGuardrailBox
-			disabled={guardrail.disable || false}
-			onClick={() => {
-				if (!guardrail.disable && onGuardrailSelect) {
-					onGuardrailSelect(guardrail);
-				}
-			}}
+		// biome-ignore lint/a11y/useSemanticElements: <explanation>
+		<div
+			className={cn(
+				"relative flex min-h-[200px] max-w-[215px] cursor-pointer flex-col justify-between rounded-lg border border-input bg-card p-4",
+				"hover:border-[1.5px] hover:border-primary hover:bg-primary/5",
+				guardrail.disable &&
+					"cursor-auto opacity-60 hover:border hover:border-input hover:bg-card",
+			)}
+			onClick={handleCardClick}
+			onKeyDown={handleCardKeyDown}
 			data-testId={formatToDataTestId(
 				`importPageContent-connect-to-${guardrail.name}-img`,
 			)}
+			role="button"
+			tabIndex={guardrail.disable ? -1 : 0}
 		>
+			<div className="flex flex-col items-start gap-1">
+				<div className="flex w-full flex-row items-center gap-2">
+					{guardrail.icon ? (
+						<img
+							src={guardrail.icon}
+							alt={initials}
+							className="flex h-[30px] w-[30px] rounded-lg object-cover"
+						/>
+					) : (
+						<div
+							className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-[250ms] [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
+							style={{ background: avatarGradient }}
+						>
+							{initials}
+						</div>
+					)}
+					{guardrail.disable && (
+						<Badge variant="secondary">Coming Soon</Badge>
+					)}
+				</div>
+				<div className="flex w-full items-center gap-2">
+					<p
+						ref={textRef}
+						className="mt-0.5 self-stretch overflow-hidden text-ellipsis whitespace-nowrap font-medium text-secondary-foreground text-sm leading-[143%] tracking-[0.17px]"
+					>
+						{guardrail.display || guardrail.name}
+					</p>
+				</div>
+				<p
+					className="mt-1 line-clamp-3 text-[11px] text-muted-foreground leading-[1.3]"
+					title={guardrail.description || ""}
+				>
+					{guardrail.description}
+				</p>
+			</div>
 			{guardrail.link && !guardrail.disable && (
-				<DocsLinkButton
+				<Button
 					type="button"
+					variant="link"
+					className="mt-2 flex justify-end p-0 text-[12px]"
 					onClick={(e) => {
 						e.stopPropagation();
 						window.open(
@@ -229,41 +154,31 @@ export const GuardrailTitleCard: React.FC<GuardrailTileCardProps> = ({
 							"noopener,noreferrer",
 						);
 					}}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							e.stopPropagation();
+							window.open(
+								guardrail.link as string,
+								"_blank",
+								"noopener,noreferrer",
+							);
+						}
+					}}
 					aria-label={`Open documentation for ${label}`}
 				>
 					Docs
-				</DocsLinkButton>
+				</Button>
 			)}
-			<StyledInnerBox isGuardrail={true}>
-				<Stack direction="row" width={"100%"} spacing={1}>
-					{guardrail.icon ? (
-						<StyledCardImage src={guardrail.icon} alt={initials} />
-					) : (
-						<StyledGuardrailAvatar gradientBg={avatarGradient}>
-							{initials}
-						</StyledGuardrailAvatar>
-					)}
-					{guardrail.disable && (
-						<StyledTypographyText variant="body1">
-							Coming Soon
-						</StyledTypographyText>
-					)}
-				</Stack>
-				<TitleRow>
-					<StyledCardGuardrailText ref={textRef}>
-						{guardrail.display || guardrail.name}
-					</StyledCardGuardrailText>
-				</TitleRow>
-				<DescriptionText component="p" variant="caption">
-					{guardrail.description}
-				</DescriptionText>
-			</StyledInnerBox>
-		</StyledFormTypeGuardrailBox>
+		</div>
 	);
 
 	return isTruncated ? (
-		<Tooltip title={label} placement="bottom" arrow>
-			<StyledCardContentSpan>{cardContent}</StyledCardContentSpan>
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<span className="block">{cardContent}</span>
+			</TooltipTrigger>
+			<TooltipContent side="bottom">{label}</TooltipContent>
 		</Tooltip>
 	) : (
 		cardContent

@@ -1,52 +1,34 @@
-import { ExpandLess, ExpandMore } from "@mui/icons-material";
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import {
-	Autocomplete,
-	Box,
 	Button,
 	Checkbox,
-	Divider,
-	FileDropzone,
-	FormControlLabel,
-	IconButton,
-	LoadingScreen,
-	Menu,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	Field,
+	FieldDescription,
+	FieldLabel,
+	H4,
+	Input,
+	Label,
+	Muted,
+	P,
 	RadioGroup,
+	RadioGroupItem,
 	Select,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Separator,
+	toast,
+} from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
-
-const StyledBox = styled(Box)({
-	marginBottom: "32px",
-	marginTop: "16px",
-});
-
-const StyledFlexEnd = styled("div")(({ theme }) => ({
-	display: "flex",
-	justifyContent: "flex-end",
-	gap: theme.spacing(1),
-	marginTop: theme.spacing(2),
-}));
-
-const StyledSubmitButton = styled(Button)({
-	textTransform: "capitalize",
-	minWidth: "128px",
-});
-
-const AdvancedHeader = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	justifyContent: "space-between",
-	alignItems: "center",
-	padding: theme.spacing(2, 0),
-}));
 
 export interface ParsedResult {
 	headers: string[];
@@ -99,7 +81,6 @@ export const GuardrailForm = ({
 
 	const watchedFieldRef = useRef({});
 	const { monolithStore } = useRootStore();
-	const notification = useNotification();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -108,6 +89,7 @@ export const GuardrailForm = ({
 	const debounceTimeoutsRef = useRef<
 		Record<string, ReturnType<typeof setTimeout>>
 	>({});
+	const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
 	//  Group fields by category
 	const grouped = defaultFields.reduce((acc, f) => {
@@ -216,18 +198,14 @@ export const GuardrailForm = ({
 				operationType = response.pixelReturn[0].operationType;
 
 			if (operationType.indexOf("ERROR") > -1) {
-				notification.add({
-					color: "error",
-					message: pixelOutput,
-				});
+				toast.error(pixelOutput as string);
 				setLoading(false);
 				return;
 			}
-			notification.add({
-				color: "success",
-				message: `Successfully added new guardrail to catalog`,
-			});
-			navigate(`/engine/guardrail/${pixelOutput.database_id}`);
+			toast.success("Successfully added new guardrail to catalog");
+			navigate(
+				`/engine/guardrail/${(pixelOutput as { database_id: string }).database_id}`,
+			);
 			setLoading(false);
 		});
 	};
@@ -350,7 +328,7 @@ export const GuardrailForm = ({
 		const operationType = response.pixelReturn[0].operationType;
 
 		if (operationType.includes("ERROR")) {
-			notification.add({ color: "error", message: output });
+			toast.error(output as string);
 			return;
 		}
 
@@ -365,7 +343,9 @@ export const GuardrailForm = ({
 					f.key === key
 						? {
 								...f,
-								options: output.map((opt) => ({
+								options: (
+									output as Array<Record<string, unknown>>
+								).map((opt) => ({
 									display: opt[f.optionRule.optionDisplay],
 									value: opt[f.optionRule.optionValue],
 								})),
@@ -388,11 +368,11 @@ export const GuardrailForm = ({
 		const operationType = response.pixelReturn[0].operationType;
 
 		if (operationType.includes("ERROR")) {
-			notification.add({ color: "error", message: output });
+			toast.error(output as string);
 			return false;
 		}
 
-		if (output.exists) {
+		if ((output as { exists?: boolean }).exists) {
 			setFocus(field.key);
 			setIsValidDatabaseName(true);
 			return false;
@@ -458,6 +438,79 @@ export const GuardrailForm = ({
 		}
 	};
 
+	// Helper functions for file upload (matching database-form.tsx)
+	const onFileUpload = (
+		files: File | File[],
+		fieldOnChange: (value: File[]) => void,
+		currentValue: File | File[],
+	) => {
+		const fileArray = Array.isArray(files) ? files : [files];
+
+		// Get current files from field value
+		const currentFiles = Array.isArray(currentValue)
+			? currentValue
+			: currentValue
+				? [currentValue]
+				: [];
+		const existingFileNames = currentFiles.map((f: File) => f.name);
+		const newFiles = fileArray.filter(
+			(f) => !existingFileNames.includes(f.name),
+		);
+		const combined = [...currentFiles, ...newFiles];
+
+		// Update form value with validation
+		fieldOnChange(combined);
+	};
+
+	const removeFile = (
+		index: number,
+		fieldOnChange: (value: File[]) => void,
+		currentValue: File | File[],
+	) => {
+		const currentFiles = Array.isArray(currentValue)
+			? currentValue
+			: currentValue
+				? [currentValue]
+				: [];
+		const updated = currentFiles.filter((_, i) => i !== index);
+
+		// Update form value with validation
+		fieldOnChange(updated);
+	};
+
+	const handleFileChange = (
+		e: React.ChangeEvent<HTMLInputElement>,
+		fieldOnChange: (value: File[]) => void,
+		currentValue: File | File[],
+	) => {
+		const files = e.target.files;
+		if (files && files?.length > 0) {
+			const fileArray = Array.from(files);
+			onFileUpload(fileArray, fieldOnChange, currentValue);
+		}
+		// Reset input value to allow re-selecting the same file
+		e.target.value = "";
+	};
+
+	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+	};
+
+	const handleDrop = (
+		e: React.DragEvent<HTMLDivElement>,
+		fieldOnChange: (value: File[]) => void,
+		currentValue: File | File[],
+	) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const files = e.dataTransfer.files;
+		if (files && files?.length > 0) {
+			const fileArray = Array.from(files);
+			onFileUpload(fileArray, fieldOnChange, currentValue);
+		}
+	};
+
 	const renderControllerField = (val) => (
 		<Controller
 			key={val.key}
@@ -470,33 +523,42 @@ export const GuardrailForm = ({
 				switch (val.component) {
 					case "text":
 						return (
-							<TextField
-								{...field}
-								fullWidth
-								label={val.label}
-								disabled={val.disabled}
-								variant="outlined"
-								required={val?.required}
-								size="small"
-								sx={{ display: val.hidden ? "none" : "block" }}
-								helperText={getHelperText(error, val)}
-								error={invalid}
-								data-testid={`guardrail-form-input-${val.key}`}
-								onChange={(v) => {
-									field.onChange(v);
-									if (val.rules?.custom_rules) {
-										if (
-											debounceTimeoutsRef.current[val.key]
-										) {
-											clearTimeout(
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Input
+									{...field}
+									id={val.key}
+									disabled={val.disabled}
+									data-testid={`guardrail-form-input-${val.key}`}
+									onChange={(e) => {
+										field.onChange(e);
+										if (val.rules?.custom_rules) {
+											if (
 												debounceTimeoutsRef.current[
 													val.key
-												],
-											);
-										}
-										debounceTimeoutsRef.current[val.key] =
-											setTimeout(async () => {
-												const value = v.target.value;
+												]
+											) {
+												clearTimeout(
+													debounceTimeoutsRef.current[
+														val.key
+													],
+												);
+											}
+											debounceTimeoutsRef.current[
+												val.key
+											] = setTimeout(async () => {
+												const value = e.target.value;
 												if (value === "") {
 													setError(val.key, {});
 													return;
@@ -531,215 +593,437 @@ export const GuardrailForm = ({
 													clearErrors(val.key);
 												}
 											}, 300);
-									}
-								}}
-							/>
+										}
+									}}
+								/>
+								{error && (
+									<FieldDescription className="text-destructive">
+										{getHelperText(error, val)}
+									</FieldDescription>
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
 						);
 
 					case "password":
 						return (
-							<TextField
-								{...field}
-								type="password"
-								fullWidth
-								size="small"
-								label={val.label}
-								disabled={val.disabled}
-								required={val?.required}
-								// @ts-expect-error TODO FIX
-								error={!!error}
-								helperText={getHelperText(error, val)}
-								data-testid={`guardrail-form-input-${val.key}`}
-							/>
+							<Field
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Input
+									{...field}
+									id={val.key}
+									type="password"
+									disabled={val.disabled}
+									data-testid={`guardrail-form-input-${val.key}`}
+								/>
+								{error && (
+									<FieldDescription className="text-destructive">
+										{getHelperText(error, val)}
+									</FieldDescription>
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
 						);
 
 					case "number":
 						return (
-							<TextField
-								{...field}
-								type="number"
-								fullWidth
-								label={val.label}
-								size="small"
-								disabled={val.disabled}
-								required={val?.required}
-								sx={{ display: val.hidden ? "none" : "block" }}
-								// @ts-expect-error TODO FIX
-								error={!!error}
-								helperText={getHelperText(error, val)}
-								data-testid={`guardrail-form-input-${val.key}`}
-							/>
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Input
+									{...field}
+									id={val.key}
+									type="number"
+									disabled={val.disabled}
+									data-testid={`guardrail-form-input-${val.key}`}
+								/>
+								{error && (
+									<FieldDescription className="text-destructive">
+										{getHelperText(error, val)}
+									</FieldDescription>
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
 						);
 
 					case "select":
 						return (
-							<Select
-								{...field}
-								fullWidth
-								label={val.label}
-								disabled={val.disabled}
-								size="small"
-								required={val?.required}
-								sx={{ display: val.hidden ? "none" : "block" }}
-								error={!!error}
-								helperText={getHelperText(error, val)}
-								onChange={(e) => {
-									field.onChange(e);
-									checkForDisplayRulesSet(
-										field,
-										e.target.value,
-									);
-								}}
-								data-testid={`guardrail-form-input-${val.key}`}
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`guardrail-form-field-${val.key}`}
 							>
-								{(Array.isArray(val?.options)
-									? val && Array.isArray(val.options)
-										? val.options
-										: []
-									: []
-								).map((opt) => (
-									<Menu.Item
-										key={opt.value}
-										value={opt.value}
-										data-testid={`guardrail-form-option-${val.key}-${opt.value}`}
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Select
+									value={field.value}
+									onValueChange={(value) => {
+										field.onChange(value);
+										checkForDisplayRulesSet(field, value);
+									}}
+									disabled={val.disabled}
+								>
+									<SelectTrigger
+										id={val.key}
+										className="w-full"
+										data-testid={`guardrail-form-input-${val.key}`}
 									>
-										{opt.display}
-									</Menu.Item>
-								))}
-							</Select>
+										<SelectValue
+											placeholder={`Select ${val.label}`}
+										/>
+									</SelectTrigger>
+									<SelectContent>
+										{(Array.isArray(val?.options)
+											? val && Array.isArray(val.options)
+												? val.options
+												: []
+											: []
+										).map((opt) => (
+											<SelectItem
+												key={opt.value}
+												value={opt.value}
+												data-testid={`guardrail-form-option-${val.key}-${opt.value}`}
+											>
+												{opt.display}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								{error && (
+									<FieldDescription className="text-destructive">
+										{getHelperText(error, val)}
+									</FieldDescription>
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
 						);
 
 					case "radio":
 						return (
-							<RadioGroup
-								row
-								value={field.value || ""}
-								onChange={(e) => field.onChange(e.target.value)}
-								data-testid={`guardrail-form-input-${val.key}`}
-								sx={{ display: val.hidden ? "none" : "block" }}
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`guardrail-form-field-${val.key}`}
 							>
-								{val.options.options.map((opt) => (
-									<FormControlLabel
-										key={opt.value}
-										value={opt.value}
-										control={
-											<RadioGroup.Item
+								<FieldLabel>{val.label}</FieldLabel>
+								<RadioGroup
+									value={field.value || ""}
+									onValueChange={field.onChange}
+									className="flex flex-row gap-4"
+									data-testid={`guardrail-form-input-${val.key}`}
+								>
+									{val.options.options.map((opt) => (
+										<div
+											key={opt.value}
+											className="flex items-center gap-2"
+										>
+											<RadioGroupItem
+												value={opt.value}
+												id={`${val.key}-${opt.value}`}
 												data-testid={`guardrail-form-radio-${val.key}-${opt.value}`}
-												label={""}
 											/>
-										}
-										label={opt.display}
-									/>
-								))}
+											<Label
+												htmlFor={`${val.key}-${opt.value}`}
+												className="cursor-pointer font-normal"
+											>
+												{opt.display}
+											</Label>
+										</div>
+									))}
+								</RadioGroup>
 								{error && (
-									<Typography variant="caption" color="error">
+									<FieldDescription className="text-destructive">
 										{getHelperText(error, val)}
-									</Typography>
+									</FieldDescription>
 								)}
-							</RadioGroup>
+							</Field>
 						);
 
 					case "file-upload":
 						return (
-							<>
-								<Typography
-									variant={"body1"}
-									data-testid="guardrail-zip-upload-title"
-								>
+							<div
+								className="flex flex-col gap-2"
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
+								<P>
 									{val.label}
-								</Typography>
-								<FileDropzone
-									multiple={false}
-									value={field.value as File | File[]}
-									disabled={val.disabled}
-									extensions={val.options?.extensions || []}
-									onChange={(newValues) => {
-										const files = newValues as
-											| File
-											| File[];
-										field.onChange(files);
-									}}
-									data-testid={`guardrail-form-input-${val.key}`}
-								/>
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</P>
+								<div
+									className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
+									onClick={() =>
+										fileInputRefs.current[val.key]?.click()
+									}
+									onDragOver={handleDragOver}
+									onDrop={(e) =>
+										handleDrop(
+											e,
+											field.onChange,
+											field.value,
+										)
+									}
+								>
+									<input
+										ref={(el) => {
+											fileInputRefs.current[val.key] = el;
+										}}
+										type="file"
+										accept={
+											val.options?.extensions?.join(
+												",",
+											) || "*"
+										}
+										multiple={false}
+										className="hidden"
+										onChange={(e) =>
+											handleFileChange(
+												e,
+												field.onChange,
+												field.value,
+											)
+										}
+										disabled={val.disabled}
+										data-testid={`guardrail-form-input-${val.key}`}
+									/>
+									<div className="text-center">
+										<P className="font-medium text-foreground">
+											Drop your file here or click to
+											browse
+										</P>
+										<P className="text-muted-foreground text-sm">
+											{val.options?.extensions
+												? `Supports ${val.options.extensions.join(", ")} files`
+												: "All file types supported"}
+										</P>
+									</div>
+								</div>
+
+								{/* File List */}
+								{field.value &&
+									Array.isArray(field.value) &&
+									field.value.length > 0 && (
+										<div className="mt-2 flex flex-col gap-2">
+											<P className="font-medium text-foreground text-sm">
+												{field.value.length} file(s)
+												selected:
+											</P>
+											<div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
+												{field.value.map((file, index) => (
+												<div
+													key={`${file.name}-${index}`}
+													className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
+													data-testid={`uploaded-file-item-${index}`}
+												>
+													<div className="flex min-w-0 flex-1 items-center gap-2">
+														<div className="min-w-0 flex-1">
+															<P className="truncate text-foreground text-sm">
+																{file.name}
+															</P>
+															<P className="text-muted-foreground text-xs">
+																{(
+																	file.size /
+																	1024
+																).toFixed(
+																	2,
+																)}{" "}
+																KB
+															</P>
+														</div>
+													</div>
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														onClick={(e) => {
+															e.stopPropagation();
+															removeFile(
+																index,
+																field.onChange,
+																field.value,
+															);
+														}}
+														className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+														data-testid={`remove-file-btn-${index}`}
+													>
+														<X className="size-4" />
+													</Button>
+													</div>
+												))}
+											</div>
+										</div>
+									)}
+
 								{error && (
-									<Typography
-										variant="body1"
-										color="error"
+									<P
+										className="text-destructive text-sm"
 										data-testid={`guardrail-form-error-${val.key}`}
 									>
 										{getHelperText(error, val)}
-									</Typography>
+									</P>
 								)}
-							</>
+							</div>
 						);
+
 					case "checkbox":
 						return (
-							<>
+							<div
+								className={
+									val.hidden
+										? "hidden"
+										: "flex flex-row items-center gap-2"
+								}
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
 								<Checkbox
-									required={val?.required}
-									label={val.label}
+									id={val.key}
+									checked={field.value || false}
+									onCheckedChange={field.onChange}
 									disabled={val.disabled}
-									checked={field.value ? field.value : false}
-									onChange={(value) => field.onChange(value)}
 									data-testid={`guardrail-form-input-${val.key}`}
-									sx={{
-										display: val.hidden ? "none" : "block",
-									}}
 								/>
+								<Label
+									htmlFor={val.key}
+									className="cursor-pointer font-normal"
+								>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</Label>
 								{error && (
-									<Typography
-										variant="body1"
-										color="error"
-										sx={{ mt: 0.5, display: "block" }}
+									<P
+										className="text-destructive text-sm"
 										data-testid={`guardrail-form-error-${val.key}`}
 									>
 										{error.message}
-									</Typography>
+									</P>
 								)}
-							</>
+							</div>
 						);
+
 					case "tags":
 						return (
-							<Autocomplete
-								multiple
-								freeSolo
-								size="small"
-								options={val.options?.options || []}
-								value={field.value || []}
-								onChange={(_, newValue) => {
-									// Filter out empty or whitespace-only tags
-									const filteredValue = newValue.filter(
-										(tag) =>
-											typeof tag === "string" &&
-											tag.trim() !== "",
-									);
-									field.onChange(filteredValue);
-								}}
-								renderInput={(params) => (
-									<TextField
-										{...params}
-										fullWidth
-										label={val.label}
-										placeholder='Press "Enter" to add tag'
-										variant="outlined"
-										required={val?.required}
-										// @ts-expect-error TODO FIX
-										error={!!error}
-										helperText={getHelperText(error, val)}
-										disabled={val.disabled}
-										sx={{
-											display: val.hidden
-												? "none"
-												: "block",
-										}}
-										inputProps={{
-											...params.inputProps,
-											required: false,
-										}}
-									/>
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Input
+									id={val.key}
+									placeholder='Press "Enter" to add tag'
+									disabled={val.disabled}
+									data-testid={`guardrail-form-input-${val.key}`}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											e.preventDefault();
+											const value =
+												e.currentTarget.value.trim();
+											if (value) {
+												const currentTags =
+													field.value || [];
+												field.onChange([
+													...currentTags,
+													value,
+												]);
+												e.currentTarget.value = "";
+											}
+										}
+									}}
+								/>
+								{field.value && field.value?.length > 0 && (
+									<div className="flex flex-wrap gap-2">
+										{field.value.map((tag, index) => (
+											<span
+												key={index}
+												className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm"
+											>
+												{tag}
+												<button
+													type="button"
+													onClick={() => {
+														const newTags =
+															field.value.filter(
+																(_, i) =>
+																	i !== index,
+															);
+														field.onChange(newTags);
+													}}
+													className="text-muted-foreground hover:text-foreground"
+												>
+													×
+												</button>
+											</span>
+										))}
+									</div>
 								)}
-								data-testid={`guardrail-form-input-${val.key}`}
-							/>
+								{error && (
+									<FieldDescription className="text-destructive">
+										{getHelperText(error, val)}
+									</FieldDescription>
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
 						);
 
 					default:
@@ -748,6 +1032,7 @@ export const GuardrailForm = ({
 			}}
 		/>
 	);
+
 	const getHelperText = (error, val) => {
 		if (!error) return val.helperText || "";
 		if (error.type === "checkField" && val.rules?.custom_rules?.message) {
@@ -755,113 +1040,116 @@ export const GuardrailForm = ({
 		}
 		return error.message;
 	};
+
 	if (loading) {
-		return <LoadingScreen.Trigger description="Loading..." />;
+		return (
+			<div className="flex h-screen items-center justify-center">
+				<div className="flex flex-col items-center gap-4">
+					<div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+					<P>Loading...</P>
+				</div>
+			</div>
+		);
 	}
 
 	return (
 		<form
 			onSubmit={handleSubmit(onFormSubmit)}
 			data-testid="guardrail-form"
+			className="my-4"
 		>
-			<Typography variant="h4" data-testid="guardrail-form-title">
-				{title}
-			</Typography>
-			<Typography
-				variant="body1"
-				color="textSecondary"
-				data-testid="guardrail-form-description"
-				sx={{ marginTop: "4px" }}
-			>
-				{description}
-			</Typography>
-			<StyledBox data-testid="guardrail-form-box">
-				<Stack rowGap={4}>
+			<div className="mb-6">
+				<H4 data-testid="guardrail-form-title">{title}</H4>
+				<Muted
+					className="mt-1 text-base"
+					data-testid="guardrail-form-description"
+				>
+					{description}
+				</Muted>
+			</div>
+
+			<div className="mt-4 mb-8" data-testid="guardrail-form-box">
+				<div className="flex flex-col gap-4">
 					{Object.keys(grouped).map((category) => (
-						<Box
+						<div
 							key={category}
-							sx={{
-								display: "flex",
-								gap: 4,
-								mb: 4,
-								flexDirection: "column",
-							}}
+							className="mb-4 flex flex-col gap-4"
 						>
-							<Box
-								sx={{
-									display: "flex",
-									gap: 4,
-									alignItems: "flex-start",
-								}}
-							>
-								<Stack sx={{ flex: 1 }}>
-									<Typography
-										variant="h6"
-										data-testId={`guardrail-importForm-category-title`}
-									>
+							<div className="flex items-start gap-4">
+								<div className="flex flex-1 flex-col gap-1">
+									<H4 data-testId="guardrail-importForm-category-title">
 										{category}
-									</Typography>
-									<Typography
-										variant="body2"
-										data-testId={`model-importForm-category-description`}
-										color="textSecondary"
+									</H4>
+									<Muted
+										data-testId="model-importForm-category-description"
+										className="text-base"
 									>
 										{categoryDescriptions[category] ??
 											"No description available."}
-									</Typography>
-								</Stack>
-								<Stack spacing={2} sx={{ flex: 2 }}>
+									</Muted>
+								</div>
+								<div className="flex flex-[2] flex-col gap-2">
 									{grouped[category].map((f) =>
 										renderControllerField(f),
 									)}
-								</Stack>
-							</Box>
-							<Divider sx={{ color: "secondary" }} />
-						</Box>
+								</div>
+							</div>
+							<Separator />
+						</div>
 					))}
 					{advancedFields?.length ? (
-						<>
-							<AdvancedHeader data-testid="guardrail-form-advanced-header">
-								<Typography variant="h6">
-									ADVANCED SETTINGS
-								</Typography>
-								<IconButton
-									onClick={() =>
-										setOpenAdvanced(!openAdvanced)
-									}
-									data-testid="guardrail-form-advanced-toggle"
-								>
-									{openAdvanced ? (
-										<ExpandLess />
-									) : (
-										<ExpandMore />
-									)}
-								</IconButton>
-							</AdvancedHeader>
-							{openAdvanced &&
-								advancedFields?.map((val) => (
-									<div
-										key={val.key}
-										data-testid={`guardrail-form-field-${val.key}`}
-									>
-										{renderControllerField(val)}
-									</div>
-								))}
-						</>
+						<div className="mt-4">
+							<Collapsible
+								open={openAdvanced}
+								onOpenChange={setOpenAdvanced}
+							>
+								<div className="flex w-full items-center justify-between py-4">
+									<H4 data-testid="guardrail-form-advanced-header">
+										ADVANCED SETTINGS
+									</H4>
+									<CollapsibleTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											data-testid="guardrail-form-advanced-toggle"
+										>
+											{openAdvanced ? (
+												<ChevronUp className="size-4" />
+											) : (
+												<ChevronDown className="size-4" />
+											)}
+										</Button>
+									</CollapsibleTrigger>
+								</div>
+								<CollapsibleContent>
+									{advancedFields?.map((val) => (
+										<div
+											key={val.key}
+											data-testid={`guardrail-form-field-${val.key}`}
+										>
+											{renderControllerField(val)}
+										</div>
+									))}
+								</CollapsibleContent>
+							</Collapsible>
+						</div>
 					) : null}
-				</Stack>
+				</div>
 
-				<StyledFlexEnd data-testid="guardrail-form-actions">
-					<StyledSubmitButton
+				<div
+					className="mt-4 flex justify-end gap-2"
+					data-testid="guardrail-form-actions"
+				>
+					<Button
 						type="submit"
-						variant="contained"
 						data-testid="guardrail-form-submit"
 						disabled={!formState.isValid || isValidDatabaseName}
+						className="min-w-32 capitalize"
 					>
 						Connect
-					</StyledSubmitButton>
-				</StyledFlexEnd>
-			</StyledBox>
+					</Button>
+				</div>
+			</div>
 		</form>
 	);
 };
