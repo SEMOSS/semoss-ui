@@ -174,7 +174,7 @@ Default: 2000
 
 						{/* Tooltip (follows thumb) */}
 						<div
-							className="-top-7 pointer-events-none absolute rounded bg-accent px-2 py-0.5 text-xs shadow"
+							className="pointer-events-none absolute top-full mt-2 rounded bg-accent px-2 py-0.5 text-xs shadow"
 							style={{
 								left: `calc(${temperature * 100}% - 12px)`,
 							}}
