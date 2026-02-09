@@ -21,7 +21,7 @@ import {
 	getGroupsWithAccessToEngine,
 	getGroupsWithAccessToProject,
 } from "@/api/teams";
-import { AddTeamModal } from "@/components/teams/AddTeamModal";
+import { AddTeamModal } from "@/components/teams/add-team-modal";
 
 export const TeamsTable = ({ type, id }) => {
 	const [teams, setTeams] = useState<any[]>([]);

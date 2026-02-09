@@ -1,5 +1,5 @@
 import { FileUploadOutlined } from "@mui/icons-material";
-import { ChevronRight, Upload } from "lucide-react";
+import { ChevronRight, Search, Upload } from "lucide-react";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -133,7 +133,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 					return;
 				}
 				toast.success("Successfully Created Vector Database");
-				const databaseId = (output as { database_id: string | number })
+				const databaseId = output
 					.database_id;
 				navigate(`/engine/vector/${databaseId}`);
 			}
@@ -146,7 +146,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<Breadcrumb data-testid="breadcrumbs">
+		<Breadcrumb data-testid="breadcrumbs" className="mb-4">
 			<BreadcrumbList>
 				<BreadcrumbItem>
 					<BreadcrumbLink
@@ -321,13 +321,16 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 
 					<div className="flex w-auto flex-col items-start">
 						<div className="flex w-full items-start gap-4">
-							<Input
-								placeholder="Search..."
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-								className="flex-1"
-								data-testid="search-box"
-							/>
+							<div className="relative flex-1">
+								<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+								<Input
+									placeholder="Search"
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+									className="h-10 w-full pl-10"
+									data-testid="search-box"
+								/>
+							</div>
 							<Button
 								size="lg"
 								variant="outline"

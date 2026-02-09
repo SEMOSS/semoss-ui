@@ -1,6 +1,6 @@
 import type { AxiosResponse } from "axios";
 import { Edit, Eye, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Avatar,
@@ -142,8 +142,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 	/** Add Member State */
 	const [selectedMembers, setSelectedMembers] = useState([]);
 	const [commandOpen, setCommandOpen] = useState(false);
-	const dialogContentRef = useRef<HTMLDivElement>(null);
-
 	const [selectedRole, setSelectedRole] = useState<SETTINGS_ROLE>(null);
 	const [search, setSearch] = useState<string>("");
 	const [restriction, setRestriction] = useState<string>("null");
@@ -524,7 +522,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 	return (
 		<Dialog open={open} onOpenChange={() => closeOverlay(type, false)}>
 			<DialogContent
-				ref={dialogContentRef}
 				className="max-h-[90vh] overflow-auto sm:max-w-2xl"
 				data-testid="members-add-overlay-modal"
 			>
@@ -556,7 +553,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 							</PopoverTrigger>
 							<PopoverContent
 								className="w-[600px] p-0"
-								container={dialogContentRef.current}
 							>
 								<Command shouldFilter={false}>
 									<CommandInput

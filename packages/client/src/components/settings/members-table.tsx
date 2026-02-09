@@ -45,7 +45,7 @@ import type {
 	SETTINGS_PROVISIONED_USER,
 	SETTINGS_ROLE,
 } from "./settings.types";
-import { UserPopover } from "./UserPopover";
+import { UserPopover } from "./user-popover";
 
 const formatValue = (input: string) => {
 	if (input !== undefined) {
@@ -132,9 +132,6 @@ export const MembersTable = (props: MembersTableProps) => {
 	const [permissionOrder, setPermissionOrder] = useState<"asc" | "desc">(
 		"asc",
 	);
-	/** Utility for Popover */
-	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-	const [hoveredUser, setHoveredUser] = useState<User | null>(null);
 
 	const [userData, setUserData] = useState<SETTINGS_PROVISIONED_USER>(
 		{} as SETTINGS_PROVISIONED_USER,
@@ -504,12 +501,7 @@ export const MembersTable = (props: MembersTableProps) => {
 	const handlePermissionSort = () => {
 		setPermissionOrder((prev) => (prev === "asc" ? "desc" : "asc"));
 	};
-	/**
-	 * Handle user popover close
-	 */
-	const handlePopoverClose = () => {
-		setAnchorEl(null);
-	};
+
 	// Avatars rendered
 	const Avatars = useMemo(() => {
 		if (!renderedMembers.length) {
@@ -871,38 +863,30 @@ export const MembersTable = (props: MembersTableProps) => {
 																	/>
 																</TableCell>
 																<TableCell>
-																	<div className="flex items-center gap-2">
-																		{/** biome-ignore lint/a11y/noStaticElementInteractions: <explanation> */}
-																		<div
-																			className="flex flex-1 items-center gap-2"
-																			onMouseEnter={(
-																				event,
-																			) => {
-																				setAnchorEl(
-																					event.currentTarget,
-																				);
-																				setHoveredUser(
-																					user,
-																				);
-																			}}
-																			onMouseLeave={() =>
-																				handlePopoverClose
-																			}
-																			aria-owns="mouse-over-popover"
-																			aria-haspopup="true"
-																		>
-																			<div className="inline-block w-[50px]">
-																				<Avatar className="size-8">
-																					<AvatarFallback>
-																						{user.name[0].toUpperCase()}
-																					</AvatarFallback>
-																				</Avatar>
-																			</div>
-																			{
-																				user.name
-																			}
+																	<UserPopover
+																		user={{
+																			id: user.id,
+																			name:
+																				user.name ||
+																				"Unknown",
+																			email:
+																				user.email ||
+																				"",
+																		}}
+																	>
+																		<div className="flex cursor-pointer items-center gap-2">
+																			<Avatar className="size-8">
+																				<AvatarFallback>
+																					{user.name[0].toUpperCase()}
+																				</AvatarFallback>
+																			</Avatar>
+																			<span>
+																				{
+																					user.name
+																				}
+																			</span>
 																		</div>
-																	</div>
+																	</UserPopover>
 																</TableCell>
 																<TableCell>
 																	<RadioGroup
@@ -1284,24 +1268,6 @@ export const MembersTable = (props: MembersTableProps) => {
 											</TableFooter>
 										</Table>
 									</div>
-									<UserPopover
-										hoveredUser={
-											hoveredUser
-												? {
-														id: hoveredUser.id,
-														name:
-															hoveredUser.name ||
-															"Unknown",
-														email:
-															hoveredUser.email ||
-															"",
-													}
-												: null
-										}
-										isPopoverOpen={Boolean(anchorEl)}
-										anchorEl={anchorEl}
-										handlePopoverClose={handlePopoverClose}
-									/>
 								</>
 							) : (
 								<div className="flex h-[503px] w-full flex-col items-center justify-center gap-2">

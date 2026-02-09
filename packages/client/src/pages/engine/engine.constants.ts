@@ -6,15 +6,15 @@ import {
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { ENGINE_TYPES, Role } from "@/types";
-import { EngineFilePage } from "./EngineFilePage";
-import { EngineQAPage } from "./EngineQAPage";
-import { EngineSmssPage } from "./EngineSmssPage";
 import { EngineFileManagerPage } from "./engine-file-manager-page";
+import { EngineFilePage } from "./engine-file-page";
 import { EngineMetadataPage } from "./engine-metadata-page";
 import { EngineModelChatPage } from "./engine-model-chat-page";
 import { EngineOverviewPage } from "./engine-overview-page";
+import { EngineQAPage } from "./engine-qa-page";
 import { EngineQueryDataPage } from "./engine-query-data-page";
 import { EngineSettingsPage } from "./engine-settingsPage";
+import { EngineSmssPage } from "./engine-smss-page";
 import { EngineUsagePage } from "./engine-usage-page";
 
 export const ENGINE_ROUTES: {
