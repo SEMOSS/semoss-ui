@@ -115,7 +115,10 @@ export class ChatStore {
 	/**
 	 * Create a new room
 	 */
-	createRoom = async (mode: "planning" | "chat"): Promise<RoomStore> => {
+	createRoom = async (
+		mode: "planning" | "chat",
+		workspaceId?: string,
+	): Promise<RoomStore> => {
 		// create the room in a new insight
 		const { errors, pixelReturn, insightId } = await runPixel<
 			[
@@ -123,7 +126,10 @@ export class ChatStore {
 					roomId: string;
 				},
 			]
-		>(`CreatePlaygroundRoom();`, "new");
+		>(
+			`CreatePlaygroundRoom(${workspaceId ? `workspaceId=${JSON.stringify(workspaceId)}` : ""})`,
+			"new",
+		);
 
 		// throw errors
 		if (errors.length > 0) {
