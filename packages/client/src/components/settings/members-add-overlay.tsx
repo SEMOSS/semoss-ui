@@ -630,6 +630,9 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 																					],
 																				);
 																			}
+																			setCommandOpen(
+																				false,
+																			);
 																		}
 																	}}
 																	className="justify-between"
