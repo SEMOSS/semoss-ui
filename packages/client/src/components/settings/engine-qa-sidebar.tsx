@@ -40,7 +40,7 @@ export const EngineQASidebar = ({
 	`;
 
 	return (
-		<Card className="flex h-full w-[280px] flex-col gap-4 rounded-none p-4 max-md:absolute max-md:z-50 max-md:max-w-[280px]">
+		<Card className="mb-2 flex h-full w-[280px] flex-col gap-4 rounded-none p-4 max-md:absolute max-md:z-50 max-md:max-w-[280px]">
 			{/* Header */}
 			<div className="w-full rounded-md bg-muted px-4 py-2">
 				<div className="flex items-center gap-2 whitespace-nowrap">
@@ -95,7 +95,7 @@ export const EngineQASidebar = ({
 				/>
 
 				<div
-					className="-top-7 pointer-events-none absolute rounded bg-accent px-2 py-0.5 text-accent-foreground text-xs shadow"
+					className="pointer-events-none absolute top-full mt-2 rounded bg-accent px-2 py-0.5 text-xs shadow"
 					style={{
 						left: `calc(${((limit - 1) / 9) * 100}% - 10px)`,
 					}}
@@ -130,7 +130,7 @@ export const EngineQASidebar = ({
 				/>
 
 				<div
-					className="-top-7 pointer-events-none absolute rounded bg-accent px-2 py-0.5 text-accent-foreground text-xs shadow"
+					className="pointer-events-none absolute top-full mt-2 rounded bg-accent px-2 py-0.5 text-xs shadow"
 					style={{
 						left: `calc(${((temperature - 0.1) / 0.9) * 100}% - 10px)`,
 					}}
