@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import { AlertTriangle, HelpCircle, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
@@ -43,6 +44,7 @@ export const EngineModelTestSidebar = ({
 	setMaxTokens,
 }: EngineModelTestSidebarProps) => {
 	const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
+	const [showTempTooltip, setShowTempTooltip] = useState(false);
 
 	const temperatureTooltipText = `
 This changes the randomness of the LLM's output.
@@ -160,9 +162,13 @@ Default: 2000
 						</TooltipProvider>
 					</div>
 
-					{/* Slider */}
-					<div className="relative">
-						{/* Slider */}
+					<div
+						className="relative"
+						onMouseEnter={() => setShowTempTooltip(true)}
+						onMouseLeave={() => setShowTempTooltip(false)}
+						onPointerDown={() => setShowTempTooltip(true)}
+						onPointerUp={() => setShowTempTooltip(false)}
+					>
 						<Slider
 							value={[temperature]}
 							className="cursor-pointer"
@@ -172,20 +178,20 @@ Default: 2000
 							onValueChange={(v) => setTemperature(v[0])}
 						/>
 
-						{/* Tooltip (follows thumb) */}
-						<div
-							className="pointer-events-none absolute top-full mt-2 rounded bg-accent px-2 py-0.5 text-xs shadow"
-							style={{
-								left: `calc(${temperature * 100}% - 12px)`,
-							}}
-						>
-							{Number.isInteger(temperature)
-								? temperature
-								: temperature.toFixed(1)}
-						</div>
+						{showTempTooltip && (
+							<div
+								className="-top-7 pointer-events-none absolute rounded bg-accent px-2 py-0.5 text-xs shadow"
+								style={{
+									left: `calc(${temperature * 100}% - 12px)`,
+								}}
+							>
+								{Number.isInteger(temperature)
+									? temperature
+									: temperature.toFixed(1)}
+							</div>
+						)}
 
-						{/* Scale labels */}
-						<div className="mt-1 flex justify-between text-muted-foreground text-xs">
+						<div className="mt-3 flex justify-between text-muted-foreground text-xs">
 							<span>0</span>
 							<span>0.5</span>
 							<span>1</span>
