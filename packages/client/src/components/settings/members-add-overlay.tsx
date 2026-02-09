@@ -52,7 +52,7 @@ import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
 import { useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
-import { MembersAddOverlayUser } from "./members-add-overlayUser";
+import { MembersAddOverlayUser } from "./members-add-overlay-user";
 import type { SETTINGS_ROLE } from "./settings.types";
 
 const Setting_Role_Values: SETTINGS_ROLE[] = ["Author", "Editor", "Read-Only"];
