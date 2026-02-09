@@ -1,6 +1,6 @@
 import type { AxiosResponse } from "axios";
 import { Edit, Eye, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Avatar,
@@ -142,6 +142,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 	/** Add Member State */
 	const [selectedMembers, setSelectedMembers] = useState([]);
 	const [commandOpen, setCommandOpen] = useState(false);
+	const dialogContentRef = useRef<HTMLDivElement>(null);
 
 	const [selectedRole, setSelectedRole] = useState<SETTINGS_ROLE>(null);
 	const [search, setSearch] = useState<string>("");
@@ -523,7 +524,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 	return (
 		<Dialog open={open} onOpenChange={() => closeOverlay(type, false)}>
 			<DialogContent
-				className="flex h-fit max-h-[90vh] flex-col gap-4 overflow-auto sm:max-w-2xl"
+				ref={dialogContentRef}
+				className="max-h-[90vh] overflow-auto sm:max-w-2xl"
 				data-testid="members-add-overlay-modal"
 			>
 				<DialogHeader>
@@ -552,7 +554,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 											: `${selectedMembers.length} members selected`}
 								</Button>
 							</PopoverTrigger>
-							<PopoverContent className="w-[600px] p-0">
+							<PopoverContent
+								className="w-[600px] p-0"
+								container={dialogContentRef.current}
+							>
 								<Command shouldFilter={false}>
 									<CommandInput
 										placeholder="Search users..."
@@ -629,7 +634,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 																	}}
 																	className="justify-between"
 																>
-																	<div className="max-w-[85%] overflow-hidden">
+																	<div className="max-w-[85%] overflow-auto">
 																		<MembersAddOverlayUser
 																			name={
 																				option.name
@@ -714,7 +719,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 						>
 							Permissions
 						</P>
-						<div className="rounded-lg bg-muted/30 p-4">
+						<div className="rounded-lg bg-muted/30">
 							<RadioGroup
 								value={selectedRole}
 								onValueChange={(val) => {
@@ -724,112 +729,112 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 								}}
 								className="flex flex-col gap-4"
 							>
-								<Card className="rounded-xl">
-									<CardHeader className="pb-3">
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-3">
-												<Avatar className="h-5 w-5 font-bold text-xs">
-													<AvatarFallback className="bg-black/50 text-white">
-														A
-													</AvatarFallback>
-												</Avatar>
-												<div className="flex flex-col">
+								<Card className="m-2 rounded-xl p-2">
+									<CardHeader className="px-2">
+										<div className="flex flex-col gap-2">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-3">
+													<Avatar className="h-5 w-5 font-bold text-xs">
+														<AvatarFallback className="bg-black/50 text-white">
+															A
+														</AvatarFallback>
+													</Avatar>
 													<CardTitle
 														className="text-base"
 														data-testid="author-role"
 													>
 														Author
 													</CardTitle>
-													<CardDescription className="text-sm">
-														{PERMISSION_DESCRIPTION_MAP[
-															type
-														].author ||
-															`Error: update key in test-editor.constants to "${name}"`}
-													</CardDescription>
 												</div>
+												<RadioGroupItem
+													value="Author"
+													disabled={
+														!adminMode &&
+														permissionPriorityMapper(
+															userPermission,
+														)?.priority > 1
+													}
+													data-testid="author-role-radio"
+												/>
 											</div>
-											<RadioGroupItem
-												value="Author"
-												disabled={
-													!adminMode &&
-													permissionPriorityMapper(
-														userPermission,
-													)?.priority > 1
-												}
-												data-testid="author-role-radio"
-											/>
+											<CardDescription className="ml-8 text-sm">
+												{PERMISSION_DESCRIPTION_MAP[
+													type
+												].author ||
+													`Error: update key in test-editor.constants to "${name}"`}
+											</CardDescription>
 										</div>
 									</CardHeader>
 								</Card>
 
-								<Card className="rounded-xl">
-									<CardHeader className="pb-3">
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-3">
-												<div className="flex h-6 w-6 items-center justify-center text-black/50">
-													<Edit className="h-5 w-5" />
-												</div>
-												<div className="flex flex-col">
+								<Card className="m-2 rounded-xl p-2">
+									<CardHeader className="px-2">
+										<div className="flex flex-col gap-2">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-3">
+													<div className="flex h-6 w-6 items-center justify-center text-black/50">
+														<Edit className="h-5 w-5" />
+													</div>
 													<CardTitle
 														className="text-base"
 														data-testid="editor-role"
 													>
 														Editor
 													</CardTitle>
-													<CardDescription className="text-sm">
-														{PERMISSION_DESCRIPTION_MAP[
-															type
-														].editor ||
-															`Error: update key in test-editor.constants to "${name}"`}
-													</CardDescription>
 												</div>
+												<RadioGroupItem
+													value="Editor"
+													disabled={
+														!adminMode &&
+														permissionPriorityMapper(
+															userPermission,
+														)?.priority > 2
+													}
+													data-testid="editor-role-radio"
+												/>
 											</div>
-											<RadioGroupItem
-												value="Editor"
-												disabled={
-													!adminMode &&
-													permissionPriorityMapper(
-														userPermission,
-													)?.priority > 2
-												}
-												data-testid="editor-role-radio"
-											/>
+											<CardDescription className="ml-9 text-sm">
+												{PERMISSION_DESCRIPTION_MAP[
+													type
+												].editor ||
+													`Error: update key in test-editor.constants to "${name}"`}
+											</CardDescription>
 										</div>
 									</CardHeader>
 								</Card>
 
-								<Card className="rounded-xl">
-									<CardHeader className="pb-3">
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-3">
-												<div className="flex h-6 w-6 items-center justify-center text-black/50">
-													<Eye className="h-5 w-5" />
-												</div>
-												<div className="flex flex-col">
+								<Card className="m-2 rounded-xl p-2">
+									<CardHeader className="px-2">
+										<div className="flex flex-col gap-2">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-3">
+													<div className="flex h-6 w-6 items-center justify-center text-black/50">
+														<Eye className="h-5 w-5" />
+													</div>
 													<CardTitle
 														className="text-base"
 														data-testid="readonly-role"
 													>
 														Read-Only
 													</CardTitle>
-													<CardDescription className="text-sm">
-														{PERMISSION_DESCRIPTION_MAP[
-															type
-														].readonly ||
-															`Error: update key in test-editor.constants to "${name}"`}
-													</CardDescription>
 												</div>
+												<RadioGroupItem
+													value="Read-Only"
+													disabled={
+														!adminMode &&
+														permissionPriorityMapper(
+															userPermission,
+														)?.priority > 3
+													}
+													data-testid="readonly-role-radio"
+												/>
 											</div>
-											<RadioGroupItem
-												value="Read-Only"
-												disabled={
-													!adminMode &&
-													permissionPriorityMapper(
-														userPermission,
-													)?.priority > 3
-												}
-												data-testid="readonly-role-radio"
-											/>
+											<CardDescription className="ml-9 text-sm">
+												{PERMISSION_DESCRIPTION_MAP[
+													type
+												].readonly ||
+													`Error: update key in test-editor.constants to "${name}"`}
+											</CardDescription>
 										</div>
 									</CardHeader>
 								</Card>

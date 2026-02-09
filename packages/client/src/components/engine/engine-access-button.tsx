@@ -113,7 +113,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 					setOpen(isOpen);
 				}}
 			>
-				<DialogContent className="max-w-2xl">
+				<DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
 					<DialogHeader>
 						<DialogTitle>
 							{active?.role === "DISCOVERABLE"
@@ -129,79 +129,79 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 							}}
 						>
 							<div className="space-y-2">
-								<Card className="rounded-xl">
-									<CardHeader className="pb-4">
-										<div className="flex items-start justify-between">
-											<div className="flex items-start gap-3">
-												<Avatar className="mt-0.5 size-[22px] bg-black/50 font-bold text-[12px]">
-													<AvatarFallback>
-														A
-													</AvatarFallback>
-												</Avatar>
-												<div>
+								<Card className="m-2 rounded-xl p-2">
+									<CardHeader className="px-2">
+										<div className="flex flex-col gap-2">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-3">
+													<Avatar className="h-5 w-5 font-bold text-xs">
+														<AvatarFallback className="bg-black/50 text-white">
+															A
+														</AvatarFallback>
+													</Avatar>
 													<CardTitle className="text-base">
 														Author
 													</CardTitle>
-													<CardDescription className="mt-1 text-sm">
-														{
-															PERMISSION_DESCRIPTION_MAP[
-																type
-															].author
-														}
-													</CardDescription>
 												</div>
+												<RadioGroupItem value="OWNER" />
 											</div>
-											<RadioGroupItem value="OWNER" />
+											<CardDescription className="ml-8 text-sm">
+												{
+													PERMISSION_DESCRIPTION_MAP[
+														type
+													].author
+												}
+											</CardDescription>
 										</div>
 									</CardHeader>
 								</Card>
 
-								<Card className="rounded-xl">
-									<CardHeader className="pb-4">
-										<div className="flex items-start justify-between">
-											<div className="flex items-start gap-3">
-												<div className="mt-0.5 inline-flex text-black/50">
-													<Edit className="size-[22px]" />
-												</div>
-												<div>
+								<Card className="m-2 rounded-xl p-2">
+									<CardHeader className="px-2">
+										<div className="flex flex-col gap-2">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-3">
+													<div className="flex h-6 w-6 items-center justify-center text-black/50">
+														<Edit className="h-5 w-5" />
+													</div>
 													<CardTitle className="text-base">
 														Editor
 													</CardTitle>
-													<CardDescription className="mt-1 text-sm">
-														{
-															PERMISSION_DESCRIPTION_MAP[
-																type
-															].editor
-														}
-													</CardDescription>
 												</div>
+												<RadioGroupItem value="EDIT" />
 											</div>
-											<RadioGroupItem value="EDIT" />
+											<CardDescription className="ml-9 text-sm">
+												{
+													PERMISSION_DESCRIPTION_MAP[
+														type
+													].editor
+												}
+											</CardDescription>
 										</div>
 									</CardHeader>
 								</Card>
 
-								<Card className="rounded-xl">
-									<CardHeader className="pb-4">
-										<div className="flex items-start justify-between">
-											<div className="flex items-start gap-3">
-												<div className="mt-0.5 inline-flex text-black/50">
-													<Eye className="size-[22px]" />
-												</div>
-												<div>
+								<Card className="m-2 rounded-xl p-2">
+									<CardHeader className="px-2">
+										<div className="flex flex-col gap-2">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-3">
+													<div className="flex h-6 w-6 items-center justify-center text-black/50">
+														<Eye className="h-5 w-5" />
+													</div>
 													<CardTitle className="text-base">
 														Read-Only
 													</CardTitle>
-													<CardDescription className="mt-1 text-sm">
-														{
-															PERMISSION_DESCRIPTION_MAP[
-																type
-															].readonly
-														}
-													</CardDescription>
 												</div>
+												<RadioGroupItem value="READ_ONLY" />
 											</div>
-											<RadioGroupItem value="READ_ONLY" />
+											<CardDescription className="ml-9 text-sm">
+												{
+													PERMISSION_DESCRIPTION_MAP[
+														type
+													].readonly
+												}
+											</CardDescription>
 										</div>
 									</CardHeader>
 								</Card>
