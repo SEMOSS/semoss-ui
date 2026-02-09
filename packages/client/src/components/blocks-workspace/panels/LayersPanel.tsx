@@ -67,10 +67,10 @@ const customCollisionDetection = (args) => {
 const StyledMenu = styled("div")(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
-	height: "auto",
+	height: "100%",
 	maxHeight: "100%",
 	width: "100%",
-	paddingTop: theme.spacing(1),
+	paddingTop: theme.spacing(0.5),
 }));
 
 const StyledMenuHeader = styled("div")(({ theme }) => ({
@@ -218,6 +218,22 @@ const StyledTypography = styled(Typography)(() => ({
 	lineHeight: "150%",
 	fontWeight: 500,
 	letterSpacing: "0.15px",
+}));
+
+const StyledPagesContainer = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "column",
+	height: "30%",
+	width: "100%",
+	minHeight: "120px",
+	overflow: "hidden",
+}));
+
+const StyledPageScroll = styled("div")(({ theme }) => ({
+	flex: 1,
+	overflow: "auto",
+	width: "100%",
+	paddingBottom: theme.spacing(1),
 }));
 
 const StyledHomePageDiv = styled("div")(() => ({
@@ -458,6 +474,50 @@ export const LayersPanel = observer(
 				handlePageSelection(block);
 			}
 		}, []);
+
+		// When searching, auto-expand ancestors and scroll to the first matching layer
+		useEffect(() => {
+			if (!search) return;
+
+			const lower = search.toLowerCase();
+
+			const collectDescendants = (rootId: string): string[] => {
+				const out: string[] = [];
+				const visit = (id: string) => {
+					const blk = state.blocks[id];
+					if (!blk) return;
+					out.push(id);
+					for (const s in blk.slots) {
+						blk.slots[s]?.children?.forEach((cid: string) => visit(cid));
+					}
+				};
+				visit(rootId);
+				return out;
+			};
+
+			const allIds = collectDescendants(selectedPages);
+			const matchId = allIds.find((id) => {
+				const blk = state.blocks[id];
+				if (!blk) return false;
+				const label = `${blk.widget}${blk.id}`.toLowerCase();
+				return label.indexOf(lower) > -1;
+			});
+
+			if (matchId) {
+				// Expand all ancestors so the node will render
+				const parents = state.getAllParents(matchId);
+				if (parents?.length) {
+					setExpanded((prev) => [...new Set([...prev, ...parents])]);
+				}
+				// After expansion renders, scroll the matched item into view
+				setTimeout(() => {
+					const el = accordionRefs.current[matchId] as HTMLElement | null;
+					if (el) {
+						scrollIntoView(el, { block: "center" });
+					}
+				}, 120);
+			}
+		}, [search, selectedPages]);
 
 		const handleRename = (id: string) => {
 			state.dispatch({
@@ -1489,28 +1549,31 @@ export const LayersPanel = observer(
 		};
 
 		return (
-			<Panel>
-				<Stack spacing={undefined}>
-					<StyledTitle>
-						<StyledTitleSpan>{title}</StyledTitleSpan>
-					</StyledTitle>
-					<StyledStack>
-						<StyledTextFiled
-							placeholder="Search"
-							size="small"
-							fullWidth
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<Search />
-									</InputAdornment>
-								),
-							}}
-						/>
-					</StyledStack>
-				</Stack>
+			<Panel
+				actions={
+					<Stack spacing={undefined}>
+						<StyledTitle>
+							<StyledTitleSpan>{title}</StyledTitleSpan>
+						</StyledTitle>
+						<StyledStack>
+							<StyledTextFiled
+								placeholder="Search"
+								size="small"
+								fullWidth
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								InputProps={{
+									startAdornment: (
+										<InputAdornment position="start">
+											<Search />
+										</InputAdornment>
+									),
+								}}
+							/>
+						</StyledStack>
+					</Stack>
+				}
+			>
 				<Grid
 					container
 					direction="column"
@@ -1519,8 +1582,8 @@ export const LayersPanel = observer(
 						height: "100%",
 					}}
 				>
-					<Grid item xs={12} width={"100%"} height={"100%"}>
-						<Grid item xs={12}>
+					<Grid item xs={12} width={"100%"} sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+						<Grid item xs={12} sx={{ display: "flex", flexDirection: "column", flex: "0 0 140px", minHeight: "80px", maxHeight: "230px", overflow: "hidden" }}>
 							<StyledMenu>
 								<StyledMenuHeader>
 									<Stack
@@ -1547,7 +1610,7 @@ export const LayersPanel = observer(
 										</Stack>
 									</Stack>
 								</StyledMenuHeader>
-								<StyledMenuScroll>
+								<StyledPageScroll>
 									{allPages?.length ? (
 										allPages.map((page) =>
 											renderPage(page.id),
@@ -1559,13 +1622,11 @@ export const LayersPanel = observer(
 											</Typography>
 										</StyledTreeItemMessage>
 									)}
-								</StyledMenuScroll>
+								</StyledPageScroll>
 							</StyledMenu>
 						</Grid>
-						<Grid item xs={12} height={"1%"}>
-							<Divider />
-						</Grid>
-						<Grid item xs={12} height={"69%"}>
+						<Divider sx={{ margin: 0 }} />
+						<Grid item xs={12} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
 							<DndContext
 								sensors={sensors}
 								collisionDetection={customCollisionDetection}
