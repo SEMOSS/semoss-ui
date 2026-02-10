@@ -2,6 +2,7 @@ import { Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -114,10 +115,17 @@ interface ToolsDefaultViewProps {
 
 	/** MCP */
 	mcp: MCPTool;
+
+	/** Playwright scripts */
+	playwrightScripts?: Array<{
+		name: string;
+		path: string;
+		description?: string;
+	}>;
 }
 
 export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
-	({ room, app, message, tool, mcp }) => {
+	({ room, app, message, tool, mcp, playwrightScripts }) => {
 		const properties = mcp?.inputSchema?.properties || {};
 		const required = mcp?.inputSchema?.required || [];
 		const name = mcp?.name || "";
@@ -135,19 +143,69 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		// Tool Execution
 		const handleSubmit = async () => {
 			setIsSubmitting(true);
-			const response = await room.runRoomPixel<[string]>(
-				`RunMCPTool(project = [ "${app}" ], function=[ "${
-					mcp.name
-				}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
-			);
-			const { output } = response.pixelReturn[0];
+			console.log("mcp.name", mcp.name);
+			console.log("data for tool", data);
+			
+			// Check if this is a Playwright script execution
+			if (data.recordedFile) {
+				try {
+					// Get a valid session ID first
+					const res = await runPixel('Session()', room.insightId);
+					const sessionId = res.pixelReturn[0].output;
+					console.log("session id", sessionId);
+					
+					// Use GetAllSteps reactor to fetch the entire JSON of the playwright script
+					const response = await room.runRoomPixel<[string]>(
+						`GetAllSteps(project=["${app}"], sessionId="${sessionId}", fileName=["${data.recordedFile}"]);`,
+					);
+					const { output } = response.pixelReturn[0];
+					
+					// Log the entire JSON to console
+					console.log("Playwright Script JSON:", output);
+					
+					// Send the script to Chrome extension for execution
+					window.postMessage(
+						{
+							type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
+							script: {
+								projectId: app,
+								name: data.recordedFile,
+								autoExecute: true,
+								scriptContent: output,
+							},
+						},
+						window.location.origin,
+					);
+					
+					console.log("Playwright script sent to Chrome extension");
+					
+					// Continue with normal processing
+					const m = room.getMessage(message);
+					if (!m || m instanceof ResponseMessageStore !== true) {
+						setIsSubmitting(false);
+						return;
+					}
+					room.processTool(m.id, tool.id, tool.name, "Script sent to Chrome extension for execution");
+				} catch (error) {
+					console.error("Error fetching Playwright script:", error);
+				}
+			} else {
+				// Original behavior for non-Playwright tools
+				const response = await room.runRoomPixel<[string]>(
+					`RunMCPTool(project = [ "${app}" ], function=[ "${
+						mcp.name
+					}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
+				);
+				const { output } = response.pixelReturn[0];
 
-			const m = room.getMessage(message);
-			if (!m || m instanceof ResponseMessageStore !== true) {
-				setIsSubmitting(false);
-				return;
+				const m = room.getMessage(message);
+				if (!m || m instanceof ResponseMessageStore !== true) {
+					setIsSubmitting(false);
+					return;
+				}
+				room.processTool(m.id, tool.id, tool.name, output);
 			}
-			room.processTool(m.id, tool.id, tool.name, output);
+			
 			setIsSubmitting(false);
 		};
 
@@ -537,7 +595,35 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 								{description}
 							</CardDescription>
 						)}
-					</CardHeader>
+					{playwrightScripts && playwrightScripts.length > 0 && (
+						<div className="mt-4 space-y-2">
+							<h4 className="font-medium text-sm">Playwright Scripts</h4>
+							<div className="space-y-2">
+								{playwrightScripts.map((script, idx) => (
+								<div
+									key={idx}
+									className="rounded-md border border-border bg-muted/50 p-3 text-sm"
+									>
+										<div className="font-medium">
+											Recorded File: {script.name}
+										</div>
+										<div className="text-muted-foreground text-xs">
+											Path: {script.path}
+										</div>
+									<div className="text-muted-foreground text-xs">
+										Project ID: {app}
+									</div>
+									{script.description && (
+										<div className="mt-1 text-muted-foreground text-xs">
+											{script.description}
+										</div>
+									)}
+								</div>
+							))}
+							</div>
+						</div>
+					)}
+				</CardHeader>
 					<CardContent className="max-h-[60vh] overflow-y-auto">
 						<form onSubmit={handleSubmit} className="space-y-6">
 							<div className="space-y-4">

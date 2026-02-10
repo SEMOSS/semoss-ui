@@ -48,11 +48,134 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
+	const [lastGoogleRecorderJSON, setLastGoogleRecorderJSON] = useState<any>(null);
 
 	/**
 	 * Functions
 	 */
 	const handlePrompt = async (prompt: string, files: File[]) => {
+		console.log("[PLAYGROUND] handlePrompt called with:", {
+			prompt,
+			fileCount: files.length,
+			fileNames: files.map(f => f.name)
+		});
+
+		// Check if prompt contains Google Recorder JSON
+		const jsonMatch = prompt.match(/```json\s*([\s\S]*?)\s*```|```\s*([\s\S]*?)\s*```|({[\s\S]*})/);
+		if (jsonMatch) {
+			console.log("[PLAYGROUND] JSON code block detected in prompt");
+			try {
+				const jsonText = jsonMatch[1] || jsonMatch[2] || jsonMatch[3];
+				const parsed = JSON.parse(jsonText);
+				console.log("[PLAYGROUND] Parsed JSON from prompt:", { hasTitle: !!parsed.title, hasSteps: !!parsed.steps });
+				// Check if it's a Google Recorder script (has title and steps)
+				if (parsed.title && Array.isArray(parsed.steps)) {
+					setLastGoogleRecorderJSON(parsed);
+					console.log("[PLAYGROUND] ✅ Google Recorder JSON detected and stored:", {
+						title: parsed.title,
+						stepCount: parsed.steps.length
+					});
+				}
+			} catch (e) {
+				console.log("[PLAYGROUND] ❌ Failed to parse JSON from prompt:", e);
+			}
+		}
+
+		// Check for attached JSON files
+		let scriptFromFile: any = null;
+		console.log("[PLAYGROUND] Checking for attached JSON files...");
+		for (const file of files) {
+			console.log("[PLAYGROUND] Examining file:", file.name, "type:", file.type);
+			if (file.name.endsWith('.json')) {
+				console.log("[PLAYGROUND] Reading JSON file:", file.name);
+				try {
+					const fileContent = await file.text();
+					console.log("[PLAYGROUND] File content length:", fileContent.length);
+					const parsed = JSON.parse(fileContent);
+					console.log("[PLAYGROUND] Parsed file JSON:", {
+						hasTitle: !!parsed.title,
+						hasMeta: !!parsed.meta,
+						hasSteps: !!parsed.steps,
+						stepsIsArray: Array.isArray(parsed.steps)
+					});
+					// Check if it's a Google Recorder script (has title and steps)
+					if (parsed.title && Array.isArray(parsed.steps)) {
+						scriptFromFile = parsed;
+						setLastGoogleRecorderJSON(parsed);
+						console.log("[PLAYGROUND] ✅ Google Recorder JSON file detected:", {
+							fileName: file.name,
+							title: parsed.title,
+							stepCount: parsed.steps.length
+						});
+						break;
+					}
+					// Check if it's a Playwright script (has meta and steps)
+					else if (parsed.meta && parsed.steps) {
+						scriptFromFile = parsed;
+						console.log("[PLAYGROUND] ✅ Playwright JSON file detected:", {
+							fileName: file.name,
+							title: parsed.meta?.title,
+							stepKeys: Object.keys(parsed.steps)
+						});
+						// Store as last script for potential execution
+						setLastGoogleRecorderJSON(parsed);
+						break;
+					} else {
+						console.log("[PLAYGROUND] ⚠️ JSON file is not a recognized script format:", file.name);
+					}
+				} catch (e) {
+					console.error("[PLAYGROUND] ❌ Failed to parse JSON file:", file.name, e);
+				}
+			}
+		}
+
+		// Check if user is asking to execute/follow the steps
+		const executePattern = /execute|follow|run|play|perform/i;
+		const stepsPattern = /steps?|this|these|script|instructions/i;
+		const matchesExecute = executePattern.test(prompt);
+		const matchesSteps = stepsPattern.test(prompt);
+		const isExecuteRequest = matchesExecute && (matchesSteps || scriptFromFile);
+		
+		console.log("[PLAYGROUND] Execution check:", {
+			matchesExecute,
+			matchesSteps,
+			hasScriptFromFile: !!scriptFromFile,
+			hasLastScript: !!lastGoogleRecorderJSON,
+			isExecuteRequest
+		});
+		
+		if (isExecuteRequest && (lastGoogleRecorderJSON || scriptFromFile)) {
+			const scriptToExecute = scriptFromFile || lastGoogleRecorderJSON;
+			
+			// Determine script type
+			const isPlaywright = scriptToExecute.meta && scriptToExecute.steps && !Array.isArray(scriptToExecute.steps);
+			const messageType = isPlaywright ? "SMSS_EXEC_PLAYWRIGHT_SCRIPT" : "SMSS_EXEC_GOOGLE_RECORDER_SCRIPT";
+			
+			console.log("[PLAYGROUND] 🚀 Sending script to Chrome extension:", {
+				scriptType: isPlaywright ? 'Playwright' : 'Google Recorder',
+				messageType,
+				scriptName: scriptToExecute.title || scriptToExecute.meta?.title || "Playground Script",
+				hasScriptContent: !!scriptToExecute,
+				origin: window.location.origin
+			});
+			
+			// Send the script to chrome extension
+			window.postMessage(
+				{
+					type: messageType,
+					script: {
+						name: scriptToExecute.title || scriptToExecute.meta?.title || "Playground Script",
+						autoExecute: true,
+						scriptContent: scriptToExecute,
+					},
+				},
+				window.location.origin,
+			);
+			console.log(`[PLAYGROUND] ✅ ${isPlaywright ? 'Playwright' : 'Google Recorder'} script sent via window.postMessage`);
+		} else {
+			console.log("[PLAYGROUND] ℹ️ Not executing script - conditions not met");
+		}
+
 		// update the options
 		await room.updateRoomOptions(room.options);
 

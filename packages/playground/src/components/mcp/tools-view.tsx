@@ -5,6 +5,7 @@ import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 import type { MCPTool } from "@/types";
+import { usePlaywrightScripts } from "./playwright-search";
 import { ToolsDefaultView } from "./tools-default-view";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
@@ -92,9 +93,19 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 			},
 		});
 
-		/**
-		 * Functions
-		 */
+	// Get playwright scripts for the project
+	const { scripts: playwrightScripts, isLoading: scriptsLoading } =
+		usePlaywrightScripts({
+			projectId: app,
+			enabled: !!app,
+			onScriptsLoaded: (scripts) => {
+				console.log(
+					`Found ${scripts.length} playwright scripts for project ${app}:`,
+					scripts,
+				);
+			},
+		});
+
 
 		/**
 		 * Process iframe on load
@@ -150,16 +161,15 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 					return;
 				}
 
-				setIsLoading(true);
+			// Wait for selected tool to be available
+			if (!selectedTool) {
+				setIsLoading(false);
+				return;
+			}
 
-				if (!selectedTool._meta.SMSS_MCP_UI) {
-					// Legacy, check for portals
+			setIsLoading(true);
 
-					if (getAppInfo.data.project_type === "BLOCKS") {
-						// Low code app
-						setUrl(`${PLATFORM_URL}/#/s/${app}/`);
-					}
-
+			if (!selectedTool._meta?.SMSS_MCP_UI) {
 					// Check if portals exists
 					let foundApp = false;
 					try {
@@ -224,6 +234,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						message={message}
 						tool={tool}
 						mcp={selectedTool}
+						playwrightScripts={playwrightScripts}
 					/>
 				)}
 			</div>
