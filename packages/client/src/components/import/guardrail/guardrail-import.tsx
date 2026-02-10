@@ -29,9 +29,9 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
-import { GuardrailTitleCard } from "./GuardrailTitleCard";
-import { GuardrailForm } from "./GuardraliImportForm";
 import { GUARDRAIL_CONNECTION } from "./guardrail-import.constants";
+import { GuardrailForm } from "./guardrail-import-form";
+import { GuardrailTitleCard } from "./guardrail-title-card";
 
 interface guardrail {
 	fields: [];
