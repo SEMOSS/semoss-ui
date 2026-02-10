@@ -30,7 +30,8 @@ interface MembersProps {
 		| "MODEL"
 		| "VECTOR"
 		| "FUNCTION"
-		| "WORKSPACE";
+		| "WORKSPACE"
+		| "GUARDRAIL";
 	search?: string;
 	isAddMember?: boolean;
 	refreshList?: boolean;

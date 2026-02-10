@@ -24,7 +24,8 @@ interface MembersProps {
 		| "MODEL"
 		| "VECTOR"
 		| "FUNCTION"
-		| "WORKSPACE";
+		| "WORKSPACE"
+		| "GUARDRAIL";
 	onChange?: () => void;
 }
 
