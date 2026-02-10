@@ -1,21 +1,27 @@
-import { Close } from "@mui/icons-material";
-import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+import { Users, X } from "lucide-react";
 import React, { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import {
-	Box,
 	Button,
-	Container,
-	IconButton,
-	Modal,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Field,
+	FieldDescription,
+	FieldError,
+	FieldLabel,
+	Input,
 	Select,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Textarea,
+	toast,
+} from "@semoss/ui/next";
 import { addTeam, editTeam } from "@/api/teams";
 import AMAZON_S3 from "@/assets/loginProviders/Amazon_S3.png";
 import ADFS from "@/assets/loginProviders/adfs_microsoft_1.png";
@@ -34,47 +40,6 @@ import Siteminder from "@/assets/loginProviders/siteminder.png";
 import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
 import Twitter from "@/assets/loginProviders/x_twitter.png";
 import { useRootStore } from "@/hooks";
-
-const StyledModalTitle = styled(Modal.Title)(() => ({
-	width: "100%",
-	display: "flex",
-	justifyContent: "space-between",
-}));
-
-const StyledContainer = styled(Container)({
-	width: "524px",
-	height: "20px",
-	backgroundColor: "inherit",
-	fontSize: "12px",
-	fontWeight: "400",
-	fontFamily: "Inter",
-	color: "#666666",
-	lineHeight: "20px",
-	letterSpacing: "0.4px",
-	paddingLeft: "14px ! important",
-	marginLeft: "0px",
-	marginTop: "3px",
-});
-
-const StyledIcon = styled(PeopleAltIcon)(({ theme }) => ({
-	color: theme.palette.secondary.dark,
-}));
-
-const StyledMenuItemDesc = styled(Typography)(({ theme }) => ({
-	color: theme.palette.secondary.dark,
-}));
-
-const StyledSelectItem = styled(Select.Item, {
-	shouldForwardProp: (prop) => prop !== "type",
-})<{
-	/** Track if the page header is stuck */
-	type: string;
-}>(({ type }) => ({
-	borderBottom:
-		type === "CUSTOM"
-			? "1px solid var(--Secondary-Border, #C4C4C4)"
-			: "none",
-}));
 
 const TypeImageObject = {
 	native: AMAZON_S3,
@@ -131,7 +96,6 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 	const { open, onClose, isEdit, id, type, description } = props;
 
 	const navigate = useNavigate();
-	const notification = useNotification();
 	const { configStore } = useRootStore();
 
 	// State to track the previous team name, type
@@ -207,19 +171,13 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 						previousTeamName: previousTeamName,
 					});
 					reset();
-					notification.add({
-						color: "success",
-						message: "Successfully updated team",
-					});
+					toast.success("Successfully updated team");
 				} else {
 					throw new Error("Failed to update team");
 				}
 			} catch (e) {
 				console.error(e);
-				notification.add({
-					color: "error",
-					message: "Error updating team",
-				});
+				toast.error("Error updating team");
 			}
 		} else {
 			// Logic for creating a new team
@@ -237,10 +195,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 						description: data.TEAM_DESCRIPTION,
 					});
 					reset();
-					notification.add({
-						color: "success",
-						message: "Successfully added group",
-					});
+					toast.success("Successfully added team");
 					navigate(
 						`${encodeURIComponent(data.TEAM_TYPE)}/${encodeURIComponent(data.TEAM_NAME)}`,
 					);
@@ -249,219 +204,237 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 				}
 			} catch (e) {
 				console.error(e);
-				notification.add({
-					color: "error",
-					message: "Error adding team",
-				});
+				toast.error("Error adding team");
 			}
 		}
 	});
 
 	return (
-		<Modal open={open} fullWidth>
-			<StyledModalTitle>
-				{isEdit ? (
-					<Typography sx={{ color: "#000000DE" }} variant="h6">
-						Edit Team
-					</Typography>
-				) : (
-					"Create New Team"
-				)}
-				<IconButton
-					onClick={() => {
-						onClose();
-					}}
-				>
-					<Close />
-				</IconButton>
-			</StyledModalTitle>
-			<form onSubmit={onSubmit}>
-				<Modal.Content>
-					<Stack direction="column" spacing={2}>
-						<Box>
+		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+			<DialogContent className="max-w-[550px]" showCloseButton={false}>
+				<DialogHeader>
+					<div className="flex items-center justify-between">
+						<DialogTitle className="text-foreground">
+							{isEdit ? "Edit Team" : "Create New Team"}
+						</DialogTitle>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							onClick={() => {
+								reset();
+								onClose();
+							}}
+							className="hover:bg-accent"
+						>
+							<X className="size-4" />
+						</Button>
+					</div>
+				</DialogHeader>
+				<form onSubmit={onSubmit}>
+					<div className="flex flex-col gap-4 pb-4">
+						<Field>
 							<Controller
-								name={"TEAM_TYPE"}
+								name="TEAM_TYPE"
 								control={control}
 								rules={{
 									required: "Please select a team type",
 								}}
 								render={({ field, fieldState: { error } }) => {
 									return (
-										<Select
-											label={"Type*"}
-											fullWidth={true}
-											error={!!error}
-											value={
-												field.value ? field.value : ""
-											}
-											onChange={(value) =>
-												field.onChange(value)
-											}
-											disabled={isEdit}
-										>
-											{loginTypes
-												.sort()
-												.filter(
-													(p) =>
-														![
-															"native",
-															"registration",
-														].includes(p.provider),
-												)
-												.map((p, _idx) => {
-													return (
-														<StyledSelectItem
-															key={`logintype-${p.provider}`}
-															value={p.provider}
-															type={p.provider}
-														>
-															<Box
-																sx={{
-																	display:
-																		"flex",
-																	flexDirection:
-																		"row",
-																	alignItems:
-																		"center",
-																	gap: "24px",
-																}}
-															>
-																{TypeImageObject[
-																	p.provider
-																] ? (
-																	<img
-																		src={
-																			TypeImageObject[
-																				p
-																					.provider
-																			]
-																		}
-																		style={{
-																			height: "24px",
-																			width: "24px",
-																		}}
-																		alt={
-																			"login provider icon"
-																		}
-																	/>
-																) : (
-																	<StyledIcon />
-																)}
-																{p.name}
-																{p.description && (
-																	<StyledMenuItemDesc
-																		variant={
-																			"caption"
-																		}
-																	>
-																		<em>
-																			{
-																				p.description
-																			}
-																		</em>
-																	</StyledMenuItemDesc>
-																)}
-															</Box>
-														</StyledSelectItem>
-													);
-												})}
-										</Select>
-									);
-								}}
-							/>
-						</Box>
-						<Box>
-							<Controller
-								name={"TEAM_NAME"}
-								control={control}
-								rules={{ required: true }}
-								render={({ field }) => {
-									return (
 										<>
-											<TextField
-												label="Name*"
+											<FieldLabel>
+												Type
+											<span className="text-destructive">
+												*
+											</span>
+									</FieldLabel>
+											<Select
 												value={
 													field.value
 														? field.value
 														: ""
 												}
-												onChange={(value) =>
+												onValueChange={(value) =>
 													field.onChange(value)
 												}
-												fullWidth={true}
-												disabled={
-													isEdit &&
-													selectedTeamType !==
-														"CUSTOM"
-												}
-											/>
-											{selectedTeamType !== "CUSTOM" &&
-											selectedTeamType !== "" ? (
-												<StyledContainer>
-													Must be the name of the
-													group/team from your IdP
-												</StyledContainer>
-											) : (
-												""
+												disabled={isEdit}
+											>
+												<SelectTrigger
+													className="w-full"
+													aria-invalid={!!error}
+												>
+													<SelectValue placeholder="Select a team type" />
+												</SelectTrigger>
+												<SelectContent>
+													{loginTypes
+														.sort()
+														.filter(
+															(p) =>
+																![
+																	"native",
+																	"registration",
+																].includes(
+																	p.provider,
+																),
+														)
+														.map((p) => {
+															return (
+																<SelectItem
+																	key={`logintype-${p.provider}`}
+																	value={
+																		p.provider
+																	}
+																	className={
+																		p.provider ===
+																		"CUSTOM"
+																			? "border-border border-b"
+																			: ""
+																	}
+																>
+																	<div className="flex flex-row items-center gap-6">
+																		{TypeImageObject[
+																			p
+																				.provider
+																		] ? (
+																			<img
+																				src={
+																					TypeImageObject[
+																						p
+																							.provider
+																					]
+																				}
+																				className="h-6 w-6"
+																				alt="login provider icon"
+																			/>
+																		) : (
+																			<Users className="h-6 w-6 text-muted-foreground" />
+																		)}
+																		<span>
+																			{
+																				p.name
+																			}
+																		</span>
+																		{p.description && (
+																			<span className="text-muted-foreground text-xs italic">
+																				{
+																					p.description
+																				}
+																			</span>
+																		)}
+																	</div>
+																</SelectItem>
+															);
+														})}
+												</SelectContent>
+											</Select>
+											{error && (
+												<FieldError>
+													{error.message}
+												</FieldError>
 											)}
 										</>
 									);
 								}}
 							/>
-						</Box>
+						</Field>
 
-						<Box>
+						<Field>
 							<Controller
-								name={"TEAM_DESCRIPTION"}
+								name="TEAM_NAME"
+								control={control}
+								rules={{ required: "Team name is required" }}
+								render={({ field, fieldState: { error } }) => {
+									return (
+										<>
+											<FieldLabel>Name
+												<span className="text-destructive">
+												*
+											</span>
+											</FieldLabel>
+											<Input
+												value={
+													field.value
+														? field.value
+														: ""
+												}
+												onChange={(e) =>
+													field.onChange(
+														e.target.value,
+													)
+												}
+												disabled={
+													isEdit &&
+													selectedTeamType !==
+														"CUSTOM"
+												}
+												aria-invalid={!!error}
+											/>
+											{selectedTeamType !== "CUSTOM" &&
+											selectedTeamType !== "" ? (
+												<FieldDescription className="pl-3.5 text-[#666666] text-[12px] leading-[20px] tracking-[0.4px]">
+													Must be the name of the
+													group/team from your IdP
+												</FieldDescription>
+											) : null}
+											{error && (
+												<FieldError>
+													{error.message}
+												</FieldError>
+											)}
+										</>
+									);
+								}}
+							/>
+						</Field>
+
+						<Field>
+							<Controller
+								name="TEAM_DESCRIPTION"
 								control={control}
 								rules={{}}
 								render={({ field }) => {
 									return (
-										<TextField
-											label="Description"
-											value={
-												field.value ? field.value : ""
-											}
-											onChange={(value) =>
-												field.onChange(value)
-											}
-											fullWidth={true}
-											multiline
-											minRows={2}
-											maxRows={6}
-										/>
+										<>
+											<FieldLabel>Description</FieldLabel>
+											<Textarea
+												value={
+													field.value
+														? field.value
+														: ""
+												}
+												onChange={(e) =>
+													field.onChange(
+														e.target.value,
+													)
+												}
+												rows={2}
+												className="max-h-[150px] resize-none"
+											/>
+										</>
 									);
 								}}
 							/>
-						</Box>
-					</Stack>
-				</Modal.Content>
-				<Modal.Actions>
-					<Stack
-						direction="row"
-						spacing={1}
-						paddingX={2}
-						paddingBottom={2}
-					>
-						<Button
-							type="button"
-							sx={{ color: "#212121" }}
-							onClick={() => {
-								onClose();
-							}}
-						>
-							Cancel
-						</Button>
-						<Button
-							type="submit"
-							variant={"contained"}
-							disabled={!isValid}
-						>
-							{isEdit ? "Update" : "Add"}
-						</Button>
-					</Stack>
-				</Modal.Actions>
-			</form>
-		</Modal>
+						</Field>
+					</div>
+					<DialogFooter>
+						<div className="flex flex-row gap-2">
+							<Button
+								type="button"
+								variant="ghost"
+								onClick={() => {
+									reset();
+									onClose();
+								}}
+							>
+								Cancel
+							</Button>
+							<Button type="submit" disabled={!isValid}>
+								{isEdit ? "Update" : "Add"}
+							</Button>
+						</div>
+					</DialogFooter>
+				</form>
+			</DialogContent>
+		</Dialog>
 	);
 };
