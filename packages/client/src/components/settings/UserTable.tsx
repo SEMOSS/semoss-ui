@@ -10,7 +10,6 @@ import {
 	Checkbox,
 	IconButton,
 	LoadingScreen,
-	Popover,
 	Search,
 	Stack,
 	styled,
@@ -21,7 +20,7 @@ import {
 import { deleteMember, editMemberInfo } from "@/api";
 import { useAPI, useSettings } from "@/hooks";
 import { UserAddOverlay } from "./UserAddOverlay";
-import { UserPopover } from "./UserPopover";
+import { UserPopover } from "./user-popover";
 
 const AvatarWrapper = styled("div")({
 	display: "inline-block",
@@ -228,10 +227,7 @@ export const UserTable = (props: UserTableProps) => {
 	/** Member Table State */
 	const [selectedMembers, setSelectedMembers] = useState([]);
 
-	/** Utility for Popover */
-	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-	const [hoveredUser, setHoveredUser] = useState<User | null>(null);
-	const isPopoverOpen = Boolean(anchorEl);
+
 	/** Add User State*/
 	const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
 	const [addModalUser, setAddModalUser] = useState<User | null>(null);
@@ -383,12 +379,7 @@ export const UserTable = (props: UserTableProps) => {
 			getUsers.refresh();
 		}
 	};
-	/**
-	 * Handle user popover close
-	 */
-	const handlePopoverClose = () => {
-		setAnchorEl(null);
-	};
+
 	// Avatars rendered
 	const Avatars = useMemo(() => {
 		if (!renderedMembers.length) {
@@ -614,42 +605,40 @@ export const UserTable = (props: UserTableProps) => {
 														</StyledTableCell>
 														<Table.Cell>
 															<StyledCenteredBox>
-																<StyledNameStack
-																	direction="row"
-																	onMouseEnter={(
-																		event,
-																	) => {
-																		setAnchorEl(
-																			event.currentTarget,
-																		);
-																		setHoveredUser(
-																			user,
-																		);
+																<UserPopover
+																	user={{
+																		id: user.id,
+																		name: user.name || "Unknown",
+																		email: user.email || "",
 																	}}
-																	onMouseLeave={() =>
-																		handlePopoverClose
-																	}
-																	aria-owns="mouse-over-popover"
-																	aria-haspopup="true"
 																>
-																	<AvatarWrapper>
-																		<Avatar>
-																			{user.name[0].toUpperCase()}
-																		</Avatar>
-																	</AvatarWrapper>
-
-															<StyledPrimaryText
-																variant="body1"
-																noWrap={true}
-																title={`Name: ${user.name}`}
-															>
-																{user.name || (
-																	<>&nbsp;</>
-																)}
-															</StyledPrimaryText>
-														</StyledNameStack>
-													</StyledCenteredBox>
-												</Table.Cell>
+																	<div
+																		style={{
+																			display: "flex",
+																			flexDirection: "row",
+																			alignItems: "center",
+																			flex: 1,
+																			cursor: "pointer",
+																		}}
+																	>
+																		<AvatarWrapper>
+																			<Avatar>
+																				{user.name[0].toUpperCase()}
+																			</Avatar>
+																		</AvatarWrapper>
+																		<StyledPrimaryText
+																			variant="body1"
+																			noWrap={true}
+																			title={`Name: ${user.name}`}
+																		>
+																			{user.name || (
+																				<>&nbsp;</>
+																			)}
+																		</StyledPrimaryText>
+																	</div>
+																</UserPopover>
+															</StyledCenteredBox>
+														</Table.Cell>
 												<Table.Cell>
 													{user.type}
 												</Table.Cell>
@@ -771,24 +760,6 @@ export const UserTable = (props: UserTableProps) => {
 											/>
 										</Table.Row>
 									</Table.Footer>
-									<UserPopover
-										hoveredUser={
-											hoveredUser
-												? {
-														id: hoveredUser.id,
-														name:
-															hoveredUser.name ||
-															"Unknown",
-														email:
-															hoveredUser.email ||
-															"",
-													}
-												: null
-										}
-										isPopoverOpen={isPopoverOpen}
-										anchorEl={anchorEl}
-										handlePopoverClose={handlePopoverClose}
-									/>
 								</StyledMemberTable>
 							) : (
 								<StyledNoUsersDiv>
