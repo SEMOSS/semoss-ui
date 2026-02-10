@@ -325,7 +325,7 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
-							className="max-h-64 min-h-48 bg-background"
+							className=""
 							isLoading={
 								isLoading ||
 								(mode.type === "workspace" &&
