@@ -342,6 +342,9 @@ paramValues=[${JSON.stringify({
 			tokens: parentMessage.tokens,
 		});
 
+		// Update room options with current modelId before running message
+		await room.updateRoomOptions(room.options);
+
 		grandParentMessage.runMessage(rewrittenMessage);
 	};
 
