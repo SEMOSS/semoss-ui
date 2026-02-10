@@ -169,6 +169,7 @@ export const NewRoomPage = observer(() => {
 			// create a new room
 			const room = await chat.createRoom(
 				mode.type === "plan" ? "planning" : "chat",
+				mode.workspace?.project_id,
 			);
 
 			const updated = {
