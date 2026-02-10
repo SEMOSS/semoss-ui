@@ -1,5 +1,6 @@
 import { Ellipsis, SquarePen } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
 	Button,
@@ -8,6 +9,12 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuGroup,
@@ -35,6 +42,8 @@ export const WorkspaceCard = observer(
 		 */
 		const navigate = useNavigate();
 		const { root } = useRoot();
+
+		const [deleteModal, setDeleteModal] = useState(false);
 
 		return (
 			<Card
@@ -78,7 +87,7 @@ export const WorkspaceCard = observer(
 									<DropdownMenuItem
 										onClick={(e) => {
 											e.stopPropagation();
-											onDeleteClick();
+											setDeleteModal(true);
 										}}
 									>
 										Delete
@@ -120,6 +129,45 @@ export const WorkspaceCard = observer(
 						New Chat
 					</Button>
 				</CardContent>
+
+				<Dialog open={deleteModal} onOpenChange={setDeleteModal}>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Are you sure?</DialogTitle>
+							<DialogDescription>
+								This action is irreversable. This will
+								permanentely delete the {workspace.name}{" "}
+								workspace.
+							</DialogDescription>
+						</DialogHeader>
+						<DialogFooter>
+							<Button
+								variant="outline"
+								onClick={(e) => {
+									e.stopPropagation();
+									setDeleteModal(false);
+								}}
+								// data-testid={formatToDataTestId(
+								// 	`settingsTiles-${name}-confirmCancel-btn`,
+								// )}
+								data-testid={`settingsTiles-${workspace.name}-confirmCancel-btn`}
+							>
+								Cancel
+							</Button>
+							<Button
+								variant="destructive"
+								data-testid={`settingsTiles-${workspace.name}-confirmDelete-btn`}
+								onClick={(e) => {
+									e.stopPropagation();
+									setDeleteModal(false);
+									onDeleteClick();
+								}}
+							>
+								Delete
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
 			</Card>
 		);
 	},
