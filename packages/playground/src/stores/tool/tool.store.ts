@@ -39,6 +39,9 @@ export class ToolStore {
 		/**  title of tool **/
 		title: string;
 
+		/**  description of tool **/
+		description?: string;
+
 		/** meta data from the tool */
 		_meta: {
 			SMSS_MCP_EXECUTION: McpExecution;
@@ -57,7 +60,7 @@ export class ToolStore {
 		/**  Name of function in mcp json **/
 		original_name: string;
 
-		/** Parameters used in the tool */
+		/** Parameters suggested by the LLM */
 		parameters: Record<string, unknown>;
 	} = {
 		id: "",
@@ -70,6 +73,7 @@ export class ToolStore {
 		name: "",
 		original_name: "",
 		parameters: {},
+		description: "",
 	};
 
 	/**
@@ -84,12 +88,17 @@ export class ToolStore {
 	response: string = "";
 
 	/**
+	 * Parameters executed by the tool
+	 */
+	executedParameters: Record<string, unknown> = {};
+
+	/**
 	 * Track if the tool is open
 	 */
 	isOpen: boolean = false;
 
 	/**
-	 * Deplay information for the tool
+	 * Display information for the tool
 	 */
 	display: McpDisplay = "sidebar";
 
@@ -152,6 +161,10 @@ export class ToolStore {
 					tool: this.json,
 					toolResponse:
 						this.status === "SUCCESS" ? this.response : undefined,
+					executedParameters:
+						this.status === "SUCCESS"
+							? this.executedParameters
+							: undefined,
 				},
 				enableClose: true,
 			});

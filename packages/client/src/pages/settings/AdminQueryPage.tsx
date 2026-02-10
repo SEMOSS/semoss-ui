@@ -140,9 +140,10 @@ const StyledButton = styled(Button)({
 });
 
 const DATABASE_OPTIONS = [
+	"AuditLogs",
 	"LocalMasterDatabase",
-	"security",
 	"scheduler",
+	"security",
 	"themes",
 	"UserTrackingDatabase",
 	"Notification",

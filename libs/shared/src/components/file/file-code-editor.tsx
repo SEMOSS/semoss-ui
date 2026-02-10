@@ -1,12 +1,14 @@
 import type { OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
-import { lazy, Suspense, useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import { download, useInsight, usePixel } from "@semoss/sdk/react";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
-import { MONACO_CONFIG, MONACO_EXT_LANGUAGE_MAPPING } from "./file.constants";
+import {
+	MONACO_CONFIG,
+	MONACO_EXT_LANGUAGE_MAPPING,
+	MonacoEditor,
+} from "../monaco";
 import type { FileMode } from "./file.types";
-
-const MonacoEditor = lazy(() => import("@monaco-editor/react"));
 
 interface FileCodeEditorProps {
 	/** Mode of file editor */
@@ -230,8 +232,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 			// save it
 			await insight.actions.run(pixel);
 
-			// refresh after save
-			getFile.refresh();
+			// Do not refresh the content as it can cause the cursor to jump, instead just trigger onChange with the new content and reset the modified state
 
 			// trigger onChange
 			onChange(content, false);
