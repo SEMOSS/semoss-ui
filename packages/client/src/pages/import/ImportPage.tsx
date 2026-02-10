@@ -1,8 +1,8 @@
 import { useMemo } from "react";
-import { DatabasePageContent } from "@/components/import/database/DatabasePageContent";
-import { FunctionImport } from "@/components/import/function/FunctionImport";
+import { DatabasePageContent } from "@/components/import/database/database-page-content";
+import { FunctionImport } from "@/components/import/function/function-import";
 import { GuardrailImport } from "@/components/import/guardrail/GuardrailImport";
-import { StorageImport } from "@/components/import/storage/StorageImport";
+import { StorageImport } from "@/components/import/storage/storage-import";
 import { VectorImport } from "@/components/import/vector/VectorImport";
 import type { ENGINE_TYPES } from "@/types";
 import { ModelImport } from "../../components/import/model/model-import";

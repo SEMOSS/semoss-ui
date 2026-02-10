@@ -1,4 +1,5 @@
-import { lazy, Suspense, useState } from "react";
+import { Suspense, useState } from "react";
+import { MonacoEditor } from "@semoss/shared";
 import {
 	Markdown,
 	P,
@@ -7,9 +8,6 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-
-// Reduce Initial Bundle
-const Editor = lazy(() => import("@monaco-editor/react"));
 
 interface MarkdownEditorProps {
 	/** Value of the input */
@@ -66,7 +64,7 @@ export const MarkdownEditor = (props: MarkdownEditorProps) => {
 								</div>
 							}
 						>
-							<Editor
+							<MonacoEditor
 								height="100%"
 								width="100%"
 								defaultValue={value}
