@@ -2,12 +2,12 @@ import {
 	AccountCircleRounded,
 	Functions as FunctionsIcon,
 	GridView as GridViewIcon,
+	GppGoodRounded as GuardrailIcon,
 	Home as HomeIcon,
 	Inventory2Outlined,
 	MenuOpenRounded,
 	Settings as SettingsIcon,
 	TokenRounded,
-	GppGoodRounded as GuardrailIcon
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
