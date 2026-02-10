@@ -26,7 +26,7 @@ import {
 } from "@semoss/ui";
 import { addTeamUser, deleteTeam, getNonTeamUsers } from "@/api/teams";
 import { useRootStore } from "@/hooks";
-import { AddTeamModal } from "./AddTeamModal";
+import { AddTeamModal } from "./add-team-modal";
 
 const colors = [
 	"rgba(111, 212, 203, 1)",

@@ -1,16 +1,6 @@
-import { styled } from "@semoss/ui";
 import { UpdateSMSS } from "@/components/settings";
 import { SettingsContext } from "@/contexts";
 import { useEngine } from "@/hooks";
-
-const StyledContainer = styled("div")(({ theme }) => ({
-	width: "100%",
-	display: "flex",
-	alignSelf: "stretch",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: theme.spacing(3),
-}));
 
 export const EngineSmssPage = () => {
 	const { type, active } = useEngine();
@@ -21,9 +11,9 @@ export const EngineSmssPage = () => {
 				adminMode: false,
 			}}
 		>
-			<StyledContainer>
+			<div className="flex w-full flex-col items-start gap-6 self-stretch">
 				<UpdateSMSS type={type} id={active.id} />
-			</StyledContainer>
+			</div>
 		</SettingsContext.Provider>
 	);
 };
