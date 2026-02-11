@@ -4,6 +4,7 @@ import {
 	SquareArrowOutUpRightIcon,
 } from "lucide-react";
 import { useMemo } from "react";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -14,6 +15,7 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import { mcpToPlatformUrl } from "@/components";
 import type { WorkspaceWithMCPData } from "@/types";
@@ -45,6 +47,8 @@ export const WorkspaceMCPList = ({
 	mcp = [],
 	search,
 }: WorkspaceMCPListProps) => {
+	const { actions } = useInsight();
+
 	const searchedMCP = useMemo(() => {
 		if (!search) {
 			return mcp;
@@ -63,6 +67,29 @@ export const WorkspaceMCPList = ({
 			</div>
 		);
 	}
+
+	const handleRequestAccess = async (
+		m: WorkspaceWithMCPData["mcp"][number],
+	) => {
+		try {
+			const response = await actions.run(
+				m.type === "PROJECT"
+					? `RequestProject(project=${JSON.stringify(
+							m.id,
+						)}, permission=${JSON.stringify("READ_ONLY")})`
+					: `RequestEngine(engine=${JSON.stringify(m.id)}, permission=${JSON.stringify("READ_ONLY")})`,
+			);
+			if (
+				response.pixelReturn.some((r) =>
+					r.operationType.some((op) => op === "ERROR"),
+				)
+			) {
+				throw new Error("Failed to request access");
+			}
+		} catch {
+			toast.error("Failed to request access");
+		}
+	};
 
 	return (
 		<ScrollArea className="h-full w-full">
@@ -153,13 +180,9 @@ export const WorkspaceMCPList = ({
 											<Button
 												size="sm"
 												className="h-fit w-fit px-2 py-1 text-xs"
-												onClick={() => {
-													// TODO: Handle request access
-													console.log(
-														"Request access for:",
-														m.name,
-													);
-												}}
+												onClick={() =>
+													handleRequestAccess(m)
+												}
 											>
 												Request Access
 											</Button>
