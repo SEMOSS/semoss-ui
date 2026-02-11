@@ -1,5 +1,5 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: database cards use click handlers */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: database cards use click handlers */
 import { FileUploadOutlined } from "@mui/icons-material";
 import { GitCompare, Search, Upload } from "lucide-react";
 import type React from "react";
@@ -24,12 +24,13 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
-import { useRootStore } from "@/hooks";
-import { DatabaseForm } from "./database-form";
+import { useDatabaseWizard, useRootStore } from "@/hooks";
 import {
 	CATEGORY_DESCRIPTIONS,
 	DATABASE_CONNECTION,
 } from "./database.constants";
+import { DatabaseForm } from "./database-form";
+import { DatabaseWizardDialog } from "./wizard/DatabaseWizardDialog";
 
 interface database {
 	fields: [];
@@ -120,8 +121,10 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
+	const [isDatabaseWizardOpen, setIsDatabaseWizardOpen] = useState(false);
 	const [filedata, setFiledata] = useState(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const wizard = useDatabaseWizard();
 
 	const DatabaseOptions = DATABASE_CONNECTION;
 	const CategoryDescription = CATEGORY_DESCRIPTIONS;
@@ -285,6 +288,14 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 		setIsFileUploadModalOpen(flag);
 	};
 
+	const handleDatabaseWizardClick = (flag: boolean) => {
+		setIsDatabaseWizardOpen(flag);
+		if (flag) {
+			wizard.actions.listDatabases();
+			wizard.actions.listLlms();
+		}
+	};
+
 	return (
 		<div className="mx-auto w-full">
 			{renderBreadcrumbs()}
@@ -362,6 +373,59 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					</div>
 				</DialogContent>
 			</Dialog>
+
+			<Dialog
+				open={isDatabaseWizardOpen}
+				onOpenChange={setIsDatabaseWizardOpen}
+			>
+				<DatabaseWizardDialog
+					step={wizard.state.step}
+					isLoading={wizard.state.isLoading}
+					databaseName={wizard.state.databaseName}
+					databases={wizard.state.databases}
+					llms={wizard.state.llms}
+					schemaSql={wizard.state.schemaSql}
+					querySql={wizard.state.querySql}
+					schemaJson={wizard.state.schemaJson}
+					csvPreview={wizard.state.csvPreview}
+					selectedDatabaseId={wizard.state.currentDatabaseId}
+					selectedLlmId={wizard.state.selectedLlmId}
+					includeSampleData={wizard.state.includeSampleData}
+					sampleRowCount={wizard.state.sampleRowCount}
+					onClose={() => setIsDatabaseWizardOpen(false)}
+					onBack={() =>
+						wizard.setters.setStep(
+							wizard.state.step === "actions"
+								? "select"
+								: "actions",
+						)
+					}
+					onSelectStep={(nextStep) =>
+						wizard.setters.setStep(nextStep)
+					}
+					onDatabaseNameChange={wizard.setters.setDatabaseName}
+					onSelectDatabase={wizard.actions.selectDatabase}
+					onCreateDatabase={wizard.actions.createDatabase}
+					onDeleteDatabase={wizard.actions.deleteDatabase}
+					onLoadSchema={() => wizard.actions.refreshSchema()}
+					onDescriptionChange={wizard.setters.setDescription}
+					onSelectLlm={wizard.setters.setSelectedLlmId}
+					onIncludeSampleDataChange={
+						wizard.setters.setIncludeSampleData
+					}
+					onSampleRowCountChange={wizard.setters.setSampleRowCount}
+					onGenerateSchema={wizard.actions.generateSchemaFromNl}
+					onSchemaJsonChange={wizard.setters.setSchemaJson}
+					onGenerateSql={wizard.actions.generateSqlFromSchema}
+					onExecuteSql={wizard.actions.executeSql}
+					onCsvFileSelected={wizard.actions.handleCsvFileSelected}
+					onTableNameChange={wizard.setters.setCsvTableName}
+					onQuerySqlChange={wizard.setters.setQuerySql}
+					onRunQuery={wizard.actions.runQuery}
+					onRefreshSchema={() => wizard.actions.refreshSchema()}
+				/>
+			</Dialog>
+
 			{selectedDatabase ? (
 				<div data-testid="database-form-wrapper">
 					<DatabaseForm
@@ -414,6 +478,15 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 								className="h-10 rounded-lg leading-[0.75]"
 							>
 								<FileUploadOutlined fontSize="medium" />
+							</Button>
+							<Button
+								size="lg"
+								variant="outline"
+								onClick={() => handleDatabaseWizardClick(true)}
+								data-testid="database-wizard-button"
+								className="h-10 rounded-lg leading-[0.75]"
+							>
+								Database Wizard
 							</Button>
 						</div>
 
