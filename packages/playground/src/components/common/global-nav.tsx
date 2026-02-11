@@ -411,6 +411,7 @@ export const GlobalNav = observer(() => {
 										const roomId = room.ROOM_ID;
 										const name =
 											room.ROOM_NAME || "Untitled";
+										const date = dayjs(room.DATE_CREATED).format('M-D-YYYY h:mma')
 										const isFavorite = room.PINNED || false;
 										const isEditing =
 											editingRoomId === roomId;
@@ -454,20 +455,23 @@ export const GlobalNav = observer(() => {
 												) : (
 													<>
 														<SidebarMenuButton
-															asChild
-															isActive={
-																activeRoomId ===
-																roomId
-															}
+														asChild
+														isActive={
+															activeRoomId ===
+															roomId
+														}
 														>
 															<Link
-																className="inline-block flex-1 truncate"
+																className="flex flex-col items-start gap-0.5 p-2 h-auto"
 																to={`/room/${roomId}`}
 																aria-label={
 																	"Select room"
 																}
 															>
-																{name}
+																<span className="truncate text-sm font-medium leading-none">{name}</span>
+																<span className="text-xs text-muted-foreground leading-none">
+																	{date}
+																</span>
 															</Link>
 														</SidebarMenuButton>
 														<DropdownMenu
