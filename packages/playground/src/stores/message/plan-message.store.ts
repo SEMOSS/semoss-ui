@@ -525,6 +525,8 @@ stepNumber=["${step.step_number}"]
 		message: ResponseMessageStore,
 		tool: ResponseMessageStore["tools"][number],
 		toolResponse: string,
+		toolStatus: "success" | "error" | "cancelled",
+		executedParameters: Record<string, unknown>,
 	) => {
 		const step = this.step;
 		if (!step) {
@@ -548,6 +550,14 @@ stepNumber=["${step.step_number}"]
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
+			tool.executedParameters = executedParameters;
+			if (toolStatus === "success") {
+				tool.status = "SUCCESS";
+			} else if (toolStatus === "cancelled") {
+				tool.status = "CANCELLED";
+			} else if (toolStatus === "error") {
+				tool.status = "ERROR";
+			}
 		});
 
 		// wait for the pixel to run
@@ -567,7 +577,9 @@ toolName=["${tool.json.name}"],
 toolPredictedArguments=["<encode>${JSON.stringify(tool.json.parameters)}</encode>"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
-${message.id ? `parentMessageId=["${message.id}"]` : ""}
+${message.id ? `parentMessageId=["${message.id}"]` : ""},
+mcpToolStatus=${JSON.stringify(toolStatus)},
+toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 );`,
 		);
 

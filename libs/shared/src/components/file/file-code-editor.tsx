@@ -232,8 +232,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 			// save it
 			await insight.actions.run(pixel);
 
-			// refresh after save
-			getFile.refresh();
+			// Do not refresh the content as it can cause the cursor to jump, instead just trigger onChange with the new content and reset the modified state
 
 			// trigger onChange
 			onChange(content, false);

@@ -31,14 +31,13 @@ export const MainLayout = observer(() => {
 
 	// set up the store
 	const chatStore = useMemo(() => {
-		const defaultModel = root.theme?.defaultRoomSettings?.model;
-		const store = new ChatStore(actions, defaultModel);
+		const store = new ChatStore(root.theme, actions);
 
 		// initialize it
 		store.initialize();
 
 		return store;
-	}, [actions, root.theme]);
+	}, [root.theme, actions]);
 
 	return (
 		<ChatContext.Provider

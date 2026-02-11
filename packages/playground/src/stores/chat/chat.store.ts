@@ -1,5 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { type Insight, runPixel, getJSON } from "@semoss/sdk/react";
+import type { ThemeMap } from "@semoss/shared";
 import { MODEL_KEY } from "@/constants";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
@@ -45,6 +46,7 @@ interface ChatStoreInterface {
  * Manage the chat
  */
 export class ChatStore {
+	private _theme: ThemeMap["playground"];
 	private _actions: Insight["actions"];
 	private _error: Insight["error"];
 	private _store: ChatStoreInterface = {
@@ -59,11 +61,9 @@ export class ChatStore {
 		},
 	};
 
-	private _defaultModel?: Engine;
-
-	constructor(actions: Insight["actions"], defaultModel?: Engine) {
+	constructor(theme: ThemeMap["playground"], actions: Insight["actions"]) {
+		this._theme = theme;
 		this._actions = actions;
-		this._defaultModel = defaultModel;
 
 		// make it observable
 		makeAutoObservable(this);
@@ -115,7 +115,10 @@ export class ChatStore {
 	/**
 	 * Create a new room
 	 */
-	createRoom = async (mode: "planning" | "chat"): Promise<RoomStore> => {
+	createRoom = async (
+		mode: "planning" | "chat",
+		workspaceId?: string,
+	): Promise<RoomStore> => {
 		// create the room in a new insight
 		const { errors, pixelReturn, insightId } = await runPixel<
 			[
@@ -123,7 +126,10 @@ export class ChatStore {
 					roomId: string;
 				},
 			]
-		>(`CreatePlaygroundRoom();`, "new");
+		>(
+			`CreatePlaygroundRoom(${workspaceId ? `workspaceId=${JSON.stringify(workspaceId)}` : ""})`,
+			"new",
+		);
 
 		// throw errors
 		if (errors.length > 0) {
@@ -137,7 +143,7 @@ export class ChatStore {
 		const roomId = output.roomId;
 
 		// create the room store
-		const room = new RoomStore(roomId, insightId);
+		const room = new RoomStore(this._theme, roomId, insightId);
 
 		// set the model
 		room.setModel(this.models.selected);
@@ -195,7 +201,7 @@ export class ChatStore {
 		}
 
 		// create the room store
-		const room = new RoomStore(roomId);
+		const room = new RoomStore(this._theme, roomId);
 
 		// initialize the room
 		await room.initialize();
@@ -326,9 +332,11 @@ export class ChatStore {
 	 * Get available models from the backend
 	 */
 	private getDefaultModel = async (): Promise<void> => {
-		const defaultModelId = this._defaultModel?.app_id || DEFAUlT_MODEL_ID;
+		const defaultModelId =
+			this._theme.defaultRoomSettings.model?.app_id || DEFAUlT_MODEL_ID;
 		const defaultModelName =
-			this._defaultModel?.app_name || DEFAUlT_MODEL_NAME;
+			this._theme.defaultRoomSettings.model?.app_name ||
+			DEFAUlT_MODEL_NAME;
 		// model selection is not enabled, set it to the default
 		if (!ENABLE_MODEL_SELECT) {
 			this.setSelectedModel({

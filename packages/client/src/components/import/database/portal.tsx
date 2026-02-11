@@ -1,54 +1,14 @@
-import { Close } from "@mui/icons-material";
+import { X } from "lucide-react";
 import type React from "react";
 import { useEffect } from "react";
 import ReactDOM from "react-dom";
-import { Box, IconButton, styled } from "@semoss/ui";
+import { Button } from "@semoss/ui/next";
 
 interface PortalModalProps {
 	open: boolean;
 	onClose: () => void;
 	contentId: string;
 }
-
-const Overlay = styled(Box)(({ theme }) => ({
-	position: "fixed",
-	zIndex: 1300,
-	top: 0,
-	left: 0,
-	right: 0,
-	bottom: 0,
-	minWidth: "100vw",
-	height: "100vh",
-	backgroundColor: "rgba(0,0,0,0.8)",
-	display: "flex",
-	flexDirection: "column",
-	justifyContent: "flex-start",
-	alignItems: "center",
-	overflow: "none",
-	pointerEvents: "auto",
-}));
-
-const Content = styled(Box)(({ theme }) => ({
-	position: "relative",
-	backgroundColor: theme.palette.background.paper,
-	zIndex: 1400,
-	boxShadow: theme.shadows[5],
-	overflow: "none",
-	padding: theme.spacing(3),
-	boxSizing: "border-box",
-	display: "flex",
-	flexDirection: "column",
-	minWidth: "100vw",
-}));
-
-const CloseBtn = styled(IconButton)(({ theme }) => ({
-	position: "absolute",
-	top: theme.spacing(2),
-	right: theme.spacing(2),
-	color: theme.palette.text.primary,
-	zIndex: 1500,
-	pointerEvents: "auto",
-}));
 
 export const PortalModal: React.FC<PortalModalProps> = ({
 	open,
@@ -67,14 +27,20 @@ export const PortalModal: React.FC<PortalModalProps> = ({
 	if (!open) return null;
 
 	return ReactDOM.createPortal(
-		<Overlay sx={{ pointerEvents: "auto" }}>
-			<Content sx={{ pointerEvents: "auto" }}>
-				<CloseBtn aria-label="Close" onClick={onClose}>
-					<Close />
-				</CloseBtn>
+		<div className="pointer-events-auto fixed inset-0 z-[1300] flex min-h-screen min-w-full flex-col items-center justify-start overflow-hidden bg-background/95 backdrop-blur-sm">
+			<div className="pointer-events-auto relative z-[1400] flex min-w-full flex-col overflow-hidden border border-border bg-card p-6 shadow-2xl">
+				<Button
+					variant="ghost"
+					size="icon"
+					aria-label="Close"
+					onClick={onClose}
+					className="pointer-events-auto absolute top-4 right-4 z-[1500] text-foreground hover:bg-accent hover:text-accent-foreground"
+				>
+					<X className="size-5" />
+				</Button>
 				<div id={contentId} />
-			</Content>
-		</Overlay>,
+			</div>
+		</div>,
 		document.getElementById("root")!,
 	);
 };
