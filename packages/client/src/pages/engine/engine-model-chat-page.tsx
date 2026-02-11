@@ -216,7 +216,7 @@ export const EngineModelChatPage = () => {
 						<div className="flex flex-row items-center justify-between">
 							<H4>Chat with the Model</H4>
 						</div>
-						<P className="mb-5">
+						<P className="mb-2">
 							Test and interact with this LLM model. Ask
 							questions, experiment with different prompts, and
 							adjust parameters to see how the model responds.
@@ -242,7 +242,7 @@ export const EngineModelChatPage = () => {
 								</AlertDescription>
 							</Alert>
 						)}
-						<div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-transparent">
+						<div className="flex flex-1 flex-col rounded-lg border border-border bg-transparent">
 							<div className="flex items-center justify-between bg-primary/10 p-2">
 								<P className="font-medium">Chat History</P>
 								{messages.length > 0 && (
@@ -260,7 +260,7 @@ export const EngineModelChatPage = () => {
 									</Button>
 								)}
 							</div>
-							<ScrollArea className="max-h-[80%] min-h-[300px] flex-1">
+							<ScrollArea className="max-h-[75%] min-h-[300px] flex-1">
 								<div className="bg-transparent">
 									{isInsightLoading ? (
 										<Muted className="mt-4 block text-center">
@@ -393,7 +393,7 @@ export const EngineModelChatPage = () => {
 										name="prompt"
 										control={control}
 										render={({ field }) => (
-											<div className="relative w-full">
+											<div className="relative m-3 w-full">
 												<Textarea
 													{...field}
 													placeholder="Ask a question..."
