@@ -125,14 +125,18 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			let success = false;
 			let output = "";
 			try {
-				const response = await room.runRoomPixel<[string]>(
+				const response = await room.runRoomPixel<[unknown]>(
 					`RunMCPTool(project = [ "${app}" ], function=[ "${
 						tool.name
 					}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
 					false,
 					false,
 				);
-				output = response.pixelReturn[0].output;
+				const rawOutput = response.pixelReturn[0].output;
+				output =
+					typeof rawOutput === "string"
+						? rawOutput
+						: JSON.stringify(rawOutput);
 				success = true;
 			} catch (error) {
 				output = error.toString();

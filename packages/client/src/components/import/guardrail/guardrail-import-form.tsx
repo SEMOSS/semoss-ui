@@ -26,11 +26,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Separator,
-	Spinner,
-	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 
 export interface ParsedResult {
@@ -47,7 +44,7 @@ export interface ParsedResult {
 	nodeProp: Record<string, string[]>;
 }
 
-export const FunctionForm = ({
+export const GuardrailForm = ({
 	title,
 	description,
 	fields,
@@ -58,10 +55,10 @@ export const FunctionForm = ({
 	const [resolvedFields, setResolvedFields] = useState(fields);
 	const [isValidDatabaseName, setIsValidDatabaseName] =
 		useState<boolean>(false);
-	const debounceTimeoutsRef = useRef<
-		Record<string, ReturnType<typeof setTimeout>>
-	>({});
-	const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+	const [initScriptCallback, setInitScriptCallback] = useState(null);
+	const [updateFieldName, setUpdateFieldName] = useState("");
+	const [isDynamicInputChangedByUser, setIsDynamicInputChangedByUser] =
+		useState(false);
 
 	const {
 		control,
@@ -70,6 +67,7 @@ export const FunctionForm = ({
 		setValue,
 		setFocus,
 		formState,
+		getValues,
 		setError,
 		clearErrors,
 	} = useForm({
@@ -82,12 +80,16 @@ export const FunctionForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
-	const { monolithStore, configStore } = useRootStore();
+	const { monolithStore } = useRootStore();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
 	const categoryDescriptions = categoryDescription;
 	const [loading, setLoading] = useState(false);
+	const debounceTimeoutsRef = useRef<
+		Record<string, ReturnType<typeof setTimeout>>
+	>({});
+	const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
 	//  Group fields by category
 	const grouped = defaultFields.reduce((acc, f) => {
@@ -96,35 +98,101 @@ export const FunctionForm = ({
 		return acc;
 	}, {});
 
-	const onFormSubmit = async (formData) => {
-		const { FILE, ...newFormData } = formData;
-
-		setLoading(true);
-		let pixel = `CreateRestFunctionEngine(function=["${
-			formData.NAME
-		}"],functionDetails=[${JSON.stringify(newFormData)}]);`;
-		if (FILE !== "") {
-			try {
-				const uploadedFiles = await uploadFile(
-					[FILE],
-					configStore.store.insightID,
-				);
-
-				if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
-					toast.error("Upload failed or returned invalid response.");
-					setLoading(false);
-					return;
-				}
-				pixel = pixel.replace(
-					");",
-					`,filePaths=["${uploadedFiles[0].fileLocation}"]` + ");",
-				);
-			} catch {
-				toast.error("Upload failed or returned invalid response.");
-				setLoading(false);
-				return;
+	const dynamicFieldsToWatch = useMemo(() => {
+		const f2w = [];
+		for (const f of fields) {
+			if (f.updateValueFieldsToWatch?.length) {
+				f.updateValueFieldsToWatch.forEach((f) => {
+					f2w.push(f);
+				});
 			}
 		}
+		return f2w;
+	}, []);
+
+	const fieldsToWatch = useMemo(() => {
+		const f2w = [];
+		for (const f of fields) {
+			if (f.pixel) {
+				const pixelParams = f.pixel.match(/<([^>]+)>/g);
+				if (pixelParams) {
+					pixelParams.forEach((p) => {
+						const strippedVal = p.replace(/[<>]/g, "");
+						f2w.push(strippedVal);
+					});
+				}
+			}
+			if (f.options?.pixel) {
+				const pixelParams = f.options.pixel.match(/<([^>]+)>/g);
+				if (pixelParams) {
+					pixelParams.forEach((p) => {
+						const strippedVal = p.replace(/[<>]/g, "");
+						f2w.push(strippedVal);
+					});
+				}
+			}
+		}
+		return f2w;
+	}, []);
+	/**
+	 * Anytime watched input fields defined in constants changes trigger this
+	 * Checks to see that update callback has been loaded
+	 * Creates params object with all watched input field names and current values
+	 * Passes params object to update callback from import.constants.ts
+	 * Removes whitespace from new init script string
+	 * Updates init script field value
+	 */
+	useEffect(() => {
+		if (!initScriptCallback) return;
+		if (isDynamicInputChangedByUser) return;
+
+		const mappedValuesObject = dynamicFieldsToWatch.reduce(
+			(acc, fieldName) => ({ ...acc, [fieldName]: getValues(fieldName) }),
+			{},
+		);
+
+		const newInitScript = initScriptCallback(mappedValuesObject);
+		const newInitScriptSpacesTrimmed = newInitScript.replace(/\s+/g, " ");
+		setValue(updateFieldName, newInitScriptSpacesTrimmed);
+
+		// additionally run this after update callback is initially loaded to populate script field
+	}, [
+		...dynamicFieldsToWatch.map((field) => watch(field)),
+		initScriptCallback,
+	]);
+
+	/**
+	 * On init load of default values iterate and look for updateCallback
+	 * If it is present set it in useState var along with field name to be updated
+	 * May be combinable with another useEffect
+	 */
+	useEffect(() => {
+		defaultFields.forEach((val, _i) => {
+			if (val.updateCallback) {
+				setUpdateFieldName(val.fieldName);
+				setInitScriptCallback(
+					() =>
+						(...args) =>
+							val.updateCallback(...args),
+				);
+			}
+		});
+	}, [defaultFields]);
+
+	const setNewWatchedFieldReferences = () => {
+		fieldsToWatch.forEach((fieldName) => {
+			const val = watch(fieldName);
+
+			watchedFieldRef.current[fieldName] = val;
+		});
+	};
+
+	const onFormSubmit = async (formData) => {
+		setLoading(true);
+		const pixel = `CreateGuardrailEngine(guardrail=["${
+			formData.MODEL_NAME
+		}"],guardrailDetails=[${JSON.stringify(formData)}])`;
+
 		monolithStore.runQuery(pixel).then(async (response) => {
 			const pixelOutput = response.pixelReturn[0].output,
 				operationType = response.pixelReturn[0].operationType;
@@ -134,10 +202,9 @@ export const FunctionForm = ({
 				setLoading(false);
 				return;
 			}
-			toast.success("Successfully added function database to catalog");
-
+			toast.success("Successfully added new guardrail to catalog");
 			navigate(
-				`/engine/function/${(pixelOutput as { database_id: string }).database_id}`,
+				`/engine/guardrail/${(pixelOutput as { database_id: string }).database_id}`,
 			);
 			setLoading(false);
 		});
@@ -166,24 +233,92 @@ export const FunctionForm = ({
 		});
 	}, []);
 
-	const fieldsToWatch = useMemo(() => {
-		const f2w = fields.reduce((acc, f) => {
-			if (f.pixel) {
-				const matches = f.pixel.match(/<([^>]+)>/g);
-				if (matches) {
-					acc.push(...matches.map((m) => m.replace(/[<>]/g, "")));
+	/**
+	 * Anytime a watched field changes trigger this
+	 * to call the reactor that dependsOn that field
+	 */
+	useEffect(() => {
+		// console.warn('WATCHED FIELD CHANGED');
+		const destructuredFieldRefs = Object.entries(watchedFieldRef.current);
+
+		if (!destructuredFieldRefs.length) {
+			setNewWatchedFieldReferences();
+			return;
+		} else {
+			// 1. Loop through default fields
+			defaultFields.forEach((f) => {
+				checkFieldParamsAndExecutePixel(f);
+			});
+
+			// 2. Loop through advanced fields
+			advancedFields.forEach((f) => {
+				checkFieldParamsAndExecutePixel(f);
+			});
+
+			// 3. Set Reference of fields for next useEffect so we only call pixels that are affected
+			setNewWatchedFieldReferences();
+		}
+	}, [...fieldsToWatch.map((field) => watch(field))]);
+
+	const checkFieldParamsAndExecutePixel = (f) => {
+		let pixel = f.pixel;
+		let optionsPixel = f.options.pixel;
+
+		if (pixel) {
+			if (hasParameterizedValue(pixel)) {
+				let pixelParamChanged = false;
+				fieldsToWatch.forEach((fieldName) => {
+					const val = watch(fieldName);
+					if (
+						watchedFieldRef.current[fieldName] !== undefined &&
+						val
+					) {
+						// A watched value changed from what it was before
+						if (val !== watchedFieldRef.current[fieldName]) {
+							pixelParamChanged = true;
+						}
+						pixel = pixel.replaceAll(`<${fieldName}>`, val);
+					}
+				});
+
+				// Execute pixel if dependency changed and there aren't any params in string
+				if (!hasParameterizedValue(pixel) && pixelParamChanged) {
+					executeWatchedFieldPixel(f.fieldName, pixel, "value");
 				}
 			}
-			if (f.options?.pixel) {
-				const matches = f.options.pixel.match(/<([^>]+)>/g);
-				if (matches) {
-					acc.push(...matches.map((m) => m.replace(/[<>]/g, "")));
+		}
+
+		if (optionsPixel) {
+			if (hasParameterizedValue(optionsPixel)) {
+				let pixelParamChanged = false;
+				fieldsToWatch.forEach((fieldName) => {
+					const val = watch(fieldName);
+					if (
+						watchedFieldRef.current[fieldName] !== undefined &&
+						val
+					) {
+						// A watched value changed from what it was before
+						if (val !== watchedFieldRef.current[fieldName]) {
+							pixelParamChanged = true;
+						}
+						optionsPixel = optionsPixel.replaceAll(
+							`<${fieldName}>`,
+							val,
+						);
+					}
+				});
+
+				// Execute pixel if dependency changed and there aren't any params in string
+				if (!hasParameterizedValue(optionsPixel) && pixelParamChanged) {
+					executeWatchedFieldPixel(
+						f.fieldName,
+						optionsPixel,
+						"options",
+					);
 				}
 			}
-			return acc;
-		}, []);
-		return Array.from(new Set(f2w));
-	}, [fields]);
+		}
+	};
 
 	const hasParameterizedValue = (str) => /<([^>]+)>/.test(str);
 
@@ -208,7 +343,9 @@ export const FunctionForm = ({
 					f.key === key
 						? {
 								...f,
-								options: (output as unknown[]).map((opt) => ({
+								options: (
+									output as Array<Record<string, unknown>>
+								).map((opt) => ({
 									display: opt[f.optionRule.optionDisplay],
 									value: opt[f.optionRule.optionValue],
 								})),
@@ -220,8 +357,8 @@ export const FunctionForm = ({
 	};
 
 	const validateFormField = async (field, userInput) => {
-		if (!field.rules?.custom?.value) return true;
-		const pixelToExecute = field.rules.custom.value.replace(
+		if (!field.rules?.custom_rules?.value) return true;
+		const pixelToExecute = field.rules.custom_rules.value.replace(
 			"[VALUE]",
 			userInput.trim(),
 		);
@@ -235,7 +372,7 @@ export const FunctionForm = ({
 			return false;
 		}
 
-		if ((output as { exists: boolean }).exists) {
+		if ((output as { exists?: boolean }).exists) {
 			setFocus(field.key);
 			setIsValidDatabaseName(true);
 			return false;
@@ -263,7 +400,45 @@ export const FunctionForm = ({
 		}
 	};
 
-	// Helper functions for file upload
+	/**
+	 * This runs on input changes to check if the user has changed a dynamically updated field manually
+	 * It sets a flag that will stop dynamic update from running if the user has manually changed it
+	 * Allows the user to manually change the field back to re-enable dynamic updates
+	 */
+
+	// biome-ignore lint/correctness/noUnusedVariables: TODO - fix this
+	const checkForDynamicFieldChange = () => {
+		// check to see if this form has a dynamically updated field
+		if (updateFieldName && initScriptCallback && dynamicFieldsToWatch) {
+			// setTimeout sets this to occur after field values are updated
+			setTimeout(() => {
+				// get values from all dynamic fields
+				const mappedValuesObject = dynamicFieldsToWatch.reduce(
+					(acc, fieldName) => ({
+						...acc,
+						[fieldName]: getValues(fieldName),
+					}),
+					{},
+				);
+
+				// check if current value of initScript field matches what updateCallback would return
+				// if they do not match the user changed the initScript manually
+				const initScriptValueFromCallback = initScriptCallback(
+					mappedValuesObject,
+				).replace(/\s+/g, " ");
+				const initScriptValueFromTextField = getValues(updateFieldName);
+
+				// if they do match the user has not changed the initScript or they manually changed it back
+				// this allows them to re-enable the dynamic updateScript behavior if they revert the field value manually
+				const isMatched =
+					initScriptValueFromCallback ===
+					initScriptValueFromTextField;
+				setIsDynamicInputChangedByUser(!isMatched);
+			}, 0);
+		}
+	};
+
+	// Helper functions for file upload (matching database-form.tsx)
 	const onFileUpload = (
 		files: File | File[],
 		fieldOnChange: (value: File[]) => void,
@@ -343,17 +518,20 @@ export const FunctionForm = ({
 			control={control}
 			rules={{
 				required: val?.required,
-				pattern: val.rules?.pattern,
 			}}
-			render={({ field, fieldState: { error }, formState }) => {
-				switch (val.type) {
+			render={({ field, fieldState: { invalid, error } }) => {
+				switch (val.component) {
 					case "text":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
-									{val?.required && (
+									{val.required && (
 										<span className="text-destructive">
+											{" "}
 											*
 										</span>
 									)}
@@ -362,10 +540,10 @@ export const FunctionForm = ({
 									{...field}
 									id={val.key}
 									disabled={val.disabled}
-									data-testid={`function-form-input-${val.key}`}
+									data-testid={`guardrail-form-input-${val.key}`}
 									onChange={(e) => {
 										field.onChange(e);
-										if (val.rules?.custom) {
+										if (val.rules?.custom_rules) {
 											if (
 												debounceTimeoutsRef.current[
 													val.key
@@ -381,11 +559,21 @@ export const FunctionForm = ({
 												val.key
 											] = setTimeout(async () => {
 												const value = e.target.value;
+												if (value === "") {
+													setError(val.key, {});
+													return;
+												}
 												if (
 													!val.rules.pattern.value.test(
 														value,
 													)
 												) {
+													setError(val.key, {
+														message:
+															val.rules.pattern
+																.message ||
+															"Invalid characters in input.",
+													});
 													return;
 												}
 												const isValid =
@@ -396,9 +584,10 @@ export const FunctionForm = ({
 												if (!isValid) {
 													setError(val.key, {
 														message:
-															val.rules?.custom
+															val.rules
+																?.custom_rules
 																?.message ||
-															"Database name already exists.",
+															"Invalid value.",
 													});
 												} else {
 													clearErrors(val.key);
@@ -407,29 +596,29 @@ export const FunctionForm = ({
 										}
 									}}
 								/>
-								{error ? (
+								{error && (
 									<FieldDescription className="text-destructive">
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
+										{getHelperText(error, val)}
 									</FieldDescription>
-								) : (
-									val.helperText && (
-										<FieldDescription>
-											{val.helperText}
-										</FieldDescription>
-									)
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
 								)}
 							</Field>
 						);
 
 					case "password":
 						return (
-							<Field>
+							<Field
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
-									{val?.required && (
+									{val.required && (
 										<span className="text-destructive">
+											{" "}
 											*
 										</span>
 									)}
@@ -439,32 +628,32 @@ export const FunctionForm = ({
 									id={val.key}
 									type="password"
 									disabled={val.disabled}
-									data-testid={`function-form-input-${val.key}`}
-									autoComplete="new-password"
+									data-testid={`guardrail-form-input-${val.key}`}
 								/>
-								{error ? (
+								{error && (
 									<FieldDescription className="text-destructive">
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
+										{getHelperText(error, val)}
 									</FieldDescription>
-								) : (
-									val.helperText && (
-										<FieldDescription>
-											{val.helperText}
-										</FieldDescription>
-									)
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
 								)}
 							</Field>
 						);
 
 					case "number":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
-									{val?.required && (
+									{val.required && (
 										<span className="text-destructive">
+											{" "}
 											*
 										</span>
 									)}
@@ -474,37 +663,38 @@ export const FunctionForm = ({
 									id={val.key}
 									type="number"
 									disabled={val.disabled}
-									data-testid={`function-form-input-${val.key}`}
+									data-testid={`guardrail-form-input-${val.key}`}
 								/>
-								{error ? (
+								{error && (
 									<FieldDescription className="text-destructive">
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
+										{getHelperText(error, val)}
 									</FieldDescription>
-								) : (
-									val.helperText && (
-										<FieldDescription>
-											{val.helperText}
-										</FieldDescription>
-									)
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
 								)}
 							</Field>
 						);
 
 					case "select":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
-									{val?.required && (
+									{val.required && (
 										<span className="text-destructive">
+											{" "}
 											*
 										</span>
 									)}
 								</FieldLabel>
 								<Select
-									value={field.value || ""}
+									value={field.value}
 									onValueChange={(value) => {
 										field.onChange(value);
 										checkForDisplayRulesSet(field, value);
@@ -514,7 +704,7 @@ export const FunctionForm = ({
 									<SelectTrigger
 										id={val.key}
 										className="w-full"
-										data-testid={`function-form-input-${val.key}`}
+										data-testid={`guardrail-form-input-${val.key}`}
 									>
 										<SelectValue
 											placeholder={`Select ${val.label}`}
@@ -530,47 +720,38 @@ export const FunctionForm = ({
 											<SelectItem
 												key={opt.value}
 												value={opt.value}
-												data-testid={`function-form-option-${val.key}-${opt.value}`}
+												data-testid={`guardrail-form-option-${val.key}-${opt.value}`}
 											>
 												{opt.display}
 											</SelectItem>
 										))}
 									</SelectContent>
 								</Select>
-								{error ? (
+								{error && (
 									<FieldDescription className="text-destructive">
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
+										{getHelperText(error, val)}
 									</FieldDescription>
-								) : (
-									val.helperText && (
-										<FieldDescription>
-											{val.helperText}
-										</FieldDescription>
-									)
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
 								)}
 							</Field>
 						);
 
 					case "radio":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
-								<FieldLabel>
-									{val.label}
-									{val?.required && (
-										<span className="text-destructive">
-											*
-										</span>
-									)}
-								</FieldLabel>
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
+								<FieldLabel>{val.label}</FieldLabel>
 								<RadioGroup
 									value={field.value || ""}
-									onValueChange={(value) =>
-										field.onChange(value)
-									}
+									onValueChange={field.onChange}
 									className="flex flex-row gap-4"
-									data-testid={`function-form-input-${val.key}`}
+									data-testid={`guardrail-form-input-${val.key}`}
 								>
 									{val.options.options.map((opt) => (
 										<div
@@ -580,11 +761,11 @@ export const FunctionForm = ({
 											<RadioGroupItem
 												value={opt.value}
 												id={`${val.key}-${opt.value}`}
-												data-testid={`function-form-radio-${val.key}-${opt.value}`}
+												data-testid={`guardrail-form-radio-${val.key}-${opt.value}`}
 											/>
 											<Label
 												htmlFor={`${val.key}-${opt.value}`}
-												className="cursor-pointer"
+												className="cursor-pointer font-normal"
 											>
 												{opt.display}
 											</Label>
@@ -593,9 +774,7 @@ export const FunctionForm = ({
 								</RadioGroup>
 								{error && (
 									<FieldDescription className="text-destructive">
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
+										{getHelperText(error, val)}
 									</FieldDescription>
 								)}
 							</Field>
@@ -605,7 +784,7 @@ export const FunctionForm = ({
 						return (
 							<div
 								className="flex flex-col gap-2"
-								data-testid={`function-form-field-${val.key}`}
+								data-testid={`guardrail-form-field-${val.key}`}
 							>
 								<P>
 									{val.label}
@@ -650,7 +829,7 @@ export const FunctionForm = ({
 											)
 										}
 										disabled={val.disabled}
-										data-testid={`function-form-input-${val.key}`}
+										data-testid={`guardrail-form-input-${val.key}`}
 									/>
 									<div className="text-center">
 										<P className="font-medium text-foreground">
@@ -676,44 +855,44 @@ export const FunctionForm = ({
 											</P>
 											<div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
 												{field.value.map((file, index) => (
-													<div
-														key={`${file.name}-${index}`}
-														className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
-														data-testid={`uploaded-file-item-${index}`}
-													>
-														<div className="flex min-w-0 flex-1 items-center gap-2">
-															<div className="min-w-0 flex-1">
-																<P className="truncate text-foreground text-sm">
-																	{file.name}
-																</P>
-																<P className="text-muted-foreground text-xs">
-																	{(
-																		file.size /
-																		1024
-																	).toFixed(
-																		2,
-																	)}{" "}
-																	KB
-																</P>
-															</div>
+												<div
+													key={`${file.name}-${index}`}
+													className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
+													data-testid={`uploaded-file-item-${index}`}
+												>
+													<div className="flex min-w-0 flex-1 items-center gap-2">
+														<div className="min-w-0 flex-1">
+															<P className="truncate text-foreground text-sm">
+																{file.name}
+															</P>
+															<P className="text-muted-foreground text-xs">
+																{(
+																	file.size /
+																	1024
+																).toFixed(
+																	2,
+																)}{" "}
+																KB
+															</P>
 														</div>
-														<Button
-															type="button"
-															variant="ghost"
-															size="icon"
-															onClick={(e) => {
-																e.stopPropagation();
-																removeFile(
-																	index,
-																	field.onChange,
-																	field.value,
-																);
-															}}
-															className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
-															data-testid={`remove-file-btn-${index}`}
-														>
-															<X className="size-4" />
-														</Button>
+													</div>
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														onClick={(e) => {
+															e.stopPropagation();
+															removeFile(
+																index,
+																field.onChange,
+																field.value,
+															);
+														}}
+														className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+														data-testid={`remove-file-btn-${index}`}
+													>
+														<X className="size-4" />
+													</Button>
 													</div>
 												))}
 											</div>
@@ -723,36 +902,39 @@ export const FunctionForm = ({
 								{error && (
 									<P
 										className="text-destructive text-sm"
-										data-testid={`function-form-error-${val.key}`}
+										data-testid={`guardrail-form-error-${val.key}`}
 									>
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
+										{getHelperText(error, val)}
 									</P>
 								)}
 							</div>
 						);
+
 					case "checkbox":
 						return (
 							<div
-								className={`flex items-center gap-2 ${val.hidden ? "hidden" : ""}`}
+								className={
+									val.hidden
+										? "hidden"
+										: "flex flex-row items-center gap-2"
+								}
+								data-testid={`guardrail-form-field-${val.key}`}
 							>
 								<Checkbox
 									id={val.key}
-									checked={field.value ? field.value : false}
-									onCheckedChange={(value) =>
-										field.onChange(value)
-									}
+									checked={field.value || false}
+									onCheckedChange={field.onChange}
 									disabled={val.disabled}
-									data-testid={`function-form-input-${val.key}`}
+									data-testid={`guardrail-form-input-${val.key}`}
 								/>
 								<Label
 									htmlFor={val.key}
-									className="cursor-pointer"
+									className="cursor-pointer font-normal"
 								>
 									{val.label}
-									{val?.required && (
+									{val.required && (
 										<span className="text-destructive">
+											{" "}
 											*
 										</span>
 									)}
@@ -760,55 +942,86 @@ export const FunctionForm = ({
 								{error && (
 									<P
 										className="text-destructive text-sm"
-										data-testid={`function-form-error-${val.key}`}
+										data-testid={`guardrail-form-error-${val.key}`}
 									>
 										{error.message}
 									</P>
 								)}
 							</div>
 						);
+
 					case "tags":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={val.hidden ? "hidden" : ""}
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
-									{val?.required && (
+									{val.required && (
 										<span className="text-destructive">
+											{" "}
 											*
 										</span>
 									)}
 								</FieldLabel>
-								<Textarea
-									{...field}
+								<Input
 									id={val.key}
 									placeholder='Press "Enter" to add tag'
 									disabled={val.disabled}
-									value={
-										Array.isArray(field.value)
-											? field.value.join(", ")
-											: field.value || ""
-									}
-									onChange={(e) => {
-										const tags = e.target.value
-											.split(",")
-											.map((tag) => tag.trim())
-											.filter((tag) => tag !== "");
-										field.onChange(tags);
+									data-testid={`guardrail-form-input-${val.key}`}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											e.preventDefault();
+											const value =
+												e.currentTarget.value.trim();
+											if (value) {
+												const currentTags =
+													field.value || [];
+												field.onChange([
+													...currentTags,
+													value,
+												]);
+												e.currentTarget.value = "";
+											}
+										}
 									}}
-									data-testid={`function-form-input-${val.key}`}
 								/>
-								{error ? (
+								{field.value && field.value?.length > 0 && (
+									<div className="flex flex-wrap gap-2">
+										{field.value.map((tag, index) => (
+											<span
+												key={index}
+												className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm"
+											>
+												{tag}
+												<button
+													type="button"
+													onClick={() => {
+														const newTags =
+															field.value.filter(
+																(_, i) =>
+																	i !== index,
+															);
+														field.onChange(newTags);
+													}}
+													className="text-muted-foreground hover:text-foreground"
+												>
+													×
+												</button>
+											</span>
+										))}
+									</div>
+								)}
+								{error && (
 									<FieldDescription className="text-destructive">
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
+										{getHelperText(error, val)}
 									</FieldDescription>
-								) : (
-									val.helperText && (
-										<FieldDescription>
-											{val.helperText}
-										</FieldDescription>
-									)
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
 								)}
 							</Field>
 						);
@@ -820,21 +1033,42 @@ export const FunctionForm = ({
 		/>
 	);
 
+	const getHelperText = (error, val) => {
+		if (!error) return val.helperText || "";
+		if (error.type === "checkField" && val.rules?.custom_rules?.message) {
+			return val.rules.custom_rules.message;
+		}
+		return error.message;
+	};
+
 	if (loading) {
 		return (
-			<div className="flex h-full items-center justify-center">
-				<Spinner />
+			<div className="flex h-screen items-center justify-center">
+				<div className="flex flex-col items-center gap-4">
+					<div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+					<P>Loading...</P>
+				</div>
 			</div>
 		);
 	}
 
 	return (
-		<form onSubmit={handleSubmit(onFormSubmit)} data-testid="function-form">
-			<H4 data-testid="function-form-title">{title}</H4>
-			<Muted className="mt-1" data-testid="function-form-description">
-				{description}
-			</Muted>
-			<div className="mt-8 mb-8" data-testid="function-form-box">
+		<form
+			onSubmit={handleSubmit(onFormSubmit)}
+			data-testid="guardrail-form"
+			className="my-4"
+		>
+			<div className="mb-6">
+				<H4 data-testid="guardrail-form-title">{title}</H4>
+				<Muted
+					className="mt-1 text-base"
+					data-testid="guardrail-form-description"
+				>
+					{description}
+				</Muted>
+			</div>
+
+			<div className="mt-4 mb-8" data-testid="guardrail-form-box">
 				<div className="flex flex-col gap-4">
 					{Object.keys(grouped).map((category) => (
 						<div
@@ -843,10 +1077,13 @@ export const FunctionForm = ({
 						>
 							<div className="flex items-start gap-4">
 								<div className="flex flex-1 flex-col gap-1">
-									<H4 data-testId="function-importForm-category-title">
+									<H4 data-testId="guardrail-importForm-category-title">
 										{category}
 									</H4>
-									<Muted data-testId="model-importForm-category-description">
+									<Muted
+										data-testId="model-importForm-category-description"
+										className="text-base"
+									>
 										{categoryDescriptions[category] ??
 											"No description available."}
 									</Muted>
@@ -866,15 +1103,15 @@ export const FunctionForm = ({
 								open={openAdvanced}
 								onOpenChange={setOpenAdvanced}
 							>
-								<div className="flex flex-row items-center justify-between py-2">
-									<H4 data-testid="function-form-advanced-header">
+								<div className="flex w-full items-center justify-between py-4">
+									<H4 data-testid="guardrail-form-advanced-header">
 										ADVANCED SETTINGS
 									</H4>
 									<CollapsibleTrigger asChild>
 										<Button
 											variant="ghost"
 											size="icon"
-											data-testid="function-form-advanced-toggle"
+											data-testid="guardrail-form-advanced-toggle"
 										>
 											{openAdvanced ? (
 												<ChevronUp className="size-4" />
@@ -885,27 +1122,14 @@ export const FunctionForm = ({
 									</CollapsibleTrigger>
 								</div>
 								<CollapsibleContent>
-									<div className="mb-4 flex flex-col gap-4">
-										<div className="flex items-start gap-4">
-											<div className="flex flex-1 flex-col gap-1">
-												<Muted>
-													Add advanced settings here
-												</Muted>
-											</div>
-											<div className="flex flex-[2] flex-col gap-2">
-												{advancedFields.map((val) => (
-													<div
-														key={val.key}
-														data-testid={`function-form-field-${val.key}`}
-													>
-														{renderControllerField(
-															val,
-														)}
-													</div>
-												))}
-											</div>
+									{advancedFields?.map((val) => (
+										<div
+											key={val.key}
+											data-testid={`guardrail-form-field-${val.key}`}
+										>
+											{renderControllerField(val)}
 										</div>
-									</div>
+									))}
 								</CollapsibleContent>
 							</Collapsible>
 						</div>
@@ -913,15 +1137,14 @@ export const FunctionForm = ({
 				</div>
 
 				<div
-					className="mt-8 flex justify-end gap-2"
-					data-testid="function-form-actions"
+					className="mt-4 flex justify-end gap-2"
+					data-testid="guardrail-form-actions"
 				>
 					<Button
 						type="submit"
-						variant="default"
-						data-testid="function-form-submit"
+						data-testid="guardrail-form-submit"
 						disabled={!formState.isValid || isValidDatabaseName}
-						className="min-w-[128px] capitalize"
+						className="min-w-32 capitalize"
 					>
 						Connect
 					</Button>
