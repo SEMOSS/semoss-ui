@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { Badge, H4, Markdown, P } from "@semoss/ui/next";
-import { DatabaseStatistics } from "@/components/database/DatabaseStatistics";
+import { DatabaseStatistics } from "@/components/database/database-statistics";
 import { useEngine, useRootStore } from "@/hooks";
 import { removeUnderscores } from "@/utility";
 
