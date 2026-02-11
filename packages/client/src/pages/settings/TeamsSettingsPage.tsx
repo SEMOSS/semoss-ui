@@ -14,7 +14,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { getTeams } from "@/api";
-import { AddTeamModal } from "@/components/teams/AddTeamModal";
+import { AddTeamModal } from "@/components/teams/add-team-modal";
 import { TeamTileCard } from "@/components/teams/TeamTileCard";
 import { useSettings } from "@/hooks/useSettings";
 
