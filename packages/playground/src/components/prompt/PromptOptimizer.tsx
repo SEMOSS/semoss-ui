@@ -12,6 +12,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
+import type {RoomStore} from "@/stores";
 
 interface LLMOutput {
 	response?: string;
@@ -31,11 +32,7 @@ interface PromptOptimizerProps {
 	input: string;
 	setInput: React.Dispatch<React.SetStateAction<string>>;
 	disabled: boolean;
-
-	/**
-	 * Optional explicit model id to use for optimization.
-	 * If not provided, falls back to chat?.models?.selected?.app_id.
-	 */
+	room: RoomStore;
 	modelId?: string;
 }
 
@@ -49,8 +46,8 @@ function escapeForPixelCommand(raw: string): string {
 }
 
 export const PromptOptimizer: React.FC<PromptOptimizerProps> = observer(
-	({ input, setInput, disabled, modelId }) => {
-		const { actions } = useInsight();
+	({ input, setInput, disabled, modelId, room }) => {
+		const { actions} = useInsight();
 		const { chat } = useChat();
 
 		const [isOptimizing, setIsOptimizing] = useState(false);
@@ -65,9 +62,19 @@ export const PromptOptimizer: React.FC<PromptOptimizerProps> = observer(
 			try {
 				prevInputRef.current = input;
 
-				const optimizationPrompt = `Please optimize the following prompt to be more clear, specific, and effective while maintaining its original intent:
-"${input}"
-Return only the optimized prompt without any additional explanation or formatting.`;
+			//Build the context if it is there
+			let context = room?.options?.instructions || "";
+			console.log('=== DEBUG CONTEXT ===');
+			console.log('room exists:', !!room);
+			console.log('room.options exists:', !!room?.options);
+			console.log('instructions value:', room?.options?.instructions);
+			console.log('final context:', context);
+			console.log('context is empty:', context === "");
+			console.log('===================');
+
+				let optimizationPrompt = `Please optimize the following prompt to be more clear, specific, and effective while maintaining its original intent:
+				"${input}"
+				Return only the optimized prompt without any additional explanation or formatting.`;
 
 				const selectedModelId = modelId ?? chat?.models?.selected?.app_id;
 
@@ -76,8 +83,8 @@ Return only the optimized prompt without any additional explanation or formattin
 				}
 
 				const escapedPrompt = escapeForPixelCommand(optimizationPrompt);
-				const pixel = `LLM(engine=["${selectedModelId}"], command=["${escapedPrompt}"], paramValues=[{"temperature":0.3, "max_tokens":1000}]);`;
-
+				const contextValue = context ? `"<encode>${context}</encode>"` : '';
+				const pixel = `LLM(engine=["${selectedModelId}"], command=["${escapedPrompt}"], context=[${contextValue}], paramValues=[{"temperature":0.3, "max_tokens":10000}]);`;
 				const response = (await actions.run(pixel)) as LLMResponse;
 
 				if (!response?.pixelReturn?.[0]) {

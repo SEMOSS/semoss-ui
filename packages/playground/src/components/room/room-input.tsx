@@ -6,6 +6,7 @@ import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
+import type { RoomStore } from "@/stores";
 import {
 	$createParagraphNode,
 	$createTextNode,
@@ -59,6 +60,7 @@ interface RoomInputProps {
 	hasOutstandingTools?: boolean;
 	tokensMax?: number;
 	tokensUsed?: number;
+	room: RoomStore;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
@@ -72,6 +74,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		hasOutstandingTools = false,
 		tokensMax,
 		tokensUsed,
+		room
 	}) => {
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
@@ -440,6 +443,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								setInput={setInputFromOptimizer}
 								disabled={Boolean(isLoading || hasOutstandingTools)}
 								modelId={model?.app_id || undefined}
+								room={room}
 							/>
 
 							<Tooltip>
