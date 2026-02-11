@@ -123,9 +123,21 @@ export const WorkspaceMCPList = ({
 								{/* Image & Details */}
 								<div className="flex items-center gap-3">
 									{/* Image Placeholder */}
-									<div className="flex size-16 shrink-0 items-center justify-center rounded-md border border-border border-dashed bg-muted/50">
-										<ImageIcon className="size-6 text-muted-foreground" />
-									</div>
+									{m.permission === "NONE" ? (
+										<div className="flex size-16 shrink-0 items-center justify-center rounded-md border border-border border-dashed bg-muted/50">
+											<ImageIcon className="size-6 text-muted-foreground" />
+										</div>
+									) : (
+										<img
+											src={
+												m.type === "PROJECT"
+													? `${import.meta.env.MODULE}/api/project-${m.id}/projectImage/download`
+													: `${import.meta.env.MODULE}/api/e-${m.id}/image/download`
+											}
+											alt={m.name}
+											className="size-16 shrink-0 rounded-md object-cover object-center"
+										/>
+									)}
 
 									{/* Type & Permission */}
 									<div className="flex flex-1 flex-col gap-2">
