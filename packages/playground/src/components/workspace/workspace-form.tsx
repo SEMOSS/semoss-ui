@@ -141,7 +141,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 					<Textarea
 						id={instructionId}
 						placeholder="Enter Instructions"
-						value={instructions}
+						value={instructions.replace(/\\n/g, "\n")}
 						onChange={(e) => setInstructions(e.target.value)}
 						rows={4}
 						data-testid="workspaceForm-system_prompt-txt"
