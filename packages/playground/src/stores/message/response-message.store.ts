@@ -311,14 +311,11 @@ downloadResponse = async (format: "word" | "pdf") => {
     if (!this.text) throw new Error("No content to download");
 
     let pixelCommand: string;
-    let fileName: string;
 
     if (format === "word") {
-        fileName = "Elsa_Output.docx";
-        pixelCommand = `ToDocx(html=["<encode>${this.text}</encode>"], fileName=["Elsa_Output"]);`;
+        pixelCommand = `ToDocx(html=["<encode>${this.text}</encode>"], fileName=["Ai_Output"]);`;
     } else if (format === "pdf") {
-        fileName = "Elsa_Output.pdf"; 
-        pixelCommand = `ToPdf(html=["<encode>${this.text}</encode>"], fileName=["Elsa_Output"]);`;
+        pixelCommand = `ToPdf(html=["<encode>${this.text}</encode>"], fileName=["Ai_Output"]);`;
     } else {
         throw new Error(`Unsupported format: ${format}`);
     }
