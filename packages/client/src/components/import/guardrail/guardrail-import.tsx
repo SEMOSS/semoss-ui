@@ -2,9 +2,9 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 
 import { FileUploadOutlined } from "@mui/icons-material";
-import { SearchIcon, UploadIcon } from "lucide-react";
+import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import type React from "react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	Breadcrumb,
@@ -21,7 +21,6 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 	P,
-	Spinner,
 	Tabs,
 	TabsContent,
 	TabsList,
@@ -30,11 +29,11 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
-import { FUNCTION_CONNECTIONS } from "./function-import.constants";
-import { FunctionForm } from "./function-import-form";
-import { FunctionTitleCard } from "./function-title-card";
+import { GUARDRAIL_CONNECTION } from "./guardrail-import.constants";
+import { GuardrailForm } from "./guardrail-import-form";
+import { GuardrailTitleCard } from "./guardrail-title-card";
 
-interface functionCatalog {
+interface guardrail {
 	fields: [];
 	advanced: [];
 	id: number;
@@ -43,40 +42,46 @@ interface functionCatalog {
 	disable: boolean;
 }
 
-export const FunctionImport = ({ name }: { name: string }) => {
+export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 	const navigate = useNavigate();
 	const { monolithStore, configStore } = useRootStore();
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
-	const [selectedTab, setSelectedTab] = useState("0");
-	const [selectedDatabase, setSelectedDatabase] =
-		useState<functionCatalog | null>(null);
+	const [selectedTab, setSelectedTab] = useState("");
+	const [selectedDatabase, setSelectedDatabase] = useState<guardrail | null>(
+		null,
+	);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
-	const [filedata, setFiledata] = useState<File | null>(null);
+	const [filedata, setFiledata] = useState(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	const FunctionOptions = FUNCTION_CONNECTIONS;
-	const CategoryDescription = FUNCTION_CONNECTIONS.description;
+	const GuardrailOptions = GUARDRAIL_CONNECTION;
+	const CategoryDescription = GUARDRAIL_CONNECTION.description;
 
-	const pageTitle = "Connect to Function Database";
+	const pageTitle = "Connect to Guardrail Database";
 	const pageDescription =
-		"In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of function options available within the LLM landscape.";
+		"In a platform where safe and reliable interactions are critical, connecting to guardrails allows you to seamlessly integrate predefined or custom safety rules into your workflows. Whether you're a developer, data engineer, or product owner, this page helps you explore, configure, and apply guardrails to maintain controlled and secure platform operations.";
 
 	const tabLabels = useMemo(() => {
-		return Object.keys(FunctionOptions).filter(
+		return Object.keys(GuardrailOptions).filter(
 			(key) => key !== "description",
 		);
 	}, []);
+	const allDatabases = useMemo(() => {
+		return [...(GuardrailOptions.GUARDRAIL || [])];
+	}, [GuardrailOptions]);
 
 	const DatabasesForTab = useMemo(() => {
-		const selectedIndex = Number.parseInt(selectedTab);
-		return FunctionOptions[tabLabels[selectedIndex]] || [];
-	}, [selectedTab, tabLabels, FunctionOptions]);
+		return GuardrailOptions[selectedTab] || [];
+	}, [selectedTab, GuardrailOptions, allDatabases]);
 
-	if (loading) {
-		return <Spinner />;
-	}
+	// Set initial tab
+	useEffect(() => {
+		if (tabLabels.length > 0 && !selectedTab) {
+			setSelectedTab(tabLabels[0]);
+		}
+	}, [tabLabels]);
 
 	const onSubmit = async (data) => {
 		setLoading(true);
@@ -93,20 +98,18 @@ export const FunctionImport = ({ name }: { name: string }) => {
 			}
 			const pixelExpressions = uploadedFiles.map(
 				(file) =>
-					`UploadEngine(filePath=["${uploadedFiles[0].fileLocation}"], engineTypes=["FUNCTION"])`,
+					`UploadEngine(filePath=["${uploadedFiles[0].fileLocation}"], engineTypes=["GUARDRAIL"])`,
 			);
 			for (const pixelString of pixelExpressions) {
 				const response = await monolithStore.runQuery(pixelString);
 				const { output, operationType } = response.pixelReturn[0];
 				if (operationType.includes("ERROR")) {
-					toast.error(output as string);
+					toast.error(String(output));
 					setFiledata(null);
 					return;
 				}
-				toast.success("Successfully Created Function Database");
-				navigate(
-					`/engine/function/${output.database_id}`,
-				);
+				toast.success("Successfully Created Guardrail Database");
+				navigate(`/engine/guardrail/${output.database_id}`);
 			}
 		} catch {
 			toast.error("Upload failed or returned invalid response.");
@@ -116,8 +119,34 @@ export const FunctionImport = ({ name }: { name: string }) => {
 		}
 	};
 
+	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+	};
+
+	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const files = e.dataTransfer.files;
+		if (files && files.length > 0) {
+			const file = files[0];
+			if (file.name.endsWith(".zip")) {
+				setFiledata(file);
+			} else {
+				toast.error("Please upload a ZIP file");
+			}
+		}
+	};
+
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = e.target.files;
+		if (files && files.length > 0) {
+			setFiledata(files[0]);
+		}
+	};
+
 	const renderBreadcrumbs = () => (
-		<Breadcrumb data-testid="breadcrumbs">
+		<Breadcrumb className="mb-4">
 			<BreadcrumbList>
 				<BreadcrumbItem>
 					<BreadcrumbLink
@@ -132,7 +161,9 @@ export const FunctionImport = ({ name }: { name: string }) => {
 						{name} Catalog
 					</BreadcrumbLink>
 				</BreadcrumbItem>
-				<BreadcrumbSeparator>/</BreadcrumbSeparator>
+				<BreadcrumbSeparator>
+					<ChevronRight />
+				</BreadcrumbSeparator>
 				<BreadcrumbItem>
 					{selectedDatabase ? (
 						<BreadcrumbLink
@@ -142,19 +173,21 @@ export const FunctionImport = ({ name }: { name: string }) => {
 							}}
 							data-testid="breadcrumb-page"
 						>
-							Connect to Function Database
+							Connect to Guardrail
 						</BreadcrumbLink>
 					) : (
 						<BreadcrumbPage data-testid="breadcrumb-page">
-							Connect to Function Database
+							Connect to Guardrail
 						</BreadcrumbPage>
 					)}
 				</BreadcrumbItem>
 				{selectedDatabase && (
 					<>
-						<BreadcrumbSeparator>/</BreadcrumbSeparator>
+						<BreadcrumbSeparator>
+							<ChevronRight />
+						</BreadcrumbSeparator>
 						<BreadcrumbItem>
-							<BreadcrumbPage data-testid="breadcrumb-selected-function">
+							<BreadcrumbPage data-testid="breadcrumb-selected-storage">
 								{selectedDatabase.name}
 							</BreadcrumbPage>
 						</BreadcrumbItem>
@@ -164,21 +197,21 @@ export const FunctionImport = ({ name }: { name: string }) => {
 		</Breadcrumb>
 	);
 
-	const renderDatabaseGrid = (Databases: functionCatalog[]) => (
+	const renderDatabaseGrid = (Databases: guardrail[]) => (
 		<div
-			className="mt-1 grid grid-cols-6 gap-2"
-			data-testid="function-grid"
+			className="mt-4 grid grid-cols-6 gap-2"
+			data-testid="guardrail-grid"
 		>
 			{Databases.filter((v) =>
 				v.name.toLowerCase().includes(search.toLowerCase()),
 			).map((v) => (
 				<div key={v.id}>
-					<FunctionTitleCard
-						selectedFunction={{
+					<GuardrailTitleCard
+						guardrail={{
 							...v,
 							display: v.name,
 						}}
-						onModelSelect={() => {
+						onGuardrailSelect={() => {
 							setSelectedDatabase(v);
 						}}
 					/>
@@ -192,40 +225,33 @@ export const FunctionImport = ({ name }: { name: string }) => {
 		setIsFileUploadModalOpen(flag);
 	};
 
-	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const file = event.target.files?.[0];
-		if (file) {
-			setFiledata(file);
-		}
-	};
-
-	const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-		event.preventDefault();
-	};
-
-	const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-		event.preventDefault();
-		const file = event.dataTransfer.files?.[0];
-		if (file && file.name.endsWith(".zip")) {
-			setFiledata(file);
-		}
-	};
+	if (loading) {
+		return (
+			<div className="flex min-h-screen items-center justify-center">
+				<div className="flex flex-col items-center gap-2">
+					<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+					<P className="text-muted-foreground">Loading...</P>
+				</div>
+			</div>
+		);
+	}
 
 	return (
-		<>
+		<div>
 			{renderBreadcrumbs()}
+			{/* File Upload Modal */}
 			<Dialog
 				open={isFileUploadModalOpen}
 				onOpenChange={setIsFileUploadModalOpen}
 			>
 				<DialogContent
 					className="w-[600px]"
-					data-testid="function-zip-upload-modal"
+					data-testid="guardrail-zip-upload-modal"
 				>
 					<div className="flex h-full w-full flex-col gap-4">
 						<P
 							className="text-base"
-							data-testid="function-zip-upload-title"
+							data-testid="guardrail-zip-upload-title"
 						>
 							Zip File
 						</P>
@@ -269,7 +295,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 								size="sm"
 								variant="ghost"
 								onClick={() => setIsFileUploadModalOpen(false)}
-								data-testid="function-upload-close-button"
+								data-testid="guardrail-upload-close-button"
 								className="rounded-xl"
 							>
 								Close
@@ -279,7 +305,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 								variant="default"
 								disabled={!filedata || loading}
 								onClick={() => onSubmit(filedata)}
-								data-testid="function-upload-submit-button"
+								data-testid="guardrail-upload-submit-button"
 								className="rounded-xl"
 							>
 								Upload
@@ -289,10 +315,11 @@ export const FunctionImport = ({ name }: { name: string }) => {
 				</DialogContent>
 			</Dialog>
 			{selectedDatabase ? (
-				<div data-testid="function-form-wrapper">
-					<FunctionForm
+				<div data-testid="guardrail-form-wrapper">
+					<GuardrailForm
+						//selectedTab={tabLabels[selectedTab]}
 						title={selectedDatabase.name}
-						description={`Fill out ${selectedDatabase.name} details in order to add function to catalog`}
+						description={`Fill out ${selectedDatabase.name} details in order to add guardrail to catalog`}
 						fields={selectedDatabase.fields}
 						advanced={selectedDatabase.advanced}
 						categoryDescription={CategoryDescription}
@@ -300,22 +327,22 @@ export const FunctionImport = ({ name }: { name: string }) => {
 				</div>
 			) : (
 				<div
-					className="flex flex-col gap-4"
-					data-testid="function-page"
+					className="flex flex-col gap-2"
+					data-testid="guardrail-page"
 				>
-					<div className="flex flex-col gap-2">
+					<div className="flex flex-col gap-1">
 						<H4 className="font-medium" data-testid="page-title">
 							{pageTitle}
 						</H4>
-						<p
-							className="text-[16px] text-muted-foreground"
+						<P
+							className="text-muted-foreground"
 							data-testid="page-description"
 						>
 							{pageDescription}
-						</p>
+						</P>
 					</div>
 
-					<div className="flex flex-col">
+					<div className="flex w-auto flex-col items-start">
 						<div className="mt-3 mb-4 flex w-full items-start gap-2">
 							<InputGroup className="flex-1 border-b-2 border-none">
 								<InputGroupAddon>
@@ -324,17 +351,16 @@ export const FunctionImport = ({ name }: { name: string }) => {
 								<InputGroupInput
 									placeholder="Search"
 									value={search}
-									onChange={(e) => {
-										setSearch(e.target.value);
-									}}
-									data-testid="search-bar"
+									onChange={(e) => setSearch(e.target.value)}
+									data-testid="search-box"
 								/>
 							</InputGroup>
 							<Button
 								size="sm"
 								variant="outline"
 								onClick={() => handleFileUpload(true)}
-								data-testid="function-upload-file-button"
+								data-testid="guardrail-upload-file-button"
+								className="rounded-md"
 							>
 								<UploadIcon className="size-5" />
 							</Button>
@@ -343,32 +369,27 @@ export const FunctionImport = ({ name }: { name: string }) => {
 						<div className="w-full">
 							<Tabs
 								value={selectedTab}
-								onValueChange={setSelectedTab}
-								className="w-full"
-								data-testid="tabs"
+								onValueChange={(newValue) =>
+									setSelectedTab(newValue)
+								}
+								className="mt-1"
 							>
-								<TabsList data-testid="tabs-list">
-									{tabLabels.map((label, index) => (
+								<TabsList data-testid="tabs">
+									{tabLabels.map((label) => (
 										<TabsTrigger
 											key={label}
-											value={index.toString()}
+											value={label}
 											data-testid={`tab-${label.toLowerCase()}`}
+											className="text-sm"
 										>
 											{label}
 										</TabsTrigger>
 									))}
 								</TabsList>
-								{tabLabels.map((label, index) => (
-									<TabsContent
-										key={label}
-										value={index.toString()}
-										className="mt-[14px]"
-									>
-										<div className="">
-											{renderDatabaseGrid(
-												DatabasesForTab,
-											)}
-										</div>
+
+								{tabLabels.map((label) => (
+									<TabsContent key={label} value={label}>
+										{renderDatabaseGrid(DatabasesForTab)}
 									</TabsContent>
 								))}
 							</Tabs>
@@ -376,6 +397,6 @@ export const FunctionImport = ({ name }: { name: string }) => {
 					</div>
 				</div>
 			)}
-		</>
+		</div>
 	);
 };
