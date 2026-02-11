@@ -1,4 +1,8 @@
-import { ImageIcon, SquareArrowOutUpRightIcon } from "lucide-react";
+import {
+	AlertCircle,
+	ImageIcon,
+	SquareArrowOutUpRightIcon,
+} from "lucide-react";
 import { useMemo } from "react";
 import {
 	Badge,
@@ -7,9 +11,12 @@ import {
 	CardContent,
 	Muted,
 	ScrollArea,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import { mcpToPlatformUrl } from "@/components";
-import type { Workspace } from "@/types";
+import type { WorkspaceWithMCPData } from "@/types";
 
 interface WorkspaceMCPListProps {
 	/**
@@ -20,7 +27,7 @@ interface WorkspaceMCPListProps {
 	/**
 	 * MCPs associated with the workspace
 	 */
-	mcp: Workspace["mcp"];
+	mcp: WorkspaceWithMCPData["mcp"];
 
 	/**
 	 * Search the mcps by name
@@ -73,30 +80,48 @@ export const WorkspaceMCPList = ({
 						| "destructive";
 
 					return (
-						<Card key={m.id} className="col-span-1">
-							<CardContent className="space-y-2">
+						<Card
+							key={m.id}
+							className={`col-span-1 p-0 ${
+								m.permission === "NONE"
+									? "border-destructive/50 border-dashed"
+									: ""
+							}`}
+						>
+							<CardContent className="space-y-2 p-4">
 								{/* Title & Open Button */}
-								<div className="-mt-2 flex items-start justify-between gap-2">
+								<div className="flex items-start justify-between gap-2">
 									<div className="wrap-break-word min-w-0 flex-1 font-semibold text-sm leading-tight">
-										T{m.name.repeat(4)}
+										{m.name}
 									</div>
-									<Button
-										variant="ghost"
-										size="icon"
-										className="-m-2 -mr-4 shrink-0"
-										asChild
-									>
-										<a
-											target="_blank"
-											href={mcpToPlatformUrl(m)}
+									{m.permission === "NONE" ? (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<AlertCircle className="size-4 shrink-0 cursor-help text-destructive" />
+											</TooltipTrigger>
+											<TooltipContent>
+												{`You don't have access to this ${type === "TOOLBOX" ? "toolbox" : "knowledge base"}. Please request access from the owner.`}
+											</TooltipContent>
+										</Tooltip>
+									) : (
+										<Button
+											variant="ghost"
+											size="icon"
+											className="-m-2 shrink-0"
+											asChild
 										>
-											<SquareArrowOutUpRightIcon className="size-4" />
-										</a>
-									</Button>
+											<a
+												target="_blank"
+												href={mcpToPlatformUrl(m)}
+											>
+												<SquareArrowOutUpRightIcon className="size-4" />
+											</a>
+										</Button>
+									)}
 								</div>
 
 								{/* Image & Details */}
-								<div className="flex gap-3">
+								<div className="flex items-center gap-3">
 									{/* Image Placeholder */}
 									<div className="flex size-16 shrink-0 items-center justify-center rounded-md border border-border border-dashed bg-muted/50">
 										<ImageIcon className="size-6 text-muted-foreground" />
@@ -112,12 +137,17 @@ export const WorkspaceMCPList = ({
 											{m.type}
 										</Badge>
 
-										{/* Permission & Action */}
 										{m.permission === "NONE" ? (
 											<Button
-												variant="default"
 												size="sm"
-												className="w-fit"
+												className="h-fit w-fit px-2 py-1 text-xs"
+												onClick={() => {
+													// TODO: Handle request access
+													console.log(
+														"Request access for:",
+														m.name,
+													);
+												}}
 											>
 												Request Access
 											</Button>
@@ -126,11 +156,33 @@ export const WorkspaceMCPList = ({
 												variant={permissionColor}
 												className="w-fit"
 											>
-												{m.permission.replace("_", " ")}
+												{m.permission?.replace(
+													"_",
+													" ",
+												)}
 											</Badge>
 										)}
 									</div>
 								</div>
+
+								{/* Description */}
+								<div className="text-muted-foreground text-xs">
+									{m.description ||
+										"No description available."}
+								</div>
+								{m.tags?.length && (
+									<div className="flex flex-wrap gap-1">
+										{m.tags.map((tag) => (
+											<Badge
+												key={tag}
+												variant="secondary"
+												className="text-xs"
+											>
+												{tag}
+											</Badge>
+										))}
+									</div>
+								)}
 							</CardContent>
 						</Card>
 					);

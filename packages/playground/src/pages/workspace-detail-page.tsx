@@ -32,7 +32,7 @@ import logoImage from "@/assets/img/logo.svg";
 import { WorkspaceChatList, WorkspaceMCPList } from "@/components";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/use-chat";
-import type { Workspace } from "@/types";
+import type { WorkspaceWithMCPData } from "@/types";
 
 /**
  * Renders the Workspace Detail Page, displaying information about a specific workspace
@@ -53,7 +53,7 @@ export const WorkspaceDetailPage = observer(() => {
 	const debouncedSearch = useDebouncedValue(search);
 
 	// Fetch workspace details
-	const getWorkspace = usePixel<Workspace>(
+	const getWorkspace = usePixel<WorkspaceWithMCPData>(
 		workspaceId
 			? `GetWorkspace(workspaceId=["${workspaceId}"], dependencyPermissionLevel=true);`
 			: "",
