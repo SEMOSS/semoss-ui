@@ -1,10 +1,11 @@
 import type { AxiosResponse } from "axios";
 import { Edit, Eye, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
+	Badge,
 	Button,
 	Card,
 	CardDescription,
@@ -155,6 +156,9 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 	const [renderedMembers, setRenderedMembers] = useState([]);
 	const [infiniteOn, setInfiniteOn] = useState(true);
 	const [searchLoading, setSearchLoading] = useState(false);
+
+	// ref for dialog content to constrain popover
+	const dialogContentRef = useRef<HTMLDivElement>(null);
 
 	// debounce the input
 	const debouncedSearch = useDebouncedValue(search);
@@ -522,7 +526,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 	return (
 		<Dialog open={open} onOpenChange={() => closeOverlay(type, false)}>
 			<DialogContent
-				className="max-h-[90vh] overflow-auto sm:max-w-2xl"
+				ref={dialogContentRef}
+				className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-2xl"
 				data-testid="members-add-overlay-modal"
 			>
 				<DialogHeader>
@@ -531,11 +536,12 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 					</DialogTitle>
 				</DialogHeader>
 
-				<div className="flex flex-col gap-4">
+				<div className="flex-1 space-y-6 overflow-y-auto">
 					{user === null && (
 						<Popover
 							open={commandOpen}
 							onOpenChange={setCommandOpen}
+							modal={true}
 						>
 							<PopoverTrigger asChild>
 								<Button
@@ -553,6 +559,12 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 							</PopoverTrigger>
 							<PopoverContent
 								className="w-[600px] p-0"
+								align="start"
+								side="bottom"
+								sideOffset={4}
+								avoidCollisions={true}
+								collisionBoundary={dialogContentRef.current}
+								collisionPadding={8}
 							>
 								<Command shouldFilter={false}>
 									<CommandInput
@@ -674,33 +686,35 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 						</Popover>
 					)}
 
-					<div
-						className="flex max-h-[200px] flex-col gap-4 overflow-auto"
-						data-testid="members-add-overlay-outerbox"
-					>
-						{user === null &&
-							selectedMembers.map((selectedUser) => (
-								<MembersAddOverlayUser
+					{user === null && selectedMembers.length > 0 && (
+						<div
+							className="flex max-h-[200px] flex-wrap gap-2 overflow-auto"
+							data-testid="members-add-overlay-outerbox"
+						>
+							{selectedMembers.map((selectedUser) => (
+								<Badge
 									key={selectedUser.id}
-									name={selectedUser.name}
-									id={selectedUser.id}
-									email={selectedUser.email}
-									type={selectedUser.type}
-									action={
-										<Button
-											variant="ghost"
-											size="icon"
-											onClick={() => {
-												removeMember(selectedUser.id);
-											}}
-										>
-											<X className="h-4 w-4" />
-										</Button>
-									}
-								/>
+									variant="secondary"
+									className="gap-1.5 py-1.5"
+								>
+									{selectedUser.name}
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-4 w-4 p-0 hover:bg-transparent"
+										onClick={() => {
+											removeMember(selectedUser.id);
+										}}
+									>
+										<X className="h-3 w-3" />
+									</Button>
+								</Badge>
 							))}
+						</div>
+					)}
 
-						{user !== null && (
+					{user !== null && (
+						<div className="flex max-h-[200px] flex-col gap-4 overflow-auto">
 							<MembersAddOverlayUser
 								key={user.id}
 								name={user.name}
@@ -708,8 +722,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 								email={user.email}
 								type={user.type}
 							/>
-						)}
-					</div>
+						</div>
+					)}
 
 					<div className="flex flex-col gap-2">
 						<P
@@ -726,9 +740,9 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 										setSelectedRole(val as SETTINGS_ROLE);
 									}
 								}}
-								className="flex flex-col gap-4"
+								className="flex flex-col gap-1"
 							>
-								<Card className="m-2 rounded-xl p-2">
+								<Card className="m-2 rounded-xl p-1">
 									<CardHeader className="px-2">
 										<div className="flex flex-col gap-2">
 											<div className="flex items-center justify-between">
@@ -766,7 +780,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 									</CardHeader>
 								</Card>
 
-								<Card className="m-2 rounded-xl p-2">
+								<Card className="m-2 rounded-xl p-1">
 									<CardHeader className="px-2">
 										<div className="flex flex-col gap-2">
 											<div className="flex items-center justify-between">
@@ -802,7 +816,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 									</CardHeader>
 								</Card>
 
-								<Card className="m-2 rounded-xl p-2">
+								<Card className="m-2 rounded-xl p-1">
 									<CardHeader className="px-2">
 										<div className="flex flex-col gap-2">
 											<div className="flex items-center justify-between">

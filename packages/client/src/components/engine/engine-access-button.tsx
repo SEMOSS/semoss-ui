@@ -113,7 +113,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 					setOpen(isOpen);
 				}}
 			>
-				<DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
+				<DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-2xl">
 					<DialogHeader>
 						<DialogTitle>
 							{active?.role === "DISCOVERABLE"
@@ -121,7 +121,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 								: "Change Access"}
 						</DialogTitle>
 					</DialogHeader>
-					<div className="space-y-4">
+					<div className="flex-1 space-y-6 overflow-y-auto">
 						<RadioGroup
 							value={requestedRole}
 							onValueChange={(value) => {
@@ -211,6 +211,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 						<div className="space-y-2">
 							<Label>Comment:</Label>
 							<Textarea
+								className="focus:outline-none focus:ring-0 focus-visible:ring-0"
 								value={comment}
 								onChange={(e) => setComment(e.target.value)}
 								rows={3}

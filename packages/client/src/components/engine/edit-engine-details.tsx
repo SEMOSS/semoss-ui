@@ -1,15 +1,27 @@
-import { Pencil, XIcon } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Pencil, XIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
 	Button,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
 	Dialog,
 	DialogContent,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 	Label,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { MarkdownEditor } from "@/components/common";
@@ -42,6 +54,9 @@ export const EditEngineDetails = observer(() => {
 
 	// track if open
 	const [open, setOpen] = useState(false);
+
+	// track markdown collapsible state
+	const [isMarkdownOpen, setIsMarkdownOpen] = useState(false);
 
 	// track the options
 	const [filterOptions, setFilterOptions] = useState<
@@ -327,26 +342,51 @@ export const EditEngineDetails = observer(() => {
 
 							if (display_options === "markdown") {
 								return (
-									<div key={metakey} className="mb-1">
-										<Controller
-											name={metakey}
-											control={control}
-											render={({ field }) => {
-												return (
-													<MarkdownEditor
-														value={
-															(field.value as string) ||
-															""
-														}
-														onChange={(value) =>
-															field.onChange(
-																value,
-															)
-														}
-													/>
-												);
-											}}
-										/>
+									<div key={metakey} className="mb-4">
+										<Collapsible
+											open={isMarkdownOpen}
+											onOpenChange={setIsMarkdownOpen}
+										>
+											<CollapsibleTrigger asChild>
+												<Button
+													variant="outline"
+													className="mb-2 flex w-full items-center justify-between"
+													type="button"
+												>
+													<span className="font-medium">
+														{label}
+													</span>
+													{isMarkdownOpen ? (
+														<ChevronDown className="size-4 transition-transform" />
+													) : (
+														<ChevronRight className="size-4 transition-transform" />
+													)}
+												</Button>
+											</CollapsibleTrigger>
+											<CollapsibleContent>
+												<Controller
+													name={metakey}
+													control={control}
+													render={({ field }) => {
+														return (
+															<MarkdownEditor
+																value={
+																	(field.value as string) ||
+																	""
+																}
+																onChange={(
+																	value,
+																) =>
+																	field.onChange(
+																		value,
+																	)
+																}
+															/>
+														);
+													}}
+												/>
+											</CollapsibleContent>
+										</Collapsible>
 									</div>
 								);
 							} else if (display_options === "textarea") {
@@ -364,7 +404,7 @@ export const EditEngineDetails = observer(() => {
 													</Label>
 													<textarea
 														id={metakey}
-														className="flex max-h-[72px] min-h-[72px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+														className="flex max-h-[72px] min-h-[72px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
 														value={
 															(field.value as string) ||
 															""
@@ -589,39 +629,113 @@ export const EditEngineDetails = observer(() => {
 												}
 											};
 
+											const availableOptions =
+												filterOptions[metakey] || [];
+
 											return (
 												<div className="space-y-2">
 													<Label htmlFor={metakey}>
 														{label}
 													</Label>
-													<div className="flex flex-wrap gap-2 rounded-md border border-input bg-transparent p-2">
-														{(
-															filterOptions[
-																metakey
-															] || []
-														).map((option) => (
-															<label
-																key={option}
-																className="flex cursor-pointer items-center gap-2"
+													<Popover>
+														<PopoverTrigger asChild>
+															<Button
+																variant="outline"
+																className="w-full justify-between text-left font-normal"
+																type="button"
 															>
-																<input
-																	type="checkbox"
-																	checked={selectedValues.includes(
-																		option,
-																	)}
-																	onChange={() =>
-																		toggleValue(
-																			option,
-																		)
-																	}
-																	className="rounded border-input"
-																/>
-																<span className="text-sm">
-																	{option}
+																<span className="truncate">
+																	{selectedValues.length >
+																	0
+																		? `${selectedValues.length} selected`
+																		: `Select ${label.toLowerCase()}...`}
 																</span>
-															</label>
-														))}
-													</div>
+																<ChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
+															</Button>
+														</PopoverTrigger>
+														<PopoverContent
+															className="w-[var(--radix-popover-trigger-width)] p-0"
+															align="start"
+														>
+															<Command>
+																<CommandInput
+																	placeholder={`Search ${label.toLowerCase()}...`}
+																/>
+																<CommandList>
+																	<CommandEmpty>
+																		No
+																		options
+																		found.
+																	</CommandEmpty>
+																	<CommandGroup>
+																		{availableOptions.map(
+																			(
+																				option,
+																			) => (
+																				<CommandItem
+																					key={
+																						option
+																					}
+																					value={
+																						option
+																					}
+																					onSelect={() =>
+																						toggleValue(
+																							option,
+																						)
+																					}
+																				>
+																					<Check
+																						className={`mr-2 size-4 ${
+																							selectedValues.includes(
+																								option,
+																							)
+																								? "opacity-100"
+																								: "opacity-0"
+																						}`}
+																					/>
+																					{
+																						option
+																					}
+																				</CommandItem>
+																			),
+																		)}
+																	</CommandGroup>
+																</CommandList>
+															</Command>
+														</PopoverContent>
+													</Popover>
+													{selectedValues.length >
+														0 && (
+														<div className="flex flex-wrap gap-2 pt-2">
+															{selectedValues.map(
+																(value) => (
+																	<span
+																		key={
+																			value
+																		}
+																		className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-foreground text-sm"
+																	>
+																		{value}
+																		<button
+																			type="button"
+																			onClick={(
+																				e,
+																			) => {
+																				e.preventDefault();
+																				toggleValue(
+																					value,
+																				);
+																			}}
+																			className="hover:opacity-70"
+																		>
+																			<XIcon className="size-3" />
+																		</button>
+																	</span>
+																),
+															)}
+														</div>
+													)}
 												</div>
 											);
 										}}
