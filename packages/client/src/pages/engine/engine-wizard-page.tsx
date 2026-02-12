@@ -19,7 +19,7 @@ export const EngineWizardPage: React.FC = observer(() => {
 		if (!active.id) return;
 		wizard.actions.listLlms();
 		wizard.actions.refreshSchema(active.id);
-	}, [active.id, wizard.actions]);
+	}, [active.id]);
 
 	const handleBack = () => {
 		wizard.setters.setStep("actions");
@@ -85,7 +85,7 @@ export const EngineWizardPage: React.FC = observer(() => {
 			{wizard.state.step === "manage" && (
 				<DatabaseWizardManageAndQuery
 					isLoading={wizard.state.isLoading}
-					schemaSql={wizard.state.schemaSql}
+					schemaMetadata={wizard.state.schemaMetadata}
 					querySql={wizard.state.querySql}
 					onQuerySqlChange={wizard.setters.setQuerySql}
 					onRunQuery={wizard.actions.runQuery}

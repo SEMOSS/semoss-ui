@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "@semoss/ui/next";
+import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { inferColumnTypes, parseCsvPreview } from "@/utils/databaseWizard/csv";
 import { schemaPrompt } from "@/utils/databaseWizard/schemaPrompt";
@@ -29,7 +30,7 @@ type UseDatabaseWizardOptions = {
 
 export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 	const { mode = "catalog", databaseId, onDatabaseCreated } = options;
-	const { monolithStore } = useRootStore();
+	const { monolithStore, configStore } = useRootStore();
 	const [step, setStep] = useState<WizardStep>(
 		mode === "engine" ? "actions" : "select",
 	);
@@ -43,6 +44,7 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 	const [description, setDescription] = useState("");
 	const [schemaJson, setSchemaJson] = useState("");
 	const [schemaSql, setSchemaSql] = useState("");
+	const [schemaMetadata, setSchemaMetadata] = useState("");
 	const [querySql, setQuerySql] = useState("");
 	const [includeSampleData, setIncludeSampleData] = useState(false);
 	const [sampleRowCount, setSampleRowCount] = useState(5);
@@ -119,7 +121,21 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 		setIsLoading(true);
 		resetErrors();
 		try {
-			const sampleCsvPath = "version/assets/csv/sample.csv";
+			const csvSeed = "col1,col2\n1,1";
+			const seedFile = new File([csvSeed], "seed.csv", {
+				type: "text/csv",
+			});
+			const uploadedFiles = await uploadFile(
+				[seedFile],
+				configStore.store.insightID,
+			);
+			if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
+				throw new Error("CSV upload failed");
+			}
+			const sampleCsvPath = uploadedFiles[0]?.fileLocation;
+			if (!sampleCsvPath) {
+				throw new Error("Uploaded CSV file location not found");
+			}
 			const tempTableName = "temp_init_table";
 			const dataTypeMap = { col1: "STRING", col2: "STRING" };
 			const pixel = `RdbmsUploadTableData(database=["${databaseName}"],filePath=["${sampleCsvPath}"],delimiter=[","],dataTypeMap=[${JSON.stringify(
@@ -163,7 +179,7 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 				const schemaOutput = await runPixel(
 					`ExternalUpdateJdbcSchema(database=["${targetId}"], filters=${filters});`,
 				);
-				setSchemaSql(JSON.stringify(schemaOutput, null, 2));
+				setSchemaMetadata(JSON.stringify(schemaOutput, null, 2));
 			} catch (error) {
 				const message = (error as Error).message;
 				setErrors(message);
@@ -376,6 +392,7 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 			description,
 			schemaJson,
 			schemaSql,
+			schemaMetadata,
 			querySql,
 			includeSampleData,
 			sampleRowCount,

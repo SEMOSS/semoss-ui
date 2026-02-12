@@ -4,7 +4,7 @@ import { Button, Label, P, Textarea } from "@semoss/ui/next";
 
 export type DatabaseWizardManageAndQueryProps = {
 	isLoading: boolean;
-	schemaSql: string;
+	schemaMetadata: string;
 	querySql: string;
 	onQuerySqlChange: (value: string) => void;
 	onRunQuery: () => void;
@@ -15,7 +15,7 @@ export const DatabaseWizardManageAndQuery: React.FC<
 	DatabaseWizardManageAndQueryProps
 > = ({
 	isLoading,
-	schemaSql,
+	schemaMetadata,
 	querySql,
 	onQuerySqlChange,
 	onRunQuery,
@@ -49,7 +49,7 @@ export const DatabaseWizardManageAndQuery: React.FC<
 				<Label>Latest schema</Label>
 				<Textarea
 					rows={4}
-					value={schemaSql}
+					value={schemaMetadata}
 					readOnly
 					className="max-h-40 overflow-y-auto"
 				/>

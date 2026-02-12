@@ -14,6 +14,7 @@ export type DatabaseWizardDialogProps = {
 	databases: Array<{ database_id: string; database_name: string }>;
 	llms: Array<{ database_id: string; database_name: string }>;
 	schemaSql: string;
+	schemaMetadata: string;
 	querySql: string;
 	schemaJson: string;
 	csvPreview: { headers: string[]; rows: string[][] } | null;
@@ -103,7 +104,7 @@ const renderStep = (props: DatabaseWizardDialogProps) => {
 			return (
 				<DatabaseWizardManageAndQuery
 					isLoading={props.isLoading}
-					schemaSql={props.schemaSql}
+					schemaMetadata={props.schemaMetadata}
 					querySql={props.querySql}
 					onQuerySqlChange={props.onQuerySqlChange}
 					onRunQuery={props.onRunQuery}
