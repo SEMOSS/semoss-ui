@@ -5,7 +5,7 @@ import {
 	PendingMembersTable,
 	SettingsTiles,
 } from "@/components/settings";
-import { TeamsTable } from "@/components/settings/TeamsTable";
+import { TeamsTable } from "@/components/settings/teams-table";
 import { SettingsContext } from "@/contexts";
 
 // Styled components
