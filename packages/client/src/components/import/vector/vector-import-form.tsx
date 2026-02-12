@@ -1,6 +1,6 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -27,7 +27,6 @@ import {
 	SelectValue,
 	Separator,
 	Spinner,
-	Textarea,
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
@@ -47,7 +46,7 @@ export interface ParsedResult {
 	nodeProp: Record<string, string[]>;
 }
 
-export const FunctionForm = ({
+export const VectorForm = ({
 	title,
 	description,
 	fields,
@@ -61,7 +60,6 @@ export const FunctionForm = ({
 	const debounceTimeoutsRef = useRef<
 		Record<string, ReturnType<typeof setTimeout>>
 	>({});
-	const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
 	const {
 		control,
@@ -75,7 +73,7 @@ export const FunctionForm = ({
 	} = useForm({
 		mode: "onChange",
 		reValidateMode: "onChange",
-		defaultValues: [...fields].reduce((acc, f) => {
+		defaultValues: [...fields, ...advanced].reduce((acc, f) => {
 			acc[f.key] = f.value || "";
 			return acc;
 		}, {}),
@@ -97,48 +95,58 @@ export const FunctionForm = ({
 	}, {});
 
 	const onFormSubmit = async (formData) => {
-		const { FILE, ...newFormData } = formData;
+		const {
+			EMBEDDINGS,
+			DESCRIPTION: description,
+			TAGS: tag,
+			...newFormData
+		} = formData;
+		const metaData = JSON.stringify({ description, tag });
 
 		setLoading(true);
-		let pixel = `CreateRestFunctionEngine(function=["${
+		const pixel = `CreateVectorDatabaseEngine(database=["${
 			formData.NAME
-		}"],functionDetails=[${JSON.stringify(newFormData)}]);`;
-		if (FILE !== "") {
-			try {
-				const uploadedFiles = await uploadFile(
-					[FILE],
-					configStore.store.insightID,
-				);
+		}"],conDetails=[${JSON.stringify(newFormData)}]);SetDatabaseMetadata(database=["${formData.NAME}"],meta=[${metaData}])`;
 
-				if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
+		monolithStore.runQuery(pixel).then(async (response) => {
+			const pixelOutput = response.pixelReturn[0].output as { database_id: string },
+				operationType = response.pixelReturn[0].operationType;
+
+			if (operationType.indexOf("ERROR") > -1) {
+				toast.error(String(pixelOutput));
+				setLoading(false);
+				return;
+			}
+			toast.success("Successfully added vector database to catalog");
+
+			if (EMBEDDINGS !== "") {
+				try {
+					const uploadedFiles = await uploadFile(
+						[EMBEDDINGS],
+						configStore.store.insightID,
+					);
+
+					if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
+						toast.error("Upload failed or returned invalid response.");
+						setLoading(false);
+						return;
+					}
+					const pixelExpressions = `CreateEmbeddingsFromDocuments(filePaths=["${uploadedFiles[0].fileLocation}"], engine=["${pixelOutput.database_id}"])`;
+					const response =
+						await monolithStore.runQuery(pixelExpressions);
+					const { output, operationType } = response.pixelReturn[0];
+					if (operationType.includes("ERROR")) {
+						toast.error(String(output));
+						setLoading(false);
+						return;
+					}
+				} catch {
 					toast.error("Upload failed or returned invalid response.");
 					setLoading(false);
 					return;
 				}
-				pixel = pixel.replace(
-					");",
-					`,filePaths=["${uploadedFiles[0].fileLocation}"]` + ");",
-				);
-			} catch {
-				toast.error("Upload failed or returned invalid response.");
-				setLoading(false);
-				return;
 			}
-		}
-		monolithStore.runQuery(pixel).then(async (response) => {
-			const pixelOutput = response.pixelReturn[0].output,
-				operationType = response.pixelReturn[0].operationType;
-
-			if (operationType.indexOf("ERROR") > -1) {
-				toast.error(pixelOutput as string);
-				setLoading(false);
-				return;
-			}
-			toast.success("Successfully added function database to catalog");
-
-			navigate(
-				`/engine/function/${(pixelOutput as { database_id: string }).database_id}`,
-			);
+			navigate(`/engine/vector/${pixelOutput.database_id}`);
 			setLoading(false);
 		});
 	};
@@ -193,7 +201,7 @@ export const FunctionForm = ({
 		const operationType = response.pixelReturn[0].operationType;
 
 		if (operationType.includes("ERROR")) {
-			toast.error(output as string);
+			toast.error(String(output));
 			return;
 		}
 
@@ -208,10 +216,12 @@ export const FunctionForm = ({
 					f.key === key
 						? {
 								...f,
-								options: (output as unknown[]).map((opt) => ({
-									display: opt[f.optionRule.optionDisplay],
-									value: opt[f.optionRule.optionValue],
-								})),
+								options: Array.isArray(output)
+									? output.map((opt) => ({
+											display: opt[f.optionRule.optionDisplay],
+											value: opt[f.optionRule.optionValue],
+										}))
+									: [],
 							}
 						: f,
 				),
@@ -227,15 +237,15 @@ export const FunctionForm = ({
 		);
 
 		const response = await monolithStore.runQuery(pixelToExecute);
-		const output = response.pixelReturn[0].output;
+		const output = response.pixelReturn[0].output as { exists: boolean };
 		const operationType = response.pixelReturn[0].operationType;
 
 		if (operationType.includes("ERROR")) {
-			toast.error(output as string);
+			toast.error(String(output));
 			return false;
 		}
 
-		if ((output as { exists: boolean }).exists) {
+		if (output.exists) {
 			setFocus(field.key);
 			setIsValidDatabaseName(true);
 			return false;
@@ -263,79 +273,6 @@ export const FunctionForm = ({
 		}
 	};
 
-	// Helper functions for file upload
-	const onFileUpload = (
-		files: File | File[],
-		fieldOnChange: (value: File[]) => void,
-		currentValue: File | File[],
-	) => {
-		const fileArray = Array.isArray(files) ? files : [files];
-
-		// Get current files from field value
-		const currentFiles = Array.isArray(currentValue)
-			? currentValue
-			: currentValue
-				? [currentValue]
-				: [];
-		const existingFileNames = currentFiles.map((f: File) => f.name);
-		const newFiles = fileArray.filter(
-			(f) => !existingFileNames.includes(f.name),
-		);
-		const combined = [...currentFiles, ...newFiles];
-
-		// Update form value with validation
-		fieldOnChange(combined);
-	};
-
-	const removeFile = (
-		index: number,
-		fieldOnChange: (value: File[]) => void,
-		currentValue: File | File[],
-	) => {
-		const currentFiles = Array.isArray(currentValue)
-			? currentValue
-			: currentValue
-				? [currentValue]
-				: [];
-		const updated = currentFiles.filter((_, i) => i !== index);
-
-		// Update form value with validation
-		fieldOnChange(updated);
-	};
-
-	const handleFileChange = (
-		e: React.ChangeEvent<HTMLInputElement>,
-		fieldOnChange: (value: File[]) => void,
-		currentValue: File | File[],
-	) => {
-		const files = e.target.files;
-		if (files && files?.length > 0) {
-			const fileArray = Array.from(files);
-			onFileUpload(fileArray, fieldOnChange, currentValue);
-		}
-		// Reset input value to allow re-selecting the same file
-		e.target.value = "";
-	};
-
-	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-		e.preventDefault();
-		e.stopPropagation();
-	};
-
-	const handleDrop = (
-		e: React.DragEvent<HTMLDivElement>,
-		fieldOnChange: (value: File[]) => void,
-		currentValue: File | File[],
-	) => {
-		e.preventDefault();
-		e.stopPropagation();
-		const files = e.dataTransfer.files;
-		if (files && files?.length > 0) {
-			const fileArray = Array.from(files);
-			onFileUpload(fileArray, fieldOnChange, currentValue);
-		}
-	};
-
 	const renderControllerField = (val) => (
 		<Controller
 			key={val.key}
@@ -346,7 +283,7 @@ export const FunctionForm = ({
 				pattern: val.rules?.pattern,
 			}}
 			render={({ field, fieldState: { error }, formState }) => {
-				switch (val.type) {
+				switch (val.component) {
 					case "text":
 						return (
 							<Field className={val.hidden ? "hidden" : ""}>
@@ -362,7 +299,7 @@ export const FunctionForm = ({
 									{...field}
 									id={val.key}
 									disabled={val.disabled}
-									data-testid={`function-form-input-${val.key}`}
+									data-testid={`vector-form-input-${val.key}`}
 									onChange={(e) => {
 										field.onChange(e);
 										if (val.rules?.custom) {
@@ -439,7 +376,7 @@ export const FunctionForm = ({
 									id={val.key}
 									type="password"
 									disabled={val.disabled}
-									data-testid={`function-form-input-${val.key}`}
+									data-testid={`vector-form-input-${val.key}`}
 									autoComplete="new-password"
 								/>
 								{error ? (
@@ -474,7 +411,7 @@ export const FunctionForm = ({
 									id={val.key}
 									type="number"
 									disabled={val.disabled}
-									data-testid={`function-form-input-${val.key}`}
+									data-testid={`vector-form-input-${val.key}`}
 								/>
 								{error ? (
 									<FieldDescription className="text-destructive">
@@ -514,7 +451,7 @@ export const FunctionForm = ({
 									<SelectTrigger
 										id={val.key}
 										className="w-full"
-										data-testid={`function-form-input-${val.key}`}
+										data-testid={`vector-form-input-${val.key}`}
 									>
 										<SelectValue
 											placeholder={`Select ${val.label}`}
@@ -530,7 +467,7 @@ export const FunctionForm = ({
 											<SelectItem
 												key={opt.value}
 												value={opt.value}
-												data-testid={`function-form-option-${val.key}-${opt.value}`}
+												data-testid={`vector-form-option-${val.key}-${opt.value}`}
 											>
 												{opt.display}
 											</SelectItem>
@@ -570,7 +507,7 @@ export const FunctionForm = ({
 										field.onChange(value)
 									}
 									className="flex flex-row gap-4"
-									data-testid={`function-form-input-${val.key}`}
+									data-testid={`vector-form-input-${val.key}`}
 								>
 									{val.options.options.map((opt) => (
 										<div
@@ -580,7 +517,7 @@ export const FunctionForm = ({
 											<RadioGroupItem
 												value={opt.value}
 												id={`${val.key}-${opt.value}`}
-												data-testid={`function-form-radio-${val.key}-${opt.value}`}
+												data-testid={`vector-form-radio-${val.key}-${opt.value}`}
 											/>
 											<Label
 												htmlFor={`${val.key}-${opt.value}`}
@@ -603,127 +540,47 @@ export const FunctionForm = ({
 
 					case "file-upload":
 						return (
-							<div
-								className="flex flex-col gap-2"
-								data-testid={`function-form-field-${val.key}`}
-							>
-								<P>
+							<div className="flex flex-col gap-2">
+								<P data-testid="vector-zip-upload-title">
 									{val.label}
-									{val.required && (
-										<span className="text-destructive">
-											{" "}
-											*
-										</span>
-									)}
 								</P>
+								{/* Custom file upload - will need to replace FileDropzone */}
 								<div
-									className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
-									onClick={() =>
-										fileInputRefs.current[val.key]?.click()
-									}
-									onDragOver={handleDragOver}
-									onDrop={(e) =>
-										handleDrop(
-											e,
-											field.onChange,
-											field.value,
-										)
-									}
-								>
-									<input
-										ref={(el) => {
-											fileInputRefs.current[val.key] = el;
-										}}
-										type="file"
-										accept={
+									className="flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-4 transition-colors hover:border-primary hover:bg-accent"
+									onClick={() => {
+										const input =
+											document.createElement("input");
+										input.type = "file";
+										input.accept =
 											val.options?.extensions?.join(
 												",",
-											) || "*"
-										}
-										multiple={false}
-										className="hidden"
-										onChange={(e) =>
-											handleFileChange(
-												e,
-												field.onChange,
-												field.value,
-											)
-										}
-										disabled={val.disabled}
-										data-testid={`function-form-input-${val.key}`}
-									/>
-									<div className="text-center">
-										<P className="font-medium text-foreground">
+											) || "*";
+										input.onchange = (e) => {
+											const file = (e.target as HTMLInputElement)
+												.files?.[0];
+											if (file) {
+												field.onChange(file);
+											}
+										};
+										input.click();
+									}}
+								>
+									{field.value ? (
+										<P className="text-center text-foreground">
+											{(field.value as File).name ||
+												"File selected"}
+										</P>
+									) : (
+										<P className="text-center text-muted-foreground">
 											Drop your file here or click to
 											browse
 										</P>
-										<P className="text-muted-foreground text-sm">
-											{val.options?.extensions
-												? `Supports ${val.options.extensions.join(", ")} files`
-												: "All file types supported"}
-										</P>
-									</div>
-								</div>
-
-								{/* File List */}
-								{field.value &&
-									Array.isArray(field.value) &&
-									field.value.length > 0 && (
-										<div className="mt-2 flex flex-col gap-2">
-											<P className="font-medium text-foreground text-sm">
-												{field.value.length} file(s)
-												selected:
-											</P>
-											<div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
-												{field.value.map((file, index) => (
-													<div
-														key={`${file.name}-${index}`}
-														className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
-														data-testid={`uploaded-file-item-${index}`}
-													>
-														<div className="flex min-w-0 flex-1 items-center gap-2">
-															<div className="min-w-0 flex-1">
-																<P className="truncate text-foreground text-sm">
-																	{file.name}
-																</P>
-																<P className="text-muted-foreground text-xs">
-																	{(
-																		file.size /
-																		1024
-																	).toFixed(
-																		2,
-																	)}{" "}
-																	KB
-																</P>
-															</div>
-														</div>
-														<Button
-															type="button"
-															variant="ghost"
-															size="icon"
-															onClick={(e) => {
-																e.stopPropagation();
-																removeFile(
-																	index,
-																	field.onChange,
-																	field.value,
-																);
-															}}
-															className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
-															data-testid={`remove-file-btn-${index}`}
-														>
-															<X className="size-4" />
-														</Button>
-													</div>
-												))}
-											</div>
-										</div>
 									)}
-
+								</div>
 								{error && (
 									<P
 										className="text-destructive text-sm"
-										data-testid={`function-form-error-${val.key}`}
+										data-testid={`vector-form-error-${val.key}`}
 									>
 										{error.message ||
 											(val.rules?.pattern?.message ??
@@ -744,7 +601,7 @@ export const FunctionForm = ({
 										field.onChange(value)
 									}
 									disabled={val.disabled}
-									data-testid={`function-form-input-${val.key}`}
+									data-testid={`vector-form-input-${val.key}`}
 								/>
 								<Label
 									htmlFor={val.key}
@@ -760,7 +617,7 @@ export const FunctionForm = ({
 								{error && (
 									<P
 										className="text-destructive text-sm"
-										data-testid={`function-form-error-${val.key}`}
+										data-testid={`vector-form-error-${val.key}`}
 									>
 										{error.message}
 									</P>
@@ -768,50 +625,82 @@ export const FunctionForm = ({
 							</div>
 						);
 					case "tags":
-						return (
-							<Field className={val.hidden ? "hidden" : ""}>
-								<FieldLabel htmlFor={val.key}>
-									{val.label}
-									{val?.required && (
-										<span className="text-destructive">
-											*
-										</span>
-									)}
-								</FieldLabel>
-								<Textarea
-									{...field}
-									id={val.key}
-									placeholder='Press "Enter" to add tag'
-									disabled={val.disabled}
-									value={
-										Array.isArray(field.value)
-											? field.value.join(", ")
-											: field.value || ""
-									}
-									onChange={(e) => {
-										const tags = e.target.value
-											.split(",")
-											.map((tag) => tag.trim())
-											.filter((tag) => tag !== "");
-										field.onChange(tags);
-									}}
-									data-testid={`function-form-input-${val.key}`}
-								/>
-								{error ? (
-									<FieldDescription className="text-destructive">
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
-									</FieldDescription>
-								) : (
-									val.helperText && (
-										<FieldDescription>
-											{val.helperText}
-										</FieldDescription>
-									)
-								)}
-							</Field>
-						);
+    return (
+        <Field
+            className={val.hidden ? "hidden" : ""}
+            data-testid={`vector-form-field-${val.key}`}
+        >
+            <FieldLabel htmlFor={val.key}>
+                {val.label}
+                {val.required && (
+                    <span className="text-destructive">
+                        {" "}
+                        *
+                    </span>
+                )}
+            </FieldLabel>
+            <Input
+                id={val.key}
+                placeholder='Press "Enter" to add tag'
+                disabled={val.disabled}
+                data-testid={`vector-form-input-${val.key}`}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        const value =
+                            e.currentTarget.value.trim();
+                        if (value) {
+                            const currentTags =
+                                field.value || [];
+                            field.onChange([
+                                ...currentTags,
+                                value,
+                            ]);
+                            e.currentTarget.value = "";
+                        }
+                    }
+                }}
+            />
+            {field.value && field.value?.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                    {field.value.map((tag, index) => (
+                        <span
+                            key={index}
+                            className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm"
+                        >
+                            {tag}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const newTags =
+                                        field.value.filter(
+                                            (_, i) =>
+                                                i !== index,
+                                        );
+                                    field.onChange(newTags);
+                                }}
+                                className="text-muted-foreground hover:text-foreground"
+                            >
+                                ×
+                            </button>
+                        </span>
+                    ))}
+                </div>
+            )}
+            {error && (
+                <FieldDescription className="text-destructive">
+                    {error.message ||
+                        (val.rules?.pattern?.message ??
+                            val.helperText)}
+                </FieldDescription>
+            )}
+            {!error && val.helperText && (
+                <FieldDescription>
+                    {val.helperText}
+                </FieldDescription>
+            )}
+        </Field>
+    );
 
 					default:
 						return null;
@@ -829,12 +718,12 @@ export const FunctionForm = ({
 	}
 
 	return (
-		<form onSubmit={handleSubmit(onFormSubmit)} data-testid="function-form">
-			<H4 data-testid="function-form-title">{title}</H4>
-			<Muted className="mt-1" data-testid="function-form-description">
+		<form onSubmit={handleSubmit(onFormSubmit)} data-testid="vector-form">
+			<H4 data-testid="vector-form-title">{title}</H4>
+			<Muted className="mt-1" data-testid="vector-form-description">
 				{description}
 			</Muted>
-			<div className="mt-8 mb-8" data-testid="function-form-box">
+			<div className="mt-8 mb-8" data-testid="vector-form-box">
 				<div className="flex flex-col gap-4">
 					{Object.keys(grouped).map((category) => (
 						<div
@@ -843,7 +732,7 @@ export const FunctionForm = ({
 						>
 							<div className="flex items-start gap-4">
 								<div className="flex flex-1 flex-col gap-1">
-									<H4 data-testId="function-importForm-category-title">
+									<H4 data-testId="vector-importForm-category-title">
 										{category}
 									</H4>
 									<Muted data-testId="model-importForm-category-description">
@@ -867,14 +756,14 @@ export const FunctionForm = ({
 								onOpenChange={setOpenAdvanced}
 							>
 								<div className="flex flex-row items-center justify-between py-2">
-									<H4 data-testid="function-form-advanced-header">
+									<H4 data-testid="vector-form-advanced-header">
 										ADVANCED SETTINGS
 									</H4>
 									<CollapsibleTrigger asChild>
 										<Button
 											variant="ghost"
 											size="icon"
-											data-testid="function-form-advanced-toggle"
+											data-testid="vector-form-advanced-toggle"
 										>
 											{openAdvanced ? (
 												<ChevronUp className="size-4" />
@@ -896,7 +785,7 @@ export const FunctionForm = ({
 												{advancedFields.map((val) => (
 													<div
 														key={val.key}
-														data-testid={`function-form-field-${val.key}`}
+														data-testid={`vector-form-field-${val.key}`}
 													>
 														{renderControllerField(
 															val,
@@ -914,12 +803,12 @@ export const FunctionForm = ({
 
 				<div
 					className="mt-8 flex justify-end gap-2"
-					data-testid="function-form-actions"
+					data-testid="vector-form-actions"
 				>
 					<Button
 						type="submit"
 						variant="default"
-						data-testid="function-form-submit"
+						data-testid="vector-form-submit"
 						disabled={!formState.isValid || isValidDatabaseName}
 						className="min-w-[128px] capitalize"
 					>
