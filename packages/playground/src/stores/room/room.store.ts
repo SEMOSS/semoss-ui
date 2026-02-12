@@ -6,7 +6,7 @@ import {
 	runPixelAsync,
 	uploadInsight,
 } from "@semoss/sdk/react";
-import { FlexLayout } from "@semoss/shared";
+import { FlexLayout, type ThemeMap } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import {
 	type AbstractMessageStore,
@@ -133,6 +133,7 @@ interface RoomStoreInterface {
  * Manage the room
  */
 export class RoomStore {
+	private _theme: ThemeMap["playground"];
 	private _store: RoomStoreInterface = {
 		roomId: "",
 		insightId: "new",
@@ -165,7 +166,12 @@ export class RoomStore {
 		},
 	};
 
-	constructor(roomId: string, insightId: string = "new") {
+	constructor(
+		theme: ThemeMap["playground"],
+		roomId: string,
+		insightId: string = "new",
+	) {
+		this._theme = theme;
 		// register the roomId, insightId, and actions
 		this._store.roomId = roomId;
 		this._store.insightId = insightId;
@@ -194,6 +200,13 @@ export class RoomStore {
 	 */
 	get insightId() {
 		return this._store.insightId;
+	}
+
+	/**
+	 * Get the theme
+	 */
+	get theme() {
+		return this._theme;
 	}
 
 	/**
@@ -513,18 +526,35 @@ export class RoomStore {
 				// if its tool execution, update the corresponding tool
 				const toolExecMessage = m.message;
 				if (toolExecMessage instanceof ToolExecutionMessageStore) {
-					const parentToolExecMessage =
-						messages[m.parentMessageId].message;
-					if (parentToolExecMessage instanceof ResponseMessageStore) {
-						parentToolExecMessage.tools.forEach((tool) => {
-							if (tool.id === toolExecMessage.callId) {
-								// save the response
-								runInAction(() => {
-									tool.response = toolExecMessage.response;
-									tool.status = toolExecMessage.status;
-								});
-							}
-						});
+					// Run up the chain to find the message containing the tool
+					// (because it can go reponse_tool -> input_tool_exec -> input_tool_exec)
+					let toolExecMessageParent: AbstractMessageStore =
+						toolExecMessage.parent;
+					while (toolExecMessageParent) {
+						if (
+							toolExecMessageParent instanceof
+							ResponseMessageStore
+						) {
+							// We've found the parent response message, now find the tool
+							toolExecMessageParent.tools.forEach((tool) => {
+								if (tool.id === toolExecMessage.callId) {
+									// save the response
+									runInAction(() => {
+										tool.response =
+											toolExecMessage.response;
+										tool.status = toolExecMessage.status;
+										tool.executedParameters =
+											toolExecMessage.executedParameters;
+									});
+								}
+							});
+							// Break because we've found the right parent
+							break;
+						} else {
+							// keep going up the chain
+							toolExecMessageParent =
+								toolExecMessageParent.parent;
+						}
 					}
 				}
 			}
@@ -602,7 +632,7 @@ export class RoomStore {
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
 			if (this.tail.type === "RESPONSE") {
-				this.tail.startToolExecution();
+				this.tail.continueToolExecution();
 			}
 		} catch (e) {
 			console.error(e);
@@ -622,6 +652,7 @@ export class RoomStore {
 			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
 			const optionsToSave = {
 				...options,
+				modelId: this._store.model.app_id,
 				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
 			};
 
@@ -850,13 +881,15 @@ export class RoomStore {
 	 * @param toolName - name of the tool
 	 * @param toolResponse - response from the tool
 	 * @param toolStatus - status of the tool execution
+	 * @param executedParameters - parameters used by the tool
 	 */
 	processTool = async (
 		messageId: string,
 		toolId: string,
 		toolName: string,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled",
+		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {
 			const message = this.getMessage(messageId);
@@ -871,10 +904,21 @@ export class RoomStore {
 
 			if (this.mode === "executing") {
 				// save the tool execution
-				await this.plan?.saveToolExecution(message, tool, toolResponse);
+				await this.plan?.saveToolExecution(
+					message,
+					tool,
+					toolResponse,
+					toolStatus,
+					executedParameters,
+				);
 			} else {
 				// save the response with the tool
-				await message.saveToolExecution(tool, toolResponse, toolStatus);
+				await message.saveToolExecution(
+					tool,
+					toolResponse,
+					toolStatus,
+					executedParameters,
+				);
 			}
 		} catch (e) {
 			console.error(e);
@@ -994,9 +1038,18 @@ export class RoomStore {
 			}
 
 			// get the final result
-			return await getPixelAsyncResult<O>(jobId);
+			const result = await getPixelAsyncResult<O>(jobId);
+
+			if (result.errors.length > 0) {
+				throw new Error(result.errors.join(""));
+			}
+
+			return result;
 		} catch (e) {
 			console.error(e);
+
+			// show the error
+			this._store.error = e;
 		} finally {
 			this.setIsLoading(false);
 		}
