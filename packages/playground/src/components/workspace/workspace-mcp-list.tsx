@@ -52,6 +52,7 @@ interface ProjectDependency {
 	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
 	engine_global?: boolean;
 	access_permission?: number;
+	tags: string; // comma separated tags
 }
 
 /**
@@ -166,6 +167,8 @@ export const WorkspaceMCPList = ({
 			) {
 				throw new Error("Failed to request access");
 			}
+			toast.success(`Requested access to ${m.engine_name}`);
+			getDependencies.refresh();
 		} catch {
 			toast.error("Failed to request access");
 		}
@@ -292,9 +295,9 @@ export const WorkspaceMCPList = ({
 									{m.description ||
 										"No description available."}
 								</div>
-								{true && (
+								{m.tags?.length && (
 									<div className="flex flex-wrap gap-1">
-										{["TODO", "Tags"].map((tag) => (
+										{m.tags.split(",").map((tag) => (
 											<Badge
 												key={tag}
 												variant="secondary"
