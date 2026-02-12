@@ -147,7 +147,7 @@ export const ToolField = ({
 							placeholder={`Enter ${displayName}`}
 							rows={4}
 							className="w-full"
-							disabled={disabled}
+							readOnly={disabled}
 						/>
 						{fieldSchema.description && (
 							<p className="text-muted-foreground text-sm">
@@ -176,7 +176,7 @@ export const ToolField = ({
 						onChange={(e) => onChange(e.target.value)}
 						placeholder={`Enter ${displayName}`}
 						className="w-full"
-						disabled={disabled}
+						readOnly={disabled}
 					/>
 					{fieldSchema.description && (
 						<p className="text-muted-foreground text-sm">
@@ -184,9 +184,9 @@ export const ToolField = ({
 						</p>
 					)}
 				</div>
-				// Numeric fields (number or integer)
 			);
 
+		// Numeric fields (number or integer)
 		case "number":
 		case "integer":
 			return (
@@ -213,7 +213,7 @@ export const ToolField = ({
 						min={fieldSchema.minimum}
 						max={fieldSchema.maximum}
 						className="w-full"
-						disabled={disabled}
+						readOnly={disabled}
 					/>
 					{fieldSchema.description && (
 						<p className="text-muted-foreground text-sm">
@@ -285,7 +285,7 @@ export const ToolField = ({
 						placeholder="Enter comma-separated values"
 						rows={2}
 						className="w-full"
-						disabled={disabled}
+						readOnly={disabled}
 					/>
 					{fieldSchema.description && (
 						<p className="text-muted-foreground text-sm">
