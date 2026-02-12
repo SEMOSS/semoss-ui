@@ -843,8 +843,7 @@ export class RoomStore {
 
 		// ensure only images move forward from here
 		const isUploadedImage = (m) => {
-			if (m.mimeType) return m.mimeType.startsWith("image/");
-			return /\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(m.fileName);
+			return this._theme.uploadedFiles ? /\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(m.fileName) : true;
 		};
 
 		const uploadedImages = uploaded.filter(isUploadedImage);

@@ -76,6 +76,7 @@ export class RootStore {
 				tokenLength: TOKEN_LENGTH,
 			},
 			defaultTools: [],
+			uploadedFiles: []
 		},
 	};
 
@@ -197,6 +198,7 @@ export class RootStore {
 					].map((tool) => [tool.id, tool]),
 				).values(),
 			],
+			uploadedFiles: theme?.uploadedFiles || this._store.theme.uploadedFiles || []
 		};
 
 		// apply the theme to document root
