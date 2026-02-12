@@ -117,5 +117,7 @@ export interface ThemeMap {
 			/** Name of the mcp */
 			name: string;
 		}[];
+
+		uploadedFiles?: string[];
 	};
 }
