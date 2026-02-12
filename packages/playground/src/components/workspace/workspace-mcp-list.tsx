@@ -19,6 +19,7 @@ import {
 } from "@semoss/ui/next";
 import { mcpToPlatformUrl } from "@/components";
 import type { WorkspaceWithMCPData } from "@/types";
+import { toSentenceCase } from "@/utility";
 
 interface WorkspaceMCPListProps {
 	/**
@@ -173,7 +174,7 @@ export const WorkspaceMCPList = ({
 											variant="outline"
 											className="w-fit"
 										>
-											{m.type}
+											{toSentenceCase(m.type)}
 										</Badge>
 
 										{m.permission === "NONE" ? (
@@ -191,10 +192,7 @@ export const WorkspaceMCPList = ({
 												variant={permissionColor}
 												className="w-fit"
 											>
-												{m.permission?.replace(
-													"_",
-													" ",
-												)}
+												{toSentenceCase(m.permission)}
 											</Badge>
 										)}
 									</div>
