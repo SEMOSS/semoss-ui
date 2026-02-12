@@ -162,15 +162,9 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 					seriesIdx++
 				) {
 					if (
-						resultData["series"][seriesIdx] !== undefined &&
-						Object.hasOwn(
-							resultData["series"][seriesIdx],
-							"data",
-						) &&
-						!Object.hasOwn(
-							resultData["series"][seriesIdx],
-							"toggleTrendLineObject",
-						)
+						resultData["series"][seriesIdx] &&
+						Object.hasOwn(resultData["series"][seriesIdx], "data") &&
+						!Object.hasOwn(resultData["series"][seriesIdx], "toggleTrendLineObject")
 					) {
 						resultData["series"][seriesIdx]["data"] =
 							frameData.data?.values?.map((item) => null); // Set to null directly

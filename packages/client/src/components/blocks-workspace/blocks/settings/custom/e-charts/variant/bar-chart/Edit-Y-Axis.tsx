@@ -90,19 +90,19 @@ export const EditYAxis = observer(
 		const storedValue = initialXAxisNameRef.current;
 		//Initial y axis state for maintaining, restoring y axis fields
 		const INITIAL_YAXIS_STATE = {
-			showAxis: true, //yaxis show/hide
-			yaxistitle: storedValue, //y axis title value
-			showAxisTitle: true, // yaxis title hide/show
-			yaxisTitleFontSize: 12, // yaxis title fontsize
-			showYAxisLineTicks: false, // show/hide y axis ticks
-			showYAxisLabels: true, // show/hide y axis labels
-			labelFontSize: 12, // to change label font size
-			rotate: 0, // to rotate label values from 0 to 360
-			rotateLabelMinValue: 0, // rotating degree min value
-			rotateLabelMaxValue: 360, // rotating degree max value
-			showYAxisZoom: true, // show y axis zoom slider
-			truncateCharCount: 0, // truncate character count for y axis title
-			axisGap: 25, // gap between axis and axis title
+			showAxis: true,
+			yaxistitle: storedValue, 
+			showAxisTitle: true, 
+			yaxisTitleFontSize: 12,
+			showYAxisLineTicks: false, 
+			showYAxisLabels: true,
+			labelFontSize: 12, 
+			rotate: 0, 
+			rotateLabelMinValue: 0,
+			rotateLabelMaxValue: 360,
+			showYAxisZoom: true,
+			truncateCharCount: 0,
+			axisGap: 25,
 		};
 
 		const [yaxisState, setYaxisState] = useState(INITIAL_YAXIS_STATE);
