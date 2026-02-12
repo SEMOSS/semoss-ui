@@ -21,6 +21,9 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Markdown,
+	ScrollArea,
+	ScrollBar,
+	Table,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -157,6 +160,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						</div>
 					);
 				},
+				table: ({ ...props }) => (
+					<ScrollArea className="w-full">
+						<ScrollBar orientation="horizontal"></ScrollBar>
+						<Table {...props} />
+					</ScrollArea>
+				),
 			};
 		}, []);
 
