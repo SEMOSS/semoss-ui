@@ -76,7 +76,13 @@ export const DatabaseWizardLoadFromCSV: React.FC<
 			</Button>
 			<div className="flex flex-col gap-2">
 				<Label htmlFor={csvSqlId}>SQL Preview</Label>
-				<Textarea id={csvSqlId} rows={6} value={schemaSql} readOnly />
+				<Textarea
+					id={csvSqlId}
+					rows={6}
+					value={schemaSql}
+					readOnly
+					className="max-h-40 overflow-y-auto"
+				/>
 				<Button
 					variant="default"
 					onClick={onExecuteSql}

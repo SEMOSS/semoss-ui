@@ -141,6 +141,7 @@ export const DatabaseWizardCreateFromNL: React.FC<
 					rows={6}
 					value={schemaSql}
 					readOnly
+					className="max-h-40 overflow-y-auto"
 				/>
 				<Button
 					variant="default"

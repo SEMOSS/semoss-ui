@@ -47,7 +47,12 @@ export const DatabaseWizardManageAndQuery: React.FC<
 			</div>
 			<div className="flex flex-col gap-2">
 				<Label>Latest schema</Label>
-				<Textarea rows={6} value={schemaSql} readOnly />
+				<Textarea
+					rows={4}
+					value={schemaSql}
+					readOnly
+					className="max-h-40 overflow-y-auto"
+				/>
 				<Button variant="outline" onClick={onRefreshSchema}>
 					Refresh schema
 				</Button>

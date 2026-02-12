@@ -30,7 +30,7 @@ import {
 	DATABASE_CONNECTION,
 } from "./database.constants";
 import { DatabaseForm } from "./database-form";
-import { DatabaseWizardDialog } from "./wizard/DatabaseWizardDialog";
+import { DatabaseWizardCreatePanel } from "./wizard/DatabaseWizardCreatePanel";
 
 interface database {
 	fields: [];
@@ -121,10 +121,13 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
-	const [isDatabaseWizardOpen, setIsDatabaseWizardOpen] = useState(false);
 	const [filedata, setFiledata] = useState(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
-	const wizard = useDatabaseWizard();
+	const wizard = useDatabaseWizard({
+		mode: "catalog",
+		onDatabaseCreated: (databaseId) =>
+			navigate(`/engine/database/${databaseId}`),
+	});
 
 	const DatabaseOptions = DATABASE_CONNECTION;
 	const CategoryDescription = CATEGORY_DESCRIPTIONS;
@@ -133,17 +136,10 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	const pageDescription =
 		"In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape.";
 
-	const tabLabels = useMemo(() => ["Connections", "File Uploads"], []);
-	const allDatabases = useMemo(() => {
-		return [
-			...(DatabaseOptions.Connections || []),
-			...(DatabaseOptions["File Uploads"] || []),
-		];
-	}, [DatabaseOptions]);
-
-	const DatabasesForTab = useMemo(() => {
-		return DatabaseOptions[tabLabels[selectedTab]] || [];
-	}, [selectedTab, tabLabels, DatabaseOptions, allDatabases]);
+	const tabLabels = useMemo(
+		() => ["Connections", "File Uploads", "Wizard"],
+		[],
+	);
 
 	if (loading) {
 		return (
@@ -288,12 +284,19 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 		setIsFileUploadModalOpen(flag);
 	};
 
-	const handleDatabaseWizardClick = (flag: boolean) => {
-		setIsDatabaseWizardOpen(flag);
-		if (flag) {
-			wizard.actions.listDatabases();
-			wizard.actions.listLlms();
+	const renderTabContent = (label: string) => {
+		if (label === "Wizard") {
+			return (
+				<DatabaseWizardCreatePanel
+					isLoading={wizard.state.isLoading}
+					databaseName={wizard.state.databaseName}
+					onDatabaseNameChange={wizard.setters.setDatabaseName}
+					onCreateDatabase={wizard.actions.createDatabase}
+				/>
+			);
 		}
+		const databasesForTab = DatabaseOptions[label] || [];
+		return renderDatabaseGrid(databasesForTab);
 	};
 
 	return (
@@ -374,58 +377,6 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 				</DialogContent>
 			</Dialog>
 
-			<Dialog
-				open={isDatabaseWizardOpen}
-				onOpenChange={setIsDatabaseWizardOpen}
-			>
-				<DatabaseWizardDialog
-					step={wizard.state.step}
-					isLoading={wizard.state.isLoading}
-					databaseName={wizard.state.databaseName}
-					databases={wizard.state.databases}
-					llms={wizard.state.llms}
-					schemaSql={wizard.state.schemaSql}
-					querySql={wizard.state.querySql}
-					schemaJson={wizard.state.schemaJson}
-					csvPreview={wizard.state.csvPreview}
-					selectedDatabaseId={wizard.state.currentDatabaseId}
-					selectedLlmId={wizard.state.selectedLlmId}
-					includeSampleData={wizard.state.includeSampleData}
-					sampleRowCount={wizard.state.sampleRowCount}
-					onClose={() => setIsDatabaseWizardOpen(false)}
-					onBack={() =>
-						wizard.setters.setStep(
-							wizard.state.step === "actions"
-								? "select"
-								: "actions",
-						)
-					}
-					onSelectStep={(nextStep) =>
-						wizard.setters.setStep(nextStep)
-					}
-					onDatabaseNameChange={wizard.setters.setDatabaseName}
-					onSelectDatabase={wizard.actions.selectDatabase}
-					onCreateDatabase={wizard.actions.createDatabase}
-					onDeleteDatabase={wizard.actions.deleteDatabase}
-					onLoadSchema={() => wizard.actions.refreshSchema()}
-					onDescriptionChange={wizard.setters.setDescription}
-					onSelectLlm={wizard.setters.setSelectedLlmId}
-					onIncludeSampleDataChange={
-						wizard.setters.setIncludeSampleData
-					}
-					onSampleRowCountChange={wizard.setters.setSampleRowCount}
-					onGenerateSchema={wizard.actions.generateSchemaFromNl}
-					onSchemaJsonChange={wizard.setters.setSchemaJson}
-					onGenerateSql={wizard.actions.generateSqlFromSchema}
-					onExecuteSql={wizard.actions.executeSql}
-					onCsvFileSelected={wizard.actions.handleCsvFileSelected}
-					onTableNameChange={wizard.setters.setCsvTableName}
-					onQuerySqlChange={wizard.setters.setQuerySql}
-					onRunQuery={wizard.actions.runQuery}
-					onRefreshSchema={() => wizard.actions.refreshSchema()}
-				/>
-			</Dialog>
-
 			{selectedDatabase ? (
 				<div data-testid="database-form-wrapper">
 					<DatabaseForm
@@ -479,15 +430,6 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 							>
 								<FileUploadOutlined fontSize="medium" />
 							</Button>
-							<Button
-								size="lg"
-								variant="outline"
-								onClick={() => handleDatabaseWizardClick(true)}
-								data-testid="database-wizard-button"
-								className="h-10 rounded-lg leading-[0.75]"
-							>
-								Database Wizard
-							</Button>
 						</div>
 
 						<div className="w-full">
@@ -528,7 +470,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 										value={index.toString()}
 										className="mt-0"
 									>
-										{renderDatabaseGrid(DatabasesForTab)}
+										{renderTabContent(label)}
 									</TabsContent>
 								))}
 							</Tabs>

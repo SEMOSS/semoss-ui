@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { inferColumnTypes, parseCsvPreview } from "@/utils/databaseWizard/csv";
@@ -21,9 +21,18 @@ const defaultSchemaContract = {
 	],
 };
 
-export function useDatabaseWizard() {
+type UseDatabaseWizardOptions = {
+	mode?: "catalog" | "engine";
+	databaseId?: string;
+	onDatabaseCreated?: (databaseId: string) => void;
+};
+
+export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
+	const { mode = "catalog", databaseId, onDatabaseCreated } = options;
 	const { monolithStore } = useRootStore();
-	const [step, setStep] = useState<WizardStep>("select");
+	const [step, setStep] = useState<WizardStep>(
+		mode === "engine" ? "actions" : "select",
+	);
 	const [isLoading, setIsLoading] = useState(false);
 	const [errors, setErrors] = useState<string | null>(null);
 	const [databases, setDatabases] = useState<DatabaseSummary[]>([]);
@@ -44,6 +53,16 @@ export function useDatabaseWizard() {
 	const [csvTableName, setCsvTableName] = useState("");
 	const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
 	const [csvRows, setCsvRows] = useState<string[][]>([]);
+	const resolvedDatabaseId = databaseId || currentDatabaseId;
+
+	useEffect(() => {
+		if (databaseId) {
+			setCurrentDatabaseId(databaseId);
+		}
+		if (mode === "engine") {
+			setStep("actions");
+		}
+	}, [databaseId, mode]);
 
 	const resetErrors = useCallback(() => setErrors(null), []);
 
@@ -112,8 +131,12 @@ export function useDatabaseWizard() {
 				`Database(database=["${output.database_id}"]) | Query("<encode>DROP TABLE ${tempTableName};</encode>") | ExecQuery();`,
 			);
 			toast.success("Database created");
-			await listDatabases();
-			setStep("actions");
+			if (onDatabaseCreated) {
+				onDatabaseCreated(output.database_id);
+			} else {
+				await listDatabases();
+				setStep("actions");
+			}
 		} catch (error) {
 			const message = (error as Error).message;
 			setErrors(message);
@@ -121,11 +144,11 @@ export function useDatabaseWizard() {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [databaseName, listDatabases, resetErrors, runPixel]);
+	}, [databaseName, listDatabases, onDatabaseCreated, resetErrors, runPixel]);
 
 	const refreshSchema = useCallback(
 		async (databaseId?: string) => {
-			const targetId = databaseId || currentDatabaseId;
+			const targetId = databaseId || resolvedDatabaseId;
 			if (!targetId) return;
 			setIsLoading(true);
 			resetErrors();
@@ -149,7 +172,7 @@ export function useDatabaseWizard() {
 				setIsLoading(false);
 			}
 		},
-		[currentDatabaseId, resetErrors, runPixel],
+		[resolvedDatabaseId, resetErrors, runPixel],
 	);
 
 	const selectDatabase = useCallback(
@@ -251,11 +274,11 @@ export function useDatabaseWizard() {
 	}, [includeSampleData, schemaJson]);
 
 	const executeSql = useCallback(async () => {
-		if (!currentDatabaseId || !schemaSql.trim()) return;
+		if (!resolvedDatabaseId || !schemaSql.trim()) return;
 		setIsLoading(true);
 		resetErrors();
 		try {
-			const pixel = `Database(database=["${currentDatabaseId}"]) | Query("<encode>${schemaSql}</encode>") | ExecQuery();`;
+			const pixel = `Database(database=["${resolvedDatabaseId}"]) | Query("<encode>${schemaSql}</encode>") | ExecQuery();`;
 			await runPixel(pixel);
 			toast.success("SQL executed");
 			await refreshSchema();
@@ -266,7 +289,7 @@ export function useDatabaseWizard() {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [currentDatabaseId, refreshSchema, resetErrors, runPixel, schemaSql]);
+	}, [refreshSchema, resetErrors, resolvedDatabaseId, runPixel, schemaSql]);
 
 	const handleCsvFileSelected = useCallback(async (file: File) => {
 		const text = await file.text();
@@ -293,11 +316,11 @@ export function useDatabaseWizard() {
 	}, [csvHeaders, csvRows, csvTableName]);
 
 	const runQuery = useCallback(async () => {
-		if (!currentDatabaseId || !querySql.trim()) return;
+		if (!resolvedDatabaseId || !querySql.trim()) return;
 		setIsLoading(true);
 		resetErrors();
 		try {
-			const pixel = `Database(database=["${currentDatabaseId}"]) | Query("<encode>${querySql}</encode>") | ExecQuery();`;
+			const pixel = `Database(database=["${resolvedDatabaseId}"]) | Query("<encode>${querySql}</encode>") | ExecQuery();`;
 			await runPixel(pixel);
 			toast.success("Query executed");
 		} catch (error) {
@@ -307,7 +330,7 @@ export function useDatabaseWizard() {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [currentDatabaseId, querySql, resetErrors, runPixel]);
+	}, [querySql, resetErrors, resolvedDatabaseId, runPixel]);
 
 	const actions = useMemo(
 		() => ({

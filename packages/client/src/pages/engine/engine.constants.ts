@@ -16,6 +16,7 @@ import { EngineQueryDataPage } from "./engine-query-data-page";
 import { EngineSettingsPage } from "./engine-settingsPage";
 import { EngineSmssPage } from "./engine-smss-page";
 import { EngineUsagePage } from "./engine-usage-page";
+import { EngineWizardPage } from "./engine-wizard-page";
 
 export const ENGINE_ROUTES: {
 	/** Name of the route */
@@ -164,6 +165,12 @@ export const ENGINE_ROUTES: {
 				name: "Query",
 				path: "query",
 				component: EngineQueryDataPage,
+				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+			},
+			{
+				name: "Wizard",
+				path: "wizard",
+				component: EngineWizardPage,
 				restrict: ["EDIT", "OWNER", "READ_ONLY"],
 			},
 			{

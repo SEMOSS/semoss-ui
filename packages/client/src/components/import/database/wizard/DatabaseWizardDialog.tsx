@@ -119,7 +119,10 @@ export const DatabaseWizardDialog: React.FC<DatabaseWizardDialogProps> = (
 	props,
 ) => {
 	return (
-		<DialogContent className="w-[720px]" data-testid="database-wizard">
+		<DialogContent
+			className="w-[900px] max-w-[95vw]"
+			data-testid="database-wizard"
+		>
 			<div className="flex h-full w-full flex-col gap-4">
 				<div className="flex items-center justify-between">
 					<P
