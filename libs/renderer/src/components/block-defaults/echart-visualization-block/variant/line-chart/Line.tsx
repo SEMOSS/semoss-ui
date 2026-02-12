@@ -141,7 +141,13 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 					header.replace("Average_", ""),
 				);
 				//format the data points to match the echart specification
-				resultData["xAxis"]["data"] = valuesDataSet.map((x) => parseFloat(x[0]).toFixed(2));
+				resultData["xAxis"]["data"] = valuesDataSet
+					?.map((x) =>
+						x?.[0] !== undefined && !isNaN(parseFloat(x[0]))
+							? parseFloat(x[0]).toFixed(2)
+							: null,
+					)
+					.filter((value) => value !== null);
 				valuesDataSet.map((x) => x.shift());
 				headersDataSet.shift();
 				const yAxisListLength =
@@ -154,13 +160,15 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 						resultData["series"][index] = {};
 					}
 
-					resultData["series"][index]["data"] = valuesDataSet.map((x) => {
-						const value = x[index];
-						if (value === "NaN") {
-							return null; // Replace "NaN" with null
-						}
-						return parseFloat(value).toFixed(2); // Round to 2 decimal places
-					});
+					resultData["series"][index]["data"] = valuesDataSet.map(
+						(x) => {
+							const value = x[index];
+							if (value === null || value === undefined || value === "NaN" || isNaN(Number(value))) {
+								return null; // Replace invalid values with null
+							}
+							return parseFloat(value).toFixed(2); // Round to 2 decimal places
+						},
+					);
 					resultData["series"][index]["name"] = headersDataSet[index];
 					resultData["series"][index]["type"] = "line";
 				}
@@ -177,8 +185,8 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 				data.option["_state"]?.["fields"]["tooltip"].map((x, index) => {
 					customTooltipData.push({
 						name: x,
-						data: valuesDataSet.map((y) =>
-							parseFloat(y[index]).toFixed(2), // Round tooltip data to 2 decimal places
+						data: valuesDataSet.map(
+							(y) => parseFloat(y[index]).toFixed(2), // Round tooltip data to 2 decimal places
 						),
 					});
 				});
@@ -188,8 +196,8 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 						(x, index) => {
 							customTooltipData.push({
 								name: x,
-								data: valuesDataSet.map((y) =>
-									parseFloat(y[index]).toFixed(2), // Round tooltip data to 2 decimal places
+								data: valuesDataSet.map(
+									(y) => parseFloat(y[index]).toFixed(2), // Round tooltip data to 2 decimal places
 								),
 							});
 						},

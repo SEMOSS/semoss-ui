@@ -100,6 +100,15 @@ interface AccordionSection {
 	};
 }
 
+// Define the type for droppedColumns
+interface DroppedColumns {
+    [key: string]: {
+        values: string[];
+        dataType: string[];
+    };
+}
+
+
 //data tab left section to show the data tab and the drag area for the selected columns
 export const FrameOperations = observer(
 	<D extends BlockDef = BlockDef>({
@@ -1769,8 +1778,8 @@ export const FrameOperations = observer(
 			setDroppedColumns(updated);
 		};
 		const deleteDroppedColumn = (columnName: string) => {
-			setDroppedColumns((prev) => {
-				const updated = { ...prev };
+			setDroppedColumns((prev: DroppedColumns) => {
+				const updated: DroppedColumns = { ...prev };
 				for (const key in updated) {
 					const index = updated[key]["values"].indexOf(columnName);
 					if (index !== -1) {
