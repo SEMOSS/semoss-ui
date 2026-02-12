@@ -1,8 +1,9 @@
-import { ChevronDown, ChevronUp } from "lucide-react";
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { FileDropzone } from "@semoss/ui";
 import {
 	Button,
 	Collapsible,
@@ -25,6 +26,7 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { uploadFile } from "@/api";
 import { useRootStore, useStepper } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
@@ -60,11 +62,17 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		importableModelsCategory,
 	} = props;
 
-	const { monolithStore } = useRootStore();
+	const { monolithStore, configStore } = useRootStore();
 	const navigate = useNavigate();
 	const { isLoading, setIsLoading } = useStepper();
 
 	const [advancedOpen, setAdvancedOpen] = useState(false);
+	const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+	const debounceTimeoutsRef = useRef<
+		Record<string, ReturnType<typeof setTimeout>>
+	>({});
+	const [isValidDatabaseName, setIsValidDatabaseName] =
+		useState<boolean>(false);
 
 	// prepare default values from fields + advanced
 	const {
@@ -73,6 +81,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		reset,
 		setError,
 		clearErrors,
+		setFocus,
 		trigger,
 		formState: { isValid },
 	} = useForm({
@@ -122,10 +131,46 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		reset(defaults);
 	}, [fields, advanced, reset, name]);
 
-	const onSubmit = (data: Record<string, unknown>) => {
-		const pixel = `CreateModelEngine(model=["${
-			data.NAME
-		}"],modelDetails=[${JSON.stringify(data)}])`;
+	const getHelperText = (error, val) => {
+		if (!error) return val.helperText || "";
+		if (typeof error === "string") return error;
+		if (error?.message) return error.message;
+		if (error.type === "checkField" && val.rules?.custom?.message) {
+			return val.rules.custom.message;
+		}
+		return "";
+	};
+
+	const onSubmit = async (data: Record<string, unknown>) => {
+		const { FILE, ...newFormData } = data;
+
+		setIsLoading(true);
+		let pixel = `CreateModelEngine(model=["${
+			newFormData.NAME
+		}"],modelDetails=[${JSON.stringify(newFormData)}])`;
+
+		if (FILE !== "" && FILE !== undefined) {
+			try {
+				const uploadedFiles = await uploadFile(
+					FILE as File[],
+					configStore.store.insightID,
+				);
+
+				if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
+					toast.error("Upload failed or returned invalid response.");
+					setIsLoading(false);
+					return;
+				}
+				pixel = pixel.replace(
+					")",
+					`,filePaths=["${uploadedFiles[0].fileLocation}"])`,
+				);
+			} catch {
+				toast.error("Upload failed or returned invalid response.");
+				setIsLoading(false);
+				return;
+			}
+		}
 
 		// debugger;
 		monolithStore.runQuery(pixel).then(async (response) => {
@@ -144,6 +189,80 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		});
 
 		if (onComplete) onComplete(data);
+	};
+
+	
+	// Helper functions for file upload
+	const onFileUpload = (
+		files: File | File[],
+		fieldOnChange: (value: File[]) => void,
+		currentValue: File | File[],
+	) => {
+		const fileArray = Array.isArray(files) ? files : [files];
+
+		// Get current files from field value
+		const currentFiles = Array.isArray(currentValue)
+			? currentValue
+			: currentValue
+				? [currentValue]
+				: [];
+		const existingFileNames = currentFiles.map((f: File) => f.name);
+		const newFiles = fileArray.filter(
+			(f) => !existingFileNames.includes(f.name),
+		);
+		const combined = [...currentFiles, ...newFiles];
+
+		// Update form value with validation
+		fieldOnChange(combined);
+	};
+
+	const removeFile = (
+		index: number,
+		fieldOnChange: (value: File[]) => void,
+		currentValue: File | File[],
+	) => {
+		const currentFiles = Array.isArray(currentValue)
+			? currentValue
+			: currentValue
+				? [currentValue]
+				: [];
+		const updated = currentFiles.filter((_, i) => i !== index);
+
+		// Update form value with validation
+		fieldOnChange(updated);
+	};
+
+	const handleFileChange = (
+		e: React.ChangeEvent<HTMLInputElement>,
+		fieldOnChange: (value: File[]) => void,
+		currentValue: File | File[],
+	) => {
+		const files = e.target.files;
+		if (files && files?.length > 0) {
+			const fileArray = Array.from(files);
+			onFileUpload(fileArray, fieldOnChange, currentValue);
+		}
+		// Reset input value to allow re-selecting the same file
+		e.target.value = "";
+	};
+
+	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+	};
+
+	const handleDrop = (
+		e: React.DragEvent<HTMLDivElement>,
+		fieldOnChange: (value: File[]) => void,
+		currentValue: File | File[],
+	) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const files = e.dataTransfer.files;
+		if (files && files?.length > 0) {
+			const fileArray = Array.from(files);
+			onFileUpload(fileArray, fieldOnChange, currentValue);
+		}
 	};
 
 	const renderField = (f: FieldDefinition) => {
@@ -176,7 +295,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 						/>
 					)}
 				/>
-			);
+		);
 		}
 
 		const validateFormField = async (
@@ -199,16 +318,11 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 			//if the name already exists then the engine name is not valid
 			if (output.exists) {
-				// setFocus(field.fieldName);
-				//Using the field key (not label) for errors and helper text, and setting errors with the correct key.
-				setError(field.key, {
-					message: field.rules.custom_rules.message,
-					type: "checkField",
-				});
+				setFocus(field.fieldName);
+				setIsValidDatabaseName(true);
 				return false;
-			} else {
-				clearErrors(field.key);
 			}
+			setIsValidDatabaseName(false);
 
 			return true;
 		};
@@ -219,60 +333,8 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 				name={f.key}
 				control={control}
 				defaultValue={defaultVal}
-				//rules={{ required: f.required }}
 				rules={{
 					required: f.required,
-					validate: {
-						...(f.rules?.custom_rules
-							? {
-									checkField: async (fieldVal) => {
-										// Skip validation if not needed
-										if (!_lastField.current.runValidate)
-											return true;
-										try {
-											// Run validation only if criteria match
-											if (
-												_lastField.current
-													.lastFocussedField ===
-													f.key &&
-												_lastField.current
-													.lastValidatedValue !==
-													fieldVal
-											) {
-												const isValid =
-													await validateFormField(
-														f,
-														fieldVal,
-													); // must await
-												return (
-													isValid ||
-													f.rules.custom_rules.message
-												);
-											}
-
-											return true; // default valid
-										} catch (err) {
-											console.error(
-												"Validation error:",
-												err,
-											);
-											return (
-												f.rules.custom_rules.message ||
-												"Validation failed."
-											);
-										} finally {
-											_lastField.current.runValidate = false;
-										}
-									},
-								}
-							: {}),
-					},
-					pattern: {
-						...(f.rules?.pattern && {
-							value: f.rules?.pattern.value,
-							message: f.rules?.pattern.message,
-						}),
-					},
 				}}
 				render={({
 					field: { ref, ...field },
@@ -294,72 +356,208 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									<Input
 										id={f.key}
 										value={field.value ?? ""}
-										onChange={(e) =>
-											field.onChange(e.target.value)
+										onChange={(v) => {
+										field.onChange(v);
+										if (f.rules?.custom_rules) {
+											if (
+												debounceTimeoutsRef.current[
+													f.key
+												]
+											) {
+												clearTimeout(
+													debounceTimeoutsRef.current[
+														f.key
+													],
+												);
+											}
+											debounceTimeoutsRef.current[f.key] =
+												setTimeout(async () => {
+													const value =
+														v.target.value;
+													if (value === "") {
+														setError(f.key, {});
+														return;
+													}
+													if (
+														!f.rules.pattern.value.test(
+															value,
+														)
+													) {
+														setError(f.key, {
+															message:
+																f.rules.pattern
+																	.message ||
+																"Invalid characters in input.",
+														});
+														return;
+													}
+													const isValid =
+														await validateFormField(
+															f,
+															value,
+														);
+													if (!isValid) {
+														setError(f.key, {
+															message:
+																f.rules
+																	?.custom_rules
+																	?.message ||
+																"Invalid value.",
+														});
+													} else {
+														clearErrors(f.key);
+													}
+												}, 300);
 										}
+									}}
 										disabled={f.disabled || isLockedModel}
 										autoComplete="off"
 										data-testId={formatToDataTestId(
 											`importForm-${f.label}-textField`,
 										)}
-										onFocus={() => {
-											_lastField.current = {
-												..._lastField.current,
-												lastFocussedField: field.name,
-												lastFocussedValue: field.value,
-												lastValidatedValue: field.value,
-											};
-										}}
-										onBlur={() => {
-											if (f.rules?.custom_rules) {
-												_lastField.current.runValidate = true;
-												trigger(field.name);
-											}
-										}}
 									/>
-									{f.helperText && !error && (
-										<FieldDescription>
-											{f.helperText}
-										</FieldDescription>
-									)}
+									<FieldDescription className={errors?.[f.key] ? "text-destructive" : ""}>
+										{getHelperText(errors?.[f.key], f)}
+									</FieldDescription>
 								</Field>
 							);
 						case "file-upload":
-							return (
+						return (
+							<div
+								className="flex flex-col gap-2"
+								data-testid={`function-form-field-${f.key}`}
+							>
+								<P>
+									{f.label}
+									{f.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</P>
 								<div
-									key={f.key}
-									className="flex h-full w-full flex-col gap-2"
+									className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
+									onClick={() =>
+										fileInputRefs.current[f.key]?.click()
+									}
+									onDragOver={handleDragOver}
+									onDrop={(e) =>
+										handleDrop(
+											e,
+											field.onChange,
+											field.value,
+										)
+									}
 								>
-									<P
-										data-testid={`model-import-form-${f.label}-file-upload`}
-									>
-										{f.label}
-									</P>
-									<FileDropzone
-										multiple={false}
-										value={
-											field.value as File | File[] | null
-										}
-										disabled={false}
-										data-testid={formatToDataTestId(
-											`importForm-${field.name}-fileDropZone`,
-										)}
-										onChange={(newValues) => {
-											const files = newValues as
-												| File
-												| File[];
-											field.onChange(files);
-											_lastField.current = {
-												..._lastField.current,
-												lastFocussedField: f.value,
-												lastFocussedValue: String(
-													field.value ?? "",
-												),
-											};
+									<input
+										ref={(el) => {
+											fileInputRefs.current[f.key] = el;
 										}}
+										type="file"
+										accept={
+											(
+												f.options as {
+													extensions?: string[];
+												}
+											)?.extensions?.join(",") || "*"
+										}
+										multiple={false}
+										className="hidden"
+										onChange={(e) =>
+											handleFileChange(
+												e,
+												field.onChange,
+												field.value,
+											)
+										}
+										disabled={f.disabled}
+										data-testid={`function-form-input-${f.key}`}
 									/>
+									<div className="text-center">
+										<P className="font-medium text-foreground">
+											Drop your file here or click to
+											browse
+										</P>
+										<P className="text-muted-foreground text-sm">
+											{(
+												f.options as {
+													extensions?: string[];
+												}
+											)?.extensions
+												? `Supports ${(f.options as { extensions?: string[] }).extensions.join(", ")} files`
+												: "All file types supported"}
+										</P>
+									</div>
 								</div>
-							);
+
+								{/* File List */}
+								{field.value &&
+									Array.isArray(field.value) &&
+									field.value.length > 0 && (
+										<div className="mt-2 flex flex-col gap-2">
+											<P className="font-medium text-foreground text-sm">
+												{field.value.length} file(s)
+												selected:
+											</P>
+											<div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
+												{field.value.map((file, index) => (
+													<div
+														key={`${file.name}-${index}`}
+														className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
+														data-testid={`uploaded-file-item-${index}`}
+													>
+														<div className="flex min-w-0 flex-1 items-center gap-2">
+															<div className="min-w-0 flex-1">
+																<P className="truncate text-foreground text-sm">
+																	{file.name}
+																</P>
+																<P className="text-muted-foreground text-xs">
+																	{(
+																		file.size /
+																		1024
+																	).toFixed(
+																		2,
+																	)}{" "}
+																	KB
+																</P>
+															</div>
+														</div>
+														<Button
+															type="button"
+															variant="ghost"
+															size="icon"
+															onClick={(e) => {
+																e.stopPropagation();
+																removeFile(
+																	index,
+																	field.onChange,
+																	field.value,
+																);
+															}}
+															className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+															data-testid={`remove-file-btn-${index}`}
+														>
+															<X className="size-4" />
+														</Button>
+													</div>
+												))}
+											</div>
+										</div>
+									)}
+
+								{error && (
+									<P
+										className="text-destructive text-sm"
+										data-testid={`function-form-error-${f.key}`}
+									>
+										{error.message ||
+											(f.rules?.pattern?.message ??
+												f.helperText)}
+									</P>
+								)}
+							</div>
+						);
 						case "url":
 							return (
 								<Field>
@@ -644,7 +842,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 					variant="default"
 					className="flex w-[147px] items-center gap-2 px-4 py-2"
 					type="submit"
-					disabled={isLoading || !isValid}
+					disabled={isLoading || !isValid || isValidDatabaseName}
 				>
 					Connect
 				</Button>
