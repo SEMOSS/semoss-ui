@@ -51,6 +51,7 @@ interface ProjectDependency {
 	engine_discoverable?: boolean;
 	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
 	engine_global?: boolean;
+	access_permission?: number;
 }
 
 /**
@@ -80,27 +81,74 @@ export const WorkspaceMCPList = ({
 	);
 
 	const searchedMCP = useMemo(() => {
+		const dataWithType =
+			getDependencies.data?.filter((m) =>
+				type === "TOOLBOX"
+					? m.engine_type !== "VECTOR"
+					: m.engine_type === "VECTOR",
+			) || [];
 		if (!search) {
-			return getDependencies.data || [];
+			return dataWithType;
 		}
-		return (
-			getDependencies.data?.filter(
-				(m) =>
-					m.engine_id.toLowerCase().includes(search.toLowerCase()) ||
-					m.engine_name.toLowerCase().includes(search.toLowerCase()),
-			) || []
+		return dataWithType.filter(
+			(m) =>
+				m.engine_id.toLowerCase().includes(search.toLowerCase()) ||
+				m.engine_name.toLowerCase().includes(search.toLowerCase()),
 		);
-	}, [getDependencies.data, search]);
+	}, [getDependencies.data, search, type]);
 
 	if (searchedMCP.length === 0) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
 				<Muted>
-					No {type === "TOOLBOX" ? "toolboxes" : "knowledge"} found
+					No{" "}
+					{type === "TOOLBOX" ? "toolboxes" : "knowledge libraries"}{" "}
+					found
 				</Muted>
 			</div>
 		);
 	}
+
+	const getEffectivePermission = (
+		m: ProjectDependency,
+	): {
+		effectivePermission:
+			| "READ_ONLY"
+			| "EDIT"
+			| "OWNER"
+			| "REQUESTED"
+			| "DISCOVERABLE"
+			| "FULLY_PRIVATE";
+		label: string;
+	} => {
+		if (m.permission_name) {
+			return {
+				effectivePermission: m.permission_name,
+				label: toSentenceCase(m.permission_name),
+			};
+		} else if (m.engine_global) {
+			return {
+				effectivePermission: "READ_ONLY",
+				label: toSentenceCase("READ_ONLY"),
+			};
+		} else if (m.engine_discoverable) {
+			if (typeof m.access_permission === "number") {
+				return {
+					effectivePermission: "REQUESTED",
+					label: "Access requested",
+				};
+			} else {
+				return {
+					effectivePermission: "DISCOVERABLE",
+					label: "Request access",
+				};
+			}
+		}
+		return {
+			effectivePermission: "FULLY_PRIVATE",
+			label: "No access",
+		};
+	};
 
 	const handleRequestAccess = async (m: ProjectDependency) => {
 		try {
@@ -127,24 +175,18 @@ export const WorkspaceMCPList = ({
 		<ScrollArea className="h-full w-full">
 			<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
 				{searchedMCP.map((m) => {
-					const permissionColor = ({
-						OWNER: "default",
-						EDIT: "secondary",
-						READ_ONLY: "outline",
-					}[m.permission_name] ?? "destructive") as
-						| "default"
-						| "secondary"
-						| "outline"
-						| "destructive";
-
-					const noDataShown =
-						!m.permission_name && !m.engine_discoverable;
-
+					const { effectivePermission, label } =
+						getEffectivePermission(m);
+					const accessMissing =
+						effectivePermission === "REQUESTED" ||
+						effectivePermission === "DISCOVERABLE" ||
+						effectivePermission === "FULLY_PRIVATE";
+					console.log(m.engine_name, effectivePermission);
 					return (
 						<Card
 							key={m.engine_id}
 							className={`col-span-1 p-0 ${
-								!m.permission_name
+								accessMissing
 									? "border-destructive/50 border-dashed"
 									: ""
 							}`}
@@ -155,7 +197,7 @@ export const WorkspaceMCPList = ({
 									<div className="wrap-break-word min-w-0 flex-1 font-semibold text-sm leading-tight">
 										{m.engine_name}
 									</div>
-									{noDataShown ? (
+									{accessMissing ? (
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<AlertCircle className="size-4 shrink-0 cursor-help text-destructive" />
@@ -184,7 +226,7 @@ export const WorkspaceMCPList = ({
 								{/* Image & Details */}
 								<div className="flex items-center gap-3">
 									{/* Image Placeholder */}
-									{noDataShown ? (
+									{effectivePermission === "FULLY_PRIVATE" ? (
 										<div className="flex size-16 shrink-0 items-center justify-center rounded-md border border-border border-dashed bg-muted/50">
 											<ImageIcon className="size-6 text-muted-foreground" />
 										</div>
@@ -210,8 +252,8 @@ export const WorkspaceMCPList = ({
 											{toSentenceCase(m.engine_type)}
 										</Badge>
 
-										{!m.permission_name &&
-										m.engine_discoverable ? (
+										{effectivePermission ===
+										"DISCOVERABLE" ? (
 											<Button
 												size="sm"
 												className="h-fit w-fit px-2 py-1 text-xs"
@@ -223,12 +265,23 @@ export const WorkspaceMCPList = ({
 											</Button>
 										) : (
 											<Badge
-												variant={permissionColor}
+												variant={
+													{
+														OWNER: "default",
+														EDIT: "secondary",
+														READ_ONLY: "outline",
+														REQUESTED: "outline",
+														FULLY_PRIVATE:
+															"destructive",
+													}[effectivePermission] as
+														| "default"
+														| "secondary"
+														| "outline"
+														| "destructive"
+												}
 												className="w-fit"
 											>
-												{toSentenceCase(
-													m.permission_name,
-												) ?? "No Access"}
+												{label}
 											</Badge>
 										)}
 									</div>
