@@ -32,7 +32,7 @@ import logoImage from "@/assets/img/logo.svg";
 import { WorkspaceChatList, WorkspaceMCPList } from "@/components";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/use-chat";
-import type { WorkspaceWithMCPData } from "@/types";
+import type { Workspace } from "@/types";
 
 /**
  * Renders the Workspace Detail Page, displaying information about a specific workspace
@@ -53,7 +53,7 @@ export const WorkspaceDetailPage = observer(() => {
 	const debouncedSearch = useDebouncedValue(search);
 
 	// Fetch workspace details
-	const getWorkspace = usePixel<WorkspaceWithMCPData>(
+	const getWorkspace = usePixel<Workspace>(
 		workspaceId
 			? `GetWorkspace(workspaceId=["${workspaceId}"], dependencyMetadata=true);`
 			: "",
@@ -232,9 +232,7 @@ export const WorkspaceDetailPage = observer(() => {
 						{tab === "knowledge" && (
 							<WorkspaceMCPList
 								type="KNOWLEDGE"
-								mcp={getWorkspace.data?.mcp.filter(
-									(mcp) => mcp.type === "VECTOR",
-								)}
+								workspaceId={workspaceId}
 								search={debouncedSearch}
 							/>
 						)}
@@ -246,9 +244,7 @@ export const WorkspaceDetailPage = observer(() => {
 						{tab === "toolbox" && (
 							<WorkspaceMCPList
 								type="TOOLBOX"
-								mcp={getWorkspace.data?.mcp.filter(
-									(mcp) => mcp.type !== "VECTOR",
-								)}
+								workspaceId={workspaceId}
 								search={debouncedSearch}
 							/>
 						)}

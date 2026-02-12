@@ -4,7 +4,7 @@ import {
 	SquareArrowOutUpRightIcon,
 } from "lucide-react";
 import { useMemo } from "react";
-import { useInsight } from "@semoss/sdk/react";
+import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -18,24 +18,39 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { mcpToPlatformUrl } from "@/components";
-import type { WorkspaceWithMCPData } from "@/types";
 import { toSentenceCase } from "@/utility";
 
-interface WorkspaceMCPListProps {
+export interface WorkspaceMCPListProps {
 	/**
 	 * Type of mcp
 	 */
 	type: "TOOLBOX" | "KNOWLEDGE";
 
 	/**
-	 * MCPs associated with the workspace
+	 * WorkspaceId
 	 */
-	mcp: WorkspaceWithMCPData["mcp"];
+	workspaceId: string;
 
 	/**
 	 * Search the mcps by name
 	 */
 	search: string;
+}
+
+interface ProjectDependency {
+	engine_type:
+		| "PROJECT"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "MODEL"
+		| "VECTOR";
+	engine_id: string;
+	engine_name: string;
+	description?: string;
+	engine_discoverable?: boolean;
+	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	engine_global?: boolean;
 }
 
 /**
@@ -45,19 +60,37 @@ interface WorkspaceMCPListProps {
  */
 export const WorkspaceMCPList = ({
 	type,
-	mcp = [],
+	workspaceId,
 	search,
 }: WorkspaceMCPListProps) => {
 	const { actions } = useInsight();
 
+	const getDependencies = usePixel<ProjectDependency[]>(
+		workspaceId
+			? `GetProjectDependencies(project=["${workspaceId}"]);`
+			: "",
+		{
+			data: null,
+			onError: (_d, e) => {
+				toast.error(
+					`Failed to load workspace resources: ${e instanceof Error ? e.message : "Unknown error"}`,
+				);
+			},
+		},
+	);
+
 	const searchedMCP = useMemo(() => {
 		if (!search) {
-			return mcp;
+			return getDependencies.data || [];
 		}
-		return mcp.filter((m) =>
-			m.name.toLowerCase().includes(search.toLowerCase()),
+		return (
+			getDependencies.data?.filter(
+				(m) =>
+					m.engine_id.toLowerCase().includes(search.toLowerCase()) ||
+					m.engine_name.toLowerCase().includes(search.toLowerCase()),
+			) || []
 		);
-	}, [mcp, search]);
+	}, [getDependencies.data, search]);
 
 	if (searchedMCP.length === 0) {
 		return (
@@ -69,16 +102,14 @@ export const WorkspaceMCPList = ({
 		);
 	}
 
-	const handleRequestAccess = async (
-		m: WorkspaceWithMCPData["mcp"][number],
-	) => {
+	const handleRequestAccess = async (m: ProjectDependency) => {
 		try {
 			const response = await actions.run(
-				m.type === "PROJECT"
+				m.engine_type === "PROJECT"
 					? `RequestProject(project=${JSON.stringify(
-							m.id,
+							m.engine_id,
 						)}, permission=${JSON.stringify("READ_ONLY")})`
-					: `RequestEngine(engine=${JSON.stringify(m.id)}, permission=${JSON.stringify("READ_ONLY")})`,
+					: `RequestEngine(engine=${JSON.stringify(m.engine_id)}, permission=${JSON.stringify("READ_ONLY")})`,
 			);
 			if (
 				response.pixelReturn.some((r) =>
@@ -96,22 +127,24 @@ export const WorkspaceMCPList = ({
 		<ScrollArea className="h-full w-full">
 			<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
 				{searchedMCP.map((m) => {
-					const permissionColor = {
+					const permissionColor = ({
 						OWNER: "default",
 						EDIT: "secondary",
 						READ_ONLY: "outline",
-						NONE: "destructive",
-					}[m.permission] as
+					}[m.permission_name] ?? "destructive") as
 						| "default"
 						| "secondary"
 						| "outline"
 						| "destructive";
 
+					const noDataShown =
+						!m.permission_name && !m.engine_discoverable;
+
 					return (
 						<Card
-							key={m.id}
+							key={m.engine_id}
 							className={`col-span-1 p-0 ${
-								m.permission === "NONE"
+								!m.permission_name
 									? "border-destructive/50 border-dashed"
 									: ""
 							}`}
@@ -120,9 +153,9 @@ export const WorkspaceMCPList = ({
 								{/* Title & Open Button */}
 								<div className="flex items-start justify-between gap-2">
 									<div className="wrap-break-word min-w-0 flex-1 font-semibold text-sm leading-tight">
-										{m.name}
+										{m.engine_name}
 									</div>
-									{m.permission === "NONE" ? (
+									{noDataShown ? (
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<AlertCircle className="size-4 shrink-0 cursor-help text-destructive" />
@@ -151,18 +184,18 @@ export const WorkspaceMCPList = ({
 								{/* Image & Details */}
 								<div className="flex items-center gap-3">
 									{/* Image Placeholder */}
-									{m.permission === "NONE" ? (
+									{noDataShown ? (
 										<div className="flex size-16 shrink-0 items-center justify-center rounded-md border border-border border-dashed bg-muted/50">
 											<ImageIcon className="size-6 text-muted-foreground" />
 										</div>
 									) : (
 										<img
 											src={
-												m.type === "PROJECT"
-													? `${import.meta.env.MODULE}/api/project-${m.id}/projectImage/download`
-													: `${import.meta.env.MODULE}/api/e-${m.id}/image/download`
+												m.engine_type === "PROJECT"
+													? `${import.meta.env.MODULE}/api/project-${m.engine_id}/projectImage/download`
+													: `${import.meta.env.MODULE}/api/e-${m.engine_id}/image/download`
 											}
-											alt={m.name}
+											alt={m.engine_name}
 											className="size-16 shrink-0 rounded-md object-cover object-center"
 										/>
 									)}
@@ -174,10 +207,11 @@ export const WorkspaceMCPList = ({
 											variant="outline"
 											className="w-fit"
 										>
-											{toSentenceCase(m.type)}
+											{toSentenceCase(m.engine_type)}
 										</Badge>
 
-										{m.permission === "NONE" ? (
+										{!m.permission_name &&
+										m.engine_discoverable ? (
 											<Button
 												size="sm"
 												className="h-fit w-fit px-2 py-1 text-xs"
@@ -192,7 +226,9 @@ export const WorkspaceMCPList = ({
 												variant={permissionColor}
 												className="w-fit"
 											>
-												{toSentenceCase(m.permission)}
+												{toSentenceCase(
+													m.permission_name,
+												) ?? "No Access"}
 											</Badge>
 										)}
 									</div>
@@ -203,9 +239,9 @@ export const WorkspaceMCPList = ({
 									{m.description ||
 										"No description available."}
 								</div>
-								{m.tags?.length && (
+								{true && (
 									<div className="flex flex-wrap gap-1">
-										{m.tags.map((tag) => (
+										{["TODO", "Tags"].map((tag) => (
 											<Badge
 												key={tag}
 												variant="secondary"

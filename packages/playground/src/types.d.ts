@@ -22,10 +22,6 @@ export interface Workspace {
 	mcp: MCPConfig[];
 }
 
-export interface WorkspaceWithMCPData extends Workspace {
-	mcp: (MCP & { permission: "READ_ONLY" | "EDIT" | "OWNER" | "NONE" })[];
-}
-
 /**
  * Instructions from the backend
  */
