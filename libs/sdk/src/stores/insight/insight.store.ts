@@ -633,6 +633,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		sendMCPResponseToPlayground: (
 			mcpToolResponse: string,
 			mcpToolStatus: MCPToolResponse["tool_status"] = "success",
+			executedParameters: Record<string, unknown> = {},
 		) => {
 			if (!Env.TOOL) {
 				throw new Error("No MCP tool execution context found");
@@ -656,6 +657,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						response: mcpToolResponse,
 						roomId: Env.TOOL.roomId,
 						tool_status: mcpToolStatus,
+						executedParameters: executedParameters,
 					} satisfies MCPToolResponse,
 				},
 				"*",
@@ -671,18 +673,28 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			name: string,
 			parameters: Record<string, unknown>,
 		) => {
-			const { pixelReturn } = await this.actions.run<[string]>(
+			const { pixelReturn } = await this.actions.run<[unknown]>(
 				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ] );`,
 			);
 
-			const { output, operationType } = pixelReturn[0];
+			const operationType = pixelReturn[0].operationType || "";
+			const rawOutput = pixelReturn[0].output;
+			const output =
+				typeof rawOutput === "string"
+					? rawOutput
+					: JSON.stringify(rawOutput);
+
 			if (!output || operationType.indexOf("MCP_TOOL_EXECUTION") < 0) {
 				throw new Error("Error running MCP tool");
 			}
 
 			if (Env.TOOL) {
 				try {
-					this.actions.sendMCPResponseToPlayground(output);
+					this.actions.sendMCPResponseToPlayground(
+						output,
+						"success",
+						parameters,
+					);
 				} catch (e) {
 					console.warn(
 						`Failed to send MCP response to playground${e.message ? `: ${e.message}` : ""}`,

@@ -125,6 +125,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 						name: t.name,
 						original_name: t.original_name,
 						parameters: t.arguments,
+						description: t.description,
 					}),
 			);
 		} else {
@@ -341,6 +342,9 @@ paramValues=[${JSON.stringify({
 			tokens: parentMessage.tokens,
 		});
 
+		// Update room options with current modelId before running message
+		await room.updateRoomOptions(room.options);
+
 		grandParentMessage.runMessage(rewrittenMessage);
 	};
 
@@ -423,19 +427,33 @@ paramValues=[${JSON.stringify({
 
 		try {
 			// wait for the pixel to run
-			const response = await this.room.runRoomPixel<[string]>(
+			const response = await this.room.runRoomPixel<[unknown]>(
 				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.json.parameters)} ]);`,
 				false,
 				false,
 			);
 
-			const { output } = response.pixelReturn[0];
+			const rawOutput = response.pixelReturn[0].output;
+			const output =
+				typeof rawOutput === "string"
+					? rawOutput
+					: JSON.stringify(rawOutput);
 
 			// save the response
-			await this.saveToolExecution(tool, output);
+			await this.saveToolExecution(
+				tool,
+				output,
+				"success",
+				tool.json.parameters,
+			);
 		} catch (e) {
 			// mark the failure
-			await this.saveToolExecution(tool, e.toString(), "error");
+			await this.saveToolExecution(
+				tool,
+				e.toString(),
+				"error",
+				tool.json.parameters,
+			);
 		}
 	};
 
@@ -448,7 +466,8 @@ paramValues=[${JSON.stringify({
 	saveToolExecution = async (
 		tool: ResponseMessageStore["tools"][number],
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled",
+		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		const room = this.room;
 
@@ -470,7 +489,7 @@ paramValues=[${JSON.stringify({
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
-
+			tool.executedParameters = executedParameters;
 			if (toolStatus === "success") {
 				tool.status = "SUCCESS";
 			} else if (toolStatus === "cancelled") {
@@ -527,7 +546,8 @@ toolId = ["${tool.id}"],
 toolName=["${tool.json.name}"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
-mcpToolStatus=${JSON.stringify(toolStatus)}
+mcpToolStatus=${JSON.stringify(toolStatus)},
+toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 );`,
 				(chunk) => {
 					runInAction(() => {

@@ -543,6 +543,8 @@ export class RoomStore {
 										tool.response =
 											toolExecMessage.response;
 										tool.status = toolExecMessage.status;
+										tool.executedParameters =
+											toolExecMessage.executedParameters;
 									});
 								}
 							});
@@ -650,6 +652,7 @@ export class RoomStore {
 			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
 			const optionsToSave = {
 				...options,
+				modelId: this._store.model.app_id,
 				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
 			};
 
@@ -878,13 +881,15 @@ export class RoomStore {
 	 * @param toolName - name of the tool
 	 * @param toolResponse - response from the tool
 	 * @param toolStatus - status of the tool execution
+	 * @param executedParameters - parameters used by the tool
 	 */
 	processTool = async (
 		messageId: string,
 		toolId: string,
 		toolName: string,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled",
+		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {
 			const message = this.getMessage(messageId);
@@ -899,10 +904,21 @@ export class RoomStore {
 
 			if (this.mode === "executing") {
 				// save the tool execution
-				await this.plan?.saveToolExecution(message, tool, toolResponse);
+				await this.plan?.saveToolExecution(
+					message,
+					tool,
+					toolResponse,
+					toolStatus,
+					executedParameters,
+				);
 			} else {
 				// save the response with the tool
-				await message.saveToolExecution(tool, toolResponse, toolStatus);
+				await message.saveToolExecution(
+					tool,
+					toolResponse,
+					toolStatus,
+					executedParameters,
+				);
 			}
 		} catch (e) {
 			console.error(e);
@@ -1022,9 +1038,18 @@ export class RoomStore {
 			}
 
 			// get the final result
-			return await getPixelAsyncResult<O>(jobId);
+			const result = await getPixelAsyncResult<O>(jobId);
+
+			if (result.errors.length > 0) {
+				throw new Error(result.errors.join(""));
+			}
+
+			return result;
 		} catch (e) {
 			console.error(e);
+
+			// show the error
+			this._store.error = e;
 		} finally {
 			this.setIsLoading(false);
 		}

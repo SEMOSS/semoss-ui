@@ -369,7 +369,6 @@ export const ModelImport: React.FC = () => {
 						advanced={advanced}
 						selectedProvider={selectedProvider}
 						importableModelsCategory={importableModelsCategory}
-						onBack={() => setSelectedModel(null)}
 					/>
 				);
 			}
