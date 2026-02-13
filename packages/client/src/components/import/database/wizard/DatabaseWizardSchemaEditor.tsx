@@ -17,6 +17,7 @@ import {
 } from "@/utils/databaseWizard/allowedTypes";
 
 export type SchemaEditorColumn = {
+	id: string;
 	name: string;
 	type: AllowedSqlType;
 	description: string;
@@ -73,7 +74,7 @@ export const DatabaseWizardSchemaEditor: React.FC<
 					const descId = `${baseId}-desc-${index}`;
 					return (
 						<div
-							key={`${column.name}-${index}`}
+							key={column.id}
 							className="flex flex-col gap-2 rounded-md border border-border p-3"
 						>
 							<div className="grid gap-2 md:grid-cols-[2fr_1fr_auto]">

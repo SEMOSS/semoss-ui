@@ -7,7 +7,11 @@ import {
 	type AllowedSqlType,
 	normalizeSqlType,
 } from "@/utils/databaseWizard/allowedTypes";
-import { inferColumnTypes, parseCsvPreview } from "@/utils/databaseWizard/csv";
+import {
+	inferColumnTypes,
+	normalizeCsvHeader,
+	parseCsvData,
+} from "@/utils/databaseWizard/csv";
 import { schemaPrompt } from "@/utils/databaseWizard/schemaPrompt";
 import { schemaToSql } from "@/utils/databaseWizard/schemaToSql";
 import type { DatabaseSummary, WizardStep } from "@/utils/databaseWizard/types";
@@ -15,6 +19,7 @@ import type { DatabaseSummary, WizardStep } from "@/utils/databaseWizard/types";
 type LlmOption = { database_id: string; database_name: string };
 
 type SchemaEditorColumn = {
+	id: string;
 	name: string;
 	type: AllowedSqlType;
 	description: string;
@@ -106,6 +111,16 @@ const defaultSchemaContract = {
 	required: ["schema"],
 };
 
+const MAX_CSV_INSERT_ROWS = 500;
+const CSV_PREVIEW_ROWS = 20;
+
+const createColumnId = () => {
+	if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+		return crypto.randomUUID();
+	}
+	return `col_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+};
+
 type UseDatabaseWizardOptions = {
 	mode?: "catalog" | "engine";
 	databaseId?: string;
@@ -144,6 +159,10 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 		headers: string[];
 		rows: string[][];
 	} | null>(null);
+	const [csvRows, setCsvRows] = useState<string[][]>([]);
+	const [csvHeaderMap, setCsvHeaderMap] = useState<Record<string, number>>(
+		{},
+	);
 	const resolvedDatabaseId = databaseId || currentDatabaseId;
 
 	useEffect(() => {
@@ -363,6 +382,7 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 			const columns = tableDef?.columns || {};
 			const columnEntries = Object.entries(columns);
 			const nextColumns = columnEntries.map(([name, column]) => ({
+				id: createColumnId(),
 				name,
 				type: normalizeSqlType(column?.type || "TEXT"),
 				description: column?.description || "",
@@ -437,6 +457,57 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 		setSchemaSql(sql);
 	}, [buildSchemaFromEditor, includeSampleData, schemaSampleData]);
 
+	const coerceCsvValue = useCallback(
+		(value: string, type: AllowedSqlType) => {
+			const trimmed = value.trim();
+			if (!trimmed) return null;
+			const normalizedType = normalizeSqlType(type);
+			if (normalizedType === "BOOLEAN") {
+				const lowered = trimmed.toLowerCase();
+				if (lowered === "true") return true;
+				if (lowered === "false") return false;
+			}
+			if (
+				normalizedType === "INTEGER" ||
+				normalizedType === "DOUBLE" ||
+				normalizedType === "FLOAT" ||
+				normalizedType === "DECIMAL(10, 2)"
+			) {
+				const parsed = Number(trimmed);
+				if (!Number.isNaN(parsed)) return parsed;
+			}
+			return trimmed;
+		},
+		[],
+	);
+
+	const buildCsvSampleRows = useCallback(
+		(limit: number) => {
+			if (csvRows.length === 0)
+				return [] as Array<Record<string, unknown>>;
+			const columnsForInsert = schemaColumns.filter((column) =>
+				column.name.trim(),
+			);
+			if (columnsForInsert.length === 0) {
+				return [] as Array<Record<string, unknown>>;
+			}
+			const rowLimit = Math.min(csvRows.length, limit);
+			return csvRows.slice(0, rowLimit).map((row) => {
+				const rowObject: Record<string, unknown> = {};
+				columnsForInsert.forEach((column, index) => {
+					const headerIndex = csvHeaderMap[column.name] ?? -1;
+					const valueIndex = headerIndex >= 0 ? headerIndex : index;
+					rowObject[column.name] = coerceCsvValue(
+						row[valueIndex] ?? "",
+						column.type,
+					);
+				});
+				return rowObject;
+			});
+		},
+		[coerceCsvValue, csvHeaderMap, csvRows, schemaColumns],
+	);
+
 	const executeSql = useCallback(async () => {
 		if (!resolvedDatabaseId || !schemaSql.trim()) return;
 		setIsLoading(true);
@@ -457,11 +528,27 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 
 	const handleCsvFileSelected = useCallback(async (file: File) => {
 		const text = await file.text();
-		const preview = parseCsvPreview(text);
-		setCsvPreview(preview);
+		const parsed = parseCsvData(text);
+		const normalizedHeaders = parsed.headers.map((header, index) =>
+			normalizeCsvHeader(header, `column_${index + 1}`),
+		);
+		const headerMap = normalizedHeaders.reduce<Record<string, number>>(
+			(acc, header, index) => {
+				acc[header] = index;
+				return acc;
+			},
+			{},
+		);
+		setCsvRows(parsed.rows);
+		setCsvPreview({
+			headers: parsed.headers,
+			rows: parsed.rows.slice(0, 5),
+		});
+		setCsvHeaderMap(headerMap);
 		setSchemaSampleData(null);
-		const inferredTypes = inferColumnTypes(preview.rows, preview.headers);
-		const nextColumns = preview.headers.map((header) => ({
+		const inferredTypes = inferColumnTypes(parsed.rows, normalizedHeaders);
+		const nextColumns = normalizedHeaders.map((header) => ({
+			id: createColumnId(),
 			name: header,
 			type: normalizeSqlType(inferredTypes[header] || "TEXT"),
 			description: "",
@@ -470,11 +557,46 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 	}, []);
 
 	const generateSqlFromCsv = useCallback(() => {
-		const wizardSchema = buildSchemaFromEditor(null);
+		if (!csvPreview || csvRows.length === 0) {
+			const wizardSchema = buildSchemaFromEditor(null);
+			if (!wizardSchema) return;
+			const sql = schemaToSql(wizardSchema, false);
+			setSchemaSql(sql);
+			return;
+		}
+
+		const tableName = schemaTableName.trim();
+		const rowLimit = Math.min(csvRows.length, MAX_CSV_INSERT_ROWS);
+		if (csvRows.length > MAX_CSV_INSERT_ROWS) {
+			toast.info(
+				`CSV has ${csvRows.length} rows. Generating inserts for the first ${MAX_CSV_INSERT_ROWS} rows.`,
+			);
+		}
+		const sampleRows = buildCsvSampleRows(rowLimit);
+
+		const wizardSchema = buildSchemaFromEditor(
+			tableName
+				? {
+						[tableName]: sampleRows,
+					}
+				: null,
+		);
 		if (!wizardSchema) return;
-		const sql = schemaToSql(wizardSchema, false);
+		const sql = schemaToSql(wizardSchema, true);
 		setSchemaSql(sql);
-	}, [buildSchemaFromEditor]);
+	}, [
+		buildSchemaFromEditor,
+		buildCsvSampleRows,
+		csvPreview,
+		csvRows,
+		schemaColumns,
+		schemaTableName,
+	]);
+
+	const csvRowsPreview = useMemo(
+		() => buildCsvSampleRows(CSV_PREVIEW_ROWS),
+		[buildCsvSampleRows],
+	);
 
 	const updateSchemaColumn = useCallback(
 		(index: number, patch: Partial<SchemaEditorColumn>) => {
@@ -495,7 +617,12 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 	const addSchemaColumn = useCallback(() => {
 		setSchemaColumns((prev) => [
 			...prev,
-			{ name: "", type: ALLOWED_SQL_TYPES[0], description: "" },
+			{
+				id: createColumnId(),
+				name: "",
+				type: ALLOWED_SQL_TYPES[0],
+				description: "",
+			},
 		]);
 	}, []);
 
@@ -577,6 +704,10 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 			includeSampleData,
 			sampleRowCount,
 			csvPreview,
+			csvRows,
+			csvHeaderMap,
+			csvRowsPreview,
+			csvRowCount: csvRows.length,
 		},
 		setters: {
 			setStep,

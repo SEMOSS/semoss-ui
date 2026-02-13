@@ -3,11 +3,22 @@ export type CsvPreview = {
 	rows: string[][];
 };
 
-export const parseCsvPreview = (
-	text: string,
-	delimiter = ",",
-	maxRows = 5,
-): CsvPreview => {
+export type CsvData = {
+	headers: string[];
+	rows: string[][];
+};
+
+export const normalizeCsvHeader = (value: string, fallback: string) => {
+	const normalized = value
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "_")
+		.replace(/^_+|_+$/g, "");
+
+	return normalized || fallback;
+};
+
+export const parseCsvData = (text: string, delimiter = ","): CsvData => {
 	const lines = text
 		.split(/\r\n|\n/)
 		.map((line) => line.trim())
@@ -19,10 +30,22 @@ export const parseCsvPreview = (
 
 	const headers = lines[0].split(delimiter).map((value) => value.trim());
 	const rows = lines
-		.slice(1, maxRows + 1)
+		.slice(1)
 		.map((line) => line.split(delimiter).map((value) => value.trim()));
 
 	return { headers, rows };
+};
+
+export const parseCsvPreview = (
+	text: string,
+	delimiter = ",",
+	maxRows = 5,
+): CsvPreview => {
+	const parsed = parseCsvData(text, delimiter);
+	return {
+		headers: parsed.headers,
+		rows: parsed.rows.slice(0, maxRows),
+	};
 };
 
 const isNumber = (value: string) => {

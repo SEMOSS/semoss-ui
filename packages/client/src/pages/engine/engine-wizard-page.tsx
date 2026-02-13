@@ -70,6 +70,8 @@ export const EngineWizardPage: React.FC = observer(() => {
 					<DatabaseWizardLoadFromCSV
 						isLoading={wizard.state.isLoading}
 						csvPreview={wizard.state.csvPreview}
+						csvRowsPreview={wizard.state.csvRowsPreview}
+						csvRowCount={wizard.state.csvRowCount}
 						schemaSql={wizard.state.schemaSql}
 						schemaTableName={wizard.state.schemaTableName}
 						schemaColumns={wizard.state.schemaColumns}

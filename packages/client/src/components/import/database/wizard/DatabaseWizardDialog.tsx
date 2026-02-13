@@ -17,8 +17,11 @@ export type DatabaseWizardDialogProps = {
 	schemaMetadata: string;
 	querySql: string;
 	csvPreview: { headers: string[]; rows: string[][] } | null;
+	csvRowsPreview: Array<Record<string, unknown>>;
+	csvRowCount: number;
 	schemaTableName: string;
 	schemaColumns: Array<{
+		id: string;
 		name: string;
 		type: string;
 		description: string;
@@ -111,6 +114,8 @@ const renderStep = (props: DatabaseWizardDialogProps) => {
 						<DatabaseWizardLoadFromCSV
 							isLoading={props.isLoading}
 							csvPreview={props.csvPreview}
+							csvRowsPreview={props.csvRowsPreview}
+							csvRowCount={props.csvRowCount}
 							schemaSql={props.schemaSql}
 							schemaTableName={props.schemaTableName}
 							schemaColumns={props.schemaColumns}
