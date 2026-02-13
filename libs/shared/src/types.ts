@@ -90,7 +90,7 @@ export interface ThemeMap {
 		defaultRoomSettings?: {
 			model?: Engine;
 			temperature?: number;
-			tokenLength?: number;
+			tokenLength?: number;    ˜
 		};
 
 		/**
@@ -98,6 +98,10 @@ export interface ThemeMap {
 		 */
 		toolAutoExecutionLimit?: number;
 
+		/**
+		 * The uploaded files that should be added to the file tool in the room
+		 */
+		allowedFileTypes?: string[];
 		/**
 		 * Default tools to show in the room
 		 */
@@ -117,7 +121,5 @@ export interface ThemeMap {
 			/** Name of the mcp */
 			name: string;
 		}[];
-
-		uploadedFiles?: string[];
 	};
 }
