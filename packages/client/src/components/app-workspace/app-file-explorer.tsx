@@ -185,9 +185,6 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 					});
 				}}
 				ItemComponent={({ item, refresh, ...otherProps }) => {
-					const normalizedPath = (item.path || "")
-						.replace(/\\/g, "/")
-						.toLowerCase();
 					const isDriverFile =
 						item.type !== "directory" &&
 						MCP.DRIVER_PATHS.some((f) => item.path === f);
