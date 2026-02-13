@@ -58,8 +58,7 @@ export const WorkspaceDetailPage = observer(() => {
 	const [search, setSearch] = useState<string>("");
 
 	// Pagination state - TODO: Wire up to child components
-	// For now, using a placeholder total count of 100 items
-	const pagination = usePagination(100);
+	const pagination = usePagination();
 
 	const debouncedSearch = useDebouncedValue(search);
 
@@ -278,13 +277,16 @@ export const WorkspaceDetailPage = observer(() => {
 								<WorkspaceMembersList
 									workspaceId={workspaceId}
 									search={debouncedSearch}
+									paginationControl={pagination}
 								/>
 							)}
 						</TabsContent>
 
-						<div className="flex w-full flex-row items-center justify-end gap-2 border-border border-t bg-primary-foreground p-4">
-							<PaginationButtons {...pagination} />
-						</div>
+						{tab === "members" && (
+							<div className="flex w-full flex-row items-center justify-end gap-2 border-border border-t bg-primary-foreground p-4">
+								<PaginationButtons {...pagination} />
+							</div>
+						)}
 					</div>
 				</Tabs>
 			</div>

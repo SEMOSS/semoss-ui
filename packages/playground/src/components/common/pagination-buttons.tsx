@@ -162,7 +162,7 @@ export const PaginationButtons = ({
 
 					{/* Scrollable page numbers - shows ~3 at a time */}
 					<ScrollArea
-						className="-mb-3 h-12 w-[120px]"
+						className={`-mb-3 h-12 ${numberOfPages <= 3 ? "w-fit" : "w-30"}`}
 						type="always"
 						viewportRef={(ele) => {
 							viewportRef.current = ele;

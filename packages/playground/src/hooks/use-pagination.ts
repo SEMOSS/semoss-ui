@@ -3,31 +3,35 @@ import { useCallback, useState } from "react";
 /**
  * A hook for managing pagination state and calculations.
  *
- * @param totalRows - The total number of rows/items to paginate
  * @returns An object containing pagination state and controls
+ * @returns totalRows - The total number of rows/items to paginate
  * @returns numberOfPages - The total number of pages based on totalRows and rowsPerPage
  * @returns currentPage - The current active page (1-indexed)
  * @returns rowsPerPage - The number of rows to display per page (default: 10)
  * @returns offset - The calculated offset for array slicing or database queries
+ * @returns setTotalRows - Function to update the total number of rows
  * @returns setCurrentPage - Function to update the current page (validates bounds automatically)
  * @returns setRowsPerPage - Function to update rows per page (resets to page 1)
  *
  * @example
  * ```tsx
- * const { currentPage, rowsPerPage, offset, numberOfPages, setCurrentPage } = usePagination(100);
+ * const { currentPage, rowsPerPage, offset, numberOfPages, setTotalRows } = usePagination();
  * const paginatedData = data.slice(offset, offset + rowsPerPage);
  * ```
  */
-export const usePagination = (
-	totalRows: number,
-): {
+export const usePagination = (): {
+	totalRows: number;
 	numberOfPages: number;
 	currentPage: number;
 	rowsPerPage: number;
 	offset: number;
+	setTotalRows: (rows: number) => void;
 	setCurrentPage: (page: number) => void;
 	setRowsPerPage: (rows: number) => void;
 } => {
+	// Track the total number of rows/items to paginate
+	const [totalRows, setTotalRows] = useState(0);
+
 	// Track the current page number (1-indexed)
 	const [currentPage, setCurrentPage] = useState(1);
 
@@ -69,10 +73,12 @@ export const usePagination = (
 	}, []);
 
 	return {
+		totalRows,
 		numberOfPages,
 		currentPage,
 		rowsPerPage,
 		offset,
+		setTotalRows,
 		setCurrentPage: handleSetCurrentPage,
 		setRowsPerPage: handleSetRowsPerPage,
 	};
