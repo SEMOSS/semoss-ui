@@ -39,7 +39,12 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { EnterPlugin, FocusPlugin, MentionPlugin, AutoScrollOnPastePlugin } from "@/components";
+import {
+	AutoScrollOnPastePlugin,
+	EnterPlugin,
+	FocusPlugin,
+	MentionPlugin,
+} from "@/components";
 import type { Engine } from "@/types";
 import { ContextChart } from "./context-chart";
 
@@ -93,7 +98,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const ref = useRef<HTMLDivElement>(null);
 		const editorRef = useRef<LexicalEditor>(null);
 		const fileRef = useRef<HTMLInputElement>(null);
-		const scrollRef = useRef<HTMLDivElement>(null);
 
 		const [isDragging, setIsDragging] = useState(false);
 		const [files, setFiles] = useState<File[]>([]);
@@ -102,6 +106,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [isListening, setIsListening] = useState(false);
 
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
+		const scrollRef = useRef<HTMLDivElement>(null);
 
 		useEffect(() => {
 			// Check if Speech Recognition is supported
@@ -278,264 +283,337 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 			return <FileIcon className="size-6 text-muted-foreground" />;
 		};
-return (
-  <>
-    <div className="w-full" ref={ref}>
-      <input
-        ref={fileRef}
-        type="file"
-        multiple={true}
-        hidden
-        onChange={(e) => {
-          const updated = Array.from(e.target.files ?? []);
-          setFiles((prev) => [...prev, ...updated]);
-        }}
-      />
 
-      <LexicalComposer
-        initialConfig={{
-          namespace: "RoomInput",
-          theme: {},
-          nodes: [],
-          onError: (error) => {
-            console.error(error);
-          },
-        }}
-      >
-        {/* Make THIS the positioning context for scrim + controls */}
-        <div className={cn(
-			"relative group w-full rounded-md border border-input bg-background shadow-lg",
-			"focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
-		)}>
-          <div className="flex max-h-72 min-h-48 flex-col">
-            <div
-              ref={scrollRef}
-              className="min-h-0 flex-1 overflow-y-auto scroll-pb-16"
-            >
-              <PlainTextPlugin
-                contentEditable={
-                  <ContentEditable
-                    className={cn(
-                      "min-h-full w-full bg-transparent p-4 pb-16 text-sm outline-none",
-                      isDragging
-                        ? "border-primary border-dashed"
-                        : "hover:border-primary",
-                    )}
-                    aria-placeholder="Enter text"
-                    aria-disabled={isLoading}
-					disabled={isLoading}                
-					placeholder={
-                  <div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
-                    <SparklesIcon className="size-4" />
-                    {isLoading ? "Thinking..." : "/ to open menu"}
-                  </div>
-                }
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const updated = Array.from(e.dataTransfer.files);
-                      setFiles((prev) => [...prev, ...updated]);
-                      setIsDragging(false);
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragLeave={(e) => {
-                      e.preventDefault();
-                      setIsDragging(false);
-                    }}
-                    onPaste={(e) => {
-                      const updated = Array.from(e.clipboardData.files);
-                      if (updated.length > 0) {
-                        e.preventDefault();
-                        setFiles((prev) => [...prev, ...updated]);
-                      }
-                    }}
-                  />
-                }
+		return (
+			<>
+				<div className="relative w-full" ref={ref}>
+					<input
+						ref={fileRef}
+						type="file"
+						multiple={true}
+						hidden
+						onChange={(e) => {
+							// set the new files
+							const updated = Array.from(e.target.files);
+							setFiles((prev) => [...prev, ...updated]);
+						}}
+					/>
+					<LexicalComposer
+						initialConfig={{
+							namespace: "RoomInput",
+							theme: {},
+							nodes: [],
+							onError: (error) => {
+								console.error(error);
+							},
+						}}
+					>
+						<PlainTextPlugin
+							contentEditable={
+								<div className="relative">
+									<ContentEditable
+										ref={scrollRef}
+										className={cn(
+											`h-auto w-full overflow-y-auto rounded-md border border-input bg-transparent p-4 pb-16 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
+											isDragging
+												? "border-primary border-dashed"
+												: "hover:border-primary",
+											className,
+										)}
+										aria-placeholder={"Enter text"}
+										aria-disabled={isLoading}
+										disabled={isLoading}
+										placeholder={
+											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
+												<SparklesIcon className="size-4" />
+												{isLoading
+													? "Thinking..."
+													: "/ to open menu"}
+											</div>
+										}
+										onDrop={(e) => {
+											e.preventDefault();
 
-                ErrorBoundary={LexicalErrorBoundary}
-              />
+											// set the new files
+											const updated = Array.from(
+												e.dataTransfer.files,
+											);
+											setFiles((prev) => [
+												...prev,
+												...updated,
+											]);
 
-              <OnChangePlugin
-                onChange={(editorState) => {
-                  editorState.read(() => {
-                    const root = $getRoot();
-                    setIsEmpty(root.getTextContent().trim().length === 0);
-                  });
-                }}
-              />
-              <HistoryPlugin />
-              <AutoFocusPlugin />
-              <FocusPlugin />
-              <EditorRefPlugin editorRef={editorRef} />
-              <EnterPlugin onEnter={() => promptModel()} />
-              <AutoScrollOnPastePlugin scrollContainerRef={scrollRef} />
+											// turn off dragging
+											setIsDragging(false);
+										}}
+										onDragOver={(e) => {
+											e.preventDefault();
 
-              {!isLoading && (
-                <MentionPlugin
-                  trigger="/"
-                  MenuComponent={({ isOpen, onOpenChange, menuPosition, addToken }) => (
-                    <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
-                      <DropdownMenuTrigger
-                        style={{
-                          position: "fixed",
-                          top: menuPosition.top,
-                          left: menuPosition.left,
-                          width: 0,
-                          height: 0,
-                        }}
-                      />
-                      <DropdownMenuContent align="start" className="w-72">
-                        <MenuComponent
-                          isOpen={isOpen}
-                          onOpenChange={onOpenChange}
-                          fileRef={fileRef}
-                          addToken={addToken}
-                        />
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                />
-              )}
-            </div>
-          </div>
+											// turn on dragging
+											setIsDragging(true);
+										}}
+										onDragLeave={(e) => {
+											e.preventDefault();
 
-          {/* Solid footer scrim (prevents text showing under icons) */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-14 bg-background" />
+											// turn off dragging
+											setIsDragging(false);
+										}}
+										onPaste={(e) => {
+											// set the new files
+											const updated = Array.from(
+												e.clipboardData.files,
+											);
 
-          {!isLoading && (
-            <div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
-              <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        disabled={isLoading}
-                        aria-label="Open settings"
-                      >
-                        <SlidersHorizontalIcon />
-                      </Button>
-                    </DropdownMenuTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>Open settings</TooltipContent>
-                </Tooltip>
+											if (updated.length > 0) {
+												e.preventDefault();
+												setFiles((prev) => [
+													...prev,
+													...updated,
+												]);
+											}
+										}}
+										onFocus={() => {
+											requestAnimationFrame(() => {
+												const el = scrollRef.current;
+												if (el)
+													el.scrollTop =
+														el.scrollHeight;
+											});
+										}}
+									/>
+									<div
+										aria-hidden="true"
+										className="pointer-events-none absolute inset-x-px bottom-px z-10 h-16 rounded-b-md bg-background"
+									/>
+								</div>
+							}
+							ErrorBoundary={LexicalErrorBoundary}
+						/>
+						<OnChangePlugin
+							onChange={(editorState) => {
+								editorState.read(() => {
+									// get the root
+									const root = $getRoot();
 
-                <DropdownMenuContent align="start" className="w-72">
-                  <MenuComponent
-                    isOpen={menuOpen}
-                    onOpenChange={setMenuOpen}
-                    fileRef={fileRef}
-                    addToken={() => null}
-                  />
-                </DropdownMenuContent>
-              </DropdownMenu>
+									// set empty state
+									setIsEmpty(
+										root.getTextContent().trim().length ===
+											0,
+									);
+								});
+							}}
+						/>
+						<HistoryPlugin />
+						<AutoFocusPlugin />
+						<FocusPlugin />
+						<EditorRefPlugin editorRef={editorRef} />
+						<EnterPlugin onEnter={() => promptModel()} />
+						<AutoScrollOnPastePlugin
+							scrollContainerRef={scrollRef}
+						/>
+						{!isLoading && (
+							<MentionPlugin
+								trigger="/"
+								MenuComponent={({
+									isOpen,
+									onOpenChange,
+									menuPosition,
+									addToken,
+								}) => (
+									<DropdownMenu
+										open={isOpen}
+										onOpenChange={onOpenChange}
+									>
+										{/* Invisible trigger positioned at the cursor */}
+										<DropdownMenuTrigger
+											style={{
+												position: "fixed",
+												top: menuPosition.top,
+												left: menuPosition.left,
+												width: 0,
+												height: 0,
+											}}
+										/>
+										<DropdownMenuContent
+											align="start"
+											className="w-72"
+										>
+											<MenuComponent
+												isOpen={isOpen}
+												onOpenChange={onOpenChange}
+												fileRef={fileRef}
+												addToken={addToken}
+											/>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								)}
+							/>
+						)}
+					</LexicalComposer>
+					{!isLoading && (
+						<div className="absolute bottom-3 left-3 z-20 flex flex-row items-center gap-2">
+							<div className="rounded-md bg-background p-1 ring-1 ring-border/60">
+								<div className="flex flex-row items-center gap-2">
+									<DropdownMenu
+										open={menuOpen}
+										onOpenChange={setMenuOpen}
+									>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<DropdownMenuTrigger asChild>
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														disabled={isLoading}
+														aria-label="Open settings"
+													>
+														<SlidersHorizontalIcon />
+													</Button>
+												</DropdownMenuTrigger>
+											</TooltipTrigger>
+											<TooltipContent>
+												Open settings
+											</TooltipContent>
+										</Tooltip>
+										<DropdownMenuContent
+											align="start"
+											className="w-72"
+										>
+											<MenuComponent
+												isOpen={menuOpen}
+												onOpenChange={setMenuOpen}
+												fileRef={fileRef}
+												addToken={() => null}
+											/>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								</div>
+							</div>
+							<ContextChart
+								tokensUsed={tokensUsed}
+								tokensMax={tokensMax}
+							/>
+						</div>
+					)}
+					<div className="absolute right-3 bottom-3 z-20 flex flex-row items-center gap-4">
+						<div className="flex flex-row items-center gap-1 rounded-md bg-background p-1 ring-1 ring-border/60">
+							<EngineSelect
+								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+								disabled={isLoading}
+								name={model?.app_name || ""}
+								value={model?.app_id || ""}
+								engineTypes={["MODEL"]}
+								metaFilters={[{ tag: "text-generation" }]}
+								onChange={(v) => {
+									setModel(v);
+								}}
+								popoverContentProps={{
+									align: "start",
+								}}
+							/>
 
-              <ContextChart tokensUsed={tokensUsed} tokensMax={tokensMax} />
-            </div>
-          )}
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant={"ghost"}
+										aria-label="Record the Model"
+										size="icon-sm"
+										disabled={!canListen || isLoading}
+										onClick={() => {
+											if (isListening) {
+												recognitionRef.current?.stop();
+												editorRef.current?.focus();
+											} else {
+												recognitionRef.current?.start();
+											}
+										}}
+									>
+										<MicIcon
+											className={`${isListening ? "animate-pulse text-destructive" : ""}`}
+										/>
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{isListening ? "Stop Recording" : "Record"}
+								</TooltipContent>
+							</Tooltip>
+						</div>
+						<div className="rounded-md bg-background/95 ring-1 ring-border/60 backdrop-blur-sm">
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<span>
+										<Button
+											variant="default"
+											aria-label="Ask the AI"
+											disabled={
+												isLoading ||
+												isEmpty ||
+												hasOutstandingTools
+											}
+											onClick={() => {
+												promptModel();
+											}}
+										>
+											{isLoading ? (
+												<Spinner />
+											) : (
+												<SendIcon />
+											)}
+										</Button>
+									</span>
+								</TooltipTrigger>
+								<TooltipContent>
+									{(() => {
+										if (isLoading) {
+											return "Thinking";
+										} else if (isEmpty) {
+											return "Please enter a question";
+										} else if (hasOutstandingTools) {
+											return "Please complete the tool(s) to proceed";
+										}
+										return "Ask";
+									})()}
+								</TooltipContent>
+							</Tooltip>
+						</div>
+					</div>
+				</div>
+				{files.length > 0 ? (
+					<div className="flex flex-row items-center gap-2 pt-4">
+						{files.map((f, fIdx) => {
+							const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
+							return (
+								<Tooltip key={fileKey}>
+									<TooltipTrigger asChild>
+										<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted">
+											{getFileImage(f)}
+											<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
+												<Button
+													variant="ghost"
+													size={"icon-sm"}
+													onClick={() => {
+														const updated = [
+															...files,
+														];
 
-          <div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
-            <div className="flex flex-row items-center gap-1">
-              <EngineSelect
-                className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-                disabled={isLoading}
-                name={model?.app_name || ""}
-                value={model?.app_id || ""}
-                engineTypes={["MODEL"]}
-                metaFilters={[{ tag: "text-generation" }]}
-                onChange={(v) => setModel(v)}
-                popoverContentProps={{ align: "start" }}
-              />
+														// remove it
+														updated.splice(fIdx, 1);
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    aria-label="Record the Model"
-                    size="icon-sm"
-                    disabled={!canListen || isLoading}
-                    onClick={() => {
-                      if (isListening) {
-                        recognitionRef.current?.stop();
-                        editorRef.current?.focus();
-                      } else {
-                        recognitionRef.current?.start();
-                      }
-                    }}
-                  >
-                    <MicIcon
-                      className={`${isListening ? "animate-pulse text-destructive" : ""}`}
-                    />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {isListening ? "Stop Recording" : "Record"}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button
-                    variant="default"
-                    aria-label="Ask the AI"
-                    disabled={isLoading || isEmpty || hasOutstandingTools}
-                    onClick={() => promptModel()}
-                  >
-                    {isLoading ? <Spinner /> : <SendIcon />}
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isLoading
-                  ? "Thinking"
-                  : isEmpty
-                    ? "Please enter a question"
-                    : hasOutstandingTools
-                      ? "Please complete the tool(s) to proceed"
-                      : "Ask"}
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-      </LexicalComposer>
-
-      {/* Attachments BELOW the editor card (not inside positioning context) */}
-      {files.length > 0 ? (
-        <div className="flex flex-row items-center gap-2 pt-4">
-          {files.map((f, fIdx) => {
-            const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
-            return (
-              <Tooltip key={fileKey}>
-                <TooltipTrigger asChild>
-                  <div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted">
-                    {getFileImage(f)}
-                    <div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => {
-                          const updated = [...files];
-                          updated.splice(fIdx, 1);
-                          setFiles(updated);
-                        }}
-                      >
-                        <XIcon />
-                      </Button>
-                    </div>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>{f.name}</TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
-  </>
-)
-});
+														setFiles(updated);
+													}}
+												>
+													<XIcon />
+												</Button>
+											</div>
+										</div>
+									</TooltipTrigger>
+									<TooltipContent>{f.name}</TooltipContent>
+								</Tooltip>
+							);
+						})}
+					</div>
+				) : null}
+			</>
+		);
+	},
+);
