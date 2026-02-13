@@ -202,34 +202,39 @@ export const WorkspaceMCPList = ({
 									<div className="wrap-break-word min-w-0 flex-1 font-semibold text-sm leading-tight">
 										{m.engine_name}
 									</div>
-									{effectivePermission === "FULLY_PRIVATE" ? (
-										<Tooltip>
-											<TooltipTrigger asChild>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											{effectivePermission ===
+											"FULLY_PRIVATE" ? (
 												<AlertCircle className="size-4 shrink-0 cursor-help text-destructive" />
-											</TooltipTrigger>
-											<TooltipContent>
-												{`You don't have access to this ${type === "TOOLBOX" ? "toolbox" : "knowledge base"}. Please request access from the owner.`}
-											</TooltipContent>
-										</Tooltip>
-									) : (
-										<Button
-											variant="ghost"
-											size="icon"
-											className={`-m-2 shrink-0 ${
-												accessMissing
-													? "text-destructive"
-													: ""
-											}`}
-											asChild
-										>
-											<a
-												target="_blank"
-												href={mcpToPlatformUrl(m)}
-											>
-												<SquareArrowOutUpRightIcon className="size-4" />
-											</a>
-										</Button>
-									)}
+											) : (
+												<Button
+													variant="ghost"
+													size="icon"
+													className={`-m-2 shrink-0 ${
+														accessMissing
+															? "text-destructive"
+															: ""
+													}`}
+													asChild
+												>
+													<a
+														target="_blank"
+														href={mcpToPlatformUrl(
+															m,
+														)}
+													>
+														<SquareArrowOutUpRightIcon className="size-4" />
+													</a>
+												</Button>
+											)}
+										</TooltipTrigger>
+										<TooltipContent>
+											{accessMissing
+												? `You don't have access to this ${type === "TOOLBOX" ? "toolbox" : "knowledge base"}. Please request access from the owner.`
+												: `Open this ${type === "TOOLBOX" ? "toolbox" : "knowledge base"} in the platform`}
+										</TooltipContent>
+									</Tooltip>
 								</div>
 
 								{/* Image & Details */}
