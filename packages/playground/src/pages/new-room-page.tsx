@@ -368,6 +368,7 @@ export const NewRoomPage = observer(() => {
 									getWorkspace.status !== "SUCCESS")
 							}
 							model={chat.models.selected}
+							room={tempRoomStore}
 							setModel={(m) => {
 								chat.setSelectedModel(m);
 							}}
