@@ -190,6 +190,7 @@ export class RootStore {
 			toolAutoExecutionLimit:
 				theme?.toolAutoExecutionLimit ||
 				this._store.theme.toolAutoExecutionLimit,
+			allowedFileTypes: theme?.allowedFileTypes || this._store.theme.allowedFileTypes || [],
 			defaultTools: [
 				...new Map(
 					[
@@ -198,7 +199,6 @@ export class RootStore {
 					].map((tool) => [tool.id, tool]),
 				).values(),
 			],
-			uploadedFiles: theme?.uploadedFiles || this._store.theme.uploadedFiles || []
 		};
 
 		// apply the theme to document root

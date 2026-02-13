@@ -841,12 +841,32 @@ export class RoomStore {
 				.data;
 		}
 
-		// ensure only images move forward from here
-		const isUploadedImage = (m) => {
-			return this._theme.uploadedFiles ? /\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(m.fileName) : true;
+		// ensure only file extensions in themedb move forward from here
+		const getExtension = (fileName: string) => {
+		const match = (fileName || "").toLowerCase().match(/\.([a-z0-9]+)$/i);
+		return match ? `.${match[1]}` : "";
 		};
 
-		const uploadedImages = uploaded.filter(isUploadedImage);
+		const normalizeAllowed = (t: string) => {
+		const s = (t || "").trim().toLowerCase();
+		if (!s) return "";
+		return s.startsWith(".") ? s : `.${s}`;
+		};
+
+		const isUploadedFile = (m: { fileName: string }) => {
+			const allowed = this._theme.allowedFileTypes;
+
+			// If not configured (or empty), allow all
+			if (!allowed || allowed.length === 0) return true;
+
+			const ext = getExtension(m.fileName);
+			if (!ext) return false;
+
+			const allowedSet = new Set(allowed.map(normalizeAllowed).filter(Boolean));
+			return allowedSet.has(ext);
+		};
+
+		const uploadedFiles = uploaded.filter(isUploadedFile);
 
 		// create the input message
 		const inputMessage = new InputMessageStore(this, {
@@ -854,7 +874,7 @@ export class RoomStore {
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: prompt,
-			mediaInputs: uploadedImages,
+			mediaInputs: uploadedFiles,
 			modelId: this.model?.app_id,
 			paramMap: {
 				max_new_tokens: this.options.tokenLength,
