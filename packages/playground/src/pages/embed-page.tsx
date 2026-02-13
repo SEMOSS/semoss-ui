@@ -28,16 +28,18 @@ export const EmbedPage: React.FC = observer(() => {
 		}
 	}
 
-	useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: isLoading ? "Loading" : matched.name,
-			path: `/embed/${path}`,
-		},
-	]);
+	useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: "Home",
+				path: "/",
+			},
+			{
+				name: isLoading ? "Loading" : matched.name,
+				path: `/embed/${path}`,
+			},
+		],
+	});
 
 	if (!matched) {
 		return <Navigate to="/" replace />;
