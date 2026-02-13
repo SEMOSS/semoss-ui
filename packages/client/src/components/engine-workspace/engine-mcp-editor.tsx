@@ -92,6 +92,26 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 			}
 		};
 
+		const optimizeDesc = async (context: string) => {
+			try {
+				setIsLoading(true);
+				// TODO: Replace model IDs with actual values when available - this will be implemented after model centraliation work is done
+				// Build the pixel command
+				const pixelCommand = `GenerateEngineMetadata(engine=["${engine}"], model=["4801422a-5c62-421e-a00c-05c6a9e15de8"], metaKeys=[["description"]], options=[{"additionalContext": ${context}, "tone": "neutral"}]);`;
+
+				const { pixelReturn } = await insight.actions.run(pixelCommand);
+				const response = pixelReturn[0].output as Record<
+					string,
+					Record<string, string>
+				>;
+				return response.generated_metadata.description;
+			} catch (e) {
+				console.error(e);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
 		return (
 			<div className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1">
 				{(getFile.status === "LOADING" || isLoading) && (
@@ -112,6 +132,7 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 							dataMap={{
 								initialData: data,
 								onSave: (data) => saveFile(data),
+								onOptimize: (data) => optimizeDesc(data),
 								path: config.path,
 								name: config.name,
 							}}
