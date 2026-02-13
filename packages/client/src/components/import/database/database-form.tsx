@@ -118,6 +118,9 @@ export const DatabaseForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
+	const debounceTimeoutsRef = useRef<
+		Record<string, ReturnType<typeof setTimeout>>
+	>({});
 	const { monolithStore, configStore } = useRootStore();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
@@ -162,31 +165,6 @@ export const DatabaseForm = ({
 		acc[f.category].push(f);
 		return acc;
 	}, {});
-
-	const handleFieldValidation = async (
-		e,
-		val,
-		field,
-		validateFormField,
-		setError,
-		clearErrors,
-	) => {
-		field.onChange(e);
-		const value = e.target.value;
-		if (val.rules?.custom) {
-			const isValid = await validateFormField(val, value);
-			if (!isValid) {
-				setError(val.key, {
-					type: "manual",
-					message:
-						val.rules?.custom?.message ||
-						"Database name already exists.",
-				});
-			} else {
-				clearErrors(val.key);
-			}
-		}
-	};
 
 	const onFormSubmit = async (formData) => {
 		setLoading(true);
@@ -542,7 +520,6 @@ export const DatabaseForm = ({
 			setLoading(false);
 		}
 	};
-
 	useEffect(() => {
 		resolvedFields.forEach((f) => {
 			let pixel = f.pixel;
@@ -771,16 +748,46 @@ export const DatabaseForm = ({
 									disabled={val.disabled}
 									autoComplete="off"
 									data-testid={`database-form-input-${val.key}`}
-									onChange={(e) =>
-										handleFieldValidation(
-											e,
-											val,
-											field,
-											validateFormField,
-											setError,
-											clearErrors,
-										)
+									onChange={(e) => {
+									field.onChange(e);
+									if (val.rules?.custom) {
+										if (
+											debounceTimeoutsRef.current[val.key]
+										) {
+											clearTimeout(
+												debounceTimeoutsRef.current[
+													val.key
+												],
+											);
+										}
+										debounceTimeoutsRef.current[val.key] =
+											setTimeout(async () => {
+												const value = e.target.value;
+												if (
+													!val.rules.pattern.value.test(
+														value,
+													)
+												) {
+													return;
+												}
+												const isValid =
+													await validateFormField(
+														val,
+														value,
+													);
+												if (!isValid) {
+													setError(val.key, {
+														message:
+															val.rules?.custom
+																?.message ||
+															"Database name already exists.",
+													});
+												} else {
+													clearErrors(val.key);
+												}
+											}, 300);
 									}
+								}}
 								/>
 								{error && (
 									<FieldDescription className="text-destructive">
