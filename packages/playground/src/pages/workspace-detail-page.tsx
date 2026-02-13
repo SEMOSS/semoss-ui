@@ -54,9 +54,7 @@ export const WorkspaceDetailPage = observer(() => {
 
 	// Fetch workspace details
 	const getWorkspace = usePixel<Workspace>(
-		workspaceId
-			? `GetWorkspace(workspaceId=["${workspaceId}"], dependencyMetadata=true);`
-			: "",
+		workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "",
 		{
 			data: null,
 			onError: (_d, e) => {

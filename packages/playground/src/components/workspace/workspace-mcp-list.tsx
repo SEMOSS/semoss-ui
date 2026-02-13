@@ -186,7 +186,6 @@ export const WorkspaceMCPList = ({
 						effectivePermission === "REQUESTED" ||
 						effectivePermission === "DISCOVERABLE" ||
 						effectivePermission === "FULLY_PRIVATE";
-					console.log(m.engine_name, effectivePermission);
 					return (
 						<Card
 							key={m.engine_id}
