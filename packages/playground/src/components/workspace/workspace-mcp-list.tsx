@@ -125,7 +125,9 @@ export const WorkspaceMCPList = ({
 		if (m.permission_name) {
 			return {
 				effectivePermission: m.permission_name,
-				label: toSentenceCase(m.permission_name),
+				label: toSentenceCase(
+					m.permission_name === "EDIT" ? "Editor" : m.permission_name,
+				),
 			};
 		} else if (m.engine_global) {
 			return {
