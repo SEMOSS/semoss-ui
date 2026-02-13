@@ -1165,26 +1165,22 @@ export const FrameOperations = observer(
 				setData("option", tempValue);
 			}
 			if (variation === "echart-world-map-chart") {
+				const tempValue = JSON.parse(computedValue);
 				if (firstColumn?.values) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
 							? tempValue["_state"]
 							: {};
+					tempValue["series"][0]["label"]["name"] = firstColumn?.values;
+
 					tempValue["_state"]["fields"] = {
 						...tempValue["_state"]["fields"],
 						label: firstColumn?.values?.[0],
 						labelDataType: firstColumn?.dataType?.[0],
-					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
+					};					
 				}
 				if (secondColumn?.values) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1195,13 +1191,8 @@ export const FrameOperations = observer(
 						Latitude: secondColumn?.values?.[0],
 						LatitudeDataType: secondColumn?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
 				if (columnsDrop[2]?.values.length > 0) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1212,13 +1203,8 @@ export const FrameOperations = observer(
 						Longitude: columnsDrop[2]?.values?.[0],
 						LongitudeDataType: columnsDrop[2]?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
 				if (columnsDrop[3]?.values.length > 0) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1229,13 +1215,8 @@ export const FrameOperations = observer(
 						size: columnsDrop[3]?.values?.[0],
 						sizeDataType: columnsDrop[3]?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
 				if (columnsDrop[4]?.values.length > 0) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1246,13 +1227,8 @@ export const FrameOperations = observer(
 						color: columnsDrop[4]?.values?.[0],
 						colorDataType: columnsDrop[4]?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
 				if (columnsDrop[5]?.values.length > 0) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1263,10 +1239,9 @@ export const FrameOperations = observer(
 						tooltip: columnsDrop[5]?.values?.[0],
 						tooltipDataType: columnsDrop[5]?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
+				setValue(JSON.stringify(tempValue));
+				setData("option", tempValue);
 			}
 			if (variation == "echart-gantt-chart") {
 				let columnsToSet = [];
