@@ -263,7 +263,10 @@ export const WorkspaceDetailPage = observer(() => {
 						className="w-full overflow-hidden"
 					>
 						{tab === "members" && (
-							<WorkspaceMembersList workspaceId={workspaceId} />
+							<WorkspaceMembersList
+								workspaceId={workspaceId}
+								search={debouncedSearch}
+							/>
 						)}
 					</TabsContent>
 				</Tabs>
