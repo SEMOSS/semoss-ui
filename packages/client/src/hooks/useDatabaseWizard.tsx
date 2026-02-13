@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import {
+	ALLOWED_SQL_TYPES,
+	type AllowedSqlType,
+	normalizeSqlType,
+} from "@/utils/databaseWizard/allowedTypes";
 import { inferColumnTypes, parseCsvPreview } from "@/utils/databaseWizard/csv";
 import { schemaPrompt } from "@/utils/databaseWizard/schemaPrompt";
 import { schemaToSql } from "@/utils/databaseWizard/schemaToSql";
@@ -9,17 +14,96 @@ import type { DatabaseSummary, WizardStep } from "@/utils/databaseWizard/types";
 
 type LlmOption = { database_id: string; database_name: string };
 
+type SchemaEditorColumn = {
+	name: string;
+	type: AllowedSqlType;
+	description: string;
+};
+
 const defaultSchemaContract = {
-	schema: [
-		{
-			table: "table_name",
-			columns: [{ name: "column_name", type: "TEXT" }],
-			foreign_keys: [
-				{ column: "column_name", references: "table(column)" },
-			],
-			sample_data: [{ column_name: "example" }],
+	type: "object",
+	properties: {
+		schema: {
+			type: "object",
+			description:
+				"An object where each key is a table name and the value contains table details.",
+			patternProperties: {
+				"^[a-zA-Z0-9_]+$": {
+					type: "object",
+					properties: {
+						columns: {
+							type: "object",
+							description:
+								"An object where each key is a column name and the value is an object containing its SQL data type and description.",
+							patternProperties: {
+								"^[a-zA-Z0-9_]+$": {
+									type: "object",
+									properties: {
+										type: {
+											type: "string",
+											description:
+												"SQL data type for the column.",
+										},
+										description: {
+											type: "string",
+											description:
+												"A brief description of the column's purpose.",
+										},
+									},
+									required: ["type", "description"],
+								},
+							},
+							additionalProperties: false,
+						},
+						primary_key: { type: "string" },
+						foreign_keys: {
+							type: "object",
+							description:
+								"An object defining foreign key relationships.",
+							patternProperties: {
+								"^[a-zA-Z0-9_]+$": {
+									type: "object",
+									properties: {
+										references: {
+											type: "string",
+											description:
+												"The table this key references.",
+										},
+										on: {
+											type: "string",
+											description:
+												"The column in the referenced table.",
+										},
+									},
+									required: ["references", "on"],
+								},
+							},
+						},
+					},
+					required: ["columns"],
+				},
+			},
+			additionalProperties: false,
 		},
-	],
+		sample_data: {
+			type: ["object", "null"],
+			description:
+				"An object where each key is a table name and the value is an array of data objects. Only include if requested.",
+			patternProperties: {
+				"^[a-zA-Z0-9_]+$": {
+					type: "array",
+					items: {
+						type: "object",
+						additionalProperties: {
+							type: ["string", "number", "boolean", "null"],
+						},
+					},
+				},
+			},
+			additionalProperties: false,
+		},
+	},
+	required: ["schema"],
 };
 
 type UseDatabaseWizardOptions = {
@@ -45,6 +129,14 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 	const [schemaJson, setSchemaJson] = useState("");
 	const [schemaSql, setSchemaSql] = useState("");
 	const [schemaMetadata, setSchemaMetadata] = useState("");
+	const [schemaTableName, setSchemaTableName] = useState("");
+	const [schemaColumns, setSchemaColumns] = useState<SchemaEditorColumn[]>(
+		[],
+	);
+	const [schemaSampleData, setSchemaSampleData] = useState<Record<
+		string,
+		Array<Record<string, unknown>>
+	> | null>(null);
 	const [querySql, setQuerySql] = useState("");
 	const [includeSampleData, setIncludeSampleData] = useState(false);
 	const [sampleRowCount, setSampleRowCount] = useState(5);
@@ -52,9 +144,6 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 		headers: string[];
 		rows: string[][];
 	} | null>(null);
-	const [csvTableName, setCsvTableName] = useState("");
-	const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
-	const [csvRows, setCsvRows] = useState<string[][]>([]);
 	const resolvedDatabaseId = databaseId || currentDatabaseId;
 
 	useEffect(() => {
@@ -262,6 +351,26 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 				throw new Error("LLM response missing schema");
 			}
 			setSchemaJson(JSON.stringify(response, null, 2));
+
+			const tableEntries = Object.entries(response.schema || {});
+			if (tableEntries.length === 0) {
+				throw new Error("LLM response has no tables");
+			}
+			if (tableEntries.length > 1) {
+				toast.info("Multiple tables returned. Using the first table.");
+			}
+			const [tableName, tableDef] = tableEntries[0];
+			const columns = tableDef?.columns || {};
+			const columnEntries = Object.entries(columns);
+			const nextColumns = columnEntries.map(([name, column]) => ({
+				name,
+				type: normalizeSqlType(column?.type || "TEXT"),
+				description: column?.description || "",
+			}));
+
+			setSchemaTableName(tableName);
+			setSchemaColumns(nextColumns);
+			setSchemaSampleData(response.sample_data || null);
 			toast.success("Schema generated");
 		} catch (error) {
 			const message = (error as Error).message;
@@ -279,15 +388,54 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 		selectedLlmId,
 	]);
 
+	const buildSchemaFromEditor = useCallback(
+		(
+			sampleDataOverride?: Record<
+				string,
+				Array<Record<string, unknown>>
+			> | null,
+		) => {
+			if (!schemaTableName.trim()) {
+				toast.error("Table name is required");
+				return null;
+			}
+			const filteredColumns = schemaColumns.filter((column) =>
+				column.name.trim(),
+			);
+			if (filteredColumns.length === 0) {
+				toast.error("At least one column is required");
+				return null;
+			}
+			const columnsMap = filteredColumns.reduce<
+				Record<string, { type: string; description?: string }>
+			>((acc, column) => {
+				acc[column.name] = {
+					type: normalizeSqlType(column.type),
+					description: column.description,
+				};
+				return acc;
+			}, {});
+
+			return {
+				schema: {
+					[schemaTableName]: {
+						columns: columnsMap,
+					},
+				},
+				sample_data: sampleDataOverride ?? null,
+			};
+		},
+		[schemaColumns, schemaTableName],
+	);
+
 	const generateSqlFromSchema = useCallback(() => {
-		try {
-			const parsed = JSON.parse(schemaJson);
-			const sql = schemaToSql(parsed, includeSampleData);
-			setSchemaSql(sql);
-		} catch (_error) {
-			toast.error("Invalid schema JSON");
-		}
-	}, [includeSampleData, schemaJson]);
+		const wizardSchema = buildSchemaFromEditor(
+			includeSampleData ? schemaSampleData : null,
+		);
+		if (!wizardSchema) return;
+		const sql = schemaToSql(wizardSchema, includeSampleData);
+		setSchemaSql(sql);
+	}, [buildSchemaFromEditor, includeSampleData, schemaSampleData]);
 
 	const executeSql = useCallback(async () => {
 		if (!resolvedDatabaseId || !schemaSql.trim()) return;
@@ -311,25 +459,49 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 		const text = await file.text();
 		const preview = parseCsvPreview(text);
 		setCsvPreview(preview);
-		setCsvHeaders(preview.headers);
-		setCsvRows(preview.rows);
+		setSchemaSampleData(null);
+		const inferredTypes = inferColumnTypes(preview.rows, preview.headers);
+		const nextColumns = preview.headers.map((header) => ({
+			name: header,
+			type: normalizeSqlType(inferredTypes[header] || "TEXT"),
+			description: "",
+		}));
+		setSchemaColumns(nextColumns);
 	}, []);
 
 	const generateSqlFromCsv = useCallback(() => {
-		if (!csvHeaders.length || !csvTableName) {
-			toast.error("CSV file and table name required");
-			return;
-		}
-		const columnTypes = inferColumnTypes(csvRows, csvHeaders);
-		const columns = csvHeaders.map((header) => ({
-			name: header,
-			type: columnTypes[header] || "TEXT",
-		}));
-		const sql = `CREATE TABLE "${csvTableName}" (\n  ${columns
-			.map((column) => `"${column.name}" ${column.type}`)
-			.join(",\n  ")}\n);`;
+		const wizardSchema = buildSchemaFromEditor(null);
+		if (!wizardSchema) return;
+		const sql = schemaToSql(wizardSchema, false);
 		setSchemaSql(sql);
-	}, [csvHeaders, csvRows, csvTableName]);
+	}, [buildSchemaFromEditor]);
+
+	const updateSchemaColumn = useCallback(
+		(index: number, patch: Partial<SchemaEditorColumn>) => {
+			setSchemaColumns((prev) =>
+				prev.map((column, idx) => {
+					if (idx !== index) return column;
+					return {
+						...column,
+						...patch,
+						type: normalizeSqlType(patch.type || column.type),
+					};
+				}),
+			);
+		},
+		[],
+	);
+
+	const addSchemaColumn = useCallback(() => {
+		setSchemaColumns((prev) => [
+			...prev,
+			{ name: "", type: ALLOWED_SQL_TYPES[0], description: "" },
+		]);
+	}, []);
+
+	const deleteSchemaColumn = useCallback((index: number) => {
+		setSchemaColumns((prev) => prev.filter((_, idx) => idx !== index));
+	}, []);
 
 	const runQuery = useCallback(async () => {
 		if (!resolvedDatabaseId || !querySql.trim()) return;
@@ -361,6 +533,9 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 			executeSql,
 			handleCsvFileSelected,
 			generateSqlFromCsv,
+			updateSchemaColumn,
+			addSchemaColumn,
+			deleteSchemaColumn,
 			runQuery,
 		}),
 		[
@@ -373,6 +548,9 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 			handleCsvFileSelected,
 			listDatabases,
 			listLlms,
+			updateSchemaColumn,
+			addSchemaColumn,
+			deleteSchemaColumn,
 			refreshSchema,
 			runQuery,
 			selectDatabase,
@@ -393,23 +571,23 @@ export function useDatabaseWizard(options: UseDatabaseWizardOptions = {}) {
 			schemaJson,
 			schemaSql,
 			schemaMetadata,
+			schemaTableName,
+			schemaColumns,
 			querySql,
 			includeSampleData,
 			sampleRowCount,
 			csvPreview,
-			csvTableName,
 		},
 		setters: {
 			setStep,
 			setDatabaseName,
 			setSelectedLlmId,
 			setDescription,
-			setSchemaJson,
 			setSchemaSql,
 			setQuerySql,
 			setIncludeSampleData,
 			setSampleRowCount,
-			setCsvTableName,
+			setSchemaTableName,
 		},
 		actions,
 	};

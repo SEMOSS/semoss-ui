@@ -126,7 +126,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	const wizard = useDatabaseWizard({
 		mode: "catalog",
 		onDatabaseCreated: (databaseId) =>
-			navigate(`/engine/database/${databaseId}`),
+			navigate(`/engine/database/${databaseId}/wizard`),
 	});
 
 	const DatabaseOptions = DATABASE_CONNECTION;

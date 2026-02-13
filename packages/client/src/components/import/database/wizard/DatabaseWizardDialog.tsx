@@ -16,8 +16,13 @@ export type DatabaseWizardDialogProps = {
 	schemaSql: string;
 	schemaMetadata: string;
 	querySql: string;
-	schemaJson: string;
 	csvPreview: { headers: string[]; rows: string[][] } | null;
+	schemaTableName: string;
+	schemaColumns: Array<{
+		name: string;
+		type: string;
+		description: string;
+	}>;
 	selectedDatabaseId: string;
 	selectedLlmId: string;
 	includeSampleData: boolean;
@@ -35,11 +40,16 @@ export type DatabaseWizardDialogProps = {
 	onIncludeSampleDataChange: (value: boolean) => void;
 	onSampleRowCountChange: (value: number) => void;
 	onGenerateSchema: () => void;
-	onSchemaJsonChange: (value: string) => void;
+	onTableNameChange: (value: string) => void;
+	onColumnChange: (
+		index: number,
+		patch: { name?: string; type?: string; description?: string },
+	) => void;
+	onAddColumn: () => void;
+	onDeleteColumn: (index: number) => void;
 	onGenerateSql: () => void;
 	onExecuteSql: () => void;
 	onCsvFileSelected: (file: File) => void;
-	onTableNameChange: (value: string) => void;
 	onQuerySqlChange: (value: string) => void;
 	onRunQuery: () => void;
 	onRefreshSchema: () => void;
@@ -61,54 +71,68 @@ const renderStep = (props: DatabaseWizardDialogProps) => {
 				/>
 			);
 		case "actions":
+		case "create-nl":
+		case "csv":
+		case "manage":
 			return (
 				<DatabaseWizardStepActions
 					isLoading={props.isLoading}
-					onSelectStep={props.onSelectStep}
+					activeStep={props.step}
+					onToggleStep={props.onSelectStep}
 					onRefreshSchema={props.onRefreshSchema}
-				/>
-			);
-		case "create-nl":
-			return (
-				<DatabaseWizardCreateFromNL
-					isLoading={props.isLoading}
-					llms={props.llms}
-					selectedLlmId={props.selectedLlmId}
-					includeSampleData={props.includeSampleData}
-					sampleRowCount={props.sampleRowCount}
-					schemaJson={props.schemaJson}
-					schemaSql={props.schemaSql}
-					onDescriptionChange={props.onDescriptionChange}
-					onSelectLlm={props.onSelectLlm}
-					onIncludeSampleDataChange={props.onIncludeSampleDataChange}
-					onSampleRowCountChange={props.onSampleRowCountChange}
-					onGenerateSchema={props.onGenerateSchema}
-					onSchemaJsonChange={props.onSchemaJsonChange}
-					onGenerateSql={props.onGenerateSql}
-					onExecuteSql={props.onExecuteSql}
-				/>
-			);
-		case "csv":
-			return (
-				<DatabaseWizardLoadFromCSV
-					isLoading={props.isLoading}
-					csvPreview={props.csvPreview}
-					schemaSql={props.schemaSql}
-					onCsvFileSelected={props.onCsvFileSelected}
-					onTableNameChange={props.onTableNameChange}
-					onGenerateSql={props.onGenerateSql}
-					onExecuteSql={props.onExecuteSql}
-				/>
-			);
-		case "manage":
-			return (
-				<DatabaseWizardManageAndQuery
-					isLoading={props.isLoading}
-					schemaMetadata={props.schemaMetadata}
-					querySql={props.querySql}
-					onQuerySqlChange={props.onQuerySqlChange}
-					onRunQuery={props.onRunQuery}
-					onRefreshSchema={props.onRefreshSchema}
+					renderCreate={() => (
+						<DatabaseWizardCreateFromNL
+							isLoading={props.isLoading}
+							llms={props.llms}
+							selectedLlmId={props.selectedLlmId}
+							includeSampleData={props.includeSampleData}
+							sampleRowCount={props.sampleRowCount}
+							schemaSql={props.schemaSql}
+							schemaTableName={props.schemaTableName}
+							schemaColumns={props.schemaColumns}
+							onDescriptionChange={props.onDescriptionChange}
+							onSelectLlm={props.onSelectLlm}
+							onIncludeSampleDataChange={
+								props.onIncludeSampleDataChange
+							}
+							onSampleRowCountChange={
+								props.onSampleRowCountChange
+							}
+							onGenerateSchema={props.onGenerateSchema}
+							onTableNameChange={props.onTableNameChange}
+							onColumnChange={props.onColumnChange}
+							onAddColumn={props.onAddColumn}
+							onDeleteColumn={props.onDeleteColumn}
+							onGenerateSql={props.onGenerateSql}
+							onExecuteSql={props.onExecuteSql}
+						/>
+					)}
+					renderCsv={() => (
+						<DatabaseWizardLoadFromCSV
+							isLoading={props.isLoading}
+							csvPreview={props.csvPreview}
+							schemaSql={props.schemaSql}
+							schemaTableName={props.schemaTableName}
+							schemaColumns={props.schemaColumns}
+							onCsvFileSelected={props.onCsvFileSelected}
+							onTableNameChange={props.onTableNameChange}
+							onColumnChange={props.onColumnChange}
+							onAddColumn={props.onAddColumn}
+							onDeleteColumn={props.onDeleteColumn}
+							onGenerateSql={props.onGenerateSql}
+							onExecuteSql={props.onExecuteSql}
+						/>
+					)}
+					renderManage={() => (
+						<DatabaseWizardManageAndQuery
+							isLoading={props.isLoading}
+							schemaMetadata={props.schemaMetadata}
+							querySql={props.querySql}
+							onQuerySqlChange={props.onQuerySqlChange}
+							onRunQuery={props.onRunQuery}
+							onRefreshSchema={props.onRefreshSchema}
+						/>
+					)}
 				/>
 			);
 		default:

@@ -13,6 +13,10 @@ import {
 	SelectValue,
 	Textarea,
 } from "@semoss/ui/next";
+import {
+	DatabaseWizardSchemaEditor,
+	type SchemaEditorColumn,
+} from "./DatabaseWizardSchemaEditor";
 
 export type DatabaseWizardCreateFromNLProps = {
 	isLoading: boolean;
@@ -20,14 +24,18 @@ export type DatabaseWizardCreateFromNLProps = {
 	selectedLlmId: string;
 	includeSampleData: boolean;
 	sampleRowCount: number;
-	schemaJson: string;
 	schemaSql: string;
+	schemaTableName: string;
+	schemaColumns: SchemaEditorColumn[];
 	onDescriptionChange: (value: string) => void;
 	onSelectLlm: (id: string) => void;
 	onIncludeSampleDataChange: (value: boolean) => void;
 	onSampleRowCountChange: (value: number) => void;
 	onGenerateSchema: () => void;
-	onSchemaJsonChange: (value: string) => void;
+	onTableNameChange: (value: string) => void;
+	onColumnChange: (index: number, patch: Partial<SchemaEditorColumn>) => void;
+	onAddColumn: () => void;
+	onDeleteColumn: (index: number) => void;
 	onGenerateSql: () => void;
 	onExecuteSql: () => void;
 };
@@ -40,20 +48,23 @@ export const DatabaseWizardCreateFromNL: React.FC<
 	selectedLlmId,
 	includeSampleData,
 	sampleRowCount,
-	schemaJson,
 	schemaSql,
+	schemaTableName,
+	schemaColumns,
 	onDescriptionChange,
 	onSelectLlm,
 	onIncludeSampleDataChange,
 	onSampleRowCountChange,
 	onGenerateSchema,
-	onSchemaJsonChange,
+	onTableNameChange,
+	onColumnChange,
+	onAddColumn,
+	onDeleteColumn,
 	onGenerateSql,
 	onExecuteSql,
 }) => {
 	const descriptionId = useId();
 	const llmId = useId();
-	const schemaJsonId = useId();
 	const schemaSqlId = useId();
 
 	return (
@@ -118,18 +129,19 @@ export const DatabaseWizardCreateFromNL: React.FC<
 				Generate schema
 			</Button>
 			<div className="flex flex-col gap-2">
-				<Label htmlFor={schemaJsonId}>Schema JSON</Label>
-				<Textarea
-					id={schemaJsonId}
-					rows={6}
-					value={schemaJson}
-					onChange={(event) => onSchemaJsonChange(event.target.value)}
-					placeholder="Paste or edit the schema JSON"
+				<Label>Schema</Label>
+				<DatabaseWizardSchemaEditor
+					tableName={schemaTableName}
+					columns={schemaColumns}
+					onTableNameChange={onTableNameChange}
+					onColumnChange={onColumnChange}
+					onAddColumn={onAddColumn}
+					onDeleteColumn={onDeleteColumn}
 				/>
 				<Button
 					variant="outline"
 					onClick={onGenerateSql}
-					disabled={isLoading || !schemaJson}
+					disabled={isLoading}
 				>
 					Generate SQL
 				</Button>

@@ -1,22 +1,22 @@
 export type WizardColumn = {
-	name: string;
 	type: string;
+	description?: string;
 };
 
 export type WizardForeignKey = {
-	column: string;
 	references: string;
+	on: string;
 };
 
 export type WizardTable = {
-	table: string;
-	columns: WizardColumn[];
-	foreign_keys?: WizardForeignKey[];
-	sample_data?: Array<Record<string, unknown>>;
+	columns: Record<string, WizardColumn>;
+	primary_key?: string;
+	foreign_keys?: Record<string, WizardForeignKey>;
 };
 
 export type WizardSchema = {
-	schema: WizardTable[];
+	schema: Record<string, WizardTable>;
+	sample_data?: Record<string, Array<Record<string, unknown>>> | null;
 };
 
 const quoteIdentifier = (value: string) => {
@@ -47,32 +47,43 @@ export const schemaToSql = (
 ) => {
 	const statements: string[] = [];
 
-	wizardSchema.schema.forEach((table) => {
-		const columnLines = table.columns.map(
-			(column) =>
-				`${quoteIdentifier(column.name)} ${column.type || "TEXT"}`,
-		);
-
-		const foreignKeys = (table.foreign_keys || []).map((fk) => {
-			return `FOREIGN KEY (${quoteIdentifier(fk.column)}) REFERENCES ${fk.references}`;
+	Object.entries(wizardSchema.schema).forEach(([tableName, table]) => {
+		const columnNames = Object.keys(table.columns || {});
+		const columnLines = columnNames.map((columnName) => {
+			const column = table.columns[columnName];
+			return `${quoteIdentifier(columnName)} ${column?.type || "TEXT"}`;
 		});
 
-		const allLines = [...columnLines, ...foreignKeys];
+		const primaryKey = table.primary_key
+			? `PRIMARY KEY (${quoteIdentifier(table.primary_key)})`
+			: null;
 
-		statements.push(
-			`CREATE TABLE ${quoteIdentifier(table.table)} (\n  ${allLines.join(",\n  ")}\n);`,
+		const foreignKeys = Object.entries(table.foreign_keys || {}).map(
+			([columnName, fk]) => {
+				return `FOREIGN KEY (${quoteIdentifier(columnName)}) REFERENCES ${quoteIdentifier(fk.references)} (${quoteIdentifier(fk.on)})`;
+			},
 		);
 
-		if (includeSampleData && table.sample_data?.length) {
-			const columnNames = table.columns.map((column) => column.name);
+		const allLines = [
+			...columnLines,
+			...(primaryKey ? [primaryKey] : []),
+			...foreignKeys,
+		];
+
+		statements.push(
+			`CREATE TABLE ${quoteIdentifier(tableName)} (\n  ${allLines.join(",\n  ")}\n);`,
+		);
+
+		const sampleRows = wizardSchema.sample_data?.[tableName];
+		if (includeSampleData && sampleRows?.length) {
 			const columnsSql = columnNames.map(quoteIdentifier).join(", ");
 
-			table.sample_data.forEach((row) => {
+			sampleRows.forEach((row) => {
 				const values = columnNames.map((name) =>
 					formatValue(row[name]),
 				);
 				statements.push(
-					`INSERT INTO ${quoteIdentifier(table.table)} (${columnsSql}) VALUES (${values.join(", ")});`,
+					`INSERT INTO ${quoteIdentifier(tableName)} (${columnsSql}) VALUES (${values.join(", ")});`,
 				);
 			});
 		}

@@ -4,40 +4,83 @@ import type { WizardStep } from "@/utils/databaseWizard/types";
 
 export type DatabaseWizardStepActionsProps = {
 	isLoading: boolean;
-	onSelectStep: (step: WizardStep) => void;
+	activeStep: WizardStep;
+	onToggleStep: (step: WizardStep) => void;
 	onRefreshSchema: () => void;
+	renderCreate: () => React.ReactNode;
+	renderCsv: () => React.ReactNode;
+	renderManage: () => React.ReactNode;
 };
 
 export const DatabaseWizardStepActions: React.FC<
 	DatabaseWizardStepActionsProps
-> = ({ isLoading, onSelectStep, onRefreshSchema }) => {
+> = ({
+	isLoading,
+	activeStep,
+	onToggleStep,
+	onRefreshSchema,
+	renderCreate,
+	renderCsv,
+	renderManage,
+}) => {
+	const toggleStep = (next: WizardStep) => {
+		onToggleStep(activeStep === next ? "actions" : next);
+	};
+
 	return (
 		<div className="flex flex-col gap-4">
 			<P className="text-muted-foreground text-sm">
 				Choose how you want to work with the database.
 			</P>
-			<div className="grid gap-3 sm:grid-cols-3">
-				<Button
-					variant="outline"
-					onClick={() => onSelectStep("create-nl")}
-					disabled={isLoading}
-				>
-					Create Table from Natural Language
-				</Button>
-				<Button
-					variant="outline"
-					onClick={() => onSelectStep("csv")}
-					disabled={isLoading}
-				>
-					Load Data from CSV
-				</Button>
-				<Button
-					variant="outline"
-					onClick={() => onSelectStep("manage")}
-					disabled={isLoading}
-				>
-					Manage & Query Database
-				</Button>
+			<div className="flex flex-col gap-3">
+				<div className="rounded-lg border border-border">
+					<button
+						className="flex w-full items-center justify-between px-4 py-3 text-left font-medium"
+						onClick={() => toggleStep("create-nl")}
+						disabled={isLoading}
+						type="button"
+					>
+						<span>Create Table from Natural Language</span>
+						<span>{activeStep === "create-nl" ? "-" : "+"}</span>
+					</button>
+					{activeStep === "create-nl" && (
+						<div className="border-border border-t px-4 py-4">
+							{renderCreate()}
+						</div>
+					)}
+				</div>
+				<div className="rounded-lg border border-border">
+					<button
+						className="flex w-full items-center justify-between px-4 py-3 text-left font-medium"
+						onClick={() => toggleStep("csv")}
+						disabled={isLoading}
+						type="button"
+					>
+						<span>Load Data from CSV</span>
+						<span>{activeStep === "csv" ? "-" : "+"}</span>
+					</button>
+					{activeStep === "csv" && (
+						<div className="border-border border-t px-4 py-4">
+							{renderCsv()}
+						</div>
+					)}
+				</div>
+				<div className="rounded-lg border border-border">
+					<button
+						className="flex w-full items-center justify-between px-4 py-3 text-left font-medium"
+						onClick={() => toggleStep("manage")}
+						disabled={isLoading}
+						type="button"
+					>
+						<span>Manage & Query Database</span>
+						<span>{activeStep === "manage" ? "-" : "+"}</span>
+					</button>
+					{activeStep === "manage" && (
+						<div className="border-border border-t px-4 py-4">
+							{renderManage()}
+						</div>
+					)}
+				</div>
 			</div>
 			<Button variant="ghost" onClick={onRefreshSchema}>
 				Refresh schema

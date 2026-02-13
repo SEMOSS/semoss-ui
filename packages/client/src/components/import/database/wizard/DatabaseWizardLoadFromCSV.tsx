@@ -1,13 +1,22 @@
 import type React from "react";
 import { useId } from "react";
 import { Button, Input, Label, P, Textarea } from "@semoss/ui/next";
+import {
+	DatabaseWizardSchemaEditor,
+	type SchemaEditorColumn,
+} from "./DatabaseWizardSchemaEditor";
 
 export type DatabaseWizardLoadFromCSVProps = {
 	isLoading: boolean;
 	csvPreview: { headers: string[]; rows: string[][] } | null;
 	schemaSql: string;
+	schemaTableName: string;
+	schemaColumns: SchemaEditorColumn[];
 	onCsvFileSelected: (file: File) => void;
 	onTableNameChange: (value: string) => void;
+	onColumnChange: (index: number, patch: Partial<SchemaEditorColumn>) => void;
+	onAddColumn: () => void;
+	onDeleteColumn: (index: number) => void;
 	onGenerateSql: () => void;
 	onExecuteSql: () => void;
 };
@@ -18,13 +27,17 @@ export const DatabaseWizardLoadFromCSV: React.FC<
 	isLoading,
 	csvPreview,
 	schemaSql,
+	schemaTableName,
+	schemaColumns,
 	onCsvFileSelected,
 	onTableNameChange,
+	onColumnChange,
+	onAddColumn,
+	onDeleteColumn,
 	onGenerateSql,
 	onExecuteSql,
 }) => {
 	const csvFileId = useId();
-	const csvTableId = useId();
 	const csvSqlId = useId();
 
 	return (
@@ -43,14 +56,6 @@ export const DatabaseWizardLoadFromCSV: React.FC<
 					}}
 				/>
 			</div>
-			<div className="flex flex-col gap-2">
-				<Label htmlFor={csvTableId}>Table name</Label>
-				<Input
-					id={csvTableId}
-					placeholder="table_name"
-					onChange={(event) => onTableNameChange(event.target.value)}
-				/>
-			</div>
 			{csvPreview && (
 				<div className="rounded-md border border-border p-3">
 					<P className="text-muted-foreground text-sm">Preview</P>
@@ -67,6 +72,17 @@ export const DatabaseWizardLoadFromCSV: React.FC<
 					</div>
 				</div>
 			)}
+			<div className="flex flex-col gap-2">
+				<Label>Schema</Label>
+				<DatabaseWizardSchemaEditor
+					tableName={schemaTableName}
+					columns={schemaColumns}
+					onTableNameChange={onTableNameChange}
+					onColumnChange={onColumnChange}
+					onAddColumn={onAddColumn}
+					onDeleteColumn={onDeleteColumn}
+				/>
+			</div>
 			<Button
 				variant="outline"
 				onClick={onGenerateSql}
