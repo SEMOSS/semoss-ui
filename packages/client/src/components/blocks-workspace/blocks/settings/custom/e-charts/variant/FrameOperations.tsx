@@ -1753,17 +1753,13 @@ export const FrameOperations = observer(
 				const updated = { ...prev };
 				for (const key in updated) {
 					const index = updated[key]["values"].indexOf(columnName);
-					updated[key] = {
-						...updated[key],
-						values: [
-							...updated[key]["values"]?.slice(0, index),
-							...updated[key]["values"].slice(index + 1),
-						],
-						dataType: [
-							...updated[key]["dataType"]?.slice(0, index),
-							...updated[key]["dataType"].slice(index + 1),
-						],
-					};
+					if (index !== -1) {
+						updated[key] = {
+							...updated[key],
+							values: updated[key]["values"].filter((_, i) => i !== index),
+							dataType: updated[key]["dataType"].filter((_, i) => i !== index),
+						};
+					}
 				}
 				return updated;
 			});
