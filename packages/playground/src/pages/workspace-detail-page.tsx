@@ -52,17 +52,6 @@ export const WorkspaceDetailPage = observer(() => {
 
 	const debouncedSearch = useDebouncedValue(search);
 
-	// Validate UUID format to prevent open redirect
-	const isValidUUID = (id: string | undefined): boolean => {
-		if (!id) return false;
-		const uuidRegex =
-			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-		return uuidRegex.test(id);
-	};
-
-	// Sanitize workspace ID for safe URL construction
-	const safeWorkspaceId = isValidUUID(workspaceId) ? workspaceId : "";
-
 	// Fetch workspace details
 	const getWorkspace = usePixel<Workspace>(
 		workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "",
@@ -139,13 +128,7 @@ export const WorkspaceDetailPage = observer(() => {
 						<DropdownMenuContent align="end">
 							<DropdownMenuGroup>
 								<DropdownMenuItem asChild>
-									<Link
-										to={
-											safeWorkspaceId
-												? `/workspace/${safeWorkspaceId}/edit`
-												: "/workspace"
-										}
-									>
+									<Link to={`/workspace/${workspaceId}/edit`}>
 										Edit
 									</Link>
 								</DropdownMenuItem>
