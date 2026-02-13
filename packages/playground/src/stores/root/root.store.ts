@@ -75,8 +75,8 @@ export class RootStore {
 				temperature: TEMPERATURE,
 				tokenLength: TOKEN_LENGTH,
 			},
-			defaultTools: [],
-			uploadedFiles: []
+			allowedFileTypes: [],
+			defaultTools: []
 		},
 	};
 
