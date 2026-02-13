@@ -438,8 +438,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						<DialogHeader>
 							<DialogTitle>Download Response</DialogTitle>
 							<DialogDescription>
-								Choose the format you'd like to download your
-								response as:
+								Choose the format for your download:
 							</DialogDescription>
 						</DialogHeader>
 						<div className="grid grid-cols-2 gap-3 py-4">
