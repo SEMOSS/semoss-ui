@@ -1,7 +1,6 @@
 import { observer } from "mobx-react-lite";
-import { Badge, Markdown } from "@semoss/ui/next";
-import { DatabaseStatistics } from "@/components/database/DatabaseStatistics";
-import { Section } from "@/components/ui";
+import { Badge, H4, Markdown, P } from "@semoss/ui/next";
+import { DatabaseStatistics } from "@/components/database/database-statistics";
 import { useEngine, useRootStore } from "@/hooks";
 import { removeUnderscores } from "@/utility";
 
@@ -20,15 +19,28 @@ export const EngineOverviewPage = observer(() => {
 		},
 	);
 
+	// Custom markdown components
+	const markdownComponents = {
+		p: ({
+			children,
+			...props
+		}: React.HTMLAttributes<HTMLParagraphElement>) => (
+			<P {...props}>{children}</P>
+		),
+	};
+
 	return (
 		<div className="relative z-0">
-			<Section>
-				<Section.Header data-testid="engine-overview-header">
+			<section className="mb-1 border-border border-b pb-2 last:mb-0 last:border-b-0">
+				<H4 className="mb-2" data-testid="engine-overview-header">
 					Details
-				</Section.Header>
+				</H4>
 				{active.metadata.markdown ? (
 					<div className="overflow-scroll">
-						<Markdown data-testid="engine-overview-markdown">
+						<Markdown
+							data-testid="engine-overview-markdown"
+							components={markdownComponents}
+						>
 							{active.metadata.markdown as string}
 						</Markdown>
 					</div>
@@ -37,7 +49,7 @@ export const EngineOverviewPage = observer(() => {
 						No Markdown available
 					</div>
 				)}
-			</Section>
+			</section>
 			{engineMetaKeys.map((k) => {
 				if (
 					active.metadata[k.metakey] === undefined ||
@@ -47,10 +59,11 @@ export const EngineOverviewPage = observer(() => {
 				}
 
 				return (
-					<Section key={k.metakey}>
-						<Section.Header>
-							{removeUnderscores(k.metakey)}
-						</Section.Header>
+					<section
+						key={k.metakey}
+						className="mb-1 border-border border-b pb-2 last:mb-0 last:border-b-0"
+					>
+						<H4 className="mb-2">{removeUnderscores(k.metakey)}</H4>
 						{k.display_options === "multi-checklist" ||
 						k.display_options === "multi-select" ||
 						k.display_options === "multi-typeahead" ||
@@ -74,14 +87,14 @@ export const EngineOverviewPage = observer(() => {
 						) : (
 							String(active.metadata[k.metakey] || "")
 						)}
-					</Section>
+					</section>
 				);
 			})}
 			{type === "DATABASE" && (
-				<Section>
-					<Section.Header>Statistics</Section.Header>
+				<section className="mb-1 border-border border-b pb-2 last:mb-0 last:border-b-0">
+					<H4 className="mb-2">Statistics</H4>
 					<DatabaseStatistics id={active.id} />
-				</Section>
+				</section>
 			)}
 		</div>
 	);
