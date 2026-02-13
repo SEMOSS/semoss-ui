@@ -31,12 +31,14 @@ import {
 } from "@semoss/ui/next";
 import logoImage from "@/assets/img/logo.svg";
 import {
+	PaginationButtons,
 	WorkspaceChatList,
 	WorkspaceMCPList,
 	WorkspaceMembersList,
 } from "@/components";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/use-chat";
+import { usePagination } from "@/hooks/use-pagination";
 import type { Workspace } from "@/types";
 
 /**
@@ -54,6 +56,10 @@ export const WorkspaceDetailPage = observer(() => {
 
 	const [tab, setTab] = useState<string>("chats");
 	const [search, setSearch] = useState<string>("");
+
+	// Pagination state - TODO: Wire up to child components
+	// For now, using a placeholder total count of 100 items
+	const pagination = usePagination(100);
 
 	const debouncedSearch = useDebouncedValue(search);
 
@@ -275,6 +281,10 @@ export const WorkspaceDetailPage = observer(() => {
 								/>
 							)}
 						</TabsContent>
+
+						<div className="flex w-full flex-row items-center justify-end gap-2 border-border border-t bg-primary-foreground p-4">
+							<PaginationButtons {...pagination} />
+						</div>
 					</div>
 				</Tabs>
 			</div>
