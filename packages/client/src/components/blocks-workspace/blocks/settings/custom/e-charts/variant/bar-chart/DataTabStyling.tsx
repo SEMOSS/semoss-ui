@@ -242,6 +242,14 @@ export const DataTabStyling = observer(
 						values: uniqueValues,
 					};
 				}
+				else if (item.multiLabel && updatedColumns[key]?.values) {
+					// Remove duplicate values for multiLabel fields
+					const uniqueValues = Array.from(new Set(updatedColumns[key].values));
+					updatedColumns[key] = {
+						...updatedColumns[key],
+						values: uniqueValues,
+					};
+				}
 			});
 			if (Object.keys(updatedColumns).length > 0) {
 				setSelectedColumns({ ...updatedColumns });

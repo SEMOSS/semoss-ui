@@ -100,6 +100,15 @@ interface AccordionSection {
 	};
 }
 
+// Define the type for droppedColumns
+interface DroppedColumns {
+    [key: string]: {
+        values: string[];
+        dataType: string[];
+    };
+}
+
+
 //data tab left section to show the data tab and the drag area for the selected columns
 export const FrameOperations = observer(
 	<D extends BlockDef = BlockDef>({
@@ -1711,21 +1720,41 @@ export const FrameOperations = observer(
 			const dropId = destination.droppableId;
 
 			const updated = { ...droppedColumns };
-			if (!updated[dropId])
-				updated[dropId] = { values: [], dataType: [] };
-			const dropCol = filteredColumns.find(
-				(col) => col?.name === draggableId,
-			);
-			updated[dropId] = {
-				...updated[dropId],
-				values: [...updated[dropId]?.values, draggableId],
-				dataType: [...updated[dropId]?.dataType, dropCol?.dataType],
-			};
+			if (!updated[dropId]) updated[dropId] = { values: [], dataType: [] };
+		
+			const dropCol = filteredColumns.find((col) => col?.name === draggableId);
+		
+			// Extract the index from the dropId
+			const dropIndex = parseInt(dropId.split("-").pop(), 10);
+		
+			const isMultiLabel = chart[dropIndex]?.multiLabel;
+		
+			if (isMultiLabel) {
+				// Allow multiple values
+				if (!updated[dropId].values.includes(draggableId)) {
+					updated[dropId] = {
+						...updated[dropId],
+						values: [...updated[dropId]?.values, draggableId],
+						dataType: [...updated[dropId]?.dataType, dropCol?.dataType],
+					};
+				}
+			} else {
+				// Allow only one value
+				if (updated[dropId]?.values.length === 0) {
+					// If no value exists, set the first value
+					updated[dropId] = {
+						...updated[dropId],
+						values: [draggableId],
+						dataType: [dropCol?.dataType],
+					};
+				}
+			}
+		
 			setDroppedColumns(updated);
 		};
 		const deleteDroppedColumn = (columnName: string) => {
-			setDroppedColumns((prev) => {
-				const updated = { ...prev };
+			setDroppedColumns((prev: DroppedColumns) => {
+				const updated: DroppedColumns = { ...prev };
 				for (const key in updated) {
 					const index = updated[key]["values"].indexOf(columnName);
 					if (index !== -1) {
