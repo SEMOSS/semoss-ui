@@ -141,28 +141,53 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 					header.replace("Average_", ""),
 				);
 				//format the data points to match the echart specification
-				resultData["xAxis"]["data"] = valuesDataSet.map((x) => x[0]);
+				resultData["xAxis"]["data"] = valuesDataSet
+					?.map((x) =>
+						x?.[0] !== undefined && !isNaN(parseFloat(x[0]))
+							? parseFloat(x[0]).toFixed(2)
+							: null,
+					)
+					.filter((value) => value !== null);
 				valuesDataSet.map((x) => x.shift());
 				headersDataSet.shift();
 				const yAxisListLength =
 					resultData["_state"]?.["fields"]?.["yAxis"].length;
+				if (!resultData["series"]) {
+					resultData["series"] = [];
+				}
 				for (let index = 0; index < yAxisListLength; index++) {
+					if (!resultData["series"][index]) {
+						resultData["series"][index] = {};
+					}
+
 					resultData["series"][index]["data"] = valuesDataSet.map(
 						(x) => {
-							return x[index];
+							const value = x[index];
+							if (value === null || value === undefined || value === "NaN" || isNaN(Number(value))) {
+								return null; // Replace invalid values with null
+							}
+							return parseFloat(value).toFixed(2); // Round to 2 decimal places
 						},
 					);
 					resultData["series"][index]["name"] = headersDataSet[index];
+					resultData["series"][index]["type"] = "line";
 				}
-				// resultData["series"].length = yAxisListLength;
-				resultData["series"].slice(0, yAxisListLength);
+
+				const yAxisNames = resultData["yAxis"]["name"];
+
+				resultData["series"] = resultData["series"].filter(
+					(seriesItem) => yAxisNames.includes(seriesItem.name),
+				);
+
 				valuesDataSet.map((x) => x.splice(0, yAxisListLength));
 				headersDataSet.splice(0, yAxisListLength);
 				const customTooltipData = [];
 				data.option["_state"]?.["fields"]["tooltip"].map((x, index) => {
 					customTooltipData.push({
 						name: x,
-						data: valuesDataSet.map((y) => y[index]),
+						data: valuesDataSet.map(
+							(y) => parseFloat(y[index]).toFixed(2), // Round tooltip data to 2 decimal places
+						),
 					});
 				});
 				if (!Object.hasOwn(resultData["tooltip"], "formatter")) {
@@ -171,7 +196,9 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 						(x, index) => {
 							customTooltipData.push({
 								name: x,
-								data: valuesDataSet.map((y) => y[index]),
+								data: valuesDataSet.map(
+									(y) => parseFloat(y[index]).toFixed(2), // Round tooltip data to 2 decimal places
+								),
 							});
 						},
 					);
@@ -186,7 +213,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 							params.forEach((param) => {
 								let { value, seriesName, color } = param;
 								if (!isNaN(value) && value !== undefined) {
-									value = value.toFixed(1);
+									value = parseFloat(value).toFixed(2);
 								}
 								formatterStringArr.push(
 									`<span style="color:${color}">\u25CF</span> Average of ${seriesName}:<strong> ${value}</strong><br>`,
@@ -307,6 +334,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 		return (
 			<StyledChartContainer>
 				<ReactECharts
+					key={JSON.stringify(resultData)}
 					option={resultData as EChartsOption}
 					onEvents={onClickChart}
 					onChartReady={(chart) => {
