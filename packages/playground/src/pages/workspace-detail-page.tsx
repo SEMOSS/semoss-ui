@@ -5,6 +5,7 @@ import {
 	MessagesSquareIcon,
 	PlusIcon,
 	SearchIcon,
+	UsersRound,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -29,7 +30,11 @@ import {
 	useDebouncedValue,
 } from "@semoss/ui/next";
 import logoImage from "@/assets/img/logo.svg";
-import { WorkspaceChatList, WorkspaceMCPList } from "@/components";
+import {
+	WorkspaceChatList,
+	WorkspaceMCPList,
+	WorkspaceMembersList,
+} from "@/components";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/use-chat";
 import type { Workspace } from "@/types";
@@ -188,6 +193,10 @@ export const WorkspaceDetailPage = observer(() => {
 								<HammerIcon />
 								Toolbox
 							</TabsTrigger>
+							<TabsTrigger value="members">
+								<UsersRound />
+								Members
+							</TabsTrigger>
 						</TabsList>
 						<InputGroup className="bg-background">
 							<InputGroupInput
@@ -247,6 +256,14 @@ export const WorkspaceDetailPage = observer(() => {
 								workspaceId={workspaceId}
 								search={debouncedSearch}
 							/>
+						)}
+					</TabsContent>
+					<TabsContent
+						value="members"
+						className="w-full overflow-hidden"
+					>
+						{tab === "members" && (
+							<WorkspaceMembersList workspaceId={workspaceId} />
 						)}
 					</TabsContent>
 				</Tabs>
