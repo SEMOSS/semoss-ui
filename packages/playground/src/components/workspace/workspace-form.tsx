@@ -1,4 +1,3 @@
-import { PlusIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import {
 	Button,
@@ -8,9 +7,6 @@ import {
 	FieldSeparator,
 	Input,
 	Textarea,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { MCPSelector, NewKnowledgeOverlay } from "@/components";
@@ -98,7 +94,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 			console.error(e);
 
 			toast.error(
-				e instanceof Error ? e.message : "Failed to save workspace",
+				e instanceof Error ? e.message : "Failed to save agent",
 			);
 		} finally {
 			// stop the loading screen
@@ -157,25 +153,6 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						}}
 					>
 						<div className="flex-1">Knowledge</div>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={(event) => {
-										event.preventDefault();
-										event.stopPropagation();
-
-										setIsKnowledgeOverlayOpen(true);
-									}}
-								>
-									<PlusIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								Create Knowledge Source
-							</TooltipContent>
-						</Tooltip>
 					</FieldLabel>
 
 					<MCPSelector
