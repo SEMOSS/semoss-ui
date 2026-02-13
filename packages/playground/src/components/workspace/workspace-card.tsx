@@ -40,7 +40,7 @@ export const WorkspaceCard = observer(
 			<Card
 				className="cursor-pointer gap-0 bg-background p-0"
 				onClick={() => {
-					navigate(`/workspace/${workspace.workspace_id}`);
+					navigate(`/agent/${workspace.workspace_id}`);
 				}}
 			>
 				<CardContent className="flex flex-col gap-4 p-6">
@@ -70,7 +70,7 @@ export const WorkspaceCard = observer(
 										asChild
 									>
 										<Link
-											to={`/workspace/${workspace.workspace_id}/edit`}
+											to={`/agent/${workspace.workspace_id}/edit`}
 										>
 											Edit
 										</Link>

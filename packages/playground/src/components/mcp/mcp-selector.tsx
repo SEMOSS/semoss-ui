@@ -1,4 +1,9 @@
-import { SearchIcon, SquareArrowOutUpRightIcon, XIcon } from "lucide-react";
+import {
+	PlusIcon,
+	SearchIcon,
+	SquareArrowOutUpRightIcon,
+	XIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
@@ -23,7 +28,11 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { engineProjectToMCP, mcpToPlatformUrl } from "@/components";
+import {
+	engineProjectToMCP,
+	mcpToPlatformUrl,
+	NewKnowledgeOverlay,
+} from "@/components";
 import type { App, Engine, MCP, MCPConfig } from "@/types";
 
 interface MCPSelectorProps {
@@ -41,7 +50,7 @@ interface MCPSelectorProps {
 }
 
 /**
- * Renders the MCPSelector component for selecting mcps within a workspace
+ * Renders the MCPSelector component for selecting mcps within an agent
  */
 export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	type,
@@ -50,6 +59,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	onChange,
 }) => {
 	const [search, setSearch] = useState<string>("");
+	const [isKnowledgeOverlayOpen, setIsKnowledgeOverlayOpen] = useState(false);
 
 	const debouncedSearch = useDebouncedValue(search);
 
@@ -129,6 +139,25 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 						<SearchIcon />
 					</InputGroupAddon>
 				</InputGroup>
+				{type === "KNOWLEDGE" && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={(event) => {
+									event.preventDefault();
+									event.stopPropagation();
+									setIsKnowledgeOverlayOpen(true);
+								}}
+								disabled={disabled}
+							>
+								<PlusIcon />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Create Knowledge Source</TooltipContent>
+					</Tooltip>
+				)}
 			</div>
 
 			<ScrollArea
@@ -238,6 +267,21 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 					</div>
 				</ScrollArea>
 			)}
+			<NewKnowledgeOverlay
+				key={`${getMCP?.data?.length}`}
+				open={isKnowledgeOverlayOpen}
+				onClose={(knowledge) => {
+					// update it
+					if (knowledge) {
+						onChange([...values, knowledge]);
+						// refresh the list to show the newly created knowledge store selected
+						getMCP.reset();
+					}
+
+					// close the overlay
+					setIsKnowledgeOverlayOpen(false);
+				}}
+			/>
 		</div>
 	);
 };
