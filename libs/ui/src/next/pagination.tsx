@@ -3,7 +3,7 @@ import {
 	ChevronRightIcon,
 	MoreHorizontalIcon,
 } from "lucide-react";
-import type * as React from "react";
+import * as React from "react";
 import { cn } from "@/lib/utils";
 import { type Button, buttonVariants } from "@/next/button";
 
@@ -40,28 +40,27 @@ type PaginationLinkProps = {
 } & Pick<React.ComponentProps<typeof Button>, "size"> &
 	React.ComponentProps<"a">;
 
-function PaginationLink({
-	className,
-	isActive,
-	size = "icon",
-	...props
-}: PaginationLinkProps) {
-	return (
-		<a
-			aria-current={isActive ? "page" : undefined}
-			data-slot="pagination-link"
-			data-active={isActive}
-			className={cn(
-				buttonVariants({
-					variant: isActive ? "outline" : "ghost",
-					size,
-				}),
-				className,
-			)}
-			{...props}
-		/>
-	);
-}
+const PaginationLink = React.forwardRef<HTMLAnchorElement, PaginationLinkProps>(
+	({ className, isActive, size = "icon", ...props }, ref) => {
+		return (
+			<a
+				ref={ref}
+				aria-current={isActive ? "page" : undefined}
+				data-slot="pagination-link"
+				data-active={isActive}
+				className={cn(
+					buttonVariants({
+						variant: isActive ? "outline" : "ghost",
+						size,
+					}),
+					className,
+				)}
+				{...props}
+			/>
+		);
+	},
+);
+PaginationLink.displayName = "PaginationLink";
 
 function PaginationPrevious({
 	className,

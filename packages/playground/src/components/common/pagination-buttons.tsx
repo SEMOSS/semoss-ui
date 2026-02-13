@@ -1,11 +1,13 @@
+import { useEffect, useRef } from "react";
 import {
 	Pagination,
 	PaginationContent,
-	PaginationEllipsis,
 	PaginationItem,
 	PaginationLink,
 	PaginationNext,
 	PaginationPrevious,
+	ScrollArea,
+	ScrollBar,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -71,48 +73,37 @@ export const PaginationButtons = ({
 	showRowsPerPage = true,
 	rowsPerPageOptions = [10, 25, 50, 100],
 }: PaginationButtonsProps) => {
-	/**
-	 * Generate array of page numbers to display.
-	 * Adapts based on current page position:
-	 * - Near start: 1, 2, 3, 4, 5, ..., end
-	 * - In middle: 1, ..., n-1, n, n+1, ..., end
-	 * - Near end: 1, ..., end-4, end-3, end-2, end-1, end
-	 */
-	const getPageNumbers = (): (number | "ellipsis")[] => {
-		if (numberOfPages < 7) {
-			// Show all pages if we have fewer than 7
-			return Array.from({ length: numberOfPages }, (_, i) => i + 1);
-		}
+	const currentPageRef = useRef<HTMLAnchorElement>(null);
+	const viewportRef = useRef<HTMLDivElement>(null);
 
-		// Current page is near the start (pages 1-4)
-		if (currentPage <= 4) {
-			return [1, 2, 3, 4, 5, "ellipsis", numberOfPages];
-		}
+	// Auto-scroll to center the current page button
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally only run when currentPage changes
+	useEffect(() => {
+		// Wait for React to update refs after page change
+		const frameId = requestAnimationFrame(() => {
+			if (!currentPageRef.current || !viewportRef.current) {
+				return;
+			}
 
-		// Current page is near the end (last 4 pages)
-		if (currentPage >= numberOfPages - 3) {
-			return [
-				1,
-				"ellipsis",
-				numberOfPages - 4,
-				numberOfPages - 3,
-				numberOfPages - 2,
-				numberOfPages - 1,
-				numberOfPages,
-			];
-		}
+			const button = currentPageRef.current;
+			const viewport = viewportRef.current;
 
-		// Current page is in the middle
-		return [
-			1,
-			"ellipsis",
-			currentPage - 1,
-			currentPage,
-			currentPage + 1,
-			"ellipsis",
-			numberOfPages,
-		];
-	};
+			// Calculate position to center the button
+			const buttonLeft = button.offsetLeft;
+			const buttonWidth = button.offsetWidth;
+			const viewportWidth = viewport.offsetWidth;
+
+			const scrollPosition =
+				buttonLeft - viewportWidth / 2 + buttonWidth / 2;
+
+			viewport.scrollTo({
+				left: scrollPosition,
+				behavior: "smooth",
+			});
+		});
+
+		return () => cancelAnimationFrame(frameId);
+	}, [currentPage]);
 
 	const handlePrevious = () => {
 		if (currentPage > 1) {
@@ -166,17 +157,29 @@ export const PaginationButtons = ({
 						/>
 					</PaginationItem>
 
-					{getPageNumbers().map((page, index) => {
-						const key =
-							page === "ellipsis"
-								? `ellipsis-${index}`
-								: `page-${page}`;
-						return (
-							<PaginationItem key={key}>
-								{page === "ellipsis" ? (
-									<PaginationEllipsis />
-								) : (
+					{/* Divider */}
+					<div className="h-6 w-px bg-border" />
+
+					{/* Scrollable page numbers - shows ~3 at a time */}
+					<ScrollArea
+						className="-mb-3 h-12 w-[120px]"
+						type="always"
+						viewportRef={(ele) => {
+							viewportRef.current = ele;
+						}}
+					>
+						<div className="flex gap-1 px-1">
+							{Array.from(
+								{ length: numberOfPages },
+								(_, i) => i + 1,
+							).map((page) => (
+								<PaginationItem key={`page-${page}`}>
 									<PaginationLink
+										ref={
+											page === currentPage
+												? currentPageRef
+												: undefined
+										}
 										onClick={() => setCurrentPage(page)}
 										isActive={currentPage === page}
 										size="icon"
@@ -184,10 +187,14 @@ export const PaginationButtons = ({
 									>
 										{page}
 									</PaginationLink>
-								)}
-							</PaginationItem>
-						);
-					})}
+								</PaginationItem>
+							))}
+						</div>
+						<ScrollBar orientation="horizontal" />
+					</ScrollArea>
+
+					{/* Divider */}
+					<div className="h-6 w-px bg-border" />
 
 					<PaginationItem>
 						<PaginationNext
