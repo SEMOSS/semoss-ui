@@ -188,24 +188,9 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 					const normalizedPath = (item.path || "")
 						.replace(/\\/g, "/")
 						.toLowerCase();
-					const fileName = (item.name || "").toLowerCase();
-					const driverFileName = (MCP.DRIVER_PATHS[0]
-						.split("/")
-						.pop() || "").toLowerCase();
 					const isDriverFile =
 						item.type !== "directory" &&
-						(
-							fileName === driverFileName ||
-							MCP.DRIVER_PATHS.some((f) => {
-								const fLower = f.toLowerCase();
-								const fBase = (f.split("/").pop() || "").toLowerCase();
-								return (
-									normalizedPath.endsWith(fLower) ||
-									normalizedPath.endsWith(fBase) ||
-									fileName === fBase
-								);
-							})
-						);
+						MCP.DRIVER_PATHS.some((f) => item.path === f);
 					return (
 						<FileExplorerItem
 							draggable={item.type !== "directory"}
