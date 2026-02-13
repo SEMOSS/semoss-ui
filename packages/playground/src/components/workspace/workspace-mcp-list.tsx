@@ -202,7 +202,7 @@ export const WorkspaceMCPList = ({
 									<div className="wrap-break-word min-w-0 flex-1 font-semibold text-sm leading-tight">
 										{m.engine_name}
 									</div>
-									{accessMissing ? (
+									{effectivePermission === "FULLY_PRIVATE" ? (
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<AlertCircle className="size-4 shrink-0 cursor-help text-destructive" />
@@ -215,7 +215,11 @@ export const WorkspaceMCPList = ({
 										<Button
 											variant="ghost"
 											size="icon"
-											className="-m-2 shrink-0"
+											className={`-m-2 shrink-0 ${
+												accessMissing
+													? "text-destructive"
+													: ""
+											}`}
 											asChild
 										>
 											<a
