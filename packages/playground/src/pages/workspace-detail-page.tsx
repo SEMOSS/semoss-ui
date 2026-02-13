@@ -259,16 +259,13 @@ export const WorkspaceDetailPage = observer(() => {
 								e.stopPropagation();
 								setDeleteModal(false);
 							}}
-							// data-testid={formatToDataTestId(
-							// 	`settingsTiles-${name}-confirmCancel-btn`,
-							// )}
-							data-testid={`settingsTiles-${getWorkspace?.data?.name || "workspace"}-confirmCancel-btn`}
+							data-testid={`workspace-detail-page--cancel-delete-btn`}
 						>
 							Cancel
 						</Button>
 						<Button
 							variant="destructive"
-							data-testid={`settingsTiles-${getWorkspace?.data?.name || "workspace"}-confirmDelete-btn`}
+							data-testid={`workspace-detail-page--confirm-delete-btn`}
 							onClick={async (e) => {
 								e.stopPropagation();
 
