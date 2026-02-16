@@ -51,7 +51,7 @@ import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
 
-const ENABLE_AGENT = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
+const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
 
 const BUCKETS = [
 	"Favorites",
