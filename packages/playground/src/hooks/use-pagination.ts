@@ -36,7 +36,7 @@ export const usePagination = (): {
 	const [currentPage, setCurrentPage] = useState(1);
 
 	// Track how many rows to display per page (default: 10)
-	const [rowsPerPage, setRowsPerPage] = useState(3);
+	const [rowsPerPage, setRowsPerPage] = useState(10);
 
 	// Calculate total number of pages
 	// Guard against division by zero if rowsPerPage is 0 or negative
