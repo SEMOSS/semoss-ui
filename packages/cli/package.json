@@ -14,7 +14,7 @@
         "build": "shx rm -rf dist && tsc -b"
     },
     "bin": {
-        "@semoss/cli": "./bin/run.js"
+        "semoss": "./bin/run.js"
     },
     "dependencies": {
         "@oclif/core": "^3",

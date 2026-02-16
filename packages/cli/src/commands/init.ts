@@ -30,6 +30,11 @@ init (./src/commands/init.ts)
 			char: "c",
 			description: "Path to the configuration. Default is smss.json",
 		}),
+		// project type
+		type: Flags.string({
+			char: "t",
+			description: "Type of the project",
+		}),
 	};
 
 	public async run(): Promise<void> {
@@ -37,6 +42,7 @@ init (./src/commands/init.ts)
 
 		// path to the environment variables
 		const envPath = flags.env ?? ".env";
+		const envLocalPath = ".env.local";
 
 		// path to the config (optional)
 		const configPath = flags.config ?? "smss.json";
@@ -45,8 +51,17 @@ init (./src/commands/init.ts)
 		let configOptions: Config | null = null;
 
 		try {
-			// load the env
-			config({ path: envPath });
+			// load the env files
+			// if custom env path is provided, use only that
+			// otherwise, load .env first, then .env.local (which overrides .env values)
+			if (flags.env) {
+				config({ path: envPath });
+			} else {
+				config({ path: envPath }); // load .env
+				if (fs.existsSync(envLocalPath)) {
+					config({ path: envLocalPath, override: true }); // load .env.local with override
+				}
+			}
 
 			// try to load the configOptions (optional)
 			try {
@@ -54,36 +69,47 @@ init (./src/commands/init.ts)
 				configOptions = JSON.parse(
 					fs.readFileSync(configPath, "utf8"),
 				) as Config;
-			} catch (e) {
+			} catch (_e) {
 				// noop
 			}
+
+			// validate and construct the full module URL
+			const endpoint = process.env.ENDPOINT;
+			const modulePath = process.env.MODULE;
+
+			if (!endpoint) {
+				this.error(
+					"ENDPOINT is required. Define one in your environment variables (.env)",
+				);
+			}
+
+			if (!modulePath) {
+				this.error(
+					"MODULE is required. Define one in your environment variables (.env)",
+				);
+			}
+
+			// construct the full module URL
+			const fullModule = `${endpoint}${modulePath}`;
 
 			// update the environment
 			Env.update({
 				ACCESS_KEY: process.env.ACCESS_KEY,
-				MODULE: process.env.MODULE,
+				MODULE: fullModule,
 				SECRET_KEY: process.env.SECRET_KEY,
+				APP: process.env.APP,
 			});
 		} catch (error) {
 			this.error(error as Error);
 		}
 
 		// throw the error
-		const name =
-			configOptions && configOptions.name
-				? configOptions.name
-				: flags.name;
+		const name = configOptions?.name ? configOptions.name : flags.name;
 		if (!name) {
 			throw new Error("Name is required");
 		}
 
-		// check the environment
-		if (!Env.MODULE) {
-			this.error(
-				"MODULE is required. Define one in your environment variables (.env)",
-			);
-		}
-
+		// check the remaining environment variables
 		if (!Env.ACCESS_KEY) {
 			this.error(
 				"ACCESS_KEY is required. Define one in your environment variables (.env)",
@@ -96,7 +122,7 @@ init (./src/commands/init.ts)
 			);
 		}
 
-		if (Env.APP) {
+		if (Env.APP || process.env.VITE_APP) {
 			this.error(
 				"APP is already defined. Delete from your environment variables (.env) to create a new app",
 			);
@@ -133,7 +159,9 @@ init (./src/commands/init.ts)
 					// Load the insight classes
 					const { pixelReturn } = await insight.actions.run<
 						[{ project_id: string }]
-					>(`CreateProject("${name}")`);
+					>(
+						`CreateProject(project=["${name}"], portal=[true], projectType=["${flags.type ?? "CODE"}"])`,
+					);
 					// save the new app ID
 					context.APP = pixelReturn[0].output.project_id;
 					return true;
@@ -146,6 +174,66 @@ init (./src/commands/init.ts)
 						throw new Error("No App");
 					}
 
+					// for code apps set a default index.html file with placeholder content
+					if (flags.type === "CODE" || !flags.type) {
+						// after the project is created run a pixel to create a new portals/index.html file
+						// use the returned projectId
+
+						const newIndexFilePath =
+							"version/assets/portals/index.html";
+						const newIndexFileContent = `<html><style>html {font-family: sans-serif; padding: 30px;}</style><h1>${name}</h1><p>This is placeholder text for your new Application.</p><p>You can add new files and edit this text using the Code Editor.</p></html>`;
+
+						const saveIndexFilePixel = `
+                    SaveAsset(fileName=["${newIndexFilePath}"], content=["<encode>${newIndexFileContent}</encode>"], space=["${context.APP}"]); 
+                    CommitAsset(filePath=["${newIndexFilePath}"], comment=["Hardcoded comment from the App Page editor"], space=["${context.APP}"])
+                `;
+
+						const { pixelReturn } =
+							await insight.actions.run(saveIndexFilePixel);
+
+						let output = pixelReturn[0].output;
+						let operationType = pixelReturn[0].operationType;
+
+						if (operationType.indexOf("ERROR") > -1) {
+							this.error(
+								`Error creating index.html file: ${String(output)}`,
+							); // log the error but don't throw, we still want to save the app even if the index file creation fails
+						}
+
+						output = pixelReturn[1].output;
+						operationType = pixelReturn[1].operationType;
+
+						if (operationType.indexOf("ERROR") > -1) {
+							this.error(
+								`Error committing index.html file: ${String(output)}`,
+							); // log the error but don't throw, we still want to save the app even if the index file commit fails
+						}
+					}
+
+					// save the new app ID to .env file(s)
+					const envContent = `\nAPP=${context.APP}\n`;
+
+					// if custom env flag was provided, write only to that file
+					if (flags.env) {
+						fs.appendFileSync(envPath, envContent);
+					} else {
+						// otherwise, write to whichever file(s) exist
+						const envExists = fs.existsSync(envPath);
+						const envLocalExists = fs.existsSync(envLocalPath);
+
+						if (envLocalExists) {
+							// prefer .env.local if it exists (it overrides .env)
+							fs.appendFileSync(envLocalPath, envContent);
+						} else if (envExists) {
+							// fallback to .env
+							fs.appendFileSync(envPath, envContent);
+						} else {
+							// if neither exists, create .env.local (won't be committed)
+							fs.appendFileSync(envLocalPath, envContent);
+						}
+					}
+
+					// also save to config file
 					let content = {
 						app: "",
 						name: "",

@@ -8,6 +8,25 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { Env, Insight, upload } from "@semoss/sdk";
 
+const DEFAULT_IGNORE = [
+	"node_modules/**",
+	"**/.git/**",
+	"**/*.local",
+	"client/**",
+	"**/package.json",
+	"**/package-lock.json",
+	"**/pnpm-lock.yaml",
+	"**/vite.config.ts",
+	"**/vite.config.js",
+	"**/vitest.config.ts",
+	"**/vitest.config.js",
+	"**/tsconfig.json",
+	"**/components.json",
+	"target/**",
+	"test_classes/**",
+	"classes/**",
+];
+
 export default class Deploy extends Command {
 	static args = {};
 
@@ -16,6 +35,12 @@ export default class Deploy extends Command {
 	static examples = [
 		`<%= config.bin %> <%= command.id %>
 deploy (./src/commands/deploy.ts)
+`,
+		`<%= config.bin %> <%= command.id %> --target java
+deploy only java folder
+`,
+		`<%= config.bin %> <%= command.id %> --target java --target py
+deploy java and python folders
 `,
 	];
 
@@ -63,7 +88,77 @@ deploy (./src/commands/deploy.ts)
 		showRaw: Flags.boolean({
 			description: "Show raw data from all operations",
 		}),
+		// target deployment flag
+		target: Flags.string({
+			char: "t",
+			description:
+				"Target directory to deploy (e.g., 'java', 'python'). Can be specified multiple times.",
+			multiple: true,
+		}),
 	};
+
+	private async loadConfig(
+		configPath?: string,
+	): Promise<Record<string, any> | null> {
+		const resolvedPath = configPath || "smss.json";
+
+		try {
+			const content = await fs.promises.readFile(resolvedPath, "utf-8");
+			return JSON.parse(content);
+		} catch {
+			return null;
+		}
+	}
+
+	private getDeployTargets(flags: {
+		target?: string | string[];
+	}): string[] | "all" {
+		if (
+			!flags.target ||
+			(Array.isArray(flags.target) && flags.target.length === 0)
+		) {
+			return "all";
+		}
+
+		return Array.isArray(flags.target) ? flags.target : [flags.target];
+	}
+
+	private async getFilesForTargets(
+		targets: string[] | "all",
+		ignorePatterns: string[],
+	): Promise<string[]> {
+		if (targets === "all") {
+			const paths = await glob("**/*", {
+				ignore: ignorePatterns,
+			});
+			return paths;
+		}
+
+		const allFiles: string[] = [];
+
+		for (const target of targets) {
+			const targetPath = path.join(process.cwd(), target);
+
+			try {
+				await fs.promises.access(targetPath);
+			} catch {
+				throw new Error(
+					`Target directory "${target}" does not exist in ${process.cwd()}`,
+				);
+			}
+
+			const targetFiles = await glob("**/*", {
+				cwd: targetPath,
+				ignore: ignorePatterns,
+			});
+
+			allFiles.push(
+				...targetFiles.map((file) => path.join(target, file)),
+			);
+		}
+
+		return allFiles;
+	}
 
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Deploy);
@@ -75,6 +170,7 @@ deploy (./src/commands/deploy.ts)
 
 		// path to the environment variables
 		const envPath = flags.env ?? ".env";
+		const envLocalPath = ".env.local";
 
 		// Helper function to log with timing
 		const logWithTiming = (message: string, startTime?: number) => {
@@ -94,12 +190,14 @@ deploy (./src/commands/deploy.ts)
 		if (flags.showEnv) {
 			this.log("\n🌍 Environment Variables:");
 			this.log(`   • MODULE: ${Env.MODULE || "Not set"}`);
-			this.log(`   • APP: ${Env.APP || "Not set"}`);
 			this.log(
-				`   • ACCESS_KEY: ${Env.ACCESS_KEY ? "***" + Env.ACCESS_KEY.slice(-4) : "Not set"}`,
+				`   • APP: ${Env.APP || process.env.VITE_APP || "Not set"}`,
 			);
 			this.log(
-				`   • SECRET_KEY: ${Env.SECRET_KEY ? "***" + Env.SECRET_KEY.slice(-4) : "Not set"}`,
+				`   • ACCESS_KEY: ${Env.ACCESS_KEY ? `***${Env.ACCESS_KEY.slice(-4)}` : "Not set"}`,
+			);
+			this.log(
+				`   • SECRET_KEY: ${Env.SECRET_KEY ? `***${Env.SECRET_KEY.slice(-4)}` : "Not set"}`,
 			);
 		}
 
@@ -117,14 +215,41 @@ deploy (./src/commands/deploy.ts)
 		}
 
 		try {
-			// load the env
-			config({ path: envPath });
+			// if custom env path is provided, use only that
+			// otherwise, load .env first, then .env.local (which overrides .env values)
+			if (flags.env) {
+				config({ path: envPath });
+			} else {
+				config({ path: envPath }); // load .env
+				if (fs.existsSync(envLocalPath)) {
+					config({ path: envLocalPath, override: true }); // load .env.local with override
+				}
+			}
+
+			// validate and construct the full module URL
+			const endpoint = process.env.ENDPOINT;
+			const modulePath = process.env.MODULE;
+
+			if (!endpoint) {
+				this.error(
+					"ENDPOINT is required. Define one in your environment variables (.env)",
+				);
+			}
+
+			if (!modulePath) {
+				this.error(
+					"MODULE is required. Define one in your environment variables (.env)",
+				);
+			}
+
+			// construct the full module URL
+			const fullModule = `${endpoint}${modulePath}`;
 
 			// update the environment
 			Env.update({
-				APP: process.env.APP,
+				APP: process.env.APP || process.env.VITE_APP,
 				ACCESS_KEY: process.env.ACCESS_KEY,
-				MODULE: process.env.MODULE,
+				MODULE: fullModule,
 				SECRET_KEY: process.env.SECRET_KEY,
 			});
 		} catch (error) {
@@ -154,6 +279,39 @@ deploy (./src/commands/deploy.ts)
 			this.error(
 				"APP is required. Define one in your environment variables (.env)",
 			);
+		}
+
+		// Load config file for ignore patterns
+		let mergedIgnorePatterns = [...DEFAULT_IGNORE];
+		try {
+			const config = await this.loadConfig(flags.config);
+			if (config?.deploy?.ignore && Array.isArray(config.deploy.ignore)) {
+				mergedIgnorePatterns = [
+					...DEFAULT_IGNORE,
+					...config.deploy.ignore,
+				];
+				if (flags.debug) {
+					this.log(`📋 Merged ignore patterns from smss.json`);
+				}
+			}
+		} catch (error) {
+			if (flags.verbose) {
+				this.log(`⚠️  Could not load config: ${error}`);
+			}
+		}
+
+		// Determine deployment targets
+		const deployTargets = this.getDeployTargets(flags);
+		const isFullDeploy = deployTargets === "all";
+
+		if (flags.debug) {
+			if (!isFullDeploy) {
+				this.log(
+					`🎯 Deployment targets: ${(deployTargets as string[]).join(", ")}`,
+				);
+			} else {
+				this.log("🎯 Deployment mode: Full deployment");
+			}
 		}
 
 		// create a new insight
@@ -254,13 +412,15 @@ deploy (./src/commands/deploy.ts)
 				},
 			},
 			{
-				title: "Zipping Current Directory",
+				title: isFullDeploy
+					? "Zipping Current Directory"
+					: "Zipping Target Directories",
 				task: async (context) => {
 					const startTime = Date.now();
 
 					if (flags.verbose || flags.superVerbose) {
 						logWithTiming(
-							`📦 Zipping current directory`,
+							`📦 Zipping ${isFullDeploy ? "current directory" : "target directories"}`,
 							startTime,
 						);
 					}
@@ -269,13 +429,19 @@ deploy (./src/commands/deploy.ts)
 						this.log(`🔍 Zip Details:`);
 						this.log(`   • Current Directory: ${process.cwd()}`);
 						this.log(`   • Working Directory: ${__dirname}`);
+						if (!isFullDeploy) {
+							this.log(
+								`   • Targets: ${(deployTargets as string[]).join(", ")}`,
+							);
+						}
 					}
 
 					try {
-						// Get all files in current directory (similar to deploy.ts)
-						const paths = await glob("**/*", {
-							ignore: ["node_modules/**"],
-						});
+						// Get files based on deployment targets
+						const paths = await this.getFilesForTargets(
+							deployTargets,
+							mergedIgnorePatterns,
+						);
 
 						if (flags.verbose || flags.superVerbose) {
 							logWithTiming(
@@ -286,9 +452,9 @@ deploy (./src/commands/deploy.ts)
 
 						if (flags.superVerbose) {
 							this.log(`📋 Files to include:`);
-							paths
-								.slice(0, 10)
-								.forEach((p) => this.log(`   • ${p}`));
+							paths.slice(0, 10).forEach((p) => {
+								this.log(`   • ${p}`);
+							});
 							if (paths.length > 10) {
 								this.log(
 									`   • ... and ${paths.length - 10} more files`,
@@ -368,50 +534,94 @@ deploy (./src/commands/deploy.ts)
 				},
 			},
 			{
-				title: "Running DeleteAsset Reactor",
+				title: isFullDeploy
+					? "Deleting All Assets"
+					: "Cleaning Target Assets",
 				task: async (context) => {
 					const startTime = Date.now();
 
-					// Deletes all assets in version/assets/
-					const deleteCommand = `DeleteAppAssets(project="${Env.APP}")`;
+					if (isFullDeploy) {
+						const deleteCommand = `DeleteAppAssets(project="${Env.APP}")`;
 
-					if (flags.verbose || flags.superVerbose) {
-						logWithTiming(
-							`🗑️ Executing: ${deleteCommand}`,
-							startTime,
-						);
-					}
+						if (flags.verbose || flags.superVerbose) {
+							logWithTiming(
+								`🗑️ Executing: ${deleteCommand}`,
+								startTime,
+							);
+						}
 
-					if (flags.superVerbose) {
-						this.log(`🔍 Delete Details:`);
-						this.log(`   • Command: ${deleteCommand}`);
-						this.log(`   • Target Path: version/assets/`);
-						this.log(`   • Target App: ${Env.APP}`);
-					}
+						if (flags.superVerbose) {
+							this.log(`🔍 Delete Details:`);
+							this.log(`   • Command: ${deleteCommand}`);
+							this.log(`   • Target Path: version/assets/`);
+							this.log(`   • Target App: ${Env.APP}`);
+						}
 
-					// Run the DeleteAsset reactor
-					const { pixelReturn } =
-						await insight.actions.run(deleteCommand);
+						const { pixelReturn } =
+							await insight.actions.run(deleteCommand);
 
-					// save the delete result
-					context.deleteResult = pixelReturn[0].output;
+						context.deleteResult = pixelReturn[0].output;
 
-					if (flags.verbose || flags.superVerbose) {
-						logWithTiming(
-							`✅ DeleteAsset Result: ${context.deleteResult}`,
-							startTime,
-						);
-					}
+						if (flags.verbose || flags.superVerbose) {
+							logWithTiming(
+								`✅ DeleteAsset Result: ${context.deleteResult}`,
+								startTime,
+							);
+						}
 
-					if (flags.superVerbose) {
-						this.log(`🔍 Delete Analysis:`);
-						this.log(`   • Result: ${context.deleteResult}`);
-						this.log(
-							`   • Result Type: ${typeof context.deleteResult}`,
-						);
-						this.log(
-							`   • Execution Time: ${Date.now() - startTime}ms`,
-						);
+						if (flags.superVerbose) {
+							this.log(`🔍 Delete Analysis:`);
+							this.log(`   • Result: ${context.deleteResult}`);
+							this.log(
+								`   • Result Type: ${typeof context.deleteResult}`,
+							);
+							this.log(
+								`   • Execution Time: ${Date.now() - startTime}ms`,
+							);
+						}
+					} else {
+						if (flags.verbose || flags.superVerbose) {
+							logWithTiming(
+								`🗑️ Deleting target-specific assets...`,
+								startTime,
+							);
+						}
+
+						for (const target of deployTargets as string[]) {
+							const remotePath = `version/assets/${target}`;
+
+							if (flags.verbose || flags.superVerbose) {
+								this.log(`   🗑️ Deleting: ${remotePath}`);
+							}
+
+							const deleteCommand = `DeleteAsset(project="${Env.APP}", filePath="${remotePath}");`;
+
+							try {
+								const { pixelReturn } =
+									await insight.actions.run(deleteCommand);
+
+								if (flags.showRaw || flags.superVerbose) {
+									this.log(
+										`📊 DeleteAsset Response for ${target}: ${JSON.stringify(pixelReturn, null, 2)}`,
+									);
+								}
+							} catch (error) {
+								if (flags.verbose || flags.superVerbose) {
+									this.warn(
+										`⚠️ Warning deleting ${remotePath}: ${error}`,
+									);
+								}
+							}
+						}
+
+						if (flags.verbose || flags.superVerbose) {
+							logWithTiming(
+								`✅ Target assets deleted`,
+								startTime,
+							);
+						}
+
+						context.deleteResult = "target-assets-deleted";
 					}
 
 					return true;
@@ -450,7 +660,9 @@ deploy (./src/commands/deploy.ts)
 
 					try {
 						// Create a file from the zip buffer
-						const fileName = "current-directory.zip";
+						const fileName = isFullDeploy
+							? "current-directory.zip"
+							: `deploy-${(deployTargets as string[]).join("-")}.zip`;
 						const file = new File(
 							[context.zipBuffer],
 							fileName,
@@ -487,12 +699,12 @@ deploy (./src/commands/deploy.ts)
 
 						// Unzip the uploaded file
 						await insight.actions.run(
-							`UnzipFile(filePath=["version/assets/${uploaded[0].fileName}"], space=["${Env.APP}"])`,
+							`UnzipFile(filePath=["/${uploaded[0].fileName}"], space=["${Env.APP}"])`,
 						);
 
 						// Clean up the zip file
 						await insight.actions.run(
-							`DeleteAsset(filePath=["version/assets/${uploaded[0].fileName}"], space=["${Env.APP}"])`,
+							`DeleteAppAssets(filePath=["/${uploaded[0].fileName}"], project=["${Env.APP}"])`,
 						);
 
 						context.uploadResult = uploaded[0];
@@ -601,6 +813,12 @@ deploy (./src/commands/deploy.ts)
 							`   • Upload result: ${context.uploadResult.fileName}`,
 						);
 					}
+
+					if (!isFullDeploy) {
+						this.log(
+							`   • Deployment type: Targeted (${(deployTargets as string[]).join(", ")})`,
+						);
+					}
 				}
 
 				if (flags.superVerbose) {
@@ -617,6 +835,14 @@ deploy (./src/commands/deploy.ts)
 						}/5`,
 					);
 					this.log(`   • Environment: ${Env.MODULE} (${Env.APP})`);
+					this.log(
+						`   • Deployment Type: ${isFullDeploy ? "Full" : "Targeted"}`,
+					);
+					if (!isFullDeploy) {
+						this.log(
+							`   • Targets: ${(deployTargets as string[]).join(", ")}`,
+						);
+					}
 					this.log(
 						`   • Debug Mode: ${flags.debug ? "Enabled" : "Disabled"}`,
 					);
