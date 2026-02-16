@@ -95,10 +95,12 @@ export const WorkspaceMembersList = ({
 				{ userid: userId, permission: newPermission },
 			]);
 			toast.success("Permission updated successfully");
-		} catch {
+		} catch (error) {
 			// Revert the optimistic update on error
 			setMembers(previousMembers);
-			toast.error("Failed to update permission");
+			toast.error(
+				`Failed to update permission${error ? `: ${error instanceof Error ? error.message : "Unknown error"}` : ""}`,
+			);
 			// TODO: Show error toast notification
 		}
 	};
