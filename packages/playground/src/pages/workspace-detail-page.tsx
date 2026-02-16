@@ -232,9 +232,7 @@ export const WorkspaceDetailPage = observer(() => {
 						{tab === "knowledge" && (
 							<WorkspaceMCPList
 								type="KNOWLEDGE"
-								mcp={getWorkspace.data?.mcp.filter(
-									(mcp) => mcp.type === "VECTOR",
-								)}
+								workspaceId={workspaceId}
 								search={debouncedSearch}
 							/>
 						)}
@@ -246,9 +244,7 @@ export const WorkspaceDetailPage = observer(() => {
 						{tab === "toolbox" && (
 							<WorkspaceMCPList
 								type="TOOLBOX"
-								mcp={getWorkspace.data?.mcp.filter(
-									(mcp) => mcp.type !== "VECTOR",
-								)}
+								workspaceId={workspaceId}
 								search={debouncedSearch}
 							/>
 						)}
