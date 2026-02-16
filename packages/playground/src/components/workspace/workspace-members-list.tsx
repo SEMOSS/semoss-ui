@@ -19,7 +19,9 @@ import {
 	getUserProjectPermission,
 	removeProjectUserPermissions,
 } from "@/api";
+import { useChat } from "@/hooks";
 import type { User } from "@/types";
+import { toInitials } from "@/utility";
 
 export interface WorkspaceMembersListProps {
 	/**
@@ -61,6 +63,9 @@ export const WorkspaceMembersList = ({
 }: WorkspaceMembersListProps) => {
 	const { rowsPerPage, offset, setTotalRows, setCurrentPage } =
 		paginationControl;
+	const { chat } = useChat();
+	const currentUser = chat.user;
+
 	// Track previous search term to detect changes and reset pagination
 	const prevSearchRef = useRef(search);
 	// Current user's permission level for the workspace
@@ -207,9 +212,6 @@ export const WorkspaceMembersList = ({
 
 			// If the operation completed too quickly, delay to prevent UI flash
 			if (remaining > 0) {
-				console.log(
-					`Waiting ${remaining}ms to show loading state for at least ${minLoadingDuration}ms`,
-				);
 				await new Promise((resolve) => setTimeout(resolve, remaining));
 			}
 
@@ -247,89 +249,83 @@ export const WorkspaceMembersList = ({
 								<Skeleton className="h-8 w-24" />
 							</div>
 						))
-					: members.map((member) => {
-							// Generate avatar initials from last 2 letters of name parts
-							// e.g., "John Doe" -> "JD", "Jane" -> "JE"
-							const initials = member.name
-								.split(" ")
-								.map((n) => n[0])
-								.join("")
-								.toUpperCase()
-								.slice(-2);
-
-							return (
-								<div
-									key={member.id}
-									className="flex items-center gap-3 rounded p-2 px-6 hover:bg-accent"
-								>
-									<Avatar className="h-12 w-12 rounded-md">
-										<AvatarFallback className="rounded-md">
-											{initials}
-										</AvatarFallback>
-									</Avatar>
-									<div className="flex flex-1 flex-col">
-										<span className="font-medium text-sm">
-											{member.name}
-										</span>
-										<span className="text-muted-foreground text-xs">
-											{member.email}
-										</span>
-									</div>
-									<Select
-										value={member.permission}
-										onValueChange={(newPermission) =>
-											handlePermissionChange(
-												member.id,
-												newPermission,
-											)
-										}
-										// Disable if current user is read-only or trying to modify an owner without being an owner
-										disabled={
-											userPermission === "READ_ONLY" ||
-											(member.permission === "OWNER" &&
-												userPermission !== "OWNER")
-										}
-									>
-										<SelectTrigger size="sm">
-											<SelectValue />
-										</SelectTrigger>
-										{/* Position checkmark on left side of menu items */}
-										<SelectContent className="[&_span:first-child]:right-auto [&_span:first-child]:left-2">
-											{/* Only owners can promote users to owner */}
-											<SelectItem
-												value="OWNER"
-												disabled={
-													userPermission !== "OWNER"
-												}
-												className="pr-2 pl-8"
-											>
-												Owner
-											</SelectItem>
-											<SelectItem
-												value="EDIT"
-												className="pr-2 pl-8"
-											>
-												Editor
-											</SelectItem>
-											<SelectItem
-												value="READ_ONLY"
-												className="pr-2 pl-8"
-											>
-												Read-only
-											</SelectItem>
-											<SelectSeparator />
-											<SelectItem
-												value="delete"
-												className="pr-2 text-destructive focus:text-destructive"
-											>
-												<Trash2 className="size-4 text-destructive" />
-												Remove access
-											</SelectItem>
-										</SelectContent>
-									</Select>
+					: members.map((member) => (
+							<div
+								key={member.id}
+								className="flex items-center gap-3 rounded p-2 px-6 hover:bg-accent"
+							>
+								<Avatar className="h-12 w-12 rounded-md">
+									<AvatarFallback className="rounded-md bg-primary/10">
+										{toInitials(member.name)}
+									</AvatarFallback>
+								</Avatar>
+								<div className="flex flex-1 flex-col">
+									<span className="font-medium text-sm">
+										{member.name}{" "}
+										{member.id === currentUser.id && (
+											<span className="ml-1 text-muted-foreground">
+												(You)
+											</span>
+										)}
+									</span>
+									<span className="text-muted-foreground text-xs">
+										{member.email}
+									</span>
 								</div>
-							);
-						})}
+								<Select
+									value={member.permission}
+									onValueChange={(newPermission) =>
+										handlePermissionChange(
+											member.id,
+											newPermission,
+										)
+									}
+									// Disable if current user is read-only or trying to modify an owner without being an owner
+									disabled={
+										userPermission === "READ_ONLY" ||
+										(member.permission === "OWNER" &&
+											userPermission !== "OWNER")
+									}
+								>
+									<SelectTrigger size="sm">
+										<SelectValue />
+									</SelectTrigger>
+									{/* Position checkmark on left side of menu items */}
+									<SelectContent className="[&_span:first-child]:right-auto [&_span:first-child]:left-2">
+										{/* Only owners can promote users to owner */}
+										<SelectItem
+											value="OWNER"
+											disabled={
+												userPermission !== "OWNER"
+											}
+											className="pr-2 pl-8"
+										>
+											Owner
+										</SelectItem>
+										<SelectItem
+											value="EDIT"
+											className="pr-2 pl-8"
+										>
+											Editor
+										</SelectItem>
+										<SelectItem
+											value="READ_ONLY"
+											className="pr-2 pl-8"
+										>
+											Read-only
+										</SelectItem>
+										<SelectSeparator />
+										<SelectItem
+											value="delete"
+											className="pr-2 text-destructive focus:text-destructive"
+										>
+											<Trash2 className="size-4 text-destructive" />
+											Remove access
+										</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+						))}
 			</div>
 		</ScrollArea>
 	);
