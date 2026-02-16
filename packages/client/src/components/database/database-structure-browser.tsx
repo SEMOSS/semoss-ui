@@ -198,7 +198,6 @@ export const DatabaseStructureBrowser: React.FC<
 					className="h-9 whitespace-nowrap font-medium text-xs"
 					data-testid="database-toggle-all-btn"
 				>
-					{toggleState ? "Collapse All" : "Expand All"}
 					{allExpanded ? "Collapse All" : "Expand All"}
 				</Button>
 			</div>
