@@ -1024,8 +1024,6 @@ const BarToolsList = ({ id }) => {
 				{barSelection === "trendlines" && (
 					<ToggleTrendline
 						id={id}
-						options={data.option}
-						updateChart={updateChart}
 						chartType={BAR_CHART_DATA.JSONVALUE[0]}
 						path="option"
 					/>
