@@ -61,30 +61,32 @@ export const WorkspaceDetailPage = observer(() => {
 			data: null,
 			onError: (_d, e) => {
 				toast.error(
-					`Failed to load workspace: ${e instanceof Error ? e.message : "Unknown error"}`,
+					`Failed to load agent: ${e instanceof Error ? e.message : "Unknown error"}`,
 				);
 			},
 		},
 	);
 
 	// set the breadcrumbs
-	useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: "Workspace",
-			path: "/workspace",
-		},
-		{
-			name:
-				getWorkspace.status === "SUCCESS"
-					? getWorkspace.data.name
-					: "Loading",
-			path: `/workspace/${workspaceId}`,
-		},
-	]);
+	useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: "Home",
+				path: "/",
+			},
+			{
+				name: "Agent",
+				path: "/agent",
+			},
+			{
+				name:
+					getWorkspace.status === "SUCCESS"
+						? getWorkspace.data.name
+						: "Loading",
+				path: `/agent/${workspaceId}`,
+			},
+		],
+	});
 
 	if (getWorkspace.status === "LOADING" || isLoading) {
 		return (
@@ -95,7 +97,7 @@ export const WorkspaceDetailPage = observer(() => {
 	}
 
 	if (getWorkspace.status === "ERROR") {
-		return <Navigate to="/workspace" />;
+		return <Navigate to="/agent" />;
 	}
 
 	return (
@@ -130,7 +132,7 @@ export const WorkspaceDetailPage = observer(() => {
 						<DropdownMenuContent align="end">
 							<DropdownMenuGroup>
 								<DropdownMenuItem asChild>
-									<Link to={`/workspace/${workspaceId}/edit`}>
+									<Link to={`/agent/${workspaceId}/edit`}>
 										Edit
 									</Link>
 								</DropdownMenuItem>
@@ -145,12 +147,12 @@ export const WorkspaceDetailPage = observer(() => {
 											);
 
 											// go to the workspace
-											navigate("/workspace");
+											navigate("/agent");
 										} catch (e) {
 											toast.error(
 												e instanceof Error
 													? e.message
-													: "Failed to delete workspace",
+													: "Failed to delete agent",
 											);
 										} finally {
 											setIsLoading(false);

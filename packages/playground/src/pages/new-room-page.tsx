@@ -34,7 +34,7 @@ import {
 import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
-import type { RoomStore } from "@/stores";
+import { RoomStore } from "@/stores";
 import type { App, MCPConfig, Workspace } from "@/types";
 
 /**
@@ -44,12 +44,14 @@ import type { App, MCPConfig, Workspace } from "@/types";
  */
 export const NewRoomPage = observer(() => {
 	const { root } = useRoot();
-	useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-	]);
+	useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: "Home",
+				path: "/",
+			},
+		],
+	});
 
 	const { chat } = useChat();
 	const navigate = useNavigate();
@@ -65,7 +67,7 @@ export const NewRoomPage = observer(() => {
 	const workspaceId = searchParams.get("workspaceId");
 	const knowledgeId = searchParams.get("knowledgeId");
 
-	// Fetch workspace data based on URL param or selected workspace
+	// Fetch workspace data based on URL param or selected agent
 	const selectedWorkspaceId =
 		mode.type === "workspace"
 			? mode.workspace?.project_id
@@ -94,15 +96,23 @@ export const NewRoomPage = observer(() => {
 	 * State
 	 */
 	const [isLoading, setIsLoading] = useState(false);
-	const [options, setOptions] = useState<RoomStore["options"]>({
-		instructions: "",
-		mcp: [...(root.theme.defaultTools || [])],
-		tokenLength:
-			root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
-		temperature:
-			root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
-		workspace: null,
-	});
+
+	// Create a temporary RoomStore instance to handle options mutations
+	// This prevents re-renders on tool selection since MobX handles the mutations
+	const tempRoomStore = useState(() => {
+		const store = new RoomStore(root.theme, "temp");
+		// Initialize with default options
+		store.setOptions({
+			instructions: "",
+			mcp: [...(root.theme.defaultTools || [])],
+			tokenLength:
+				root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
+			temperature:
+				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
+			workspace: null,
+		});
+		return store;
+	})[0];
 
 	/**
 	 * Functions
@@ -112,8 +122,8 @@ export const NewRoomPage = observer(() => {
 	 * @param tool - selected tool
 	 */
 	const handleToolSelect = (tool: MCPConfig) => {
-		// Toggle tool in options
-		const tools = options.mcp.reduce(
+		// Toggle tool in options using the temporary RoomStore
+		const tools = tempRoomStore.options.mcp.reduce(
 			(acc, curr) => {
 				acc[curr.id] = curr;
 				return acc;
@@ -127,14 +137,14 @@ export const NewRoomPage = observer(() => {
 			tools[tool.id] = tool;
 		}
 
-		setOptions({
-			...options,
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
 			mcp: Object.values(tools),
 		});
 	};
 
 	/**
-	 * Handle workspace selection
+	 * Handle agent selection
 	 */
 	const handleWorkspaceSelect = (workspace: App | null) => {
 		if (workspace) {
@@ -173,8 +183,10 @@ export const NewRoomPage = observer(() => {
 			);
 
 			const updated = {
-				...options,
-				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
+				...tempRoomStore.options,
+				mcp: tempRoomStore.options.mcp.filter(
+					(mcp) => !mcp?.fromWorkspace,
+				),
 			};
 
 			// add workspace id
@@ -231,22 +243,42 @@ export const NewRoomPage = observer(() => {
 			return;
 		}
 
-		// Sync options
-		setOptions((prev) => {
-			// Add workspace MCPs with fromWorkspace flag to the mcp array
-			const workspaceMCPs = (getWorkspace.data.mcp || []).map((mcp) => ({
-				...mcp,
-				fromWorkspace: true,
-			}));
+		// Sync options using the temporary RoomStore
+		// Add workspace MCPs with fromWorkspace flag to the mcp array
+		const workspaceMCPs = (getWorkspace.data.mcp || []).map((mcp) => ({
+			...mcp,
+			fromWorkspace: true,
+		}));
 
-			return {
-				...prev,
-				instructions:
-					getWorkspace.data?.system_prompt || prev.instructions,
-				mcp: workspaceMCPs,
-			};
+		// Preserve existing tools that are not from workspace
+		const nonWorkspaceMCPs = tempRoomStore.options.mcp.filter(
+			(mcp) => !mcp.fromWorkspace,
+		);
+
+		// Combine and deduplicate by ID (workspace MCPs take precedence)
+		const allMCPs = [...workspaceMCPs, ...nonWorkspaceMCPs];
+		const mcpMap = new Map<string, MCPConfig>();
+		for (const mcp of allMCPs) {
+			// Only add if not already in map (workspace MCPs added first, so they take precedence)
+			if (!mcpMap.has(mcp.id)) {
+				mcpMap.set(mcp.id, mcp);
+			}
+		}
+
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
+			instructions:
+				getWorkspace.data?.system_prompt ||
+				tempRoomStore.options.instructions,
+			mcp: Array.from(mcpMap.values()),
 		});
-	}, [mode.type, mode.workspace, getWorkspace.status, getWorkspace.data]);
+	}, [
+		mode.type,
+		mode.workspace,
+		getWorkspace.status,
+		getWorkspace.data,
+		tempRoomStore,
+	]);
 
 	// Handle knowledge vector engine from URL parameter
 	useEffect(() => {
@@ -254,44 +286,47 @@ export const NewRoomPage = observer(() => {
 			return;
 		}
 
-		// Add the knowledge MCP to options
-		setOptions((prev) => {
-			// Check if this knowledge MCP already exists
-			const existingMcp = prev.mcp.find(
-				(mcp) => mcp.id === knowledgeId && mcp.type === "VECTOR",
-			);
+		// Add the knowledge MCP to options using the temporary RoomStore
+		// Check if this knowledge MCP already exists
+		const existingMcp = tempRoomStore.options.mcp.find(
+			(mcp) => mcp.id === knowledgeId && mcp.type === "VECTOR",
+		);
 
-			// If it already exists, don't add it again
-			if (existingMcp) {
-				return prev;
-			}
+		// If it already exists, don't add it again
+		if (existingMcp) {
+			return;
+		}
 
-			// Add the knowledge MCP
-			const knowledgeMcp = {
-				id: knowledgeId,
-				type: "VECTOR" as const,
-				name: getKnowledge.data[0].app_name || knowledgeId,
-			};
+		// Add the knowledge MCP
+		const knowledgeMcp = {
+			id: knowledgeId,
+			type: "VECTOR" as const,
+			name: getKnowledge.data[0].app_name || knowledgeId,
+		};
 
-			return {
-				...prev,
-				mcp: [...prev.mcp, knowledgeMcp],
-			};
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
+			mcp: [...tempRoomStore.options.mcp, knowledgeMcp],
 		});
-	}, [knowledgeId, getKnowledge.status, getKnowledge.data]);
+	}, [knowledgeId, getKnowledge.status, getKnowledge.data, tempRoomStore]);
 
 	// Clear instructions and workspace MCPs when switching away from workspace mode
 	useEffect(() => {
 		if (mode.type !== "workspace") {
-			setOptions((prev) => ({
-				...prev,
+			tempRoomStore.setOptions({
+				...tempRoomStore.options,
 				instructions: "",
 				temperature: root.theme.defaultRoomSettings.temperature,
 				tokenLength: root.theme.defaultRoomSettings.tokenLength,
 				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
-			}));
+			});
 		}
-	}, [mode.type, root.theme.defaultTools, root.theme.defaultRoomSettings]);
+	}, [
+		mode.type,
+		root.theme.defaultTools,
+		root.theme.defaultRoomSettings,
+		tempRoomStore,
+	]);
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
@@ -389,14 +424,14 @@ export const NewRoomPage = observer(() => {
 										/>
 										<DropdownMenuSeparator />
 										<RoomInputMenuKnowledge
-											options={options}
+											options={tempRoomStore.options}
 											onSelect={(tool) => {
 												handleToolSelect(tool);
 												addToken(`<${tool.name}>`);
 											}}
 										/>
 										<RoomInputMenuToolbox
-											options={options}
+											options={tempRoomStore.options}
 											onSelect={(tool) => {
 												handleToolSelect(tool);
 												addToken(`<${tool.name}>`);
@@ -460,7 +495,7 @@ export const NewRoomPage = observer(() => {
 								<ScrollArea className="h-full w-full">
 									<RoomOptionsForm
 										model={chat.models.selected}
-										options={options}
+										options={tempRoomStore.options}
 										onModelChange={(model) => {
 											if (model) {
 												chat.setSelectedModel(model);
@@ -468,10 +503,10 @@ export const NewRoomPage = observer(() => {
 										}}
 										onOptionsChange={(options) => {
 											if (options) {
-												setOptions((prev) => ({
-													...prev,
+												tempRoomStore.setOptions({
+													...tempRoomStore.options,
 													...options,
-												}));
+												});
 											}
 										}}
 									/>
