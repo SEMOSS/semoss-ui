@@ -1,6 +1,15 @@
-import { useEffect, useRef, useState } from "react";
-import { Avatar, AvatarFallback, Button, ScrollArea } from "@semoss/ui/next";
-import { getProjectUsers } from "@/api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	Avatar,
+	AvatarFallback,
+	ScrollArea,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
+import { editProjectUserPermissions, getProjectUsers } from "@/api";
 import type { User } from "@/types";
 
 export interface WorkspaceMembersListProps {
@@ -33,32 +42,43 @@ export const WorkspaceMembersList = ({
 	const prevSearchRef = useRef(search);
 	const [members, setMembers] = useState<User[]>([]);
 
-	useEffect(() => {
-		const fetchMembers = async () => {
-			const { totalMembers, members } = await getProjectUsers(
-				workspaceId,
-				search,
-				undefined,
-				rowsPerPage,
-				offset,
-			);
-			setTotalRows(totalMembers);
-			// If the search term has changed, reset to the first page
-			if (prevSearchRef.current !== search) {
-				setCurrentPage(1);
-				prevSearchRef.current = search;
-			}
-			setMembers(members); // Update members with fetched data
-		};
-		fetchMembers();
+	const fetchMembers = useCallback(async () => {
+		const { totalMembers, members } = await getProjectUsers(
+			workspaceId,
+			search,
+			undefined,
+			rowsPerPage,
+			offset,
+		);
+		setTotalRows(totalMembers);
+		// If the search term has changed, reset to the first page
+		if (prevSearchRef.current !== search) {
+			setCurrentPage(1);
+			prevSearchRef.current = search;
+		}
+		setMembers(members); // Update members with fetched data
 	}, [
 		workspaceId,
+		search,
 		rowsPerPage,
 		offset,
-		search,
 		setTotalRows,
 		setCurrentPage,
 	]);
+
+	useEffect(() => {
+		fetchMembers();
+	}, [fetchMembers]);
+
+	const handlePermissionChange = async (
+		userId: string,
+		newPermission: string,
+	) => {
+		await editProjectUserPermissions(workspaceId, [
+			{ userid: userId, permission: newPermission },
+		]);
+		await fetchMembers(); // Refresh the members list after changing permissions
+	};
 
 	return (
 		<ScrollArea className="h-full w-full">
@@ -92,9 +112,26 @@ export const WorkspaceMembersList = ({
 									{member.email}
 								</span>
 							</div>
-							<Button variant="outline" size="sm">
-								Todo
-							</Button>
+							<Select
+								value={member.permission}
+								onValueChange={(newPermission) =>
+									handlePermissionChange(
+										member.id,
+										newPermission,
+									)
+								}
+							>
+								<SelectTrigger size="sm">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="OWNER">Owner</SelectItem>
+									<SelectItem value="EDIT">Editor</SelectItem>
+									<SelectItem value="READ_ONLY">
+										Read-only
+									</SelectItem>
+								</SelectContent>
+							</Select>
 						</div>
 					);
 				})}
