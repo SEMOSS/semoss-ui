@@ -29,16 +29,18 @@ export const WorkspacePage = observer(() => {
 	const { root } = useRoot();
 	const navigate = useNavigate();
 	// set the breadcrumbs
-	useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: "Workspace",
-			path: "/workspace",
-		},
-	]);
+	useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: "Home",
+				path: "/",
+			},
+			{
+				name: "Agent",
+				path: "/agent",
+			},
+		],
+	});
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
@@ -83,25 +85,25 @@ export const WorkspacePage = observer(() => {
 				<div className="flex w-full rounded-lg bg-primary/10">
 					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
 						<div className="font-medium text-primary text-xl leading-normal">
-							Welcome to Workspace Manager
+							Welcome to Agent Manager
 						</div>
 						<div className="font-normal text-base text-primary leading-normal">
-							Explore custom AI workspaces designed to meet your
+							Explore custom AI agents designed to meet your
 							unique needs and integrate seamlessly into your
 							processes.
 						</div>
 						<Button
-							onClick={() => navigate("/workspace/new")}
+							onClick={() => navigate("/agent/new")}
 							className="w-auto"
 						>
-							Create a Workspace
+							Create an Agent
 						</Button>
 					</div>
 					{/* Image appears only on large screens and above */}
 					<div className="relative hidden w-[351px] overflow-hidden rounded-r-lg lg:block">
 						<img
 							src={root.theme.images.workspace || workspaceImage}
-							alt="Workspace illustration"
+							alt="Agent illustration"
 							className="-translate-y-1/2 absolute top-1/2 left-0 h-[351px] w-full select-none object-cover"
 						/>
 					</div>

@@ -228,14 +228,26 @@ export const DataTabStyling = observer(
 
 			chart.forEach((item, index) => {
 				const key = `data-tab-drop-area-${index}`;
-				if (
-					!item.multiLabel &&
-					updatedColumns[key]?.values?.length > 1
-				) {
+				if (!item.multiLabel && updatedColumns[key]?.values?.length > 1) {
 					// Restrict to only one value if multiLabel is false
 					updatedColumns[key] = {
 						values: [updatedColumns[key]?.values[0]],
 						dataType: [updatedColumns[key]?.dataType[0]],
+					};
+				} else if (item.multiLabel && updatedColumns[key]?.values) {
+					// Remove duplicate values for multiLabel fields
+					const uniqueValues = Array.from(new Set(updatedColumns[key].values));
+					updatedColumns[key] = {
+						...updatedColumns[key],
+						values: uniqueValues,
+					};
+				}
+				else if (item.multiLabel && updatedColumns[key]?.values) {
+					// Remove duplicate values for multiLabel fields
+					const uniqueValues = Array.from(new Set(updatedColumns[key].values));
+					updatedColumns[key] = {
+						...updatedColumns[key],
+						values: uniqueValues,
 					};
 				}
 			});

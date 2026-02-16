@@ -1,7 +1,7 @@
-import { Download, Pencil } from "lucide-react";
+import { DownloadIcon, Pencil, RefreshCwIcon, SaveIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { download, usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -12,49 +12,46 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
+import { SyncExternalDatabaseOverlay } from "@/components/database";
 import { Metamodel } from "@/components/metamodel";
 import { Section } from "@/components/ui";
-import { useEngine, usePixel, useRootStore } from "@/hooks";
-import { SyncChangesModal } from "./sync-changes-modal";
+import { useEngine, useRootStore } from "@/hooks";
 
 export const EngineMetadataPage = observer(() => {
 	const { active } = useEngine();
-	const { monolithStore } = useRootStore();
+	const { configStore } = useRootStore();
+
+	const [isModified, setIsModified] = useState(false);
+	const [nodes, setNodes] = useState<
+		{
+			id: string;
+			type: "metamodel";
+			data: {
+				name: string;
+				properties: {
+					id: string;
+					name: string;
+					type: string;
+				}[];
+			};
+			position: {
+				x: number;
+				y: number;
+			};
+		}[]
+	>([]);
+	const [edges, setEdges] = useState<
+		{ id: string; type: "floating"; source: string; target: string }[]
+	>([]);
 
 	const [selectedNode, setSelectedNode] = useState(null);
 	const [columnPage, setColumnPage] = useState<number>(0);
 	const [columnVisibleRows, setColumnVisibleRows] = useState<number>(5);
-
-	const [customNodes, setCustomNodes] = useState(null);
-	const [customEdges, setCustomEdges] = useState(null);
-	const [relationships, setRelationships] = useState(null);
-	const [canSave, setCanSave] = useState(true);
-	const navigate = useNavigate();
-
-	const refreshData = (showModal: boolean = false) => {
-		const pixel = `ExternalUpdateJdbcTablesAndViews(database=["${active.id}"]);`;
-		monolithStore.runQuery(pixel).then((response) => {
-			const output = response.pixelReturn?.[0]?.output ?? {};
-			setTabledata(output.tables ?? []);
-			setViewdata(output.views ?? []);
-			if (showModal) {
-				setShowSyncModal(true);
-			}
-		});
-	};
-
-	const query = useMemo(() => {
-		if (!active?.id) return "";
-
-		return `GetDatabaseMetamodel( database=["${active.id}"], options=["dataTypes","additionalDataTypes","logicalNames","descriptions","positions"]);`;
-	}, [active?.id]);
-
-	useEffect(() => {
-		if (active?.id) {
-			refreshData(false);
-		}
-	}, [query]);
 
 	const getDatabaseMetamodel = usePixel<{
 		dataTypes: Record<string, "INT" | "DOUBLE" | "STRING">;
@@ -77,7 +74,47 @@ export const EngineMetadataPage = observer(() => {
 		>;
 		descriptions: Record<string, string>;
 		additionalDataTypes: Record<string, "INT" | "FLOAT" | "VARCHAR(2000)">;
-	}>(query);
+	}>(
+		active.id
+			? `GetDatabaseMetamodel( database=["${active.id}"], options=["dataTypes","additionalDataTypes","logicalNames","descriptions","positions"]);`
+			: "",
+		{
+			onSuccess({ nodes, edges, positions }) {
+				// update the nodes
+				const n = nodes.map((n) => ({
+					id: n.conceptualName,
+					type: "metamodel" as const,
+					data: {
+						name: n.conceptualName.replace(/_/g, " "),
+						properties: n.propSet.map((p) => ({
+							id: `${n.conceptualName}__${p}`,
+							name: p.replace(/_/g, " "),
+							type: "",
+						})),
+					},
+					position: positions[n.conceptualName]
+						? {
+								x: positions[n.conceptualName].left,
+								y: positions[n.conceptualName].top,
+							}
+						: { x: 0, y: 0 },
+				}));
+
+				setNodes(n);
+
+				// update the edges
+				const e = edges.map((e) => ({
+					id: e.relation,
+					type: "floating" as const,
+					source: e.source,
+					target: e.target,
+				}));
+
+				setEdges(e);
+			},
+		},
+		configStore.store.insightID,
+	);
 
 	// get the data if a table is selected
 	const getData = usePixel<{
@@ -112,90 +149,10 @@ export const EngineMetadataPage = observer(() => {
 				numCollected: 0,
 			},
 		},
+		configStore.store.insightID,
 	);
 
-	const defaultNodes = useMemo(() => {
-		if (getDatabaseMetamodel.status !== "SUCCESS") return [];
-		const { nodes = [], positions = {} } = getDatabaseMetamodel.data;
-		return nodes.map((n) => ({
-			id: n.conceptualName,
-			type: "metamodel",
-			data: {
-				name: n.conceptualName.replace(/_/g, " "),
-				properties: n.propSet.map((p) => ({
-					id: `${n.conceptualName}__${p}`,
-					name: p.replace(/_/g, " "),
-					type: "",
-				})),
-			},
-			position: positions[n.conceptualName]
-				? {
-						x: positions[n.conceptualName].left,
-						y: positions[n.conceptualName].top,
-					}
-				: { x: 0, y: 0 },
-		}));
-	}, [getDatabaseMetamodel.status, getDatabaseMetamodel.data]);
-
-	const defaultEdges = useMemo(() => {
-		if (getDatabaseMetamodel.status !== "SUCCESS") return [];
-		return getDatabaseMetamodel.data.edges.map((e) => ({
-			id: e.relation,
-			type: "floating",
-			source: e.source,
-			target: e.target,
-		}));
-	}, [getDatabaseMetamodel.status, getDatabaseMetamodel.data]);
-
-	const [showSyncModal, setShowSyncModal] = useState(false);
-	const [tabledata, setTabledata] = useState<string[]>([]);
-	const [viewdata, setViewdata] = useState<string[]>([]);
-
-	const handleSyncApply = (
-		selectedTables: string[],
-		selectedViews: string[],
-	) => {
-		const filters = JSON.stringify([...selectedTables, ...selectedViews]);
-		const pixel = `ExternalUpdateJdbcSchema(database=["${active.id}"], filters=${filters});`;
-
-		monolithStore.runQuery(pixel).then((response) => {
-			const output = response.pixelReturn[0]?.output;
-
-			if (!output) return;
-
-			const newNodes = output.tables.map((table) => ({
-				id: table.table,
-				type: "metamodel",
-				data: {
-					name: table.table.replace(/_/g, " "),
-					properties: table.columns.map((col, idx) => ({
-						id: `${table.table}__${col}`,
-						name: col.replace(/_/g, " "),
-						type: table.type?.[idx] || "",
-					})),
-				},
-				position: output.positions?.[table.table]
-					? {
-							x: output.positions[table.table].left,
-							y: output.positions[table.table].top,
-						}
-					: { x: 0, y: 0 },
-			}));
-
-			const newEdges = (output.relationships || []).map((rel, i) => ({
-				id: `${rel.fromTable}-${rel.toTable}-${i}`,
-				type: "floating",
-				source: rel.fromTable,
-				target: rel.toTable,
-			}));
-
-			setRelationships(output.relationships);
-			setCustomNodes(newNodes);
-			setCustomEdges(newEdges);
-			setShowSyncModal(false);
-			setCanSave(!true);
-		});
-	};
+	const [showSyncDatabase, setShowSyncDatabase] = useState(false);
 
 	const columnRows = useMemo(() => {
 		if (!selectedNode?.data?.properties?.length) return [];
@@ -213,94 +170,180 @@ export const EngineMetadataPage = observer(() => {
 		? (getDatabaseMetamodel.data?.logicalNames?.[selectedNode.id] ?? [])
 		: [];
 
-	const printMeta = () => {
-		const pixel = `META|DatabaseMetadataToPdf(database=["${active.id}"]);`;
-		monolithStore.runQuery(pixel).then((response) => {
-			const output = response.pixelReturn[0].output;
-			const insightId = response.insightId;
-			monolithStore.download(insightId, output);
-		});
+	// get the concepts
+	const concepts = nodes.map((n) => n.id);
+
+	/**
+	 * Sync the metamodel with the database, given the tables and views to sync
+	 * @param tables
+	 * @param views
+	 */
+	const syncDatabase = async (tables: string[], views: string[]) => {
+		try {
+			console.log(tables, views);
+			// create the filters
+			const filters = JSON.stringify([...tables, ...views]);
+
+			// run it
+			const { errors, pixelReturn } = await configStore.runPixel<
+				[
+					{
+						positions: Record<
+							string,
+							{
+								top: number;
+								left: number;
+							}
+						>;
+						tables: {
+							table: string;
+							raw_type: string[];
+							columns: string[];
+							type: string[];
+							isPrimKey: boolean[];
+						}[];
+						relationships: {
+							fromTable: string;
+							toTable: string;
+						}[];
+					},
+				]
+			>(
+				`ExternalUpdateJdbcSchema(database=["${active.id}"], filters=${filters});`,
+			);
+
+			if (errors.length > 0) {
+				throw new Error(errors.join(""));
+			}
+
+			const output = pixelReturn[0]?.output;
+
+			const newNodes = output.tables.map((table) => ({
+				id: table.table,
+				type: "metamodel" as const,
+				data: {
+					name: table.table,
+					properties: table.columns.map((col, idx) => ({
+						id: `${table.table}__${col}`,
+						name: col,
+						type: table.type?.[idx] || "",
+					})),
+				},
+				position: output.positions?.[table.table]
+					? {
+							x: output.positions[table.table].left,
+							y: output.positions[table.table].top,
+						}
+					: { x: 0, y: 0 },
+			}));
+
+			const newEdges = output.relationships.map((rel, i) => ({
+				id: `${rel.fromTable}-${rel.toTable}-${i}`,
+				type: "floating" as const,
+				source: rel.fromTable,
+				target: rel.toTable,
+			}));
+
+			setNodes(newNodes);
+			setEdges(newEdges);
+
+			// set as modified
+			setIsModified(true);
+		} catch (e) {
+			toast.error(
+				`
+Failed to sync with database changes. Please try again. 
+				
+Error ${e.message || "Unknown error"}				
+				`,
+			);
+		}
 	};
 
 	/**
-	 *
-	 * @param data
-	 * @desc Needs to be done at top level since this is very similar to other RDBMS dbs
+	 * Download teh database metadata as a PDF
 	 */
-	const saveDatabase = async (data) => {
-		const tables = {};
-		const owlPositions = {};
+	const downloadDatabaseMetadata = async () => {
+		try {
+			// run it
+			const { errors, pixelReturn, insightId } =
+				await configStore.runPixel<[string]>(
+					`DatabaseMetadataToPdf(database=["${active.id}"]);`,
+				);
 
-		data.nodes.forEach((node) => {
-			const tableInfo = node.data;
-			const cols = node.data.properties;
-			const firstCol = cols[0].name.replace(/ /g, "_");
-
-			if (!tables[tableInfo.name + "." + firstCol]) {
-				const columns = [];
-
-				cols.forEach((col) => {
-					columns.push(col.name.replace(/ /g, "_"));
-				});
-
-				tables[tableInfo.name + "." + firstCol] = columns;
+			if (errors.length > 0) {
+				throw new Error(errors.join(""));
 			}
 
-			if (!owlPositions[node.id]) {
-				owlPositions[node.id] = {
-					top: node.position.y,
-					left: node.position.x,
-				};
-			}
-		});
+			const output = pixelReturn[0]?.output;
 
-		const pixel = `RdbmsExternalUpload(database=["${active.id}"], metamodel=[${JSON.stringify({ relationships: relationships, tables: tables })}], existing=[true]); META|SaveOwlPositions(database=["${active.id}"], positionMap=[${JSON.stringify(owlPositions)}]); META|SyncDatabaseWithLocalMaster(database=["${active.id}"])`;
-
-		const resp = await monolithStore.runQuery(pixel);
-		const output = resp.pixelReturn[0].output,
-			operationType = resp.pixelReturn[0].operationType;
-
-		if (operationType.indexOf("ERROR") > -1) {
-			console.warn("RDBMSExternalUpload Reactor bug");
-		} else {
-			navigate(`/engine/database/${output.database_id}/metamodel`);
-			return;
+			// download the file
+			download(insightId, output);
+		} catch (e) {
+			toast.error(
+				`
+Error downloading PDF. Please try again.
+				
+Error ${e.message || "Unknown error"}				
+				`,
+			);
 		}
 	};
 
-	const onSubmit = () => {
-		const payloadObj = {
-			metamodel: {
-				relation: [],
-				nodeProp: {},
-			},
-			dataTypeMap: {},
-			newHeaders: {},
-			additionalDataTypes: {},
-			descriptionMap: {},
-			logicalNamesMap: {},
-			position: [{}],
-			nodes: customNodes,
-		};
-
-		for (const edge of customEdges) {
-			const relName = `${edge.source}_${edge.target}`;
-			payloadObj.metamodel.relation.push({
-				fromTable: edge.source,
-				toTable: edge.target,
-				relName: relName,
-			});
-		}
-
-		for (const node of customNodes) {
-			for (const col of node.data.properties) {
-				payloadObj.dataTypeMap[col.name] = col.type;
+	/**
+	 * Save the changes
+	 */
+	const saveDatabase = async () => {
+		try {
+			const relationships = [];
+			for (const edge of edges) {
+				relationships.push({
+					fromTable: edge.source,
+					toTable: edge.target,
+					relName: `${edge.source}_${edge.target}`,
+				});
 			}
 
-			payloadObj.metamodel.nodeProp[node.data.name] = [];
-		}
+			const tables = {};
+			const positions = {};
+			for (const node of nodes) {
+				if (!positions[node.id]) {
+					positions[node.id] = {
+						top: node.position.y,
+						left: node.position.x,
+					};
+				}
 
-		saveDatabase(payloadObj);
+				const tableKey = `${node.data.name}.${node.data.properties[0].name}`;
+				if (!tables[tableKey]) {
+					tables[tableKey] = node.data.properties.map((col) => {
+						return col.name;
+					});
+				}
+			}
+
+			const { errors } = await configStore.runPixel(
+				`RdbmsExternalUpload(database=["${active.id}"], metamodel=[${JSON.stringify({ relationships: relationships, tables: tables })}], existing=[true]); META|SaveOwlPositions(database=["${active.id}"], positionMap=[${JSON.stringify(positions)}]); META|SyncDatabaseWithLocalMaster(database=["${active.id}"])`,
+			);
+
+			if (errors.length > 0) {
+				throw new Error(errors.join(""));
+			}
+
+			// refresh it
+			getDatabaseMetamodel.refresh();
+
+			// throw a success
+			toast.success("Successfully saved changes.");
+		} catch (e) {
+			toast.error(
+				`
+Failed to sync with database changes. Please try again. 
+				
+Error ${e.message || "Unknown error"}				
+				`,
+			);
+		}
 	};
 
 	return (
@@ -309,29 +352,60 @@ export const EngineMetadataPage = observer(() => {
 				<Section.Header
 					actions={
 						<div className="flex gap-2">
-							<Button
-								variant="outline"
-								onClick={() => refreshData(true)}
-								data-testid="engineMetadata-refresh-btn"
-							>
-								Refresh Data
-							</Button>
-							<Button
-								variant="outline"
-								onClick={printMeta}
-								data-testid="engineMetadata-print-btn"
-							>
-								<Download className="mr-2 size-4" />
-								Print Metadata
-							</Button>
-							<Button
-								disabled={canSave}
-								variant="outline"
-								onClick={() => onSubmit()}
-								data-testid="engineMetadata-save-btn"
-							>
-								Save
-							</Button>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										size="sm"
+										disabled={!active?.id}
+										variant="outline"
+										onClick={() =>
+											setShowSyncDatabase(true)
+										}
+										data-testid="engineMetadata-refresh-btn"
+									>
+										<RefreshCwIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									Sync the metamodel with the database
+								</TooltipContent>
+							</Tooltip>
+
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										size="sm"
+										disabled={!active?.id}
+										variant="outline"
+										onClick={() =>
+											downloadDatabaseMetadata()
+										}
+										data-testid="engineMetadata-print-btn"
+									>
+										<DownloadIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									Download the metadata
+								</TooltipContent>
+							</Tooltip>
+
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										size="sm"
+										disabled={!active?.id || !isModified}
+										variant="outline"
+										onClick={() => saveDatabase()}
+										data-testid="engineMetadata-save-btn"
+									>
+										<SaveIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									Save changes to the metamodel
+								</TooltipContent>
+							</Tooltip>
 						</div>
 					}
 				>
@@ -340,8 +414,8 @@ export const EngineMetadataPage = observer(() => {
 				<div className="flex flex-col gap-4">
 					<section className="h-[55vh] w-full rounded-lg border border-border">
 						<Metamodel
-							nodes={customNodes ?? defaultNodes}
-							edges={customEdges ?? defaultEdges}
+							nodes={nodes}
+							edges={edges}
 							selectedNode={selectedNode}
 							onSelectNode={setSelectedNode}
 							isInteractive={true}
@@ -517,10 +591,18 @@ export const EngineMetadataPage = observer(() => {
 							<TableBody>
 								{getData.data.data.values.map(
 									(row, rowIndex) => (
-										<TableRow key={`row-${rowIndex}`}>
+										<TableRow
+											key={`row-${
+												// biome-ignore lint/suspicious/noArrayIndexKey: TODO: Fix
+												rowIndex
+											}`}
+										>
 											{row.map((val, colIndex) => (
 												<TableCell
-													key={`val-${rowIndex}-${colIndex}`}
+													key={`val-${rowIndex}-${
+														// biome-ignore lint/suspicious/noArrayIndexKey:TODO: Fix
+														colIndex
+													}`}
 												>
 													{val}
 												</TableCell>
@@ -534,13 +616,22 @@ export const EngineMetadataPage = observer(() => {
 				</Section>
 			)}
 
-			<SyncChangesModal
-				open={showSyncModal}
-				onClose={() => setShowSyncModal(false)}
-				onApply={handleSyncApply}
-				tables={tabledata}
-				views={viewdata}
-			/>
+			{active?.id && (
+				<SyncExternalDatabaseOverlay
+					engine={active.id}
+					tables={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
+					views={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
+					open={showSyncDatabase}
+					onClose={async (success, data) => {
+						if (success) {
+							await syncDatabase(data.tables, data.views);
+						}
+
+						// close it
+						setShowSyncDatabase(false);
+					}}
+				/>
+			)}
 		</div>
 	);
 });
