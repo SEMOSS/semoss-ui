@@ -100,6 +100,15 @@ interface AccordionSection {
 	};
 }
 
+// Define the type for droppedColumns
+interface DroppedColumns {
+    [key: string]: {
+        values: string[];
+        dataType: string[];
+    };
+}
+
+
 //data tab left section to show the data tab and the drag area for the selected columns
 export const FrameOperations = observer(
 	<D extends BlockDef = BlockDef>({
@@ -1156,26 +1165,22 @@ export const FrameOperations = observer(
 				setData("option", tempValue);
 			}
 			if (variation === "echart-world-map-chart") {
+				const tempValue = JSON.parse(computedValue);
 				if (firstColumn?.values) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
 							? tempValue["_state"]
 							: {};
+					tempValue["series"][0]["label"]["name"] = firstColumn?.values;
+
 					tempValue["_state"]["fields"] = {
 						...tempValue["_state"]["fields"],
 						label: firstColumn?.values?.[0],
 						labelDataType: firstColumn?.dataType?.[0],
-					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
+					};					
 				}
 				if (secondColumn?.values) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1186,13 +1191,8 @@ export const FrameOperations = observer(
 						Latitude: secondColumn?.values?.[0],
 						LatitudeDataType: secondColumn?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
 				if (columnsDrop[2]?.values.length > 0) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1203,13 +1203,8 @@ export const FrameOperations = observer(
 						Longitude: columnsDrop[2]?.values?.[0],
 						LongitudeDataType: columnsDrop[2]?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
 				if (columnsDrop[3]?.values.length > 0) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1220,13 +1215,8 @@ export const FrameOperations = observer(
 						size: columnsDrop[3]?.values?.[0],
 						sizeDataType: columnsDrop[3]?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
 				if (columnsDrop[4]?.values.length > 0) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1237,13 +1227,8 @@ export const FrameOperations = observer(
 						color: columnsDrop[4]?.values?.[0],
 						colorDataType: columnsDrop[4]?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
 				if (columnsDrop[5]?.values.length > 0) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1254,10 +1239,9 @@ export const FrameOperations = observer(
 						tooltip: columnsDrop[5]?.values?.[0],
 						tooltipDataType: columnsDrop[5]?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
+				setValue(JSON.stringify(tempValue));
+				setData("option", tempValue);
 			}
 			if (variation == "echart-gantt-chart") {
 				let columnsToSet = [];
@@ -1736,34 +1720,50 @@ export const FrameOperations = observer(
 			const dropId = destination.droppableId;
 
 			const updated = { ...droppedColumns };
-			if (!updated[dropId])
-				updated[dropId] = { values: [], dataType: [] };
-			const dropCol = filteredColumns.find(
-				(col) => col?.name === draggableId,
-			);
-			updated[dropId] = {
-				...updated[dropId],
-				values: [...updated[dropId]?.values, draggableId],
-				dataType: [...updated[dropId]?.dataType, dropCol?.dataType],
-			};
+			if (!updated[dropId]) updated[dropId] = { values: [], dataType: [] };
+		
+			const dropCol = filteredColumns.find((col) => col?.name === draggableId);
+		
+			// Extract the index from the dropId
+			const dropIndex = parseInt(dropId.split("-").pop(), 10);
+		
+			const isMultiLabel = chart[dropIndex]?.multiLabel;
+		
+			if (isMultiLabel) {
+				// Allow multiple values
+				if (!updated[dropId].values.includes(draggableId)) {
+					updated[dropId] = {
+						...updated[dropId],
+						values: [...updated[dropId]?.values, draggableId],
+						dataType: [...updated[dropId]?.dataType, dropCol?.dataType],
+					};
+				}
+			} else {
+				// Allow only one value
+				if (updated[dropId]?.values.length === 0) {
+					// If no value exists, set the first value
+					updated[dropId] = {
+						...updated[dropId],
+						values: [draggableId],
+						dataType: [dropCol?.dataType],
+					};
+				}
+			}
+		
 			setDroppedColumns(updated);
 		};
 		const deleteDroppedColumn = (columnName: string) => {
-			setDroppedColumns((prev) => {
-				const updated = { ...prev };
+			setDroppedColumns((prev: DroppedColumns) => {
+				const updated: DroppedColumns = { ...prev };
 				for (const key in updated) {
 					const index = updated[key]["values"].indexOf(columnName);
-					updated[key] = {
-						...updated[key],
-						values: [
-							...updated[key]["values"]?.slice(0, index),
-							...updated[key]["values"].slice(index + 1),
-						],
-						dataType: [
-							...updated[key]["dataType"]?.slice(0, index),
-							...updated[key]["dataType"].slice(index + 1),
-						],
-					};
+					if (index !== -1) {
+						updated[key] = {
+							...updated[key],
+							values: updated[key]["values"].filter((_, i) => i !== index),
+							dataType: updated[key]["dataType"].filter((_, i) => i !== index),
+						};
+					}
 				}
 				return updated;
 			});

@@ -1,12 +1,10 @@
-import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import {
-	type BlockDef,
-	type EchartVisualizationBlockConfig,
-	type EchartVisualizationBlockDef,
-	getValueByPath,
-	type PathValue,
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import type {
+	BlockDef,
+	EchartVisualizationBlockConfig,
+	EchartVisualizationBlockDef,
+	PathValue,
 } from "@semoss/renderer";
 import {
 	Button,
@@ -18,62 +16,37 @@ import {
 } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 
-//Axis div for switch type fields
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
+const StyledAxisDiv = styled("div")({
+	display: "flex",
 	padding: "8px 16px",
 	alignItems: "center",
-	gap: gap ?? undefined,
-}));
+	gap: "8px",
+});
 
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-}));
+const StyledAxis = styled("div")({
+	display: "flex",
+	flexDirection: "column",
+});
 
-//Axis div for input type fields with label
-const StyledAxisColDiv = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
+const StyledAxisColDiv = styled("div")({
+	display: "flex",
 	flexDirection: "column",
 	padding: "8px 16px",
 	gap: "8px",
-}));
+});
 
-//Axis div for span type elements
-const StyledAxisSpan = styled("span")<{
-	display?: string;
-	justifyContent?: string;
-	width?: string;
-}>(({ display, justifyContent, width }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	width: width ?? undefined,
-}));
-
-//text field styling to have 100% width
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const StyledAxisSpan = styled("span")({
+	display: "flex",
+	justifyContent: "space-between",
 	width: "100%",
-}));
+});
 
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.primary,
-}));
+const StyledTextField = styled(TextField)({
+	width: "100%",
+});
 
-// Initial axis state
+const StyledTypography = styled(Typography)({});
+
 const INITIAL_AXIS_STATE = {
 	axistitle: "",
 	showAxisTitle: true,
@@ -90,273 +63,238 @@ export const EditAxis = observer(
 	<D extends BlockDef = BlockDef>({ id, path, axis: axisType }) => {
 		const axis = `${axisType}Axis`;
 		const upperCaseAxisType = axisType.toUpperCase();
+
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
+
 		const option = data.option;
 
-		// State
 		const [axisState, setAxisState] = useState(INITIAL_AXIS_STATE);
 		const [axisDataUpdated, setAxisDataUpdated] = useState<
 			"initial" | "updated"
 		>("initial");
-		const [value, setValue] = useState(data.option);
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-		// Get chart config value by path
-		const computedValue = useMemo(() => {
-			return computed(() => {
-				if (!data) return "";
-				const v = getValueByPath(data, path);
-				if (typeof v === "undefined") return "";
-				if (typeof v === "string") return v;
-				return JSON.stringify(v, null, 2);
-			});
-		}, [data, path]).get();
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-		// Sync value from computedValue
-		useEffect(() => {
-			setValue(JSON.parse(computedValue));
-		}, [computedValue]);
+		const buildAxisTitleGraphic = (optionObj: any) => {
+			const existing = (optionObj.graphic ?? []).filter(
+				(g) => g.__axisTitle !== axisType,
+			);
 
-		// Initialize axis state from option
-		useEffect(() => {
-			const axisStateData = { ...INITIAL_AXIS_STATE };
-			if (option[axis]) {
-				axisStateData.axistitle = option[axis].name ?? "";
-				if (option[axis].axisLabel) {
-					axisStateData.labelFontSize =
-						option[axis].axisLabel.fontSize ?? 12;
-					axisStateData.rotate = option[axis].axisLabel.rotate ?? 0;
-					axisStateData.truncateCharCount =
-						option[axis].axisLabel.truncateCharCount ?? 0;
-				}
-				if (option.dataZoom) {
-					const axisPosition = option.dataZoom.findIndex(
-						(opt) => opt.axisIndex !== undefined,
-					);
-					if (axisPosition > -1) {
-						axisStateData.showAxisZoom =
-							option.dataZoom[axisPosition]?.show ?? false;
-					}
-				}
+			if (!axisState.showAxisTitle || !axisState.axistitle) {
+				return existing;
 			}
-			setAxisState((prevState) => ({ ...prevState, ...axisStateData }));
-		}, [option, axis]);
 
-		// Update chart data when axisState changes
-		useEffect(() => {
-			if (axisDataUpdated === "updated") {
-				updateChartData();
+			if (axisType === "x") {
+				existing.push({
+					type: "text",
+					__axisTitle: "x",
+					left: "50%",
+					bottom: 20,
+					z: 100,
+					style: {
+						text: axisState.axistitle,
+						fontSize: Number(axisState.axisTitleFontSize) || 12,
+						fill: "#000",
+						align: "center",
+					},
+				});
 			}
-		}, [axisState]);
 
-		// Reset axis state
-		const resetToInitialState = () => {
-			setAxisState(INITIAL_AXIS_STATE);
+			if (axisType === "y") {
+				existing.push({
+					type: "text",
+					__axisTitle: "y",
+					left: 20,
+					top: "50%",
+					rotation: -140,
+					z: 100,
+					style: {
+						text: axisState.axistitle,
+						fontSize: Number(axisState.axisTitleFontSize) || 12,
+						fill: "#000",
+						align: "center",
+					},
+				});
+			}
+
+			return existing;
 		};
 
-		// Update chart data in parent state
 		const runStateUpdateCustom = (
 			optionUpdated: typeof EchartVisualizationBlockConfig.data.option,
 		) => {
 			if (timeoutRef.current) {
 				clearTimeout(timeoutRef.current);
-				timeoutRef.current = null;
 			}
+
 			timeoutRef.current = setTimeout(() => {
-				try {
-					setData(
-						"option",
-						optionUpdated as PathValue<D["data"], typeof path>,
-					);
-				} catch (e) {
-					console.log(e);
-				}
+				setData(
+					"option",
+					optionUpdated as PathValue<D["data"], typeof path>,
+				);
 			}, 300);
 		};
 
-		// Update chart data when axis fields change
 		const updateChartData = () => {
-			const axisData = {
-				showAxisTitle: axisState.showAxisTitle,
-				axistitle: axisState.axistitle,
-				axisTitleFontSize: axisState.axisTitleFontSize,
-				labelFontSize: axisState.labelFontSize,
-				rotate: axisState.rotate,
-				truncateCharCount: axisState.truncateCharCount,
+			if (!option?.[axis]) return;
+
+			const optionObj = {
+				...option,
+				[axis]: {
+					...option[axis],
+					axisLabel: {
+						...(option[axis]?.axisLabel ?? {}),
+					},
+				},
+				graphic: [...(option.graphic ?? [])],
 			};
-			const optionObj =
-				typeof value === "string" ? JSON.parse(value) : value;
-			const axisLabel = optionObj[axis]?.axisLabel ?? {};
 
-			if (optionObj[axis]) {
-				if (axisData.showAxisTitle) {
-					axisLabel.name = axisData.axistitle;
-					axisLabel.nameTextStyle = {
-						...optionObj[axis].nameTextStyle,
-						fontSize:
-							Number(axisData.axisTitleFontSize) || undefined,
-					};
-				} else {
-					axisLabel.name = "";
-				}
-				axisLabel.fontSize =
-					Number(axisData.labelFontSize) || undefined;
-				axisLabel.rotate = axisData.rotate;
-				axisLabel.truncateCharCount = axisData.truncateCharCount;
-				axisLabel.show = axisLabel?.show ?? true;
+			const updatedGraphics = buildAxisTitleGraphic(optionObj);
 
-				runStateUpdateCustom({
-					...optionObj,
-					[axis]: {
-						...optionObj[axis],
-						axisLabel: {
-							...optionObj[axis].axisLabel,
-							...axisLabel,
-						},
+			runStateUpdateCustom({
+				...optionObj,
+				[axis]: {
+					...optionObj[axis],
+					axisLabel: {
+						...optionObj[axis].axisLabel,
+						fontSize: Number(axisState.labelFontSize) || undefined,
+						rotate: axisState.rotate,
+						truncateCharCount: axisState.truncateCharCount,
+						show: optionObj[axis].axisLabel?.show ?? true,
 					},
-					customSettings: {
-						...optionObj.customSettings,
-						toolsUpdated: true,
-					},
-				});
-			}
+				},
+				graphic: updatedGraphics,
+				customSettings: {
+					...optionObj.customSettings,
+					toolsUpdated: true,
+				},
+			});
 		};
 
-		// Handle input changes
-		const handleInputChange = (e, title, directVal = undefined) => {
-			if (axisDataUpdated === "initial") setAxisDataUpdated("updated");
-			const newValue =
-				directVal !== undefined ? directVal : e.target.value;
-			setAxisState((prevAxisState) => ({
-				...prevAxisState,
-				[title]: newValue,
+		useEffect(() => {
+			if (axisDataUpdated === "updated") {
+				updateChartData();
+			}
+		}, [JSON.stringify(axisState), axisDataUpdated]);
+
+		const handleInputChange = (
+			e: ChangeEvent<HTMLInputElement> | any,
+			key: keyof typeof INITIAL_AXIS_STATE,
+			directVal?: any,
+		) => {
+			if (axisDataUpdated === "initial") {
+				setAxisDataUpdated("updated");
+			}
+
+			setAxisState((prev) => ({
+				...prev,
+				[key]: directVal ?? e.target.value,
 			}));
 		};
 
-		// Helper renderers
-		const renderAxisTitle = () =>
-			axisState.showAxisTitle && (
-				<StyledAxisColDiv display="flex" justifyContent="flex-start">
-					<Typography variant="body2" color="secondary">
-						Set Axis Title
-					</Typography>
-					<StyledTextField
-						size="small"
-						id={`${axis}-title`}
-						data-testid={`${axis}-title`}
-						value={axisState.axistitle}
-						onChange={(e) => handleInputChange(e, "axistitle")}
-					/>
-				</StyledAxisColDiv>
-			);
-
-		const renderAxisTitleFontSize = () =>
-			axisState.showAxisTitle && (
-				<StyledAxisColDiv display="flex" justifyContent="space-around">
-					<Typography variant="body2" color="secondary">
-						Edit Axis Title Font Size
-					</Typography>
-					<TextField
-						size="small"
-						id={`${axis}_TitleFontSizeField`}
-						data-testid={`${axis}_TitleFontSizeField`}
-						type="number"
-						value={axisState.axisTitleFontSize}
-						onChange={(e) =>
-							handleInputChange(e, "axisTitleFontSize")
-						}
-					/>
-				</StyledAxisColDiv>
-			);
-
-		const renderLabelFontSize = () => (
-			<StyledAxisColDiv display="flex" justifyContent="space-around">
-				<Typography variant="body2" color="secondary">
-					Edit Label Font Size:
-				</Typography>
-				<StyledTextField
-					size="small"
-					id={`${axis}_LabelFontSizeField`}
-					data-testid={`${axis}_LabelFontSizeField`}
-					value={axisState.labelFontSize}
-					type="number"
-					onChange={(e) => handleInputChange(e, "labelFontSize")}
-				/>
-			</StyledAxisColDiv>
-		);
-
-		const renderTruncateCharCount = () =>
-			axisType === "y" && (
-				<StyledAxisColDiv display="flex" justifyContent="space-around">
-					<Typography variant="body2" color="secondary">
-						Truncate Characters Length:
-					</Typography>
-					<StyledTextField
-						size="small"
-						id={`${axis}_truncateCharCountField`}
-						data-testid={`${axis}_truncateCharCountField`}
-						value={axisState.truncateCharCount}
-						type="number"
-						onChange={(e) =>
-							handleInputChange(e, "truncateCharCount")
-						}
-					/>
-				</StyledAxisColDiv>
-			);
-
-		const renderRotateSlider = () => (
-			<StyledAxisColDiv display="flex" justifyContent="space-between">
-				<Typography variant="body2">
-					Rotate {upperCaseAxisType}-Axis Values:
-				</Typography>
-				<Slider
-					size="small"
-					aria-label="Always visible"
-					value={axisState.rotate}
-					min={axisState.rotateLabelMinValue}
-					max={axisState.rotateLabelMaxValue}
-					valueLabelDisplay="on"
-					onChange={(event, newValue) =>
-						handleInputChange(event, "rotate", newValue)
-					}
-				/>
-				<StyledAxisSpan
-					display="flex"
-					width="100%"
-					justifyContent="space-between"
-				>
-					<span>{axisState.rotateLabelMinValue}</span>
-					<span>{axisState.rotateLabelMaxValue}</span>
-				</StyledAxisSpan>
-			</StyledAxisColDiv>
-		);
+		const resetToInitialState = () => {
+			setAxisState(INITIAL_AXIS_STATE);
+			setAxisDataUpdated("updated");
+		};
 
 		return (
 			<StyledAxis>
 				<StyledAxisDiv>
 					<Switch
 						size="small"
-						defaultChecked={axisState.showAxisTitle ?? undefined}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
+						checked={axisState.showAxisTitle}
+						onChange={(e) =>
 							handleInputChange(
 								e,
 								"showAxisTitle",
 								e.target.checked,
 							)
 						}
-						title="Show Axis Title"
 					/>
 					<StyledTypography variant="body2">
 						Show Axis Title
 					</StyledTypography>
 				</StyledAxisDiv>
-				{renderAxisTitle()}
-				{renderAxisTitleFontSize()}
-				{renderLabelFontSize()}
-				{renderTruncateCharCount()}
-				{renderRotateSlider()}
-				<StyledAxisDiv display="flex" justifyContent="end">
+
+				{axisState.showAxisTitle && (
+					<>
+						<StyledAxisColDiv>
+							<Typography variant="body2" color="secondary">
+								Set Axis Title
+							</Typography>
+							<StyledTextField
+								size="small"
+								value={axisState.axistitle}
+								onChange={(e) =>
+									handleInputChange(e, "axistitle")
+								}
+							/>
+						</StyledAxisColDiv>
+
+						<StyledAxisColDiv>
+							<Typography variant="body2" color="secondary">
+								Axis Title Font Size
+							</Typography>
+							<TextField
+								size="small"
+								type="number"
+								value={axisState.axisTitleFontSize}
+								onChange={(e) =>
+									handleInputChange(e, "axisTitleFontSize")
+								}
+							/>
+						</StyledAxisColDiv>
+					</>
+				)}
+
+				<StyledAxisColDiv>
+					<Typography variant="body2" color="secondary">
+						Label Font Size
+					</Typography>
+					<StyledTextField
+						size="small"
+						type="number"
+						value={axisState.labelFontSize}
+						onChange={(e) => handleInputChange(e, "labelFontSize")}
+					/>
+				</StyledAxisColDiv>
+
+				{axisType === "y" && (
+					<StyledAxisColDiv>
+						<Typography variant="body2" color="secondary">
+							Truncate Characters Length
+						</Typography>
+						<StyledTextField
+							size="small"
+							type="number"
+							value={axisState.truncateCharCount}
+							onChange={(e) =>
+								handleInputChange(e, "truncateCharCount")
+							}
+						/>
+					</StyledAxisColDiv>
+				)}
+
+				<StyledAxisColDiv>
+					<Typography variant="body2">
+						Rotate {upperCaseAxisType}-Axis Labels
+					</Typography>
+					<Slider
+						size="small"
+						value={axisState.rotate}
+						min={0}
+						max={360}
+						valueLabelDisplay="on"
+						onChange={(e, v) => handleInputChange(e, "rotate", v)}
+					/>
+					<StyledAxisSpan>
+						<span>0</span>
+						<span>360</span>
+					</StyledAxisSpan>
+				</StyledAxisColDiv>
+
+				<StyledAxisDiv style={{ justifyContent: "flex-end" }}>
 					<Button
 						color="primary"
 						variant="contained"
