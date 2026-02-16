@@ -3,6 +3,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Avatar,
 	AvatarFallback,
+	Button,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	ScrollArea,
 	Select,
 	SelectContent,
@@ -74,6 +81,12 @@ export const WorkspaceMembersList = ({
 	const [members, setMembers] = useState<User[]>([]);
 	// Loading state for the entire list
 	const [isLoading, setIsLoading] = useState(true);
+	// Dialog state for delete confirmation
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [userToDelete, setUserToDelete] = useState<{
+		id: string;
+		name: string;
+	} | null>(null);
 
 	/**
 	 * Fetches the current user's permission level for the workspace.
@@ -187,21 +200,35 @@ export const WorkspaceMembersList = ({
 	};
 
 	/**
-	 * Handles deletion of a workspace member.
-	 * Shows loading state for at least 500ms to prevent jarring UI flashes,
-	 * then refetches the list to display the next user from pagination.
+	 * Opens the delete confirmation dialog for a workspace member.
 	 * @param userId - The ID of the user to remove from the workspace
 	 */
 	const handleDelete = async (userId: string) => {
+		const member = members.find((m) => m.id === userId);
+		if (member) {
+			setUserToDelete({ id: member.id, name: member.name });
+			setDeleteDialogOpen(true);
+		}
+	};
+
+	/**
+	 * Confirms and executes deletion of a workspace member.
+	 * Shows loading state for at least 500ms to prevent jarring UI flashes,
+	 * then refetches the list to display the next user from pagination.
+	 */
+	const confirmDelete = async () => {
+		if (!userToDelete) return;
+
 		const startTime = Date.now();
 		// Minimum duration to show loading state (prevents jarring flash)
 		const minLoadingDuration = 500;
 
+		setDeleteDialogOpen(false);
 		setIsLoading(true);
 
 		try {
 			// Remove user from the workspace
-			await removeProjectUserPermissions(workspaceId, [userId]);
+			await removeProjectUserPermissions(workspaceId, [userToDelete.id]);
 
 			// Silently refetch to get the next user from pagination (showLoading=false)
 			await fetchMembers(false);
@@ -222,6 +249,8 @@ export const WorkspaceMembersList = ({
 			toast.error(
 				`Failed to remove user${error ? `: ${error instanceof Error ? error.message : "Unknown error"}` : ""}`,
 			);
+		} finally {
+			setUserToDelete(null);
 		}
 	};
 
@@ -327,6 +356,34 @@ export const WorkspaceMembersList = ({
 							</div>
 						))}
 			</div>
+
+			{/* Delete Confirmation Dialog */}
+			<Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Remove agent access</DialogTitle>
+						<DialogDescription>
+							Are you sure you want to remove{" "}
+							<span className="font-medium text-foreground">
+								{userToDelete?.name}
+							</span>
+							's access to this agent? This action cannot be
+							undone.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setDeleteDialogOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button variant="destructive" onClick={confirmDelete}>
+							Remove access
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</ScrollArea>
 	);
 };
