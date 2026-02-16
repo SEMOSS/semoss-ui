@@ -1,5 +1,6 @@
 import { ChevronDown, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Env, get, post } from "@semoss/sdk";
 import { useNotification } from "@semoss/ui";
 import {
 	Avatar,
@@ -15,7 +16,6 @@ import {
 	Muted,
 	toast,
 } from "@semoss/ui/next";
-import { apiGet, apiPost } from "../utility/api";
 import { returnAccessType } from "./common";
 import { DeleteMembersOverlay } from "./delete-members";
 import type { SETTINGS_PROVISIONED_USER } from "./members-types";
@@ -104,22 +104,17 @@ export const MembersList = ({
 			// Fetch user data based on type and id
 			try {
 				setUserDataLoading(true);
-				const response:
-					| {
-							members: SETTINGS_PROVISIONED_USER[];
-							totalMembers: number;
-					  }
-					| { members: []; totalMembers: number } = (await apiGet(
-					`/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/${type === "PROJECT" || type === "WORKSPACE" ? "getProjectUsers" : "getEngineUsers"}?${type === "PROJECT" || type === "WORKSPACE" ? "projectId" : "engineId"}=${id}&limit=${limit}${search !== "" ? `&userId=${search}` : ""}`,
-				)) as unknown as
-					| {
-							members: SETTINGS_PROVISIONED_USER[];
-							totalMembers: number;
-					  }
-					| { members: []; totalMembers: number };
-				console.log(response.members, "membersresponse");
-				setUserData(response?.members || []);
-				setTotalMembers(response?.totalMembers || 0);
+				const response = await get(
+					`${Env.MODULE}/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/${type === "PROJECT" || type === "WORKSPACE" ? "getProjectUsers" : "getEngineUsers"}?${type === "PROJECT" || type === "WORKSPACE" ? "projectId" : "engineId"}=${id}&limit=${limit}${search !== "" ? `&userId=${search}` : ""}`,
+				).catch((error) => {
+					throw Error(error);
+				});
+
+				if (response?.data) {
+					setUserData(response?.data?.members || []);
+					setTotalMembers(response?.data?.totalMembers || 0);
+				}
+				console.log(response.data, "memberslistresponse");
 				setTimeout(() => {
 					setUserDataLoading(false);
 				}, 100);
@@ -147,42 +142,39 @@ export const MembersList = ({
 	 * @param {string} userId - The ID of the user to update.
 	 * @param {string} permission - The permission to update the user to.
 	 */
-	const updateUserPermission = (userId, permission) => {
+	const updateUserPermission = async (userId, permission) => {
 		// Implement API call to update user permission
-		apiPost(
-			`/api/auth/project/${type === "PROJECT" || type === "WORKSPACE" ? "editProjectUserPermissions" : "editEngineUserPermissions"}`,
+		const response = await post(
+			`${Env.MODULE}/api/auth/project/${type === "PROJECT" || type === "WORKSPACE" ? "editProjectUserPermissions" : "editEngineUserPermissions"}`,
 			{
 				projectId: id,
 				userpermissions: [{ userid: userId, permission: permission }],
 			},
-		)
-			.then((response) => {
-				if (response?.success) {
-					// Refresh user data
-					setRefreshData((prev) => prev + 1);
-					if (type === "WORKSPACE") {
-						toast.success("User permission updated successfully.");
-					} else {
-						notification.add({
-							id: "success",
-							color: "success",
-							message: "User permission updated successfully.",
-						});
-					}
-				}
-			})
-			.catch((error) => {
-				console.error("Error updating user permission:", error);
-				if (type === "WORKSPACE") {
-					toast.error("Error updating user permission.");
-				} else {
-					notification.add({
-						id: "error",
-						color: "error",
-						message: "Error updating user permission.",
-					});
-				}
-			});
+		).catch((error) => {
+			console.error("Error updating user permission:", error);
+			if (type === "WORKSPACE") {
+				toast.error("Error updating user permission.");
+			} else {
+				notification.add({
+					id: "error",
+					color: "error",
+					message: "Error updating user permission.",
+				});
+			}
+		});
+		if (response?.success) {
+			// Refresh user data
+			setRefreshData((prev) => prev + 1);
+			if (type === "WORKSPACE") {
+				toast.success("User permission updated successfully.");
+			} else {
+				notification.add({
+					id: "success",
+					color: "success",
+					message: "User permission updated successfully.",
+				});
+			}
+		}
 	};
 	//filtering user data based on permission group like, can view/ can edit
 	const userDataFiltered =
@@ -252,7 +244,7 @@ export const MembersList = ({
 																user.permission,
 															) === "can view"
 														}
-														onCheckedChange={() => {
+														onCheckedChange={async () => {
 															updateUserPermission(
 																user.id,
 																"READ_ONLY",
@@ -268,7 +260,7 @@ export const MembersList = ({
 																user.permission,
 															) === "can edit"
 														}
-														onCheckedChange={() => {
+														onCheckedChange={async () => {
 															updateUserPermission(
 																user.id,
 																"EDIT",

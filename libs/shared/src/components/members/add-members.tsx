@@ -1,5 +1,6 @@
 import { ChevronDown, X } from "lucide-react";
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { get as apiGet, post as apiPost, Env } from "@semoss/sdk";
 import { useNotification } from "@semoss/ui";
 import {
 	Button,
@@ -14,7 +15,6 @@ import {
 	Input,
 	toast,
 } from "@semoss/ui/next";
-import { apiGet, apiPost } from "../utility/api";
 import { returnAccessType } from "./common";
 import { MembersList } from "./members-list";
 
@@ -49,17 +49,19 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 	const typeId =
 		type === "PROJECT" || type === "WORKSPACE" ? "projectId" : "engineId";
 	useEffect(() => {
-		// Fetch users based on searchKey and by default limits record to 5
-		apiGet(
-			`/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/` +
-				usersUrl +
-				`?${typeId}=${id}&searchTerm=${searchKey}&limit=5`,
-		)
-			.then((response: unknown[]) => {
-				setSearchedResults(response);
-			})
-			.catch((_error) => {});
-	}, [searchKey, typeId, id, usersUrl]);
+		async function fetchUsers() {
+			// Fetch users based on searchKey and by default limits record to 5
+			const response = await apiGet(
+				`${Env.MODULE}/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/` +
+					usersUrl +
+					`?${typeId}=${id}&searchTerm=${searchKey}&limit=5`,
+			).catch((_error) => {});
+			if (response?.data) {
+				setSearchedResults(response.data);
+			}
+		}
+		fetchUsers();
+	}, [searchKey, typeId, id, usersUrl, type]);
 
 	function returnAccessTypeLabel(permission) {
 		switch (permission) {
@@ -79,7 +81,7 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 	 *
 	 * @param {function} onClose - callback to close the overlay
 	 */
-	function addNewMembers() {
+	async function addNewMembers() {
 		const selectedUserObj = selectedUsers.map((m) => ({
 			userid: m.id,
 			permission: returnAccessTypeLabel(selectedPermission),
@@ -89,53 +91,45 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 			username: m.username,
 		}));
 
-		apiPost(
-			`/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/${type === "PROJECT" || type === "WORKSPACE" ? "addProjectUserPermissions" : "addEngineUserPermissions"}`,
+		const response = await apiPost(
+			`${Env.MODULE}/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/${type === "PROJECT" || type === "WORKSPACE" ? "addProjectUserPermissions" : "addEngineUserPermissions"}`,
 			{
 				[type === "PROJECT" || type === "WORKSPACE"
 					? "projectId"
 					: "engineId"]: id,
 				userpermissions: selectedUserObj,
 			},
-		)
-			.then((response) => {
-				if (response?.success) {
-					if (type === "WORKSPACE") {
-						toast.success(
-							"Selected members have been added successfully.",
-						);
-					} else {
-						notification.add({
-							id: "success",
-							color: "success",
-							message:
-								"Selected members have been added successfully.",
-						});
-					}
-					setSelectedUsers([]);
-					setSearchKey("");
-					// Close the overlay
-					onClose(true);
-				}
-			})
-			.catch((error) => {
-				console.error("Error adding new members:", error);
-				if (type === "WORKSPACE") {
-					toast.error(
-						"There was an error adding the selected members.",
-					);
-				} else {
-					notification.add({
-						id: "error",
-						color: "error",
-						message:
-							"There was an error adding the selected members.",
-					});
-				}
-				setSelectedUsers([]);
-				setSearchKey("");
-				onClose(true);
-			});
+		).catch((error) => {
+			console.error("Error adding new members:", error);
+			if (type === "WORKSPACE") {
+				toast.error("There was an error adding the selected members.");
+			} else {
+				notification.add({
+					id: "error",
+					color: "error",
+					message: "There was an error adding the selected members.",
+				});
+			}
+			setSelectedUsers([]);
+			setSearchKey("");
+			onClose(true);
+		});
+		const responseInfo = response?.data || {};
+		if (responseInfo?.success) {
+			if (type === "WORKSPACE") {
+				toast.success("Selected members have been added successfully.");
+			} else {
+				notification.add({
+					id: "success",
+					color: "success",
+					message: "Selected members have been added successfully.",
+				});
+			}
+			setSelectedUsers([]);
+			setSearchKey("");
+			// Close the overlay
+			onClose(true);
+		}
 	}
 	/**
 	 * resets the add member state to initial values
@@ -279,8 +273,8 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 								<Button
 									variant="default"
 									size="lg"
-									onClick={() => {
-										addNewMembers();
+									onClick={async () => {
+										await addNewMembers();
 									}}
 								>
 									Invite

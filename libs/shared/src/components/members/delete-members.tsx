@@ -1,3 +1,4 @@
+import { post as apiPost, Env } from "@semoss/sdk";
 import { useNotification } from "@semoss/ui";
 import {
 	Button,
@@ -9,7 +10,6 @@ import {
 	DialogTitle,
 	toast,
 } from "@semoss/ui/next";
-import { apiPost } from "../utility/api";
 
 /**
  * DeleteMembersOverlay is a component that allows users to delete members from the app or engine.
@@ -44,7 +44,7 @@ export const DeleteMembersOverlay = ({
 	 */
 	function deleteSelectedMembers() {
 		// Logic to delete members
-		apiPost(`/api/auth/project/${usersUrl}`, {
+		apiPost(`${Env.MODULE}/api/auth/project/${usersUrl}`, {
 			[typeId]: id,
 			ids: idsToDelete,
 		})
