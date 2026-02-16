@@ -30,7 +30,13 @@ const fetchApi = async <K>(extension: string, params: object): Promise<K> => {
 
 	// there was no response, that is an error
 	if (!response.ok) {
-		throw Error(`No Response from ${extension}`);
+		const errorData = await response.json().catch(() => ({}));
+		const errorMessage =
+			errorData.errorMessage ||
+			errorData.error ||
+			errorData.message ||
+			`No Response from ${extension}`;
+		throw Error(errorMessage);
 	}
 
 	const data = await response.json();
@@ -60,7 +66,13 @@ const postApi = async (
 	});
 
 	if (!response.ok) {
-		throw Error(`No Response from ${extension}`);
+		const errorData = await response.json().catch(() => ({}));
+		const errorMessage =
+			errorData.errorMessage ||
+			errorData.error ||
+			errorData.message ||
+			`No Response from ${extension}`;
+		throw Error(errorMessage);
 	}
 
 	const data = await response.json();

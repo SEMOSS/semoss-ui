@@ -11,7 +11,11 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
-import { editProjectUserPermissions, getProjectUsers } from "@/api";
+import {
+	editProjectUserPermissions,
+	getProjectUsers,
+	getUserProjectPermission,
+} from "@/api";
 import type { User } from "@/types";
 
 export interface WorkspaceMembersListProps {
@@ -42,8 +46,22 @@ export const WorkspaceMembersList = ({
 	const { rowsPerPage, offset, setTotalRows, setCurrentPage } =
 		paginationControl;
 	const prevSearchRef = useRef(search);
+	const [userPermission, setUserPermission] = useState<string | null>(null);
 	const [members, setMembers] = useState<User[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+
+	const fetchUserPermission = useCallback(async () => {
+		try {
+			const permission = await getUserProjectPermission(workspaceId);
+			if (permission) {
+				setUserPermission(permission);
+			}
+		} catch (error) {
+			toast.error(
+				`Failed to fetch user permissions${error ? `: ${error instanceof Error ? error.message : "Unknown error"}` : ""}`,
+			);
+		}
+	}, [workspaceId]);
 
 	const fetchMembers = useCallback(async () => {
 		setIsLoading(true);
@@ -70,6 +88,10 @@ export const WorkspaceMembersList = ({
 		setTotalRows,
 		setCurrentPage,
 	]);
+
+	useEffect(() => {
+		fetchUserPermission();
+	}, [fetchUserPermission]);
 
 	useEffect(() => {
 		fetchMembers();
@@ -163,12 +185,22 @@ export const WorkspaceMembersList = ({
 												newPermission,
 											)
 										}
+										disabled={
+											userPermission === "READ_ONLY" ||
+											(member.permission === "OWNER" &&
+												userPermission !== "OWNER")
+										}
 									>
 										<SelectTrigger size="sm">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="OWNER">
+											<SelectItem
+												value="OWNER"
+												disabled={
+													userPermission !== "OWNER"
+												}
+											>
 												Owner
 											</SelectItem>
 											<SelectItem value="EDIT">
