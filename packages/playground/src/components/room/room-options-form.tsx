@@ -19,7 +19,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { MCPOverlay, SaveWorkspaceDialog } from "@/components";
+import { MCPOverlay } from "@/components";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 
@@ -57,8 +57,10 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		});
 
 		// All MCPs are in the mcp array (workspace MCPs have fromWorkspace flag)
-		const knowledge = options.mcp.filter((mcp) => mcp.type === "VECTOR");
-		const toolbox = options.mcp.filter((mcp) => mcp.type !== "VECTOR");
+		const knowledge =
+			options?.mcp?.filter((mcp) => mcp.type === "VECTOR") || [];
+		const toolbox =
+			options?.mcp?.filter((mcp) => mcp.type !== "VECTOR") || [];
 
 		/**
 		 * Functions
@@ -82,12 +84,8 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 			<form className="p-4">
 				<FieldGroup>
 					<FieldSet>
-						<FieldLegend className="flex w-full flex-1 items-center gap-2">
+						<FieldLegend className="flex w-full flex-1 items-center justify-between gap-2">
 							Room Settings
-							<SaveWorkspaceDialog
-								systemPrompt={options.instructions}
-								mcps={options.mcp}
-							/>
 						</FieldLegend>
 						<FieldDescription>
 							Update room settings and modify the behavior of the
@@ -180,7 +178,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 															variant="outline"
 															className="disabled: mr-2 border border-primary text-primary text-xs"
 														>
-															From Workspace
+															From Agent
 														</Badge>
 													) : (
 														<Button
@@ -287,7 +285,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 															variant="outline"
 															className="disabled: mr-2 border border-primary text-primary text-xs"
 														>
-															From Workspace
+															From Agent
 														</Badge>
 													) : (
 														<Button
@@ -304,7 +302,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 															}
 															title={
 																mcp.fromWorkspace
-																	? "Cannot delete workspace MCPs"
+																	? "Cannot delete agent MCPs"
 																	: "Delete MCP"
 															}
 														>

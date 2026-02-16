@@ -13,24 +13,26 @@ export const NewWorkspacePage = observer(() => {
 	const navigate = useNavigate();
 
 	// set the breadcrumbs
-	useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: "Workspace",
-			path: "/workspace",
-		},
-		{
-			name: "New",
-			path: "/workspace/new",
-		},
-	]);
+	useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: "Home",
+				path: "/",
+			},
+			{
+				name: "Agent",
+				path: "/agent",
+			},
+			{
+				name: "New",
+				path: "/agent/new",
+			},
+		],
+	});
 
 	const handleClose = (newWorkspaceId?: string) => {
 		if (newWorkspaceId) {
-			navigate(`/workspace/${newWorkspaceId}`);
+			navigate(`/agent/${newWorkspaceId}`);
 		} else {
 			navigate("/workspace");
 		}
@@ -42,10 +44,10 @@ export const NewWorkspacePage = observer(() => {
 				<div className="flex flex-row gap-2">
 					<div className="space-y-2.5">
 						<div className="font-semibold text-2xl text-foreground leading-none">
-							New Workspace
+							New Agent
 						</div>
 						<div className="text-base text-muted-foreground">
-							Create a new workspace to get started
+							Create a new agent to get started
 						</div>
 					</div>
 					<div className="flex-1" />

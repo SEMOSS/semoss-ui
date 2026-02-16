@@ -883,6 +883,7 @@ export const Gantt = observer(
 				)}
 
 				<ReactECharts
+					key={JSON.stringify(dataOption)}
 					option={dataOption}
 					onEvents={onClickChart}
 					ref={(e) => {
