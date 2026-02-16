@@ -248,6 +248,24 @@ export const WorkspaceMembersList = ({
 	};
 
 	/**
+	 * Converts a permission constant to a human-readable display name.
+	 * @param permission - The permission constant (OWNER, EDIT, READ_ONLY)
+	 * @returns The formatted permission name for display
+	 */
+	const getPermissionDisplay = (permission: string) => {
+		switch (permission) {
+			case "OWNER":
+				return "Owner";
+			case "EDIT":
+				return "Editor";
+			case "READ_ONLY":
+				return "Read-only";
+			default:
+				return permission;
+		}
+	};
+
+	/**
 	 * Confirms and executes the pending action (delete or permission change).
 	 */
 	const handleConfirm = async () => {
@@ -360,15 +378,15 @@ export const WorkspaceMembersList = ({
 							<>
 								You are about to change your own permission from{" "}
 								<span className="font-medium text-foreground">
-									{confirmationDialog.action.oldPermission
-										?.toLowerCase()
-										.replace("_", " ")}
+									{getPermissionDisplay(
+										confirmationDialog.action.oldPermission,
+									)}
 								</span>{" "}
 								to{" "}
 								<span className="font-medium text-foreground">
-									{confirmationDialog.action.newPermission
-										?.toLowerCase()
-										.replace("_", " ")}
+									{getPermissionDisplay(
+										confirmationDialog.action.newPermission,
+									)}
 								</span>
 								. This will affect what actions you can perform
 								in this agent.
