@@ -211,6 +211,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 		return (
 			<StyledChartContainer>
 				<ReactECharts
+					key={JSON.stringify(resultData)}
 					option={resultData as EChartsOption}
 					onEvents={onClickChart}
 					style={{
