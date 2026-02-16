@@ -18,7 +18,7 @@ export type PostUser = {
 const fetchApi = async <K>(extension: string, params: object): Promise<K> => {
 	const queryParams = new URLSearchParams(
 		Object.entries(params)
-			.filter(([_, value]) => value !== undefined)
+			.filter(([_, value]) => Boolean(value))
 			.map(([key, value]) => [key, String(value)]),
 	);
 	const url = `${import.meta.env.MODULE}/api/auth/project/${extension}?${queryParams}`;
@@ -86,16 +86,16 @@ export const getUserProjectPermission = async (
  * @param projectId - The project ID
  * @param userId - Optional user ID to filter by
  * @param permission - Optional permission level to filter by
- * @param offset - Optional offset for pagination
  * @param limit - Optional limit for pagination
+ * @param offset - Optional offset for pagination
  * @returns Object containing members array and total count
  */
 export const getProjectUsers = async (
 	projectId: string,
 	userId?: string,
 	permission?: string,
-	offset?: number,
 	limit?: number,
+	offset?: number,
 ): Promise<{
 	totalMembers: number;
 	members: User[];
@@ -103,7 +103,7 @@ export const getProjectUsers = async (
 	await fetchApi<{
 		members: User[];
 		totalMembers: number;
-	}>("getProjectUsers", { projectId, userId, permission, offset, limit });
+	}>("getProjectUsers", { projectId, userId, permission, limit, offset });
 
 /**
  * Add user permissions to a project
