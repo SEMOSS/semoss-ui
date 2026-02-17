@@ -5,6 +5,7 @@ import {
 	MessagesSquareIcon,
 	PlusIcon,
 	SearchIcon,
+	UsersRound,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -29,9 +30,15 @@ import {
 	useDebouncedValue,
 } from "@semoss/ui/next";
 import logoImage from "@/assets/img/logo.svg";
-import { WorkspaceChatList, WorkspaceMCPList } from "@/components";
+import {
+	PaginationButtons,
+	WorkspaceChatList,
+	WorkspaceMCPList,
+	WorkspaceMembersList,
+} from "@/components";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/use-chat";
+import { usePagination } from "@/hooks/use-pagination";
 import type { Workspace } from "@/types";
 
 /**
@@ -49,6 +56,9 @@ export const WorkspaceDetailPage = observer(() => {
 
 	const [tab, setTab] = useState<string>("chats");
 	const [search, setSearch] = useState<string>("");
+
+	// Pagination state - TODO: Wire up to child components
+	const pagination = usePagination();
 
 	const debouncedSearch = useDebouncedValue(search);
 
@@ -100,7 +110,7 @@ export const WorkspaceDetailPage = observer(() => {
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
-			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-12 px-12 pt-8 pb-4">
+			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4">
 				<div className="flex flex-row gap-2">
 					<div className="items-center text-2xl">
 						<img
@@ -172,9 +182,9 @@ export const WorkspaceDetailPage = observer(() => {
 				<Tabs
 					value={tab}
 					onValueChange={(value) => setTab(value)}
-					className="flex h-full w-full flex-1 flex-col items-start overflow-hidden rounded-xl border-border bg-card shadow-sm"
+					className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden"
 				>
-					<div className="flex w-full flex-row gap-2 border-border bg-primary-foreground p-4">
+					<div className="flex flex-row items-center justify-between gap-4">
 						<TabsList>
 							<TabsTrigger value="chats">
 								<MessagesSquareIcon />
@@ -188,21 +198,11 @@ export const WorkspaceDetailPage = observer(() => {
 								<HammerIcon />
 								Toolbox
 							</TabsTrigger>
+							<TabsTrigger value="members">
+								<UsersRound />
+								Members
+							</TabsTrigger>
 						</TabsList>
-						<InputGroup className="bg-background">
-							<InputGroupInput
-								placeholder="Search"
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-							/>
-							<InputGroupAddon>
-								<SearchIcon />
-							</InputGroupAddon>
-						</InputGroup>
-						{/* <Button variant="outline">
-								<ListFilterIcon />
-								Filter
-							</Button> */}
 						<Button
 							variant="default"
 							onClick={() => {
@@ -213,42 +213,81 @@ export const WorkspaceDetailPage = observer(() => {
 							New Chat
 						</Button>
 					</div>
+					<div className="flex min-h-0 w-full flex-1 flex-col items-start overflow-hidden rounded-xl border border-border bg-card">
+						<div className="flex w-full flex-row gap-2 border-border border-b bg-primary-foreground p-4">
+							<InputGroup className="bg-background">
+								<InputGroupInput
+									placeholder="Search"
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+								/>
+								<InputGroupAddon>
+									<SearchIcon />
+								</InputGroupAddon>
+							</InputGroup>
+							{/* Tab-specific actions go here */}
+							{tab === "members" ? (
+								<Button variant="outline">
+									<PlusIcon />
+									Add members
+								</Button>
+							) : null}
+						</div>
 
-					<TabsContent
-						value="chats"
-						className="w-full overflow-hidden"
-					>
-						{tab === "chats" && (
-							<WorkspaceChatList
-								workspaceId={workspaceId}
-								search={debouncedSearch}
-							/>
+						<TabsContent
+							value="chats"
+							className="w-full overflow-hidden"
+						>
+							{tab === "chats" && (
+								<WorkspaceChatList
+									workspaceId={workspaceId}
+									search={debouncedSearch}
+								/>
+							)}
+						</TabsContent>
+						<TabsContent
+							value="knowledge"
+							className="w-full overflow-hidden"
+						>
+							{tab === "knowledge" && (
+								<WorkspaceMCPList
+									type="KNOWLEDGE"
+									workspaceId={workspaceId}
+									search={debouncedSearch}
+								/>
+							)}
+						</TabsContent>
+						<TabsContent
+							value="toolbox"
+							className="w-full overflow-hidden"
+						>
+							{tab === "toolbox" && (
+								<WorkspaceMCPList
+									type="TOOLBOX"
+									workspaceId={workspaceId}
+									search={debouncedSearch}
+								/>
+							)}
+						</TabsContent>
+						<TabsContent
+							value="members"
+							className="w-full overflow-hidden"
+						>
+							{tab === "members" && (
+								<WorkspaceMembersList
+									workspaceId={workspaceId}
+									search={debouncedSearch}
+									paginationControl={pagination}
+								/>
+							)}
+						</TabsContent>
+
+						{tab === "members" && (
+							<div className="flex w-full flex-row items-center justify-end gap-2 border-border border-t bg-primary-foreground p-4">
+								<PaginationButtons {...pagination} />
+							</div>
 						)}
-					</TabsContent>
-					<TabsContent
-						value="knowledge"
-						className="w-full overflow-hidden"
-					>
-						{tab === "knowledge" && (
-							<WorkspaceMCPList
-								type="KNOWLEDGE"
-								workspaceId={workspaceId}
-								search={debouncedSearch}
-							/>
-						)}
-					</TabsContent>
-					<TabsContent
-						value="toolbox"
-						className="w-full overflow-hidden"
-					>
-						{tab === "toolbox" && (
-							<WorkspaceMCPList
-								type="TOOLBOX"
-								workspaceId={workspaceId}
-								search={debouncedSearch}
-							/>
-						)}
-					</TabsContent>
+					</div>
 				</Tabs>
 			</div>
 		</div>
