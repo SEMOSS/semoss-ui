@@ -29,7 +29,7 @@
         "@mui/x-date-pickers": "6.8.0",
         "dayjs": "1.11.8",
         "echarts-wordcloud": "^2.1.0",
-        "mermaid": "^10.9.1"
+        "mermaid": "^11.12.2"
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "28.0.6",
@@ -40,9 +40,14 @@
         "@rollup/plugin-typescript": "12.1.4",
         "@testing-library/jest-dom": "^6.6.3",
         "@testing-library/react": "^16.2.0",
+        "@testing-library/user-event": "^14.4.3",
         "@types/jest": "^29.5.14",
         "@types/react": "18.3.1",
         "@types/react-dom": "18.3.0",
+        "@vitejs/plugin-react": "^4.6.0",
+        "@vitest/browser-playwright": "^4.0.0",
+        "@vitest/coverage-v8": "^4.0.0",
+        "@vitest/ui": "^4.0.0",
         "dompurify": "^2.3.10",
         "echarts": "^5.5.1",
         "echarts-for-react": "^3.0.2",
@@ -56,12 +61,7 @@
         "typescript": "~5.5.2",
         "vega": "^6.1.2",
         "vega-lite": "^6.2.0",
-        "vitest": "^4.0.0",
-        "@vitest/ui": "^4.0.0",
-        "@vitest/coverage-v8": "^4.0.0",
-        "@vitest/browser-playwright": "^4.0.0",
-        "@testing-library/user-event": "^14.4.3",
-        "@vitejs/plugin-react": "^4.6.0"
+        "vitest": "^4.0.0"
     },
     "peerDependencies": {
         "@emotion/react": "11.11.1",
