@@ -8,6 +8,7 @@ import {
 	MenuOpenRounded,
 	Settings as SettingsIcon,
 	TokenRounded,
+	AccountTreeRounded as WorkflowSidebarIcon,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
@@ -49,6 +50,11 @@ const CATALOG_ROUTES = [
 		route: "/engine/storage",
 	},
 	{ text: "Guardrail", icon: <GuardrailIcon />, route: "/engine/guardrail" },
+	{
+		text: "Workflows",
+		icon: <WorkflowSidebarIcon />,
+		route: "/workflow",
+	},
 ];
 
 const StyledNavHeader = styled(Stack)(({ theme }) => ({
@@ -92,13 +98,13 @@ const StyledSidebar = styled(Drawer)(() => ({
 	],
 }));
 
-const StyledSidebarContent = styled(Stack)(({ theme }) => ({
+const StyledSidebarContent = styled(Stack)(() => ({
 	flexDirection: "column",
 	width: "100%",
 	overflowY: "auto",
 }));
 
-const StyledSidebarFooter = styled(Stack)(({ theme }) => ({
+const StyledSidebarFooter = styled(Stack)(() => ({
 	overflowY: "hidden",
 }));
 
@@ -131,7 +137,7 @@ const StyledLink = styled(Link)(({ theme }) => ({
 	padding: theme.spacing(0.5, 0),
 }));
 
-const StyledSettingsArea = styled(Stack)(({ theme }) => ({
+const StyledSettingsArea = styled(Stack)(() => ({
 	flexDirection: "column",
 	width: "100%",
 	overflowY: "auto",

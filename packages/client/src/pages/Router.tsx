@@ -21,6 +21,7 @@ import { PageLayout } from "./PageLayout";
 import { PromptRouter } from "./prompt";
 import { SharePage } from "./SharePage";
 import { SettingsRouter } from "./settings";
+import { WorkflowRouter } from "./workflow";
 
 export const Router = observer(() => {
 	const { configStore } = useRootStore();
@@ -59,6 +60,7 @@ export const Router = observer(() => {
 					<Route path="engine/*" element={<EngineRouter />} />
 					<Route path="prompt/*" element={<PromptRouter />} />
 					<Route path="settings/*" element={<SettingsRouter />} />
+					<Route path="workflow/*" element={<WorkflowRouter />} />
 					<Route path="*" element={<Navigate to="/" replace />} />
 				</Route>
 			</Route>
