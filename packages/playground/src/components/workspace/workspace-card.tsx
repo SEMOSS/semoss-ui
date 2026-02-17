@@ -46,42 +46,41 @@ export const WorkspaceCard = observer(
 		const [deleteModal, setDeleteModal] = useState(false);
 
 		return (
-			<>
-				<Card
-					className="cursor-pointer gap-0 bg-background p-0"
-					onClick={() => {
-						navigate(`/workspace/${workspace.workspace_id}`);
-					}}
-				>
-					<CardContent className="flex flex-col gap-4 p-6">
-						<div className="flex justify-between">
-							<div className="text-4xl">
-								<img
-									className="flex h-10 select-none flex-row items-center"
-									alt="logo"
-									src={root.theme?.images.logo || logoImage}
-								/>
-							</div>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										onClick={(e) => e.stopPropagation()}
+			<Card
+				className="cursor-pointer gap-0 bg-background p-0"
+				onClick={() => {
+					navigate(`/agent/${workspace.workspace_id}`);
+				}}
+			>
+				<CardContent className="flex flex-col gap-4 p-6">
+					<div className="flex justify-between">
+						<div className="text-4xl">
+							<img
+								className="flex h-10 select-none flex-row items-center"
+								alt="logo"
+								src={root.theme?.images.logo || logoImage}
+							/>
+						</div>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="ghost"
+									onClick={(e) => e.stopPropagation()}
+								>
+									<Ellipsis />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuGroup>
+									<DropdownMenuItem
+										onClick={(e) => {
+											e.stopPropagation();
+										}}
+										asChild
 									>
-										<Ellipsis />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuGroup>
-										<DropdownMenuItem
-											onClick={(e) => {
-												e.stopPropagation();
-											}}
-											asChild
+										<Link
+											to={`/agent/${workspace.workspace_id}/edit`}
 										>
-											<Link
-												to={`/workspace/${workspace.workspace_id}/edit`}
-											>
 												Edit
 											</Link>
 										</DropdownMenuItem>

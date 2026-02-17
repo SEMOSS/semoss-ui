@@ -12,20 +12,37 @@ import {
 	X,
 } from "lucide-react";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { useNotification } from "@semoss/ui";
-import { Badge, Button, Card, Input, Label, Textarea } from "@semoss/ui/next";
-import { FlexLayout } from "@/components/flex-layout";
-import { useWorkspace } from "@/hooks";
-import { MCP_JSON_FILE_NAMES } from "@/pages/app/app.constants";
+import {
+	Badge,
+	Button,
+	Card,
+	Input,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupButton,
+	InputGroupInput,
+	InputGroupText,
+	Label,
+	Textarea,
+} from "@semoss/ui/next";
 
-type MCPToolProperty = {
+type MCPJsonEditorProps = {
+	dataMap: {
+		initialData: MCPJsonData;
+		onSave?: (data: MCPJsonData, path: string) => void;
+		path: string;
+		name: string;
+	};
+};
+
+export type MCPToolProperty = {
 	title: string;
 	description?: string;
 	type: string;
 	default?: unknown;
 };
 
-type MCPTool = {
+export type MCPTool = {
 	name: string;
 	title: string;
 	description?: string;
@@ -38,30 +55,29 @@ type MCPTool = {
 	_type: string;
 };
 
-type MCPJsonData = {
+export type MCPJsonData = {
 	_meta: Record<string, string>;
 	tools: MCPTool[];
 };
 
-type MCPJsonEditorProps = {
-	dataMap: {
-		initialData: MCPJsonData;
-		onSave?: (data: MCPJsonData, path: string) => void;
-		path: string;
-		name: string;
-	};
-};
+interface EditorHeaderProps {
+	functionCount: number;
+	deletedCount?: number;
+	searchQuery: string;
+	debouncedSearch?: string;
+	showExpandAll?: boolean;
+	showSave?: boolean;
+	showSearch?: boolean;
+	expandAll?: boolean;
+	hasChanges?: boolean;
+	onExpandAll?: () => void;
+	onSave?: () => void;
+	onSearchChange: (value: string) => void;
+	onSearchClear: () => void;
+	saveShortcut?: string;
+}
 
-const TYPE_OPTIONS = [
-	{ value: "string", label: "String" },
-	{ value: "number", label: "Number" },
-	{ value: "boolean", label: "Boolean" },
-	{ value: "array", label: "Array" },
-	{ value: "object", label: "Object" },
-];
-
-// Memoized Function Card Component for performance
-const FunctionCard = memo<{
+interface FunctionCardProps {
 	tool: MCPTool;
 	actualIdx: number;
 	isExpanded: boolean;
@@ -98,7 +114,192 @@ const FunctionCard = memo<{
 		defaultValue: unknown,
 	) => string;
 	jsonErrors: Record<string, string>;
-}>(
+	showDelete?: boolean;
+	showRestore?: boolean;
+}
+
+// Custom hooks
+const useDebounce = <T,>(value: T, delay: number = 400): T => {
+	const [debouncedValue, setDebouncedValue] = useState(value);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedValue(value);
+		}, delay);
+
+		return () => clearTimeout(timer);
+	}, [value, delay]);
+
+	return debouncedValue;
+};
+
+const useJsonValidation = () => {
+	const [jsonErrors, setJsonErrors] = useState<Record<string, string>>({});
+
+	const validateJson = useCallback((key: string, value: string) => {
+		try {
+			JSON.parse(value);
+			setJsonErrors((prev) => {
+				const newErrors = { ...prev };
+				delete newErrors[key];
+				return newErrors;
+			});
+			return { valid: true };
+		} catch (e) {
+			const errorMsg = e instanceof Error ? e.message : "Invalid JSON";
+			setJsonErrors((prev) => ({
+				...prev,
+				[key]: errorMsg,
+			}));
+			return { valid: false, error: errorMsg };
+		}
+	}, []);
+
+	const clearError = useCallback((key: string) => {
+		setJsonErrors((prev) => {
+			const newErrors = { ...prev };
+			delete newErrors[key];
+			return newErrors;
+		});
+	}, []);
+
+	return { jsonErrors, validateJson, clearError };
+};
+
+const useKeyboardShortcut = (
+	key: string,
+	callback: () => void,
+	deps: unknown[] = [],
+) => {
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if ((e.ctrlKey || e.metaKey) && e.key === key) {
+				e.preventDefault();
+				callback();
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [key, callback, ...deps]);
+};
+
+// EditorHeader Component
+const EditorHeader: React.FC<EditorHeaderProps> = ({
+	functionCount,
+	deletedCount = 0,
+	searchQuery,
+	debouncedSearch = "",
+	showExpandAll = true,
+	showSave = true,
+	showSearch = true,
+	expandAll = false,
+	hasChanges = false,
+	onExpandAll,
+	onSave,
+	onSearchChange,
+	onSearchClear,
+	saveShortcut = "Ctrl+S / Cmd+S",
+}) => {
+	return (
+		<div className="sticky top-0 z-50 mb-6 rounded-lg border bg-card/95 p-4 shadow-sm backdrop-blur-sm">
+			{/* Top Row: Function Count, Actions */}
+			<div className="mb-3 flex items-center justify-between">
+				<div className="flex items-center gap-2">
+					<Badge color="info" className="px-2 py-1 text-xs">
+						{functionCount}{" "}
+						{functionCount === 1 ? "Function" : "Functions"}
+					</Badge>
+					{deletedCount > 0 && (
+						<Badge color="error" className="px-2 py-1 text-xs">
+							{deletedCount} Pending Deletion
+						</Badge>
+					)}
+					{debouncedSearch && (
+						<span className="text-muted-foreground text-xs">
+							(filtered)
+						</span>
+					)}
+				</div>
+				<div className="flex items-center gap-2">
+					{showExpandAll && onExpandAll && (
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={onExpandAll}
+							className="flex items-center gap-1.5 border-border bg-background text-foreground hover:bg-accent hover:text-foreground"
+						>
+							{expandAll ? (
+								<Minimize2 size={14} />
+							) : (
+								<Maximize2 size={14} />
+							)}
+							<span className="hidden sm:inline">
+								{expandAll ? "Collapse All" : "Expand All"}
+							</span>
+						</Button>
+					)}
+					{showSave && onSave && (
+						<Button
+							size="sm"
+							color="primary"
+							onClick={onSave}
+							disabled={!hasChanges}
+							title={saveShortcut}
+							className="flex items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+						>
+							<Save size={14} />
+							<span>Save</span>
+						</Button>
+					)}
+				</div>
+			</div>
+
+			{/* Search Bar */}
+			{showSearch && (
+				<InputGroup>
+					<InputGroupAddon align="inline-start">
+						<InputGroupText>
+							<Search
+								size={18}
+								className="text-muted-foreground"
+							/>
+						</InputGroupText>
+					</InputGroupAddon>
+					<InputGroupInput
+						value={searchQuery}
+						onChange={(e) => onSearchChange?.(e.target.value)}
+						placeholder="Search functions by name, title, or description..."
+						className="text-foreground text-sm"
+					/>
+					{searchQuery && (
+						<InputGroupAddon align="inline-end">
+							<InputGroupButton
+								size="icon-xs"
+								variant="ghost"
+								onClick={onSearchClear}
+								className="text-muted-foreground transition-colors hover:text-foreground"
+							>
+								<X size={18} />
+							</InputGroupButton>
+						</InputGroupAddon>
+					)}
+				</InputGroup>
+			)}
+		</div>
+	);
+};
+
+// FunctionCard Component
+const TYPE_OPTIONS = [
+	{ value: "string", label: "String" },
+	{ value: "number", label: "Number" },
+	{ value: "boolean", label: "Boolean" },
+	{ value: "array", label: "Array" },
+	{ value: "object", label: "Object" },
+];
+
+const FunctionCard = memo<FunctionCardProps>(
 	({
 		tool,
 		actualIdx,
@@ -115,6 +316,8 @@ const FunctionCard = memo<{
 		onJsonTextChange,
 		getJsonTextValue,
 		jsonErrors,
+		showDelete = true,
+		showRestore = true,
 	}) => {
 		const handleHeaderClick = (e: React.MouseEvent) => {
 			// Prevent toggle when clicking on delete/restore buttons
@@ -129,38 +332,42 @@ const FunctionCard = memo<{
 		};
 
 		return (
-			<Card
-				className={`mb-5 w-full gap-0 rounded-lg py-0 transition-all ${
-					isDeleted ? "border-2 border-red-400" : ""
-				}`}
-			>
+			<Card className="mb-5 w-full gap-0 rounded-lg py-0 transition-all">
 				<button
 					type="button"
 					onClick={handleHeaderClick}
-					className={`flex w-full cursor-pointer items-center justify-between p-2 text-left ${isDeleted ? "bg-zinc-100" : "bg-slate-100"} ${isExpanded ? "rounded-t-lg" : "rounded-lg"} transition-colors hover:bg-slate-200`}
+					className={`flex w-full cursor-pointer items-center justify-between p-2 text-left ${
+						isDeleted ? "bg-muted" : "bg-secondary"
+					} ${
+						isExpanded ? "rounded-t-lg" : "rounded-lg"
+					} transition-colors hover:bg-accent`}
 				>
 					<div className="flex items-center gap-2">
 						<div className="rounded p-1">
 							{isExpanded ? (
 								<ChevronUp
 									size={18}
-									className="text-gray-600"
+									className="text-muted-foreground"
 								/>
 							) : (
 								<ChevronDown
 									size={18}
-									className="text-gray-600"
+									className="text-muted-foreground"
 								/>
 							)}
 						</div>
 						<span
-							className={`font-bold text-base ${isDeleted ? "text-gray-500 line-through" : ""}`}
+							className={`font-bold text-base ${
+								isDeleted
+									? "text-muted-foreground line-through"
+									: "text-foreground"
+							}`}
 						>
 							{tool.title || tool.name}
 						</span>
 					</div>
 					<div className="flex gap-2">
-						{!isDeleted ? (
+						{!isDeleted && showDelete ? (
 							<Button
 								variant="ghost"
 								size="sm"
@@ -170,35 +377,35 @@ const FunctionCard = memo<{
 									onDelete(actualIdx);
 								}}
 								data-action="delete"
-								className="flex items-center gap-1 text-red-600 hover:bg-transparent"
+								className="flex items-center gap-1 text-destructive hover:bg-transparent hover:text-destructive/90"
 							>
 								<Trash2 size={14} />
 								<span className="hidden sm:inline">Delete</span>
 							</Button>
-						) : (
+						) : isDeleted && showRestore ? (
 							<Button
-								variant="outline"
+								variant="ghost"
 								size="sm"
 								onClick={(e) => {
 									e.stopPropagation();
 									onRestore(actualIdx);
 								}}
 								data-action="restore"
-								className="flex items-center gap-1 border-green-500 text-green-600 hover:bg-green-50"
+								className="flex items-center gap-1 text-destructive hover:bg-transparent hover:text-destructive/90"
 							>
 								<RotateCcw size={14} />
 								<span className="hidden sm:inline">
 									Restore
 								</span>
 							</Button>
-						)}
+						) : null}
 					</div>
 				</button>
 
 				{isExpanded && (
 					<div className="p-4">
 						<div className="mb-3">
-							<Label className="mb-1 block text-sm">
+							<Label className="mb-1 block text-foreground text-sm">
 								Description:
 							</Label>
 							<Textarea
@@ -211,14 +418,18 @@ const FunctionCard = memo<{
 								disabled={isDeleted}
 								rows={2}
 								style={{ height: "4rem" }}
-								className={`w-full resize-y overflow-y-auto px-2 py-1 text-sm ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+								className={`w-full resize-y overflow-y-auto px-2 py-1 text-foreground text-sm ${
+									isDeleted
+										? "cursor-not-allowed bg-muted opacity-60"
+										: ""
+								}`}
 								placeholder="Describe function purpose and parameters..."
 							/>
 						</div>
 
 						<div className="w-full overflow-x-auto">
 							<div
-								className="min-w-full overflow-hidden rounded-lg border border-base-300"
+								className="min-w-full overflow-hidden rounded-lg border"
 								style={{
 									display: "grid",
 									gridTemplateColumns:
@@ -227,22 +438,22 @@ const FunctionCard = memo<{
 								}}
 							>
 								{/* Header Row */}
-								<div className="flex items-center border-gray-300 border-r border-b bg-zinc-50 px-2 py-2 font-semibold">
+								<div className="flex items-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
 									Name
 								</div>
-								<div className="flex items-center border-gray-300 border-r border-b bg-zinc-50 px-2 py-2 font-semibold">
+								<div className="flex items-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
 									Title
 								</div>
-								<div className="flex items-center border-gray-300 border-r border-b bg-zinc-50 px-2 py-2 font-semibold">
+								<div className="flex items-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
 									Description
 								</div>
-								<div className="flex items-center border-gray-300 border-r border-b bg-zinc-50 px-2 py-2 font-semibold">
+								<div className="flex items-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
 									Type
 								</div>
-								<div className="flex items-center justify-center border-gray-300 border-r border-b bg-zinc-50 px-2 py-2 font-semibold">
+								<div className="flex items-center justify-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
 									Required
 								</div>
-								<div className="flex items-center border-gray-300 border-b bg-zinc-50 px-2 py-2 font-semibold">
+								<div className="flex items-center border-border border-b bg-muted px-2 py-2 font-semibold text-foreground">
 									Default Value
 								</div>
 
@@ -259,17 +470,17 @@ const FunctionCard = memo<{
 
 									return (
 										<React.Fragment key={k}>
-											<div className="flex w-full items-center border-gray-200 border-r border-b bg-white px-2 py-2">
+											<div className="flex w-full items-center border-border border-r border-b bg-card px-2 py-2">
 												<div className="min-w-0 flex-1">
 													<span
-														className="block truncate"
+														className="block truncate text-foreground"
 														title={k}
 													>
 														{k}
 													</span>
 												</div>
 											</div>
-											<div className="flex items-center border-gray-200 border-r border-b bg-white px-2 py-2">
+											<div className="flex items-center border-border border-r border-b bg-card px-2 py-2">
 												<Input
 													value={p.title}
 													onChange={(e) =>
@@ -283,10 +494,14 @@ const FunctionCard = memo<{
 														)
 													}
 													disabled={isDeleted}
-													className={`w-full px-1.5 py-1 text-sm ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+													className={`w-full px-1.5 py-1 text-foreground text-sm ${
+														isDeleted
+															? "cursor-not-allowed bg-muted opacity-60"
+															: ""
+													}`}
 												/>
 											</div>
-											<div className="border-gray-200 border-r border-b bg-white px-2 py-2">
+											<div className="border-border border-r border-b bg-card px-2 py-2">
 												<Textarea
 													value={p.description ?? ""}
 													onChange={(e) =>
@@ -302,12 +517,18 @@ const FunctionCard = memo<{
 													}
 													disabled={isDeleted}
 													rows={2}
-													style={{ height: "3rem" }}
-													className={`w-full resize-y overflow-y-auto px-1.5 py-1 text-xs ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+													style={{
+														height: "3rem",
+													}}
+													className={`w-full resize-y overflow-y-auto px-1.5 py-1 text-foreground text-xs ${
+														isDeleted
+															? "cursor-not-allowed bg-muted opacity-60"
+															: ""
+													}`}
 													placeholder="Parameter description..."
 												/>
 											</div>
-											<div className="flex items-center border-gray-200 border-r border-b bg-white px-2 py-2">
+											<div className="flex items-center border-border border-r border-b bg-card px-2 py-2">
 												<select
 													value={p.type}
 													onChange={(e) =>
@@ -318,7 +539,11 @@ const FunctionCard = memo<{
 														)
 													}
 													disabled={isDeleted}
-													className={`h-[34px] w-full rounded border bg-white px-1.5 text-sm ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+													className={`h-[34px] w-full rounded border border-border bg-card px-1.5 text-foreground text-sm ${
+														isDeleted
+															? "cursor-not-allowed opacity-60"
+															: ""
+													}`}
 												>
 													{TYPE_OPTIONS.map((opt) => (
 														<option
@@ -330,7 +555,7 @@ const FunctionCard = memo<{
 													))}
 												</select>
 											</div>
-											<div className="flex items-center justify-center border-gray-200 border-r border-b bg-white px-2 py-2">
+											<div className="flex items-center justify-center border-border border-r border-b bg-card px-2 py-2">
 												<label className="flex cursor-pointer items-center gap-2">
 													<input
 														type="checkbox"
@@ -344,10 +569,22 @@ const FunctionCard = memo<{
 															)
 														}
 														disabled={isDeleted}
-														className={`h-4 w-4 rounded border-gray-300 text-blue-600 accent-blue-600 focus:ring-2 focus:ring-blue-500 ${isDeleted ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+														className={`h-4 w-4 rounded border border-border text-primary accent-primary focus:ring-2 focus:ring-ring ${
+															isDeleted
+																? "cursor-not-allowed opacity-60"
+																: "cursor-pointer"
+														}`}
 													/>
 													<span
-														className={`text-xs ${isRequired ? "font-semibold text-blue-600" : "text-gray-500"} ${isDeleted ? "opacity-60" : ""}`}
+														className={`text-xs ${
+															isRequired
+																? "font-semibold text-primary"
+																: "text-muted-foreground"
+														} ${
+															isDeleted
+																? "opacity-60"
+																: ""
+														}`}
 													>
 														{isRequired
 															? "Required"
@@ -357,7 +594,7 @@ const FunctionCard = memo<{
 											</div>
 											{p.type === "array" ||
 											p.type === "object" ? (
-												<div className="border-gray-200 border-b bg-white px-2 py-2">
+												<div className="border-border border-b bg-card px-2 py-2">
 													<Textarea
 														value={getJsonTextValue(
 															actualIdx,
@@ -376,7 +613,15 @@ const FunctionCard = memo<{
 														style={{
 															height: "4.5rem",
 														}}
-														className={`w-full resize-y overflow-y-auto px-1.5 py-1 font-mono text-xs ${hasError ? "border-red-500 focus:border-red-500" : ""} ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+														className={`w-full resize-y overflow-y-auto px-1.5 py-1 font-mono text-foreground text-xs ${
+															hasError
+																? "border-destructive ring-destructive/20 focus:border-destructive"
+																: "border-border"
+														} ${
+															isDeleted
+																? "cursor-not-allowed bg-muted opacity-60"
+																: ""
+														}`}
 														placeholder={
 															p.type === "array"
 																? '["item1", "item2"]'
@@ -384,7 +629,7 @@ const FunctionCard = memo<{
 														}
 													/>
 													{hasError && (
-														<div className="mt-1 flex items-start gap-1 text-red-600 text-xs">
+														<div className="mt-1 flex items-start gap-1 text-destructive text-xs">
 															<AlertCircle
 																size={12}
 																className="mt-0.5 flex-shrink-0"
@@ -397,7 +642,7 @@ const FunctionCard = memo<{
 													{!hasError &&
 														p.default !==
 															undefined && (
-															<div className="mt-1 flex items-center gap-1 text-green-600 text-xs">
+															<div className="mt-1 flex items-center gap-1 text-[color:var(--chart-2)] text-xs">
 																<CheckCircle
 																	size={12}
 																	className="flex-shrink-0"
@@ -409,7 +654,7 @@ const FunctionCard = memo<{
 														)}
 												</div>
 											) : (
-												<div className="flex items-center border-gray-200 border-b bg-white px-2 py-2">
+												<div className="flex items-center border-border border-b bg-card px-2 py-2">
 													{p.type === "boolean" ? (
 														<select
 															value={String(
@@ -425,7 +670,11 @@ const FunctionCard = memo<{
 																)
 															}
 															disabled={isDeleted}
-															className={`h-[34px] w-full rounded border bg-white px-1.5 text-sm ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+															className={`h-[34px] w-full rounded border border-border bg-card px-1.5 text-foreground text-sm ${
+																isDeleted
+																	? "cursor-not-allowed opacity-60"
+																	: ""
+															}`}
 														>
 															<option value="true">
 																True
@@ -455,7 +704,11 @@ const FunctionCard = memo<{
 																)
 															}
 															disabled={isDeleted}
-															className={`w-full px-1.5 py-1 text-sm ${isDeleted ? "cursor-not-allowed opacity-60" : ""}`}
+															className={`w-full px-1.5 py-1 text-foreground text-sm ${
+																isDeleted
+																	? "cursor-not-allowed bg-muted opacity-60"
+																	: ""
+															}`}
 														/>
 													)}
 												</div>
@@ -474,20 +727,13 @@ const FunctionCard = memo<{
 
 FunctionCard.displayName = "FunctionCard";
 
+// Main MCPJsonEditor Component
 export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
-	const { initialData, onSave, path, name } = dataMap;
-	const { workspace } = useWorkspace();
-	const notification = useNotification();
+	const { initialData, onSave, path } = dataMap;
 
-	// Data state
 	const [data, setData] = useState<MCPJsonData>(initialData);
 	const [deletedTools, setDeletedTools] = useState<string[]>([]);
-
-	// Search state
 	const [searchQuery, setSearchQuery] = useState("");
-	const [debouncedSearch, setDebouncedSearch] = useState("");
-
-	// Expand/Collapse state (only first card expanded by default)
 	const [expandedCards, setExpandedCards] = useState<Set<string>>(
 		new Set<string>(
 			initialData.tools && initialData.tools.length > 0
@@ -496,105 +742,29 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		),
 	);
 	const [expandAll, setExpandAll] = useState(false);
-
-	// Track raw text for array/object fields
 	const [jsonTextValues, setJsonTextValues] = useState<
 		Record<string, string>
 	>({});
-
-	// Track JSON validation errors for array/object fields
-	const [jsonErrors, setJsonErrors] = useState<Record<string, string>>({});
-
-	// Track if data has been modified
 	const [hasChanges, setHasChanges] = useState(false);
 	const [initialDataSnapshot, setInitialDataSnapshot] = useState<string>(
 		JSON.stringify(initialData),
 	);
 
-	// Debounce search input with longer delay for better performance
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			setDebouncedSearch(searchQuery);
-		}, 400); // Increased from 300ms to 400ms for better performance with large datasets
-		return () => clearTimeout(timer);
-	}, [searchQuery]);
+	const debouncedSearch = useDebounce(searchQuery, 400);
+	const { jsonErrors, validateJson, clearError } = useJsonValidation();
 
-	// Track changes - only compare actual data, not UI state
 	useEffect(() => {
 		const currentSnapshot = JSON.stringify(data);
 		const isModified =
 			currentSnapshot !== initialDataSnapshot || deletedTools.length > 0;
-		updatePanels(isModified);
 		setHasChanges(isModified);
 	}, [data, deletedTools, initialDataSnapshot]);
 
-	// Keyboard shortcut for save (Ctrl+S / Cmd+S)
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			// Check for Ctrl+S (Windows/Linux) or Cmd+S (Mac)
-			if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-				e.preventDefault(); // Prevent browser's default save dialog
-				if (hasChanges) {
-					handleSave();
-				}
-			}
-		};
-
-		// Add event listener
-		window.addEventListener("keydown", handleKeyDown);
-
-		// Cleanup on unmount
-		return () => {
-			window.removeEventListener("keydown", handleKeyDown);
-		};
-	}, [hasChanges, data, deletedTools]); // Dependencies needed for handleSave
-
-	const updatePanels = useCallback(
-		(isModified: boolean) => {
-			try {
-				// get the model
-				const model = workspace.model;
-				if (!model) {
-					throw new Error("Missing model");
-				}
-				// visit the notes, and see if it exists
-				model.visitNodes((node) => {
-					// check if it is a tabNode
-					if (node instanceof FlexLayout.TabNode) {
-						// it needs to be a file-editor
-						const component = node.getComponent();
-						if (component !== "mcpJsonEditor") {
-							return;
-						}
-
-						// path and space need to match
-						const config = node.getConfig();
-						if (path !== config.data.path) {
-							return;
-						}
-
-						const id = node.getId();
-
-						if (isModified) {
-							model.doAction(
-								FlexLayout.Actions.renameTab(id, `${name}*`),
-							);
-						} else {
-							model.doAction(
-								FlexLayout.Actions.renameTab(id, `${name}`),
-							);
-						}
-					}
-				});
-			} catch (e) {
-				notification.add({
-					color: "error",
-					message: e,
-				});
-			}
-		},
-		[workspace.model, path, name, notification],
-	);
+	useKeyboardShortcut("s", () => {
+		if (hasChanges) {
+			handleSave();
+		}
+	}, [hasChanges, data, deletedTools]);
 
 	const updateTool = useCallback((index: number, value: Partial<MCPTool>) => {
 		setData((d) => ({
@@ -650,14 +820,12 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 					let newRequired: string[];
 
 					if (isRequired) {
-						// Add to required array if not already present
 						if (!currentRequired.includes(propKey)) {
 							newRequired = [...currentRequired, propKey];
 						} else {
 							newRequired = currentRequired;
 						}
 					} else {
-						// Remove from required array
 						newRequired = currentRequired.filter(
 							(key) => key !== propKey,
 						);
@@ -712,7 +880,6 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				default: newDefault,
 			});
 
-			// Update text value for array/object types
 			const textKey = `${toolIdx}-${propKey}`;
 			if (newType === "array" || newType === "object") {
 				setJsonTextValues((prev) => ({
@@ -720,7 +887,6 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 					[textKey]: JSON.stringify(newDefault, null, 2),
 				}));
 			} else {
-				// Clean up jsonTextValues when switching away from array/object
 				setJsonTextValues((prev) => {
 					const newValues = { ...prev };
 					delete newValues[textKey];
@@ -728,14 +894,9 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				});
 			}
 
-			// Clear any JSON errors for this field
-			setJsonErrors((prev) => {
-				const newErrors = { ...prev };
-				delete newErrors[textKey];
-				return newErrors;
-			});
+			clearError(textKey);
 		},
-		[updateToolProp],
+		[updateToolProp, clearError],
 	);
 
 	const handleDefaultChange = useCallback(
@@ -749,55 +910,43 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 			if (propType === "number") {
 				validDefault = Number(newDefault) || 0;
 			} else if (propType === "boolean") {
-				validDefault = newDefault === "true" || newDefault === "true";
+				validDefault = newDefault === "true";
 			}
 			updateToolProp(toolIdx, propKey, { default: validDefault });
 		},
 		[updateToolProp],
 	);
 
-	// Handle raw text change for array/object types (for typing)
 	const handleJsonTextChange = useCallback(
 		(toolIdx: number, propKey: string, newText: string) => {
 			const textKey = `${toolIdx}-${propKey}`;
 
-			// Update the raw text value immediately (this allows typing to show)
 			setJsonTextValues((prev) => ({
 				...prev,
 				[textKey]: newText,
 			}));
 
-			// Try to parse and validate
-			try {
-				const parsed = JSON.parse(newText);
-				updateToolProp(toolIdx, propKey, { default: parsed });
-				setJsonErrors((prev) => {
-					const newErrors = { ...prev };
-					delete newErrors[textKey];
-					return newErrors;
-				});
-			} catch (e) {
-				// Show error but allow continued typing
-				setJsonErrors((prev) => ({
-					...prev,
-					[textKey]: e instanceof Error ? e.message : "Invalid JSON",
-				}));
+			const result = validateJson(textKey, newText);
+			if (result.valid) {
+				try {
+					const parsed = JSON.parse(newText);
+					updateToolProp(toolIdx, propKey, { default: parsed });
+				} catch {
+					// Should not happen as validateJson already checked
+				}
 			}
 		},
-		[updateToolProp],
+		[updateToolProp, validateJson],
 	);
 
-	// Get the display value for array/object textarea
 	const getJsonTextValue = useCallback(
 		(toolIdx: number, propKey: string, defaultValue: unknown): string => {
 			const textKey = `${toolIdx}-${propKey}`;
 
-			// If we have a stored text value, use it
 			if (jsonTextValues[textKey] !== undefined) {
 				return jsonTextValues[textKey];
 			}
 
-			// Otherwise, stringify the default value
 			try {
 				return JSON.stringify(defaultValue, null, 2);
 			} catch {
@@ -809,7 +958,6 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 
 	const clearSearch = useCallback(() => {
 		setSearchQuery("");
-		setDebouncedSearch("");
 	}, []);
 
 	const toggleCardExpand = useCallback((toolName: string) => {
@@ -826,11 +974,9 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 
 	const handleExpandAll = useCallback(() => {
 		if (expandAll) {
-			// Collapse all
 			setExpandedCards(new Set());
 			setExpandAll(false);
 		} else {
-			// Expand all (except deleted ones)
 			const allNames = new Set(
 				data.tools
 					.filter((t) => !deletedTools.includes(t.name))
@@ -841,59 +987,25 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		}
 	}, [expandAll, data.tools, deletedTools]);
 
-	const removedJsonTabs = useCallback(() => {
-		// remove the mcp json and UI tab on mcp generation
-		if (workspace.model) {
-			MCP_JSON_FILE_NAMES.forEach((fileName) => {
-				const tabset = workspace.model
-					.getActiveTabset()
-					.getChildren()
-					.find((tabset) => tabset.getAttr("name") === fileName);
-				if (tabset) {
-					workspace.model.doAction(
-						FlexLayout.Actions.deleteTab(tabset.getId()),
-					);
-				}
-			});
-		}
-	}, [workspace.model]);
-
 	const handleSave = useCallback(() => {
 		if (hasChanges) {
-			removedJsonTabs();
-			// Filter out deleted tools before saving
 			const updatedData = {
 				...data,
 				tools: data.tools.filter((t) => !deletedTools.includes(t.name)),
 			};
 			onSave?.(updatedData, path);
 
-			// Update initial snapshot to the saved state
 			setInitialDataSnapshot(JSON.stringify(updatedData));
-
-			// Clear deleted tools list after save
 			setDeletedTools([]);
-
-			// Update data to reflect the saved state (without deleted tools)
 			setData(updatedData);
 		} else {
 			onSave?.(data, path);
 		}
 
-		// Disable save button and remove asterisk from tab
 		setHasChanges(false);
-		updatePanels(false);
-	}, [
-		hasChanges,
-		data,
-		deletedTools,
-		onSave,
-		path,
-		removedJsonTabs,
-		updatePanels,
-	]);
+		// updatePanels(false);
+	}, [hasChanges, data, deletedTools, onSave, path]);
 
-	// Filter and search logic - Show all tools including deleted ones
 	const visibleTools = useMemo(() => data.tools || [], [data.tools]);
 
 	const filteredTools = useMemo(() => {
@@ -909,7 +1021,6 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		);
 	}, [visibleTools, debouncedSearch]);
 
-	// Check if card is expanded
 	const isCardExpanded = useCallback(
 		(toolName: string) => {
 			return expandedCards.has(toolName);
@@ -917,7 +1028,6 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		[expandedCards],
 	);
 
-	// Check if card is deleted
 	const isCardDeleted = useCallback(
 		(toolName: string) => {
 			return deletedTools.includes(toolName);
@@ -930,98 +1040,42 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 	}, [path]);
 
 	return (
-		<div className="mx-auto w-full max-w-full px-2 py-6 pb-8">
-			{/* Page Title */}
-			<div className="mb-6 px-4">
-				<h2 className="font-bold text-2xl">{headerText}</h2>
+		<div className="container-padding-x mx-auto w-full max-w-full py-3">
+			<div className="mb-6">
+				<h2 className="heading-md">{headerText}</h2>
 			</div>
 
-			{/* Sticky Control Section */}
-			<div className="sticky top-0 z-50 mb-6 rounded-lg border border-gray-200 bg-white/95 p-4 backdrop-blur-sm">
-				{/* Top Row: Function Count, Actions */}
-				<div className="mb-3 flex items-center justify-between">
-					<div className="flex items-center gap-2">
-						<Badge color="info" className="px-2 py-1 text-xs">
-							{filteredTools.length}{" "}
-							{filteredTools.length === 1
-								? "Function"
-								: "Functions"}
-						</Badge>
-						{deletedTools.length > 0 && (
-							<Badge color="error" className="px-2 py-1 text-xs">
-								{deletedTools.length} Pending Deletion
-							</Badge>
-						)}
-						{debouncedSearch && (
-							<span className="text-gray-500 text-xs">
-								(filtered)
-							</span>
-						)}
-					</div>
-					<div className="flex items-center gap-2">
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleExpandAll}
-							className="flex items-center gap-1.5"
-						>
-							{expandAll ? (
-								<Minimize2 size={14} />
-							) : (
-								<Maximize2 size={14} />
-							)}
-							<span className="hidden sm:inline">
-								{expandAll ? "Collapse All" : "Expand All"}
-							</span>
-						</Button>
-						<Button
-							size="sm"
-							color="primary"
-							onClick={handleSave}
-							disabled={!hasChanges}
-							title="Save (Ctrl+S / Cmd+S)"
-							className="flex items-center gap-1.5 bg-blue-600 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
-						>
-							<Save size={14} />
-							<span>Save</span>
-						</Button>
-					</div>
-				</div>
+			<EditorHeader
+				functionCount={filteredTools.length}
+				deletedCount={deletedTools.length}
+				searchQuery={searchQuery}
+				debouncedSearch={debouncedSearch}
+				showExpandAll={true}
+				showSave={true}
+				showSearch={true}
+				expandAll={expandAll}
+				hasChanges={hasChanges}
+				onExpandAll={handleExpandAll}
+				onSave={handleSave}
+				onSearchChange={setSearchQuery}
+				onSearchClear={clearSearch}
+			/>
 
-				{/* Search Bar */}
-				<div className="relative">
-					<Search
-						className="-translate-y-1/2 absolute top-1/2 left-3 transform text-gray-400"
-						size={18}
-					/>
-					<Input
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-						placeholder="Search functions by name, title, or description..."
-						className="w-full py-2 pr-10 pl-10 text-sm"
-					/>
-					{searchQuery && (
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={clearSearch}
-							className="-translate-y-1/2 absolute top-1/2 right-3 transform text-gray-400 transition-colors hover:text-gray-600"
-						>
-							<X size={18} />
-						</Button>
-					)}
-				</div>
-			</div>
-
-			{/* Meta Data Card - Read Only */}
-			<Card className="mb-5 w-full gap-2 rounded-lg bg-zinc-100 p-4">
-				<h3 className="mb-3 font-semibold text-base">Meta Data</h3>
-				<div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3">
-					{Object.entries(data?._meta).map(([key, value]) => (
+			<Card className="mb-5 w-full rounded-lg bg-secondary p-4">
+				<h3 className="font-semibold text-base text-foreground">
+					Meta Data
+				</h3>
+				<div
+					className="grid w-full gap-3"
+					style={{
+						gridTemplateColumns: `repeat(3, 1fr)`,
+					}}
+				>
+					{Object.entries(data._meta).map(([key, value]) => (
 						<div key={key} className="flex flex-col gap-1">
 							<Label
 								htmlFor={key}
-								className="text-base-muted-foreground text-xm"
+								className="text-muted-foreground text-sm"
 							>
 								{key}
 							</Label>
@@ -1030,18 +1084,20 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 								value={value}
 								readOnly
 								disabled
-								className="w-full cursor-not-allowed border-base-input bg-white px-2 py-1 text-base-muted-foreground text-sm"
+								className="w-full cursor-not-allowed border-input bg-muted px-2 py-1 text-muted-foreground text-sm"
 							/>
 						</div>
 					))}
 				</div>
 			</Card>
 
-			{/* Function Cards */}
 			{filteredTools.length === 0 && (
-				<div className="py-12 text-center text-gray-500">
-					<Search className="mx-auto mb-3 text-gray-300" size={48} />
-					<p className="text-base">
+				<div className="py-12 text-center">
+					<Search
+						className="mx-auto mb-3 text-muted-foreground"
+						size={48}
+					/>
+					<p className="text-base text-muted-foreground">
 						{debouncedSearch
 							? `No functions found matching "${debouncedSearch}"`
 							: "No functions found."}
@@ -1074,6 +1130,8 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 						onJsonTextChange={handleJsonTextChange}
 						getJsonTextValue={getJsonTextValue}
 						jsonErrors={jsonErrors}
+						showDelete={true}
+						showRestore={true}
 					/>
 				);
 			})}

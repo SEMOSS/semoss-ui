@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import React, { useMemo } from "react";
+import React, { type ReactNode, useMemo, useState } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -16,13 +16,15 @@ import {
 } from "@semoss/ui/next";
 import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
-import { ChatContext } from "@/contexts";
+import { ChatContext, NavbarContext } from "@/contexts";
 import { useRoot } from "@/hooks";
+import { useNavbar } from "@/hooks/use-navbar";
 import { ChatStore } from "@/stores";
 
 export const MainLayout = observer(() => {
 	const { actions } = useInsight();
 	const { root } = useRoot();
+	const [navbarActions, setNavbarActions] = useState<ReactNode | null>(null);
 
 	const [isSidebarOpen, setIsSidebarOpen] = useCacheState(
 		false,
@@ -45,6 +47,30 @@ export const MainLayout = observer(() => {
 				chat: chatStore,
 			}}
 		>
+			<NavbarContext.Provider
+				value={{ actions: navbarActions, setActions: setNavbarActions }}
+			>
+				<MainLayoutContent
+					isSidebarOpen={isSidebarOpen}
+					setIsSidebarOpen={setIsSidebarOpen}
+				/>
+			</NavbarContext.Provider>
+		</ChatContext.Provider>
+	);
+});
+
+const MainLayoutContent = observer(
+	({
+		isSidebarOpen,
+		setIsSidebarOpen,
+	}: {
+		isSidebarOpen: boolean;
+		setIsSidebarOpen: (open: boolean) => void;
+	}) => {
+		const { root } = useRoot();
+		const { actions } = useNavbar();
+
+		return (
 			<SidebarProvider
 				open={isSidebarOpen}
 				onOpenChange={setIsSidebarOpen}
@@ -113,6 +139,9 @@ export const MainLayout = observer(() => {
 								</Breadcrumb>
 							</div>
 							<div className="flex-1" />
+							<div className="flex items-center gap-2">
+								{actions ?? null}
+							</div>
 						</div>
 						<Separator />
 						<div className="w-full flex-1 overflow-hidden">
@@ -122,6 +151,6 @@ export const MainLayout = observer(() => {
 					</div>
 				</SidebarInset>
 			</SidebarProvider>
-		</ChatContext.Provider>
-	);
-});
+		);
+	},
+);

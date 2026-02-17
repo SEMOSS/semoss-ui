@@ -584,7 +584,7 @@ export const IMPORTABLE_MODELS = {
 									message:
 										"Catalog names can only contain alphanumeric characters and dashes.",
 								},
-								custom: {
+								custom_rules: {
 									value: 'CheckEngineName ( "[VALUE]") ;',
 									message:
 										"This Catalog name has already been used, please try another.",
@@ -598,7 +598,7 @@ export const IMPORTABLE_MODELS = {
 							type: "hidden",
 							disabled: true,
 							required: true,
-							default: "AZURE_OPEN_AI",
+							default: "OPEN_AI",
 							category: "General",
 						},
 						{
@@ -1626,7 +1626,7 @@ export const IMPORTABLE_MODELS = {
 									message:
 										"Catalog names can only contain alphanumeric characters and dashes.",
 								},
-								custom: {
+								custom_rules: {
 									value: 'CheckEngineName ( "[VALUE]") ;',
 									message:
 										"This Catalog name has already been used, please try another.",
