@@ -1,22 +1,9 @@
-import { Quote } from "lucide-react";
+import { ChevronDownIcon, Quote } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
-import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-	H1,
-	H2,
-	H3,
-	H4,
-	Markdown,
-	P,
-	Separator,
-} from "@semoss/ui/next";
-import { useMarkdownTypewriter } from "@/hooks";
-import { useLoadingMessage } from "@/hooks/use-loading-messages";
+import { useState } from "react";
+import { cn, H1, H2, H3, H4, Markdown, P, Separator } from "@semoss/ui/next";
 import type { ResponseMessageStore, RoomStore } from "@/stores";
+import type { PixelMessageThinkingPart } from "@/types";
 
 const THINKING_MARKDOWN_COMPONENTS = {
 	h1: ({ children, ...props }) => (
@@ -106,47 +93,59 @@ interface ResponseMessageThinkingProps {
 
 	/** Message to render */
 	message: ResponseMessageStore;
+
+	/** Thinking to render */
+	part: PixelMessageThinkingPart;
 }
 
 export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
-	observer(({ room, message }) => {
-		const thinkingMessage = useLoadingMessage(room.isLoading);
-		const [thinking, setThinking] = useState<string>("");
+	observer(({ room, message, part }) => {
+		const [isForcedOpen, setIsForcedOpen] = useState<boolean>(false);
 
-		const typewriter = useMarkdownTypewriter(message.thinking);
-
-		useEffect(() => {
-			if (message.isThinking) {
-				typewriter.start();
-			}
-		}, [message.isThinking, typewriter.start]);
-
-		if (message.isThinking || message.thinking.length > 0) {
-			return (
-				<Accordion
-					type="single"
-					collapsible
-					className="rounded-lg border border-border p-3 text-muted-foreground text-sm shadow-sm"
-					value={message.isThinking ? "thinking" : thinking}
-					onValueChange={(val) => setThinking(val || "")}
-				>
-					<AccordionItem value="thinking">
-						<AccordionTrigger className="p-0">
-							<span className="font-medium">Thinking</span>
-						</AccordionTrigger>
-						<AccordionContent className="pt-2">
-							<Markdown
-								className="[&>*:first-child]:mt-0"
-								components={THINKING_MARKDOWN_COMPONENTS}
-							>
-								{typewriter.isTyping
-									? typewriter.rendered
-									: message.thinking ||
-										thinkingMessage.loadingMessage}
-							</Markdown>
-						</AccordionContent>
-					</AccordionItem>
-				</Accordion>
-			);
+		if (!part.thinking) {
+			return null;
 		}
+
+		const isOpen = isForcedOpen || message.isThinking;
+
+		return (
+			<div className="relative">
+				{/* biome-ignore lint/a11y/noStaticElementInteractions: cannot make it a button because it contains interactive elements like links */}
+				<div
+					className={cn(
+						"w-full cursor-pointer overflow-hidden text-left text-muted-foreground text-xs italic hover:text-accent-foreground",
+						isOpen ? "" : "line-clamp-1",
+					)}
+					onClick={() => setIsForcedOpen(!isForcedOpen)}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") {
+							e.preventDefault();
+							setIsForcedOpen(!isForcedOpen);
+						}
+					}}
+					data-state={isOpen ? "open" : "closed"}
+				>
+					<Markdown
+						className="pr-4 [&>*:first-child]:mt-0"
+						components={THINKING_MARKDOWN_COMPONENTS}
+					>
+						{part.thinking}
+					</Markdown>
+				</div>
+				<ChevronDownIcon
+					className="pointer-events-none absolute top-0 right-0 size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200 data-[state=closed]:rotate-90"
+					data-state={isOpen ? "open" : "closed"}
+				/>
+
+				{/* Fade overlay when collapsed */}
+				<div
+					className={cn(
+						"absolute right-0 bottom-0 left-0 h-3",
+						"bg-linear-to-t from-background to-transparent",
+						"pointer-events-none transition-opacity duration-300",
+						isOpen ? "opacity-0" : "opacity-100",
+					)}
+				/>
+			</div>
+		);
 	});

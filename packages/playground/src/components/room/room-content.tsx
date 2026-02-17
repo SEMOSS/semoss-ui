@@ -288,7 +288,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 											message={m}
 										/>
 									);
-								} else if (m.type === "RESPONSE") {
+								} else if (m.type === "OUTPUT") {
 									return (
 										<ResponseMessage
 											key={m.key}

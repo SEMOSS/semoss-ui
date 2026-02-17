@@ -29,7 +29,7 @@ export abstract class AbstractMessageStore {
 	/**
 	 * Track if it is an root, input, or response message
 	 */
-	abstract type: "ROOT" | "PLAN" | "INPUT" | "RESPONSE" | "TOOL_EXECUTION";
+	abstract type: "ROOT" | "PLAN" | "INPUT" | "OUTPUT";
 
 	/**
 	 * Parent of the message
@@ -50,6 +50,11 @@ export abstract class AbstractMessageStore {
 	 * Active Child Position
 	 */
 	activeChildPosition: number = -1;
+
+	/**
+	 * Track if it is an root, input, or response message
+	 */
+	abstract parts: AbstractPixelMessage["parts"];
 
 	/**
 	 * Active Child Position
@@ -77,6 +82,7 @@ export abstract class AbstractMessageStore {
 			position: observable,
 			children: observable,
 			activeChildPosition: observable,
+			tokens: observable,
 			siblings: computed,
 			previousSibling: computed,
 			nextSibling: computed,
@@ -85,7 +91,6 @@ export abstract class AbstractMessageStore {
 			addChild: action,
 			removeChild: action,
 			activateMessage: action,
-			tokens: observable,
 		});
 	}
 

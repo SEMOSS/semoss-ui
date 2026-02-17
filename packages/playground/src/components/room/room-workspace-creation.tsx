@@ -89,7 +89,7 @@ export const SaveWorkspaceDialog = observer(
 		return (
 			<>
 				<Tooltip>
-					<TooltipTrigger>
+					<TooltipTrigger asChild>
 						<Button
 							variant="outline"
 							size="sm"

@@ -13,7 +13,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import type { ResponseMessageStore, RoomStore, ToolStore } from "@/stores";
 import { ToolsView } from "../mcp";
 
 interface RoomInlineToolProps {
@@ -24,7 +24,7 @@ interface RoomInlineToolProps {
 	message: ResponseMessageStore;
 
 	/** Tool to render */
-	tool: ResponseMessageStore["tools"][number];
+	tool: ToolStore;
 }
 
 export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
@@ -122,11 +122,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 									? tool.response
 									: undefined
 							}
-							executedParameters={
-								tool.status === "SUCCESS"
-									? tool.executedParameters
-									: undefined
-							}
+							toolParameters={tool.parameters}
 						/>
 					</div>
 				</div>

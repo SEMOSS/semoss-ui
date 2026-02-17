@@ -3,14 +3,14 @@ import {
 	ArrowRightIcon,
 	CircleAlert,
 	CopyIcon,
+	FileIcon,
 	MessageCircleIcon,
 	RefreshCwIcon,
-	SkipForwardIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import {
 	Button,
 	Code,
@@ -23,7 +23,6 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useMarkdownTypewriter } from "@/hooks";
 import {
 	InputMessageStore,
 	type ResponseMessageStore,
@@ -44,13 +43,13 @@ interface ResponseMessageProps {
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 	({ room, message }) => {
-		const typewriter = useMarkdownTypewriter(message.text);
-
-		useEffect(() => {
-			if (message.isThinking) {
-				typewriter.start();
-			}
-		}, [message.isThinking, typewriter.start]);
+		// const typewriter = useMarkdownTypewriter(message.text);
+		//
+		// useEffect(() => {
+		// 	if (message.isThinking) {
+		// 		typewriter.start();
+		// 	}
+		// }, [message.isThinking, typewriter.start]);
 
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
@@ -87,10 +86,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				toast.error(e.message);
 			}
 		};
-
-		const areToolsActive =
-			message.type === "RESPONSE" &&
-			message.tools.some((tool) => !tool.response);
 
 		const markdownComponents = useMemo(() => {
 			return {
@@ -164,31 +159,95 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						{message.model.name ?? "Agent"}
 					</span>
 				</div>
-				<ResponseMessageThinking room={room} message={message} />
-				<Markdown
-					components={markdownComponents}
-					className="[&>*:first-child]:mt-0"
-				>
-					{typewriter.isTyping ? typewriter.rendered : message.text}
-				</Markdown>
-				{message.tools.map((t) => {
-					return (
-						<div
-							key={`tool-${t.id}`}
-							className="flex flex-col gap-2"
-						>
-							<ResponseMessageTool message={message} tool={t} />
-							{t.display === "inline" && t.isOpen && (
-								<RoomInlineTool
-									room={room}
+				{message.parts.map((p, pIdx) => {
+					const key = `message-part-${pIdx}`;
+
+					if (p.type === "TEXT") {
+						return (
+							<Markdown
+								key={key}
+								components={markdownComponents}
+								className="[&>*:first-child]:mt-0"
+							>
+								{p.text}
+							</Markdown>
+						);
+					} else if (p.type === "MEDIA") {
+						return (
+							<div key={`${message.id}-part-${pIdx}`}>
+								<button
+									type="button"
+									className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted"
+									onClick={() => {
+										// this will select if there or open if not
+										room.addSidebarNode(
+											`FILE--${p.mediaInfo.fileLocation}`,
+											{
+												type: "tab",
+												name: p.mediaInfo.fileName,
+												component: "room-file-editor",
+												config: {
+													name: p.mediaInfo.fileName,
+													path: p.mediaInfo
+														.fileLocation,
+												},
+												enableClose: true,
+											},
+										);
+									}}
+									aria-label={`View ${p.mediaInfo.fileName}`}
+								>
+									{p.mediaInfo.mimeType?.startsWith(
+										"image/",
+									) ? (
+										<img
+											className="w-full"
+											src={`data:image/png;base64,${p.mediaInfo.base64Data}`}
+											alt={p.mediaInfo.fileName}
+										/>
+									) : (
+										<FileIcon className="size-6 text-muted-foreground" />
+									)}
+								</button>
+							</div>
+						);
+					} else if (p.type === "THINKING") {
+						return (
+							<ResponseMessageThinking
+								key={key}
+								room={room}
+								message={message}
+								part={p}
+							/>
+						);
+					} else if (p.type === "TOOL_CALL") {
+						const tool = room.getTool(p.toolCall.id);
+
+						// if tool is not found, return null
+						if (!tool) {
+							return null;
+						}
+
+						return (
+							<div key={key} className="flex flex-col gap-2">
+								<ResponseMessageTool
 									message={message}
-									tool={t}
+									tool={tool}
 								/>
-							)}
-						</div>
-					);
+								{tool.display === "inline" && tool.isOpen && (
+									<RoomInlineTool
+										room={room}
+										message={message}
+										tool={tool}
+									/>
+								)}
+							</div>
+						);
+					}
+
+					return null;
 				})}
-				{areToolsActive && (
+				{message.hasUnfinishedTools && (
 					<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
 						<CircleAlert className="size-4" />
 						Please complete the tool(s) to proceed.
@@ -326,16 +385,33 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								<Button
 									variant="ghost"
 									size="icon"
-									disabled={!message.text}
+									disabled={message.parts.length === 0}
 									onClick={() => {
-										if (!message.text) {
+										const text = message.parts
+											.map((part) => {
+												if (part.type === "TEXT") {
+													return part.text;
+												} else if (
+													part.type === "MEDIA"
+												) {
+													return `<${part.mediaInfo.fileName}?`;
+												} else if (
+													part.type === "TOOL_CALL"
+												) {
+													return `<${part.toolCall.name}?`;
+												}
+
+												return "";
+											})
+											.join("\n");
+
+										if (!text) {
+											toast.warning("No content to copy");
 											return;
 										}
 
 										try {
-											navigator.clipboard.writeText(
-												message.text,
-											);
+											navigator.clipboard.writeText(text);
 
 											toast.success(
 												"Successfully copied to clipboard",
@@ -356,7 +432,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 					<div className="flex-1" />
 
-					{typewriter.isTyping && !message.isThinking && (
+					{/* {typewriter.isTyping && !message.isThinking && (
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
@@ -372,7 +448,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								Fast Forward to End
 							</TooltipContent>
 						</Tooltip>
-					)}
+					)} */}
 				</div>
 			</div>
 		);
