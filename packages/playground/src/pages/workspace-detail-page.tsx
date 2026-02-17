@@ -13,6 +13,12 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuGroup,
@@ -56,6 +62,7 @@ export const WorkspaceDetailPage = observer(() => {
 
 	const [tab, setTab] = useState<string>("chats");
 	const [search, setSearch] = useState<string>("");
+	const [deleteModal, setDeleteModal] = useState<boolean>(false);
 
 	// Pagination state - TODO: Wire up to child components
 	const pagination = usePagination();
@@ -147,7 +154,7 @@ export const WorkspaceDetailPage = observer(() => {
 								<DropdownMenuItem
 									onClick={async (e) => {
 										e.stopPropagation();
-
+										setDeleteModal(true);
 										setIsLoading(true);
 										try {
 											await chat.deleteWorkspace(
@@ -290,6 +297,54 @@ export const WorkspaceDetailPage = observer(() => {
 					</div>
 				</Tabs>
 			</div>
+			<Dialog open={deleteModal} onOpenChange={setDeleteModal}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Are you sure?</DialogTitle>
+						<DialogDescription>
+							This action is irreversable. This will permanentely
+							delete the {getWorkspace?.data?.name} workspace.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={(e) => {
+								e.stopPropagation();
+								setDeleteModal(false);
+							}}
+							data-testid={`workspace-detail-page--cancel-delete-btn`}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							data-testid={`workspace-detail-page--confirm-delete-btn`}
+							onClick={async (e) => {
+								e.stopPropagation();
+
+								setIsLoading(true);
+								try {
+									await chat.deleteWorkspace(workspaceId);
+
+									// go to the workspace
+									navigate("/workspace");
+								} catch (e) {
+									toast.error(
+										e instanceof Error
+											? e.message
+											: "Failed to delete workspace",
+									);
+								} finally {
+									setIsLoading(false);
+								}
+							}}
+						>
+							Delete
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 });
