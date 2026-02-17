@@ -70,32 +70,38 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 	color: theme.palette.text.primary,
 }));
 
-//Initial xaxis state used for restoring
-const INITIAL_XAXIS_STATE = {
-	showAxis: true,
-	showAxisTitle: true,
-	xaxistitle: "",
-	xaxisTitleFontSize: 12,
-	showXAxisLineTicks: false,
-	showXAxisLabels: true,
-	labelFontSize: 12,
-	rotate: 0,
-	rotateLabelMinValue: 0,
-	rotateLabelMaxValue: 360,
-	showxAxisZoom: false,
-	axisGap: 25, // gap between axis and axis title
-};
 //Changing the X axis styling like title, rotate and changing the labels
 export const EditXAxis = observer(
 	<D extends BlockDef = BlockDef>({ option, id, path }) => {
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
-		const [xaxisState, setXaxisState] = useState(INITIAL_XAXIS_STATE);
 		const [xAxisDataUpdated, setXAxisDataUpdated] = useState<
 			"initial" | "updated"
 		>("initial");
 		const [value, setValue] = useState(data.option);
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		// Store the initial value of xAxis.name in a ref to persist it across renders
+        const initialXAxisNameRef = useRef(data.option.xAxis["name"]);
+
+        // Use the initial value from the ref
+        const storedValue = initialXAxisNameRef.current;
+		
+		//Initial xaxis state used for restoring
+		const INITIAL_XAXIS_STATE = {
+			showAxis: true,
+			showAxisTitle: true,
+			xaxistitle: storedValue,
+			xaxisTitleFontSize: 12,
+			showXAxisLineTicks: false,
+			showXAxisLabels: true,
+			labelFontSize: 12,
+			rotate: 0,
+			rotateLabelMinValue: 0,
+			rotateLabelMaxValue: 360,
+			showxAxisZoom: false,
+			axisGap: 25, // gap between axis and axis title
+		};
+		const [xaxisState, setXaxisState] = useState(INITIAL_XAXIS_STATE);
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
 			return computed(() => {
@@ -129,7 +135,7 @@ export const EditXAxis = observer(
 			const xAxisStateData = {
 				showAxis: true,
 				showAxisTitle: true,
-				xaxistitle: "",
+				xaxistitle: data.option[axis]["name"],
 				xaxisTitleFontSize: 12,
 				showXAxisLineTicks: false,
 				showXAxisLabels: true,

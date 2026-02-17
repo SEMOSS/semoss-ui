@@ -51,7 +51,7 @@ import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
 
-const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
+const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
 
 const BUCKETS = [
 	"Favorites",
@@ -333,18 +333,15 @@ export const GlobalNav = observer(() => {
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 
-					{ENABLE_WORKSPACE && (
+					{ENABLE_AGENT && (
 						<SidebarMenuItem>
 							<SidebarMenuButton
 								asChild
-								isActive={!!matchPath("/workspace", pathname)}
+								isActive={!!matchPath("/agent", pathname)}
 							>
-								<Link
-									to={"/workspace"}
-									aria-label={"Workspace"}
-								>
+								<Link to={"/agent"} aria-label={"agent"}>
 									<ComputerIcon />
-									Workspaces
+									Agents
 								</Link>
 							</SidebarMenuButton>
 						</SidebarMenuItem>

@@ -115,6 +115,7 @@ export const VisualizationBlock: BlockComponent = observer(
 					setData(
 						"option",
 						parsedData as PathValue<D["data"], typeof path>,
+						true
 					);
 				} catch (e) {
 					console.log(e);
