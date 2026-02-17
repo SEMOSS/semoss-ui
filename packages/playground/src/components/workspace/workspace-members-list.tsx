@@ -30,6 +30,7 @@ import {
 import { useChat } from "@/hooks";
 import type { User } from "@/types";
 import { toInitials } from "@/utility";
+import { WorkspaceSharingModal } from "./workspace-sharing-modal";
 
 export interface WorkspaceMembersListProps {
 	/**
@@ -57,6 +58,12 @@ export interface WorkspaceMembersListProps {
 		/** Setter to update current page number */
 		setCurrentPage: (currentPage: number) => void;
 	};
+
+	/**
+	 * Optional callback to trigger when members are updated (e.g., after a permission change or deletion)
+	 */
+	isSharingModalOpen: boolean;
+	onSharingModalClose: (madeChanges: boolean) => void;
 }
 
 /**
@@ -68,6 +75,8 @@ export const WorkspaceMembersList = ({
 	workspaceId,
 	paginationControl,
 	search,
+	isSharingModalOpen,
+	onSharingModalClose,
 }: WorkspaceMembersListProps) => {
 	const { rowsPerPage, offset, setTotalRows, setCurrentPage } =
 		paginationControl;
@@ -540,6 +549,17 @@ export const WorkspaceMembersList = ({
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+			{/* Workspace Sharing Modal */}
+			{workspaceId && (
+				<WorkspaceSharingModal
+					workspaceId={workspaceId}
+					open={isSharingModalOpen}
+					onClose={(madeChanges) => {
+						onSharingModalClose(madeChanges);
+						if (madeChanges) fetchMembers();
+					}}
+				/>
+			)}
 		</ScrollArea>
 	);
 };

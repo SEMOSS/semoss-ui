@@ -47,19 +47,27 @@ import type { Workspace } from "@/types";
  * @component
  */
 export const WorkspaceDetailPage = observer(() => {
+	/**
+	 * Library Hooks
+	 */
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChat();
 	const { root } = useRoot();
-
-	const [isLoading, setIsLoading] = useState<boolean>(false);
-
-	const [tab, setTab] = useState<string>("chats");
-	const [search, setSearch] = useState<string>("");
-
-	// Pagination state - TODO: Wire up to child components
 	const pagination = usePagination();
 
+	/**
+	 * State
+	 */
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [tab, setTab] = useState<string>("chats");
+	const [search, setSearch] = useState<string>("");
+	const [isSharingModalOpen, setIsSharingModalOpen] =
+		useState<boolean>(false);
+
+	/**
+	 * Library Hooks
+	 */
 	const debouncedSearch = useDebouncedValue(search);
 
 	// Fetch workspace details
@@ -227,7 +235,10 @@ export const WorkspaceDetailPage = observer(() => {
 							</InputGroup>
 							{/* Tab-specific actions go here */}
 							{tab === "members" ? (
-								<Button variant="outline">
+								<Button
+									variant="outline"
+									onClick={() => setIsSharingModalOpen(true)}
+								>
 									<PlusIcon />
 									Add members
 								</Button>
@@ -278,6 +289,10 @@ export const WorkspaceDetailPage = observer(() => {
 									workspaceId={workspaceId}
 									search={debouncedSearch}
 									paginationControl={pagination}
+									isSharingModalOpen={isSharingModalOpen}
+									onSharingModalClose={() =>
+										setIsSharingModalOpen(false)
+									}
 								/>
 							)}
 						</TabsContent>
