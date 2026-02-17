@@ -29,6 +29,7 @@ import { Vector } from "@/assets/img/Vector";
 import { useSettings } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 import { SETTINGS_ROUTES } from "./settings.constants";
+import {GuardrailIcon} from "@/assets/img/Guardrail";
 
 const StyledContainer = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -103,6 +104,7 @@ const IconMapper = {
 	"My Profile": <PersonRounded />,
 	Jobs: <Jobs />,
 	"View RDF Map": <Folder />,
+	"Guardrail Settings": <GuardrailIcon color={"#0471F0"} width={"50"} height={"50"} />,
 };
 
 export const SettingsIndexPage = () => {
