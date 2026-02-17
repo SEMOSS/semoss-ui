@@ -1,4 +1,4 @@
-import { Trash2, UserPlusIcon } from "lucide-react";
+import { UserPlusIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
 	Avatar,
@@ -12,15 +12,11 @@ import {
 	DialogTitle,
 	Input,
 	ScrollArea,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	toast,
 } from "@semoss/ui/next";
 import { addProjectUserPermissions, type PostUser } from "@/api";
 import { toInitials } from "@/utility";
+import { PermissionDropdown } from "./permission-dropdown";
 
 export interface WorkspaceSharingModalProps {
 	/** Id of the workspace */
@@ -28,6 +24,7 @@ export interface WorkspaceSharingModalProps {
 
 	open: boolean;
 	onClose: (madeChanges: boolean) => void;
+	activeUserPermission: string; // Pass active user's permission to control dropdown options and actions
 }
 
 type PendingUser = {
@@ -41,6 +38,7 @@ export const WorkspaceSharingModal = ({
 	workspaceId,
 	open,
 	onClose,
+	activeUserPermission,
 }: WorkspaceSharingModalProps) => {
 	const [userId, setUserId] = useState("");
 	const [selectedPermission, setSelectedPermission] = useState("READ_ONLY");
@@ -50,7 +48,7 @@ export const WorkspaceSharingModal = ({
 	/**
 	 * Add a user to the pending list
 	 */
-	const handleAddUser = useCallback(() => {
+	const handleAddUser = () => {
 		const trimmedUserId = userId.trim();
 		if (!trimmedUserId) {
 			toast.error("Please enter a user ID");
@@ -74,22 +72,27 @@ export const WorkspaceSharingModal = ({
 		// Reset inputs
 		setUserId("");
 		setSelectedPermission("READ_ONLY");
-	}, [userId, selectedPermission, pendingUsers]);
+	};
 
 	/**
 	 * Remove a user from the pending list
 	 */
-	const handleRemoveUser = useCallback((userIdToRemove: string) => {
+	const handleRemoveUser = (userIdToRemove: string) => {
 		setPendingUsers((prev) =>
 			prev.filter((u) => u.userid !== userIdToRemove),
 		);
-	}, []);
+	};
 
 	/**
 	 * Update a user's permission in the pending list
 	 */
-	const handleUpdatePermission = useCallback(
-		(userIdToUpdate: string, newPermission: string) => {
+	const handleUpdatePermission = (
+		userIdToUpdate: string,
+		newPermission: string,
+	) => {
+		if (newPermission === "delete") {
+			handleRemoveUser(userIdToUpdate);
+		} else {
 			setPendingUsers((prev) =>
 				prev.map((u) =>
 					u.userid === userIdToUpdate
@@ -97,14 +100,13 @@ export const WorkspaceSharingModal = ({
 						: u,
 				),
 			);
-		},
-		[],
-	);
+		}
+	};
 
 	/**
 	 * Submit the pending users to the API
 	 */
-	const handleSubmit = useCallback(async () => {
+	const handleSubmit = async () => {
 		if (pendingUsers.length === 0) {
 			toast.error("Please add at least one user");
 			return;
@@ -137,7 +139,7 @@ export const WorkspaceSharingModal = ({
 		} finally {
 			setIsSubmitting(false);
 		}
-	}, [pendingUsers, workspaceId, onClose]);
+	};
 
 	/**
 	 * Handle dialog close
@@ -176,21 +178,12 @@ export const WorkspaceSharingModal = ({
 								}}
 								className="flex-1"
 							/>
-							<Select
-								value={selectedPermission}
-								onValueChange={setSelectedPermission}
-							>
-								<SelectTrigger className="w-[140px]">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="READ_ONLY">
-										Read Only
-									</SelectItem>
-									<SelectItem value="EDIT">Edit</SelectItem>
-									<SelectItem value="OWNER">Owner</SelectItem>
-								</SelectContent>
-							</Select>
+							<PermissionDropdown
+								activeUserPermission={activeUserPermission}
+								permission={selectedPermission}
+								handlePermissionChange={setSelectedPermission}
+								hideDeleteOption
+							/>
 							<Button
 								variant="outline"
 								onClick={handleAddUser}
@@ -232,41 +225,20 @@ export const WorkspaceSharingModal = ({
 													</div>
 												)}
 											</div>
-											<Select
-												value={user.permission}
-												onValueChange={(value) =>
+											<PermissionDropdown
+												permission={user.permission}
+												handlePermissionChange={(
+													newPermission,
+												) =>
 													handleUpdatePermission(
 														user.userid,
-														value,
+														newPermission,
 													)
 												}
-											>
-												<SelectTrigger className="w-[120px]">
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													<SelectItem value="READ_ONLY">
-														Read Only
-													</SelectItem>
-													<SelectItem value="EDIT">
-														Edit
-													</SelectItem>
-													<SelectItem value="OWNER">
-														Owner
-													</SelectItem>
-												</SelectContent>
-											</Select>
-											<Button
-												variant="ghost"
-												size="icon-sm"
-												onClick={() =>
-													handleRemoveUser(
-														user.userid,
-													)
+												activeUserPermission={
+													activeUserPermission
 												}
-											>
-												<Trash2 className="size-4" />
-											</Button>
+											/>
 										</div>
 									))}
 								</div>

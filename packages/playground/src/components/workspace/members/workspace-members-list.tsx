@@ -1,4 +1,3 @@
-import { Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,12 +11,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 	ScrollArea,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectSeparator,
-	SelectTrigger,
-	SelectValue,
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
@@ -30,6 +23,7 @@ import {
 import { useChat } from "@/hooks";
 import type { User } from "@/types";
 import { toInitials } from "@/utility";
+import { PermissionDropdown } from "./permission-dropdown";
 import { WorkspaceSharingModal } from "./workspace-sharing-modal";
 
 export interface WorkspaceMembersListProps {
@@ -458,58 +452,16 @@ export const WorkspaceMembersList = ({
 										{member.email}
 									</span>
 								</div>
-								<Select
-									value={member.permission}
-									onValueChange={(newPermission) =>
+								<PermissionDropdown
+									permission={member.permission}
+									handlePermissionChange={(newPermission) =>
 										handlePermissionChange(
 											member.id,
 											newPermission,
 										)
 									}
-									// Disable if current user is read-only or trying to modify an owner without being an owner
-									disabled={
-										userPermission === "READ_ONLY" ||
-										(member.permission === "OWNER" &&
-											userPermission !== "OWNER")
-									}
-								>
-									<SelectTrigger size="sm">
-										<SelectValue />
-									</SelectTrigger>
-									{/* Position checkmark on left side of menu items */}
-									<SelectContent className="[&_span:first-child]:right-auto [&_span:first-child]:left-2">
-										{/* Only owners can promote users to owner */}
-										<SelectItem
-											value="OWNER"
-											disabled={
-												userPermission !== "OWNER"
-											}
-											className="pr-2 pl-8"
-										>
-											Owner
-										</SelectItem>
-										<SelectItem
-											value="EDIT"
-											className="pr-2 pl-8"
-										>
-											Editor
-										</SelectItem>
-										<SelectItem
-											value="READ_ONLY"
-											className="pr-2 pl-8"
-										>
-											Read-only
-										</SelectItem>
-										<SelectSeparator />
-										<SelectItem
-											value="delete"
-											className="pr-2 text-destructive focus:text-destructive"
-										>
-											<Trash2 className="size-4 text-destructive" />
-											Remove access
-										</SelectItem>
-									</SelectContent>
-								</Select>
+									activeUserPermission={userPermission}
+								/>
 							</div>
 						))}
 			</div>
@@ -558,6 +510,7 @@ export const WorkspaceMembersList = ({
 						onSharingModalClose(madeChanges);
 						if (madeChanges) fetchMembers();
 					}}
+					activeUserPermission={userPermission}
 				/>
 			)}
 		</ScrollArea>
