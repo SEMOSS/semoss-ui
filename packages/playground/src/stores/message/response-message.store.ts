@@ -304,38 +304,36 @@ paramValues=[${JSON.stringify({
 		}
 	};
 
-/**
- * Download the response as a Word or PDF document
- */
-downloadResponse = async (format: "word" | "pdf") => {
-    if (!this.text) throw new Error("No content to download");
+	/**
+	 * Download the response as a Word or PDF document
+	 */
+	downloadResponse = async (format: "word" | "pdf") => {
+		if (!this.text) throw new Error("No content to download");
 
-    let pixelCommand: string;
+		let pixelCommand: string;
 
-    if (format === "word") {
-        pixelCommand = `ToDocx(html=["<encode>${this.text}</encode>"], fileName=["Ai_Output"]);`;
-    } else if (format === "pdf") {
-        pixelCommand = `ToPdf(html=["<encode>${this.text}</encode>"], fileName=["Ai_Output"]);`;
-    } else {
-        throw new Error(`Unsupported format: ${format}`);
-    }
+		if (format === "word") {
+		pixelCommand = `ToDocx(html=["<encode>${this.text}</encode>"], fileName="${this.room.roomId}");`;
+		} else if (format === "pdf") {
+			pixelCommand = `ToPdf(html=["<encode>${this.text}</encode>"], fileName="${this.room.roomId}");`;
+		} else {
+			throw new Error(`Unsupported format: ${format}`);
+		}
 
-    const resp = await this.room.runRoomPixel<any>(pixelCommand, false);
+		const resp = await this.room.runRoomPixel<any>(pixelCommand, false);
 
-    console.log("✅ Response received:", resp);
-
-    if (resp?.pixelReturn?.[0]) {
-        const { operationType, output } = resp.pixelReturn[0];
-        
-        if (operationType?.includes("FILE_DOWNLOAD")) {
-            download(this.room.insightId, output);
-        } else {
-            throw new Error(`Failed to generate ${format.toUpperCase()} file`);
-        }
-    } else {
-        throw new Error("No response received from server");
-    }
-};
+		if (resp?.pixelReturn?.[0]) {
+			const { operationType, output } = resp.pixelReturn[0];
+			
+			if (operationType?.includes("FILE_DOWNLOAD")) {
+				download(this.room.insightId, output);
+			} else {
+				throw new Error(`Failed to generate ${format.toUpperCase()} file`);
+			}
+		} else {
+			throw new Error("No response received from server");
+		}
+	};
 
 	/**
 	 * Rewrite a message and generate a new sibling
