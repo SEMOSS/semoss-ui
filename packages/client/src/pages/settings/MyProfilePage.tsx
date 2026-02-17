@@ -346,7 +346,7 @@ export const MyProfilePage = () => {
 			});
 
 			// Send the app_id (UUID) to the API
-			await setUserMetadata(selectedEngine.app_name, selectedAppId);
+			await setUserMetadata("text-generation-model", selectedAppId);
 
 			
 
