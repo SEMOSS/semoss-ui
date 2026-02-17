@@ -1,4 +1,4 @@
-import { PlusIcon, Trash2, UserPlusIcon } from "lucide-react";
+import { Trash2, UserPlusIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
 	Avatar,
@@ -154,9 +154,9 @@ export const WorkspaceSharingModal = ({
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
 			<DialogContent className="max-w-2xl">
 				<DialogHeader>
-					<DialogTitle>Share Workspace</DialogTitle>
+					<DialogTitle>Add members</DialogTitle>
 					<DialogDescription>
-						Add members to collaborate on this workspace
+						Invite members to access and collaborate on this agent.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -196,8 +196,7 @@ export const WorkspaceSharingModal = ({
 								onClick={handleAddUser}
 								disabled={!userId.trim()}
 							>
-								<PlusIcon />
-								Add
+								Invite
 							</Button>
 						</div>
 					</div>
