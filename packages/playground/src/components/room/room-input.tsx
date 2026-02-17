@@ -39,12 +39,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import {
-	AutoScrollOnPastePlugin,
-	EnterPlugin,
-	FocusPlugin,
-	MentionPlugin,
-} from "@/components";
+import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import type { Engine } from "@/types";
 import { ContextChart } from "./context-chart";
 
@@ -106,7 +101,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [isListening, setIsListening] = useState(false);
 
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
-		const scrollRef = useRef<HTMLDivElement>(null);
 
 		useEffect(() => {
 			// Check if Speech Recognition is supported
@@ -312,9 +306,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							contentEditable={
 								<div className="relative">
 									<ContentEditable
-										ref={scrollRef}
 										className={cn(
-											`h-auto w-full overflow-y-auto rounded-md border border-input bg-transparent p-4 pb-16 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
+											`h-auto w-full overflow-y-auto rounded-md border border-input bg-transparent p-4 pb-14 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
 											isDragging
 												? "border-primary border-dashed"
 												: "hover:border-primary",
@@ -372,18 +365,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												]);
 											}
 										}}
-										onFocus={() => {
-											requestAnimationFrame(() => {
-												const el = scrollRef.current;
-												if (el)
-													el.scrollTop =
-														el.scrollHeight;
-											});
-										}}
 									/>
 									<div
 										aria-hidden="true"
-										className="pointer-events-none absolute inset-x-px bottom-px z-10 h-16 rounded-b-md bg-background"
+										className="pointer-events-none absolute inset-x-px bottom-px z-10 h-12 rounded-b-md bg-background"
 									/>
 								</div>
 							}
@@ -408,9 +393,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<FocusPlugin />
 						<EditorRefPlugin editorRef={editorRef} />
 						<EnterPlugin onEnter={() => promptModel()} />
-						<AutoScrollOnPastePlugin
-							scrollContainerRef={scrollRef}
-						/>
 						{!isLoading && (
 							<MentionPlugin
 								trigger="/"
@@ -451,52 +433,48 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						)}
 					</LexicalComposer>
 					{!isLoading && (
-						<div className="absolute bottom-3 left-3 z-20 flex flex-row items-center gap-2">
-							<div className="rounded-md bg-background p-1 ring-1 ring-border/60">
-								<div className="flex flex-row items-center gap-2">
-									<DropdownMenu
-										open={menuOpen}
+						<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
+							<DropdownMenu
+								open={menuOpen}
+								onOpenChange={setMenuOpen}
+							>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<DropdownMenuTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												disabled={isLoading}
+												aria-label="Open settings"
+											>
+												<SlidersHorizontalIcon />
+											</Button>
+										</DropdownMenuTrigger>
+									</TooltipTrigger>
+									<TooltipContent>
+										Open settings
+									</TooltipContent>
+								</Tooltip>
+								<DropdownMenuContent
+									align="start"
+									className="w-72"
+								>
+									<MenuComponent
+										isOpen={menuOpen}
 										onOpenChange={setMenuOpen}
-									>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<DropdownMenuTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon-sm"
-														disabled={isLoading}
-														aria-label="Open settings"
-													>
-														<SlidersHorizontalIcon />
-													</Button>
-												</DropdownMenuTrigger>
-											</TooltipTrigger>
-											<TooltipContent>
-												Open settings
-											</TooltipContent>
-										</Tooltip>
-										<DropdownMenuContent
-											align="start"
-											className="w-72"
-										>
-											<MenuComponent
-												isOpen={menuOpen}
-												onOpenChange={setMenuOpen}
-												fileRef={fileRef}
-												addToken={() => null}
-											/>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								</div>
-							</div>
+										fileRef={fileRef}
+										addToken={() => null}
+									/>
+								</DropdownMenuContent>
+							</DropdownMenu>
 							<ContextChart
 								tokensUsed={tokensUsed}
 								tokensMax={tokensMax}
 							/>
 						</div>
 					)}
-					<div className="absolute right-3 bottom-3 z-20 flex flex-row items-center gap-4">
-						<div className="flex flex-row items-center gap-1 rounded-md bg-background p-1 ring-1 ring-border/60">
+					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
+						<div className="flex flex-row items-center gap-1">
 							<EngineSelect
 								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
 								disabled={isLoading}
@@ -538,44 +516,38 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								</TooltipContent>
 							</Tooltip>
 						</div>
-						<div className="rounded-md bg-background/95 ring-1 ring-border/60 backdrop-blur-sm">
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<span>
-										<Button
-											variant="default"
-											aria-label="Ask the AI"
-											disabled={
-												isLoading ||
-												isEmpty ||
-												hasOutstandingTools
-											}
-											onClick={() => {
-												promptModel();
-											}}
-										>
-											{isLoading ? (
-												<Spinner />
-											) : (
-												<SendIcon />
-											)}
-										</Button>
-									</span>
-								</TooltipTrigger>
-								<TooltipContent>
-									{(() => {
-										if (isLoading) {
-											return "Thinking";
-										} else if (isEmpty) {
-											return "Please enter a question";
-										} else if (hasOutstandingTools) {
-											return "Please complete the tool(s) to proceed";
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span>
+									<Button
+										variant="default"
+										aria-label="Ask the AI"
+										disabled={
+											isLoading ||
+											isEmpty ||
+											hasOutstandingTools
 										}
-										return "Ask";
-									})()}
-								</TooltipContent>
-							</Tooltip>
-						</div>
+										onClick={() => {
+											promptModel();
+										}}
+									>
+										{isLoading ? <Spinner /> : <SendIcon />}
+									</Button>
+								</span>
+							</TooltipTrigger>
+							<TooltipContent>
+								{(() => {
+									if (isLoading) {
+										return "Thinking";
+									} else if (isEmpty) {
+										return "Please enter a question";
+									} else if (hasOutstandingTools) {
+										return "Please complete the tool(s) to proceed";
+									}
+									return "Ask";
+								})()}
+							</TooltipContent>
+						</Tooltip>
 					</div>
 				</div>
 				{files.length > 0 ? (
