@@ -142,7 +142,7 @@ export const WorkspaceDetailPage = observer(() => {
 									</Link>
 								</DropdownMenuItem>
 								<DropdownMenuItem
-									onClick={(e) => {
+									onClick={async (e) => {
 										e.stopPropagation();
 										setDeleteModal(true);
 										setIsLoading(true);
