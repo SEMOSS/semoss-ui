@@ -1,8 +1,9 @@
 import { ChevronDownIcon, Quote } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn, H1, H2, H3, H4, Markdown, P, Separator } from "@semoss/ui/next";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
+import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageThinkingPart } from "@/types";
 
 const THINKING_MARKDOWN_COMPONENTS = {
@@ -88,19 +89,32 @@ const THINKING_MARKDOWN_COMPONENTS = {
 };
 
 interface ResponseMessageThinkingProps {
-	/** Room */
-	room: RoomStore;
-
 	/** Message to render */
 	message: ResponseMessageStore;
 
 	/** Thinking to render */
 	part: PixelMessageThinkingPart;
+
+	/** Is it the last part */
+	isLast: boolean;
 }
 
 export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
-	observer(({ room, message, part }) => {
+	observer(({ message, part, isLast }) => {
 		const [isForcedOpen, setIsForcedOpen] = useState<boolean>(false);
+		const typewriter = useMarkdownTypewriter(part.thinking);
+
+		useEffect(() => {
+			if (message.isThinking && isLast) {
+				typewriter.start();
+			}
+		}, [message.isThinking, typewriter.start, isLast]);
+
+		useEffect(() => {
+			if (!isLast) {
+				typewriter.skipToEnd();
+			}
+		}, [isLast, typewriter.skipToEnd]);
 
 		if (!part.thinking) {
 			return null;
@@ -129,7 +143,9 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 						className="pr-4 [&>*:first-child]:mt-0"
 						components={THINKING_MARKDOWN_COMPONENTS}
 					>
-						{part.thinking}
+						{typewriter.isTyping
+							? typewriter.rendered
+							: part.thinking}
 					</Markdown>
 				</div>
 				<ChevronDownIcon

@@ -10,14 +10,8 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useMemo } from "react";
 import {
 	Button,
-	Code,
-	Markdown,
-	ScrollArea,
-	ScrollBar,
-	Table,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -30,6 +24,7 @@ import {
 } from "@/stores";
 import { AppLogo } from "../common";
 import { RoomInlineTool } from "../room/room-inline-tool";
+import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
 
@@ -87,64 +82,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			}
 		};
 
-		const markdownComponents = useMemo(() => {
-			return {
-				code: ({ children, className, ...props }) => {
-					const match = /language-(\w+)/.exec(className || "");
-					const code = children as string;
-
-					let lang: string = "";
-					if (match?.[1]) {
-						lang = match[1];
-					}
-
-					return (
-						<div className="group/response-markdown relative">
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										className="absolute top-0 right-0 bg-background opacity-0 transition-opacity group-hover/response-markdown:opacity-100"
-										variant="ghost"
-										size="icon"
-										disabled={!code}
-										onClick={() => {
-											try {
-												navigator.clipboard.writeText(
-													code,
-												);
-
-												toast.success(
-													"Successfully copied to clipboard",
-												);
-											} catch (e) {
-												toast.error(e.message);
-											}
-										}}
-									>
-										<CopyIcon />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent side="bottom">
-									Copy Code
-								</TooltipContent>
-							</Tooltip>
-							<Code
-								code={code}
-								lang={lang || undefined}
-								{...props}
-							/>
-						</div>
-					);
-				},
-				table: ({ ...props }) => (
-					<ScrollArea className="w-full">
-						<ScrollBar orientation="horizontal"></ScrollBar>
-						<Table {...props} />
-					</ScrollArea>
-				),
-			};
-		}, []);
-
 		return (
 			<div className="group mb-0 flex w-full flex-col gap-4">
 				<div className="group flex flex-row items-center gap-2">
@@ -161,16 +98,16 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				</div>
 				{message.parts.map((p, pIdx) => {
 					const key = `message-part-${pIdx}`;
+					const isLast = pIdx === message.parts.length - 1;
 
 					if (p.type === "TEXT") {
 						return (
-							<Markdown
+							<ResponseMessageText
 								key={key}
-								components={markdownComponents}
-								className="[&>*:first-child]:mt-0"
-							>
-								{p.text}
-							</Markdown>
+								message={message}
+								part={p}
+								isLast={isLast}
+							/>
 						);
 					} else if (p.type === "MEDIA") {
 						return (
@@ -215,9 +152,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						return (
 							<ResponseMessageThinking
 								key={key}
-								room={room}
 								message={message}
 								part={p}
+								isLast={isLast}
 							/>
 						);
 					} else if (p.type === "TOOL_CALL") {
@@ -431,24 +368,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					</div>
 
 					<div className="flex-1" />
-
-					{/* {typewriter.isTyping && !message.isThinking && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									disabled={!message.text}
-									onClick={() => typewriter.skipToEnd()}
-								>
-									<SkipForwardIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								Fast Forward to End
-							</TooltipContent>
-						</Tooltip>
-					)} */}
 				</div>
 			</div>
 		);
