@@ -3,8 +3,9 @@ import AdmZip from "adm-zip";
 import { config } from "dotenv";
 import { glob } from "glob";
 import Listr from "listr";
-import { File } from "node:buffer";
 import * as fs from "node:fs";
+import * as http from "node:http";
+import * as https from "node:https";
 import * as path from "node:path";
 import { Env, Insight, upload } from "@semoss/sdk";
 
@@ -95,11 +96,26 @@ deploy java and python folders
 				"Target directory to deploy (e.g., 'java', 'python'). Can be specified multiple times.",
 			multiple: true,
 		}),
+		// dry-run flag
+		dryRun: Flags.boolean({
+			description: "Preview deployment without actually deploying",
+		}),
+		// rollback flag
+		rollback: Flags.boolean({
+			char: "r",
+			description: "Rollback to previous deployment",
+		}),
+		// batch flag
+		batch: Flags.string({
+			char: "B",
+			description:
+				"Deploy to multiple modules/apps. Provide comma-separated list or 'all'",
+		}),
 	};
 
 	private async loadConfig(
 		configPath?: string,
-	): Promise<Record<string, any> | null> {
+	): Promise<Record<string, unknown> | null> {
 		const resolvedPath = configPath || "smss.json";
 
 		try {
@@ -107,6 +123,441 @@ deploy java and python folders
 			return JSON.parse(content);
 		} catch {
 			return null;
+		}
+	}
+
+	/**
+	 * Download a file using Node.js http/https
+	 * Similar to VSCode extension approach
+	 */
+	private async downloadWithHttp(
+		downloadUrl: string,
+		accessKey: string,
+		secretKey: string,
+		debugMode: boolean = false,
+	): Promise<ArrayBuffer> {
+		return new Promise((resolve, reject) => {
+			if (debugMode) {
+				this.log(`📡 Downloading via HTTP(S): ${downloadUrl}`);
+			}
+
+			try {
+				const parsedUrl = new URL(downloadUrl);
+				const protocol = parsedUrl.protocol === "https:" ? https : http;
+
+				// Create Basic auth header
+				const credentials = Buffer.from(
+					`${accessKey}:${secretKey}`,
+				).toString("base64");
+
+				const options = {
+					hostname: parsedUrl.hostname,
+					port:
+						parsedUrl.port ||
+						(parsedUrl.protocol === "https:" ? 443 : 80),
+					path: parsedUrl.pathname + parsedUrl.search,
+					method: "GET",
+					headers: {
+						Authorization: `Basic ${credentials}`,
+					},
+				};
+
+				const req = protocol.request(options, (response) => {
+					if (debugMode) {
+						this.log(
+							`📡 HTTP Response received - Status: ${response.statusCode}, Headers: ${JSON.stringify(response.headers)}`,
+						);
+					}
+
+					if (response.statusCode !== 200) {
+						const errorMsg = `Download failed with status code: ${response.statusCode}`;
+
+						const chunks: Buffer[] = [];
+						response.on("data", (chunk: Buffer) => {
+							chunks.push(chunk);
+						});
+						response.on("end", () => {
+							const responseBody =
+								Buffer.concat(chunks).toString("utf-8");
+							if (debugMode) {
+								this.log(`\n${"`".repeat(80)}`);
+								this.log(
+									`📋 ERROR RESPONSE (${responseBody.length} bytes):`,
+								);
+								this.log(`${"=".repeat(80)}`);
+								this.log(responseBody);
+								this.log(`${"=".repeat(80)}\n`);
+							}
+							reject(new Error(errorMsg));
+						});
+						return;
+					}
+
+					const chunks: Buffer[] = [];
+
+					response.on("data", (chunk: Buffer) => {
+						chunks.push(chunk);
+					});
+
+					response.on("end", () => {
+						const buffer = Buffer.concat(chunks);
+
+						if (debugMode) {
+							this.log(`📦 Downloaded ${buffer.length} bytes`);
+							const firstBytes = buffer
+								.slice(0, 4)
+								.toString("hex");
+							this.log(
+								`📥 First 4 bytes (hex): ${firstBytes} (should start with "504b" for zip)`,
+							);
+						}
+
+						resolve(
+							buffer.buffer.slice(
+								buffer.byteOffset,
+								buffer.byteOffset + buffer.byteLength,
+							),
+						);
+					});
+
+					response.on("error", (err) => {
+						reject(err);
+					});
+				});
+
+				req.on("error", (err) => {
+					if (debugMode) {
+						this.log(`❌ HTTP Request Error: ${err.message}`);
+					}
+					reject(err);
+				});
+
+				req.end();
+			} catch (err) {
+				reject(err);
+			}
+		});
+	}
+
+	private async createBackup(
+		deployTargets: string[] | "all",
+		insight: Insight,
+		debugMode: boolean = false,
+	): Promise<{ backupDir: string; backupZipPath: string }> {
+		const backupBaseDir = ".semoss-backups";
+		const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+		const targetStr =
+			deployTargets === "all"
+				? "full"
+				: (deployTargets as string[]).join("-");
+		const backupDir = path.join(backupBaseDir, `${targetStr}-${timestamp}`);
+		const tempDir = path.join(backupBaseDir, `temp-${timestamp}`);
+
+		try {
+			await fs.promises.mkdir(backupDir, { recursive: true });
+			await fs.promises.mkdir(tempDir, { recursive: true });
+
+			// Export the project using the ExportProjectApp reactor
+			if (debugMode) {
+				this.log(
+					`🔍 Before ExportProjectApp - insight.insightId: ${insight.insightId}`,
+				);
+			}
+
+			const { pixelReturn } = await insight.actions.run<[string]>(
+				`ExportProjectApp(project=['${Env.APP}']);`,
+			);
+
+			if (debugMode) {
+				this.log(
+					`📦 ExportProjectApp response: ${JSON.stringify(pixelReturn[0])}`,
+				);
+			}
+
+			// Call download to get the exported zip file
+			const { operationType, output } = pixelReturn[0];
+
+			if (operationType?.includes("FILE_DOWNLOAD")) {
+				// Build the download URL
+				const downloadUrl = `${
+					Env.MODULE
+				}/api/engine/downloadFile?insightId=${insight.insightId}&fileKey=${encodeURIComponent(
+					output,
+				)}`;
+
+				// Download using http/https (Node.js approach)
+				let downloadResult: ArrayBuffer;
+				try {
+					downloadResult = await this.downloadWithHttp(
+						downloadUrl,
+						Env.ACCESS_KEY || "",
+						Env.SECRET_KEY || "",
+						debugMode,
+					);
+				} catch (downloadError) {
+					throw new Error(
+						`HTTP download failed: ${downloadError}. Make sure the server endpoint is accessible.`,
+					);
+				}
+
+				if (!downloadResult || downloadResult.byteLength === 0) {
+					throw new Error(
+						"Download returned empty result. This might indicate the server response was not a valid zip file.",
+					);
+				}
+
+				if (debugMode) {
+					this.log(`📥 Download result is ArrayBuffer: true`);
+					this.log(
+						`📥 Download result length: ${downloadResult.byteLength}`,
+					);
+				}
+
+				// Convert to Buffer for AdmZip
+				const zipBuffer = Buffer.from(downloadResult);
+
+				if (debugMode) {
+					this.log(
+						`📥 Converted to Buffer, size: ${zipBuffer.length} bytes`,
+					);
+					// Log first few bytes to verify it's a zip (should start with 504B)
+					const firstFewBytes = zipBuffer.slice(0, 4).toString("hex");
+					this.log(
+						`📥 First 4 bytes (hex): ${firstFewBytes} (should start with "504b")`,
+					);
+				}
+
+				// Validate it's a zip file
+				if (zipBuffer.length === 0) {
+					throw new Error("Downloaded file is empty");
+				}
+
+				const fileSignature = zipBuffer.slice(0, 2).toString("hex");
+				if (fileSignature !== "504b") {
+					this.log(`❌ Not a valid ZIP file!`);
+					this.log(
+						`📄 File signature: ${fileSignature} (expected "504b")`,
+					);
+					const content = zipBuffer.toString("utf-8");
+
+					// Log the entire content in a clear section
+					this.log(`\n${"=".repeat(80)}`);
+					this.log(
+						`📋 FULL SERVER RESPONSE (${zipBuffer.length} bytes):`,
+					);
+					this.log(`${"=".repeat(80)}`);
+					this.log(content);
+					this.log(`${"=".repeat(80)}\n`);
+
+					// Check if it's HTML error response
+					if (
+						content.includes("<!DOCTYPE") ||
+						content.includes("<html")
+					) {
+						this.log(
+							`ℹ️  Server returned HTML page (possibly a redirect or error page).`,
+						);
+						throw new Error(
+							`Server returned HTML instead of zip file. This might be a redirect or authentication error. Check the response printed above.`,
+						);
+					}
+
+					throw new Error(
+						`Downloaded content is not a valid zip file. Got signature: ${fileSignature}. Expected "504b" for zip files. See response above.`,
+					);
+				}
+
+				// Extract the zip from the buffer
+				try {
+					const zip = new AdmZip(zipBuffer);
+					zip.extractAllTo(tempDir, true);
+
+					if (debugMode) {
+						this.log(
+							`✅ Successfully extracted zip to temp directory`,
+						);
+					}
+				} catch (zipError) {
+					throw new Error(
+						`Failed to extract zip: ${zipError}. Buffer size: ${zipBuffer.length} bytes, Signature: ${fileSignature}`,
+					);
+				}
+			} else {
+				throw new Error(
+					"ExportProjectApp did not return a FILE_DOWNLOAD operation",
+				);
+			}
+
+			// Search for the assets folder in the extracted directory
+			// The exported zip structure has assets folder directly at the root
+			let assetsSource: string | undefined;
+
+			// List directories in temp and find the assets folder
+			const entries = await fs.promises.readdir(tempDir, {
+				withFileTypes: true,
+			});
+
+			// Look for 'assets' folder directly
+			for (const entry of entries) {
+				if (entry.isDirectory() && entry.name === "assets") {
+					assetsSource = path.join(tempDir, "assets");
+
+					if (debugMode) {
+						const assetFiles =
+							await fs.promises.readdir(assetsSource);
+						this.log(
+							`📦 Found assets folder with ${assetFiles.length} items`,
+						);
+					}
+					break;
+				}
+			}
+
+			if (!assetsSource) {
+				console.log(`❌ NO ASSETS FOLDER FOUND IN EXTRACTED ZIP`);
+			}
+
+			// Create the backup zip directly from the extracted assets folder
+			const backupZip = new AdmZip();
+			const backupZipPath = path.join(backupDir, "backup.zip");
+
+			if (assetsSource) {
+				try {
+					backupZip.addLocalFolder(assetsSource, "");
+
+					if (debugMode) {
+						this.log(`📦 Added assets to backup.zip at root level`);
+					}
+				} catch (error) {
+					// Assets folder couldn't be added
+					if (debugMode) {
+						this.log(
+							`⚠️ Failed to add assets to backup.zip: ${error}`,
+						);
+					}
+				}
+			} else {
+				console.log(`❌ No assets folder found to backup`);
+			}
+
+			backupZip.writeZip(backupZipPath);
+
+			if (debugMode) {
+				const backupStats = await fs.promises.stat(backupZipPath);
+				this.log(
+					`✅ Backup created: ${backupZipPath} (${backupStats.size} bytes)`,
+				);
+			}
+
+			// Create metadata file
+			await fs.promises.writeFile(
+				path.join(backupDir, "metadata.json"),
+				JSON.stringify(
+					{
+						timestamp,
+						targets: deployTargets,
+						app: Env.APP,
+						module: Env.MODULE,
+						backed_up_from_server: true,
+					},
+					null,
+					2,
+				),
+			);
+
+			// Clean up temp directory
+			await fs.promises.rm(tempDir, { recursive: true, force: true });
+
+			return { backupDir, backupZipPath };
+		} catch (error) {
+			// Clean up temp directory on error
+			try {
+				await fs.promises.rm(tempDir, { recursive: true, force: true });
+			} catch {
+				// Ignore cleanup errors
+			}
+
+			throw new Error(`Failed to create backup: ${error}`);
+		}
+	}
+
+	private async logDeploymentHistory(deployRecord: {
+		timestamp: string;
+		targets: string[] | "all";
+		status: "success" | "failure" | "dry-run";
+		zipSize?: number;
+		duration?: number;
+		backupDir?: string;
+		rollback?: boolean;
+	}): Promise<void> {
+		const historyFile = ".semoss-deployments";
+
+		try {
+			let history: unknown[] = [];
+
+			// Load existing history if file exists
+			try {
+				const content = await fs.promises.readFile(
+					historyFile,
+					"utf-8",
+				);
+				history = JSON.parse(content);
+			} catch {
+				// File doesn't exist yet, start with empty array
+			}
+
+			// Add new record
+			history.push({
+				...deployRecord,
+				timestamp: new Date().toISOString(),
+				app: Env.APP,
+				module: Env.MODULE,
+			});
+
+			// Keep only last 20 deployments
+			if (history.length > 20) {
+				history = history.slice(-20);
+			}
+
+			// Write updated history
+			await fs.promises.writeFile(
+				historyFile,
+				JSON.stringify(history, null, 2),
+			);
+		} catch (error) {
+			// Don't fail deployment if history logging fails
+			console.warn(`Failed to log deployment history: ${error}`);
+		}
+	}
+
+	private async rollbackToPrevious(): Promise<string> {
+		const historyFile = ".semoss-deployments";
+
+		try {
+			const content = await fs.promises.readFile(historyFile, "utf-8");
+			const history = JSON.parse(content) as Array<{
+				backupDir?: string;
+				status: string;
+				timestamp: string;
+			}>;
+
+			// Find the most recent successful deployment with a backup
+			const backupRecord = history
+				.reverse()
+				.find(
+					(record) =>
+						record.status === "success" &&
+						record.backupDir &&
+						record.backupDir !== null,
+				);
+
+			if (!backupRecord || !backupRecord.backupDir) {
+				throw new Error("No previous backup found for rollback");
+			}
+
+			return backupRecord.backupDir;
+		} catch (error) {
+			throw new Error(`Rollback failed: ${error}`);
 		}
 	}
 
@@ -162,6 +613,18 @@ deploy java and python folders
 
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Deploy);
+
+		// Handle rollback - store backup path but continue to setup
+		let rollbackBackupDir: string | undefined;
+		if (flags.rollback) {
+			try {
+				this.log("🔄 Rolling back to previous deployment...");
+				rollbackBackupDir = await this.rollbackToPrevious();
+				this.log(`📦 Using backup from: ${rollbackBackupDir}`);
+			} catch (error) {
+				this.error(`Rollback failed: ${error}`);
+			}
+		}
 
 		// Enable debug logging if flag is set
 		if (flags.debug) {
@@ -285,7 +748,15 @@ deploy java and python folders
 		let mergedIgnorePatterns = [...DEFAULT_IGNORE];
 		try {
 			const config = await this.loadConfig(flags.config);
-			if (config?.deploy?.ignore && Array.isArray(config.deploy.ignore)) {
+			if (
+				config &&
+				typeof config === "object" &&
+				"deploy" in config &&
+				typeof config.deploy === "object" &&
+				config.deploy !== null &&
+				"ignore" in config.deploy &&
+				Array.isArray(config.deploy.ignore)
+			) {
 				mergedIgnorePatterns = [
 					...DEFAULT_IGNORE,
 					...config.deploy.ignore,
@@ -314,6 +785,11 @@ deploy java and python folders
 			}
 		}
 
+		// Handle dry-run mode
+		if (flags.dryRun) {
+			this.log("🔍 DRY-RUN MODE: No actual deployment will occur");
+		}
+
 		// create a new insight
 		const insight = new Insight();
 
@@ -321,9 +797,10 @@ deploy java and python folders
 		const tasks = new Listr<{
 			result?: number;
 			zipBuffer?: Buffer;
-			deleteResult?: any;
-			uploadResult?: any;
+			deleteResult?: unknown;
+			uploadResult?: unknown;
 			url?: string;
+			backupDir?: string;
 		}>([
 			{
 				title: "Initializing",
@@ -412,12 +889,97 @@ deploy java and python folders
 				},
 			},
 			{
-				title: isFullDeploy
-					? "Zipping Current Directory"
-					: "Zipping Target Directories",
+				title: "Creating Backup from server",
+				enabled: () => !flags.dryRun && !flags.rollback,
 				task: async (context) => {
 					const startTime = Date.now();
 
+					if (flags.verbose || flags.superVerbose) {
+						logWithTiming("💾 Creating backup", startTime);
+					}
+
+					try {
+						const backup = await this.createBackup(
+							deployTargets,
+							insight,
+							flags.debug,
+						);
+						context.backupDir = backup.backupDir;
+
+						if (flags.verbose || flags.superVerbose) {
+							logWithTiming(
+								`✅ Backup created: ${backup.backupDir}`,
+								startTime,
+							);
+						}
+					} catch (error) {
+						// Always log backup failures to warn users
+						this.log(`⚠️  Backup creation failed: ${error}`);
+						this.log(
+							`📝 Note: Deployment will continue without backup. Backups help with recovery.`,
+						);
+						if (
+							flags.debug ||
+							flags.verbose ||
+							flags.superVerbose
+						) {
+							this.log(
+								`🔍 Debug info: Check that ExportProjectApp reactor returns a valid downloadable file.`,
+							);
+						}
+					}
+
+					return true;
+				},
+			},
+			{
+				title: rollbackBackupDir
+					? "Loading Backup File"
+					: isFullDeploy
+						? "Zipping Current Directory"
+						: "Zipping Target Directories",
+				task: async (context) => {
+					const startTime = Date.now();
+
+					// If rollback, load backup.zip instead of zipping
+					if (rollbackBackupDir) {
+						const backupZipPath = path.join(
+							rollbackBackupDir,
+							"backup.zip",
+						);
+
+						if (flags.verbose || flags.superVerbose) {
+							logWithTiming(
+								`📦 Loading backup file: ${backupZipPath}`,
+								startTime,
+							);
+						}
+
+						try {
+							const zipBuffer =
+								await fs.promises.readFile(backupZipPath);
+							context.zipBuffer = zipBuffer;
+
+							if (flags.verbose || flags.superVerbose) {
+								logWithTiming(
+									`✅ Backup loaded (${zipBuffer.length} bytes)`,
+									startTime,
+								);
+							}
+						} catch (error) {
+							if (flags.verbose || flags.superVerbose) {
+								logWithTiming(
+									`❌ Failed to load backup: ${error}`,
+									startTime,
+								);
+							}
+							throw error;
+						}
+
+						return true;
+					}
+
+					// Normal zipping logic for deploy
 					if (flags.verbose || flags.superVerbose) {
 						logWithTiming(
 							`📦 Zipping ${isFullDeploy ? "current directory" : "target directories"}`,
@@ -428,7 +990,6 @@ deploy java and python folders
 					if (flags.superVerbose) {
 						this.log(`🔍 Zip Details:`);
 						this.log(`   • Current Directory: ${process.cwd()}`);
-						this.log(`   • Working Directory: ${__dirname}`);
 						if (!isFullDeploy) {
 							this.log(
 								`   • Targets: ${(deployTargets as string[]).join(", ")}`,
@@ -534,13 +1095,15 @@ deploy java and python folders
 				},
 			},
 			{
-				title: isFullDeploy
-					? "Deleting All Assets"
-					: "Cleaning Target Assets",
+				title:
+					rollbackBackupDir || isFullDeploy
+						? "Deleting All Assets"
+						: "Cleaning Target Assets",
+				enabled: () => !flags.dryRun,
 				task: async (context) => {
 					const startTime = Date.now();
 
-					if (isFullDeploy) {
+					if (rollbackBackupDir || isFullDeploy) {
 						const deleteCommand = `DeleteAppAssets(project="${Env.APP}")`;
 
 						if (flags.verbose || flags.superVerbose) {
@@ -588,13 +1151,13 @@ deploy java and python folders
 						}
 
 						for (const target of deployTargets as string[]) {
-							const remotePath = `version/assets/${target}`;
+							const remotePath = `${target}`;
 
 							if (flags.verbose || flags.superVerbose) {
 								this.log(`   🗑️ Deleting: ${remotePath}`);
 							}
 
-							const deleteCommand = `DeleteAsset(project="${Env.APP}", filePath="${remotePath}");`;
+							const deleteCommand = `DeleteAppAssets(project="${Env.APP}", filePath="${remotePath}");`;
 
 							try {
 								const { pixelReturn } =
@@ -602,7 +1165,7 @@ deploy java and python folders
 
 								if (flags.showRaw || flags.superVerbose) {
 									this.log(
-										`📊 DeleteAsset Response for ${target}: ${JSON.stringify(pixelReturn, null, 2)}`,
+										`📊 DeleteAppAssets Response for ${target}: ${JSON.stringify(pixelReturn, null, 2)}`,
 									);
 								}
 							} catch (error) {
@@ -629,6 +1192,7 @@ deploy java and python folders
 			},
 			{
 				title: "Uploading Zipped Directory",
+				enabled: () => !flags.dryRun,
 				task: async (context) => {
 					const startTime = Date.now();
 
@@ -656,6 +1220,9 @@ deploy java and python folders
 						);
 						this.log(`   • Target App: ${Env.APP}`);
 						this.log(`   • Target Path: version/assets/`);
+						this.log(
+							`🔍 [DEBUG] Before upload - insight.insightId: ${insight.insightId}`,
+						);
 					}
 
 					try {
@@ -663,10 +1230,15 @@ deploy java and python folders
 						const fileName = isFullDeploy
 							? "current-directory.zip"
 							: `deploy-${(deployTargets as string[]).join("-")}.zip`;
-						const file = new File(
-							[context.zipBuffer],
-							fileName,
-						) as any;
+						// Copy buffer to new ArrayBuffer to avoid SharedArrayBuffer type issues
+						const arrayBuffer = new ArrayBuffer(
+							context.zipBuffer.length,
+						);
+						const view = new Uint8Array(arrayBuffer);
+						view.set(context.zipBuffer);
+						const file = new File([view], fileName, {
+							type: "application/zip",
+						});
 
 						if (flags.superVerbose) {
 							this.log(`🔍 File Details:`);
@@ -675,12 +1247,19 @@ deploy java and python folders
 								`   • File Size: ${context.zipBuffer.length} bytes`,
 							);
 							this.log(`   • File Type: ${typeof file}`);
+							this.log(
+								`🔍 [DEBUG] Before upload - insight.insightId: ${insight.insightId}`,
+							);
 						}
 
 						this.log(`🔄 Starting upload of ${fileName}...`);
+						this.log(
+							`🔍 [DEBUG] Before upload - insight.insightId: ${insight.insightId}`,
+						);
+
 						// Upload the file
 						const uploaded = await upload(
-							file,
+							file as unknown as File | File[],
 							insight.insightId,
 							Env.APP,
 							"version/assets",
@@ -766,11 +1345,27 @@ deploy java and python folders
 			},
 		]);
 
+		// Track deployment start time
+		const deploymentStartTime = Date.now();
+
 		tasks
 			.run()
 			.then((context) => {
+				const deploymentDuration = Date.now() - deploymentStartTime;
+
 				if (context.result === undefined) {
 					throw new Error("Result Missing");
+				}
+
+				if (flags.dryRun) {
+					this.log("✅ Dry-run completed successfully!");
+					this.log("Files would have been deployed:");
+					if (context.zipBuffer) {
+						this.log(
+							`   • Zip size: ${context.zipBuffer.length} bytes`,
+						);
+					}
+					return;
 				}
 
 				this.log("🎉 Success!");
@@ -781,9 +1376,13 @@ deploy java and python folders
 				}
 
 				if (context.uploadResult !== undefined) {
-					this.log(
-						`📤 Upload Result: ${context.uploadResult.fileName}`,
-					);
+					const fileName =
+						typeof context.uploadResult === "object" &&
+						context.uploadResult !== null &&
+						"fileName" in context.uploadResult
+							? (context.uploadResult.fileName as string)
+							: "unknown";
+					this.log(`📤 Upload Result: ${fileName}`);
 				}
 
 				if (flags.verbose || flags.superVerbose) {
@@ -809,9 +1408,13 @@ deploy java and python folders
 						);
 					}
 					if (context.uploadResult !== undefined) {
-						this.log(
-							`   • Upload result: ${context.uploadResult.fileName}`,
-						);
+						const fileName =
+							typeof context.uploadResult === "object" &&
+							context.uploadResult !== null &&
+							"fileName" in context.uploadResult
+								? (context.uploadResult.fileName as string)
+								: "unknown";
+						this.log(`   • Upload result: ${fileName}`);
 					}
 
 					if (!isFullDeploy) {
@@ -819,6 +1422,8 @@ deploy java and python folders
 							`   • Deployment type: Targeted (${(deployTargets as string[]).join(", ")})`,
 						);
 					}
+
+					this.log(`   • Duration: ${deploymentDuration}ms`);
 				}
 
 				if (flags.superVerbose) {
@@ -858,9 +1463,35 @@ deploy java and python folders
 					this.log(
 						`   • Show Timing: ${flags.showTiming ? "Enabled" : "Disabled"}`,
 					);
+					this.log(
+						`   • Dry-run: ${flags.dryRun ? "Enabled" : "Disabled"}`,
+					);
 				}
+
+				// Log deployment to history
+				void this.logDeploymentHistory({
+					timestamp: new Date().toISOString(),
+					targets: flags.rollback ? "all" : deployTargets,
+					status: "success",
+					zipSize: context.zipBuffer?.length,
+					duration: deploymentDuration,
+					backupDir: flags.rollback ? undefined : context.backupDir,
+					rollback: flags.rollback,
+				});
 			})
 			.catch((err) => {
+				const deploymentDuration = Date.now() - deploymentStartTime;
+
+				// Log deployment failure to history
+				void this.logDeploymentHistory({
+					timestamp: new Date().toISOString(),
+					targets: flags.rollback ? "all" : deployTargets,
+					status: "failure",
+					duration: deploymentDuration,
+					backupDir: undefined,
+					rollback: flags.rollback,
+				});
+
 				// log the error
 				this.error(err);
 			});

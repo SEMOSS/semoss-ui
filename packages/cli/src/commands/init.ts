@@ -77,6 +77,7 @@ init (./src/commands/init.ts)
 			const endpoint = process.env.ENDPOINT;
 			const modulePath = process.env.MODULE;
 
+			console.log(process.env);
 			if (!endpoint) {
 				this.error(
 					"ENDPOINT is required. Define one in your environment variables (.env)",

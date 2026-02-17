@@ -6,6 +6,7 @@
     "files": [
         "/bin",
         "/dist",
+        "/templates",
         "/npm-shrinkwrap.json",
         "/oclif.manifest.json"
     ],
