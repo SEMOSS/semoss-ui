@@ -6,7 +6,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import {
@@ -99,10 +99,13 @@ export const NewRoomPage = observer(() => {
 
 	// Create a temporary RoomStore instance to handle options mutations
 	// This prevents re-renders on tool selection since MobX handles the mutations
-	const tempRoomStore = useState(() => {
-		const store = new RoomStore(root.theme, "temp");
-		// Initialize with default options
-		store.setOptions({
+	const tempRoomStore = useMemo(
+		() => new RoomStore(root.theme, "temp"),
+		[root.theme],
+	);
+	// On initial load, set the default options from the theme using the temporary RoomStore
+	useEffect(() => {
+		tempRoomStore.setOptions({
 			instructions: "",
 			mcp: [...(root.theme.defaultTools || [])],
 			tokenLength:
@@ -111,8 +114,7 @@ export const NewRoomPage = observer(() => {
 				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
 			workspace: null,
 		});
-		return store;
-	})[0];
+	}, [tempRoomStore, root.theme]);
 
 	/**
 	 * Functions
@@ -280,7 +282,7 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore,
 	]);
 
-	// Handle knowledge vector engine from URL parameter
+	// // Handle knowledge vector engine from URL parameter
 	useEffect(() => {
 		if (getKnowledge.status !== "SUCCESS" || !getKnowledge.data?.[0]) {
 			return;
