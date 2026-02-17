@@ -165,7 +165,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 					return acc + part.text;
 				}
 
-				return "";
+				return acc;
 			}, "");
 
 			const media = inputMessage.parts.reduce((acc, part) => {
