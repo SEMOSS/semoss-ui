@@ -1,10 +1,8 @@
-import React from "react";
-import { Box, Card, Chip, Grid, Stack, styled, Typography } from "@semoss/ui";
+/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
+/** biome-ignore-all lint/correctness/noUnusedVariables: <explanation> */
+import { Card, CardContent } from "@semoss/ui/next";
 import BLOCKS_APP_2 from "@/assets/img/blocks_app_2.png";
-import Apps from "../../../assets/img/Apps.png";
-import Download from "../../../assets/img/Downloads.png";
-import Usability from "../../../assets/img/Usability.png";
-import View from "../../../assets/img/ViewIcon.png";
 
 // Statistics configuration - removed hardcoded data
 const stats: any[] = [
@@ -22,64 +20,6 @@ const similarApps: any[] = [
 
 const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString();
 
-const StyledBox = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(3),
-	width: "100%",
-}));
-
-// Text
-const StyledDescription = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.disabled,
-	fontSize: "16px",
-}));
-
-const SectionTitle = styled(Typography)(({ theme }) => ({
-	paddingTop: theme.spacing(1), // 8px
-}));
-
-// Stat card
-const StatCard = styled(Box)(({ theme }) => ({
-	border: `1px solid ${theme.palette.secondary.main}`,
-	borderRadius: theme.shape.borderRadius * 2,
-	padding: theme.spacing(2),
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(1.5),
-}));
-
-// Similar apps
-const AppCard = styled(Card)(({ theme }) => ({
-	height: "100%",
-	display: "flex",
-	flexDirection: "column",
-	borderRadius: theme.shape.borderRadius * 2,
-	boxShadow: theme.shadows[1] as string,
-}));
-
-const AppImage = styled("img")({
-	width: "100%",
-	height: 300,
-	objectFit: "contain",
-});
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	padding: theme.spacing(1),
-}));
-
-const StyledCard = styled(Card)(({ theme }) => ({
-	height: "100%",
-	display: "flex",
-	flexDirection: "column",
-	borderRadius: 2,
-}));
-
-const StyledPlaceholderBox = styled(Box)(({ theme }) => ({
-	border: `1px solid ${theme.palette.secondary.main}`,
-	borderRadius: 2,
-	padding: theme.spacing(4),
-	textAlign: "center",
-}));
-
 interface OverviewProps {
 	appInfo: {
 		markdown?: string;
@@ -88,100 +28,84 @@ interface OverviewProps {
 
 export const Overview = ({ appInfo }: OverviewProps) => {
 	return (
-		<StyledBox>
-			<Typography variant="h6" gutterBottom>
-				Details
-			</Typography>
+		<div className="space-y-6">
+			{/* Details */}
+			<h3 className="font-semibold text-lg">Details</h3>
+
 			{appInfo?.markdown ? (
-				<StyledDescription variant="body2">
+				<p className="text-muted-foreground text-sm leading-relaxed">
 					{appInfo?.markdown}
-				</StyledDescription>
+				</p>
 			) : (
-				<StyledPlaceholderBox>
-					<Typography variant="body1" color="text.secondary">
-						No markdown available
-					</Typography>
-				</StyledPlaceholderBox>
+				<PlaceholderBox label="No markdown available" />
 			)}
 
-			<SectionTitle variant="h6" gutterBottom sx={{ paddingTop: "8px" }}>
-				Statistics
-			</SectionTitle>
+			{/* Statistics */}
+			<h3 className="pt-2 font-semibold text-lg">Statistics</h3>
 
 			{stats.length > 0 ? (
-				<Grid container spacing={2} mb={4}>
+				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
 					{stats.map((stat, index) => (
-						<Grid item xs={12} sm={6} md={3} key={index}>
-							<StatCard>
+						<Card key={index} className="border border-secondary">
+							<CardContent className="flex items-center gap-4 p-4">
 								<img
 									src={stat.icon}
 									alt={stat.label}
-									width={60}
-									height={60}
-									style={{ objectFit: "contain" }}
+									className="h-14 w-14 object-contain"
 								/>
-								<Box>
-									<Typography variant="body2">
+								<div>
+									<p className="text-muted-foreground text-sm">
 										{stat.label}
-									</Typography>
-									<Typography
-										variant="subtitle1"
-										fontWeight="bold"
-									>
+									</p>
+									<p className="font-semibold text-base">
 										{stat.value}
-									</Typography>
-								</Box>
-							</StatCard>
-						</Grid>
+									</p>
+								</div>
+							</CardContent>
+						</Card>
 					))}
-				</Grid>
+				</div>
 			) : (
-				<StyledPlaceholderBox>
-					<Typography variant="body1" color="text.secondary">
-						No statistics available
-					</Typography>
-				</StyledPlaceholderBox>
+				<PlaceholderBox label="No statistics available" />
 			)}
 
-			<Typography sx={{ paddingTop: "8px" }} variant="h6" gutterBottom>
-				Similar Apps
-			</Typography>
+			{/* Similar Apps */}
+			<h3 className="pt-2 font-semibold text-lg">Similar Apps</h3>
 
 			{similarApps.length > 0 ? (
-				<Grid container spacing={2}>
+				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
 					{similarApps.map((app) => (
-						<Grid item xs={12} sm={6} md={3} key={app.project_id}>
-							<AppCard>
-								<Box>
-									<AppImage
-										src={BLOCKS_APP_2}
-										alt="App Icon"
-										style={{ objectFit: "contain" }}
-									/>
-									<StyledTypography
-										variant="subtitle1"
-										gutterBottom
-									>
-										{app.project_name}
-									</StyledTypography>
-									<StyledTypography
-										variant="body2"
-										gutterBottom
-									>
-										{app.project_description}
-									</StyledTypography>
-								</Box>
-							</AppCard>
-						</Grid>
+						<Card
+							key={app.project_id}
+							className="flex h-full flex-col"
+						>
+							<CardContent className="space-y-3 p-4">
+								<img
+									src={BLOCKS_APP_2}
+									alt="App Icon"
+									className="h-[300px] w-full object-contain"
+								/>
+								<h4 className="font-semibold">
+									{app.project_name}
+								</h4>
+								<p className="text-muted-foreground text-sm">
+									{app.project_description}
+								</p>
+							</CardContent>
+						</Card>
 					))}
-				</Grid>
+				</div>
 			) : (
-				<StyledPlaceholderBox>
-					<Typography variant="body1" color="text.secondary">
-						No similar apps available
-					</Typography>
-				</StyledPlaceholderBox>
+				<PlaceholderBox label="No similar apps available" />
 			)}
-		</StyledBox>
+		</div>
+	);
+};
+
+const PlaceholderBox = ({ label }: { label: string }) => {
+	return (
+		<div className="rounded-md border border-secondary p-8 text-center">
+			<p className="text-muted-foreground text-sm">{label}</p>
+		</div>
 	);
 };

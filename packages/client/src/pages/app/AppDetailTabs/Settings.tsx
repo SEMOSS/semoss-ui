@@ -1,191 +1,39 @@
-import { ContentCopy, OpenInBrowser } from "@mui/icons-material";
-import LockIcon from "@mui/icons-material/Lock";
+import {
+	Copy,
+	Link as LinkIcon,
+	Upload as UploadIcon,
+	User,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Env, usePixel } from "@semoss/sdk/react";
+import { FileDropzone } from "@semoss/ui";
 import {
-	Box,
+	Avatar,
+	AvatarFallback,
 	Button,
-	FileDropzone,
-	Grid,
-	IconButton,
-	InputAdornment,
-	LoadingScreen,
-	Stack,
-	styled,
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+	Field,
+	H3,
+	H4,
+	Input,
+	P,
+	Separator,
+	Small,
+	Spinner,
+	Switch,
 	Table,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TableBody,
+	TableCell,
+	TableRow,
+	toast,
+} from "@semoss/ui/next";
 import { setProjectPortal, uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
-import { useRootStore, useSettings } from "@/hooks";
-
-const StyledTable = styled(Table)(({ theme }) => ({
-	borderRadius: theme.spacing(1),
-	borderColor: theme.palette.secondary.main,
-	borderStyle: "solid",
-	borderCollapse: "initial",
-	borderWidth: "thin",
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	display: "flex",
-	borderRadius: "16px",
-	border: `1px solid ${theme.palette.divider}`,
-	alignItems: "center",
-	justifyContent: "center",
-	width: "100%",
-	height: "70px",
-	color: theme.palette.text.secondary,
-}));
-
-const StyledBox = styled(Box)({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "flex-start",
-	width: "100%",
-	mb: 2,
-	gap: 4,
-	flexWrap: "nowrap",
-});
-
-const StyledContainer = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(2),
-	width: "100%",
-}));
-
-const StyledReactor = styled(Box)({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	mb: 2,
-	flexWrap: "wrap",
-	gap: 2,
-});
-// Root container
-const _RootGrid = styled(Grid)(({ theme }) => ({
-	marginBottom: theme.spacing(4),
-	width: "100%",
-}));
-
-// Column wrapper box
-const _ColumnBox = styled(Box)(({ theme }) => ({
-	display: "flex",
-	justifyContent: "space-between",
-	gap: theme.spacing(2),
-	border: `1px solid ${theme.palette.secondary.main}`,
-	borderRadius: theme.shape.borderRadius * 2,
-	padding: theme.spacing(2),
-	height: 136,
-}));
-
-// Left text block container
-const _LeftTextContainer = styled(Box)(({ theme }) => ({
-	display: "flex",
-	alignItems: "flex-start",
-	gap: theme.spacing(1),
-}));
-
-// Styled Lock icon
-const _StyledLockIcon = styled(LockIcon)(({ theme }) => ({
-	color: theme.palette.text.disabled,
-}));
-
-// Publish title
-const _PublishTitle = styled(Typography)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	fontSize: "16px",
-	gap: theme.spacing(1),
-	marginBottom: theme.spacing(0.5),
-}));
-
-// Publish description
-const Description = styled(Typography)({
-	fontSize: "14px",
-});
-
-const _PublishPortalDescription = styled(Typography)({
-	marginBottom: "0.5px",
-});
-
-// Second column container
-const _SecondColumnBox = styled(Box)(({ theme }) => ({
-	gap: theme.spacing(2),
-	border: `1px solid ${theme.palette.secondary.main}`,
-	borderRadius: theme.shape.borderRadius * 2,
-	padding: theme.spacing(2),
-	height: 136,
-	width: 610,
-}));
-
-// Header section inside second column
-const _SecondColumnHeader = styled(Box)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	gap: theme.spacing(2),
-	flexWrap: "wrap",
-	paddingBottom: theme.spacing(2),
-}));
-
-// Custom text field
-const _StyledTextField = styled(TextField)({
-	"& .MuiOutlinedInput-root": {
-		borderRadius: "8px",
-	},
-});
-
-const SectionDivider = styled("hr")(({ theme }) => ({
-	border: `1px solid ${theme.palette.secondary.divider}`,
-	borderTop: theme.palette.secondary.divider,
-	marginTop: theme.spacing(3),
-	marginBottom: theme.spacing(3),
-}));
-
-const Title = styled(Typography)({
-	fontSize: "20px",
-});
-
-const ReactorActions = styled(Box)(({ theme }) => ({
-	display: "flex",
-	gap: theme.spacing(2),
-}));
-
-const ActionBtnOutlined = styled(Button)({
-	fontSize: "14px",
-});
-
-const LeftPane = styled(Box)({
-	width: 619,
-});
-
-const RightPane = styled(Box)({
-	width: 518,
-});
-
-const UpdateText = styled(Typography)(({ theme }) => ({
-	marginBottom: theme.spacing(2),
-	fontSize: "14px",
-}));
-
-const UploadIcon = styled(OpenInBrowser)(({ theme }) => ({
-	fontSize: 32,
-	color: theme.palette.primary.dark,
-	marginBottom: theme.spacing(1),
-}));
-
-const BrowseText = styled(Typography)({
-	color: "theme.palette.primary.dark",
-	fontWeight: 500,
-	cursor: "pointer",
-});
-
-const SecondaryText = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.secondary,
-}));
+import { usePixel, useRootStore, useSettings } from "@/hooks";
 
 interface AppSettingsProps {
 	id: string;
@@ -199,7 +47,6 @@ type EditAppForm = {
 export const SettingsTab = (props: AppSettingsProps) => {
 	const { id } = props;
 	const { monolithStore, configStore } = useRootStore();
-	const notification = useNotification();
 	const { adminMode } = useSettings();
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -212,8 +59,6 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	const uploadFile = watch("PROJECT_UPLOAD");
 
 	const admin = configStore.store.user.admin;
-
-	const mcpUrl = `${Env.MODULE}/api/ext/mcp/${id}/comms`;
 
 	const [portalReactors, setPortalReactors] = useState<{
 		reactors: string[];
@@ -228,7 +73,6 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	const [portalDetails, setPortalDetails] = useState<{
 		url?: string;
 		hasPortal?: boolean;
-		// isPublished: boolean;
 		project_has_portal: boolean;
 		project_portal_url?: string;
 		lastCompiled?: string;
@@ -236,7 +80,6 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	}>({
 		url: "",
 		hasPortal: false,
-		// isPublished: false,
 		project_has_portal: false,
 		project_portal_url: "",
 		lastCompiled: "12/25/2022",
@@ -246,7 +89,6 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	const getPortalDetails = usePixel<{
 		url?: string;
 		hasPortal?: boolean;
-		// isPublished: boolean;
 		project_has_portal: boolean;
 		project_portal_url?: string;
 		lastCompiled?: string;
@@ -276,9 +118,9 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	/** LOADING */
 	if (getPortalDetails.status !== "SUCCESS") {
 		return (
-			<LoadingScreen>
-				<LoadingScreen.Trigger description="Loading..." />
-			</LoadingScreen>
+			<div className="flex h-screen items-center justify-center">
+				<Spinner className="items-center justify-center" />
+			</div>
 		);
 	}
 
@@ -293,16 +135,13 @@ export const SettingsTab = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				console.log(response, "response");
-				const output: string[] = response.pixelReturn[0].output;
+				const output = Array.isArray(response.pixelReturn[0].output)
+					? (response.pixelReturn[0].output as string[])
+					: [response.pixelReturn[0].output as string];
 				const type: string = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
-						message: output,
-					});
-
+					toast.error(output);
 					return;
 				}
 
@@ -312,10 +151,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 				});
 			})
 			.catch((error) => {
-				notification.add({
-					color: "error",
-					message: error,
-				});
+				toast.error(error);
 			});
 	};
 
@@ -333,34 +169,22 @@ export const SettingsTab = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				const output: string[] = response.pixelReturn[0].output;
+				const output: string = response.pixelReturn[0].output as string;
 				const type: string = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
-						message: output,
-					});
+					toast.error(output);
 					return;
 				}
 
 				if (release == null) {
-					notification.add({
-						color: "success",
-						message: "Successfully recompiled",
-					});
+					toast.success("Successfully recompile");
 				} else {
-					notification.add({
-						color: "success",
-						message: "Successfully redeployed",
-					});
+					toast.success("Successfully redeployed");
 				}
 			})
 			.catch((error) => {
-				notification.add({
-					color: "error",
-					message: error,
-				});
+				toast.error(error);
 			});
 	};
 
@@ -368,19 +192,15 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	 * @name publish
 	 * @desc Publishes Portal
 	 */
-	const _publish = () => {
+	const publish = () => {
 		const pixelString = `PublishProject(project='${id}', release=true);`;
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				const output: string = response.pixelReturn[0].output;
+				const output: string = response.pixelReturn[0].output as string;
 				const type: string = response.pixelReturn[0].operationType[0];
 				if (type.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
-						message: output,
-					});
-
+					toast.error(output);
 					return;
 				}
 
@@ -388,24 +208,17 @@ export const SettingsTab = (props: AppSettingsProps) => {
 					...portalDetails,
 					project_portal_url: output,
 				});
-
-				notification.add({
-					color: "success",
-					message: "Successfully published",
-				});
+				toast.success("Successfully publiched");
 			})
 			.catch((error) => {
-				notification.add({
-					color: "error",
-					message: error,
-				});
+				toast.error(error);
 			});
 	};
 
 	/**
 	 * @name enablePublishing
 	 */
-	const _enablePublishing = () => {
+	const enablePublishing = () => {
 		setProjectPortal(admin, id, !portalDetails.project_has_portal)
 			.then((resp) => {
 				if (resp.data) {
@@ -413,31 +226,25 @@ export const SettingsTab = (props: AppSettingsProps) => {
 						...portalDetails,
 						project_has_portal: !portalDetails.project_has_portal,
 					});
-
-					notification.add({
-						color: "success",
-						message: `Successfully ${
+					toast.success(
+						`Successfully ${
 							!portalDetails.project_has_portal
 								? "enabled"
 								: "disabled"
 						} portal`,
-					});
+					);
 				} else {
-					notification.add({
-						color: "error",
-						message: `Unsuccessfully ${
+					toast.error(
+						`Unsuccessfully ${
 							!portalDetails.project_has_portal
 								? "disabled"
 								: "enabled"
 						} portal`,
-					});
+					);
 				}
 			})
 			.catch((error) => {
-				notification.add({
-					color: "error",
-					message: error,
-				});
+				toast.error(error);
 			});
 	};
 
@@ -481,20 +288,12 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			await monolithStore.runQuery(
 				`PublishProject(project='${id}', release=true);`,
 			);
-
-			notification.add({
-				color: "success",
-				message: "Succesfully Updated Project",
-			});
+			toast.success("Succesfully Updated Project");
 
 			reset();
 		} catch (e) {
 			console.error(e);
-
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+			toast.error(e.message);
 		} finally {
 			// turn of loading
 			setIsLoading(false);
@@ -508,208 +307,208 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	const copy = async (text: string) => {
 		try {
 			await navigator.clipboard.writeText(text);
-
-			notification.add({
-				color: "success",
-				message: "Successfully copied to clipboard",
-			});
+			toast.success("Successfully copied to clipboard");
 		} catch (_e) {
-			notification.add({
-				color: "error",
-				message: "Unable to copy to clipboard",
-			});
+			toast.error("Unable to copy to clipboard");
 		}
 	};
 
 	return (
-		<StyledContainer>
-			{/* Access Section */}
-			{/* <Typography variant="h6" gutterBottom>
-        Access
-      </Typography>
-      <RootGrid container spacing={3}>
-        <Grid item xs={12} md={5}>
-          <ColumnBox>
-            <LeftTextContainer>
-              <StyledLockIcon fontSize="small" />
-              <Box>
-                <PublishTitle variant="subtitle2">Publish</PublishTitle>
-                <Description variant="body2">
-                  Enable the publishing of the portal
-                </Description>
-              </Box>
-            </LeftTextContainer>
-            <Switch
-              defaultChecked
-              size="medium"
-              checked={portalDetails.project_has_portal}
-              value={portalDetails.project_has_portal}
-              onChange={() => {
-                enablePublishing();
-              }}
-              disabled={
-                !configStore.isEngineOperationAvailable("PROJECT", "access")
-              }
-            />
-          </ColumnBox>
-        </Grid>
+		<div className="flex w-full flex-col gap-6">
+			{/* Portals Section */}
+			<Card className="gap-1 p-4">
+				<CardHeader className="px-0">
+					<div className="flex w-full items-start justify-between">
+						<div className="flex flex-col gap-2">
+							<CardTitle>
+								<H3>Portals</H3>
+							</CardTitle>
+							{portalDetails.lastCompiled && (
+								<div className="flex items-center gap-2">
+									<Small className="text-muted-foreground">
+										Last compiled by:
+									</Small>
+									<Avatar className="size-6">
+										<AvatarFallback>
+											<User className="size-3" />
+										</AvatarFallback>
+									</Avatar>
+									<Small>{portalDetails.compiledBy}</Small>
+									<Small>on</Small>
+									<Small>{portalDetails.lastCompiled}</Small>
+								</div>
+							)}
+						</div>
+					</div>
+				</CardHeader>
+				<CardContent className="flex flex-col gap-3 px-0">
+					{/* Enable Publishing */}
+					<div className="flex items-center justify-between gap-4">
+						<div className="flex flex-col gap-1">
+							<H4>Enable Publishing</H4>
+							<P className="text-muted-foreground">
+								Enable the publishing of the portal.
+							</P>
+						</div>
 
-        <Grid item xs={12} md={7}>
-          <SecondColumnBox>
-            <SecondColumnHeader>
-              <Box>
-                <PublishPortalDescription variant="subtitle2">
-                  Publish Portal
-                </PublishPortalDescription>
-                <Typography variant="body2">
-                  Publish the portal to generate a shareable link
-                </Typography>
-              </Box>
+						<Switch
+							checked={portalDetails.project_has_portal}
+							onCheckedChange={enablePublishing}
+							disabled={
+								!configStore.isEngineOperationAvailable(
+									"PROJECT",
+									"access",
+								)
+							}
+						/>
+					</div>
 
-              <Button
-                variant="contained"
-                size="small"
-                disabled={
-                  !portalDetails.project_has_portal ||
-                  !configStore.isEngineOperationAvailable("PROJECT", "access")
-                }
-                onClick={() => {
-                  publish();
-                }}
-              >
-                Publish
-              </Button>
-            </SecondColumnHeader>
+					<Separator />
+					{/* Publish Portal */}
+					<div className="flex flex-col gap-0">
+						<div className="flex items-center justify-between gap-4">
+							<div className="flex flex-col gap-1">
+								<H4>Publish Portal</H4>
+								<P className="text-muted-foreground">
+									Publish the portal to generate a shareable
+									link.
+								</P>
+							</div>
+							<Button
+								variant="outline"
+								disabled={
+									!portalDetails.project_has_portal ||
+									!configStore.isEngineOperationAvailable(
+										"PROJECT",
+										"access",
+									)
+								}
+								onClick={() => {
+									publish();
+								}}
+							>
+								Publish
+							</Button>
+						</div>
 
-            <StyledTextField
-              fullWidth
-              size="small"
-              focused={false}
-              label={"Link"}
-              variant={"outlined"}
-              value={
-                portalDetails.project_has_portal
-                  ? portalDetails.project_portal_url
-                  : ""
-              }
-              InputProps={{
-                startAdornment: <InsertLink />,
-              }}
-            >
-              {portalDetails.project_has_portal
-                ? portalDetails.project_portal_url
-                : ""}
-            </StyledTextField>
-          </SecondColumnBox>
-        </Grid>
-      </RootGrid> */}
-			{/* <SectionDivider /> */}
+						<Field>
+							<div className="relative">
+								<div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+									<LinkIcon className="size-4 text-muted-foreground" />
+								</div>
+								<Input
+									value={
+										portalDetails.project_has_portal
+											? portalDetails.project_portal_url
+											: ""
+									}
+									readOnly
+									className="pr-10 pl-9"
+								/>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									className="-translate-y-1/2 absolute top-1/2 right-1"
+									onClick={() =>
+										copy(portalDetails.project_portal_url)
+									}
+									disabled={!portalDetails.project_has_portal}
+								>
+									<Copy className="size-4" />
+								</Button>
+							</div>
+						</Field>
+					</div>
+				</CardContent>
+			</Card>
 			{/* Reactors Section */}
-			<StyledReactor>
-				<Box>
-					<Title variant="h6">Reactors</Title>
+			<Card className="gap-1 p-4">
+				<CardContent className="flex flex-col gap-4 px-0">
+					{/* Header with Title and Buttons */}
+					<div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+						<H3>Reactors</H3>
+						<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+							<Button
+								variant="outline"
+								className="w-full justify-start border-(--primary) sm:w-auto"
+								onClick={() => {
+									recompileReactors({ release: null });
+								}}
+							>
+								Compile Changes on This Instance
+							</Button>
+							<Button
+								variant="outline"
+								className="s w-full justify-start border-(--primary) sm:w-auto"
+								onClick={() => {
+									recompileReactors({ release: true });
+								}}
+							>
+								Deploy and Persist Changes
+							</Button>
+						</div>
+					</div>
 
-					{portalReactors.reactors.length > 0 && (
-						<Description variant="body2">
-							Custom reactors created for the portal
-						</Description>
+					{/* Description */}
+					<P className="text-muted-foreground">
+						Custom reactors created for the portal.
+					</P>
+
+					{/* Reactors Table or Empty State */}
+					{portalReactors.reactors.length > 0 ? (
+						<div className="rounded-lg border">
+							<Table>
+								<TableBody>
+									{portalReactors.reactors.map((reactor) => (
+										<TableRow key={`reactor-${reactor}`}>
+											<TableCell>{reactor}</TableCell>
+											<TableCell className="text-right">
+												<Java />
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
+					) : (
+						<div className="flex h-[120px] w-full items-center justify-center rounded-lg border">
+							<P className="text-muted-foreground">
+								No reactors found
+							</P>
+						</div>
 					)}
-				</Box>
 
-				{portalReactors.reactors.length > 0 && (
-					<ReactorActions>
-						<ActionBtnOutlined
-							variant="outlined"
-							onClick={() => {
-								recompileReactors({ release: true });
-							}}
-						>
-							Deploy and Persist Changes
-						</ActionBtnOutlined>
-						<ActionBtnOutlined
-							variant="contained"
-							onClick={() => {
-								recompileReactors({ release: null });
-							}}
-						>
-							Compile Changes On This Instance
-						</ActionBtnOutlined>
-					</ReactorActions>
-				)}
-			</StyledReactor>
-
-			{portalReactors.reactors.length > 0 ? (
-				<StyledTable>
-					<Table.Body>
-						{portalReactors.reactors.map((reactor) => (
-							<Table.Row key={`reactor-${reactor}`}>
-								<Table.Cell>{reactor}</Table.Cell>
-								<Table.Cell align="right">
-									<Java />
-								</Table.Cell>
-							</Table.Row>
-						))}
-					</Table.Body>
-				</StyledTable>
-			) : (
-				<StyledTypography variant="body2">
-					No reactors found
-				</StyledTypography>
-			)}
-
-			<SectionDivider />
-
-			<Stack direction="row">
-				<TextField
-					label="MCP URL"
-					size="small"
-					value={mcpUrl}
-					fullWidth={true}
-					slotProps={{
-						input: {
-							endAdornment: (
-								<InputAdornment position="end">
-									<IconButton
-										aria-label="copy"
-										color="default"
-										size="small"
-										onClick={() => copy(`{{${mcpUrl}}}`)}
-									>
-										<ContentCopy fontSize="small" />
-									</IconButton>
-								</InputAdornment>
-							),
-						},
-					}}
-				/>
-			</Stack>
-
-			<SectionDivider />
+					{/* Last Compiled Info */}
+					{portalReactors.lastCompiled && (
+						<div className="flex items-center gap-2">
+							<Small className="text-muted-foreground">
+								Last compiled by:
+							</Small>
+							<Avatar className="size-6">
+								<AvatarFallback>
+									<User className="size-3" />
+								</AvatarFallback>
+							</Avatar>
+							<Small>{portalReactors.compiledBy}</Small>
+							<Small>on</Small>
+							<Small>{portalReactors.lastCompiled}</Small>
+						</div>
+					)}
+				</CardContent>
+			</Card>
 
 			{/* Update Project Section */}
-			<StyledBox>
-				{/* Left Content */}
-				<LeftPane>
-					{isLoading && (
-						<LoadingScreen>
-							<LoadingScreen.Trigger description="Loading..." />
-						</LoadingScreen>
-					)}
-					<Title variant="h6">Update Project</Title>
-					<UpdateText variant="body2">
+			<Card className="gap-1 p-4">
+				{isLoading && <Spinner />}
+				<CardHeader className="px-0">
+					<CardTitle>
+						<H3>Update Project</H3>
+					</CardTitle>
+					<CardDescription>
 						The maximum file size we can handle is 5MB per Zip
-					</UpdateText>
-					<Button
-						variant="contained"
-						disabled={isLoading || !uploadFile}
-						onClick={editApp}
-					>
-						Update
-					</Button>
-				</LeftPane>
-
-				{/* Right Upload Box */}
-				<RightPane>
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="flex flex-col gap-4 px-0">
 					<Controller
 						name={"PROJECT_UPLOAD"}
 						control={control}
@@ -734,16 +533,29 @@ export const SettingsTab = (props: AppSettingsProps) => {
 									field.onChange(newValues)
 								}
 							>
-								<UploadIcon />
-								<BrowseText variant="body2">Browse</BrowseText>
-								<SecondaryText variant="caption">
-									or drop file to upload
-								</SecondaryText>
+								<div className="flex flex-col items-center gap-2">
+									<UploadIcon className="size-8 text-primary" />
+									<P className="font-medium text-primary">
+										Browse
+									</P>
+									<Small className="text-muted-foreground">
+										or drop file to upload
+									</Small>
+								</div>
 							</FileDropzone>
 						)}
 					/>
-				</RightPane>
-			</StyledBox>
-		</StyledContainer>
+					<div className="flex justify-start">
+						<Button
+							variant="default"
+							disabled={isLoading || !uploadFile}
+							onClick={editApp}
+						>
+							Update
+						</Button>
+					</div>
+				</CardContent>
+			</Card>
+		</div>
 	);
 };

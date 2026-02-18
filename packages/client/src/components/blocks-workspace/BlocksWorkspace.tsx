@@ -35,7 +35,6 @@ import {
 	NotebookExplorerPanel,
 	NotebookViewerPanel,
 	SelectedBlockPanel,
-	SettingsNavPanel,
 	VariablesPanel,
 } from "./panels";
 
@@ -97,7 +96,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						type: "tab",
 						id: "settings",
 						name: "Settings",
-						component: "settings",
+						component: "settingsPanel",
 						config: {},
 						// maxWidth: 1,
 						helpText: "Settings",
@@ -327,9 +326,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "graph") {
 			return <GraphPanel />;
 		} else if (component === "settingsPanel") {
-			return <SettingsPanel value={config.value} />;
-		} else if (component === "settings") {
-			return <SettingsNavPanel />; // This is a placeholder for the settings tab, which is handled in the border layout
+			return <SettingsPanel value={"APPSETTINGS"} />;
 		} else if (component === "export-button") {
 			return <ExportButtonPanel />;
 		}

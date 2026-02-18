@@ -235,11 +235,138 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 				?.getNodeById("main-tabset")
 				?.getAttr("weight");
 
+			if (isSettingsTab) {
+				try {
+					let settingsNode: FlexLayout.TabNode | null = null;
+					model.visitNodes((node) => {
+						if (
+							node instanceof FlexLayout.TabNode &&
+							node.getId() === "settings"
+						) {
+							settingsNode = node;
+						}
+					});
+
+					const isAlreadyActive =
+						settingsNode?.getConfig()?.isSettingsActive;
+
+					if (isAlreadyActive) {
+						// Remove highlight
+						model.doAction(
+							FlexLayout.Actions.updateNodeAttributes(
+								"settings",
+								{
+									config: { isSettingsActive: false },
+								},
+							),
+						);
+
+						// Close the AppSettings tab
+						let existingId: string | null = null;
+						model.visitNodes((node) => {
+							if (
+								node instanceof FlexLayout.TabNode &&
+								node.getName() === "AppSettings"
+							) {
+								existingId = node.getId();
+							}
+						});
+						if (existingId) {
+							model.doAction(
+								FlexLayout.Actions.deleteTab(existingId),
+							);
+						}
+
+						return true;
+					}
+					model.doAction(
+						FlexLayout.Actions.updateNodeAttributes("settings", {
+							config: { isSettingsActive: true },
+						}),
+					);
+
+					model
+						.getBorderSet()
+						.getBorders()
+						.forEach((border) => {
+							border.setSelected(-1);
+						});
+					model.doAction(
+						FlexLayout.Actions.updateNodeAttributes("settings", {
+							config: { isSettingsActive: true },
+						}),
+					);
+
+					// close left borders to restrict left panel
+					model
+						.getBorderSet()
+						.getBorders()
+						.forEach((border) => {
+							border.setSelected(-1);
+						});
+
+					const mainTabsetId =
+						model.getNodeById("main-tabset")?.getId() ||
+						model.getRoot().getChildren()[0]?.getId() ||
+						"";
+
+					let existingId: string | null = null;
+					model.visitNodes((node) => {
+						if (
+							node instanceof FlexLayout.TabNode &&
+							node.getName() === "AppSettings"
+						) {
+							existingId = node.getId();
+						}
+					});
+
+					if (!existingId) {
+						model.doAction(
+							FlexLayout.Actions.addNode(
+								{
+									type: "tab",
+									name: "AppSettings",
+									component: "settingsPanel",
+									config: {},
+									enableClose: true,
+								},
+								mainTabsetId,
+								FlexLayout.DockLocation.CENTER,
+								-1,
+								true,
+							),
+						);
+						model.visitNodes((node) => {
+							if (
+								node instanceof FlexLayout.TabNode &&
+								node.getName() === "AppSettings"
+							) {
+								existingId = node.getId();
+							}
+						});
+					}
+
+					if (existingId) {
+						model.doAction(
+							FlexLayout.Actions.selectTab(existingId),
+						);
+					}
+				} catch (err) {
+					console.error(err);
+				}
+
+				return true;
+			} else {
+				model.doAction(
+					FlexLayout.Actions.updateNodeAttributes("settings", {
+						config: { isSettingsActive: false },
+					}),
+				);
+			}
 			model
 				.getBorderSet()
 				.getBorders()
 				.forEach((border) => {
-					// border.setSelected(isSettingsTab ? -1 : border.getSelected());
 					border.setSelected(
 						action.data.tabNode === "block-settings" &&
 							mainTabsetWeight === 0
@@ -344,20 +471,25 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 											workspace.saveToCache();
 										}}
 										onAction={(action) => {
-											updateModel(action);
-											return action;
+											const handled = updateModel(action);
+											return !handled ? action : false;
 										}}
 										onRenderTab={(
 											tabNode,
 											renderValues,
 										) => {
+											const isSettingsTab =
+												tabNode.getName() ===
+												"Settings";
 											const item = SIDEBAR_MENU.MENU.find(
 												(menuItem) =>
 													menuItem.name ===
 													tabNode.getName(),
 											);
-											const isSelected =
-												tabNode.isSelected();
+											const isSelected = isSettingsTab
+												? !!tabNode.getConfig()
+														?.isSettingsActive
+												: tabNode.isSelected();
 
 											// Base test ID without suffix
 											const baseDataTestId =

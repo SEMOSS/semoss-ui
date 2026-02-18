@@ -41,7 +41,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						id: "settings",
 						type: "tab",
 						name: "Settings",
-						component: "settings",
+						component: "settingsPanel",
 						config: {},
 					},
 				],
@@ -113,9 +113,7 @@ export const CodeWorkspace: React.FC = observer(() => {
 		} else if (component === "renderer") {
 			return <RendererPanel />;
 		} else if (component === "settingsPanel") {
-			return <SettingsPanel value={config.value} />;
-		} else if (component === "settings") {
-			return <SettingsNavPanel />; // This is a placeholder for the settings tab, which is handled in the border layout
+			return <SettingsPanel value="APPSETTINGS" />;
 		} else if (component === "terminal") {
 			return <TerminalPanel />;
 		}

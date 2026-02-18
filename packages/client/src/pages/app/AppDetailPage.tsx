@@ -1,31 +1,38 @@
 import {
+	Download,
 	Edit,
-	EditOutlined,
-	InfoRounded,
-	LockReset,
-	SimCardDownload,
-} from "@mui/icons-material";
-import UpdateIcon from "@mui/icons-material/Update";
+	Info,
+	LockKeyhole,
+	PencilLine,
+	RefreshCw,
+	SquareArrowOutUpRight,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
+import { useNotification } from "@semoss/ui";
 import {
-	Box,
-	Breadcrumbs,
+	Badge,
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 	Button,
-	Chip,
-	CircularProgress,
-	Grid,
-	IconButton,
-	Modal,
-	Stack,
-	styled,
-	ToggleTabsGroup,
+	Dialog,
+	DialogContent,
+	H2,
+	Spinner,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
 	Tooltip,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { getUserProjectPermission, uploadImage } from "@/api";
 import {
 	type AppDetailsFormTypes,
@@ -42,6 +49,7 @@ import {
 	type modelledDependency,
 } from "@/components/app";
 import { UpdateSMSS } from "@/components/settings";
+import { McpUsage } from "@/components/shared/mcp-usage";
 import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
@@ -52,175 +60,12 @@ import { Dependencies } from "./AppDetailTabs/Dependencies";
 import { Overview } from "./AppDetailTabs/Overview";
 import { SettingsTab } from "./AppDetailTabs/Settings";
 
-const OuterContainer = styled("div")({
-	height: "100%",
-	justifyContent: "center",
-	overflow: "scroll",
-	width: "100%",
-});
+interface AppDetailsProps {
+	showNav?: boolean;
+}
 
-const InnerContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	height: "100%",
-	gap: theme.spacing(3),
-	margin: "auto",
-	maxWidth: "79rem",
-	width: "100%",
-}));
-
-const ActionBar = styled("div")(({ theme }) => ({
-	display: "flex",
-	gap: theme.spacing(1),
-	marginLeft: "auto",
-}));
-
-const PageBody = styled("div")({
-	//marginLeft: '200px',
-	display: "flex",
-	flexDirection: "column",
-});
-
-const TitleSection = styled("section")(({ theme }) => ({
-	display: "flex",
-	gap: theme.spacing(2),
-	paddingBottom: theme.spacing(2),
-	justifyContent: "space-between",
-	alignItems: "center",
-	flexWrap: "wrap",
-}));
-
-const TitleSectionImg = styled("img")(({ theme }) => ({
-	borderRadius: theme.spacing(0.75),
-	height: "64px",
-	width: "64px",
-	overflow: "hidden",
-}));
-
-const TitleSectionBodyWrapper = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	gap: "0.5rem",
-	justifyContent: "center",
-});
-
-const TagsBodyWrapper = styled("div")({
-	display: "flex",
-	flexWrap: "wrap",
-	gap: "0.6rem",
-});
-
-const TagsDescription = styled(Typography)(({ theme }) => ({
-	paddingBottom: theme.spacing(2),
-}));
-
-const StyledContentContainer = styled(Box)(({ theme }) => ({
-	width: "100% !important",
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(3),
-	color: theme.palette.secondary.light,
-	"&.MuiBox-root": {
-		width: "100%",
-	},
-}));
-
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
-	minHeight: "42px",
-	color: theme.palette.secondary.light,
-	//borderRadius: theme.shape.borderRadius,
-	alignItems: "center",
-	padding: "0px 3px",
-	display: "flex",
-	justifyContent: "flex-start", // or 'flex-start' if you want left alignment
-	borderBottomRadius: "0px",
-}));
-
-const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
-	height: "38px",
-	padding: "8px 11px",
-	"&.MuiTab-root": {
-		borderRadius: theme.shape.borderRadius,
-	},
-	"&.Mui-selected": {
-		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
-	},
-}));
-
-const StyledTabs = {
-	width: "100%",
-	borderBottomLeftRadius: "0px",
-	borderBottomRightRadius: "0px",
-};
-
-const StyledTabsSection = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "row",
-	width: "100%",
-	flexWrap: "wrap",
-	gap: theme.spacing(3),
-	padding: "2px",
-	backgroundColor: theme.palette.background.paper,
-	// boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
-}));
-
-const StyledUpdateIcon = styled(UpdateIcon)(({ theme }) => ({
-	color: theme.palette.text.disabled,
-}));
-
-const StyledLockReset = styled(LockReset)(({ theme }) => ({
-	color: theme.palette.background.paper,
-}));
-
-const ContainerGrid = styled(Grid)(({ theme }) => ({
-	paddingBottom: theme.spacing(2),
-	alignItems: "flex-start", // align both columns to top
-}));
-
-const DescriptionText = styled(Typography)(({ theme }) => ({
-	paddingBottom: theme.spacing(2), // 16px
-	color: theme.palette.text.disabled,
-}));
-
-const RightColumn = styled(Grid)(() => ({
-	display: "flex",
-	justifyContent: "flex-end", // push content to the right
-}));
-
-const PublisherInfo = styled(Typography)(({ theme }) => ({
-	fontSize: theme.typography.pxToRem(14),
-	color: "gray",
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-end",
-	gap: theme.spacing(0.5),
-}));
-
-const HeaderRow = styled("div")({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-});
-
-const StyledInfoOutlined = styled(InfoRounded)(({ theme }) => ({
-	cursor: "pointer",
-	width: "15px",
-	height: "15px",
-	color: theme.palette.secondary.dark,
-}));
-
-const StyledTypography = styled(Typography)({
-	display: "flex",
-	alignItems: "center",
-	gap: "6px",
-});
-
-const StyledStack = styled(Stack)(({ theme }) => ({
-	width: "100%",
-	padding: theme.spacing(3),
-}));
-
-export const AppDetailPage = () => {
+export const AppDetailPage = (props: AppDetailsProps) => {
+	const { showNav = true } = props;
 	const { control, setValue, getValues, watch, handleSubmit } =
 		useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
 
@@ -242,14 +87,13 @@ export const AppDetailPage = () => {
 	const { appId } = useParams();
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
-
 	useEffect(() => {
 		setSelectedTab("Overview");
 		setValue("appId", appId);
 		fetchUserSpecificData();
 		fetchAppData(appId);
 	}, [appId]);
-
+	const navigate = useNavigate();
 	const fetchUserSpecificData = async () => {
 		const currPermission = getValues("permission");
 		await getPermission();
@@ -569,6 +413,7 @@ export const AppDetailPage = () => {
 			"Dependencies",
 			"Settings",
 			"SMSS",
+			"MCP Usage",
 		],
 		editor: ["Overview", "Access Control"],
 		readOnly: ["Overview"],
@@ -578,99 +423,103 @@ export const AppDetailPage = () => {
 	const visibleTabs = TABS_BY_PERMISSION[permission] || ["Overview"];
 
 	return (
-		<div>
-			<NavbarLeft>
-				<NavbarHeader />
-			</NavbarLeft>
-			<OuterContainer>
-				<InnerContainer>
-					<Breadcrumbs separator="/">
-						<Breadcrumbs.Item
-							href="#/app"
-							underline="none"
-							color="inherit"
-							variant="body1"
-						>
-							App Catalog
-						</Breadcrumbs.Item>
-						<Breadcrumbs.Item
-							href={`.`}
-							underline="none"
-							color="text.disabled"
-							variant="body1"
-						>
-							<div
-								title={appInfo?.project_name}
-								className="w-[40ch] truncate text-ellipsis"
-							>
-								{appInfo?.project_name}
-							</div>
-						</Breadcrumbs.Item>
-					</Breadcrumbs>
-
-					<div>
-						<PageBody>
-							<TitleSection>
-								<Box>
-									<TitleSectionImg
-										src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
-										alt="App Image"
-									/>
-									<TitleSectionBodyWrapper>
+		<div className="w-full">
+			{showNav && (
+				<NavbarLeft>
+					<NavbarHeader />
+				</NavbarLeft>
+			)}
+			<div
+				className={`h-full w-full ${
+					showNav ? "flex justify-center" : ""
+				}`}
+			>
+				<div
+					className={`flex h-full w-full flex-col gap-3 ${
+						showNav ? "m-auto max-w-[79rem]" : ""
+					}`}
+				>
+					{showNav && (
+						<Breadcrumb>
+							<BreadcrumbList>
+								<BreadcrumbItem>
+									<BreadcrumbLink href="#/app">
+										App Catalog
+									</BreadcrumbLink>
+								</BreadcrumbItem>
+								<BreadcrumbSeparator>/</BreadcrumbSeparator>
+								<BreadcrumbItem>
+									<BreadcrumbPage>
 										<div
 											title={appInfo?.project_name}
-											className={
-												"mt-1 max-w-[40ch] truncate text-ellipsis font-normal text-[34px] leading-[150%]"
-											}
+											className="w-[40ch] truncate text-ellipsis"
 										>
 											{appInfo?.project_name}
 										</div>
-									</TitleSectionBodyWrapper>
-								</Box>
+									</BreadcrumbPage>
+								</BreadcrumbItem>
+							</BreadcrumbList>
+						</Breadcrumb>
+					)}
 
-								<ActionBar>
+					<div>
+						<div className="flex flex-col">
+							<section className="flex flex-wrap items-center justify-between gap-2 pb-2">
+								<div className="flex gap-2">
+									<img
+										src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
+										alt="app"
+										className="h-16 w-16 overflow-hidden rounded-lg"
+									/>
+									<div className="flex flex-col justify-center gap-2">
+										<div
+											title={appInfo?.project_name}
+											className="mt-1 max-w-[40ch] truncate text-ellipsis font-normal text-[34px] leading-[150%]"
+										>
+											{appInfo?.project_name}
+										</div>
+									</div>
+								</div>
+
+								<div className="ml-auto flex gap-2">
 									{permission === "author" ? (
 										<Button
 											disabled={exportLoading}
-											startIcon={
-												exportLoading ? (
-													<CircularProgress size="1em" />
-												) : (
-													<SimCardDownload />
-												)
-											}
-											variant="outlined"
+											variant="outline"
 											onClick={() => exportApp()}
-											data-testid={"appDetail-export-btn"}
+											data-testid="appDetail-export-btn"
 										>
+											{exportLoading ? (
+												<Spinner className="size-4" />
+											) : (
+												<Download className="size-4" />
+											)}
 											Export
 										</Button>
 									) : (
 										<Button
-											startIcon={
-												responseStatus ? (
-													<StyledUpdateIcon />
-												) : permission ===
-													"discoverable" ? (
-													<StyledLockReset />
-												) : null
-											}
 											disabled={
 												responseStatus || pendingRequest
 											}
 											variant={
 												responseStatus
-													? "outlined"
+													? "outline"
 													: permission ===
 															"discoverable"
-														? "contained"
-														: "outlined"
+														? "default"
+														: "outline"
 											}
 											onClick={() =>
 												setIsChangeAccessModalOpen(true)
 											}
-											data-testid={"appDetail-access-btn"}
+											data-testid="appDetail-access-btn"
 										>
+											{responseStatus ? (
+												<RefreshCw className="size-4 text-muted-foreground" />
+											) : permission ===
+												"discoverable" ? (
+												<LockKeyhole className="size-4" />
+											) : null}
 											{responseStatus || pendingRequest
 												? "Pending Access"
 												: permission === "discoverable"
@@ -681,10 +530,7 @@ export const AppDetailPage = () => {
 									{permission !== "discoverable" &&
 										permission !== "readOnly" && (
 											<Button
-												variant="contained"
-												startIcon={
-													<EditOutlined fontSize="inherit" />
-												}
+												variant="default"
 												onClick={() => {
 													setIsEditDetailsModalOpen(
 														true,
@@ -692,190 +538,275 @@ export const AppDetailPage = () => {
 												}}
 												data-testid="appDetail-edit-btn"
 											>
+												<PencilLine className="size-4" />
 												Edit
 											</Button>
 										)}
-								</ActionBar>
-							</TitleSection>
-							<ContainerGrid container spacing={2}>
-								<Grid item xs={12} md={8}>
-									<DescriptionText variant="body1">
+									{permission !== "discoverable" &&
+										permission !== "readOnly" &&
+										showNav && (
+											<Button
+												variant="outline"
+												onClick={() =>
+													navigate(
+														`/app/${appId}/view`,
+													)
+												}
+												data-testid="appDetail-edit-btn"
+											>
+												<SquareArrowOutUpRight className="size-4" />
+												Open App
+											</Button>
+										)}
+								</div>
+							</section>
+							<div className="grid grid-cols-1 items-start gap-2 pb-2 md:grid-cols-12">
+								<div className="md:col-span-8">
+									<p className="pb-2 text-muted-foreground">
 										{appInfo?.description ||
 											"No description available"}
-									</DescriptionText>
-								</Grid>
+									</p>
+								</div>
 
-								<RightColumn item xs={12} md={4}>
-									<PublisherInfo variant="body1">
+								<div className="flex justify-end md:col-span-4">
+									<div className="flex flex-col items-end gap-0.5 text-muted-foreground text-sm">
 										<span>
 											Published by:{" "}
 											{appInfo?.project_created_by ||
 												"Unknown"}
 										</span>
-										Updated{" "}
-										{appInfo?.project_date_created
-											? new Date(
-													appInfo?.project_date_created,
-												).toLocaleString("en-US", {
-													month: "long",
-													day: "2-digit",
-													year: "numeric",
-													hour: "numeric",
-													minute: "2-digit",
-													hour12: true,
-												})
-											: "N/A"}
-									</PublisherInfo>
-								</RightColumn>
-							</ContainerGrid>
+										<span>
+											Updated{" "}
+											{appInfo?.project_date_created
+												? new Date(
+														appInfo?.project_date_created,
+													).toLocaleString("en-US", {
+														month: "long",
+														day: "2-digit",
+														year: "numeric",
+														hour: "numeric",
+														minute: "2-digit",
+														hour12: true,
+													})
+												: "N/A"}
+										</span>
+									</div>
+								</div>
+							</div>
 
-							<TagsDescription variant="body1">
+							<div className="pb-2">
 								{tags ? (
-									<TagsBodyWrapper>
+									<div className="flex flex-wrap gap-2.5">
 										{tags.map((tag) => (
-											<Chip
-												key={`tag-${tag}-${tag}`}
-												label={tag}
-												variant="outlined"
-											/>
+											<Badge
+												key={`tag-${tag}`}
+												variant="outline"
+											>
+												{tag}
+											</Badge>
 										))}
-									</TagsBodyWrapper>
+									</div>
 								) : (
-									<Typography variant="body1">
-										No tags available
-									</Typography>
+									<p className="text-sm">No tags available</p>
 								)}
-							</TagsDescription>
+							</div>
 
-							<StyledContentContainer>
-								<StyledToggleTabsGroup
+							<div className="flex w-full flex-col gap-3">
+								<Tabs
 									value={selectedTab}
-									boxSx={StyledTabs}
-									onChange={(_e, val) =>
-										setSelectedTab(String(val))
-									}
+									onValueChange={(val) => setSelectedTab(val)}
+									className="gap-0"
 								>
-									{visibleTabs.includes("Overview") && (
-										<StyledToggleTabsGroupItem
-											label="Overview"
-											value="Overview"
-										/>
-									)}
-									{visibleTabs.includes("Access Control") && (
-										<StyledToggleTabsGroupItem
-											label="Access Control"
-											value="Access Control"
-										/>
-									)}
-									{visibleTabs.includes("Dependencies") && (
-										<StyledToggleTabsGroupItem
-											label="Dependencies"
-											value="Dependencies"
-										/>
-									)}
-									{visibleTabs.includes("Settings") && (
-										<StyledToggleTabsGroupItem
-											label="Settings"
-											value="Settings"
-										/>
-									)}
-									{visibleTabs.includes("SMSS") && (
-										<StyledToggleTabsGroupItem
-											label="SMSS"
-											value="SMSS"
-										/>
-									)}
-									Hi
-								</StyledToggleTabsGroup>
-							</StyledContentContainer>
-							<StyledTabsSection>
-								{selectedTab === "Overview" && (
-									<Overview appInfo={appInfo} />
-								)}
-								{selectedTab === "Access Control" && (
-									<AccessControl
-										appInfo={appInfo}
-										appId={appId}
-										fetchUserSpecificData={
-											fetchUserSpecificData
-										}
-										permission={permission}
-									/>
-								)}
-								{selectedTab === "Dependencies" && (
-									<StyledStack>
-										<HeaderRow>
-											<StyledTypography variant="h6">
-												Dependencies
-												<Tooltip
-													title={
-														appInfo.project_type ===
-														"CODE"
-															? "Add/Remove dependencies using the Edit Icon"
-															: "Add/Remove dependencies using the Variables Tab"
-													}
+									<div className="w-full rounded-t-lg bg-muted">
+										<TabsList>
+											{visibleTabs.includes(
+												"Overview",
+											) && (
+												<TabsTrigger
+													value="Overview"
+													className="p-3"
 												>
-													<StyledInfoOutlined fontSize="small" />
-												</Tooltip>
-											</StyledTypography>
-
-											{appInfo.project_type === "CODE" &&
-												permission === "author" && (
-													<IconButton
-														size="small"
-														onClick={() =>
-															setIsEditDependenciesModalOpen(
-																true,
-															)
-														}
-														data-testid="appDetail-edit-btn"
-													>
-														<Edit />
-													</IconButton>
-												)}
-										</HeaderRow>
-
-										<Dependencies
-											dependencies={dependencies}
-										/>
-									</StyledStack>
-								)}
-								{selectedTab === "Settings" && (
-									<SettingsContext.Provider
-										value={{
-											adminMode: false,
-										}}
+													Overview
+												</TabsTrigger>
+											)}
+											{visibleTabs.includes(
+												"Access Control",
+											) && (
+												<TabsTrigger
+													value="Access Control"
+													className="p-3"
+												>
+													Access Control
+												</TabsTrigger>
+											)}
+											{visibleTabs.includes(
+												"Dependencies",
+											) && (
+												<TabsTrigger
+													value="Dependencies"
+													className="p-3"
+												>
+													Dependencies
+												</TabsTrigger>
+											)}
+											{visibleTabs.includes("SMSS") && (
+												<TabsTrigger
+													value="SMSS"
+													className="p-3"
+												>
+													SMSS
+												</TabsTrigger>
+											)}
+											{visibleTabs.includes(
+												"MCP Usage",
+											) && (
+												<TabsTrigger
+													value="MCP Usage"
+													className="p-3"
+												>
+													MCP Usage
+												</TabsTrigger>
+											)}
+											{visibleTabs.includes(
+												"Settings",
+											) && (
+												<TabsTrigger
+													value="Settings"
+													className="p-3"
+												>
+													Settings
+												</TabsTrigger>
+											)}
+										</TabsList>
+									</div>
+									<TabsContent
+										value="Overview"
+										className="mt-2 w-full"
 									>
-										<SettingsTab id={appId} />
-									</SettingsContext.Provider>
-								)}
-								{selectedTab === "SMSS" && (
-									<SettingsContext.Provider
-										value={{
-											adminMode: false,
-										}}
+										<Overview appInfo={appInfo} />
+									</TabsContent>
+									<TabsContent
+										value="Access Control"
+										className="mt-2 w-full"
 									>
-										<UpdateSMSS
-											type={"PROJECT"}
-											id={appId}
-										/>
-									</SettingsContext.Provider>
-								)}
-							</StyledTabsSection>
-						</PageBody>
+										<div className="w-full">
+											<AccessControl
+												appInfo={appInfo}
+												appId={appId}
+												fetchUserSpecificData={
+													fetchUserSpecificData
+												}
+												permission={permission}
+											/>
+										</div>
+									</TabsContent>
+									<TabsContent
+										value="Dependencies"
+										className="mt-2 w-full"
+									>
+										<div className="w-full">
+											<div className="flex w-full items-center">
+												{/* Left: Title + Tooltip */}
+												<div className="flex items-center gap-2">
+													<H2 className="font-medium text-xl">
+														Dependencies
+													</H2>
+
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Info className="size-[15px] cursor-pointer text-muted-foreground" />
+														</TooltipTrigger>
+														<TooltipContent>
+															{appInfo?.project_type ===
+															"CODE"
+																? "Add/Remove dependencies using the Edit Icon"
+																: "Add/Remove dependencies using the Variables Tab"}
+														</TooltipContent>
+													</Tooltip>
+												</div>
+
+												{/* Right: Edit button */}
+												{appInfo?.project_type ===
+													"CODE" &&
+													permission === "author" && (
+														<Button
+															size="icon-sm"
+															variant="ghost"
+															onClick={() =>
+																setIsEditDependenciesModalOpen(
+																	true,
+																)
+															}
+															data-testid="appDetail-edit-btn"
+															className="ml-auto"
+														>
+															<Edit className="size-4" />
+														</Button>
+													)}
+											</div>
+
+											<Dependencies
+												dependencies={dependencies}
+											/>
+										</div>
+									</TabsContent>
+									<TabsContent
+										value="Settings"
+										className="mt-2 w-full"
+									>
+										<div className="w-full">
+											<SettingsContext.Provider
+												value={{
+													adminMode: false,
+												}}
+											>
+												<SettingsTab id={appId} />
+											</SettingsContext.Provider>
+										</div>
+									</TabsContent>
+									<TabsContent
+										value="SMSS"
+										className="mt-2 w-full"
+									>
+										<div className="w-full">
+											<SettingsContext.Provider
+												value={{
+													adminMode: false,
+												}}
+											>
+												<UpdateSMSS
+													type={"PROJECT"}
+													id={appId}
+												/>
+											</SettingsContext.Provider>
+										</div>
+									</TabsContent>
+									<TabsContent
+										value="MCP Usage"
+										className="mt-2 w-full"
+									>
+										<div className="w-full">
+											<McpUsage id={appId} />
+										</div>
+									</TabsContent>
+								</Tabs>
+							</div>
+						</div>
 					</div>
-				</InnerContainer>
+				</div>
 
-				<Modal
+				<Dialog
 					open={isShareOverlayOpen}
-					onClose={() => setIsShareOverlayOpen(false)}
+					onOpenChange={setIsShareOverlayOpen}
 				>
-					<ShareOverlay
-						appId={appId}
-						diffs={false}
-						onClose={() => setIsShareOverlayOpen(false)}
-					/>
-				</Modal>
+					<DialogContent>
+						<ShareOverlay
+							appId={appId}
+							diffs={false}
+							onClose={() => setIsShareOverlayOpen(false)}
+						/>
+					</DialogContent>
+				</Dialog>
 
 				<ChangeAccessModal
 					open={isChangeAccessModalOpen}
@@ -900,7 +831,7 @@ export const AppDetailPage = () => {
 					onClose={handleCloseDependenciesModal}
 					appId={appId}
 				/>
-			</OuterContainer>
+			</div>
 		</div>
 	);
 };
