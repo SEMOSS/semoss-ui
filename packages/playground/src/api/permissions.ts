@@ -44,22 +44,6 @@ const postApi = async (
 };
 
 /**
- * Remove user permissions from a project
- * @param projectId - The project ID
- * @param users - Array of user IDs to remove
- * @returns Whether the operation was successful
- */
-export const removeProjectUserPermissions = async (
-	projectId: string,
-	users: string[],
-) =>
-	await postApi(
-		"removeProjectUserPermissions",
-		projectId,
-		`&ids=${encodeURIComponent(JSON.stringify(users))}`,
-	);
-
-/**
  * Propagate user permissions to project dependencies
  * @param projectId - The project ID
  * @param users - Array of users with their permissions to propagate

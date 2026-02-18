@@ -4,6 +4,7 @@ import {
 	editProjectUserPermissions,
 	getProjectUsers,
 	getUserProjectPermission,
+	removeProjectUserPermissions,
 } from "@semoss/shared";
 import {
 	Button,
@@ -17,7 +18,6 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
-import { removeProjectUserPermissions } from "@/api";
 import { useChat } from "@/hooks";
 import type { User } from "@/types";
 import { WorkspaceMemberRow } from "./workspace-member-row";

@@ -190,29 +190,6 @@ export const denyProjectUserAccessRequest = async (
 	// figure out whether we want to do .catch here
 };
 
-export const removeProjectUserPermissions = async (
-	admin: boolean,
-	appId: string,
-	users: string[],
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-
-	const postData = {
-		projectId: appId,
-		ids: users,
-	};
-	if (admin) {
-		url += "admin/";
-	}
-	url += "project/removeProjectUserPermissions";
-
-	const response = await post<{
-		success: boolean;
-	}>(url, postData, {});
-	return response;
-	// figure out whether we want to do .catch here
-};
-
 export const setProjectGlobal = async (admin, appId, global: boolean) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	const postData = {
