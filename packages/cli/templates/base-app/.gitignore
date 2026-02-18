@@ -11,6 +11,7 @@ package-lock.json
 # Deployment
 .semoss-backups/
 .semoss-deployments
+smss.json
 
 # IDE
 .vscode/

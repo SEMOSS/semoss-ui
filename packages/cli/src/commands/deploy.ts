@@ -109,7 +109,32 @@ deploy java and python folders
 		batch: Flags.string({
 			char: "B",
 			description:
-				"Deploy to multiple modules/apps. Provide comma-separated list or 'all'",
+				"Deploy to multiple instances via batch config in smss.json. Use 'all' or comma-separated names (e.g., 'dev,prod')",
+		}),
+		// endpoint flag (override for batch deployments)
+		endpoint: Flags.string({
+			description:
+				"Server endpoint URL (overrides .env, used by batch deployments)",
+		}),
+		// module flag (override for batch deployments)
+		module: Flags.string({
+			description:
+				"Module path (overrides .env, used by batch deployments)",
+		}),
+		// accessKey flag (override for batch deployments)
+		"access-key": Flags.string({
+			description:
+				"Access key for authentication (overrides .env, used by batch deployments)",
+		}),
+		// secretKey flag (override for batch deployments)
+		"secret-key": Flags.string({
+			description:
+				"Secret key for authentication (overrides .env, used by batch deployments)",
+		}),
+		// app flag (override for batch deployments)
+		app: Flags.string({
+			description:
+				"App name or ID (overrides config, used by batch deployments)",
 		}),
 	};
 
@@ -177,8 +202,9 @@ deploy java and python folders
 							chunks.push(chunk);
 						});
 						response.on("end", () => {
-							const responseBody =
-								Buffer.concat(chunks).toString("utf-8");
+							const responseBody = Buffer.concat(
+								chunks as Uint8Array[],
+							).toString("utf-8");
 							if (debugMode) {
 								this.log(`\n${"`".repeat(80)}`);
 								this.log(
@@ -200,8 +226,7 @@ deploy java and python folders
 					});
 
 					response.on("end", () => {
-						const buffer = Buffer.concat(chunks);
-
+						const buffer = Buffer.concat(chunks as Uint8Array[]);
 						if (debugMode) {
 							this.log(`📦 Downloaded ${buffer.length} bytes`);
 							const firstBytes = buffer
@@ -213,7 +238,7 @@ deploy java and python folders
 						}
 
 						resolve(
-							buffer.buffer.slice(
+							(buffer.buffer as ArrayBuffer).slice(
 								buffer.byteOffset,
 								buffer.byteOffset + buffer.byteLength,
 							),
@@ -561,17 +586,36 @@ deploy java and python folders
 		}
 	}
 
-	private getDeployTargets(flags: {
-		target?: string | string[];
-	}): string[] | "all" {
+	private getDeployTargets(
+		flags: {
+			target?: string | string[];
+		},
+		config?: Record<string, unknown>,
+	): string[] | "all" {
+		// Priority: CLI flag > config targets > deploy everything
 		if (
-			!flags.target ||
-			(Array.isArray(flags.target) && flags.target.length === 0)
+			flags.target &&
+			Array.isArray(flags.target) &&
+			flags.target.length > 0
 		) {
-			return "all";
+			return flags.target;
 		}
 
-		return Array.isArray(flags.target) ? flags.target : [flags.target];
+		if (flags.target && typeof flags.target === "string") {
+			return [flags.target];
+		}
+
+		// Fall back to config targets
+		if (
+			config &&
+			"targets" in config &&
+			Array.isArray(config.targets) &&
+			config.targets.length > 0
+		) {
+			return config.targets as string[];
+		}
+
+		return "all";
 	}
 
 	private async getFilesForTargets(
@@ -611,8 +655,256 @@ deploy java and python folders
 		return allFiles;
 	}
 
+	private async handleBatchDeploy(flags: {
+		batch?: string;
+		config?: string;
+		debug?: boolean;
+		verbose?: boolean;
+		env?: string;
+		dryRun?: boolean;
+		rollback?: boolean;
+		target?: string | string[];
+		superVerbose?: boolean;
+		breakpoint?: boolean;
+		showEnv?: boolean;
+		showTiming?: boolean;
+		showRaw?: boolean;
+		[key: string]: unknown;
+	}): Promise<void> {
+		try {
+			const config = await this.loadConfig(flags.config);
+
+			if (
+				!config ||
+				typeof config !== "object" ||
+				!("deploy" in config) ||
+				typeof config.deploy !== "object" ||
+				config.deploy === null ||
+				!("batch" in config.deploy) ||
+				typeof config.deploy.batch !== "object" ||
+				config.deploy.batch === null
+			) {
+				this.error(
+					`❌ Batch configuration not found in smss.json.\n\nAdd batch configurations to your smss.json:\n\n{\n  "deploy": {\n    "batch": {\n      "dev": { "endpoint": "https://dev-server.com", "module": "/dev-insight", "accessKey": "key", "secretKey": "secret", "app": "dev-app" },\n      "staging": { "endpoint": "https://staging-server.com", "module": "/staging-insight", "accessKey": "key", "secretKey": "secret", "app": "staging-app" },\n      "prod": { "endpoint": "https://prod-server.com", "module": "/prod-insight", "accessKey": "key", "secretKey": "secret", "app": "prod-app" }\n    }\n  }\n}`,
+				);
+			}
+
+			const batchConfig = config.deploy.batch as Record<string, unknown>;
+			const batchInput = flags.batch || "all";
+
+			// Parse batch input: support "all", single name, or comma-separated names
+			let batchNames: string[];
+			if (batchInput.toLowerCase() === "all") {
+				batchNames = Object.keys(batchConfig);
+			} else {
+				batchNames = batchInput
+					.split(",")
+					.map((name) => name.trim())
+					.filter((name) => name.length > 0);
+			}
+
+			// Validate all requested batches exist
+			const invalidBatches = batchNames.filter(
+				(name) => !(name in batchConfig),
+			);
+			if (invalidBatches.length > 0) {
+				const availableBatches = Object.keys(batchConfig).join(", ");
+				this.error(
+					`❌ Batch(es) not found: ${invalidBatches.join(", ")}\nAvailable batches: ${availableBatches}`,
+				);
+			}
+
+			this.log(
+				`\n🔄 Running batch deployment for: ${batchNames.join(", ")}\n`,
+			);
+
+			const originalArgv = process.argv.slice();
+			const originalEnv = { ...process.env };
+
+			try {
+				// Set flag to prevent re-entry into batch handling during recursive calls
+				process.env.SEMOSS_BATCH_PROCESSING = "true";
+
+				// Track results
+				const successful: { name: string; duration: number }[] = [];
+				const failed: { name: string; error: string }[] = [];
+
+				// Deploy to each batch instance sequentially
+				for (const batchName of batchNames) {
+					const batchStartTime = Date.now();
+					const batchSettings = batchConfig[batchName] as Record<
+						string,
+						unknown
+					>;
+
+					if (
+						typeof batchSettings !== "object" ||
+						batchSettings === null
+					) {
+						const errorMsg = `❌ Batch "${batchName}" must be an object with instance configuration`;
+						this.log(errorMsg);
+						failed.push({ name: batchName, error: errorMsg });
+						continue;
+					}
+
+					this.log(
+						`\n📦 Deploying to batch instance: "${batchName}" [${new Date(batchStartTime).toISOString()}]`,
+					);
+					this.log(
+						`   Endpoint: ${batchSettings.endpoint || "from .env"}`,
+					);
+					this.log(
+						`   Module: ${batchSettings.module || "from .env"}`,
+					);
+
+					// Set process.env from batch config
+					if (
+						batchSettings.endpoint &&
+						typeof batchSettings.endpoint === "string"
+					) {
+						process.env.ENDPOINT = batchSettings.endpoint;
+					}
+					if (
+						batchSettings.module &&
+						typeof batchSettings.module === "string"
+					) {
+						process.env.MODULE = batchSettings.module;
+					}
+					if (
+						batchSettings.accessKey &&
+						typeof batchSettings.accessKey === "string"
+					) {
+						process.env.ACCESS_KEY = batchSettings.accessKey;
+					}
+					if (
+						batchSettings.secretKey &&
+						typeof batchSettings.secretKey === "string"
+					) {
+						process.env.SECRET_KEY = batchSettings.secretKey;
+					}
+					if (
+						batchSettings.app &&
+						typeof batchSettings.app === "string"
+					) {
+						process.env.APP = batchSettings.app;
+						process.env.VITE_APP = batchSettings.app;
+					}
+
+					// Construct full module URL from endpoint + module path
+					let fullModuleUrl: string | undefined;
+					if (
+						batchSettings.endpoint &&
+						typeof batchSettings.endpoint === "string" &&
+						batchSettings.module &&
+						typeof batchSettings.module === "string"
+					) {
+						fullModuleUrl = `${batchSettings.endpoint}${batchSettings.module}`;
+						// Set process.env.MODULE to the full URL so run() can detect it's already full
+						process.env.MODULE = fullModuleUrl;
+					}
+
+					// Debug: Log what we're setting
+					if (flags.verbose || flags.superVerbose) {
+						this.log(
+							`\n[DEBUG] Batch "${batchName}" environment setup:`,
+						);
+						this.log(
+							`  ENDPOINT: ${process.env.ENDPOINT || "NOT SET"}`,
+						);
+						this.log(
+							`  MODULE: ${process.env.MODULE || "NOT SET"}`,
+						);
+						this.log(`  APP: ${process.env.APP || "NOT SET"}`);
+					}
+
+					// Update Env singleton immediately with batch config values
+					// (since we skip .env loading in batch mode)
+					const envUpdate: Record<string, string | undefined> = {
+						ENDPOINT: process.env.ENDPOINT,
+						MODULE: process.env.MODULE,
+						ACCESS_KEY: process.env.ACCESS_KEY,
+						SECRET_KEY: process.env.SECRET_KEY,
+						APP: process.env.APP,
+					};
+					Env.update(envUpdate);
+
+					if (flags.verbose || flags.superVerbose) {
+						this.log(
+							`[DEBUG] Env singleton updated with: ${JSON.stringify(envUpdate, null, 2)}`,
+						);
+					}
+
+					// Call deployment (will skip batch mode and proceed with regular deploy)
+					try {
+						await this.run();
+						const batchEndTime = Date.now();
+						const duration = batchEndTime - batchStartTime;
+						this.log(
+							`   ✅ Successfully deployed to "${batchName}" [completed in ${duration}ms]`,
+						);
+						successful.push({ name: batchName, duration });
+					} catch (deployError) {
+						const batchEndTime = Date.now();
+						const duration = batchEndTime - batchStartTime;
+						const errorMsg =
+							deployError instanceof Error
+								? deployError.message
+								: String(deployError);
+						this.log(
+							`   ❌ Deployment failed for "${batchName}" [completed in ${duration}ms]: ${errorMsg}`,
+						);
+						failed.push({ name: batchName, error: errorMsg });
+						// Continue to next deployment instead of throwing
+					}
+				}
+
+				// Always show summary
+				this.log("\n" + "=".repeat(60));
+				this.log("📋 Batch Deployment Summary");
+				this.log("=".repeat(60));
+				this.log(
+					`✅ Successful: ${successful.length}/${batchNames.length}`,
+				);
+				if (successful.length > 0) {
+					for (const { name, duration } of successful) {
+						this.log(`   • "${name}" (${duration}ms)`);
+					}
+				}
+				if (failed.length > 0) {
+					this.log(
+						`❌ Failed: ${failed.length}/${batchNames.length}`,
+					);
+					for (const { name, error } of failed) {
+						this.log(`   • "${name}": ${error}`);
+					}
+				}
+				this.log("=".repeat(60) + "\n");
+
+				process.argv = originalArgv;
+				process.env = originalEnv;
+
+				// Throw error only if there were failures
+				if (failed.length > 0) {
+					throw new Error(`${failed.length} deployment(s) failed`);
+				}
+			} catch (error) {
+				process.argv = originalArgv;
+				process.env = originalEnv;
+				this.error(`\n❌ Batch deployment error: ${error}`);
+			}
+		} catch (error) {
+			this.error(`Batch deployment initialization failed: ${error}`);
+		}
+	}
+
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Deploy);
+
+		// Handle batch deployments (only if not already running from batch)
+		if (flags.batch && !process.env.SEMOSS_BATCH_PROCESSING) {
+			await this.handleBatchDeploy(flags);
+			return;
+		}
 
 		// Handle rollback - store backup path but continue to setup
 		let rollbackBackupDir: string | undefined;
@@ -680,40 +972,72 @@ deploy java and python folders
 		try {
 			// if custom env path is provided, use only that
 			// otherwise, load .env first, then .env.local (which overrides .env values)
-			if (flags.env) {
-				config({ path: envPath });
-			} else {
-				config({ path: envPath }); // load .env
-				if (fs.existsSync(envLocalPath)) {
-					config({ path: envLocalPath, override: true }); // load .env.local with override
+			// Skip in batch mode since batch config provides all necessary values
+			if (!process.env.SEMOSS_BATCH_PROCESSING) {
+				if (flags.env) {
+					config({ path: envPath });
+				} else {
+					config({ path: envPath }); // load .env
+					if (fs.existsSync(envLocalPath)) {
+						config({ path: envLocalPath, override: true }); // load .env.local with override
+					}
 				}
 			}
 
 			// validate and construct the full module URL
-			const endpoint = process.env.ENDPOINT;
-			const modulePath = process.env.MODULE;
+			// prioritize flags over environment variables
+			const flagsRecord = flags as Record<string, unknown>;
+			const endpoint =
+				(typeof flagsRecord.endpoint === "string"
+					? flagsRecord.endpoint
+					: undefined) || process.env.ENDPOINT;
+			const modulePath =
+				(typeof flagsRecord.module === "string"
+					? flagsRecord.module
+					: undefined) || process.env.MODULE;
+			const accessKey =
+				(typeof flagsRecord["access-key"] === "string"
+					? flagsRecord["access-key"]
+					: undefined) || process.env.ACCESS_KEY;
+			const secretKey =
+				(typeof flagsRecord["secret-key"] === "string"
+					? flagsRecord["secret-key"]
+					: undefined) || process.env.SECRET_KEY;
+			const app =
+				(typeof flagsRecord.app === "string"
+					? flagsRecord.app
+					: undefined) ||
+				process.env.APP ||
+				process.env.VITE_APP;
 
 			if (!endpoint) {
 				this.error(
-					"ENDPOINT is required. Define one in your environment variables (.env)",
+					"ENDPOINT is required. Define one in your environment variables (.env) or use --endpoint flag",
 				);
 			}
 
 			if (!modulePath) {
 				this.error(
-					"MODULE is required. Define one in your environment variables (.env)",
+					"MODULE is required. Define one in your environment variables (.env) or use --module flag",
 				);
 			}
 
-			// construct the full module URL
-			const fullModule = `${endpoint}${modulePath}`;
+			// Construct the full module URL
+			// If modulePath is already a full URL (starts with http), use it as-is
+			// This handles the batch mode case where we pre-construct fullModuleUrl
+			let fullModule: string;
+			if (modulePath.toString().startsWith("http")) {
+				fullModule = modulePath.toString();
+			} else {
+				fullModule = `${endpoint}${modulePath}`;
+			}
 
 			// update the environment
 			Env.update({
-				APP: process.env.APP || process.env.VITE_APP,
-				ACCESS_KEY: process.env.ACCESS_KEY,
+				APP: app,
+				ACCESS_KEY: accessKey,
 				MODULE: fullModule,
-				SECRET_KEY: process.env.SECRET_KEY,
+				SECRET_KEY: secretKey,
 			});
 		} catch (error) {
 			this.error(error as Error);
@@ -744,25 +1068,36 @@ deploy java and python folders
 			);
 		}
 
-		// Load config file for ignore patterns
+		// Load config file for ignore patterns and targets
 		let mergedIgnorePatterns = [...DEFAULT_IGNORE];
+		let loadedConfig: Record<string, unknown> | undefined;
 		try {
 			const config = await this.loadConfig(flags.config);
-			if (
-				config &&
-				typeof config === "object" &&
-				"deploy" in config &&
-				typeof config.deploy === "object" &&
-				config.deploy !== null &&
-				"ignore" in config.deploy &&
-				Array.isArray(config.deploy.ignore)
-			) {
-				mergedIgnorePatterns = [
-					...DEFAULT_IGNORE,
-					...config.deploy.ignore,
-				];
-				if (flags.debug) {
-					this.log(`📋 Merged ignore patterns from smss.json`);
+			if (config && typeof config === "object") {
+				loadedConfig = config;
+
+				if (
+					"deploy" in config &&
+					typeof config.deploy === "object" &&
+					config.deploy !== null &&
+					"ignore" in config.deploy &&
+					Array.isArray(config.deploy.ignore)
+				) {
+					mergedIgnorePatterns = [
+						...DEFAULT_IGNORE,
+						...(config.deploy.ignore as string[]),
+					];
+					if (flags.debug) {
+						this.log(`📋 Merged ignore patterns from smss.json`);
+					}
+				}
+
+				if ("targets" in config && Array.isArray(config.targets)) {
+					if (flags.debug && !flags.target) {
+						this.log(
+							`📋 Using deployment targets from config: ${(config.targets as string[]).join(", ")}`,
+						);
+					}
 				}
 			}
 		} catch (error) {
@@ -772,7 +1107,7 @@ deploy java and python folders
 		}
 
 		// Determine deployment targets
-		const deployTargets = this.getDeployTargets(flags);
+		const deployTargets = this.getDeployTargets(flags, loadedConfig);
 		const isFullDeploy = deployTargets === "all";
 
 		if (flags.debug) {
@@ -1120,27 +1455,51 @@ deploy java and python folders
 							this.log(`   • Target App: ${Env.APP}`);
 						}
 
-						const { pixelReturn } =
-							await insight.actions.run(deleteCommand);
+						try {
+							const { pixelReturn } =
+								await insight.actions.run(deleteCommand);
 
-						context.deleteResult = pixelReturn[0].output;
+							context.deleteResult = pixelReturn[0].output;
 
-						if (flags.verbose || flags.superVerbose) {
-							logWithTiming(
-								`✅ DeleteAsset Result: ${context.deleteResult}`,
-								startTime,
-							);
-						}
+							if (flags.verbose || flags.superVerbose) {
+								logWithTiming(
+									`✅ DeleteAsset Result: ${context.deleteResult}`,
+									startTime,
+								);
+							}
 
-						if (flags.superVerbose) {
-							this.log(`🔍 Delete Analysis:`);
-							this.log(`   • Result: ${context.deleteResult}`);
-							this.log(
-								`   • Result Type: ${typeof context.deleteResult}`,
-							);
-							this.log(
-								`   • Execution Time: ${Date.now() - startTime}ms`,
-							);
+							if (flags.superVerbose) {
+								this.log(`🔍 Delete Analysis:`);
+								this.log(
+									`   • Result: ${context.deleteResult}`,
+								);
+								this.log(
+									`   • Result Type: ${typeof context.deleteResult}`,
+								);
+								this.log(
+									`   • Execution Time: ${Date.now() - startTime}ms`,
+								);
+							}
+						} catch (error) {
+							const errorMsg =
+								(error as Error).message || String(error);
+							if (
+								errorMsg.includes(
+									"Could not find any of the files",
+								)
+							) {
+								// No assets to delete - this is fine (first deployment or already clean)
+								if (flags.verbose || flags.superVerbose) {
+									logWithTiming(
+										`ℹ️ No assets to delete (environment may be fresh)`,
+										startTime,
+									);
+								}
+								context.deleteResult = "no-assets-to-delete";
+							} else {
+								// Re-throw other errors
+								throw error;
+							}
 						}
 					} else {
 						if (flags.verbose || flags.superVerbose) {
@@ -1348,7 +1707,8 @@ deploy java and python folders
 		// Track deployment start time
 		const deploymentStartTime = Date.now();
 
-		tasks
+		// Return the promise chain so batch deployments can properly await completion
+		return tasks
 			.run()
 			.then((context) => {
 				const deploymentDuration = Date.now() - deploymentStartTime;

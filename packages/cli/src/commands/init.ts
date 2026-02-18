@@ -238,22 +238,43 @@ init (./src/commands/init.ts)
 					let content = {
 						app: "",
 						name: "",
+						targets: [],
+						ignore: [
+							"node_modules/**",
+							"**/.git/**",
+							"**/*.local",
+							"*.local",
+							".semoss-backups/**",
+							".semoss-deployments",
+							"smss.json",
+						],
+						deploy: {
+							batch: {},
+						},
 					};
 
 					if (configOptions) {
-						content = configOptions;
+						content = {
+							...content,
+							...configOptions,
+							// Merge deploy config if it exists
+							deploy: {
+								batch: {
+									...(configOptions.deploy?.batch || {}),
+									// Preserve any existing batch configs
+									...(content.deploy.batch || {}),
+								},
+							},
+						};
+
+						// write it
+						fs.writeFileSync(
+							configPath,
+							JSON.stringify(content, null, 4),
+						);
+
+						return true;
 					}
-
-					content.app = context.APP;
-					content.name = name;
-
-					// write it
-					fs.writeFileSync(
-						configPath,
-						JSON.stringify(content, null, 4),
-					);
-
-					return true;
 				},
 			},
 		]);

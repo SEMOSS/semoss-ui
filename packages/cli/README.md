@@ -64,7 +64,10 @@ This will:
 - Validate your environment variables
 - Create a new project on the server
 - Save the app ID to your `.env` file
-- Create a `smss.json` configuration file
+- Create a `smss.json` configuration file with:
+  - Default ignore patterns (node_modules, .git, etc.)
+  - Empty targets and batch sections ready to customize
+  - Template comments for batch deployment setup
 
 ### Option 2: Get a Head Start with a Template (create)
 
@@ -110,6 +113,171 @@ When ready to deploy:
 ```sh
 semoss deploy
 ```
+
+## Quick Setup (If you already have a .env file)
+
+If you already have a `.env` file with your SEMOSS server configuration (ENDPOINT, MODULE, ACCESS_KEY, SECRET_KEY, APP), you can quickly generate the `smss.json` configuration file:
+
+```bash
+# Generate smss.json with default targets and ignore patterns
+semoss config
+```
+
+This creates a ready-to-use configuration including:
+- Default ignore patterns (node_modules, .git, etc.)
+- Empty targets and batch sections you can customize
+- Template comments for batch deployment setup
+
+Then you're ready to deploy:
+
+```bash
+semoss deploy
+```
+
+## Configuration
+
+### Generate Configuration File
+
+Create a skeleton `smss.json` configuration file with all available options:
+
+```bash
+semoss config
+# or force overwrite if it already exists
+semoss config --force
+# or
+semoss config -f
+```
+
+This generates a configuration file with sections for:
+- **targets**: (Optional) Specific folders to deploy  
+- **ignore**: Patterns to exclude from deployments
+- **deploy.batch**: (Optional) Multi-instance deployment configurations
+
+**Example generated config:**
+
+```json
+{
+  "targets": [],
+  "ignore": [
+    "node_modules/**",
+    "**/.git/**",
+    "**/*.local",
+    "*.local",
+    ".semoss-backups/**",
+    ".semoss-deployments",
+    "smss.json"
+  ],
+  "deploy": {
+    "batch": {}
+  }
+}
+```
+
+### Configuring Batch Deployments
+
+Define multiple deployment environments in the `deploy.batch` section of `smss.json` to deploy to multiple instances with a single command.
+
+Each batch entry requires:
+- `endpoint` - Server URL 
+- `module` - Module path (e.g., `/Monolith`, `/my-insight`)
+- `accessKey` - API access key
+- `secretKey` - API secret key  
+- `app` - Application UUID on that instance
+
+**Example batch configuration:**
+
+```json
+{
+  "deploy": {
+    "batch": {
+      "dev": {
+        "endpoint": "https://dev.example.com",
+        "module": "/Monolith",
+        "accessKey": "dev-access-key",
+        "secretKey": "dev-secret-key",
+        "app": "d2ee332f-e686-4b5d-a375-4dc9f6f82fae"
+      },
+      "staging": {
+        "endpoint": "https://staging.example.com",
+        "module": "/Monolith",
+        "accessKey": "staging-access-key",
+        "secretKey": "staging-secret-key",
+        "app": "06e85853-8cb4-4973-a616-85f7589a4936"
+      },
+      "prod": {
+        "endpoint": "https://prod.example.com",
+        "module": "/Monolith",
+        "accessKey": "prod-access-key",
+        "secretKey": "prod-secret-key",
+        "app": "f4a1c2d3-e5f6-4b7c-8d9e-1f2a3b4c5d6e"
+      }
+    }
+  }
+}
+```
+
+Then deploy using:
+
+```bash
+# Deploy to all instances
+semoss deploy --batch all
+
+# Deploy to specific instance
+semoss deploy --batch prod
+
+# Deploy to multiple instances
+semoss deploy --batch dev,staging
+
+# Deploy with other flags
+semoss deploy --batch prod -t java --verbose
+```
+
+### Configuring Targets
+
+Set default deployment targets in `smss.json`:
+
+```json
+{
+  "targets": ["java", "py", "portals"]
+}
+```
+
+Then deploying without flags will use these targets:
+
+```bash
+# Uses targets from config: java, py, portals
+semoss deploy
+
+# Override with CLI flag
+semoss deploy -t java
+```
+
+**Priority (highest to lowest):**
+1. CLI flag: `semoss deploy -t java`
+2. Config file: `targets` array in smss.json
+3. Full deployment: all files
+
+### Configuring Ignore Patterns
+
+Patterns in the **ignore** array are excluded from all deployments (glob syntax supported):
+
+```json
+{
+  "ignore": [
+    "node_modules/**",
+    "**/.git/**",
+    "**/*.local",
+    "dist/**",
+    "build/**"
+  ]
+}
+```
+
+Common patterns:
+- `node_modules/**` - Exclude all node_modules
+- `**/.local` - Exclude .local files in any directory
+- `.semoss-*` - Exclude CLI backup and history artifacts
+- `*.test.js` - Exclude test files
 
 ## Deployment
 
@@ -187,6 +355,18 @@ By default, these files/folders are excluded from deployment:
 - `**/vite.config.ts` & `**/vite.config.js`
 - `**/vitest.config.ts` & `**/vitest.config.js`
 
+## Files to Gitignore
+
+These files should **never** be committed to version control as they contain sensitive configuration:
+
+- `.env` - Environment variables with API keys
+- `.env.local` - Local environment overrides
+- `smss.json` - Configuration file with batch deployment credentials
+- `.semoss-backups/**` - Local backup files
+- `.semoss-deployments` - Deployment history
+
+**Automatic inclusion:** If you use `semoss create` to initialize your project, these entries are automatically included in the generated `.gitignore` file.
+
 ## Available Flags
 
 ### General Options
@@ -220,6 +400,16 @@ By default, these files/folders are excluded from deployment:
 |------|-------|-------------|---------|
 | `--dry-run` | | Preview deployment without actually deploying | `semoss deploy --dry-run` |
 | `--rollback` | `-r` | Rollback to previous deployment | `semoss deploy --rollback` |
+| `--batch` | `-B` | Deploy to multiple instances from config | `semoss deploy --batch prod` |
+
+### Instance Overrides (Batch Deployments)
+
+| Flag | Description | Used By |
+|------|-------------|---------|
+| `--endpoint` | Override server endpoint | Batch deployments |
+| `--module` | Override module path | Batch deployments |
+| `--access-key` | Override access key | Batch deployments |
+| `--secret-key` | Override secret key | Batch deployments |
 
 ## Deployment Behavior
 
@@ -329,6 +519,93 @@ semoss deploy -r
 # NOT just the java folder, even though only java was targeted last time
 semoss deploy -t java --rollback  # Still restores full previous deployment
 ```
+
+### Batch Deployments to Multiple Instances
+
+> **⚠️ IMPORTANT:** Batch deployments only work if projects are already initialized and hosted on their respective SEMOSS server instances. Each instance must have its own running SEMOSS server with the application already set up. Batch cannot create or initialize applications—only deploy to existing ones.
+
+Deploy the same code to multiple instances (dev, staging, prod, etc.) from a single command:
+
+```bash
+# Deploy to all batch instances defined in config
+semoss deploy --batch all
+
+# Deploy to specific instances
+semoss deploy --batch prod
+semoss deploy --batch dev,staging
+
+# Deploy specific target only to an instance
+semoss deploy --batch prod -t java
+
+# Dry-run batch deployment
+semoss deploy --batch staging --dry-run
+
+# Verbose batch deployment
+semoss deploy --batch dev --verbose
+```
+
+**Batch Configuration:**
+
+Define batch instances in your `smss.json` under `deploy.batch`:
+
+```json
+{
+  "deploy": {
+    "batch": {
+      "dev": {
+        "endpoint": "https://dev-server.com",
+        "module": "/dev-insight",
+        "accessKey": "dev-key-here",
+        "secretKey": "dev-secret-here",
+        "app": "dev-app-id"
+      },
+      "staging": {
+        "endpoint": "https://staging-server.com",
+        "module": "/staging-insight",
+        "accessKey": "staging-key-here",
+        "secretKey": "staging-secret-here",
+        "app": "staging-app-id"
+      },
+      "prod": {
+        "endpoint": "https://prod-server.com",
+        "module": "/prod-insight",
+        "accessKey": "prod-key-here",
+        "secretKey": "prod-secret-here",
+        "app": "prod-app-id"
+      }
+    }
+  }
+}
+```
+
+**Configuration Fields:**
+- `endpoint` - Server endpoint URL (e.g., `https://server.com` or `https://server.com/path`)
+- `module` - Application module path (e.g., `/Monolith` or `/my-insight`)
+- `accessKey` - API access key for this instance
+- `secretKey` - API secret key for this instance
+- `app` - Application UUID for this instance
+
+**Batch Deployment Behavior:**
+- ✅ Deploys **the same code** to each instance **sequentially**
+- ✅ Each instance configuration specifies its own endpoint, module, credentials, and app ID
+- ✅ Can combine with `--target` flag to deploy specific folders only
+- ✅ Supports all other flags: `--dry-run`, `--verbose`, `--show-timing`, etc.
+- ✅ Shows progress for each instance deployment with timestamps
+- ✅ **Continues deployment even if one instance fails**
+- ✅ Displays summary at end showing all successes and failures:
+  ```
+  ============================================================
+  📋 Batch Deployment Summary
+  ============================================================
+  ✅ Successful: 2/3
+     • "dev" (5234ms)
+     • "staging" (4891ms)
+  ❌ Failed: 1/3
+     • "prod": Connection timeout
+  ============================================================
+  ```
+- ✅ Full backup/restore cycle for each instance
+
 
 ### Deployment History
 
