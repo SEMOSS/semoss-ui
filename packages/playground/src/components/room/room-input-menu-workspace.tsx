@@ -78,7 +78,7 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 			<DropdownMenuSubTrigger>
 				<ComputerIcon />
 				<span className="flex-1">
-					{workspace ? workspace.project_name : "Select Workspace"}
+					{workspace ? workspace.project_name : "Select Agent"}
 				</span>
 				{workspace ? (
 					<div className="px-1">
