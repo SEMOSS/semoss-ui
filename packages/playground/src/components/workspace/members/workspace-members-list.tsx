@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getProjectUsers, getUserProjectPermission } from "@semoss/shared";
+import {
+	editProjectUserPermissions,
+	getProjectUsers,
+	getUserProjectPermission,
+} from "@semoss/shared";
 import {
 	Button,
 	Dialog,
@@ -13,10 +17,7 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
-import {
-	editProjectUserPermissions,
-	removeProjectUserPermissions,
-} from "@/api";
+import { removeProjectUserPermissions } from "@/api";
 import { useChat } from "@/hooks";
 import type { User } from "@/types";
 import { WorkspaceMemberRow } from "./workspace-member-row";

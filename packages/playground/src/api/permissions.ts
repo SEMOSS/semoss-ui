@@ -44,22 +44,6 @@ const postApi = async (
 };
 
 /**
- * Edit user permissions for a project
- * @param projectId - The project ID
- * @param users - Array of users with their updated permissions
- * @returns Whether the operation was successful
- */
-export const editProjectUserPermissions = async (
-	projectId: string,
-	users: PostUser[],
-) =>
-	await postApi(
-		"editProjectUserPermissions",
-		projectId,
-		`&userpermissions=${encodeURIComponent(JSON.stringify(users))}`,
-	);
-
-/**
  * Remove user permissions from a project
  * @param projectId - The project ID
  * @param users - Array of user IDs to remove

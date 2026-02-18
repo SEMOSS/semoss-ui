@@ -1,9 +1,9 @@
-import type { AxiosResponse } from "axios";
 import { Edit, Eye, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	addProjectUserPermissions,
+	editProjectUserPermissions,
 	getProjectUsers,
 	getProjectUsersNoCredentials,
 } from "@semoss/shared";
@@ -46,7 +46,6 @@ import {
 import {
 	addEngineUserPermissions,
 	editEngineUserPermissions,
-	editProjectUserPermissions,
 	getEngineUsers,
 	getEngineUsersNoCredentials,
 } from "@/api";
@@ -338,7 +337,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| boolean
 				| {
 						response: Response;
 						data: {
@@ -361,9 +360,9 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				);
 			} else if (type === "PROJECT") {
 				response = await editProjectUserPermissions(
-					adminMode,
 					id,
 					requests,
+					adminMode,
 				);
 			}
 
@@ -372,7 +371,9 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 			}
 
 			// ignore if there is no response
-			if (response.data.success) {
+			if (
+				typeof response === "boolean" ? response : response.data.success
+			) {
 				toast.success("Successfully updated user permissions");
 				success = true;
 				onChange();

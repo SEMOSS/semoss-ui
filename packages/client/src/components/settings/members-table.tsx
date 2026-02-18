@@ -1,4 +1,3 @@
-import type { AxiosResponse } from "axios";
 import {
 	ArrowDown,
 	ArrowUp,
@@ -9,7 +8,10 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
-import type { getUserProjectPermission } from "@semoss/shared";
+import {
+	editProjectUserPermissions,
+	type getUserProjectPermission,
+} from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -35,11 +37,7 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import {
-	editEngineUserPermissions,
-	editProjectUserPermissions,
-	type getUserEnginePermission,
-} from "@/api";
+import { editEngineUserPermissions, type getUserEnginePermission } from "@/api";
 import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
@@ -347,7 +345,7 @@ export const MembersTable = (props: MembersTableProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| boolean
 				| {
 						response: Response;
 						data: {
@@ -370,9 +368,9 @@ export const MembersTable = (props: MembersTableProps) => {
 				);
 			} else if (type === "PROJECT") {
 				response = await editProjectUserPermissions(
-					adminMode,
 					id,
 					requests,
+					adminMode,
 				);
 			}
 
@@ -381,7 +379,9 @@ export const MembersTable = (props: MembersTableProps) => {
 			}
 
 			// ignore if there is no response
-			if (response.data.success) {
+			if (
+				typeof response === "boolean" ? response : response.data.success
+			) {
 				toast.success("Successfully updated user permissions");
 
 				// refresh the members
