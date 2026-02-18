@@ -2,7 +2,11 @@ import type { AxiosResponse } from "axios";
 import { Edit, Eye, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
-import { getProjectUsers, getProjectUsersNoCredentials } from "@semoss/shared";
+import {
+	addProjectUserPermissions,
+	getProjectUsers,
+	getProjectUsersNoCredentials,
+} from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -41,7 +45,6 @@ import {
 } from "@semoss/ui/next";
 import {
 	addEngineUserPermissions,
-	addProjectUserPermissions,
 	editEngineUserPermissions,
 	editProjectUserPermissions,
 	getEngineUsers,
@@ -435,13 +438,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
-				| {
-						response: Response;
-						data: {
-							success: boolean;
-						};
-				  }
+				| Awaited<ReturnType<typeof editEngineUserPermissions>>
+				| boolean
 				| null = null;
 			if (
 				type === "DATABASE" ||
@@ -458,9 +456,9 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				);
 			} else if (type === "PROJECT") {
 				response = await addProjectUserPermissions(
-					adminMode,
 					id,
 					requests as string[],
+					adminMode,
 				);
 			}
 
@@ -469,7 +467,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 			}
 
 			// ignore if there is no response
-			if (response.data.success) {
+			if (
+				typeof response === "boolean"
+					? response
+					: response.data?.success
+			) {
 				toast.success("Successfully added member permissions");
 				success = true;
 			} else {

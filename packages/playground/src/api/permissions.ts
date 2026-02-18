@@ -44,22 +44,6 @@ const postApi = async (
 };
 
 /**
- * Add user permissions to a project
- * @param projectId - The project ID
- * @param users - Array of users with their permissions to add
- * @returns Whether the operation was successful
- */
-export const addProjectUserPermissions = async (
-	projectId: string,
-	users: PostUser[],
-) =>
-	await postApi(
-		"addProjectUserPermissions",
-		projectId,
-		`&userpermissions=${encodeURIComponent(JSON.stringify(users))}`,
-	);
-
-/**
  * Edit user permissions for a project
  * @param projectId - The project ID
  * @param users - Array of users with their updated permissions

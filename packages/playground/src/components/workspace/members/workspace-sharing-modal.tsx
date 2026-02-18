@@ -1,6 +1,10 @@
 import { ChevronsUpDownIcon, UserPlusIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { getProjectUsers, getProjectUsersNoCredentials } from "@semoss/shared";
+import {
+	addProjectUserPermissions,
+	getProjectUsers,
+	getProjectUsersNoCredentials,
+} from "@semoss/shared";
 import {
 	Button,
 	Command,
@@ -23,7 +27,7 @@ import {
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
-import { addProjectUserPermissions, type PostUser } from "@/api";
+import type { PostUser } from "@/api";
 import type { User } from "@/types";
 import { PermissionDropdown } from "./permission-dropdown";
 import { WorkspaceMemberRow } from "./workspace-member-row";
