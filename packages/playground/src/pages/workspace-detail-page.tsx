@@ -67,9 +67,6 @@ export const WorkspaceDetailPage = observer(() => {
 	// Pagination state - TODO: Wire up to child components
 	const pagination = usePagination();
 
-	// Pagination state - TODO: Wire up to child components
-	const pagination = usePagination();
-
 	const debouncedSearch = useDebouncedValue(search);
 
 	// Fetch workspace details
