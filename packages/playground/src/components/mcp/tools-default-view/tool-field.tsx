@@ -10,6 +10,7 @@ import {
 	SelectValue,
 	Textarea,
 } from "@semoss/ui/next";
+import { capitalizeWords } from "@/utility";
 import { JSONEditor } from "./json-editor";
 
 export interface ToolFieldProps<T = unknown> {
@@ -49,18 +50,6 @@ export interface ToolFieldProps<T = unknown> {
 	/** Callback fired when the field value changes */
 	onChange: (value: T) => void;
 }
-
-/**
- * Converts a snake_case or space-separated string to Title Case
- *
- * @param str - The string to capitalize
- * @returns The capitalized string
- */
-const capitalizeWords = (str: string) =>
-	str
-		.split(/[_\s]+/) // Split by underscores or spaces
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-		.join(" "); // Join with spaces for better readability
 
 /**
  * A dynamic form field component that renders different input types based on JSON schema
@@ -147,7 +136,7 @@ export const ToolField = ({
 							placeholder={`Enter ${displayName}`}
 							rows={4}
 							className="w-full"
-							disabled={disabled}
+							readOnly={disabled}
 						/>
 						{fieldSchema.description && (
 							<p className="text-muted-foreground text-sm">
@@ -176,7 +165,7 @@ export const ToolField = ({
 						onChange={(e) => onChange(e.target.value)}
 						placeholder={`Enter ${displayName}`}
 						className="w-full"
-						disabled={disabled}
+						readOnly={disabled}
 					/>
 					{fieldSchema.description && (
 						<p className="text-muted-foreground text-sm">
@@ -184,9 +173,9 @@ export const ToolField = ({
 						</p>
 					)}
 				</div>
-				// Numeric fields (number or integer)
 			);
 
+		// Numeric fields (number or integer)
 		case "number":
 		case "integer":
 			return (
@@ -213,7 +202,7 @@ export const ToolField = ({
 						min={fieldSchema.minimum}
 						max={fieldSchema.maximum}
 						className="w-full"
-						disabled={disabled}
+						readOnly={disabled}
 					/>
 					{fieldSchema.description && (
 						<p className="text-muted-foreground text-sm">
@@ -285,7 +274,7 @@ export const ToolField = ({
 						placeholder="Enter comma-separated values"
 						rows={2}
 						className="w-full"
-						disabled={disabled}
+						readOnly={disabled}
 					/>
 					{fieldSchema.description && (
 						<p className="text-muted-foreground text-sm">

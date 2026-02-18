@@ -5,6 +5,7 @@ import {
 	MessagesSquareIcon,
 	PlusIcon,
 	SearchIcon,
+	UsersRound,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -12,6 +13,12 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuGroup,
@@ -29,9 +36,15 @@ import {
 	useDebouncedValue,
 } from "@semoss/ui/next";
 import logoImage from "@/assets/img/logo.svg";
-import { WorkspaceChatList, WorkspaceMCPList } from "@/components";
+import {
+	PaginationButtons,
+	WorkspaceChatList,
+	WorkspaceMCPList,
+	WorkspaceMembersList,
+} from "@/components";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/use-chat";
+import { usePagination } from "@/hooks/use-pagination";
 import type { Workspace } from "@/types";
 
 /**
@@ -49,6 +62,10 @@ export const WorkspaceDetailPage = observer(() => {
 
 	const [tab, setTab] = useState<string>("chats");
 	const [search, setSearch] = useState<string>("");
+	const [deleteModal, setDeleteModal] = useState<boolean>(false);
+
+	// Pagination state - TODO: Wire up to child components
+	const pagination = usePagination();
 
 	const debouncedSearch = useDebouncedValue(search);
 
@@ -59,30 +76,32 @@ export const WorkspaceDetailPage = observer(() => {
 			data: null,
 			onError: (_d, e) => {
 				toast.error(
-					`Failed to load workspace: ${e instanceof Error ? e.message : "Unknown error"}`,
+					`Failed to load agent: ${e instanceof Error ? e.message : "Unknown error"}`,
 				);
 			},
 		},
 	);
 
 	// set the breadcrumbs
-	useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: "Workspace",
-			path: "/workspace",
-		},
-		{
-			name:
-				getWorkspace.status === "SUCCESS"
-					? getWorkspace.data.name
-					: "Loading",
-			path: `/workspace/${workspaceId}`,
-		},
-	]);
+	useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: "Home",
+				path: "/",
+			},
+			{
+				name: "Agent",
+				path: "/agent",
+			},
+			{
+				name:
+					getWorkspace.status === "SUCCESS"
+						? getWorkspace.data.name
+						: "Loading",
+				path: `/agent/${workspaceId}`,
+			},
+		],
+	});
 
 	if (getWorkspace.status === "LOADING" || isLoading) {
 		return (
@@ -93,12 +112,12 @@ export const WorkspaceDetailPage = observer(() => {
 	}
 
 	if (getWorkspace.status === "ERROR") {
-		return <Navigate to="/workspace" />;
+		return <Navigate to="/agent" />;
 	}
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
-			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-12 px-12 pt-8 pb-4">
+			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4">
 				<div className="flex flex-row gap-2">
 					<div className="items-center text-2xl">
 						<img
@@ -128,14 +147,14 @@ export const WorkspaceDetailPage = observer(() => {
 						<DropdownMenuContent align="end">
 							<DropdownMenuGroup>
 								<DropdownMenuItem asChild>
-									<Link to={`/workspace/${workspaceId}/edit`}>
+									<Link to={`/agent/${workspaceId}/edit`}>
 										Edit
 									</Link>
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									onClick={async (e) => {
 										e.stopPropagation();
-
+										setDeleteModal(true);
 										setIsLoading(true);
 										try {
 											await chat.deleteWorkspace(
@@ -143,12 +162,12 @@ export const WorkspaceDetailPage = observer(() => {
 											);
 
 											// go to the workspace
-											navigate("/workspace");
+											navigate("/agent");
 										} catch (e) {
 											toast.error(
 												e instanceof Error
 													? e.message
-													: "Failed to delete workspace",
+													: "Failed to delete agent",
 											);
 										} finally {
 											setIsLoading(false);
@@ -170,9 +189,9 @@ export const WorkspaceDetailPage = observer(() => {
 				<Tabs
 					value={tab}
 					onValueChange={(value) => setTab(value)}
-					className="flex h-full w-full flex-1 flex-col items-start overflow-hidden rounded-xl border-border bg-card shadow-sm"
+					className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden"
 				>
-					<div className="flex w-full flex-row gap-2 border-border bg-primary-foreground p-4">
+					<div className="flex flex-row items-center justify-between gap-4">
 						<TabsList>
 							<TabsTrigger value="chats">
 								<MessagesSquareIcon />
@@ -186,21 +205,11 @@ export const WorkspaceDetailPage = observer(() => {
 								<HammerIcon />
 								Toolbox
 							</TabsTrigger>
+							<TabsTrigger value="members">
+								<UsersRound />
+								Members
+							</TabsTrigger>
 						</TabsList>
-						<InputGroup className="bg-background">
-							<InputGroupInput
-								placeholder="Search"
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-							/>
-							<InputGroupAddon>
-								<SearchIcon />
-							</InputGroupAddon>
-						</InputGroup>
-						{/* <Button variant="outline">
-								<ListFilterIcon />
-								Filter
-							</Button> */}
 						<Button
 							variant="default"
 							onClick={() => {
@@ -211,48 +220,131 @@ export const WorkspaceDetailPage = observer(() => {
 							New Chat
 						</Button>
 					</div>
+					<div className="flex min-h-0 w-full flex-1 flex-col items-start overflow-hidden rounded-xl border border-border bg-card">
+						<div className="flex w-full flex-row gap-2 border-border border-b bg-primary-foreground p-4">
+							<InputGroup className="bg-background">
+								<InputGroupInput
+									placeholder="Search"
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+								/>
+								<InputGroupAddon>
+									<SearchIcon />
+								</InputGroupAddon>
+							</InputGroup>
+							{/* Tab-specific actions go here */}
+							{tab === "members" ? (
+								<Button variant="outline">
+									<PlusIcon />
+									Add members
+								</Button>
+							) : null}
+						</div>
 
-					<TabsContent
-						value="chats"
-						className="w-full overflow-hidden"
-					>
-						{tab === "chats" && (
-							<WorkspaceChatList
-								workspaceId={workspaceId}
-								search={debouncedSearch}
-							/>
+						<TabsContent
+							value="chats"
+							className="w-full overflow-hidden"
+						>
+							{tab === "chats" && (
+								<WorkspaceChatList
+									workspaceId={workspaceId}
+									search={debouncedSearch}
+								/>
+							)}
+						</TabsContent>
+						<TabsContent
+							value="knowledge"
+							className="w-full overflow-hidden"
+						>
+							{tab === "knowledge" && (
+								<WorkspaceMCPList
+									type="KNOWLEDGE"
+									workspaceId={workspaceId}
+									search={debouncedSearch}
+								/>
+							)}
+						</TabsContent>
+						<TabsContent
+							value="toolbox"
+							className="w-full overflow-hidden"
+						>
+							{tab === "toolbox" && (
+								<WorkspaceMCPList
+									type="TOOLBOX"
+									workspaceId={workspaceId}
+									search={debouncedSearch}
+								/>
+							)}
+						</TabsContent>
+						<TabsContent
+							value="members"
+							className="w-full overflow-hidden"
+						>
+							{tab === "members" && (
+								<WorkspaceMembersList
+									workspaceId={workspaceId}
+									search={debouncedSearch}
+									paginationControl={pagination}
+								/>
+							)}
+						</TabsContent>
+
+						{tab === "members" && (
+							<div className="flex w-full flex-row items-center justify-end gap-2 border-border border-t bg-primary-foreground p-4">
+								<PaginationButtons {...pagination} />
+							</div>
 						)}
-					</TabsContent>
-					<TabsContent
-						value="knowledge"
-						className="w-full overflow-hidden"
-					>
-						{tab === "knowledge" && (
-							<WorkspaceMCPList
-								type="KNOWLEDGE"
-								mcp={getWorkspace.data?.mcp.filter(
-									(mcp) => mcp.type === "VECTOR",
-								)}
-								search={debouncedSearch}
-							/>
-						)}
-					</TabsContent>
-					<TabsContent
-						value="toolbox"
-						className="w-full overflow-hidden"
-					>
-						{tab === "toolbox" && (
-							<WorkspaceMCPList
-								type="TOOLBOX"
-								mcp={getWorkspace.data?.mcp.filter(
-									(mcp) => mcp.type !== "VECTOR",
-								)}
-								search={debouncedSearch}
-							/>
-						)}
-					</TabsContent>
+					</div>
 				</Tabs>
 			</div>
+			<Dialog open={deleteModal} onOpenChange={setDeleteModal}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Are you sure?</DialogTitle>
+						<DialogDescription>
+							This action is irreversable. This will permanentely
+							delete the {getWorkspace?.data?.name} workspace.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={(e) => {
+								e.stopPropagation();
+								setDeleteModal(false);
+							}}
+							data-testid={`workspace-detail-page--cancel-delete-btn`}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							data-testid={`workspace-detail-page--confirm-delete-btn`}
+							onClick={async (e) => {
+								e.stopPropagation();
+
+								setIsLoading(true);
+								try {
+									await chat.deleteWorkspace(workspaceId);
+
+									// go to the workspace
+									navigate("/workspace");
+								} catch (e) {
+									toast.error(
+										e instanceof Error
+											? e.message
+											: "Failed to delete workspace",
+									);
+								} finally {
+									setIsLoading(false);
+								}
+							}}
+						>
+							Delete
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 });
