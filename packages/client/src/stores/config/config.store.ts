@@ -142,6 +142,11 @@ interface ConfigStoreInterface {
 		adminOnlyVectorDelete: boolean;
 		adminOnlyVectorSetDiscoverable: boolean;
 		adminOnlyVectorSetPublic: boolean;
+		adminOnlyGuardrailAdd: boolean;
+		adminOnlyGuardrailAddAccess: boolean;
+		adminOnlyGuardrailDelete: boolean;
+		adminOnlyGuardrailSetDiscoverable: boolean;
+		adminOnlyGuardrailSetPublic: boolean;
 
 		[key: string]: unknown;
 	};
@@ -212,6 +217,11 @@ export class ConfigStore {
 			adminOnlyVectorDelete: false,
 			adminOnlyVectorSetDiscoverable: false,
 			adminOnlyVectorSetPublic: false,
+			adminOnlyGuardrailAdd: false,
+			adminOnlyGuardrailAddAccess: false,
+			adminOnlyGuardrailDelete: false,
+			adminOnlyGuardrailSetDiscoverable: false,
+			adminOnlyGuardrailSetPublic: false,
 		},
 	};
 	private _generalReactors: Array<string> = [];
@@ -336,6 +346,7 @@ export class ConfigStore {
 			MODEL: "Model",
 			STORAGE: "Storage",
 			VECTOR: "Vector",
+			GUARDRAIL: "Guardrail",
 		} as const;
 
 		const operationMap = {
