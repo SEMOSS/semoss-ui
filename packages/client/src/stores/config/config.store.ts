@@ -30,6 +30,7 @@ interface ConfigStoreInterface {
 		name: string;
 		email: string;
 		admin: boolean;
+		meta: unknown;
 	};
 	/** Native mode */
 	isNative: boolean;
@@ -163,6 +164,7 @@ export class ConfigStore {
 			name: "",
 			email: "",
 			admin: false,
+			meta: {},
 		},
 		config: {
 			databaseMetaKeys: [],
@@ -244,6 +246,17 @@ export class ConfigStore {
 	 */
 	get config() {
 		return this._store.config;
+	}
+
+	/**
+	 * Get the default model ID (UUID) from user meta
+	 */
+	get defaultModel(): string {
+		if (this._store.user.meta && typeof this._store.user.meta === 'object') {
+			const metaValues = Object.values(this._store.user.meta);
+			return metaValues.length > 0 ? (metaValues[0] as string) : "";
+		}
+		return "";
 	}
 
 	/**
@@ -434,6 +447,7 @@ export class ConfigStore {
 							email: string;
 							admin: boolean;
 							userEpoch: string;
+							meta: unknown;
 						};
 					},
 				]
@@ -457,27 +471,34 @@ export class ConfigStore {
 					email: "",
 					userEpoch: "",
 					admin: false,
+					meta: {},
 				};
 
-				// TODO: remove userEpoch from the backend
-				if (output.userEpoch) {
-					delete output.userEpoch;
-				}
+				// Helper function to extract first element from array values in meta
+				const transformMeta = (meta: unknown) => {
+					if (!meta || typeof meta !== 'object') return null;
+					return Object.entries(meta).reduce((acc, [key, value]) => {
+						acc[key] = Array.isArray(value) ? value[0] : value;
+						return acc;
+					}, {} as Record<string, unknown>);
+				};
 
 				// get the user based on provider
 				if (output.SAML) {
-					user = output.SAML;
+					user = { ...output.SAML, meta: transformMeta(output.SAML?.meta) };
 				} else if (output.NATIVE) {
-					user = output.NATIVE;
+					user = { ...output.NATIVE, meta: transformMeta(output.NATIVE?.meta) };
 					this._store.isNative = true;
 				} else if (Object.keys(output).length > 0) {
 					// This is a hack...since we don't have a single user
-					user = output[Object.keys(output)[0]];
+					const firstKey = Object.keys(output)[0];
+					user = { ...output[firstKey], meta: transformMeta(output[firstKey]?.meta) };
 				}
 
 				this._store.user.id = user.id || "";
 				this._store.user.name = user.name || "";
 				this._store.user.email = user.email || "";
+				this._store.user.meta = user.meta || {};
 				this._store.userEpoch = user.userEpoch;
 
 				this._store.user.admin = isAdmin;
@@ -487,7 +508,6 @@ export class ConfigStore {
 			});
 		} catch (error) {
 			console.error(error);
-
 			runInAction(() => {
 				// set the status as an error
 				this._store.status = "ERROR";
@@ -517,6 +537,7 @@ export class ConfigStore {
 				id: "",
 				name: "",
 				email: "",
+				meta: {},
 			};
 		});
 
@@ -542,6 +563,7 @@ export class ConfigStore {
 				id: "",
 				name: "",
 				email: "",
+				meta: {},
 			};
 		});
 
@@ -596,6 +618,7 @@ export class ConfigStore {
 				id: "",
 				name: "",
 				email: "",
+				meta: {},
 			};
 		});
 
@@ -643,6 +666,7 @@ export class ConfigStore {
 				id: "",
 				name: "",
 				email: "",
+				meta: {},
 			};
 		});
 
@@ -671,6 +695,7 @@ export class ConfigStore {
 				id: "",
 				name: "",
 				email: "",
+				meta: {},
 			};
 		});
 
@@ -695,6 +720,7 @@ export class ConfigStore {
 					id: "",
 					name: "",
 					email: "",
+					meta: {},
 				};
 				this._store.status = "MISSING AUTHENTICATION";
 			});

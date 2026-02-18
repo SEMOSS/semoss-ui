@@ -863,6 +863,38 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
 	return response.data;
 };
 
+export const setUserMetadata = async (
+	metaKey: string,
+	metaValue: string,
+) => {
+	const url = `${Env.MODULE}/api/auth/user/setUserMetadata`;
+	const response = await post<boolean>(
+		url,
+		{
+			metaKey,
+			metaValue,
+		},
+		{},
+	).catch((e) => {
+		throw Error(e);
+	});
+	return response;
+};
+
+// export const getUserMetadata = async (metaKey: string) => {
+// 	const url = `${Env.MODULE}/api/auth/user/getUserMetadata`;
+// 	const response = await post<string>(
+// 		url,
+// 		{
+// 			metaKey,
+// 		},
+// 		{},
+// 	).catch((e) => {
+// 		throw Error(e);
+// 	});
+// 	return response;
+// };
+
 const processPostData = (data: unknown) => {
 	const postRecordData: Record<string, unknown> = {};
 	Object.keys(data).forEach((item) => {

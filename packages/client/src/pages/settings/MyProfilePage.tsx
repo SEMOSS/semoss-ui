@@ -5,7 +5,8 @@ import {
 	KeyboardArrowDown,
 	KeyboardArrowUp,
 } from "@mui/icons-material";
-import { useState } from "react";
+import { runInAction } from "mobx";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
 	Alert,
@@ -17,6 +18,7 @@ import {
 	LoadingScreen,
 	Modal,
 	Paper,
+	Select,
 	Stack,
 	styled,
 	Table,
@@ -28,8 +30,9 @@ import {
 	createUserAccessKey,
 	deleteUserAccessKeys,
 	editMemberInfo,
+	setUserMetadata,
 } from "@/api/auth";
-import { useAPI, useRootStore } from "@/hooks";
+import { useAPI, useRootStore, useSettings } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./ChangePasswordModal";
 
@@ -175,6 +178,11 @@ interface CreateAccessKeyForm {
 	PLACEHOLDER: string;
 }
 
+interface Engine {
+	app_id: string;
+	app_name: string;
+}
+
 interface EditUserInfoForm {
 	NAME: string;
 	USERNAME: string;
@@ -185,8 +193,9 @@ interface EditUserInfoForm {
 export const MyProfilePage = () => {
 	const notification = useNotification();
 	const { configStore } = useRootStore();
-	const { email, id, name} = configStore.store.user;
+	const { email, id, name } = configStore.store.user;
 	const { isNative } = configStore.store;
+	const { adminMode } = useSettings();
 
 	// track the models
 	const [addModal, setAddModal] = useState(false);
@@ -197,6 +206,13 @@ export const MyProfilePage = () => {
 
 	// get the keys
 	const getUserAccessKeys = useAPI(["getUserAccessKeys"]);
+
+	// get engines/models
+	const getEngines = useAPI(["getEngines", adminMode, "", "MODEL"]);
+
+	// track selected default model
+	const [selectedDefaultModel, setSelectedDefaultModel] =
+		useState<string>("");
 
 	// NATIVE Login USERID must match Username
 	const logins = configStore.store.config.logins;
@@ -235,6 +251,23 @@ export const MyProfilePage = () => {
 
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
 	const [isPySdkOpen, setIsPySdkOpen] = useState(false);
+
+	const engines =
+		getEngines.status === "SUCCESS" && Array.isArray(getEngines.data)
+			? (getEngines.data as Engine[])
+			: [];
+
+	useEffect(() => {
+		if (configStore.defaultModel && engines.length > 0) {
+			// defaultModel now returns the UUID value, find the engine with matching app_id
+			const matchingEngine = engines.find(
+				(e) => e.app_id === configStore.defaultModel,
+			);
+			if (matchingEngine) {
+				setSelectedDefaultModel(matchingEngine.app_id);
+			}
+		}
+	}, [configStore.defaultModel, engines]);
 
 	/**
 	 * Submit edit profile info
@@ -281,6 +314,59 @@ export const MyProfilePage = () => {
 				color: "error",
 				message: "Error editing profile information",
 			});
+		}
+	};
+
+	/**
+	 * Handle selecting a default model
+	 */
+	const handleSelectModel = async (modelId: any) => {
+		try {
+			const selectedAppId = modelId.target.value;
+			setSelectedDefaultModel(selectedAppId);
+
+			if (!selectedAppId) {
+				return;
+			}
+
+			// Find the selected engine
+			const selectedEngine = engines.find(
+				(e) => e.app_id === selectedAppId,
+			);
+			if (!selectedEngine) {
+				throw new Error("Selected model not found");
+			}
+
+			// Update the store's meta to reflect the new default model
+			// Clear existing meta and add only the selected model
+			runInAction(() => {
+				configStore.store.user.meta = {
+					[selectedEngine.app_name]: selectedAppId,
+				};
+			});
+
+			// Send the app_id (UUID) to the API
+			await setUserMetadata("text-generation-model", selectedAppId);
+
+			
+
+			notification.add({
+				color: "success",
+				message: "Default model saved successfully",
+			});
+		} catch (e) {
+			setSelectedDefaultModel(""); // revert on error
+			if (e instanceof Error) {
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
+			} else {
+				notification.add({
+					color: "error",
+					message: "Error saving default model",
+				});
+			}
 		}
 	};
 
@@ -644,7 +730,50 @@ export const MyProfilePage = () => {
 					</GridItem>
 				</Grid>
 			</StyledPaper>
-
+			<StyledPaper>
+				<MonolithGrid container spacing={3}>
+					<CustomGridItem sm={11}>
+						{/* <Typography variant="h6">Select a Default Model</Typography> */}
+						<Typography variant="h6" sx={{ marginTop: "8px" }}>
+							Choose which AI model will be used by default for
+							your requests
+						</Typography>
+					</CustomGridItem>
+				</MonolithGrid>
+				<Grid container spacing={3} sx={{ marginTop: "16px" }}>
+					<GridItem sm={8}>
+						{getEngines.status === "INITIAL" ||
+						getEngines.status === "LOADING" ? (
+							<Typography variant={"button"}>
+								Loading models...
+							</Typography>
+						) : getEngines.status === "ERROR" ? (
+							<Typography color="error" variant={"button"}>
+								Error loading models
+							</Typography>
+						) : (
+							<Select
+								label="Select a model"
+								value={selectedDefaultModel}
+								onChange={(value) => handleSelectModel(value)}
+								fullWidth
+								data-testid={
+									"myProfilePage-default-model-select"
+								}
+							>
+								{engines.map((engine) => (
+									<Select.Item
+										key={engine.app_id}
+										value={engine.app_id}
+									>
+										{engine.app_name}
+									</Select.Item>
+								))}
+							</Select>
+						)}
+					</GridItem>
+				</Grid>
+			</StyledPaper>
 			<StyledPaper>
 				<MonolithGrid container spacing={3}>
 					<CustomGridItem sm={11}>
