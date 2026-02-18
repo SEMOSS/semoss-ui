@@ -131,14 +131,13 @@ export const EditDependenciesModal = ({
 		} else {
 			setSelectedDeps([...selectedDeps, dep]);
 		}
-		// Keep dropdown open after selection
+		setDropdownOpen(false);
 	};
 
 	const handleClose = (refresh: boolean) => {
 		// Reset search when closing
 		setSearch("");
 		setDropdownOpen(false);
-		// Reset selected deps to current dependencies if not saving
 		if (!refresh) {
 			setSelectedDeps(currentDependencies);
 		}
