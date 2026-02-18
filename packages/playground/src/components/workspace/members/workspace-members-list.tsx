@@ -405,7 +405,7 @@ export const WorkspaceMembersList = ({
 	return (
 		<ScrollArea className="h-full w-full">
 			<div className="py-4">
-				<div className="px-6 pb-2 text-muted-foreground">
+				<div className="px-4 pb-2 text-muted-foreground">
 					Who has access
 				</div>
 				{isLoading
@@ -416,7 +416,7 @@ export const WorkspaceMembersList = ({
 									// biome-ignore lint/suspicious/noArrayIndexKey: loading state
 									index
 								}`}
-								className="flex items-center gap-3 rounded p-2 px-6"
+								className="flex items-center gap-3 rounded p-2 px-4"
 							>
 								<Skeleton className="h-12 w-12 rounded-md" />
 								<div className="flex flex-1 flex-col gap-2">

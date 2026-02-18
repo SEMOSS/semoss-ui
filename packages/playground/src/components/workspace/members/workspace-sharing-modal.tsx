@@ -1,8 +1,6 @@
 import { UserPlusIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 import {
-	Avatar,
-	AvatarFallback,
 	Button,
 	Dialog,
 	DialogContent,
@@ -15,8 +13,9 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { addProjectUserPermissions, type PostUser } from "@/api";
-import { toInitials } from "@/utility";
+import type { User } from "@/types";
 import { PermissionDropdown } from "./permission-dropdown";
+import { WorkspaceMemberRow } from "./workspace-member-row";
 
 export interface WorkspaceSharingModalProps {
 	/** Id of the workspace */
@@ -27,13 +26,6 @@ export interface WorkspaceSharingModalProps {
 	activeUserPermission: string; // Pass active user's permission to control dropdown options and actions
 }
 
-type PendingUser = {
-	userid: string;
-	name?: string;
-	email?: string;
-	permission: string;
-};
-
 export const WorkspaceSharingModal = ({
 	workspaceId,
 	open,
@@ -42,7 +34,7 @@ export const WorkspaceSharingModal = ({
 }: WorkspaceSharingModalProps) => {
 	const [userId, setUserId] = useState("");
 	const [selectedPermission, setSelectedPermission] = useState("READ_ONLY");
-	const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+	const [pendingUsers, setPendingUsers] = useState<User[]>([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	/**
@@ -56,7 +48,7 @@ export const WorkspaceSharingModal = ({
 		}
 
 		// Check if user is already in the list
-		if (pendingUsers.some((u) => u.userid === trimmedUserId)) {
+		if (pendingUsers.some((u) => u.id === trimmedUserId)) {
 			toast.error("User already added");
 			return;
 		}
@@ -64,9 +56,13 @@ export const WorkspaceSharingModal = ({
 		setPendingUsers((prev) => [
 			...prev,
 			{
-				userid: trimmedUserId,
+				id: trimmedUserId,
 				permission: selectedPermission,
-			},
+				date_added: "todo",
+				name: "todo", // Name and email will be resolved on the backend when processing the request
+				email: "todo",
+				type: "todo",
+			} satisfies User,
 		]);
 
 		// Reset inputs
@@ -78,9 +74,7 @@ export const WorkspaceSharingModal = ({
 	 * Remove a user from the pending list
 	 */
 	const handleRemoveUser = (userIdToRemove: string) => {
-		setPendingUsers((prev) =>
-			prev.filter((u) => u.userid !== userIdToRemove),
-		);
+		setPendingUsers((prev) => prev.filter((u) => u.id !== userIdToRemove));
 	};
 
 	/**
@@ -95,7 +89,7 @@ export const WorkspaceSharingModal = ({
 		} else {
 			setPendingUsers((prev) =>
 				prev.map((u) =>
-					u.userid === userIdToUpdate
+					u.id === userIdToUpdate
 						? { ...u, permission: newPermission }
 						: u,
 				),
@@ -115,7 +109,7 @@ export const WorkspaceSharingModal = ({
 		setIsSubmitting(true);
 		try {
 			const usersToAdd: PostUser[] = pendingUsers.map((u) => ({
-				userid: u.userid,
+				userid: u.id,
 				permission: u.permission,
 			}));
 
@@ -201,45 +195,24 @@ export const WorkspaceSharingModal = ({
 								Members to add ({pendingUsers.length})
 							</div>
 							<ScrollArea className="max-h-[300px] rounded-md border">
-								<div className="divide-y">
+								<div>
 									{pendingUsers.map((user) => (
-										<div
-											key={user.userid}
-											className="flex items-center gap-3 p-3"
-										>
-											<Avatar className="size-8">
-												<AvatarFallback className="text-xs">
-													{toInitials(
-														user.name ||
-															user.userid,
-													)}
-												</AvatarFallback>
-											</Avatar>
-											<div className="flex min-w-0 flex-1 flex-col">
-												<div className="truncate font-medium text-sm">
-													{user.userid}
-												</div>
-												{user.email && (
-													<div className="truncate text-muted-foreground text-xs">
-														{user.email}
-													</div>
-												)}
-											</div>
-											<PermissionDropdown
-												permission={user.permission}
-												handlePermissionChange={(
+										<WorkspaceMemberRow
+											key={user.id}
+											member={user}
+											currentUserId=""
+											activeUserPermission={
+												activeUserPermission
+											}
+											onPermissionChange={(
+												newPermission,
+											) =>
+												handleUpdatePermission(
+													user.id,
 													newPermission,
-												) =>
-													handleUpdatePermission(
-														user.userid,
-														newPermission,
-													)
-												}
-												activeUserPermission={
-													activeUserPermission
-												}
-											/>
-										</div>
+												)
+											}
+										/>
 									))}
 								</div>
 							</ScrollArea>

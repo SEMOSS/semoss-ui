@@ -35,7 +35,7 @@ export const WorkspaceMemberRow = ({
 	onPermissionChange,
 }: WorkspaceMemberRowProps) => {
 	return (
-		<div className="flex items-center gap-3 rounded p-2 px-6 hover:bg-accent">
+		<div className="flex items-center gap-3 rounded px-4 py-2 hover:bg-accent">
 			<Avatar className="h-12 w-12 rounded-md">
 				<AvatarFallback className="rounded-md bg-primary/10">
 					{toInitials(member.name)}
