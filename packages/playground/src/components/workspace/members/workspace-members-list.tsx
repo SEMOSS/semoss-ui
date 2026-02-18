@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-	Avatar,
-	AvatarFallback,
 	Button,
 	Dialog,
 	DialogContent,
@@ -22,8 +20,7 @@ import {
 } from "@/api";
 import { useChat } from "@/hooks";
 import type { User } from "@/types";
-import { toInitials } from "@/utility";
-import { PermissionDropdown } from "./permission-dropdown";
+import { WorkspaceMemberRow } from "./workspace-member-row";
 import { WorkspaceSharingModal } from "./workspace-sharing-modal";
 
 export interface WorkspaceMembersListProps {
@@ -430,42 +427,20 @@ export const WorkspaceMembersList = ({
 							</div>
 						))
 					: members.map((member) => (
-							<div
+							<WorkspaceMemberRow
 								key={member.id}
-								className="flex items-center gap-3 rounded p-2 px-6 hover:bg-accent"
-							>
-								<Avatar className="h-12 w-12 rounded-md">
-									<AvatarFallback className="rounded-md bg-primary/10">
-										{toInitials(member.name)}
-									</AvatarFallback>
-								</Avatar>
-								<div className="flex flex-1 flex-col">
-									<span className="font-medium text-sm">
-										{member.name}{" "}
-										{member.id === currentUser.id && (
-											<span className="ml-1 text-muted-foreground">
-												(You)
-											</span>
-										)}
-									</span>
-									<span className="text-muted-foreground text-xs">
-										{member.email}
-									</span>
-								</div>
-								<PermissionDropdown
-									permission={member.permission}
-									handlePermissionChange={(newPermission) =>
-										handlePermissionChange(
-											member.id,
-											newPermission,
-										)
-									}
-									activeUserPermission={userPermission}
-								/>
-							</div>
+								member={member}
+								currentUserId={currentUser.id}
+								activeUserPermission={userPermission}
+								onPermissionChange={(newPermission) =>
+									handlePermissionChange(
+										member.id,
+										newPermission,
+									)
+								}
+							/>
 						))}
 			</div>
-
 			{/* Unified Confirmation Dialog */}
 			<Dialog
 				open={confirmationDialog.open}
