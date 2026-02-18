@@ -4,6 +4,8 @@ import {
 	addProjectUserPermissions,
 	getProjectUsers,
 	getProjectUsersNoCredentials,
+	type PostUser,
+	type Role,
 } from "@semoss/shared";
 import {
 	Button,
@@ -27,7 +29,6 @@ import {
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
-import type { PostUser } from "@/api";
 import type { User } from "@/types";
 import { PermissionDropdown } from "./permission-dropdown";
 import { WorkspaceMemberRow } from "./workspace-member-row";
@@ -185,7 +186,7 @@ export const WorkspaceSharingModal = ({
 		try {
 			const usersToAdd: PostUser[] = pendingUsersList.map((u) => ({
 				userid: u.id,
-				permission: u.permission,
+				permission: u.permission as Role,
 			}));
 
 			await addProjectUserPermissions(workspaceId, usersToAdd);
