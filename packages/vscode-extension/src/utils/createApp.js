@@ -7,7 +7,8 @@
  * @module createApp
  */
 
-const axios = require("axios");
+import { post } from "@semoss/sdk/react";
+
 const fs = require("fs");
 const http = require("http");
 const https = require("https");
@@ -306,7 +307,7 @@ async function createAppOnServer(secrets, headers, appDetails) {
 	params.append("insightId", "new");
 
 	try {
-		const response = await axios.post(
+		const response = await post(
 			`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
 			params,
 			{ headers },
@@ -340,7 +341,7 @@ async function createAppOnServer(secrets, headers, appDetails) {
 				response.data.insightID || "new",
 			);
 
-			await axios.post(
+			await post(
 				`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
 				metadataParams,
 				{ headers },
@@ -349,19 +350,12 @@ async function createAppOnServer(secrets, headers, appDetails) {
 
 		return projectId;
 	} catch (err) {
-		if (err.isAxiosError) {
-			logError("Axios error during CreateProject", err);
-			const url = err.config && err.config.url ? err.config.url : "N/A";
-			const status =
-				err.response && err.response.status
-					? err.response.status
-					: "N/A";
-			vscode.window.showErrorMessage(
-				`Network/API error: ${err.message}\nURL: ${url}\nStatus: ${status}`,
-			);
-		} else {
-			logError("App creation failed", err);
-		}
+		logError("Request failed", err);
+		const url = err.config?.url || "N/A";
+		const status = err.response?.status || err.statusCode || "N/A";
+		vscode.window.showErrorMessage(
+			`Network/API error: ${err.message}\nURL: ${url}\nStatus: ${status}`,
+		);
 		throw err;
 	}
 }
@@ -385,7 +379,7 @@ async function addPlaceholderAsset(secrets, headers, projectId, appName) {
 	saveAssetParams.append("insightId", "new");
 
 	try {
-		await axios.post(
+		await post(
 			`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
 			saveAssetParams,
 			{ headers },
@@ -429,7 +423,7 @@ async function exportAndDownloadProject(
 	);
 	exportParams.append("insightId", "new");
 
-	const exportResponse = await axios.post(
+	const exportResponse = await post(
 		`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
 		exportParams,
 		{ headers },
