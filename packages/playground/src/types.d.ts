@@ -289,3 +289,12 @@ export interface ToolStructure {
 	};
 	tools: MCPTool[];
 }
+
+export interface User {
+	date_added: string;
+	name: string;
+	permission: string;
+	id: string;
+	type: string;
+	email: string;
+}

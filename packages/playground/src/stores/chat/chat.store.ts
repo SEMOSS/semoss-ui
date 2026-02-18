@@ -40,6 +40,14 @@ interface ChatStoreInterface {
 		 */
 		roomCounter: number;
 	};
+
+	/**
+	 * Current user info
+	 */
+	user: {
+		id: string;
+		name: string;
+	};
 }
 
 /**
@@ -59,11 +67,25 @@ export class ChatStore {
 		keys: {
 			roomCounter: 0,
 		},
+		user: {
+			id: "",
+			name: "",
+		},
 	};
 
-	constructor(theme: ThemeMap["playground"], actions: Insight["actions"]) {
+	constructor(
+		theme: ThemeMap["playground"],
+		actions: Insight["actions"],
+		user?: {
+			id: string;
+			name: string;
+		},
+	) {
 		this._theme = theme;
 		this._actions = actions;
+		if (user) {
+			this._store.user = user;
+		}
 
 		// make it observable
 		makeAutoObservable(this);
@@ -94,6 +116,13 @@ export class ChatStore {
 	}
 
 	/**
+	 * Get the current user
+	 */
+	get user() {
+		return this._store.user;
+	}
+
+	/**
 	 * Initialize the store
 	 */
 	initialize = async (): Promise<void> => {
@@ -115,7 +144,10 @@ export class ChatStore {
 	/**
 	 * Create a new room
 	 */
-	createRoom = async (mode: "planning" | "chat"): Promise<RoomStore> => {
+	createRoom = async (
+		mode: "planning" | "chat",
+		workspaceId?: string,
+	): Promise<RoomStore> => {
 		// create the room in a new insight
 		const { errors, pixelReturn, insightId } = await runPixel<
 			[
@@ -123,7 +155,10 @@ export class ChatStore {
 					roomId: string;
 				},
 			]
-		>(`CreatePlaygroundRoom();`, "new");
+		>(
+			`CreatePlaygroundRoom(${workspaceId ? `workspaceId=${JSON.stringify(workspaceId)}` : ""})`,
+			"new",
+		);
 
 		// throw errors
 		if (errors.length > 0) {

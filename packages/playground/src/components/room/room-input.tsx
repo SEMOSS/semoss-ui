@@ -40,6 +40,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
+import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import type { Engine } from "@/types";
 import { ContextChart } from "./context-chart";
 
@@ -93,6 +94,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const ref = useRef<HTMLDivElement>(null);
 		const editorRef = useRef<LexicalEditor>(null);
 		const fileRef = useRef<HTMLInputElement>(null);
+		const contentEditableRef = useRef<HTMLDivElement>(null);
 
 		const [isDragging, setIsDragging] = useState(false);
 		const [files, setFiles] = useState<File[]>([]);
@@ -306,6 +308,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							contentEditable={
 								<div className="relative">
 									<ContentEditable
+										ref={contentEditableRef}
 										className={cn(
 											`h-auto w-full overflow-y-auto rounded-md border border-input bg-transparent p-4 pb-14 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
 											isDragging
@@ -389,6 +392,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<FocusPlugin />
 						<EditorRefPlugin editorRef={editorRef} />
 						<EnterPlugin onEnter={() => promptModel()} />
+						<AutoScrollOnPastePlugin
+							scrollContainerRef={contentEditableRef}
+						/>
 						{!isLoading && (
 							<MentionPlugin
 								trigger="/"
@@ -438,6 +444,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									<TooltipTrigger asChild>
 										<DropdownMenuTrigger asChild>
 											<Button
+												className="bg-background"
 												variant="ghost"
 												size="icon-sm"
 												disabled={isLoading}
@@ -489,6 +496,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
+										className="bg-background"
 										variant={"ghost"}
 										aria-label="Record the Model"
 										size="icon-sm"

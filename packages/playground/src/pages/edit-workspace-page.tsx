@@ -29,33 +29,35 @@ export const EditWorkspacePage = observer(() => {
 	);
 
 	// set the breadcrumbs
-	useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: "Workspace",
-			path: "/workspace",
-		},
-		{
-			name:
-				getWorkspace.status === "SUCCESS"
-					? getWorkspace.data.name
-					: "Loading",
-			path: `/workspace/${workspaceId}`,
-		},
-		{
-			name: "Edit",
-			path: `/workspace/${workspaceId}/edit`,
-		},
-	]);
+	useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: "Home",
+				path: "/",
+			},
+			{
+				name: "Agent",
+				path: "/agent",
+			},
+			{
+				name:
+					getWorkspace.status === "SUCCESS"
+						? getWorkspace.data.name
+						: "Loading",
+				path: `/agent/${workspaceId}`,
+			},
+			{
+				name: "Edit",
+				path: `/agent/${workspaceId}/edit`,
+			},
+		],
+	});
 
 	const handleClose = (shouldRefresh?: string) => {
 		if (shouldRefresh) {
-			navigate(`/workspace/${workspaceId}`);
+			navigate(`/agent/${workspaceId}`);
 		} else {
-			navigate(`/workspace/${workspaceId}`);
+			navigate(`/agent/${workspaceId}`);
 		}
 	};
 
@@ -73,10 +75,10 @@ export const EditWorkspacePage = observer(() => {
 				<div className="mx-auto flex h-full w-full max-w-[950px] flex-col gap-8 px-12 pt-8 pb-4">
 					<div>
 						<h1 className="font-semibold text-2xl">
-							Error Loading Workspace
+							Error Loading Agent
 						</h1>
 						<p className="text-base text-muted-foreground">
-							Failed to load the workspace details
+							Failed to load the agent details
 						</p>
 					</div>
 				</div>
@@ -90,10 +92,10 @@ export const EditWorkspacePage = observer(() => {
 				<div className="flex flex-row gap-2">
 					<div className="space-y-2.5">
 						<div className="font-semibold text-2xl text-foreground leading-none">
-							Edit Workspace
+							Edit Agent
 						</div>
 						<div className="text-base text-muted-foreground">
-							Update your workspace details
+							Update your agent details
 						</div>
 					</div>
 					<div className="flex-1" />
