@@ -3,7 +3,6 @@ import {
 	DownloadForOfflineRounded,
 	LocalPoliceRounded,
 } from "@mui/icons-material";
-import type { AxiosResponse } from "axios";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -21,6 +20,7 @@ import {
 } from "@semoss/ui";
 import { createUser, editMemberInfo } from "@/api";
 import { useRootStore, useSettings } from "@/hooks";
+import type { ApiResponse } from "@/types";
 
 const StyledModalContent = styled(Modal.Content)(() => ({
 	maxWidth: "50rem",
@@ -236,7 +236,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 
 			try {
 				let response:
-					| AxiosResponse<boolean>
+					| ApiResponse<boolean>
 					| {
 							response: Response;
 							data: boolean;

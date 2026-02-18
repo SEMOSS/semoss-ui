@@ -6,7 +6,6 @@ import {
 } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import type { AxiosResponse } from "axios";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	Autocomplete,
@@ -26,6 +25,7 @@ import {
 } from "@semoss/ui";
 import { addTeamUser, deleteTeam, getNonTeamUsers } from "@/api/teams";
 import { useRootStore } from "@/hooks";
+import type { ApiResponse } from "@/types";
 import { AddTeamModal } from "./add-team-modal";
 
 const colors = [
@@ -237,7 +237,9 @@ export const TeamTileCard = (props: TeamCardProps) => {
 					// ignore if there is no response
 					if (response) {
 						let requests = reset ? [] : nonCredentialedUsers;
-						const users = (response as unknown as NonTeamMembers[]).map((val) => {
+						const users = (
+							response as unknown as NonTeamMembers[]
+						).map((val) => {
 							return {
 								...val,
 								color: colors[
@@ -362,7 +364,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 
 			for (let i = 0; i < requests.length; i++) {
 				const response:
-					| AxiosResponse<{ success: boolean }>
+					| ApiResponse<{ success: boolean }>
 					| {
 							response: Response;
 							data: {
@@ -658,8 +660,8 @@ export const TeamTileCard = (props: TeamCardProps) => {
 								const initial = user.name
 									? space > -1
 										? `${user.name[0].toUpperCase()}${user.name[
-											space + 1
-										].toUpperCase()}`
+												space + 1
+											].toUpperCase()}`
 										: user.name[0].toUpperCase()
 									: user.id[0].toUpperCase();
 								return (
@@ -811,10 +813,10 @@ export const TeamTileCard = (props: TeamCardProps) => {
 						const updatedTeams = teams.map((t) =>
 							t.id === team.previousTeamName
 								? {
-									id: team.id,
-									description: team.description,
-									type: team.type,
-								}
+										id: team.id,
+										description: team.description,
+										type: team.type,
+									}
 								: t,
 						);
 

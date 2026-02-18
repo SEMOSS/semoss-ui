@@ -1,4 +1,3 @@
-import type { AxiosResponse } from "axios";
 import { Edit, Eye, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
@@ -50,7 +49,7 @@ import {
 } from "@/api";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
 import { useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
+import type { ALL_TYPES, ApiResponse } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
 import { MembersAddOverlayUser } from "./members-add-overlay-user";
 import type { SETTINGS_ROLE } from "./settings.types";
@@ -336,7 +335,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {
@@ -436,7 +435,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {
@@ -551,9 +550,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 											: `${selectedMembers.length} members selected`}
 								</Button>
 							</PopoverTrigger>
-							<PopoverContent
-								className="w-[600px] p-0"
-							>
+							<PopoverContent className="w-[600px] p-0">
 								<Command shouldFilter={false}>
 									<CommandInput
 										placeholder="Search users..."

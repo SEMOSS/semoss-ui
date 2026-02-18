@@ -1,6 +1,5 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-import type { AxiosResponse } from "axios";
 import {
 	AlertCircle,
 	Check,
@@ -38,7 +37,7 @@ import {
 } from "@/api";
 import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { usePixel, useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
+import type { ALL_TYPES, ApiResponse } from "@/types";
 import type { SETTINGS_PENDING_USER, SETTINGS_ROLE } from "./settings.types";
 
 // maps for permissions,
@@ -216,7 +215,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {

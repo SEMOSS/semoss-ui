@@ -1,4 +1,3 @@
-import type { AxiosResponse } from "axios";
 import {
 	ArrowDown,
 	ArrowUp,
@@ -37,7 +36,7 @@ import {
 import { editEngineUserPermissions, editProjectUserPermissions } from "@/api";
 import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
+import type { ALL_TYPES, ApiResponse } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
 import { MembersAddOverlay } from "./members-add-overlay";
 import { MembersDeleteOverlay } from "./members-delete-overlay";
@@ -335,7 +334,7 @@ export const MembersTable = (props: MembersTableProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {

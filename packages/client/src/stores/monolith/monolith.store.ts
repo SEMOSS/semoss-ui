@@ -1,6 +1,5 @@
-import axios from "axios";
 import { makeAutoObservable } from "mobx";
-import { Env, logout } from "@semoss/sdk/react";
+import { Env, get, logout, post } from "@semoss/sdk/react";
 import type { RootStore } from "@/stores";
 
 /**
@@ -29,22 +28,20 @@ export class MonolithStore {
 	 */
 	async config() {
 		// get the response
-		const response = await axios
-			.get<{
-				logins: { [key: string]: unknown };
-				/**
-				 * List of available providers (logins) that are available
-				 */
-				availableProviders: {
-					provider: string;
-					name: string;
-					isOauth: boolean;
-				}[];
-				[key: string]: unknown;
-			}>(`${Env.MODULE}/api/config`)
-			.catch((error) => {
-				throw Error(error);
-			});
+		const response = await get<{
+			logins: { [key: string]: unknown };
+			/**
+			 * List of available providers (logins) that are available
+			 */
+			availableProviders: {
+				provider: string;
+				name: string;
+				isOauth: boolean;
+			}[];
+			[key: string]: unknown;
+		}>(`${Env.MODULE}/api/config`).catch((error) => {
+			throw Error(error);
+		});
 
 		// there was an error, no response
 		if (!response) {
@@ -63,32 +60,26 @@ export class MonolithStore {
 	 */
 	async run<O extends unknown[] | []>(insightID: string, pixel: string) {
 		// build the expression
-		let postData = "";
-
-		postData += `expression=${encodeURIComponent(pixel)}`;
+		const postData: Record<string, unknown> = {
+			expression: pixel,
+		};
 		if (insightID) {
-			postData += `&insightId=${encodeURIComponent(insightID)}`;
+			postData.insightId = insightID;
 		}
 
-		const response = await axios
-			.post<{
-				insightID: string;
-				pixelReturn: {
-					isMeta: boolean;
-					operationType: string[];
-					additionalOutput: { output: string }[];
-					output: O[number];
-					pixelExpression: string;
-					pixelId: string;
-				}[];
-			}>(`${Env.MODULE}/api/engine/runPixel`, postData, {
-				headers: {
-					"content-type": "application/x-www-form-urlencoded",
-				},
-			})
-			.catch((error) => {
-				throw Error(error);
-			});
+		const response = await post<{
+			insightID: string;
+			pixelReturn: {
+				isMeta: boolean;
+				operationType: string[];
+				additionalOutput: { output: string }[];
+				output: O[number];
+				pixelExpression: string;
+				pixelId: string;
+			}[];
+		}>(`${Env.MODULE}/api/engine/runPixel`, postData, {}).catch((error) => {
+			throw Error(error);
+		});
 
 		// there was no response, that is an error
 		if (!response) {
@@ -176,24 +167,28 @@ export class MonolithStore {
 	 * @returns true if successful
 	 */
 	async login(username: string, password: string): Promise<boolean> {
-		const postData = `username=${encodeURIComponent(
+		const postData = {
 			username,
-		)}&password=${encodeURIComponent(password)}&disableRedirect=true`;
+			password,
+			disableRedirect: true,
+		};
 
 		try {
-			const response = await axios.post(
+			const response = await post(
 				`${Env.MODULE}/api/auth/login`,
 				postData,
-				{
-					headers: {
-						"content-type": "application/x-www-form-urlencoded",
-					},
-					validateStatus: () => true,
-				},
+				{},
 			);
 
-			if (response?.data?.errorMessage) {
-				throw new Error(response.data.errorMessage);
+			if (
+				response &&
+				response.data &&
+				typeof response.data === "object" &&
+				"errorMessage" in response.data
+			) {
+				throw new Error(
+					(response.data as { errorMessage: string }).errorMessage,
+				);
 			}
 
 			return true;
@@ -213,20 +208,17 @@ export class MonolithStore {
 		username: string,
 		password: string,
 	): Promise<"success" | "change-password"> {
-		const postData = `username=${encodeURIComponent(
-			username,
-		)}&pin=${encodeURIComponent(password)}&disableRedirect=true`;
+		const postData = {
+			username: username,
+			pin: password,
+			disableRedirect: true,
+		};
 
 		// track the status
 		let status: "success" | "change-password" = "success";
 
-		await axios
-			.post(`${Env.MODULE}/api/auth/loginLinOTP`, postData, {
-				headers: {
-					"content-type": "application/x-www-form-urlencoded",
-				},
-			})
-			.catch((error) => {
+		await post(`${Env.MODULE}/api/auth/loginLinOTP`, postData, {}).catch(
+			(error) => {
 				if (
 					error.response &&
 					error.response.status === 401 &&
@@ -239,7 +231,8 @@ export class MonolithStore {
 
 				// throw the message
 				throw Error(error);
-			});
+			},
+		);
 
 		return status;
 	}
@@ -251,18 +244,17 @@ export class MonolithStore {
 	 * @returns true if successful
 	 */
 	async confirmOTP(otp: string): Promise<boolean> {
-		const postData = `otp=${encodeURIComponent(otp)}&disableRedirect=true`;
+		const postData = {
+			otp: otp,
+			disableRedirect: true,
+		};
 
-		await axios
-			.post(`${Env.MODULE}/api/auth/loginLinOTP`, postData, {
-				headers: {
-					"content-type": "application/x-www-form-urlencoded",
-				},
-			})
-			.catch((error) => {
+		await post(`${Env.MODULE}/api/auth/loginLinOTP`, postData, {}).catch(
+			(error) => {
 				// throw the message
 				throw Error(error.response.data.errorMessage);
-			});
+			},
+		);
 
 		return true;
 	}
@@ -278,20 +270,17 @@ export class MonolithStore {
 		username: string,
 		password: string,
 	): Promise<"success" | "change-password"> {
-		const postData = `username=${encodeURIComponent(
-			username,
-		)}&pin=${encodeURIComponent(password)}&disableRedirect=true`;
+		const postData = {
+			username: username,
+			pin: password,
+			disableRedirect: true,
+		};
 
 		// track the status
 		let status: "success" | "change-password" = "success";
 
-		await axios
-			.post(`${Env.MODULE}/api/auth/loginLDAP`, postData, {
-				headers: {
-					"content-type": "application/x-www-form-urlencoded",
-				},
-			})
-			.catch((error) => {
+		await post(`${Env.MODULE}/api/auth/loginLDAP`, postData, {}).catch(
+			(error) => {
 				if (
 					error.response &&
 					error.response.status === 401 &&
@@ -304,7 +293,8 @@ export class MonolithStore {
 
 				// throw the message
 				throw Error(error);
-			});
+			},
+		);
 
 		return status;
 	}
@@ -325,13 +315,11 @@ export class MonolithStore {
 	 */
 	async oauth(provider: string): Promise<boolean> {
 		// check if the user is logged in
-		const response = await axios
-			.get<{ name: string }>(
-				`${Env.MODULE}/api/auth/userinfo/${provider}`,
-			)
-			.catch((error) => {
-				throw Error(error);
-			});
+		const response = await get<{ name: string }>(
+			`${Env.MODULE}/api/auth/userinfo/${provider}`,
+		).catch((error) => {
+			throw Error(error);
+		});
 
 		//check if they are already logged in
 		if (response.data?.name) {
@@ -386,7 +374,7 @@ export class MonolithStore {
 	async getLoginProperties() {
 		const url = `${Env.MODULE}/api/auth/loginProperties`;
 
-		const response = await axios.get(url).catch((error) => {
+		const response = await get(url).catch((error) => {
 			throw Error(error);
 		});
 
@@ -395,19 +383,15 @@ export class MonolithStore {
 
 	async modifyLoginProperties(provider, properties) {
 		const url = `${Env.MODULE}/api/auth/modifyLoginProperties/${provider}`;
-		let postData = "";
+		const postData: Record<string, unknown> = {
+			modifications: JSON.stringify(properties),
+		};
 
-		postData += `modifications=${JSON.stringify(properties)}`;
-
-		const response = await axios
-			.post<boolean>(url, postData, {
-				headers: {
-					"content-type": "application/x-www-form-urlencoded",
-				},
-			})
-			.catch((error) => {
+		const response = await post<boolean>(url, postData, {}).catch(
+			(error) => {
 				throw Error(error);
-			});
+			},
+		);
 
 		return response.data;
 	}
@@ -420,7 +404,7 @@ export class MonolithStore {
 	async isAdminUser() {
 		const url = `${Env.MODULE}/api/auth/admin/user/isAdminUser`;
 
-		const response = await axios.get(url).catch((error) => {
+		const response = await get(url).catch((error) => {
 			throw Error(error);
 		});
 
@@ -454,28 +438,19 @@ export class MonolithStore {
 
 		url += "engine/getEngines";
 
-		const params = {
-			engineTypes: "",
-			filterWord: "",
-			offset: "",
-			limit: "",
-		};
-
-		params.engineTypes = engineType;
-		params.filterWord = search ? search : "";
-
-		params.offset = offset ? offset.toString() : "0";
-
-		params.limit = limit ? limit.toString() : "10";
+		const params = new URLSearchParams({
+			engineTypes: engineType,
+			filterWord: search ? search : "",
+			offset: offset ? offset.toString() : "0",
+			limit: limit ? limit.toString() : "10",
+		});
 
 		// get the response
-		const response = await axios
-			.get(url, {
-				params: params,
-			})
-			.catch((error) => {
+		const response = await get(`${url}?${params.toString()}`).catch(
+			(error) => {
 				throw Error(error);
-			});
+			},
+		);
 
 		// there was no response, that is an error
 		if (!response) {
@@ -502,19 +477,17 @@ export class MonolithStore {
 
 		url += "database/getDatabases";
 		// get the response
-		const response = await axios
-			.get<
-				{
-					app_global: boolean;
-					app_id: string;
-					app_name: string;
-					app_permission: string;
-					app_visibility: boolean;
-				}[]
-			>(url)
-			.catch((error) => {
-				throw Error(error);
-			});
+		const response = await get<
+			{
+				app_global: boolean;
+				app_id: string;
+				app_name: string;
+				app_permission: string;
+				app_visibility: boolean;
+			}[]
+		>(url).catch((error) => {
+			throw Error(error);
+		});
 
 		// there was no response, that is an error
 		if (!response) {

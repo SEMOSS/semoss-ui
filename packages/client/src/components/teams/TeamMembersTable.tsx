@@ -1,5 +1,4 @@
 import { Add, ClearRounded, DeleteRounded } from "@mui/icons-material";
-import type { AxiosResponse } from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -26,6 +25,7 @@ import {
 	getNonTeamUsers,
 	getTeamUsers,
 } from "@/api/teams";
+import type { ApiResponse } from "@/types";
 
 const colors = [
 	"#22A4FF",
@@ -344,7 +344,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 			for (let i = 0; i < requests.length; i++) {
 				let response:
-					| AxiosResponse<{ success: boolean }>
+					| ApiResponse<{ success: boolean }>
 					| {
 							response: Response;
 							data: {
@@ -401,7 +401,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const deleteUser = async (user) => {
 		try {
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {
@@ -440,7 +440,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			for (let i = 0; i < selectedMembers.length; i++) {
 				try {
 					let response:
-						| AxiosResponse<{ success: boolean }>
+						| ApiResponse<{ success: boolean }>
 						| {
 								response: Response;
 								data: {

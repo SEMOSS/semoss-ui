@@ -1,4 +1,3 @@
-import type { AxiosResponse } from "axios";
 import { EyeOff, LockKeyhole } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -26,7 +25,7 @@ import {
 } from "@/api";
 import databaseIcon from "@/assets/img/databaseIcon.png";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
+import type { ALL_TYPES, ApiResponse } from "@/types";
 import { formatToDataTestId } from "@/utility";
 
 interface SettingsTilesProps {
@@ -205,7 +204,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			setLoading(true);
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {
@@ -270,7 +269,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			setLoading(true);
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {

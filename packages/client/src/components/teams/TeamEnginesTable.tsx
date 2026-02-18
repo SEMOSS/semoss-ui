@@ -5,7 +5,6 @@ import {
 	EditRounded,
 	RemoveRedEyeRounded,
 } from "@mui/icons-material";
-import type { AxiosResponse } from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { debounced } from "@semoss/sdk/react";
@@ -39,6 +38,7 @@ import codeApp3 from "@/assets/img/code_app_3.png";
 import codeApp4 from "@/assets/img/code_app_4.png";
 import codeApp5 from "@/assets/img/code_app_5.png";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
+import type { ApiResponse } from "@/types";
 
 const colors = [
 	"#22A4FF",
@@ -431,7 +431,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 
 			for (let i = 0; i < requests.length; i++) {
 				let response:
-					| AxiosResponse<{ success: boolean }>
+					| ApiResponse<{ success: boolean }>
 					| {
 							response: Response;
 							data: {
@@ -488,7 +488,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const deleteEngine = async (engine: Engine) => {
 		try {
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {
@@ -526,7 +526,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			for (let i = 0; i < selectedEngines.length; i++) {
 				try {
 					let response:
-						| AxiosResponse<{ success: boolean }>
+						| ApiResponse<{ success: boolean }>
 						| {
 								response: Response;
 								data: {
@@ -576,7 +576,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {
