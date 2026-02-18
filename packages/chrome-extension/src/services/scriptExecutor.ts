@@ -488,9 +488,15 @@ export class ScriptExecutor {
 		onAskUser?: (label: string, isPassword: boolean) => Promise<string>,
 	): Promise<void> {
 		console.log("=".repeat(80));
-		console.log(`[ScriptExecutor] Executing action:`, action.type.toUpperCase());
+		console.log(
+			`[ScriptExecutor] Executing action:`,
+			action.type.toUpperCase(),
+		);
 		console.log(`[ScriptExecutor] Tab ID:`, tabId);
-		console.log(`[ScriptExecutor] Full action object:`, JSON.stringify(action, null, 2));
+		console.log(
+			`[ScriptExecutor] Full action object:`,
+			JSON.stringify(action, null, 2),
+		);
 
 		if (action.type === "navigate") {
 			if (!action.url) {
@@ -507,7 +513,9 @@ export class ScriptExecutor {
 				const tabs = await chrome.tabs.query({});
 				const tab = tabs.find((t) => t.id === tabId);
 				if (tab && tab.status === "complete") {
-					console.log(`[ScriptExecutor] NAVIGATE - Page loaded successfully`);
+					console.log(
+						`[ScriptExecutor] NAVIGATE - Page loaded successfully`,
+					);
 					await new Promise((resolve) => setTimeout(resolve, 500));
 					break;
 				}
@@ -515,15 +523,21 @@ export class ScriptExecutor {
 				loadTimeout--;
 			}
 			if (loadTimeout === 0) {
-				console.warn(`[ScriptExecutor] NAVIGATE - Load timeout reached`);
+				console.warn(
+					`[ScriptExecutor] NAVIGATE - Load timeout reached`,
+				);
 			}
 		} else if (action.type === "type") {
 			// If text is empty or it's a password field, ask user
 			let textToType = action.text || "";
-			console.log(`[ScriptExecutor] TYPE - Initial text: "${textToType}"`);
+			console.log(
+				`[ScriptExecutor] TYPE - Initial text: "${textToType}"`,
+			);
 			console.log(`[ScriptExecutor] TYPE - Label: "${action.label}"`);
-			console.log(`[ScriptExecutor] TYPE - Is password: ${action.isPassword}`);
-			
+			console.log(
+				`[ScriptExecutor] TYPE - Is password: ${action.isPassword}`,
+			);
+
 			if (
 				(!textToType || action.isPassword) &&
 				action.label &&
@@ -534,11 +548,15 @@ export class ScriptExecutor {
 					action.label,
 					action.isPassword || false,
 				);
-				console.log(`[ScriptExecutor] TYPE - User provided: "${textToType}"`);
+				console.log(
+					`[ScriptExecutor] TYPE - User provided: "${textToType}"`,
+				);
 			}
 
 			if (action.selector) {
-				console.log(`[ScriptExecutor] TYPE - Using SELECTOR: "${action.selector}"`);
+				console.log(
+					`[ScriptExecutor] TYPE - Using SELECTOR: "${action.selector}"`,
+				);
 				// typeBySelector handles retry logic internally
 				const response = await chrome.runtime.sendMessage({
 					type: "EXECUTE_SCRIPT_ACTION",
@@ -551,20 +569,32 @@ export class ScriptExecutor {
 				});
 				console.log(`[ScriptExecutor] TYPE - Response:`, response);
 				if (chrome.runtime.lastError) {
-					console.warn(`[ScriptExecutor] TYPE - Chrome runtime error:`, chrome.runtime.lastError);
+					console.warn(
+						`[ScriptExecutor] TYPE - Chrome runtime error:`,
+						chrome.runtime.lastError,
+					);
 				}
 				if (!response.success) {
-					console.error(`[ScriptExecutor] TYPE - Failed:`, response.error);
-					throw new Error(response.error || "Failed to type by selector");
+					console.error(
+						`[ScriptExecutor] TYPE - Failed:`,
+						response.error,
+					);
+					throw new Error(
+						response.error || "Failed to type by selector",
+					);
 				}
 				console.log(`[ScriptExecutor] TYPE - Succeeded! ✓`);
 			} else {
-				console.error(`[ScriptExecutor] TYPE - No selector provided! Selector is required.`);
+				console.error(
+					`[ScriptExecutor] TYPE - No selector provided! Selector is required.`,
+				);
 				throw new Error("TYPE action requires a selector");
 			}
 		} else if (action.type === "click") {
 			if (action.selector) {
-				console.log(`[ScriptExecutor] CLICK - Using SELECTOR: "${action.selector}"`);
+				console.log(
+					`[ScriptExecutor] CLICK - Using SELECTOR: "${action.selector}"`,
+				);
 				// clickBySelector handles retry logic internally
 				const response = await chrome.runtime.sendMessage({
 					type: "EXECUTE_SCRIPT_ACTION",
@@ -576,22 +606,34 @@ export class ScriptExecutor {
 				});
 				console.log(`[ScriptExecutor] CLICK - Response:`, response);
 				if (chrome.runtime.lastError) {
-					console.warn(`[ScriptExecutor] CLICK - Chrome runtime error:`, chrome.runtime.lastError);
+					console.warn(
+						`[ScriptExecutor] CLICK - Chrome runtime error:`,
+						chrome.runtime.lastError,
+					);
 				}
 				if (!response.success) {
-					console.error(`[ScriptExecutor] CLICK - Failed:`, response.error);
-					throw new Error(response.error || "Failed to click by selector");
+					console.error(
+						`[ScriptExecutor] CLICK - Failed:`,
+						response.error,
+					);
+					throw new Error(
+						response.error || "Failed to click by selector",
+					);
 				}
 				console.log(`[ScriptExecutor] CLICK - Succeeded! ✓`);
 			} else {
-				console.error(`[ScriptExecutor] CLICK - No selector provided! Selector is required.`);
+				console.error(
+					`[ScriptExecutor] CLICK - No selector provided! Selector is required.`,
+				);
 				throw new Error("CLICK action requires a selector");
 			}
 		}
 
 		// Wait after action
 		if (action.waitAfterMs) {
-			console.log(`[ScriptExecutor] Waiting ${action.waitAfterMs}ms after action...`);
+			console.log(
+				`[ScriptExecutor] Waiting ${action.waitAfterMs}ms after action...`,
+			);
 			await new Promise((resolve) =>
 				setTimeout(resolve, action.waitAfterMs),
 			);
@@ -603,14 +645,18 @@ export class ScriptExecutor {
 			action.waitAfterMs &&
 			action.waitAfterMs >= 2000
 		) {
-			console.log(`[ScriptExecutor] CLICK - Long wait detected, waiting for page load...`);
+			console.log(
+				`[ScriptExecutor] CLICK - Long wait detected, waiting for page load...`,
+			);
 			// Wait for page to finish loading
 			let loadTimeout = 20; // 20 * 500ms = 10 seconds max
 			while (loadTimeout > 0) {
 				const tabs = await chrome.tabs.query({});
 				const tab = tabs.find((t) => t.id === tabId);
 				if (tab && tab.status === "complete") {
-					console.log(`[ScriptExecutor] CLICK - Page load complete after navigation`);
+					console.log(
+						`[ScriptExecutor] CLICK - Page load complete after navigation`,
+					);
 					// Page loaded - wait for dynamic content
 					await new Promise((resolve) => setTimeout(resolve, 2000));
 					break;
@@ -619,11 +665,15 @@ export class ScriptExecutor {
 				loadTimeout--;
 			}
 			if (loadTimeout === 0) {
-				console.warn(`[ScriptExecutor] CLICK - Page load timeout reached`);
+				console.warn(
+					`[ScriptExecutor] CLICK - Page load timeout reached`,
+				);
 			}
 		}
-		
-		console.log(`[ScriptExecutor] Action ${action.type.toUpperCase()} completed successfully ✓`);
+
+		console.log(
+			`[ScriptExecutor] Action ${action.type.toUpperCase()} completed successfully ✓`,
+		);
 		console.log("=".repeat(80));
 	}
 }

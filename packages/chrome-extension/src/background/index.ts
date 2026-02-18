@@ -33,7 +33,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		"from:",
 		sender.tab ? `tab ${sender.tab.id}` : "extension",
 		"data:",
-		message.script ? { scriptName: message.script.name, hasContent: !!message.script.scriptContent } : "N/A"
+		message.script
+			? {
+					scriptName: message.script.name,
+					hasContent: !!message.script.scriptContent,
+				}
+			: "N/A",
 	);
 
 	// Forward playground messages from content scripts to all extension pages (panel, popup, etc.)
@@ -269,9 +274,12 @@ async function executeScriptAction(
 }
 
 // Check if element is ready (exists in DOM)
-async function checkElementReady(tabId: number, selector: string): Promise<{ isReady: boolean }> {
+async function checkElementReady(
+	tabId: number,
+	selector: string,
+): Promise<{ isReady: boolean }> {
 	try {
-		const result = await sendDebuggerCommand(tabId, "Runtime.evaluate", {
+		const result = (await sendDebuggerCommand(tabId, "Runtime.evaluate", {
 			expression: `
 				(function() {
 					const element = document.querySelector(${JSON.stringify(selector)});
@@ -279,10 +287,10 @@ async function checkElementReady(tabId: number, selector: string): Promise<{ isR
 				})()
 			`,
 			returnByValue: true,
-		}) as { result?: { value?: { exists: boolean } } };
+		})) as { result?: { value?: { exists: boolean } } };
 
 		return { isReady: result?.result?.value?.exists || false };
-	} catch (error) {
+	} catch (_error) {
 		// Any error means element isn't ready
 		return { isReady: false };
 	}
@@ -292,12 +300,15 @@ async function checkElementReady(tabId: number, selector: string): Promise<{ isR
 async function clickBySelector(tabId: number, selector: string): Promise<void> {
 	const maxRetries = 3;
 	let lastError: string | undefined;
-	
+
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
 		try {
 			// Use Runtime.evaluate to directly call .click() on the element
-			const result = await sendDebuggerCommand(tabId, "Runtime.evaluate", {
-				expression: `
+			const result = (await sendDebuggerCommand(
+				tabId,
+				"Runtime.evaluate",
+				{
+					expression: `
 					(function() {
 						const element = document.querySelector(${JSON.stringify(selector)});
 						if (!element) {
@@ -313,32 +324,39 @@ async function clickBySelector(tabId: number, selector: string): Promise<void> {
 						return { success: true };
 					})()
 				`,
-				returnByValue: true,
-				awaitPromise: false,
-			}) as { result?: { value?: { success: boolean; error?: string } } };
+					returnByValue: true,
+					awaitPromise: false,
+				},
+			)) as { result?: { value?: { success: boolean; error?: string } } };
 
 			if (result?.result?.value?.success) {
 				// Wait for click to process
 				await wait(150);
 				return; // Success, exit function
 			}
-			
-			lastError = result?.result?.value?.error || 'Unknown error';
-			console.log(`Click attempt ${attempt}/${maxRetries} failed: ${lastError}`);
-			
+
+			lastError = result?.result?.value?.error || "Unknown error";
+			console.log(
+				`Click attempt ${attempt}/${maxRetries} failed: ${lastError}`,
+			);
 		} catch (error) {
-			lastError = error instanceof Error ? error.message : 'Unknown error';
-			console.log(`Click attempt ${attempt}/${maxRetries} failed: ${lastError}`);
+			lastError =
+				error instanceof Error ? error.message : "Unknown error";
+			console.log(
+				`Click attempt ${attempt}/${maxRetries} failed: ${lastError}`,
+			);
 		}
-		
+
 		// Wait before retry (but not after last attempt)
 		if (attempt < maxRetries) {
 			await wait(1500);
 		}
 	}
-	
+
 	// All retries failed
-	throw new Error(`Failed to click element with selector "${selector}" after ${maxRetries} attempts. Last error: ${lastError}`);
+	throw new Error(
+		`Failed to click element with selector "${selector}" after ${maxRetries} attempts. Last error: ${lastError}`,
+	);
 }
 
 // Click at specific coordinates
@@ -372,12 +390,15 @@ async function typeBySelector(
 ): Promise<void> {
 	const maxRetries = 3;
 	let lastError: string | undefined;
-	
+
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
 		try {
 			// Use Runtime.evaluate to directly set value and trigger events
-			const result = await sendDebuggerCommand(tabId, "Runtime.evaluate", {
-				expression: `
+			const result = (await sendDebuggerCommand(
+				tabId,
+				"Runtime.evaluate",
+				{
+					expression: `
 					(function() {
 						const element = document.querySelector(${JSON.stringify(selector)});
 						if (!element) {
@@ -410,31 +431,38 @@ async function typeBySelector(
 						return { success: true };
 					})()
 				`,
-				returnByValue: true,
-			}) as { result?: { value?: { success: boolean; error?: string } } };
+					returnByValue: true,
+				},
+			)) as { result?: { value?: { success: boolean; error?: string } } };
 
 			if (result?.result?.value?.success) {
 				// Add small delay after typing to let the page react
 				await wait(200);
 				return; // Success, exit function
 			}
-			
-			lastError = result?.result?.value?.error || 'Unknown error';
-			console.log(`Type attempt ${attempt}/${maxRetries} failed: ${lastError}`);
-			
+
+			lastError = result?.result?.value?.error || "Unknown error";
+			console.log(
+				`Type attempt ${attempt}/${maxRetries} failed: ${lastError}`,
+			);
 		} catch (error) {
-			lastError = error instanceof Error ? error.message : 'Unknown error';
-			console.log(`Type attempt ${attempt}/${maxRetries} failed: ${lastError}`);
+			lastError =
+				error instanceof Error ? error.message : "Unknown error";
+			console.log(
+				`Type attempt ${attempt}/${maxRetries} failed: ${lastError}`,
+			);
 		}
-		
+
 		// Wait before retry (but not after last attempt)
 		if (attempt < maxRetries) {
 			await wait(1500);
 		}
 	}
-	
+
 	// All retries failed
-	throw new Error(`Failed to type into element with selector "${selector}" after ${maxRetries} attempts. Last error: ${lastError}`);
+	throw new Error(
+		`Failed to type into element with selector "${selector}" after ${maxRetries} attempts. Last error: ${lastError}`,
+	);
 }
 
 // Type text at coordinates
