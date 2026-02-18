@@ -1,6 +1,5 @@
-import axios, { isAxiosError } from "axios";
 import { useEffect } from "react";
-import { CSRF, Env, get } from "@semoss/sdk/react";
+import { CSRF, Env } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { RootStoreContext } from "@/contexts";
 import { RootStore } from "@/stores";
