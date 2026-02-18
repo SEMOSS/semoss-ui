@@ -355,19 +355,51 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											setIsDragging(false);
 										}}
 										onPaste={(e) => {
-											// set the new files
-											const updated = Array.from(
-												e.clipboardData.files,
+											const cd = e.clipboardData;
+
+											const imageFiles = Array.from(cd.files || []).filter((f) =>
+												f.type?.startsWith("image/")
 											);
 
-											if (updated.length > 0) {
+											const textPlainRaw = cd.getData("text/plain") || "";
+											const textPlain = textPlainRaw.trim();
+
+											const html = cd.getData("text/html") || "";
+
+											const { htmlHasImg, htmlHasMeaningfulText } = (() => {
+												if (!html) return { htmlHasImg: false, htmlHasMeaningfulText: false };
+
+												const doc = new DOMParser().parseFromString(html, "text/html");
+												const htmlHasImg = !!doc.querySelector("img");
+
+												doc.querySelectorAll("img,style,script,meta,link").forEach((n) => n.remove());
+
+												const txt = (doc.body?.textContent || "")
+												.replace(/\u00A0/g, " ")
+												.trim();
+
+												return { htmlHasImg, htmlHasMeaningfulText: txt.length > 0 };
+											})();
+
+											const hasMeaningfulText = textPlain.length > 0 || htmlHasMeaningfulText;
+											const hasAnyImage = imageFiles.length > 0 || htmlHasImg;
+
+											if (hasMeaningfulText && hasAnyImage) {
 												e.preventDefault();
-												setFiles((prev) => [
-													...prev,
-													...updated,
-												]);
+												document.execCommand("insertText", false, textPlainRaw);
+												return;
 											}
-										}}
+
+											if (hasMeaningfulText) return;
+
+											if (imageFiles.length > 0) {
+												e.preventDefault();
+												setFiles((prev) => [...prev, ...imageFiles]);
+												return;
+											}
+
+											if (htmlHasImg) return;
+											}}
 									/>
 								</div>
 							}
