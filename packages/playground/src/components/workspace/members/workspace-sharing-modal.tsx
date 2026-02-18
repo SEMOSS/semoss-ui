@@ -1,18 +1,33 @@
-import { UserPlusIcon } from "lucide-react";
-import { useCallback, useState } from "react";
+import { ChevronsUpDownIcon, UserPlusIcon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	Button,
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
 	Dialog,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	Input,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
 	ScrollArea,
+	Spinner,
 	toast,
+	useDebouncedValue,
 } from "@semoss/ui/next";
-import { addProjectUserPermissions, type PostUser } from "@/api";
+import {
+	addProjectUserPermissions,
+	getProjectUsers,
+	getProjectUsersNoCredentials,
+	type PostUser,
+} from "@/api";
 import type { User } from "@/types";
 import { PermissionDropdown } from "./permission-dropdown";
 import { WorkspaceMemberRow } from "./workspace-member-row";
@@ -32,23 +47,64 @@ export const WorkspaceSharingModal = ({
 	onClose,
 	activeUserPermission,
 }: WorkspaceSharingModalProps) => {
-	const [userId, setUserId] = useState("");
+	/**
+	 * State
+	 */
+	const [search, setSearch] = useState("");
 	const [selectedPermission, setSelectedPermission] = useState("READ_ONLY");
 	const [pendingUsers, setPendingUsers] = useState<User[]>([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [popoverOpen, setPopoverOpen] = useState(false);
+
+	const [usersInDropdown, setUsersInDropdown] = useState<User[]>([]);
+	const [isLoadingDropdownUsers, setIsLoadingDropdownUsers] = useState(false);
+
+	/**
+	 * Library Hooks
+	 */
+	const debouncedSearch = useDebouncedValue(search, 500);
+
+	/**
+	 * Functions
+	 */
+	useEffect(() => {
+		const fetchUsers = async () => {
+			setIsLoadingDropdownUsers(true);
+			try {
+				const [usersIn, usersOut] = await Promise.all([
+					getProjectUsers(
+						workspaceId,
+						debouncedSearch,
+						undefined,
+						5,
+						0,
+					),
+					getProjectUsersNoCredentials(
+						workspaceId,
+						debouncedSearch,
+						5,
+						0,
+					),
+				]);
+
+				setUsersInDropdown([...usersOut, ...usersIn.members]);
+			} catch (error) {
+				toast.error(
+					`Failed to fetch users: ${error instanceof Error ? error.message : "Unknown error"}`,
+				);
+			} finally {
+				setIsLoadingDropdownUsers(false);
+			}
+		};
+		fetchUsers();
+	}, [debouncedSearch, workspaceId]);
 
 	/**
 	 * Add a user to the pending list
 	 */
-	const handleAddUser = () => {
-		const trimmedUserId = userId.trim();
-		if (!trimmedUserId) {
-			toast.error("Please enter a user ID");
-			return;
-		}
-
+	const handleAddUser = (user: User) => {
 		// Check if user is already in the list
-		if (pendingUsers.some((u) => u.id === trimmedUserId)) {
+		if (pendingUsers.some((u) => u.id === user.id)) {
 			toast.error("User already added");
 			return;
 		}
@@ -56,18 +112,14 @@ export const WorkspaceSharingModal = ({
 		setPendingUsers((prev) => [
 			...prev,
 			{
-				id: trimmedUserId,
+				...user,
 				permission: selectedPermission,
-				date_added: "todo",
-				name: "todo", // Name and email will be resolved on the backend when processing the request
-				email: "todo",
-				type: "todo",
-			} satisfies User,
+			},
 		]);
 
-		// Reset inputs
-		setUserId("");
-		setSelectedPermission("READ_ONLY");
+		// Close popover and reset search
+		setPopoverOpen(false);
+		setSearch("");
 	};
 
 	/**
@@ -121,7 +173,7 @@ export const WorkspaceSharingModal = ({
 
 			// Reset state
 			setPendingUsers([]);
-			setUserId("");
+			setSearch("");
 			setSelectedPermission("READ_ONLY");
 
 			// Close modal with changes made
@@ -141,10 +193,12 @@ export const WorkspaceSharingModal = ({
 	const handleClose = useCallback(() => {
 		// Reset state
 		setPendingUsers([]);
-		setUserId("");
+		setSearch("");
 		setSelectedPermission("READ_ONLY");
 		onClose(false);
 	}, [onClose]);
+
+	const showLoading = isLoadingDropdownUsers || search !== debouncedSearch;
 
 	return (
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
@@ -160,31 +214,87 @@ export const WorkspaceSharingModal = ({
 					{/* Add User Form */}
 					<div className="flex flex-col gap-2">
 						<div className="flex gap-2">
-							<Input
-								placeholder="Enter user ID or email"
-								value={userId}
-								onChange={(e) => setUserId(e.target.value)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter") {
-										e.preventDefault();
-										handleAddUser();
-									}
-								}}
-								className="flex-1"
-							/>
+							<Popover
+								open={popoverOpen}
+								onOpenChange={setPopoverOpen}
+							>
+								<PopoverTrigger asChild>
+									<Button
+										variant="outline"
+										role="combobox"
+										aria-expanded={popoverOpen}
+										className="flex-1 justify-between"
+									>
+										<span className="truncate">
+											{search || "Search for a user..."}
+										</span>
+										<ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent
+									className="w-[400px] p-0"
+									align="start"
+								>
+									<Command shouldFilter={false}>
+										<CommandInput
+											placeholder="Search users..."
+											value={search}
+											onValueChange={setSearch}
+										/>
+										<CommandList>
+											<CommandEmpty>
+												{showLoading ? (
+													<div className="flex items-center justify-center py-4">
+														<Spinner />
+													</div>
+												) : (
+													"No users found"
+												)}
+											</CommandEmpty>
+											<CommandGroup>
+												{usersInDropdown.map((user) => (
+													<CommandItem
+														key={user.id}
+														value={user.id}
+														onSelect={() =>
+															handleAddUser(user)
+														}
+														disabled={pendingUsers.some(
+															(u) =>
+																u.id ===
+																user.id,
+														)}
+													>
+														<div className="flex flex-1 flex-col truncate">
+															<span className="truncate">
+																{user.name}
+															</span>
+															{user.email && (
+																<span className="truncate text-muted-foreground text-xs">
+																	{user.email}
+																</span>
+															)}
+														</div>
+													</CommandItem>
+												))}
+												{showLoading &&
+													usersInDropdown.length >
+														0 && (
+														<div className="flex items-center justify-center py-2">
+															<Spinner className="size-4" />
+														</div>
+													)}
+											</CommandGroup>
+										</CommandList>
+									</Command>
+								</PopoverContent>
+							</Popover>
 							<PermissionDropdown
 								activeUserPermission={activeUserPermission}
 								permission={selectedPermission}
 								handlePermissionChange={setSelectedPermission}
 								hideDeleteOption
 							/>
-							<Button
-								variant="outline"
-								onClick={handleAddUser}
-								disabled={!userId.trim()}
-							>
-								Invite
-							</Button>
 						</div>
 					</div>
 

@@ -118,6 +118,28 @@ export const getProjectUsers = async (
 	}>("getProjectUsers", { projectId, userId, permission, limit, offset });
 
 /**
+ * Get users without access to a project
+ * @param projectId - The project ID
+ * @param userId - Optional user ID to filter by
+ * @param permission - Optional permission level to filter by
+ * @param limit - Optional limit for pagination
+ * @param offset - Optional offset for pagination
+ * @returns Object containing members array and total count
+ */
+export const getProjectUsersNoCredentials = async (
+	projectId: string,
+	userId?: string,
+	limit?: number,
+	offset?: number,
+): Promise<User[]> =>
+	await fetchApi<User[]>("getProjectUsersNoCredentials", {
+		projectId,
+		userId,
+		limit,
+		offset,
+	});
+
+/**
  * Add user permissions to a project
  * @param projectId - The project ID
  * @param users - Array of users with their permissions to add
