@@ -1,5 +1,4 @@
 import { Env, get, post } from "@semoss/sdk/react";
-import type { Role } from "@/types";
 
 export const setProjectFavorite = async (
 	projectId: string,
@@ -142,21 +141,6 @@ export const getProjects = async (
 	// there was no response, that is an error
 	if (!response) {
 		throw Error("No Response to get Projects");
-	}
-	return response.data;
-};
-
-export const getUserProjectPermission = async (projectId: string) => {
-	const response = await get<{
-		permission: Role;
-	}>(
-		`${Env.MODULE}/api/auth/project/getUserProjectPermission?projectId=${projectId}`,
-	).catch((error) => {
-		throw Error(error);
-	});
-	// there was no response, that is an error
-	if (!response) {
-		throw Error("No Response to get permission");
 	}
 	return response.data;
 };

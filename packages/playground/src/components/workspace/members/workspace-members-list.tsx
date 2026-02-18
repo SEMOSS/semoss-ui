@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getUserProjectPermission } from "@semoss/shared";
 import {
 	Button,
 	Dialog,
@@ -15,7 +16,6 @@ import {
 import {
 	editProjectUserPermissions,
 	getProjectUsers,
-	getUserProjectPermission,
 	removeProjectUserPermissions,
 } from "@/api";
 import { useChat } from "@/hooks";

@@ -80,20 +80,6 @@ const postApi = async (
 };
 
 /**
- * Get the current user's permission for a project
- * @param projectId - The project ID
- * @returns The user's permission level
- */
-export const getUserProjectPermission = async (
-	projectId: string,
-): Promise<string> =>
-	(
-		await fetchApi<{
-			permission: string;
-		}>("getUserProjectPermission", { projectId })
-	).permission;
-
-/**
  * Get users with access to a project
  * @param projectId - The project ID
  * @param userId - Optional user ID to filter by
