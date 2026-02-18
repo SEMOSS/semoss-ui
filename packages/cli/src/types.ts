@@ -9,5 +9,7 @@ export type Config = {
 	deploy: {
 		/** glob pattern(s) to ignore files */
 		ignore: string | string[];
+		/** Batch deployment configurations */
+		batch?: Record<string, unknown>;
 	};
 };

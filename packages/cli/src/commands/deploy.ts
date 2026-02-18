@@ -577,11 +577,21 @@ deploy java and python folders
 				);
 
 			if (!backupRecord || !backupRecord.backupDir) {
-				throw new Error("No previous backup found for rollback");
+				throw new Error("No previous deployment found for rollback.");
 			}
 
 			return backupRecord.backupDir;
 		} catch (error) {
+			if (
+				error instanceof Error &&
+				"code" in error &&
+				(error as NodeJS.ErrnoException).code === "ENOENT"
+			) {
+				throw new Error("No previous deployment found for rollback.");
+			}
+			if (error instanceof Error) {
+				throw error;
+			}
 			throw new Error(`Rollback failed: ${error}`);
 		}
 	}
@@ -914,7 +924,9 @@ deploy java and python folders
 				rollbackBackupDir = await this.rollbackToPrevious();
 				this.log(`📦 Using backup from: ${rollbackBackupDir}`);
 			} catch (error) {
-				this.error(`Rollback failed: ${error}`);
+				const message =
+					error instanceof Error ? error.message : String(error);
+				this.error(message);
 			}
 		}
 
@@ -940,20 +952,6 @@ deploy java and python folders
 		if (flags.verbose || flags.superVerbose) {
 			this.log("🔍 Debug mode enabled");
 			this.log(`📁 Environment file: ${envPath}`);
-		}
-
-		if (flags.showEnv) {
-			this.log("\n🌍 Environment Variables:");
-			this.log(`   • MODULE: ${Env.MODULE || "Not set"}`);
-			this.log(
-				`   • APP: ${Env.APP || process.env.VITE_APP || "Not set"}`,
-			);
-			this.log(
-				`   • ACCESS_KEY: ${Env.ACCESS_KEY ? `***${Env.ACCESS_KEY.slice(-4)}` : "Not set"}`,
-			);
-			this.log(
-				`   • SECRET_KEY: ${Env.SECRET_KEY ? `***${Env.SECRET_KEY.slice(-4)}` : "Not set"}`,
-			);
 		}
 
 		if (flags.superVerbose) {
@@ -1041,6 +1039,20 @@ deploy java and python folders
 			});
 		} catch (error) {
 			this.error(error as Error);
+		}
+
+		if (flags.showEnv) {
+			this.log("\n🌍 Environment Variables:");
+			this.log(`   • MODULE: ${Env.MODULE || "Not set"}`);
+			this.log(
+				`   • APP: ${Env.APP || process.env.VITE_APP || "Not set"}`,
+			);
+			this.log(
+				`   • ACCESS_KEY: ${Env.ACCESS_KEY ? `***${Env.ACCESS_KEY.slice(-4)}` : "Not set"}`,
+			);
+			this.log(
+				`   • SECRET_KEY: ${Env.SECRET_KEY ? `***${Env.SECRET_KEY.slice(-4)}` : "Not set"}`,
+			);
 		}
 
 		// check the environment
@@ -1139,6 +1151,7 @@ deploy java and python folders
 		}>([
 			{
 				title: "Initializing",
+				enabled: () => !flags.dryRun,
 				task: async () => {
 					const startTime = Date.now();
 
@@ -1163,6 +1176,26 @@ deploy java and python folders
 					}
 
 					if (insight.error) {
+						const msg =
+							insight.error instanceof Error
+								? insight.error.message
+								: String(insight.error);
+						if (
+							msg.includes("Unexpected token") ||
+							msg.includes("is not valid JSON")
+						) {
+							throw new Error(
+								"Authentication failed — check ACCESS_KEY and SECRET_KEY. The server returned an HTML login page instead of JSON.",
+							);
+						}
+						if (
+							msg.includes("fetch failed") ||
+							msg.includes("ECONNREFUSED")
+						) {
+							throw new Error(
+								`Could not connect to server at ${Env.MODULE} — is the server running?`,
+							);
+						}
 						throw insight.error;
 					} else if (!insight.isAuthorized) {
 						throw new Error("User is not Authorized");
@@ -1182,6 +1215,7 @@ deploy java and python folders
 			},
 			{
 				title: "Running Reactor 1+1",
+				enabled: () => !flags.dryRun,
 				task: async (context) => {
 					const startTime = Date.now();
 
@@ -1497,8 +1531,15 @@ deploy java and python folders
 								}
 								context.deleteResult = "no-assets-to-delete";
 							} else {
-								// Re-throw other errors
-								throw error;
+								// Log the error but proceed — upload can still succeed
+								this.log(
+									`⚠️  DeleteAppAssets failed: ${errorMsg}`,
+								);
+								this.log(
+									`📝 Continuing with upload — assets may need manual cleanup.`,
+								);
+								context.deleteResult =
+									"delete-failed-continuing";
 							}
 						}
 					} else {
@@ -1679,6 +1720,7 @@ deploy java and python folders
 			},
 			{
 				title: "Loading App Reactors",
+				enabled: () => !flags.dryRun,
 				task: async () => {
 					// Load the insight classes
 					await insight.actions.run(
@@ -1690,6 +1732,7 @@ deploy java and python folders
 			},
 			{
 				title: "Publishing App",
+				enabled: () => !flags.dryRun,
 				task: async (context) => {
 					// Publish the app
 					const { pixelReturn } = await insight.actions.run<[string]>(
@@ -1713,10 +1756,6 @@ deploy java and python folders
 			.then((context) => {
 				const deploymentDuration = Date.now() - deploymentStartTime;
 
-				if (context.result === undefined) {
-					throw new Error("Result Missing");
-				}
-
 				if (flags.dryRun) {
 					this.log("✅ Dry-run completed successfully!");
 					this.log("Files would have been deployed:");
@@ -1726,6 +1765,10 @@ deploy java and python folders
 						);
 					}
 					return;
+				}
+
+				if (context.result === undefined) {
+					throw new Error("Result Missing");
 				}
 
 				this.log("🎉 Success!");

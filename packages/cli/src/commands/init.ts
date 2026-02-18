@@ -77,7 +77,6 @@ init (./src/commands/init.ts)
 			const endpoint = process.env.ENDPOINT;
 			const modulePath = process.env.MODULE;
 
-			console.log(process.env);
 			if (!endpoint) {
 				this.error(
 					"ENDPOINT is required. Define one in your environment variables (.env)",
@@ -145,6 +144,26 @@ init (./src/commands/init.ts)
 					});
 
 					if (insight.error) {
+						const msg =
+							insight.error instanceof Error
+								? insight.error.message
+								: String(insight.error);
+						if (
+							msg.includes("Unexpected token") ||
+							msg.includes("is not valid JSON")
+						) {
+							throw new Error(
+								"Authentication failed — check ACCESS_KEY and SECRET_KEY. The server returned an HTML login page instead of JSON.",
+							);
+						}
+						if (
+							msg.includes("fetch failed") ||
+							msg.includes("ECONNREFUSED")
+						) {
+							throw new Error(
+								`Could not connect to server at ${Env.MODULE} — is the server running?`,
+							);
+						}
 						throw insight.error;
 					} else if (!insight.isAuthorized) {
 						throw new Error("User is not Authorized");
