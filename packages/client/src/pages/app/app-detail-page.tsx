@@ -11,7 +11,6 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
-import { useNotification } from "@semoss/ui";
 import {
 	Badge,
 	Breadcrumb,
@@ -32,6 +31,7 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import { getUserProjectPermission, uploadImage } from "@/api";
 import {
@@ -55,7 +55,7 @@ import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import type { Role } from "@/types";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
-import { AccessControl } from "./AppDetailTabs/AccessControl";
+import { AccessControl } from "./AppDetailTabs/access-control";
 import { Dependencies } from "./AppDetailTabs/Dependencies";
 import { Overview } from "./AppDetailTabs/Overview";
 import { SettingsTab } from "./AppDetailTabs/Settings";
@@ -83,7 +83,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	);
 	const [pendingRequest, setPendingRequest] = useState(false);
 	const { monolithStore, configStore } = useRootStore();
-	const notification = useNotification();
 	const { appId } = useParams();
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
@@ -251,10 +250,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 		}));
 	};
 	const emitMessage = (isError: boolean, message: string) => {
-		notification.add({
-			color: isError ? "error" : "success",
-			message,
-		});
+		toast(message);
 	};
 
 	const handleCloseChangeAccessModal = (refresh?: boolean) => {
@@ -307,10 +303,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 				const modelled = modelDependencies(res.output);
 				setValue("dependencies", modelled);
 			} else {
-				notification.add({
-					color: "error",
-					message: res.output,
-				});
+				toast.error(res.output);
 			}
 		}
 		setIsEditDependenciesModalOpen(false);
@@ -340,11 +333,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 		}
 
 		if (Object.keys(meta).length === 0) {
-			notification.add({
-				color: "warning",
-				message: "Nothing to Save",
-			});
-
+			toast.info("Nothing to Save");
 			return;
 		}
 
@@ -360,11 +349,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 
 				// track the errors
 				if (operationType.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
-						message: output as string,
-					});
-
+					toast.error(output as string);
 					return;
 				}
 				// upload the image
@@ -385,19 +370,12 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 				}
 
 				// close it, refresh and succesfully message
-				notification.add({
-					color: "success",
-					message: additionalOutput[0].output,
-				});
-
+				toast.success(additionalOutput[0].output);
 				fetchAppData(appId);
 				handleCloseEditDetailsModal();
 			})
 			.catch((error) => {
-				notification.add({
-					color: "error",
-					message: error.message,
-				});
+				toast.error(error.message);
 			});
 	});
 

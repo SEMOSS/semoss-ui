@@ -1,3 +1,3 @@
 export * from "./Panel";
-export * from "./SettingsPanel";
+export * from "./settings-panel";
 export * from "./TerminalPanel";
