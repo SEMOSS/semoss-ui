@@ -145,37 +145,6 @@ export const getProjects = async (
 	return response.data;
 };
 
-export const getProjectUsersNoCredentials = async (
-	admin: boolean,
-	appId: string,
-	limit: number,
-	offset: number,
-	searchTerm: string,
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	if (admin) {
-		url += "admin/";
-	}
-	url += `project/getProjectUsersNoCredentials?projectId=${appId}&limit=${limit}&offset=${offset}&searchTerm=${searchTerm}`;
-	// get the response
-	const response = await get<
-		{
-			id: string;
-			email: string;
-			name: string;
-			type: string;
-			username: string;
-		}[]
-	>(url).catch((error) => {
-		throw Error(error);
-	});
-	// there was no response, that is an error
-	if (!response) {
-		throw Error("No Response to get non credentialed users");
-	}
-	return response;
-};
-
 export const approveProjectUserAccessRequest = async (
 	admin: boolean,
 	appId: string,

@@ -2,7 +2,7 @@ import type { AxiosResponse } from "axios";
 import { Edit, Eye, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
-import { getProjectUsers } from "@semoss/shared";
+import { getProjectUsers, getProjectUsersNoCredentials } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -46,7 +46,6 @@ import {
 	editProjectUserPermissions,
 	getEngineUsers,
 	getEngineUsersNoCredentials,
-	getProjectUsersNoCredentials,
 } from "@/api";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
 import { useSettings } from "@/hooks";
@@ -205,11 +204,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				if (type === "PROJECT") {
 					const [noCred, cred] = await Promise.all([
 						getProjectUsersNoCredentials(
-							adminMode,
 							id,
+							adminMode,
+							debouncedSearch || "",
 							AUTOCOMPLETE_LIMIT,
 							offset,
-							debouncedSearch || "",
 						),
 						getProjectUsers(
 							id,
@@ -220,7 +219,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 							offset,
 						),
 					]);
-					all = [...(noCred?.data || []), ...(cred?.members || [])];
+					all = [...(noCred || []), ...(cred?.members || [])];
 				} else if (
 					type === "DATABASE" ||
 					type === "STORAGE" ||

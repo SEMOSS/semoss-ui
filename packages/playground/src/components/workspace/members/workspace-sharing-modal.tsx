@@ -1,6 +1,6 @@
 import { ChevronsUpDownIcon, UserPlusIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { getProjectUsers } from "@semoss/shared";
+import { getProjectUsers, getProjectUsersNoCredentials } from "@semoss/shared";
 import {
 	Button,
 	Command,
@@ -23,11 +23,7 @@ import {
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
-import {
-	addProjectUserPermissions,
-	getProjectUsersNoCredentials,
-	type PostUser,
-} from "@/api";
+import { addProjectUserPermissions, type PostUser } from "@/api";
 import type { User } from "@/types";
 import { PermissionDropdown } from "./permission-dropdown";
 import { WorkspaceMemberRow } from "./workspace-member-row";
@@ -93,6 +89,7 @@ export const WorkspaceSharingModal = ({
 					),
 					getProjectUsersNoCredentials(
 						workspaceId,
+						false,
 						debouncedSearch,
 						5,
 						0,

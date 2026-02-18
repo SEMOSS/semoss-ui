@@ -1,5 +1,3 @@
-import type { User } from "@/types";
-
 export type PostUser = {
 	userid: string;
 	permission: string;
@@ -8,40 +6,6 @@ export type PostUser = {
 /**
  * Helper Methods
  */
-
-/**
- * Fetch data from the API
- * @param extension - The API endpoint extension
- * @param params - Query parameters to include in the request
- * @returns The API response data
- */
-const fetchApi = async <K>(extension: string, params: object): Promise<K> => {
-	const queryParams = new URLSearchParams(
-		Object.entries(params)
-			.filter(([_, value]) => Boolean(value))
-			.map(([key, value]) => [key, String(value)]),
-	);
-	const url = `${import.meta.env.MODULE}/api/auth/project/${extension}?${queryParams}`;
-
-	// get the response
-	const response = await fetch(url).catch((error) => {
-		throw Error(error);
-	});
-
-	// there was no response, that is an error
-	if (!response.ok) {
-		const errorData = await response.json().catch(() => ({}));
-		const errorMessage =
-			errorData.errorMessage ||
-			errorData.error ||
-			errorData.message ||
-			`No Response from ${extension}`;
-		throw Error(errorMessage);
-	}
-
-	const data = await response.json();
-	return data;
-};
 
 /**
  * Post data to the API
@@ -78,28 +42,6 @@ const postApi = async (
 	const data = await response.json();
 	return data.success;
 };
-
-/**
- * Get users without access to a project
- * @param projectId - The project ID
- * @param userId - Optional user ID to filter by
- * @param permission - Optional permission level to filter by
- * @param limit - Optional limit for pagination
- * @param offset - Optional offset for pagination
- * @returns Object containing members array and total count
- */
-export const getProjectUsersNoCredentials = async (
-	projectId: string,
-	userId?: string,
-	limit?: number,
-	offset?: number,
-): Promise<User[]> =>
-	await fetchApi<User[]>("getProjectUsersNoCredentials", {
-		projectId,
-		userId,
-		limit,
-		offset,
-	});
 
 /**
  * Add user permissions to a project
