@@ -194,7 +194,10 @@ export const EditDependenciesModal = ({
 		search !== debouncedSearch || getEngines.status !== "SUCCESS";
 
 	return (
-		<Dialog open={isOpen} onOpenChange={(open) => !open && handleClose(false)}>
+		<Dialog
+			open={isOpen}
+			onOpenChange={(open) => !open && handleClose(false)}
+		>
 			<DialogContent className="sm:max-w-2xl">
 				<DialogHeader>
 					<div className="flex items-center justify-between">
@@ -208,7 +211,10 @@ export const EditDependenciesModal = ({
 							Add Dependencies
 						</Muted>
 
-						<Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
+						<Popover
+							open={dropdownOpen}
+							onOpenChange={setDropdownOpen}
+						>
 							<PopoverTrigger asChild>
 								<Button
 									variant="outline"
@@ -221,7 +227,10 @@ export const EditDependenciesModal = ({
 								</Button>
 							</PopoverTrigger>
 							<PopoverContent className="w-[600px]" align="start">
-								<Command shouldFilter={false} className="w-full">
+								<Command
+									shouldFilter={false}
+									className="w-full"
+								>
 									<div className="flex items-center border-b px-3">
 										<CommandInput
 											placeholder="Search..."
@@ -234,17 +243,22 @@ export const EditDependenciesModal = ({
 										)}
 									</div>
 									<CommandList className="max-h-[300px]">
-										<CommandEmpty>No results found</CommandEmpty>
+										<CommandEmpty>
+											No results found
+										</CommandEmpty>
 										<CommandGroup className="p-0">
 											{allDeps.map((dep) => {
-												const isSelected = selectedDeps.some(
-													(d) => d.id === dep.id,
-												);
+												const isSelected =
+													selectedDeps.some(
+														(d) => d.id === dep.id,
+													);
 												return (
 													<CommandItem
 														key={dep.id}
 														onSelect={() =>
-															handleToggleDependency(dep)
+															handleToggleDependency(
+																dep,
+															)
 														}
 														className="flex items-center gap-2"
 													>
@@ -309,7 +323,9 @@ export const EditDependenciesModal = ({
 												variant="ghost"
 												size="icon"
 												onClick={() =>
-													handleRemoveDependency(dep.id)
+													handleRemoveDependency(
+														dep.id,
+													)
 												}
 												className="h-8 w-8"
 											>
@@ -324,7 +340,10 @@ export const EditDependenciesModal = ({
 				</div>
 
 				<DialogFooter>
-					<Button onClick={() => handleClose(false)} variant="outline">
+					<Button
+						onClick={() => handleClose(false)}
+						variant="outline"
+					>
 						Cancel
 					</Button>
 					<Button onClick={handleUpdateDependencies}>Save</Button>
