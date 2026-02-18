@@ -537,169 +537,55 @@ export class ScriptExecutor {
 				console.log(`[ScriptExecutor] TYPE - User provided: "${textToType}"`);
 			}
 
-			// Try selector first, fall back to coordinates
 			if (action.selector) {
 				console.log(`[ScriptExecutor] TYPE - Using SELECTOR: "${action.selector}"`);
-				console.log(`[ScriptExecutor] TYPE - Selector strategy: Primary attempt`);
-				try {
-					const response = await chrome.runtime.sendMessage({
-						type: "EXECUTE_SCRIPT_ACTION",
-						tabId: tabId,
-						action: "typeBySelector",
-						payload: {
-							selector: action.selector,
-							value: textToType,
-						},
-					});
-					console.log(`[ScriptExecutor] TYPE - Response from typeBySelector:`, response);
-					// Suppress bfcache errors
-					if (chrome.runtime.lastError) {
-						console.warn(`[ScriptExecutor] TYPE - Chrome runtime error:`, chrome.runtime.lastError);
-					}
-					if (!response.success) {
-						console.error(`[ScriptExecutor] TYPE - Selector failed:`, response.error);
-						throw new Error(response.error);
-					}
-					console.log(`[ScriptExecutor] TYPE - Selector succeeded! ✓`);
-				} catch (error) {
-					// Fall back to coordinates if selector fails
-					console.error(`[ScriptExecutor] TYPE - Selector approach FAILED:`, error);
-					if (action.coords) {
-						console.log(`[ScriptExecutor] TYPE - Falling back to COORDINATES: (${action.coords.x}, ${action.coords.y})`);
-						const response = await chrome.runtime.sendMessage({
-							type: "EXECUTE_SCRIPT_ACTION",
-							tabId: tabId,
-							action: "typeByCoords",
-							payload: {
-								x: action.coords.x,
-								y: action.coords.y,
-								value: textToType,
-							},
-						});
-						console.log(`[ScriptExecutor] TYPE - Response from typeByCoords:`, response);
-						// Suppress bfcache errors
-						if (chrome.runtime.lastError) {
-							console.warn(`[ScriptExecutor] TYPE - Chrome runtime error (coords):`, chrome.runtime.lastError);
-						}
-						if (!response.success) {
-							console.error(`[ScriptExecutor] TYPE - Coords failed:`, response.error);
-							throw new Error(
-								response.error || "Failed to type by coords",
-							);
-						}
-						console.log(`[ScriptExecutor] TYPE - Coords succeeded! ✓`);
-					} else {
-						console.error(`[ScriptExecutor] TYPE - No coords available for fallback!`);
-						throw error;
-					}
-				}
-			} else if (action.coords) {
-				console.log(`[ScriptExecutor] TYPE - No selector, using COORDINATES directly: (${action.coords.x}, ${action.coords.y})`);
+				// typeBySelector handles retry logic internally
 				const response = await chrome.runtime.sendMessage({
 					type: "EXECUTE_SCRIPT_ACTION",
 					tabId: tabId,
-					action: "typeByCoords",
+					action: "typeBySelector",
 					payload: {
-						x: action.coords.x,
-						y: action.coords.y,
+						selector: action.selector,
 						value: textToType,
 					},
 				});
-				console.log(`[ScriptExecutor] TYPE - Response from typeByCoords:`, response);
-				// Suppress bfcache errors
+				console.log(`[ScriptExecutor] TYPE - Response:`, response);
 				if (chrome.runtime.lastError) {
-					console.warn(`[ScriptExecutor] TYPE - Chrome runtime error (coords direct):`, chrome.runtime.lastError);
+					console.warn(`[ScriptExecutor] TYPE - Chrome runtime error:`, chrome.runtime.lastError);
 				}
 				if (!response.success) {
-					console.error(`[ScriptExecutor] TYPE - Coords failed:`, response.error);
-					throw new Error(
-						response.error || "Failed to type by coords",
-					);
+					console.error(`[ScriptExecutor] TYPE - Failed:`, response.error);
+					throw new Error(response.error || "Failed to type by selector");
 				}
-				console.log(`[ScriptExecutor] TYPE - Coords succeeded! ✓`);
+				console.log(`[ScriptExecutor] TYPE - Succeeded! ✓`);
 			} else {
-				console.error(`[ScriptExecutor] TYPE - No selector AND no coords provided!`);
+				console.error(`[ScriptExecutor] TYPE - No selector provided! Selector is required.`);
+				throw new Error("TYPE action requires a selector");
 			}
 		} else if (action.type === "click") {
-			// Try selector first, fall back to coordinates
 			if (action.selector) {
 				console.log(`[ScriptExecutor] CLICK - Using SELECTOR: "${action.selector}"`);
-				console.log(`[ScriptExecutor] CLICK - Selector strategy: Primary attempt`);
-				try {
-					const response = await chrome.runtime.sendMessage({
-						type: "EXECUTE_SCRIPT_ACTION",
-						tabId: tabId,
-						action: "clickBySelector",
-						payload: {
-							selector: action.selector,
-						},
-					});
-					console.log(`[ScriptExecutor] CLICK - Response from clickBySelector:`, response);
-					// Suppress bfcache errors
-					if (chrome.runtime.lastError) {
-						console.warn(`[ScriptExecutor] CLICK - Chrome runtime error:`, chrome.runtime.lastError);
-					}
-					if (!response.success) {
-						console.error(`[ScriptExecutor] CLICK - Selector failed:`, response.error);
-						throw new Error(response.error);
-					}
-					console.log(`[ScriptExecutor] CLICK - Selector succeeded! ✓`);
-				} catch (error) {
-					// Fall back to coordinates if selector fails
-					console.error(`[ScriptExecutor] CLICK - Selector approach FAILED:`, error);
-					if (action.coords) {
-						console.log(`[ScriptExecutor] CLICK - Falling back to COORDINATES: (${action.coords.x}, ${action.coords.y})`);
-						const response = await chrome.runtime.sendMessage({
-							type: "EXECUTE_SCRIPT_ACTION",
-							tabId: tabId,
-							action: "clickByCoords",
-							payload: {
-								x: action.coords.x,
-								y: action.coords.y,
-							},
-						});
-						console.log(`[ScriptExecutor] CLICK - Response from clickByCoords:`, response);
-						// Suppress bfcache errors
-						if (chrome.runtime.lastError) {
-							console.warn(`[ScriptExecutor] CLICK - Chrome runtime error (coords):`, chrome.runtime.lastError);
-						}
-						if (!response.success) {
-							console.error(`[ScriptExecutor] CLICK - Coords failed:`, response.error);
-							throw new Error(
-								response.error || "Failed to click by coords",
-							);
-						}
-						console.log(`[ScriptExecutor] CLICK - Coords succeeded! ✓`);
-					} else {
-						console.error(`[ScriptExecutor] CLICK - No coords available for fallback!`);
-						throw error;
-					}
-				}
-			} else if (action.coords) {
-				console.log(`[ScriptExecutor] CLICK - No selector, using COORDINATES directly: (${action.coords.x}, ${action.coords.y})`);
+				// clickBySelector handles retry logic internally
 				const response = await chrome.runtime.sendMessage({
 					type: "EXECUTE_SCRIPT_ACTION",
 					tabId: tabId,
-					action: "clickByCoords",
+					action: "clickBySelector",
 					payload: {
-						x: action.coords.x,
-						y: action.coords.y,
+						selector: action.selector,
 					},
 				});
-				console.log(`[ScriptExecutor] CLICK - Response from clickByCoords:`, response);
-				// Suppress bfcache errors
+				console.log(`[ScriptExecutor] CLICK - Response:`, response);
 				if (chrome.runtime.lastError) {
-					console.warn(`[ScriptExecutor] CLICK - Chrome runtime error (coords direct):`, chrome.runtime.lastError);
+					console.warn(`[ScriptExecutor] CLICK - Chrome runtime error:`, chrome.runtime.lastError);
 				}
 				if (!response.success) {
-					console.error(`[ScriptExecutor] CLICK - Coords failed:`, response.error);
-					throw new Error(
-						response.error || "Failed to click by coords",
-					);
+					console.error(`[ScriptExecutor] CLICK - Failed:`, response.error);
+					throw new Error(response.error || "Failed to click by selector");
 				}
-				console.log(`[ScriptExecutor] CLICK - Coords succeeded! ✓`);
+				console.log(`[ScriptExecutor] CLICK - Succeeded! ✓`);
 			} else {
-				console.error(`[ScriptExecutor] CLICK - No selector AND no coords provided!`);
+				console.error(`[ScriptExecutor] CLICK - No selector provided! Selector is required.`);
+				throw new Error("CLICK action requires a selector");
 			}
 		}
 

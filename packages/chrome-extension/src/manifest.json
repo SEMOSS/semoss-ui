@@ -18,7 +18,8 @@
 		"128": "assets/icon-128.svg"
 	},
 	"background": {
-		"service_worker": "background.bundle.js"
+		"service_worker": "src/background/index.ts",
+		"type": "module"
 	},
 	"action": {
 		"default_title": "Workshop Automation Assistant",
@@ -29,15 +30,15 @@
 		}
 	},
 	"side_panel": {
-		"default_path": "panel.html"
+		"default_path": "src/panel/index.html"
 	},
-	"options_page": "options/index.html",
+	"options_page": "src/options/index.html",
 	"content_scripts": [
 		{
 			"matches": ["<all_urls>"],
-			"js": ["content.bundle.js"],
+			"js": ["src/content/index.ts"],
 			"run_at": "document_idle"
 		}
 	],
-	"devtools_page": "devtools.html"
+	"devtools_page": "src/devtools/index.html"
 }

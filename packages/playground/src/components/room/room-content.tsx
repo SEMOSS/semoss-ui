@@ -130,48 +130,71 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		}
 
 		// Check if user is asking to execute/follow the steps
-		const executePattern = /execute|follow|run|play|perform/i;
-		const stepsPattern = /steps?|this|these|script|instructions/i;
-		const matchesExecute = executePattern.test(prompt);
-		const matchesSteps = stepsPattern.test(prompt);
-		const isExecuteRequest = matchesExecute && (matchesSteps || scriptFromFile);
+		// More flexible pattern matching for execution requests
+		const normalizedPrompt = prompt.toLowerCase().trim();
+		
+		// Check for execution keywords
+		const hasExecuteKeyword = /\b(execute|run|play|perform|start|launch|trigger|replay)\b/.test(normalizedPrompt);
+		
+		// Check if the prompt mentions what to execute (script, file, recording, steps, etc.)
+		// or if it's just a single execute command with a script available
+		const hasScriptReference = /\b(this|that|it|the|script|file|recording|steps?|instructions?|automation|test|flow|sequence)\b/.test(normalizedPrompt);
+		
+		// Consider it an execute request if:
+		// 1. User says execute/run/etc AND references something to execute
+		// 2. OR user just says execute/run with a script available (scriptFromFile or lastGoogleRecorderJSON)
+		// 3. OR prompt contains phrases like "execute this file", "run the script", "play recording", etc.
+		const isExecuteRequest = (hasExecuteKeyword && (hasScriptReference || scriptFromFile || lastGoogleRecorderJSON)) ||
+			/\b(execute|run|play|perform|start|launch)\s+(this|that|the|it|my)?\s*(script|file|recording|steps?|instructions?|automation|test|flow)?\b/.test(normalizedPrompt);
+		
+		// Determine which script to execute (prefer current file over previous state)
+		const availableScript = scriptFromFile || lastGoogleRecorderJSON;
 		
 		console.log("[PLAYGROUND] Execution check:", {
-			matchesExecute,
-			matchesSteps,
+			normalizedPrompt: normalizedPrompt.substring(0, 50),
+			hasExecuteKeyword,
+			hasScriptReference,
 			hasScriptFromFile: !!scriptFromFile,
 			hasLastScript: !!lastGoogleRecorderJSON,
+			hasAvailableScript: !!availableScript,
 			isExecuteRequest
 		});
 		
-		if (isExecuteRequest && (lastGoogleRecorderJSON || scriptFromFile)) {
-			const scriptToExecute = scriptFromFile || lastGoogleRecorderJSON;
-			
+		// Execute script if conditions are met
+		// Use availableScript (local variable) instead of state to avoid timing issues
+		if (isExecuteRequest && availableScript) {
 			// Determine script type
-			const isPlaywright = scriptToExecute.meta && scriptToExecute.steps && !Array.isArray(scriptToExecute.steps);
+			const isPlaywright = availableScript.meta && availableScript.steps && !Array.isArray(availableScript.steps);
 			const messageType = isPlaywright ? "SMSS_EXEC_PLAYWRIGHT_SCRIPT" : "SMSS_EXEC_GOOGLE_RECORDER_SCRIPT";
 			
 			console.log("[PLAYGROUND] 🚀 Sending script to Chrome extension:", {
 				scriptType: isPlaywright ? 'Playwright' : 'Google Recorder',
 				messageType,
-				scriptName: scriptToExecute.title || scriptToExecute.meta?.title || "Playground Script",
-				hasScriptContent: !!scriptToExecute,
+				scriptName: availableScript.title || availableScript.meta?.title || "Playground Script",
+				hasScriptContent: !!availableScript,
 				origin: window.location.origin
 			});
 			
-			// Send the script to chrome extension
-			window.postMessage(
-				{
-					type: messageType,
-					script: {
-						name: scriptToExecute.title || scriptToExecute.meta?.title || "Playground Script",
-						autoExecute: true,
-						scriptContent: scriptToExecute,
+			// Use setTimeout to ensure message is sent after current call stack completes
+			// This helps with timing issues on first execution
+			setTimeout(() => {
+				window.postMessage(
+					{
+						type: messageType,
+						script: {
+							name: availableScript.title || availableScript.meta?.title || "Playground Script",
+							autoExecute: true,
+							scriptContent: availableScript,
+						},
 					},
-				},
-				window.location.origin,
-			);
-			console.log(`[PLAYGROUND] ✅ ${isPlaywright ? 'Playwright' : 'Google Recorder'} script sent via window.postMessage`);
+					window.location.origin,
+				);
+				console.log(`[PLAYGROUND] ✅ ${isPlaywright ? 'Playwright' : 'Google Recorder'} script sent via window.postMessage`);
+			}, 0);
+			
+			// Don't send to backend when executing via extension
+			console.log("[PLAYGROUND] ℹ️ Skipping backend message - script execution handled by extension");
+			return true;
 		} else {
 			console.log("[PLAYGROUND] ℹ️ Not executing script - conditions not met");
 		}
@@ -272,17 +295,45 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	useEffect(() => {
 		const handleMessage = async (
 			event: MessageEvent<{
-				type: "SMSS_EXEC_TOOL";
-				tool: MCPToolResponse;
-			}>,
-		) => {
-			try {
-				if (!event.data || event.data.type !== "SMSS_EXEC_TOOL") {
-					return;
+			type: string;
+			success?: boolean;
+			message?: string;
+			tool?: MCPToolResponse;
+		}>,
+	) => {
+		try {
+			// Handle script execution completion from chrome extension
+			if (event.data && event.data.type === "SMSS_SCRIPT_EXECUTION_COMPLETE") {
+				console.log("[PLAYGROUND] 📥 Received script execution complete:", event.data);
+				
+				// Get the last response message to append the completion status
+				const lastMessage = room.history[room.history.length - 1];
+				if (lastMessage && lastMessage.type === "RESPONSE") {
+					// Add execution result as a new message
+					const statusEmoji = event.data.success ? "✅" : "❌";
+					const statusMessage = `${statusEmoji} ${event.data.message || "Script execution completed"}`;
+					
+					// Process as a tool result
+					room.processTool(
+						lastMessage.id,
+						"chrome-extension-script",
+						"Chrome Extension Script Execution",
+						statusMessage,
+						event.data.success ? "success" : "error"
+					);
 				}
+				return;
+			}
+			
+			if (!event.data || event.data.type !== "SMSS_EXEC_TOOL") {
+				return;
+			}
 
-				const tool = event.data.tool;
+			const tool = event.data.tool;
 
+			if (!tool) {
+				return;
+			}
 				room.processTool(
 					tool.message,
 					tool.id,

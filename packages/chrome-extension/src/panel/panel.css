@@ -23,7 +23,7 @@ body {
 
 .panel-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   padding: 16px 24px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -338,25 +338,26 @@ body {
   line-height: 1.5;
 }
 
-.user-input-dialog input {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  margin-bottom: 16px;
-  transition: border-color 0.2s;
+/* TextField component from @semoss/ui - force full width */
+.user-input-dialog .MuiTextField-root {
+  width: 100% !important;
+  margin-bottom: 0;
 }
 
-.user-input-dialog input:focus {
-  outline: none;
-  border-color: #667eea;
+.user-input-dialog .MuiInputBase-root {
+  width: 100%;
 }
 
 .user-input-buttons {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* Override Material-UI Button width constraints */
+.user-input-dialog .MuiButton-root {
+  min-width: auto;
 }
 
 .user-input-dialog .submit-btn {

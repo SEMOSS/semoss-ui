@@ -240,6 +240,8 @@ async function executeScriptAction(
 	}
 
 	switch (action) {
+		case "checkElementReady":
+			return await checkElementReady(tabId, payload.selector as string);
 		case "clickBySelector":
 			return await clickBySelector(tabId, payload.selector as string);
 		case "clickByCoords":
@@ -266,58 +268,77 @@ async function executeScriptAction(
 	}
 }
 
+// Check if element is ready (exists in DOM)
+async function checkElementReady(tabId: number, selector: string): Promise<{ isReady: boolean }> {
+	try {
+		const result = await sendDebuggerCommand(tabId, "Runtime.evaluate", {
+			expression: `
+				(function() {
+					const element = document.querySelector(${JSON.stringify(selector)});
+					return { exists: !!element };
+				})()
+			`,
+			returnByValue: true,
+		}) as { result?: { value?: { exists: boolean } } };
+
+		return { isReady: result?.result?.value?.exists || false };
+	} catch (error) {
+		// Any error means element isn't ready
+		return { isReady: false };
+	}
+}
+
 // Click element by CSS selector
 async function clickBySelector(tabId: number, selector: string): Promise<void> {
-	// Retry logic: wait for element to appear (max 5 seconds)
-	const maxRetries = 10;
-	const retryDelay = 500; // ms
-	let node: { nodeId?: number } | null = null;
+	const maxRetries = 3;
+	let lastError: string | undefined;
+	
+	for (let attempt = 1; attempt <= maxRetries; attempt++) {
+		try {
+			// Use Runtime.evaluate to directly call .click() on the element
+			const result = await sendDebuggerCommand(tabId, "Runtime.evaluate", {
+				expression: `
+					(function() {
+						const element = document.querySelector(${JSON.stringify(selector)});
+						if (!element) {
+							return { success: false, error: 'Element not found' };
+						}
+						
+						// Scroll into view
+						element.scrollIntoView({ behavior: 'auto', block: 'center' });
+						
+						// Click the element
+						element.click();
+						
+						return { success: true };
+					})()
+				`,
+				returnByValue: true,
+				awaitPromise: false,
+			}) as { result?: { value?: { success: boolean; error?: string } } };
 
-	for (let attempt = 0; attempt < maxRetries; attempt++) {
-		const doc = await sendDebuggerCommand(tabId, "DOM.getDocument");
-		node = (await sendDebuggerCommand(tabId, "DOM.querySelector", {
-			nodeId: (doc as { root: { nodeId: number } }).root.nodeId,
-			selector: selector,
-		})) as { nodeId?: number };
-
-		if (node?.nodeId) {
-			break; // Element found!
+			if (result?.result?.value?.success) {
+				// Wait for click to process
+				await wait(150);
+				return; // Success, exit function
+			}
+			
+			lastError = result?.result?.value?.error || 'Unknown error';
+			console.log(`Click attempt ${attempt}/${maxRetries} failed: ${lastError}`);
+			
+		} catch (error) {
+			lastError = error instanceof Error ? error.message : 'Unknown error';
+			console.log(`Click attempt ${attempt}/${maxRetries} failed: ${lastError}`);
 		}
-
-		// Wait before retrying
-		if (attempt < maxRetries - 1) {
-			await wait(retryDelay);
+		
+		// Wait before retry (but not after last attempt)
+		if (attempt < maxRetries) {
+			await wait(1500);
 		}
 	}
-
-	if (!node?.nodeId) {
-		throw new Error(`Element not found with selector: ${selector}`);
-	}
-
-	const boxModel = await sendDebuggerCommand(tabId, "DOM.getBoxModel", {
-		nodeId: node.nodeId,
-	});
-
-	const content = (boxModel as { model: { content: number[] } }).model
-		.content;
-	const x = (content[0] + content[2]) / 2;
-	const y = (content[1] + content[5]) / 2;
-
-	await sendDebuggerCommand(tabId, "Input.dispatchMouseEvent", {
-		type: "mousePressed",
-		x: x,
-		y: y,
-		button: "left",
-		clickCount: 1,
-	});
-
-	await sendDebuggerCommand(tabId, "Input.dispatchMouseEvent", {
-		type: "mouseReleased",
-		x: x,
-		y: y,
-		button: "left",
-		clickCount: 1,
-	});
+	
+	// All retries failed
+	throw new Error(`Failed to click element with selector "${selector}" after ${maxRetries} attempts. Last error: ${lastError}`);
 }
 
 // Click at specific coordinates
@@ -349,24 +370,71 @@ async function typeBySelector(
 	selector: string,
 	value: string,
 ): Promise<void> {
-	// First click the element to focus
-	await clickBySelector(tabId, selector);
+	const maxRetries = 3;
+	let lastError: string | undefined;
+	
+	for (let attempt = 1; attempt <= maxRetries; attempt++) {
+		try {
+			// Use Runtime.evaluate to directly set value and trigger events
+			const result = await sendDebuggerCommand(tabId, "Runtime.evaluate", {
+				expression: `
+					(function() {
+						const element = document.querySelector(${JSON.stringify(selector)});
+						if (!element) {
+							return { success: false, error: 'Element not found' };
+						}
+						
+						// Scroll into view
+						element.scrollIntoView({ behavior: 'auto', block: 'center' });
+						
+						// Focus the element
+						element.focus();
+						
+						// Clear existing value
+						element.value = '';
+						
+						// Set new value
+						element.value = ${JSON.stringify(value)};
+						
+						// Create and dispatch native setter for React/Vue compatibility
+						const descriptor = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+						if (descriptor && descriptor.set) {
+							descriptor.set.call(element, ${JSON.stringify(value)});
+						}
+						
+						// Trigger all necessary events
+						element.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+						element.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
+						element.dispatchEvent(new Event('blur', { bubbles: true }));
+						
+						return { success: true };
+					})()
+				`,
+				returnByValue: true,
+			}) as { result?: { value?: { success: boolean; error?: string } } };
 
-	// Wait a bit for focus
-	await wait(200);
-
-	// Type each character
-	for (const char of value) {
-		await sendDebuggerCommand(tabId, "Input.dispatchKeyEvent", {
-			type: "keyDown",
-			text: char,
-		});
-		await sendDebuggerCommand(tabId, "Input.dispatchKeyEvent", {
-			type: "keyUp",
-			text: char,
-		});
-		await wait(50); // Small delay between keystrokes
+			if (result?.result?.value?.success) {
+				// Add small delay after typing to let the page react
+				await wait(200);
+				return; // Success, exit function
+			}
+			
+			lastError = result?.result?.value?.error || 'Unknown error';
+			console.log(`Type attempt ${attempt}/${maxRetries} failed: ${lastError}`);
+			
+		} catch (error) {
+			lastError = error instanceof Error ? error.message : 'Unknown error';
+			console.log(`Type attempt ${attempt}/${maxRetries} failed: ${lastError}`);
+		}
+		
+		// Wait before retry (but not after last attempt)
+		if (attempt < maxRetries) {
+			await wait(1500);
+		}
 	}
+	
+	// All retries failed
+	throw new Error(`Failed to type into element with selector "${selector}" after ${maxRetries} attempts. Last error: ${lastError}`);
 }
 
 // Type text at coordinates

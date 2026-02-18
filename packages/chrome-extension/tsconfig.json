@@ -8,11 +8,10 @@
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		"resolveJsonModule": true,
 		"allowSyntheticDefaultImports": true,
-		"outDir": "./dist",
-		"rootDir": "./src"
+		"outDir": "./dist"
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", "dist", "build"]

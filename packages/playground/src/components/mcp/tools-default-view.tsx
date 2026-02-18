@@ -595,7 +595,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 								{description}
 							</CardDescription>
 						)}
-					{playwrightScripts && playwrightScripts.length > 0 && (
+					{false && playwrightScripts && playwrightScripts.length > 0 && (
 						<div className="mt-4 space-y-2">
 							<h4 className="font-medium text-sm">Playwright Scripts</h4>
 							<div className="space-y-2">

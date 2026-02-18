@@ -19,7 +19,7 @@ module.exports = {
 			{
 				test: /\.(ts|tsx)$/,
 				use: "ts-loader",
-				exclude: /node_modules/,
+				exclude: [/node_modules/, /libs\/(ui|sdk|shared|renderer)/],
 			},
 			{
 				test: /\.(js|jsx)$/,
@@ -34,6 +34,9 @@ module.exports = {
 	},
 	resolve: {
 		extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
+		alias: {
+			"@semoss/ui": path.resolve(__dirname, "../../libs/ui/dist/index.mjs"),
+		},
 	},
 	plugins: [
 		new Dotenv({
