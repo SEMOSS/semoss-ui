@@ -377,7 +377,11 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 
 			if (isSettingsTab || mainTabsetWeight === 0) {
 				model.visitNodes((node) => {
-					if (node.getType() === "tabset") {
+					if (
+						node &&
+						typeof node.getType === "function" &&
+						node.getType() === "tabset"
+					) {
 						const newWeight =
 							(isSettingsTab &&
 								node.getId() === "settings-tabset") ||
