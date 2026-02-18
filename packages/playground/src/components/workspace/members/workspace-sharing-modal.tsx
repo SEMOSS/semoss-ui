@@ -52,11 +52,22 @@ export const WorkspaceSharingModal = ({
 	 */
 	const [search, setSearch] = useState("");
 	const [selectedPermission, setSelectedPermission] = useState("READ_ONLY");
-	const [pendingUsers, setPendingUsers] = useState<User[]>([]);
+	const [pendingUsers, setPendingUsers] = useState<
+		Record<
+			string,
+			User & {
+				inAgent?: boolean; // Optional flag to indicate if user is already in the agent (for UI purposes)
+			}
+		>
+	>({});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [popoverOpen, setPopoverOpen] = useState(false);
 
-	const [usersInDropdown, setUsersInDropdown] = useState<User[]>([]);
+	const [usersInDropdown, setUsersInDropdown] = useState<
+		(User & {
+			inAgent?: boolean;
+		})[]
+	>([]);
 	const [isLoadingDropdownUsers, setIsLoadingDropdownUsers] = useState(false);
 
 	/**
@@ -87,7 +98,13 @@ export const WorkspaceSharingModal = ({
 					),
 				]);
 
-				setUsersInDropdown([...usersOut, ...usersIn.members]);
+				setUsersInDropdown([
+					...usersOut,
+					...usersIn.members.map((member) => ({
+						...member,
+						inAgent: true,
+					})),
+				]);
 			} catch (error) {
 				toast.error(
 					`Failed to fetch users: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -104,18 +121,18 @@ export const WorkspaceSharingModal = ({
 	 */
 	const handleAddUser = (user: User) => {
 		// Check if user is already in the list
-		if (pendingUsers.some((u) => u.id === user.id)) {
+		if (pendingUsers[user.id]) {
 			toast.error("User already added");
 			return;
 		}
 
-		setPendingUsers((prev) => [
+		setPendingUsers((prev) => ({
 			...prev,
-			{
+			[user.id]: {
 				...user,
 				permission: selectedPermission,
 			},
-		]);
+		}));
 
 		// Close popover and reset search
 		setPopoverOpen(false);
@@ -126,7 +143,10 @@ export const WorkspaceSharingModal = ({
 	 * Remove a user from the pending list
 	 */
 	const handleRemoveUser = (userIdToRemove: string) => {
-		setPendingUsers((prev) => prev.filter((u) => u.id !== userIdToRemove));
+		setPendingUsers((prev) => {
+			const { [userIdToRemove]: _, ...rest } = prev;
+			return rest;
+		});
 	};
 
 	/**
@@ -139,13 +159,13 @@ export const WorkspaceSharingModal = ({
 		if (newPermission === "delete") {
 			handleRemoveUser(userIdToUpdate);
 		} else {
-			setPendingUsers((prev) =>
-				prev.map((u) =>
-					u.id === userIdToUpdate
-						? { ...u, permission: newPermission }
-						: u,
-				),
-			);
+			setPendingUsers((prev) => ({
+				...prev,
+				[userIdToUpdate]: {
+					...prev[userIdToUpdate],
+					permission: newPermission,
+				},
+			}));
 		}
 	};
 
@@ -153,14 +173,15 @@ export const WorkspaceSharingModal = ({
 	 * Submit the pending users to the API
 	 */
 	const handleSubmit = async () => {
-		if (pendingUsers.length === 0) {
+		const pendingUsersList = Object.values(pendingUsers);
+		if (pendingUsersList.length === 0) {
 			toast.error("Please add at least one user");
 			return;
 		}
 
 		setIsSubmitting(true);
 		try {
-			const usersToAdd: PostUser[] = pendingUsers.map((u) => ({
+			const usersToAdd: PostUser[] = pendingUsersList.map((u) => ({
 				userid: u.id,
 				permission: u.permission,
 			}));
@@ -168,11 +189,13 @@ export const WorkspaceSharingModal = ({
 			await addProjectUserPermissions(workspaceId, usersToAdd);
 
 			toast.success(
-				`Successfully added ${pendingUsers.length} member${pendingUsers.length > 1 ? "s" : ""}`,
+				`Successfully added ${pendingUsersList.length} member${
+					pendingUsersList.length > 1 ? "s" : ""
+				}`,
 			);
 
 			// Reset state
-			setPendingUsers([]);
+			setPendingUsers({});
 			setSearch("");
 			setSelectedPermission("READ_ONLY");
 
@@ -192,7 +215,7 @@ export const WorkspaceSharingModal = ({
 	 */
 	const handleClose = useCallback(() => {
 		// Reset state
-		setPendingUsers([]);
+		setPendingUsers({});
 		setSearch("");
 		setSelectedPermission("READ_ONLY");
 		onClose(false);
@@ -252,31 +275,52 @@ export const WorkspaceSharingModal = ({
 												)}
 											</CommandEmpty>
 											<CommandGroup>
-												{usersInDropdown.map((user) => (
-													<CommandItem
-														key={user.id}
-														value={user.id}
-														onSelect={() =>
-															handleAddUser(user)
-														}
-														disabled={pendingUsers.some(
-															(u) =>
-																u.id ===
-																user.id,
-														)}
-													>
-														<div className="flex flex-1 flex-col truncate">
-															<span className="truncate">
-																{user.name}
-															</span>
-															{user.email && (
-																<span className="truncate text-muted-foreground text-xs">
-																	{user.email}
+												{usersInDropdown.map((user) => {
+													const isAlreadyPending =
+														!!pendingUsers[user.id];
+													const isInAgent =
+														user.inAgent;
+
+													return (
+														<CommandItem
+															key={user.id}
+															value={user.id}
+															onSelect={() =>
+																handleAddUser(
+																	user,
+																)
+															}
+															disabled={
+																isAlreadyPending ||
+																isInAgent
+															}
+														>
+															<div className="flex flex-1 flex-col truncate">
+																<span className="truncate">
+																	{user.name}
+																</span>
+																{user.email && (
+																	<span className="truncate text-muted-foreground text-xs">
+																		{
+																			user.email
+																		}
+																	</span>
+																)}
+															</div>
+															{isInAgent && (
+																<span className="ml-auto text-muted-foreground text-xs">
+																	Has access
 																</span>
 															)}
-														</div>
-													</CommandItem>
-												))}
+															{isAlreadyPending && (
+																<span className="ml-auto text-muted-foreground text-xs">
+																	Pending
+																	invite
+																</span>
+															)}
+														</CommandItem>
+													);
+												})}
 												{showLoading &&
 													usersInDropdown.length >
 														0 && (
@@ -299,14 +343,15 @@ export const WorkspaceSharingModal = ({
 					</div>
 
 					{/* Pending Users List */}
-					{pendingUsers.length > 0 && (
+					{Object.keys(pendingUsers).length > 0 && (
 						<div className="flex flex-col gap-2">
 							<div className="font-medium text-sm">
-								Members to add ({pendingUsers.length})
+								Members to add (
+								{Object.keys(pendingUsers).length})
 							</div>
 							<ScrollArea className="max-h-[300px] rounded-md border">
 								<div>
-									{pendingUsers.map((user) => (
+									{Object.values(pendingUsers).map((user) => (
 										<WorkspaceMemberRow
 											key={user.id}
 											member={user}
@@ -329,7 +374,7 @@ export const WorkspaceSharingModal = ({
 						</div>
 					)}
 
-					{pendingUsers.length === 0 && (
+					{Object.keys(pendingUsers).length === 0 && (
 						<div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed py-12 text-center">
 							<UserPlusIcon className="size-8 text-muted-foreground" />
 							<div className="text-muted-foreground text-sm">
@@ -345,7 +390,10 @@ export const WorkspaceSharingModal = ({
 					</Button>
 					<Button
 						onClick={handleSubmit}
-						disabled={pendingUsers.length === 0 || isSubmitting}
+						disabled={
+							Object.keys(pendingUsers).length === 0 ||
+							isSubmitting
+						}
 					>
 						{isSubmitting ? "Adding..." : "Add Members"}
 					</Button>
