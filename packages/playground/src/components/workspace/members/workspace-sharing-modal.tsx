@@ -333,12 +333,16 @@ export const WorkspaceSharingModal = ({
 									</Command>
 								</PopoverContent>
 							</Popover>
-							<PermissionDropdown
-								activeUserPermission={activeUserPermission}
-								permission={selectedPermission}
-								handlePermissionChange={setSelectedPermission}
-								hideDeleteOption
-							/>
+							<div className="[&_button]:h-9!">
+								<PermissionDropdown
+									activeUserPermission={activeUserPermission}
+									permission={selectedPermission}
+									handlePermissionChange={
+										setSelectedPermission
+									}
+									hideDeleteOption
+								/>
+							</div>
 						</div>
 					</div>
 
