@@ -366,13 +366,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				);
 			}
 
-			if (!response) {
-				return;
-			}
-
-			// ignore if there is no response
 			if (
-				typeof response === "boolean" ? response : response.data.success
+				typeof response === "boolean"
+					? response
+					: response?.data?.success
 			) {
 				toast.success("Successfully updated user permissions");
 				success = true;
@@ -463,15 +460,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				);
 			}
 
-			if (!response) {
-				return;
-			}
-
 			// ignore if there is no response
 			if (
 				typeof response === "boolean"
 					? response
-					: response.data?.success
+					: response?.data?.success
 			) {
 				toast.success("Successfully added member permissions");
 				success = true;

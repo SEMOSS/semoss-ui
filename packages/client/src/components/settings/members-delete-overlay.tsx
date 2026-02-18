@@ -99,13 +99,10 @@ export const MembersDeleteOverlay = (props: MembersDeleteOverlayProps) => {
 				);
 			}
 
-			if (!response) {
-				return;
-			}
-
-			// ignore if there is no response
 			if (
-				typeof response === "boolean" ? response : response.data.success
+				typeof response === "boolean"
+					? response
+					: response?.data?.success
 			) {
 				toast.success(
 					`Successfully removed ${
