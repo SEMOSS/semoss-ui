@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getUserProjectPermission } from "@semoss/shared";
+import { getProjectUsers, getUserProjectPermission } from "@semoss/shared";
 import {
 	Button,
 	Dialog,
@@ -15,7 +15,6 @@ import {
 } from "@semoss/ui/next";
 import {
 	editProjectUserPermissions,
-	getProjectUsers,
 	removeProjectUserPermissions,
 } from "@/api";
 import { useChat } from "@/hooks";
@@ -130,6 +129,7 @@ export const WorkspaceMembersList = ({
 
 			const { totalMembers, members } = await getProjectUsers(
 				workspaceId,
+				false,
 				search,
 				undefined,
 				rowsPerPage,

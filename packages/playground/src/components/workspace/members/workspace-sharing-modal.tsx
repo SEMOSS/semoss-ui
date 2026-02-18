@@ -1,5 +1,6 @@
 import { ChevronsUpDownIcon, UserPlusIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { getProjectUsers } from "@semoss/shared";
 import {
 	Button,
 	Command,
@@ -24,7 +25,6 @@ import {
 } from "@semoss/ui/next";
 import {
 	addProjectUserPermissions,
-	getProjectUsers,
 	getProjectUsersNoCredentials,
 	type PostUser,
 } from "@/api";
@@ -85,6 +85,7 @@ export const WorkspaceSharingModal = ({
 				const [usersIn, usersOut] = await Promise.all([
 					getProjectUsers(
 						workspaceId,
+						false,
 						debouncedSearch,
 						undefined,
 						5,

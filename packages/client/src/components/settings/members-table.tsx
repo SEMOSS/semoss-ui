@@ -166,12 +166,12 @@ export const MembersTable = (props: MembersTableProps) => {
 		getUserDataApi = ["getUserProjectPermission", id];
 		getMembersApi = [
 			"getProjectUsers",
-			adminMode,
 			id,
+			adminMode,
 			debouncedSearch ? debouncedSearch : undefined,
 			permissionPriorityMapper(permissionFilter)?.permission,
-			(page + 1) * rowsPerPage - rowsPerPage, // offset
 			rowsPerPage, // limit
+			(page + 1) * rowsPerPage - rowsPerPage, // offset
 		];
 		getAllAuthorsApi = [
 			"getProjectUsers",
@@ -193,12 +193,12 @@ export const MembersTable = (props: MembersTableProps) => {
 		getUserDataApi = ["getUserEnginePermission", id];
 		getMembersApi = [
 			"getEngineUsers",
-			adminMode,
 			id,
+			adminMode,
 			debouncedSearch ? debouncedSearch : undefined,
 			permissionPriorityMapper(permissionFilter)?.permission,
-			(page + 1) * rowsPerPage - rowsPerPage, // offset
 			rowsPerPage, // limit
+			(page + 1) * rowsPerPage - rowsPerPage, // offset
 		];
 		getAllAuthorsApi = [
 			"getEngineUsers",

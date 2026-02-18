@@ -80,30 +80,6 @@ const postApi = async (
 };
 
 /**
- * Get users with access to a project
- * @param projectId - The project ID
- * @param userId - Optional user ID to filter by
- * @param permission - Optional permission level to filter by
- * @param limit - Optional limit for pagination
- * @param offset - Optional offset for pagination
- * @returns Object containing members array and total count
- */
-export const getProjectUsers = async (
-	projectId: string,
-	userId?: string,
-	permission?: string,
-	limit?: number,
-	offset?: number,
-): Promise<{
-	totalMembers: number;
-	members: User[];
-}> =>
-	await fetchApi<{
-		members: User[];
-		totalMembers: number;
-	}>("getProjectUsers", { projectId, userId, permission, limit, offset });
-
-/**
  * Get users without access to a project
  * @param projectId - The project ID
  * @param userId - Optional user ID to filter by

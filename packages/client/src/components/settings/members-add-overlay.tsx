@@ -2,6 +2,7 @@ import type { AxiosResponse } from "axios";
 import { Edit, Eye, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
+import { getProjectUsers } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -45,7 +46,6 @@ import {
 	editProjectUserPermissions,
 	getEngineUsers,
 	getEngineUsersNoCredentials,
-	getProjectUsers,
 	getProjectUsersNoCredentials,
 } from "@/api";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
@@ -212,12 +212,12 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 							debouncedSearch || "",
 						),
 						getProjectUsers(
-							adminMode,
 							id,
+							adminMode,
 							debouncedSearch || "",
 							"", // permission
-							offset,
 							AUTOCOMPLETE_LIMIT,
+							offset,
 						),
 					]);
 					all = [...(noCred?.data || []), ...(cred?.members || [])];
@@ -551,9 +551,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 											: `${selectedMembers.length} members selected`}
 								</Button>
 							</PopoverTrigger>
-							<PopoverContent
-								className="w-[600px] p-0"
-							>
+							<PopoverContent className="w-[600px] p-0">
 								<Command shouldFilter={false}>
 									<CommandInput
 										placeholder="Search users..."

@@ -145,45 +145,6 @@ export const getProjects = async (
 	return response.data;
 };
 
-export const getProjectUsers = async (
-	admin: boolean,
-	projectId: string,
-	user: string,
-	permission: string,
-	offset?: number,
-	limit?: number,
-	_id?: string,
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	if (admin) {
-		url += "admin/";
-	}
-
-	url += "project/getProjectUsers?";
-	url += `projectId=${projectId}`;
-	url += user ? `&userId=${user}` : "";
-	url += permission ? `&permission=${permission}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += limit ? `&limit=${limit}` : "";
-
-	// get the response
-	const response = await get<{
-		members: {
-			id: string;
-			name: string;
-			permission: string;
-		}[];
-		totalMembers: number;
-	}>(url).catch((error) => {
-		throw Error(error);
-	});
-	// there was no response, that is an error
-	if (!response) {
-		throw Error("No Response to get users associated with app");
-	}
-	return response.data;
-};
-
 export const getProjectUsersNoCredentials = async (
 	admin: boolean,
 	appId: string,
