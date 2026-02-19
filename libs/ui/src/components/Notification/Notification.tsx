@@ -1,6 +1,6 @@
 import { Snackbar, type SxProps } from "@mui/material";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { isValidElement, useEffect, useState } from "react";
 import type { NotificationMessage } from "./notification.types";
 
 // generate a uuid
@@ -69,7 +69,7 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 				// set the active one
 				setActive(notifications[0]);
 
-				// remove from the notitications
+				// remove from the notifications
 				setNotifications((notifications) => notifications.slice(1));
 
 				// open it
@@ -146,7 +146,7 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 				anchorOrigin={anchorOrigin}
 				autoHideDuration={autoHideDuration}
 				className={"notification-bubble"}
-				onClose={(event, reason) => {
+				onClose={(_event, reason) => {
 					if (reason === "clickaway") {
 						return;
 					}
@@ -171,7 +171,12 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 							<span
 								data-testid={`notification-${active.color}-message`}
 							>
-								{active.message}
+								{isValidElement(active.message)
+									? active.message
+									: typeof active.message === "object" &&
+											Object.keys(active.message).length
+										? JSON.stringify(active.message)
+										: "Error during operation"}
 							</span>
 						</Alert>
 					) : null}
