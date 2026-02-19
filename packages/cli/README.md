@@ -341,6 +341,37 @@ semoss deploy --dry-run
 semoss deploy --rollback
 ```
 
+## Publish Command
+
+Publish your SEMOSS app to the configured server or batch of servers. This command runs initialization, loads reactors, and publishes the app in one step.
+
+```sh
+semoss publish
+# Publish to a specific environment
+semoss publish --env .env.staging
+# Publish to multiple batch instances
+semoss publish --batch dev,prod
+```
+
+### Flags
+| Flag         | Short | Description                                                      |
+|--------------|-------|------------------------------------------------------------------|
+| `--env`      | `-e`  | Path to .env file                                                |
+| `--config`   | `-c`  | Path to config file (default: smss.json)                         |
+| `--batch`    | `-B`  | Publish to multiple instances from config (comma-separated list) |
+
+### What it does
+- Initializes and tests the app connection (1+1 reactor)
+- Loads all app reactors
+- Publishes the app (runs PublishProject)
+- Supports batch publishing to multiple environments
+- Prints a summary of the publish operation
+
+**Example:**
+```sh
+semoss publish --batch dev,prod
+```
+
 ## Ignored Files
 
 By default, these files/folders are excluded from deployment:
@@ -884,3 +915,35 @@ The CLI creates deployment artifacts that should **not** be committed to Git:
 ## Support
 
 For issues or questions, check the main repository documentation.
+
+## Open App in Browser
+
+Open your configured endpoint or batch endpoints in your default or specified browser:
+
+```sh
+semoss open
+# Open in a specific browser (chrome, firefox, edge, etc.)
+semoss open --browser chrome
+# Open a batch of endpoints in Firefox
+semoss open --batch dev,staging --browser firefox
+```
+
+### --browser Flag
+
+The `--browser` (or `-b`) flag allows you to specify which browser to use for opening the app URL. Allowed values:
+
+- chrome
+- brave
+- firefox
+- edge
+- browser
+- browserPrivate
+
+If you pass an invalid value, the CLI will show an error listing the valid options.
+
+**Example:**
+```sh
+semoss open --browser chrome
+```
+
+If not specified, the system default browser will be used.
