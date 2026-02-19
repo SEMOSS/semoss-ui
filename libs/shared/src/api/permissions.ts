@@ -79,7 +79,7 @@ export const getProjectUsers = async (
  * Get users without access to a project
  * @param projectId - The project ID
  * @param admin - Whether to use admin endpoint
- * @param userId - Optional user ID to filter by
+ * @param searchTerm - Optional search term to filter users by
  * @param limit - Optional limit for pagination
  * @param offset - Optional offset for pagination
  * @returns Array of users without project credentials
@@ -87,7 +87,7 @@ export const getProjectUsers = async (
 export const getProjectUsersNoCredentials = async (
 	projectId: string,
 	admin = false,
-	userId?: string,
+	searchTerm?: string,
 	limit?: number,
 	offset?: number,
 ): Promise<User[]> => {
@@ -98,7 +98,7 @@ export const getProjectUsersNoCredentials = async (
 
 	url += "project/getProjectUsersNoCredentials?";
 	url += `projectId=${projectId}`;
-	url += userId ? `&userId=${userId}` : "";
+	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
 	url += limit !== undefined ? `&limit=${limit}` : "";
 	url += offset !== undefined ? `&offset=${offset}` : "";
 
