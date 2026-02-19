@@ -69,7 +69,7 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 				// set the active one
 				setActive(notifications[0]);
 
-				// remove from the notitications
+				// remove from the notifications
 				setNotifications((notifications) => notifications.slice(1));
 
 				// open it
@@ -146,7 +146,7 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 				anchorOrigin={anchorOrigin}
 				autoHideDuration={autoHideDuration}
 				className={"notification-bubble"}
-				onClose={(event, reason) => {
+				onClose={(_event, reason) => {
 					if (reason === "clickaway") {
 						return;
 					}
@@ -171,7 +171,11 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 							<span
 								data-testid={`notification-${active.color}-message`}
 							>
-								{active.message}
+								{typeof active.message === "object"
+									? Object.keys(active.message).length
+										? JSON.stringify(active.message)
+										: "Error during operation"
+									: active.message}
 							</span>
 						</Alert>
 					) : null}
