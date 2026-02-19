@@ -56,9 +56,9 @@ import { useRootStore } from "@/hooks";
 import type { Role } from "@/types";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { AccessControl } from "./AppDetailTabs/access-control";
-import { Dependencies } from "./AppDetailTabs/Dependencies";
-import { Overview } from "./AppDetailTabs/Overview";
-import { SettingsTab } from "./AppDetailTabs/Settings";
+import { Dependencies } from "./AppDetailTabs/dependencies-tab";
+import { Overview } from "./AppDetailTabs/overview-tab";
+import { SettingsTab } from "./AppDetailTabs/settings-tab";
 
 
 interface AppDetailsProps {
