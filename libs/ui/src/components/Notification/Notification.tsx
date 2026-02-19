@@ -1,6 +1,6 @@
 import { Snackbar, type SxProps } from "@mui/material";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { isValidElement, useEffect, useState } from "react";
 import type { NotificationMessage } from "./notification.types";
 
 // generate a uuid
@@ -171,11 +171,12 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 							<span
 								data-testid={`notification-${active.color}-message`}
 							>
-								{typeof active.message === "object"
-									? Object.keys(active.message).length
+								{isValidElement(active.message)
+									? active.message
+									: typeof active.message === "object" &&
+											Object.keys(active.message).length
 										? JSON.stringify(active.message)
-										: "Error during operation"
-									: active.message}
+										: "Error during operation"}
 							</span>
 						</Alert>
 					) : null}
