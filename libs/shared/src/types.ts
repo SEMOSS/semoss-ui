@@ -99,6 +99,11 @@ export interface ThemeMap {
 		toolAutoExecutionLimit?: number;
 
 		/**
+		 * The uploaded files that should be added to the file tool in the room
+		 */
+		allowedFileTypes?: string[];
+
+		/**
 		 * Default tools to show in the room
 		 */
 		defaultTools: {
