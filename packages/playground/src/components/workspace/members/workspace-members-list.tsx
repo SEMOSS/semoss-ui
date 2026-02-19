@@ -429,7 +429,7 @@ export const WorkspaceMembersList = ({
 						))
 					: members.map((member) => (
 							<WorkspaceMemberRow
-								key={member.id}
+								key={`${member.id}-${member.email}`} // Use both ID and email for uniqueness
 								member={member}
 								currentUserId={currentUser.id}
 								activeUserPermission={userPermission}
