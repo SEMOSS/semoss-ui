@@ -16,25 +16,17 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from "@semoss/ui/next";
+import { useChat } from "@/hooks";
+import { toInitials } from "@/utility";
 
 export function NavUser() {
 	const { isMobile } = useSidebar();
-	const { system, actions } = useInsight();
+	const { actions } = useInsight();
+	const { chat } = useChat();
 
 	const navigate = useNavigate();
 
-	const loginType = Object.keys(system.config.logins)[0];
-	const userName: string =
-		typeof system.config.logins[loginType] === "string"
-			? (system.config.logins[loginType] as unknown as string)
-			: "";
-
-	const initials: string = userName
-		.match(/(\b\S)?/g)
-		.join("")
-		.match(/(^\S|\S$)?/g)
-		.join("")
-		.toUpperCase();
+	const userName = chat.user.name;
 
 	return (
 		<SidebarMenu className="gap-2 group-data-[collapsible=icon]:p-2">
@@ -49,7 +41,7 @@ export function NavUser() {
 							<Avatar className="h-8 w-8 flex-shrink-0 rounded-lg grayscale">
 								<AvatarImage src={""} alt={userName} />
 								<AvatarFallback className="rounded-lg">
-									{initials}
+									{toInitials(userName)}
 								</AvatarFallback>
 							</Avatar>
 							<div className="flex min-w-0 flex-1 items-center">
