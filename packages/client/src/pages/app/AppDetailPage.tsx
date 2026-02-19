@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
+import { getUserProjectPermission } from "@semoss/shared";
 import {
 	Box,
 	Breadcrumbs,
@@ -26,7 +27,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { getUserProjectPermission, uploadImage } from "@/api";
+import { uploadImage } from "@/api";
 import {
 	type AppDetailsFormTypes,
 	AppDetailsFormValues,
@@ -281,7 +282,7 @@ export const AppDetailPage = () => {
 	}, [appId]);
 
 	async function getPermission() {
-		const { permission: role } = await getUserProjectPermission(appId);
+		const role = await getUserProjectPermission(appId);
 
 		setValue("userRole", role);
 		const permission = determineUserPermission(role);

@@ -1,9 +1,12 @@
-import { Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-	Avatar,
-	AvatarFallback,
+	editProjectUserPermissions,
+	getProjectUsers,
+	getUserProjectPermission,
+	removeProjectUserPermissions,
+} from "@semoss/shared";
+import {
 	Button,
 	Dialog,
 	DialogContent,
@@ -12,24 +15,13 @@ import {
 	DialogHeader,
 	DialogTitle,
 	ScrollArea,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectSeparator,
-	SelectTrigger,
-	SelectValue,
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
-import {
-	editProjectUserPermissions,
-	getProjectUsers,
-	getUserProjectPermission,
-	removeProjectUserPermissions,
-} from "@/api";
 import { useChat } from "@/hooks";
 import type { User } from "@/types";
-import { toInitials } from "@/utility";
+import { WorkspaceMemberRow } from "./workspace-member-row";
+import { WorkspaceSharingModal } from "./workspace-sharing-modal";
 
 export interface WorkspaceMembersListProps {
 	/**
@@ -57,6 +49,12 @@ export interface WorkspaceMembersListProps {
 		/** Setter to update current page number */
 		setCurrentPage: (currentPage: number) => void;
 	};
+
+	/**
+	 * Optional callback to trigger when members are updated (e.g., after a permission change or deletion)
+	 */
+	isSharingModalOpen: boolean;
+	onSharingModalClose: (madeChanges: boolean) => void;
 }
 
 /**
@@ -68,6 +66,8 @@ export const WorkspaceMembersList = ({
 	workspaceId,
 	paginationControl,
 	search,
+	isSharingModalOpen,
+	onSharingModalClose,
 }: WorkspaceMembersListProps) => {
 	const { rowsPerPage, offset, setTotalRows, setCurrentPage } =
 		paginationControl;
@@ -130,6 +130,7 @@ export const WorkspaceMembersList = ({
 
 			const { totalMembers, members } = await getProjectUsers(
 				workspaceId,
+				false,
 				search,
 				undefined,
 				rowsPerPage,
@@ -405,7 +406,7 @@ export const WorkspaceMembersList = ({
 	return (
 		<ScrollArea className="h-full w-full">
 			<div className="py-4">
-				<div className="px-6 pb-2 text-muted-foreground">
+				<div className="px-4 pb-2 text-muted-foreground">
 					Who has access
 				</div>
 				{isLoading
@@ -416,7 +417,7 @@ export const WorkspaceMembersList = ({
 									// biome-ignore lint/suspicious/noArrayIndexKey: loading state
 									index
 								}`}
-								className="flex items-center gap-3 rounded p-2 px-6"
+								className="flex items-center gap-3 rounded p-2 px-4"
 							>
 								<Skeleton className="h-12 w-12 rounded-md" />
 								<div className="flex flex-1 flex-col gap-2">
@@ -427,84 +428,20 @@ export const WorkspaceMembersList = ({
 							</div>
 						))
 					: members.map((member) => (
-							<div
+							<WorkspaceMemberRow
 								key={member.id}
-								className="flex items-center gap-3 rounded p-2 px-6 hover:bg-accent"
-							>
-								<Avatar className="h-12 w-12 rounded-md">
-									<AvatarFallback className="rounded-md bg-primary/10">
-										{toInitials(member.name)}
-									</AvatarFallback>
-								</Avatar>
-								<div className="flex flex-1 flex-col">
-									<span className="font-medium text-sm">
-										{member.name}{" "}
-										{member.id === currentUser.id && (
-											<span className="ml-1 text-muted-foreground">
-												(You)
-											</span>
-										)}
-									</span>
-									<span className="text-muted-foreground text-xs">
-										{member.email}
-									</span>
-								</div>
-								<Select
-									value={member.permission}
-									onValueChange={(newPermission) =>
-										handlePermissionChange(
-											member.id,
-											newPermission,
-										)
-									}
-									// Disable if current user is read-only or trying to modify an owner without being an owner
-									disabled={
-										userPermission === "READ_ONLY" ||
-										(member.permission === "OWNER" &&
-											userPermission !== "OWNER")
-									}
-								>
-									<SelectTrigger size="sm">
-										<SelectValue />
-									</SelectTrigger>
-									{/* Position checkmark on left side of menu items */}
-									<SelectContent className="[&_span:first-child]:right-auto [&_span:first-child]:left-2">
-										{/* Only owners can promote users to owner */}
-										<SelectItem
-											value="OWNER"
-											disabled={
-												userPermission !== "OWNER"
-											}
-											className="pr-2 pl-8"
-										>
-											Owner
-										</SelectItem>
-										<SelectItem
-											value="EDIT"
-											className="pr-2 pl-8"
-										>
-											Editor
-										</SelectItem>
-										<SelectItem
-											value="READ_ONLY"
-											className="pr-2 pl-8"
-										>
-											Read-only
-										</SelectItem>
-										<SelectSeparator />
-										<SelectItem
-											value="delete"
-											className="pr-2 text-destructive focus:text-destructive"
-										>
-											<Trash2 className="size-4 text-destructive" />
-											Remove access
-										</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
+								member={member}
+								currentUserId={currentUser.id}
+								activeUserPermission={userPermission}
+								onPermissionChange={(newPermission) =>
+									handlePermissionChange(
+										member.id,
+										newPermission,
+									)
+								}
+							/>
 						))}
 			</div>
-
 			{/* Unified Confirmation Dialog */}
 			<Dialog
 				open={confirmationDialog.open}
@@ -540,6 +477,18 @@ export const WorkspaceMembersList = ({
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+			{/* Workspace Sharing Modal */}
+			{workspaceId && (
+				<WorkspaceSharingModal
+					workspaceId={workspaceId}
+					open={isSharingModalOpen}
+					onClose={(madeChanges) => {
+						onSharingModalClose(madeChanges);
+						if (madeChanges) fetchMembers();
+					}}
+					activeUserPermission={userPermission}
+				/>
+			)}
 		</ScrollArea>
 	);
 };
