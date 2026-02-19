@@ -836,10 +836,44 @@ export class RoomStore {
 		}
 
 		// upload the files
-		let uploaded = [];
+		let uploaded: {
+			fileName: string;
+			fileLocation: string;
+		}[] = [];
+
+		let mediaInputs: {
+			fileName: string;
+			fileLocation: string;
+		}[] = [];
+
+		// upload the files if there are any
 		if (files.length > 0) {
-			uploaded = (await uploadInsight(this._store.insightId, "", files))
-				.data;
+			const response = await uploadInsight(
+				this._store.insightId,
+				"",
+				files,
+			);
+
+			// set the new files
+			uploaded = response.data;
+
+			// filter the uploaded files to only include allowed file types based on the theme configuration (if configured)
+			mediaInputs = uploaded.filter((f) => {
+				const allowed = this._theme.allowedFileTypes;
+
+				// If not configured (or empty), allow all
+				if (!allowed || allowed.length === 0) {
+					return true;
+				}
+
+				// get the extension
+				const ext = f.fileName.split(".").pop();
+				if (allowed.indexOf(ext) > -1) {
+					return true;
+				}
+
+				return false;
+			});
 		}
 
 		// create the input message
@@ -848,7 +882,7 @@ export class RoomStore {
 			type: "INPUT_TEXT",
 			visible: true,
 			inputUIPrompt: prompt,
-			mediaInputs: uploaded,
+			mediaInputs: mediaInputs,
 			modelId: this.model?.app_id,
 			paramMap: {
 				max_new_tokens: this.options.tokenLength,
