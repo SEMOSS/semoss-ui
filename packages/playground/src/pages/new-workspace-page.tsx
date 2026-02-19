@@ -34,7 +34,7 @@ export const NewWorkspacePage = observer(() => {
 		if (newWorkspaceId) {
 			navigate(`/agent/${newWorkspaceId}`);
 		} else {
-			navigate("/workspace");
+			navigate("/agent");
 		}
 	};
 

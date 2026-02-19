@@ -343,7 +343,7 @@ export const WorkspaceDetailPage = observer(() => {
 									await chat.deleteWorkspace(workspaceId);
 
 									// go to the workspace
-									navigate("/workspace");
+									navigate("/agent");
 								} catch (e) {
 									toast.error(
 										e instanceof Error
