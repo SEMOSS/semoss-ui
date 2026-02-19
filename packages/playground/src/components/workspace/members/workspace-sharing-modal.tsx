@@ -286,7 +286,7 @@ export const WorkspaceSharingModal = ({
 
 													return (
 														<CommandItem
-															key={user.id}
+															key={`${user.id}-${user.email}`} // Use both ID and email for uniqueness
 															value={user.id}
 															onSelect={() =>
 																handleAddUser(
