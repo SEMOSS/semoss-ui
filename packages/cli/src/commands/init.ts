@@ -4,6 +4,10 @@ import Listr from "listr";
 import * as fs from "node:fs";
 import { Env, Insight } from "@semoss/sdk/react";
 import type { Config } from "../types.js";
+import {
+	ensureSemossGitignore,
+	initializeAndTestInsight,
+} from "../utils/index.js";
 
 export default class Deploy extends Command {
 	static description = "Initialize a new app";
@@ -44,6 +48,8 @@ init (./src/commands/init.ts)
 		const envPath = flags.env ?? ".env";
 		const envLocalPath = ".env.local";
 
+		// Ensure .gitignore is updated before writing config
+		ensureSemossGitignore(process.cwd());
 		// path to the config (optional)
 		const configPath = flags.config ?? "smss.json";
 
@@ -138,38 +144,8 @@ init (./src/commands/init.ts)
 			{
 				title: "Initializing",
 				task: async () => {
-					// initialize the insight
-					await insight.initialize({
-						python: false,
-					});
-
-					if (insight.error) {
-						const msg =
-							insight.error instanceof Error
-								? insight.error.message
-								: String(insight.error);
-						if (
-							msg.includes("Unexpected token") ||
-							msg.includes("is not valid JSON")
-						) {
-							throw new Error(
-								"Authentication failed — check ACCESS_KEY and SECRET_KEY. The server returned an HTML login page instead of JSON.",
-							);
-						}
-						if (
-							msg.includes("fetch failed") ||
-							msg.includes("ECONNREFUSED")
-						) {
-							throw new Error(
-								`Could not connect to server at ${Env.MODULE} — is the server running?`,
-							);
-						}
-						throw insight.error;
-					} else if (!insight.isAuthorized) {
-						throw new Error("User is not Authorized");
-					} else if (!insight.isReady) {
-						throw new Error("Error initializing model");
-					}
+					// Use shared helper for initialization and error handling
+					await initializeAndTestInsight(insight);
 					return true;
 				},
 			},
@@ -254,7 +230,7 @@ init (./src/commands/init.ts)
 					}
 
 					// also save to config file
-					let content = {
+					let content: Config = {
 						app: "",
 						name: "",
 						targets: [],

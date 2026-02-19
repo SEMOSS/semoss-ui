@@ -3,11 +3,18 @@ import AdmZip from "adm-zip";
 import { config } from "dotenv";
 import { glob } from "glob";
 import Listr from "listr";
+import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as http from "node:http";
 import * as https from "node:https";
 import * as path from "node:path";
 import { Env, Insight, upload } from "@semoss/sdk";
+import {
+	getBatchConfig,
+	initializeAndTestInsight,
+	logWithTiming,
+	shouldLog,
+} from "../utils/index.js";
 
 const DEFAULT_IGNORE = [
 	"node_modules/**",
@@ -19,6 +26,7 @@ const DEFAULT_IGNORE = [
 	"**/pnpm-lock.yaml",
 	"**/vite.config.ts",
 	"**/vite.config.js",
+	"**/vite-env.d.ts",
 	"**/vitest.config.ts",
 	"**/vitest.config.js",
 	"**/tsconfig.json",
@@ -56,38 +64,18 @@ deploy java and python folders
 			char: "c",
 			description: "Path to the configuration. Default is smss.json",
 		}),
-		// debug flag
-		debug: Flags.boolean({
-			char: "d",
-			description: "Enable debug logging",
-		}),
-		// verbose flag
-		verbose: Flags.boolean({
-			char: "v",
-			description: "Enable verbose output",
+		// log level flag
+		logLevel: Flags.string({
+			char: "l",
+			description:
+				"Set log verbosity: silent, normal, verbose, debug (default: normal)",
+			options: ["silent", "normal", "verbose", "debug"],
+			default: "normal",
 		}),
 		// breakpoint flag
 		breakpoint: Flags.boolean({
 			char: "b",
 			description: "Add debugger breakpoint for debugging",
-		}),
-		// super verbose flag
-		superVerbose: Flags.boolean({
-			char: "s",
-			description:
-				"Enable super verbose output (includes all debug info)",
-		}),
-		// show environment flag
-		showEnv: Flags.boolean({
-			description: "Show environment variables (without sensitive data)",
-		}),
-		// show timing flag
-		showTiming: Flags.boolean({
-			description: "Show timing information for each step",
-		}),
-		// show raw data flag
-		showRaw: Flags.boolean({
-			description: "Show raw data from all operations",
 		}),
 		// target deployment flag
 		target: Flags.string({
@@ -110,31 +98,6 @@ deploy java and python folders
 			char: "B",
 			description:
 				"Deploy to multiple instances via batch config in smss.json. Use 'all' or comma-separated names (e.g., 'dev,prod')",
-		}),
-		// endpoint flag (override for batch deployments)
-		endpoint: Flags.string({
-			description:
-				"Server endpoint URL (overrides .env, used by batch deployments)",
-		}),
-		// module flag (override for batch deployments)
-		module: Flags.string({
-			description:
-				"Module path (overrides .env, used by batch deployments)",
-		}),
-		// accessKey flag (override for batch deployments)
-		"access-key": Flags.string({
-			description:
-				"Access key for authentication (overrides .env, used by batch deployments)",
-		}),
-		// secretKey flag (override for batch deployments)
-		"secret-key": Flags.string({
-			description:
-				"Secret key for authentication (overrides .env, used by batch deployments)",
-		}),
-		// app flag (override for batch deployments)
-		app: Flags.string({
-			description:
-				"App name or ID (overrides config, used by batch deployments)",
 		}),
 	};
 
@@ -268,6 +231,13 @@ deploy java and python folders
 		deployTargets: string[] | "all",
 		insight: Insight,
 		debugMode: boolean = false,
+		opts: {
+			app?: string;
+			module?: string;
+			accessKey?: string;
+			secretKey?: string;
+			endpoint?: string;
+		},
 	): Promise<{ backupDir: string; backupZipPath: string }> {
 		const backupBaseDir = ".semoss-backups";
 		const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -290,7 +260,7 @@ deploy java and python folders
 			}
 
 			const { pixelReturn } = await insight.actions.run<[string]>(
-				`ExportProjectApp(project=['${Env.APP}']);`,
+				`ExportProjectApp(project=['${opts.app}']);`,
 			);
 
 			if (debugMode) {
@@ -305,7 +275,7 @@ deploy java and python folders
 			if (operationType?.includes("FILE_DOWNLOAD")) {
 				// Build the download URL
 				const downloadUrl = `${
-					Env.MODULE
+					opts.module
 				}/api/engine/downloadFile?insightId=${insight.insightId}&fileKey=${encodeURIComponent(
 					output,
 				)}`;
@@ -315,8 +285,8 @@ deploy java and python folders
 				try {
 					downloadResult = await this.downloadWithHttp(
 						downloadUrl,
-						Env.ACCESS_KEY || "",
-						Env.SECRET_KEY || "",
+						opts.accessKey || "",
+						opts.secretKey || "",
 						debugMode,
 					);
 				} catch (downloadError) {
@@ -450,9 +420,7 @@ deploy java and python folders
 				try {
 					backupZip.addLocalFolder(assetsSource, "");
 
-					if (debugMode) {
-						this.log(`📦 Added assets to backup.zip at root level`);
-					}
+					this.log(`📦 Added assets to backup.zip at root level`);
 				} catch (error) {
 					// Assets folder couldn't be added
 					if (debugMode) {
@@ -481,8 +449,8 @@ deploy java and python folders
 					{
 						timestamp,
 						targets: deployTargets,
-						app: Env.APP,
-						module: Env.MODULE,
+						app: opts.app,
+						module: opts.module,
 						backed_up_from_server: true,
 					},
 					null,
@@ -514,6 +482,8 @@ deploy java and python folders
 		duration?: number;
 		backupDir?: string;
 		rollback?: boolean;
+		app?: string;
+		module?: string;
 	}): Promise<void> {
 		const historyFile = ".semoss-deployments";
 
@@ -534,9 +504,6 @@ deploy java and python folders
 			// Add new record
 			history.push({
 				...deployRecord,
-				timestamp: new Date().toISOString(),
-				app: Env.APP,
-				module: Env.MODULE,
 			});
 
 			// Keep only last 20 deployments
@@ -665,98 +632,27 @@ deploy java and python folders
 		return allFiles;
 	}
 
-	private async handleBatchDeploy(flags: {
-		batch?: string;
-		config?: string;
-		debug?: boolean;
-		verbose?: boolean;
-		env?: string;
-		dryRun?: boolean;
-		rollback?: boolean;
-		target?: string | string[];
-		superVerbose?: boolean;
-		breakpoint?: boolean;
-		showEnv?: boolean;
-		showTiming?: boolean;
-		showRaw?: boolean;
-		[key: string]: unknown;
-	}): Promise<void> {
-		try {
-			const config = await this.loadConfig(flags.config);
+	public async run(): Promise<void> {
+		const { flags } = await this.parse(Deploy);
 
-			if (
-				!config ||
-				typeof config !== "object" ||
-				!("deploy" in config) ||
-				typeof config.deploy !== "object" ||
-				config.deploy === null ||
-				!("batch" in config.deploy) ||
-				typeof config.deploy.batch !== "object" ||
-				config.deploy.batch === null
-			) {
-				this.error(
-					`❌ Batch configuration not found in smss.json.\n\nAdd batch configurations to your smss.json:\n\n{\n  "deploy": {\n    "batch": {\n      "dev": { "endpoint": "https://dev-server.com", "module": "/dev-insight", "accessKey": "key", "secretKey": "secret", "app": "dev-app" },\n      "staging": { "endpoint": "https://staging-server.com", "module": "/staging-insight", "accessKey": "key", "secretKey": "secret", "app": "staging-app" },\n      "prod": { "endpoint": "https://prod-server.com", "module": "/prod-insight", "accessKey": "key", "secretKey": "secret", "app": "prod-app" }\n    }\n  }\n}`,
-				);
-			}
-
-			const batchConfig = config.deploy.batch as Record<string, unknown>;
-			const batchInput = flags.batch || "all";
-
-			// Parse batch input: support "all", single name, or comma-separated names
-			let batchNames: string[];
-			if (batchInput.toLowerCase() === "all") {
-				batchNames = Object.keys(batchConfig);
-			} else {
-				batchNames = batchInput
-					.split(",")
-					.map((name) => name.trim())
-					.filter((name) => name.length > 0);
-			}
-
-			// Validate all requested batches exist
-			const invalidBatches = batchNames.filter(
-				(name) => !(name in batchConfig),
-			);
-			if (invalidBatches.length > 0) {
-				const availableBatches = Object.keys(batchConfig).join(", ");
-				this.error(
-					`❌ Batch(es) not found: ${invalidBatches.join(", ")}\nAvailable batches: ${availableBatches}`,
-				);
-			}
-
-			this.log(
-				`\n🔄 Running batch deployment for: ${batchNames.join(", ")}\n`,
-			);
-
-			const originalArgv = process.argv.slice();
-			const originalEnv = { ...process.env };
-
+		// Handle batch deployments (only if not already running from batch)
+		if (flags.batch) {
 			try {
-				// Set flag to prevent re-entry into batch handling during recursive calls
-				process.env.SEMOSS_BATCH_PROCESSING = "true";
+				const { batchNames, batchConfig } = await getBatchConfig({
+					configPath: flags.config || "smss.json",
+					batchInput: flags.batch || "all",
+				});
 
-				// Track results
+				this.log(
+					`\n🔄 Running batch deployment for: ${batchNames.join(", ")}\n`,
+				);
+
 				const successful: { name: string; duration: number }[] = [];
 				const failed: { name: string; error: string }[] = [];
 
-				// Deploy to each batch instance sequentially
 				for (const batchName of batchNames) {
 					const batchStartTime = Date.now();
-					const batchSettings = batchConfig[batchName] as Record<
-						string,
-						unknown
-					>;
-
-					if (
-						typeof batchSettings !== "object" ||
-						batchSettings === null
-					) {
-						const errorMsg = `❌ Batch "${batchName}" must be an object with instance configuration`;
-						this.log(errorMsg);
-						failed.push({ name: batchName, error: errorMsg });
-						continue;
-					}
-
+					const batchSettings = batchConfig[batchName];
 					this.log(
 						`\n📦 Deploying to batch instance: "${batchName}" [${new Date(batchStartTime).toISOString()}]`,
 					);
@@ -767,86 +663,25 @@ deploy java and python folders
 						`   Module: ${batchSettings.module || "from .env"}`,
 					);
 
-					// Set process.env from batch config
-					if (
-						batchSettings.endpoint &&
-						typeof batchSettings.endpoint === "string"
-					) {
-						process.env.ENDPOINT = batchSettings.endpoint;
-					}
-					if (
-						batchSettings.module &&
-						typeof batchSettings.module === "string"
-					) {
-						process.env.MODULE = batchSettings.module;
-					}
-					if (
-						batchSettings.accessKey &&
-						typeof batchSettings.accessKey === "string"
-					) {
-						process.env.ACCESS_KEY = batchSettings.accessKey;
-					}
-					if (
-						batchSettings.secretKey &&
-						typeof batchSettings.secretKey === "string"
-					) {
-						process.env.SECRET_KEY = batchSettings.secretKey;
-					}
-					if (
-						batchSettings.app &&
-						typeof batchSettings.app === "string"
-					) {
-						process.env.APP = batchSettings.app;
-						process.env.VITE_APP = batchSettings.app;
-					}
-
-					// Construct full module URL from endpoint + module path
-					let fullModuleUrl: string | undefined;
-					if (
-						batchSettings.endpoint &&
-						typeof batchSettings.endpoint === "string" &&
-						batchSettings.module &&
-						typeof batchSettings.module === "string"
-					) {
-						fullModuleUrl = `${batchSettings.endpoint}${batchSettings.module}`;
-						// Set process.env.MODULE to the full URL so run() can detect it's already full
-						process.env.MODULE = fullModuleUrl;
-					}
-
-					// Debug: Log what we're setting
-					if (flags.verbose || flags.superVerbose) {
-						this.log(
-							`\n[DEBUG] Batch "${batchName}" environment setup:`,
-						);
-						this.log(
-							`  ENDPOINT: ${process.env.ENDPOINT || "NOT SET"}`,
-						);
-						this.log(
-							`  MODULE: ${process.env.MODULE || "NOT SET"}`,
-						);
-						this.log(`  APP: ${process.env.APP || "NOT SET"}`);
-					}
-
-					// Update Env singleton immediately with batch config values
-					// (since we skip .env loading in batch mode)
-					const envUpdate: Record<string, string | undefined> = {
-						ENDPOINT: process.env.ENDPOINT,
-						MODULE: process.env.MODULE,
-						ACCESS_KEY: process.env.ACCESS_KEY,
-						SECRET_KEY: process.env.SECRET_KEY,
-						APP: process.env.APP,
-					};
-					Env.update(envUpdate);
-
-					if (flags.verbose || flags.superVerbose) {
-						this.log(
-							`[DEBUG] Env singleton updated with: ${JSON.stringify(envUpdate, null, 2)}`,
-						);
-					}
-
-					// Call deployment (will skip batch mode and proceed with regular deploy)
 					try {
-						await this.run();
+						await this.deployToInstance(
+							{
+								endpoint: batchSettings.endpoint as
+									| string
+									| undefined,
+								module: batchSettings.module as
+									| string
+									| undefined,
+								accessKey: batchSettings.accessKey as
+									| string
+									| undefined,
+								secretKey: batchSettings.secretKey as
+									| string
+									| undefined,
+								app: batchSettings.app as string | undefined,
+							},
+							flags,
+						);
 						const batchEndTime = Date.now();
 						const duration = batchEndTime - batchStartTime;
 						this.log(
@@ -864,13 +699,11 @@ deploy java and python folders
 							`   ❌ Deployment failed for "${batchName}" [completed in ${duration}ms]: ${errorMsg}`,
 						);
 						failed.push({ name: batchName, error: errorMsg });
-						// Continue to next deployment instead of throwing
 					}
 				}
 
-				// Always show summary
 				this.log("\n" + "=".repeat(60));
-				this.log("📋 Batch Deployment Summary");
+				this.log("📋 Batch Deploy Summary");
 				this.log("=".repeat(60));
 				this.log(
 					`✅ Successful: ${successful.length}/${batchNames.length}`,
@@ -890,32 +723,53 @@ deploy java and python folders
 				}
 				this.log("=".repeat(60) + "\n");
 
-				process.argv = originalArgv;
-				process.env = originalEnv;
-
-				// Throw error only if there were failures
 				if (failed.length > 0) {
-					throw new Error(`${failed.length} deployment(s) failed`);
+					throw new Error(
+						`${failed.length} deploy instance(s) failed`,
+					);
 				}
-			} catch (error) {
-				process.argv = originalArgv;
-				process.env = originalEnv;
-				this.error(`\n❌ Batch deployment error: ${error}`);
+				return;
+			} catch (err) {
+				this.error(err instanceof Error ? err.message : String(err));
 			}
-		} catch (error) {
-			this.error(`Batch deployment initialization failed: ${error}`);
 		}
+
+		// Load environment variables from .env and .env.local
+		// If --env is provided, use only that file
+		// Otherwise, load .env first, then .env.local (which overrides .env values)
+		const envPath = path.resolve(process.cwd(), ".env");
+		const envLocalPath = path.resolve(process.cwd(), ".env.local");
+		if (flags.env) {
+			config({ path: flags.env });
+		} else {
+			config({ path: envPath });
+			if (fs.existsSync(envLocalPath)) {
+				config({ path: envLocalPath, override: true });
+			}
+		}
+
+		await this.deployToInstance(
+			{
+				endpoint: process.env.ENDPOINT,
+				module: process.env.MODULE,
+				accessKey: process.env.ACCESS_KEY,
+				secretKey: process.env.SECRET_KEY,
+				app: process.env.APP || process.env.VITE_APP,
+			},
+			flags,
+		);
 	}
 
-	public async run(): Promise<void> {
-		const { flags } = await this.parse(Deploy);
-
-		// Handle batch deployments (only if not already running from batch)
-		if (flags.batch && !process.env.SEMOSS_BATCH_PROCESSING) {
-			await this.handleBatchDeploy(flags);
-			return;
-		}
-
+	private async deployToInstance(
+		opts: {
+			endpoint?: string;
+			module?: string;
+			accessKey?: string;
+			secretKey?: string;
+			app?: string;
+		},
+		flags: { [key: string]: any },
+	): Promise<void> {
 		// Handle rollback - store backup path but continue to setup
 		let rollbackBackupDir: string | undefined;
 		if (flags.rollback) {
@@ -930,32 +784,13 @@ deploy java and python folders
 			}
 		}
 
-		// Enable debug logging if flag is set
-		if (flags.debug) {
+		// Enable debug logging if logLevel is debug
+		if (shouldLog(flags.logLevel, "debug")) {
 			process.env.DEBUG = "oclif*,@semoss/cli*";
 		}
 
-		// path to the environment variables
-		const envPath = flags.env ?? ".env";
-		const envLocalPath = ".env.local";
-
-		// Helper function to log with timing
-		const logWithTiming = (message: string, startTime?: number) => {
-			if (flags.showTiming && startTime) {
-				const elapsed = Date.now() - startTime;
-				this.log(`⏱️ [${elapsed}ms] ${message}`);
-			} else {
-				this.log(message);
-			}
-		};
-
-		if (flags.verbose || flags.superVerbose) {
-			this.log("🔍 Debug mode enabled");
-			this.log(`📁 Environment file: ${envPath}`);
-		}
-
-		if (flags.superVerbose) {
-			this.log("\n🔬 Super Verbose Mode Enabled:");
+		if (shouldLog(flags.logLevel, "debug")) {
+			this.log("\n🔬 Debug Mode Enabled:");
 			this.log("   • All debug information will be shown");
 			this.log("   • Raw data from all operations will be displayed");
 			this.log("   • Timing information will be included");
@@ -968,53 +803,14 @@ deploy java and python folders
 		}
 
 		try {
-			// if custom env path is provided, use only that
-			// otherwise, load .env first, then .env.local (which overrides .env values)
-			// Skip in batch mode since batch config provides all necessary values
-			if (!process.env.SEMOSS_BATCH_PROCESSING) {
-				if (flags.env) {
-					config({ path: envPath });
-				} else {
-					config({ path: envPath }); // load .env
-					if (fs.existsSync(envLocalPath)) {
-						config({ path: envLocalPath, override: true }); // load .env.local with override
-					}
-				}
-			}
-
 			// validate and construct the full module URL
-			// prioritize flags over environment variables
-			const flagsRecord = flags as Record<string, unknown>;
-			const endpoint =
-				(typeof flagsRecord.endpoint === "string"
-					? flagsRecord.endpoint
-					: undefined) || process.env.ENDPOINT;
-			const modulePath =
-				(typeof flagsRecord.module === "string"
-					? flagsRecord.module
-					: undefined) || process.env.MODULE;
-			const accessKey =
-				(typeof flagsRecord["access-key"] === "string"
-					? flagsRecord["access-key"]
-					: undefined) || process.env.ACCESS_KEY;
-			const secretKey =
-				(typeof flagsRecord["secret-key"] === "string"
-					? flagsRecord["secret-key"]
-					: undefined) || process.env.SECRET_KEY;
-			const app =
-				(typeof flagsRecord.app === "string"
-					? flagsRecord.app
-					: undefined) ||
-				process.env.APP ||
-				process.env.VITE_APP;
-
-			if (!endpoint) {
+			if (!opts.endpoint) {
 				this.error(
 					"ENDPOINT is required. Define one in your environment variables (.env) or use --endpoint flag",
 				);
 			}
 
-			if (!modulePath) {
+			if (!opts.module) {
 				this.error(
 					"MODULE is required. Define one in your environment variables (.env) or use --module flag",
 				);
@@ -1024,35 +820,25 @@ deploy java and python folders
 			// If modulePath is already a full URL (starts with http), use it as-is
 			// This handles the batch mode case where we pre-construct fullModuleUrl
 			let fullModule: string;
-			if (modulePath.toString().startsWith("http")) {
-				fullModule = modulePath.toString();
+			if (opts.module.toString().startsWith("http")) {
+				fullModule = opts.module.toString();
 			} else {
-				fullModule = `${endpoint}${modulePath}`;
+				let endpoint = opts.endpoint;
+				if (typeof endpoint === "string" && endpoint.endsWith("/")) {
+					endpoint = endpoint.slice(0, -1);
+				}
+				fullModule = `${endpoint}${opts.module}`;
 			}
 
 			// update the environment
 			Env.update({
-				APP: app,
-				ACCESS_KEY: accessKey,
+				APP: opts.app,
+				ACCESS_KEY: opts.accessKey,
 				MODULE: fullModule,
-				SECRET_KEY: secretKey,
+				SECRET_KEY: opts.secretKey,
 			});
 		} catch (error) {
 			this.error(error as Error);
-		}
-
-		if (flags.showEnv) {
-			this.log("\n🌍 Environment Variables:");
-			this.log(`   • MODULE: ${Env.MODULE || "Not set"}`);
-			this.log(
-				`   • APP: ${Env.APP || process.env.VITE_APP || "Not set"}`,
-			);
-			this.log(
-				`   • ACCESS_KEY: ${Env.ACCESS_KEY ? `***${Env.ACCESS_KEY.slice(-4)}` : "Not set"}`,
-			);
-			this.log(
-				`   • SECRET_KEY: ${Env.SECRET_KEY ? `***${Env.SECRET_KEY.slice(-4)}` : "Not set"}`,
-			);
 		}
 
 		// check the environment
@@ -1079,12 +865,26 @@ deploy java and python folders
 				"APP is required. Define one in your environment variables (.env)",
 			);
 		}
+		// create a new insight
+		const insight = new Insight();
+
+		if (shouldLog(flags.logLevel, "debug")) {
+			this.log("\n🌍 Environment Variables:");
+			this.log(`   • MODULE: ${Env.MODULE || "Not set"}`);
+			this.log(`   • APP: ${Env.APP || "Not set"}`);
+			this.log(
+				`   • ACCESS_KEY: ${Env.ACCESS_KEY ? `***${Env.ACCESS_KEY.slice(-4)}` : "Not set"}`,
+			);
+			this.log(
+				`   • SECRET_KEY: ${Env.SECRET_KEY ? `***${Env.SECRET_KEY.slice(-4)}` : "Not set"}`,
+			);
+		}
 
 		// Load config file for ignore patterns and targets
 		let mergedIgnorePatterns = [...DEFAULT_IGNORE];
 		let loadedConfig: Record<string, unknown> | undefined;
 		try {
-			const config = await this.loadConfig(flags.config);
+			const config = await this.loadConfig(flags.config || "smss.json");
 			if (config && typeof config === "object") {
 				loadedConfig = config;
 
@@ -1099,13 +899,13 @@ deploy java and python folders
 						...DEFAULT_IGNORE,
 						...(config.deploy.ignore as string[]),
 					];
-					if (flags.debug) {
+					if (shouldLog(flags.logLevel, "debug")) {
 						this.log(`📋 Merged ignore patterns from smss.json`);
 					}
 				}
 
 				if ("targets" in config && Array.isArray(config.targets)) {
-					if (flags.debug && !flags.target) {
+					if (shouldLog(flags.logLevel, "debug") && !flags.target) {
 						this.log(
 							`📋 Using deployment targets from config: ${(config.targets as string[]).join(", ")}`,
 						);
@@ -1113,7 +913,7 @@ deploy java and python folders
 				}
 			}
 		} catch (error) {
-			if (flags.verbose) {
+			if (shouldLog(flags.logLevel, "verbose")) {
 				this.log(`⚠️  Could not load config: ${error}`);
 			}
 		}
@@ -1122,7 +922,7 @@ deploy java and python folders
 		const deployTargets = this.getDeployTargets(flags, loadedConfig);
 		const isFullDeploy = deployTargets === "all";
 
-		if (flags.debug) {
+		if (shouldLog(flags.logLevel, "debug")) {
 			if (!isFullDeploy) {
 				this.log(
 					`🎯 Deployment targets: ${(deployTargets as string[]).join(", ")}`,
@@ -1137,9 +937,6 @@ deploy java and python folders
 			this.log("🔍 DRY-RUN MODE: No actual deployment will occur");
 		}
 
-		// create a new insight
-		const insight = new Insight();
-
 		// get the tasks
 		const tasks = new Listr<{
 			result?: number;
@@ -1153,107 +950,12 @@ deploy java and python folders
 				title: "Initializing",
 				enabled: () => !flags.dryRun,
 				task: async () => {
-					const startTime = Date.now();
-
-					if (flags.verbose || flags.superVerbose) {
-						logWithTiming(
-							"🔧 Initializing Semoss Insight...",
-							startTime,
-						);
-					}
-
-					// initialize the insight
-					await insight.initialize({
-						python: false,
-					});
-
-					if (flags.superVerbose) {
-						logWithTiming(`📊 Insight Status:`, startTime);
-						this.log(`   • Error: ${insight.error || "None"}`);
-						this.log(`   • Authorized: ${insight.isAuthorized}`);
-						this.log(`   • Ready: ${insight.isReady}`);
-						this.log(`   • Insight ID: Available`);
-					}
-
-					if (insight.error) {
-						const msg =
-							insight.error instanceof Error
-								? insight.error.message
-								: String(insight.error);
-						if (
-							msg.includes("Unexpected token") ||
-							msg.includes("is not valid JSON")
-						) {
-							throw new Error(
-								"Authentication failed — check ACCESS_KEY and SECRET_KEY. The server returned an HTML login page instead of JSON.",
-							);
-						}
-						if (
-							msg.includes("fetch failed") ||
-							msg.includes("ECONNREFUSED")
-						) {
-							throw new Error(
-								`Could not connect to server at ${Env.MODULE} — is the server running?`,
-							);
-						}
-						throw insight.error;
-					} else if (!insight.isAuthorized) {
-						throw new Error("User is not Authorized");
-					} else if (!insight.isReady) {
-						throw new Error("Error initializing model");
-					}
-
-					if (flags.verbose || flags.superVerbose) {
-						logWithTiming(
-							"✅ Insight initialized successfully",
-							startTime,
-						);
-					}
-
-					return true;
-				},
-			},
-			{
-				title: "Running Reactor 1+1",
-				enabled: () => !flags.dryRun,
-				task: async (context) => {
-					const startTime = Date.now();
-
-					if (flags.verbose || flags.superVerbose) {
-						logWithTiming("🧮 Executing: 1+1", startTime);
-					}
-
-					// Run the reactor 1+1
-					const { pixelReturn } =
-						await insight.actions.run<[number]>(`1+1`);
-
-					if (flags.showRaw || flags.superVerbose) {
-						logWithTiming(
-							`📊 Raw pixelReturn: ${JSON.stringify(pixelReturn, null, 2)}`,
-							startTime,
-						);
-					}
-
-					// save the result
-					context.result = pixelReturn[0].output;
-
-					if (flags.verbose || flags.superVerbose) {
-						logWithTiming(
-							`✅ 1+1 Result: ${context.result}`,
-							startTime,
-						);
-					}
-
-					if (flags.superVerbose) {
-						this.log(`🔍 Detailed Analysis:`);
-						this.log(`   • Input: 1+1`);
-						this.log(`   • Output Type: ${typeof context.result}`);
-						this.log(`   • Output Value: ${context.result}`);
-						this.log(
-							`   • Execution Time: ${Date.now() - startTime}ms`,
-						);
-					}
-
+					// Use shared helper for initialization and error handling
+					await initializeAndTestInsight(
+						insight,
+						this.log.bind(this),
+						shouldLog(flags.logLevel, "normal"),
+					);
 					return true;
 				},
 			},
@@ -1263,20 +965,26 @@ deploy java and python folders
 				task: async (context) => {
 					const startTime = Date.now();
 
-					if (flags.verbose || flags.superVerbose) {
-						logWithTiming("💾 Creating backup", startTime);
+					if (shouldLog(flags.logLevel, "verbose")) {
+						logWithTiming(
+							this.log.bind(this),
+							"💾 Creating backup",
+							startTime,
+						);
 					}
 
 					try {
 						const backup = await this.createBackup(
 							deployTargets,
 							insight,
-							flags.debug,
+							shouldLog(flags.logLevel, "debug"),
+							opts,
 						);
 						context.backupDir = backup.backupDir;
 
-						if (flags.verbose || flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "verbose")) {
 							logWithTiming(
+								this.log.bind(this),
 								`✅ Backup created: ${backup.backupDir}`,
 								startTime,
 							);
@@ -1287,18 +995,45 @@ deploy java and python folders
 						this.log(
 							`📝 Note: Deployment will continue without backup. Backups help with recovery.`,
 						);
-						if (
-							flags.debug ||
-							flags.verbose ||
-							flags.superVerbose
-						) {
-							this.log(
-								`🔍 Debug info: Check that ExportProjectApp reactor returns a valid downloadable file.`,
-							);
-						}
 					}
 
 					return true;
+				},
+			},
+			{
+				title: "Building Portals",
+				enabled: () =>
+					!flags.dryRun &&
+					!flags.rollback &&
+					(isFullDeploy ||
+						(Array.isArray(deployTargets) &&
+							deployTargets.includes("portals"))),
+				task: async () => {
+					// Pre-deploy hook: build portals if needed
+					this.log(
+						"🔨 Running pre-deploy build for portals (pnpm build)...",
+					);
+					await new Promise((resolve, reject) => {
+						const build = spawn("pnpm", ["build"], {
+							cwd: process.cwd(),
+							stdio: "inherit",
+							shell: true,
+						});
+						build.on("close", (code) => {
+							if (code === 0) {
+								this.log(
+									"✅ Portals build completed successfully.",
+								);
+								resolve(true);
+							} else {
+								reject(
+									new Error(
+										"pnpm build failed. Aborting deploy.",
+									),
+								);
+							}
+						});
+					});
 				},
 			},
 			{
@@ -1317,8 +1052,9 @@ deploy java and python folders
 							"backup.zip",
 						);
 
-						if (flags.verbose || flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "verbose")) {
 							logWithTiming(
+								this.log.bind(this),
 								`📦 Loading backup file: ${backupZipPath}`,
 								startTime,
 							);
@@ -1329,15 +1065,17 @@ deploy java and python folders
 								await fs.promises.readFile(backupZipPath);
 							context.zipBuffer = zipBuffer;
 
-							if (flags.verbose || flags.superVerbose) {
+							if (shouldLog(flags.logLevel, "verbose")) {
 								logWithTiming(
+									this.log.bind(this),
 									`✅ Backup loaded (${zipBuffer.length} bytes)`,
 									startTime,
 								);
 							}
 						} catch (error) {
-							if (flags.verbose || flags.superVerbose) {
+							if (shouldLog(flags.logLevel, "verbose")) {
 								logWithTiming(
+									this.log.bind(this),
 									`❌ Failed to load backup: ${error}`,
 									startTime,
 								);
@@ -1349,14 +1087,15 @@ deploy java and python folders
 					}
 
 					// Normal zipping logic for deploy
-					if (flags.verbose || flags.superVerbose) {
+					if (shouldLog(flags.logLevel, "verbose")) {
 						logWithTiming(
+							this.log.bind(this),
 							`📦 Zipping ${isFullDeploy ? "current directory" : "target directories"}`,
 							startTime,
 						);
 					}
 
-					if (flags.superVerbose) {
+					if (shouldLog(flags.logLevel, "verbose")) {
 						this.log(`🔍 Zip Details:`);
 						this.log(`   • Current Directory: ${process.cwd()}`);
 						if (!isFullDeploy) {
@@ -1373,14 +1112,15 @@ deploy java and python folders
 							mergedIgnorePatterns,
 						);
 
-						if (flags.verbose || flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "verbose")) {
 							logWithTiming(
+								this.log.bind(this),
 								`📁 Found ${paths.length} files to zip`,
 								startTime,
 							);
 						}
 
-						if (flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "debug")) {
 							this.log(`📋 Files to include:`);
 							paths.slice(0, 10).forEach((p) => {
 								this.log(`   • ${p}`);
@@ -1416,8 +1156,10 @@ deploy java and python folders
 											}
 										} catch (e) {
 											if (
-												flags.verbose ||
-												flags.superVerbose
+												shouldLog(
+													flags.logLevel,
+													"verbose",
+												)
 											) {
 												this.warn(`⚠️ Warning: ${e}`);
 											}
@@ -1433,14 +1175,15 @@ deploy java and python folders
 						context.zipBuffer =
 							(await zip.toBufferPromise()) || "NOT ANYTHING";
 
-						if (flags.verbose || flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "verbose")) {
 							logWithTiming(
+								this.log.bind(this),
 								`✅ Zip created successfully (${context.zipBuffer.length} bytes)`,
 								startTime,
 							);
 						}
 
-						if (flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "debug")) {
 							this.log(`🔍 Zip Analysis:`);
 							this.log(`   • Files included: ${paths.length}`);
 							this.log(
@@ -1451,8 +1194,9 @@ deploy java and python folders
 							);
 						}
 					} catch (error) {
-						if (flags.verbose || flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "verbose")) {
 							logWithTiming(
+								this.log.bind(this),
 								`❌ Zip creation failed: ${error}`,
 								startTime,
 							);
@@ -1473,20 +1217,21 @@ deploy java and python folders
 					const startTime = Date.now();
 
 					if (rollbackBackupDir || isFullDeploy) {
-						const deleteCommand = `DeleteAppAssets(project="${Env.APP}")`;
+						const deleteCommand = `DeleteAppAssets(project="${opts.app}")`;
 
-						if (flags.verbose || flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "verbose")) {
 							logWithTiming(
+								this.log.bind(this),
 								`🗑️ Executing: ${deleteCommand}`,
 								startTime,
 							);
 						}
 
-						if (flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "debug")) {
 							this.log(`🔍 Delete Details:`);
 							this.log(`   • Command: ${deleteCommand}`);
 							this.log(`   • Target Path: version/assets/`);
-							this.log(`   • Target App: ${Env.APP}`);
+							this.log(`   • Target App: ${opts.app}`);
 						}
 
 						try {
@@ -1495,14 +1240,15 @@ deploy java and python folders
 
 							context.deleteResult = pixelReturn[0].output;
 
-							if (flags.verbose || flags.superVerbose) {
+							if (shouldLog(flags.logLevel, "verbose")) {
 								logWithTiming(
+									this.log.bind(this),
 									`✅ DeleteAsset Result: ${context.deleteResult}`,
 									startTime,
 								);
 							}
 
-							if (flags.superVerbose) {
+							if (shouldLog(flags.logLevel, "debug")) {
 								this.log(`🔍 Delete Analysis:`);
 								this.log(
 									`   • Result: ${context.deleteResult}`,
@@ -1523,8 +1269,9 @@ deploy java and python folders
 								)
 							) {
 								// No assets to delete - this is fine (first deployment or already clean)
-								if (flags.verbose || flags.superVerbose) {
+								if (shouldLog(flags.logLevel, "verbose")) {
 									logWithTiming(
+										this.log.bind(this),
 										`ℹ️ No assets to delete (environment may be fresh)`,
 										startTime,
 									);
@@ -1543,8 +1290,9 @@ deploy java and python folders
 							}
 						}
 					} else {
-						if (flags.verbose || flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "verbose")) {
 							logWithTiming(
+								this.log.bind(this),
 								`🗑️ Deleting target-specific assets...`,
 								startTime,
 							);
@@ -1553,23 +1301,23 @@ deploy java and python folders
 						for (const target of deployTargets as string[]) {
 							const remotePath = `${target}`;
 
-							if (flags.verbose || flags.superVerbose) {
+							if (shouldLog(flags.logLevel, "verbose")) {
 								this.log(`   🗑️ Deleting: ${remotePath}`);
 							}
 
-							const deleteCommand = `DeleteAppAssets(project="${Env.APP}", filePath="${remotePath}");`;
+							const deleteCommand = `DeleteAppAssets(project="${opts.app}", filePath="${remotePath}");`;
 
 							try {
 								const { pixelReturn } =
 									await insight.actions.run(deleteCommand);
 
-								if (flags.showRaw || flags.superVerbose) {
+								if (shouldLog(flags.logLevel, "debug")) {
 									this.log(
 										`📊 DeleteAppAssets Response for ${target}: ${JSON.stringify(pixelReturn, null, 2)}`,
 									);
 								}
 							} catch (error) {
-								if (flags.verbose || flags.superVerbose) {
+								if (shouldLog(flags.logLevel, "verbose")) {
 									this.warn(
 										`⚠️ Warning deleting ${remotePath}: ${error}`,
 									);
@@ -1577,8 +1325,9 @@ deploy java and python folders
 							}
 						}
 
-						if (flags.verbose || flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "verbose")) {
 							logWithTiming(
+								this.log.bind(this),
 								`✅ Target assets deleted`,
 								startTime,
 							);
@@ -1597,28 +1346,30 @@ deploy java and python folders
 					const startTime = Date.now();
 
 					if (!context.zipBuffer) {
-						if (flags.verbose || flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "verbose")) {
 							logWithTiming(
-								"⏭️ No zip buffer to upload, skipping upload step",
+								this.log.bind(this),
+								`⏭️ No zip buffer to upload, skipping upload step`,
 								startTime,
 							);
 						}
 						return true;
 					}
 
-					if (flags.verbose || flags.superVerbose) {
+					if (shouldLog(flags.logLevel, "verbose")) {
 						logWithTiming(
-							"📤 Uploading zipped directory to the server",
+							this.log.bind(this),
+							`📤 Uploading zipped directory to the server`,
 							startTime,
 						);
 					}
 
-					if (flags.superVerbose) {
+					if (shouldLog(flags.logLevel, "debug")) {
 						this.log(`🔍 Upload Details:`);
 						this.log(
 							`   • Zip Buffer Size: ${context.zipBuffer.length} bytes`,
 						);
-						this.log(`   • Target App: ${Env.APP}`);
+						this.log(`   • Target App: ${opts.app}`);
 						this.log(`   • Target Path: version/assets/`);
 						this.log(
 							`🔍 [DEBUG] Before upload - insight.insightId: ${insight.insightId}`,
@@ -1640,7 +1391,7 @@ deploy java and python folders
 							type: "application/zip",
 						});
 
-						if (flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "debug")) {
 							this.log(`🔍 File Details:`);
 							this.log(`   • File Name: ${fileName}`);
 							this.log(
@@ -1661,7 +1412,7 @@ deploy java and python folders
 						const uploaded = await upload(
 							file as unknown as File | File[],
 							insight.insightId,
-							Env.APP,
+							opts.app as string,
 							"version/assets",
 						);
 
@@ -1669,8 +1420,9 @@ deploy java and python folders
 							`✅ Upload of ${fileName} completed., ${JSON.stringify(uploaded)}`,
 						);
 
-						if (flags.showRaw || flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "debug")) {
 							logWithTiming(
+								this.log.bind(this),
 								`📊 Upload result: ${JSON.stringify(uploaded, null, 2)}`,
 								startTime,
 							);
@@ -1678,24 +1430,25 @@ deploy java and python folders
 
 						// Unzip the uploaded file
 						await insight.actions.run(
-							`UnzipFile(filePath=["/${uploaded[0].fileName}"], space=["${Env.APP}"])`,
+							`UnzipFile(filePath=["/${uploaded[0].fileName}"], space=["${opts.app}"])`,
 						);
 
 						// Clean up the zip file
 						await insight.actions.run(
-							`DeleteAppAssets(filePath=["/${uploaded[0].fileName}"], project=["${Env.APP}"])`,
+							`DeleteAppAssets(filePath=["/${uploaded[0].fileName}"], project=["${opts.app}"])`,
 						);
 
 						context.uploadResult = uploaded[0];
 
-						if (flags.verbose || flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "verbose")) {
 							logWithTiming(
+								this.log.bind(this),
 								`✅ Upload completed: ${uploaded[0].fileName}`,
 								startTime,
 							);
 						}
 
-						if (flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "debug")) {
 							this.log(`🔍 Upload Analysis:`);
 							this.log(`   • File Name: ${uploaded[0].fileName}`);
 							this.log(
@@ -1706,8 +1459,9 @@ deploy java and python folders
 							);
 						}
 					} catch (error) {
-						if (flags.verbose || flags.superVerbose) {
+						if (shouldLog(flags.logLevel, "verbose")) {
 							logWithTiming(
+								this.log.bind(this),
 								`❌ Upload failed: ${error}`,
 								startTime,
 							);
@@ -1724,7 +1478,7 @@ deploy java and python folders
 				task: async () => {
 					// Load the insight classes
 					await insight.actions.run(
-						`ReloadInsightClasses(project='${Env.APP}', release=true);`,
+						`ReloadInsightClasses(project='${opts.app}', release=true);`,
 					);
 
 					return true;
@@ -1736,7 +1490,7 @@ deploy java and python folders
 				task: async (context) => {
 					// Publish the app
 					const { pixelReturn } = await insight.actions.run<[string]>(
-						`PublishProject(project='${Env.APP}', release=true);`,
+						`PublishProject(project='${opts.app}', release=true);`,
 					);
 
 					// save the url
@@ -1788,7 +1542,7 @@ deploy java and python folders
 					this.log(`📤 Upload Result: ${fileName}`);
 				}
 
-				if (flags.verbose || flags.superVerbose) {
+				if (shouldLog(flags.logLevel, "verbose")) {
 					this.log("\n📋 Summary:");
 					this.log(`   • 1+1 calculation: ${context.result}`);
 					this.log(
@@ -1829,7 +1583,7 @@ deploy java and python folders
 					this.log(`   • Duration: ${deploymentDuration}ms`);
 				}
 
-				if (flags.superVerbose) {
+				if (shouldLog(flags.logLevel, "debug")) {
 					this.log("\n🔬 Super Verbose Summary:");
 					this.log(`   • Total Operations: 5`);
 					this.log(
@@ -1852,19 +1606,10 @@ deploy java and python folders
 						);
 					}
 					this.log(
-						`   • Debug Mode: ${flags.debug ? "Enabled" : "Disabled"}`,
+						`   • Debug Mode: ${flags.logLevel === "debug" ? "Enabled" : "Disabled"}`,
 					);
 					this.log(
-						`   • Verbose Mode: ${flags.verbose ? "Enabled" : "Disabled"}`,
-					);
-					this.log(
-						`   • Super Verbose: ${flags.superVerbose ? "Enabled" : "Disabled"}`,
-					);
-					this.log(
-						`   • Show Raw Data: ${flags.showRaw ? "Enabled" : "Disabled"}`,
-					);
-					this.log(
-						`   • Show Timing: ${flags.showTiming ? "Enabled" : "Disabled"}`,
+						`   • Verbose Mode: ${flags.logLevel === "verbose" ? "Enabled" : "Disabled"}`,
 					);
 					this.log(
 						`   • Dry-run: ${flags.dryRun ? "Enabled" : "Disabled"}`,
@@ -1880,6 +1625,8 @@ deploy java and python folders
 					duration: deploymentDuration,
 					backupDir: flags.rollback ? undefined : context.backupDir,
 					rollback: flags.rollback,
+					app: opts.app,
+					module: opts.module,
 				});
 			})
 			.catch((err) => {
@@ -1893,6 +1640,8 @@ deploy java and python folders
 					duration: deploymentDuration,
 					backupDir: undefined,
 					rollback: flags.rollback,
+					app: opts.app,
+					module: opts.module,
 				});
 
 				// log the error

@@ -5,10 +5,13 @@ export type Config = {
 	/** Name of the app */
 	name: string;
 
+	targets: string[];
+
+	/** glob pattern(s) to ignore files */
+	ignore: string[];
+
 	/** Deploy options */
 	deploy: {
-		/** glob pattern(s) to ignore files */
-		ignore: string | string[];
 		/** Batch deployment configurations */
 		batch?: Record<string, unknown>;
 	};

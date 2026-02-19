@@ -1,6 +1,8 @@
 import { Command, Flags } from "@oclif/core";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import * as readline from "node:readline";
+import { ensureSemossGitignore } from "../utils/index.js";
 
 export default class Config extends Command {
 	static args = {};
@@ -24,13 +26,6 @@ Generate skeleton config
 		const { flags } = await this.parse(Config);
 
 		const configPath = path.join(process.cwd(), "smss.json");
-
-		if (fs.existsSync(configPath) && !flags.force) {
-			this.error(
-				"❌ smss.json already exists. Use --force to overwrite.",
-			);
-		}
-
 		const skeletonConfig = {
 			targets: [],
 			ignore: [
@@ -59,14 +54,101 @@ Generate skeleton config
 			},
 		};
 
+		let mergedConfig = skeletonConfig;
+		let shouldPrompt = false;
+
+		// Ensure .gitignore is updated before writing config
+		ensureSemossGitignore(process.cwd());
+		if (fs.existsSync(configPath)) {
+			try {
+				const existing = JSON.parse(
+					fs.readFileSync(configPath, "utf-8"),
+				);
+				// Merge targets
+				const targets = Array.isArray(existing.targets)
+					? Array.from(
+							new Set([
+								...(existing.targets || []),
+								...(skeletonConfig.targets || []),
+							]),
+						)
+					: skeletonConfig.targets;
+				// Merge ignore
+				const ignore = Array.isArray(existing.ignore)
+					? Array.from(
+							new Set([
+								...(existing.ignore || []),
+								...(skeletonConfig.ignore || []),
+							]),
+						)
+					: skeletonConfig.ignore;
+				// Merge deploy.batch
+				let batch = {};
+				if (
+					existing.deploy &&
+					typeof existing.deploy === "object" &&
+					existing.deploy.batch
+				) {
+					batch = {
+						...existing.deploy.batch,
+						...skeletonConfig.deploy.batch,
+					};
+				} else {
+					batch = skeletonConfig.deploy.batch;
+				}
+				// If merging is possible, update mergedConfig
+				mergedConfig = {
+					...existing,
+					targets,
+					ignore,
+					deploy: {
+						...existing.deploy,
+						batch,
+					},
+				};
+				// If fields are present and merging is not possible (e.g. wrong type), prompt
+				if (
+					!Array.isArray(existing.targets) ||
+					!Array.isArray(existing.ignore) ||
+					typeof batch !== "object"
+				) {
+					shouldPrompt = true;
+				}
+			} catch {
+				shouldPrompt = true;
+			}
+		}
+
+		// If merging is not possible and --force is not present, prompt user interactively
+		if (shouldPrompt && !flags.force) {
+			const rl = readline.createInterface({
+				input: process.stdin,
+				output: process.stdout,
+			});
+			const question = (q: string) =>
+				new Promise<string>((resolve) => rl.question(q, resolve));
+			const answer = await question(
+				"smss.json exists and cannot be safely merged. Overwrite? (y/n): ",
+			);
+			rl.close();
+			if (answer.trim().toLowerCase() !== "y") {
+				this.log("Aborted. smss.json was not overwritten.");
+				return;
+			}
+		}
+
 		try {
 			fs.writeFileSync(
 				configPath,
-				JSON.stringify(skeletonConfig, null, 2),
+				JSON.stringify(
+					flags.force ? skeletonConfig : mergedConfig,
+					null,
+					2,
+				),
 				"utf-8",
 			);
 
-			this.log("\n✅ Configuration file created: smss.json\n");
+			this.log("\n✅ Configuration file created/updated: smss.json\n");
 
 			this.log("📋 Configuration sections:");
 			this.log("   • targets: (Optional) Specific folders to deploy");
