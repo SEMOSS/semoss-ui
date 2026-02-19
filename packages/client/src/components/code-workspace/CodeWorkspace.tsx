@@ -3,9 +3,7 @@ import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { useWorkspace } from "@/hooks";
 import { AppDetailPage } from "@/pages/app/app-detail-page";
-import { SettingsNavPanel } from "../../components/blocks-workspace/panels";
 import {
-	SettingsPanel,
 	TerminalPanel,
 	WorkspaceManager,
 } from "../../components/workspace";
