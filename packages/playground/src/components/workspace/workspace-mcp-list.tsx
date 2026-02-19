@@ -2,6 +2,7 @@ import {
 	AlertCircle,
 	ImageIcon,
 	SquareArrowOutUpRightIcon,
+	TriangleAlert,
 } from "lucide-react";
 import { useMemo } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
@@ -53,6 +54,7 @@ interface ProjectDependency {
 	engine_global?: boolean;
 	access_permission?: number;
 	tags: string; // comma separated tags
+	can_view_dependencies?: boolean;
 }
 
 /**
@@ -182,10 +184,13 @@ export const WorkspaceMCPList = ({
 				{searchedMCP.map((m) => {
 					const { effectivePermission, label } =
 						getEffectivePermission(m);
+
 					const accessMissing =
 						effectivePermission === "REQUESTED" ||
 						effectivePermission === "DISCOVERABLE" ||
 						effectivePermission === "FULLY_PRIVATE";
+					const missingSubDependencies =
+						m.can_view_dependencies === false;
 					return (
 						<Card
 							key={m.engine_id}
@@ -210,11 +215,7 @@ export const WorkspaceMCPList = ({
 												<Button
 													variant="ghost"
 													size="icon"
-													className={`-m-2 shrink-0 ${
-														accessMissing
-															? "text-destructive"
-															: ""
-													}`}
+													className={`-m-2 shrink-0 ${accessMissing || missingSubDependencies ? "w-auto px-2" : ""}`}
 													asChild
 												>
 													<a
@@ -222,7 +223,14 @@ export const WorkspaceMCPList = ({
 														href={mcpToPlatformUrl(
 															m,
 														)}
+														className="flex items-center gap-1"
 													>
+														{(missingSubDependencies ||
+															accessMissing) && (
+															<TriangleAlert
+																className={`size-4 ${accessMissing ? "text-destructive" : "text-amber-500"}`}
+															/>
+														)}
 														<SquareArrowOutUpRightIcon className="size-4" />
 													</a>
 												</Button>
@@ -231,7 +239,9 @@ export const WorkspaceMCPList = ({
 										<TooltipContent>
 											{accessMissing
 												? `You don't have access to this ${type === "TOOLBOX" ? "toolbox" : "knowledge base"}. Please request access from the owner.`
-												: `Open this ${type === "TOOLBOX" ? "toolbox" : "knowledge base"} in the platform`}
+												: missingSubDependencies
+													? `You don't have access to all dependencies of this ${type === "TOOLBOX" ? "toolbox" : "knowledge base"}, so functionality may be limited. Open in the platform for more information.`
+													: `Open this ${type === "TOOLBOX" ? "toolbox" : "knowledge base"} in the platform`}
 										</TooltipContent>
 									</Tooltip>
 								</div>
