@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import {
+	AppWindowIcon,
 	ComputerIcon,
 	MoreVertical,
 	PencilIcon,
@@ -346,6 +347,18 @@ export const GlobalNav = observer(() => {
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					)}
+
+					<SidebarMenuItem>
+						<SidebarMenuButton
+							asChild
+							isActive={!!matchPath("/apps", pathname)}
+						>
+							<Link to={"/apps"} aria-label={"apps"}>
+								<AppWindowIcon />
+								Apps
+							</Link>
+						</SidebarMenuButton>
+					</SidebarMenuItem>
 					{root.theme.sidebar.headerItems.map((item) => (
 						<GlobalNavItem
 							key={item.path}
