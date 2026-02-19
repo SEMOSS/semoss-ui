@@ -10,6 +10,7 @@ import {
 	SelectValue,
 	Textarea,
 } from "@semoss/ui/next";
+import { capitalizeWords } from "@/utility";
 import { JSONEditor } from "./json-editor";
 
 export interface ToolFieldProps<T = unknown> {
@@ -49,18 +50,6 @@ export interface ToolFieldProps<T = unknown> {
 	/** Callback fired when the field value changes */
 	onChange: (value: T) => void;
 }
-
-/**
- * Converts a snake_case or space-separated string to Title Case
- *
- * @param str - The string to capitalize
- * @returns The capitalized string
- */
-const capitalizeWords = (str: string) =>
-	str
-		.split(/[_\s]+/) // Split by underscores or spaces
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-		.join(" "); // Join with spaces for better readability
 
 /**
  * A dynamic form field component that renders different input types based on JSON schema

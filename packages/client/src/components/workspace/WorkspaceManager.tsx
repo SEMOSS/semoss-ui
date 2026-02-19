@@ -235,22 +235,9 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 				?.getNodeById("main-tabset")
 				?.getAttr("weight");
 
-			model
-				.getBorderSet()
-				.getBorders()
-				.forEach((border) => {
-					// border.setSelected(isSettingsTab ? -1 : border.getSelected());
-					border.setSelected(
-						action.data.tabNode === "block-settings" &&
-							mainTabsetWeight === 0
-							? 1
-							: border.getSelected(),
-					);
-				});
-
 			if (isSettingsTab || mainTabsetWeight === 0) {
 				model.visitNodes((node) => {
-					if (node.getType() === "tabset") {
+					if (node && typeof node.getType === "function" && node.getType() === "tabset") {
 						const newWeight =
 							(isSettingsTab &&
 								node.getId() === "settings-tabset") ||
