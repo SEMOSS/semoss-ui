@@ -1,9 +1,17 @@
-import { Edit } from "@mui/icons-material";
+import { Edit, WarningAmberRounded } from "@mui/icons-material";
 import BlockIcon from "@mui/icons-material/Block";
 import PersonIcon from "@mui/icons-material/Person";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Env } from "@semoss/sdk";
-import { Box, Chip, Link, Stack, styled, Typography } from "@semoss/ui";
+import {
+	Box,
+	Chip,
+	Link,
+	Stack,
+	styled,
+	Tooltip,
+	Typography,
+} from "@semoss/ui";
 import type { modelledDependency } from "@/components/app";
 import { EngineAccessButton } from "@/components/engine";
 import { EngineContext } from "@/contexts/EngineContext";
@@ -177,7 +185,20 @@ export const Dependencies = ({
 										</StyledIcons>
 									</Box>
 									<StyledStack direction="row" spacing={1}>
-										<Stack direction="row" spacing={1}>
+										<Stack
+											direction="row"
+											spacing={1}
+											alignItems="center"
+										>
+											{dep.can_view_dependencies ===
+												false && (
+												<Tooltip
+													arrow
+													title={`You don't have access to all dependencies of this ${dep.type.toLowerCase()}, so functionality may be limited. Visit its details page for more information.`}
+												>
+													<WarningAmberRounded color="warning" />
+												</Tooltip>
+											)}
 											{dep.isPublic && (
 												<Chip label="Public" />
 											)}

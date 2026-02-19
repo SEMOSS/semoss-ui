@@ -18,6 +18,7 @@ export interface appDependency {
 	permission_name: string;
 	description: string;
 	access_permission: number;
+	can_view_dependencies?: boolean;
 }
 
 export interface modelledDependency {
@@ -29,6 +30,7 @@ export interface modelledDependency {
 	isDiscoverable: boolean;
 	description: string;
 	access_permission: number;
+	can_view_dependencies?: boolean;
 }
 
 export interface engine {
