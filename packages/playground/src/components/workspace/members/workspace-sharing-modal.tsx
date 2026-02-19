@@ -286,7 +286,7 @@ export const WorkspaceSharingModal = ({
 
 													return (
 														<CommandItem
-															key={user.id}
+															key={`${user.id}-${user.email}`} // Use both ID and email for uniqueness
 															value={user.id}
 															onSelect={() =>
 																handleAddUser(
@@ -360,7 +360,7 @@ export const WorkspaceSharingModal = ({
 								<div>
 									{Object.values(pendingUsers).map((user) => (
 										<WorkspaceMemberRow
-											key={user.id}
+											key={`${user.id}-${user.email}`} // Use both ID and email for uniqueness
 											member={user}
 											currentUserId=""
 											activeUserPermission={
