@@ -60,6 +60,7 @@ import { Dependencies } from "./AppDetailTabs/Dependencies";
 import { Overview } from "./AppDetailTabs/Overview";
 import { SettingsTab } from "./AppDetailTabs/Settings";
 
+
 interface AppDetailsProps {
 	showNav?: boolean;
 }
@@ -409,7 +410,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			)}
 			<div
 				className={`h-full w-full ${
-					showNav ? "flex justify-center" : ""
+					showNav ? "flex justify-center" : "p-5"
 				}`}
 			>
 				<div

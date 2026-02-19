@@ -15,9 +15,9 @@ import { LoadingScreen, useNotification } from "@semoss/ui";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { useWorkspace } from "@/hooks";
+import { AppDetailPage } from "@/pages/app";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
 import {
-	SettingsPanel,
 	TerminalPanel,
 	WorkspaceManager,
 } from "../../components/workspace";
@@ -326,7 +326,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "graph") {
 			return <GraphPanel />;
 		} else if (component === "settingsPanel") {
-			return <SettingsPanel value={"APPSETTINGS"} />;
+			return <AppDetailPage showNav={false} />;
 		} else if (component === "export-button") {
 			return <ExportButtonPanel />;
 		}
