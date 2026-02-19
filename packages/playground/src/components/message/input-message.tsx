@@ -1,5 +1,6 @@
 import { CopyIcon, FileIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Tooltip,
@@ -19,6 +20,8 @@ interface InputMessageProps {
 
 export const InputMessage: React.FC<InputMessageProps> = observer(
 	({ room, message }) => {
+		const { t } = useTranslation("chat");
+
 		return (
 			<div className="group">
 				<div className="ml-auto max-w-[600px] items-start self-stretch rounded-lg bg-accent px-5 py-4 leading-normal">
@@ -95,7 +98,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 											} else if (
 												part.type === "TOOL_RESULT"
 											) {
-												return `<${part.toolCall.toolName}?`;
+												return `<${part.toolResult.toolName}?`;
 											}
 
 											return "";
@@ -103,7 +106,9 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 										.join("\n");
 
 									if (!text) {
-										toast.warning("No content to copy");
+										toast.warning(
+											t("notifications.noCopyContent"),
+										);
 										return;
 									}
 
@@ -111,7 +116,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 										navigator.clipboard.writeText(text);
 
 										toast.success(
-											"Successfully copied to clipboard",
+											t("notifications.copySuccess"),
 										);
 									} catch (e) {
 										toast.error(e.message);
@@ -122,7 +127,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent side="bottom">
-							Copy Message
+							{t("input.copyMessage")}
 						</TooltipContent>
 					</Tooltip>
 				</div>

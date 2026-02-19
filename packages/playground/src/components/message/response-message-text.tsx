@@ -1,6 +1,7 @@
 import { CopyIcon, SkipForwardIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Code,
@@ -19,6 +20,7 @@ import type { PixelMessageTextPart } from "@/types";
 
 const TEXT_MARKDOWN_COMPONENTS = {
 	code: ({ children, className, ...props }) => {
+		const { t } = useTranslation("chat");
 		const match = /language-(\w+)/.exec(className || "");
 		const code = children as string;
 
@@ -41,7 +43,7 @@ const TEXT_MARKDOWN_COMPONENTS = {
 									navigator.clipboard.writeText(code);
 
 									toast.success(
-										"Successfully copied to clipboard",
+										t("notifications.copySuccess"),
 									);
 								} catch (e) {
 									toast.error(e.message);
@@ -51,7 +53,9 @@ const TEXT_MARKDOWN_COMPONENTS = {
 							<CopyIcon />
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent side="bottom">Copy Code</TooltipContent>
+					<TooltipContent side="bottom">
+						{t("response.copyCode")}
+					</TooltipContent>
 				</Tooltip>
 				<Code code={code} lang={lang || undefined} {...props} />
 			</div>
@@ -78,6 +82,7 @@ interface ResponseMessageTextProps {
 
 export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 	({ message, part, isLast }) => {
+		const { t } = useTranslation("chat");
 		const typewriter = useMarkdownTypewriter(part.text);
 
 		useEffect(() => {
@@ -117,7 +122,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 							</span>
 						</TooltipTrigger>
 						<TooltipContent side="bottom">
-							Fast Forward to End
+							{t("response.fastForwardToEnd")}
 						</TooltipContent>
 					</Tooltip>
 				)}

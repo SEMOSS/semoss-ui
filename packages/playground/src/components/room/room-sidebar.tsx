@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { FlexLayout } from "@semoss/shared";
 import {
 	Button,
@@ -30,6 +31,7 @@ interface RoomSidebarProps {
 }
 
 export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
+	const { t } = useTranslation("sidebar");
 	const layoutRef = useRef<FlexLayout.Layout | null>(null);
 	const [isMaximized, setIsMaximized] = useState(false);
 
@@ -87,7 +89,9 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 									<PanelBottomIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Open in-line</TooltipContent>
+							<TooltipContent>
+								{t("actions.openInline")}
+							</TooltipContent>
 						</Tooltip>
 					)}
 
@@ -108,7 +112,9 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
-							{isMaximized ? "Minimize" : "Maximize"}
+							{isMaximized
+								? t("actions.minimize")
+								: t("actions.maximize")}
 						</TooltipContent>
 					</Tooltip>
 					<Separator
@@ -132,7 +138,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								<XIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Close</TooltipContent>
+						<TooltipContent>{t("actions.close")}</TooltipContent>
 					</Tooltip>
 				</div>
 				<div className="w-full flex-1 overflow-hidden rounded-md">

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Separator,
@@ -29,6 +30,7 @@ interface RoomInlineToolProps {
 
 export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 	({ room, message, tool }) => {
+		const { t } = useTranslation("room");
 		const [isMaximized, setIsMaximized] = useState(false);
 
 		return (
@@ -65,7 +67,9 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 									<PanelRightIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Open in Sidebar</TooltipContent>
+							<TooltipContent>
+								{t("inlineTool.openInSidebar")}
+							</TooltipContent>
 						</Tooltip>
 						<Tooltip>
 							<TooltipTrigger asChild>
@@ -84,7 +88,9 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent>
-								{isMaximized ? "Minimize" : "Maximize"}
+								{isMaximized
+									? t("inlineTool.minimize")
+									: t("inlineTool.maximize")}
 							</TooltipContent>
 						</Tooltip>
 						<Separator
@@ -108,7 +114,9 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 									<XIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Close</TooltipContent>
+							<TooltipContent>
+								{t("inlineTool.close")}
+							</TooltipContent>
 						</Tooltip>
 					</div>
 					<div className="w-full flex-1 overflow-hidden">

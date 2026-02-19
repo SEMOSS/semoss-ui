@@ -1,0 +1,49 @@
+{
+	"messages": {
+		"placeholder": "اكتب رسالة...",
+		"sending": "جارٍ الإرسال...",
+		"error": "فشل إرسال الرسالة"
+	},
+	"attachments": {
+		"addFile": "إضافة ملف",
+		"removeFile": "إزالة الملف"
+	},
+	"response": {
+		"agent": "الوكيل",
+		"previousMessage": "الرسالة السابقة",
+		"nextMessage": "الرسالة التالية",
+		"rewriteMessage": "إعادة كتابة الرسالة",
+		"goodResponse": "استجابة جيدة",
+		"poorResponse": "استجابة ضعيفة",
+		"copyResponse": "نسخ الاستجابة",
+		"copyCode": "نسخ الكود",
+		"fastForwardToEnd": "التقدم السريع إلى النهاية",
+		"completeTools": "يرجى إكمال الأداة (الأدوات) للمتابعة."
+	},
+	"input": {
+		"copyMessage": "نسخ الرسالة"
+	},
+	"plan": {
+		"heading": "هذه هي الخطة التي أنشأتها. لا تتردد في تعديلها حسب الحاجة.",
+		"fixStep": "إصلاح الخطوة",
+		"edit": "تعديل",
+		"delete": "حذف",
+		"addTask": "إضافة مهمة",
+		"confirmPlan": "تأكيد الخطة"
+	},
+	"tool": {
+		"failed": "فشل تنفيذ الأداة",
+		"cancelled": "تم إلغاء تنفيذ الأداة",
+		"completed": "مكتمل",
+		"clickToOpen": "انقر للفتح",
+		"autoExecute": "هذه الأداة مضبوطة على التنفيذ التلقائي",
+		"cancel": "إلغاء"
+	},
+	"notifications": {
+		"feedbackSuccess": "شكراً على الملاحظات!",
+		"rewriteSuccess": "تمت إعادة كتابة الرسالة بنجاح",
+		"copySuccess": "تم النسخ إلى الحافظة بنجاح",
+		"noCopyContent": "لا يوجد محتوى للنسخ",
+		"planStepRemoved": "تمت إزالة الخطوة {{stepNumber}} من الخطة بنجاح"
+	}
+}

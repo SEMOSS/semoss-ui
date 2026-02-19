@@ -7,6 +7,7 @@ import {
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
@@ -47,6 +48,7 @@ interface RoomContentProps {
  */
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
+	const { t } = useTranslation("room");
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
 
@@ -321,7 +323,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								</div>
 								<span>
 									{room.error.message ||
-										"Unable to process request. Please check your connection, copy your message, and refresh."}
+										t("content.errorDefault")}
 								</span>
 							</div>
 						) : null}
@@ -336,14 +338,16 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									size="icon-sm"
 									variant={"outline"}
 									onClick={() => scrollToTarget(0)}
-									aria-label="Scroll to top"
+									aria-label={t("content.scrollToTop")}
 									className="shadow-lg"
 								>
 									<MoveUpIcon />
 								</Button>
 							</span>
 						</TooltipTrigger>
-						<TooltipContent>Scroll to top</TooltipContent>
+						<TooltipContent>
+							{t("content.scrollToTop")}
+						</TooltipContent>
 					</Tooltip>
 				)}
 
@@ -357,14 +361,16 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									onClick={() => {
 										scrollToTarget(contentHeight);
 									}}
-									aria-label="Scroll to bottom"
+									aria-label={t("content.scrollToBottom")}
 									className="shadow-lg"
 								>
 									<MoveDownIcon />
 								</Button>
 							</span>
 						</TooltipTrigger>
-						<TooltipContent>Scroll to bottom</TooltipContent>
+						<TooltipContent>
+							{t("content.scrollToBottom")}
+						</TooltipContent>
 					</Tooltip>
 				)}
 			</div>
@@ -423,7 +429,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								>
 									<Settings2Icon />
 									<span className="flex-1">
-										Edit Settings
+										{t("settings.edit")}
 									</span>
 								</DropdownMenuItem>
 							</>

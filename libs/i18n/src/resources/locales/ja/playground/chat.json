@@ -1,0 +1,49 @@
+{
+	"messages": {
+		"placeholder": "メッセージを入力...",
+		"sending": "送信中...",
+		"error": "メッセージの送信に失敗しました"
+	},
+	"attachments": {
+		"addFile": "ファイルを追加",
+		"removeFile": "ファイルを削除"
+	},
+	"response": {
+		"agent": "エージェント",
+		"previousMessage": "前のメッセージ",
+		"nextMessage": "次のメッセージ",
+		"rewriteMessage": "メッセージを書き直す",
+		"goodResponse": "良い回答",
+		"poorResponse": "悪い回答",
+		"copyResponse": "回答をコピー",
+		"copyCode": "コードをコピー",
+		"fastForwardToEnd": "最後まで早送り",
+		"completeTools": "続行するにはツールを完了してください。"
+	},
+	"input": {
+		"copyMessage": "メッセージをコピー"
+	},
+	"plan": {
+		"heading": "以下のプランを作成しました。必要に応じて変更してください。",
+		"fixStep": "ステップを修正",
+		"edit": "編集",
+		"delete": "削除",
+		"addTask": "タスクを追加",
+		"confirmPlan": "プランを確認"
+	},
+	"tool": {
+		"failed": "ツールの実行に失敗しました",
+		"cancelled": "ツールの実行がキャンセルされました",
+		"completed": "完了",
+		"clickToOpen": "クリックして開く",
+		"autoExecute": "このツールは自動実行に設定されています",
+		"cancel": "キャンセル"
+	},
+	"notifications": {
+		"feedbackSuccess": "フィードバックをありがとうございます!",
+		"rewriteSuccess": "メッセージを正常に書き直しました",
+		"copySuccess": "クリップボードに正常にコピーしました",
+		"noCopyContent": "コピーするコンテンツがありません",
+		"planStepRemoved": "プランからステップ{{stepNumber}}を正常に削除しました"
+	}
+}

@@ -5,6 +5,7 @@ import {
 	XCircleIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "@semoss/i18n";
 import { Button, Spinner } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
@@ -20,6 +21,7 @@ interface ResponseMessageToolProps {
 
 export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 	({ message, tool }) => {
+		const { t } = useTranslation("chat");
 		const { room } = message;
 
 		/**
@@ -111,18 +113,18 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							>
 								{/* {tool.title} */}
 								{tool.status === "ERROR"
-									? "Failed to execute tool"
+									? t("tool.failed")
 									: tool.status === "CANCELLED"
-										? "Tool execution cancelled"
+										? t("tool.cancelled")
 										: tool.response
-											? "Completed"
+											? t("tool.completed")
 											: tool.json._meta
 														.SMSS_MCP_EXECUTION ===
 													"ask"
-												? "Click to open"
+												? t("tool.clickToOpen")
 												: tool.status === "LOADING"
 													? toolExecutionMessage
-													: "This tool is set to auto-execute"}
+													: t("tool.autoExecute")}
 							</div>
 						</div>
 					</button>
@@ -146,7 +148,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 									tool.closeTool();
 								}}
 							>
-								Cancel
+								{t("tool.cancel")}
 							</Button>
 						)}
 					</div>

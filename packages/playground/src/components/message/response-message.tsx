@@ -10,6 +10,7 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Tooltip,
@@ -38,6 +39,7 @@ interface ResponseMessageProps {
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 	({ room, message }) => {
+		const { t } = useTranslation("chat");
 		// const typewriter = useMarkdownTypewriter(message.text);
 		//
 		// useEffect(() => {
@@ -61,7 +63,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			try {
 				await message.recordFeedback(isDeleting ? null : rating);
 				if (!isDeleting) {
-					toast.success("Thank you for the feedback!");
+					toast.success(t("notifications.feedbackSuccess"));
 				}
 			} catch (e) {
 				toast.error(e.message);
@@ -76,7 +78,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			try {
 				await message.rewriteMessage();
 
-				toast.success("Successfully rewrote message");
+				toast.success(t("notifications.rewriteSuccess"));
 			} catch (e) {
 				toast.error(e.message);
 			}
@@ -93,7 +95,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						<MessageCircleIcon className="size-4" />
 					)}
 					<span className="mr-0.5 font-medium text-base">
-						{message.model.name ?? "Agent"}
+						{message.model.name ?? t("response.agent")}
 					</span>
 				</div>
 				{message.parts.map((p, pIdx) => {
@@ -187,7 +189,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				{message.hasUnfinishedTools && (
 					<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
 						<CircleAlert className="size-4" />
-						Please complete the tool(s) to proceed.
+						{t("response.completeTools")}
 					</p>
 				)}
 				<div className="-ml-2.5 flex flex-1 flex-row items-center justify-start">
@@ -216,7 +218,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										</Button>
 									</TooltipTrigger>
 									<TooltipContent side="bottom">
-										Previous Message
+										{t("response.previousMessage")}
 									</TooltipContent>
 								</Tooltip>
 								<span className="text-muted-foreground text-xs">
@@ -242,7 +244,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										</Button>
 									</TooltipTrigger>
 									<TooltipContent side="bottom">
-										Next Message
+										{t("response.nextMessage")}
 									</TooltipContent>
 								</Tooltip>
 							</>
@@ -266,7 +268,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
-									Rewrite Message
+									{t("response.rewriteMessage")}
 								</TooltipContent>
 							</Tooltip>
 						)}
@@ -290,7 +292,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
-								Good response
+								{t("response.goodResponse")}
 							</TooltipContent>
 						</Tooltip>
 
@@ -313,7 +315,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
-								Poor response
+								{t("response.poorResponse")}
 							</TooltipContent>
 						</Tooltip>
 
@@ -343,7 +345,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											.join("\n");
 
 										if (!text) {
-											toast.warning("No content to copy");
+											toast.warning(
+												t(
+													"notifications.noCopyContent",
+												),
+											);
 											return;
 										}
 
@@ -351,7 +357,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											navigator.clipboard.writeText(text);
 
 											toast.success(
-												"Successfully copied to clipboard",
+												t("notifications.copySuccess"),
 											);
 										} catch (e) {
 											toast.error(e.message);
@@ -362,7 +368,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
-								Copy Response
+								{t("response.copyResponse")}
 							</TooltipContent>
 						</Tooltip>
 					</div>

@@ -1,0 +1,49 @@
+{
+	"messages": {
+		"placeholder": "एक संदेश लिखें...",
+		"sending": "भेजा जा रहा है...",
+		"error": "संदेश भेजने में विफल"
+	},
+	"attachments": {
+		"addFile": "फ़ाइल जोड़ें",
+		"removeFile": "फ़ाइल हटाएं"
+	},
+	"response": {
+		"agent": "एजेंट",
+		"previousMessage": "पिछला संदेश",
+		"nextMessage": "अगला संदेश",
+		"rewriteMessage": "संदेश फिर से लिखें",
+		"goodResponse": "अच्छा जवाब",
+		"poorResponse": "खराब जवाब",
+		"copyResponse": "जवाब कॉपी करें",
+		"copyCode": "कोड कॉपी करें",
+		"fastForwardToEnd": "अंत तक तेजी से आगे बढ़ें",
+		"completeTools": "कृपया आगे बढ़ने के लिए टूल पूरा करें।"
+	},
+	"input": {
+		"copyMessage": "संदेश कॉपी करें"
+	},
+	"plan": {
+		"heading": "यहाँ वह योजना है जो मैंने बनाई है। आवश्यकतानुसार इसे संशोधित करने के लिए स्वतंत्र महसूस करें।",
+		"fixStep": "चरण ठीक करें",
+		"edit": "संपादित करें",
+		"delete": "हटाएं",
+		"addTask": "कार्य जोड़ें",
+		"confirmPlan": "योजना की पुष्टि करें"
+	},
+	"tool": {
+		"failed": "टूल निष्पादित करने में विफल",
+		"cancelled": "टूल निष्पादन रद्द किया गया",
+		"completed": "पूर्ण",
+		"clickToOpen": "खोलने के लिए क्लिक करें",
+		"autoExecute": "यह टूल ऑटो-एक्ज़िक्यूट करने के लिए सेट है",
+		"cancel": "रद्द करें"
+	},
+	"notifications": {
+		"feedbackSuccess": "प्रतिक्रिया के लिए धन्यवाद!",
+		"rewriteSuccess": "संदेश सफलतापूर्वक फिर से लिखा गया",
+		"copySuccess": "क्लिपबोर्ड पर सफलतापूर्वक कॉपी किया गया",
+		"noCopyContent": "कॉपी करने के लिए कोई सामग्री नहीं",
+		"planStepRemoved": "योजना से चरण {{stepNumber}} सफलतापूर्वक हटाया गया"
+	}
+}

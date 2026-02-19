@@ -1,5 +1,6 @@
 import { ChevronsUpDownIcon, UserPlusIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	addProjectUserPermissions,
 	getProjectUsers,
@@ -48,6 +49,8 @@ export const WorkspaceSharingModal = ({
 	onClose,
 	activeUserPermission,
 }: WorkspaceSharingModalProps) => {
+	const { t } = useTranslation(["workspace", "common"]);
+
 	/**
 	 * State
 	 */
@@ -110,7 +113,8 @@ export const WorkspaceSharingModal = ({
 				]);
 			} catch (error) {
 				toast.error(
-					`Failed to fetch users: ${error instanceof Error ? error.message : "Unknown error"}`,
+					t("workspace:messages.fetchUsersFailed") +
+						`: ${error instanceof Error ? error.message : "Unknown error"}`,
 				);
 			} finally {
 				setIsLoadingDropdownUsers(false);
@@ -125,7 +129,7 @@ export const WorkspaceSharingModal = ({
 	const handleAddUser = (user: User) => {
 		// Check if user is already in the list
 		if (pendingUsers[user.id]) {
-			toast.error("User already added");
+			toast.error(t("workspace:messages.userAlreadyAdded"));
 			return;
 		}
 
@@ -178,7 +182,7 @@ export const WorkspaceSharingModal = ({
 	const handleSubmit = async () => {
 		const pendingUsersList = Object.values(pendingUsers);
 		if (pendingUsersList.length === 0) {
-			toast.error("Please add at least one user");
+			toast.error(t("workspace:messages.addAtLeastOne"));
 			return;
 		}
 
@@ -192,9 +196,9 @@ export const WorkspaceSharingModal = ({
 			await addProjectUserPermissions(workspaceId, usersToAdd);
 
 			toast.success(
-				`Successfully added ${pendingUsersList.length} member${
-					pendingUsersList.length > 1 ? "s" : ""
-				}`,
+				t("workspace:messages.addMembersSuccess", {
+					count: pendingUsersList.length,
+				}),
 			);
 
 			// Reset state
@@ -206,7 +210,8 @@ export const WorkspaceSharingModal = ({
 			onClose(true);
 		} catch (error) {
 			toast.error(
-				`Failed to add members: ${error instanceof Error ? error.message : "Unknown error"}`,
+				t("workspace:messages.addMembersFailed") +
+					`: ${error instanceof Error ? error.message : "Unknown error"}`,
 			);
 		} finally {
 			setIsSubmitting(false);
@@ -230,9 +235,9 @@ export const WorkspaceSharingModal = ({
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
 			<DialogContent className="max-w-2xl">
 				<DialogHeader>
-					<DialogTitle>Add members</DialogTitle>
+					<DialogTitle>{t("workspace:sharing.title")}</DialogTitle>
 					<DialogDescription>
-						Invite members to access and collaborate on this agent.
+						{t("workspace:sharing.description")}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -252,7 +257,10 @@ export const WorkspaceSharingModal = ({
 										className="flex-1 justify-between"
 									>
 										<span className="truncate">
-											{search || "Search for a user..."}
+											{search ||
+												t(
+													"workspace:sharing.searchPlaceholder",
+												)}
 										</span>
 										<ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
 									</Button>
@@ -263,7 +271,9 @@ export const WorkspaceSharingModal = ({
 								>
 									<Command shouldFilter={false}>
 										<CommandInput
-											placeholder="Search users..."
+											placeholder={t(
+												"workspace:sharing.searchUsers",
+											)}
 											value={search}
 											onValueChange={setSearch}
 										/>
@@ -274,7 +284,9 @@ export const WorkspaceSharingModal = ({
 														<Spinner />
 													</div>
 												) : (
-													"No users found"
+													t(
+														"workspace:sharing.noUsersFound",
+													)
 												)}
 											</CommandEmpty>
 											<CommandGroup>
@@ -312,13 +324,16 @@ export const WorkspaceSharingModal = ({
 															</div>
 															{isInAgent && (
 																<span className="ml-auto text-muted-foreground text-xs">
-																	Has access
+																	{t(
+																		"workspace:sharing.hasAccess",
+																	)}
 																</span>
 															)}
 															{isAlreadyPending && (
 																<span className="ml-auto text-muted-foreground text-xs">
-																	Pending
-																	invite
+																	{t(
+																		"workspace:sharing.pendingInvite",
+																	)}
 																</span>
 															)}
 														</CommandItem>
@@ -353,7 +368,7 @@ export const WorkspaceSharingModal = ({
 					{Object.keys(pendingUsers).length > 0 && (
 						<div className="flex flex-col gap-2">
 							<div className="font-medium text-sm">
-								Members to add (
+								{t("workspace:sharing.membersToAdd")} (
 								{Object.keys(pendingUsers).length})
 							</div>
 							<ScrollArea className="max-h-[300px] rounded-md border">
@@ -385,7 +400,7 @@ export const WorkspaceSharingModal = ({
 						<div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed py-12 text-center">
 							<UserPlusIcon className="size-8 text-muted-foreground" />
 							<div className="text-muted-foreground text-sm">
-								Add users to share this workspace
+								{t("workspace:sharing.emptyState")}
 							</div>
 						</div>
 					)}
@@ -393,7 +408,7 @@ export const WorkspaceSharingModal = ({
 
 				<DialogFooter>
 					<Button variant="outline" onClick={handleClose}>
-						Cancel
+						{t("common:buttons.cancel")}
 					</Button>
 					<Button
 						onClick={handleSubmit}
@@ -402,7 +417,9 @@ export const WorkspaceSharingModal = ({
 							isSubmitting
 						}
 					>
-						{isSubmitting ? "Adding..." : "Add Members"}
+						{isSubmitting
+							? t("workspace:sharing.buttonAdding")
+							: t("workspace:sharing.buttonAdd")}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

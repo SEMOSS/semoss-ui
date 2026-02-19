@@ -1,0 +1,49 @@
+{
+	"messages": {
+		"placeholder": "Escriba un mensaje...",
+		"sending": "Enviando...",
+		"error": "No se pudo enviar el mensaje"
+	},
+	"attachments": {
+		"addFile": "Añadir archivo",
+		"removeFile": "Eliminar archivo"
+	},
+	"response": {
+		"agent": "Agente",
+		"previousMessage": "Mensaje anterior",
+		"nextMessage": "Siguiente mensaje",
+		"rewriteMessage": "Reescribir mensaje",
+		"goodResponse": "Buena respuesta",
+		"poorResponse": "Mala respuesta",
+		"copyResponse": "Copiar respuesta",
+		"copyCode": "Copiar código",
+		"fastForwardToEnd": "Avanzar al final",
+		"completeTools": "Por favor, completa las herramientas para continuar."
+	},
+	"input": {
+		"copyMessage": "Copiar mensaje"
+	},
+	"plan": {
+		"heading": "Aquí está el plan que he creado. Siéntete libre de modificarlo según sea necesario.",
+		"fixStep": "Corregir paso",
+		"edit": "Editar",
+		"delete": "Eliminar",
+		"addTask": "Agregar tarea",
+		"confirmPlan": "Confirmar plan"
+	},
+	"tool": {
+		"failed": "Error al ejecutar la herramienta",
+		"cancelled": "Ejecución de herramienta cancelada",
+		"completed": "Completado",
+		"clickToOpen": "Haz clic para abrir",
+		"autoExecute": "Esta herramienta está configurada para ejecutarse automáticamente",
+		"cancel": "Cancelar"
+	},
+	"notifications": {
+		"feedbackSuccess": "¡Gracias por tus comentarios!",
+		"rewriteSuccess": "Mensaje reescrito con éxito",
+		"copySuccess": "Copiado al portapapeles con éxito",
+		"noCopyContent": "No hay contenido para copiar",
+		"planStepRemoved": "Paso {{stepNumber}} eliminado del plan con éxito"
+	}
+}

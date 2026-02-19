@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import {
 	editProjectUserPermissions,
 	getProjectUsers,
@@ -69,6 +70,7 @@ export const WorkspaceMembersList = ({
 	isSharingModalOpen,
 	onSharingModalClose,
 }: WorkspaceMembersListProps) => {
+	const { t } = useTranslation(["workspace", "common"]);
 	const { rowsPerPage, offset, setTotalRows, setCurrentPage } =
 		paginationControl;
 	const { chat } = useChat();
@@ -113,7 +115,10 @@ export const WorkspaceMembersList = ({
 			}
 		} catch (error) {
 			toast.error(
-				`Failed to fetch user permissions${error ? `: ${error instanceof Error ? error.message : "Unknown error"}` : ""}`,
+				t("workspace:messages.fetchPermissionsFailed") +
+					(error
+						? `: ${error instanceof Error ? error.message : "Unknown error"}`
+						: ""),
 			);
 		}
 	}, [workspaceId]);
@@ -220,12 +225,15 @@ export const WorkspaceMembersList = ({
 			await editProjectUserPermissions(workspaceId, [
 				{ userid: userId, permission: newPermission },
 			]);
-			toast.success("Permission updated successfully");
+			toast.success(t("workspace:messages.permissionUpdated"));
 		} catch (error) {
 			// Revert to previous state if the server update failed
 			setMembers(previousMembers);
 			toast.error(
-				`Failed to update permission${error ? `: ${error instanceof Error ? error.message : "Unknown error"}` : ""}`,
+				t("workspace:messages.permissionUpdateFailed") +
+					(error
+						? `: ${error instanceof Error ? error.message : "Unknown error"}`
+						: ""),
 			);
 		}
 	};
@@ -256,11 +264,11 @@ export const WorkspaceMembersList = ({
 	const getPermissionDisplay = (permission: string) => {
 		switch (permission) {
 			case "OWNER":
-				return "Owner";
+				return t("workspace:members.owner");
 			case "EDIT":
-				return "Editor";
+				return t("workspace:members.editor");
 			case "READ_ONLY":
-				return "Read-only";
+				return t("workspace:members.readOnly");
 			default:
 				return permission;
 		}
@@ -308,11 +316,14 @@ export const WorkspaceMembersList = ({
 				}
 
 				setIsLoading(false);
-				toast.success("User removed successfully");
+				toast.success(t("workspace:messages.userRemoved"));
 			} catch (error) {
 				setIsLoading(false);
 				toast.error(
-					`Failed to remove user${error ? `: ${error instanceof Error ? error.message : "Unknown error"}` : ""}`,
+					t("workspace:messages.userRemoveFailed") +
+						(error
+							? `: ${error instanceof Error ? error.message : "Unknown error"}`
+							: ""),
 				);
 			}
 		} else if (action.type === "permission") {
@@ -333,14 +344,17 @@ export const WorkspaceMembersList = ({
 				await editProjectUserPermissions(workspaceId, [
 					{ userid: action.userId, permission: action.newPermission },
 				]);
-				toast.success("Permission updated successfully");
+				toast.success(t("workspace:messages.permissionUpdated"));
 				// Refetch user permission to update the current user's permission state
 				await fetchUserPermission();
 			} catch (error) {
 				// Revert to previous state if the server update failed
 				setMembers(previousMembers);
 				toast.error(
-					`Failed to update permission${error ? `: ${error instanceof Error ? error.message : "Unknown error"}` : ""}`,
+					t("workspace:messages.permissionUpdateFailed") +
+						(error
+							? `: ${error instanceof Error ? error.message : "Unknown error"}`
+							: ""),
 				);
 			}
 		}
@@ -351,50 +365,49 @@ export const WorkspaceMembersList = ({
 		confirmationDialog.action?.type === "delete"
 			? confirmationDialog.action.userId === currentUser.id
 				? {
-						title: "Remove yourself from agent",
-						description:
-							"You are about to remove your access to this agent. You will need to be re-invited to regain access. This action cannot be undone.",
+						title: t("workspace:members.removeSelfTitle"),
+						description: t(
+							"workspace:members.removeSelfDescription",
+						),
 						buttonVariant: "destructive" as const,
-						buttonText: "Remove access",
+						buttonText: t("workspace:members.removeAccess"),
 					}
 				: {
-						title: "Remove agent access",
+						title: t("workspace:members.removeUserTitle"),
 						description: (
 							<>
-								Are you sure you want to remove{" "}
-								<span className="font-medium text-foreground">
-									{confirmationDialog.action.userName}
-								</span>
-								's access to this agent? This action cannot be
-								undone.
+								{t("workspace:members.removeUserDescription", {
+									name: confirmationDialog.action.userName,
+								})}
 							</>
 						),
 						buttonVariant: "destructive" as const,
-						buttonText: "Remove access",
+						buttonText: t("workspace:members.removeAccess"),
 					}
 			: confirmationDialog.action?.type === "permission"
 				? {
-						title: "Change your permission",
+						title: t("workspace:members.changePermissionTitle"),
 						description: (
 							<>
-								You are about to change your own permission from{" "}
-								<span className="font-medium text-foreground">
-									{getPermissionDisplay(
-										confirmationDialog.action.oldPermission,
-									)}
-								</span>{" "}
-								to{" "}
-								<span className="font-medium text-foreground">
-									{getPermissionDisplay(
-										confirmationDialog.action.newPermission,
-									)}
-								</span>
-								. This will affect what actions you can perform
-								in this agent.
+								{t(
+									"workspace:members.changePermissionDescription",
+									{
+										oldPermission: getPermissionDisplay(
+											confirmationDialog.action
+												.oldPermission,
+										),
+										newPermission: getPermissionDisplay(
+											confirmationDialog.action
+												.newPermission,
+										),
+									},
+								)}
 							</>
 						),
 						buttonVariant: "default" as const,
-						buttonText: "Change permission",
+						buttonText: t(
+							"workspace:members.changePermissionButton",
+						),
 					}
 				: {
 						title: "",
@@ -407,7 +420,7 @@ export const WorkspaceMembersList = ({
 		<ScrollArea className="h-full w-full">
 			<div className="py-4">
 				<div className="px-4 pb-2 text-muted-foreground">
-					Who has access
+					{t("workspace:members.heading")}
 				</div>
 				{isLoading
 					? // Show skeleton loaders while data is being fetched
@@ -466,7 +479,7 @@ export const WorkspaceMembersList = ({
 								})
 							}
 						>
-							Cancel
+							{t("common:buttons.cancel")}
 						</Button>
 						<Button
 							variant={dialogContent.buttonVariant}
