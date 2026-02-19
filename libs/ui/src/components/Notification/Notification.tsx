@@ -131,7 +131,10 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 	};
 
 	const getMessage = (): ReactNode => {
-		if (isValidElement(active?.message)) {
+		if (
+			isValidElement(active?.message) ||
+			typeof active?.message === "string"
+		) {
 			return active.message;
 		} else if (
 			typeof active?.message === "object" &&
