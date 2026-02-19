@@ -261,12 +261,44 @@ export class ConfigStore {
 	/**
 	 * Get the default model ID (UUID) from user meta
 	 */
-	get defaultModel(): string {
-		if (this._store.user.meta && typeof this._store.user.meta === 'object') {
-			const metaValues = Object.values(this._store.user.meta);
-			return metaValues.length > 0 ? (metaValues[0] as string) : "";
+	get defaultTextGenerationModel(): string {
+		const meta = this._store.user.meta as unknown;
+		if (meta && typeof meta === "object") {
+			const tg = (meta as Record<string, unknown>)[
+				"text-generation-model"
+			] as unknown;
+			if (tg) {
+				return typeof tg === "string" ? tg : "";
+			}
 		}
 		return "";
+	}
+
+	get defaultCodeGenerationModel(): string {
+		const meta = this._store.user.meta as unknown;
+		if (meta && typeof meta === "object") {
+			const tg = (meta as Record<string, unknown>)[
+				"code-generation-model"
+			] as unknown;
+			if (tg) {
+				return typeof tg === "string" ? tg : "";
+			}
+		}
+		return "";
+	}
+
+	/**
+	 * Update user meta with a model selection
+	 * @param modelName - The model name (e.g., "text-generation-model", "code-generation-model")
+	 * @param modelId - The model ID to set
+	 */
+	updateUserMeta(modelName: string, modelId: string): void {
+		runInAction(() => {
+			this._store.user.meta = {
+				...(this._store.user.meta as Record<string, unknown>),
+				[modelName]: modelId,
+			};
+		});
 	}
 
 	/**
