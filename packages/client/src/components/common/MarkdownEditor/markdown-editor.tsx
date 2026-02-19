@@ -37,7 +37,7 @@ export const MarkdownEditor = (props: MarkdownEditorProps) => {
 			<Tabs
 				value={view}
 				onValueChange={(val) => setView(val as "edit" | "view")}
-				className="w-full"
+				className="w-full gap-0"
 			>
 				<TabsList className="w-full rounded-t-lg rounded-b-none">
 					<TabsTrigger
