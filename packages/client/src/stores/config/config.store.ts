@@ -519,6 +519,11 @@ export class ConfigStore {
 					meta: {},
 				};
 
+				// TODO: remove userEpoch from the backend
+				if (output.userEpoch) {
+					delete output.userEpoch;
+				}
+
 				// Helper function to extract first element from array values in meta
 				const transformMeta = (meta: unknown) => {
 					if (!meta || typeof meta !== 'object') return null;
