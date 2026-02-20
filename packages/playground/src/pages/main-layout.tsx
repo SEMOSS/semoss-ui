@@ -22,7 +22,7 @@ import { useNavbar } from "@/hooks/use-navbar";
 import { ChatStore } from "@/stores";
 
 export const MainLayout = observer(() => {
-	const { actions } = useInsight();
+	const { actions, system } = useInsight();
 	const { root } = useRoot();
 	const [navbarActions, setNavbarActions] = useState<ReactNode | null>(null);
 
@@ -33,13 +33,17 @@ export const MainLayout = observer(() => {
 
 	// set up the store
 	const chatStore = useMemo(() => {
-		const store = new ChatStore(root.theme, actions);
+		const store = new ChatStore(
+			root.theme,
+			actions,
+			Object.values(system.config.loginDetails ?? {})?.[0],
+		);
 
 		// initialize it
 		store.initialize();
 
 		return store;
-	}, [root.theme, actions]);
+	}, [root.theme, actions, system.config.loginDetails]);
 
 	return (
 		<ChatContext.Provider
