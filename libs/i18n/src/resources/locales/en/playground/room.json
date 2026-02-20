@@ -1,0 +1,96 @@
+{
+	"welcome": "Welcome",
+	"settings": {
+		"title": "Room Settings",
+		"description": "Update room settings and modify the behavior of the chat",
+		"open": "Open Settings",
+		"close": "Close",
+		"edit": "Edit Settings"
+	},
+	"form": {
+		"modelLabel": "Model",
+		"instructionsLabel": "Instructions",
+		"knowledgeLabel": "Knowledge",
+		"toolboxLabel": "Toolbox",
+		"maxTokenLabel": "Max Token",
+		"temperatureLabel": "Temperature"
+	},
+	"modes": {
+		"ask": "Ask",
+		"plan": "Plan"
+	},
+	"workspace": {
+		"publishTooltip": "Publish as Agent",
+		"publishTitle": "Publish Agent",
+		"publishDescription": "Publish a new agent with the current room configuration, including instructions and MCPs.",
+		"nameLabel": "Name *",
+		"namePlaceholder": "Enter agent name",
+		"descriptionLabel": "Description",
+		"descriptionPlaceholder": "Enter agent description",
+		"cancelButton": "Cancel",
+		"publishingButton": "Publishing...",
+		"publishButton": "Publish Agent",
+		"nameRequired": "Agent name is required",
+		"publishSuccess": "Agent created successfully",
+		"publishError": "Failed to create agent: {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "Enter text",
+		"thinking": "Thinking...",
+		"menuPrompt": "/ to open menu",
+		"openSettings": "Open settings",
+		"recordLabel": "Record the Model",
+		"stopRecording": "Stop Recording",
+		"record": "Record",
+		"askLabel": "Ask the AI",
+		"thinkingTooltip": "Thinking",
+		"enterQuestion": "Please enter a question",
+		"completeTool": "Please complete the tool(s) to proceed",
+		"ask": "Ask",
+		"errorProcessing": "Error processing chat"
+	},
+	"content": {
+		"scrollToTop": "Scroll to top",
+		"scrollToBottom": "Scroll to bottom",
+		"errorDefault": "Unable to process request. Please check your connection, copy your message, and refresh."
+	},
+	"inlineTool": {
+		"openInSidebar": "Open in Sidebar",
+		"minimize": "Minimize",
+		"maximize": "Maximize",
+		"close": "Close"
+	},
+	"fileExplorer": {
+		"copyPath": "Copy Path",
+		"download": "Download",
+		"delete": "Delete",
+		"copyFailed": "Failed to copy to clipboard"
+	},
+	"menuToolbox": {
+		"addToolbox": "Add Toolbox",
+		"searchPlaceholder": "Search toolboxes",
+		"notFound": "Not Found",
+		"allTools": "All Tools"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "Add Knowledge",
+		"searchPlaceholder": "Search knowledge",
+		"notFound": "Not Found"
+	},
+	"menuWorkspace": {
+		"selectAgent": "Select Agent",
+		"searchPlaceholder": "Search workspaces",
+		"notFound": "Not Found"
+	},
+	"menuUpload": {
+		"attachDocument": "Attach Document"
+	},
+	"menuFileExplorer": {
+		"name": "File Explorer",
+		"open": "Open File Explorer",
+		"close": "Close File Explorer"
+	},
+	"errors": {
+		"createRoom": "An error occurred while creating the room. Error: {{message}}"
+	}
+}

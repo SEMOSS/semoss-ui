@@ -1,0 +1,69 @@
+{
+	"title": "Almacenes de Conocimiento",
+	"aboutTitle": "Acerca de los Almacenes de Conocimiento",
+	"whatIsKnowledgeStore": "¿Qué es un Almacén de Conocimiento?",
+	"ragDescription": "El chat RAG (Generación Aumentada por Recuperación) mejora las conversaciones de IA al fundamentar las respuestas en datos confiables. Elija entre las bibliotecas a continuación para recibir una respuesta que haga referencia a esos documentos específicamente.",
+	"subtitle": "Busque, filtre y cree nuevas fuentes de conocimiento.",
+	"newSource": {
+		"title": "Nueva fuente de conocimiento",
+		"description": "Suba documentos para crear una nueva fuente de conocimiento"
+	},
+	"form": {
+		"nameLabel": "Nombre",
+		"descriptionLabel": "Descripción",
+		"embeddingLabel": "Incrustación",
+		"filesLabel": "Archivos",
+		"descriptionPlaceholder": "Ingrese la descripción"
+	},
+	"tabs": {
+		"all": "Todos",
+		"global": "Almacenes Globales",
+		"mine": "Mis Almacenes"
+	},
+	"filters": {
+		"allCenters": "Todos los Centros/Oficinas",
+		"all": "Todos"
+	},
+	"actions": {
+		"createSource": "Crear Fuente de Conocimiento",
+		"viewDocuments": "Ver documentos",
+		"newChat": "Nuevo Chat"
+	},
+	"messages": {
+		"noDescription": "Sin descripción",
+		"noLibrariesFound": "No se encontraron bibliotecas de documentos que coincidan con sus criterios.",
+		"loadingDocuments": "Cargando documentos…",
+		"noDocuments": "No se encontraron documentos."
+	},
+	"documents": {
+		"title": "Documentos",
+		"description": "Archivos actualmente asociados con esta fuente de conocimiento."
+	},
+	"embedDocuments": {
+		"title": "Insertar documentos en fuente existente",
+		"description": "Sube documentos para insertar en esta fuente de conocimiento.",
+		"documents": "Documentos",
+		"selectFiles": "Haz clic para seleccionar archivos o arrastra y suelta",
+		"embedButton": "Insertar documentos",
+		"embedding": "Insertando...",
+		"removeFile": "Eliminar archivo"
+	},
+	"embedMessages": {
+		"selectKnowledgeSource": "Por favor, selecciona una fuente de conocimiento",
+		"selectDocument": "Por favor, selecciona al menos un documento",
+		"embedSuccess": "Documentos insertados con éxito",
+		"embedFailed": "Error al insertar documentos"
+	},
+	"breadcrumbs": {
+		"home": "Inicio",
+		"knowledgeStores": "Almacenes de Conocimiento",
+		"loading": "Cargando"
+	},
+	"detail": {
+		"knowledge": "Conocimiento",
+		"embedDocuments": "Insertar documentos",
+		"newKnowledgeCreated": "Se ha creado una nueva fuente de conocimiento. Ahora puedes seleccionarla para insertar documentos adicionales.",
+		"documentsDescription": "Documentos actualmente insertados en esta fuente de conocimiento.",
+		"failedToLoadDocuments": "Error al cargar los documentos."
+	}
+}
