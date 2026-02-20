@@ -14,7 +14,7 @@ import {
 import { ClosePage } from "@/assets/img/ClosePage";
 import SEMOSS_BLACK_LOGO from "@/assets/img/SEMOSS_BLACK_LOGO.png";
 import { FlexLayout } from "@/components/flex-layout";
-import { useWorkspace } from "@/hooks";
+import { useDesigner, useWorkspace } from "@/hooks";
 import { SIDEBAR_MENU } from "@/pages/import/import.constants";
 import type { WorkspaceOptions } from "@/stores";
 import { formatToDataTestId } from "@/utility";
@@ -119,6 +119,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 		const { workspace } = useWorkspace();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const model = workspace.model;
+		const { designer } = useDesigner();
 		// build the model from the layout
 		useEffect(() => {
 			const handler = (e: CustomEvent) => {
@@ -349,6 +350,11 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 											);
 											const isSelected =
 												tabNode.isSelected();
+											if (isSelected) {
+												designer.setSelected(
+													tabNode.getName(),
+												);
+											}
 
 											// Base test ID without suffix
 											const baseDataTestId =
