@@ -26,6 +26,7 @@ import {
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
 	Button,
@@ -40,6 +41,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
+import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import type { Engine } from "@/types";
 import { ContextChart } from "./context-chart";
 
@@ -87,12 +89,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		tokensMax,
 		tokensUsed,
 	}) => {
+		const { t } = useTranslation("room");
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
 
 		const ref = useRef<HTMLDivElement>(null);
 		const editorRef = useRef<LexicalEditor>(null);
 		const fileRef = useRef<HTMLInputElement>(null);
+		const contentEditableRef = useRef<HTMLDivElement>(null);
 
 		const [isDragging, setIsDragging] = useState(false);
 		const [files, setFiles] = useState<File[]>([]);
@@ -306,6 +310,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							contentEditable={
 								<div className="relative">
 									<ContentEditable
+										ref={contentEditableRef}
 										className={cn(
 											`h-auto w-full overflow-y-auto rounded-md border border-input bg-transparent p-4 pb-14 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
 											isDragging
@@ -313,15 +318,17 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												: "hover:border-primary",
 											className,
 										)}
-										aria-placeholder={"Enter text"}
+										aria-placeholder={t(
+											"input.ariaPlaceholder",
+										)}
 										aria-disabled={isLoading}
 										disabled={isLoading}
 										placeholder={
 											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
 												<SparklesIcon className="size-4" />
 												{isLoading
-													? "Thinking..."
-													: "/ to open menu"}
+													? t("input.thinking")
+													: t("input.menuPrompt")}
 											</div>
 										}
 										onDrop={(e) => {
@@ -389,6 +396,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<FocusPlugin />
 						<EditorRefPlugin editorRef={editorRef} />
 						<EnterPlugin onEnter={() => promptModel()} />
+						<AutoScrollOnPastePlugin
+							scrollContainerRef={contentEditableRef}
+						/>
 						{!isLoading && (
 							<MentionPlugin
 								trigger="/"
@@ -438,17 +448,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									<TooltipTrigger asChild>
 										<DropdownMenuTrigger asChild>
 											<Button
+												className="bg-background"
 												variant="ghost"
 												size="icon-sm"
 												disabled={isLoading}
-												aria-label="Open settings"
+												aria-label={t(
+													"input.openSettings",
+												)}
 											>
 												<SlidersHorizontalIcon />
 											</Button>
 										</DropdownMenuTrigger>
 									</TooltipTrigger>
 									<TooltipContent>
-										Open settings
+										{t("input.openSettings")}
 									</TooltipContent>
 								</Tooltip>
 								<DropdownMenuContent
@@ -489,8 +502,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
+										className="bg-background"
 										variant={"ghost"}
-										aria-label="Record the Model"
+										aria-label={t("input.recordLabel")}
 										size="icon-sm"
 										disabled={!canListen || isLoading}
 										onClick={() => {
@@ -508,7 +522,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
-									{isListening ? "Stop Recording" : "Record"}
+									{isListening
+										? t("input.stopRecording")
+										: t("input.record")}
 								</TooltipContent>
 							</Tooltip>
 						</div>
@@ -517,7 +533,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								<span>
 									<Button
 										variant="default"
-										aria-label="Ask the AI"
+										aria-label={t("input.askLabel")}
 										disabled={
 											isLoading ||
 											isEmpty ||
@@ -534,13 +550,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							<TooltipContent>
 								{(() => {
 									if (isLoading) {
-										return "Thinking";
+										return t("input.thinkingTooltip");
 									} else if (isEmpty) {
-										return "Please enter a question";
+										return t("input.enterQuestion");
 									} else if (hasOutstandingTools) {
-										return "Please complete the tool(s) to proceed";
+										return t("input.completeTool");
 									}
-									return "Ask";
+									return t("input.ask");
 								})()}
 							</TooltipContent>
 						</Tooltip>

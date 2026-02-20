@@ -25,8 +25,9 @@ export const getSelector = (data, aggregates) => {
 		return fields[type] === "NUMBER" ? "Average" : "Count";
 	};
 	const getAggregates = (field) => {
-		if (!fields[field] || Object.values(aggregates[field]).length === 0)
+		if (!fields[field] || !aggregates[field] || Object.values(aggregates[field]).length === 0) {
 			return "";
+		}
 		return Object.values(aggregates[field])[0];
 	};
 	const getSelectors = () => {

@@ -17,6 +17,7 @@ import {
 	useNavigate,
 	useParams,
 } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { runPixel, useInsight, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -51,16 +52,7 @@ import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
 
-const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
-
-const BUCKETS = [
-	"Favorites",
-	"Today",
-	"Yesterday",
-	"Last Week",
-	"Last Month",
-	"Older",
-] as const;
+const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
 
 /**
  * Renders a sidebar allowing users to navigate between pages
@@ -69,6 +61,16 @@ const BUCKETS = [
  */
 export const GlobalNav = observer(() => {
 	const { system } = useInsight();
+	const { t } = useTranslation("sidebar");
+
+	const BUCKETS = [
+		t("buckets.favorites"),
+		t("buckets.today"),
+		t("buckets.yesterday"),
+		t("buckets.lastWeek"),
+		t("buckets.lastMonth"),
+		t("buckets.older"),
+	] as const;
 
 	const { root } = useRoot();
 	const [search, setSearch] = useState("");
@@ -203,36 +205,33 @@ export const GlobalNav = observer(() => {
 
 			// Pinned rooms only go in Favorites bucket
 			if (val.PINNED) {
-				acc.Favorites.push(val);
+				acc[t("buckets.favorites")].push(val);
 				return acc; // Don't add to date buckets
 			}
 
 			// Non-pinned rooms go in date-based buckets
 			if (systemDate.isSame(d, "day")) {
-				acc.Today.push(val);
+				acc[t("buckets.today")].push(val);
 			} else if (systemDate.subtract(1, "day").isSame(d, "day")) {
-				acc.Yesterday.push(val);
+				acc[t("buckets.yesterday")].push(val);
 			} else if (systemDate.isSame(d, "week")) {
-				acc["Last Week"].push(val);
+				acc[t("buckets.lastWeek")].push(val);
 			} else if (systemDate.isSame(d, "month")) {
-				acc["Last Month"].push(val);
+				acc[t("buckets.lastMonth")].push(val);
 			} else {
-				acc.Older.push(val);
+				acc[t("buckets.older")].push(val);
 			}
 
 			return acc;
 		},
 		{
-			Favorites: [],
-			Today: [],
-			Yesterday: [],
-			"Last Week": [],
-			"Last Month": [],
-			Older: [],
-		} as Record<
-			"Favorites" | (typeof BUCKETS)[number],
-			typeof getRooms.data
-		>,
+			[t("buckets.favorites")]: [],
+			[t("buckets.today")]: [],
+			[t("buckets.yesterday")]: [],
+			[t("buckets.lastWeek")]: [],
+			[t("buckets.lastMonth")]: [],
+			[t("buckets.older")]: [],
+		} as Record<string, typeof getRooms.data>,
 	);
 
 	/**
@@ -250,7 +249,11 @@ export const GlobalNav = observer(() => {
 			// Refetch rooms after toggling favorite
 			getRooms.reset();
 		} catch {
-			toast.error(`Failed to ${isFavorite ? "unpin" : "pin"} room`);
+			toast.error(
+				isFavorite
+					? t("toasts.failedToUnpin")
+					: t("toasts.failedToPin"),
+			);
 		}
 	};
 
@@ -266,7 +269,7 @@ export const GlobalNav = observer(() => {
 
 	const handleSaveRename = async (roomId: string) => {
 		if (!editingName.trim()) {
-			toast.error("Room name cannot be empty");
+			toast.error(t("toasts.roomNameEmpty"));
 			return;
 		}
 
@@ -275,7 +278,7 @@ export const GlobalNav = observer(() => {
 				`RenameRoom(roomId=["${roomId}"], name=["${editingName}"]);`,
 			);
 
-			toast.success("Room renamed successfully");
+			toast.success(t("toasts.roomRenamedSuccess"));
 
 			// Reset state
 			setEditingRoomId(null);
@@ -284,7 +287,7 @@ export const GlobalNav = observer(() => {
 			// Refetch rooms after renaming
 			getRooms.reset();
 		} catch {
-			toast.error("Failed to rename room");
+			toast.error(t("toasts.failedToRename"));
 		}
 	};
 
@@ -312,7 +315,7 @@ export const GlobalNav = observer(() => {
 				<SidebarMenu className="gap-2 p-2">
 					<InputGroup className="bg-background group-data-[collapsible=icon]:hidden">
 						<InputGroupInput
-							placeholder="Search"
+							placeholder={t("search")}
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 						/>
@@ -328,23 +331,20 @@ export const GlobalNav = observer(() => {
 						>
 							<Link to={"/new"} aria-label={"New Chat"}>
 								<SquarePenIcon />
-								New
+								{t("new")}
 							</Link>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 
-					{ENABLE_WORKSPACE && (
+					{ENABLE_AGENT && (
 						<SidebarMenuItem>
 							<SidebarMenuButton
 								asChild
-								isActive={!!matchPath("/workspace", pathname)}
+								isActive={!!matchPath("/agent", pathname)}
 							>
-								<Link
-									to={"/workspace"}
-									aria-label={"Workspace"}
-								>
+								<Link to={"/agent"} aria-label={"agent"}>
 									<ComputerIcon />
-									Workspaces
+									{t("agents")}
 								</Link>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
@@ -376,13 +376,13 @@ export const GlobalNav = observer(() => {
 				{open && getRooms.isError && (
 					<div className="px-2 py-4 text-center">
 						<Muted className="text-destructive">
-							Error loading rooms
+							{t("messages.errorLoadingRooms")}
 						</Muted>
 					</div>
 				)}
 				{open && !getRooms.isLoading && getRooms.data.length === 0 && (
 					<div className="px-2 py-4 text-center">
-						<Muted>No rooms found</Muted>
+						<Muted>{t("messages.noRoomsFound")}</Muted>
 					</div>
 				)}
 				{open && getRooms.isLoading && (
@@ -410,7 +410,8 @@ export const GlobalNav = observer(() => {
 									{rooms.map((room) => {
 										const roomId = room.ROOM_ID;
 										const name =
-											room.ROOM_NAME || "Untitled";
+											room.ROOM_NAME ||
+											t("messages.untitled");
 										const isFavorite = room.PINNED || false;
 										const isEditing =
 											editingRoomId === roomId;
@@ -514,8 +515,12 @@ export const GlobalNav = observer(() => {
 																		}`}
 																	/>
 																	{isFavorite
-																		? "Unfavorite"
-																		: "Favorite"}
+																		? t(
+																				"actions.unfavorite",
+																			)
+																		: t(
+																				"actions.favorite",
+																			)}
 																</DropdownMenuItem>
 																<DropdownMenuItem
 																	onClick={(
@@ -529,7 +534,9 @@ export const GlobalNav = observer(() => {
 																	}}
 																>
 																	<PencilIcon className="mr-2 size-4" />
-																	Rename
+																	{t(
+																		"actions.rename",
+																	)}
 																</DropdownMenuItem>
 																<DropdownMenuItem
 																	onClick={async (
@@ -543,7 +550,9 @@ export const GlobalNav = observer(() => {
 																			);
 
 																			toast.success(
-																				"Room deleted successfully",
+																				t(
+																					"toasts.roomDeletedSuccess",
+																				),
 																			);
 																			if (
 																				activeRoomId ===
@@ -565,7 +574,9 @@ export const GlobalNav = observer(() => {
 																	className="text-destructive focus:text-destructive"
 																>
 																	<TrashIcon className="mr-2 size-4" />
-																	Delete
+																	{t(
+																		"actions.delete",
+																	)}
 																</DropdownMenuItem>
 															</DropdownMenuContent>
 														</DropdownMenu>
@@ -593,7 +604,11 @@ export const GlobalNav = observer(() => {
 						/>
 					))}
 				</SidebarMenu>
-				<NavUser />
+				<SidebarMenu className="gap-2 p-2">
+					<SidebarMenuItem>
+						<NavUser />
+					</SidebarMenuItem>
+				</SidebarMenu>
 			</SidebarFooter>
 			<SidebarRail />
 		</Sidebar>

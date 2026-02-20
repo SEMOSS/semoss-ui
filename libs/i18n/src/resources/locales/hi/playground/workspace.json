@@ -1,0 +1,117 @@
+{
+	"welcomeTitle": "एजेंट मैनेजर में स्वागत है",
+	"welcomeDescription": "अपनी विशिष्ट आवश्यकताओं को पूरा करने और आपकी प्रक्रियाओं में सहजता से एकीकृत होने के लिए डिज़ाइन किए गए कस्टम AI एजेंट का अन्वेषण करें।",
+	"form": {
+		"nameLabel": "नाम",
+		"descriptionLabel": "विवरण",
+		"instructionsLabel": "निर्देश",
+		"knowledgeLabel": "ज्ञान",
+		"toolboxLabel": "टूलबॉक्स"
+	},
+	"actions": {
+		"create": "बनाएं",
+		"save": "सहेजें",
+		"createAgent": "एक एजेंट बनाएं",
+		"edit": "संपादित करें",
+		"delete": "हटाएं",
+		"newChat": "नई चैट"
+	},
+	"card": {
+		"noDescription": "कोई विवरण उपलब्ध नहीं",
+		"deleteConfirmTitle": "क्या आपको यकीन है?",
+		"deleteConfirmDescription": "यह क्रिया अपरिवर्तनीय है। यह {{name}} वर्कस्पेस को स्थायी रूप से हटा देगा।"
+	},
+	"sharing": {
+		"title": "सदस्य जोड़ें",
+		"description": "इस एजेंट तक पहुंचने और उस पर सहयोग करने के लिए सदस्यों को आमंत्रित करें।",
+		"searchPlaceholder": "उपयोगकर्ता खोजें...",
+		"searchUsers": "उपयोगकर्ता खोजें...",
+		"noUsersFound": "कोई उपयोगकर्ता नहीं मिला",
+		"hasAccess": "पहुंच है",
+		"pendingInvite": "लंबित आमंत्रण",
+		"membersToAdd": "जोड़ने के लिए सदस्य",
+		"emptyState": "इस वर्कस्पेस को साझा करने के लिए उपयोगकर्ता जोड़ें",
+		"buttonAdding": "जोड़ा जा रहा है...",
+		"buttonAdd": "सदस्य जोड़ें"
+	},
+	"members": {
+		"heading": "किसके पास पहुंच है",
+		"you": "(आप)",
+		"owner": "मालिक",
+		"editor": "संपादक",
+		"readOnly": "केवल पढ़ने के लिए",
+		"removeAccess": "पहुंच हटाएं",
+		"removeSelfTitle": "एजेंट से खुद को हटाएं",
+		"removeSelfDescription": "आप इस एजेंट तक अपनी पहुंच हटाने वाले हैं। पहुंच फिर से प्राप्त करने के लिए आपको फिर से आमंत्रित करने की आवश्यकता होगी। इस क्रिया को पूर्ववत नहीं किया जा सकता।",
+		"removeUserTitle": "एजेंट पहुंच हटाएं",
+		"removeUserDescription": "क्या आप वाकई {{name}} की इस एजेंट तक पहुंच हटाना चाहते हैं? इस क्रिया को पूर्ववत नहीं किया जा सकता।",
+		"changePermissionTitle": "अपनी अनुमति बदलें",
+		"changePermissionDescription": "आप अपनी स्वयं की अनुमति {{oldPermission}} से {{newPermission}} में बदलने वाले हैं। यह प्रभावित करेगा कि आप इस एजेंट में कौन सी क्रियाएं कर सकते हैं।",
+		"changePermissionButton": "अनुमति बदलें"
+	},
+	"mcp": {
+		"noToolboxes": "कोई टूलबॉक्स नहीं मिला",
+		"noKnowledge": "कोई ज्ञान लाइब्रेरी नहीं मिली",
+		"accessRequested": "पहुंच का अनुरोध किया गया",
+		"requestAccess": "पहुंच का अनुरोध करें",
+		"noAccess": "कोई पहुंच नहीं",
+		"requestAccessButton": "पहुंच का अनुरोध करें",
+		"noDescription": "कोई विवरण उपलब्ध नहीं।",
+		"tooltipNoAccess": "आपके पास इस {{type}} तक पहुंच नहीं है। कृपया मालिक से पहुंच का अनुरोध करें।",
+		"tooltipOpen": "प्लेटफ़ॉर्म में इस {{type}} को खोलें",
+		"failedToLoad": "वर्कस्पेस संसाधन लोड करने में विफल",
+		"requestedSuccess": "{{name}} तक पहुंच का अनुरोध किया गया",
+		"requestedFailed": "पहुंच का अनुरोध करने में विफल"
+	},
+	"chat": {
+		"noChats": "कोई चैट नहीं मिली",
+		"error": "त्रुटि:",
+		"selectRoom": "रूम चुनें"
+	},
+	"images": {
+		"agentIllustration": "एजेंट चित्रण"
+	},
+	"messages": {
+		"noResults": "कोई परिणाम नहीं मिला",
+		"userAlreadyAdded": "उपयोगकर्ता पहले से जोड़ा गया",
+		"fetchUsersFailed": "उपयोगकर्ताओं को प्राप्त करने में विफल",
+		"addAtLeastOne": "कृपया कम से कम एक उपयोगकर्ता जोड़ें",
+		"addMembersSuccess": "{{count}} सदस्य सफलतापूर्वक जोड़ा गया",
+		"addMembersSuccess_plural": "{{count}} सदस्य सफलतापूर्वक जोड़े गए",
+		"addMembersFailed": "सदस्य जोड़ने में विफल",
+		"permissionUpdated": "अनुमति सफलतापूर्वक अपडेट की गई",
+		"permissionUpdateFailed": "अनुमति अपडेट करने में विफल",
+		"userRemoved": "उपयोगकर्ता सफलतापूर्वक हटाया गया",
+		"userRemoveFailed": "उपयोगकर्ता को हटाने में विफल",
+		"fetchPermissionsFailed": "उपयोगकर्ता अनुमतियां प्राप्त करने में विफल"
+	},
+	"breadcrumbs": {
+		"home": "होम",
+		"agent": "एजेंट",
+		"loading": "लोड हो रहा है",
+		"edit": "संपादित करें",
+		"new": "नया",
+		"room": "रूम"
+	},
+	"detail": {
+		"tabs": {
+			"myChats": "मेरी चैट",
+			"knowledge": "ज्ञान",
+			"toolbox": "टूलबॉक्स",
+			"members": "सदस्य"
+		},
+		"failedToDelete": "एजेंट हटाने में विफल",
+		"failedToLoad": "एजेंट लोड करने में विफल: {{error}}"
+	},
+	"edit": {
+		"title": "एजेंट संपादित करें",
+		"subtitle": "अपने एजेंट के विवरण अपडेट करें",
+		"errorTitle": "एजेंट लोड करने में त्रुटि",
+		"errorDescription": "एजेंट विवरण लोड करने में विफल",
+		"failedToLoad": "वर्कस्पेस लोड करने में विफल: {{error}}"
+	},
+	"new": {
+		"title": "नया एजेंट",
+		"subtitle": "शुरू करने के लिए एक नया एजेंट बनाएं"
+	}
+}
