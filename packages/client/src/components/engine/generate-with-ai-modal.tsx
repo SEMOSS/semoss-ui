@@ -700,7 +700,7 @@ export const GenerateWithAIModal = ({
 					</div>
 				</div>
 
-				<DialogFooter className="border-t pt-4">
+				<DialogFooter>
 					<Button
 						variant="outline"
 						onClick={handleReset}
