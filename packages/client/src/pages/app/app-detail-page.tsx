@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
+import { getUserProjectPermission } from "@semoss/shared";
 import {
 	Badge,
 	Breadcrumb,
@@ -33,7 +34,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { getUserProjectPermission, uploadImage } from "@/api";
+import { uploadImage } from "@/api";
 import {
 	type AppDetailsFormTypes,
 	AppDetailsFormValues,
@@ -59,7 +60,6 @@ import { AccessControl } from "./AppDetailTabs/access-control";
 import { Dependencies } from "./AppDetailTabs/dependencies-tab";
 import { Overview } from "./AppDetailTabs/overview-tab";
 import { SettingsTab } from "./AppDetailTabs/settings-tab";
-
 
 interface AppDetailsProps {
 	showNav?: boolean;
@@ -125,7 +125,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	}, [appId]);
 
 	async function getPermission() {
-		const { permission: role } = await getUserProjectPermission(appId);
+		const role = await getUserProjectPermission(appId);
 
 		setValue("userRole", role);
 		const permission = determineUserPermission(role);

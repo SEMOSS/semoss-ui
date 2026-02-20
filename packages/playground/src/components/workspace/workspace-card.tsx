@@ -2,6 +2,7 @@ import { Ellipsis, SquarePen } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Card,
@@ -42,6 +43,7 @@ export const WorkspaceCard = observer(
 		 */
 		const navigate = useNavigate();
 		const { root } = useRoot();
+		const { t } = useTranslation(["workspace", "common"]);
 
 		const [deleteModal, setDeleteModal] = useState(false);
 
@@ -82,7 +84,7 @@ export const WorkspaceCard = observer(
 											<Link
 												to={`/agent/${workspace.workspace_id}/edit`}
 											>
-												Edit
+												{t("workspace:actions.edit")}
 											</Link>
 										</DropdownMenuItem>
 										<DropdownMenuItem
@@ -91,7 +93,7 @@ export const WorkspaceCard = observer(
 												setDeleteModal(true);
 											}}
 										>
-											Delete
+											{t("workspace:actions.delete")}
 										</DropdownMenuItem>
 									</DropdownMenuGroup>
 								</DropdownMenuContent>
@@ -102,8 +104,8 @@ export const WorkspaceCard = observer(
 								{workspace.name}
 							</CardTitle>
 							<CardDescription className="truncate">
-								{workspace.description ??
-									"No description available"}
+								{workspace.description ||
+									t("workspace:card.noDescription")}
 							</CardDescription>
 						</CardHeader>
 					</CardContent>
@@ -127,18 +129,20 @@ export const WorkspaceCard = observer(
 							variant="outline"
 						>
 							<SquarePen />
-							New Chat
+							{t("workspace:actions.newChat")}
 						</Button>
 					</CardContent>
 				</Card>
 				<Dialog open={deleteModal} onOpenChange={setDeleteModal}>
 					<DialogContent>
 						<DialogHeader>
-							<DialogTitle>Are you sure?</DialogTitle>
+							<DialogTitle>
+								{t("workspace:card.deleteConfirmTitle")}
+							</DialogTitle>
 							<DialogDescription>
-								This action is irreversable. This will
-								permanentely delete the {workspace.name}{" "}
-								workspace.
+								{t("workspace:card.deleteConfirmDescription", {
+									name: workspace.name,
+								})}
 							</DialogDescription>
 						</DialogHeader>
 						<DialogFooter>
@@ -150,7 +154,7 @@ export const WorkspaceCard = observer(
 								}}
 								data-testid={`workspace-card--cancel-delete-btn`}
 							>
-								Cancel
+								{t("common:buttons.cancel")}
 							</Button>
 							<Button
 								variant="destructive"
@@ -161,7 +165,7 @@ export const WorkspaceCard = observer(
 									onDeleteClick();
 								}}
 							>
-								Delete
+								{t("workspace:actions.delete")}
 							</Button>
 						</DialogFooter>
 					</DialogContent>
