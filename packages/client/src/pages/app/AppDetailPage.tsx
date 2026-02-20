@@ -571,8 +571,8 @@ export const AppDetailPage = () => {
 			"Settings",
 			"SMSS",
 		],
-		editor: ["Overview", "Access Control"],
-		readOnly: ["Overview"],
+		editor: ["Overview", "Access Control", "Dependencies"],
+		readOnly: ["Overview", "Dependencies"],
 		discoverable: ["Overview"],
 	};
 

@@ -191,8 +191,8 @@ export const MembersTable = (props: MembersTableProps) => {
 		getUserDataApi = ["getUserEnginePermission", id];
 		getMembersApi = [
 			"getEngineUsers",
-			id,
 			adminMode,
+			id,
 			debouncedSearch ? debouncedSearch : undefined,
 			permissionPriorityMapper(permissionFilter)?.permission,
 			rowsPerPage, // limit
@@ -225,6 +225,8 @@ export const MembersTable = (props: MembersTableProps) => {
 	const [allAuthors, setAllAuthors] = useState<SETTINGS_PROVISIONED_USER[]>(
 		[],
 	);
+
+	console.log(getMembers);
 
 	useEffect(() => {
 		if (
