@@ -1,0 +1,96 @@
+{
+	"welcome": "ようこそ",
+	"settings": {
+		"title": "ルーム設定",
+		"description": "ルーム設定を更新し、チャットの動作を変更します",
+		"open": "設定を開く",
+		"close": "閉じる",
+		"edit": "設定を編集"
+	},
+	"form": {
+		"modelLabel": "モデル",
+		"instructionsLabel": "指示",
+		"knowledgeLabel": "ナレッジ",
+		"toolboxLabel": "ツールボックス",
+		"maxTokenLabel": "最大トークン",
+		"temperatureLabel": "温度"
+	},
+	"modes": {
+		"ask": "質問",
+		"plan": "プラン"
+	},
+	"workspace": {
+		"publishTooltip": "エージェントとして公開",
+		"publishTitle": "エージェントを公開",
+		"publishDescription": "現在のルーム構成(指示とMCPを含む)で新しいエージェントを公開します。",
+		"nameLabel": "名前 *",
+		"namePlaceholder": "エージェント名を入力",
+		"descriptionLabel": "説明",
+		"descriptionPlaceholder": "エージェントの説明を入力",
+		"cancelButton": "キャンセル",
+		"publishingButton": "公開中...",
+		"publishButton": "エージェントを公開",
+		"nameRequired": "エージェント名は必須です",
+		"publishSuccess": "エージェントを正常に作成しました",
+		"publishError": "エージェントの作成に失敗しました: {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "テキストを入力",
+		"thinking": "考え中...",
+		"menuPrompt": "/ でメニューを開く",
+		"openSettings": "設定を開く",
+		"recordLabel": "モデルを録音",
+		"stopRecording": "録音を停止",
+		"record": "録音",
+		"askLabel": "AIに質問",
+		"thinkingTooltip": "考え中",
+		"enterQuestion": "質問を入力してください",
+		"completeTool": "続行するにはツールを完了してください",
+		"ask": "質問",
+		"errorProcessing": "チャットの処理中にエラーが発生しました"
+	},
+	"content": {
+		"scrollToTop": "一番上にスクロール",
+		"scrollToBottom": "一番下にスクロール",
+		"errorDefault": "リクエストを処理できません。接続を確認し、メッセージをコピーしてから更新してください。"
+	},
+	"inlineTool": {
+		"openInSidebar": "サイドバーで開く",
+		"minimize": "最小化",
+		"maximize": "最大化",
+		"close": "閉じる"
+	},
+	"fileExplorer": {
+		"copyPath": "パスをコピー",
+		"download": "ダウンロード",
+		"delete": "削除",
+		"copyFailed": "クリップボードへのコピーに失敗しました"
+	},
+	"menuToolbox": {
+		"addToolbox": "ツールボックスを追加",
+		"searchPlaceholder": "ツールボックスを検索",
+		"notFound": "見つかりません",
+		"allTools": "すべてのツール"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "ナレッジを追加",
+		"searchPlaceholder": "ナレッジを検索",
+		"notFound": "見つかりません"
+	},
+	"menuWorkspace": {
+		"selectAgent": "エージェントを選択",
+		"searchPlaceholder": "ワークスペースを検索",
+		"notFound": "見つかりません"
+	},
+	"menuUpload": {
+		"attachDocument": "ドキュメントを添付"
+	},
+	"menuFileExplorer": {
+		"name": "ファイルエクスプローラー",
+		"open": "ファイルエクスプローラーを開く",
+		"close": "ファイルエクスプローラーを閉じる"
+	},
+	"errors": {
+		"createRoom": "ルームの作成中にエラーが発生しました。エラー: {{message}}"
+	}
+}

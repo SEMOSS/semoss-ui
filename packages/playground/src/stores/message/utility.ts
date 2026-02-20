@@ -3,7 +3,6 @@ import type { PixelMessage } from "@/types";
 import { InputMessageStore } from "./input-message.store";
 import { PlanMessageStore } from "./plan-message.store";
 import { ResponseMessageStore } from "./response-message.store";
-import { ToolExecutionMessageStore } from "./tool-execution-message.store";
 
 /**
  * Create a messageStore from a pixelMessage
@@ -13,25 +12,15 @@ import { ToolExecutionMessageStore } from "./tool-execution-message.store";
 export const createMessageStore = (
 	room: RoomStore,
 	pixelMessage: PixelMessage,
-):
-	| ResponseMessageStore
-	| InputMessageStore
-	| PlanMessageStore
-	| ToolExecutionMessageStore => {
+): ResponseMessageStore | InputMessageStore | PlanMessageStore => {
 	// set data based on type
-	if (pixelMessage.type === "INPUT_TEXT") {
+	if (pixelMessage.io === "INPUT") {
 		return new InputMessageStore(room, pixelMessage);
-	} else if (pixelMessage.type === "INPUT_MEDIA") {
-		return new InputMessageStore(room, pixelMessage);
-	} else if (pixelMessage.type === "RESPONSE_TEXT") {
+	} else if (pixelMessage.io === "OUTPUT") {
 		if (pixelMessage.ornaments.PLAYGROUND_MESSAGE_TYPE === "COT") {
 			return new PlanMessageStore(room, pixelMessage);
 		}
 
-		return new ResponseMessageStore(room, pixelMessage);
-	} else if (pixelMessage.type === "INPUT_TOOL_EXEC") {
-		return new ToolExecutionMessageStore(room, pixelMessage);
-	} else if (pixelMessage.type === "RESPONSE_TOOL") {
 		return new ResponseMessageStore(room, pixelMessage);
 	}
 };
