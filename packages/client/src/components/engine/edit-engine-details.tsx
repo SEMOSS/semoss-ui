@@ -582,6 +582,7 @@ export const EditEngineDetails = observer(() => {
 								data-testid={formatToDataTestId(
 									`editEngineDetails-${name}-generate-btn`,
 								)}
+								disabled={!configStore.defaultTextGenerationModel}
 							>
 								<Sparkles className="size-4" />
 								<span className="font-medium text-sm">
