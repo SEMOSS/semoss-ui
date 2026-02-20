@@ -33,6 +33,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	toast
 } from "@semoss/ui/next";
 import {
 	createUserAccessKey,
@@ -382,21 +383,14 @@ export const MyProfilePage = () => {
 			// Send the new default model selection to the backend
 			await setUserMetadata(modelType, selectedAppId);
 
-			notification.add({
-				color: "success",
-				message: `Default ${modelType} saved successfully`,
-			});
+			toast.success(
+				`Default ${modelType} saved successfully`,
+			);
 		} catch (e) {
 			if (e instanceof Error) {
-				notification.add({
-					color: "error",
-					message: e.message,
-				});
+				toast.error(e.message);
 			} else {
-				notification.add({
-					color: "error",
-					message: "Error saving default model",
-				});
+				toast.error("Error saving default model");
 			}
 		}
 	};
@@ -793,12 +787,12 @@ export const MyProfilePage = () => {
 								>
 									<SelectTrigger
 										id={modelSelectId}
-										className="flex h-11 w-full items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+										className="flex h-11 w-full items-center rounded-[7px] border border-black-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 										data-testid="myProfilePage-default-model-select"
 									>
 										<SelectValue placeholder="Select a model" />
 									</SelectTrigger>
-									<SelectContent className="max-h-[300px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+									<SelectContent className="max-h-[300px] overflow-y-auto rounded-[7px] border border-black-300 bg-white shadow-lg">
 										{modals.map((engine) => (
 											<SelectItem
 												key={engine.app_id}
@@ -834,12 +828,12 @@ export const MyProfilePage = () => {
 								>
 									<SelectTrigger
 										id={`${modelSelectId}-secondary`}
-										className="flex h-11 w-full items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+										className="flex h-11 w-full items-center rounded-[7px] border border-black-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 										data-testid="myProfilePage-secondary-model-select"
 									>
 										<SelectValue placeholder="Select a model" />
 									</SelectTrigger>
-									<SelectContent className="max-h-[300px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+									<SelectContent className="max-h-[300px] overflow-y-auto rounded-[7px] border border-black-300 bg-white shadow-lg">
 										{modals.map((engine) => (
 											<SelectItem
 												key={`secondary-${engine.app_id}`}
