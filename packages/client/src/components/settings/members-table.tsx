@@ -177,8 +177,8 @@ export const MembersTable = (props: MembersTableProps) => {
 			id,
 			undefined, // no search
 			"OWNER", // OWNER Permission Filter
-			undefined, // offset
 			undefined, // limit
+			undefined, // offset
 		];
 	} else if (
 		type === "DATABASE" ||
@@ -195,8 +195,8 @@ export const MembersTable = (props: MembersTableProps) => {
 			id,
 			debouncedSearch ? debouncedSearch : undefined,
 			permissionPriorityMapper(permissionFilter)?.permission,
-			rowsPerPage, // limit
 			(page + 1) * rowsPerPage - rowsPerPage, // offset
+			rowsPerPage, // limit
 		];
 		getAllAuthorsApi = [
 			"getEngineUsers",
