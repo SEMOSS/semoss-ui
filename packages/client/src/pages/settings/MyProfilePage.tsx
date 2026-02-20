@@ -217,13 +217,15 @@ export const MyProfilePage = () => {
 	// get the keys
 	const getUserAccessKeys = useAPI(["getUserAccessKeys"]);
 
-	// get engines/models
-	const getEngines = useAPI(["getEngines", adminMode, "", "MODEL"]);
+	// get the models
+	const getModals = useAPI(["getEngines", adminMode, "", "MODEL"]);
 
-	// track selected default model
-	const [selectedDefaultModel, setSelectedDefaultModel] =
+	// track selected default text generation model
+	const [selectedTextGenerationDefaultModel, setSelectedTextGenerationDefaultModel] =
 		useState<string>("");
-	const [selectedCodeDefaultModel, setSelectedCodeDefaultModel] =
+
+	// track selected default code generation model
+	const [selectedCodeGenerationDefaultModel, setSelectedCodeGenerationDefaultModel] =
 		useState<string>("");
 
 	// NATIVE Login USERID must match Username
@@ -264,35 +266,34 @@ export const MyProfilePage = () => {
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
 	const [isPySdkOpen, setIsPySdkOpen] = useState(false);
 
-	const engines =
-		getEngines.status === "SUCCESS" && Array.isArray(getEngines.data)
-			? (getEngines.data as unknown as Engine[]).filter(
+	const modals =
+		getModals.status === "SUCCESS" && Array.isArray(getModals.data)
+			? (getModals.data as unknown as Engine[]).filter(
 					(e) => e.app_subtype !== "EMBEDDED",
 				)
 			: [];
 
 	useEffect(() => {
-		if (configStore.defaultTextGenerationModel && engines.length > 0) {
-			// defaultModel now returns the UUID value, find the engine with matching app_id
-			const matchingEngine = engines.find(
+		if (configStore.defaultTextGenerationModel && modals.length > 0) {
+			const matchingEngine = modals.find(
 				(e) => e.app_id === configStore.defaultTextGenerationModel,
 			);
 			if (matchingEngine) {
-				setSelectedDefaultModel(matchingEngine.app_id);
+				setSelectedTextGenerationDefaultModel(matchingEngine.app_id);
 			}
 		}
-		if (configStore.defaultCodeGenerationModel && engines.length > 0) {
-			const matchingCodeEngine = engines.find(
+		if (configStore.defaultCodeGenerationModel && modals.length > 0) {
+			const matchingCodeEngine = modals.find(
 				(e) => e.app_id === configStore.defaultCodeGenerationModel,
 			);
 			if (matchingCodeEngine) {
-				setSelectedCodeDefaultModel(matchingCodeEngine.app_id);
+				setSelectedCodeGenerationDefaultModel(matchingCodeEngine.app_id);
 			}
 		}
 	}, [
 		configStore.defaultTextGenerationModel,
 		configStore.defaultCodeGenerationModel,
-		engines,
+		modals,
 	]);
 
 	/**
@@ -352,9 +353,9 @@ export const MyProfilePage = () => {
 	) => {
 		try {
 			if (modelType === "text-generation-model") {
-				setSelectedDefaultModel(selectedAppId);
+				setSelectedTextGenerationDefaultModel(selectedAppId);
 			} else if (modelType === "code-generation-model") {
-				setSelectedCodeDefaultModel(selectedAppId);
+				setSelectedCodeGenerationDefaultModel(selectedAppId);
 			}
 
 			if (!selectedAppId) {
@@ -362,7 +363,7 @@ export const MyProfilePage = () => {
 			}
 
 			// Find the selected engine
-			const selectedEngine = engines.find(
+			const selectedEngine = modals.find(
 				(e) => e.app_id === selectedAppId,
 			);
 			if (!selectedEngine) {
@@ -372,7 +373,7 @@ export const MyProfilePage = () => {
 			// Update the store's meta to reflect the new default model
 			configStore.updateUserMeta(modelType, selectedAppId);
 
-			// Send the app_id (UUID) to the API
+			// Send the new default model selection to the backend
 			await setUserMetadata(modelType, selectedAppId);
 
 			notification.add({
@@ -760,12 +761,12 @@ export const MyProfilePage = () => {
 						Choose which AI model will be used by default for your
 						requests
 					</h2>
-					{getEngines.status === "INITIAL" ||
-					getEngines.status === "LOADING" ? (
+					{getModals.status === "INITIAL" ||
+					getModals.status === "LOADING" ? (
 						<span className="font-medium text-gray-700 text-sm">
 							Loading models...
 						</span>
-					) : getEngines.status === "ERROR" ? (
+					) : getModals.status === "ERROR" ? (
 						<span className="font-medium text-red-600 text-sm">
 							Error loading models
 						</span>
@@ -776,7 +777,7 @@ export const MyProfilePage = () => {
 									Text Generation Model
 								</FieldLabel>
 								<Select
-									value={selectedDefaultModel}
+									value={selectedTextGenerationDefaultModel}
 									onValueChange={(value) =>
 										handleSelectModel(
 											value,
@@ -792,7 +793,7 @@ export const MyProfilePage = () => {
 										<SelectValue placeholder="Select a model" />
 									</SelectTrigger>
 									<SelectContent className="max-h-[300px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-										{engines.map((engine) => (
+										{modals.map((engine) => (
 											<SelectItem
 												key={engine.app_id}
 												value={engine.app_id}
@@ -817,7 +818,7 @@ export const MyProfilePage = () => {
 									Code Generation Model
 								</FieldLabel>
 								<Select
-									value={selectedCodeDefaultModel}
+									value={selectedCodeGenerationDefaultModel}
 									onValueChange={(value) =>
 										handleSelectModel(
 											value,
@@ -833,7 +834,7 @@ export const MyProfilePage = () => {
 										<SelectValue placeholder="Select a model" />
 									</SelectTrigger>
 									<SelectContent className="max-h-[300px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-										{engines.map((engine) => (
+										{modals.map((engine) => (
 											<SelectItem
 												key={`secondary-${engine.app_id}`}
 												value={engine.app_id}

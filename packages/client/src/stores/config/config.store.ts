@@ -257,7 +257,7 @@ export class ConfigStore {
 	}
 
 	/**
-	 * Get the default model ID (UUID) from user meta
+	 * Get the default Text Generation model ID (UUID) from user meta
 	 */
 	get defaultTextGenerationModel(): string {
 		const meta = this._store.user.meta as unknown;
@@ -271,6 +271,10 @@ export class ConfigStore {
 		}
 		return "";
 	}
+
+	/**
+	 * Get the default Code Generation model ID (UUID) from user meta
+	 */
 
 	get defaultCodeGenerationModel(): string {
 		const meta = this._store.user.meta as unknown;
