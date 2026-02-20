@@ -2,14 +2,14 @@ import { Command, Flags } from "@oclif/core";
 import { config } from "dotenv";
 import Listr from "listr";
 import * as fs from "node:fs";
-import { Env, Insight } from "@semoss/sdk/react";
+import { Env, Insight } from "@semoss/sdk";
 import type { Config } from "../types.js";
 import {
 	ensureSemossGitignore,
 	initializeAndTestInsight,
 } from "../utils/index.js";
 
-export default class Deploy extends Command {
+export default class Init extends Command {
 	static description = "Initialize a new app";
 
 	static examples = [
@@ -42,7 +42,7 @@ init (./src/commands/init.ts)
 	};
 
 	public async run(): Promise<void> {
-		const { flags } = await this.parse(Deploy);
+		const { flags } = await this.parse(Init);
 
 		// path to the environment variables
 		const envPath = flags.env ?? ".env";

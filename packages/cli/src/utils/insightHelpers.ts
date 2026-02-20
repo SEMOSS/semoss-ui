@@ -12,8 +12,6 @@ export async function initializeAndTestInsight(
 ): Promise<number> {
 	const log = logger || (() => {});
 
-	console.log("This is running some how");
-
 	if (shouldLog) {
 		log("🔧 Initializing Semoss Insight...");
 	}

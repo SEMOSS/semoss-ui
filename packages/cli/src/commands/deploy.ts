@@ -702,7 +702,7 @@ deploy java and python folders
 					}
 				}
 
-				this.log("\n" + "=".repeat(60));
+				this.log(`\n${"=".repeat(60)}`);
 				this.log("📋 Batch Deploy Summary");
 				this.log("=".repeat(60));
 				this.log(
@@ -721,7 +721,7 @@ deploy java and python folders
 						this.log(`   • "${name}": ${error}`);
 					}
 				}
-				this.log("=".repeat(60) + "\n");
+				this.log(`${"=".repeat(60)}\n`);
 
 				if (failed.length > 0) {
 					throw new Error(
@@ -768,6 +768,7 @@ deploy java and python folders
 			secretKey?: string;
 			app?: string;
 		},
+		// biome-ignore lint/suspicious/noExplicitAny: oclif flags type is dynamic
 		flags: { [key: string]: any },
 	): Promise<void> {
 		// Handle rollback - store backup path but continue to setup
@@ -1172,8 +1173,13 @@ deploy java and python folders
 						);
 
 						// Convert to a buffer
-						context.zipBuffer =
-							(await zip.toBufferPromise()) || "NOT ANYTHING";
+						const zipResult = await zip.toBufferPromise();
+						if (!zipResult || zipResult.length === 0) {
+							throw new Error(
+								"Failed to create zip buffer — zip was empty.",
+							);
+						}
+						context.zipBuffer = zipResult;
 
 						if (shouldLog(flags.logLevel, "verbose")) {
 							logWithTiming(
@@ -1404,9 +1410,11 @@ deploy java and python folders
 						}
 
 						this.log(`🔄 Starting upload of ${fileName}...`);
-						this.log(
-							`🔍 [DEBUG] Before upload - insight.insightId: ${insight.insightId}`,
-						);
+						if (shouldLog(flags.logLevel, "debug")) {
+							this.log(
+								`🔍 [DEBUG] Before upload - insight.insightId: ${insight.insightId}`,
+							);
+						}
 
 						// Upload the file
 						const uploaded = await upload(
