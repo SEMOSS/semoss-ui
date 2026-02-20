@@ -1,10 +1,8 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
 import { Env, logout, runPixel } from "@semoss/sdk/react";
-import {
-	getUserProjectPermission as getUserProjectLevelPermission,
-	registerUser,
-} from "@/api";
+import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared";
+import { registerUser } from "@/api";
 import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
 import {
@@ -791,12 +789,8 @@ export class ConfigStore {
 	 * @param appId - id of app to load into the workspace
 	 */
 	async createWorkspace(appId: string, insightId: string = "new") {
-		// check the permission
-		const getUserProjectPermission =
-			await getUserProjectLevelPermission(appId);
-
 		// get the role and throw an error if it is missing
-		const role = getUserProjectPermission.permission;
+		const role = await getUserProjectLevelPermission(appId);
 		if (!role) {
 			throw new Error("Unauthorized");
 		}
