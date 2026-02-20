@@ -1,0 +1,36 @@
+{
+	"search": "بحث",
+	"new": "جديد",
+	"agents": "الوكلاء",
+	"buckets": {
+		"favorites": "المفضلة",
+		"today": "اليوم",
+		"yesterday": "أمس",
+		"lastWeek": "الأسبوع الماضي",
+		"lastMonth": "الشهر الماضي",
+		"older": "أقدم"
+	},
+	"messages": {
+		"errorLoadingRooms": "خطأ في تحميل الغرف",
+		"noRoomsFound": "لم يتم العثور على غرف",
+		"untitled": "بدون عنوان"
+	},
+	"actions": {
+		"favorite": "مفضل",
+		"unfavorite": "إلغاء المفضلة",
+		"rename": "إعادة التسمية",
+		"delete": "حذف",
+		"openInline": "فتح مضمّن",
+		"minimize": "تصغير",
+		"maximize": "تكبير",
+		"close": "إغلاق"
+	},
+	"toasts": {
+		"failedToPin": "فشل تثبيت الغرفة",
+		"failedToUnpin": "فشل إلغاء تثبيت الغرفة",
+		"roomNameEmpty": "لا يمكن أن يكون اسم الغرفة فارغاً",
+		"roomRenamedSuccess": "تمت إعادة تسمية الغرفة بنجاح",
+		"failedToRename": "فشل إعادة تسمية الغرفة",
+		"roomDeletedSuccess": "تم حذف الغرفة بنجاح"
+	}
+}

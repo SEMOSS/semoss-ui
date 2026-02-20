@@ -1,5 +1,6 @@
 import { CheckIcon, ComputerIcon } from "lucide-react";
 import React, { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Command,
@@ -34,6 +35,7 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 	onSelect,
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
+	const { t } = useTranslation("room");
 	const [search, setSearch] = React.useState("");
 
 	const debouncedSearch = useDebouncedValue(search);
@@ -78,7 +80,9 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 			<DropdownMenuSubTrigger>
 				<ComputerIcon />
 				<span className="flex-1">
-					{workspace ? workspace.project_name : "Select Agent"}
+					{workspace
+						? workspace.project_name
+						: t("menuWorkspace.selectAgent")}
 				</span>
 				{workspace ? (
 					<div className="px-1">
@@ -89,7 +93,7 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 			<DropdownMenuSubContent className="w-72 p-0">
 				<Command shouldFilter={false} className="w-full">
 					<CommandInput
-						placeholder="Search workspaces"
+						placeholder={t("menuWorkspace.searchPlaceholder")}
 						value={search}
 						onValueChange={setSearch}
 						autoFocus
@@ -100,7 +104,9 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 					>
 						{!getWorkspaces.isLoading &&
 						getWorkspaces.data.length === 0 ? (
-							<CommandEmpty>Not Found</CommandEmpty>
+							<CommandEmpty>
+								{t("menuWorkspace.notFound")}
+							</CommandEmpty>
 						) : null}
 
 						{getWorkspaces.data.length > 0 && (
