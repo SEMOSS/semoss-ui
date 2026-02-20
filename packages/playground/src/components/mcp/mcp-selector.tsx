@@ -5,6 +5,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Badge,
@@ -58,6 +59,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	disabled,
 	onChange,
 }) => {
+	const { t } = useTranslation("mcp");
 	const [search, setSearch] = useState<string>("");
 	const [isKnowledgeOverlayOpen, setIsKnowledgeOverlayOpen] = useState(false);
 
@@ -130,7 +132,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 			<div className="flex w-full flex-row gap-2 border-border bg-primary-foreground p-4">
 				<InputGroup className="bg-background">
 					<InputGroupInput
-						placeholder="Search"
+						placeholder={t("selector.search")}
 						value={search}
 						disabled={disabled || getMCP.isLoading}
 						onChange={(e) => setSearch(e.target.value)}
@@ -155,7 +157,9 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 								<PlusIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Create Knowledge Source</TooltipContent>
+						<TooltipContent>
+							{t("selector.createKnowledgeSource")}
+						</TooltipContent>
 					</Tooltip>
 				)}
 			</div>
@@ -172,15 +176,16 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 				{!getMCP.isLoading && getMCP.data.length === 0 && (
 					<div className="flex h-64 w-full items-center justify-center">
 						<Muted>
-							No {type === "TOOLBOX" ? "toolboxes" : "knowledge"}{" "}
-							found
+							{type === "TOOLBOX"
+								? t("selector.noToolboxesFound")
+								: t("selector.noKnowledgeFound")}
 						</Muted>
 					</div>
 				)}
 				{!getMCP.isLoading && getMCP.data.length !== 0 && (
 					<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
-						{getMCP.data.map((t) => (
-							<FieldLabel key={t.id} className="col-span-1">
+						{getMCP.data.map((mcp) => (
+							<FieldLabel key={mcp.id} className="col-span-1">
 								<Field
 									orientation="horizontal"
 									className="pb-2!"
@@ -188,16 +193,16 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 									<FieldContent>
 										<FieldTitle
 											className="line-clamp-1"
-											title={t.name}
+											title={mcp.name}
 										>
-											{t.name}
+											{mcp.name}
 										</FieldTitle>
-										{t.description && (
+										{mcp.description && (
 											<FieldDescription
 												className="line-clamp-2"
-												title={t.description}
+												title={mcp.description}
 											>
-												{t.description}
+												{mcp.description}
 											</FieldDescription>
 										)}
 									</FieldContent>
@@ -208,13 +213,16 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 											disabled ||
 											values.some(
 												(a) =>
-													a.id === t.id &&
+													a.id === mcp.id &&
 													a.fromWorkspace,
 											)
 										}
-										checked={Object.hasOwn(selected, t.id)}
+										checked={Object.hasOwn(
+											selected,
+											mcp.id,
+										)}
 										onCheckedChange={() => {
-											onSelect(t);
+											onSelect(mcp);
 										}}
 									/>
 								</Field>
@@ -223,13 +231,13 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 										<TooltipTrigger asChild>
 											<a
 												target="_blank"
-												href={mcpToPlatformUrl(t)}
+												href={mcpToPlatformUrl(mcp)}
 											>
 												<SquareArrowOutUpRightIcon className="size-4" />
 											</a>
 										</TooltipTrigger>
 										<TooltipContent>
-											View Details
+											{t("selector.viewDetails")}
 										</TooltipContent>
 									</Tooltip>
 								</div>

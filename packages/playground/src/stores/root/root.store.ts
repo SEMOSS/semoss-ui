@@ -75,6 +75,7 @@ export class RootStore {
 				temperature: TEMPERATURE,
 				tokenLength: TOKEN_LENGTH,
 			},
+			allowedFileTypes: [],
 			defaultTools: [],
 		},
 	};
@@ -210,6 +211,10 @@ export class RootStore {
 			toolAutoExecutionLimit:
 				theme?.toolAutoExecutionLimit ||
 				this._store.theme.toolAutoExecutionLimit,
+			allowedFileTypes:
+				theme?.allowedFileTypes ||
+				this._store.theme.allowedFileTypes ||
+				[],
 			defaultTools: [
 				...new Map(
 					[

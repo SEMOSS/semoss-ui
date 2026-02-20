@@ -1,6 +1,7 @@
 import { CheckIcon, HammerIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Badge,
@@ -38,6 +39,7 @@ export const RoomInputMenuToolbox: React.FC<RoomInputMenuToolboxProps> =
 	observer(({ options, onSelect }) => {
 		const [isOpen, setIsOpen] = useState(false);
 		const { root } = useRoot();
+		const { t } = useTranslation("room");
 		const [search, setSearch] = React.useState("");
 
 		const debouncedSearch = useDebouncedValue(search);
@@ -97,13 +99,15 @@ export const RoomInputMenuToolbox: React.FC<RoomInputMenuToolboxProps> =
 			<DropdownMenuSub open={isOpen} onOpenChange={setIsOpen}>
 				<DropdownMenuSubTrigger>
 					<HammerIcon />
-					<span className="flex-1">Add Toolbox</span>
+					<span className="flex-1">
+						{t("menuToolbox.addToolbox")}
+					</span>
 					<Badge variant="outline">{mcps.length}</Badge>
 				</DropdownMenuSubTrigger>
 				<DropdownMenuSubContent className="w-72 p-0">
 					<Command shouldFilter={false} className="w-full">
 						<CommandInput
-							placeholder="Search toolboxes"
+							placeholder={t("menuToolbox.searchPlaceholder")}
 							value={search}
 							onValueChange={setSearch}
 							autoFocus
@@ -115,7 +119,9 @@ export const RoomInputMenuToolbox: React.FC<RoomInputMenuToolboxProps> =
 							{!getToolbox.isLoading &&
 							getToolbox.data.length === 0 &&
 							defaultTools.length === 0 ? (
-								<CommandEmpty>Not Found</CommandEmpty>
+								<CommandEmpty>
+									{t("menuToolbox.notFound")}
+								</CommandEmpty>
 							) : null}
 
 							{!getToolbox.isLoading &&
@@ -140,7 +146,9 @@ export const RoomInputMenuToolbox: React.FC<RoomInputMenuToolboxProps> =
 
 							{!getToolbox.isLoading &&
 								getToolbox.data.length > 0 && (
-									<CommandGroup heading="All Tools">
+									<CommandGroup
+										heading={t("menuToolbox.allTools")}
+									>
 										{getToolbox.data.map((item) => (
 											<CommandItem
 												key={item.id}

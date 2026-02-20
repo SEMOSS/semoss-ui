@@ -1,5 +1,6 @@
 import { FileIcon, XIcon } from "lucide-react";
 import { useId, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -27,6 +28,7 @@ export const EmbedDocumentsOverlay = ({
 	open,
 	onClose,
 }: EmbedDocumentsOverlayProps) => {
+	const { t } = useTranslation("mcp");
 	const { actions } = useInsight();
 	const fileInputId = useId();
 	const [selectedKnowledge, setSelectedKnowledge] = useState<string | null>(
@@ -53,12 +55,12 @@ export const EmbedDocumentsOverlay = ({
 
 	const handleEmbed = async () => {
 		if (!selectedKnowledge) {
-			toast.error("Please select a knowledge source");
+			toast.error(t("messages.selectKnowledgeSource"));
 			return;
 		}
 
 		if (files.length === 0) {
-			toast.error("Please select at least one document");
+			toast.error(t("messages.selectDocument"));
 			return;
 		}
 
@@ -83,12 +85,12 @@ export const EmbedDocumentsOverlay = ({
 				filePaths=[${filePaths}]
 			);`);
 
-			toast.success("Documents embedded successfully");
+			toast.success(t("messages.embedSuccess"));
 			setFiles([]);
 			setSelectedKnowledge(null);
 			onClose(true);
 		} catch (e) {
-			toast.error("Failed to embed documents");
+			toast.error(t("messages.embedFailed"));
 			console.error(e);
 		} finally {
 			setIsEmbedding(false);
@@ -99,11 +101,9 @@ export const EmbedDocumentsOverlay = ({
 		<Dialog open={open} onOpenChange={() => onClose(false)}>
 			<DialogContent className="max-w-md">
 				<DialogHeader>
-					<DialogTitle>
-						Embed Documents into Existing Source
-					</DialogTitle>
+					<DialogTitle>{t("embedDocuments.title")}</DialogTitle>
 					<DialogDescription>
-						Select a knowledge source and upload documents to embed.
+						{t("embedDocuments.description")}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -113,7 +113,7 @@ export const EmbedDocumentsOverlay = ({
 							htmlFor={fileInputId}
 							className="mb-2 block font-medium text-sm"
 						>
-							Knowledge Source
+							{t("embedDocuments.knowledgeSource")}
 						</label>
 						{getKnowledgeSources.status === "LOADING" ? (
 							<div className="flex justify-center py-8">
@@ -121,11 +121,11 @@ export const EmbedDocumentsOverlay = ({
 							</div>
 						) : getKnowledgeSources.status === "ERROR" ? (
 							<div className="text-destructive text-sm">
-								Failed to load knowledge sources.
+								{t("messages.loadFailed")}
 							</div>
 						) : getKnowledgeSources.data.length === 0 ? (
 							<div className="text-muted-foreground text-sm">
-								No knowledge sources found.
+								{t("messages.noSources")}
 							</div>
 						) : (
 							<ScrollArea className="h-[200px] rounded-md border">
@@ -159,7 +159,7 @@ export const EmbedDocumentsOverlay = ({
 							htmlFor={fileInputId}
 							className="mb-2 block font-medium text-sm"
 						>
-							Documents
+							{t("embedDocuments.documents")}
 						</label>
 						<div className="rounded-md border-2 border-dashed p-4">
 							<input
@@ -174,7 +174,7 @@ export const EmbedDocumentsOverlay = ({
 								htmlFor={fileInputId}
 								className="cursor-pointer text-muted-foreground text-sm hover:text-foreground"
 							>
-								Click to select files or drag and drop
+								{t("embedDocuments.selectFiles")}
 							</label>
 						</div>
 
@@ -198,7 +198,9 @@ export const EmbedDocumentsOverlay = ({
 											}
 											disabled={isEmbedding}
 											className="rounded p-1 hover:bg-destructive/10"
-											aria-label="Remove file"
+											aria-label={t(
+												"embedDocuments.removeFile",
+											)}
 										>
 											<XIcon className="h-4 w-4" />
 										</button>
@@ -218,7 +220,7 @@ export const EmbedDocumentsOverlay = ({
 							}}
 							disabled={isEmbedding}
 						>
-							Cancel
+							{t("buttons.cancel")}
 						</Button>
 						<Button
 							onClick={handleEmbed}
@@ -232,10 +234,10 @@ export const EmbedDocumentsOverlay = ({
 							{isEmbedding ? (
 								<>
 									<Spinner className="mr-2 h-4 w-4" />
-									Embedding...
+									{t("embedDocuments.embedding")}
 								</>
 							) : (
-								"Embed Documents"
+								t("embedDocuments.embedButton")
 							)}
 						</Button>
 					</div>
