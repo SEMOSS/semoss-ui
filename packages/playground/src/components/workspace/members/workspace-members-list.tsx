@@ -1,9 +1,13 @@
-import { Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import {
-	Avatar,
-	AvatarFallback,
+	editProjectUserPermissions,
+	getProjectUsers,
+	getUserProjectPermission,
+	removeProjectUserPermissions,
+} from "@semoss/shared";
+import {
 	Button,
 	Dialog,
 	DialogContent,
@@ -12,24 +16,13 @@ import {
 	DialogHeader,
 	DialogTitle,
 	ScrollArea,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectSeparator,
-	SelectTrigger,
-	SelectValue,
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
-import {
-	editProjectUserPermissions,
-	getProjectUsers,
-	getUserProjectPermission,
-	removeProjectUserPermissions,
-} from "@/api";
 import { useChat } from "@/hooks";
 import type { User } from "@/types";
-import { toInitials } from "@/utility";
+import { WorkspaceMemberRow } from "./workspace-member-row";
+import { WorkspaceSharingModal } from "./workspace-sharing-modal";
 
 export interface WorkspaceMembersListProps {
 	/**
@@ -57,6 +50,12 @@ export interface WorkspaceMembersListProps {
 		/** Setter to update current page number */
 		setCurrentPage: (currentPage: number) => void;
 	};
+
+	/**
+	 * Optional callback to trigger when members are updated (e.g., after a permission change or deletion)
+	 */
+	isSharingModalOpen: boolean;
+	onSharingModalClose: (madeChanges: boolean) => void;
 }
 
 /**
@@ -68,7 +67,10 @@ export const WorkspaceMembersList = ({
 	workspaceId,
 	paginationControl,
 	search,
+	isSharingModalOpen,
+	onSharingModalClose,
 }: WorkspaceMembersListProps) => {
+	const { t } = useTranslation(["workspace", "common"]);
 	const { rowsPerPage, offset, setTotalRows, setCurrentPage } =
 		paginationControl;
 	const { chat } = useChat();
@@ -113,7 +115,10 @@ export const WorkspaceMembersList = ({
 			}
 		} catch (error) {
 			toast.error(
-				`Failed to fetch user permissions${error ? `: ${error instanceof Error ? error.message : "Unknown error"}` : ""}`,
+				t("workspace:messages.fetchPermissionsFailed") +
+					(error
+						? `: ${error instanceof Error ? error.message : "Unknown error"}`
+						: ""),
 			);
 		}
 	}, [workspaceId]);
@@ -130,6 +135,7 @@ export const WorkspaceMembersList = ({
 
 			const { totalMembers, members } = await getProjectUsers(
 				workspaceId,
+				false,
 				search,
 				undefined,
 				rowsPerPage,
@@ -219,12 +225,15 @@ export const WorkspaceMembersList = ({
 			await editProjectUserPermissions(workspaceId, [
 				{ userid: userId, permission: newPermission },
 			]);
-			toast.success("Permission updated successfully");
+			toast.success(t("workspace:messages.permissionUpdated"));
 		} catch (error) {
 			// Revert to previous state if the server update failed
 			setMembers(previousMembers);
 			toast.error(
-				`Failed to update permission${error ? `: ${error instanceof Error ? error.message : "Unknown error"}` : ""}`,
+				t("workspace:messages.permissionUpdateFailed") +
+					(error
+						? `: ${error instanceof Error ? error.message : "Unknown error"}`
+						: ""),
 			);
 		}
 	};
@@ -255,11 +264,11 @@ export const WorkspaceMembersList = ({
 	const getPermissionDisplay = (permission: string) => {
 		switch (permission) {
 			case "OWNER":
-				return "Owner";
+				return t("workspace:members.owner");
 			case "EDIT":
-				return "Editor";
+				return t("workspace:members.editor");
 			case "READ_ONLY":
-				return "Read-only";
+				return t("workspace:members.readOnly");
 			default:
 				return permission;
 		}
@@ -307,11 +316,14 @@ export const WorkspaceMembersList = ({
 				}
 
 				setIsLoading(false);
-				toast.success("User removed successfully");
+				toast.success(t("workspace:messages.userRemoved"));
 			} catch (error) {
 				setIsLoading(false);
 				toast.error(
-					`Failed to remove user${error ? `: ${error instanceof Error ? error.message : "Unknown error"}` : ""}`,
+					t("workspace:messages.userRemoveFailed") +
+						(error
+							? `: ${error instanceof Error ? error.message : "Unknown error"}`
+							: ""),
 				);
 			}
 		} else if (action.type === "permission") {
@@ -332,14 +344,17 @@ export const WorkspaceMembersList = ({
 				await editProjectUserPermissions(workspaceId, [
 					{ userid: action.userId, permission: action.newPermission },
 				]);
-				toast.success("Permission updated successfully");
+				toast.success(t("workspace:messages.permissionUpdated"));
 				// Refetch user permission to update the current user's permission state
 				await fetchUserPermission();
 			} catch (error) {
 				// Revert to previous state if the server update failed
 				setMembers(previousMembers);
 				toast.error(
-					`Failed to update permission${error ? `: ${error instanceof Error ? error.message : "Unknown error"}` : ""}`,
+					t("workspace:messages.permissionUpdateFailed") +
+						(error
+							? `: ${error instanceof Error ? error.message : "Unknown error"}`
+							: ""),
 				);
 			}
 		}
@@ -350,50 +365,49 @@ export const WorkspaceMembersList = ({
 		confirmationDialog.action?.type === "delete"
 			? confirmationDialog.action.userId === currentUser.id
 				? {
-						title: "Remove yourself from agent",
-						description:
-							"You are about to remove your access to this agent. You will need to be re-invited to regain access. This action cannot be undone.",
+						title: t("workspace:members.removeSelfTitle"),
+						description: t(
+							"workspace:members.removeSelfDescription",
+						),
 						buttonVariant: "destructive" as const,
-						buttonText: "Remove access",
+						buttonText: t("workspace:members.removeAccess"),
 					}
 				: {
-						title: "Remove agent access",
+						title: t("workspace:members.removeUserTitle"),
 						description: (
 							<>
-								Are you sure you want to remove{" "}
-								<span className="font-medium text-foreground">
-									{confirmationDialog.action.userName}
-								</span>
-								's access to this agent? This action cannot be
-								undone.
+								{t("workspace:members.removeUserDescription", {
+									name: confirmationDialog.action.userName,
+								})}
 							</>
 						),
 						buttonVariant: "destructive" as const,
-						buttonText: "Remove access",
+						buttonText: t("workspace:members.removeAccess"),
 					}
 			: confirmationDialog.action?.type === "permission"
 				? {
-						title: "Change your permission",
+						title: t("workspace:members.changePermissionTitle"),
 						description: (
 							<>
-								You are about to change your own permission from{" "}
-								<span className="font-medium text-foreground">
-									{getPermissionDisplay(
-										confirmationDialog.action.oldPermission,
-									)}
-								</span>{" "}
-								to{" "}
-								<span className="font-medium text-foreground">
-									{getPermissionDisplay(
-										confirmationDialog.action.newPermission,
-									)}
-								</span>
-								. This will affect what actions you can perform
-								in this agent.
+								{t(
+									"workspace:members.changePermissionDescription",
+									{
+										oldPermission: getPermissionDisplay(
+											confirmationDialog.action
+												.oldPermission,
+										),
+										newPermission: getPermissionDisplay(
+											confirmationDialog.action
+												.newPermission,
+										),
+									},
+								)}
 							</>
 						),
 						buttonVariant: "default" as const,
-						buttonText: "Change permission",
+						buttonText: t(
+							"workspace:members.changePermissionButton",
+						),
 					}
 				: {
 						title: "",
@@ -405,8 +419,8 @@ export const WorkspaceMembersList = ({
 	return (
 		<ScrollArea className="h-full w-full">
 			<div className="py-4">
-				<div className="px-6 pb-2 text-muted-foreground">
-					Who has access
+				<div className="px-4 pb-2 text-muted-foreground">
+					{t("workspace:members.heading")}
 				</div>
 				{isLoading
 					? // Show skeleton loaders while data is being fetched
@@ -416,7 +430,7 @@ export const WorkspaceMembersList = ({
 									// biome-ignore lint/suspicious/noArrayIndexKey: loading state
 									index
 								}`}
-								className="flex items-center gap-3 rounded p-2 px-6"
+								className="flex items-center gap-3 rounded p-2 px-4"
 							>
 								<Skeleton className="h-12 w-12 rounded-md" />
 								<div className="flex flex-1 flex-col gap-2">
@@ -427,84 +441,20 @@ export const WorkspaceMembersList = ({
 							</div>
 						))
 					: members.map((member) => (
-							<div
-								key={member.id}
-								className="flex items-center gap-3 rounded p-2 px-6 hover:bg-accent"
-							>
-								<Avatar className="h-12 w-12 rounded-md">
-									<AvatarFallback className="rounded-md bg-primary/10">
-										{toInitials(member.name)}
-									</AvatarFallback>
-								</Avatar>
-								<div className="flex flex-1 flex-col">
-									<span className="font-medium text-sm">
-										{member.name}{" "}
-										{member.id === currentUser.id && (
-											<span className="ml-1 text-muted-foreground">
-												(You)
-											</span>
-										)}
-									</span>
-									<span className="text-muted-foreground text-xs">
-										{member.email}
-									</span>
-								</div>
-								<Select
-									value={member.permission}
-									onValueChange={(newPermission) =>
-										handlePermissionChange(
-											member.id,
-											newPermission,
-										)
-									}
-									// Disable if current user is read-only or trying to modify an owner without being an owner
-									disabled={
-										userPermission === "READ_ONLY" ||
-										(member.permission === "OWNER" &&
-											userPermission !== "OWNER")
-									}
-								>
-									<SelectTrigger size="sm">
-										<SelectValue />
-									</SelectTrigger>
-									{/* Position checkmark on left side of menu items */}
-									<SelectContent className="[&_span:first-child]:right-auto [&_span:first-child]:left-2">
-										{/* Only owners can promote users to owner */}
-										<SelectItem
-											value="OWNER"
-											disabled={
-												userPermission !== "OWNER"
-											}
-											className="pr-2 pl-8"
-										>
-											Owner
-										</SelectItem>
-										<SelectItem
-											value="EDIT"
-											className="pr-2 pl-8"
-										>
-											Editor
-										</SelectItem>
-										<SelectItem
-											value="READ_ONLY"
-											className="pr-2 pl-8"
-										>
-											Read-only
-										</SelectItem>
-										<SelectSeparator />
-										<SelectItem
-											value="delete"
-											className="pr-2 text-destructive focus:text-destructive"
-										>
-											<Trash2 className="size-4 text-destructive" />
-											Remove access
-										</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
+							<WorkspaceMemberRow
+								key={`${member.id}-${member.email}`} // Use both ID and email for uniqueness
+								member={member}
+								currentUserId={currentUser.id}
+								activeUserPermission={userPermission}
+								onPermissionChange={(newPermission) =>
+									handlePermissionChange(
+										member.id,
+										newPermission,
+									)
+								}
+							/>
 						))}
 			</div>
-
 			{/* Unified Confirmation Dialog */}
 			<Dialog
 				open={confirmationDialog.open}
@@ -529,7 +479,7 @@ export const WorkspaceMembersList = ({
 								})
 							}
 						>
-							Cancel
+							{t("common:buttons.cancel")}
 						</Button>
 						<Button
 							variant={dialogContent.buttonVariant}
@@ -540,6 +490,18 @@ export const WorkspaceMembersList = ({
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+			{/* Workspace Sharing Modal */}
+			{workspaceId && (
+				<WorkspaceSharingModal
+					workspaceId={workspaceId}
+					open={isSharingModalOpen}
+					onClose={(madeChanges) => {
+						onSharingModalClose(madeChanges);
+						if (madeChanges) fetchMembers();
+					}}
+					activeUserPermission={userPermission}
+				/>
+			)}
 		</ScrollArea>
 	);
 };
