@@ -180,13 +180,7 @@ export const NewRoomPage = observer(() => {
 			// turn the loading screen
 			setIsLoading(true);
 
-			// create a new room
-			const room = await chat.createRoom(
-				mode.type === "plan" ? "planning" : "chat",
-				mode.workspace?.project_id,
-			);
-
-			const updated = {
+			const options = {
 				...tempRoomStore.options,
 				mcp: tempRoomStore.options.mcp.filter(
 					(mcp) => !mcp?.fromWorkspace,
@@ -195,16 +189,19 @@ export const NewRoomPage = observer(() => {
 
 			// add workspace id
 			if (mode.type === "workspace" && mode.workspace) {
-				updated.workspace = {
+				options.workspace = {
 					workspace_id: mode.workspace.project_id,
 				};
 			}
 
-			// update the options
-			await room.updateRoomOptions(updated);
-
-			// ask the room
-			room.askMessage(prompt, files);
+			// create a new room
+			const room = await chat.createRoom(
+				mode.type === "plan" ? "planning" : "chat",
+				prompt,
+				files,
+				options,
+				mode.workspace?.project_id,
+			);
 
 			// go to the new room
 			navigate(`/room/${room.roomId}`);
