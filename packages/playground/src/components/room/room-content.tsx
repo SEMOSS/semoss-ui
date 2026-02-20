@@ -28,11 +28,14 @@ import {
 	RoomInputMenuKnowledge,
 	RoomInputMenuToolbox,
 	RoomInputMenuUpload,
+	RoomInputMenuWorkspace,
+	workspaceToApp,
 } from "@/components";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { MCPConfig } from "@/types";
+import type { App, MCPConfig, Workspace } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
+import { usePixel } from "@semoss/sdk/react";
 
 const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS === "true";
 
@@ -57,6 +60,20 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
+	const [mode, setMode] = useState<{
+		type: "chat" | "plan" | "workspace";
+		workspace: Pick<Workspace, "workspace_id" | "name"> | null;
+	}>({
+		type: "chat",
+		workspace: null,
+	});
+	
+	const workspaceIdFromRoom = room.options.workspace?.workspace_id ?? null;
+
+	const getWorkspace = usePixel<Workspace | null>(
+		workspaceIdFromRoom ? `GetWorkspace("${workspaceIdFromRoom}");` : null,
+		{ data: null },
+	);
 
 	/**
 	 * Functions
@@ -75,26 +92,28 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	 * Handle tool selection
 	 * @param tool - selected tool
 	 */
-	const handleToolSelect = (tool: MCPConfig) => {
-		// Toggle tool in options
-		const tools = room.options.mcp.reduce(
-			(acc, curr) => {
-				acc[curr.id] = curr;
-				return acc;
-			},
-			{} as Record<string, typeof tool>,
-		);
+	const handleToolSelect = async (tool: MCPConfig) => {
+		const toolsById = room.options.mcp.reduce((acc, curr) => {
+			acc[curr.id] = curr;
+			return acc;
+		}, {} as Record<string, MCPConfig>);
 
-		if (Object.hasOwn(tools, tool.id)) {
-			delete tools[tool.id];
+		if (Object.hasOwn(toolsById, tool.id)) {
+			delete toolsById[tool.id];
 		} else {
-			tools[tool.id] = tool;
+			toolsById[tool.id] = tool;
 		}
 
-		room.setOptions({
+		const nextOptions = {
 			...room.options,
-			mcp: Object.values(tools),
-		});
+			mcp: Object.values(toolsById),
+		};
+
+		// Update UI immediately
+		room.setOptions(nextOptions);
+
+		// Persist so it survives navigation/refresh
+		await room.updateRoomOptions(nextOptions);
 	};
 
 	/**
@@ -149,6 +168,17 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		},
 		[scrollEle],
 	);
+
+	/**
+	 * Handle agent selection
+	 */
+	const handleWorkspaceSelect = (workspace: Pick<Workspace, "workspace_id" | "name"> | null) => {
+		if (workspace) {
+			setMode({ type: "workspace", workspace });
+		} else {
+			setMode({ type: "chat", workspace: null });
+		}
+	};
 
 	/**
 	 * Effects
@@ -262,6 +292,27 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			observer.disconnect();
 		};
 	}, [contentEle]);
+
+	/**
+	 * Get workspace data when workspaceId changes
+	 */
+	useEffect(() => {
+		if (!workspaceIdFromRoom) {
+			setMode({ type: "chat", workspace: null });
+			return;
+		}
+
+		if (getWorkspace.status === "SUCCESS" && getWorkspace.data) {
+			setMode({
+				type: "workspace",
+				workspace: {
+					workspace_id: getWorkspace.data.workspace_id,
+					name: getWorkspace.data.name,
+				},
+			});
+		}
+	}, [workspaceIdFromRoom, getWorkspace.status, getWorkspace.data]);
+
 
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
@@ -400,18 +451,26 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									room={room}
 									onSelect={() => onOpenChange(false)}
 								/>
+								<RoomInputMenuWorkspace
+									workspace={
+										mode.type === "workspace"
+											? mode.workspace
+											: null
+									}
+									onSelect={handleWorkspaceSelect}
+								/>
 								<DropdownMenuSeparator />
 								<RoomInputMenuKnowledge
 									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
+									onSelect={async (tool) => {
+										await handleToolSelect(tool);
 										addToken(`<${tool.name}>`);
 									}}
 								/>
 								<RoomInputMenuToolbox
 									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
+									onSelect={async (tool) => {
+										await handleToolSelect(tool);
 										addToken(`<${tool.name}>`);
 									}}
 								/>

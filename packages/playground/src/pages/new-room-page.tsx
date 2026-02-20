@@ -162,17 +162,11 @@ export const NewRoomPage = observer(() => {
 
 			const options = {
 				...tempRoomStore.options,
-				mcp: tempRoomStore.options.mcp.filter(
-					(mcp) => !mcp?.fromWorkspace,
-				),
+				mcp: tempRoomStore.options.mcp,
+				...(mode === "workspace" && getWorkspace.data?.workspace_id
+					? { workspace: { workspace_id: getWorkspace.data?.workspace_id } }
+					: {}),
 			};
-
-			// add workspace id
-			if (mode === "workspace") {
-				options.workspace = {
-					workspace_id: getWorkspace.data?.workspace_id || "",
-				};
-			}
 
 			// create a new room
 			const room = await chat.createRoom(
@@ -295,6 +289,7 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore,
 	]);
 
+	console.log('mode', mode);
 	return (
 		<div className="relative h-full w-full overflow-hidden">
 			<ResizablePanelGroup direction="horizontal">
