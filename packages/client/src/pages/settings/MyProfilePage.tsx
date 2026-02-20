@@ -755,101 +755,103 @@ export const MyProfilePage = () => {
 				</Grid>
 			</StyledPaper>
 			<StyledPaper>
-				<div className="-ml-5">
+				<div className="-ml-5 -mt-5 mb-5">
 					<h2 className="mr-1 mb-6 font-semibold text-gray-900 text-xl">
 						Choose which AI model will be used by default for your
 						requests
 					</h2>
 					{getEngines.status === "INITIAL" ||
-				getEngines.status === "LOADING" ? (
-					<span className="font-medium text-gray-700 text-sm">
-						Loading models...
-					</span>
-				) : getEngines.status === "ERROR" ? (
-					<span className="font-medium text-red-600 text-sm">
-						Error loading models
-					</span>
-				) : (
-					<div className="ml-3 grid grid-cols-1 gap-6 md:grid-cols-2">
-						<Field>
-							<FieldLabel htmlFor={modelSelectId}>
-								Text Generation Model
-							</FieldLabel>
-							<Select
-								value={selectedDefaultModel}
-								onValueChange={(value) =>
-									handleSelectModel(
-										value,
-										"text-generation-model",
-									)
-								}
-							>
-								<SelectTrigger
-									id={modelSelectId}
-									className="flex h-11 w-full items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-									data-testid="myProfilePage-default-model-select"
+					getEngines.status === "LOADING" ? (
+						<span className="font-medium text-gray-700 text-sm">
+							Loading models...
+						</span>
+					) : getEngines.status === "ERROR" ? (
+						<span className="font-medium text-red-600 text-sm">
+							Error loading models
+						</span>
+					) : (
+						<div className="ml-3 grid grid-cols-1 gap-6 md:grid-cols-2">
+							<Field>
+								<FieldLabel htmlFor={modelSelectId}>
+									Text Generation Model
+								</FieldLabel>
+								<Select
+									value={selectedDefaultModel}
+									onValueChange={(value) =>
+										handleSelectModel(
+											value,
+											"text-generation-model",
+										)
+									}
 								>
-									<SelectValue placeholder="Select a model" />
-								</SelectTrigger>
-								<SelectContent className="max-h-[300px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-									{engines.map((engine) => (
-										<SelectItem
-											key={engine.app_id}
-											value={engine.app_id}
-											data-testid={`myProfilePage-model-option-${engine.app_id}`}
-											className="cursor-pointer px-4 py-3 text-base text-gray-900"
-										>
-											<span>{engine.app_name}</span>
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<FieldDescription className="mt-2 text-gray-600 text-sm">
-								This text generation model will be used to power
-								AI-driven user requests
-							</FieldDescription>
-						</Field>
+									<SelectTrigger
+										id={modelSelectId}
+										className="flex h-11 w-full items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+										data-testid="myProfilePage-default-model-select"
+									>
+										<SelectValue placeholder="Select a model" />
+									</SelectTrigger>
+									<SelectContent className="max-h-[300px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+										{engines.map((engine) => (
+											<SelectItem
+												key={engine.app_id}
+												value={engine.app_id}
+												data-testid={`myProfilePage-model-option-${engine.app_id}`}
+												className="cursor-pointer px-4 py-3 text-base text-gray-900"
+											>
+												<span>{engine.app_name}</span>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FieldDescription className="mt-2 text-gray-600 text-sm">
+									This text generation model will be used to
+									power AI-driven user requests
+								</FieldDescription>
+							</Field>
 
-						<Field>
-							<FieldLabel htmlFor={`${modelSelectId}-secondary`}>
-								Code Generation Model
-							</FieldLabel>
-							<Select
-								value={selectedCodeDefaultModel}
-								onValueChange={(value) =>
-									handleSelectModel(
-										value,
-										"code-generation-model",
-									)
-								}
-							>
-								<SelectTrigger
-									id={`${modelSelectId}-secondary`}
-									className="flex h-11 w-full items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-									data-testid="myProfilePage-secondary-model-select"
+							<Field>
+								<FieldLabel
+									htmlFor={`${modelSelectId}-secondary`}
 								>
-									<SelectValue placeholder="Select a model" />
-								</SelectTrigger>
-								<SelectContent className="max-h-[300px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-									{engines.map((engine) => (
-										<SelectItem
-											key={`secondary-${engine.app_id}`}
-											value={engine.app_id}
-											data-testid={`myProfilePage-secondary-model-option-${engine.app_id}`}
-											className="cursor-pointer px-4 py-3 text-base text-gray-900"
-										>
-											<span>{engine.app_name}</span>
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<FieldDescription className="mt-2 text-gray-600 text-sm">
-								This code generation model will be used to power
-								AI-driven user requests
-							</FieldDescription>
-						</Field>
-					</div>
-				)}
+									Code Generation Model
+								</FieldLabel>
+								<Select
+									value={selectedCodeDefaultModel}
+									onValueChange={(value) =>
+										handleSelectModel(
+											value,
+											"code-generation-model",
+										)
+									}
+								>
+									<SelectTrigger
+										id={`${modelSelectId}-secondary`}
+										className="flex h-11 w-full items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+										data-testid="myProfilePage-secondary-model-select"
+									>
+										<SelectValue placeholder="Select a model" />
+									</SelectTrigger>
+									<SelectContent className="max-h-[300px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+										{engines.map((engine) => (
+											<SelectItem
+												key={`secondary-${engine.app_id}`}
+												value={engine.app_id}
+												data-testid={`myProfilePage-secondary-model-option-${engine.app_id}`}
+												className="cursor-pointer px-4 py-3 text-base text-gray-900"
+											>
+												<span>{engine.app_name}</span>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FieldDescription className="mt-2 text-gray-600 text-sm">
+									This code generation model will be used to
+									power AI-driven user requests
+								</FieldDescription>
+							</Field>
+						</div>
+					)}
 				</div>
 			</StyledPaper>
 			<StyledPaper>
