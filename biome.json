@@ -136,6 +136,16 @@
 					}
 				}
 			}
+		},
+		{
+			"includes": ["**/flow-nodes/*.{ts,tsx}"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"useSemanticElements": "off"
+					}
+				}
+			}
 		}
 	]
 }
