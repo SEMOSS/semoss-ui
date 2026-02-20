@@ -332,6 +332,7 @@ paramValues=[${JSON.stringify({
 			visible: true,
 			platform_generated: true,
 			modelId: room.model.app_id,
+			modelType: room.model.app_type,
 			dateCreated: new Date().toISOString(),
 			parts: parentMessage.parts,
 			tokens: parentMessage.tokens,

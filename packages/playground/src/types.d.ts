@@ -84,6 +84,7 @@ export interface AbstractPixelMessage {
 	visible: boolean;
 	platform_generated: boolean;
 	modelId: string;
+	modelType: string;
 	dateCreated: string;
 	parts: (
 		| PixelMessageThinkingPart

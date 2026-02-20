@@ -35,7 +35,7 @@
 		"failed": "ツールの実行に失敗しました",
 		"cancelled": "ツールの実行がキャンセルされました",
 		"completed": "完了",
-		"clickToOpen": "クリックして開く",
+		"ready": "準備完了",
 		"autoExecute": "このツールは自動実行に設定されています",
 		"cancel": "キャンセル"
 	},

@@ -5,8 +5,7 @@ import {
 	TriangleAlertIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
@@ -14,6 +13,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	ScrollArea,
+	Separator,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -266,7 +266,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
-					className="h-full w-full"
+					className="h-full w-full overflow-hidden"
 					viewportRef={(ele) => {
 						setScrollEle(ele);
 					}}
@@ -276,41 +276,45 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto flex w-screen max-w-4xl flex-col gap-4 px-4 py-6">
+						<div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-6 sm:gap-6">
 							{room.history.map((m, mIdx) => {
 								if (!m.visible) {
 									return null;
 								}
 
-								if (m.type === "INPUT") {
-									return (
-										<InputMessage
-											key={m.key}
-											room={room}
-											message={m}
-										/>
-									);
-								} else if (m.type === "OUTPUT") {
-									return (
-										<ResponseMessage
-											key={m.key}
-											room={room}
-											message={m}
-										/>
-									);
-								} else if (m.type === "PLAN") {
-									return (
-										<PlanMessage
-											key={m.key}
-											message={m}
-											isLast={
-												mIdx === room.history.length - 1
-											}
-										/>
-									);
-								}
-
-								return null;
+								return (
+									<React.Fragment key={m.key}>
+										{m.parent.modelId !== m.modelId && (
+											<div className="relative flex flex-col items-center justify-center">
+												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
+													{m.ornaments.modelName}
+												</div>
+												<Separator className="absolute top-1/2" />
+											</div>
+										)}
+										{m.type === "INPUT" && (
+											<InputMessage
+												room={room}
+												message={m}
+											/>
+										)}
+										{m.type === "OUTPUT" && (
+											<ResponseMessage
+												room={room}
+												message={m}
+											/>
+										)}
+										{m.type === "PLAN" && (
+											<PlanMessage
+												message={m}
+												isLast={
+													mIdx ===
+													room.history.length - 1
+												}
+											/>
+										)}
+									</React.Fragment>
+								);
 							})}
 							{ENABLE_SUGGESTIONS && (
 								<RoomSuggestions room={room} />
@@ -328,6 +332,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							</div>
 						) : null}
 					</div>
+					{/* <ScrollBar orientation="horizontal"></ScrollBar> */}
 				</ScrollArea>
 
 				{showScrollup && (

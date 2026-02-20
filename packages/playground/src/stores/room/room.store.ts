@@ -894,6 +894,7 @@ export class RoomStore {
 			visible: true,
 			platform_generated: true,
 			modelId: this.model?.app_id,
+			modelType: this.model?.app_type,
 			dateCreated: new Date().toISOString(),
 			parts: parts,
 			tokens: 0,

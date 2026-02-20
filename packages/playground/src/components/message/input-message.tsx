@@ -3,6 +3,9 @@ import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -23,65 +26,72 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 		const { t } = useTranslation("chat");
 
 		return (
-			<div className="group">
-				<div className="ml-auto max-w-[600px] items-start self-stretch rounded-lg bg-accent px-5 py-4 leading-normal">
-					{message.parts.map((p, pIdx) => {
-						if (p.type === "TEXT") {
-							return (
-								<span
-									key={`${message.id}-part-${pIdx}`}
-									className="text-base text-foreground"
-								>
-									{p.text}
-								</span>
-							);
-						} else if (p.type === "MEDIA") {
-							return (
-								<div key={`${message.id}-part-${pIdx}`}>
-									<button
-										type="button"
-										className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted"
-										onClick={() => {
-											// this will select if there or open if not
-											room.addSidebarNode(
-												`FILE--${p.mediaInfo.fileLocation}`,
-												{
-													type: "tab",
-													name: p.mediaInfo.fileName,
-													component:
-														"room-file-editor",
-													config: {
+			<HoverCard>
+				<HoverCardTrigger asChild>
+					<div className="ml-auto max-w-[600px] items-start self-stretch rounded-lg bg-accent px-4 py-3 leading-normal">
+						{message.parts.map((p, pIdx) => {
+							if (p.type === "TEXT") {
+								return (
+									<span
+										key={`${message.id}-part-${pIdx}`}
+										className="text-foreground text-small"
+									>
+										{p.text}
+									</span>
+								);
+							} else if (p.type === "MEDIA") {
+								return (
+									<div key={`${message.id}-part-${pIdx}`}>
+										<button
+											type="button"
+											className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted"
+											onClick={() => {
+												// this will select if there or open if not
+												room.addSidebarNode(
+													`FILE--${p.mediaInfo.fileLocation}`,
+													{
+														type: "tab",
 														name: p.mediaInfo
 															.fileName,
-														path: p.mediaInfo
-															.fileLocation,
+														component:
+															"room-file-editor",
+														config: {
+															name: p.mediaInfo
+																.fileName,
+															path: p.mediaInfo
+																.fileLocation,
+														},
+														enableClose: true,
 													},
-													enableClose: true,
-												},
-											);
-										}}
-										aria-label={`View ${p.mediaInfo.fileName}`}
-									>
-										{p.mediaInfo.mimeType?.startsWith(
-											"image/",
-										) ? (
-											<img
-												className="w-full"
-												src={`data:image/png;base64,${p.mediaInfo.base64Data}`}
-												alt={p.mediaInfo.fileName}
-											/>
-										) : (
-											<FileIcon className="size-6 text-muted-foreground" />
-										)}
-									</button>
-								</div>
-							);
-						}
+												);
+											}}
+											aria-label={`View ${p.mediaInfo.fileName}`}
+										>
+											{p.mediaInfo.mimeType?.startsWith(
+												"image/",
+											) ? (
+												<img
+													className="w-full"
+													src={`data:image/png;base64,${p.mediaInfo.base64Data}`}
+													alt={p.mediaInfo.fileName}
+												/>
+											) : (
+												<FileIcon className="size-6 text-muted-foreground" />
+											)}
+										</button>
+									</div>
+								);
+							}
 
-						return null;
-					})}
-				</div>
-				<div className="ml-auto flex max-w-[600px] justify-end pt-2 opacity-0 transition-opacity group-hover:opacity-100">
+							return null;
+						})}
+					</div>
+				</HoverCardTrigger>
+				<HoverCardContent
+					className="flex w-auto flex-col items-center gap-0.5 p-1"
+					side="right"
+					align="start"
+				>
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
@@ -130,8 +140,8 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 							{t("input.copyMessage")}
 						</TooltipContent>
 					</Tooltip>
-				</div>
-			</div>
+				</HoverCardContent>
+			</HoverCard>
 		);
 	},
 );

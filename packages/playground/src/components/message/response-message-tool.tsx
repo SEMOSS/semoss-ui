@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
-import { Button, Spinner } from "@semoss/ui/next";
+import { Button, cn, Spinner } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
 
@@ -76,59 +76,41 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		return (
 			<div className="flex flex-col gap-2">
 				<div
-					className={`group/toolcard flex w-full flex-row items-center gap-5 rounded-lg border border-border bg-primary-foreground p-4 text-left shadow-sm ${
+					className={`group/toolcard flex w-full flex-row items-center gap-2 rounded-md border border-border px-3 py-2 text-left ${
 						isDisabled
-							? "cursor-not-allowed opacity-50"
-							: `cursor-pointer hover:bg-accent ${isActive ? "border-primary" : ""}`
+							? "opacity-50"
+							: `hover:bg-accent ${isActive ? "border-primary" : ""}`
 					}`}
 				>
 					<button
 						type="button"
 						disabled={isDisabled}
-						className="flex flex-1 flex-row items-center gap-5 text-left"
+						className={cn(
+							"flex flex-1 flex-row items-center gap-2 text-left",
+							isDisabled
+								? "cursor-not-allowed"
+								: "cursor-pointer",
+						)}
 						onClick={() => tool.openTool()}
 					>
-						<div className="flex items-center gap-2">
-							<div
-								className={`flex size-9 flex-col items-center justify-center overflow-hidden rounded p-2 ${
-									tool.status === "ERROR" ||
-									tool.status === "CANCELLED"
-										? "bg-destructive/10 text-destructive"
-										: "bg-primary/10 text-primary"
-								}`}
-							>
-								{icon}
-							</div>
+						<div
+							className={`flex size-6 flex-col items-center justify-center overflow-hidden rounded p-1 ${
+								tool.status === "ERROR" ||
+								tool.status === "CANCELLED"
+									? "bg-destructive/10 text-destructive"
+									: "bg-primary/10 text-primary"
+							}`}
+						>
+							{icon}
 						</div>
-						<div className="flex-1">
-							<div
-								className="truncate text-base"
-								title={tool.json.title}
-							>
-								{tool.json.title}
-							</div>
-							<div
-								className="truncate text-muted-foreground text-sm"
-								title={tool.json.title}
-							>
-								{/* {tool.title} */}
-								{tool.status === "ERROR"
-									? t("tool.failed")
-									: tool.status === "CANCELLED"
-										? t("tool.cancelled")
-										: tool.response
-											? t("tool.completed")
-											: tool.json._meta
-														.SMSS_MCP_EXECUTION ===
-													"ask"
-												? t("tool.clickToOpen")
-												: tool.status === "LOADING"
-													? toolExecutionMessage
-													: t("tool.autoExecute")}
-							</div>
+						<div
+							className="flex-1 truncate font-medium text-foreground text-sm"
+							title={tool.json.title}
+						>
+							{tool.json.title}
 						</div>
 					</button>
-					<div className="flex items-center gap-2">
+					<div className="flex flex-row items-center gap-2">
 						{!tool.response && (
 							<Button
 								type="button"
@@ -137,6 +119,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 								className="invisible hover:text-destructive group-hover/toolcard:visible"
 								onClick={(e) => {
 									e.stopPropagation();
+
 									message.saveToolExecution(
 										tool,
 										"",
@@ -151,6 +134,24 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 								{t("tool.cancel")}
 							</Button>
 						)}
+						<div
+							className="truncate text-muted-foreground text-xs"
+							title={tool.json.title}
+						>
+							{/* {tool.title} */}
+							{tool.status === "ERROR"
+								? t("tool.failed")
+								: tool.status === "CANCELLED"
+									? t("tool.cancelled")
+									: tool.response
+										? t("tool.completed")
+										: tool.json._meta.SMSS_MCP_EXECUTION ===
+												"ask"
+											? t("tool.ready")
+											: tool.status === "LOADING"
+												? toolExecutionMessage
+												: t("tool.autoExecute")}
+						</div>
 					</div>
 				</div>
 			</div>

@@ -35,7 +35,7 @@
 		"failed": "Échec de l'exécution de l'outil",
 		"cancelled": "Exécution de l'outil annulée",
 		"completed": "Terminé",
-		"clickToOpen": "Cliquez pour ouvrir",
+		"ready": "Prêt",
 		"autoExecute": "Cet outil est configuré pour s'exécuter automatiquement",
 		"cancel": "Annuler"
 	},

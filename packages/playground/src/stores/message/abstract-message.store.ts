@@ -57,13 +57,31 @@ export abstract class AbstractMessageStore {
 	abstract parts: AbstractPixelMessage["parts"];
 
 	/**
-	 * Active Child Position
+	 * Tokens used in the message, used for cost calculation
 	 */
 	tokens: number = 0;
 
 	/**
-	 * Set the message
-	 * @param id
+	 * Model Id used for the message
+	 */
+	modelId: string;
+
+	/**
+	 * Model Type used for the message
+	 */
+	modelType: string;
+
+	/**
+	 * Ornaments for the message, used for extra properties that are not essential
+	 */
+	ornaments: {
+		modelName?: string;
+	};
+
+	/**
+	 *
+	 * @param room
+	 * @param message
 	 */
 	constructor(room: RoomStore, message: AbstractPixelMessage) {
 		this.room = room;
@@ -74,6 +92,11 @@ export abstract class AbstractMessageStore {
 		this.id = message.messageId;
 		this.visible = message.visible;
 		this.tokens = message.tokens;
+		this.modelId = message.modelId;
+		this.modelType = message.modelType;
+		this.ornaments = {
+			modelName: message.ornaments?.modelName,
+		};
 
 		makeObservable(this, {
 			room: observable,
@@ -83,6 +106,9 @@ export abstract class AbstractMessageStore {
 			children: observable,
 			activeChildPosition: observable,
 			tokens: observable,
+			modelId: observable,
+			modelType: observable,
+			ornaments: observable,
 			siblings: computed,
 			previousSibling: computed,
 			nextSibling: computed,

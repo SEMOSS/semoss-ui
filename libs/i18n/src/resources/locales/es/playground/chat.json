@@ -35,7 +35,7 @@
 		"failed": "Error al ejecutar la herramienta",
 		"cancelled": "Ejecución de herramienta cancelada",
 		"completed": "Completado",
-		"clickToOpen": "Haz clic para abrir",
+		"ready": "Listo",
 		"autoExecute": "Esta herramienta está configurada para ejecutarse automáticamente",
 		"cancel": "Cancelar"
 	},

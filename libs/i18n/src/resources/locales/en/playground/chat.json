@@ -32,11 +32,11 @@
 		"confirmPlan": "Confirm Plan"
 	},
 	"tool": {
-		"failed": "Failed to execute tool",
-		"cancelled": "Tool execution cancelled",
+		"failed": "Failed",
+		"cancelled": "Cancelled",
 		"completed": "Completed",
-		"clickToOpen": "Click to open",
-		"autoExecute": "This tool is set to auto-execute",
+		"ready": "Ready",
+		"autoExecute": "Auto-executing",
 		"cancel": "Cancel"
 	},
 	"notifications": {

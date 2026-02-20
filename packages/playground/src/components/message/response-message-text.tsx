@@ -1,13 +1,19 @@
-import { CopyIcon, SkipForwardIcon } from "lucide-react";
+import { CopyIcon, Quote, SkipForwardIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Code,
+	H1,
+	H2,
+	H3,
+	H4,
 	Markdown,
+	P,
 	ScrollArea,
 	ScrollBar,
+	Separator,
 	Table,
 	Tooltip,
 	TooltipContent,
@@ -19,6 +25,85 @@ import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
 
 const TEXT_MARKDOWN_COMPONENTS = {
+	h1: ({ children, ...props }) => (
+		<H1 className="mt-5 font-semibold text-2xl text-inherit" {...props}>
+			{children}
+		</H1>
+	),
+	h2: ({ children, ...props }) => (
+		<H2 className="mt-4 font-semibold text-inherit text-xl" {...props}>
+			{children}
+		</H2>
+	),
+	h3: ({ children, ...props }) => (
+		<H3 className="mt-4 text-inherit text-lg" {...props}>
+			{children}
+		</H3>
+	),
+	h4: ({ children, ...props }) => (
+		<H4 className="mt-3 text-inherit text-lg" {...props}>
+			{children}
+		</H4>
+	),
+	h5: ({ children, ...props }) => (
+		<h5
+			className="mt-2 scroll-m-20 font-semibold text-base text-inherit tracking-tight"
+			{...props}
+		>
+			{children}
+		</h5>
+	),
+	h6: ({ children, ...props }) => (
+		<h6
+			className="mt-2 scroll-m-20 font-medium text-base text-inherit tracking-tight"
+			{...props}
+		>
+			{children}
+		</h6>
+	),
+	p: ({ children, ...props }) => (
+		<P className="mt-2 text-base text-inherit" {...props}>
+			{children}
+		</P>
+	),
+	a: ({ children, href, ...props }) => (
+		<a
+			href={href}
+			className="font-medium text-base text-primary underline underline-offset-1"
+			target="_blank"
+			rel="noopener noreferrer"
+			{...props}
+		>
+			{children}
+		</a>
+	),
+	ul: ({ children, ...props }) => (
+		<ul
+			className="my-1 ml-4 list-disc text-base text-inherit [&>li]:mt-1"
+			{...props}
+		>
+			{children}
+		</ul>
+	),
+	ol: ({ children, ...props }) => (
+		<ol
+			className="my-1 ml-4 list-decimal text-base text-inherit [&>li]:mt-1"
+			{...props}
+		>
+			{children}
+		</ol>
+	),
+	li: ({ children, ...props }) => (
+		<li className="text-base text-inherit" {...props}>
+			{children}
+		</li>
+	),
+	blockquote: ({ children, ...props }) => (
+		<Quote className="mt-1" {...props}>
+			{children}
+		</Quote>
+	),
+	hr: ({ ...props }) => <Separator className="mt-2 mb-1" {...props} />,
 	code: ({ children, className, ...props }) => {
 		const { t } = useTranslation("chat");
 		const match = /language-(\w+)/.exec(className || "");

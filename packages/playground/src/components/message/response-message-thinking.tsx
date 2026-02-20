@@ -1,4 +1,4 @@
-import { ChevronDownIcon, Quote } from "lucide-react";
+import { ChevronUpIcon, Quote } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { cn, H1, H2, H3, H4, Markdown, P, Separator } from "@semoss/ui/next";
@@ -123,11 +123,15 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		const isOpen = isForcedOpen || message.isThinking;
 
 		return (
-			<div className="relative">
+			<div className="relative mb-2">
+				<ChevronUpIcon
+					className="pointer-events-none absolute top-0 left-0 size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200 data-[state=closed]:rotate-90 data-[state=open]:rotate-180"
+					data-state={isOpen ? "open" : "closed"}
+				/>
 				{/* biome-ignore lint/a11y/noStaticElementInteractions: cannot make it a button because it contains interactive elements like links */}
 				<div
 					className={cn(
-						"w-full cursor-pointer overflow-hidden text-left text-muted-foreground text-xs italic hover:text-accent-foreground",
+						"w-full cursor-pointer overflow-hidden text-left text-muted-foreground text-xs hover:text-accent-foreground",
 						isOpen ? "" : "line-clamp-1",
 					)}
 					onClick={() => setIsForcedOpen(!isForcedOpen)}
@@ -140,7 +144,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 					data-state={isOpen ? "open" : "closed"}
 				>
 					<Markdown
-						className="pr-4 [&>*:first-child]:mt-0"
+						className="pl-6 [&>*:first-child]:mt-0"
 						components={THINKING_MARKDOWN_COMPONENTS}
 					>
 						{typewriter.isTyping
@@ -148,10 +152,6 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 							: part.thinking}
 					</Markdown>
 				</div>
-				<ChevronDownIcon
-					className="pointer-events-none absolute top-0 right-0 size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200 data-[state=closed]:rotate-90"
-					data-state={isOpen ? "open" : "closed"}
-				/>
 
 				{/* Fade overlay when collapsed */}
 				<div
