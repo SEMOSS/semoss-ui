@@ -6,8 +6,9 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -43,11 +44,12 @@ import type { App, MCPConfig, Workspace } from "@/types";
  * @component
  */
 export const NewRoomPage = observer(() => {
+	const { t } = useTranslation(["room", "workspace", "common"]);
 	const { root } = useRoot();
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
 			{
-				name: "Home",
+				name: t("workspace:breadcrumbs.home"),
 				path: "/",
 			},
 		],
@@ -99,10 +101,13 @@ export const NewRoomPage = observer(() => {
 
 	// Create a temporary RoomStore instance to handle options mutations
 	// This prevents re-renders on tool selection since MobX handles the mutations
-	const tempRoomStore = useState(() => {
-		const store = new RoomStore(root.theme, "temp");
-		// Initialize with default options
-		store.setOptions({
+	const tempRoomStore = useMemo(
+		() => new RoomStore(root.theme, "temp"),
+		[root.theme],
+	);
+	// On initial load, set the default options from the theme using the temporary RoomStore
+	useEffect(() => {
+		tempRoomStore.setOptions({
 			instructions: "",
 			mcp: [...(root.theme.defaultTools || [])],
 			tokenLength:
@@ -111,8 +116,7 @@ export const NewRoomPage = observer(() => {
 				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
 			workspace: null,
 		});
-		return store;
-	})[0];
+	}, [tempRoomStore, root.theme]);
 
 	/**
 	 * Functions
@@ -206,7 +210,7 @@ export const NewRoomPage = observer(() => {
 			navigate(`/room/${room.roomId}`);
 		} catch (error) {
 			toast.error(
-				`An error occurred while creating the room. Error: ${error.message}`,
+				t("room:errors.createRoom", { message: error.message }),
 			);
 		} finally {
 			setIsLoading(false);
@@ -280,7 +284,7 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore,
 	]);
 
-	// Handle knowledge vector engine from URL parameter
+	// // Handle knowledge vector engine from URL parameter
 	useEffect(() => {
 		if (getKnowledge.status !== "SUCCESS" || !getKnowledge.data?.[0]) {
 			return;
@@ -349,7 +353,7 @@ export const NewRoomPage = observer(() => {
 						) : (
 							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
 								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-									Welcome
+									{t("room:welcome")}
 								</div>
 								{root.theme.description ? (
 									<div className="text-center text-muted-foreground text-sm leading-normal">
@@ -384,7 +388,9 @@ export const NewRoomPage = observer(() => {
 											}}
 										>
 											<MessageCircleIcon />
-											<span className="flex-1">Ask</span>
+											<span className="flex-1">
+												{t("room:modes.ask")}
+											</span>
 											{mode.type === "chat" ? (
 												<div className="px-1">
 													<CheckIcon />
@@ -401,7 +407,9 @@ export const NewRoomPage = observer(() => {
 											}}
 										>
 											<ListTodoIcon />
-											<span className="flex-1">Plan</span>
+											<span className="flex-1">
+												{t("room:modes.plan")}
+											</span>
 
 											{mode.type === "plan" ? (
 												<div className="px-1">
@@ -449,9 +457,8 @@ export const NewRoomPage = observer(() => {
 											<Settings2Icon />
 											<span className="flex-1">
 												{isConfigurationOpen
-													? "Close"
-													: "Open"}{" "}
-												Settings
+													? t("room:settings.close")
+													: t("room:settings.open")}
 											</span>
 										</DropdownMenuItem>
 									</>
@@ -489,7 +496,9 @@ export const NewRoomPage = observer(() => {
 											<XIcon />
 										</Button>
 									</TooltipTrigger>
-									<TooltipContent>Close</TooltipContent>
+									<TooltipContent>
+										{t("room:settings.close")}
+									</TooltipContent>
 								</Tooltip>
 
 								<ScrollArea className="h-full w-full">
