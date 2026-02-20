@@ -6,7 +6,6 @@ import {
 	PlusIcon,
 	SearchIcon,
 	UsersRound,
-	UsersRound,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -16,6 +15,7 @@ import { usePixel } from "@semoss/sdk/react";
 import { MembersTable } from "@semoss/shared";
 import {
 	Button,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -40,14 +40,14 @@ import {
 } from "@semoss/ui/next";
 import logoImage from "@/assets/img/logo.svg";
 import {
-	PaginationButtons,
+	// PaginationButtons,
 	WorkspaceChatList,
 	WorkspaceMCPList,
-	WorkspaceMembersList,
+	// WorkspaceMembersList,
 } from "@/components";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/use-chat";
-import { usePagination } from "@/hooks/use-pagination";
+// import { usePagination } from "@/hooks/use-pagination";
 import type { Workspace } from "@/types";
 
 /**
@@ -65,7 +65,7 @@ export const WorkspaceDetailPage = observer(() => {
 	const navigate = useNavigate();
 	const { chat } = useChat();
 	const { root } = useRoot();
-	const pagination = usePagination();
+	// const pagination = usePagination();
 
 	/**
 	 * State
@@ -74,8 +74,8 @@ export const WorkspaceDetailPage = observer(() => {
 	const [tab, setTab] = useState<string>("chats");
 	const [search, setSearch] = useState<string>("");
 	const [deleteModal, setDeleteModal] = useState<boolean>(false);
-	const [isSharingModalOpen, setIsSharingModalOpen] =
-		useState<boolean>(false);
+	// const [isSharingModalOpen, setIsSharingModalOpen] =
+	// 	useState<boolean>(false);
 
 	/**
 	 * Library Hooks
@@ -131,8 +131,21 @@ export const WorkspaceDetailPage = observer(() => {
 	}
 
 	return (
-		<div className="relative h-full w-full overflow-hidden">
-			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4">
+		<div
+			className={cn(
+				"relative",
+				tab !== "members" && "h-full",
+				"w-full overflow-hidden",
+			)}
+		>
+			<div
+				className={cn(
+					"mx-auto flex",
+					tab !== "members" && "h-full",
+					tab === "members" && "px-4",
+					"w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4",
+				)}
+			>
 				<div className="flex flex-row gap-2">
 					<div className="items-center text-2xl">
 						<img
@@ -238,18 +251,23 @@ export const WorkspaceDetailPage = observer(() => {
 						</Button>
 					</div>
 					<div className="flex min-h-0 w-full flex-1 flex-col items-start overflow-hidden rounded-xl border border-border bg-card">
-						<div className="flex w-full flex-row gap-2 border-border border-b bg-primary-foreground p-4">
-							<InputGroup className="bg-background">
-								<InputGroupInput
-									placeholder={t("common:buttons.search")}
-									value={search}
-									onChange={(e) => setSearch(e.target.value)}
-								/>
-								<InputGroupAddon>
-									<SearchIcon />
-								</InputGroupAddon>
-							</InputGroup>
-							{/* Tab-specific actions go here */}
+						{tab === "members" ? null : (
+							<div className="flex w-full flex-row gap-2 border-border border-b bg-primary-foreground p-4">
+								<InputGroup className="bg-background">
+									<InputGroupInput
+										placeholder={t("common:buttons.search")}
+										value={search}
+										onChange={(e) =>
+											setSearch(e.target.value)
+										}
+									/>
+									<InputGroupAddon>
+										<SearchIcon />
+									</InputGroupAddon>
+								</InputGroup>
+								{/* Tab-specific actions go here */}
+								{/* For members tab, all actions are handled in the shared component itself */}
+								{/**
 							{tab === "members" ? (
 								<Button
 									variant="outline"
@@ -259,7 +277,9 @@ export const WorkspaceDetailPage = observer(() => {
 									{t("workspace:sharing.title")}
 								</Button>
 							) : null}
-						</div>
+							  */}
+							</div>
+						)}
 
 						<TabsContent
 							value="chats"
@@ -296,15 +316,18 @@ export const WorkspaceDetailPage = observer(() => {
 								/>
 							)}
 						</TabsContent>
-					<TabsContent
-						value="members"
-						className="w-full overflow-hidden rounded-md"
-					>
-						{tab === "members" && (
-							<MembersTable id={workspaceId} type="WORKSPACE" />
-						)}
-					</TabsContent>
 						<TabsContent
+							value="members"
+							className="w-full overflow-hidden rounded-md"
+						>
+							{tab === "members" && (
+								<MembersTable
+									id={workspaceId}
+									type="WORKSPACE"
+								/>
+							)}
+						</TabsContent>
+						{/* <TabsContent
 							value="members"
 							className="w-full overflow-hidden"
 						>
@@ -325,7 +348,7 @@ export const WorkspaceDetailPage = observer(() => {
 							<div className="flex w-full flex-row items-center justify-end gap-2 border-border border-t bg-primary-foreground p-4">
 								<PaginationButtons {...pagination} />
 							</div>
-						)}
+						)} */}
 					</div>
 				</Tabs>
 			</div>
