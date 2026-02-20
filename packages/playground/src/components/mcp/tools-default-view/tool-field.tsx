@@ -1,3 +1,4 @@
+import { useTranslation } from "@semoss/i18n";
 import {
 	Badge,
 	Checkbox,
@@ -64,6 +65,7 @@ export const ToolField = ({
 	value,
 	onChange,
 }: ToolFieldProps) => {
+	const { t } = useTranslation("mcp");
 	const displayName = capitalizeWords(fieldName);
 
 	switch (fieldSchema.type) {
@@ -92,7 +94,9 @@ export const ToolField = ({
 						>
 							<SelectTrigger className="w-full">
 								<SelectValue
-									placeholder={`Select ${displayName}`}
+									placeholder={t("tools.selectField", {
+										field: displayName,
+									})}
 								/>
 							</SelectTrigger>
 							<SelectContent>
@@ -133,7 +137,9 @@ export const ToolField = ({
 							id={fieldName}
 							value={value as string}
 							onChange={(e) => onChange(e.target.value)}
-							placeholder={`Enter ${displayName}`}
+							placeholder={t("tools.enterField", {
+								field: displayName,
+							})}
 							rows={4}
 							className="w-full"
 							readOnly={disabled}
@@ -163,7 +169,9 @@ export const ToolField = ({
 						id={fieldName}
 						value={value as string}
 						onChange={(e) => onChange(e.target.value)}
-						placeholder={`Enter ${displayName}`}
+						placeholder={t("tools.enterField", {
+							field: displayName,
+						})}
 						className="w-full"
 						readOnly={disabled}
 					/>
@@ -198,7 +206,9 @@ export const ToolField = ({
 						onChange={(e) =>
 							onChange(Number.parseFloat(e.target.value))
 						}
-						placeholder={`Enter ${displayName}`}
+						placeholder={t("tools.enterField", {
+							field: displayName,
+						})}
 						min={fieldSchema.minimum}
 						max={fieldSchema.maximum}
 						className="w-full"
@@ -271,7 +281,7 @@ export const ToolField = ({
 								e.target.value.split(",").map((s) => s.trim()),
 							)
 						}
-						placeholder="Enter comma-separated values"
+						placeholder={t("tools.enterValues")}
 						rows={2}
 						className="w-full"
 						readOnly={disabled}
@@ -335,7 +345,9 @@ export const ToolField = ({
 						id={fieldName}
 						value={value as string}
 						onChange={(e) => onChange(e.target.value)}
-						placeholder={`Enter ${displayName}`}
+						placeholder={t("tools.enterField", {
+							field: displayName,
+						})}
 						className="w-full"
 					/>
 				</div>

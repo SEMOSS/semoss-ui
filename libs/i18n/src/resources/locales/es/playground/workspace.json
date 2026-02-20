@@ -1,0 +1,117 @@
+{
+	"welcomeTitle": "Bienvenido al Gestor de Agentes",
+	"welcomeDescription": "Explore agentes de IA personalizados diseñados para satisfacer sus necesidades únicas e integrarse perfectamente en sus procesos.",
+	"form": {
+		"nameLabel": "Nombre",
+		"descriptionLabel": "Descripción",
+		"instructionsLabel": "Instrucciones",
+		"knowledgeLabel": "Conocimiento",
+		"toolboxLabel": "Caja de herramientas"
+	},
+	"actions": {
+		"create": "Crear",
+		"save": "Guardar",
+		"createAgent": "Crear un Agente",
+		"edit": "Editar",
+		"delete": "Eliminar",
+		"newChat": "Nuevo Chat"
+	},
+	"card": {
+		"noDescription": "No hay descripción disponible",
+		"deleteConfirmTitle": "¿Está seguro?",
+		"deleteConfirmDescription": "Esta acción es irreversible. Esto eliminará permanentemente el espacio de trabajo {{name}}."
+	},
+	"sharing": {
+		"title": "Añadir miembros",
+		"description": "Invitar miembros para acceder y colaborar en este agente.",
+		"searchPlaceholder": "Buscar un usuario...",
+		"searchUsers": "Buscar usuarios...",
+		"noUsersFound": "No se encontraron usuarios",
+		"hasAccess": "Tiene acceso",
+		"pendingInvite": "Invitación pendiente",
+		"membersToAdd": "Miembros a añadir",
+		"emptyState": "Añadir usuarios para compartir este espacio de trabajo",
+		"buttonAdding": "Añadiendo...",
+		"buttonAdd": "Añadir Miembros"
+	},
+	"members": {
+		"heading": "Quién tiene acceso",
+		"you": "(Tú)",
+		"owner": "Propietario",
+		"editor": "Editor",
+		"readOnly": "Solo lectura",
+		"removeAccess": "Eliminar acceso",
+		"removeSelfTitle": "Eliminarte del agente",
+		"removeSelfDescription": "Estás a punto de eliminar tu acceso a este agente. Necesitarás ser reinvitado para recuperar el acceso. Esta acción no se puede deshacer.",
+		"removeUserTitle": "Eliminar acceso al agente",
+		"removeUserDescription": "¿Está seguro de que desea eliminar el acceso de {{name}} a este agente? Esta acción no se puede deshacer.",
+		"changePermissionTitle": "Cambiar tu permiso",
+		"changePermissionDescription": "Estás a punto de cambiar tu permiso de {{oldPermission}} a {{newPermission}}. Esto afectará las acciones que puedes realizar en este agente.",
+		"changePermissionButton": "Cambiar permiso"
+	},
+	"mcp": {
+		"noToolboxes": "No se encontraron cajas de herramientas",
+		"noKnowledge": "No se encontraron bibliotecas de conocimiento",
+		"accessRequested": "Acceso solicitado",
+		"requestAccess": "Solicitar acceso",
+		"noAccess": "Sin acceso",
+		"requestAccessButton": "Solicitar Acceso",
+		"noDescription": "No hay descripción disponible.",
+		"tooltipNoAccess": "No tienes acceso a este {{type}}. Por favor, solicita acceso al propietario.",
+		"tooltipOpen": "Abrir este {{type}} en la plataforma",
+		"failedToLoad": "Error al cargar los recursos del espacio de trabajo",
+		"requestedSuccess": "Acceso solicitado a {{name}}",
+		"requestedFailed": "Error al solicitar acceso"
+	},
+	"chat": {
+		"noChats": "No se encontraron chats",
+		"error": "Error:",
+		"selectRoom": "Seleccionar sala"
+	},
+	"images": {
+		"agentIllustration": "Ilustración del agente"
+	},
+	"messages": {
+		"noResults": "No se encontraron resultados",
+		"userAlreadyAdded": "Usuario ya añadido",
+		"fetchUsersFailed": "Error al obtener usuarios",
+		"addAtLeastOne": "Por favor, añade al menos un usuario",
+		"addMembersSuccess": "{{count}} miembro añadido exitosamente",
+		"addMembersSuccess_plural": "{{count}} miembros añadidos exitosamente",
+		"addMembersFailed": "Error al añadir miembros",
+		"permissionUpdated": "Permiso actualizado exitosamente",
+		"permissionUpdateFailed": "Error al actualizar el permiso",
+		"userRemoved": "Usuario eliminado exitosamente",
+		"userRemoveFailed": "Error al eliminar usuario",
+		"fetchPermissionsFailed": "Error al obtener permisos de usuario"
+	},
+	"breadcrumbs": {
+		"home": "Inicio",
+		"agent": "Agente",
+		"loading": "Cargando",
+		"edit": "Editar",
+		"new": "Nuevo",
+		"room": "Sala"
+	},
+	"detail": {
+		"tabs": {
+			"myChats": "Mis Chats",
+			"knowledge": "Conocimiento",
+			"toolbox": "Caja de herramientas",
+			"members": "Miembros"
+		},
+		"failedToDelete": "Error al eliminar el agente",
+		"failedToLoad": "Error al cargar el agente: {{error}}"
+	},
+	"edit": {
+		"title": "Editar Agente",
+		"subtitle": "Actualiza los detalles de tu agente",
+		"errorTitle": "Error al Cargar el Agente",
+		"errorDescription": "Error al cargar los detalles del agente",
+		"failedToLoad": "Error al cargar el espacio de trabajo: {{error}}"
+	},
+	"new": {
+		"title": "Nuevo Agente",
+		"subtitle": "Crea un nuevo agente para comenzar"
+	}
+}
