@@ -221,12 +221,16 @@ export const MyProfilePage = () => {
 	const getModals = useAPI(["getEngines", adminMode, "", "MODEL"]);
 
 	// track selected default text generation model
-	const [selectedTextGenerationDefaultModel, setSelectedTextGenerationDefaultModel] =
-		useState<string>("");
+	const [
+		selectedTextGenerationDefaultModel,
+		setSelectedTextGenerationDefaultModel,
+	] = useState<string>("");
 
 	// track selected default code generation model
-	const [selectedCodeGenerationDefaultModel, setSelectedCodeGenerationDefaultModel] =
-		useState<string>("");
+	const [
+		selectedCodeGenerationDefaultModel,
+		setSelectedCodeGenerationDefaultModel,
+	] = useState<string>("");
 
 	// NATIVE Login USERID must match Username
 	const logins = configStore.store.config.logins;
@@ -287,7 +291,9 @@ export const MyProfilePage = () => {
 				(e) => e.app_id === configStore.defaultCodeGenerationModel,
 			);
 			if (matchingCodeEngine) {
-				setSelectedCodeGenerationDefaultModel(matchingCodeEngine.app_id);
+				setSelectedCodeGenerationDefaultModel(
+					matchingCodeEngine.app_id,
+				);
 			}
 		}
 	}, [
