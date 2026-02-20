@@ -9,6 +9,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
@@ -43,6 +44,7 @@ type VectorDocument = {
  * Knowledge detail page
  */
 export const KnowledgeDetailPage = observer(() => {
+	const { t } = useTranslation(["knowledge", "common"]);
 	const navigate = useNavigate();
 	const { knowledgeId } = useParams<{ knowledgeId: string }>();
 
@@ -66,13 +68,16 @@ export const KnowledgeDetailPage = observer(() => {
 
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
-			{ name: "Home", path: "/" },
-			{ name: "Knowledge Stores", path: "/knowledge" },
+			{ name: t("knowledge:breadcrumbs.home"), path: "/" },
+			{
+				name: t("knowledge:breadcrumbs.knowledgeStores"),
+				path: "/knowledge",
+			},
 			{
 				name:
 					getKnowledge.status === "SUCCESS"
-						? knowledge?.app_name || "Knowledge"
-						: "Loading",
+						? knowledge?.app_name || t("knowledge:detail.knowledge")
+						: t("knowledge:breadcrumbs.loading"),
 				path: `/knowledge/${knowledgeId}`,
 			},
 		],
@@ -112,23 +117,25 @@ export const KnowledgeDetailPage = observer(() => {
 						variant="ghost"
 						size="icon"
 						onClick={() => navigate(-1)}
-						aria-label="Back"
+						aria-label={t("common:buttons.back")}
 					>
 						<ArrowLeftIcon />
 					</Button>
 
 					<div className="flex-1 space-y-1">
 						<h1 className="text-2xl font-semibold leading-none">
-							{knowledge?.app_name || "Knowledge"}
+							{knowledge?.app_name ||
+								t("knowledge:detail.knowledge")}
 						</h1>
 						<p className="text-sm text-muted-foreground">
-							{knowledge?.description || "No description"}
+							{knowledge?.description ||
+								t("knowledge:messages.noDescription")}
 						</p>
 						{tags.length > 0 ? (
 							<div className="flex flex-wrap gap-2 pt-2">
-								{tags.map((t) => (
-									<Badge key={t} variant="secondary">
-										{t}
+								{tags.map((tag) => (
+									<Badge key={tag} variant="secondary">
+										{tag}
 									</Badge>
 								))}
 							</div>
@@ -141,7 +148,7 @@ export const KnowledgeDetailPage = observer(() => {
 								to={`/new?knowledgeId=${encodeURIComponent(knowledgeId)}`}
 							>
 								<MessageSquarePlusIcon />
-								New Chat
+								{t("knowledge:actions.newChat")}
 							</Link>
 						</Button>
 
@@ -150,7 +157,7 @@ export const KnowledgeDetailPage = observer(() => {
 							onClick={() => setIsEmbedExistingOpen(true)}
 						>
 							<FolderPlusIcon />
-							Embed documents
+							{t("knowledge:detail.embedDocuments")}
 						</Button>
 					</div>
 				</div>
@@ -161,7 +168,7 @@ export const KnowledgeDetailPage = observer(() => {
 						setIsEmbedOpen(false);
 						if (knowledgeCreated) {
 							toast.info(
-								"A new knowledge source was created. You can now select it to embed additional documents.",
+								t("knowledge:detail.newKnowledgeCreated"),
 							);
 						}
 					}}
@@ -180,24 +187,23 @@ export const KnowledgeDetailPage = observer(() => {
 
 				<Card className="rounded-xl border-border bg-card shadow-sm">
 					<CardHeader>
-						<CardTitle>Documents</CardTitle>
+						<CardTitle>{t("knowledge:documents.title")}</CardTitle>
 						<CardDescription>
-							Documents currently embedded in this knowledge
-							source.
+							{t("knowledge:detail.documentsDescription")}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						{getDocuments.status === "LOADING" ? (
 							<div className="text-sm text-muted-foreground">
-								Loading documents…
+								{t("knowledge:messages.loadingDocuments")}
 							</div>
 						) : getDocuments.status === "ERROR" ? (
 							<div className="text-sm text-destructive">
-								Failed to load documents.
+								{t("knowledge:detail.failedToLoadDocuments")}
 							</div>
 						) : getDocuments.data.length === 0 ? (
 							<div className="text-sm text-muted-foreground">
-								No documents found.
+								{t("knowledge:messages.noDocuments")}
 							</div>
 						) : (
 							<ScrollArea className="h-[50vh]">

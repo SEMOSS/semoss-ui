@@ -1,11 +1,13 @@
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { Skeleton } from "@semoss/ui/next";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RootStore } from "@/stores";
 
 export const EmbedPage: React.FC = observer(() => {
+	const { t } = useTranslation("workspace");
 	const { path } = useParams();
 	const { root } = useRoot();
 
@@ -31,11 +33,11 @@ export const EmbedPage: React.FC = observer(() => {
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
 			{
-				name: "Home",
+				name: t("breadcrumbs.home"),
 				path: "/",
 			},
 			{
-				name: isLoading ? "Loading" : matched.name,
+				name: isLoading ? t("breadcrumbs.loading") : matched.name,
 				path: `/embed/${path}`,
 			},
 		],
