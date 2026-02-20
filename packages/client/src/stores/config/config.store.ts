@@ -1,10 +1,8 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
 import { Env, logout, runPixel } from "@semoss/sdk/react";
-import {
-	getUserProjectPermission as getUserProjectLevelPermission,
-	registerUser,
-} from "@/api";
+import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared";
+import { registerUser } from "@/api";
 import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
 import {
@@ -141,6 +139,11 @@ interface ConfigStoreInterface {
 		adminOnlyVectorDelete: boolean;
 		adminOnlyVectorSetDiscoverable: boolean;
 		adminOnlyVectorSetPublic: boolean;
+		adminOnlyGuardrailAdd: boolean;
+		adminOnlyGuardrailAddAccess: boolean;
+		adminOnlyGuardrailDelete: boolean;
+		adminOnlyGuardrailSetDiscoverable: boolean;
+		adminOnlyGuardrailSetPublic: boolean;
 
 		[key: string]: unknown;
 	};
@@ -210,6 +213,11 @@ export class ConfigStore {
 			adminOnlyVectorDelete: false,
 			adminOnlyVectorSetDiscoverable: false,
 			adminOnlyVectorSetPublic: false,
+			adminOnlyGuardrailAdd: false,
+			adminOnlyGuardrailAddAccess: false,
+			adminOnlyGuardrailDelete: false,
+			adminOnlyGuardrailSetDiscoverable: false,
+			adminOnlyGuardrailSetPublic: false,
 		},
 	};
 	private _generalReactors: Array<string> = [];
@@ -323,6 +331,7 @@ export class ConfigStore {
 			MODEL: "Model",
 			STORAGE: "Storage",
 			VECTOR: "Vector",
+			GUARDRAIL: "Guardrail",
 		} as const;
 
 		const operationMap = {
@@ -722,12 +731,8 @@ export class ConfigStore {
 	 * @param appId - id of app to load into the workspace
 	 */
 	async createWorkspace(appId: string, insightId: string = "new") {
-		// check the permission
-		const getUserProjectPermission =
-			await getUserProjectLevelPermission(appId);
-
 		// get the role and throw an error if it is missing
-		const role = getUserProjectPermission.permission;
+		const role = await getUserProjectLevelPermission(appId);
 		if (!role) {
 			throw new Error("Unauthorized");
 		}

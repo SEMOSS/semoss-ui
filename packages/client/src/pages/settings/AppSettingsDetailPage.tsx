@@ -49,16 +49,13 @@ export const AppSettingsUserDetailPage = () => {
 			return;
 		}
 
-		if (
-			!getUserEnginePermission.data ||
-			!getUserEnginePermission.data.permission
-		) {
+		if (!getUserEnginePermission.data) {
 			setPermission(null);
 			return;
 		}
 
 		// set the permission
-		setPermission(getUserEnginePermission.data.permission);
+		setPermission(getUserEnginePermission.data);
 	}, [getUserEnginePermission.status, getUserEnginePermission.data]);
 
 	// if there is no permission, ignore
