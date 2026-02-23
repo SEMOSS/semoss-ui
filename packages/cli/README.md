@@ -341,6 +341,79 @@ semoss deploy --dry-run
 semoss deploy --rollback
 ```
 
+## Status Command
+
+Check the current state of your project — config, credentials, deployment history, backups — without making any changes.
+
+```sh
+# Show local project status
+semoss status
+
+# Include server connectivity and auth check (requires network)
+semoss status --check
+
+# Output as JSON (useful for scripting / CI)
+semoss status --json
+```
+
+### Status Flags
+
+| Flag | Description |
+|------|-------------|
+| `--env` / `-e` | Path to environment variables (default: `.env`) |
+| `--config` / `-c` | Path to configuration file (default: `smss.json`) |
+| `--check` | Verify server connectivity and authentication |
+| `--json` | Output status as JSON |
+
+### Example Output
+
+```
+📋 Project Status
+────────────────────────────────────────────────
+  Project:      My App
+  App ID:       abc-123-def-456
+  Endpoint:     https://my-server.com
+  Module:       /Monolith
+
+  Credentials:
+    ACCESS_KEY: ✓ set
+    SECRET_KEY: ✓ set
+
+  Config:       smss.json ✓
+  Targets:      java, py
+  Ignore:       14 patterns
+  Batch:        3 (dev, staging, prod)
+────────────────────────────────────────────────
+
+📦 Last Deployment
+────────────────────────────────────────────────
+  Status:       ✅ success
+  When:         2026-02-22T18:30:00Z (18h ago)
+  Targets:      java
+  Duration:     3.2s
+  Zip Size:     1.02 MB
+
+  History:      12 total (11 success, 0 failed, 1 dry-run)
+  Rollback:     ✓ available
+────────────────────────────────────────────────
+
+💾 Backups
+────────────────────────────────────────────────
+  Count:        4
+  Total Size:   26.1 MB
+────────────────────────────────────────────────
+```
+
+With `--check`:
+
+```
+🌐 Server
+────────────────────────────────────────────────
+  Connection:   ✅ reachable
+  Auth:         ✅ authorized
+────────────────────────────────────────────────
+```
+
 ## Publish Command
 
 Publish your SEMOSS app to the configured server or batch of servers. This command runs initialization, loads reactors, and publishes the app in one step.
