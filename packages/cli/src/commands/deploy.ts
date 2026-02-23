@@ -99,6 +99,19 @@ deploy java and python folders
 			description:
 				"Deploy to multiple instances via batch config in smss.json. Use 'all' or comma-separated names (e.g., 'dev,prod')",
 		}),
+		// backup flag
+		backup: Flags.boolean({
+			description:
+				"Create a server backup before deploying. Use --no-backup to skip.",
+			default: true,
+			allowNo: true,
+		}),
+		// backup retention flag
+		backupRetention: Flags.integer({
+			description:
+				"Number of backups to keep. Older backups are auto-pruned. Set to 0 to keep all.",
+			default: 5,
+		}),
 	};
 
 	private async loadConfig(
@@ -474,6 +487,84 @@ deploy java and python folders
 		}
 	}
 
+	/**
+	 * Prune old backups to keep only the most recent N.
+	 */
+	private async pruneBackups(
+		retention: number,
+		verbose: boolean = false,
+	): Promise<void> {
+		const backupBaseDir = ".semoss-backups";
+
+		try {
+			const entries = await fs.promises.readdir(backupBaseDir, {
+				withFileTypes: true,
+			});
+
+			const backupDirs: { name: string; timestamp: string }[] = [];
+
+			for (const entry of entries) {
+				if (!entry.isDirectory() || entry.name.startsWith("temp-")) {
+					continue;
+				}
+
+				const dirPath = path.join(backupBaseDir, entry.name);
+
+				// Only consider directories that have a backup.zip
+				try {
+					await fs.promises.access(path.join(dirPath, "backup.zip"));
+				} catch {
+					continue;
+				}
+
+				// Try to get timestamp from metadata, fall back to dir name
+				let timestamp = entry.name;
+				try {
+					const meta = JSON.parse(
+						await fs.promises.readFile(
+							path.join(dirPath, "metadata.json"),
+							"utf-8",
+						),
+					);
+					if (meta.timestamp) {
+						timestamp = meta.timestamp;
+					}
+				} catch {
+					// Use directory name
+				}
+
+				backupDirs.push({ name: entry.name, timestamp });
+			}
+
+			if (backupDirs.length <= retention) {
+				return; // Nothing to prune
+			}
+
+			// Sort by timestamp descending (newest first)
+			backupDirs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+			// Remove everything after the retention limit
+			const toRemove = backupDirs.slice(retention);
+
+			for (const backup of toRemove) {
+				const dirPath = path.join(backupBaseDir, backup.name);
+				await fs.promises.rm(dirPath, { recursive: true, force: true });
+
+				if (verbose) {
+					this.log(`🗑️  Pruned old backup: ${backup.name}`);
+				}
+			}
+
+			if (verbose && toRemove.length > 0) {
+				this.log(
+					`📋 Kept ${retention} backup(s), pruned ${toRemove.length}`,
+				);
+			}
+		} catch {
+			// Don't fail if pruning encounters issues
+		}
+	}
+
 	private async logDeploymentHistory(deployRecord: {
 		timestamp: string;
 		targets: string[] | "all";
@@ -524,7 +615,9 @@ deploy java and python folders
 
 	private async rollbackToPrevious(): Promise<string> {
 		const historyFile = ".semoss-deployments";
+		const backupBaseDir = ".semoss-backups";
 
+		// 1. Try the history file first (fast path)
 		try {
 			const content = await fs.promises.readFile(historyFile, "utf-8");
 			const history = JSON.parse(content) as Array<{
@@ -533,7 +626,6 @@ deploy java and python folders
 				timestamp: string;
 			}>;
 
-			// Find the most recent successful deployment with a backup
 			const backupRecord = history
 				.reverse()
 				.find(
@@ -543,12 +635,75 @@ deploy java and python folders
 						record.backupDir !== null,
 				);
 
-			if (!backupRecord || !backupRecord.backupDir) {
+			if (backupRecord?.backupDir) {
+				// Verify the backup directory and zip actually exist
+				const zipPath = path.join(backupRecord.backupDir, "backup.zip");
+				try {
+					await fs.promises.access(zipPath);
+					return backupRecord.backupDir;
+				} catch {
+					// Backup dir from history is gone, fall through to directory scan
+				}
+			}
+		} catch {
+			// History file missing or unreadable, fall through to directory scan
+		}
+
+		// 2. Fallback: scan .semoss-backups/ for valid backup directories
+		try {
+			const entries = await fs.promises.readdir(backupBaseDir, {
+				withFileTypes: true,
+			});
+
+			const validBackups: { dir: string; timestamp: string }[] = [];
+
+			for (const entry of entries) {
+				if (!entry.isDirectory() || entry.name.startsWith("temp-")) {
+					continue;
+				}
+
+				const dirPath = path.join(backupBaseDir, entry.name);
+				const zipPath = path.join(dirPath, "backup.zip");
+
+				try {
+					await fs.promises.access(zipPath);
+				} catch {
+					continue; // No backup.zip, skip
+				}
+
+				// Try to read metadata for timestamp, fall back to dir name
+				let timestamp = entry.name;
+				try {
+					const meta = JSON.parse(
+						await fs.promises.readFile(
+							path.join(dirPath, "metadata.json"),
+							"utf-8",
+						),
+					);
+					if (meta.timestamp) {
+						timestamp = meta.timestamp;
+					}
+				} catch {
+					// Use directory name for sorting
+				}
+
+				validBackups.push({ dir: dirPath, timestamp });
+			}
+
+			if (validBackups.length === 0) {
 				throw new Error("No previous deployment found for rollback.");
 			}
 
-			return backupRecord.backupDir;
+			// Sort by timestamp descending and return the most recent
+			validBackups.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+			return validBackups[0].dir;
 		} catch (error) {
+			if (
+				error instanceof Error &&
+				error.message === "No previous deployment found for rollback."
+			) {
+				throw error;
+			}
 			if (
 				error instanceof Error &&
 				"code" in error &&
@@ -933,6 +1088,20 @@ deploy java and python folders
 			}
 		}
 
+		// Validate target directories exist before doing any work (e.g., backup)
+		if (!isFullDeploy && !flags.rollback) {
+			for (const target of deployTargets as string[]) {
+				const targetPath = path.join(process.cwd(), target);
+				try {
+					await fs.promises.access(targetPath);
+				} catch {
+					this.error(
+						`Target directory "${target}" does not exist in ${process.cwd()}. Aborting before backup.`,
+					);
+				}
+			}
+		}
+
 		// Handle dry-run mode
 		if (flags.dryRun) {
 			this.log("🔍 DRY-RUN MODE: No actual deployment will occur");
@@ -962,7 +1131,7 @@ deploy java and python folders
 			},
 			{
 				title: "Creating Backup from server",
-				enabled: () => !flags.dryRun && !flags.rollback,
+				enabled: () => !flags.dryRun && !flags.rollback && flags.backup,
 				task: async (context) => {
 					const startTime = Date.now();
 
@@ -989,6 +1158,18 @@ deploy java and python folders
 								`✅ Backup created: ${backup.backupDir}`,
 								startTime,
 							);
+						}
+
+						// Prune old backups if retention is configured
+						if (flags.backupRetention > 0) {
+							try {
+								await this.pruneBackups(
+									flags.backupRetention,
+									shouldLog(flags.logLevel, "verbose"),
+								);
+							} catch {
+								// Don't fail deploy if pruning fails
+							}
 						}
 					} catch (error) {
 						// Always log backup failures to warn users
