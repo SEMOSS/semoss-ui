@@ -79,7 +79,7 @@
 	},
 	"menuWorkspace": {
 		"selectAgent": "Select Agent",
-		"searchPlaceholder": "Search workspaces",
+		"searchPlaceholder": "Search agents",
 		"notFound": "Not Found"
 	},
 	"menuUpload": {

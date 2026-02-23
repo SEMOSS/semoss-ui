@@ -14,20 +14,19 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { EngineFileEditor } from "./engine-file-editor";
-import { EngineFileExplorer } from "./engine-file-explorer";
-import { EngineMcpEditor } from "./engine-mcp-editor";
+import { AppFileEditor } from "./app-file-editor";
+import { AppFileExplorer } from "./app-file-explorer";
 
-interface EngineWorkspaceProps {
-	/** Engine to render */
-	engine: string;
+interface AppWorkspaceProps {
+	/** App to render */
+	app: string;
 
 	/** Model */
 	model: FlexLayout.Model;
 }
 
-export const EngineWorkspace: React.FC<EngineWorkspaceProps> = observer(
-	({ engine, model }) => {
+export const AppWorkspace: React.FC<AppWorkspaceProps> = observer(
+	({ app, model }) => {
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const [isMaximized, setIsMaximized] = useState(false);
 
@@ -74,12 +73,12 @@ export const EngineWorkspace: React.FC<EngineWorkspaceProps> = observer(
 								model={model}
 								onRenderTab={(node, renderValues) => {
 									const component = node.getComponent();
-									if (component === "engine-file-explorer") {
+									if (component === "app-file-explorer") {
 										renderValues.leading = (
 											<FolderTreeIcon className="size-4" />
 										);
 									} else if (
-										component === "engine-file-editor"
+										component === "app-file-editor"
 									) {
 										renderValues.leading = (
 											<FileIcon className="size-4" />
@@ -88,32 +87,23 @@ export const EngineWorkspace: React.FC<EngineWorkspaceProps> = observer(
 								}}
 								factory={(node) => {
 									const component = node.getComponent();
-									if (component === "engine-file-explorer") {
+									if (component === "app-file-explorer") {
 										return (
-											<EngineFileExplorer
+											<AppFileExplorer
 												layout={
 													layoutRef.current || null
 												}
 												node={node}
-												engine={engine}
+												app={app}
 											/>
 										);
 									} else if (
-										component === "engine-file-editor"
+										component === "app-file-editor"
 									) {
 										return (
-											<EngineFileEditor
+											<AppFileEditor
 												node={node}
-												engine={engine}
-											/>
-										);
-									} else if (
-										component === "engine-mcp-editor"
-									) {
-										return (
-											<EngineMcpEditor
-												node={node}
-												engine={engine}
+												app={app}
 											/>
 										);
 									}

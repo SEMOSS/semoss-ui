@@ -146,6 +146,9 @@ export class ChatStore {
 	 */
 	createRoom = async (
 		mode: "planning" | "chat",
+		prompt: string,
+		files: File[],
+		options: RoomStore["options"],
 		workspaceId?: string,
 	): Promise<RoomStore> => {
 		// create the room in a new insight
@@ -183,12 +186,23 @@ export class ChatStore {
 		// initialize the room
 		await room.initialize();
 
+		// set the options
+		await room.updateRoomOptions(options);
+
 		runInAction(() => {
 			// save it to the cache
 			this._store.rooms[roomId] = room;
 
 			// increment the roomCounter to force re-render of the nav
 			this._store.keys.roomCounter++;
+		});
+
+		// ask the room
+		room.askMessage(prompt, files).then(() => {
+			runInAction(() => {
+				// increment the roomCounter to force re-render of the nav
+				this._store.keys.roomCounter++;
+			});
 		});
 
 		// return the room
