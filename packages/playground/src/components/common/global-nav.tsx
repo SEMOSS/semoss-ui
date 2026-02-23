@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import {
 	ComputerIcon,
+	FileSearchIcon,
 	MoreVertical,
 	PencilIcon,
 	Search,
@@ -52,6 +53,7 @@ import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
 
 const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
+const ENABLE_KNOWLEDGE = import.meta.env.VITE_ENABLE_KNOWLEDGE === "true";
 
 /**
  * Renders a sidebar allowing users to navigate between pages
@@ -350,7 +352,20 @@ export const GlobalNav = observer(() => {
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					)}
-					{root.theme.sidebar.headerItems.map((item) => (
+					{ENABLE_KNOWLEDGE && (
+						<SidebarMenuItem>
+							<SidebarMenuButton
+								asChild
+								isActive={!!matchPath("/knowledge", pathname)}
+							>
+								<Link to={"/knowledge"} aria-label={"knowledge"}>
+									<FileSearchIcon />
+									{t("Document Library")}
+								</Link>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					)}
+					{/* {root.theme.sidebar.headerItems.map((item) => (
 						<GlobalNavItem
 							key={item.path}
 							name={item.name}
@@ -359,7 +374,7 @@ export const GlobalNav = observer(() => {
 							url={item.url}
 							embed={item.embed}
 						/>
-					))}
+					))} */}
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent

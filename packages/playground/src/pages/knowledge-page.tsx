@@ -36,6 +36,8 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-overlay";
+import { useGlobalBreadcrumbs } from "@/hooks";
+import { observer } from "mobx-react-lite";
 
 type DocumentLibraryEngine = {
 	name: string;
@@ -55,7 +57,7 @@ type EngineAsset = {
 	fileSize?: string;
 };
 
-export const DocumentLibrary = () => {
+export const DocumentLibrary = observer(() => {
 	const { t } = useTranslation(["knowledge", "common"]);
 	const centerId = useId();
 	const navigate = useNavigate();
@@ -76,6 +78,19 @@ export const DocumentLibrary = () => {
 
 	const { actions } = useInsight();
 	const [data, setData] = useState([]);
+
+	useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: t("knowledge:breadcrumbs.home"),
+				path: "/",
+			},
+			{
+				name: t("knowledge:breadcrumbs.library"),
+				path: "/knowledge",
+			},
+		],
+	});
 
 	useEffect(() => {
 		const getEngines = async () => {
@@ -597,4 +612,4 @@ export const DocumentLibrary = () => {
 			</div>
 		</TooltipProvider>
 	);
-};
+});
