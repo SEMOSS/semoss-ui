@@ -351,9 +351,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 											const isSelected =
 												tabNode.isSelected();
 											if (isSelected) {
-												designer.setSelected(
-													tabNode.getName(),
-												);
+												designer.setSelected("");
 											}
 
 											// Base test ID without suffix
