@@ -43,7 +43,6 @@ import {
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import type { Engine } from "@/types";
-import { ContextChart } from "./context-chart";
 
 interface RoomInputProps {
 	/** Classes to override */
@@ -72,9 +71,8 @@ interface RoomInputProps {
 	/** Has outstanding tools */
 	hasOutstandingTools?: boolean;
 
-	/** Percentage of context used */
-	tokensMax?: number;
-	tokensUsed?: number;
+	/** Content to render in the footer */
+	footer?: React.ReactNode;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
@@ -86,8 +84,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		MenuComponent,
 		onPrompt = () => null,
 		hasOutstandingTools = false,
-		tokensMax,
-		tokensUsed,
+		footer = null,
 	}) => {
 		const { t } = useTranslation("room");
 		const [isEmpty, setIsEmpty] = useState(true);
@@ -476,10 +473,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									/>
 								</DropdownMenuContent>
 							</DropdownMenu>
-							<ContextChart
-								tokensUsed={tokensUsed}
-								tokensMax={tokensMax}
-							/>
+							{footer}
 						</div>
 					)}
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
