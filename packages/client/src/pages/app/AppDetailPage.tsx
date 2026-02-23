@@ -53,6 +53,7 @@ import { AccessControl } from "./AppDetailTabs/AccessControl";
 import { Dependencies } from "./AppDetailTabs/Dependencies";
 import { Overview } from "./AppDetailTabs/Overview";
 import { SettingsTab } from "./AppDetailTabs/Settings";
+import { AppFileManagerPage } from "./app-file-manager-page";
 
 const OuterContainer = styled("div")({
 	height: "100%",
@@ -553,13 +554,14 @@ export const AppDetailPage = observer(() => {
 	const TABS_BY_PERMISSION: Record<string, string[]> = {
 		author: [
 			"Overview",
+			"Files",
 			"Access Control",
 			"Dependencies",
 			"Settings",
 			"SMSS",
 		],
-		editor: ["Overview", "Access Control"],
-		readOnly: ["Overview"],
+		editor: ["Overview", "Files", "Access Control", "Dependencies"],
+		readOnly: ["Overview", "Files", "Dependencies"],
 		discoverable: ["Overview"],
 	};
 
@@ -747,6 +749,12 @@ export const AppDetailPage = observer(() => {
 											value="Overview"
 										/>
 									)}
+									{visibleTabs.includes("Files") && (
+										<StyledToggleTabsGroupItem
+											label="Files"
+											value="Files"
+										/>
+									)}
 									{visibleTabs.includes("Access Control") && (
 										<StyledToggleTabsGroupItem
 											label="Access Control"
@@ -771,12 +779,14 @@ export const AppDetailPage = observer(() => {
 											value="SMSS"
 										/>
 									)}
-									Hi
 								</StyledToggleTabsGroup>
 							</StyledContentContainer>
 							<StyledTabsSection>
 								{selectedTab === "Overview" && (
 									<Overview appInfo={appInfo} />
+								)}
+								{selectedTab === "Files" && (
+									<AppFileManagerPage appId={appId || ""} />
 								)}
 								{selectedTab === "Access Control" && (
 									<AccessControl
