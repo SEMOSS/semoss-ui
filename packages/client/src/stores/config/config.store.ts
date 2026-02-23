@@ -257,7 +257,7 @@ export class ConfigStore {
 	}
 
 	/**
-	 * Get the default model ID (UUID) from user meta
+	 * Get the default Text Generation model ID (UUID) from user meta
 	 */
 	get defaultTextGenerationModel(): string {
 		const meta = this._store.user.meta as unknown;
@@ -271,6 +271,10 @@ export class ConfigStore {
 		}
 		return "";
 	}
+
+	/**
+	 * Get the default Code Generation model ID (UUID) from user meta
+	 */
 
 	get defaultCodeGenerationModel(): string {
 		const meta = this._store.user.meta as unknown;
@@ -515,25 +519,42 @@ export class ConfigStore {
 					meta: {},
 				};
 
+				// TODO: remove userEpoch from the backend
+				if (output.userEpoch) {
+					delete output.userEpoch;
+				}
+
 				// Helper function to extract first element from array values in meta
 				const transformMeta = (meta: unknown) => {
-					if (!meta || typeof meta !== 'object') return null;
-					return Object.entries(meta).reduce((acc, [key, value]) => {
-						acc[key] = Array.isArray(value) ? value[0] : value;
-						return acc;
-					}, {} as Record<string, unknown>);
+					if (!meta || typeof meta !== "object") return null;
+					return Object.entries(meta).reduce(
+						(acc, [key, value]) => {
+							acc[key] = Array.isArray(value) ? value[0] : value;
+							return acc;
+						},
+						{} as Record<string, unknown>,
+					);
 				};
 
 				// get the user based on provider
 				if (output.SAML) {
-					user = { ...output.SAML, meta: transformMeta(output.SAML?.meta) };
+					user = {
+						...output.SAML,
+						meta: transformMeta(output.SAML?.meta),
+					};
 				} else if (output.NATIVE) {
-					user = { ...output.NATIVE, meta: transformMeta(output.NATIVE?.meta) };
+					user = {
+						...output.NATIVE,
+						meta: transformMeta(output.NATIVE?.meta),
+					};
 					this._store.isNative = true;
 				} else if (Object.keys(output).length > 0) {
 					// This is a hack...since we don't have a single user
 					const firstKey = Object.keys(output)[0];
-					user = { ...output[firstKey], meta: transformMeta(output[firstKey]?.meta) };
+					user = {
+						...output[firstKey],
+						meta: transformMeta(output[firstKey]?.meta),
+					};
 				}
 
 				this._store.user.id = user.id || "";
