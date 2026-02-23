@@ -41,7 +41,6 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarRail,
-	Spinner,
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
@@ -113,7 +112,9 @@ export const GlobalNav = observer(() => {
 		}
 	>(
 		(limit, offset) =>
-			`GetPlaygroundRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""} limit = ${limit} , offset = ${offset} , sort = [ "DESC" ] ) ;`,
+			open
+				? `GetPlaygroundRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""} limit = ${limit} , offset = ${offset} , sort = [ "DESC" ] ) ;`
+				: "",
 
 		(response) => {
 			// if its less than the limit, we know its the end
@@ -383,11 +384,6 @@ export const GlobalNav = observer(() => {
 				{open && !getRooms.isLoading && getRooms.data.length === 0 && (
 					<div className="px-2 py-4 text-center">
 						<Muted>{t("messages.noRoomsFound")}</Muted>
-					</div>
-				)}
-				{open && getRooms.isLoading && (
-					<div className="flex items-center justify-center py-4">
-						<Spinner className="size-4" />
 					</div>
 				)}
 				{BUCKETS.map((bucket) => {

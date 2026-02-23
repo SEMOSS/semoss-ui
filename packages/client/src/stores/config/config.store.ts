@@ -256,52 +256,6 @@ export class ConfigStore {
 		return this._store.config;
 	}
 
-	/**
-	 * Get the default Text Generation model ID (UUID) from user meta
-	 */
-	get defaultTextGenerationModel(): string {
-		const meta = this._store.user.meta as unknown;
-		if (meta && typeof meta === "object") {
-			const tg = (meta as Record<string, unknown>)[
-				"text-generation-model"
-			] as unknown;
-			if (tg) {
-				return typeof tg === "string" ? tg : "";
-			}
-		}
-		return "";
-	}
-
-	/**
-	 * Get the default Code Generation model ID (UUID) from user meta
-	 */
-
-	get defaultCodeGenerationModel(): string {
-		const meta = this._store.user.meta as unknown;
-		if (meta && typeof meta === "object") {
-			const tg = (meta as Record<string, unknown>)[
-				"code-generation-model"
-			] as unknown;
-			if (tg) {
-				return typeof tg === "string" ? tg : "";
-			}
-		}
-		return "";
-	}
-
-	/**
-	 * Update user meta with a model selection
-	 * @param modelName - The model name (e.g., "text-generation-model", "code-generation-model")
-	 * @param modelId - The model ID to set
-	 */
-	updateUserMeta(modelName: string, modelId: string): void {
-		runInAction(() => {
-			this._store.user.meta = {
-				...(this._store.user.meta as Record<string, unknown>),
-				[modelName]: modelId,
-			};
-		});
-	}
 
 	/**
 	 * Get the config
@@ -557,11 +511,15 @@ export class ConfigStore {
 					};
 				}
 
-				this._store.user.id = user.id || "";
+			    this._store.user.id = user.id || "";
 				this._store.user.name = user.name || "";
 				this._store.user.email = user.email || "";
-				this._store.user.meta = user.meta || {};
 				this._store.userEpoch = user.userEpoch;
+
+				// sync meta into insight store
+				this._root.insightStore.setUserDefaultModel(
+					(user.meta as Record<string, unknown>) || {},
+				);
 
 				this._store.user.admin = isAdmin;
 

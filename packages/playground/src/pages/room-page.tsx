@@ -14,7 +14,6 @@ import { RoomContent, RoomSidebar, SaveWorkspaceDialog } from "@/components";
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine } from "@/types";
-
 /**
  * The page for a room
  *
