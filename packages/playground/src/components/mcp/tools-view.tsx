@@ -27,11 +27,11 @@ interface ToolsViewProps {
 	toolResponse?: string;
 
 	/** Parameters that were executed */
-	executedParameters?: Record<string, unknown>;
+	toolParameters?: Record<string, unknown>;
 }
 
 export const ToolsView: React.FC<ToolsViewProps> = observer(
-	({ room, app, message, tool, toolResponse, executedParameters }) => {
+	({ room, app, message, tool, toolResponse, toolParameters }) => {
 		/**
 		 * State
 		 */
@@ -69,11 +69,11 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						message: message || "",
 						id: tool?.id || "",
 						name: tool?.name || "",
-						parameters: toJS(tool?.parameters || {}),
+						parameters: toJS(toolParameters || {}),
 						roomId: room.roomId,
 						original_name: tool.original_name || "",
 						tool_response: toolResponse,
-						executedParameters: toJS(executedParameters || {}),
+						executedParameters: toJS(toolParameters || {}),
 					} satisfies MCPToolRequest,
 				},
 				"*",
@@ -174,7 +174,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						message={message}
 						tool={tool}
 						toolResponse={toolResponse}
-						executedParameters={executedParameters}
+						toolParameters={toolParameters}
 					/>
 				)}
 			</div>

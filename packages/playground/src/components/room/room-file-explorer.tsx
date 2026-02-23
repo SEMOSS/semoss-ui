@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "@semoss/i18n";
 import { download, useInsight } from "@semoss/sdk/react";
 import {
 	FileExplorer,
@@ -18,6 +19,7 @@ interface RoomFileExplorerProps {
 export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 	({ layout, room }) => {
 		const insight = useInsight();
+		const { t } = useTranslation("room");
 
 		return (
 			<FileExplorer
@@ -71,7 +73,7 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 							}}
 							secondaryActions={[
 								{
-									name: "Copy Path",
+									name: t("fileExplorer.copyPath"),
 									action: async (item) => {
 										try {
 											await navigator.clipboard.writeText(
@@ -79,14 +81,14 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 											);
 										} catch (_e) {
 											throw new Error(
-												"Failed to copy to clipboard",
+												t("fileExplorer.copyFailed"),
 											);
 										}
 									},
 								},
 								item.type !== "directory"
 									? {
-											name: "Download",
+											name: t("fileExplorer.download"),
 											action: async (item) => {
 												// save it
 												const { pixelReturn } =
@@ -111,7 +113,7 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 										}
 									: null,
 								{
-									name: "Delete",
+									name: t("fileExplorer.delete"),
 									action: async (item) => {
 										await insight.actions.run(
 											`DeleteInsightAssets(filePath=["${item.path}"]);`,

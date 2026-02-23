@@ -590,18 +590,17 @@ export const Terminal: React.FC<TerminalProps> = ({
 				// Arrow Up
 				case "\x1b[A": {
 					if (showOptionList.length === 0 || customHideOption) {
-						console.log("in if");
 						// decrement and make sure it is always greater than 0
 						updatedHistoryPosition--;
 						if (updatedHistoryPosition < 0) {
 							updatedHistoryPosition = 0;
+						} else {
+							// set the buffer to the command from the history
+							updatedBuffer.command =
+								history[updatedHistoryPosition].command;
+							updatedBuffer.position =
+								history[updatedHistoryPosition].command.length;
 						}
-
-						// set the buffer to the command from the history
-						updatedBuffer.command =
-							history[updatedHistoryPosition].command;
-						updatedBuffer.position =
-							history[updatedHistoryPosition].command.length;
 
 						// clear the line and add the buffer
 						terminalInstance.write(

@@ -8,6 +8,7 @@ import {
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -50,6 +51,7 @@ type RoomWorkspaceProps = {
 
 export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 	({ mode, onModeChange }) => {
+		const { t } = useTranslation("common");
 		const [open, setOpen] = useState(false);
 
 		const [search, setSearch] = useState("");
@@ -135,7 +137,7 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 							<PopoverContent className="p-0">
 								<Command shouldFilter={false}>
 									<CommandInput
-										placeholder="Search"
+										placeholder={t("placeholders.search")}
 										value={search}
 										onValueChange={setSearch}
 									/>
@@ -150,7 +152,7 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 													<Spinner className="size-4" />
 												</div>
 											) : (
-												"Not Found"
+												t("buttons.search")
 											)}
 										</CommandEmpty>
 										<CommandGroup>
