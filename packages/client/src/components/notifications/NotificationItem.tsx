@@ -52,10 +52,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
 				const priorityColor =
 					n.notification_priority === "HIGH"
-						? "bg-red-500"
+						? "bg-(--destructive)"
 						: n.notification_priority === "MEDIUM"
-							? "bg-yellow-500"
-							: "bg-green-500";
+							? "bg-(--chart-4)"
+							: "bg-(--accent)";
 
 				return (
 					<div
