@@ -77,14 +77,11 @@ const UnsavedChangesDialog = ({
 
 	return createPortal(
 		<div className="fixed inset-0 z-[9999] flex items-center justify-center">
-			{/* Backdrop */}
 			<div
 				className="absolute inset-0 bg-black/50"
 				onClick={onStay}
 				aria-hidden="true"
 			/>
-
-			{/* Dialog panel */}
 			<div
 				role="alertdialog"
 				aria-modal="true"
@@ -92,12 +89,10 @@ const UnsavedChangesDialog = ({
 				aria-describedby={descId}
 				className="relative z-10 w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-xl"
 			>
-				{/* Header */}
 				<div className="mb-4 flex items-start gap-3">
 					<span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10">
 						<TriangleAlert className="size-5 text-destructive" />
 					</span>
-
 					<div className="flex-1">
 						<P
 							id={titleId}
@@ -113,8 +108,6 @@ const UnsavedChangesDialog = ({
 							leave. Would you like to save before leaving?
 						</P>
 					</div>
-
-					{/* Close / Stay button */}
 					<Button
 						variant="ghost"
 						size="icon"
@@ -125,10 +118,7 @@ const UnsavedChangesDialog = ({
 						<XIcon className="size-4" />
 					</Button>
 				</div>
-
 				<Separator className="mb-4" />
-
-				{/* Actions */}
 				<div className="flex justify-end gap-2">
 					<Button
 						variant="outline"
@@ -171,7 +161,6 @@ const MultiTypeaheadField = ({
 	testId,
 }: MultiTypeaheadFieldProps) => {
 	const [inputValue, setInputValue] = useState("");
-
 	const tags = (Array.isArray(value) ? value : []).filter(
 		(t): t is string => typeof t === "string" && t.trim() !== "",
 	);
@@ -261,7 +250,6 @@ const SelectBoxField = ({
 	const selected = (Array.isArray(value) ? value : []).filter(
 		Boolean,
 	) as string[];
-
 	const filtered = options.filter((o) =>
 		o.toLowerCase().includes(search.toLowerCase()),
 	);
@@ -385,7 +373,6 @@ const SelectBoxField = ({
 						style={dropdownStyle}
 						className="rounded-md border border-input bg-popover shadow-md"
 					>
-						{/* Search row */}
 						<div className="flex items-center gap-2 border-b px-3 py-2">
 							<Search className="size-4 shrink-0 text-muted-foreground" />
 							<Input
@@ -397,8 +384,6 @@ const SelectBoxField = ({
 								className="h-auto flex-1 border-none bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
 							/>
 						</div>
-
-						{/* Options list */}
 						<div
 							className="overflow-y-auto py-1"
 							style={{ maxHeight: listMaxHeight }}
@@ -439,7 +424,7 @@ const SelectBoxField = ({
 // ─── EngineEditPage ───────────────────────────────────────────────────────────
 
 export const EngineEditPage: React.FC = observer(() => {
-	const { configStore, monolithStore } = useRootStore();
+	const { configStore, monolithStore, insightStore } = useRootStore();
 	const { name, active, type } = useEngine();
 	const { id, metadata, role, refresh } = active;
 	const navigate = useNavigate();
@@ -496,7 +481,7 @@ export const EngineEditPage: React.FC = observer(() => {
 		formState: { isDirty },
 	} = useForm<Record<string, unknown>>({ defaultValues: metadata || {} });
 
-	// ── Shared save helper ───────────────────────────────────────────────────
+	// ── Shared save helper ─────────────────────────────────────────────────
 	const runSave = (data: object, onSuccess: () => void) => {
 		const meta = Object.fromEntries(
 			Object.entries(data as Record<string, unknown>).filter(
@@ -529,7 +514,7 @@ export const EngineEditPage: React.FC = observer(() => {
 			);
 	};
 
-	// ── Navigation helpers ───────────────────────────────────────────────────
+	// ── Navigation helpers ─────────────────────────────────────────────────
 	const safeNavigate = (path: string) =>
 		isDirty ? setPendingNavPath(path) : navigate(path);
 	const handleCancelLeave = () => setPendingNavPath(null);
@@ -570,11 +555,10 @@ export const EngineEditPage: React.FC = observer(() => {
 		setGenerateOpen(false);
 	};
 
-	// ── Field renderer ───────────────────────────────────────────────────────
+	// ── Field renderer ─────────────────────────────────────────────────────
 	const renderField = (key: (typeof engineMetaKeys)[number]) => {
 		const { metakey, display_options } = key;
 		const label = metakey.charAt(0).toUpperCase() + metakey.slice(1);
-
 		const labelEl = (
 			<Label htmlFor={metakey} className="font-semibold text-sm">
 				{label}
@@ -725,7 +709,6 @@ export const EngineEditPage: React.FC = observer(() => {
 	return (
 		<div className="flex h-full w-full flex-col">
 			<div className="flex-1 overflow-y-auto">
-				{/* Breadcrumb nav */}
 				<Breadcrumb className="mb-6">
 					<BreadcrumbList>
 						<BreadcrumbItem>
@@ -756,7 +739,6 @@ export const EngineEditPage: React.FC = observer(() => {
 					</BreadcrumbList>
 				</Breadcrumb>
 
-				{/* Page header */}
 				<div className="mb-6 flex items-center justify-between">
 					<h3 className="font-semibold text-foreground text-xl">
 						Edit {active.name}
@@ -766,7 +748,7 @@ export const EngineEditPage: React.FC = observer(() => {
 						size="sm"
 						className="flex items-center gap-1.5 text-primary hover:bg-primary/10 hover:text-primary"
 						onClick={() => setGenerateOpen(true)}
-						disabled={!configStore.defaultTextGenerationModel}
+						disabled={!insightStore.defaultTextGenerationModel}
 						data-testid={formatToDataTestId(
 							`editEngineDetails-${name}-generate-btn`,
 						)}
@@ -778,13 +760,11 @@ export const EngineEditPage: React.FC = observer(() => {
 					</Button>
 				</div>
 
-				{/* Dynamic fields */}
 				<div className="space-y-6">
 					{engineMetaKeys.map(renderField)}
 				</div>
 			</div>
 
-			{/* Footer actions */}
 			<div className="flex items-center justify-end gap-2 py-4">
 				<Button
 					variant="outline"
@@ -803,12 +783,11 @@ export const EngineEditPage: React.FC = observer(() => {
 				</Button>
 			</div>
 
-			{/* Modals */}
 			<GenerateWithAIModal
 				open={generateOpen}
 				engineId={id}
 				engineType={type}
-				modelId={configStore.defaultTextGenerationModel}
+				modelId={insightStore.defaultTextGenerationModel}
 				onBack={() => setGenerateOpen(false)}
 				onGenerated={handleGenerated}
 			/>
