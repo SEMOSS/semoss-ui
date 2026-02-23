@@ -22,6 +22,7 @@ import {
 	InputMessage,
 	PlanMessage,
 	ResponseMessage,
+	RoomContextChart,
 	RoomInput,
 	RoomInputMenuFileExplorer,
 	RoomInputMenuKnowledge,
@@ -441,9 +442,13 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						),
 					)}
 					onPrompt={handlePrompt}
-					tokensMax={chat.models.contextWindow}
-					tokensUsed={room.tokensUsed}
 					hasOutstandingTools={room.hasUnfinishedTools}
+					footer={
+						<RoomContextChart
+							tokensUsed={room.tokensUsed}
+							tokensMax={chat.models.contextWindow}
+						/>
+					}
 				/>
 			</div>
 		</div>
