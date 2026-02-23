@@ -1,14 +1,17 @@
 import { useMemo } from "react";
-import { useParams } from "react-router-dom";
 import { InsightProvider } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
-import { EngineWorkspace } from "@/components/engine-workspace/engine-workspace";
+import { AppWorkspace } from "@/components/app-workspace/app-workspace";
 
 const DEFAULT_BORDER_SIZE = 300;
 
-export const EngineFileManagerPage = () => {
-	const { engineId } = useParams<{ engineId: string }>();
+interface AppFileManagerPageProps {
+	appId?: string;
+}
 
+export const AppFileManagerPage: React.FC<AppFileManagerPageProps> = ({
+	appId,
+}) => {
 	const model = useMemo(() => {
 		return FlexLayout.Model.fromJson({
 			global: {},
@@ -21,9 +24,9 @@ export const EngineFileManagerPage = () => {
 					children: [
 						{
 							type: "tab",
-							id: "ENGINE_FILE_EXPLORER",
+							id: "APP_FILE_EXPLORER",
 							name: "Files",
-							component: "engine-file-explorer",
+							component: "app-file-explorer",
 							config: {},
 							helpText: "File Explorer",
 							enableClose: false,
@@ -42,7 +45,7 @@ export const EngineFileManagerPage = () => {
 	return (
 		<div className="h-[60vh] w-full overflow-hidden">
 			<InsightProvider>
-				<EngineWorkspace engine={engineId || ""} model={model} />
+				<AppWorkspace app={appId || ""} model={model} />
 			</InsightProvider>
 		</div>
 	);
