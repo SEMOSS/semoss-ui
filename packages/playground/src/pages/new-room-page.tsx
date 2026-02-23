@@ -66,8 +66,8 @@ export const NewRoomPage = observer(() => {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 
-
-	const initialPrefill = (location.state as { description?: string } | null)?.description ?? "";
+	const initialPrefill =
+		(location.state as { description?: string } | null)?.description ?? "";
 	const [promptText, setPromptText] = useState(initialPrefill);
 	const workspaceIdSearchParams = searchParams.get("workspaceId");
 	const knowledgeId = searchParams.get("knowledgeId");

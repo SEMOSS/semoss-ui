@@ -381,356 +381,241 @@ export const PromptLibrary = observer(() => {
 	const hiddenCount = Math.max(0, selectedTags.length - 2);
 
 	return (
-				<>
-					<div className="flex items-center gap-2 py-5 text-primary">
-						{/* <img src={menuIcon} alt="Prompt Library Icon" /> */}
-						<span className="pt-0.5 font-semibold text-2xl leading-tight">
-							Prompt Library
-						</span>
+		<>
+			<div className="flex items-center gap-2 py-5 text-primary">
+				{/* <img src={menuIcon} alt="Prompt Library Icon" /> */}
+				<span className="pt-0.5 font-semibold text-2xl leading-tight">
+					Prompt Library
+				</span>
 
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									aria-label="Prompt Library Info"
-									variant="ghost"
-									size="icon-sm"
-									className="ml-1"
-								>
-									<Info className="h-4 w-4" />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent
-								side={isMobile ? "bottom" : "right"}
-							>
-								<div className="max-w-sm text-sm leading-relaxed">
-									Browse and use saved conversation starters
-									and templates, including your personal
-									collection and popular agency-wide prompts
-								</div>
-							</TooltipContent>
-						</Tooltip>
-					</div>
-
-					<div className="border-border border-b" />
-
-					<div className="mt-3 mb-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-						<div className="flex-1">
-							{!isMobile && (
-								<div className="mb-1 font-medium text-muted-foreground text-sm">
-									Search
-								</div>
-							)}
-
-							<div className="relative">
-								<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-								<input
-									className="h-10 w-full rounded-md border border-border bg-background pr-3 pl-9 text-sm outline-none focus:ring-2 focus:ring-ring"
-									placeholder="Search prompts"
-									value={search}
-									onChange={(e) => setSearch(e.target.value)}
-								/>
-							</div>
-						</div>
-
-						{categoryHasTags && (
-							<div className="w-full md:w-[320px]">
-								{!isMobile && (
-									<div className="mb-1 font-medium text-muted-foreground text-sm">
-										Filter by Tags
-									</div>
-								)}
-
-								<div className="relative">
-									<Button
-										type="button"
-										variant="outline"
-										className="h-10 w-full justify-between"
-										onClick={() =>
-											setIsTagMenuOpen((v) => !v)
-										}
-									>
-										<span className="truncate text-left text-sm">
-											{selectedTags.length === 0
-												? "Select tags..."
-												: selectedTags.join(", ")}
-										</span>
-										<span className="text-muted-foreground text-xs">
-											{selectedTags.length
-												? `${selectedTags.length} selected`
-												: ""}
-										</span>
-									</Button>
-
-									{selectedTags.length > 0 && (
-										<div className="mt-2 flex flex-wrap gap-2">
-											{displayedTags.map((tag) => (
-												<span
-													key={tag}
-													className="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-accent-foreground text-xs"
-												>
-													{tag}
-													<button
-														type="button"
-														className="rounded-sm opacity-80 hover:opacity-100"
-														onClick={() =>
-															handleRemoveTag(tag)
-														}
-														aria-label={`Remove ${tag}`}
-													>
-														<X className="h-3 w-3" />
-													</button>
-												</span>
-											))}
-											{hiddenCount > 0 && (
-												<span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-muted-foreground text-xs">
-													+{hiddenCount} more
-												</span>
-											)}
-										</div>
-									)}
-
-									{isTagMenuOpen && (
-										<div className="absolute z-10 mt-2 w-full rounded-md border border-border bg-background p-2 shadow-sm">
-											<div className="max-h-56 overflow-auto">
-												{availableTags
-													.filter(
-														(t) =>
-															t !==
-															selectedCategory.label,
-													) // avoid selecting the category tag redundantly
-													.map((tag) => {
-														const checked =
-															selectedTags.includes(
-																tag,
-															);
-														return (
-															<label
-																key={tag}
-																className="flex cursor-pointer items-center justify-between rounded-sm px-2 py-1 text-sm hover:bg-muted"
-															>
-																<span
-																	className={
-																		checked
-																			? "font-medium text-primary"
-																			: ""
-																	}
-																>
-																	{tag}
-																</span>
-																<input
-																	type="checkbox"
-																	checked={
-																		checked
-																	}
-																	onChange={(
-																		e,
-																	) => {
-																		const next =
-																			e
-																				.target
-																				.checked
-																				? [
-																						...selectedTags,
-																						tag,
-																					]
-																				: selectedTags.filter(
-																						(
-																							t2,
-																						) =>
-																							t2 !==
-																							tag,
-																					);
-																		setSelectedTags(
-																			next,
-																		);
-																	}}
-																/>
-															</label>
-														);
-													})}
-											</div>
-
-											<div className="mt-2 flex items-center justify-between gap-2">
-												<Button
-													type="button"
-													variant="ghost"
-													className="h-8 px-2 text-xs"
-													onClick={() =>
-														setSelectedTags([])
-													}
-													disabled={
-														selectedTags.length ===
-														0
-													}
-												>
-													Clear
-												</Button>
-												<Button
-													type="button"
-													className="h-8 px-2 text-xs"
-													onClick={() =>
-														setIsTagMenuOpen(false)
-													}
-												>
-													Done
-												</Button>
-											</div>
-										</div>
-									)}
-								</div>
-							</div>
-						)}
-
+				<Tooltip>
+					<TooltipTrigger asChild>
 						<Button
-							className="h-10 whitespace-nowrap"
-							onClick={() => {
-								setCurrentPrompt({
-									id: "new",
-									title: "",
-									context: "",
-									intent: "",
-									version: 1,
-									createdBy: userId,
-									dateCreated: new Date(),
-									global: false,
-									tags: [],
-									metaMap: {},
-								});
-								setIsEditModalOpen(true);
-							}}
+							aria-label="Prompt Library Info"
+							variant="ghost"
+							size="icon-sm"
+							className="ml-1"
 						>
-							<Plus className="mr-2 h-4 w-4" />
-							Create Prompt
+							<Info className="h-4 w-4" />
 						</Button>
+					</TooltipTrigger>
+					<TooltipContent side={isMobile ? "bottom" : "right"}>
+						<div className="max-w-sm text-sm leading-relaxed">
+							Browse and use saved conversation starters and
+							templates, including your personal collection and
+							popular agency-wide prompts
+						</div>
+					</TooltipContent>
+				</Tooltip>
+			</div>
 
-						{isEditModalOpen && (
-							<EditPromptModal
-								prompt={currentPrompt}
-								open={isEditModalOpen}
-								onClose={() => setIsEditModalOpen(false)}
-								onSave={handleAddNew}
-								isNewPrompt={true}
-							/>
-						)}
-					</div>
+			<div className="border-border border-b" />
 
-					{isMobile && isSmallDevice && (
-						<div className="h-[25vh] overflow-auto">
-							<div className="mt-3 mb-2">
-								<PromptCategories
-									categoryArray={categoryArray}
-									handleButtonClick={handleButtonClick}
-									selectedCategory={selectedCategory}
-								/>
-							</div>
-
-							<div className="mb-1 text-muted-foreground text-sm">
-								{selectedCategory.label === "My Prompts"
-									? myPromptsSearched.length
-									: categoryPromptsSearched.length}{" "}
-								prompts found
-							</div>
-
-							<div className="h-[25vh] overflow-auto pr-1">
-								{loadStatus === "LOADING" ? (
-									<div className="flex h-full items-center justify-center">
-										<div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-									</div>
-								) : (
-									<PromptGrid
-										selectedCategory={selectedCategory}
-										globalPrompts={
-											selectedCategory.label ===
-											"My Prompts"
-												? []
-												: categoryPromptsSearched
-										}
-										refresh={refreshPrompts}
-										myPrompts={myPromptsSearched}
-									/>
-								)}
-							</div>
+			<div className="mt-3 mb-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+				<div className="flex-1">
+					{!isMobile && (
+						<div className="mb-1 font-medium text-muted-foreground text-sm">
+							Search
 						</div>
 					)}
 
-					<div className="mt-3 mb-2">
-						<div className="relative flex w-full items-center">
-							{shouldShowChevrons && (
-								<Button
-									variant="outline"
-									size="icon-sm"
-									className="-left-2 absolute z-10"
-									onClick={() => {
-										const el = document.querySelector(
-											".categories-scroll-container",
-										);
-										if (el instanceof HTMLElement) {
-											el.scrollBy({
-												left: -220,
-												behavior: "smooth",
-											});
-										}
-									}}
-									aria-label="Scroll categories left"
-								>
-									<ChevronLeft className="h-4 w-4" />
-								</Button>
+					<div className="relative">
+						<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+						<input
+							className="h-10 w-full rounded-md border border-border bg-background pr-3 pl-9 text-sm outline-none focus:ring-2 focus:ring-ring"
+							placeholder="Search prompts"
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+						/>
+					</div>
+				</div>
+
+				{categoryHasTags && (
+					<div className="w-full md:w-[320px]">
+						{!isMobile && (
+							<div className="mb-1 font-medium text-muted-foreground text-sm">
+								Filter by Tags
+							</div>
+						)}
+
+						<div className="relative">
+							<Button
+								type="button"
+								variant="outline"
+								className="h-10 w-full justify-between"
+								onClick={() => setIsTagMenuOpen((v) => !v)}
+							>
+								<span className="truncate text-left text-sm">
+									{selectedTags.length === 0
+										? "Select tags..."
+										: selectedTags.join(", ")}
+								</span>
+								<span className="text-muted-foreground text-xs">
+									{selectedTags.length
+										? `${selectedTags.length} selected`
+										: ""}
+								</span>
+							</Button>
+
+							{selectedTags.length > 0 && (
+								<div className="mt-2 flex flex-wrap gap-2">
+									{displayedTags.map((tag) => (
+										<span
+											key={tag}
+											className="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-accent-foreground text-xs"
+										>
+											{tag}
+											<button
+												type="button"
+												className="rounded-sm opacity-80 hover:opacity-100"
+												onClick={() =>
+													handleRemoveTag(tag)
+												}
+												aria-label={`Remove ${tag}`}
+											>
+												<X className="h-3 w-3" />
+											</button>
+										</span>
+									))}
+									{hiddenCount > 0 && (
+										<span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-muted-foreground text-xs">
+											+{hiddenCount} more
+										</span>
+									)}
+								</div>
 							)}
 
-							<div
-								className={`categories-scroll-container w-full ${
-									shouldShowChevrons
-										? "mx-[30px] overflow-x-auto"
-										: "overflow-visible"
-								}`}
-								style={{ scrollbarWidth: "none" as const }}
-							>
-								<PromptCategories
-									categoryArray={categoryArray}
-									handleButtonClick={handleButtonClick}
-									selectedCategory={selectedCategory}
-									className={
-										shouldShowChevrons
-											? "flex min-w-max flex-nowrap justify-start"
-											: "flex min-w-max flex-nowrap justify-center"
-									}
-								/>
-							</div>
+							{isTagMenuOpen && (
+								<div className="absolute z-10 mt-2 w-full rounded-md border border-border bg-background p-2 shadow-sm">
+									<div className="max-h-56 overflow-auto">
+										{availableTags
+											.filter(
+												(t) =>
+													t !==
+													selectedCategory.label,
+											) // avoid selecting the category tag redundantly
+											.map((tag) => {
+												const checked =
+													selectedTags.includes(tag);
+												return (
+													<label
+														key={tag}
+														className="flex cursor-pointer items-center justify-between rounded-sm px-2 py-1 text-sm hover:bg-muted"
+													>
+														<span
+															className={
+																checked
+																	? "font-medium text-primary"
+																	: ""
+															}
+														>
+															{tag}
+														</span>
+														<input
+															type="checkbox"
+															checked={checked}
+															onChange={(e) => {
+																const next = e
+																	.target
+																	.checked
+																	? [
+																			...selectedTags,
+																			tag,
+																		]
+																	: selectedTags.filter(
+																			(
+																				t2,
+																			) =>
+																				t2 !==
+																				tag,
+																		);
+																setSelectedTags(
+																	next,
+																);
+															}}
+														/>
+													</label>
+												);
+											})}
+									</div>
 
-							{shouldShowChevrons && (
-								<Button
-									variant="outline"
-									size="icon-sm"
-									className="-right-2 absolute z-10"
-									onClick={() => {
-										const el = document.querySelector(
-											".categories-scroll-container",
-										);
-										if (el instanceof HTMLElement) {
-											el.scrollBy({
-												left: 220,
-												behavior: "smooth",
-											});
-										}
-									}}
-									aria-label="Scroll categories right"
-								>
-									<ChevronRight className="h-4 w-4" />
-								</Button>
+									<div className="mt-2 flex items-center justify-between gap-2">
+										<Button
+											type="button"
+											variant="ghost"
+											className="h-8 px-2 text-xs"
+											onClick={() => setSelectedTags([])}
+											disabled={selectedTags.length === 0}
+										>
+											Clear
+										</Button>
+										<Button
+											type="button"
+											className="h-8 px-2 text-xs"
+											onClick={() =>
+												setIsTagMenuOpen(false)
+											}
+										>
+											Done
+										</Button>
+									</div>
+								</div>
 							)}
 						</div>
 					</div>
+				)}
 
-					<div className="mt-3 mb-2 text-muted-foreground text-sm">
+				<Button
+					className="h-10 whitespace-nowrap"
+					onClick={() => {
+						setCurrentPrompt({
+							id: "new",
+							title: "",
+							context: "",
+							intent: "",
+							version: 1,
+							createdBy: userId,
+							dateCreated: new Date(),
+							global: false,
+							tags: [],
+							metaMap: {},
+						});
+						setIsEditModalOpen(true);
+					}}
+				>
+					<Plus className="mr-2 h-4 w-4" />
+					Create Prompt
+				</Button>
+
+				{isEditModalOpen && (
+					<EditPromptModal
+						prompt={currentPrompt}
+						open={isEditModalOpen}
+						onClose={() => setIsEditModalOpen(false)}
+						onSave={handleAddNew}
+						isNewPrompt={true}
+					/>
+				)}
+			</div>
+
+			{isMobile && isSmallDevice && (
+				<div className="h-[25vh] overflow-auto">
+					<div className="mt-3 mb-2">
+						<PromptCategories
+							categoryArray={categoryArray}
+							handleButtonClick={handleButtonClick}
+							selectedCategory={selectedCategory}
+						/>
+					</div>
+
+					<div className="mb-1 text-muted-foreground text-sm">
 						{selectedCategory.label === "My Prompts"
 							? myPromptsSearched.length
 							: categoryPromptsSearched.length}{" "}
 						prompts found
 					</div>
 
-					<div
-						className={`overflow-auto pr-1 ${isMobile ? "h-[25vh]" : "h-[calc(100vh-400px)]"}`}
-					>
+					<div className="h-[25vh] overflow-auto pr-1">
 						{loadStatus === "LOADING" ? (
 							<div className="flex h-full items-center justify-center">
 								<div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
@@ -748,6 +633,104 @@ export const PromptLibrary = observer(() => {
 							/>
 						)}
 					</div>
-				</>
+				</div>
+			)}
+
+			<div className="mt-3 mb-2">
+				<div className="relative flex w-full items-center">
+					{shouldShowChevrons && (
+						<Button
+							variant="outline"
+							size="icon-sm"
+							className="-left-2 absolute z-10"
+							onClick={() => {
+								const el = document.querySelector(
+									".categories-scroll-container",
+								);
+								if (el instanceof HTMLElement) {
+									el.scrollBy({
+										left: -220,
+										behavior: "smooth",
+									});
+								}
+							}}
+							aria-label="Scroll categories left"
+						>
+							<ChevronLeft className="h-4 w-4" />
+						</Button>
+					)}
+
+					<div
+						className={`categories-scroll-container w-full ${
+							shouldShowChevrons
+								? "mx-[30px] overflow-x-auto"
+								: "overflow-visible"
+						}`}
+						style={{ scrollbarWidth: "none" as const }}
+					>
+						<PromptCategories
+							categoryArray={categoryArray}
+							handleButtonClick={handleButtonClick}
+							selectedCategory={selectedCategory}
+							className={
+								shouldShowChevrons
+									? "flex min-w-max flex-nowrap justify-start"
+									: "flex min-w-max flex-nowrap justify-center"
+							}
+						/>
+					</div>
+
+					{shouldShowChevrons && (
+						<Button
+							variant="outline"
+							size="icon-sm"
+							className="-right-2 absolute z-10"
+							onClick={() => {
+								const el = document.querySelector(
+									".categories-scroll-container",
+								);
+								if (el instanceof HTMLElement) {
+									el.scrollBy({
+										left: 220,
+										behavior: "smooth",
+									});
+								}
+							}}
+							aria-label="Scroll categories right"
+						>
+							<ChevronRight className="h-4 w-4" />
+						</Button>
+					)}
+				</div>
+			</div>
+
+			<div className="mt-3 mb-2 text-muted-foreground text-sm">
+				{selectedCategory.label === "My Prompts"
+					? myPromptsSearched.length
+					: categoryPromptsSearched.length}{" "}
+				prompts found
+			</div>
+
+			<div
+				className={`overflow-auto pr-1 ${isMobile ? "h-[25vh]" : "h-[calc(100vh-400px)]"}`}
+			>
+				{loadStatus === "LOADING" ? (
+					<div className="flex h-full items-center justify-center">
+						<div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+					</div>
+				) : (
+					<PromptGrid
+						selectedCategory={selectedCategory}
+						globalPrompts={
+							selectedCategory.label === "My Prompts"
+								? []
+								: categoryPromptsSearched
+						}
+						refresh={refreshPrompts}
+						myPrompts={myPromptsSearched}
+					/>
+				)}
+			</div>
+		</>
 	);
 });

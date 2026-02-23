@@ -40,7 +40,12 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { EnterPlugin, FocusPlugin, MentionPlugin, PromptSyncPlugin } from "@/components";
+import {
+	EnterPlugin,
+	FocusPlugin,
+	MentionPlugin,
+	PromptSyncPlugin,
+} from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import type { Engine } from "@/types";
 
@@ -71,7 +76,7 @@ interface RoomInputProps {
 	/** Has outstanding tools */
 	hasOutstandingTools?: boolean;
 
-	/** Prompt and prompt change **/ 
+	/** Prompt and prompt change **/
 	prompt: string;
 
 	onPromptChange: React.Dispatch<React.SetStateAction<string>>;
@@ -317,7 +322,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							},
 							onError: (error) => {
 								console.error(error);
-							}
+							},
 						}}
 					>
 						<PromptSyncPlugin prompt={prompt} overwrite={true} />
@@ -400,10 +405,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									const nextText = root.getTextContent();
 
 									// set empty state
-									setIsEmpty(
-										nextText.trim().length ===
-											0,
-									);
+									setIsEmpty(nextText.trim().length === 0);
 
 									if (nextText !== prompt) {
 										onPromptChange(nextText);

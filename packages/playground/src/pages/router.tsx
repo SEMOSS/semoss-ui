@@ -10,10 +10,10 @@ import { LoginPage } from "./login-page";
 import { MainLayout } from "./main-layout";
 import { NewRoomPage } from "./new-room-page";
 import { NewWorkspacePage } from "./new-workspace-page";
+import { PromptLibrary } from "./prompt-library";
 import { RoomPage } from "./room-page";
 import { WorkspaceDetailPage } from "./workspace-detail-page";
 import { WorkspacePage } from "./workspace-page";
-import { PromptLibrary } from "./prompt-library";
 
 const router = createHashRouter(
 	[

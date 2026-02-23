@@ -33,11 +33,14 @@ export const EditPromptModal = ({
 
 	const sanitizeString = (str: string): string => {
 		let sanitized = String(str ?? "").trim();
-		while (sanitized.endsWith("\\")) sanitized = sanitized.slice(0, -1).trim();
+		while (sanitized.endsWith("\\"))
+			sanitized = sanitized.slice(0, -1).trim();
 		return sanitized;
 	};
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+	const handleChange = (
+		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+	) => {
 		const { name, value } = e.target;
 		setIsBeingEdited(true);
 		setEditedPrompt((prev) => ({ ...prev, [name]: value }));
@@ -89,7 +92,10 @@ export const EditPromptModal = ({
 
 					<div className="px-4 py-4">
 						<div className="flex flex-col gap-2">
-							<label className="font-medium text-sm" htmlFor={nameId}>
+							<label
+								className="font-medium text-sm"
+								htmlFor={nameId}
+							>
 								Name
 							</label>
 							<input
@@ -101,7 +107,10 @@ export const EditPromptModal = ({
 								className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
 							/>
 
-							<label className="mt-4 font-medium text-sm" htmlFor={contentId}>
+							<label
+								className="mt-4 font-medium text-sm"
+								htmlFor={contentId}
+							>
 								Prompt Content
 							</label>
 							<textarea
@@ -114,19 +123,25 @@ export const EditPromptModal = ({
 								className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
 							/>
 
-							<label className="mt-4 font-medium text-sm" htmlFor={intentId}>
+							<label
+								className="mt-4 font-medium text-sm"
+								htmlFor={intentId}
+							>
 								Intent
 							</label>
 							<input
 								id={intentId}
-								name="intent"              
+								name="intent"
 								value={editedPrompt.intent ?? ""}
-								onChange={handleChange}    
+								onChange={handleChange}
 								required
 								className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
 							/>
 
-							<label className="mt-4 font-medium text-sm" htmlFor={tagsId}>
+							<label
+								className="mt-4 font-medium text-sm"
+								htmlFor={tagsId}
+							>
 								Tags
 							</label>
 							<ChipsInput
@@ -134,7 +149,10 @@ export const EditPromptModal = ({
 								value={editedPrompt.tags || []}
 								onChange={(nextTags) => {
 									setIsBeingEdited(true);
-									setEditedPrompt((prev) => ({ ...prev, tags: nextTags }));
+									setEditedPrompt((prev) => ({
+										...prev,
+										tags: nextTags,
+									}));
 								}}
 								placeholder="Add tags and press Enter"
 							/>

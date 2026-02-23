@@ -217,7 +217,9 @@ export function PromptCard({
 					<button
 						type="button"
 						className={`flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-lg border bg-white transition-[transform,box-shadow] duration-200 ${
-							isHovered ? "-translate-y-0.5 border-slate-200 shadow-md" : "border-slate-100 shadow-sm"
+							isHovered
+								? "-translate-y-0.5 border-slate-200 shadow-md"
+								: "border-slate-100 shadow-sm"
 						}`}
 						onClick={handleCardClick}
 						onKeyDown={handleCardKeyDown}

@@ -131,8 +131,7 @@ export const PromptGrid = observer(function PromptGrid({
 	};
 
 	const handleSave = async (updatedPrompt: Prompt) => {
-
-		console.log('updated prompt', updatedPrompt);
+		console.log("updated prompt", updatedPrompt);
 
 		if (!updatedPrompt.title || !updatedPrompt.context) {
 			setSnackbar({
@@ -150,13 +149,16 @@ export const PromptGrid = observer(function PromptGrid({
 			intent: String(updatedPrompt.intent ?? "").trim(),
 			version: Number(updatedPrompt.version ?? 1),
 			created_by: String(updatedPrompt.createdBy ?? ""), // this should theoretically have a userId to fall back on, but the edit could not happen if it wasn't the user's card anyway
-			date_created: 
+			date_created:
 				updatedPrompt.dateCreated instanceof Date
 					? updatedPrompt.dateCreated.toISOString()
-					: String(updatedPrompt.dateCreated ?? new Date().toISOString()),
+					: String(
+							updatedPrompt.dateCreated ??
+								new Date().toISOString(),
+						),
 			global: Boolean(updatedPrompt.global ?? false),
 			tags: Array.isArray(updatedPrompt.tags) ? updatedPrompt.tags : [],
-			metaMap: updatedPrompt.metaMap ?? {}
+			metaMap: updatedPrompt.metaMap ?? {},
 		};
 
 		const response = await actions.run<[boolean]>(
@@ -212,7 +214,7 @@ export const PromptGrid = observer(function PromptGrid({
 	return (
 		<>
 			{!isMobile && (
-				  <div className="grid grid-cols-4 gap-0 items-stretch justify-items-stretch">
+				<div className="grid grid-cols-4 items-stretch justify-items-stretch gap-0">
 					{Array.isArray(listToRender) &&
 						listToRender.map((prompt) => (
 							<div key={prompt.id} className="h-full">
