@@ -188,6 +188,11 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		return -1;
 	}, [route, tabs, resolvedPath, pathname]);
 
+	// whether we're on the edit route for this engine
+	const isEdit = Boolean(
+		matchPath(`${resolvedPath.pathname}/edit`, pathname),
+	);
+
 	// if the engine isn't found, navigate to the Home Page
 	if (!engineId || getUserEnginePermission.status === "ERROR") {
 		return <Navigate to={`${route.path}`} replace />;
@@ -245,43 +250,47 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 				},
 			}}
 		>
-			<div className="flex flex-col gap-4">
-				<EngineHeader />
-				<div className="flex flex-col rounded-lg bg-(--muted)">
-					{tabs.length > 0 && (
-						<div>
-							<Tabs
-								value={
-									activeTabIdx !== -1
-										? tabs[activeTabIdx].path
-										: undefined
-								}
-								className="gap-0 bg-transparent"
-							>
-								<div className="w-[80%]">
-									<TabsList className="gap-2">
-										{tabs.map((t, idx) => (
-											<TabsTrigger
-												key={t.path}
-												value={t.path}
-												onClick={() =>
-													navigate(`${t.path}`)
-												}
-												data-testid={`engineLayout-${t.name}-tab`}
-											>
-												{t.name}
-											</TabsTrigger>
-										))}
-									</TabsList>
-								</div>
-							</Tabs>
+			{!isEdit ? 
+				<div className="flex flex-col gap-4">
+					<EngineHeader />
+					<div className="flex flex-col rounded-lg bg-(--muted)">
+						{tabs.length > 0 && (
+							<div>
+								<Tabs
+									value={
+										activeTabIdx !== -1
+											? tabs[activeTabIdx].path
+											: undefined
+									}
+									className="gap-0 bg-transparent"
+								>
+									<div className="w-[80%]">
+										<TabsList className="gap-2">
+											{tabs.map((t, idx) => (
+												<TabsTrigger
+													key={t.path}
+													value={t.path}
+													onClick={() =>
+														navigate(`${t.path}`)
+													}
+													data-testid={`engineLayout-${t.name}-tab`}
+												>
+													{t.name}
+												</TabsTrigger>
+											))}
+										</TabsList>
+									</div>
+								</Tabs>
+							</div>
+						)}
+						<div className="w-full bg-(--card) p-4">
+							<Outlet />
 						</div>
-					)}
-					<div className="w-full bg-(--card) p-4">
-						<Outlet />
 					</div>
 				</div>
-			</div>
+			:
+				<Outlet />
+			}
 		</EngineContext.Provider>
 	);
 };
