@@ -16,6 +16,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
 	BookmarkPlus,
 	CircleCheck,
+	CircleQuestionMark,
 	Copy,
 	Home,
 	MoreVertical,
@@ -193,7 +194,7 @@ export const LayersPanel = observer(
 			});
 		};
 
-		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
+		// biome-ignore lint/correctness/useExhaustiveDependencies: scrollIntoView, selectLayer, getAllParents are not dependencies
 		useEffect(() => {
 			const parents = state.getAllParents(designer.selected);
 			if (parents.length) {
@@ -219,6 +220,7 @@ export const LayersPanel = observer(
 			};
 		}, [designer.selected]);
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: handlePageSelection is not a dependency
 		useEffect(() => {
 			const handleClickOutside = (event: MouseEvent) => {
 				if (
@@ -251,7 +253,7 @@ export const LayersPanel = observer(
 		}, []);
 
 		// When searching, auto-expand ancestors and scroll to the first matching layer
-		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
+		// biome-ignore lint/correctness/useExhaustiveDependencies: scrollintoView and getAllParents are not dependencies
 		useEffect(() => {
 			if (!search) return;
 
@@ -923,7 +925,8 @@ export const LayersPanel = observer(
 			}
 			const variableName = state.getAlias(id);
 			const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
-			const WidgetIcon = BlockSettingsRegistry[block.widget].icon;
+			const WidgetIcon =
+				BlockSettingsRegistry[block.widget]?.icon || CircleQuestionMark;
 			const children = [];
 			for (const s in block.slots) {
 				children.push(...block.slots[s].children);

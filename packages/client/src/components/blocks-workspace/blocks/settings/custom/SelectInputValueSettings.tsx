@@ -96,11 +96,23 @@ export const SelectInputValueSettings = observer(
 		/**
 		 * Sync the data on change
 		 */
-		const onChange = (value: string | string[]) => {
-			// set the value
-			setValue(value);
+		const onChange = (value: unknown) => {
+			// Handle nulls and normalize nested arrays
+			let safeValue: string | string[];
 
-			// clear out he old timeout
+			if (value === null || value === undefined) {
+				safeValue = parsedData.multiple ? [] : "";
+			} else if (Array.isArray(value)) {
+				// Flatten any nested arrays and convert to strings
+				safeValue = value.flat(Infinity).map(String);
+			} else {
+				safeValue = String(value);
+			}
+
+			// set the value
+			setValue(safeValue);
+
+			// clear out the old timeout
 			if (timeoutRef.current) {
 				clearTimeout(timeoutRef.current);
 				timeoutRef.current = null;
@@ -108,8 +120,11 @@ export const SelectInputValueSettings = observer(
 
 			timeoutRef.current = setTimeout(() => {
 				try {
-					// set the value
-					setData(path, value as PathValue<D["data"], typeof path>);
+					// set the value using safeValue, not value
+					setData(
+						path,
+						safeValue as PathValue<D["data"], typeof path>,
+					);
 				} catch (e) {
 					console.log(e);
 				}
@@ -121,6 +136,38 @@ export const SelectInputValueSettings = observer(
 			if (!parsedData.options) {
 				// NOOP
 				return [];
+			}
+
+			// Check if options has the data.values structure (tabular format)
+			if (
+				typeof parsedData.options === "object" &&
+				"data" in parsedData.options &&
+				parsedData.options.data &&
+				typeof parsedData.options.data === "object" &&
+				"values" in parsedData.options.data &&
+				Array.isArray(parsedData.options.data.values) &&
+				"headers" in parsedData.options.data &&
+				Array.isArray(parsedData.options.data.headers)
+			) {
+				// Handle tabular data format
+				const { values, headers } = parsedData.options.data as {
+					values: unknown[][];
+					headers: string[];
+				};
+
+				if (headers.length === 1) {
+					// Single column - extract as simple array
+					arr = values.map((row: unknown[]) => row[0]);
+				} else {
+					// Multiple columns - convert rows to objects
+					arr = values.map((row: unknown[]) => {
+						const obj: Record<string, unknown> = {};
+						headers.forEach((header, idx) => {
+							obj[header] = row[idx];
+						});
+						return obj;
+					});
+				}
 			} else if (!Array.isArray(parsedData?.options)) {
 				if (typeof parsedData.options === "string") {
 					let opts: string = (parsedData.options as string).trim();
@@ -144,13 +191,15 @@ export const SelectInputValueSettings = observer(
 			} else {
 				arr = parsedData.options;
 			}
-			return arr.map((option) => {
+
+			const result = arr.map((option: unknown) => {
 				if (typeof option !== "string") {
 					return JSON.stringify(option);
 				} else {
 					return option;
 				}
 			});
+			return result;
 		}, [parsedData.options]);
 
 		const multipleple =

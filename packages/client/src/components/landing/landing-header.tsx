@@ -36,11 +36,19 @@ const CARDS = [
 		type: "agent",
 		testId: "new-app-agent-btn",
 	},
+	{
+		title: "Create an insight",
+		description:
+			"Create queries, select components and organize dashboards to get the most out of your data.",
+		image: Appagent,
+		type: "insight",
+		testId: "new-app-insight-btn",
+	},
 ] as const;
 
 interface LandingHeaderProps {
 	/** Trigger creation of a new app */
-	onCreate: (type: "blocks" | "code" | "agent") => void;
+	onCreate: (type: "blocks" | "code" | "agent" | "insight") => void;
 }
 
 export const LandingHeader: React.FC<LandingHeaderProps> = ({

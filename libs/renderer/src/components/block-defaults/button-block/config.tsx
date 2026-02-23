@@ -15,6 +15,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
 		color: "primary",
 		show: "true",
 		type: "button",
+		requiredBlocks: [],
 	},
 	listeners: {
 		onClick: {

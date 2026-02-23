@@ -7,6 +7,7 @@ import { DefaultBlocks } from "./components/block-defaults";
 import { Blocks, RendererEngine } from "./components/blocks";
 import { DefaultCells } from "./components/cell-defaults";
 import {
+	type CellRegistry,
 	MigrationManager,
 	type SerializedState,
 	STATE_VERSION,
@@ -42,12 +43,12 @@ export const Renderer = observer((props: RendererProps) => {
 	const [stateStore, setStateStore] = useState<StateStore | null>();
 	const queryStringParams = new URLSearchParams(useLocation().search);
 
-	const [homePage, setHomePage] = useState("");
+	const [homePage, setHomePage] = useState<string>("page-1");
 
 	const URLroute = window.location.href;
 
 	// Replace variable values with query params
-	const params = {};
+	const params: Record<string, string> = {};
 	queryStringParams.forEach((value, key) => {
 		params[key] = value;
 	});
@@ -99,7 +100,7 @@ export const Renderer = observer((props: RendererProps) => {
 					s = await migration.run(s);
 				}
 
-				const activePage = getCurrentPageId(s);
+				const activePage = getCurrentPageId({ blocks: s.blocks });
 				setHomePage(activePage);
 
 				// process Env.Tool parameters and add to the state
@@ -115,7 +116,10 @@ export const Renderer = observer((props: RendererProps) => {
 							const toValue = variable.to;
 							if (variable.type === "block") {
 								// Look into blocks section
-								if (s.blocks[toValue]) {
+								if (
+									typeof toValue === "string" &&
+									s.blocks[toValue]
+								) {
 									s.blocks[toValue].data.value = value;
 								}
 							} else if (
@@ -134,7 +138,7 @@ export const Renderer = observer((props: RendererProps) => {
 					mode: "interactive",
 					insightId: insightId,
 					state: s,
-					cellRegistry: DefaultCells,
+					cellRegistry: DefaultCells as unknown as CellRegistry,
 				});
 
 				// set it
@@ -148,6 +152,15 @@ export const Renderer = observer((props: RendererProps) => {
 				setIsLoading(false);
 			});
 	}, [state, appId, insightId, URLroute]);
+
+	// Update active page when URL changes (for navigation)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: URLroute is intentionally included to re-sync page state when URL changes externally.
+	useEffect(() => {
+		if (!stateStore) return;
+
+		const activePage = getCurrentPageId({ blocks: stateStore.blocks });
+		setHomePage(activePage);
+	}, [URLroute, stateStore]);
 
 	if (!stateStore || (isLoading && !preview)) {
 		if (!preview) {
@@ -177,7 +190,18 @@ export const Renderer = observer((props: RendererProps) => {
 	);
 });
 
-const getCurrentPageId = (state: SerializedState) => {
+type PageLookupState = {
+	blocks?: Record<
+		string,
+		{
+			id: string;
+			widget: string;
+			data?: Record<string, unknown>;
+		}
+	>;
+};
+
+const getCurrentPageId = (state: PageLookupState): string => {
 	const URLroute = window.location.href;
 	const match = URLroute.match(/([^/]+)$/);
 	const currentBlockRoute = match ? match[1] : "";
@@ -186,11 +210,14 @@ const getCurrentPageId = (state: SerializedState) => {
 	const blocks = state?.blocks;
 
 	if (!blocks) {
-		return;
+		return "page-1";
 	}
 	Object?.entries(blocks).forEach(([_, block]) => {
+		const blockRoute =
+			typeof block?.data?.route === "string" ? block.data.route : "";
+
 		if (block?.widget === "page") {
-			if (currentBlockRoute === block?.data.route) {
+			if (currentBlockRoute === blockRoute) {
 				activePageID = block?.id;
 			}
 		}

@@ -37,6 +37,18 @@ const NewPromptBuilderAppPage = lazy(() =>
 		default: m.NewPromptBuilderAppPage,
 	})),
 );
+const NewInsightBuilderAppPage = lazy(() =>
+	import("./app/new-insight-builder-app-page").then((m) => ({
+		default: m.NewInsightBuilderAppPage,
+	})),
+);
+
+const EditInsightBuilderAppPage = lazy(() =>
+	import("./app/edit-insight-builder-app-page").then((m) => ({
+		default: m.EditInsightBuilderAppPage,
+	})),
+);
+
 const ViewAppPage = lazy(() =>
 	import("./app/view-app-page").then((m) => ({ default: m.ViewAppPage })),
 );
@@ -104,6 +116,10 @@ export const Router = observer(() => {
 								path="new/prompt"
 								element={<NewPromptBuilderAppPage />}
 							/>
+							<Route
+								path="new/insight"
+								element={<NewInsightBuilderAppPage />}
+							/>
 							<Route path=":appId" element={<AppDetailLayout />}>
 								{APP_DETAIL_TABS.map((tab) =>
 									tab.path === "" ? (
@@ -136,6 +152,10 @@ export const Router = observer(() => {
 								element={<EditAppPage />}
 							/>
 							<Route
+								path=":appId/insight/edit"
+								element={<EditInsightBuilderAppPage />}
+							/>
+							<Route
 								path=":appId/dashboard/*"
 								element={
 									<AuditLogsDashboard catalogName={"Apps"} />
@@ -154,7 +174,7 @@ export const Router = observer(() => {
 				{showPrivacyNotice && (
 					<Route path="/privacy-notice" element={<PrivacyNotice />} />
 				)}
-				<Route path="/login" element={<LoginPage />} />
+				<Route path="/login" element={<LoginPage />}></Route>
 			</Routes>
 		</Suspense>
 	);

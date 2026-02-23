@@ -201,6 +201,9 @@ export const CreateAppPage = () => {
 							} else if (type === "agent") {
 								console.log(type);
 								navigate("/app/new/prompt");
+							} else if (type === "insight") {
+								console.log(type);
+								navigate("/app/new/insight");
 							}
 						}}
 					/>

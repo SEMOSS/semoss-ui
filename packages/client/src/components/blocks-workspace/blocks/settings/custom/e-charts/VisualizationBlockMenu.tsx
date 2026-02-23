@@ -26,6 +26,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 	const [_forceRender, setForceRender] = useState(false);
 	function updateFrame() {}
 
+
 	// biome-ignore lint/suspicious/noExplicitAny: echart event type
 	function handleStoreData(storeData: any[]) {
 		const hasValues = storeData.some(

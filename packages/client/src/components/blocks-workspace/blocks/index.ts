@@ -7,6 +7,7 @@ import { config as ChipSettingsConfig } from "./block-settings/chip-block";
 import { config as ContainerSettingsConfig } from "./block-settings/container-block";
 import { config as DividerSettingsConfig } from "./block-settings/divider-block";
 import { config as EchartVisualizationSettingsConfig } from "./block-settings/echart-visualization-block";
+import { config as FlexLayoutSettingsConfig } from "./block-settings/flex-layout-block";
 import { config as FlipCardSettingsConfig } from "./block-settings/flip-card-block";
 import { config as FormSettingsConfig } from "./block-settings/form-block";
 import { config as GridSettingsConfig } from "./block-settings/grid-block";
@@ -53,6 +54,7 @@ export const BlockSettingsRegistry = {
 	form: FormSettingsConfig,
 	divider: DividerSettingsConfig,
 	"e-chart": EchartVisualizationSettingsConfig,
+	"flex-layout": FlexLayoutSettingsConfig,
 	"flip-card": FlipCardSettingsConfig,
 	grid: GridSettingsConfig,
 	icon: IconSettingsConfig,
