@@ -3,16 +3,6 @@ import { Chip as MuiChip, type SxProps, styled } from "@mui/material";
 const StyledMuiChip = styled(MuiChip, {
 	shouldForwardProp: (prop) => prop !== "chipColor",
 })<{ chipColor: ChipProps["color"] }>(({ chipColor, theme }) => {
-	const palette = theme.palette as unknown as {
-		text: Record<string, string>;
-		green: Record<string, string>;
-		pink: Record<string, string>;
-		purple: Record<string, string>;
-		darkBlue: Record<string, string>;
-		primaryContrast: Record<string, string>;
-        red: Record<string, string>;
-		yellow: Record<string, string>;
-	};
 	return {
 		...(chipColor === "default" && {
 			backgroundColor: theme.palette.secondary.selected,
@@ -182,20 +172,6 @@ const StyledMuiChip = styled(MuiChip, {
 				backgroundColor: theme.palette.error.main,
 			},
 		}),
-		...(chipColor === "yellow" && {
-            backgroundColor: theme.palette.warning.main,
-            color: palette.text.white,
-            borderColor: "",
-            ".MuiSvgIcon-root": {
-                color: palette.text.white,
-            },
-            "& .MuiChip-deleteIcon": {
-                color: palette.text.white,
-            },
-            "&&:hover": {
-                backgroundColor: theme.palette.warning.main,
-            },
-        }),
 	};
 });
 
@@ -237,8 +213,7 @@ export interface ChipProps {
 		| "lcpurple"
 		| "lcindigo"
 		| "lcprimary"
-		| "red"
-		| "yellow";
+		| "red";
 
 	/**
 	 * If `true`, the component is disabled.

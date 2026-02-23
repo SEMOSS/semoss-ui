@@ -38,7 +38,6 @@ export interface PageStoreInterface {
 		 */
 		pinned: boolean;
 	};
-
 }
 
 /**
@@ -107,6 +106,7 @@ export class PageStore {
 	get sidebar() {
 		return this._store.sidebar;
 	}
+
 	/**
 	 * Actions
 	 */

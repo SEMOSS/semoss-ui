@@ -1,102 +1,19 @@
-import { Close } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import type * as React from "react";
 import { useEffect, useId, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import {
-	Box,
 	Button,
-	Drawer,
-	IconButton,
-	Stack,
-	styled,
-	Tab,
+	Sheet,
+	SheetContent,
 	Tabs,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TabsList,
+	TabsTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { NotificationItem } from "./NotificationItem";
 import type { NotificationRecord } from "./types";
-
-const StyledDrawer = styled(Drawer)(() => ({
-	"& .MuiDrawer-paper": {
-		width: 537,
-		display: "flex",
-		flexDirection: "column",
-		overflow: "hidden",
-		borderRadius: "8px",
-		margin: "8px",
-		height: "calc(100% - 16px)",
-	},
-}));
-
-const Header = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(1, 0, 1, 0),
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	margin: theme.spacing(0, 3, 0, 3),
-}));
-
-const List = styled(Stack)(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-	margin: theme.spacing(1),
-	padding: theme.spacing(1, 2, 1, 2),
-	overflow: "auto",
-}));
-
-const StyledIconButton = styled(IconButton)({
-	"& .MuiSvgIcon-root": { width: 20, height: 20 },
-});
-
-const Wrap = styled(Box)(({ theme }) => ({
-	borderBottom: `1px solid ${theme.palette.divider}`,
-	background: theme.palette.background.paper,
-	padding: theme.spacing(1, 0, 1, 0),
-	marginBottom: theme.spacing(2),
-	paddingBottom: theme.spacing(2),
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	margin: theme.spacing(0, 3, 0, 3),
-}));
-
-const SegmentedTabs = styled(Tabs)(({ theme }) => ({
-	height: 36,
-	border: `1px solid ${theme.palette.divider}`,
-	borderRadius: theme.shape.borderRadius * 1.5 || 12,
-	overflow: "hidden",
-	minHeight: 36,
-	"& .MuiTabs-indicator": { display: "none" },
-}));
-
-const PillTab = styled(Tab)(({ theme }) => ({
-	minWidth: "auto",
-	width: "auto",
-	height: 36,
-	minHeight: 36,
-	padding: "6px 16px",
-	fontWeight: 500,
-	color: theme.palette.text.secondary,
-	borderRight: `1px solid ${theme.palette.divider}`,
-	borderRadius: 0,
-	"&:last-of-type": { borderRight: "none" },
-	"&:hover": { backgroundColor: theme.palette.action.hover },
-	"&.Mui-selected": {
-		color: theme.palette.text.secondary,
-		backgroundColor: theme.palette.action.selected,
-	},
-}));
-
-const ClearButton = styled(Button)(({ theme }) => ({
-	fontWeight: 600,
-	color: theme.palette.primary.main,
-	minWidth: 0,
-	"&:hover": { backgroundColor: "transparent" },
-}));
 
 interface NotificationDrawerProps {
 	open: boolean;
@@ -112,7 +29,6 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 		const [offset, setOffset] = useState(0);
 		const [hasMore, setHasMore] = useState(true);
 		const [loading, setLoading] = useState(false);
-		const notification = useNotification();
 		const [selectedTab, setSelectedTab] = useState<
 			"all" | "read" | "unread"
 		>("all");
@@ -158,11 +74,8 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 				const notifications = first.output as NotificationRecord[];
 				return notifications;
 			} catch (e) {
-				notification.add({
-					color: "error",
-					message: e?.message ?? "Failed to fetch notifications",
-				});
-				return []; // return empty list so caller doesn’t break
+				toast.error(e?.message ?? "Failed to fetch notifications");
+				return []; // return empty list so caller doesn't break
 			}
 		};
 
@@ -261,15 +174,11 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 
 		/**
 		 * Handle tab change event.
-		 * @param {React.SyntheticEvent} _e - Event object.
 		 * @param {("all" | "unread" | "read")} v - New tab value.
 		 * @returns {void}
 		 */
-		const handleTabChange = (
-			_e: React.SyntheticEvent,
-			v: "all" | "unread" | "read",
-		) => {
-			setSelectedTab(v);
+		const handleTabChange = (v: string) => {
+			setSelectedTab(v as "all" | "unread" | "read");
 		};
 
 		/**
@@ -380,61 +289,76 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 
 		if (!open) return null;
 		return (
-			<StyledDrawer
-				anchor="right"
-				open={open}
-				onClose={onClose}
-				ModalProps={{ keepMounted: true }}
-			>
-				<Header>
-					<Typography variant="subtitle1" fontWeight="bold">
-						Notifications
-					</Typography>
-					<Stack direction="row" spacing={1}>
-						<StyledIconButton onClick={onClose}>
-							<Close />
-						</StyledIconButton>
-					</Stack>
-				</Header>
+			<Sheet open={open} onOpenChange={onClose}>
+				<SheetContent
+					side="right"
+					className="m-2 flex h-[calc(100%-16px)] flex-col overflow-hidden rounded-lg sm:max-w-lg"
+				>
+					{/* Header */}
+					<div className="flex items-center justify-between px-3 py-1">
+						<h2 className="font-bold text-base">Notifications</h2>
+					</div>
 
-				<Wrap>
-					<SegmentedTabs
-						value={selectedTab}
-						onChange={handleTabChange}
-						aria-label="Notification filters"
+					{/* Tabs and Clear All */}
+					<div className="mb-2 flex items-center justify-between border-b bg-background px-3 py-1 pb-2">
+						<Tabs
+							value={selectedTab}
+							onValueChange={handleTabChange}
+							className="h-9 min-h-9 overflow-hidden rounded-xl border"
+						>
+							<TabsList className="h-9 p-[3px]">
+								<TabsTrigger
+									value="all"
+									className="h-[calc(100%-1px)]"
+								>
+									All
+								</TabsTrigger>
+								<TabsTrigger
+									value="read"
+									className="h-[calc(100%-1px)]"
+								>
+									Read
+								</TabsTrigger>
+								<TabsTrigger
+									value="unread"
+									className="h-[calc(100%-1px)]"
+								>
+									Unread
+									{unreadCount ? `(${unreadCount})` : ""}
+								</TabsTrigger>
+							</TabsList>
+						</Tabs>
+
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => deleteNotifications()}
+							data-testid="clear-all-notifications"
+							className="min-w-0 font-semibold text-primary"
+						>
+							Clear All
+						</Button>
+					</div>
+
+					{/* Notification List */}
+					<div
+						id={notificationListId}
+						className="m-1 flex flex-col gap-2 overflow-auto px-2 py-1"
 					>
-						<PillTab label="All" value="all" />
-						<PillTab label="Read" value="read" />
-						<PillTab
-							label={`Unread${unreadCount ? `(${unreadCount})` : ""}`}
-							value="unread"
+						<NotificationItem
+							notifications={displayedNotifications}
+							getHrefFromNotification={getHrefFromNotification}
+							onMarkAsRead={MarkAsRead}
+							onDelete={deleteNotifications}
+							onLinkClick={onLinkClick}
+							loggedInUser={loggedInUser}
+							onLoadMore={loadMore}
+							hasMore={showLoadMoreButton}
+							loading={loading}
 						/>
-					</SegmentedTabs>
-
-					<ClearButton
-						size="small"
-						onClick={() => deleteNotifications()}
-						variant="outlined"
-						data-testid="clear-all-notifications"
-					>
-						Clear All
-					</ClearButton>
-				</Wrap>
-
-				<List id={notificationListId}>
-					<NotificationItem
-						notifications={displayedNotifications}
-						getHrefFromNotification={getHrefFromNotification}
-						onMarkAsRead={MarkAsRead}
-						onDelete={deleteNotifications}
-						onLinkClick={onLinkClick}
-						loggedInUser={loggedInUser}
-						onLoadMore={loadMore}
-						hasMore={showLoadMoreButton}
-						loading={loading}
-					/>
-				</List>
-			</StyledDrawer>
+					</div>
+				</SheetContent>
+			</Sheet>
 		);
 	},
 );

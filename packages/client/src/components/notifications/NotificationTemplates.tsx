@@ -1,23 +1,17 @@
 import type * as React from "react";
-import { styled, Typography } from "@semoss/ui";
 import { determineUserPermission } from "../app";
 import type { NotificationRecord, NotificationType } from "./types";
 
-const StyledTypography = styled(Typography)({
-	fontSize: "14px",
-	lineHeight: 1.43,
-	letterSpacing: "0.17px",
-	display: "inline",
-});
-
 const Message = ({ children }: { children: React.ReactNode }) => (
-	<StyledTypography variant="body2">{children}</StyledTypography>
+	<span className="inline text-sm leading-[1.43] tracking-[0.17px]">
+		{children}
+	</span>
 );
 
 const Bold = ({ children }: { children: React.ReactNode }) => (
-	<StyledTypography variant="body1" fontWeight="bold">
+	<span className="inline font-bold text-sm leading-[1.43] tracking-[0.17px]">
 		{children}
-	</StyledTypography>
+	</span>
 );
 
 const FullStop = () => <Message>.</Message>;
@@ -28,6 +22,8 @@ export const getNotificationMessage = (
 	n: NotificationRecord,
 	loggedInUser?: string,
 ) => {
+	console.log("Generating message for notification:", n);
+	console.log("Logged in user:", loggedInUser);
 	const type = (n.notification_type || "").trim() as NotificationType;
 	const isSelf = !!loggedInUser && loggedInUser === n.recipient_user_name;
 	const isAuthor =
