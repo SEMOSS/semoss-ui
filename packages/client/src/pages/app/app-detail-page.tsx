@@ -60,6 +60,7 @@ import { AccessControl } from "./AppDetailTabs/access-control";
 import { Dependencies } from "./AppDetailTabs/dependencies-tab";
 import { Overview } from "./AppDetailTabs/overview-tab";
 import { SettingsTab } from "./AppDetailTabs/settings-tab";
+import { AppFileManagerPage } from "./app-file-manager-page";
 
 interface AppDetailsProps {
 	showNav?: boolean;
@@ -388,14 +389,15 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	const TABS_BY_PERMISSION: Record<string, string[]> = {
 		author: [
 			"Overview",
+			"Files",
 			"Access Control",
 			"Dependencies",
 			"Settings",
 			"SMSS",
 			"MCP Usage",
 		],
-		editor: ["Overview", "Access Control"],
-		readOnly: ["Overview"],
+		editor: ["Overview", "Files", "Access Control", "Dependencies"],
+		readOnly: ["Overview", "Files", "Dependencies"],
 		discoverable: ["Overview"],
 	};
 
@@ -618,6 +620,14 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 													Access Control
 												</TabsTrigger>
 											)}
+											{visibleTabs.includes("Files") && (
+												<TabsTrigger
+													value="Files"
+													className="p-3"
+												>
+													Files
+												</TabsTrigger>
+											)}
 											{visibleTabs.includes(
 												"Dependencies",
 											) && (
@@ -678,6 +688,12 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 												permission={permission}
 											/>
 										</div>
+									</TabsContent>
+									<TabsContent
+										value="Files"
+										className="mt-2 w-full"
+									>
+										<AppFileManagerPage appId={appId} />
 									</TabsContent>
 									<TabsContent
 										value="Dependencies"
