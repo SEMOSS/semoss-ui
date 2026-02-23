@@ -40,7 +40,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
+import { EnterPlugin, FocusPlugin, MentionPlugin, PromptSyncPlugin } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import type { Engine } from "@/types";
 
@@ -71,6 +71,11 @@ interface RoomInputProps {
 	/** Has outstanding tools */
 	hasOutstandingTools?: boolean;
 
+	/** Prompt and prompt change **/ 
+	prompt: string;
+
+	onPromptChange: React.Dispatch<React.SetStateAction<string>>;
+
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
 }
@@ -84,6 +89,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		MenuComponent,
 		onPrompt = () => null,
 		hasOutstandingTools = false,
+		prompt,
+		onPromptChange,
 		footer = null,
 	}) => {
 		const { t } = useTranslation("room");
@@ -298,11 +305,22 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							namespace: "RoomInput",
 							theme: {},
 							nodes: [],
+							editorState: () => {
+								if (!prompt) return;
+
+								const root = $getRoot();
+								root.clear();
+								const p = $createParagraphNode();
+								p.append($createTextNode(prompt));
+								root.append(p);
+								root.selectEnd();
+							},
 							onError: (error) => {
 								console.error(error);
-							},
+							}
 						}}
 					>
+						<PromptSyncPlugin prompt={prompt} overwrite={true} />
 						<PlainTextPlugin
 							contentEditable={
 								<div className="relative">
@@ -379,12 +397,17 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								editorState.read(() => {
 									// get the root
 									const root = $getRoot();
+									const nextText = root.getTextContent();
 
 									// set empty state
 									setIsEmpty(
-										root.getTextContent().trim().length ===
+										nextText.trim().length ===
 											0,
 									);
+
+									if (nextText !== prompt) {
+										onPromptChange(nextText);
+									}
 								});
 							}}
 						/>

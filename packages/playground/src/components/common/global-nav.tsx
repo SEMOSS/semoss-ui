@@ -4,6 +4,7 @@ import {
 	MoreVertical,
 	PencilIcon,
 	Search,
+	SquareLibrary,
 	SquarePenIcon,
 	StarIcon,
 	TrashIcon,
@@ -52,6 +53,7 @@ import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
 
 const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
+const ENABLE_PROMPT_LIBRARY = import.meta.env.VITE_ENABLE_PROMPT_LIBRARY === "true";
 
 /**
  * Renders a sidebar allowing users to navigate between pages
@@ -337,6 +339,19 @@ export const GlobalNav = observer(() => {
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 
+					{ENABLE_PROMPT_LIBRARY && (
+						<SidebarMenuItem>
+							<SidebarMenuButton
+								asChild
+								isActive={!!matchPath("/prompt-library", pathname)}
+							>
+								<Link to={"/prompt-library"} aria-label={"Prompt Library"}>
+									<SquareLibrary />
+									{t("Prompt Library")}
+								</Link>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					)}
 					{ENABLE_AGENT && (
 						<SidebarMenuItem>
 							<SidebarMenuButton

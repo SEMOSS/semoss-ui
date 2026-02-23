@@ -13,6 +13,7 @@ import { NewWorkspacePage } from "./new-workspace-page";
 import { RoomPage } from "./room-page";
 import { WorkspaceDetailPage } from "./workspace-detail-page";
 import { WorkspacePage } from "./workspace-page";
+import { PromptLibrary } from "./prompt-library";
 
 const router = createHashRouter(
 	[
@@ -45,6 +46,10 @@ const router = createHashRouter(
 										{
 											path: "embed/:path",
 											element: <EmbedPage />,
+										},
+										{
+											path: "prompt-library",
+											element: <PromptLibrary />,
 										},
 										{
 											path: "agent",

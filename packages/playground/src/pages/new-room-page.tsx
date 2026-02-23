@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
@@ -62,9 +62,13 @@ export const NewRoomPage = observer(() => {
 	});
 
 	const { chat } = useChat();
+	const location = useLocation();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 
+
+	const initialPrefill = (location.state as { description?: string } | null)?.description ?? "";
+	const [promptText, setPromptText] = useState(initialPrefill);
 	const workspaceIdSearchParams = searchParams.get("workspaceId");
 	const knowledgeId = searchParams.get("knowledgeId");
 
@@ -295,6 +299,12 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore,
 	]);
 
+	// Clear state once (prevents re-prefill on back/refresh)
+	useEffect(() => {
+		if (!initialPrefill) return;
+		navigate(location.pathname, { replace: true, state: null });
+	}, []);
+
 	return (
 		<div className="relative h-full w-full overflow-hidden">
 			<ResizablePanelGroup direction="horizontal">
@@ -327,6 +337,8 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
+							prompt={promptText}
+							onPromptChange={setPromptText}
 							className="max-h-64 min-h-48 bg-background"
 							isLoading={isLoading}
 							model={chat.models.selected}
