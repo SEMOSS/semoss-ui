@@ -835,7 +835,7 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
 	return response.data;
 };
 
-export const setUserMetadata = async (metaKey: string, metaValue: string) => {
+export const setUserDefaultModel = async (metaKey: string, metaValue: string) => {
 	const url = `${Env.MODULE}/api/auth/user/setUserMetadata`;
 	const response = await post<boolean>(
 		url,

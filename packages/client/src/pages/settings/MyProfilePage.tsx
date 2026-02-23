@@ -39,7 +39,7 @@ import {
 	createUserAccessKey,
 	deleteUserAccessKeys,
 	editMemberInfo,
-	setUserMetadata,
+	setUserDefaultModel,
 } from "@/api/auth";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
@@ -203,7 +203,7 @@ interface EditUserInfoForm {
 export const MyProfilePage = () => {
 	const modelSelectId = useId();
 	const notification = useNotification();
-	const { configStore } = useRootStore();
+	const { configStore, insightStore } = useRootStore();
 	const { email, id, name } = configStore.store.user;
 	const { isNative } = configStore.store;
 	const { adminMode } = useSettings();
@@ -279,17 +279,17 @@ export const MyProfilePage = () => {
 			: [];
 
 	useEffect(() => {
-		if (configStore.defaultTextGenerationModel && modals.length > 0) {
+		if (insightStore.defaultTextGenerationModel && modals.length > 0) {
 			const matchingEngine = modals.find(
-				(e) => e.app_id === configStore.defaultTextGenerationModel,
+				(e) => e.app_id === insightStore.defaultTextGenerationModel,
 			);
 			if (matchingEngine) {
 				setSelectedTextGenerationDefaultModel(matchingEngine.app_id);
 			}
 		}
-		if (configStore.defaultCodeGenerationModel && modals.length > 0) {
+		if (insightStore.defaultCodeGenerationModel && modals.length > 0) {
 			const matchingCodeEngine = modals.find(
-				(e) => e.app_id === configStore.defaultCodeGenerationModel,
+				(e) => e.app_id === insightStore.defaultCodeGenerationModel,
 			);
 			if (matchingCodeEngine) {
 				setSelectedCodeGenerationDefaultModel(
@@ -298,8 +298,8 @@ export const MyProfilePage = () => {
 			}
 		}
 	}, [
-		configStore.defaultTextGenerationModel,
-		configStore.defaultCodeGenerationModel,
+		insightStore.defaultTextGenerationModel,
+		insightStore.defaultCodeGenerationModel,
 		modals,
 	]);
 
@@ -378,10 +378,10 @@ export const MyProfilePage = () => {
 			}
 
 			// Update the store's meta to reflect the new default model
-			configStore.updateUserMeta(modelType, selectedAppId);
+			insightStore.updateUserDefaultModel(modelType, selectedAppId);
 
 			// Send the new default model selection to the backend
-			await setUserMetadata(modelType, selectedAppId);
+			await setUserDefaultModel(modelType, selectedAppId);
 
 			toast.success(
 				`Default ${modelType} saved successfully`,
