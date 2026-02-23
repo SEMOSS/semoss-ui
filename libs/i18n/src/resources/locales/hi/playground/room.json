@@ -1,0 +1,96 @@
+{
+	"welcome": "स्वागत है",
+	"settings": {
+		"title": "रूम सेटिंग्स",
+		"description": "रूम सेटिंग्स अपडेट करें और चैट का व्यवहार संशोधित करें",
+		"open": "सेटिंग्स खोलें",
+		"close": "बंद करें",
+		"edit": "सेटिंग्स संपादित करें"
+	},
+	"form": {
+		"modelLabel": "मॉडल",
+		"instructionsLabel": "निर्देश",
+		"knowledgeLabel": "ज्ञान",
+		"toolboxLabel": "टूलबॉक्स",
+		"maxTokenLabel": "अधिकतम टोकन",
+		"temperatureLabel": "टेम्परेचर"
+	},
+	"modes": {
+		"ask": "पूछें",
+		"plan": "योजना"
+	},
+	"workspace": {
+		"publishTooltip": "एजेंट के रूप में प्रकाशित करें",
+		"publishTitle": "एजेंट प्रकाशित करें",
+		"publishDescription": "वर्तमान रूम कॉन्फ़िगरेशन के साथ एक नया एजेंट प्रकाशित करें, जिसमें निर्देश और MCP शामिल हैं।",
+		"nameLabel": "नाम *",
+		"namePlaceholder": "एजेंट नाम दर्ज करें",
+		"descriptionLabel": "विवरण",
+		"descriptionPlaceholder": "एजेंट विवरण दर्ज करें",
+		"cancelButton": "रद्द करें",
+		"publishingButton": "प्रकाशित किया जा रहा है...",
+		"publishButton": "एजेंट प्रकाशित करें",
+		"nameRequired": "एजेंट नाम आवश्यक है",
+		"publishSuccess": "एजेंट सफलतापूर्वक बनाया गया",
+		"publishError": "एजेंट बनाने में विफल: {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "टेक्स्ट दर्ज करें",
+		"thinking": "सोच रहा है...",
+		"menuPrompt": "मेनू खोलने के लिए /",
+		"openSettings": "सेटिंग्स खोलें",
+		"recordLabel": "मॉडल रिकॉर्ड करें",
+		"stopRecording": "रिकॉर्डिंग बंद करें",
+		"record": "रिकॉर्ड करें",
+		"askLabel": "AI से पूछें",
+		"thinkingTooltip": "सोच रहा है",
+		"enterQuestion": "कृपया एक प्रश्न दर्ज करें",
+		"completeTool": "कृपया आगे बढ़ने के लिए टूल पूरा करें",
+		"ask": "पूछें",
+		"errorProcessing": "चैट प्रोसेस करने में त्रुटि"
+	},
+	"content": {
+		"scrollToTop": "शीर्ष पर स्क्रॉल करें",
+		"scrollToBottom": "नीचे तक स्क्रॉल करें",
+		"errorDefault": "अनुरोध प्रोसेस करने में असमर्थ। कृपया अपना कनेक्शन जांचें, अपना संदेश कॉपी करें और रिफ्रेश करें।"
+	},
+	"inlineTool": {
+		"openInSidebar": "साइडबार में खोलें",
+		"minimize": "छोटा करें",
+		"maximize": "बड़ा करें",
+		"close": "बंद करें"
+	},
+	"fileExplorer": {
+		"copyPath": "पथ कॉपी करें",
+		"download": "डाउनलोड करें",
+		"delete": "हटाएं",
+		"copyFailed": "क्लिपबोर्ड पर कॉपी करने में विफल"
+	},
+	"menuToolbox": {
+		"addToolbox": "टूलबॉक्स जोड़ें",
+		"searchPlaceholder": "टूलबॉक्स खोजें",
+		"notFound": "नहीं मिला",
+		"allTools": "सभी टूल"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "ज्ञान जोड़ें",
+		"searchPlaceholder": "ज्ञान खोजें",
+		"notFound": "नहीं मिला"
+	},
+	"menuWorkspace": {
+		"selectAgent": "एजेंट चुनें",
+		"searchPlaceholder": "वर्कस्पेस खोजें",
+		"notFound": "नहीं मिला"
+	},
+	"menuUpload": {
+		"attachDocument": "दस्तावेज़ संलग्न करें"
+	},
+	"menuFileExplorer": {
+		"name": "फ़ाइल एक्सप्लोरर",
+		"open": "फ़ाइल एक्सप्लोरर खोलें",
+		"close": "फ़ाइल एक्सप्लोरर बंद करें"
+	},
+	"errors": {
+		"createRoom": "रूम बनाते समय एक त्रुटि हुई। त्रुटि: {{message}}"
+	}
+}

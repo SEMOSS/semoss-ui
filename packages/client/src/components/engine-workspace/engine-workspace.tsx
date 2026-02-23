@@ -6,7 +6,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { FlexLayout } from "@semoss/shared";
 import {
 	Button,
@@ -18,48 +18,18 @@ import { EngineFileEditor } from "./engine-file-editor";
 import { EngineFileExplorer } from "./engine-file-explorer";
 import { EngineMcpEditor } from "./engine-mcp-editor";
 
-const DEFAULT_BORDER_SIZE = 300;
-
 interface EngineWorkspaceProps {
 	/** Engine to render */
 	engine: string;
+
+	/** Model */
+	model: FlexLayout.Model;
 }
 
 export const EngineWorkspace: React.FC<EngineWorkspaceProps> = observer(
-	({ engine }) => {
+	({ engine, model }) => {
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const [isMaximized, setIsMaximized] = useState(false);
-
-		const model = useMemo(() => {
-			return FlexLayout.Model.fromJson({
-				global: {},
-				borders: [
-					{
-						type: "border",
-						location: "left",
-						size: DEFAULT_BORDER_SIZE,
-						selected: 0,
-						children: [
-							{
-								type: "tab",
-								id: "ENGINE_FILE_EXPLORER",
-								name: "Files",
-								component: "engine-file-explorer",
-								config: {},
-								helpText: "File Explorer",
-								enableClose: false,
-							},
-						],
-					},
-				],
-				layout: {
-					type: "row",
-					weight: 0,
-					children: [],
-				},
-			});
-		}, []);
-
 		// TODO : Implement Run Engine Functionality once backend is ready
 		// 	const runEngine = async () => {
 		// 	setIsLoading(true);

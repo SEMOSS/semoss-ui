@@ -8,6 +8,7 @@ interface ImportMetaEnv {
 	readonly VITE_DEFAUlT_MODEL_NAME: string;
 	readonly VITE_ENABLE_MODEL_SELECT: string;
 	readonly VITE_ENABLE_AUTH: string;
+	readonly VITE_ENABLE_AGENT: string;
 	readonly VITE_ENABLE_WORKSPACE: string;
 	readonly VITE_ENABLE_SUGGESTIONS: string;
 }

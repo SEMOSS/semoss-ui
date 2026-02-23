@@ -1,0 +1,52 @@
+{
+	"embedDocuments": {
+		"title": "Intégrer des documents dans une source existante",
+		"description": "Sélectionnez une source de connaissances et téléversez des documents à intégrer.",
+		"knowledgeSource": "Source de connaissances",
+		"documents": "Documents",
+		"selectFiles": "Cliquez pour sélectionner des fichiers ou glissez-déposez",
+		"embedButton": "Intégrer les documents",
+		"embedding": "Intégration...",
+		"removeFile": "Supprimer le fichier",
+		"selectPlaceholder": "Sélectionnez une source de connaissances"
+	},
+	"selector": {
+		"title": "Sélectionner un MCP",
+		"search": "Rechercher",
+		"searchPlaceholder": "Rechercher...",
+		"noResults": "Aucun résultat trouvé",
+		"createKnowledgeSource": "Créer une source de connaissances",
+		"viewDetails": "Voir les détails",
+		"noToolboxesFound": "Aucune boîte à outils trouvée",
+		"noKnowledgeFound": "Aucune connaissance trouvée"
+	},
+	"overlay": {
+		"title": "Configuration MCP",
+		"description": "Configurez vos paramètres MCP",
+		"editToolbox": "Modifier la boîte à outils",
+		"editKnowledge": "Modifier les connaissances",
+		"toolboxDescription": "Ajoutez des capacités à votre agent et étendez ce qu'il peut faire",
+		"knowledgeDescription": "Modifiez les sources de connaissances auxquelles votre agent peut accéder"
+	},
+	"tools": {
+		"selectMcp": "Sélectionner un MCP",
+		"selectTool": "Sélectionner un outil",
+		"enterValues": "Entrez des valeurs séparées par des virgules",
+		"selectField": "Sélectionner {{field}}",
+		"enterField": "Entrer {{field}}"
+	},
+	"messages": {
+		"selectKnowledgeSource": "Veuillez sélectionner une source de connaissances",
+		"selectDocument": "Veuillez sélectionner au moins un document",
+		"embedSuccess": "Documents intégrés avec succès",
+		"embedFailed": "Échec de l'intégration des documents",
+		"loadFailed": "Échec du chargement des sources de connaissances.",
+		"noSources": "Aucune source de connaissances trouvée."
+	},
+	"buttons": {
+		"cancel": "Annuler",
+		"embed": "Intégrer",
+		"save": "Enregistrer",
+		"close": "Fermer"
+	}
+}
