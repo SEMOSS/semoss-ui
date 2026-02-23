@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import {
-	Badge,
 	Container,
 	IconButton,
 	InputAdornment,
@@ -11,8 +10,9 @@ import {
 	styled,
 	TextField,
 } from "@semoss/ui";
+import { Badge } from "@semoss/ui/next";
 import { usePage } from "@/hooks";
-import { NotificationDrawer } from "../notifications/NotificationDrawer";
+import { NotificationDrawer } from "../notifications/notification-drawer";
 import { PlatformSearch } from "./platform-search";
 
 const StyledNavbar = styled("div")(({ theme }) => ({
@@ -133,20 +133,15 @@ export const Navbar: React.FC = observer(() => {
 				flex={"1 1 0"}
 			>
 				<IconButton onClick={handleBellClick} color="secondary">
-					<Badge
-						badgeContent={
-							typeof hasUnread === "number"
-								? hasUnread > 9
-									? "9+"
-									: hasUnread
-								: null
-						}
-						color="error"
-						overlap="circular"
-						variant="standard"
-					>
-						<NotificationIcon />
-					</Badge>
+					<NotificationIcon />
+					{typeof hasUnread === "number" && hasUnread > 0 && (
+						<Badge
+							variant="destructive"
+							className="-right-[0.5px] -top-[0.5px] absolute flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px]"
+						>
+							{hasUnread > 9 ? "9+" : hasUnread}
+						</Badge>
+					)}
 				</IconButton>
 				<NotificationDrawer
 					open={drawerOpen}

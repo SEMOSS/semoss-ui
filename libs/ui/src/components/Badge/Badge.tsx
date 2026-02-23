@@ -19,7 +19,7 @@ export interface BadgeProps {
 	anchorOrigin?: BadgeOrigin;
 
 	/** count of badges */
-	badgeContent?: number;
+	badgeContent?: number | string;
 
 	/**
 	 * The color of the component.

@@ -5,7 +5,7 @@ import { ExternalLinkIcon, TrashIcon } from "lucide-react";
 import type React from "react";
 import { Badge, Button, cn } from "@semoss/ui/next";
 import { formatDate } from "@/utility/general";
-import { getNotificationMessage } from "./NotificationTemplates";
+import { getNotificationMessage } from "./notification-templates";
 import type { NotificationRecord } from "./types";
 
 interface NotificationItemProps {

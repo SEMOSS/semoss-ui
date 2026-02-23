@@ -12,7 +12,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
-import { NotificationItem } from "./NotificationItem";
+import { NotificationItem } from "./notification-item";
 import type { NotificationRecord } from "./types";
 
 interface NotificationDrawerProps {
