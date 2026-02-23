@@ -373,17 +373,14 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							</Tabs>
 						</div>
 
-						{Object.entries(metaFilters).length === 0 &&
-							!isDiscoverable &&
+						{!isDiscoverable &&
 							getFavoritedEngines.data.length > 0 && (
 								<p className="font-medium text-sm">
 									Bookmarked
 								</p>
 							)}
 
-						{!isDiscoverable &&
-						getFavoritedEngines.data.length &&
-						Object.entries(metaFilters).length === 0 ? (
+						{!isDiscoverable && getFavoritedEngines.data.length && (
 							<div className="grid grid-cols-1 gap-6">
 								{getFavoritedEngines.data.map((db) => {
 									return (
@@ -433,7 +430,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 									);
 								})}
 							</div>
-						) : null}
+						)}
 
 						{Object.entries(metaFilters).length === 0 &&
 							getEngines.data.length > 0 &&
