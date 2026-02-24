@@ -1,5 +1,6 @@
 import { FolderTreeIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "@semoss/i18n";
 import { DropdownMenuItem } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 
@@ -15,6 +16,8 @@ interface RoomInputMenuFileExplorerProps {
 
 export const RoomInputMenuFileExplorer: React.FC<RoomInputMenuFileExplorerProps> =
 	observer(({ room, onSelect = () => null }) => {
+		const { t } = useTranslation("room");
+
 		// this will render the component whenever the sidebar model changes
 		room.sidebar.counter;
 
@@ -30,7 +33,7 @@ export const RoomInputMenuFileExplorer: React.FC<RoomInputMenuFileExplorerProps>
 						// this will select if there or open if not
 						room.addSidebarNode(ROOM_FILE_EXPLORER_ID, {
 							type: "tab",
-							name: "File Explorer",
+							name: t("menuFileExplorer.name"),
 							component: "room-file-explorer",
 							config: {},
 							enableClose: true,
@@ -42,7 +45,9 @@ export const RoomInputMenuFileExplorer: React.FC<RoomInputMenuFileExplorerProps>
 			>
 				<FolderTreeIcon />
 				<span className="flex-1">
-					{isSelected ? "Close" : "Open"} File Explorer
+					{isSelected
+						? t("menuFileExplorer.close")
+						: t("menuFileExplorer.open")}
 				</span>
 			</DropdownMenuItem>
 		);

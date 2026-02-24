@@ -75,6 +75,7 @@ export class RootStore {
 				temperature: TEMPERATURE,
 				tokenLength: TOKEN_LENGTH,
 			},
+			allowedFileTypes: [],
 			defaultTools: [],
 		},
 	};
@@ -124,6 +125,13 @@ export class RootStore {
 	}
 
 	/**
+	 * Get the current navbar actions
+	 */
+	get navbarActions() {
+		return this._store.navbarActions;
+	}
+
+	/**
 	 * Set custom breadcrumbs
 	 */
 	setBreadcrumbs = (breadcrumbs: RootStore["breadcrumbs"]) => {
@@ -135,6 +143,20 @@ export class RootStore {
 	 */
 	clearBreadcrumbs = () => {
 		this._store.breadcrumbs = [];
+	};
+
+	/**
+	 * Set right-side navbar actions
+	 */
+	setNavbarActions = (actions: React.ReactNode | null) => {
+		this._store.navbarActions = actions;
+	};
+
+	/**
+	 * Clear right-side navbar actions
+	 */
+	clearNavbarActions = () => {
+		this._store.navbarActions = null;
 	};
 
 	/**
@@ -189,6 +211,10 @@ export class RootStore {
 			toolAutoExecutionLimit:
 				theme?.toolAutoExecutionLimit ||
 				this._store.theme.toolAutoExecutionLimit,
+			allowedFileTypes:
+				theme?.allowedFileTypes ||
+				this._store.theme.allowedFileTypes ||
+				[],
 			defaultTools: [
 				...new Map(
 					[
