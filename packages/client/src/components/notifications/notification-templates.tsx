@@ -25,7 +25,7 @@ export const getNotificationMessage = (
 	console.log("Generating message for notification:", n);
 	console.log("Logged in user:", loggedInUser);
 	const type = (n.notification_type || "").trim() as NotificationType;
-	const isSelf = !!loggedInUser && loggedInUser === n.recipient_user_name;
+	const isSelf = !!loggedInUser && loggedInUser === n.recipient_user_id;
 	const isAuthor =
 		!!loggedInUser && loggedInUser === n.notification_createdby;
 	const user = <Bold>{isSafe(n.recipient_user_name)}</Bold>;
