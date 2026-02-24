@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
 	Button,
+	Card,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -214,13 +215,10 @@ export function PromptCard({
 		<>
 			{location.pathname === "/prompt-library" ? (
 				<>
-					<button
-						type="button"
-						className={`flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-lg border bg-white transition-[transform,box-shadow] duration-200 ${
-							isHovered
-								? "-translate-y-0.5 border-slate-200 shadow-md"
-								: "border-slate-100 shadow-sm"
-						}`}
+					<Card
+						className={`relative flex h-[220px] w-full flex-col overflow-hidden rounded-lg border bg-background p-0 text-left
+							transition-[transform,box-shadow,background-color,border-color] duration-200
+							border-l-4 ${isHovered ? "border-slate-200 border-l-[#b18950] bg-slate-50 shadow-md" : "border-slate-100 border-l-transparent bg-white shadow-sm"}`}
 						onClick={handleCardClick}
 						onKeyDown={handleCardKeyDown}
 						onMouseEnter={() => setIsHovered(true)}
@@ -320,7 +318,7 @@ export function PromptCard({
 								<ArrowRight className="ml-2 h-4 w-4" />
 							</Button>
 						</div>
-					</button>
+					</Card>
 
 					{deleteDialogNode}
 					{snackbarNode}

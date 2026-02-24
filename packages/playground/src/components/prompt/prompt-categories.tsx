@@ -1,12 +1,8 @@
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "@semoss/ui/next";
-
-// import IconAnalysisEvaluation from "../../assets/img/icon_analysis_and_evaluation_grey.svg";
-// import IconCodingAssistance from "../../assets/img/icon_coding_assistance_grey.svg";
-// import IconMyPrompts from "../../assets/img/icon_my_prompts_grey.svg";
-// import IconWritingAssistance from "../../assets/img/icon_writing_assistance_grey.svg";
+import { SearchSlash, CodeXml, PenLine, UserRoundPen } from "lucide-react";
 
 type CategoryOption = { label: string; value: string };
 
@@ -54,19 +50,6 @@ const CategoryButtons: React.FC<CategoryButtonsProps> = ({
 	const isMobile = useMediaQuery("(max-width: 640px)");
 	const location = useLocation();
 
-	const iconByLabel = useMemo(
-		() => ({
-			// "My Prompts": IconMyPrompts,
-			// "Content & Writing Assistance": IconWritingAssistance,
-			// "Analysis and Evaluation": IconAnalysisEvaluation,
-			// "Coding Assistance": IconCodingAssistance,
-		}),
-		[],
-	);
-
-	const getMyIcon = (label: string) =>
-		iconByLabel[label as keyof typeof iconByLabel] || "";
-
 	return (
 		<div
 			className={[
@@ -96,15 +79,7 @@ const CategoryButtons: React.FC<CategoryButtonsProps> = ({
 								: "px-4 py-2 text-sm",
 						].join(" ")}
 					>
-						{!isMobile && getMyIcon(button.label) ? (
-							<img
-								src={getMyIcon(button.label)}
-								width={20}
-								height={20}
-								alt=""
-								className="mr-2"
-							/>
-						) : null}
+						{!isMobile && (button.label === "Content & Writing Assistance" ? <SearchSlash className="mr-2" /> : button.label === "Analysis and Evaluation" ? <PenLine className="mr-2" /> : button.label === "Coding Assistance" ? <CodeXml className="mr-2" /> : button.label === "My Prompts" ? <UserRoundPen className="mr-2" /> : null)}
 						{button.label}
 					</Button>
 				);

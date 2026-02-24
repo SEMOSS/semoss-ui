@@ -214,7 +214,7 @@ export const PromptGrid = observer(function PromptGrid({
 	return (
 		<>
 			{!isMobile && (
-				<div className="grid grid-cols-4 items-stretch justify-items-stretch gap-0">
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 					{Array.isArray(listToRender) &&
 						listToRender.map((prompt) => (
 							<div key={prompt.id} className="h-full">

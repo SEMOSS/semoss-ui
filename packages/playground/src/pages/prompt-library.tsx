@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Info, Plus, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Plus, Search, SquareLibrary, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
@@ -12,6 +12,8 @@ import { EditPromptModal } from "@/components/prompt/edit-prompt-modal";
 import { PromptGrid } from "@/components/prompt/prompt-grid";
 import type { Prompt } from "@/types/prompt";
 import PromptCategories from "../components/prompt/prompt-categories";
+import { useGlobalBreadcrumbs } from "@/hooks";
+import { useTranslation } from "@semoss/i18n";
 
 type SelectedCategory = { label: string; value: string };
 type UnknownRecord = Record<string, unknown>;
@@ -22,19 +24,6 @@ type MetaMap = Record<string, string[]>;
 function isRecord(v: unknown): v is UnknownRecord {
 	return typeof v === "object" && v !== null;
 }
-
-// function hasNativeMeta(x: unknown): x is { NATIVE: { meta: UserMeta } } {
-// 	return (
-// 		typeof x === "object" &&
-// 		x !== null &&
-// 		"NATIVE" in x &&
-// 		typeof (x as any).NATIVE === "object" &&
-// 		(x as any).NATIVE !== null &&
-// 		"meta" in (x as any).NATIVE &&
-// 		typeof (x as any).NATIVE.meta === "object" &&
-// 		(x as any).NATIVE.meta !== null
-// 	);
-// }
 
 const normalizeToMetaMap = (meta: unknown): MetaMap | null => {
 	if (typeof meta !== "object" || meta === null) return null;
@@ -127,6 +116,7 @@ function canSeePrompt(p: Prompt, userId: string) {
 }
 
 export const PromptLibrary = observer(() => {
+	const { t } = useTranslation(["workspace", "notifications", "common"]);
 	const [search, setSearch] = useState("");
 	const [selectedTags, setSelectedTags] = useState<string[]>([]);
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -175,6 +165,19 @@ export const PromptLibrary = observer(() => {
 	);
 
 	console.log("PromptLibrary myPrompts:", myPrompts);
+
+	useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: t("workspace:breadcrumbs.home"),
+				path: "/",
+			},
+			{
+				name: t("Prompt Library"),
+				path: "/prompt-library",
+			},
+		],
+	});
 
 	const refreshPrompts = useCallback(async () => {
 		setLoadStatus("LOADING");
@@ -381,9 +384,10 @@ export const PromptLibrary = observer(() => {
 	const hiddenCount = Math.max(0, selectedTags.length - 2);
 
 	return (
-		<>
+		<div className="flex min-h-screen flex-col bg-gray-50">
+			<main className="mx-auto w-full flex-1 px-4 py-4 md:px-8 lg:px-12 max-w-4xl">
 			<div className="flex items-center gap-2 py-5 text-primary">
-				{/* <img src={menuIcon} alt="Prompt Library Icon" /> */}
+				<SquareLibrary className="h-6 w-6" />
 				<span className="pt-0.5 font-semibold text-2xl leading-tight">
 					Prompt Library
 				</span>
@@ -731,6 +735,7 @@ export const PromptLibrary = observer(() => {
 					/>
 				)}
 			</div>
-		</>
+		</main>
+	</div>
 	);
 });
