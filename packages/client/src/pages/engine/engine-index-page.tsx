@@ -380,7 +380,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 								</p>
 							)}
 
-						{!isDiscoverable && getFavoritedEngines.data.length && (
+						{!isDiscoverable && getFavoritedEngines.data.length > 0 && (
 							<div className="grid grid-cols-1 gap-6">
 								{getFavoritedEngines.data.map((db) => {
 									return (
