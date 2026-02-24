@@ -210,8 +210,6 @@ export const SettingsTab = (props: AppSettingsProps) => {
 
 	const admin = configStore.store.user.admin;
 
-	// const mcpUrl = `${Env.MODULE}/api/ext/mcp/${id}/comms`;
-
 	const [portalReactors, setPortalReactors] = useState<{
 		reactors: string[];
 		lastCompiled?: string;
@@ -498,26 +496,6 @@ export const SettingsTab = (props: AppSettingsProps) => {
 		}
 	});
 
-	// /**
-	//  * Copy text and add it to the clipboard
-	//  * @param text - text to copy
-	//  */
-	// const copy = async (text: string) => {
-	// 	try {
-	// 		await navigator.clipboard.writeText(text);
-
-	// 		notification.add({
-	// 			color: "success",
-	// 			message: "Successfully copied to clipboard",
-	// 		});
-	// 	} catch (_e) {
-	// 		notification.add({
-	// 			color: "error",
-	// 			message: "Unable to copy to clipboard",
-	// 		});
-	// 	}
-	// };
-
 	return (
 		<StyledContainer>
 			{/* Access Section */}
@@ -655,31 +633,6 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			)}
 
 			<SectionDivider />
-
-			{/* <Stack direction="row">
-				<TextField
-					label="MCP URL"
-					size="small"
-					value={mcpUrl}
-					fullWidth={true}
-					slotProps={{
-						input: {
-							endAdornment: (
-								<InputAdornment position="end">
-									<IconButton
-										aria-label="copy"
-										color="default"
-										size="small"
-										onClick={() => copy(`{{${mcpUrl}}}`)}
-									>
-										<ContentCopy fontSize="small" />
-									</IconButton>
-								</InputAdornment>
-							),
-						},
-					}}
-				/>
-			</Stack> */}
 
 			<SectionDivider />
 
