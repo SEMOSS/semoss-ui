@@ -143,7 +143,11 @@ export const RoomPage = observer(() => {
 	}
 
 	return (
-		<InsightProvider key={roomId} options={{ insightId: room.insightId }}>
+		<InsightProvider
+			key={roomId}
+			options={{ insightId: room.insightId }}
+			destroyOnUnmount={false}
+		>
 			<div className="flex h-full w-full flex-col overflow-hidden">
 				<ResizablePanelGroup
 					direction="horizontal"
