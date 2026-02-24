@@ -128,7 +128,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 */
 		const getEngines = useIteratorPixel<Engine[], Engine>(
 			(limit, offset) =>
-				`${enginePrefix}(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} ${route ? `engineTypes=['${route.type}'], ` : ""} ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} userT = [true], limit=[${limit}], offset=[${offset}]);`,
+				`${enginePrefix}(${debouncedSearch ? `filterWord=["${debouncedSearch}"], ` : ""} ${route ? `engineTypes=['${route.type}'], ` : ""} ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} userT = [true], limit=[${limit}], offset=[${offset}]);`,
 			(response) => {
 				// if its less than the limit, we know its the end
 				if (response.length < 15) {
@@ -263,6 +263,12 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				setScroll(null);
 			};
 		}, [setScroll]);
+
+		useEffect(() => {
+			setSearch("");
+
+			resetScroll();
+		}, [route.type, resetScroll]);
 
 		// if there is an error show this
 		if (getEngines.isError || getCatalogFilters.status === "ERROR") {

@@ -105,7 +105,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 				}
 				toast.success("Successfully Created Function Database");
 				navigate(
-					`/engine/function/${(output as { database_id: string }).database_id}`,
+					`/engine/function/${output.database_id}`,
 				);
 			}
 		} catch {

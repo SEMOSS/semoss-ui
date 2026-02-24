@@ -1,3 +1,4 @@
+import { useTranslation } from "@semoss/i18n";
 import {
 	Badge,
 	Checkbox,
@@ -10,6 +11,7 @@ import {
 	SelectValue,
 	Textarea,
 } from "@semoss/ui/next";
+import { capitalizeWords } from "@/utility";
 import { JSONEditor } from "./json-editor";
 
 export interface ToolFieldProps<T = unknown> {
@@ -51,18 +53,6 @@ export interface ToolFieldProps<T = unknown> {
 }
 
 /**
- * Converts a snake_case or space-separated string to Title Case
- *
- * @param str - The string to capitalize
- * @returns The capitalized string
- */
-const capitalizeWords = (str: string) =>
-	str
-		.split(/[_\s]+/) // Split by underscores or spaces
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-		.join(" "); // Join with spaces for better readability
-
-/**
  * A dynamic form field component that renders different input types based on JSON schema
  *
  * @component
@@ -75,6 +65,7 @@ export const ToolField = ({
 	value,
 	onChange,
 }: ToolFieldProps) => {
+	const { t } = useTranslation("mcp");
 	const displayName = capitalizeWords(fieldName);
 
 	switch (fieldSchema.type) {
@@ -103,7 +94,9 @@ export const ToolField = ({
 						>
 							<SelectTrigger className="w-full">
 								<SelectValue
-									placeholder={`Select ${displayName}`}
+									placeholder={t("tools.selectField", {
+										field: displayName,
+									})}
 								/>
 							</SelectTrigger>
 							<SelectContent>
@@ -144,10 +137,12 @@ export const ToolField = ({
 							id={fieldName}
 							value={value as string}
 							onChange={(e) => onChange(e.target.value)}
-							placeholder={`Enter ${displayName}`}
+							placeholder={t("tools.enterField", {
+								field: displayName,
+							})}
 							rows={4}
 							className="w-full"
-							disabled={disabled}
+							readOnly={disabled}
 						/>
 						{fieldSchema.description && (
 							<p className="text-muted-foreground text-sm">
@@ -174,9 +169,11 @@ export const ToolField = ({
 						id={fieldName}
 						value={value as string}
 						onChange={(e) => onChange(e.target.value)}
-						placeholder={`Enter ${displayName}`}
+						placeholder={t("tools.enterField", {
+							field: displayName,
+						})}
 						className="w-full"
-						disabled={disabled}
+						readOnly={disabled}
 					/>
 					{fieldSchema.description && (
 						<p className="text-muted-foreground text-sm">
@@ -184,9 +181,9 @@ export const ToolField = ({
 						</p>
 					)}
 				</div>
-				// Numeric fields (number or integer)
 			);
 
+		// Numeric fields (number or integer)
 		case "number":
 		case "integer":
 			return (
@@ -209,11 +206,13 @@ export const ToolField = ({
 						onChange={(e) =>
 							onChange(Number.parseFloat(e.target.value))
 						}
-						placeholder={`Enter ${displayName}`}
+						placeholder={t("tools.enterField", {
+							field: displayName,
+						})}
 						min={fieldSchema.minimum}
 						max={fieldSchema.maximum}
 						className="w-full"
-						disabled={disabled}
+						readOnly={disabled}
 					/>
 					{fieldSchema.description && (
 						<p className="text-muted-foreground text-sm">
@@ -282,10 +281,10 @@ export const ToolField = ({
 								e.target.value.split(",").map((s) => s.trim()),
 							)
 						}
-						placeholder="Enter comma-separated values"
+						placeholder={t("tools.enterValues")}
 						rows={2}
 						className="w-full"
-						disabled={disabled}
+						readOnly={disabled}
 					/>
 					{fieldSchema.description && (
 						<p className="text-muted-foreground text-sm">
@@ -346,7 +345,9 @@ export const ToolField = ({
 						id={fieldName}
 						value={value as string}
 						onChange={(e) => onChange(e.target.value)}
-						placeholder={`Enter ${displayName}`}
+						placeholder={t("tools.enterField", {
+							field: displayName,
+						})}
 						className="w-full"
 					/>
 				</div>

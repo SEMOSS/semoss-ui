@@ -1,0 +1,96 @@
+{
+	"welcome": "Bienvenue",
+	"settings": {
+		"title": "Paramètres de la salle",
+		"description": "Mettez à jour les paramètres de la salle et modifiez le comportement du chat",
+		"open": "Ouvrir les paramètres",
+		"close": "Fermer",
+		"edit": "Modifier les paramètres"
+	},
+	"form": {
+		"modelLabel": "Modèle",
+		"instructionsLabel": "Instructions",
+		"knowledgeLabel": "Connaissances",
+		"toolboxLabel": "Boîte à outils",
+		"maxTokenLabel": "Jeton maximum",
+		"temperatureLabel": "Température"
+	},
+	"modes": {
+		"ask": "Demander",
+		"plan": "Planifier"
+	},
+	"workspace": {
+		"publishTooltip": "Publier en tant qu'agent",
+		"publishTitle": "Publier l'agent",
+		"publishDescription": "Publiez un nouvel agent avec la configuration actuelle de la salle, y compris les instructions et les MCPs.",
+		"nameLabel": "Nom *",
+		"namePlaceholder": "Entrez le nom de l'agent",
+		"descriptionLabel": "Description",
+		"descriptionPlaceholder": "Entrez la description de l'agent",
+		"cancelButton": "Annuler",
+		"publishingButton": "Publication...",
+		"publishButton": "Publier l'agent",
+		"nameRequired": "Le nom de l'agent est requis",
+		"publishSuccess": "Agent créé avec succès",
+		"publishError": "Échec de la création de l'agent : {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "Entrez du texte",
+		"thinking": "Réflexion...",
+		"menuPrompt": "/ pour ouvrir le menu",
+		"openSettings": "Ouvrir les paramètres",
+		"recordLabel": "Enregistrer le modèle",
+		"stopRecording": "Arrêter l'enregistrement",
+		"record": "Enregistrer",
+		"askLabel": "Interroger l'IA",
+		"thinkingTooltip": "Réflexion",
+		"enterQuestion": "Veuillez entrer une question",
+		"completeTool": "Veuillez compléter le(s) outil(s) pour continuer",
+		"ask": "Demander",
+		"errorProcessing": "Erreur de traitement du chat"
+	},
+	"content": {
+		"scrollToTop": "Défiler vers le haut",
+		"scrollToBottom": "Défiler vers le bas",
+		"errorDefault": "Impossible de traiter la demande. Veuillez vérifier votre connexion, copier votre message et actualiser la page."
+	},
+	"inlineTool": {
+		"openInSidebar": "Ouvrir dans la barre latérale",
+		"minimize": "Réduire",
+		"maximize": "Agrandir",
+		"close": "Fermer"
+	},
+	"fileExplorer": {
+		"copyPath": "Copier le chemin",
+		"download": "Télécharger",
+		"delete": "Supprimer",
+		"copyFailed": "Échec de la copie dans le presse-papiers"
+	},
+	"menuToolbox": {
+		"addToolbox": "Ajouter une boîte à outils",
+		"searchPlaceholder": "Rechercher des boîtes à outils",
+		"notFound": "Non trouvé",
+		"allTools": "Tous les outils"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "Ajouter des connaissances",
+		"searchPlaceholder": "Rechercher des connaissances",
+		"notFound": "Non trouvé"
+	},
+	"menuWorkspace": {
+		"selectAgent": "Sélectionner un agent",
+		"searchPlaceholder": "Rechercher des espaces de travail",
+		"notFound": "Non trouvé"
+	},
+	"menuUpload": {
+		"attachDocument": "Joindre un document"
+	},
+	"menuFileExplorer": {
+		"name": "Explorateur de fichiers",
+		"open": "Ouvrir l'explorateur de fichiers",
+		"close": "Fermer l'explorateur de fichiers"
+	},
+	"errors": {
+		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}"
+	}
+}
