@@ -752,6 +752,11 @@ export const EngineEditPage: React.FC = observer(() => {
 						data-testid={formatToDataTestId(
 							`editEngineDetails-${name}-generate-btn`,
 						)}
+						title={
+							!insightStore.defaultTextGenerationModel
+								? "No text generation model configured"
+								: "Generate details with AI"
+						}
 					>
 						<Sparkles className="size-4" />
 						<span className="font-medium text-sm">
