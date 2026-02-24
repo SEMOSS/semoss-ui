@@ -263,6 +263,28 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [contentEle]);
 
+	/**
+     * Error handling
+     */
+    const getErrorMessage = (error: any): string => {
+		const errorString = error.toString().toLowerCase();
+		if (errorString.includes("5 mb")) {
+			return "One of your files exceeds the 5 MB limit. Please upload smaller files and try again.";
+		}
+
+		// Needs refactor bc error is a string, not an object:
+		
+		// Check for error code in different structures 
+		// const code = error?.error?.code || error?.status || error?.statusCode;
+		
+		// if (code === 429) {
+		// 	return "This model is experiencing high load right now. Please try a different model.";
+		// }
+
+		// Fallback to original message or default
+		return "Unable to process request. Please check your connection, copy your message, and refresh.";
+    };
+
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
@@ -327,8 +349,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
 								<span>
-									{room.error.message ||
-										t("content.errorDefault")}
+									{getErrorMessage(room.error)}
 								</span>
 							</div>
 						) : null}
