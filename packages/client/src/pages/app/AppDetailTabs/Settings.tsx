@@ -1,17 +1,14 @@
-import { ContentCopy, OpenInBrowser } from "@mui/icons-material";
+import {  OpenInBrowser } from "@mui/icons-material";
 import LockIcon from "@mui/icons-material/Lock";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Env, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Box,
 	Button,
 	FileDropzone,
 	Grid,
-	IconButton,
-	InputAdornment,
 	LoadingScreen,
-	Stack,
 	styled,
 	Table,
 	TextField,
@@ -213,7 +210,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 
 	const admin = configStore.store.user.admin;
 
-	const mcpUrl = `${Env.MODULE}/api/ext/mcp/${id}/comms`;
+	// const mcpUrl = `${Env.MODULE}/api/ext/mcp/${id}/comms`;
 
 	const [portalReactors, setPortalReactors] = useState<{
 		reactors: string[];
@@ -501,25 +498,25 @@ export const SettingsTab = (props: AppSettingsProps) => {
 		}
 	});
 
-	/**
-	 * Copy text and add it to the clipboard
-	 * @param text - text to copy
-	 */
-	const copy = async (text: string) => {
-		try {
-			await navigator.clipboard.writeText(text);
+	// /**
+	//  * Copy text and add it to the clipboard
+	//  * @param text - text to copy
+	//  */
+	// const copy = async (text: string) => {
+	// 	try {
+	// 		await navigator.clipboard.writeText(text);
 
-			notification.add({
-				color: "success",
-				message: "Successfully copied to clipboard",
-			});
-		} catch (_e) {
-			notification.add({
-				color: "error",
-				message: "Unable to copy to clipboard",
-			});
-		}
-	};
+	// 		notification.add({
+	// 			color: "success",
+	// 			message: "Successfully copied to clipboard",
+	// 		});
+	// 	} catch (_e) {
+	// 		notification.add({
+	// 			color: "error",
+	// 			message: "Unable to copy to clipboard",
+	// 		});
+	// 	}
+	// };
 
 	return (
 		<StyledContainer>
@@ -659,7 +656,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 
 			<SectionDivider />
 
-			<Stack direction="row">
+			{/* <Stack direction="row">
 				<TextField
 					label="MCP URL"
 					size="small"
@@ -682,7 +679,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 						},
 					}}
 				/>
-			</Stack>
+			</Stack> */}
 
 			<SectionDivider />
 
