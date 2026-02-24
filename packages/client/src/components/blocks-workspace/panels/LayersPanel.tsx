@@ -41,7 +41,6 @@ import {
 	Icon,
 	IconButton,
 	InputAdornment,
-	Menu,
 	Stack,
 	styled,
 	TextField,
@@ -49,6 +48,14 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import {
+	Button,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	Input,
+} from "@semoss/ui/next";
 import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
@@ -220,15 +227,6 @@ const StyledTypography = styled(Typography)(() => ({
 	letterSpacing: "0.15px",
 }));
 
-const StyledPagesContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	height: "30%",
-	width: "100%",
-	minHeight: "120px",
-	overflow: "hidden",
-}));
-
 const StyledPageScroll = styled("div")(({ theme }) => ({
 	flex: 1,
 	overflow: "auto",
@@ -246,48 +244,6 @@ const StyledHomePageChildDiv = styled("div")(() => ({
 	alignItems: "center",
 	justifyContent: "center",
 	width: "24px",
-}));
-
-const StyledRenameTextFiled = styled(TextField)(() => ({
-	"& .MuiOutlinedInput-root": {
-		borderRadius: "4px",
-		width: "100%",
-		maxWidth: "170px",
-		height: "21px",
-		paddingInline: "4px",
-		border: "1px solid #0471F0",
-		fontFamily: "Inter",
-		fontSize: "14px",
-		fontWeight: 400,
-		fontStyle: "normal",
-		lineHeight: "150%",
-		letterSpacing: "0.17px",
-		color: "#666666",
-		"& fieldset": {
-			borderRadius: "4px",
-		},
-		"& .MuiOutlinedInput-input": {
-			padding: "0px",
-		},
-	},
-}));
-
-const StyledRenameStack = styled(Stack)(() => ({
-	alignItems: "center",
-	spacing: 1,
-	display: "flex",
-	gap: "4px",
-	flexDirection: "row",
-}));
-
-const StyledIconButton = styled(IconButton)(() => ({
-	bottom: "4px",
-}));
-
-const StyledRenameImage = styled("img")(() => ({
-	marginRight: "12px",
-	position: "relative",
-	left: "4px",
 }));
 
 export const PAGE_BLOCK: BlockJSON = {
@@ -933,7 +889,7 @@ export const LayersPanel = observer(
 				renderBlock(newId);
 				handleMenuClose();
 			};
-			const handleBlockName = (id: string) => {
+			const handleRenameBlock = (id: string) => {
 				setEditingBlockId(id);
 				const block = state.blocks[id];
 				setEditBlockId(
@@ -942,29 +898,20 @@ export const LayersPanel = observer(
 						: (block?.id as string),
 				);
 			};
-			const handlevalidation = (id: string) => {
-				for (let i = 0; i < Object.keys(state.blocks).length; i++) {
-					const block = state.blocks[Object.keys(state.blocks)[i]];
-					if (block.data.id) {
-						if (block.data.id === id) {
-							setRename(true);
-							break;
-						} else if (block.id === id) {
-							setRename(true);
-							break;
-						}
-					} else if (block.id === id) {
-						setRename(true);
-						break;
-					} else if (id.length === 0) {
-						setRename(true);
-						break;
-					} else {
-						setRename(false);
-					}
+			const handleValidation = (id: string) => {
+				if (!id) {
+					setRename(true);
+					return;
 				}
-			};
 
+				const blocks = Object.values(state.blocks);
+
+				const exists = blocks.some(
+					(block: any) => block.id === id || block?.data?.id === id,
+				);
+
+				setRename(exists);
+			};
 			return (
 				<>
 					<StyledTreeItemLabel>
@@ -987,56 +934,75 @@ export const LayersPanel = observer(
 							</StyledLabelTitle>
 							<div ref={editableAreaRef}>
 								{editingBlockId === block.id ? ( // Check if the current block is being edited
-									<StyledRenameStack>
-										<StyledRenameStack className="editable-container">
-											<StyledRenameTextFiled
-												inputRef={inputRef}
+									<div className="flex flex-row items-center gap-1">
+										<div className="flex flex-row items-center gap-1">
+											<Input
+												ref={inputRef}
+												className={[
+													"w-full max-w-[170px]",
+													"h-[21px]",
+													"px-1 shadow-none",
+													"rounded border border-[#0471F0]",
+													"font-['Inter'] font-normal text-[14px] leading-[21px] tracking-[0.17px]",
+													"text-[#666666]",
+													"focus-visible:border-[#0471F0] focus-visible:outline-none focus-visible:ring-0",
+												].join(" ")}
 												value={editBlockId}
 												onChange={(e) => {
-													e.preventDefault();
-													e.stopPropagation();
-													setEditBlockId(
-														e.target.value,
-													);
-													handlevalidation(
-														e.target.value,
-													);
+													const newVal =
+														e.target.value;
+													setEditBlockId(newVal);
+													handleValidation(newVal);
 													const cursorPosition =
 														e.target.selectionStart;
-													setTimeout(() => {
-														if (
-															inputRef.current &&
-															cursorPosition !==
-																null
-														) {
-															inputRef.current.setSelectionRange(
-																cursorPosition,
-																cursorPosition,
-															);
-														}
-													}, 0);
+													if (
+														inputRef.current &&
+														cursorPosition !== null
+													) {
+														requestAnimationFrame(
+															() => {
+																if (
+																	inputRef.current
+																) {
+																	inputRef.current.setSelectionRange(
+																		cursorPosition,
+																		cursorPosition,
+																	);
+																}
+															},
+														);
+													}
 												}}
-												size="small"
-												variant="outlined"
+												onClick={(e) =>
+													e.stopPropagation()
+												}
+												onMouseDown={(e) => {
+													e.stopPropagation();
+												}}
 												autoFocus
 											/>
-										</StyledRenameStack>
-										<StyledIconButton
-											color="primary"
+										</div>
+										<Button
 											disabled={rename}
 											onMouseDown={(e) => {
 												e.stopPropagation();
 											}}
+											className={`relative bottom-0.5 min-h-0 min-w-0 bg-transparent px-1 py-0 ${
+												rename
+													? "text-black-300"
+													: "text-blue-600"
+											}`}
 											onClick={(e) => {
 												e.stopPropagation();
 												handleRename(block.id);
 												setRename(true);
 												setEditingBlockId(null);
 											}}
+											variant="secondary"
 										>
 											<CheckIcon />
-										</StyledIconButton>
-									</StyledRenameStack>
+										</Button>
+									</div>
 								) : (
 									<StyledLabelSubtitleText variant="caption">
 										{variableName ||
@@ -1085,68 +1051,62 @@ export const LayersPanel = observer(
 							<MoreVert fontSize="small" />
 						</IconButton>
 					</StyledTreeItemLabel>
-					<Menu
-						anchorEl={menuAnchorEl}
+					<DropdownMenu
 						open={Boolean(menuAnchorEl)}
-						onClose={handleMenuClose}
-						anchorOrigin={{
-							vertical: "bottom",
-							horizontal: "right",
-						}}
-						transformOrigin={{
-							vertical: "top",
-							horizontal: "right",
-						}}
-						sx={{
-							".MuiPopover-paper": {
-								borderRadius: "4px",
-								padding: "8px 0px",
-								boxShadow:
-									"0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
-							},
-						}}
+						onOpenChange={handleMenuClose}
 					>
-						{!INPUT_BLOCK_TYPES.includes(block.widget) && (
-							<Menu.Item
-								value="rename"
-								sx={{ display: "flex" }}
-								onClick={(e) => {
+						<DropdownMenuTrigger asChild>
+							<div />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							align="end"
+							side="bottom"
+							className="rounded-md border bg-popover p-1 shadow-md"
+						>
+							{!INPUT_BLOCK_TYPES.includes(block.widget) && (
+								<DropdownMenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										handleRenameBlock(block.id);
+										handleMenuClose();
+									}}
+									className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+								>
+									<img
+										src={RenameIcon}
+										alt="Rename Icon"
+										className="relative left-1 mr-3"
+									/>
+									Rename
+								</DropdownMenuItem>
+							)}
+							<DropdownMenuItem
+								onClick={(e: React.MouseEvent<HTMLElement>) => {
 									e.stopPropagation();
-									handleBlockName(block.id);
+									handleDuplicate(e, block.id);
+									handleMenuClose();
 								}}
+								className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
 							>
-								<StyledRenameImage
-									src={RenameIcon}
-									alt="Rename Icon"
+								<img
+									src={DuplicateIcon}
+									alt="Duplicate Icon"
+									className="mr-2"
 								/>
-								Rename
-							</Menu.Item>
-						)}
-						<Menu.Item
-							value="duplicate"
-							sx={{ display: "flex" }}
-							onClick={(e: React.MouseEvent<HTMLElement>) =>
-								handleDuplicate(e, block.id)
-							}
-						>
-							<img
-								src={DuplicateIcon}
-								alt="Duplicate Icon"
-								style={{ marginRight: "8px" }}
-							/>
-							Duplicate
-						</Menu.Item>
-						<Menu.Item
-							value="delete"
-							sx={{ display: "flex" }}
-							onClick={() => handleDelete(block.id)}
-						>
-							<DeleteOutlineOutlinedIcon
-								style={{ color: "#757575", marginRight: "6px" }}
-							/>
-							Delete
-						</Menu.Item>
-					</Menu>
+								Duplicate
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => {
+									handleDelete(block.id);
+									handleMenuClose();
+								}}
+								className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-outline text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+							>
+								<DeleteOutlineOutlinedIcon className="mr-1.5 size-4" />
+								Delete
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</>
 			);
 		};
