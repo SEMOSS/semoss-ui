@@ -9,6 +9,7 @@ import {
 	TextField,
 	ToggleTabsGroup,
 	Typography,
+	useNotification,
 } from "@semoss/ui";
 import { setProjectFavorite } from "@/api";
 import { type AppMetadata, AppTileCard } from "@/components/app";
@@ -258,10 +259,17 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	 * @desc action to favorite app
 	 * @param app
 	 */
+	const notification = useNotification();
+
 	const favoriteApp = (app) => {
 		const favorite = !isFavorited(app.project_id);
 		setProjectFavorite(app.project_id, favorite)
 			.then(() => {
+				notification.add({
+					color: "success",
+					message: `Project ${favorite ? "bookmarked" : "unbookmarked"}`,
+				});
+
 				if (!favorite) {
 					// Create a new array before modifying
 					const newFavorites = [...favoritedApps];
@@ -284,7 +292,11 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				}
 			})
 			.catch((err) => {
-				throw Error(err);
+				notification.add({
+					color: "error",
+					message: "Unable to update favorite status",
+				});
+				console.error(err);
 			});
 	};
 
