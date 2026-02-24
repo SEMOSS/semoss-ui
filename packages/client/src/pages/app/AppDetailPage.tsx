@@ -582,7 +582,7 @@ export const AppDetailPage = () => {
 			"Dependencies",
 			"MCP Usage",
 		],
-		readOnly: ["Overview", "Files", "Dependencies", "MCP Usage"],
+		readOnly: ["Overview", "Dependencies", "MCP Usage"],
 		discoverable: ["Overview"],
 	};
 
