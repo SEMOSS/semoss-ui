@@ -3,7 +3,6 @@ import { config } from "dotenv";
 import fs from "fs";
 import open, { type AppName } from "open";
 import path from "path";
-import { Env } from "@semoss/sdk";
 import { getBatchConfig } from "../utils/index.js";
 
 export default class Open extends Command {
@@ -100,7 +99,12 @@ export default class Open extends Command {
 		}
 
 		// Single endpoint mode
-		await this.openApp(endpoint, Env.APP, undefined, flags.browser);
+		await this.openApp(
+			endpoint,
+			process.env.APP ?? process.env.VITE_APP,
+			undefined,
+			flags.browser,
+		);
 	}
 
 	// Helper to open a browser for a given endpoint and optional app
@@ -111,11 +115,16 @@ export default class Open extends Command {
 		browser?: string,
 	) {
 		let url = endpoint;
+		if (url.endsWith("/")) {
+			url = url.slice(0, -1);
+		}
+
+		url = `${url}/packages/client/dist/#`;
 		if (typeof app === "string" && app.trim() !== "") {
 			if (url.endsWith("/")) {
 				url = url.slice(0, -1);
 			}
-			url = `${url}/packages/client/dist/#/app/${app}/view`;
+			url = `${url}/app/${app}/view`;
 		}
 		if (label) {
 			this.log(`Opening browser to [${label}]: ${url}`);

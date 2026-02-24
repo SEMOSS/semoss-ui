@@ -1,7 +1,6 @@
-import { Command, Flags } from "@oclif/core";
+import { Command, Flags, ux } from "@oclif/core";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import * as readline from "node:readline";
 import { ensureSemossGitignore } from "../utils/index.js";
 
 export default class Config extends Command {
@@ -121,16 +120,9 @@ Generate skeleton config
 
 		// If merging is not possible and --force is not present, prompt user interactively
 		if (shouldPrompt && !flags.force) {
-			const rl = readline.createInterface({
-				input: process.stdin,
-				output: process.stdout,
-			});
-			const question = (q: string) =>
-				new Promise<string>((resolve) => rl.question(q, resolve));
-			const answer = await question(
-				"smss.json exists and cannot be safely merged. Overwrite? (y/n): ",
+			const answer = await ux.prompt(
+				"smss.json exists and cannot be safely merged. Overwrite? (y/n)",
 			);
-			rl.close();
 			if (answer.trim().toLowerCase() !== "y") {
 				this.log("Aborted. smss.json was not overwritten.");
 				return;

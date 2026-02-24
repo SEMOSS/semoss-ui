@@ -1,0 +1,211 @@
+import { Command, Flags } from "@oclif/core";
+import * as fs from "node:fs";
+
+const HISTORY_FILE = ".semoss-deployments";
+
+/** A single deployment history record written by the deploy command. */
+interface DeployRecord {
+	timestamp: string;
+	targets: string[] | "all";
+	status: "success" | "failure" | "dry-run";
+	zipSize?: number;
+	duration?: number;
+	backupDir?: string;
+	rollback?: boolean;
+	app?: string;
+	module?: string;
+}
+
+const VALID_DEPLOY_STATUSES = new Set(["success", "failure", "dry-run"]);
+
+export default class Log extends Command {
+	static description = "Show deployment history from .semoss-deployments";
+
+	static examples = [
+		`<%= config.bin %> <%= command.id %>
+Show recent deployments
+`,
+		`<%= config.bin %> <%= command.id %> --limit=5
+Show last 5 deployments
+`,
+		`<%= config.bin %> <%= command.id %> --verbose
+Show detailed deployment info
+`,
+		`<%= config.bin %> <%= command.id %> --json
+Output as JSON
+`,
+	];
+
+	static flags = {
+		limit: Flags.integer({
+			char: "l",
+			description: "Number of deployments to show (default: 10)",
+			default: 10,
+		}),
+		verbose: Flags.boolean({
+			char: "v",
+			description: "Show detailed deployment information",
+			default: false,
+		}),
+		json: Flags.boolean({
+			description: "Output as JSON",
+			default: false,
+		}),
+		status: Flags.string({
+			char: "s",
+			description: "Filter by status: success, failure, dry-run",
+			options: ["success", "failure", "dry-run"],
+		}),
+	};
+
+	public async run(): Promise<void> {
+		const { flags } = await this.parse(Log);
+
+		const history = this.loadDeployHistory();
+
+		if (history.length === 0) {
+			if (flags.json) {
+				this.log("[]");
+			} else {
+				this.log("No deployment history found.");
+				this.log(`History file: ${HISTORY_FILE}`);
+			}
+			return;
+		}
+
+		// Filter by status if specified
+		let filtered = history;
+		if (flags.status) {
+			filtered = history.filter((r) => r.status === flags.status);
+		}
+
+		// Apply limit (show most recent first)
+		const limited = filtered.slice(-flags.limit).reverse();
+
+		if (flags.json) {
+			this.log(JSON.stringify(limited, null, 2));
+			return;
+		}
+
+		this.log(
+			`\n📋 Deployment History (${limited.length} of ${history.length} total)\n`,
+		);
+		this.log("─".repeat(60));
+
+		for (const record of limited) {
+			this.printRecord(record, flags.verbose);
+		}
+
+		// Summary
+		const successCount = history.filter(
+			(r) => r.status === "success",
+		).length;
+		const failureCount = history.filter(
+			(r) => r.status === "failure",
+		).length;
+		const dryRunCount = history.filter(
+			(r) => r.status === "dry-run",
+		).length;
+
+		this.log("\n📊 Summary");
+		this.log("─".repeat(60));
+		this.log(`   ✅ Successful: ${successCount}`);
+		this.log(`   ❌ Failed: ${failureCount}`);
+		this.log(`   🔍 Dry-run: ${dryRunCount}`);
+		this.log("");
+	}
+
+	private loadDeployHistory(): DeployRecord[] {
+		try {
+			const content = fs.readFileSync(HISTORY_FILE, "utf-8");
+			const parsed: unknown = JSON.parse(content);
+			if (!Array.isArray(parsed)) return [];
+
+			return parsed.filter(
+				(r): r is DeployRecord =>
+					r != null &&
+					typeof r === "object" &&
+					typeof (r as DeployRecord).timestamp === "string" &&
+					VALID_DEPLOY_STATUSES.has((r as DeployRecord).status),
+			);
+		} catch {
+			return [];
+		}
+	}
+
+	private printRecord(record: DeployRecord, verbose: boolean): void {
+		const statusIcon = this.getStatusIcon(record.status);
+		const timestamp = this.formatTimestamp(record.timestamp);
+		const targets =
+			record.targets === "all"
+				? "all"
+				: Array.isArray(record.targets)
+					? record.targets.join(", ")
+					: "unknown";
+
+		this.log(`\n${statusIcon} ${timestamp}`);
+		this.log(
+			`   Status:  ${record.status}${record.rollback ? " (rollback)" : ""}`,
+		);
+		this.log(`   Targets: ${targets}`);
+
+		if (verbose) {
+			if (record.duration) {
+				this.log(
+					`   Duration: ${this.formatDuration(record.duration)}`,
+				);
+			}
+			if (record.zipSize) {
+				this.log(`   Zip size: ${this.formatBytes(record.zipSize)}`);
+			}
+			if (record.backupDir) {
+				this.log(`   Backup:   ${record.backupDir}`);
+			}
+			if (record.app) {
+				this.log(`   App ID:   ${record.app}`);
+			}
+			if (record.module) {
+				this.log(`   Module:   ${record.module}`);
+			}
+		}
+	}
+
+	private getStatusIcon(status: string): string {
+		switch (status) {
+			case "success":
+				return "✅";
+			case "failure":
+				return "❌";
+			case "dry-run":
+				return "🔍";
+			default:
+				return "❓";
+		}
+	}
+
+	private formatTimestamp(timestamp: string): string {
+		try {
+			const date = new Date(timestamp);
+			return date.toLocaleString();
+		} catch {
+			return timestamp;
+		}
+	}
+
+	private formatDuration(ms: number): string {
+		if (ms < 1000) return `${ms}ms`;
+		const seconds = Math.floor(ms / 1000);
+		if (seconds < 60) return `${seconds}s`;
+		const minutes = Math.floor(seconds / 60);
+		const remainingSeconds = seconds % 60;
+		return `${minutes}m ${remainingSeconds}s`;
+	}
+
+	private formatBytes(bytes: number): string {
+		if (bytes === 0) return "0 Bytes";
+		const k = 1024;
+		const sizes = ["Bytes", "KB", "MB", "GB"];
+		const i = Math.floor(Math.log(bytes) / Math.log(k));
+		return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
+	}
+}

@@ -1109,7 +1109,6 @@ deploy java and python folders
 
 		// get the tasks
 		const tasks = new Listr<{
-			result?: number;
 			zipBuffer?: Buffer;
 			deleteResult?: unknown;
 			uploadResult?: unknown;
@@ -1394,138 +1393,139 @@ deploy java and python folders
 					return true;
 				},
 			},
-			{
-				title:
-					rollbackBackupDir || isFullDeploy
-						? "Deleting All Assets"
-						: "Cleaning Target Assets",
-				enabled: () => !flags.dryRun,
-				task: async (context) => {
-					const startTime = Date.now();
+			// Commenting out for now. Unzipping should replace the old files will fully remove once tested.
+			// {
+			// 	title:
+			// 		rollbackBackupDir || isFullDeploy
+			// 			? "Deleting All Assets"
+			// 			: "Cleaning Target Assets",
+			// 	enabled: () => !flags.dryRun,
+			// 	task: async (context) => {
+			// 		const startTime = Date.now();
 
-					if (rollbackBackupDir || isFullDeploy) {
-						const deleteCommand = `DeleteAppAssets(project="${opts.app}")`;
+			// 		if (rollbackBackupDir || isFullDeploy) {
+			// 			const deleteCommand = `DeleteAppAssets(project="${opts.app}")`;
 
-						if (shouldLog(flags.logLevel, "verbose")) {
-							logWithTiming(
-								this.log.bind(this),
-								`🗑️ Executing: ${deleteCommand}`,
-								startTime,
-							);
-						}
+			// 			if (shouldLog(flags.logLevel, "verbose")) {
+			// 				logWithTiming(
+			// 					this.log.bind(this),
+			// 					`🗑️ Executing: ${deleteCommand}`,
+			// 					startTime,
+			// 				);
+			// 			}
 
-						if (shouldLog(flags.logLevel, "debug")) {
-							this.log(`🔍 Delete Details:`);
-							this.log(`   • Command: ${deleteCommand}`);
-							this.log(`   • Target Path: version/assets/`);
-							this.log(`   • Target App: ${opts.app}`);
-						}
+			// 			if (shouldLog(flags.logLevel, "debug")) {
+			// 				this.log(`🔍 Delete Details:`);
+			// 				this.log(`   • Command: ${deleteCommand}`);
+			// 				this.log(`   • Target Path: version/assets/`);
+			// 				this.log(`   • Target App: ${opts.app}`);
+			// 			}
 
-						try {
-							const { pixelReturn } =
-								await insight.actions.run(deleteCommand);
+			// 			try {
+			// 				const { pixelReturn } =
+			// 					await insight.actions.run(deleteCommand);
 
-							context.deleteResult = pixelReturn[0].output;
+			// 				context.deleteResult = pixelReturn[0].output;
 
-							if (shouldLog(flags.logLevel, "verbose")) {
-								logWithTiming(
-									this.log.bind(this),
-									`✅ DeleteAsset Result: ${context.deleteResult}`,
-									startTime,
-								);
-							}
+			// 				if (shouldLog(flags.logLevel, "verbose")) {
+			// 					logWithTiming(
+			// 						this.log.bind(this),
+			// 						`✅ DeleteAsset Result: ${context.deleteResult}`,
+			// 						startTime,
+			// 					);
+			// 				}
 
-							if (shouldLog(flags.logLevel, "debug")) {
-								this.log(`🔍 Delete Analysis:`);
-								this.log(
-									`   • Result: ${context.deleteResult}`,
-								);
-								this.log(
-									`   • Result Type: ${typeof context.deleteResult}`,
-								);
-								this.log(
-									`   • Execution Time: ${Date.now() - startTime}ms`,
-								);
-							}
-						} catch (error) {
-							const errorMsg =
-								(error as Error).message || String(error);
-							if (
-								errorMsg.includes(
-									"Could not find any of the files",
-								)
-							) {
-								// No assets to delete - this is fine (first deployment or already clean)
-								if (shouldLog(flags.logLevel, "verbose")) {
-									logWithTiming(
-										this.log.bind(this),
-										`ℹ️ No assets to delete (environment may be fresh)`,
-										startTime,
-									);
-								}
-								context.deleteResult = "no-assets-to-delete";
-							} else {
-								// Log the error but proceed — upload can still succeed
-								this.log(
-									`⚠️  DeleteAppAssets failed: ${errorMsg}`,
-								);
-								this.log(
-									`📝 Continuing with upload — assets may need manual cleanup.`,
-								);
-								context.deleteResult =
-									"delete-failed-continuing";
-							}
-						}
-					} else {
-						if (shouldLog(flags.logLevel, "verbose")) {
-							logWithTiming(
-								this.log.bind(this),
-								`🗑️ Deleting target-specific assets...`,
-								startTime,
-							);
-						}
+			// 				if (shouldLog(flags.logLevel, "debug")) {
+			// 					this.log(`🔍 Delete Analysis:`);
+			// 					this.log(
+			// 						`   • Result: ${context.deleteResult}`,
+			// 					);
+			// 					this.log(
+			// 						`   • Result Type: ${typeof context.deleteResult}`,
+			// 					);
+			// 					this.log(
+			// 						`   • Execution Time: ${Date.now() - startTime}ms`,
+			// 					);
+			// 				}
+			// 			} catch (error) {
+			// 				const errorMsg =
+			// 					(error as Error).message || String(error);
+			// 				if (
+			// 					errorMsg.includes(
+			// 						"Could not find any of the files",
+			// 					)
+			// 				) {
+			// 					// No assets to delete - this is fine (first deployment or already clean)
+			// 					if (shouldLog(flags.logLevel, "verbose")) {
+			// 						logWithTiming(
+			// 							this.log.bind(this),
+			// 							`ℹ️ No assets to delete (environment may be fresh)`,
+			// 							startTime,
+			// 						);
+			// 					}
+			// 					context.deleteResult = "no-assets-to-delete";
+			// 				} else {
+			// 					// Log the error but proceed — upload can still succeed
+			// 					this.log(
+			// 						`⚠️  DeleteAppAssets failed: ${errorMsg}`,
+			// 					);
+			// 					this.log(
+			// 						`📝 Continuing with upload — assets may need manual cleanup.`,
+			// 					);
+			// 					context.deleteResult =
+			// 						"delete-failed-continuing";
+			// 				}
+			// 			}
+			// 		} else {
+			// 			if (shouldLog(flags.logLevel, "verbose")) {
+			// 				logWithTiming(
+			// 					this.log.bind(this),
+			// 					`🗑️ Deleting target-specific assets...`,
+			// 					startTime,
+			// 				);
+			// 			}
 
-						for (const target of deployTargets as string[]) {
-							const remotePath = `${target}`;
+			// 			for (const target of deployTargets as string[]) {
+			// 				const remotePath = `${target}`;
 
-							if (shouldLog(flags.logLevel, "verbose")) {
-								this.log(`   🗑️ Deleting: ${remotePath}`);
-							}
+			// 				if (shouldLog(flags.logLevel, "verbose")) {
+			// 					this.log(`   🗑️ Deleting: ${remotePath}`);
+			// 				}
 
-							const deleteCommand = `DeleteAppAssets(project="${opts.app}", filePath="${remotePath}");`;
+			// 				const deleteCommand = `DeleteAppAssets(project="${opts.app}", filePath="${remotePath}");`;
 
-							try {
-								const { pixelReturn } =
-									await insight.actions.run(deleteCommand);
+			// 				try {
+			// 					const { pixelReturn } =
+			// 						await insight.actions.run(deleteCommand);
 
-								if (shouldLog(flags.logLevel, "debug")) {
-									this.log(
-										`📊 DeleteAppAssets Response for ${target}: ${JSON.stringify(pixelReturn, null, 2)}`,
-									);
-								}
-							} catch (error) {
-								if (shouldLog(flags.logLevel, "verbose")) {
-									this.warn(
-										`⚠️ Warning deleting ${remotePath}: ${error}`,
-									);
-								}
-							}
-						}
+			// 					if (shouldLog(flags.logLevel, "debug")) {
+			// 						this.log(
+			// 							`📊 DeleteAppAssets Response for ${target}: ${JSON.stringify(pixelReturn, null, 2)}`,
+			// 						);
+			// 					}
+			// 				} catch (error) {
+			// 					if (shouldLog(flags.logLevel, "verbose")) {
+			// 						this.warn(
+			// 							`⚠️ Warning deleting ${remotePath}: ${error}`,
+			// 						);
+			// 					}
+			// 				}
+			// 			}
 
-						if (shouldLog(flags.logLevel, "verbose")) {
-							logWithTiming(
-								this.log.bind(this),
-								`✅ Target assets deleted`,
-								startTime,
-							);
-						}
+			// 			if (shouldLog(flags.logLevel, "verbose")) {
+			// 				logWithTiming(
+			// 					this.log.bind(this),
+			// 					`✅ Target assets deleted`,
+			// 					startTime,
+			// 				);
+			// 			}
 
-						context.deleteResult = "target-assets-deleted";
-					}
+			// 			context.deleteResult = "target-assets-deleted";
+			// 		}
 
-					return true;
-				},
-			},
+			// 		return true;
+			// 	},
+			// },
 			{
 				title: "Uploading Zipped Directory",
 				enabled: () => !flags.dryRun,
@@ -1710,12 +1710,7 @@ deploy java and python folders
 					return;
 				}
 
-				if (context.result === undefined) {
-					throw new Error("Result Missing");
-				}
-
 				this.log("🎉 Success!");
-				this.log(`🧮 1+1 Result: ${context.result}`);
 
 				if (context.deleteResult !== undefined) {
 					this.log(`🗑️ DeleteAsset Result: ${context.deleteResult}`);
@@ -1733,7 +1728,6 @@ deploy java and python folders
 
 				if (shouldLog(flags.logLevel, "verbose")) {
 					this.log("\n📋 Summary:");
-					this.log(`   • 1+1 calculation: ${context.result}`);
 					this.log(
 						`   • Zip operation: ${context.zipBuffer ? "Completed" : "Failed"}`,
 					);
@@ -1778,7 +1772,6 @@ deploy java and python folders
 					this.log(
 						`   • Successful Operations: ${
 							[
-								context.result !== undefined,
 								context.zipBuffer !== undefined,
 								context.deleteResult !== undefined,
 								context.uploadResult !== undefined,

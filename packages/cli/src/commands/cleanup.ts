@@ -1,4 +1,4 @@
-import { Command, Flags } from "@oclif/core";
+import { Command, Flags, ux } from "@oclif/core";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -173,17 +173,7 @@ List all backups without deleting
 	}
 
 	private async confirm(message: string): Promise<boolean> {
-		const readline = await import("node:readline");
-		const rl = readline.createInterface({
-			input: process.stdin,
-			output: process.stdout,
-		});
-
-		return new Promise((resolve) => {
-			rl.question(`${message} `, (answer) => {
-				rl.close();
-				resolve(answer.toLowerCase() === "yes");
-			});
-		});
+		const answer = await ux.prompt(message);
+		return answer.toLowerCase() === "yes";
 	}
 }

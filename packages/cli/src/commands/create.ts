@@ -1,4 +1,4 @@
-import { Command, Flags } from "@oclif/core";
+import { Command, Flags, ux } from "@oclif/core";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,7 +21,7 @@ create in specific directory
 		name: Flags.string({
 			char: "n",
 			description: "Application name",
-			required: true,
+			required: false,
 		}),
 		directory: Flags.string({
 			char: "d",
@@ -37,7 +37,15 @@ create in specific directory
 
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Create);
-		const appName = flags.name;
+
+		// Prompt for app name if not provided
+		let appName = flags.name;
+		if (!appName) {
+			appName = await ux.prompt("What is the name of your app?", {
+				required: true,
+			});
+		}
+
 		const targetDir =
 			flags.directory || appName.toLowerCase().replace(/\s+/g, "-");
 		const forceOverwrite = flags.force;
