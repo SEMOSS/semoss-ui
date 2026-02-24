@@ -6,6 +6,7 @@ import {
 	getProjectUsers,
 	getProjectUsersNoCredentials,
 	type PostUser,
+	propagateUserPermissions,
 	type Role,
 } from "@semoss/shared";
 import {
@@ -66,6 +67,10 @@ export const WorkspaceSharingModal = ({
 	>({});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [popoverOpen, setPopoverOpen] = useState(false);
+	const [step, setStep] = useState<"add-users" | "confirm-dependencies">(
+		"add-users",
+	);
+	const [sharedUsers, setSharedUsers] = useState<PostUser[]>([]);
 
 	const [usersInDropdown, setUsersInDropdown] = useState<
 		(User & {
@@ -201,13 +206,12 @@ export const WorkspaceSharingModal = ({
 				}),
 			);
 
-			// Reset state
+			// Save the added users and move to the dependency-sharing step
+			setSharedUsers(usersToAdd);
 			setPendingUsers({});
 			setSearch("");
 			setSelectedPermission("READ_ONLY");
-
-			// Close modal with changes made
-			onClose(true);
+			setStep("confirm-dependencies");
 		} catch (error) {
 			toast.error(
 				t("workspace:messages.addMembersFailed") +
@@ -219,209 +223,292 @@ export const WorkspaceSharingModal = ({
 	};
 
 	/**
-	 * Handle dialog close
+	 * Handle dialog close. If we've already added members (step 2),
+	 * report changes=true so the members list refreshes.
 	 */
-	const handleClose = useCallback(() => {
-		// Reset state
-		setPendingUsers({});
-		setSearch("");
-		setSelectedPermission("READ_ONLY");
-		onClose(false);
-	}, [onClose]);
+	const handleClose = useCallback(
+		(madeChanges = false) => {
+			const didAddMembers = step === "confirm-dependencies";
+			setPendingUsers({});
+			setSearch("");
+			setSelectedPermission("READ_ONLY");
+			setStep("add-users");
+			setSharedUsers([]);
+			onClose(madeChanges || didAddMembers);
+		},
+		[onClose, step],
+	);
+
+	/**
+	 * Propagate the just-added members' permissions to all dependencies.
+	 */
+	const handleShareDependencies = async () => {
+		setIsSubmitting(true);
+		try {
+			await propagateUserPermissions(workspaceId, sharedUsers);
+			toast.success(t("workspace:sharing.dependenciesSuccess"));
+		} catch {
+			toast.error(t("workspace:sharing.dependenciesFailed"));
+		} finally {
+			setIsSubmitting(false);
+			handleClose(true);
+		}
+	};
+
+	/**
+	 * Skip the dependency-sharing step and close.
+	 */
+	const handleSkipDependencies = () => {
+		handleClose(true);
+	};
 
 	const showLoading = isLoadingDropdownUsers || search !== debouncedSearch;
 
 	return (
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
 			<DialogContent className="max-w-2xl">
-				<DialogHeader>
-					<DialogTitle>{t("workspace:sharing.title")}</DialogTitle>
-					<DialogDescription>
-						{t("workspace:sharing.description")}
-					</DialogDescription>
-				</DialogHeader>
-
-				<div className="flex flex-col gap-4">
-					{/* Add User Form */}
-					<div className="flex flex-col gap-2">
-						<div className="flex gap-2">
-							<Popover
-								open={popoverOpen}
-								onOpenChange={setPopoverOpen}
+				{step === "confirm-dependencies" ? (
+					<>
+						<DialogHeader>
+							<DialogTitle>
+								{t("workspace:sharing.dependenciesTitle")}
+							</DialogTitle>
+							<DialogDescription>
+								{t(
+									"workspace:sharing.dependenciesDescription",
+									{ count: sharedUsers.length },
+								)}
+							</DialogDescription>
+						</DialogHeader>
+						<DialogFooter>
+							<Button
+								variant="outline"
+								onClick={handleSkipDependencies}
+								disabled={isSubmitting}
 							>
-								<PopoverTrigger asChild>
-									<Button
-										variant="outline"
-										role="combobox"
-										aria-expanded={popoverOpen}
-										className="flex-1 justify-between"
+								{t("workspace:sharing.buttonSkip")}
+							</Button>
+							<Button
+								onClick={handleShareDependencies}
+								disabled={isSubmitting}
+							>
+								{isSubmitting
+									? t("workspace:sharing.buttonAdding")
+									: t(
+											"workspace:sharing.buttonShareDependencies",
+										)}
+							</Button>
+						</DialogFooter>
+					</>
+				) : (
+					<>
+						<DialogHeader>
+							<DialogTitle>
+								{t("workspace:sharing.title")}
+							</DialogTitle>
+							<DialogDescription>
+								{t("workspace:sharing.description")}
+							</DialogDescription>
+						</DialogHeader>
+
+						<div className="flex flex-col gap-4">
+							{/* Add User Form */}
+							<div className="flex flex-col gap-2">
+								<div className="flex gap-2">
+									<Popover
+										open={popoverOpen}
+										onOpenChange={setPopoverOpen}
 									>
-										<span className="truncate">
-											{search ||
-												t(
-													"workspace:sharing.searchPlaceholder",
-												)}
-										</span>
-										<ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
-									</Button>
-								</PopoverTrigger>
-								<PopoverContent
-									className="w-[400px] p-0"
-									align="start"
-								>
-									<Command shouldFilter={false}>
-										<CommandInput
-											placeholder={t(
-												"workspace:sharing.searchUsers",
-											)}
-											value={search}
-											onValueChange={setSearch}
-										/>
-										<CommandList>
-											<CommandEmpty>
-												{showLoading ? (
-													<div className="flex items-center justify-center py-4">
-														<Spinner />
-													</div>
-												) : (
-													t(
-														"workspace:sharing.noUsersFound",
-													)
-												)}
-											</CommandEmpty>
-											<CommandGroup>
-												{usersInDropdown.map((user) => {
-													const isAlreadyPending =
-														!!pendingUsers[user.id];
-													const isInAgent =
-														user.inAgent;
-
-													return (
-														<CommandItem
-															key={`${user.id}-${user.email}`} // Use both ID and email for uniqueness
-															value={user.id}
-															onSelect={() =>
-																handleAddUser(
-																	user,
-																)
-															}
-															disabled={
-																isAlreadyPending ||
-																isInAgent
-															}
-														>
-															<div className="flex flex-1 flex-col truncate">
-																<span className="truncate">
-																	{user.name}
-																</span>
-																{user.email && (
-																	<span className="truncate text-muted-foreground text-xs">
-																		{
-																			user.email
-																		}
-																	</span>
-																)}
-															</div>
-															{isInAgent && (
-																<span className="ml-auto text-muted-foreground text-xs">
-																	{t(
-																		"workspace:sharing.hasAccess",
-																	)}
-																</span>
-															)}
-															{isAlreadyPending && (
-																<span className="ml-auto text-muted-foreground text-xs">
-																	{t(
-																		"workspace:sharing.pendingInvite",
-																	)}
-																</span>
-															)}
-														</CommandItem>
-													);
-												})}
-												{showLoading &&
-													usersInDropdown.length >
-														0 && (
-														<div className="flex items-center justify-center py-2">
-															<Spinner className="size-4" />
-														</div>
+										<PopoverTrigger asChild>
+											<Button
+												variant="outline"
+												role="combobox"
+												aria-expanded={popoverOpen}
+												className="flex-1 justify-between"
+											>
+												<span className="truncate">
+													{search ||
+														t(
+															"workspace:sharing.searchPlaceholder",
+														)}
+												</span>
+												<ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+											</Button>
+										</PopoverTrigger>
+										<PopoverContent
+											className="w-[400px] p-0"
+											align="start"
+										>
+											<Command shouldFilter={false}>
+												<CommandInput
+													placeholder={t(
+														"workspace:sharing.searchUsers",
 													)}
-											</CommandGroup>
-										</CommandList>
-									</Command>
-								</PopoverContent>
-							</Popover>
-							<div className="[&_button]:h-9!">
-								<PermissionDropdown
-									activeUserPermission={activeUserPermission}
-									permission={selectedPermission}
-									handlePermissionChange={
-										setSelectedPermission
-									}
-									hideDeleteOption
-								/>
-							</div>
-						</div>
-					</div>
+													value={search}
+													onValueChange={setSearch}
+												/>
+												<CommandList>
+													<CommandEmpty>
+														{showLoading ? (
+															<div className="flex items-center justify-center py-4">
+																<Spinner />
+															</div>
+														) : (
+															t(
+																"workspace:sharing.noUsersFound",
+															)
+														)}
+													</CommandEmpty>
+													<CommandGroup>
+														{usersInDropdown.map(
+															(user) => {
+																const isAlreadyPending =
+																	!!pendingUsers[
+																		user.id
+																	];
+																const isInAgent =
+																	user.inAgent;
 
-					{/* Pending Users List */}
-					{Object.keys(pendingUsers).length > 0 && (
-						<div className="flex flex-col gap-2">
-							<div className="font-medium text-sm">
-								{t("workspace:sharing.membersToAdd")} (
-								{Object.keys(pendingUsers).length})
-							</div>
-							<ScrollArea className="max-h-[300px] rounded-md border">
-								<div>
-									{Object.values(pendingUsers).map((user) => (
-										<WorkspaceMemberRow
-											key={`${user.id}-${user.email}`} // Use both ID and email for uniqueness
-											member={user}
-											currentUserId=""
+																return (
+																	<CommandItem
+																		key={`${user.id}-${user.email}`} // Use both ID and email for uniqueness
+																		value={
+																			user.id
+																		}
+																		onSelect={() =>
+																			handleAddUser(
+																				user,
+																			)
+																		}
+																		disabled={
+																			isAlreadyPending ||
+																			isInAgent
+																		}
+																	>
+																		<div className="flex flex-1 flex-col truncate">
+																			<span className="truncate">
+																				{
+																					user.name
+																				}
+																			</span>
+																			{user.email && (
+																				<span className="truncate text-muted-foreground text-xs">
+																					{
+																						user.email
+																					}
+																				</span>
+																			)}
+																		</div>
+																		{isInAgent && (
+																			<span className="ml-auto text-muted-foreground text-xs">
+																				{t(
+																					"workspace:sharing.hasAccess",
+																				)}
+																			</span>
+																		)}
+																		{isAlreadyPending && (
+																			<span className="ml-auto text-muted-foreground text-xs">
+																				{t(
+																					"workspace:sharing.pendingInvite",
+																				)}
+																			</span>
+																		)}
+																	</CommandItem>
+																);
+															},
+														)}
+														{showLoading &&
+															usersInDropdown.length >
+																0 && (
+																<div className="flex items-center justify-center py-2">
+																	<Spinner className="size-4" />
+																</div>
+															)}
+													</CommandGroup>
+												</CommandList>
+											</Command>
+										</PopoverContent>
+									</Popover>
+									<div className="[&_button]:h-9!">
+										<PermissionDropdown
 											activeUserPermission={
 												activeUserPermission
 											}
-											onPermissionChange={(
-												newPermission,
-											) =>
-												handleUpdatePermission(
-													user.id,
-													newPermission,
-												)
+											permission={selectedPermission}
+											handlePermissionChange={
+												setSelectedPermission
 											}
+											hideDeleteOption
 										/>
-									))}
+									</div>
 								</div>
-							</ScrollArea>
-						</div>
-					)}
-
-					{Object.keys(pendingUsers).length === 0 && (
-						<div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed py-12 text-center">
-							<UserPlusIcon className="size-8 text-muted-foreground" />
-							<div className="text-muted-foreground text-sm">
-								{t("workspace:sharing.emptyState")}
 							</div>
-						</div>
-					)}
-				</div>
 
-				<DialogFooter>
-					<Button variant="outline" onClick={handleClose}>
-						{t("common:buttons.cancel")}
-					</Button>
-					<Button
-						onClick={handleSubmit}
-						disabled={
-							Object.keys(pendingUsers).length === 0 ||
-							isSubmitting
-						}
-					>
-						{isSubmitting
-							? t("workspace:sharing.buttonAdding")
-							: t("workspace:sharing.buttonAdd")}
-					</Button>
-				</DialogFooter>
+							{/* Pending Users List */}
+							{Object.keys(pendingUsers).length > 0 && (
+								<div className="flex flex-col gap-2">
+									<div className="font-medium text-sm">
+										{t("workspace:sharing.membersToAdd")} (
+										{Object.keys(pendingUsers).length})
+									</div>
+									<ScrollArea className="max-h-[300px] rounded-md border">
+										<div>
+											{Object.values(pendingUsers).map(
+												(user) => (
+													<WorkspaceMemberRow
+														key={`${user.id}-${user.email}`} // Use both ID and email for uniqueness
+														member={user}
+														currentUserId=""
+														activeUserPermission={
+															activeUserPermission
+														}
+														onPermissionChange={(
+															newPermission,
+														) =>
+															handleUpdatePermission(
+																user.id,
+																newPermission,
+															)
+														}
+													/>
+												),
+											)}
+										</div>
+									</ScrollArea>
+								</div>
+							)}
+
+							{Object.keys(pendingUsers).length === 0 && (
+								<div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed py-12 text-center">
+									<UserPlusIcon className="size-8 text-muted-foreground" />
+									<div className="text-muted-foreground text-sm">
+										{t("workspace:sharing.emptyState")}
+									</div>
+								</div>
+							)}
+						</div>
+
+						<DialogFooter>
+							<Button
+								variant="outline"
+								onClick={() => handleClose()}
+							>
+								{t("common:buttons.cancel")}
+							</Button>
+							<Button
+								onClick={handleSubmit}
+								disabled={
+									Object.keys(pendingUsers).length === 0 ||
+									isSubmitting
+								}
+							>
+								{isSubmitting
+									? t("workspace:sharing.buttonAdding")
+									: t("workspace:sharing.buttonAdd")}
+							</Button>
+						</DialogFooter>
+					</>
+				)}
 			</DialogContent>
 		</Dialog>
 	);

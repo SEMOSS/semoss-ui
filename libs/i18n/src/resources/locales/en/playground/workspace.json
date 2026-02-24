@@ -32,7 +32,14 @@
 		"membersToAdd": "Members to add",
 		"emptyState": "Add users to share this workspace",
 		"buttonAdding": "Adding...",
-		"buttonAdd": "Add Members"
+		"buttonAdd": "Add Members",
+		"dependenciesTitle": "Share dependencies?",
+		"dependenciesDescription": "Would you also like to give this member access to this agent's knowledge bases and tools? You must be an owner or editor on each dependency.",
+		"dependenciesDescription_plural": "Would you also like to give these {{count}} members access to this agent's knowledge bases and tools? You must be an owner or editor on each dependency.",
+		"buttonShareDependencies": "Share Dependencies",
+		"buttonSkip": "Skip",
+		"dependenciesSuccess": "Dependencies shared successfully",
+		"dependenciesFailed": "Could not share all dependencies. You may not have owner or editor access on some of them."
 	},
 	"members": {
 		"heading": "Who has access",
