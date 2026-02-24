@@ -185,6 +185,18 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 				});
 
 				setBlocksToRemove(newIds);
+
+				return () => {
+					newIds.forEach(async (blockId) => {
+						await state.dispatch({
+							message: ActionMessages.REMOVE_BLOCK,
+							payload: {
+								id: blockId,
+								keep: false,
+							},
+						});
+					});
+				};
 			}
 		}
 		// TODO: FIx Dependency array
