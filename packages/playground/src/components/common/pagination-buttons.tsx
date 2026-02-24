@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Pagination,
 	PaginationContent,
@@ -73,6 +74,7 @@ export const PaginationButtons = ({
 	showRowsPerPage = true,
 	rowsPerPageOptions = [10, 25, 50, 100],
 }: PaginationButtonsProps) => {
+	const { t } = useTranslation("common");
 	const currentPageRef = useRef<HTMLAnchorElement>(null);
 	const viewportRef = useRef<HTMLDivElement>(null);
 
@@ -122,7 +124,7 @@ export const PaginationButtons = ({
 			{showRowsPerPage && (
 				<div className="flex items-center gap-2 text-sm">
 					<span className="whitespace-nowrap text-muted-foreground">
-						Rows per page:
+						{t("pagination.rowsPerPage")}
 					</span>
 					<Select
 						value={String(rowsPerPage)}

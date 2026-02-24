@@ -56,7 +56,7 @@ export const TerminalPanel: React.FC = observer(() => {
 	const notification = useNotification();
 
 	const [history, setHistory] = useState<TerminalProps["history"]>([]);
-	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [, setIsLoading] = useState<boolean>(false);
 	const { workspace } = useWorkspace();
 	const { monolithStore } = useRootStore();
 
@@ -80,74 +80,69 @@ export const TerminalPanel: React.FC = observer(() => {
 		} else if (language === "R") {
 			instructions = `${prefix}\x1b[36mR\x1b[0m${postfix}`;
 		}
-		console.log("instructions", instructions);
 		return instructions;
 	};
 
-	const getSuggestions = async () => {
-		const suggestions = await runPixel("META|help();");
-		const suggestionsData = await suggestions;
-		const suggestionsJson: string =
-			suggestionsData?.pixelReturn[0]?.output || "";
-		const suggesstionsArray = suggestionsJson.split("\n");
-		const suggestionsIndexBased = suggesstionsArray
-			.map((item, index) => (item.indexOf(":") > -1 ? index : -1))
-			.filter((item) => item > -1);
-		// const suggesstionsArraySplitCount = (suggestionsIndexBased.length - 2  > 0) ? (suggestionsIndexBased.length - 2) * 2 : 2;
-		const suggesstionsSection = [];
-		const suggesstionsData = {};
-		for (let i = 0; i < suggestionsIndexBased.length - 1; i++) {
-			suggesstionsSection.push([
-				suggestionsIndexBased[i],
-				suggestionsIndexBased?.[i + 1] || -1,
-			]);
-			suggesstionsData[
-				suggesstionsArray[suggestionsIndexBased[i]]
-					.toString()
-					.trim()
-					.replaceAll(" ", "")
-					.replaceAll(":", "")
-			] = suggestionsIndexBased?.[i + 1]
-				? suggesstionsArray.slice(
-						suggestionsIndexBased[i] + 1,
-						suggestionsIndexBased?.[i + 1],
-					)
-				: suggesstionsArray.slice(suggestionsIndexBased[i] + 1);
-		}
-		Object.keys(suggesstionsData).forEach((key) => {
-			suggesstionsData[key] = suggesstionsData[key].flatMap((item) =>
-				item.split(" ").filter((innerItem) => innerItem.length > 0),
-			);
-		});
-		console.log(suggesstionsData, "Suggesstion");
-		//returning GeneralReactors for testing suggesstions
-		return (
-			suggesstionsData || {
-				GeneralReactors: [],
-			}
-		);
-	};
 	useEffect(() => {
+		const getSuggestions = async () => {
+			const suggestions = await runPixel<string[]>("META|help();");
+			const suggestionsData = await suggestions;
+			const suggestionsJson: string =
+				suggestionsData?.pixelReturn[0]?.output || "";
+			const suggesstionsArray = suggestionsJson.split("\n");
+			const suggestionsIndexBased = suggesstionsArray
+				.map((item, index) => (item.indexOf(":") > -1 ? index : -1))
+				.filter((item) => item > -1);
+			// const suggesstionsArraySplitCount = (suggestionsIndexBased.length - 2  > 0) ? (suggestionsIndexBased.length - 2) * 2 : 2;
+			const suggesstionsSection = [];
+			const suggesstionsData = {} as {
+				GeneralReactors: string[];
+				TinkerFrameReactors: string[];
+				PythonFrameReactors: string[];
+				RFrameReactors: string[];
+			};
+			for (let i = 0; i < suggestionsIndexBased.length - 1; i++) {
+				suggesstionsSection.push([
+					suggestionsIndexBased[i],
+					suggestionsIndexBased?.[i + 1] || -1,
+				]);
+				suggesstionsData[
+					suggesstionsArray[suggestionsIndexBased[i]]
+						.toString()
+						.trim()
+						.replaceAll(" ", "")
+						.replaceAll(":", "")
+				] = suggestionsIndexBased?.[i + 1]
+					? suggesstionsArray.slice(
+							suggestionsIndexBased[i] + 1,
+							suggestionsIndexBased?.[i + 1],
+						)
+					: suggesstionsArray.slice(suggestionsIndexBased[i] + 1);
+			}
+			Object.keys(suggesstionsData).forEach((key) => {
+				suggesstionsData[key] = suggesstionsData[key].flatMap((item) =>
+					item.split(" ").filter((innerItem) => innerItem.length > 0),
+				);
+			});
+			//returning GeneralReactors for testing suggesstions
+			return suggesstionsData;
+		};
+
 		getSuggestions()
 			.then((data) => {
 				if (language === "PIXEL") {
-					suggesstionsList.current =
-						(data as unknown)?.GeneralReactors || [];
+					suggesstionsList.current = data?.GeneralReactors || [];
 				} else if (language === "SHELL") {
-					suggesstionsList.current =
-						(data as unknown)?.TinkerFrameReactors || [];
+					suggesstionsList.current = data?.TinkerFrameReactors || [];
 				} else if (language === "PYTHON") {
-					suggesstionsList.current =
-						(data as unknown)?.PythonFrameReactors || [];
+					suggesstionsList.current = data?.PythonFrameReactors || [];
 				} else if (language === "R") {
-					suggesstionsList.current =
-						(data as unknown)?.RFrameReactors || [];
+					suggesstionsList.current = data?.RFrameReactors || [];
 				} else {
-					suggesstionsList.current =
-						(data as unknown)?.GeneralReactors || [];
+					suggesstionsList.current = data?.GeneralReactors || [];
 				}
 			})
-			.catch((err) => {
+			.catch(() => {
 				suggesstionsList.current = [];
 			});
 	}, [language]);

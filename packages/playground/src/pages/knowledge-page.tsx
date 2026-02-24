@@ -4,6 +4,7 @@
 import { Folder, Info, Search } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
@@ -55,6 +56,7 @@ type EngineAsset = {
 };
 
 export const DocumentLibrary = () => {
+	const { t } = useTranslation(["knowledge", "common"]);
 	const centerId = useId();
 	const navigate = useNavigate();
 
@@ -291,21 +293,20 @@ export const DocumentLibrary = () => {
 					<DialogContent className="max-w-2xl">
 						<DialogHeader>
 							<DialogTitle>
-								Documents
+								{t("knowledge:documents.title")}
 								{selectedEngine?.app_name
 									? `: ${selectedEngine.app_name}`
 									: ""}
 							</DialogTitle>
 							<DialogDescription>
-								Files currently associated with this knowledge
-								source.
+								{t("knowledge:documents.description")}
 							</DialogDescription>
 						</DialogHeader>
 
 						<div className="space-y-3">
 							{isLoadingAssets ? (
 								<div className="text-sm text-muted-foreground">
-									Loading documents…
+									{t("knowledge:messages.loadingDocuments")}
 								</div>
 							) : assetsError ? (
 								<div className="text-sm text-destructive">
@@ -313,7 +314,7 @@ export const DocumentLibrary = () => {
 								</div>
 							) : documentFiles.length === 0 ? (
 								<div className="text-sm text-muted-foreground">
-									No documents found.
+									{t("knowledge:messages.noDocuments")}
 								</div>
 							) : (
 								<ul className="divide-y rounded-md border">
@@ -343,7 +344,7 @@ export const DocumentLibrary = () => {
 				<Card className="rounded-xl border-border bg-card shadow-sm">
 					<CardHeader className="pb-3">
 						<CardTitle className="text-xl">
-							Knowledge Stores{" "}
+							{t("knowledge:title")}{" "}
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
@@ -353,7 +354,7 @@ export const DocumentLibrary = () => {
 									>
 										<Info className="h-4 w-4" />
 										<span className="sr-only">
-											About Knowledge Stores
+											{t("knowledge:aboutTitle")}
 										</span>
 									</Button>
 								</TooltipTrigger>
@@ -363,22 +364,19 @@ export const DocumentLibrary = () => {
 								>
 									<div className="space-y-2">
 										<p className="font-medium">
-											What's a Knowledge Store?
+											{t(
+												"knowledge:whatIsKnowledgeStore",
+											)}
 										</p>
 										<p className="text-muted-foreground text-sm leading-relaxed">
-											RAG (Retrieval-Augmented Generation)
-											chat enhances AI conversations by
-											grounding responses in trusted data.
-											Choose from the libraries below to
-											receive a response referencing those
-											documents specifically.
+											{t("knowledge:ragDescription")}
 										</p>
 									</div>
 								</TooltipContent>
 							</Tooltip>
 						</CardTitle>
 						<CardDescription>
-							Search, filter, and create new knowledge sources.
+							{t("knowledge:subtitle")}
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-3">
@@ -389,12 +387,14 @@ export const DocumentLibrary = () => {
 							}
 						>
 							<TabsList>
-								<TabsTrigger value="all">All</TabsTrigger>
+								<TabsTrigger value="all">
+									{t("knowledge:tabs.all")}
+								</TabsTrigger>
 								<TabsTrigger value="global">
-									Global Stores
+									{t("knowledge:tabs.global")}
 								</TabsTrigger>
 								<TabsTrigger value="mine">
-									My Stores
+									{t("knowledge:tabs.mine")}
 								</TabsTrigger>
 							</TabsList>
 							<TabsContent value={libraryTab}>
@@ -402,7 +402,9 @@ export const DocumentLibrary = () => {
 									<div className="flex w-full flex-row flex-wrap items-center gap-2 items-bottom">
 										<InputGroup className="min-w-[220px] flex-1 bg-background">
 											<InputGroupInput
-												placeholder="Search"
+												placeholder={t(
+													"common:buttons.search",
+												)}
 												value={search}
 												onChange={(e) =>
 													setSearch(e.target.value)
@@ -426,13 +428,19 @@ export const DocumentLibrary = () => {
 													<SelectTrigger
 														id={centerId}
 													>
-														<SelectValue placeholder="All Centers/Offices" />
+														<SelectValue
+															placeholder={t(
+																"knowledge:filters.allCenters",
+															)}
+														/>
 													</SelectTrigger>
 													<SelectContent>
 														<SelectItem
 															value={null}
 														>
-															All
+															{t(
+																"knowledge:filters.all",
+															)}
 														</SelectItem>
 														{centers.map(
 															(center) => (
@@ -457,7 +465,9 @@ export const DocumentLibrary = () => {
 												setIsNewKnowledgeOpen(true)
 											}
 										>
-											Create Knowledge Source
+											{t(
+												"knowledge:actions.createSource",
+											)}
 										</Button>
 									</div>
 								</div>
@@ -486,7 +496,9 @@ export const DocumentLibrary = () => {
 											</CardTitle>
 											<CardDescription className="line-clamp-2">
 												{item.subheader ||
-													"No description"}
+													t(
+														"knowledge:messages.noDescription",
+													)}
 											</CardDescription>
 										</CardHeader>
 										{/* <CardContent className="flex items-center justify-between gap-2">
@@ -548,7 +560,9 @@ export const DocumentLibrary = () => {
 														</Button>
 													</TooltipTrigger>
 													<TooltipContent>
-														View documents
+														{t(
+															"knowledge:actions.viewDocuments",
+														)}
 													</TooltipContent>
 												</Tooltip>
 
@@ -562,7 +576,9 @@ export const DocumentLibrary = () => {
 														);
 													}}
 												>
-													New Chat
+													{t(
+														"knowledge:actions.newChat",
+													)}
 												</Button>
 											</div>
 										</CardContent>
@@ -574,7 +590,7 @@ export const DocumentLibrary = () => {
 				) : (
 					<div className="rounded-lg border border-dashed p-10 text-center">
 						<p className="text-muted-foreground">
-							No document libraries found matching your criteria.
+							{t("knowledge:messages.noLibrariesFound")}
 						</p>
 					</div>
 				)}
