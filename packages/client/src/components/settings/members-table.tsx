@@ -9,6 +9,10 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
+	editProjectUserPermissions,
+	type getUserProjectPermission,
+} from "@semoss/shared";
+import {
 	Avatar,
 	AvatarFallback,
 	Button,
@@ -33,7 +37,7 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { editEngineUserPermissions, editProjectUserPermissions } from "@/api";
+import { editEngineUserPermissions, type getUserEnginePermission } from "@/api";
 import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
@@ -160,12 +164,12 @@ export const MembersTable = (props: MembersTableProps) => {
 		getUserDataApi = ["getUserProjectPermission", id];
 		getMembersApi = [
 			"getProjectUsers",
-			adminMode,
 			id,
+			adminMode,
 			debouncedSearch ? debouncedSearch : undefined,
 			permissionPriorityMapper(permissionFilter)?.permission,
-			(page + 1) * rowsPerPage - rowsPerPage, // offset
 			rowsPerPage, // limit
+			(page + 1) * rowsPerPage - rowsPerPage, // offset
 		];
 		getAllAuthorsApi = [
 			"getProjectUsers",
@@ -173,8 +177,8 @@ export const MembersTable = (props: MembersTableProps) => {
 			id,
 			undefined, // no search
 			"OWNER", // OWNER Permission Filter
-			undefined, // offset
 			undefined, // limit
+			undefined, // offset
 		];
 	} else if (
 		type === "DATABASE" ||
@@ -222,6 +226,8 @@ export const MembersTable = (props: MembersTableProps) => {
 		[],
 	);
 
+	console.log(getMembers);
+
 	useEffect(() => {
 		if (
 			allAuthorsResponse.status === "SUCCESS" &&
@@ -250,7 +256,16 @@ export const MembersTable = (props: MembersTableProps) => {
 			return;
 		}
 
-		const userData = userDetails.data as SETTINGS_PROVISIONED_USER;
+		const userPermission =
+			type === "PROJECT"
+				? (userDetails.data as Awaited<
+						ReturnType<typeof getUserProjectPermission>
+					>)
+				: (
+						userDetails.data as Awaited<
+							ReturnType<typeof getUserEnginePermission>
+						>
+					).permission;
 		if (adminMode) {
 			const adminPermissionPriority = "Author";
 			setUserPermission(
@@ -260,9 +275,7 @@ export const MembersTable = (props: MembersTableProps) => {
 		} else {
 			setUserPermission(
 				permissionPriorityMapper(
-					userData.permission === "OWNER"
-						? "Author"
-						: userData.permission,
+					userPermission === "OWNER" ? "Author" : userPermission,
 				)?.permission as SETTINGS_ROLE,
 			);
 		}
@@ -334,7 +347,7 @@ export const MembersTable = (props: MembersTableProps) => {
 			}
 
 			let response:
-				| ApiResponse<{ success: boolean }>
+				| boolean
 				| {
 						response: Response;
 						data: {
@@ -357,18 +370,17 @@ export const MembersTable = (props: MembersTableProps) => {
 				);
 			} else if (type === "PROJECT") {
 				response = await editProjectUserPermissions(
-					adminMode,
 					id,
 					requests,
+					adminMode,
 				);
 			}
 
-			if (!response) {
-				return;
-			}
-
-			// ignore if there is no response
-			if (response.data.success) {
+			if (
+				typeof response === "boolean"
+					? response
+					: response?.data?.success
+			) {
 				toast.success("Successfully updated user permissions");
 
 				// refresh the members
@@ -685,589 +697,576 @@ export const MembersTable = (props: MembersTableProps) => {
 					) : (
 						<div>
 							{hasMembers ? (
-								<>
-									<div className="overflow-x-auto">
-										<Table className="mb-[0.5px] rounded-xl bg-background">
-											<TableHeader>
-												<TableRow>
-													<TableHead className="w-12">
-														<TableCell className="p-2 pr-0 pl-2">
-															<Checkbox
-																disabled={
-																	userPermission ===
-																	"Read-Only"
-																}
-																checked={
-																	selectedMembers.length ===
-																		renderedMembers.length &&
-																	renderedMembers.length >
-																		0
-																}
-																onCheckedChange={() => {
-																	if (
-																		selectedMembers.length !==
-																		renderedMembers.length
-																	) {
-																		setSelectedMembers(
-																			renderedMembers,
-																		);
-																	} else {
-																		setSelectedMembers(
-																			[],
-																		);
-																	}
-																}}
-															/>
-														</TableCell>
-													</TableHead>
-													<TableHead>
-														<Button
-															variant="ghost"
-															size="sm"
-															onClick={() =>
-																handleNameSort()
+								<div className="overflow-x-auto">
+									<Table className="mb-[0.5px] rounded-xl bg-background">
+										<TableHeader>
+											<TableRow>
+												<TableHead className="w-12">
+													<TableCell className="p-2 pr-0 pl-2">
+														<Checkbox
+															disabled={
+																userPermission ===
+																"Read-Only"
 															}
-															className="h-8 gap-1"
-														>
-															Name
-															{nameOrder ===
-															"asc" ? (
-																<ArrowUp className="size-4" />
-															) : (
-																<ArrowDown className="size-4" />
-															)}
-														</Button>
-													</TableHead>
-													<TableHead>
-														<Button
-															variant="ghost"
-															size="sm"
-															onClick={() =>
-																handlePermissionSort()
+															checked={
+																selectedMembers.length ===
+																	renderedMembers.length &&
+																renderedMembers.length >
+																	0
 															}
-															className="h-8 gap-1"
-														>
-															Permission
-															{permissionOrder ===
-															"asc" ? (
-																<ArrowUp className="size-4" />
-															) : (
-																<ArrowDown className="size-4" />
-															)}
-														</Button>
-													</TableHead>
-													<TableHead>
-														Permission Date
-													</TableHead>
-													{type === "MODEL" && (
-														<>
-															<TableHead>
-																Model Limit Type
-															</TableHead>
-															<TableHead>
-																Limit Value
-															</TableHead>
-															<TableHead>
-																Frequency
-															</TableHead>
-														</>
-													)}
-													<TableHead>
-														Actions
-													</TableHead>
-												</TableRow>
-											</TableHeader>
-											<TableBody>
-												{sortedMembers.map((_x, i) => {
-													const user =
-														sortedMembers[i];
-
-													let isSelected = false;
-
-													if (user) {
-														isSelected =
-															selectedMembers.some(
-																(value) => {
-																	return (
-																		value.id ===
-																		user.id
+															onCheckedChange={() => {
+																if (
+																	selectedMembers.length !==
+																	renderedMembers.length
+																) {
+																	setSelectedMembers(
+																		renderedMembers,
 																	);
-																},
-															);
-													}
-
-													if (user) {
-														// Determine if this row represents an Author-level user
-														const targetPermission =
-															permissionPriorityMapper(
-																user.permission,
-															)?.permission;
-
-														const disableActionsForEditorAuthor =
-															userPermission ===
-																"Editor" &&
-															targetPermission ===
-																"Author" &&
-															!adminMode;
-
-														return (
-															<TableRow
-																key={user.id}
-																data-state={
-																	isSelected
-																		? "selected"
-																		: undefined
+																} else {
+																	setSelectedMembers(
+																		[],
+																	);
 																}
-															>
-																<TableCell className="pl-4">
-																	<Checkbox
-																		disabled={
-																			userPermission ===
-																			"Read-Only"
-																		}
-																		checked={
+															}}
+														/>
+													</TableCell>
+												</TableHead>
+												<TableHead>
+													<Button
+														variant="ghost"
+														size="sm"
+														onClick={() =>
+															handleNameSort()
+														}
+														className="h-8 gap-1"
+													>
+														Name
+														{nameOrder === "asc" ? (
+															<ArrowUp className="size-4" />
+														) : (
+															<ArrowDown className="size-4" />
+														)}
+													</Button>
+												</TableHead>
+												<TableHead>
+													<Button
+														variant="ghost"
+														size="sm"
+														onClick={() =>
+															handlePermissionSort()
+														}
+														className="h-8 gap-1"
+													>
+														Permission
+														{permissionOrder ===
+														"asc" ? (
+															<ArrowUp className="size-4" />
+														) : (
+															<ArrowDown className="size-4" />
+														)}
+													</Button>
+												</TableHead>
+												<TableHead>
+													Permission Date
+												</TableHead>
+												{type === "MODEL" && (
+													<>
+														<TableHead>
+															Model Limit Type
+														</TableHead>
+														<TableHead>
+															Limit Value
+														</TableHead>
+														<TableHead>
+															Frequency
+														</TableHead>
+													</>
+												)}
+												<TableHead>Actions</TableHead>
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{sortedMembers.map((_x, i) => {
+												const user = sortedMembers[i];
+
+												let isSelected = false;
+
+												if (user) {
+													isSelected =
+														selectedMembers.some(
+															(value) => {
+																return (
+																	value.id ===
+																	user.id
+																);
+															},
+														);
+												}
+
+												if (user) {
+													// Determine if this row represents an Author-level user
+													const targetPermission =
+														permissionPriorityMapper(
+															user.permission,
+														)?.permission;
+
+													const disableActionsForEditorAuthor =
+														userPermission ===
+															"Editor" &&
+														targetPermission ===
+															"Author" &&
+														!adminMode;
+
+													return (
+														<TableRow
+															key={user.id}
+															data-state={
+																isSelected
+																	? "selected"
+																	: undefined
+															}
+														>
+															<TableCell className="pl-4">
+																<Checkbox
+																	disabled={
+																		userPermission ===
+																		"Read-Only"
+																	}
+																	checked={
+																		isSelected
+																	}
+																	onCheckedChange={() => {
+																		if (
 																			isSelected
-																		}
-																		onCheckedChange={() => {
-																			if (
-																				isSelected
-																			) {
-																				const selMembers =
-																					[];
-																				selectedMembers.forEach(
-																					(
-																						u,
-																					) => {
-																						if (
-																							u.id !==
-																							user.id
-																						)
-																							selMembers.push(
-																								u,
-																							);
-																					},
-																				);
-																				setSelectedMembers(
-																					selMembers,
-																				);
-																			} else {
-																				setSelectedMembers(
-																					[
-																						...selectedMembers,
-																						user,
-																					],
-																				);
-																			}
-																		}}
-																	/>
-																</TableCell>
-																<TableCell>
-																	<UserPopover
-																		user={{
-																			id: user.id,
-																			name:
-																				user.name ||
-																				"Unknown",
-																			email:
-																				user.email ||
-																				"",
-																		}}
-																	>
-																		<div className="flex cursor-pointer items-center gap-2">
-																			<Avatar className="size-8">
-																				<AvatarFallback>
-																					{user.name[0].toUpperCase()}
-																				</AvatarFallback>
-																			</Avatar>
-																			<span>
-																				{
-																					user.name
-																				}
-																			</span>
-																		</div>
-																	</UserPopover>
-																</TableCell>
-																<TableCell>
-																	<RadioGroup
-																		value={
-																			permissionPriorityMapper(
-																				user.permission,
-																			)
-																				?.permission
-																		}
-																		onValueChange={(
-																			value,
-																		) => {
-																			updateSelectedUsers(
+																		) {
+																			const selMembers =
+																				[];
+																			selectedMembers.forEach(
+																				(
+																					u,
+																				) => {
+																					if (
+																						u.id !==
+																						user.id
+																					)
+																						selMembers.push(
+																							u,
+																						);
+																				},
+																			);
+																			setSelectedMembers(
+																				selMembers,
+																			);
+																		} else {
+																			setSelectedMembers(
 																				[
+																					...selectedMembers,
 																					user,
 																				],
-																				permissionPriorityMapper(
-																					value,
-																				)
-																					?.permission,
 																			);
-																		}}
-																		className="flex flex-row flex-nowrap gap-3"
-																	>
-																		<div className="flex items-center gap-2">
-																			<RadioGroupItem
-																				value="Author"
-																				id={`${user.id}-author`}
-																				disabled={
-																					(!configStore.isEngineOperationAvailable(
-																						type,
-																						"access",
-																					) ||
-																						permissionPriorityMapper(
-																							userPermission,
-																						)
-																							.priority >
-																							1) &&
-																					!adminMode
-																				}
-																				data-testid="author"
-																			/>
-																			<label
-																				htmlFor={`${user.id}-author`}
-																				className="text-sm"
-																			>
-																				Author
-																			</label>
-																		</div>
-																		<div className="flex items-center gap-2">
-																			<RadioGroupItem
-																				value="Editor"
-																				id={`${user.id}-editor`}
-																				disabled={
-																					isLastAuthor(
-																						user,
-																					) ||
-																					(((userPermission ===
-																						"Editor" &&
-																						user.permission ===
-																							"OWNER") ||
-																						!configStore.isEngineOperationAvailable(
-																							type,
-																							"access",
-																						) ||
-																						permissionPriorityMapper(
-																							userPermission,
-																						)
-																							?.priority >
-																							2) &&
-																						!adminMode)
-																				}
-																				data-testid="editor"
-																			/>
-																			<label
-																				htmlFor={`${user.id}-editor`}
-																				className="text-sm"
-																			>
-																				Editor
-																			</label>
-																		</div>
-																		<div className="flex items-center gap-2">
-																			<RadioGroupItem
-																				value="Read-Only"
-																				id={`${user.id}-readonly`}
-																				disabled={
-																					isLastAuthor(
-																						user,
-																					) ||
-																					(((userPermission ===
-																						"Editor" &&
-																						user.permission ===
-																							"OWNER") ||
-																						!configStore.isEngineOperationAvailable(
-																							type,
-																							"access",
-																						) ||
-																						permissionPriorityMapper(
-																							userPermission,
-																						)
-																							?.priority >=
-																							3 ||
-																						readOnlyRestricted(
-																							user,
-																						)) &&
-																						!adminMode)
-																				}
-																				data-testid="readOnly"
-																			/>
-																			<label
-																				htmlFor={`${user.id}-readonly`}
-																				className="text-sm"
-																			>
-																				Read-Only
-																			</label>
-																		</div>
-																	</RadioGroup>
-																</TableCell>
-																<TableCell>
-																	{user?.date_added ??
-																		"Not Available"}
-																</TableCell>
-																{type ===
-																	"MODEL" && (
-																	<>
-																		<TableCell>
-																			{(
-																				user as User
-																			)
-																				?.usage_restriction !==
-																			undefined
-																				? formatValue(
-																						(
-																							user as User
-																						)
-																							?.usage_restriction,
-																					)
-																				: formatValue(
-																						"null",
-																					)}
-																		</TableCell>
-																		<TableCell>
-																			{(
-																				user as User
-																			)
-																				?.usage_restriction ===
-																				"compute" &&
-																				`${(user as User)?.max_response_time?.toLocaleString()} ms`}
-
-																			{(
-																				user as User
-																			)
-																				?.usage_restriction ===
-																				"token" &&
-																				`${(user as User)?.max_tokens?.toLocaleString()}`}
-																		</TableCell>
-																		<TableCell>
-																			{formatValue(
-																				(
-																					user as User
-																				)
-																					?.usage_frequency,
-																			)}
-																		</TableCell>
-																	</>
-																)}
-																<TableCell>
-																	<div className="flex gap-1">
-																		<Button
-																			variant="ghost"
-																			size="icon"
-																			onClick={() => {
-																				setAddMembersModal(
-																					true,
-																				);
-
-																				setAddModalUser(
-																					user,
-																				);
-																			}}
-																			disabled={
-																				!configStore.isEngineOperationAvailable(
-																					type,
-																					"access",
-																				) ||
-																				userPermission ===
-																					"Read-Only" ||
-																				disableActionsForEditorAuthor
+																		}
+																	}}
+																/>
+															</TableCell>
+															<TableCell>
+																<UserPopover
+																	user={{
+																		id: user.id,
+																		name:
+																			user.name ||
+																			"Unknown",
+																		email:
+																			user.email ||
+																			"",
+																	}}
+																>
+																	<div className="flex cursor-pointer items-center gap-2">
+																		<Avatar className="size-8">
+																			<AvatarFallback>
+																				{user.name[0].toUpperCase()}
+																			</AvatarFallback>
+																		</Avatar>
+																		<span>
+																			{
+																				user.name
 																			}
-																		>
-																			<Pencil className="size-4" />
-																		</Button>
-																		<Button
-																			variant="ghost"
-																			size="icon"
-																			onClick={() => {
-																				openDeleteMembersModal(
-																					[
-																						user,
-																					],
-																				);
-																			}}
-																			disabled={
-																				!configStore.isEngineOperationAvailable(
-																					type,
-																					"access",
-																				) ||
-																				userPermission ===
-																					"Read-Only" ||
-																				disableActionsForEditorAuthor
-																			}
-																		>
-																			<Trash2 className="size-4" />
-																		</Button>
+																		</span>
 																	</div>
-																</TableCell>
-															</TableRow>
-														);
-													}
-
-													return null;
-												})}
-											</TableBody>
-											<TableFooter>
-												<TableRow>
-													<TableCell
-														colSpan={
-															type === "MODEL"
-																? 8
-																: 5
-														}
-													>
-														<div className="flex items-center justify-end gap-4 px-2">
-															<div className="flex items-center gap-2">
-																<span className="text-sm">
-																	Rows per
-																	page:
-																</span>
-																<Select
-																	disabled={
-																		isLoading
+																</UserPopover>
+															</TableCell>
+															<TableCell>
+																<RadioGroup
+																	value={
+																		permissionPriorityMapper(
+																			user.permission,
+																		)
+																			?.permission
 																	}
-																	value={String(
-																		rowsPerPage,
-																	)}
 																	onValueChange={(
 																		value,
 																	) => {
-																		setRowsPerPage(
-																			parseInt(
+																		updateSelectedUsers(
+																			[
+																				user,
+																			],
+																			permissionPriorityMapper(
 																				value,
-																				10,
-																			),
+																			)
+																				?.permission,
 																		);
 																	}}
+																	className="flex flex-row flex-nowrap gap-3"
 																>
-																	<SelectTrigger className="h-8 w-[70px]">
-																		<SelectValue />
-																	</SelectTrigger>
-																	<SelectContent>
-																		<SelectItem value="5">
-																			5
-																		</SelectItem>
-																		<SelectItem value="10">
-																			10
-																		</SelectItem>
-																		<SelectItem value="20">
-																			20
-																		</SelectItem>
-																	</SelectContent>
-																</Select>
-															</div>
-															<div className="text-sm">
-																{page *
-																	rowsPerPage +
-																	1}
-																-
-																{Math.min(
-																	(page + 1) *
-																		rowsPerPage,
-																	totalMembers,
-																)}{" "}
-																of{" "}
-																{totalMembers}
-															</div>
-															<div className="flex gap-1">
-																<Button
-																	variant="outline"
-																	size="icon-sm"
-																	onClick={() =>
-																		setPage(
+																	<div className="flex items-center gap-2">
+																		<RadioGroupItem
+																			value="Author"
+																			id={`${user.id}-author`}
+																			disabled={
+																				(!configStore.isEngineOperationAvailable(
+																					type,
+																					"access",
+																				) ||
+																					permissionPriorityMapper(
+																						userPermission,
+																					)
+																						.priority >
+																						1) &&
+																				!adminMode
+																			}
+																			data-testid="author"
+																		/>
+																		<label
+																			htmlFor={`${user.id}-author`}
+																			className="text-sm"
+																		>
+																			Author
+																		</label>
+																	</div>
+																	<div className="flex items-center gap-2">
+																		<RadioGroupItem
+																			value="Editor"
+																			id={`${user.id}-editor`}
+																			disabled={
+																				isLastAuthor(
+																					user,
+																				) ||
+																				(((userPermission ===
+																					"Editor" &&
+																					user.permission ===
+																						"OWNER") ||
+																					!configStore.isEngineOperationAvailable(
+																						type,
+																						"access",
+																					) ||
+																					permissionPriorityMapper(
+																						userPermission,
+																					)
+																						?.priority >
+																						2) &&
+																					!adminMode)
+																			}
+																			data-testid="editor"
+																		/>
+																		<label
+																			htmlFor={`${user.id}-editor`}
+																			className="text-sm"
+																		>
+																			Editor
+																		</label>
+																	</div>
+																	<div className="flex items-center gap-2">
+																		<RadioGroupItem
+																			value="Read-Only"
+																			id={`${user.id}-readonly`}
+																			disabled={
+																				isLastAuthor(
+																					user,
+																				) ||
+																				(((userPermission ===
+																					"Editor" &&
+																					user.permission ===
+																						"OWNER") ||
+																					!configStore.isEngineOperationAvailable(
+																						type,
+																						"access",
+																					) ||
+																					permissionPriorityMapper(
+																						userPermission,
+																					)
+																						?.priority >=
+																						3 ||
+																					readOnlyRestricted(
+																						user,
+																					)) &&
+																					!adminMode)
+																			}
+																			data-testid="readOnly"
+																		/>
+																		<label
+																			htmlFor={`${user.id}-readonly`}
+																			className="text-sm"
+																		>
+																			Read-Only
+																		</label>
+																	</div>
+																</RadioGroup>
+															</TableCell>
+															<TableCell>
+																{user?.date_added ??
+																	"Not Available"}
+															</TableCell>
+															{type ===
+																"MODEL" && (
+																<>
+																	<TableCell>
+																		{(
+																			user as User
+																		)
+																			?.usage_restriction !==
+																		undefined
+																			? formatValue(
+																					(
+																						user as User
+																					)
+																						?.usage_restriction,
+																				)
+																			: formatValue(
+																					"null",
+																				)}
+																	</TableCell>
+																	<TableCell>
+																		{(
+																			user as User
+																		)
+																			?.usage_restriction ===
+																			"compute" &&
+																			`${(user as User)?.max_response_time?.toLocaleString()} ms`}
+
+																		{(
+																			user as User
+																		)
+																			?.usage_restriction ===
+																			"token" &&
+																			`${(user as User)?.max_tokens?.toLocaleString()}`}
+																	</TableCell>
+																	<TableCell>
+																		{formatValue(
+																			(
+																				user as User
+																			)
+																				?.usage_frequency,
+																		)}
+																	</TableCell>
+																</>
+															)}
+															<TableCell>
+																<div className="flex gap-1">
+																	<Button
+																		variant="ghost"
+																		size="icon"
+																		onClick={() => {
+																			setAddMembersModal(
+																				true,
+																			);
+
+																			setAddModalUser(
+																				user,
+																			);
+																		}}
+																		disabled={
+																			!configStore.isEngineOperationAvailable(
+																				type,
+																				"access",
+																			) ||
+																			userPermission ===
+																				"Read-Only" ||
+																			disableActionsForEditorAuthor
+																		}
+																	>
+																		<Pencil className="size-4" />
+																	</Button>
+																	<Button
+																		variant="ghost"
+																		size="icon"
+																		onClick={() => {
+																			openDeleteMembersModal(
+																				[
+																					user,
+																				],
+																			);
+																		}}
+																		disabled={
+																			!configStore.isEngineOperationAvailable(
+																				type,
+																				"access",
+																			) ||
+																			userPermission ===
+																				"Read-Only" ||
+																			disableActionsForEditorAuthor
+																		}
+																	>
+																		<Trash2 className="size-4" />
+																	</Button>
+																</div>
+															</TableCell>
+														</TableRow>
+													);
+												}
+
+												return null;
+											})}
+										</TableBody>
+										<TableFooter>
+											<TableRow>
+												<TableCell
+													colSpan={
+														type === "MODEL" ? 8 : 5
+													}
+												>
+													<div className="flex items-center justify-end gap-4 px-2">
+														<div className="flex items-center gap-2">
+															<span className="text-sm">
+																Rows per page:
+															</span>
+															<Select
+																disabled={
+																	isLoading
+																}
+																value={String(
+																	rowsPerPage,
+																)}
+																onValueChange={(
+																	value,
+																) => {
+																	setRowsPerPage(
+																		parseInt(
+																			value,
+																			10,
+																		),
+																	);
+																}}
+															>
+																<SelectTrigger className="h-8 w-[70px]">
+																	<SelectValue />
+																</SelectTrigger>
+																<SelectContent>
+																	<SelectItem value="5">
+																		5
+																	</SelectItem>
+																	<SelectItem value="10">
+																		10
+																	</SelectItem>
+																	<SelectItem value="20">
+																		20
+																	</SelectItem>
+																</SelectContent>
+															</Select>
+														</div>
+														<div className="text-sm">
+															{page *
+																rowsPerPage +
+																1}
+															-
+															{Math.min(
+																(page + 1) *
+																	rowsPerPage,
+																totalMembers,
+															)}{" "}
+															of {totalMembers}
+														</div>
+														<div className="flex gap-1">
+															<Button
+																variant="outline"
+																size="icon-sm"
+																onClick={() =>
+																	setPage(0)
+																}
+																disabled={
+																	page ===
+																		0 ||
+																	isLoading
+																}
+															>
+																{"<<"}
+															</Button>
+															<Button
+																variant="outline"
+																size="icon-sm"
+																onClick={() =>
+																	setPage(
+																		Math.max(
 																			0,
-																		)
-																	}
-																	disabled={
-																		page ===
-																			0 ||
-																		isLoading
-																	}
-																>
-																	{"<<"}
-																</Button>
-																<Button
-																	variant="outline"
-																	size="icon-sm"
-																	onClick={() =>
-																		setPage(
-																			Math.max(
-																				0,
-																				page -
-																					1,
-																			),
-																		)
-																	}
-																	disabled={
-																		page ===
-																			0 ||
-																		isLoading
-																	}
-																>
-																	{"<"}
-																</Button>
-																<Button
-																	variant="outline"
-																	size="icon-sm"
-																	onClick={() =>
-																		setPage(
-																			Math.min(
-																				Math.ceil(
-																					totalMembers /
-																						rowsPerPage,
-																				) -
-																					1,
-																				page +
-																					1,
-																			),
-																		)
-																	}
-																	disabled={
-																		page >=
-																			Math.ceil(
-																				totalMembers /
-																					rowsPerPage,
-																			) -
-																				1 ||
-																		isLoading
-																	}
-																>
-																	{">"}
-																</Button>
-																<Button
-																	variant="outline"
-																	size="icon-sm"
-																	onClick={() =>
-																		setPage(
+																			page -
+																				1,
+																		),
+																	)
+																}
+																disabled={
+																	page ===
+																		0 ||
+																	isLoading
+																}
+															>
+																{"<"}
+															</Button>
+															<Button
+																variant="outline"
+																size="icon-sm"
+																onClick={() =>
+																	setPage(
+																		Math.min(
 																			Math.ceil(
 																				totalMembers /
 																					rowsPerPage,
 																			) -
 																				1,
-																		)
-																	}
-																	disabled={
-																		page >=
-																			Math.ceil(
-																				totalMembers /
-																					rowsPerPage,
-																			) -
-																				1 ||
-																		isLoading
-																	}
-																>
-																	{">>"}
-																</Button>
-															</div>
+																			page +
+																				1,
+																		),
+																	)
+																}
+																disabled={
+																	page >=
+																		Math.ceil(
+																			totalMembers /
+																				rowsPerPage,
+																		) -
+																			1 ||
+																	isLoading
+																}
+															>
+																{">"}
+															</Button>
+															<Button
+																variant="outline"
+																size="icon-sm"
+																onClick={() =>
+																	setPage(
+																		Math.ceil(
+																			totalMembers /
+																				rowsPerPage,
+																		) - 1,
+																	)
+																}
+																disabled={
+																	page >=
+																		Math.ceil(
+																			totalMembers /
+																				rowsPerPage,
+																		) -
+																			1 ||
+																	isLoading
+																}
+															>
+																{">>"}
+															</Button>
 														</div>
-													</TableCell>
-												</TableRow>
-											</TableFooter>
-										</Table>
-									</div>
-								</>
+													</div>
+												</TableCell>
+											</TableRow>
+										</TableFooter>
+									</Table>
+								</div>
 							) : (
 								<div className="flex h-[503px] w-full flex-col items-center justify-center gap-2">
 									<P>No members</P>

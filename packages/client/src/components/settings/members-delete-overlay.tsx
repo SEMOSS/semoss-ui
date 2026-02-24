@@ -1,3 +1,4 @@
+import { removeProjectUserPermissions } from "@semoss/shared";
 import {
 	Button,
 	Dialog,
@@ -7,10 +8,7 @@ import {
 	DialogTitle,
 	toast,
 } from "@semoss/ui/next";
-import {
-	removeEngineUserPermissions,
-	removeProjectUserPermissions,
-} from "@/api";
+import { removeEngineUserPermissions } from "@/api";
 import { useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
 import type { SETTINGS_PROVISIONED_USER } from "./settings.types";
@@ -73,7 +71,7 @@ export const MembersDeleteOverlay = (props: MembersDeleteOverlayProps) => {
 			});
 
 			let response:
-				| ApiResponse<{ success: boolean }>
+				| boolean
 				| {
 						response: Response;
 						data: {
@@ -95,18 +93,17 @@ export const MembersDeleteOverlay = (props: MembersDeleteOverlayProps) => {
 				);
 			} else if (type === "PROJECT") {
 				response = await removeProjectUserPermissions(
-					adminMode,
 					id,
 					requests,
+					adminMode,
 				);
 			}
 
-			if (!response) {
-				return;
-			}
-
-			// ignore if there is no response
-			if (response.data.success) {
+			if (
+				typeof response === "boolean"
+					? response
+					: response?.data?.success
+			) {
 				toast.success(
 					`Successfully removed ${
 						requests.length > 1 ? "members" : "member"

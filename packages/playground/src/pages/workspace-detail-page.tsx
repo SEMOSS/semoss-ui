@@ -10,6 +10,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -53,20 +54,30 @@ import type { Workspace } from "@/types";
  * @component
  */
 export const WorkspaceDetailPage = observer(() => {
+	const { t } = useTranslation(["workspace", "common"]);
+
+	/**
+	 * Library Hooks
+	 */
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChat();
 	const { root } = useRoot();
+	const pagination = usePagination();
 
+	/**
+	 * State
+	 */
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-
 	const [tab, setTab] = useState<string>("chats");
 	const [search, setSearch] = useState<string>("");
 	const [deleteModal, setDeleteModal] = useState<boolean>(false);
+	const [isSharingModalOpen, setIsSharingModalOpen] =
+		useState<boolean>(false);
 
-	// Pagination state - TODO: Wire up to child components
-	const pagination = usePagination();
-
+	/**
+	 * Library Hooks
+	 */
 	const debouncedSearch = useDebouncedValue(search);
 
 	// Fetch workspace details
@@ -76,7 +87,9 @@ export const WorkspaceDetailPage = observer(() => {
 			data: null,
 			onError: (_d, e) => {
 				toast.error(
-					`Failed to load agent: ${e instanceof Error ? e.message : "Unknown error"}`,
+					t("workspace:detail.failedToLoad", {
+						error: e instanceof Error ? e.message : "Unknown error",
+					}),
 				);
 			},
 		},
@@ -86,18 +99,18 @@ export const WorkspaceDetailPage = observer(() => {
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
 			{
-				name: "Home",
+				name: t("workspace:breadcrumbs.home"),
 				path: "/",
 			},
 			{
-				name: "Agent",
+				name: t("workspace:breadcrumbs.agent"),
 				path: "/agent",
 			},
 			{
 				name:
 					getWorkspace.status === "SUCCESS"
 						? getWorkspace.data.name
-						: "Loading",
+						: t("workspace:breadcrumbs.loading"),
 				path: `/agent/${workspaceId}`,
 			},
 		],
@@ -122,7 +135,7 @@ export const WorkspaceDetailPage = observer(() => {
 					<div className="items-center text-2xl">
 						<img
 							className="flex h-6 select-none flex-row items-center"
-							alt="logo"
+							alt={t("common:images.logoAlt")}
 							src={root.theme?.images.logo || logoImage}
 						/>
 					</div>
@@ -148,7 +161,7 @@ export const WorkspaceDetailPage = observer(() => {
 							<DropdownMenuGroup>
 								<DropdownMenuItem asChild>
 									<Link to={`/agent/${workspaceId}/edit`}>
-										Edit
+										{t("workspace:actions.edit")}
 									</Link>
 								</DropdownMenuItem>
 								<DropdownMenuItem
@@ -167,20 +180,22 @@ export const WorkspaceDetailPage = observer(() => {
 											toast.error(
 												e instanceof Error
 													? e.message
-													: "Failed to delete agent",
+													: t(
+															"workspace:detail.failedToDelete",
+														),
 											);
 										} finally {
 											setIsLoading(false);
 										}
 									}}
 								>
-									Delete
+									{t("workspace:actions.delete")}
 								</DropdownMenuItem>
 							</DropdownMenuGroup>
 						</DropdownMenuContent>
 					</DropdownMenu>
 					{/* <Button
-								variant="outline"	
+								variant="outline"
 							>
 								<PinIcon />
 							</Button> */}
@@ -195,19 +210,19 @@ export const WorkspaceDetailPage = observer(() => {
 						<TabsList>
 							<TabsTrigger value="chats">
 								<MessagesSquareIcon />
-								My Chats
+								{t("workspace:detail.tabs.myChats")}
 							</TabsTrigger>
 							<TabsTrigger value="knowledge">
 								<BookOpenIcon />
-								Knowledge
+								{t("workspace:detail.tabs.knowledge")}
 							</TabsTrigger>
 							<TabsTrigger value="toolbox">
 								<HammerIcon />
-								Toolbox
+								{t("workspace:detail.tabs.toolbox")}
 							</TabsTrigger>
 							<TabsTrigger value="members">
 								<UsersRound />
-								Members
+								{t("workspace:detail.tabs.members")}
 							</TabsTrigger>
 						</TabsList>
 						<Button
@@ -217,14 +232,14 @@ export const WorkspaceDetailPage = observer(() => {
 							}}
 						>
 							<PlusIcon />
-							New Chat
+							{t("workspace:actions.newChat")}
 						</Button>
 					</div>
 					<div className="flex min-h-0 w-full flex-1 flex-col items-start overflow-hidden rounded-xl border border-border bg-card">
 						<div className="flex w-full flex-row gap-2 border-border border-b bg-primary-foreground p-4">
 							<InputGroup className="bg-background">
 								<InputGroupInput
-									placeholder="Search"
+									placeholder={t("common:buttons.search")}
 									value={search}
 									onChange={(e) => setSearch(e.target.value)}
 								/>
@@ -234,9 +249,12 @@ export const WorkspaceDetailPage = observer(() => {
 							</InputGroup>
 							{/* Tab-specific actions go here */}
 							{tab === "members" ? (
-								<Button variant="outline">
+								<Button
+									variant="outline"
+									onClick={() => setIsSharingModalOpen(true)}
+								>
 									<PlusIcon />
-									Add members
+									{t("workspace:sharing.title")}
 								</Button>
 							) : null}
 						</div>
@@ -285,6 +303,10 @@ export const WorkspaceDetailPage = observer(() => {
 									workspaceId={workspaceId}
 									search={debouncedSearch}
 									paginationControl={pagination}
+									isSharingModalOpen={isSharingModalOpen}
+									onSharingModalClose={() =>
+										setIsSharingModalOpen(false)
+									}
 								/>
 							)}
 						</TabsContent>
@@ -300,10 +322,13 @@ export const WorkspaceDetailPage = observer(() => {
 			<Dialog open={deleteModal} onOpenChange={setDeleteModal}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Are you sure?</DialogTitle>
+						<DialogTitle>
+							{t("workspace:card.deleteConfirmTitle")}
+						</DialogTitle>
 						<DialogDescription>
-							This action is irreversable. This will permanentely
-							delete the {getWorkspace?.data?.name} workspace.
+							{t("workspace:card.deleteConfirmDescription", {
+								name: getWorkspace?.data?.name,
+							})}
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
@@ -315,7 +340,7 @@ export const WorkspaceDetailPage = observer(() => {
 							}}
 							data-testid={`workspace-detail-page--cancel-delete-btn`}
 						>
-							Cancel
+							{t("common:buttons.cancel")}
 						</Button>
 						<Button
 							variant="destructive"
@@ -328,19 +353,21 @@ export const WorkspaceDetailPage = observer(() => {
 									await chat.deleteWorkspace(workspaceId);
 
 									// go to the workspace
-									navigate("/workspace");
+									navigate("/agent");
 								} catch (e) {
 									toast.error(
 										e instanceof Error
 											? e.message
-											: "Failed to delete workspace",
+											: t(
+													"workspace:detail.failedToDelete",
+												),
 									);
 								} finally {
 									setIsLoading(false);
 								}
 							}}
 						>
-							Delete
+							{t("workspace:actions.delete")}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

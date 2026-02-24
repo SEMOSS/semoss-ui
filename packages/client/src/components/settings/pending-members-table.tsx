@@ -5,11 +5,14 @@ import {
 	Check,
 	ChevronDown,
 	ChevronUp,
-	Plus,
 	Search,
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+	approveProjectUserAccessRequest,
+	denyProjectUserAccessRequest,
+} from "@semoss/shared";
 import {
 	Button,
 	Checkbox,
@@ -19,7 +22,6 @@ import {
 	P,
 	RadioGroup,
 	RadioGroupItem,
-	Separator,
 	Spinner,
 	Table,
 	TableBody,
@@ -31,9 +33,7 @@ import {
 } from "@semoss/ui/next";
 import {
 	approveEngineUserAccessRequest,
-	approveProjectUserAccessRequest,
 	denyEngineUserAccessRequest,
-	denyProjectUserAccessRequest,
 } from "@/api";
 import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { usePixel, useSettings } from "@/hooks";
@@ -141,7 +141,10 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 				return;
 			}
 
-			let response = null;
+			let response:
+				| boolean
+				| Awaited<ReturnType<typeof approveEngineUserAccessRequest>>
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -157,18 +160,17 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 				);
 			} else if (type === "PROJECT") {
 				response = await approveProjectUserAccessRequest(
-					adminMode,
 					id,
 					requests,
+					adminMode,
 				);
 			}
 
-			// ignore if there is no response
-			if (!response) {
-				return;
-			}
-
-			if (response.data.success) {
+			if (
+				typeof response === "boolean"
+					? response
+					: response?.data?.success
+			) {
 				const updatedMembers = {
 					...selectedMembers,
 				} as Record<string, true>;
@@ -215,7 +217,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 			}
 
 			let response:
-				| ApiResponse<{ success: boolean }>
+				| boolean
 				| {
 						response: Response;
 						data: {
@@ -238,18 +240,17 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 				);
 			} else if (type === "PROJECT") {
 				response = await denyProjectUserAccessRequest(
-					adminMode,
 					id,
 					requests,
+					adminMode,
 				);
 			}
 
-			// ignore if there is no response
-			if (!response) {
-				return;
-			}
-
-			if (response.data.success) {
+			if (
+				typeof response === "boolean"
+					? response
+					: response?.data?.success
+			) {
 				const updatedMembers = {
 					...selectedMembers,
 				} as Record<string, true>;

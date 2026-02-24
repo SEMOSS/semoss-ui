@@ -1,6 +1,7 @@
 import { PackagePlus } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useId, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Dialog,
@@ -35,6 +36,7 @@ export const SaveWorkspaceDialog = observer(
 		 * Library hooks
 		 */
 		const { chat } = useChat();
+		const { t } = useTranslation("room");
 		const nameId = useId();
 		const descriptionId = useId();
 
@@ -51,7 +53,7 @@ export const SaveWorkspaceDialog = observer(
 		 */
 		const handleSave = async () => {
 			if (!name.trim()) {
-				toast.error("Agent name is required");
+				toast.error(t("workspace.nameRequired"));
 				return;
 			}
 
@@ -65,7 +67,7 @@ export const SaveWorkspaceDialog = observer(
 					mcp: mcps,
 				});
 
-				toast.success("Agent created successfully");
+				toast.success(t("workspace.publishSuccess"));
 
 				// Reset and close
 				setIsOpen(false);
@@ -73,7 +75,12 @@ export const SaveWorkspaceDialog = observer(
 				setDescription("");
 			} catch (error) {
 				toast.error(
-					`Failed to create agent: ${error instanceof Error ? error.message : "Unknown error"}`,
+					t("workspace.publishError", {
+						error:
+							error instanceof Error
+								? error.message
+								: "Unknown error",
+					}),
 				);
 			} finally {
 				setIsLoading(false);
@@ -89,7 +96,7 @@ export const SaveWorkspaceDialog = observer(
 		return (
 			<>
 				<Tooltip>
-					<TooltipTrigger>
+					<TooltipTrigger asChild>
 						<Button
 							variant="outline"
 							size="sm"
@@ -102,24 +109,29 @@ export const SaveWorkspaceDialog = observer(
 							<PackagePlus />
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>Publish as Agent</TooltipContent>
+					<TooltipContent>
+						{t("workspace.publishTooltip")}
+					</TooltipContent>
 				</Tooltip>
 
 				<Dialog open={isOpen} onOpenChange={setIsOpen}>
 					<DialogContent>
 						<DialogHeader>
-							<DialogTitle>Publish Agent</DialogTitle>
+							<DialogTitle>
+								{t("workspace.publishTitle")}
+							</DialogTitle>
 							<DialogDescription>
-								Publish a new agent with the current room
-								configuration, including instructions and MCPs.
+								{t("workspace.publishDescription")}
 							</DialogDescription>
 						</DialogHeader>
 						<div className="space-y-4 py-4">
 							<div className="space-y-2">
-								<Label htmlFor={nameId}>Name *</Label>
+								<Label htmlFor={nameId}>
+									{t("workspace.nameLabel")}
+								</Label>
 								<Input
 									id={nameId}
-									placeholder="Enter agent name"
+									placeholder={t("workspace.namePlaceholder")}
 									value={name}
 									onChange={(e) => setName(e.target.value)}
 									disabled={isLoading}
@@ -127,11 +139,13 @@ export const SaveWorkspaceDialog = observer(
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor={descriptionId}>
-									Description
+									{t("workspace.descriptionLabel")}
 								</Label>
 								<Textarea
 									id={descriptionId}
-									placeholder="Enter agent description"
+									placeholder={t(
+										"workspace.descriptionPlaceholder",
+									)}
 									value={description}
 									onChange={(e) =>
 										setDescription(e.target.value)
@@ -147,10 +161,12 @@ export const SaveWorkspaceDialog = observer(
 								onClick={handleCancel}
 								disabled={isLoading}
 							>
-								Cancel
+								{t("workspace.cancelButton")}
 							</Button>
 							<Button onClick={handleSave} disabled={isLoading}>
-								{isLoading ? "Publishing..." : "Publish Agent"}
+								{isLoading
+									? t("workspace.publishingButton")
+									: t("workspace.publishButton")}
 							</Button>
 						</DialogFooter>
 					</DialogContent>
