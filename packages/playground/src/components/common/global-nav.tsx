@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import {
-	AppWindowIcon,
 	ComputerIcon,
 	MoreVertical,
 	PencilIcon,
@@ -8,6 +7,7 @@ import {
 	SquarePenIcon,
 	StarIcon,
 	TrashIcon,
+	WrenchIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -351,11 +351,11 @@ export const GlobalNav = observer(() => {
 					<SidebarMenuItem>
 						<SidebarMenuButton
 							asChild
-							isActive={!!matchPath("/apps", pathname)}
+							isActive={!!matchPath("/tools", pathname)}
 						>
-							<Link to={"/apps"} aria-label={"apps"}>
-								<AppWindowIcon />
-								Apps
+							<Link to={"/tools"} aria-label={"tools"}>
+								<WrenchIcon />
+								Tools
 							</Link>
 						</SidebarMenuButton>
 					</SidebarMenuItem>

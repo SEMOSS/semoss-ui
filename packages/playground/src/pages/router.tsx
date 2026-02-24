@@ -11,6 +11,7 @@ import { MainLayout } from "./main-layout";
 import { NewRoomPage } from "./new-room-page";
 import { NewWorkspacePage } from "./new-workspace-page";
 import { RoomPage } from "./room-page";
+import { ToolsPage } from "./tools-page";
 import { WorkspaceDetailPage } from "./workspace-detail-page";
 import { WorkspacePage } from "./workspace-page";
 
@@ -70,6 +71,10 @@ const router = createHashRouter(
 										{
 											path: "knowledge/:knowledgeId",
 											element: <KnowledgeDetailPage />,
+										},
+										{
+											path: "tools",
+											element: <ToolsPage />,
 										},
 										{
 											path: "*",

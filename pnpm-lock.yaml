@@ -201,6 +201,9 @@ importers:
       '@types/react':
         specifier: 18.3.1
         version: 18.3.1
+      del:
+        specifier: ^8.0.1
+        version: 8.0.1
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -806,9 +809,6 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../../libs/ui
-      '@tailwindcss/vite':
-        specifier: ^4.1.14
-        version: 4.1.17(vite@7.2.4(@types/node@18.16.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1))
       dayjs:
         specifier: 1.11.8
         version: 1.11.8
@@ -843,6 +843,9 @@ importers:
         specifier: ^4.1.14
         version: 4.1.17
     devDependencies:
+      '@tailwindcss/vite':
+        specifier: ^4.1.17
+        version: 4.1.17(vite@7.2.4(@types/node@18.16.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1))
       '@testing-library/jest-dom':
         specifier: ^6.6.3
         version: 6.9.1
@@ -1836,7 +1839,7 @@ packages:
   '@mui/base@5.0.0-beta.70':
     resolution: {integrity: sha512-Tb/BIhJzb0pa5zv/wu7OdokY9ZKEDqcu1BDFnohyvGCoHuSXbEr90rPq1qeNW3XvTBIbNWHEF7gqge+xpUo6tQ==}
     engines: {node: '>=14.0.0'}
-    deprecated: This package has been replaced by @base-ui-components/react
+    deprecated: This package has been replaced by @base-ui/react
     peerDependencies:
       '@types/react': ^17.0.0 || ^18.0.0 || ^19.0.0
       react: ^17.0.0 || ^18.0.0 || ^19.0.0
