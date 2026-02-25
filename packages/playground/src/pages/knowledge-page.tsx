@@ -86,7 +86,7 @@ export const DocumentLibrary = observer(() => {
 				path: "/",
 			},
 			{
-				name: t("knowledge:breadcrumbs.library"),
+				name: t("knowledge:breadcrumbs.knowledgeStores"),
 				path: "/knowledge",
 			},
 		],
