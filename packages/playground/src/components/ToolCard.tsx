@@ -42,23 +42,19 @@ const ToolCard: React.FC<ToolCardProps> = ({ tool }) => {
 						className="flex flex-col justify-between"
 					>
 						<CardContent className="flex flex-col gap-3 p-5">
-							{/* Tool name */}
 							<div className="font-semibold text-base">
 								{mcpTool.title || mcpTool.name}
 							</div>
 
-							{/* Tool description */}
 							<div className="line-clamp-2 text-muted-foreground text-sm">
 								{mcpTool.description ||
 									"No description available"}
 							</div>
 
-							{/* Parent app name */}
 							<div className="text-muted-foreground text-xs">
 								App: {tool.project_name}
 							</div>
 
-							{/* Badge */}
 							<div
 								className={`w-fit rounded-full border px-2.5 py-0.5 font-medium text-xs ${
 									tool.project_global
