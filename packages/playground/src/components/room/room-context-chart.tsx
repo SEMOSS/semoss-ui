@@ -8,7 +8,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 
-export interface ContextChartProps {
+export interface RoomContextChartProps {
 	tokensUsed?: number;
 	tokensMax?: number;
 }
@@ -18,7 +18,10 @@ export interface ContextChartProps {
  *
  * @component
  */
-export const ContextChart = ({ tokensUsed, tokensMax }: ContextChartProps) => {
+export const RoomContextChart = ({
+	tokensUsed,
+	tokensMax,
+}: RoomContextChartProps) => {
 	// Calculate the percentage of context used
 	const contextUsedPercent =
 		tokensMax > 0 && tokensUsed !== undefined
