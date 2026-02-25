@@ -7,10 +7,12 @@ const DEFAULT_BORDER_SIZE = 300;
 
 interface AppFileManagerPageProps {
 	appId?: string;
+	showNavbar?: boolean;
 }
 
 export const AppFileManagerPage: React.FC<AppFileManagerPageProps> = ({
 	appId,
+	showNavbar,
 }) => {
 	const model = useMemo(() => {
 		return FlexLayout.Model.fromJson({
@@ -45,7 +47,11 @@ export const AppFileManagerPage: React.FC<AppFileManagerPageProps> = ({
 	return (
 		<div className="h-[60vh] w-full overflow-hidden">
 			<InsightProvider>
-				<AppWorkspace app={appId || ""} model={model} />
+				<AppWorkspace
+					app={appId || ""}
+					model={model}
+					showNavbar={showNavbar}
+				/>
 			</InsightProvider>
 		</div>
 	);

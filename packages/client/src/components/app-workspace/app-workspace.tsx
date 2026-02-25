@@ -23,13 +23,16 @@ interface AppWorkspaceProps {
 
 	/** Model */
 	model: FlexLayout.Model;
+
+	/** Whether to show the navbar */
+	showNavbar?: boolean;
 }
 
 export const AppWorkspace: React.FC<AppWorkspaceProps> = observer(
-	({ app, model }) => {
+	({ app, model, showNavbar }) => {
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const [isMaximized, setIsMaximized] = useState(false);
-
+		console.log("test", showNavbar);
 		return (
 			<div className="relative h-full w-full overflow-hidden">
 				<div
@@ -67,16 +70,27 @@ export const AppWorkspace: React.FC<AppWorkspaceProps> = observer(
 						</Tooltip>
 					</div>
 					<div className="w-full flex-1 overflow-hidden rounded-md">
-						<div className="flexlayout__theme_smss relative h-full w-full overflow-hidden">
+						<div
+							className={`flexlayout__theme_smss relative h-full w-full overflow-hidden ${!showNavbar ? "child-flexlayout" : ""}`}
+						>
 							<FlexLayout.Layout
 								ref={layoutRef}
 								model={model}
 								onRenderTab={(node, renderValues) => {
 									const component = node.getComponent();
 									if (component === "app-file-explorer") {
-										renderValues.leading = (
-											<FolderTreeIcon className="size-4" />
-										);
+										if (showNavbar) {
+											renderValues.leading = (
+												<FolderTreeIcon className="size-4" />
+											);
+										} else {
+											renderValues.content = (
+												<span className="-rotate-90 flex items-center gap-2 p-2">
+													<FolderTreeIcon className="size-4" />
+													Files
+												</span>
+											);
+										}
 									} else if (
 										component === "app-file-editor"
 									) {

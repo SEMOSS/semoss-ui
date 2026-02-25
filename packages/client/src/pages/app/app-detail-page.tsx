@@ -693,7 +693,10 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 										value="Files"
 										className="mt-2 w-full"
 									>
-										<AppFileManagerPage appId={appId} />
+										<AppFileManagerPage
+											appId={appId}
+											showNavbar={showNav}
+										/>
 									</TabsContent>
 									<TabsContent
 										value="Dependencies"

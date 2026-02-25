@@ -169,3 +169,8 @@ Main Content tabs
     color: var(--Primary-Dark, #1260dd);
     background-color: #ebf4fe;
 }
+
+.child-flexlayout
+  .flexlayout__border_button_left {
+  border: none;
+}
