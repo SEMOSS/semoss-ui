@@ -55,6 +55,10 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 	Input,
+	Tooltip,
+    TooltipContent,
+  	TooltipProvider,
+  	TooltipTrigger,
 } from "@semoss/ui/next";
 import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
@@ -64,6 +68,7 @@ import { getBlockElement } from "@/stores";
 import DuplicateIcon from "../../../assets/img/Duplicate.svg";
 import RenameIcon from "../../../assets/img/Rename.svg";
 import { BlockSettingsRegistry } from "../blocks";
+import { CircleCheck } from "lucide-react";
 
 const customCollisionDetection = (args) => {
 	const collisions = closestCenter(args);
@@ -913,202 +918,201 @@ export const LayersPanel = observer(
 				setRename(exists);
 			};
 			return (
-				<>
-					<StyledTreeItemLabel>
-						<StyledTreeItemIcon>
-							<WidgetIcon />
-						</StyledTreeItemIcon>
-						<StyledLabelContainer
-							search={
-								search
-									? [block.widget, block.id, block.data.id]
-											.join("")
-											.toLowerCase()
-											.indexOf(search.toLowerCase()) > -1
-									: false
-							}
-						>
-							<StyledLabelTitle variant="body2">
-								{block.widget.charAt(0).toUpperCase() +
-									block.widget.slice(1)}
-							</StyledLabelTitle>
-							<div ref={editableAreaRef}>
-								{editingBlockId === block.id ? ( // Check if the current block is being edited
-									<div className="flex flex-row items-center gap-1">
-										<div className="flex flex-row items-center gap-1">
-											<Input
-												ref={inputRef}
-												className={[
-													"w-full max-w-[170px]",
-													"h-[21px]",
-													"px-1 shadow-none",
-													"rounded border border-[#0471F0]",
-													"font-['Inter'] font-normal text-[14px] leading-[21px] tracking-[0.17px]",
-													"text-[#666666]",
-													"focus-visible:border-[#0471F0] focus-visible:outline-none focus-visible:ring-0",
-												].join(" ")}
-												value={editBlockId}
-												onChange={(e) => {
-													const newVal =
-														e.target.value;
-													setEditBlockId(newVal);
-													handleValidation(newVal);
-													const cursorPosition =
-														e.target.selectionStart;
-													if (
-														inputRef.current &&
-														cursorPosition !== null
-													) {
-														requestAnimationFrame(
-															() => {
-																if (
-																	inputRef.current
-																) {
-																	inputRef.current.setSelectionRange(
-																		cursorPosition,
-																		cursorPosition,
-																	);
-																}
-															},
-														);
-													}
-												}}
-												onClick={(e) =>
-													e.stopPropagation()
-												}
-												onMouseDown={(e) => {
-													e.stopPropagation();
-												}}
-												autoFocus
-											/>
-										</div>
-										<Button
-											disabled={rename}
-											onMouseDown={(e) => {
-												e.stopPropagation();
-											}}
-											className={`relative bottom-0.5 min-h-0 min-w-0 bg-transparent px-1 py-0 ${
-												rename
-													? "text-black-300"
-													: "text-blue-600"
-											}`}
-											onClick={(e) => {
-												e.stopPropagation();
-												handleRename(block.id);
-												setRename(true);
-												setEditingBlockId(null);
-											}}
-											variant="secondary"
-										>
-											<CheckIcon />
-										</Button>
-									</div>
-								) : (
-									<StyledLabelSubtitleText variant="caption">
-										{variableName ||
-											block.data.id ||
-											block.id}
-									</StyledLabelSubtitleText>
-								)}
-							</div>
-						</StyledLabelContainer>
-						{variableName ? (
-							<StyledTreeItemIconButton
-								aria-label="copy"
-								title={`Copy variable`}
-								color="default"
-								size="small"
-								onClick={async (e: React.SyntheticEvent) => {
-									e.stopPropagation();
-									await copy(`{{${variableName}}}`);
-								}}
-								data-onhover
-							>
-								<ContentCopy fontSize="small" />
-							</StyledTreeItemIconButton>
-						) : canVariabilize ? (
-							<StyledTreeItemIconButton
-								aria-label="add"
-								title={`Add variable`}
-								size="small"
-								color="primary"
-								onClick={(e: React.SyntheticEvent) => {
-									e.stopPropagation();
-									setVariableModal(block.id);
-								}}
-								data-onhover
-							>
-								<LibraryAdd fontSize="small" />
-							</StyledTreeItemIconButton>
-						) : null}
+        <>
+          <StyledTreeItemLabel>
+            <StyledTreeItemIcon>
+              <WidgetIcon />
+            </StyledTreeItemIcon>
+            <StyledLabelContainer
+              search={
+                search
+                  ? [block.widget, block.id, block.data.id]
+                      .join("")
+                      .toLowerCase()
+                      .indexOf(search.toLowerCase()) > -1
+                  : false
+              }
+            >
+              <StyledLabelTitle variant="body2">
+                {block.widget.charAt(0).toUpperCase() + block.widget.slice(1)}
+              </StyledLabelTitle>
+              <div ref={editableAreaRef}>
+                {editingBlockId === block.id ? ( // Check if the current block is being edited
+                  <div className="flex flex-row items-center gap-1">
+                    <div className="flex flex-row items-center gap-1">
+                      <Input
+                        ref={inputRef}
+                        className={[
+                          "w-full max-w-[170px]",
+                          "h-[21px]",
+                          "px-1 shadow-none",
+                          "rounded border border-[#0471F0] focus-visible:border-[#0471F0]",
+                          "font-['Inter'] font-normal text-[14px] leading-[21px] tracking-[0.17px]",
+                          "text-[#666666]",
+                          "focus-visible:outline-none focus-visible:ring-0",
+                        ].join(" ")}
+                        value={editBlockId}
+                        onChange={(e) => {
+                          const newVal = e.target.value;
+                          setEditBlockId(newVal);
+                          handleValidation(newVal);
+                          const cursorPosition = e.target.selectionStart;
+                          if (inputRef.current && cursorPosition !== null) {
+                            requestAnimationFrame(() => {
+                              if (inputRef.current) {
+                                inputRef.current.setSelectionRange(
+                                  cursorPosition,
+                                  cursorPosition,
+                                );
+                              }
+                            });
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                        }}
+                        autoFocus
+                      />
+                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Button
+                              disabled={rename}
+                              size="icon"
+                              onMouseDown={(e) => e.stopPropagation()}
+                              className="h-6 w-6 p-0 bg-transparent"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRename(block.id);
+                                setRename(true);
+                                setEditingBlockId(null);
+                              }}
+                              variant="secondary"
+                            >
+                              <CircleCheck
+                                className={`w-4 h-4 ${
+                                  rename ? "text-gray-400" : "text-green-600"
+                                }`}
+                              />
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
 
-						{/* 3-dot menu button */}
-						<IconButton
-							size="small"
-							aria-label="more"
-							onClick={(e) => handleMenuOpen(e, block.id)}
-						>
-							<MoreVert fontSize="small" />
-						</IconButton>
-					</StyledTreeItemLabel>
-					<DropdownMenu
-						open={Boolean(menuAnchorEl)}
-						onOpenChange={handleMenuClose}
-					>
-						<DropdownMenuTrigger asChild>
-							<div />
-						</DropdownMenuTrigger>
-						<DropdownMenuContent
-							align="end"
-							side="bottom"
-							className="rounded-md border bg-popover p-1 shadow-md"
-						>
-							{!INPUT_BLOCK_TYPES.includes(block.widget) && (
-								<DropdownMenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										handleRenameBlock(block.id);
-										handleMenuClose();
-									}}
-									className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
-								>
-									<img
-										src={RenameIcon}
-										alt="Rename Icon"
-										className="relative left-1 mr-3"
-									/>
-									Rename
-								</DropdownMenuItem>
-							)}
-							<DropdownMenuItem
-								onClick={(e: React.MouseEvent<HTMLElement>) => {
-									e.stopPropagation();
-									handleDuplicate(e, block.id);
-									handleMenuClose();
-								}}
-								className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
-							>
-								<img
-									src={DuplicateIcon}
-									alt="Duplicate Icon"
-									className="mr-2"
-								/>
-								Duplicate
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={() => {
-									handleDelete(block.id);
-									handleMenuClose();
-								}}
-								className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-outline text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
-							>
-								<DeleteOutlineOutlinedIcon className="mr-1.5 size-4" />
-								Delete
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</>
-			);
+                        {rename && (
+                          <TooltipContent side="top" >
+                            Block name already exists
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                ) : (
+                  <StyledLabelSubtitleText variant="caption">
+                    {variableName || block.data.id || block.id}
+                  </StyledLabelSubtitleText>
+                )}
+              </div>
+            </StyledLabelContainer>
+            {variableName ? (
+              <StyledTreeItemIconButton
+                aria-label="copy"
+                title={`Copy variable`}
+                color="default"
+                size="small"
+                onClick={async (e: React.SyntheticEvent) => {
+                  e.stopPropagation();
+                  await copy(`{{${variableName}}}`);
+                }}
+                data-onhover
+              >
+                <ContentCopy fontSize="small" />
+              </StyledTreeItemIconButton>
+            ) : canVariabilize ? (
+              <StyledTreeItemIconButton
+                aria-label="add"
+                title={`Add variable`}
+                size="small"
+                color="primary"
+                onClick={(e: React.SyntheticEvent) => {
+                  e.stopPropagation();
+                  setVariableModal(block.id);
+                }}
+                data-onhover
+              >
+                <LibraryAdd fontSize="small" />
+              </StyledTreeItemIconButton>
+            ) : null}
+
+            {/* 3-dot menu button */}
+            <IconButton
+              size="small"
+              aria-label="more"
+              onClick={(e) => handleMenuOpen(e, block.id)}
+            >
+              <MoreVert fontSize="small" />
+            </IconButton>
+          </StyledTreeItemLabel>
+          <DropdownMenu
+            open={Boolean(menuAnchorEl)}
+            onOpenChange={handleMenuClose}
+          >
+            <DropdownMenuTrigger asChild>
+              <div />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              side="bottom"
+              className="rounded-md border bg-popover p-1 shadow-md"
+            >
+              {!INPUT_BLOCK_TYPES.includes(block.widget) && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRenameBlock(block.id);
+                    handleMenuClose();
+                  }}
+                  className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+                >
+                  <img
+                    src={RenameIcon}
+                    alt="Rename Icon"
+                    className="relative left-1 mr-3"
+                  />
+                  Rename
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                onClick={(e: React.MouseEvent<HTMLElement>) => {
+                  e.stopPropagation();
+                  handleDuplicate(e, block.id);
+                  handleMenuClose();
+                }}
+                className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+              >
+                <img
+                  src={DuplicateIcon}
+                  alt="Duplicate Icon"
+                  className="mr-2"
+                />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  handleDelete(block.id);
+                  handleMenuClose();
+                }}
+                className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-outline text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+              >
+                <DeleteOutlineOutlinedIcon className="mr-1.5 size-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
+      );
 		};
 		const renderBlock = (id: string) => {
 			const block = state.blocks[id];
