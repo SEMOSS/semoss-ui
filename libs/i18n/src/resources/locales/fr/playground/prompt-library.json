@@ -1,0 +1,37 @@
+{
+	"welcomeTitle": "Bibliothèque de Prompts",
+	"welcomeDescription": "Parcourez et utilisez les démarreurs de conversation et modèles sauvegardés, y compris votre collection personnelle et les prompts populaires de l'agence",
+	"search": {
+		"title": "Rechercher",
+		"placeholder": "Rechercher des prompts"
+	},
+	"buttons": {
+		"createPrompt": "Créer un Prompt",
+		"deletePrompt": "Supprimer le Prompt",
+		"deletePromptConfirm": "Êtes-vous sûr de vouloir supprimer '{{ title }}' ? Cette action ne peut pas être annulée.",
+		"delete": "Supprimer",
+		"usePrompt": "Utiliser le Prompt"
+	},
+	"descriptions": {
+		"promptsFound": "prompts trouvés"
+	},
+	"details": {
+		"title": "Détails",
+		"created": "Créé :",
+		"createdBy": "Créé par :",
+		"version": "Version :",
+		"scope": "Portée :",
+		"promptContext": "Contexte du Prompt",
+		"intent": "Intention",
+		"tags": "Étiquettes"
+	},
+	"breadcrumbs": {
+		"home": "Accueil",
+		"agent": "Agent",
+		"loading": "Chargement",
+		"edit": "Modifier",
+		"new": "Nouveau",
+		"room": "Salle",
+		"library": "Bibliothèque de Prompts"
+	}
+}

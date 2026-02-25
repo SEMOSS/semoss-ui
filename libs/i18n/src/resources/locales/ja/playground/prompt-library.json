@@ -1,0 +1,37 @@
+{
+	"welcomeTitle": "プロンプトライブラリ",
+	"welcomeDescription": "保存された会話の開始テンプレートを閲覧・使用できます。個人コレクションや組織全体で人気のプロンプトが含まれています",
+	"search": {
+		"title": "検索",
+		"placeholder": "プロンプトを検索"
+	},
+	"buttons": {
+		"createPrompt": "プロンプトを作成",
+		"deletePrompt": "プロンプトを削除",
+		"deletePromptConfirm": "'{{ title }}' を削除してもよろしいですか？この操作は元に戻せません。",
+		"delete": "削除",
+		"usePrompt": "プロンプトを使用"
+	},
+	"descriptions": {
+		"promptsFound": "件のプロンプトが見つかりました"
+	},
+	"details": {
+		"title": "詳細",
+		"created": "作成日:",
+		"createdBy": "作成者:",
+		"version": "バージョン:",
+		"scope": "スコープ:",
+		"promptContext": "プロンプトコンテキスト",
+		"intent": "目的",
+		"tags": "タグ"
+	},
+	"breadcrumbs": {
+		"home": "ホーム",
+		"agent": "エージェント",
+		"loading": "読み込み中",
+		"edit": "編集",
+		"new": "新規",
+		"room": "ルーム",
+		"library": "ライブラリ"
+	}
+}

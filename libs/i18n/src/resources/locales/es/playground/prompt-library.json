@@ -1,0 +1,37 @@
+{
+	"welcomeTitle": "Biblioteca de Prompts",
+	"welcomeDescription": "Navega y utiliza iniciadores de conversación y plantillas guardadas, incluyendo tu colección personal y prompts populares de toda la agencia",
+	"search": {
+		"title": "Buscar",
+		"placeholder": "Buscar prompts"
+	},
+	"buttons": {
+		"createPrompt": "Crear Prompt",
+		"deletePrompt": "Eliminar Prompt",
+		"deletePromptConfirm": "¿Estás seguro de que quieres eliminar '{{ title }}'? Esta acción no se puede deshacer.",
+		"delete": "Eliminar",
+		"usePrompt": "Usar Prompt"
+	},
+	"descriptions": {
+		"promptsFound": "prompts encontrados"
+	},
+	"details": {
+		"title": "Detalles",
+		"created": "Creado:",
+		"createdBy": "Creado por:",
+		"version": "Versión:",
+		"scope": "Alcance:",
+		"promptContext": "Contexto del Prompt",
+		"intent": "Intención",
+		"tags": "Etiquetas"
+	},
+	"breadcrumbs": {
+		"home": "Inicio",
+		"agent": "Agente",
+		"loading": "Cargando",
+		"edit": "Editar",
+		"new": "Nuevo",
+		"room": "Sala",
+		"library": "Biblioteca de Prompts"
+	}
+}

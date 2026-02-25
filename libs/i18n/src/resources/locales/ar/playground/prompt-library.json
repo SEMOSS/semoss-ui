@@ -1,0 +1,37 @@
+{
+	"welcomeTitle": "مكتبة المطالبات",
+	"welcomeDescription": "تصفح واستخدم بادئات المحادثة والقوالب المحفوظة، بما في ذلك مجموعتك الشخصية والمطالبات الشائعة على مستوى الوكالة",
+	"search": {
+		"title": "بحث",
+		"placeholder": "البحث في المطالبات"
+	},
+	"buttons": {
+		"createPrompt": "إنشاء مطالبة",
+		"deletePrompt": "حذف المطالبة",
+		"deletePromptConfirm": "هل أنت متأكد من أنك تريد حذف '{{ title }}'؟ لا يمكن التراجع عن هذا الإجراء.",
+		"delete": "حذف",
+		"usePrompt": "استخدام المطالبة"
+	},
+	"descriptions": {
+		"promptsFound": "مطالبة موجودة"
+	},
+	"details": {
+		"title": "التفاصيل",
+		"created": "تاريخ الإنشاء:",
+		"createdBy": "أنشئت بواسطة:",
+		"version": "الإصدار:",
+		"scope": "النطاق:",
+		"promptContext": "سياق المطالبة",
+		"intent": "الهدف",
+		"tags": "العلامات"
+	},
+	"breadcrumbs": {
+		"home": "الرئيسية",
+		"agent": "الوكيل",
+		"loading": "جاري التحميل",
+		"edit": "تحرير",
+		"new": "جديد",
+		"room": "الغرفة",
+		"library": "مكتبة المطالبات"
+	}
+}
