@@ -1,8 +1,8 @@
 import { Command, Flags } from "@oclif/core";
 import { config } from "dotenv";
 import Listr from "listr";
-import path from "path";
 import * as fs from "node:fs";
+import path from "node:path";
 import { Env, Insight } from "@semoss/sdk";
 import { getBatchConfig, initializeAndTestInsight } from "../utils/index.js";
 
@@ -100,7 +100,7 @@ export default class Publish extends Command {
 					}
 				}
 
-				this.log("\n" + "=".repeat(60));
+				this.log(`\n${"=".repeat(60)}`);
 				this.log("📋 Batch Publish Summary");
 				this.log("=".repeat(60));
 				this.log(
@@ -119,7 +119,7 @@ export default class Publish extends Command {
 						this.log(`   • "${name}": ${error}`);
 					}
 				}
-				this.log("=".repeat(60) + "\n");
+				this.log(`${"=".repeat(60)}\n`);
 
 				if (failed.length > 0) {
 					throw new Error(

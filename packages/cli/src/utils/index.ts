@@ -1,5 +1,20 @@
 // Re-export all utility modules for cleaner imports
 export * from "./batchHelpers.js";
+// Explicitly re-export config functions
+export {
+	getConfigDir,
+	getCredentialsPath,
+	getCurrentContext,
+	getCurrentInstance,
+	getCurrentInstanceName,
+	getGlobalConfigPath,
+	getInstance,
+	loadCredentials,
+	loadGlobalConfig,
+	resolveCredentials,
+	saveCredentials,
+	saveGlobalConfig,
+} from "./config.js";
 export * from "./gitignore.js";
 export * from "./insightHelpers.js";
 export * from "./logHelpers.js";

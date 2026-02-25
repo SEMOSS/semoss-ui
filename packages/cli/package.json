@@ -12,7 +12,7 @@
     ],
     "exports": "./lib/index.js",
     "scripts": {
-        "build": "shx rm -rf dist && tsc -b"
+        "build": "shx rm -rf dist && tsc"
     },
     "bin": {
         "semoss": "./bin/run.js"
@@ -23,15 +23,25 @@
         "@oclif/plugin-plugins": "^3.7.0",
         "@semoss/sdk": "workspace:*",
         "adm-zip": "^0.5.10",
+        "chalk": "^5.6.2",
+        "cli-table3": "^0.6.5",
         "dotenv": "^16.0.1",
         "glob": "^10.3.10",
+        "ink": "^6.8.0",
+        "ink-spinner": "^5.0.0",
+        "ink-text-input": "^6.0.0",
+        "inquirer": "^10.2.2",
         "listr": "^0.14.3",
-        "open": "^11.0.0"
+        "open": "^11.0.0",
+        "ora": "^8.2.0",
+        "react": "^19.2.4"
     },
     "devDependencies": {
         "@types/adm-zip": "^0.5.3",
+        "@types/inquirer": "^9.0.9",
         "@types/listr": "^0.14.7",
         "@types/node": "^18",
+        "@types/react": "^19.2.14",
         "add": "^2.0.6",
         "shx": "^0.3.4",
         "ts-node": "^10.9.1",

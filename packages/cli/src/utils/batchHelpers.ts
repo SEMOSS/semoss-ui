@@ -2,6 +2,7 @@ import * as fs from "node:fs";
 
 export interface BatchConfigResult {
 	batchNames: string[];
+	// biome-ignore lint/suspicious/noExplicitAny: Legacy config format is dynamic
 	batchConfig: Record<string, any>;
 }
 
@@ -16,6 +17,7 @@ export async function getBatchConfig({
 	configPath?: string;
 	batchInput?: string;
 }): Promise<BatchConfigResult> {
+	// biome-ignore lint/suspicious/noExplicitAny: Legacy config format is dynamic
 	let configData: any;
 	try {
 		const content = await fs.promises.readFile(configPath, "utf-8");
@@ -41,6 +43,7 @@ export async function getBatchConfig({
 		);
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: Legacy config format is dynamic
 	const batchConfig = configData.deploy.batch as Record<string, any>;
 	let batchNames: string[];
 	if (batchInput.toLowerCase() === "all") {

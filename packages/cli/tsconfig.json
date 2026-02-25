@@ -6,7 +6,10 @@
 		"strict": true,
 		"target": "es2022",
 		"module": "esnext",
-		"moduleResolution": "bundler"
+		"moduleResolution": "bundler",
+		"jsx": "react",
+		"esModuleInterop": true,
+		"resolveJsonModule": true
 	},
 	"include": ["./src/**/*"],
 	"ts-node": {

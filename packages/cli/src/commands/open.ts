@@ -1,8 +1,8 @@
 import { Command, Flags } from "@oclif/core";
 import { config } from "dotenv";
-import fs from "fs";
 import open, { type AppName } from "open";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { getBatchConfig } from "../utils/index.js";
 
 export default class Open extends Command {

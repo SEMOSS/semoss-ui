@@ -1,7 +1,9 @@
 import { Command, Flags } from "@oclif/core";
 import AdmZip from "adm-zip";
+import chalk from "chalk";
 import { config } from "dotenv";
 import { glob } from "glob";
+import inquirer from "inquirer";
 import Listr from "listr";
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
@@ -11,7 +13,9 @@ import * as path from "node:path";
 import { Env, Insight, upload } from "@semoss/sdk";
 import {
 	getBatchConfig,
+	getCurrentContext,
 	initializeAndTestInsight,
+	loadCredentials,
 	logWithTiming,
 	shouldLog,
 } from "../utils/index.js";
@@ -92,6 +96,11 @@ deploy java and python folders
 		rollback: Flags.boolean({
 			char: "r",
 			description: "Rollback to previous deployment",
+		}),
+		// yes flag
+		yes: Flags.boolean({
+			char: "y",
+			description: "Skip confirmation prompt",
 		}),
 		// batch flag
 		batch: Flags.string({
@@ -722,7 +731,7 @@ deploy java and python folders
 		flags: {
 			target?: string | string[];
 		},
-		config?: Record<string, unknown>,
+		config?: Record<string, unknown> | { targets?: string[] },
 	): string[] | "all" {
 		// Priority: CLI flag > config targets > deploy everything
 		if (
@@ -737,7 +746,7 @@ deploy java and python folders
 			return [flags.target];
 		}
 
-		// Fall back to config targets
+		// Fall back to config targets (unified config or smss.json)
 		if (
 			config &&
 			"targets" in config &&
@@ -790,9 +799,130 @@ deploy java and python folders
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Deploy);
 
+		// Try unified config first, fallback to legacy .env/smss.json
+		let configContext: Awaited<
+			ReturnType<typeof getCurrentContext>
+		> | null = null;
+		try {
+			configContext = await getCurrentContext();
+			if (shouldLog(flags.logLevel, "normal")) {
+				this.log(
+					"✓ Using unified config from ~/.config/semoss/credentials.json",
+				);
+			}
+		} catch {
+			// Fall back to .env/smss.json
+			if (shouldLog(flags.logLevel, "verbose")) {
+				this.log("ℹ  Using legacy .env/smss.json config (fallback)");
+			}
+		}
+
 		// Handle batch deployments (only if not already running from batch)
 		if (flags.batch) {
 			try {
+				// Try unified config for batch deployment
+				if (configContext) {
+					this.log(
+						"\n🔄 Running batch deployment from unified config...\n",
+					);
+
+					const allCredentials = await loadCredentials();
+					const instanceNames =
+						flags.batch === "all"
+							? Object.keys(allCredentials.instances)
+							: (flags.batch as string)
+									.split(",")
+									.map((s) => s.trim());
+
+					this.log(
+						`📦 Deploying to instances: ${instanceNames.join(", ")}\n`,
+					);
+
+					const successful: { name: string; duration: number }[] = [];
+					const failed: { name: string; error: string }[] = [];
+
+					for (const instanceName of instanceNames) {
+						const batchStartTime = Date.now();
+						const instance = allCredentials.instances[instanceName];
+						if (!instance) {
+							failed.push({
+								name: instanceName,
+								error: "Instance not found in config",
+							});
+							continue;
+						}
+
+						this.log(
+							`\n📦 Deploying to instance: "${instanceName}" [${new Date(batchStartTime).toISOString()}]`,
+						);
+						this.log(`   Endpoint: ${instance.endpoint}`);
+						this.log(`   Module: ${instance.module}`);
+
+						try {
+							await this.deployToInstance(
+								{
+									endpoint: instance.endpoint,
+									module: instance.module,
+									accessKey: instance.accessKey,
+									secretKey: instance.secretKey,
+									app: configContext.app?.appId,
+								},
+								flags,
+								configContext.app || undefined,
+							);
+							const batchEndTime = Date.now();
+							const duration = batchEndTime - batchStartTime;
+							this.log(
+								`   ✅ Successfully deployed to "${instanceName}" [completed in ${duration}ms]`,
+							);
+							successful.push({ name: instanceName, duration });
+						} catch (deployError) {
+							const batchEndTime = Date.now();
+							const duration = batchEndTime - batchStartTime;
+							const errorMsg =
+								deployError instanceof Error
+									? deployError.message
+									: String(deployError);
+							this.log(
+								`   ❌ Deployment failed for "${instanceName}" [completed in ${duration}ms]: ${errorMsg}`,
+							);
+							failed.push({
+								name: instanceName,
+								error: errorMsg,
+							});
+						}
+					}
+
+					this.log(`\n${"=".repeat(60)}`);
+					this.log("📋 Batch Deploy Summary");
+					this.log("=".repeat(60));
+					this.log(
+						`✅ Successful: ${successful.length}/${instanceNames.length}`,
+					);
+					if (successful.length > 0) {
+						for (const { name, duration } of successful) {
+							this.log(`   • "${name}" (${duration}ms)`);
+						}
+					}
+					if (failed.length > 0) {
+						this.log(
+							`❌ Failed: ${failed.length}/${instanceNames.length}`,
+						);
+						for (const { name, error } of failed) {
+							this.log(`   • "${name}": ${error}`);
+						}
+					}
+					this.log(`${"=".repeat(60)}\n`);
+
+					if (failed.length > 0) {
+						throw new Error(
+							`${failed.length} deploy instance(s) failed`,
+						);
+					}
+					return;
+				}
+
+				// LEGACY: smss.json batch config (kept for backward compatibility)
 				const { batchNames, batchConfig } = await getBatchConfig({
 					configPath: flags.config || "smss.json",
 					batchInput: flags.batch || "all",
@@ -890,6 +1020,7 @@ deploy java and python folders
 		}
 
 		// Load environment variables from .env and .env.local
+		// LEGACY: .env support (kept for backward compatibility)
 		// If --env is provided, use only that file
 		// Otherwise, load .env first, then .env.local (which overrides .env values)
 		const envPath = path.resolve(process.cwd(), ".env");
@@ -903,16 +1034,66 @@ deploy java and python folders
 			}
 		}
 
-		await this.deployToInstance(
-			{
-				endpoint: process.env.ENDPOINT,
-				module: process.env.MODULE,
-				accessKey: process.env.ACCESS_KEY,
-				secretKey: process.env.SECRET_KEY,
-				app: process.env.APP || process.env.VITE_APP,
-			},
-			flags,
-		);
+		// Use unified config if available, otherwise fall back to .env
+		if (configContext?.instance) {
+			const instance = configContext.instance; // Type narrowing
+
+			// Show confirmation prompt (unless --yes flag or --dry-run or --rollback)
+			if (!flags.yes && !flags.dryRun && !flags.rollback) {
+				const appInfo = configContext.app
+					? `app "${chalk.cyan(configContext.app.name || configContext.app.appId)}"`
+					: `app from ${chalk.cyan(process.cwd())}`;
+
+				this.log("");
+				this.log(chalk.yellow("⚠️  Deployment Confirmation"));
+				this.log(chalk.dim("─".repeat(50)));
+				this.log(`Instance: ${chalk.cyan(configContext.instanceName)}`);
+				this.log(`Endpoint: ${chalk.dim(instance.endpoint)}`);
+				this.log(`App:      ${appInfo}`);
+				this.log(chalk.dim("─".repeat(50)));
+				this.log(chalk.red("This action is irreversible."));
+				this.log("");
+
+				const { confirm } = await inquirer.prompt([
+					{
+						type: "confirm",
+						name: "confirm",
+						message: "Do you want to proceed with deployment?",
+						default: false,
+					},
+				]);
+
+				if (!confirm) {
+					this.log(chalk.yellow("\n✗ Deployment cancelled"));
+					return;
+				}
+				this.log("");
+			}
+
+			await this.deployToInstance(
+				{
+					endpoint: instance.endpoint,
+					module: instance.module,
+					accessKey: instance.accessKey,
+					secretKey: instance.secretKey,
+					app: configContext.app?.appId,
+				},
+				flags,
+				configContext.app || undefined,
+			);
+		} else {
+			// LEGACY: .env credentials (kept for backward compatibility)
+			await this.deployToInstance(
+				{
+					endpoint: process.env.ENDPOINT,
+					module: process.env.MODULE,
+					accessKey: process.env.ACCESS_KEY,
+					secretKey: process.env.SECRET_KEY,
+					app: process.env.APP || process.env.VITE_APP,
+				},
+				flags,
+			);
+		}
 	}
 
 	private async deployToInstance(
@@ -925,6 +1106,17 @@ deploy java and python folders
 		},
 		// biome-ignore lint/suspicious/noExplicitAny: oclif flags type is dynamic
 		flags: { [key: string]: any },
+		appConfig?: {
+			appId?: string;
+			name?: string;
+			path?: string;
+			targets?: string[];
+			ignore?: string[];
+			hooks?: {
+				preDeploy?: string[];
+				postDeploy?: string[];
+			};
+		},
 	): Promise<void> {
 		// Handle rollback - store backup path but continue to setup
 		let rollbackBackupDir: string | undefined;
@@ -1039,43 +1231,67 @@ deploy java and python folders
 		// Load config file for ignore patterns and targets
 		let mergedIgnorePatterns = [...DEFAULT_IGNORE];
 		let loadedConfig: Record<string, unknown> | undefined;
-		try {
-			const config = await this.loadConfig(flags.config || "smss.json");
-			if (config && typeof config === "object") {
-				loadedConfig = config;
 
-				if (
-					"deploy" in config &&
-					typeof config.deploy === "object" &&
-					config.deploy !== null &&
-					"ignore" in config.deploy &&
-					Array.isArray(config.deploy.ignore)
-				) {
-					mergedIgnorePatterns = [
-						...DEFAULT_IGNORE,
-						...(config.deploy.ignore as string[]),
-					];
-					if (shouldLog(flags.logLevel, "debug")) {
-						this.log(`📋 Merged ignore patterns from smss.json`);
-					}
-				}
-
-				if ("targets" in config && Array.isArray(config.targets)) {
-					if (shouldLog(flags.logLevel, "debug") && !flags.target) {
-						this.log(
-							`📋 Using deployment targets from config: ${(config.targets as string[]).join(", ")}`,
-						);
-					}
+		// Use app config from unified config if available
+		if (appConfig) {
+			if (appConfig.ignore && Array.isArray(appConfig.ignore)) {
+				mergedIgnorePatterns = [...DEFAULT_IGNORE, ...appConfig.ignore];
+				if (shouldLog(flags.logLevel, "debug")) {
+					this.log(
+						`📋 Using ignore patterns from unified config (${appConfig.ignore.length} custom)`,
+					);
 				}
 			}
-		} catch (error) {
-			if (shouldLog(flags.logLevel, "verbose")) {
-				this.log(`⚠️  Could not load config: ${error}`);
+		} else {
+			// LEGACY: smss.json config (kept for backward compatibility)
+			try {
+				const config = await this.loadConfig(
+					flags.config || "smss.json",
+				);
+				if (config && typeof config === "object") {
+					loadedConfig = config;
+
+					if (
+						"deploy" in config &&
+						typeof config.deploy === "object" &&
+						config.deploy !== null &&
+						"ignore" in config.deploy &&
+						Array.isArray(config.deploy.ignore)
+					) {
+						mergedIgnorePatterns = [
+							...DEFAULT_IGNORE,
+							...(config.deploy.ignore as string[]),
+						];
+						if (shouldLog(flags.logLevel, "debug")) {
+							this.log(
+								`📋 Merged ignore patterns from smss.json`,
+							);
+						}
+					}
+
+					if ("targets" in config && Array.isArray(config.targets)) {
+						if (
+							shouldLog(flags.logLevel, "debug") &&
+							!flags.target
+						) {
+							this.log(
+								`📋 Using deployment targets from config: ${(config.targets as string[]).join(", ")}`,
+							);
+						}
+					}
+				}
+			} catch (error) {
+				if (shouldLog(flags.logLevel, "verbose")) {
+					this.log(`⚠️  Could not load config: ${error}`);
+				}
 			}
 		}
 
 		// Determine deployment targets
-		const deployTargets = this.getDeployTargets(flags, loadedConfig);
+		const deployTargets = this.getDeployTargets(
+			flags,
+			appConfig || loadedConfig,
+		);
 		const isFullDeploy = deployTargets === "all";
 
 		if (shouldLog(flags.logLevel, "debug")) {

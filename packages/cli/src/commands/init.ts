@@ -6,6 +6,7 @@ import { Env, Insight } from "@semoss/sdk";
 import type { Config } from "../types.js";
 import {
 	ensureSemossGitignore,
+	getCurrentContext,
 	initializeAndTestInsight,
 } from "../utils/index.js";
 
@@ -44,6 +45,22 @@ init (./src/commands/init.ts)
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Init);
 
+		// Try to use unified config first
+		let useUnifiedConfig = false;
+		let configContext: Awaited<
+			ReturnType<typeof getCurrentContext>
+		> | null = null;
+
+		try {
+			configContext = getCurrentContext();
+			if (configContext?.instance) {
+				useUnifiedConfig = true;
+				this.log("✓ Using unified config from ~/.config/semoss/");
+			}
+		} catch {
+			// Fall back to .env
+		}
+
 		// path to the environment variables
 		const envPath = flags.env ?? ".env";
 		const envLocalPath = ".env.local";
@@ -57,18 +74,56 @@ init (./src/commands/init.ts)
 		let configOptions: Config | null = null;
 
 		try {
-			// load the env files
-			// if custom env path is provided, use only that
-			// otherwise, load .env first, then .env.local (which overrides .env values)
-			if (flags.env) {
-				config({ path: envPath });
-			} else {
-				config({ path: envPath }); // load .env
-				if (fs.existsSync(envLocalPath)) {
-					config({ path: envLocalPath, override: true }); // load .env.local with override
-				}
-			}
+			if (useUnifiedConfig && configContext?.instance) {
+				// Use unified config
+				const instance = configContext.instance;
 
+				// update the environment
+				Env.update({
+					ACCESS_KEY: instance.accessKey,
+					MODULE: instance.module,
+					SECRET_KEY: instance.secretKey,
+				});
+			} else {
+				// LEGACY: load .env files
+				// if custom env path is provided, use only that
+				// otherwise, load .env first, then .env.local (which overrides .env values)
+				if (flags.env) {
+					config({ path: envPath });
+				} else {
+					config({ path: envPath }); // load .env
+					if (fs.existsSync(envLocalPath)) {
+						config({ path: envLocalPath, override: true }); // load .env.local with override
+					}
+				}
+
+				// validate and construct the full module URL
+				const endpoint = process.env.ENDPOINT;
+				const modulePath = process.env.MODULE;
+
+				if (!endpoint) {
+					this.error(
+						"ENDPOINT is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
+					);
+				}
+
+				if (!modulePath) {
+					this.error(
+						"MODULE is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
+					);
+				}
+
+				// construct the full module URL
+				const fullModule = `${endpoint}${modulePath}`;
+
+				// update the environment
+				Env.update({
+					ACCESS_KEY: process.env.ACCESS_KEY,
+					MODULE: fullModule,
+					SECRET_KEY: process.env.SECRET_KEY,
+					APP: process.env.APP,
+				});
+			}
 			// try to load the configOptions (optional)
 			try {
 				// load it
@@ -78,33 +133,6 @@ init (./src/commands/init.ts)
 			} catch (_e) {
 				// noop
 			}
-
-			// validate and construct the full module URL
-			const endpoint = process.env.ENDPOINT;
-			const modulePath = process.env.MODULE;
-
-			if (!endpoint) {
-				this.error(
-					"ENDPOINT is required. Define one in your environment variables (.env)",
-				);
-			}
-
-			if (!modulePath) {
-				this.error(
-					"MODULE is required. Define one in your environment variables (.env)",
-				);
-			}
-
-			// construct the full module URL
-			const fullModule = `${endpoint}${modulePath}`;
-
-			// update the environment
-			Env.update({
-				ACCESS_KEY: process.env.ACCESS_KEY,
-				MODULE: fullModule,
-				SECRET_KEY: process.env.SECRET_KEY,
-				APP: process.env.APP,
-			});
 		} catch (error) {
 			this.error(error as Error);
 		}
@@ -118,13 +146,13 @@ init (./src/commands/init.ts)
 		// check the remaining environment variables
 		if (!Env.ACCESS_KEY) {
 			this.error(
-				"ACCESS_KEY is required. Define one in your environment variables (.env)",
+				"ACCESS_KEY is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
 			);
 		}
 
 		if (!Env.SECRET_KEY) {
 			this.error(
-				"SECRET_KEY is required. Define one in your environment variables (.env)",
+				"SECRET_KEY is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
 			);
 		}
 
