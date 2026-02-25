@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Dialog,
@@ -12,6 +13,7 @@ import {
 import { useRoot } from "@/hooks";
 
 export const GlobalDialog: React.FC = observer(() => {
+	const { t } = useTranslation("common");
 	const { root } = useRoot();
 	const [visible, setVisible] = useCacheState(
 		true,
@@ -42,7 +44,7 @@ export const GlobalDialog: React.FC = observer(() => {
 							setVisible(false);
 						}}
 					>
-						Acknowledge
+						{t("navigation.acknowledge")}
 					</Button>
 				</DialogFooter>
 			</DialogContent>
