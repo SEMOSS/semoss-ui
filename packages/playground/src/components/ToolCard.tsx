@@ -1,5 +1,6 @@
 import type React from "react";
-import { Button, Card, CardContent, CardFooter } from "@semoss/ui/next";
+import { usePixel } from "@semoss/sdk/react";
+import { Card, CardContent, CardFooter } from "@semoss/ui/next";
 
 interface ToolCardProps {
 	tool: {
@@ -13,51 +14,79 @@ interface ToolCardProps {
 }
 
 const ToolCard: React.FC<ToolCardProps> = ({ tool }) => {
+	const getMCP = usePixel<{
+		tools: {
+			name: string;
+			title?: string;
+			description?: string;
+		}[];
+	}>(`GetMCPTools(project=["${tool.project_id}"]);`, {
+		data: {
+			tools: [
+				{
+					name: "",
+					title: "",
+					description: "",
+				},
+			],
+		},
+	});
+
 	return (
-		<Card className="flex flex-col justify-between">
-			                  
-			<CardContent className="flex flex-col gap-3 p-5">
-				                            
-				<div className="font-semibold text-base">
-					                              
-					{tool.project_name || "Untitled"}
-					                        
-				</div>
-				                                            
-				<div className="line-clamp-2 text-muted-foreground text-sm">
-					                              
-					{tool.description ?? "No description available"}
-					                        
-				</div>
-				                                      
-				<div>
-					                              
-					<span className="-full inline-block rounded border px-2.5 py-0.5 font-medium text-muted-foreground">
-						                                    
-						{tool.project_global ? "Public" : "Private"}
-						                              
-					</span>
-					                        
-				</div>
-				                  
-			</CardContent>
-			                  
-			<CardFooter className="px-5 pt-0 pb-5">
-				                        
-				<Button
-					className="w-full"
-					variant="outline"
-					onClick={() => {
-						window.open(`/app/${tool.project_id}`, "_blank");
-					}}
-				>
-					                              View Documentation
-					                        
-				</Button>
-				                  
-			</CardFooter>
-			            
-		</Card>
+		<>
+			{getMCP.data.tools
+				.filter((t) => t.name)
+				.map((mcpTool) => (
+					<Card
+						key={mcpTool.name}
+						className="flex flex-col justify-between"
+					>
+						<CardContent className="flex flex-col gap-3 p-5">
+							{/* Tool name */}
+							<div className="font-semibold text-base">
+								{mcpTool.title || mcpTool.name}
+							</div>
+
+							{/* Tool description */}
+							<div className="line-clamp-2 text-muted-foreground text-sm">
+								{mcpTool.description ||
+									"No description available"}
+							</div>
+
+							{/* Parent app name */}
+							<div className="text-muted-foreground text-xs">
+								App: {tool.project_name}
+							</div>
+
+							{/* Badge */}
+							<div
+								className={`w-fit rounded-full border px-2.5 py-0.5 font-medium text-xs ${
+									tool.project_global
+										? "border-primary/30 bg-primary/4 text-primary"
+										: "text-muted-foreground"
+								}`}
+							>
+								{tool.project_global ? "Public" : "Private"}
+							</div>
+						</CardContent>
+
+						<CardFooter className="px-5 pt-0 pb-5">
+							{/* <Button
+								className="w-full"
+								variant="outline"
+								onClick={() =>
+									window.open(
+										`/#/app/${tool.project_id}`,
+										"_blank",
+									)
+								}
+							>
+								View Documentation
+							</Button> */}
+						</CardFooter>
+					</Card>
+				))}
+		</>
 	);
 };
 
