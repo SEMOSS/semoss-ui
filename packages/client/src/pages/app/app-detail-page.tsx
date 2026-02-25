@@ -396,8 +396,14 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			"SMSS",
 			"MCP Usage",
 		],
-		editor: ["Overview", "Files", "Access Control", "Dependencies"],
-		readOnly: ["Overview", "Files", "Dependencies"],
+		editor: [
+			"Overview",
+			"Files",
+			"Access Control",
+			"Dependencies",
+			"MCP Usage",
+		],
+		readOnly: ["Overview", "Dependencies", "MCP Usage"],
 		discoverable: ["Overview"],
 	};
 
