@@ -120,8 +120,6 @@ export const PromptGrid = observer(function PromptGrid({
 			throw new Error(output as unknown as string);
 		}
 
-		console.log("output", output);
-
 		await refresh();
 		setSnackbar({
 			open: true,
@@ -131,8 +129,6 @@ export const PromptGrid = observer(function PromptGrid({
 	};
 
 	const handleSave = async (updatedPrompt: Prompt) => {
-		console.log("updated prompt", updatedPrompt);
-
 		if (!updatedPrompt.title || !updatedPrompt.context) {
 			setSnackbar({
 				open: true,
@@ -210,7 +206,7 @@ export const PromptGrid = observer(function PromptGrid({
 			severity: "success",
 		});
 	};
-	console.log("sample prompt:", myPrompts?.[0]);
+	
 	return (
 		<>
 			{!isMobile && (

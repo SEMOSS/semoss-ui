@@ -353,7 +353,7 @@ export const GlobalNav = observer(() => {
 									aria-label={"Prompt Library"}
 								>
 									<SquareLibrary />
-									{t("Prompt Library")}
+									{t("promptLibrary")}
 								</Link>
 							</SidebarMenuButton>
 						</SidebarMenuItem>

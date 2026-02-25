@@ -50,3 +50,22 @@ export const toInitials = (str: string | undefined) => {
 		words[0].charAt(0) + words[words.length - 1].charAt(0)
 	).toUpperCase();
 };
+
+/**
+ * Formats date-like input (Date object, timestamp, or date string) into a human-readable format (e.g., "Jan 1, 2024").
+ *
+ * @param dateLike - The date-like input to format
+ * @returns The formatted date string, or an empty string if input is invalid
+ */
+export const formatDate = (dateLike: Date | string | number | null | undefined) => {
+	if (!dateLike) return "";
+
+	const d = dateLike instanceof Date ? dateLike : new Date(dateLike);
+	if (Number.isNaN(d.getTime())) return String(dateLike);
+
+	return new Intl.DateTimeFormat("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	}).format(d);
+}

@@ -11,6 +11,7 @@ import workspaceAR from "./locales/ar/playground/workspace.json";
 import chatEN from "./locales/en/playground/chat.json";
 import knowledgeEN from "./locales/en/playground/knowledge.json";
 import mcpEN from "./locales/en/playground/mcp.json";
+import promptLibraryEN from "./locales/en/playground/prompt-library.json";
 import roomEN from "./locales/en/playground/room.json";
 import sidebarEN from "./locales/en/playground/sidebar.json";
 import workspaceEN from "./locales/en/playground/workspace.json";
@@ -45,6 +46,7 @@ export const playgroundResources = {
 		chat: chatEN,
 		knowledge: knowledgeEN,
 		mcp: mcpEN,
+		promptLibrary: promptLibraryEN,
 		room: roomEN,
 		workspace: workspaceEN,
 		sidebar: sidebarEN,

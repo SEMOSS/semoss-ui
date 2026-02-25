@@ -2,6 +2,9 @@ import { Copy, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useId, useMemo, useState } from "react";
 import type { Prompt } from "@/types/prompt";
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from "@semoss/ui/next";
+import { useTranslation } from "@semoss/i18n";
+import { formatDate } from "@/utility/utils"
 
 interface PromptDetailsModalProps {
 	open: boolean;
@@ -39,18 +42,7 @@ function useMediaQuery(query: string) {
 	return matches;
 }
 
-function formatDate(dateLike: Date | string | number | null | undefined) {
-	if (!dateLike) return "";
 
-	const d = dateLike instanceof Date ? dateLike : new Date(dateLike);
-	if (Number.isNaN(d.getTime())) return String(dateLike);
-
-	return new Intl.DateTimeFormat("en-US", {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-	}).format(d);
-}
 
 export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 	open,
@@ -58,6 +50,7 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 	prompt,
 	onCopy,
 }) => {
+	const { t } = useTranslation(["prompt-library", "common"]);
 	const isMobile = useMediaQuery("(max-width: 640px)");
 	const dialogTitleId = useId();
 
@@ -105,16 +98,14 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 	};
 
 	return (
-		<div
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby={dialogTitleId}
-			onMouseDown={(e) => {
-				if (e.target === e.currentTarget) onClose();
+		<Dialog
+			open={open}
+			onOpenChange={(open) => {
+				if (!open) onClose();
 			}}
+			aria-labelledby={dialogTitleId}
 		>
-			<div
+			<DialogContent
 				className={[
 					"w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg",
 					isMobile
@@ -122,35 +113,27 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 						: "max-w-3xl",
 				].join(" ")}
 			>
-				<div className="flex items-center justify-between border-slate-200 border-b px-4 py-3">
-					<div
+				<DialogHeader className="flex items-center justify-between border-slate-200 border-b px-4 py-3">
+					<DialogTitle
 						id={dialogTitleId}
 						className="font-semibold text-[20px] text-slate-900"
 					>
 						{title}
-					</div>
-					<button
-						type="button"
-						onClick={onClose}
-						aria-label="Close"
-						className="rounded-md p-2 text-slate-500 hover:bg-slate-100"
-					>
-						<X className="h-5 w-5" />
-					</button>
-				</div>
+					</DialogTitle>
+				</DialogHeader>
 
 				<div className="p-4">
 					<div className="flex flex-col gap-6">
 						<div>
 							<div className="mb-3 font-semibold text-slate-900 text-sm">
-								Details
+								{t("promptLibrary:details.title")}
 							</div>
 
 							<div className="flex flex-wrap items-center gap-x-10 gap-y-2">
 								{createdValue ? (
 									<div className="flex items-center gap-2">
 										<div className="font-medium text-slate-500 text-sm">
-											Created:
+											{t("promptLibrary:details.created")}
 										</div>
 										<div className="text-slate-900 text-sm">
 											{createdText}
@@ -161,7 +144,7 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 								{createdBy ? (
 									<div className="flex items-center gap-2">
 										<div className="font-medium text-slate-500 text-sm">
-											Created by:
+											{t("promptLibrary:details.createdBy")}
 										</div>
 										<div className="text-slate-900 text-sm">
 											{createdBy}
@@ -172,7 +155,7 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 								{version !== null ? (
 									<div className="flex items-center gap-2">
 										<div className="font-medium text-slate-500 text-sm">
-											Version:
+											{t("promptLibrary:details.version")}
 										</div>
 										<div className="text-slate-900 text-sm">
 											{version}
@@ -183,7 +166,7 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 								{scope ? (
 									<div className="flex items-center gap-2">
 										<div className="font-medium text-slate-500 text-sm">
-											Scope:
+											{t("promptLibrary:details.scope")}
 										</div>
 										<div className="text-slate-900 text-sm">
 											{scope}
@@ -198,7 +181,7 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 						{prompt.context ? (
 							<div>
 								<div className="mb-2 font-semibold text-slate-900 text-sm">
-									Prompt Content
+									{t("promptLibrary:details.promptContext")}
 								</div>
 								<div className="max-h-[250px] overflow-y-auto rounded-md border border-slate-200 bg-slate-50 p-3">
 									<div className="whitespace-pre-wrap text-slate-600 text-sm leading-6">
@@ -211,7 +194,7 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 						<div>
 							<div className="mb-2 flex items-center justify-between">
 								<div className="font-semibold text-slate-900 text-sm">
-									Intent
+									{t("promptLibrary:details.intent")}
 								</div>
 								<button
 									type="button"
@@ -230,12 +213,14 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 							</div>
 						</div>
 
-						<div className="h-px bg-slate-200" />
 
 						{tags.length > 0 ? (
+						<>
+						
+						<div className="h-px bg-slate-200" />
 							<div>
 								<div className="mb-2 font-semibold text-slate-900 text-sm">
-									Tags
+									{t("promptLibrary:details.tags")}
 								</div>
 								<div className="flex flex-wrap gap-2">
 									{tags.map((tag) => (
@@ -248,10 +233,11 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 									))}
 								</div>
 							</div>
+						</>
 						) : null}
 					</div>
 				</div>
-			</div>
-		</div>
+			</DialogContent>
+		</Dialog>
 	);
 };

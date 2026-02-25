@@ -2,6 +2,7 @@
 	"search": "Search",
 	"new": "New",
 	"agents": "Agents",
+	"promptLibrary": "Prompt Library",
 	"buckets": {
 		"favorites": "Favorites",
 		"today": "Today",

@@ -116,7 +116,7 @@ function canSeePrompt(p: Prompt, userId: string) {
 }
 
 export const PromptLibrary = observer(() => {
-	const { t } = useTranslation(["workspace", "notifications", "common"]);
+	const { t } = useTranslation(["promptLibrary", "common"]);
 	const [search, setSearch] = useState("");
 	const [selectedTags, setSelectedTags] = useState<string[]>([]);
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -157,23 +157,19 @@ export const PromptLibrary = observer(() => {
 		[allPrompts, userId],
 	);
 
-	console.log("PromptLibrary visiblePrompts:", visiblePrompts);
-
 	const myPrompts = useMemo(
 		() => visiblePrompts.filter((p) => isMinePrompt(p, userId)),
 		[visiblePrompts, userId],
 	);
 
-	console.log("PromptLibrary myPrompts:", myPrompts);
-
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
 			{
-				name: t("workspace:breadcrumbs.home"),
+				name: t("promptLibrary:breadcrumbs.home"),
 				path: "/",
 			},
 			{
-				name: t("Prompt Library"),
+				name: t("promptLibrary:breadcrumbs.library"),
 				path: "/prompt-library",
 			},
 		],
@@ -389,7 +385,7 @@ export const PromptLibrary = observer(() => {
 			<div className="flex items-center gap-2 py-5 text-primary">
 				<SquareLibrary className="h-6 w-6" />
 				<span className="pt-0.5 font-semibold text-2xl leading-tight">
-					Prompt Library
+					{t("promptLibrary:welcomeTitle")}
 				</span>
 
 				<Tooltip>
@@ -405,9 +401,7 @@ export const PromptLibrary = observer(() => {
 					</TooltipTrigger>
 					<TooltipContent side={isMobile ? "bottom" : "right"}>
 						<div className="max-w-sm text-sm leading-relaxed">
-							Browse and use saved conversation starters and
-							templates, including your personal collection and
-							popular agency-wide prompts
+							{t("promptLibrary:welcomeDescription")}
 						</div>
 					</TooltipContent>
 				</Tooltip>
@@ -419,7 +413,7 @@ export const PromptLibrary = observer(() => {
 				<div className="flex-1">
 					{!isMobile && (
 						<div className="mb-1 font-medium text-muted-foreground text-sm">
-							Search
+							{t("promptLibrary:search.title")}
 						</div>
 					)}
 
@@ -427,7 +421,7 @@ export const PromptLibrary = observer(() => {
 						<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 						<input
 							className="h-10 w-full rounded-md border border-border bg-background pr-3 pl-9 text-sm outline-none focus:ring-2 focus:ring-ring"
-							placeholder="Search prompts"
+							placeholder={t("promptLibrary:search.placeholder")}
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 						/>
@@ -588,7 +582,7 @@ export const PromptLibrary = observer(() => {
 					}}
 				>
 					<Plus className="mr-2 h-4 w-4" />
-					Create Prompt
+					{t("promptLibrary:buttons.createPrompt")}
 				</Button>
 
 				{isEditModalOpen && (
@@ -616,7 +610,7 @@ export const PromptLibrary = observer(() => {
 						{selectedCategory.label === "My Prompts"
 							? myPromptsSearched.length
 							: categoryPromptsSearched.length}{" "}
-						prompts found
+						{t("promptLibrary:descriptions.promptsFound")}
 					</div>
 
 					<div className="h-[25vh] overflow-auto pr-1">
@@ -712,7 +706,7 @@ export const PromptLibrary = observer(() => {
 				{selectedCategory.label === "My Prompts"
 					? myPromptsSearched.length
 					: categoryPromptsSearched.length}{" "}
-				prompts found
+				{t("promptLibrary:descriptions.promptsFound")}
 			</div>
 
 			<div

@@ -10,6 +10,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { Prompt } from "@/types/prompt";
+import { useTranslation } from "@semoss/i18n";
 
 interface PromptCardProps {
 	prompt: Prompt;
@@ -74,6 +75,7 @@ export function PromptCard({
 	category,
 	onShowDetails,
 }: PromptCardProps) {
+	const { t } = useTranslation(["prompt-library", "common"]);
 	const { id, title, dateCreated } = prompt;
 
 	const description = getDescription(prompt);
@@ -183,11 +185,10 @@ export function PromptCard({
 		>
 			<div className="w-full max-w-md rounded-lg border border-border bg-background shadow-lg">
 				<div className="border-border border-b px-4 py-3 font-semibold">
-					Delete Prompt
+					{t("promptLibrary:buttons.deletePrompt")}
 				</div>
 				<div className="px-4 py-4 text-muted-foreground text-sm">
-					Are you sure you want to delete {String(title ?? "")}? This
-					action cannot be undone.
+					{t("promptLibrary:buttons.deletePromptConfirm", { title: String(title ?? "") })}
 				</div>
 				<div className="flex items-center justify-end gap-2 border-border border-t px-4 py-3">
 					<Button
@@ -195,7 +196,7 @@ export function PromptCard({
 						variant="ghost"
 						onClick={() => setIsDeleteDialogOpen(false)}
 					>
-						Cancel
+						{t("common:buttons.cancel")}
 					</Button>
 					<Button
 						type="button"
@@ -205,7 +206,7 @@ export function PromptCard({
 							setIsDeleteDialogOpen(false);
 						}}
 					>
-						Delete
+						{t("promptLibrary:buttons.delete")}
 					</Button>
 				</div>
 			</div>
@@ -230,14 +231,6 @@ export function PromptCard({
 									<div className="mb-1 line-clamp-2 font-medium text-[16px] text-slate-800 leading-[1.2]">
 										{String(title ?? "")}
 									</div>
-
-									{/* {category === "My Prompts" &&
-									displayTime ? (
-										<div className="mb-1 text-[12px] text-slate-500">
-											Created on: {displayTime}
-										</div>
-									) : null} */}
-
 									{tags.length > 0 ? (
 										<div className="mb-1 flex flex-wrap gap-1">
 											{tags.slice(0, 3).map((tag) => (
@@ -314,7 +307,7 @@ export function PromptCard({
 									handleUse();
 								}}
 							>
-								<span>Use Prompt</span>
+								<span>{t("promptLibrary:buttons.usePrompt")}</span>
 								<ArrowRight className="ml-2 h-4 w-4" />
 							</Button>
 						</div>

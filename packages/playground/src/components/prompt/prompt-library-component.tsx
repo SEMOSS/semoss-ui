@@ -2,7 +2,7 @@ import { Search as SearchIcon, X } from "lucide-react";
 import type React from "react";
 import { useId, useMemo, useState } from "react";
 import { Button } from "@semoss/ui/next";
-import { usePixel } from "@/hooks";
+import { usePixel } from "@semoss/sdk/react";
 import type { Prompt } from "@/types/prompt";
 
 interface PromptLibraryComponentProps {
