@@ -1,6 +1,7 @@
 import {
 	ChevronDown,
 	ChevronRight,
+	CircleQuestionMark,
 	Search,
 	Sparkles,
 	TriangleAlert,
@@ -18,6 +19,7 @@ import {
 import { createPortal } from "react-dom";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { Tooltip } from "@semoss/ui";
 import {
 	Badge,
 	Breadcrumb,
@@ -743,26 +745,41 @@ export const EngineEditPage: React.FC = observer(() => {
 					<h3 className="font-semibold text-foreground text-xl">
 						Edit {active.name}
 					</h3>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="flex items-center gap-1.5 text-primary hover:bg-primary/10 hover:text-primary"
-						onClick={() => setGenerateOpen(true)}
-						disabled={!insightStore.defaultTextGenerationModel}
-						data-testid={formatToDataTestId(
-							`editEngineDetails-${name}-generate-btn`,
+					<div className="flex items-center">
+						<Button
+							variant="ghost"
+							size="sm"
+							className="flex items-center gap-1.5 text-primary hover:bg-primary/10 hover:text-primary"
+							onClick={() => setGenerateOpen(true)}
+							disabled={!insightStore.defaultTextGenerationModel}
+							data-testid={formatToDataTestId(
+								`editEngineDetails-${name}-generate-btn`,
+							)}
+						>
+							<Sparkles className="size-4" />
+							<span className="font-medium text-sm">
+								Generate with AI
+							</span>
+						</Button>
+						{!insightStore.defaultTextGenerationModel && (
+							<Tooltip
+								title={
+									"Set a default text generation model to enable this feature. Click to configure now."
+								}
+							>
+								<CircleQuestionMark
+									className="size-4 cursor-pointer text-primary hover:text-primary/80"
+									onClick={() =>
+										navigate("/settings/my-profile")
+									}
+									data-testid={formatToDataTestId(
+										`editEngineDetails-${name}-generate-help-icon`,
+									)}
+									aria-label="Generate with AI help icon"
+								/>
+							</Tooltip>
 						)}
-						title={
-							!insightStore.defaultTextGenerationModel
-								? "No text generation model configured"
-								: "Generate details with AI"
-						}
-					>
-						<Sparkles className="size-4" />
-						<span className="font-medium text-sm">
-							Generate with AI
-						</span>
-					</Button>
+					</div>
 				</div>
 
 				<div className="space-y-6">
