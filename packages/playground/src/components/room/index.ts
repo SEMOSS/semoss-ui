@@ -1,4 +1,5 @@
 export * from "./room-content";
+export * from "./room-context-chart";
 export * from "./room-inline-tool";
 export * from "./room-input";
 export * from "./room-input-menu-file-explorer";

@@ -177,8 +177,8 @@ export const MembersTable = (props: MembersTableProps) => {
 			id,
 			undefined, // no search
 			"OWNER", // OWNER Permission Filter
-			undefined, // offset
 			undefined, // limit
+			undefined, // offset
 		];
 	} else if (
 		type === "DATABASE" ||
@@ -191,12 +191,12 @@ export const MembersTable = (props: MembersTableProps) => {
 		getUserDataApi = ["getUserEnginePermission", id];
 		getMembersApi = [
 			"getEngineUsers",
-			id,
 			adminMode,
+			id,
 			debouncedSearch ? debouncedSearch : undefined,
 			permissionPriorityMapper(permissionFilter)?.permission,
-			rowsPerPage, // limit
 			(page + 1) * rowsPerPage - rowsPerPage, // offset
+			rowsPerPage, // limit
 		];
 		getAllAuthorsApi = [
 			"getEngineUsers",
@@ -225,6 +225,8 @@ export const MembersTable = (props: MembersTableProps) => {
 	const [allAuthors, setAllAuthors] = useState<SETTINGS_PROVISIONED_USER[]>(
 		[],
 	);
+
+	console.log(getMembers);
 
 	useEffect(() => {
 		if (

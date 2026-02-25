@@ -1,8 +1,9 @@
-import { CheckIcon, ComputerIcon } from "lucide-react";
+import { CheckIcon, ComputerIcon, ExternalLinkIcon } from "lucide-react";
 import React, { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
+	Button,
 	Command,
 	CommandEmpty,
 	CommandGroup,
@@ -13,21 +14,30 @@ import {
 	DropdownMenuSubContent,
 	DropdownMenuSubTrigger,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import type { App } from "@/types";
+import type { App, Workspace } from "@/types";
+
+const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
+	? import.meta.env.VITE_PLATFORM_URL
+	: "";
 
 interface RoomInputMenuWorkspaceProps {
 	/**
 	 * The currently selected workspace
 	 */
-	workspace: App | null;
+	workspace: Pick<Workspace, "workspace_id" | "name"> | null;
 
 	/**
 	 * Callback when a workspace is selected
 	 */
-	onSelect: (workspace: App | null) => void;
+	onSelect: (
+		workspace: Pick<Workspace, "workspace_id" | "name"> | null,
+	) => void;
 }
 
 export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
@@ -81,7 +91,7 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 				<ComputerIcon />
 				<span className="flex-1">
 					{workspace
-						? workspace.project_name
+						? workspace.name
 						: t("menuWorkspace.selectAgent")}
 				</span>
 				{workspace ? (
@@ -116,13 +126,43 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 										key={w.project_id}
 										value={w.project_id}
 										onSelect={() => {
-											onSelect(w);
+											onSelect({
+												workspace_id: w.project_id,
+												name: w.project_name,
+											});
 										}}
 									>
 										<ComputerIcon className="size-4" />
-										{w.project_name}
+										<div className="w-full flex-1 truncate">
+											{w.project_name}
+										</div>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<div className="flex flex-row items-center justify-center">
+													<Button
+														className="size-4"
+														variant="link"
+														size="icon-sm"
+														onClick={(e) => {
+															e.stopPropagation();
+														}}
+														asChild
+													>
+														<a
+															target="_blank"
+															href={`${PLATFORM_URL}/#/app/${w.project_id}`}
+														>
+															<ExternalLinkIcon />
+														</a>
+													</Button>
+												</div>
+											</TooltipTrigger>
+											<TooltipContent>
+												Click to view agent details
+											</TooltipContent>
+										</Tooltip>
 										<CheckIcon
-											className={`ml-auto ${workspace?.project_id === w.project_id ? "opacity-100" : "opacity-0"}`}
+											className={`ml-auto ${workspace?.workspace_id === w.project_id ? "opacity-100" : "opacity-0"}`}
 										/>
 									</CommandItem>
 								))}
