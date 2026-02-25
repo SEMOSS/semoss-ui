@@ -191,7 +191,7 @@ export const KnowledgeDetailPage = observer(() => {
 		breadcrumbs: [
 			{ name: t("knowledge:breadcrumbs.home"), path: "/" },
 			{
-				name: t("knowledge:breadcrumbs.knowledgeStores"),
+				name: t("knowledge:breadcrumbs.knowledgeLibrary"),
 				path: "/knowledge",
 			},
 			{

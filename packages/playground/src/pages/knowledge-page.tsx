@@ -1,6 +1,3 @@
-/* eslint-disable */
-/** biome-ignore-all lint/nursery/useSortedClasses: using existing Tailwind order in this file */
-
 import { Bookmark, ChevronDown, Info, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -625,7 +622,7 @@ export const DocumentLibrary = () => {
 
 				{filteredItems.length > 0 ? (
 					<div className="max-h-[70vh] overflow-y-auto pr-1">
-						<div className="flex flex-col gap-2 max-w-3xl">
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-8xl">
 							{filteredItems.map((item, index) => (
 								<button
 									type="button"
