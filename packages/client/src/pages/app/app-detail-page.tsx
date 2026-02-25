@@ -620,14 +620,15 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 													Access Control
 												</TabsTrigger>
 											)}
-											{visibleTabs.includes("Files") && (
-												<TabsTrigger
-													value="Files"
-													className="p-3"
-												>
-													Files
-												</TabsTrigger>
-											)}
+											{visibleTabs.includes("Files") &&
+												showNav && (
+													<TabsTrigger
+														value="Files"
+														className="p-3"
+													>
+														Files
+													</TabsTrigger>
+												)}
 											{visibleTabs.includes(
 												"Dependencies",
 											) && (
@@ -689,15 +690,14 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 											/>
 										</div>
 									</TabsContent>
-									<TabsContent
-										value="Files"
-										className="mt-2 w-full"
-									>
-										<AppFileManagerPage
-											appId={appId}
-											showNavbar={showNav}
-										/>
-									</TabsContent>
+									{showNav && (
+										<TabsContent
+											value="Files"
+											className="mt-2 w-full"
+										>
+											<AppFileManagerPage appId={appId} />
+										</TabsContent>
+									)}
 									<TabsContent
 										value="Dependencies"
 										className="mt-2 w-full"
