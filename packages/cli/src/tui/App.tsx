@@ -1,6 +1,5 @@
 import { Box, useApp, useInput, useStdout } from "ink";
-import type React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { spawn } from "node:child_process";
 import type { InstanceConfig } from "../types.js";
 import {

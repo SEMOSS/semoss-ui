@@ -1,7 +1,6 @@
 import { Box, Text } from "ink";
 import TextInput from "ink-text-input";
-import type React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 
 interface InputProps {
 	onSubmit: (command: string) => void;
