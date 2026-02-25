@@ -1,6 +1,3 @@
-/* eslint-disable */
-/** biome-ignore-all lint/nursery/useSortedClasses: using existing Tailwind order in this file */
-
 import {
 	ArrowLeftIcon,
 	ChevronDownIcon,

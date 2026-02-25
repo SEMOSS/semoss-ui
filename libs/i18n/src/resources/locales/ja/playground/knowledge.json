@@ -1,7 +1,7 @@
 {
 	"title": "ナレッジストア",
 	"aboutTitle": "ナレッジストアについて",
-	"whatIsKnowledgeStore": "ナレッジストアとは?",
+	"whatIsKnowledgeLibray": "ナレッジストアとは?",
 	"ragDescription": "RAG(検索拡張生成)チャットは、信頼できるデータに基づいた応答を提供することで、AI会話を強化します。以下のライブラリから選択して、特定のドキュメントを参照した応答を受け取ることができます。",
 	"subtitle": "ナレッジソースを検索、フィルタ、作成します。",
 	"newSource": {

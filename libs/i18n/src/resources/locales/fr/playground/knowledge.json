@@ -1,7 +1,7 @@
 {
 	"title": "Bases de connaissances",
 	"aboutTitle": "À propos des bases de connaissances",
-	"whatIsKnowledgeStore": "Qu'est-ce qu'une base de connaissances?",
+	"whatIsKnowledgeLibrary": "Qu'est-ce qu'une base de connaissances?",
 	"ragDescription": "Le chat RAG (Retrieval-Augmented Generation) améliore les conversations IA en ancrant les réponses dans des données fiables. Choisissez parmi les bibliothèques ci-dessous pour recevoir une réponse faisant référence spécifiquement à ces documents.",
 	"subtitle": "Recherchez, filtrez et créez de nouvelles sources de connaissances.",
 	"newSource": {

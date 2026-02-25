@@ -418,7 +418,7 @@ export const DocumentLibrary = () => {
 									<div className="space-y-2">
 										<p className="font-medium">
 											{t(
-												"knowledge:whatIsKnowledgeStore",
+												"knowledge:whatIsKnowledgeLibrary",
 											)}
 										</p>
 										<p className="text-muted-foreground text-sm leading-relaxed">

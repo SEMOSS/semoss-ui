@@ -1,7 +1,7 @@
 {
 	"title": "Almacenes de Conocimiento",
 	"aboutTitle": "Acerca de los Almacenes de Conocimiento",
-	"whatIsKnowledgeStore": "¿Qué es un Almacén de Conocimiento?",
+	"whatIsKnowledgeLibrary": "¿Qué es un Almacén de Conocimiento?",
 	"ragDescription": "El chat RAG (Generación Aumentada por Recuperación) mejora las conversaciones de IA al fundamentar las respuestas en datos confiables. Elija entre las bibliotecas a continuación para recibir una respuesta que haga referencia a esos documentos específicamente.",
 	"subtitle": "Busque, filtre y cree nuevas fuentes de conocimiento.",
 	"newSource": {
