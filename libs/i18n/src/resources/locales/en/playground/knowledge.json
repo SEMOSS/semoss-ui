@@ -1,12 +1,12 @@
 {
-	"title": "Knowledge Stores",
+	"title": "Knowledge Library",
 	"aboutTitle": "About Knowledge Stores",
-	"whatIsKnowledgeStore": "What's a Knowledge Store?",
+	"whatIsKnowledgeStore": "What's a Knowledge Library?",
 	"ragDescription": "RAG (Retrieval-Augmented Generation) chat enhances AI conversations by grounding responses in trusted data. Choose from the libraries below to receive a response referencing those documents specifically.",
-	"subtitle": "Search, filter, and create new knowledge sources.",
+	"subtitle": "Search, filter, and create new knowledge libraries.",
 	"newSource": {
-		"title": "New Knowledge Source",
-		"description": "Upload documents to create a new knowledge source"
+		"title": "New Knowledge Library",
+		"description": "Upload documents to create a new knowledge library"
 	},
 	"form": {
 		"nameLabel": "Name",
@@ -17,15 +17,15 @@
 	},
 	"tabs": {
 		"all": "All",
-		"global": "Global Stores",
-		"mine": "My Stores"
+		"global": "Global Library",
+		"mine": "My Libraries"
 	},
 	"filters": {
 		"allCenters": "All Centers/Offices",
 		"all": "All"
 	},
 	"actions": {
-		"createSource": "Create Knowledge Source",
+		"createSource": "Create Knowledge Library",
 		"viewDocuments": "View documents",
 		"newChat": "New Chat"
 	},
@@ -56,7 +56,7 @@
 	},
 	"breadcrumbs": {
 		"home": "Home",
-		"knowledgeStores": "Knowledge Stores",
+		"knowledgeLibrary": "Knowledge Library",
 		"loading": "Loading"
 	},
 	"detail": {
