@@ -88,6 +88,8 @@ export const WorkspaceSharingModal = ({
 	 * Functions
 	 */
 	useEffect(() => {
+		let cancelled = false;
+
 		const fetchUsers = async () => {
 			setIsLoadingDropdownUsers(true);
 			try {
@@ -109,23 +111,34 @@ export const WorkspaceSharingModal = ({
 					),
 				]);
 
-				setUsersInDropdown([
-					...usersOut,
-					...usersIn.members.map((member) => ({
-						...member,
-						inAgent: true,
-					})),
-				]);
+				if (!cancelled) {
+					setUsersInDropdown([
+						...usersOut,
+						...usersIn.members.map((member) => ({
+							...member,
+							inAgent: true,
+						})),
+					]);
+				}
 			} catch (error) {
-				toast.error(
-					t("workspace:messages.fetchUsersFailed") +
-						`: ${error instanceof Error ? error.message : "Unknown error"}`,
-				);
+				if (!cancelled) {
+					toast.error(
+						t("workspace:messages.fetchUsersFailed") +
+							`: ${error instanceof Error ? error.message : "Unknown error"}`,
+					);
+				}
 			} finally {
-				setIsLoadingDropdownUsers(false);
+				if (!cancelled) {
+					setIsLoadingDropdownUsers(false);
+				}
 			}
 		};
+
 		fetchUsers();
+
+		return () => {
+			cancelled = true;
+		};
 	}, [debouncedSearch, workspaceId]);
 
 	/**
@@ -198,7 +211,11 @@ export const WorkspaceSharingModal = ({
 				permission: u.permission as Role,
 			}));
 
-			await addProjectUserPermissions(workspaceId, usersToAdd);
+			const addOk = await addProjectUserPermissions(
+				workspaceId,
+				usersToAdd,
+			);
+			if (!addOk) throw new Error("Server returned failure");
 
 			toast.success(
 				t("workspace:messages.addMembersSuccess", {
@@ -245,13 +262,17 @@ export const WorkspaceSharingModal = ({
 	const handleShareDependencies = async () => {
 		setIsSubmitting(true);
 		try {
-			await propagateUserPermissions(workspaceId, sharedUsers);
+			const propagateOk = await propagateUserPermissions(
+				workspaceId,
+				sharedUsers,
+			);
+			if (!propagateOk) throw new Error("Server returned failure");
 			toast.success(t("workspace:sharing.dependenciesSuccess"));
+			handleClose(true);
 		} catch {
 			toast.error(t("workspace:sharing.dependenciesFailed"));
 		} finally {
 			setIsSubmitting(false);
-			handleClose(true);
 		}
 	};
 
