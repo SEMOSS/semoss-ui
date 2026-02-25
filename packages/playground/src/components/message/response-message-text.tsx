@@ -1,6 +1,6 @@
 import { CopyIcon, Quote, SkipForwardIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -24,7 +24,7 @@ import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
 
-const TEXT_MARKDOWN_COMPONENTS = {
+const createMarkdownComponents = (onRoomLink?: (path: string) => void) => ({
 	h1: ({ children, ...props }) => (
 		<H1 className="mt-5 font-semibold text-2xl text-inherit" {...props}>
 			{children}
@@ -66,17 +66,31 @@ const TEXT_MARKDOWN_COMPONENTS = {
 			{children}
 		</P>
 	),
-	a: ({ children, href, ...props }) => (
-		<a
-			href={href}
-			className="font-medium text-base text-primary underline underline-offset-1"
-			target="_blank"
-			rel="noopener noreferrer"
-			{...props}
-		>
-			{children}
-		</a>
-	),
+	a: ({ children, href, ...props }) => {
+		if (href?.startsWith("room://") && onRoomLink) {
+			const path = "/" + href.slice("room://".length);
+			return (
+				<button
+					type="button"
+					className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
+					onClick={() => onRoomLink(path)}
+				>
+					{children}
+				</button>
+			);
+		}
+		return (
+			<a
+				href={href}
+				className="font-medium text-base text-primary underline underline-offset-1"
+				target="_blank"
+				rel="noopener noreferrer"
+				{...props}
+			>
+				{children}
+			</a>
+		);
+	},
 	ul: ({ children, ...props }) => (
 		<ul
 			className="my-1 ml-4 list-disc text-base text-inherit [&>li]:mt-1"
@@ -152,7 +166,7 @@ const TEXT_MARKDOWN_COMPONENTS = {
 			<Table {...props} />
 		</ScrollArea>
 	),
-};
+});
 
 interface ResponseMessageTextProps {
 	/** Message to render */
@@ -163,12 +177,19 @@ interface ResponseMessageTextProps {
 
 	/** Is it the last part */
 	isLast: boolean;
+
+	/** Called when the user clicks a room:// file link */
+	onRoomLink?: (path: string) => void;
 }
 
 export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
-	({ message, part, isLast }) => {
+	({ message, part, isLast, onRoomLink }) => {
 		const { t } = useTranslation("chat");
 		const typewriter = useMarkdownTypewriter(part.text);
+		const components = useMemo(
+			() => createMarkdownComponents(onRoomLink),
+			[onRoomLink],
+		);
 
 		useEffect(() => {
 			if (message.isThinking && isLast) {
@@ -185,7 +206,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		return (
 			<>
 				<Markdown
-					components={TEXT_MARKDOWN_COMPONENTS}
+					components={components}
 					className="[&>*:first-child]:mt-0"
 				>
 					{typewriter.isTyping ? typewriter.rendered : part.text}

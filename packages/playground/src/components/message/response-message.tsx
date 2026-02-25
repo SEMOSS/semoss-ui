@@ -9,6 +9,7 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useCallback } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -68,6 +69,29 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		 * Copy the text
 		 * @param text - text to copy
 		 */
+		const handleRoomLink = useCallback(
+			(path: string) => {
+				const filename = path.split("/").filter(Boolean).pop() ?? path;
+
+				room.addSidebarNode("FILE_EXPLORER", {
+					type: "tab",
+					name: "Files",
+					component: "room-file-explorer",
+					config: {},
+					enableClose: true,
+				});
+
+				room.addSidebarNode(`FILE--${path}`, {
+					type: "tab",
+					name: filename,
+					component: "room-file-editor",
+					config: { name: filename, path },
+					enableClose: true,
+				});
+			},
+			[room],
+		);
+
 		const rewriteMessage = async () => {
 			try {
 				await message.rewriteMessage();
@@ -93,6 +117,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										message={message}
 										part={p}
 										isLast={isLast}
+										onRoomLink={handleRoomLink}
 									/>
 								);
 							} else if (p.type === "MEDIA") {
