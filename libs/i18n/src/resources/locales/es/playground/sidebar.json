@@ -1,0 +1,36 @@
+{
+	"search": "Buscar",
+	"new": "Nuevo",
+	"agents": "Agentes",
+	"buckets": {
+		"favorites": "Favoritos",
+		"today": "Hoy",
+		"yesterday": "Ayer",
+		"lastWeek": "Última semana",
+		"lastMonth": "Último mes",
+		"older": "Más antiguo"
+	},
+	"messages": {
+		"errorLoadingRooms": "Error al cargar las salas",
+		"noRoomsFound": "No se encontraron salas",
+		"untitled": "Sin título"
+	},
+	"actions": {
+		"favorite": "Favorito",
+		"unfavorite": "Quitar de favoritos",
+		"rename": "Renombrar",
+		"delete": "Eliminar",
+		"openInline": "Abrir en línea",
+		"minimize": "Minimizar",
+		"maximize": "Maximizar",
+		"close": "Cerrar"
+	},
+	"toasts": {
+		"failedToPin": "Error al fijar la sala",
+		"failedToUnpin": "Error al desfijar la sala",
+		"roomNameEmpty": "El nombre de la sala no puede estar vacío",
+		"roomRenamedSuccess": "Sala renombrada exitosamente",
+		"failedToRename": "Error al renombrar la sala",
+		"roomDeletedSuccess": "Sala eliminada exitosamente"
+	}
+}

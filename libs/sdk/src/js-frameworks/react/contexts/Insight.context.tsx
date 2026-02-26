@@ -88,6 +88,7 @@ export const InsightProvider = (props: InsightProviderProps) => {
 	}, [insight, insight.actions, syncInsight]);
 
 	// initialize the insight / destroy
+	// biome-ignore lint/correctness/useExhaustiveDependencies: options is checked in the string
 	useEffect(() => {
 		// initialize the insight
 		insight.initialize(options).finally(() => syncInsight());
@@ -99,7 +100,7 @@ export const InsightProvider = (props: InsightProviderProps) => {
 				syncInsight();
 			});
 		};
-	}, [insight, options, syncInsight]);
+	}, [insight, JSON.stringify(options), syncInsight]);
 
 	return (
 		<InsightContext.Provider

@@ -235,22 +235,13 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 				?.getNodeById("main-tabset")
 				?.getAttr("weight");
 
-			model
-				.getBorderSet()
-				.getBorders()
-				.forEach((border) => {
-					// border.setSelected(isSettingsTab ? -1 : border.getSelected());
-					border.setSelected(
-						action.data.tabNode === "block-settings" &&
-							mainTabsetWeight === 0
-							? 1
-							: border.getSelected(),
-					);
-				});
-
 			if (isSettingsTab || mainTabsetWeight === 0) {
 				model.visitNodes((node) => {
-					if (node.getType() === "tabset") {
+					if (
+						node &&
+						typeof node.getType === "function" &&
+						node.getType() === "tabset"
+					) {
 						const newWeight =
 							(isSettingsTab &&
 								node.getId() === "settings-tabset") ||
@@ -358,6 +349,43 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 											);
 											const isSelected =
 												tabNode.isSelected();
+
+											// Base test ID without suffix
+											const baseDataTestId =
+												formatToDataTestId(
+													`workspace-${tabNode.getName()}`,
+												);
+
+											// Ref callback to set data-testid based on ghost/original state
+											const DynamicDataTestId = (
+												el: HTMLElement | null,
+											) => {
+												if (el) {
+													// Check if this is a ghost/preview element during drag
+													const parent =
+														el.parentElement;
+													const grandParent =
+														parent?.parentElement;
+
+													const isGhost =
+														parent?.classList.contains(
+															"flexlayout__tab_button_stamp",
+														) ||
+														grandParent?.classList.contains(
+															"flexlayout__tab_button_stamp",
+														);
+
+													// Determine suffix: ghost for drag preview, image for original
+													const suffix = isGhost
+														? "ghost"
+														: "image";
+													el.setAttribute(
+														"data-testid",
+														`${baseDataTestId}-${suffix}`,
+													);
+												}
+											};
+
 											if (item?.icon?.component) {
 												const Icon =
 													item.icon.component;
@@ -371,9 +399,9 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 														<IconButton
 															size={"small"}
 															color="default"
-															data-testId={formatToDataTestId(
-																`workspace-${tabNode.getName()}`,
-															)}
+															ref={
+																DynamicDataTestId
+															}
 														>
 															<Icon
 																color={
@@ -394,9 +422,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 													<StyledLetTabImage
 														src={iconSrc}
 														alt={tabNode.getName()}
-														data-testId={formatToDataTestId(
-															`workspace-${tabNode.getName()}`,
-														)}
+														ref={DynamicDataTestId}
 													/>
 												);
 											}

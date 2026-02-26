@@ -35,6 +35,8 @@ export interface MCPToolRequest {
 	parameters: Record<string, unknown>;
 	roomId: string;
 	original_name: string;
+	tool_response?: string;
+	executedParameters?: Record<string, unknown>;
 }
 
 export interface MCPToolResponse {
@@ -45,4 +47,5 @@ export interface MCPToolResponse {
 	response: string;
 	roomId: string;
 	tool_status: "success" | "error" | "cancelled";
+	executedParameters?: Record<string, unknown>;
 }

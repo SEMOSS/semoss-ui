@@ -3,123 +3,32 @@ import {
 	ArrowRightIcon,
 	CircleAlert,
 	CopyIcon,
-	MessageCircleIcon,
-	Quote,
+	FileIcon,
 	RefreshCwIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
 	Button,
-	H1,
-	H2,
-	H3,
-	H4,
-	Markdown,
-	P,
-	Separator,
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useLoadingMessage } from "@/hooks/useLoadingMessage";
 import {
 	InputMessageStore,
 	type ResponseMessageStore,
 	type RoomStore,
-	RootMessageStore,
 } from "@/stores";
-import { AppLogo } from "../common";
+import { RoomInlineTool } from "../room/room-inline-tool";
+import { ResponseMessageText } from "./response-message-text";
+import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
-
-const THINKING_MARKDOWN_COMPONENTS = {
-	h1: ({ children, ...props }) => (
-		<H1 className="text-inherit text-sm" {...props}>
-			{children}
-		</H1>
-	),
-	h2: ({ children, ...props }) => (
-		<H2 className="mt-2 text-inherit text-sm" {...props}>
-			{children}
-		</H2>
-	),
-	h3: ({ children, ...props }) => (
-		<H3 className="mt-2 text-inherit text-sm" {...props}>
-			{children}
-		</H3>
-	),
-	h4: ({ children, ...props }) => (
-		<H4 className="mt-2 text-inherit text-sm" {...props}>
-			{children}
-		</H4>
-	),
-	h5: ({ children, ...props }) => (
-		<h5
-			className="mt-1 scroll-m-20 font-medium text-inherit text-sm tracking-tight"
-			{...props}
-		>
-			{children}
-		</h5>
-	),
-	h6: ({ children, ...props }) => (
-		<h6
-			className="mt-1 scroll-m-20 font-medium text-inherit text-sm tracking-tight"
-			{...props}
-		>
-			{children}
-		</h6>
-	),
-	p: ({ children, ...props }) => (
-		<P className="mt-1 text-inherit text-sm" {...props}>
-			{children}
-		</P>
-	),
-	a: ({ children, href, ...props }) => (
-		<a
-			href={href}
-			className="font-medium text-primary text-primary text-sm underline underline-offset-1"
-			target="_blank"
-			rel="noopener noreferrer"
-			{...props}
-		>
-			{children}
-		</a>
-	),
-	ul: ({ children, ...props }) => (
-		<ul
-			className="my-1 ml-4 list-disc text-inherit text-sm [&>li]:mt-1"
-			{...props}
-		>
-			{children}
-		</ul>
-	),
-	ol: ({ children, ...props }) => (
-		<ol
-			className="my-1 ml-4 list-decimal text-inherit text-sm [&>li]:mt-1"
-			{...props}
-		>
-			{children}
-		</ol>
-	),
-	li: ({ children, ...props }) => (
-		<li className="text-inherit text-sm" {...props}>
-			{children}
-		</li>
-	),
-	blockquote: ({ children, ...props }) => (
-		<Quote className="mt-1" {...props}>
-			{children}
-		</Quote>
-	),
-	hr: ({ ...props }) => <Separator className="mt-2 mb-1" {...props} />,
-};
 
 interface ResponseMessageProps {
 	/** Room */
@@ -127,16 +36,11 @@ interface ResponseMessageProps {
 
 	/** Message to render */
 	message: ResponseMessageStore;
-
-	/** Is it last */
-	isLast: boolean;
 }
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
-	({ room, message, isLast }) => {
-		const thinkingMessage = useLoadingMessage(room.isLoading);
-
-		const [thinking, setThinking] = useState<string>("");
+	({ room, message }) => {
+		const { t } = useTranslation("chat");
 
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
@@ -145,28 +49,16 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		}
 
 		/**
-		 * Copy the text
-		 * @param text - text to copy
-		 */
-		const copyMessage = (text: string) => {
-			try {
-				navigator.clipboard.writeText(text);
-
-				toast.success("Successfully copied to clipboard");
-			} catch (e) {
-				toast.error(e.message);
-			}
-		};
-
-		/**
 		 * Record the feedback
 		 * @param rating - positive or negative
 		 */
 		const recordFeedback = async (rating: boolean) => {
+			const isDeleting = message.feedback?.rating === rating;
 			try {
-				await message.recordFeedback(rating);
-
-				toast.success("Successfully saved feedback");
+				await message.recordFeedback(isDeleting ? null : rating);
+				if (!isDeleting) {
+					toast.success(t("notifications.feedbackSuccess"));
+				}
 			} catch (e) {
 				toast.error(e.message);
 			}
@@ -180,76 +72,126 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			try {
 				await message.rewriteMessage();
 
-				toast.success("Successfully rewrote message");
+				toast.success(t("notifications.rewriteSuccess"));
 			} catch (e) {
 				toast.error(e.message);
 			}
 		};
 
-		const areToolsActive =
-			message.type === "RESPONSE" &&
-			message.tools.some((tool) => !tool.response);
-
 		return (
-			<div className="group mb-0 flex w-full flex-col gap-4">
-				<div className="group flex flex-row items-center gap-2">
-					{room.isLoading && isLast ? (
-						<div className="flex size-4 animate-spin items-center justify-center">
-							<AppLogo full={false} />
-						</div>
-					) : (
-						<MessageCircleIcon className="size-4" />
-					)}
-					<span className="mr-0.5 font-medium text-base">
-						{message.model.name ?? "Agent"}
-					</span>
-				</div>
-				{((room.isLoading && isLast) ||
-					message.thinking.length > 0) && (
-					<Accordion
-						type="single"
-						collapsible
-						className="rounded-lg border p-3 text-muted-foreground text-sm shadow-sm"
-						value={room.isLoading && isLast ? "thinking" : thinking}
-						onValueChange={(val) => setThinking(val || "")}
-					>
-						<AccordionItem value="thinking">
-							<AccordionTrigger className="p-0">
-								<span className="font-medium">Thinking</span>
-							</AccordionTrigger>
-							<AccordionContent className="pt-2">
-								<Markdown
-									className="[&>*:first-child]:mt-0"
-									components={THINKING_MARKDOWN_COMPONENTS}
-								>
-									{message.thinking || thinkingMessage}
-								</Markdown>
-							</AccordionContent>
-						</AccordionItem>
-					</Accordion>
-				)}
+			<HoverCard>
+				<HoverCardTrigger asChild>
+					<div className="mb-0 flex w-full flex-col gap-4 pr-3 sm:pr-10">
+						{message.parts.map((p, pIdx) => {
+							const key = `message-part-${pIdx}`;
+							const isLast = pIdx === message.parts.length - 1;
 
-				{message.text ? (
-					<Markdown className="[&>*:first-child]:mt-0">
-						{message.text}
-					</Markdown>
-				) : null}
-				{message.tools.map((t) => (
-					<ResponseMessageTool
-						key={`tool-${t.id}`}
-						message={message}
-						tool={t}
-					/>
-				))}
-				{areToolsActive && (
-					<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
-						<CircleAlert className="size-4" />
-						Please complete the tool(s) to proceed.
-					</p>
-				)}
-				<div className="-ml-2.5 flex flex-1 flex-row items-center justify-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+							if (p.type === "TEXT") {
+								return (
+									<ResponseMessageText
+										key={key}
+										message={message}
+										part={p}
+										isLast={isLast}
+									/>
+								);
+							} else if (p.type === "MEDIA") {
+								return (
+									<div key={`${message.id}-part-${pIdx}`}>
+										<button
+											type="button"
+											className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted"
+											onClick={() => {
+												// this will select if there or open if not
+												room.addSidebarNode(
+													`FILE--${p.mediaInfo.fileLocation}`,
+													{
+														type: "tab",
+														name: p.mediaInfo
+															.fileName,
+														component:
+															"room-file-editor",
+														config: {
+															name: p.mediaInfo
+																.fileName,
+															path: p.mediaInfo
+																.fileLocation,
+														},
+														enableClose: true,
+													},
+												);
+											}}
+											aria-label={`View ${p.mediaInfo.fileName}`}
+										>
+											{p.mediaInfo.mimeType?.startsWith(
+												"image/",
+											) ? (
+												<img
+													className="w-full"
+													src={`data:image/png;base64,${p.mediaInfo.base64Data}`}
+													alt={p.mediaInfo.fileName}
+												/>
+											) : (
+												<FileIcon className="size-6 text-muted-foreground" />
+											)}
+										</button>
+									</div>
+								);
+							} else if (p.type === "THINKING") {
+								return (
+									<ResponseMessageThinking
+										key={key}
+										message={message}
+										part={p}
+										isLast={isLast}
+									/>
+								);
+							} else if (p.type === "TOOL_CALL") {
+								const tool = room.getTool(p.toolCall.id);
+
+								// if tool is not found, return null
+								if (!tool) {
+									return null;
+								}
+
+								return (
+									<div
+										key={key}
+										className="flex flex-col gap-2"
+									>
+										<ResponseMessageTool
+											message={message}
+											tool={tool}
+										/>
+										{tool.display === "inline" &&
+											tool.isOpen && (
+												<RoomInlineTool
+													room={room}
+													message={message}
+													tool={tool}
+												/>
+											)}
+									</div>
+								);
+							}
+
+							return null;
+						})}
+						{message.hasUnfinishedTools && (
+							<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
+								<CircleAlert className="size-4" />
+								{t("response.completeTools")}
+							</p>
+						)}
+					</div>
+				</HoverCardTrigger>
+				<HoverCardContent
+					className="flex w-auto flex-col items-center gap-0.5 p-1"
+					side="right"
+					align="start"
+				>
 					{inputMessage?.siblings.length > 1 && (
-						<>
+						<div className="flex flex-row items-center gap-0.5">
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
@@ -268,7 +210,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
-									Previous Message
+									{t("response.previousMessage")}
 								</TooltipContent>
 							</Tooltip>
 							<span className="text-muted-foreground text-xs">
@@ -294,10 +236,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
-									Next Message
+									{t("response.nextMessage")}
 								</TooltipContent>
 							</Tooltip>
-						</>
+						</div>
 					)}
 
 					{inputMessage && (
@@ -305,8 +247,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							<TooltipTrigger asChild>
 								<Button
 									disabled={
-										inputMessage.parent instanceof
-											RootMessageStore ||
+										!inputMessage.parent?.parent ||
 										message.room.mode === "executing"
 									}
 									variant="ghost"
@@ -319,7 +260,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
-								Rewrite Message
+								{t("response.rewriteMessage")}
 							</TooltipContent>
 						</Tooltip>
 					)}
@@ -333,11 +274,17 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									recordFeedback(true);
 								}}
 							>
-								<ThumbsUpIcon />
+								<ThumbsUpIcon
+									fill={
+										message.feedback?.rating === true
+											? "currentColor"
+											: "none"
+									}
+								/>
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent side="bottom">
-							Share Positive Feedback
+							{t("response.goodResponse")}
 						</TooltipContent>
 					</Tooltip>
 
@@ -350,11 +297,17 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									recordFeedback(false);
 								}}
 							>
-								<ThumbsDownIcon />
+								<ThumbsDownIcon
+									fill={
+										message.feedback?.rating === false
+											? "currentColor"
+											: "none"
+									}
+								/>
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent side="bottom">
-							Share Negative Feedback
+							{t("response.poorResponse")}
 						</TooltipContent>
 					</Tooltip>
 
@@ -363,24 +316,51 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							<Button
 								variant="ghost"
 								size="icon"
-								disabled={!message.text}
+								disabled={message.parts.length === 0}
 								onClick={() => {
-									if (!message.text) {
+									const text = message.parts
+										.map((part) => {
+											if (part.type === "TEXT") {
+												return part.text;
+											} else if (part.type === "MEDIA") {
+												return `<${part.mediaInfo.fileName}?`;
+											} else if (
+												part.type === "TOOL_CALL"
+											) {
+												return `<${part.toolCall.name}?`;
+											}
+
+											return "";
+										})
+										.join("\n");
+
+									if (!text) {
+										toast.warning(
+											t("notifications.noCopyContent"),
+										);
 										return;
 									}
 
-									copyMessage(message.text);
+									try {
+										navigator.clipboard.writeText(text);
+
+										toast.success(
+											t("notifications.copySuccess"),
+										);
+									} catch (e) {
+										toast.error(e.message);
+									}
 								}}
 							>
 								<CopyIcon />
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent side="bottom">
-							Copy Response
+							{t("response.copyResponse")}
 						</TooltipContent>
 					</Tooltip>
-				</div>
-			</div>
+				</HoverCardContent>
+			</HoverCard>
 		);
 	},
 );

@@ -47,6 +47,8 @@ const SETTINGS_COMPONETS = {
 	"function/:id": () => <EngineSettingsDetailPage type="FUNCTION" />,
 	vector: () => <EngineSettingsIndexPage type="VECTOR" />,
 	"vector/:id": () => <EngineSettingsDetailPage type="VECTOR" />,
+	guardrail: () => <EngineSettingsIndexPage type="GUARDRAIL" />,
+	"guardrail/:id": () => <EngineSettingsDetailPage type="GUARDRAIL" />,
 };
 
 export const SettingsRouter = observer(() => {
