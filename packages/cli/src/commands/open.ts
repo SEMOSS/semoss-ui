@@ -1,9 +1,6 @@
 import { Command, Flags } from "@oclif/core";
-import { config } from "dotenv";
 import open, { type AppName } from "open";
-import fs from "node:fs";
-import path from "node:path";
-import { getBatchConfig } from "../utils/index.js";
+import { getBatchConfig, getConfiguration } from "../utils/index.js";
 import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Open extends Command {
@@ -59,49 +56,37 @@ export default class Open extends Command {
 			}
 
 			if (flags.batch) {
-				try {
-					const { batchNames, batchConfig } = await getBatchConfig({
+				const { batchNames, batchConfig, source } =
+					await getBatchConfig({
 						configPath: "smss.json",
 						batchInput: flags.batch || "all",
 					});
-					for (const name of batchNames) {
-						const entry = batchConfig[name];
-						if (!entry || !entry.endpoint) {
-							this.log(
-								`Skipping batch '${name}': no endpoint defined.`,
-							);
-							continue;
-						}
-						await this.openApp(
-							entry.endpoint,
-							entry.app,
-							name,
-							flags.browser,
-						);
+
+				this.log(
+					`\n🔗 Opening ${batchNames.length} instance(s) from ${source}...\n`,
+				);
+
+				for (const name of batchNames) {
+					const entry = batchConfig[name];
+					if (!entry?.endpoint) {
+						this.log(`Skipping '${name}': no endpoint defined.`);
+						continue;
 					}
-					return;
-				} catch (err) {
-					this.error(
-						err instanceof Error ? err.message : String(err),
+					await this.openApp(
+						entry.endpoint,
+						entry.app,
+						name,
+						flags.browser,
 					);
 				}
+				return;
 			}
 
-			// Load environment variables from .env and .env.local
-			// If --env is provided, use only that file
-			// Otherwise, load .env first, then .env.local (which overrides .env values)
-			const envPath = path.resolve(process.cwd(), ".env");
-			const envLocalPath = path.resolve(process.cwd(), ".env.local");
-			if (flags.env) {
-				config({ path: flags.env });
-			} else {
-				config({ path: envPath });
-				if (fs.existsSync(envLocalPath)) {
-					config({ path: envLocalPath, override: true });
-				}
-			}
+			// Use getConfiguration for non-batch mode
+			const configResult = getConfiguration({ envPath: flags.env });
 
-			const endpoint = flags.endpoint || process.env.ENDPOINT;
+			// Extract endpoint from module or use flag
+			const endpoint = flags.endpoint ?? configResult.module;
 
 			if (!endpoint) {
 				this.error(
@@ -113,7 +98,7 @@ export default class Open extends Command {
 			logger.debug(`Opening endpoint: ${endpoint}`);
 			await this.openApp(
 				endpoint,
-				process.env.APP ?? process.env.VITE_APP,
+				configResult.appId || undefined,
 				undefined,
 				flags.browser,
 			);

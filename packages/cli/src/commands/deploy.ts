@@ -1,7 +1,6 @@
 import { Command, Flags } from "@oclif/core";
 import AdmZip from "adm-zip";
 import chalk from "chalk";
-import { config } from "dotenv";
 import { glob } from "glob";
 import inquirer from "inquirer";
 import Listr from "listr";
@@ -13,9 +12,8 @@ import * as path from "node:path";
 import { Env, Insight, upload } from "@semoss/sdk";
 import {
 	getBatchConfig,
-	getCurrentContext,
+	getConfiguration,
 	initializeAndTestInsight,
-	loadCredentials,
 } from "../utils/index.js";
 import {
 	getDefaultLogger,
@@ -776,297 +774,164 @@ deploy java and python folders
 		setDefaultLogger(logger);
 		logger.debug(`Deploy command started (logLevel=${flags.logLevel})`);
 
-		// Try unified config first, fallback to legacy .env/smss.json
-		let configContext: Awaited<
-			ReturnType<typeof getCurrentContext>
-		> | null = null;
-		try {
-			configContext = await getCurrentContext();
-			logger.info(
-				"✓ Using unified config from ~/.config/semoss/credentials.json",
-			);
-		} catch {
-			// Fall back to .env/smss.json
-			logger.info("ℹ  Using legacy .env/smss.json config (fallback)");
+		// Get unified configuration from all sources (priority: .env.local > .env > smss.json > global)
+		const configResult = getConfiguration({
+			configPath: flags.config,
+		});
+
+		if (configResult.source !== "none") {
+			logger.info(`✓ Using configuration from ${configResult.source}`);
+		} else {
+			logger.info("ℹ  No configuration found");
 		}
 
 		// Handle batch deployments (only if not already running from batch)
 		if (flags.batch) {
-			try {
-				// Try unified config for batch deployment
-				if (configContext) {
-					this.log(
-						"\n🔄 Running batch deployment from unified config...\n",
-					);
+			// getBatchConfig handles smss.json > global config priority
+			const { batchNames, batchConfig, source } = await getBatchConfig({
+				configPath: flags.config || "smss.json",
+				batchInput: flags.batch || "all",
+			});
 
-					const allCredentials = await loadCredentials();
-					const instanceNames =
-						flags.batch === "all"
-							? Object.keys(allCredentials.instances)
-							: (flags.batch as string)
-									.split(",")
-									.map((s) => s.trim());
+			this.log(
+				`\n🔄 Running batch deployment for: ${batchNames.join(", ")} (from ${source})\n`,
+			);
 
-					this.log(
-						`📦 Deploying to instances: ${instanceNames.join(", ")}\n`,
-					);
+			const successful: { name: string; duration: number }[] = [];
+			const failed: { name: string; error: string }[] = [];
 
-					const successful: { name: string; duration: number }[] = [];
-					const failed: { name: string; error: string }[] = [];
-
-					for (const instanceName of instanceNames) {
-						const batchStartTime = Date.now();
-						const instance = allCredentials.instances[instanceName];
-						if (!instance) {
-							failed.push({
-								name: instanceName,
-								error: "Instance not found in config",
-							});
-							continue;
-						}
-
-						this.log(
-							`\n📦 Deploying to instance: "${instanceName}" [${new Date(batchStartTime).toISOString()}]`,
-						);
-						this.log(`   Endpoint: ${instance.endpoint}`);
-						this.log(`   Module: ${instance.module}`);
-
-						try {
-							await this.deployToInstance(
-								{
-									endpoint: instance.endpoint,
-									module: instance.module,
-									accessKey: instance.accessKey,
-									secretKey: instance.secretKey,
-									app: configContext.app?.appId,
-								},
-								flags,
-								configContext.app || undefined,
-							);
-							const batchEndTime = Date.now();
-							const duration = batchEndTime - batchStartTime;
-							this.log(
-								`   ✅ Successfully deployed to "${instanceName}" [completed in ${duration}ms]`,
-							);
-							successful.push({ name: instanceName, duration });
-						} catch (deployError) {
-							const batchEndTime = Date.now();
-							const duration = batchEndTime - batchStartTime;
-							const errorMsg =
-								deployError instanceof Error
-									? deployError.message
-									: String(deployError);
-							this.log(
-								`   ❌ Deployment failed for "${instanceName}" [completed in ${duration}ms]: ${errorMsg}`,
-							);
-							failed.push({
-								name: instanceName,
-								error: errorMsg,
-							});
-						}
-					}
-
-					this.log(`\n${"=".repeat(60)}`);
-					this.log("📋 Batch Deploy Summary");
-					this.log("=".repeat(60));
-					this.log(
-						`✅ Successful: ${successful.length}/${instanceNames.length}`,
-					);
-					if (successful.length > 0) {
-						for (const { name, duration } of successful) {
-							this.log(`   • "${name}" (${duration}ms)`);
-						}
-					}
-					if (failed.length > 0) {
-						this.log(
-							`❌ Failed: ${failed.length}/${instanceNames.length}`,
-						);
-						for (const { name, error } of failed) {
-							this.log(`   • "${name}": ${error}`);
-						}
-					}
-					this.log(`${"=".repeat(60)}\n`);
-
-					if (failed.length > 0) {
-						throw new Error(
-							`${failed.length} deploy instance(s) failed`,
-						);
-					}
-					return;
-				}
-
-				// LEGACY: smss.json batch config (kept for backward compatibility)
-				const { batchNames, batchConfig } = await getBatchConfig({
-					configPath: flags.config || "smss.json",
-					batchInput: flags.batch || "all",
-				});
+			for (const batchName of batchNames) {
+				const batchStartTime = Date.now();
+				const entry = batchConfig[batchName];
 
 				this.log(
-					`\n🔄 Running batch deployment for: ${batchNames.join(", ")}\n`,
+					`\n📦 Deploying to instance: "${batchName}" [${new Date(batchStartTime).toISOString()}]`,
 				);
+				this.log(`   Module: ${entry.module || "from .env"}`);
 
-				const successful: { name: string; duration: number }[] = [];
-				const failed: { name: string; error: string }[] = [];
-
-				for (const batchName of batchNames) {
-					const batchStartTime = Date.now();
-					const batchSettings = batchConfig[batchName];
+				try {
+					await this.deployToInstance(
+						{
+							endpoint: entry.endpoint,
+							module: entry.module,
+							accessKey: entry.accessKey,
+							secretKey: entry.secretKey,
+							app: entry.app || configResult.appId || undefined,
+						},
+						flags,
+						configResult.app || undefined,
+					);
+					const batchEndTime = Date.now();
+					const duration = batchEndTime - batchStartTime;
 					this.log(
-						`\n📦 Deploying to batch instance: "${batchName}" [${new Date(batchStartTime).toISOString()}]`,
+						`   ✅ Successfully deployed to "${batchName}" [completed in ${duration}ms]`,
 					);
+					successful.push({ name: batchName, duration });
+				} catch (deployError) {
+					const batchEndTime = Date.now();
+					const duration = batchEndTime - batchStartTime;
+					const errorMsg =
+						deployError instanceof Error
+							? deployError.message
+							: String(deployError);
 					this.log(
-						`   Endpoint: ${batchSettings.endpoint || "from .env"}`,
+						`   ❌ Deployment failed for "${batchName}" [completed in ${duration}ms]: ${errorMsg}`,
 					);
-					this.log(
-						`   Module: ${batchSettings.module || "from .env"}`,
-					);
-
-					try {
-						await this.deployToInstance(
-							{
-								endpoint: batchSettings.endpoint as
-									| string
-									| undefined,
-								module: batchSettings.module as
-									| string
-									| undefined,
-								accessKey: batchSettings.accessKey as
-									| string
-									| undefined,
-								secretKey: batchSettings.secretKey as
-									| string
-									| undefined,
-								app: batchSettings.app as string | undefined,
-							},
-							flags,
-						);
-						const batchEndTime = Date.now();
-						const duration = batchEndTime - batchStartTime;
-						this.log(
-							`   ✅ Successfully deployed to "${batchName}" [completed in ${duration}ms]`,
-						);
-						successful.push({ name: batchName, duration });
-					} catch (deployError) {
-						const batchEndTime = Date.now();
-						const duration = batchEndTime - batchStartTime;
-						const errorMsg =
-							deployError instanceof Error
-								? deployError.message
-								: String(deployError);
-						this.log(
-							`   ❌ Deployment failed for "${batchName}" [completed in ${duration}ms]: ${errorMsg}`,
-						);
-						failed.push({ name: batchName, error: errorMsg });
-					}
+					failed.push({ name: batchName, error: errorMsg });
 				}
-
-				this.log(`\n${"=".repeat(60)}`);
-				this.log("📋 Batch Deploy Summary");
-				this.log("=".repeat(60));
-				this.log(
-					`✅ Successful: ${successful.length}/${batchNames.length}`,
-				);
-				if (successful.length > 0) {
-					for (const { name, duration } of successful) {
-						this.log(`   • "${name}" (${duration}ms)`);
-					}
-				}
-				if (failed.length > 0) {
-					this.log(
-						`❌ Failed: ${failed.length}/${batchNames.length}`,
-					);
-					for (const { name, error } of failed) {
-						this.log(`   • "${name}": ${error}`);
-					}
-				}
-				this.log(`${"=".repeat(60)}\n`);
-
-				if (failed.length > 0) {
-					throw new Error(
-						`${failed.length} deploy instance(s) failed`,
-					);
-				}
-				return;
-			} catch (err) {
-				this.error(err instanceof Error ? err.message : String(err));
 			}
+
+			this.log(`\n${"=".repeat(60)}`);
+			this.log("📋 Batch Deploy Summary");
+			this.log("=".repeat(60));
+			this.log(
+				`✅ Successful: ${successful.length}/${batchNames.length}`,
+			);
+			if (successful.length > 0) {
+				for (const { name, duration } of successful) {
+					this.log(`   • "${name}" (${duration}ms)`);
+				}
+			}
+			if (failed.length > 0) {
+				this.log(`❌ Failed: ${failed.length}/${batchNames.length}`);
+				for (const { name, error } of failed) {
+					this.log(`   • "${name}": ${error}`);
+				}
+			}
+			this.log(`${"=".repeat(60)}\n`);
+
+			if (failed.length > 0) {
+				throw new Error(`${failed.length} deploy instance(s) failed`);
+			}
+			return;
 		}
 
-		// Load environment variables from .env and .env.local
-		// LEGACY: .env support (kept for backward compatibility)
-		// If --env is provided, use only that file
-		// Otherwise, load .env first, then .env.local (which overrides .env values)
-		const envPath = path.resolve(process.cwd(), ".env");
-		const envLocalPath = path.resolve(process.cwd(), ".env.local");
-		if (flags.env) {
-			config({ path: flags.env });
-		} else {
-			config({ path: envPath });
-			if (fs.existsSync(envLocalPath)) {
-				config({ path: envLocalPath, override: true });
-			}
+		// Use getConfiguration result directly (already handles all config sources)
+		if (!configResult.isValid) {
+			this.error(
+				`Invalid configuration:\n${configResult.errors.map((e) => `  - ${e}`).join("\n")}`,
+			);
 		}
 
-		// Use unified config if available, otherwise fall back to .env
-		if (configContext?.instance) {
-			const instance = configContext.instance; // Type narrowing
-
-			// Show confirmation prompt (unless --yes flag or --dry-run or --rollback)
-			if (!flags.yes && !flags.dryRun && !flags.rollback) {
-				const appInfo = configContext.app
-					? `app "${chalk.cyan(configContext.app.name || configContext.app.appId)}"`
+		// Show confirmation prompt (unless --yes flag or --dry-run or --rollback)
+		if (!flags.yes && !flags.dryRun && !flags.rollback) {
+			const appInfo =
+				configResult.appName || configResult.appId
+					? `app "${chalk.cyan(configResult.appName || configResult.appId)}"`
 					: `app from ${chalk.cyan(process.cwd())}`;
 
-				this.log("");
-				this.log(chalk.yellow("⚠️  Deployment Confirmation"));
-				this.log(chalk.dim("─".repeat(50)));
-				this.log(`Instance: ${chalk.cyan(configContext.instanceName)}`);
-				this.log(`Endpoint: ${chalk.dim(instance.endpoint)}`);
-				this.log(`App:      ${appInfo}`);
-				this.log(chalk.dim("─".repeat(50)));
-				this.log(chalk.red("This action is irreversible."));
-				this.log("");
-
-				const { confirm } = await inquirer.prompt([
-					{
-						type: "confirm",
-						name: "confirm",
-						message: "Do you want to proceed with deployment?",
-						default: false,
-					},
-				]);
-
-				if (!confirm) {
-					this.log(chalk.yellow("\n✗ Deployment cancelled"));
-					return;
-				}
-				this.log("");
+			this.log("");
+			this.log(chalk.yellow("⚠️  Deployment Confirmation"));
+			this.log(chalk.dim("─".repeat(50)));
+			this.log(`Source:   ${chalk.cyan(configResult.source)}`);
+			if (configResult.instanceName) {
+				this.log(`Instance: ${chalk.cyan(configResult.instanceName)}`);
 			}
+			this.log(`Module:   ${chalk.dim(configResult.module)}`);
+			this.log(`App:      ${appInfo}`);
+			this.log(chalk.dim("─".repeat(50)));
+			this.log(chalk.red("This action is irreversible."));
+			this.log("");
 
-			await this.deployToInstance(
+			const { confirm } = await inquirer.prompt([
 				{
-					endpoint: instance.endpoint,
-					module: instance.module,
-					accessKey: instance.accessKey,
-					secretKey: instance.secretKey,
-					app: configContext.app?.appId,
+					type: "confirm",
+					name: "confirm",
+					message: "Do you want to proceed with deployment?",
+					default: false,
 				},
-				flags,
-				configContext.app || undefined,
-			);
-		} else {
-			// LEGACY: .env credentials (kept for backward compatibility)
-			await this.deployToInstance(
-				{
-					endpoint: process.env.ENDPOINT,
-					module: process.env.MODULE,
-					accessKey: process.env.ACCESS_KEY,
-					secretKey: process.env.SECRET_KEY,
-					app: process.env.APP || process.env.VITE_APP,
-				},
-				flags,
-			);
+			]);
+
+			if (!confirm) {
+				this.log(chalk.yellow("\n✗ Deployment cancelled"));
+				return;
+			}
+			this.log("");
 		}
+
+		// Extract endpoint and module for deployToInstance
+		// If module is a full URL, endpoint can be derived or left undefined
+		let endpoint: string | undefined;
+		let modulePath: string | undefined = configResult.module || undefined;
+
+		// If module is a full URL, use the same value for endpoint/module
+		// deployToInstance will handle it properly
+		if (configResult.module?.startsWith("http")) {
+			endpoint = configResult.module;
+			modulePath = configResult.module;
+		}
+
+		await this.deployToInstance(
+			{
+				endpoint,
+				module: modulePath,
+				accessKey: configResult.accessKey || undefined,
+				secretKey: configResult.secretKey || undefined,
+				app: configResult.appId || undefined,
+			},
+			flags,
+			configResult.app || undefined,
+		);
 	}
 
 	private async deployToInstance(

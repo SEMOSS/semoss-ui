@@ -1,12 +1,17 @@
-import { Command, Flags } from "@oclif/core";
-import { config } from "dotenv";
+import { Command, Flags, ux } from "@oclif/core";
 import Listr from "listr";
 import * as fs from "node:fs";
 import { Env, Insight } from "@semoss/sdk";
-import type { Config } from "../types.js";
+import type { AppConfig, Config } from "../types.js";
+import {
+	loadCredentials,
+	loadGlobalConfig,
+	saveCredentials,
+	saveGlobalConfig,
+} from "../utils/config.js";
 import {
 	ensureSemossGitignore,
-	getCurrentContext,
+	getConfiguration,
 	initializeAndTestInsight,
 } from "../utils/index.js";
 import { Logger, setDefaultLogger } from "../utils/logger.js";
@@ -53,104 +58,48 @@ init (./src/commands/init.ts)
 		setDefaultLogger(logger);
 
 		try {
-			// Try to use unified config first
-			let useUnifiedConfig = false;
-			let configContext: Awaited<
-				ReturnType<typeof getCurrentContext>
-			> | null = null;
-
-			try {
-				configContext = getCurrentContext();
-				if (configContext?.instance) {
-					useUnifiedConfig = true;
-					logger.debug("Using unified config from ~/.config/semoss/");
-					this.log("✓ Using unified config from ~/.config/semoss/");
-				}
-			} catch {
-				// Fall back to .env
-			}
-
-			// path to the environment variables
-			const envPath = flags.env ?? ".env";
-			const envLocalPath = ".env.local";
-
 			// Ensure .gitignore is updated before writing config
 			ensureSemossGitignore(process.cwd());
+
 			// path to the config (optional)
 			const configPath = flags.config ?? "smss.json";
 
-			// define the config
-			let configOptions: Config | null = null;
+			// Get unified configuration from all sources
+			const configResult = getConfiguration({
+				configPath,
+				envPath: flags.env,
+			});
+
+			if (configResult.source !== "none") {
+				logger.debug(`Using config from ${configResult.source}`);
+				this.log(`✓ Using configuration from ${configResult.source}`);
+			}
 
 			try {
-				if (useUnifiedConfig && configContext?.instance) {
-					// Use unified config
-					const instance = configContext.instance;
-
-					// update the environment
-					Env.update({
-						ACCESS_KEY: instance.accessKey,
-						MODULE: instance.module,
-						SECRET_KEY: instance.secretKey,
-					});
-				} else {
-					// LEGACY: load .env files
-					// if custom env path is provided, use only that
-					// otherwise, load .env first, then .env.local (which overrides .env values)
-					if (flags.env) {
-						config({ path: envPath });
-					} else {
-						config({ path: envPath }); // load .env
-						if (fs.existsSync(envLocalPath)) {
-							config({ path: envLocalPath, override: true }); // load .env.local with override
-						}
-					}
-
-					// validate and construct the full module URL
-					const endpoint = process.env.ENDPOINT;
-					const modulePath = process.env.MODULE;
-
-					if (!endpoint) {
-						this.error(
-							"ENDPOINT is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
-						);
-					}
-
-					if (!modulePath) {
-						this.error(
-							"MODULE is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
-						);
-					}
-
-					// construct the full module URL
-					const fullModule = `${endpoint}${modulePath}`;
-
-					// update the environment
-					Env.update({
-						ACCESS_KEY: process.env.ACCESS_KEY,
-						MODULE: fullModule,
-						SECRET_KEY: process.env.SECRET_KEY,
-						APP: process.env.APP,
-					});
+				// Validate configuration
+				if (!configResult.isValid) {
+					this.error(
+						`Invalid configuration:\n${configResult.errors.map((e) => `  - ${e}`).join("\n")}`,
+					);
 				}
-				// try to load the configOptions (optional)
-				try {
-					// load it
-					configOptions = JSON.parse(
-						fs.readFileSync(configPath, "utf8"),
-					) as Config;
-				} catch (_e) {
-					// noop
-				}
+
+				// Update Env with resolved configuration
+				Env.update({
+					ACCESS_KEY: configResult.accessKey || undefined,
+					MODULE: configResult.module || undefined,
+					SECRET_KEY: configResult.secretKey || undefined,
+					APP: configResult.appId || undefined,
+				});
 			} catch (error) {
 				this.error(error as Error);
 			}
 
-			// throw the error
-			const name = configOptions?.name ? configOptions.name : flags.name;
+			// Get project name from config, flags, or prompt
+			let name = configResult.appName ?? flags.name;
 			if (!name) {
-				logger.error("No project name provided");
-				throw new Error("Name is required");
+				name = await ux.prompt("What is the name of your app?", {
+					required: true,
+				});
 			}
 
 			logger.debug(
@@ -251,6 +200,10 @@ init (./src/commands/init.ts)
 						// save the new app ID to .env file(s)
 						const envContent = `\nAPP=${context.APP}\n`;
 
+						// path to the environment variables
+						const envPath = flags.env ?? ".env";
+						const envLocalPath = ".env.local";
+
 						// if custom env flag was provided, write only to that file
 						if (flags.env) {
 							fs.appendFileSync(envPath, envContent);
@@ -290,14 +243,15 @@ init (./src/commands/init.ts)
 							},
 						};
 
-						if (configOptions) {
+						if (configResult.rawConfig) {
 							content = {
 								...content,
-								...configOptions,
+								...configResult.rawConfig,
 								// Merge deploy config if it exists
 								deploy: {
 									batch: {
-										...(configOptions.deploy?.batch || {}),
+										...(configResult.rawConfig.deploy
+											?.batch || {}),
 										// Preserve any existing batch configs
 										...(content.deploy.batch || {}),
 									},
@@ -309,9 +263,43 @@ init (./src/commands/init.ts)
 								configPath,
 								JSON.stringify(content, null, 4),
 							);
-
-							return true;
 						}
+
+						// Also save to global config if connected to an instance
+						if (configResult.instanceName) {
+							const credentials = loadCredentials();
+							const instance =
+								credentials.instances[
+									configResult.instanceName
+								];
+
+							if (instance) {
+								// Ensure apps object exists
+								if (!instance.apps) {
+									instance.apps = {};
+								}
+
+								// Add or update the app
+								const appConfig: AppConfig = {
+									appId: context.APP,
+									name: name,
+									path: process.cwd(),
+									targets: configResult.targets,
+									ignore: configResult.ignore,
+								};
+								instance.apps[context.APP] = appConfig;
+
+								// Save credentials
+								saveCredentials(credentials);
+
+								// Update current app in global config
+								const globalConfig = loadGlobalConfig();
+								globalConfig.currentApp = context.APP;
+								saveGlobalConfig(globalConfig);
+							}
+						}
+
+						return true;
 					},
 				},
 			]);

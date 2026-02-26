@@ -15,6 +15,7 @@ export {
 	saveCredentials,
 	saveGlobalConfig,
 } from "./config.js";
+export * from "./getConfiguration.js";
 export * from "./gitignore.js";
 export * from "./insightHelpers.js";
 export * from "./logger.js";

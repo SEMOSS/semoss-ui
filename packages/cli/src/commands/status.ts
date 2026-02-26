@@ -1,10 +1,13 @@
 import { Command, Flags } from "@oclif/core";
-import { config } from "dotenv";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { Env, Insight } from "@semoss/sdk";
 import type { Config } from "../types.js";
-import { initializeAndTestInsight } from "../utils/index.js";
+import {
+	getConfigSources,
+	getConfiguration,
+	initializeAndTestInsight,
+} from "../utils/index.js";
 import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 // ── Types ───────────────────────────────────────────────────────
@@ -122,21 +125,34 @@ Output status as JSON for scripting
 				`Status check (check: ${flags.check}, json: ${flags.json})`,
 			);
 
-			const envSource = this.loadEnv(flags.env);
+			// Use getConfiguration to get unified config view
+			const configResult = getConfiguration({
+				configPath: flags.config,
+				envPath: flags.env,
+			});
+
+			// Get available config sources for display
+			const sourcesInfo = getConfigSources();
+			const envSourceDisplay = this.formatEnvSource(
+				sourcesInfo.available,
+			);
 
 			const configPath = flags.config ?? "smss.json";
 			const { config: smssConfig, status: configStatus } =
 				this.loadSmssConfig(configPath);
 
-			const project = this.getProjectInfo(
+			const project = this.getProjectInfoFromConfig(
+				configResult,
 				smssConfig,
 				configPath,
 				configStatus,
-				envSource,
+				envSourceDisplay,
 			);
 			const deployment = this.getDeploymentInfo();
 			const backups = this.getBackupInfo();
-			const server = flags.check ? await this.getServerInfo() : undefined;
+			const server = flags.check
+				? await this.getServerInfo(configResult)
+				: undefined;
 
 			logger.debug(
 				`Status gathered (config: ${configStatus}, deployments: ${deployment.total}, backups: ${backups.count}${server ? `, server: ${server.reachable ? "reachable" : "unreachable"}` : ""})`,
@@ -167,38 +183,22 @@ Output status as JSON for scripting
 	// ── Data Gathering ──────────────────────────────────────────────
 
 	/**
-	 * Load .env files in priority order:
-	 * 1. Explicit --env flag path
-	 * 2. .env.local (overrides .env when both exist)
-	 * 3. .env
+	 * Format the env source display string based on available sources
 	 */
-	private loadEnv(envFlag?: string): string {
-		const cwd = process.cwd();
-		const envPath = path.resolve(cwd, ".env");
-		const envLocalPath = path.resolve(cwd, ".env.local");
-
-		if (envFlag) {
-			const resolvedFlag = path.resolve(cwd, envFlag);
-			if (!fs.existsSync(resolvedFlag)) {
-				return `${envFlag} (not found)`;
-			}
-			config({ path: resolvedFlag });
-			return envFlag;
+	private formatEnvSource(sources: string[]): string {
+		if (sources.includes("env.local") && sources.includes("env")) {
+			return ".env.local (overrides .env)";
 		}
-
-		const envExists = fs.existsSync(envPath);
-		const envLocalExists = fs.existsSync(envLocalPath);
-
-		if (envExists) {
-			config({ path: envPath });
+		if (sources.includes("env.local")) {
+			return ".env.local";
 		}
-
-		if (envLocalExists) {
-			config({ path: envLocalPath, override: true });
-			return envExists ? ".env.local (overrides .env)" : ".env.local";
+		if (sources.includes("env")) {
+			return ".env";
 		}
-
-		return envExists ? ".env" : "no .env file found";
+		if (sources.includes("global")) {
+			return "~/.config/semoss/ (global)";
+		}
+		return "no .env file found";
 	}
 
 	/** Resolve env var with VITE_ prefix fallback (newer apps use VITE_-prefixed vars). */
@@ -221,6 +221,44 @@ Output status as JSON for scripting
 		} catch {
 			return { config: null, status: "invalid" };
 		}
+	}
+
+	/**
+	 * Get project info using the unified getConfiguration result
+	 */
+	private getProjectInfoFromConfig(
+		configResult: ReturnType<typeof getConfiguration>,
+		smssConfig: Config | null,
+		configPath: string,
+		configStatus: ConfigStatus,
+		envSource: string,
+	): ProjectInfo {
+		const batchInstances =
+			smssConfig?.deploy?.batch &&
+			typeof smssConfig.deploy.batch === "object"
+				? Object.keys(smssConfig.deploy.batch)
+				: [];
+
+		return {
+			name: configResult.appName || smssConfig?.name || null,
+			appId: configResult.appId || smssConfig?.app || null,
+			endpoint: configResult.module || null, // getConfiguration combines endpoint+module
+			module: configResult.module || null,
+			accessKeySet: !!configResult.accessKey,
+			secretKeySet: !!configResult.secretKey,
+			configStatus,
+			configPath,
+			targets:
+				configResult.targets.length > 0
+					? configResult.targets
+					: (smssConfig?.targets ?? []),
+			ignoreCount:
+				configResult.ignore.length > 0
+					? configResult.ignore.length
+					: (smssConfig?.ignore?.length ?? 0),
+			batchInstances,
+			envSource,
+		};
 	}
 
 	private getProjectInfo(
@@ -324,23 +362,19 @@ Output status as JSON for scripting
 		};
 	}
 
-	private async getServerInfo(): Promise<ServerInfo> {
-		const endpoint = this.resolveEnv("ENDPOINT");
-		const modulePath = this.resolveEnv("MODULE");
-
-		if (!endpoint || !modulePath) {
+	private async getServerInfo(
+		configResult: ReturnType<typeof getConfiguration>,
+	): Promise<ServerInfo> {
+		if (!configResult.module) {
 			return {
 				reachable: false,
 				authorized: false,
-				error: "ENDPOINT or MODULE not configured",
+				error: "MODULE not configured",
 				warning: null,
 			};
 		}
 
-		const accessKey = this.resolveEnv("ACCESS_KEY");
-		const secretKey = this.resolveEnv("SECRET_KEY");
-
-		if (!accessKey || !secretKey) {
+		if (!configResult.accessKey || !configResult.secretKey) {
 			return {
 				reachable: false,
 				authorized: false,
@@ -350,10 +384,10 @@ Output status as JSON for scripting
 		}
 
 		Env.update({
-			ACCESS_KEY: accessKey,
-			MODULE: `${endpoint}${modulePath}`,
-			SECRET_KEY: secretKey,
-			APP: this.resolveEnv("APP"),
+			ACCESS_KEY: configResult.accessKey,
+			MODULE: configResult.module,
+			SECRET_KEY: configResult.secretKey,
+			APP: configResult.appId || undefined,
 		});
 
 		const insight = new Insight();
