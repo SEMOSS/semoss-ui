@@ -2,6 +2,17 @@ import { Command, Flags, ux } from "@oclif/core";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { Env, Insight } from "@semoss/sdk";
+import type { Config } from "../types.js";
+import {
+	ensureSemossGitignore,
+	getCurrentContext,
+	initializeAndTestInsight,
+	loadCredentials,
+	loadGlobalConfig,
+	saveCredentials,
+	saveGlobalConfig,
+} from "../utils/index.js";
 import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Create extends Command {
@@ -117,14 +128,50 @@ create in specific directory
 
 				this.log(`\n✅ App created successfully!\n`);
 				logger.debug(`App "${appName}" created at ${absolutePath}`);
-				this.log(`🚀 Next steps:\n`);
-				this.log(`   cd ${targetDir}`);
-				this.log(`   pnpm install`);
-				this.log(`   cp .env.example .env`);
-				this.log(`   # Edit .env with your SEMOSS server details`);
-				this.log(`   semoss init --name="${appName}"`);
-				this.log(`   pnpm dev    # (optional) Start dev server`);
-				this.log(`   semoss deploy\n`);
+
+				// Check if global config has an active instance
+				let context: ReturnType<typeof getCurrentContext> | null = null;
+				try {
+					context = getCurrentContext();
+				} catch {
+					// No global config available
+				}
+
+				if (context?.instance && context.instanceName) {
+					// Global config exists with an active instance — auto-init
+					this.log(
+						`🔗 Active instance found: ${context.instanceName}`,
+					);
+					this.log(
+						`   Automatically initializing app on server...\n`,
+					);
+
+					try {
+						await this.initializeOnServer({
+							appName,
+							absolutePath,
+							targetDir,
+							instanceName: context.instanceName,
+							instance: context.instance,
+							logger,
+						});
+					} catch (error) {
+						// Auto-init failed, fall back to manual steps
+						logger.error(`Auto-init failed: ${error}`);
+						this.log(
+							`\n⚠️  Auto-initialization failed: ${error instanceof Error ? error.message : String(error)}`,
+						);
+						this.log(
+							`   You can initialize manually with these steps:\n`,
+						);
+						this.logManualNextSteps(targetDir, appName);
+					}
+				} else {
+					// No active instance — show manual next steps
+					this.log(`🚀 Next steps:\n`);
+					this.logManualNextSteps(targetDir, appName);
+				}
+
 				this.log(
 					`📖 See README.md in the app directory for more information.`,
 				);
@@ -166,5 +213,156 @@ create in specific directory
 				fs.copyFileSync(sourcePath, destPath);
 			}
 		}
+	}
+
+	/**
+	 * Log manual next steps when auto-init is not available
+	 */
+	private logManualNextSteps(targetDir: string, appName: string): void {
+		this.log(`   cd ${targetDir}`);
+		this.log(`   pnpm install`);
+		this.log(`   cp .env.example .env`);
+		this.log(`   # Edit .env with your SEMOSS server details`);
+		this.log(`   semoss init --name="${appName}"`);
+		this.log(`   pnpm dev    # (optional) Start dev server`);
+		this.log(`   semoss deploy\n`);
+	}
+
+	/**
+	 * Initialize the app on the SEMOSS server and register in global config.
+	 * This replicates the core init logic so users don't have to run it separately.
+	 */
+	private async initializeOnServer(options: {
+		appName: string;
+		absolutePath: string;
+		targetDir: string;
+		instanceName: string;
+		instance: import("../types.js").InstanceConfig;
+		logger: Logger;
+	}): Promise<void> {
+		const {
+			appName,
+			absolutePath,
+			targetDir,
+			instanceName,
+			instance,
+			logger,
+		} = options;
+
+		// Ensure .gitignore in the new app directory
+		ensureSemossGitignore(absolutePath);
+
+		// Set up SDK environment with instance credentials
+		Env.update({
+			ACCESS_KEY: instance.accessKey,
+			MODULE: instance.module,
+			SECRET_KEY: instance.secretKey,
+		});
+
+		// Initialize and test the connection
+		const insight = new Insight();
+		await initializeAndTestInsight(insight);
+
+		// Create the project on the server
+		this.log(`   📦 Creating project "${appName}" on server...`);
+		const { pixelReturn: createReturn } = await insight.actions.run<
+			[{ project_id: string }]
+		>(
+			`CreateProject(project=["${appName}"], portal=[true], projectType=["CODE"])`,
+		);
+		const appId = createReturn[0].output.project_id;
+		logger.debug(`Project created on server with ID: ${appId}`);
+
+		// Create default index.html on the server
+		const newIndexFilePath = "version/assets/portals/index.html";
+		const newIndexFileContent = `<html><style>html {font-family: sans-serif; padding: 30px;}</style><h1>${appName}</h1><p>This is placeholder text for your new Application.</p><p>You can add new files and edit this text using the Code Editor.</p></html>`;
+
+		const saveIndexFilePixel = `
+			SaveAsset(fileName=["${newIndexFilePath}"], content=["<encode>${newIndexFileContent}</encode>"], space=["${appId}"]);
+			CommitAsset(filePath=["${newIndexFilePath}"], comment=["Initial index.html from create"], space=["${appId}"])
+		`;
+
+		const { pixelReturn: saveReturn } =
+			await insight.actions.run(saveIndexFilePixel);
+
+		if (
+			saveReturn[0]?.operationType &&
+			String(saveReturn[0].operationType).includes("ERROR")
+		) {
+			logger.warn(
+				`Warning: Could not create index.html: ${String(saveReturn[0].output)}`,
+			);
+		}
+
+		if (
+			saveReturn[1]?.operationType &&
+			String(saveReturn[1].operationType).includes("ERROR")
+		) {
+			logger.warn(
+				`Warning: Could not commit index.html: ${String(saveReturn[1].output)}`,
+			);
+		}
+
+		// Save smss.json in the new app directory
+		const localConfig: Config = {
+			app: appId,
+			name: appName,
+			targets: [],
+			ignore: [
+				"node_modules/**",
+				"**/.git/**",
+				"**/*.local",
+				"*.local",
+				".semoss-backups/**",
+				".semoss-deployments",
+				"smss.json",
+			],
+			deploy: {
+				batch: {},
+			},
+		};
+		const configPath = path.join(absolutePath, "smss.json");
+		fs.writeFileSync(configPath, JSON.stringify(localConfig, null, 4));
+
+		// Save APP to .env in the new app directory
+		const envPath = path.join(absolutePath, ".env");
+		const envExamplePath = path.join(absolutePath, ".env.example");
+
+		if (fs.existsSync(envExamplePath)) {
+			// Copy .env.example to .env and replace the APP= placeholder
+			let envContent = fs.readFileSync(envExamplePath, "utf-8");
+			envContent = envContent.replace(/^APP=.*$/m, `APP=${appId}`);
+			fs.writeFileSync(envPath, envContent);
+		} else {
+			fs.writeFileSync(envPath, `APP=${appId}\n`);
+		}
+
+		// Register app in global config (credentials store)
+		const credentials = loadCredentials();
+		if (credentials.instances[instanceName]) {
+			if (!credentials.instances[instanceName].apps) {
+				credentials.instances[instanceName].apps = {};
+			}
+
+			credentials.instances[instanceName].apps[appId] = {
+				appId,
+				name: appName,
+				path: absolutePath,
+			};
+			saveCredentials(credentials);
+		}
+
+		// Set as current app in global config
+		const globalConfig = loadGlobalConfig();
+		globalConfig.currentApp = appId;
+		saveGlobalConfig(globalConfig);
+
+		this.log(`   ✅ App initialized on server`);
+		this.log(`   📋 App ID: ${appId}\n`);
+		this.log(`🚀 Next steps:\n`);
+		this.log(`   cd ${targetDir}`);
+		this.log(`   pnpm install`);
+		this.log(`   pnpm dev    # Start dev server`);
+		this.log(`   semoss deploy\n`);
 	}
 }
