@@ -942,15 +942,7 @@ export const LayersPanel = observer(
                     <div className="flex flex-row items-center gap-1">
                       <Input
                         ref={inputRef}
-                        className={[
-                          "w-full max-w-[170px]",
-                          "h-[21px]",
-                          "px-1 shadow-none",
-                          "rounded border border-[#0471F0] focus-visible:border-[#0471F0]",
-                          "font-['Inter'] font-normal text-[14px] leading-[21px] tracking-[0.17px]",
-                          "text-[#666666]",
-                          "focus-visible:outline-none focus-visible:ring-0",
-                        ].join(" ")}
+                        className="w-full max-w-xs h-5 px-1 shadow-none rounded border border-primary focus-visible:border-primary font-sans font-normal text-sm tracking-normal text-muted-foreground focus-visible:outline-none focus-visible:ring-0"
                         value={editBlockId}
                         onChange={(e) => {
                           const newVal = e.target.value;
@@ -994,7 +986,7 @@ export const LayersPanel = observer(
                             >
                               <CircleCheck
                                 className={`w-4 h-4 ${
-                                  rename ? "text-gray-400" : "text-green-600"
+                                  rename ? "text-muted-foreground" : "text-primary"
                                 }`}
                               />
                             </Button>
