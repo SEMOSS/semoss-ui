@@ -34,10 +34,16 @@ interface InsightProviderProps {
 	 * Options to load into the app
 	 */
 	options?: Parameters<Insight["initialize"]>[0];
+
+	/**
+	 * Whether to destroy the insight on unmount
+	 * Defaults to true
+	 */
+	destroyOnUnmount?: boolean;
 }
 
 export const InsightProvider = (props: InsightProviderProps) => {
-	const { children, options } = props;
+	const { children, options, destroyOnUnmount = true } = props;
 
 	// create the new insight on load
 	const insight = useMemo(() => {
@@ -94,13 +100,19 @@ export const InsightProvider = (props: InsightProviderProps) => {
 		insight.initialize(options).finally(() => syncInsight());
 
 		return () => {
-			// destroy the insight
-			insight.destroy().finally(() => {
-				// update the state
-				syncInsight();
-			});
+			if (destroyOnUnmount) {
+				// destroy the insight
+				insight.destroy().finally(() => {
+					// update the state
+					syncInsight();
+				});
+				return;
+			}
+
+			// update the state without destroying
+			syncInsight();
 		};
-	}, [insight, JSON.stringify(options), syncInsight]);
+	}, [insight, JSON.stringify(options), destroyOnUnmount, syncInsight]);
 
 	return (
 		<InsightContext.Provider

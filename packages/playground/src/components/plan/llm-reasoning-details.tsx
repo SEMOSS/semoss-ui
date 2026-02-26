@@ -1,5 +1,6 @@
 import type React from "react";
 import { useId } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { Field, FieldLabel, Textarea } from "@semoss/ui/next";
 import type { PlanStep } from "@/types";
 
@@ -19,12 +20,13 @@ interface LLMReasoningDetailsProps {
 export const LLMReasoningDetails: React.FC<LLMReasoningDetailsProps> = (
 	props,
 ) => {
+	const { t } = useTranslation("common");
 	const { details, onDetailsChange } = props;
 	const promptId = useId();
 
 	return (
 		<Field>
-			<FieldLabel htmlFor={promptId}>Prompt</FieldLabel>
+			<FieldLabel htmlFor={promptId}>{t("plan.prompt")}</FieldLabel>
 			<Textarea
 				id={promptId}
 				value={details.prompt}
@@ -35,7 +37,7 @@ export const LLMReasoningDetails: React.FC<LLMReasoningDetailsProps> = (
 					});
 				}}
 				rows={4}
-				placeholder="Enter the instructions for the AI"
+				placeholder={t("plan.promptPlaceholder")}
 				required
 			/>
 		</Field>

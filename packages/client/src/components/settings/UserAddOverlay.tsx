@@ -211,6 +211,9 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 	const type = watch("type", "");
 	const limitType = watch("model_usage_restriction", "");
 	const email = watch("email");
+	const userId = watch("id", "");
+	const userName = watch("name", "");
+	const isSaveDisabled = !userId?.trim() || !userName?.trim();
 
 	const usageRestritctionTypes: Record<string, string> = {
 		null: "None",
@@ -384,7 +387,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 								render={({ field }) => {
 									return (
 										<TextField
-											label="User Id"
+											label="User Id *"
 											disabled={!isNewUser}
 											value={
 												field.value ? field.value : ""
@@ -480,7 +483,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 								render={({ field }) => {
 									return (
 										<TextField
-											label="Name"
+											label="Name *"
 											value={
 												field.value ? field.value : ""
 											}
@@ -869,6 +872,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 				<Button
 					variant="contained"
 					color="primary"
+					disabled={isSaveDisabled}
 					onClick={() => editUser()}
 				>
 					Save

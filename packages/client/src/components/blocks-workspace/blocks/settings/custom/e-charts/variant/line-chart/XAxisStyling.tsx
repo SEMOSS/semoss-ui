@@ -64,7 +64,7 @@ export const XAxisStyling = observer(
 		const [showXAxis, setShowXAxis] = useState(true);
 		const [showXAxisTitle, setShowXAxisTitle] = useState(true);
 		const [showXAxisTick, setShowXAxisTick] = useState(true);
-		const [xAxisTitle, setXAxisTitle] = useState("");
+		const [xAxisTitle, setXAxisTitle] = useState(data.option?.xAxis.name);
 		const [xAxisFont, setXAxisFont] = useState(10);
 		const computedValue = useMemo(() => {
 			return computed(() => {
