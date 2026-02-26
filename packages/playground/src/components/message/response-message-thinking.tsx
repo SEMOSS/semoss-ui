@@ -1,7 +1,19 @@
-import { ChevronUpIcon, Quote } from "lucide-react";
+import { Quote } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
-import { cn, H1, H2, H3, H4, Markdown, P, Separator } from "@semoss/ui/next";
+import { useEffect, useRef, useState } from "react";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+	H1,
+	H2,
+	H3,
+	H4,
+	Markdown,
+	P,
+	Separator,
+} from "@semoss/ui/next";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageThinkingPart } from "@/types";
@@ -101,8 +113,9 @@ interface ResponseMessageThinkingProps {
 
 export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 	observer(({ message, part, isLast }) => {
-		const [isForcedOpen, setIsForcedOpen] = useState<boolean>(false);
+		const [thinking, setThinking] = useState<string>("");
 		const typewriter = useMarkdownTypewriter(part.thinking);
+		const previewRef = useRef<HTMLDivElement>(null);
 
 		useEffect(() => {
 			if (message.isThinking && isLast) {
@@ -116,52 +129,61 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 			}
 		}, [isLast, typewriter.skipToEnd]);
 
+		// Auto-scroll preview to bottom when content changes
+		useEffect(() => {
+			if (previewRef.current && !thinking) {
+				previewRef.current.scrollTop = previewRef.current.scrollHeight;
+			}
+		}, [thinking]);
+
 		if (!part.thinking) {
 			return null;
 		}
 
-		const isOpen = isForcedOpen || message.isThinking;
+		const isOpen = thinking === "thinking";
 
 		return (
-			<div className="relative mb-2">
-				<ChevronUpIcon
-					className="pointer-events-none absolute top-0 left-0 size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200 data-[state=closed]:rotate-90 data-[state=open]:rotate-180"
-					data-state={isOpen ? "open" : "closed"}
-				/>
-				{/* biome-ignore lint/a11y/noStaticElementInteractions: cannot make it a button because it contains interactive elements like links */}
-				<div
-					className={cn(
-						"w-full cursor-pointer overflow-hidden text-left text-muted-foreground text-xs hover:text-accent-foreground",
-						isOpen ? "" : "line-clamp-1",
-					)}
-					onClick={() => setIsForcedOpen(!isForcedOpen)}
-					onKeyDown={(e) => {
-						if (e.key === "Enter") {
-							e.preventDefault();
-							setIsForcedOpen(!isForcedOpen);
-						}
-					}}
-					data-state={isOpen ? "open" : "closed"}
-				>
-					<Markdown
-						className="pl-6 [&>*:first-child]:mt-0"
-						components={THINKING_MARKDOWN_COMPONENTS}
-					>
-						{typewriter.isTyping
-							? typewriter.rendered
-							: part.thinking}
-					</Markdown>
-				</div>
-
-				{/* Fade overlay when collapsed */}
-				<div
-					className={cn(
-						"absolute right-0 bottom-0 left-0 h-3",
-						"bg-linear-to-t from-background to-transparent",
-						"pointer-events-none transition-opacity duration-300",
-						isOpen ? "opacity-0" : "opacity-100",
-					)}
-				/>
-			</div>
+			<Accordion
+				type="single"
+				collapsible
+				className="mb-2 rounded-lg border border-border text-muted-foreground text-sm shadow-sm"
+				value={thinking}
+				onValueChange={(val) => setThinking(val || "")}
+			>
+				<AccordionItem value="thinking" className="border-0">
+					<div className="p-3">
+						<AccordionTrigger className="p-0 hover:no-underline">
+							<span className="font-medium">Thinking</span>
+						</AccordionTrigger>
+						{!isOpen && (
+							<div
+								ref={previewRef}
+								className="relative mt-2 max-h-12 overflow-hidden"
+							>
+								<Markdown
+									className="text-xs [&>*:first-child]:mt-0"
+									components={THINKING_MARKDOWN_COMPONENTS}
+								>
+									{typewriter.isTyping
+										? typewriter.rendered
+										: part.thinking}
+								</Markdown>
+								{/* Fade overlay at bottom */}
+								<div className="pointer-events-none absolute right-0 bottom-0 left-0 h-6 bg-linear-to-t from-background to-transparent" />
+							</div>
+						)}
+					</div>
+					<AccordionContent className="px-3 pt-0 pb-3">
+						<Markdown
+							className="[&>*:first-child]:mt-0"
+							components={THINKING_MARKDOWN_COMPONENTS}
+						>
+							{typewriter.isTyping
+								? typewriter.rendered
+								: part.thinking}
+						</Markdown>
+					</AccordionContent>
+				</AccordionItem>
+			</Accordion>
 		);
 	});
