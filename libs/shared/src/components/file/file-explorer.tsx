@@ -86,7 +86,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		} else {
 			getFilesPixel = `BrowseEngineAssets(filePath=["${path}"], engine=["${mode.engine}"]);`;
 		}
-	} else if (mode.type === "INSIGHT") {
+	} else if (mode.type === "INSIGHT" && insight.insightId) {
 		if (debouncedSearch) {
 			getFilesPixel = `SearchInsightAssets(filePath=["${searchType === "all" ? "" : path}"], search=["${debouncedSearch}"]);`;
 		} else {
