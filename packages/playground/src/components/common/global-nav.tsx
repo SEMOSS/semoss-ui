@@ -388,6 +388,7 @@ export const GlobalNav = observer(() => {
 				)}
 				{BUCKETS.map((bucket) => {
 					const rooms = bucketedRooms[bucket];
+					console.log(rooms);
 
 					if (!open || rooms.length === 0) {
 						return null;
