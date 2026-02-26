@@ -71,6 +71,7 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 									},
 								);
 							}}
+							{...otherProps}
 							secondaryActions={[
 								{
 									name: t("fileExplorer.copyPath"),
@@ -118,7 +119,6 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 									},
 								},
 							]}
-							{...otherProps}
 						/>
 					);
 				}}
