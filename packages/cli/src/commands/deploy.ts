@@ -16,9 +16,13 @@ import {
 	getCurrentContext,
 	initializeAndTestInsight,
 	loadCredentials,
-	logWithTiming,
-	shouldLog,
 } from "../utils/index.js";
+import {
+	getDefaultLogger,
+	Logger,
+	setDefaultLogger,
+	toLogLevel,
+} from "../utils/logger.js";
 
 const DEFAULT_IGNORE = [
 	"node_modules/**",
@@ -144,12 +148,10 @@ deploy java and python folders
 		downloadUrl: string,
 		accessKey: string,
 		secretKey: string,
-		debugMode: boolean = false,
 	): Promise<ArrayBuffer> {
+		const logger = getDefaultLogger();
 		return new Promise((resolve, reject) => {
-			if (debugMode) {
-				this.log(`📡 Downloading via HTTP(S): ${downloadUrl}`);
-			}
+			logger.debug(`📡 Downloading via HTTP(S): ${downloadUrl}`);
 
 			try {
 				const parsedUrl = new URL(downloadUrl);
@@ -173,11 +175,9 @@ deploy java and python folders
 				};
 
 				const req = protocol.request(options, (response) => {
-					if (debugMode) {
-						this.log(
-							`📡 HTTP Response received - Status: ${response.statusCode}, Headers: ${JSON.stringify(response.headers)}`,
-						);
-					}
+					logger.debug(
+						`📡 HTTP Response received - Status: ${response.statusCode}, Headers: ${JSON.stringify(response.headers)}`,
+					);
 
 					if (response.statusCode !== 200) {
 						const errorMsg = `Download failed with status code: ${response.statusCode}`;
@@ -190,15 +190,9 @@ deploy java and python folders
 							const responseBody = Buffer.concat(
 								chunks as Uint8Array[],
 							).toString("utf-8");
-							if (debugMode) {
-								this.log(`\n${"`".repeat(80)}`);
-								this.log(
-									`📋 ERROR RESPONSE (${responseBody.length} bytes):`,
-								);
-								this.log(`${"=".repeat(80)}`);
-								this.log(responseBody);
-								this.log(`${"=".repeat(80)}\n`);
-							}
+							logger.debug(
+								`📋 ERROR RESPONSE (${responseBody.length} bytes):\n${"=".repeat(80)}\n${responseBody}\n${"=".repeat(80)}`,
+							);
 							reject(new Error(errorMsg));
 						});
 						return;
@@ -212,15 +206,11 @@ deploy java and python folders
 
 					response.on("end", () => {
 						const buffer = Buffer.concat(chunks as Uint8Array[]);
-						if (debugMode) {
-							this.log(`📦 Downloaded ${buffer.length} bytes`);
-							const firstBytes = buffer
-								.slice(0, 4)
-								.toString("hex");
-							this.log(
-								`📥 First 4 bytes (hex): ${firstBytes} (should start with "504b" for zip)`,
-							);
-						}
+						logger.debug(`📦 Downloaded ${buffer.length} bytes`);
+						const firstBytes = buffer.slice(0, 4).toString("hex");
+						logger.debug(
+							`📥 First 4 bytes (hex): ${firstBytes} (should start with "504b" for zip)`,
+						);
 
 						resolve(
 							(buffer.buffer as ArrayBuffer).slice(
@@ -236,9 +226,7 @@ deploy java and python folders
 				});
 
 				req.on("error", (err) => {
-					if (debugMode) {
-						this.log(`❌ HTTP Request Error: ${err.message}`);
-					}
+					logger.debug(`❌ HTTP Request Error: ${err.message}`);
 					reject(err);
 				});
 
@@ -252,7 +240,6 @@ deploy java and python folders
 	private async createBackup(
 		deployTargets: string[] | "all",
 		insight: Insight,
-		debugMode: boolean = false,
 		opts: {
 			app?: string;
 			module?: string;
@@ -261,6 +248,7 @@ deploy java and python folders
 			endpoint?: string;
 		},
 	): Promise<{ backupDir: string; backupZipPath: string }> {
+		const logger = getDefaultLogger();
 		const backupBaseDir = ".semoss-backups";
 		const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 		const targetStr =
@@ -275,21 +263,17 @@ deploy java and python folders
 			await fs.promises.mkdir(tempDir, { recursive: true });
 
 			// Export the project using the ExportProjectApp reactor
-			if (debugMode) {
-				this.log(
-					`🔍 Before ExportProjectApp - insight.insightId: ${insight.insightId}`,
-				);
-			}
+			logger.debug(
+				`🔍 Before ExportProjectApp - insight.insightId: ${insight.insightId}`,
+			);
 
 			const { pixelReturn } = await insight.actions.run<[string]>(
 				`ExportProjectApp(project=['${opts.app}']);`,
 			);
 
-			if (debugMode) {
-				this.log(
-					`📦 ExportProjectApp response: ${JSON.stringify(pixelReturn[0])}`,
-				);
-			}
+			logger.debug(
+				`📦 ExportProjectApp response: ${JSON.stringify(pixelReturn[0])}`,
+			);
 
 			// Call download to get the exported zip file
 			const { operationType, output } = pixelReturn[0];
@@ -309,7 +293,6 @@ deploy java and python folders
 						downloadUrl,
 						opts.accessKey || "",
 						opts.secretKey || "",
-						debugMode,
 					);
 				} catch (downloadError) {
 					throw new Error(
@@ -323,26 +306,22 @@ deploy java and python folders
 					);
 				}
 
-				if (debugMode) {
-					this.log(`📥 Download result is ArrayBuffer: true`);
-					this.log(
-						`📥 Download result length: ${downloadResult.byteLength}`,
-					);
-				}
+				logger.debug(`📥 Download result is ArrayBuffer: true`);
+				logger.debug(
+					`📥 Download result length: ${downloadResult.byteLength}`,
+				);
 
 				// Convert to Buffer for AdmZip
 				const zipBuffer = Buffer.from(downloadResult);
 
-				if (debugMode) {
-					this.log(
-						`📥 Converted to Buffer, size: ${zipBuffer.length} bytes`,
-					);
-					// Log first few bytes to verify it's a zip (should start with 504B)
-					const firstFewBytes = zipBuffer.slice(0, 4).toString("hex");
-					this.log(
-						`📥 First 4 bytes (hex): ${firstFewBytes} (should start with "504b")`,
-					);
-				}
+				logger.debug(
+					`📥 Converted to Buffer, size: ${zipBuffer.length} bytes`,
+				);
+				// Log first few bytes to verify it's a zip (should start with 504B)
+				const firstFewBytes = zipBuffer.slice(0, 4).toString("hex");
+				logger.debug(
+					`📥 First 4 bytes (hex): ${firstFewBytes} (should start with "504b")`,
+				);
 
 				// Validate it's a zip file
 				if (zipBuffer.length === 0) {
@@ -389,11 +368,9 @@ deploy java and python folders
 					const zip = new AdmZip(zipBuffer);
 					zip.extractAllTo(tempDir, true);
 
-					if (debugMode) {
-						this.log(
-							`✅ Successfully extracted zip to temp directory`,
-						);
-					}
+					logger.debug(
+						`✅ Successfully extracted zip to temp directory`,
+					);
 				} catch (zipError) {
 					throw new Error(
 						`Failed to extract zip: ${zipError}. Buffer size: ${zipBuffer.length} bytes, Signature: ${fileSignature}`,
@@ -419,19 +396,16 @@ deploy java and python folders
 				if (entry.isDirectory() && entry.name === "assets") {
 					assetsSource = path.join(tempDir, "assets");
 
-					if (debugMode) {
-						const assetFiles =
-							await fs.promises.readdir(assetsSource);
-						this.log(
-							`📦 Found assets folder with ${assetFiles.length} items`,
-						);
-					}
+					const assetFiles = await fs.promises.readdir(assetsSource);
+					logger.debug(
+						`📦 Found assets folder with ${assetFiles.length} items`,
+					);
 					break;
 				}
 			}
 
 			if (!assetsSource) {
-				console.log(`❌ NO ASSETS FOLDER FOUND IN EXTRACTED ZIP`);
+				this.log(`❌ NO ASSETS FOLDER FOUND IN EXTRACTED ZIP`);
 			}
 
 			// Create the backup zip directly from the extracted assets folder
@@ -445,24 +419,20 @@ deploy java and python folders
 					this.log(`📦 Added assets to backup.zip at root level`);
 				} catch (error) {
 					// Assets folder couldn't be added
-					if (debugMode) {
-						this.log(
-							`⚠️ Failed to add assets to backup.zip: ${error}`,
-						);
-					}
+					logger.debug(
+						`⚠️ Failed to add assets to backup.zip: ${error}`,
+					);
 				}
 			} else {
-				console.log(`❌ No assets folder found to backup`);
+				this.log(`❌ No assets folder found to backup`);
 			}
 
 			backupZip.writeZip(backupZipPath);
 
-			if (debugMode) {
-				const backupStats = await fs.promises.stat(backupZipPath);
-				this.log(
-					`✅ Backup created: ${backupZipPath} (${backupStats.size} bytes)`,
-				);
-			}
+			const backupStats = await fs.promises.stat(backupZipPath);
+			logger.debug(
+				`✅ Backup created: ${backupZipPath} (${backupStats.size} bytes)`,
+			);
 
 			// Create metadata file
 			await fs.promises.writeFile(
@@ -499,10 +469,8 @@ deploy java and python folders
 	/**
 	 * Prune old backups to keep only the most recent N.
 	 */
-	private async pruneBackups(
-		retention: number,
-		verbose: boolean = false,
-	): Promise<void> {
+	private async pruneBackups(retention: number): Promise<void> {
+		const logger = getDefaultLogger();
 		const backupBaseDir = ".semoss-backups";
 
 		try {
@@ -559,13 +527,11 @@ deploy java and python folders
 				const dirPath = path.join(backupBaseDir, backup.name);
 				await fs.promises.rm(dirPath, { recursive: true, force: true });
 
-				if (verbose) {
-					this.log(`🗑️  Pruned old backup: ${backup.name}`);
-				}
+				logger.info(`🗑️  Pruned old backup: ${backup.name}`);
 			}
 
-			if (verbose && toRemove.length > 0) {
-				this.log(
+			if (toRemove.length > 0) {
+				logger.info(
 					`📋 Kept ${retention} backup(s), pruned ${toRemove.length}`,
 				);
 			}
@@ -618,7 +584,9 @@ deploy java and python folders
 			);
 		} catch (error) {
 			// Don't fail deployment if history logging fails
-			console.warn(`Failed to log deployment history: ${error}`);
+			getDefaultLogger().warn(
+				`Failed to log deployment history: ${error}`,
+			);
 		}
 	}
 
@@ -799,22 +767,27 @@ deploy java and python folders
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Deploy);
 
+		// ── Initialise the logger for this command session ──
+		const logger = new Logger({
+			level: toLogLevel(flags.logLevel),
+			command: "deploy",
+			console: this.log.bind(this),
+		});
+		setDefaultLogger(logger);
+		logger.debug(`Deploy command started (logLevel=${flags.logLevel})`);
+
 		// Try unified config first, fallback to legacy .env/smss.json
 		let configContext: Awaited<
 			ReturnType<typeof getCurrentContext>
 		> | null = null;
 		try {
 			configContext = await getCurrentContext();
-			if (shouldLog(flags.logLevel, "normal")) {
-				this.log(
-					"✓ Using unified config from ~/.config/semoss/credentials.json",
-				);
-			}
+			logger.info(
+				"✓ Using unified config from ~/.config/semoss/credentials.json",
+			);
 		} catch {
 			// Fall back to .env/smss.json
-			if (shouldLog(flags.logLevel, "verbose")) {
-				this.log("ℹ  Using legacy .env/smss.json config (fallback)");
-			}
+			logger.info("ℹ  Using legacy .env/smss.json config (fallback)");
 		}
 
 		// Handle batch deployments (only if not already running from batch)
@@ -1118,34 +1091,45 @@ deploy java and python folders
 			};
 		},
 	): Promise<void> {
+		// Get or create logger for this deploy instance invocation
+		const logger = new Logger({
+			level: toLogLevel(flags.logLevel),
+			command: "deploy",
+			console: this.log.bind(this),
+		});
+
+		logger.fileOnly(
+			"info",
+			`deployToInstance called – app=${opts.app} module=${opts.module} endpoint=${opts.endpoint}`,
+		);
+
 		// Handle rollback - store backup path but continue to setup
 		let rollbackBackupDir: string | undefined;
 		if (flags.rollback) {
 			try {
-				this.log("🔄 Rolling back to previous deployment...");
+				logger.info("🔄 Rolling back to previous deployment...");
 				rollbackBackupDir = await this.rollbackToPrevious();
-				this.log(`📦 Using backup from: ${rollbackBackupDir}`);
+				logger.info(`📦 Using backup from: ${rollbackBackupDir}`);
 			} catch (error) {
 				const message =
 					error instanceof Error ? error.message : String(error);
+				logger.error(`Rollback failed: ${message}`);
 				this.error(message);
 			}
 		}
 
 		// Enable debug logging if logLevel is debug
-		if (shouldLog(flags.logLevel, "debug")) {
+		if (flags.logLevel === "debug") {
 			process.env.DEBUG = "oclif*,@semoss/cli*";
 		}
 
-		if (shouldLog(flags.logLevel, "debug")) {
-			this.log("\n🔬 Debug Mode Enabled:");
-			this.log("   • All debug information will be shown");
-			this.log("   • Raw data from all operations will be displayed");
-			this.log("   • Timing information will be included");
-		}
+		logger.debug("🔬 Debug Mode Enabled:");
+		logger.debug("   • All debug information will be shown");
+		logger.debug("   • Raw data from all operations will be displayed");
+		logger.debug("   • Timing information will be included");
 
 		if (flags.breakpoint) {
-			this.log(
+			logger.info(
 				"🛑 Debugger breakpoint enabled - attach your debugger now",
 			);
 		}
@@ -1216,17 +1200,18 @@ deploy java and python folders
 		// create a new insight
 		const insight = new Insight();
 
-		if (shouldLog(flags.logLevel, "debug")) {
-			this.log("\n🌍 Environment Variables:");
-			this.log(`   • MODULE: ${Env.MODULE || "Not set"}`);
-			this.log(`   • APP: ${Env.APP || "Not set"}`);
-			this.log(
-				`   • ACCESS_KEY: ${Env.ACCESS_KEY ? `***${Env.ACCESS_KEY.slice(-4)}` : "Not set"}`,
-			);
-			this.log(
-				`   • SECRET_KEY: ${Env.SECRET_KEY ? `***${Env.SECRET_KEY.slice(-4)}` : "Not set"}`,
-			);
-		}
+		logger.debug("🌍 Environment Variables:");
+		logger.debug(`   • MODULE: ${Env.MODULE || "Not set"}`);
+		logger.debug(`   • APP: ${Env.APP || "Not set"}`);
+		// Always capture credentials to file (masked), but only show on console in debug
+		logger.fileOnly(
+			"debug",
+			`ACCESS_KEY: ${Env.ACCESS_KEY ? `***${Env.ACCESS_KEY.slice(-4)}` : "Not set"}`,
+		);
+		logger.fileOnly(
+			"debug",
+			`SECRET_KEY: ${Env.SECRET_KEY ? `***${Env.SECRET_KEY.slice(-4)}` : "Not set"}`,
+		);
 
 		// Load config file for ignore patterns and targets
 		let mergedIgnorePatterns = [...DEFAULT_IGNORE];
@@ -1236,11 +1221,9 @@ deploy java and python folders
 		if (appConfig) {
 			if (appConfig.ignore && Array.isArray(appConfig.ignore)) {
 				mergedIgnorePatterns = [...DEFAULT_IGNORE, ...appConfig.ignore];
-				if (shouldLog(flags.logLevel, "debug")) {
-					this.log(
-						`📋 Using ignore patterns from unified config (${appConfig.ignore.length} custom)`,
-					);
-				}
+				logger.debug(
+					`📋 Using ignore patterns from unified config (${appConfig.ignore.length} custom)`,
+				);
 			}
 		} else {
 			// LEGACY: smss.json config (kept for backward compatibility)
@@ -1262,28 +1245,21 @@ deploy java and python folders
 							...DEFAULT_IGNORE,
 							...(config.deploy.ignore as string[]),
 						];
-						if (shouldLog(flags.logLevel, "debug")) {
-							this.log(
-								`📋 Merged ignore patterns from smss.json`,
-							);
-						}
+						logger.debug(
+							`📋 Merged ignore patterns from smss.json`,
+						);
 					}
 
 					if ("targets" in config && Array.isArray(config.targets)) {
-						if (
-							shouldLog(flags.logLevel, "debug") &&
-							!flags.target
-						) {
-							this.log(
+						if (!flags.target) {
+							logger.debug(
 								`📋 Using deployment targets from config: ${(config.targets as string[]).join(", ")}`,
 							);
 						}
 					}
 				}
 			} catch (error) {
-				if (shouldLog(flags.logLevel, "verbose")) {
-					this.log(`⚠️  Could not load config: ${error}`);
-				}
+				logger.info(`⚠️  Could not load config: ${error}`);
 			}
 		}
 
@@ -1294,14 +1270,12 @@ deploy java and python folders
 		);
 		const isFullDeploy = deployTargets === "all";
 
-		if (shouldLog(flags.logLevel, "debug")) {
-			if (!isFullDeploy) {
-				this.log(
-					`🎯 Deployment targets: ${(deployTargets as string[]).join(", ")}`,
-				);
-			} else {
-				this.log("🎯 Deployment mode: Full deployment");
-			}
+		if (!isFullDeploy) {
+			logger.debug(
+				`🎯 Deployment targets: ${(deployTargets as string[]).join(", ")}`,
+			);
+		} else {
+			logger.debug("🎯 Deployment mode: Full deployment");
 		}
 
 		// Validate target directories exist before doing any work (e.g., backup)
@@ -1336,11 +1310,7 @@ deploy java and python folders
 				enabled: () => !flags.dryRun,
 				task: async () => {
 					// Use shared helper for initialization and error handling
-					await initializeAndTestInsight(
-						insight,
-						this.log.bind(this),
-						shouldLog(flags.logLevel, "normal"),
-					);
+					await initializeAndTestInsight(insight);
 					return true;
 				},
 			},
@@ -1350,38 +1320,26 @@ deploy java and python folders
 				task: async (context) => {
 					const startTime = Date.now();
 
-					if (shouldLog(flags.logLevel, "verbose")) {
-						logWithTiming(
-							this.log.bind(this),
-							"💾 Creating backup",
-							startTime,
-						);
-					}
+					logger.info(
+						`⏱️ [${Date.now() - startTime}ms] 💾 Creating backup`,
+					);
 
 					try {
 						const backup = await this.createBackup(
 							deployTargets,
 							insight,
-							shouldLog(flags.logLevel, "debug"),
 							opts,
 						);
 						context.backupDir = backup.backupDir;
 
-						if (shouldLog(flags.logLevel, "verbose")) {
-							logWithTiming(
-								this.log.bind(this),
-								`✅ Backup created: ${backup.backupDir}`,
-								startTime,
-							);
-						}
+						logger.info(
+							`⏱️ [${Date.now() - startTime}ms] ✅ Backup created: ${backup.backupDir}`,
+						);
 
 						// Prune old backups if retention is configured
 						if (flags.backupRetention > 0) {
 							try {
-								await this.pruneBackups(
-									flags.backupRetention,
-									shouldLog(flags.logLevel, "verbose"),
-								);
+								await this.pruneBackups(flags.backupRetention);
 							} catch {
 								// Don't fail deploy if pruning fails
 							}
@@ -1449,34 +1407,22 @@ deploy java and python folders
 							"backup.zip",
 						);
 
-						if (shouldLog(flags.logLevel, "verbose")) {
-							logWithTiming(
-								this.log.bind(this),
-								`📦 Loading backup file: ${backupZipPath}`,
-								startTime,
-							);
-						}
+						logger.info(
+							`⏱️ [${Date.now() - startTime}ms] 📦 Loading backup file: ${backupZipPath}`,
+						);
 
 						try {
 							const zipBuffer =
 								await fs.promises.readFile(backupZipPath);
 							context.zipBuffer = zipBuffer;
 
-							if (shouldLog(flags.logLevel, "verbose")) {
-								logWithTiming(
-									this.log.bind(this),
-									`✅ Backup loaded (${zipBuffer.length} bytes)`,
-									startTime,
-								);
-							}
+							logger.info(
+								`⏱️ [${Date.now() - startTime}ms] ✅ Backup loaded (${zipBuffer.length} bytes)`,
+							);
 						} catch (error) {
-							if (shouldLog(flags.logLevel, "verbose")) {
-								logWithTiming(
-									this.log.bind(this),
-									`❌ Failed to load backup: ${error}`,
-									startTime,
-								);
-							}
+							logger.info(
+								`⏱️ [${Date.now() - startTime}ms] ❌ Failed to load backup: ${error}`,
+							);
 							throw error;
 						}
 
@@ -1484,22 +1430,16 @@ deploy java and python folders
 					}
 
 					// Normal zipping logic for deploy
-					if (shouldLog(flags.logLevel, "verbose")) {
-						logWithTiming(
-							this.log.bind(this),
-							`📦 Zipping ${isFullDeploy ? "current directory" : "target directories"}`,
-							startTime,
-						);
-					}
+					logger.info(
+						`⏱️ [${Date.now() - startTime}ms] 📦 Zipping ${isFullDeploy ? "current directory" : "target directories"}`,
+					);
 
-					if (shouldLog(flags.logLevel, "verbose")) {
-						this.log(`🔍 Zip Details:`);
-						this.log(`   • Current Directory: ${process.cwd()}`);
-						if (!isFullDeploy) {
-							this.log(
-								`   • Targets: ${(deployTargets as string[]).join(", ")}`,
-							);
-						}
+					logger.info(`🔍 Zip Details:`);
+					logger.info(`   • Current Directory: ${process.cwd()}`);
+					if (!isFullDeploy) {
+						logger.info(
+							`   • Targets: ${(deployTargets as string[]).join(", ")}`,
+						);
 					}
 
 					try {
@@ -1509,24 +1449,18 @@ deploy java and python folders
 							mergedIgnorePatterns,
 						);
 
-						if (shouldLog(flags.logLevel, "verbose")) {
-							logWithTiming(
-								this.log.bind(this),
-								`📁 Found ${paths.length} files to zip`,
-								startTime,
-							);
-						}
+						logger.info(
+							`⏱️ [${Date.now() - startTime}ms] 📁 Found ${paths.length} files to zip`,
+						);
 
-						if (shouldLog(flags.logLevel, "debug")) {
-							this.log(`📋 Files to include:`);
-							paths.slice(0, 10).forEach((p) => {
-								this.log(`   • ${p}`);
-							});
-							if (paths.length > 10) {
-								this.log(
-									`   • ... and ${paths.length - 10} more files`,
-								);
-							}
+						logger.debug(`📋 Files to include:`);
+						paths.slice(0, 10).forEach((p) => {
+							logger.debug(`   • ${p}`);
+						});
+						if (paths.length > 10) {
+							logger.debug(
+								`   • ... and ${paths.length - 10} more files`,
+							);
 						}
 
 						// Create a new zip
@@ -1552,14 +1486,7 @@ deploy java and python folders
 												);
 											}
 										} catch (e) {
-											if (
-												shouldLog(
-													flags.logLevel,
-													"verbose",
-												)
-											) {
-												this.warn(`⚠️ Warning: ${e}`);
-											}
+											logger.info(`⚠️ Warning: ${e}`);
 										} finally {
 											resolve(null);
 										}
@@ -1577,171 +1504,28 @@ deploy java and python folders
 						}
 						context.zipBuffer = zipResult;
 
-						if (shouldLog(flags.logLevel, "verbose")) {
-							logWithTiming(
-								this.log.bind(this),
-								`✅ Zip created successfully (${context.zipBuffer.length} bytes)`,
-								startTime,
-							);
-						}
+						logger.info(
+							`⏱️ [${Date.now() - startTime}ms] ✅ Zip created successfully (${context.zipBuffer.length} bytes)`,
+						);
 
-						if (shouldLog(flags.logLevel, "debug")) {
-							this.log(`🔍 Zip Analysis:`);
-							this.log(`   • Files included: ${paths.length}`);
-							this.log(
-								`   • Zip size: ${context.zipBuffer.length} bytes`,
-							);
-							this.log(
-								`   • Execution Time: ${Date.now() - startTime}ms`,
-							);
-						}
+						logger.debug(`🔍 Zip Analysis:`);
+						logger.debug(`   • Files included: ${paths.length}`);
+						logger.debug(
+							`   • Zip size: ${context.zipBuffer.length} bytes`,
+						);
+						logger.debug(
+							`   • Execution Time: ${Date.now() - startTime}ms`,
+						);
 					} catch (error) {
-						if (shouldLog(flags.logLevel, "verbose")) {
-							logWithTiming(
-								this.log.bind(this),
-								`❌ Zip creation failed: ${error}`,
-								startTime,
-							);
-						}
+						logger.info(
+							`⏱️ [${Date.now() - startTime}ms] ❌ Zip creation failed: ${error}`,
+						);
 						throw error;
 					}
 
 					return true;
 				},
 			},
-			// Commenting out for now. Unzipping should replace the old files will fully remove once tested.
-			// {
-			// 	title:
-			// 		rollbackBackupDir || isFullDeploy
-			// 			? "Deleting All Assets"
-			// 			: "Cleaning Target Assets",
-			// 	enabled: () => !flags.dryRun,
-			// 	task: async (context) => {
-			// 		const startTime = Date.now();
-
-			// 		if (rollbackBackupDir || isFullDeploy) {
-			// 			const deleteCommand = `DeleteAppAssets(project="${opts.app}")`;
-
-			// 			if (shouldLog(flags.logLevel, "verbose")) {
-			// 				logWithTiming(
-			// 					this.log.bind(this),
-			// 					`🗑️ Executing: ${deleteCommand}`,
-			// 					startTime,
-			// 				);
-			// 			}
-
-			// 			if (shouldLog(flags.logLevel, "debug")) {
-			// 				this.log(`🔍 Delete Details:`);
-			// 				this.log(`   • Command: ${deleteCommand}`);
-			// 				this.log(`   • Target Path: version/assets/`);
-			// 				this.log(`   • Target App: ${opts.app}`);
-			// 			}
-
-			// 			try {
-			// 				const { pixelReturn } =
-			// 					await insight.actions.run(deleteCommand);
-
-			// 				context.deleteResult = pixelReturn[0].output;
-
-			// 				if (shouldLog(flags.logLevel, "verbose")) {
-			// 					logWithTiming(
-			// 						this.log.bind(this),
-			// 						`✅ DeleteAsset Result: ${context.deleteResult}`,
-			// 						startTime,
-			// 					);
-			// 				}
-
-			// 				if (shouldLog(flags.logLevel, "debug")) {
-			// 					this.log(`🔍 Delete Analysis:`);
-			// 					this.log(
-			// 						`   • Result: ${context.deleteResult}`,
-			// 					);
-			// 					this.log(
-			// 						`   • Result Type: ${typeof context.deleteResult}`,
-			// 					);
-			// 					this.log(
-			// 						`   • Execution Time: ${Date.now() - startTime}ms`,
-			// 					);
-			// 				}
-			// 			} catch (error) {
-			// 				const errorMsg =
-			// 					(error as Error).message || String(error);
-			// 				if (
-			// 					errorMsg.includes(
-			// 						"Could not find any of the files",
-			// 					)
-			// 				) {
-			// 					// No assets to delete - this is fine (first deployment or already clean)
-			// 					if (shouldLog(flags.logLevel, "verbose")) {
-			// 						logWithTiming(
-			// 							this.log.bind(this),
-			// 							`ℹ️ No assets to delete (environment may be fresh)`,
-			// 							startTime,
-			// 						);
-			// 					}
-			// 					context.deleteResult = "no-assets-to-delete";
-			// 				} else {
-			// 					// Log the error but proceed — upload can still succeed
-			// 					this.log(
-			// 						`⚠️  DeleteAppAssets failed: ${errorMsg}`,
-			// 					);
-			// 					this.log(
-			// 						`📝 Continuing with upload — assets may need manual cleanup.`,
-			// 					);
-			// 					context.deleteResult =
-			// 						"delete-failed-continuing";
-			// 				}
-			// 			}
-			// 		} else {
-			// 			if (shouldLog(flags.logLevel, "verbose")) {
-			// 				logWithTiming(
-			// 					this.log.bind(this),
-			// 					`🗑️ Deleting target-specific assets...`,
-			// 					startTime,
-			// 				);
-			// 			}
-
-			// 			for (const target of deployTargets as string[]) {
-			// 				const remotePath = `${target}`;
-
-			// 				if (shouldLog(flags.logLevel, "verbose")) {
-			// 					this.log(`   🗑️ Deleting: ${remotePath}`);
-			// 				}
-
-			// 				const deleteCommand = `DeleteAppAssets(project="${opts.app}", filePath="${remotePath}");`;
-
-			// 				try {
-			// 					const { pixelReturn } =
-			// 						await insight.actions.run(deleteCommand);
-
-			// 					if (shouldLog(flags.logLevel, "debug")) {
-			// 						this.log(
-			// 							`📊 DeleteAppAssets Response for ${target}: ${JSON.stringify(pixelReturn, null, 2)}`,
-			// 						);
-			// 					}
-			// 				} catch (error) {
-			// 					if (shouldLog(flags.logLevel, "verbose")) {
-			// 						this.warn(
-			// 							`⚠️ Warning deleting ${remotePath}: ${error}`,
-			// 						);
-			// 					}
-			// 				}
-			// 			}
-
-			// 			if (shouldLog(flags.logLevel, "verbose")) {
-			// 				logWithTiming(
-			// 					this.log.bind(this),
-			// 					`✅ Target assets deleted`,
-			// 					startTime,
-			// 				);
-			// 			}
-
-			// 			context.deleteResult = "target-assets-deleted";
-			// 		}
-
-			// 		return true;
-			// 	},
-			// },
 			{
 				title: "Uploading Zipped Directory",
 				enabled: () => !flags.dryRun,
@@ -1749,35 +1533,25 @@ deploy java and python folders
 					const startTime = Date.now();
 
 					if (!context.zipBuffer) {
-						if (shouldLog(flags.logLevel, "verbose")) {
-							logWithTiming(
-								this.log.bind(this),
-								`⏭️ No zip buffer to upload, skipping upload step`,
-								startTime,
-							);
-						}
+						logger.info(
+							`⏱️ [${Date.now() - startTime}ms] ⏭️ No zip buffer to upload, skipping upload step`,
+						);
 						return true;
 					}
 
-					if (shouldLog(flags.logLevel, "verbose")) {
-						logWithTiming(
-							this.log.bind(this),
-							`📤 Uploading zipped directory to the server`,
-							startTime,
-						);
-					}
+					logger.info(
+						`⏱️ [${Date.now() - startTime}ms] 📤 Uploading zipped directory to the server`,
+					);
 
-					if (shouldLog(flags.logLevel, "debug")) {
-						this.log(`🔍 Upload Details:`);
-						this.log(
-							`   • Zip Buffer Size: ${context.zipBuffer.length} bytes`,
-						);
-						this.log(`   • Target App: ${opts.app}`);
-						this.log(`   • Target Path: version/assets/`);
-						this.log(
-							`🔍 [DEBUG] Before upload - insight.insightId: ${insight.insightId}`,
-						);
-					}
+					logger.debug(`🔍 Upload Details:`);
+					logger.debug(
+						`   • Zip Buffer Size: ${context.zipBuffer.length} bytes`,
+					);
+					logger.debug(`   • Target App: ${opts.app}`);
+					logger.debug(`   • Target Path: version/assets/`);
+					logger.debug(
+						`🔍 Before upload - insight.insightId: ${insight.insightId}`,
+					);
 
 					try {
 						// Create a file from the zip buffer
@@ -1794,24 +1568,17 @@ deploy java and python folders
 							type: "application/zip",
 						});
 
-						if (shouldLog(flags.logLevel, "debug")) {
-							this.log(`🔍 File Details:`);
-							this.log(`   • File Name: ${fileName}`);
-							this.log(
-								`   • File Size: ${context.zipBuffer.length} bytes`,
-							);
-							this.log(`   • File Type: ${typeof file}`);
-							this.log(
-								`🔍 [DEBUG] Before upload - insight.insightId: ${insight.insightId}`,
-							);
-						}
+						logger.debug(`🔍 File Details:`);
+						logger.debug(`   • File Name: ${fileName}`);
+						logger.debug(
+							`   • File Size: ${context.zipBuffer.length} bytes`,
+						);
+						logger.debug(`   • File Type: ${typeof file}`);
+						logger.debug(
+							`🔍 Before upload - insight.insightId: ${insight.insightId}`,
+						);
 
 						this.log(`🔄 Starting upload of ${fileName}...`);
-						if (shouldLog(flags.logLevel, "debug")) {
-							this.log(
-								`🔍 [DEBUG] Before upload - insight.insightId: ${insight.insightId}`,
-							);
-						}
 
 						// Upload the file
 						const uploaded = await upload(
@@ -1825,13 +1592,9 @@ deploy java and python folders
 							`✅ Upload of ${fileName} completed., ${JSON.stringify(uploaded)}`,
 						);
 
-						if (shouldLog(flags.logLevel, "debug")) {
-							logWithTiming(
-								this.log.bind(this),
-								`📊 Upload result: ${JSON.stringify(uploaded, null, 2)}`,
-								startTime,
-							);
-						}
+						logger.debug(
+							`⏱️ [${Date.now() - startTime}ms] 📊 Upload result: ${JSON.stringify(uploaded, null, 2)}`,
+						);
 
 						// Unzip the uploaded file
 						await insight.actions.run(
@@ -1845,32 +1608,22 @@ deploy java and python folders
 
 						context.uploadResult = uploaded[0];
 
-						if (shouldLog(flags.logLevel, "verbose")) {
-							logWithTiming(
-								this.log.bind(this),
-								`✅ Upload completed: ${uploaded[0].fileName}`,
-								startTime,
-							);
-						}
+						logger.info(
+							`⏱️ [${Date.now() - startTime}ms] ✅ Upload completed: ${uploaded[0].fileName}`,
+						);
 
-						if (shouldLog(flags.logLevel, "debug")) {
-							this.log(`🔍 Upload Analysis:`);
-							this.log(`   • File Name: ${uploaded[0].fileName}`);
-							this.log(
-								`   • File Location: ${uploaded[0].fileLocation}`,
-							);
-							this.log(
-								`   • Execution Time: ${Date.now() - startTime}ms`,
-							);
-						}
+						logger.debug(`🔍 Upload Analysis:`);
+						logger.debug(`   • File Name: ${uploaded[0].fileName}`);
+						logger.debug(
+							`   • File Location: ${uploaded[0].fileLocation}`,
+						);
+						logger.debug(
+							`   • Execution Time: ${Date.now() - startTime}ms`,
+						);
 					} catch (error) {
-						if (shouldLog(flags.logLevel, "verbose")) {
-							logWithTiming(
-								this.log.bind(this),
-								`❌ Upload failed: ${error}`,
-								startTime,
-							);
-						}
+						logger.info(
+							`⏱️ [${Date.now() - startTime}ms] ❌ Upload failed: ${error}`,
+						);
 						throw error;
 					}
 
@@ -1942,77 +1695,73 @@ deploy java and python folders
 					this.log(`📤 Upload Result: ${fileName}`);
 				}
 
-				if (shouldLog(flags.logLevel, "verbose")) {
-					this.log("\n📋 Summary:");
-					this.log(
-						`   • Zip operation: ${context.zipBuffer ? "Completed" : "Failed"}`,
-					);
-					this.log(
-						`   • DeleteAsset operation: ${context.deleteResult !== undefined ? "Completed" : "Skipped"}`,
-					);
-					this.log(
-						`   • Upload operation: ${context.uploadResult !== undefined ? "Completed" : "Skipped"}`,
-					);
-					if (context.zipBuffer) {
-						this.log(
-							`   • Zip size: ${context.zipBuffer.length} bytes`,
-						);
-					}
-					if (context.deleteResult !== undefined) {
-						this.log(
-							`   • DeleteAsset result: ${context.deleteResult}`,
-						);
-					}
-					if (context.uploadResult !== undefined) {
-						const fileName =
-							typeof context.uploadResult === "object" &&
-							context.uploadResult !== null &&
-							"fileName" in context.uploadResult
-								? (context.uploadResult.fileName as string)
-								: "unknown";
-						this.log(`   • Upload result: ${fileName}`);
-					}
-
-					if (!isFullDeploy) {
-						this.log(
-							`   • Deployment type: Targeted (${(deployTargets as string[]).join(", ")})`,
-						);
-					}
-
-					this.log(`   • Duration: ${deploymentDuration}ms`);
-				}
-
-				if (shouldLog(flags.logLevel, "debug")) {
-					this.log("\n🔬 Super Verbose Summary:");
-					this.log(`   • Total Operations: 5`);
-					this.log(
-						`   • Successful Operations: ${
-							[
-								context.zipBuffer !== undefined,
-								context.deleteResult !== undefined,
-								context.uploadResult !== undefined,
-							].filter(Boolean).length + 1
-						}/5`,
-					);
-					this.log(`   • Environment: ${Env.MODULE} (${Env.APP})`);
-					this.log(
-						`   • Deployment Type: ${isFullDeploy ? "Full" : "Targeted"}`,
-					);
-					if (!isFullDeploy) {
-						this.log(
-							`   • Targets: ${(deployTargets as string[]).join(", ")}`,
-						);
-					}
-					this.log(
-						`   • Debug Mode: ${flags.logLevel === "debug" ? "Enabled" : "Disabled"}`,
-					);
-					this.log(
-						`   • Verbose Mode: ${flags.logLevel === "verbose" ? "Enabled" : "Disabled"}`,
-					);
-					this.log(
-						`   • Dry-run: ${flags.dryRun ? "Enabled" : "Disabled"}`,
+				logger.info("\n📋 Summary:");
+				logger.info(
+					`   • Zip operation: ${context.zipBuffer ? "Completed" : "Failed"}`,
+				);
+				logger.info(
+					`   • DeleteAsset operation: ${context.deleteResult !== undefined ? "Completed" : "Skipped"}`,
+				);
+				logger.info(
+					`   • Upload operation: ${context.uploadResult !== undefined ? "Completed" : "Skipped"}`,
+				);
+				if (context.zipBuffer) {
+					logger.info(
+						`   • Zip size: ${context.zipBuffer.length} bytes`,
 					);
 				}
+				if (context.deleteResult !== undefined) {
+					logger.info(
+						`   • DeleteAsset result: ${context.deleteResult}`,
+					);
+				}
+				if (context.uploadResult !== undefined) {
+					const fileName =
+						typeof context.uploadResult === "object" &&
+						context.uploadResult !== null &&
+						"fileName" in context.uploadResult
+							? (context.uploadResult.fileName as string)
+							: "unknown";
+					logger.info(`   • Upload result: ${fileName}`);
+				}
+
+				if (!isFullDeploy) {
+					logger.info(
+						`   • Deployment type: Targeted (${(deployTargets as string[]).join(", ")})`,
+					);
+				}
+
+				logger.info(`   • Duration: ${deploymentDuration}ms`);
+
+				logger.debug("\n🔬 Super Verbose Summary:");
+				logger.debug(`   • Total Operations: 5`);
+				logger.debug(
+					`   • Successful Operations: ${
+						[
+							context.zipBuffer !== undefined,
+							context.deleteResult !== undefined,
+							context.uploadResult !== undefined,
+						].filter(Boolean).length + 1
+					}/5`,
+				);
+				logger.debug(`   • Environment: ${Env.MODULE} (${Env.APP})`);
+				logger.debug(
+					`   • Deployment Type: ${isFullDeploy ? "Full" : "Targeted"}`,
+				);
+				if (!isFullDeploy) {
+					logger.debug(
+						`   • Targets: ${(deployTargets as string[]).join(", ")}`,
+					);
+				}
+				logger.debug(
+					`   • Debug Mode: ${flags.logLevel === "debug" ? "Enabled" : "Disabled"}`,
+				);
+				logger.debug(
+					`   • Verbose Mode: ${flags.logLevel === "verbose" ? "Enabled" : "Disabled"}`,
+				);
+				logger.debug(
+					`   • Dry-run: ${flags.dryRun ? "Enabled" : "Disabled"}`,
+				);
 
 				// Log deployment to history
 				void this.logDeploymentHistory({
@@ -2026,6 +1775,12 @@ deploy java and python folders
 					app: opts.app,
 					module: opts.module,
 				});
+
+				// Capture summary to log file
+				logger.fileOnly(
+					"info",
+					`Deploy SUCCESS – app=${opts.app} duration=${deploymentDuration}ms zip=${context.zipBuffer?.length ?? 0}bytes`,
+				);
 			})
 			.catch((err) => {
 				const deploymentDuration = Date.now() - deploymentStartTime;
@@ -2042,8 +1797,17 @@ deploy java and python folders
 					module: opts.module,
 				});
 
+				// Capture failure to log file
+				logger.fileOnly(
+					"error",
+					`Deploy FAILURE – app=${opts.app} duration=${deploymentDuration}ms error=${err instanceof Error ? err.message : String(err)}`,
+				);
+
 				// log the error
 				this.error(err);
+			})
+			.finally(async () => {
+				await logger.close();
 			});
 	}
 }

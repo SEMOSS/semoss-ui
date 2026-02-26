@@ -1,4 +1,5 @@
 import { Env, type Insight } from "@semoss/sdk";
+import { getDefaultLogger } from "./logger.js";
 
 /**
  * Initializes the insight and runs the 1+1 reactor to test connectivity.
@@ -7,24 +8,16 @@ import { Env, type Insight } from "@semoss/sdk";
  */
 export async function initializeAndTestInsight(
 	insight: Insight,
-	logger?: (msg: string) => void,
-	shouldLog?: boolean,
 ): Promise<number> {
-	const log = logger || (() => {});
+	const fileLogger = getDefaultLogger();
 
-	if (shouldLog) {
-		log("🔧 Initializing Semoss Insight...");
-	}
+	fileLogger.debug("Initializing Semoss Insight...");
 
 	await insight.initialize({ python: false });
 
-	if (shouldLog) {
-		log(`📊 Insight Status:`);
-		log(`   • Error: ${insight.error || "None"}`);
-		log(`   • Authorized: ${insight.isAuthorized}`);
-		log(`   • Ready: ${insight.isReady}`);
-		log(`   • Insight ID: Available`);
-	}
+	fileLogger.debug(
+		`Insight status — error: ${insight.error || "None"}, authorized: ${insight.isAuthorized}, ready: ${insight.isReady}`,
+	);
 
 	if (insight.error) {
 		const msg =
@@ -51,16 +44,9 @@ export async function initializeAndTestInsight(
 		throw new Error("Error initializing model");
 	}
 
-	if (shouldLog) {
-		log("✅ Insight initialized successfully");
-
-		// Run the reactor 1+1
-		log("🧮 Executing: 1+1");
-	}
+	fileLogger.debug("Insight initialized, executing 1+1 reactor test");
 	const { pixelReturn } = await insight.actions.run<[number]>("1+1");
-	if (shouldLog) {
-		log(`📊 Raw pixelReturn: ${JSON.stringify(pixelReturn, null, 2)}`);
-	}
+	fileLogger.debug(`1+1 reactor result: ${pixelReturn[0]?.output}`);
 	if (
 		!pixelReturn ||
 		!pixelReturn[0] ||
@@ -68,12 +54,6 @@ export async function initializeAndTestInsight(
 	) {
 		throw new Error("1+1 reactor did not return a valid result");
 	}
-	if (shouldLog) {
-		log(`✅ 1+1 Result: ${pixelReturn[0].output}`);
-		log(`🔍 Detailed Analysis:`);
-		log(`   • Input: 1+1`);
-		log(`   • Output Type: ${typeof pixelReturn[0].output}`);
-		log(`   • Output Value: ${pixelReturn[0].output}`);
-	}
+	fileLogger.debug(`Insight test passed (1+1 = ${pixelReturn[0].output})`);
 	return pixelReturn[0].output;
 }

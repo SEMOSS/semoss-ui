@@ -1,5 +1,7 @@
 import { Command, Flags } from "@oclif/core";
 import * as fs from "node:fs";
+import * as path from "node:path";
+import { Logger } from "../utils/logger.js";
 
 const HISTORY_FILE = ".semoss-deployments";
 
@@ -19,7 +21,8 @@ interface DeployRecord {
 const VALID_DEPLOY_STATUSES = new Set(["success", "failure", "dry-run"]);
 
 export default class Log extends Command {
-	static description = "Show deployment history from .semoss-deployments";
+	static description =
+		"Show deployment history and CLI log files from ~/.config/semoss/logs/";
 
 	static examples = [
 		`<%= config.bin %> <%= command.id %>
@@ -33,6 +36,15 @@ Show detailed deployment info
 `,
 		`<%= config.bin %> <%= command.id %> --json
 Output as JSON
+`,
+		`<%= config.bin %> <%= command.id %> --files
+List available CLI log files
+`,
+		`<%= config.bin %> <%= command.id %> --files --tail=50
+Show last 50 lines of today's log file
+`,
+		`<%= config.bin %> <%= command.id %> --dir
+Print the log directory path
 `,
 	];
 
@@ -56,10 +68,38 @@ Output as JSON
 			description: "Filter by status: success, failure, dry-run",
 			options: ["success", "failure", "dry-run"],
 		}),
+		files: Flags.boolean({
+			char: "f",
+			description:
+				"List or display CLI log files from ~/.config/semoss/logs/",
+			default: false,
+		}),
+		tail: Flags.integer({
+			char: "t",
+			description:
+				"Show the last N lines of the most recent log file (use with --files)",
+		}),
+		dir: Flags.boolean({
+			description: "Print the log directory path and exit",
+			default: false,
+		}),
 	};
 
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Log);
+
+		// --dir: just print the log directory path
+		if (flags.dir) {
+			const logger = new Logger();
+			this.log(logger.getLogDir());
+			return;
+		}
+
+		// --files: show CLI log files
+		if (flags.files) {
+			await this.showLogFiles(flags.tail);
+			return;
+		}
 
 		const history = this.loadDeployHistory();
 
@@ -113,6 +153,60 @@ Output as JSON
 		this.log(`   ❌ Failed: ${failureCount}`);
 		this.log(`   🔍 Dry-run: ${dryRunCount}`);
 		this.log("");
+	}
+
+	private async showLogFiles(tail?: number): Promise<void> {
+		const logger = new Logger();
+		const logDir = logger.getLogDir();
+
+		try {
+			const entries = fs.readdirSync(logDir);
+			const logFiles = entries
+				.filter((f) => /^semoss-\d{4}-\d{2}-\d{2}\.log$/.test(f))
+				.sort();
+
+			if (logFiles.length === 0) {
+				this.log("No log files found.");
+				this.log(`Log directory: ${logDir}`);
+				return;
+			}
+
+			// If --tail is provided, show the last N lines of the most recent file
+			if (tail !== undefined) {
+				const latest = logFiles[logFiles.length - 1];
+				const filePath = path.join(logDir, latest);
+				const content = fs.readFileSync(filePath, "utf-8");
+				const lines = content.split("\n").filter(Boolean);
+				const sliced = lines.slice(-tail);
+				this.log(`\n📄 ${latest} (last ${sliced.length} lines)\n`);
+				this.log("─".repeat(60));
+				for (const line of sliced) {
+					this.log(line);
+				}
+				this.log("");
+				return;
+			}
+
+			// Otherwise list all available log files
+			this.log(`\n📁 Log Files (${logDir})\n`);
+			this.log("─".repeat(60));
+
+			for (const file of logFiles) {
+				const filePath = path.join(logDir, file);
+				const stats = fs.statSync(filePath);
+				const sizeKb = (stats.size / 1024).toFixed(1);
+				this.log(`   ${file}  (${sizeKb} KB)`);
+			}
+
+			this.log("─".repeat(60));
+			this.log(
+				`\nTip: Use --tail=50 to see the last 50 lines of the latest log.`,
+			);
+			this.log("");
+		} catch {
+			this.log("No log files found.");
+			this.log(`Log directory: ${logDir}`);
+		}
 	}
 
 	private loadDeployHistory(): DeployRecord[] {

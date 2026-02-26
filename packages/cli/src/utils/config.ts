@@ -6,6 +6,7 @@ import type {
 	GlobalConfig,
 	InstanceConfig,
 } from "../types.js";
+import { getDefaultLogger } from "./logger.js";
 
 /**
  * Get the config directory path following XDG Base Directory spec
@@ -52,7 +53,7 @@ export function readJsonFile<T>(filePath: string, defaultValue: T): T {
 		const content = fs.readFileSync(filePath, "utf8");
 		return JSON.parse(content) as T;
 	} catch (error) {
-		console.warn(`Warning: Could not read ${filePath}:`, error);
+		getDefaultLogger().warn(`Could not read ${filePath}: ${error}`);
 		return defaultValue;
 	}
 }
@@ -153,12 +154,15 @@ export function resolveCredentials(options?: { instanceName?: string }): {
 	app: string | null;
 	source: "env" | "global" | "none";
 } {
+	const logger = getDefaultLogger();
+
 	// Priority 1: Environment variables (backward compatibility)
 	if (
 		process.env.MODULE &&
 		process.env.ACCESS_KEY &&
 		process.env.SECRET_KEY
 	) {
+		logger.debug("Credentials resolved from environment variables");
 		return {
 			module: process.env.MODULE,
 			accessKey: process.env.ACCESS_KEY,
@@ -173,6 +177,9 @@ export function resolveCredentials(options?: { instanceName?: string }): {
 	if (instanceName) {
 		const instance = getInstance(instanceName);
 		if (instance) {
+			logger.debug(
+				`Credentials resolved from global config (instance: ${instanceName})`,
+			);
 			return {
 				module: instance.module,
 				accessKey: instance.accessKey,
@@ -184,6 +191,7 @@ export function resolveCredentials(options?: { instanceName?: string }): {
 	}
 
 	// No credentials found
+	logger.debug("No credentials found from any source");
 	return {
 		module: null,
 		accessKey: null,

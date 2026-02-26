@@ -2,6 +2,7 @@ import { Command, Flags, ux } from "@oclif/core";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Create extends Command {
 	static args = {};
@@ -38,85 +39,101 @@ create in specific directory
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Create);
 
-		// Prompt for app name if not provided
-		let appName = flags.name;
-		if (!appName) {
-			appName = await ux.prompt("What is the name of your app?", {
-				required: true,
-			});
-		}
-
-		const targetDir =
-			flags.directory || appName.toLowerCase().replace(/\s+/g, "-");
-		const forceOverwrite = flags.force;
-
-		// Resolve target directory path
-		const absolutePath = path.resolve(targetDir);
-
-		// Check if directory exists
-		if (fs.existsSync(absolutePath) && !forceOverwrite) {
-			this.error(
-				`Directory "${targetDir}" already exists. Use --force to overwrite.`,
-			);
-		}
-
-		// Get template path from CLI module location
-		const __filename = fileURLToPath(import.meta.url);
-		const __dirname = path.dirname(__filename);
-		const templatePath = path.join(
-			__dirname,
-			"..",
-			"..",
-			"templates",
-			"base-app",
-		);
-
-		if (!fs.existsSync(templatePath)) {
-			this.error(
-				"Template not found. Make sure the CLI is correctly installed.",
-			);
-		}
+		const logger = new Logger({
+			command: "create",
+			console: this.log.bind(this),
+		});
+		setDefaultLogger(logger);
 
 		try {
-			// Create target directory
-			if (!fs.existsSync(absolutePath)) {
-				fs.mkdirSync(absolutePath, { recursive: true });
+			// Prompt for app name if not provided
+			let appName = flags.name;
+			if (!appName) {
+				appName = await ux.prompt("What is the name of your app?", {
+					required: true,
+				});
 			}
 
-			this.log(`📦 Creating new SEMOSS app: ${appName}`);
-			this.log(`📁 Location: ${absolutePath}`);
+			const targetDir =
+				flags.directory || appName.toLowerCase().replace(/\s+/g, "-");
+			const forceOverwrite = flags.force;
 
-			// Copy template files recursively
-			this.copyTemplate(templatePath, absolutePath);
+			// Resolve target directory path
+			const absolutePath = path.resolve(targetDir);
 
-			// Update package.json with app name
-			const packageJsonPath = path.join(absolutePath, "package.json");
-			if (fs.existsSync(packageJsonPath)) {
-				const packageJson = JSON.parse(
-					fs.readFileSync(packageJsonPath, "utf-8"),
-				);
-				packageJson.name = appName.toLowerCase().replace(/\s+/g, "-");
-				packageJson.description = `A SEMOSS application - ${appName}`;
-				fs.writeFileSync(
-					packageJsonPath,
-					JSON.stringify(packageJson, null, 2),
+			logger.debug(`Creating app "${appName}" at ${absolutePath}`);
+
+			// Check if directory exists
+			if (fs.existsSync(absolutePath) && !forceOverwrite) {
+				this.error(
+					`Directory "${targetDir}" already exists. Use --force to overwrite.`,
 				);
 			}
 
-			this.log(`\n✅ App created successfully!\n`);
-			this.log(`🚀 Next steps:\n`);
-			this.log(`   cd ${targetDir}`);
-			this.log(`   pnpm install`);
-			this.log(`   cp .env.example .env`);
-			this.log(`   # Edit .env with your SEMOSS server details`);
-			this.log(`   semoss init --name="${appName}"`);
-			this.log(`   pnpm dev    # (optional) Start dev server`);
-			this.log(`   semoss deploy\n`);
-			this.log(
-				`📖 See README.md in the app directory for more information.`,
+			// Get template path from CLI module location
+			const __filename = fileURLToPath(import.meta.url);
+			const __dirname = path.dirname(__filename);
+			const templatePath = path.join(
+				__dirname,
+				"..",
+				"..",
+				"templates",
+				"base-app",
 			);
-		} catch (error) {
-			this.error(`Failed to create app: ${error}`);
+
+			if (!fs.existsSync(templatePath)) {
+				this.error(
+					"Template not found. Make sure the CLI is correctly installed.",
+				);
+			}
+
+			try {
+				// Create target directory
+				if (!fs.existsSync(absolutePath)) {
+					fs.mkdirSync(absolutePath, { recursive: true });
+				}
+
+				this.log(`📦 Creating new SEMOSS app: ${appName}`);
+				this.log(`📁 Location: ${absolutePath}`);
+
+				// Copy template files recursively
+				this.copyTemplate(templatePath, absolutePath);
+
+				// Update package.json with app name
+				const packageJsonPath = path.join(absolutePath, "package.json");
+				if (fs.existsSync(packageJsonPath)) {
+					const packageJson = JSON.parse(
+						fs.readFileSync(packageJsonPath, "utf-8"),
+					);
+					packageJson.name = appName
+						.toLowerCase()
+						.replace(/\s+/g, "-");
+					packageJson.description = `A SEMOSS application - ${appName}`;
+					fs.writeFileSync(
+						packageJsonPath,
+						JSON.stringify(packageJson, null, 2),
+					);
+				}
+
+				this.log(`\n✅ App created successfully!\n`);
+				logger.debug(`App "${appName}" created at ${absolutePath}`);
+				this.log(`🚀 Next steps:\n`);
+				this.log(`   cd ${targetDir}`);
+				this.log(`   pnpm install`);
+				this.log(`   cp .env.example .env`);
+				this.log(`   # Edit .env with your SEMOSS server details`);
+				this.log(`   semoss init --name="${appName}"`);
+				this.log(`   pnpm dev    # (optional) Start dev server`);
+				this.log(`   semoss deploy\n`);
+				this.log(
+					`📖 See README.md in the app directory for more information.`,
+				);
+			} catch (error) {
+				logger.error(`App creation failed: ${error}`);
+				this.error(`Failed to create app: ${error}`);
+			}
+		} finally {
+			await logger.close();
 		}
 	}
 

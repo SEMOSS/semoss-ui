@@ -2,6 +2,7 @@ import { Command, Flags, ux } from "@oclif/core";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { ensureSemossGitignore } from "../utils/index.js";
+import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Config extends Command {
 	static args = {};
@@ -24,178 +25,203 @@ Generate skeleton config
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Config);
 
-		const configPath = path.join(process.cwd(), "smss.json");
-		const skeletonConfig = {
-			targets: [],
-			ignore: [
-				"node_modules/**",
-				"**/.git/**",
-				"**/*.local",
-				"client/**",
-				"**/package.json",
-				"**/package-lock.json",
-				"**/pnpm-lock.yaml",
-				"**/vite.config.ts",
-				"**/vite.config.js",
-				"**/vitest.config.ts",
-				"**/vitest.config.js",
-				"**/tsconfig.json",
-				"**/components.json",
-				"target/**",
-				"test_classes/**",
-				"classes/**",
-				".semoss-backups/**",
-				".semoss-deployments",
-				"smss.json",
-			],
-			deploy: {
-				batch: {},
-			},
-		};
-
-		let mergedConfig = skeletonConfig;
-		let shouldPrompt = false;
-
-		// Ensure .gitignore is updated before writing config
-		ensureSemossGitignore(process.cwd());
-		if (fs.existsSync(configPath)) {
-			try {
-				const existing = JSON.parse(
-					fs.readFileSync(configPath, "utf-8"),
-				);
-				// Merge targets
-				const targets = Array.isArray(existing.targets)
-					? Array.from(
-							new Set([
-								...(existing.targets || []),
-								...(skeletonConfig.targets || []),
-							]),
-						)
-					: skeletonConfig.targets;
-				// Merge ignore
-				const ignore = Array.isArray(existing.ignore)
-					? Array.from(
-							new Set([
-								...(existing.ignore || []),
-								...(skeletonConfig.ignore || []),
-							]),
-						)
-					: skeletonConfig.ignore;
-				// Merge deploy.batch
-				let batch = {};
-				if (
-					existing.deploy &&
-					typeof existing.deploy === "object" &&
-					existing.deploy.batch
-				) {
-					batch = {
-						...existing.deploy.batch,
-						...skeletonConfig.deploy.batch,
-					};
-				} else {
-					batch = skeletonConfig.deploy.batch;
-				}
-				// If merging is possible, update mergedConfig
-				mergedConfig = {
-					...existing,
-					targets,
-					ignore,
-					deploy: {
-						...existing.deploy,
-						batch,
-					},
-				};
-				// If fields are present and merging is not possible (e.g. wrong type), prompt
-				if (
-					!Array.isArray(existing.targets) ||
-					!Array.isArray(existing.ignore) ||
-					typeof batch !== "object"
-				) {
-					shouldPrompt = true;
-				}
-			} catch {
-				shouldPrompt = true;
-			}
-		}
-
-		// If merging is not possible and --force is not present, prompt user interactively
-		if (shouldPrompt && !flags.force) {
-			const answer = await ux.prompt(
-				"smss.json exists and cannot be safely merged. Overwrite? (y/n)",
-			);
-			if (answer.trim().toLowerCase() !== "y") {
-				this.log("Aborted. smss.json was not overwritten.");
-				return;
-			}
-		}
+		const logger = new Logger({
+			command: "config",
+			console: this.log.bind(this),
+		});
+		setDefaultLogger(logger);
 
 		try {
-			fs.writeFileSync(
-				configPath,
-				JSON.stringify(
-					flags.force ? skeletonConfig : mergedConfig,
-					null,
-					2,
-				),
-				"utf-8",
-			);
+			const configPath = path.join(process.cwd(), "smss.json");
+			const skeletonConfig = {
+				targets: [],
+				ignore: [
+					"node_modules/**",
+					"**/.git/**",
+					"**/*.local",
+					"client/**",
+					"**/package.json",
+					"**/package-lock.json",
+					"**/pnpm-lock.yaml",
+					"**/vite.config.ts",
+					"**/vite.config.js",
+					"**/vitest.config.ts",
+					"**/vitest.config.js",
+					"**/tsconfig.json",
+					"**/components.json",
+					"target/**",
+					"test_classes/**",
+					"classes/**",
+					".semoss-backups/**",
+					".semoss-deployments",
+					"smss.json",
+				],
+				deploy: {
+					batch: {},
+				},
+			};
 
-			this.log("\n✅ Configuration file created/updated: smss.json\n");
+			let mergedConfig = skeletonConfig;
+			let shouldPrompt = false;
 
-			this.log("📋 Configuration sections:");
-			this.log("   • targets: (Optional) Specific folders to deploy");
-			this.log("   • ignore: Files/folders excluded from deployment");
-			this.log(
-				"   • deploy.batch: (Optional) Multi-instance deployment configs\n",
-			);
+			// Ensure .gitignore is updated before writing config
+			ensureSemossGitignore(process.cwd());
+			if (fs.existsSync(configPath)) {
+				logger.debug("Existing smss.json found, attempting merge");
+				try {
+					const existing = JSON.parse(
+						fs.readFileSync(configPath, "utf-8"),
+					);
+					// Merge targets
+					const targets = Array.isArray(existing.targets)
+						? Array.from(
+								new Set([
+									...(existing.targets || []),
+									...(skeletonConfig.targets || []),
+								]),
+							)
+						: skeletonConfig.targets;
+					// Merge ignore
+					const ignore = Array.isArray(existing.ignore)
+						? Array.from(
+								new Set([
+									...(existing.ignore || []),
+									...(skeletonConfig.ignore || []),
+								]),
+							)
+						: skeletonConfig.ignore;
+					// Merge deploy.batch
+					let batch = {};
+					if (
+						existing.deploy &&
+						typeof existing.deploy === "object" &&
+						existing.deploy.batch
+					) {
+						batch = {
+							...existing.deploy.batch,
+							...skeletonConfig.deploy.batch,
+						};
+					} else {
+						batch = skeletonConfig.deploy.batch;
+					}
+					// If merging is possible, update mergedConfig
+					mergedConfig = {
+						...existing,
+						targets,
+						ignore,
+						deploy: {
+							...existing.deploy,
+							batch,
+						},
+					};
+					// If fields are present and merging is not possible (e.g. wrong type), prompt
+					if (
+						!Array.isArray(existing.targets) ||
+						!Array.isArray(existing.ignore) ||
+						typeof batch !== "object"
+					) {
+						shouldPrompt = true;
+					}
+				} catch {
+					shouldPrompt = true;
+				}
+			}
 
-			this.log("🔧 Next steps:");
-			this.log("   1. Edit smss.json with your actual values");
-			this.log("   2. Replace placeholder URLs, keys, and app IDs");
-			this.log(
-				"   3. (Optional) Add targets if you want specific folders only",
-			);
-			this.log(
-				"   4. (Optional) Add batch instances for multi-environment deployments",
-			);
-			this.log("   5. Run: semoss deploy --batch <name>\n");
+			// If merging is not possible and --force is not present, prompt user interactively
+			if (shouldPrompt && !flags.force) {
+				const answer = await ux.prompt(
+					"smss.json exists and cannot be safely merged. Overwrite? (y/n)",
+				);
+				if (answer.trim().toLowerCase() !== "y") {
+					this.log("Aborted. smss.json was not overwritten.");
+					return;
+				}
+			}
 
-			this.log("📚 Configuration reference:");
-			this.log("   targets[]:");
-			this.log(
-				"     • (Empty by default) Specific directories to include",
-			);
-			this.log('     • Example: ["java", "py", "portals"]');
-			this.log("     • Used if no -t flag provided at deploy time");
-			this.log("     • Priority: -t flag > targets array > deploy all\n");
-			this.log("   targets usage:");
-			this.log("     • Leave empty to deploy everything by default");
-			this.log(
-				'     • Set to ["java", "py"] to only deploy those folders',
-			);
-			this.log(
-				"     • Always override with: semoss deploy -t java -t portals\n",
-			);
+			try {
+				fs.writeFileSync(
+					configPath,
+					JSON.stringify(
+						flags.force ? skeletonConfig : mergedConfig,
+						null,
+						2,
+					),
+					"utf-8",
+				);
 
-			this.log("   ignore[]:");
-			this.log("     • Patterns to exclude from every deployment");
-			this.log("     • Supports glob patterns (**, *, ?, [abc])");
-			this.log("     • Examples: node_modules/**, *.local, build/**\n");
+				this.log(
+					"\n✅ Configuration file created/updated: smss.json\n",
+				);
+				logger.debug(
+					`Config written to ${configPath} (force: ${!!flags.force})`,
+				);
 
-			this.log("   deploy.batch:");
-			this.log("     • (Empty by default) Multi-instance deployments");
-			this.log("     • Example structure:");
-			this.log(
-				'     •   "prod": { "endpoint": "...", "module": "...", ...',
-			);
-			this.log(
-				'     •   "dev": { "endpoint": "...", "module": "...", ...',
-			);
-			this.log("     • Usage: semoss deploy --batch prod");
-			this.log("     • Required fields: endpoint, module, accessKey,");
-			this.log("       secretKey, app\n");
-		} catch (error) {
-			this.error(`Failed to create config file: ${error}`);
+				this.log("📋 Configuration sections:");
+				this.log("   • targets: (Optional) Specific folders to deploy");
+				this.log("   • ignore: Files/folders excluded from deployment");
+				this.log(
+					"   • deploy.batch: (Optional) Multi-instance deployment configs\n",
+				);
+
+				this.log("🔧 Next steps:");
+				this.log("   1. Edit smss.json with your actual values");
+				this.log("   2. Replace placeholder URLs, keys, and app IDs");
+				this.log(
+					"   3. (Optional) Add targets if you want specific folders only",
+				);
+				this.log(
+					"   4. (Optional) Add batch instances for multi-environment deployments",
+				);
+				this.log("   5. Run: semoss deploy --batch <name>\n");
+
+				this.log("📚 Configuration reference:");
+				this.log("   targets[]:");
+				this.log(
+					"     • (Empty by default) Specific directories to include",
+				);
+				this.log('     • Example: ["java", "py", "portals"]');
+				this.log("     • Used if no -t flag provided at deploy time");
+				this.log(
+					"     • Priority: -t flag > targets array > deploy all\n",
+				);
+				this.log("   targets usage:");
+				this.log("     • Leave empty to deploy everything by default");
+				this.log(
+					'     • Set to ["java", "py"] to only deploy those folders',
+				);
+				this.log(
+					"     • Always override with: semoss deploy -t java -t portals\n",
+				);
+
+				this.log("   ignore[]:");
+				this.log("     • Patterns to exclude from every deployment");
+				this.log("     • Supports glob patterns (**, *, ?, [abc])");
+				this.log(
+					"     • Examples: node_modules/**, *.local, build/**\n",
+				);
+
+				this.log("   deploy.batch:");
+				this.log(
+					"     • (Empty by default) Multi-instance deployments",
+				);
+				this.log("     • Example structure:");
+				this.log(
+					'     •   "prod": { "endpoint": "...", "module": "...", ...',
+				);
+				this.log(
+					'     •   "dev": { "endpoint": "...", "module": "...", ...',
+				);
+				this.log("     • Usage: semoss deploy --batch prod");
+				this.log(
+					"     • Required fields: endpoint, module, accessKey,",
+				);
+				this.log("       secretKey, app\n");
+			} catch (error) {
+				logger.error(`Config generation failed: ${error}`);
+				this.error(`Failed to create config file: ${error}`);
+			}
+		} finally {
+			await logger.close();
 		}
 	}
 }

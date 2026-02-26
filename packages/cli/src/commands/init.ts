@@ -9,6 +9,7 @@ import {
 	getCurrentContext,
 	initializeAndTestInsight,
 } from "../utils/index.js";
+import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Init extends Command {
 	static description = "Initialize a new app";
@@ -45,276 +46,299 @@ init (./src/commands/init.ts)
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Init);
 
-		// Try to use unified config first
-		let useUnifiedConfig = false;
-		let configContext: Awaited<
-			ReturnType<typeof getCurrentContext>
-		> | null = null;
+		const logger = new Logger({
+			command: "init",
+			console: this.log.bind(this),
+		});
+		setDefaultLogger(logger);
 
 		try {
-			configContext = getCurrentContext();
-			if (configContext?.instance) {
-				useUnifiedConfig = true;
-				this.log("✓ Using unified config from ~/.config/semoss/");
-			}
-		} catch {
-			// Fall back to .env
-		}
+			// Try to use unified config first
+			let useUnifiedConfig = false;
+			let configContext: Awaited<
+				ReturnType<typeof getCurrentContext>
+			> | null = null;
 
-		// path to the environment variables
-		const envPath = flags.env ?? ".env";
-		const envLocalPath = ".env.local";
-
-		// Ensure .gitignore is updated before writing config
-		ensureSemossGitignore(process.cwd());
-		// path to the config (optional)
-		const configPath = flags.config ?? "smss.json";
-
-		// define the config
-		let configOptions: Config | null = null;
-
-		try {
-			if (useUnifiedConfig && configContext?.instance) {
-				// Use unified config
-				const instance = configContext.instance;
-
-				// update the environment
-				Env.update({
-					ACCESS_KEY: instance.accessKey,
-					MODULE: instance.module,
-					SECRET_KEY: instance.secretKey,
-				});
-			} else {
-				// LEGACY: load .env files
-				// if custom env path is provided, use only that
-				// otherwise, load .env first, then .env.local (which overrides .env values)
-				if (flags.env) {
-					config({ path: envPath });
-				} else {
-					config({ path: envPath }); // load .env
-					if (fs.existsSync(envLocalPath)) {
-						config({ path: envLocalPath, override: true }); // load .env.local with override
-					}
-				}
-
-				// validate and construct the full module URL
-				const endpoint = process.env.ENDPOINT;
-				const modulePath = process.env.MODULE;
-
-				if (!endpoint) {
-					this.error(
-						"ENDPOINT is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
-					);
-				}
-
-				if (!modulePath) {
-					this.error(
-						"MODULE is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
-					);
-				}
-
-				// construct the full module URL
-				const fullModule = `${endpoint}${modulePath}`;
-
-				// update the environment
-				Env.update({
-					ACCESS_KEY: process.env.ACCESS_KEY,
-					MODULE: fullModule,
-					SECRET_KEY: process.env.SECRET_KEY,
-					APP: process.env.APP,
-				});
-			}
-			// try to load the configOptions (optional)
 			try {
-				// load it
-				configOptions = JSON.parse(
-					fs.readFileSync(configPath, "utf8"),
-				) as Config;
-			} catch (_e) {
-				// noop
+				configContext = getCurrentContext();
+				if (configContext?.instance) {
+					useUnifiedConfig = true;
+					logger.debug("Using unified config from ~/.config/semoss/");
+					this.log("✓ Using unified config from ~/.config/semoss/");
+				}
+			} catch {
+				// Fall back to .env
 			}
-		} catch (error) {
-			this.error(error as Error);
-		}
 
-		// throw the error
-		const name = configOptions?.name ? configOptions.name : flags.name;
-		if (!name) {
-			throw new Error("Name is required");
-		}
+			// path to the environment variables
+			const envPath = flags.env ?? ".env";
+			const envLocalPath = ".env.local";
 
-		// check the remaining environment variables
-		if (!Env.ACCESS_KEY) {
-			this.error(
-				"ACCESS_KEY is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
-			);
-		}
+			// Ensure .gitignore is updated before writing config
+			ensureSemossGitignore(process.cwd());
+			// path to the config (optional)
+			const configPath = flags.config ?? "smss.json";
 
-		if (!Env.SECRET_KEY) {
-			this.error(
-				"SECRET_KEY is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
-			);
-		}
+			// define the config
+			let configOptions: Config | null = null;
 
-		if (Env.APP || process.env.VITE_APP) {
-			this.error(
-				"APP is already defined. Delete from your environment variables (.env) to create a new app",
-			);
-		}
+			try {
+				if (useUnifiedConfig && configContext?.instance) {
+					// Use unified config
+					const instance = configContext.instance;
 
-		// create a new insight
-		const insight = new Insight();
-
-		// get the tasks
-		const tasks = new Listr<{
-			APP?: string;
-		}>([
-			{
-				title: "Initializing",
-				task: async () => {
-					// Use shared helper for initialization and error handling
-					await initializeAndTestInsight(insight);
-					return true;
-				},
-			},
-			{
-				title: "Configuring App",
-				task: async (context) => {
-					// Load the insight classes
-					const { pixelReturn } = await insight.actions.run<
-						[{ project_id: string }]
-					>(
-						`CreateProject(project=["${name}"], portal=[true], projectType=["${flags.type ?? "CODE"}"])`,
-					);
-					// save the new app ID
-					context.APP = pixelReturn[0].output.project_id;
-					return true;
-				},
-			},
-			{
-				title: "Saving App",
-				task: async (context) => {
-					if (!context.APP) {
-						throw new Error("No App");
+					// update the environment
+					Env.update({
+						ACCESS_KEY: instance.accessKey,
+						MODULE: instance.module,
+						SECRET_KEY: instance.secretKey,
+					});
+				} else {
+					// LEGACY: load .env files
+					// if custom env path is provided, use only that
+					// otherwise, load .env first, then .env.local (which overrides .env values)
+					if (flags.env) {
+						config({ path: envPath });
+					} else {
+						config({ path: envPath }); // load .env
+						if (fs.existsSync(envLocalPath)) {
+							config({ path: envLocalPath, override: true }); // load .env.local with override
+						}
 					}
 
-					// for code apps set a default index.html file with placeholder content
-					if (flags.type === "CODE" || !flags.type) {
-						// after the project is created run a pixel to create a new portals/index.html file
-						// use the returned projectId
+					// validate and construct the full module URL
+					const endpoint = process.env.ENDPOINT;
+					const modulePath = process.env.MODULE;
 
-						const newIndexFilePath =
-							"version/assets/portals/index.html";
-						const newIndexFileContent = `<html><style>html {font-family: sans-serif; padding: 30px;}</style><h1>${name}</h1><p>This is placeholder text for your new Application.</p><p>You can add new files and edit this text using the Code Editor.</p></html>`;
+					if (!endpoint) {
+						this.error(
+							"ENDPOINT is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
+						);
+					}
 
-						const saveIndexFilePixel = `
+					if (!modulePath) {
+						this.error(
+							"MODULE is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
+						);
+					}
+
+					// construct the full module URL
+					const fullModule = `${endpoint}${modulePath}`;
+
+					// update the environment
+					Env.update({
+						ACCESS_KEY: process.env.ACCESS_KEY,
+						MODULE: fullModule,
+						SECRET_KEY: process.env.SECRET_KEY,
+						APP: process.env.APP,
+					});
+				}
+				// try to load the configOptions (optional)
+				try {
+					// load it
+					configOptions = JSON.parse(
+						fs.readFileSync(configPath, "utf8"),
+					) as Config;
+				} catch (_e) {
+					// noop
+				}
+			} catch (error) {
+				this.error(error as Error);
+			}
+
+			// throw the error
+			const name = configOptions?.name ? configOptions.name : flags.name;
+			if (!name) {
+				logger.error("No project name provided");
+				throw new Error("Name is required");
+			}
+
+			logger.debug(
+				`Initializing project "${name}" (type: ${flags.type ?? "CODE"})`,
+			);
+
+			// check the remaining environment variables
+			if (!Env.ACCESS_KEY) {
+				this.error(
+					"ACCESS_KEY is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
+				);
+			}
+
+			if (!Env.SECRET_KEY) {
+				this.error(
+					"SECRET_KEY is required. Define one in your environment variables (.env) or connect to an instance first with 'semoss connect'",
+				);
+			}
+
+			if (Env.APP || process.env.VITE_APP) {
+				this.error(
+					"APP is already defined. Delete from your environment variables (.env) to create a new app",
+				);
+			}
+
+			// create a new insight
+			const insight = new Insight();
+
+			// get the tasks
+			const tasks = new Listr<{
+				APP?: string;
+			}>([
+				{
+					title: "Initializing",
+					task: async () => {
+						// Use shared helper for initialization and error handling
+						await initializeAndTestInsight(insight);
+						return true;
+					},
+				},
+				{
+					title: "Configuring App",
+					task: async (context) => {
+						// Load the insight classes
+						const { pixelReturn } = await insight.actions.run<
+							[{ project_id: string }]
+						>(
+							`CreateProject(project=["${name}"], portal=[true], projectType=["${flags.type ?? "CODE"}"])`,
+						);
+						// save the new app ID
+						context.APP = pixelReturn[0].output.project_id;
+						return true;
+					},
+				},
+				{
+					title: "Saving App",
+					task: async (context) => {
+						if (!context.APP) {
+							throw new Error("No App");
+						}
+
+						// for code apps set a default index.html file with placeholder content
+						if (flags.type === "CODE" || !flags.type) {
+							// after the project is created run a pixel to create a new portals/index.html file
+							// use the returned projectId
+
+							const newIndexFilePath =
+								"version/assets/portals/index.html";
+							const newIndexFileContent = `<html><style>html {font-family: sans-serif; padding: 30px;}</style><h1>${name}</h1><p>This is placeholder text for your new Application.</p><p>You can add new files and edit this text using the Code Editor.</p></html>`;
+
+							const saveIndexFilePixel = `
                     SaveAsset(fileName=["${newIndexFilePath}"], content=["<encode>${newIndexFileContent}</encode>"], space=["${context.APP}"]); 
                     CommitAsset(filePath=["${newIndexFilePath}"], comment=["Hardcoded comment from the App Page editor"], space=["${context.APP}"])
                 `;
 
-						const { pixelReturn } =
-							await insight.actions.run(saveIndexFilePixel);
+							const { pixelReturn } =
+								await insight.actions.run(saveIndexFilePixel);
 
-						let output = pixelReturn[0].output;
-						let operationType = pixelReturn[0].operationType;
+							let output = pixelReturn[0].output;
+							let operationType = pixelReturn[0].operationType;
 
-						if (operationType.indexOf("ERROR") > -1) {
-							this.error(
-								`Error creating index.html file: ${String(output)}`,
-							); // log the error but don't throw, we still want to save the app even if the index file creation fails
+							if (operationType.indexOf("ERROR") > -1) {
+								this.error(
+									`Error creating index.html file: ${String(output)}`,
+								); // log the error but don't throw, we still want to save the app even if the index file creation fails
+							}
+
+							output = pixelReturn[1].output;
+							operationType = pixelReturn[1].operationType;
+
+							if (operationType.indexOf("ERROR") > -1) {
+								this.error(
+									`Error committing index.html file: ${String(output)}`,
+								); // log the error but don't throw, we still want to save the app even if the index file commit fails
+							}
 						}
 
-						output = pixelReturn[1].output;
-						operationType = pixelReturn[1].operationType;
+						// save the new app ID to .env file(s)
+						const envContent = `\nAPP=${context.APP}\n`;
 
-						if (operationType.indexOf("ERROR") > -1) {
-							this.error(
-								`Error committing index.html file: ${String(output)}`,
-							); // log the error but don't throw, we still want to save the app even if the index file commit fails
-						}
-					}
-
-					// save the new app ID to .env file(s)
-					const envContent = `\nAPP=${context.APP}\n`;
-
-					// if custom env flag was provided, write only to that file
-					if (flags.env) {
-						fs.appendFileSync(envPath, envContent);
-					} else {
-						// otherwise, write to whichever file(s) exist
-						const envExists = fs.existsSync(envPath);
-						const envLocalExists = fs.existsSync(envLocalPath);
-
-						if (envLocalExists) {
-							// prefer .env.local if it exists (it overrides .env)
-							fs.appendFileSync(envLocalPath, envContent);
-						} else if (envExists) {
-							// fallback to .env
+						// if custom env flag was provided, write only to that file
+						if (flags.env) {
 							fs.appendFileSync(envPath, envContent);
 						} else {
-							// if neither exists, create .env.local (won't be committed)
-							fs.appendFileSync(envLocalPath, envContent);
+							// otherwise, write to whichever file(s) exist
+							const envExists = fs.existsSync(envPath);
+							const envLocalExists = fs.existsSync(envLocalPath);
+
+							if (envLocalExists) {
+								// prefer .env.local if it exists (it overrides .env)
+								fs.appendFileSync(envLocalPath, envContent);
+							} else if (envExists) {
+								// fallback to .env
+								fs.appendFileSync(envPath, envContent);
+							} else {
+								// if neither exists, create .env.local (won't be committed)
+								fs.appendFileSync(envLocalPath, envContent);
+							}
 						}
-					}
 
-					// also save to config file
-					let content: Config = {
-						app: "",
-						name: "",
-						targets: [],
-						ignore: [
-							"node_modules/**",
-							"**/.git/**",
-							"**/*.local",
-							"*.local",
-							".semoss-backups/**",
-							".semoss-deployments",
-							"smss.json",
-						],
-						deploy: {
-							batch: {},
-						},
-					};
-
-					if (configOptions) {
-						content = {
-							...content,
-							...configOptions,
-							// Merge deploy config if it exists
+						// also save to config file
+						let content: Config = {
+							app: "",
+							name: "",
+							targets: [],
+							ignore: [
+								"node_modules/**",
+								"**/.git/**",
+								"**/*.local",
+								"*.local",
+								".semoss-backups/**",
+								".semoss-deployments",
+								"smss.json",
+							],
 							deploy: {
-								batch: {
-									...(configOptions.deploy?.batch || {}),
-									// Preserve any existing batch configs
-									...(content.deploy.batch || {}),
-								},
+								batch: {},
 							},
 						};
 
-						// write it
-						fs.writeFileSync(
-							configPath,
-							JSON.stringify(content, null, 4),
-						);
+						if (configOptions) {
+							content = {
+								...content,
+								...configOptions,
+								// Merge deploy config if it exists
+								deploy: {
+									batch: {
+										...(configOptions.deploy?.batch || {}),
+										// Preserve any existing batch configs
+										...(content.deploy.batch || {}),
+									},
+								},
+							};
 
-						return true;
-					}
+							// write it
+							fs.writeFileSync(
+								configPath,
+								JSON.stringify(content, null, 4),
+							);
+
+							return true;
+						}
+					},
 				},
-			},
-		]);
+			]);
 
-		tasks
-			.run()
-			.then((context) => {
-				if (!context.APP) {
-					throw new Error("Id Missing");
-				}
+			tasks
+				.run()
+				.then((context) => {
+					if (!context.APP) {
+						throw new Error("Id Missing");
+					}
 
-				this.log("Success");
-				this.log(`ID: ${context.APP}`);
-			})
-			.catch((err) => {
-				// log the error
-				this.error(err);
-			});
+					logger.debug(`Project created with ID: ${context.APP}`);
+					this.log("Success");
+					this.log(`ID: ${context.APP}`);
+				})
+				.catch((err) => {
+					logger.error(
+						`Init failed: ${err instanceof Error ? err.message : String(err)}`,
+					);
+					// log the error
+					this.error(err);
+				})
+				.finally(() => logger.close());
+		} finally {
+			// Logger.close() is also called in the .finally() above for the
+			// Listr chain, but calling it twice is safe (idempotent).
+			await logger.close();
+		}
 	}
 }

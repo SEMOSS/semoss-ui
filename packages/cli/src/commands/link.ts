@@ -10,6 +10,7 @@ import {
 	loadCredentials,
 	saveCredentials,
 } from "../utils/config.js";
+import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Link extends Command {
 	static description = "Link the current directory to a SEMOSS app";
@@ -56,97 +57,114 @@ export default class Link extends Command {
 	public async run(): Promise<void> {
 		const { args, flags } = await this.parse(Link);
 
-		const instanceName = getCurrentInstanceName();
-		const instance = getCurrentInstance();
+		const logger = new Logger({
+			command: "link",
+			console: this.log.bind(this),
+		});
+		setDefaultLogger(logger);
 
-		if (!instanceName || !instance) {
-			this.error(
-				chalk.red("\n✗ No active instance found.\n") +
-					chalk.dim(
-						`Use ${chalk.cyan("@semoss/cli connect")} to add an instance first.`,
-					),
+		try {
+			logger.debug(`Linking app "${args.appId}" in ${process.cwd()}`);
+
+			const instanceName = getCurrentInstanceName();
+			const instance = getCurrentInstance();
+
+			if (!instanceName || !instance) {
+				logger.error("No active instance found");
+				this.error(
+					chalk.red("\n✗ No active instance found.\n") +
+						chalk.dim(
+							`Use ${chalk.cyan("@semoss/cli connect")} to add an instance first.`,
+						),
+				);
+			}
+
+			// Check if smss.json already exists
+			const smssPath = path.join(process.cwd(), "smss.json");
+			if (fs.existsSync(smssPath) && !flags.force) {
+				this.error(
+					chalk.red("\n✗ This directory is already linked.\n") +
+						chalk.dim(
+							`Use ${chalk.cyan("--force")} flag to overwrite.`,
+						),
+				);
+			}
+
+			// Use provided name or app ID
+			const appName = flags.name || args.appId;
+
+			// Parse deployment settings
+			const targets = flags.targets
+				? flags.targets.split(",").map((t) => t.trim())
+				: undefined;
+			const ignore = flags.ignore
+				? flags.ignore.split(",").map((p) => p.trim())
+				: undefined;
+			const preDeploy = flags["pre-deploy"]
+				? flags["pre-deploy"].split(",").map((c) => c.trim())
+				: undefined;
+			const postDeploy = flags["post-deploy"]
+				? flags["post-deploy"].split(",").map((c) => c.trim())
+				: undefined;
+
+			// Create the project config
+			const _projectConfig: Config = {
+				...DEFAULT_CONFIG,
+				app: args.appId,
+				name: appName,
+			};
+
+			// Write smss.json (commented: may be useful for backward compat)
+			// fs.writeFileSync(smssPath, JSON.stringify(projectConfig, null, 4));
+
+			// Update instance's app registry with deployment settings
+			const credentials = loadCredentials();
+			if (!credentials.instances[instanceName].apps) {
+				credentials.instances[instanceName].apps = {};
+			}
+
+			// biome-ignore lint/style/noNonNullAssertion: Apps object is initialized above
+			credentials.instances[instanceName].apps![appName] = {
+				appId: args.appId,
+				name: appName,
+				path: process.cwd(),
+				...(targets && { targets }),
+				...(ignore && { ignore }),
+				...((preDeploy || postDeploy) && {
+					hooks: {
+						...(preDeploy && { preDeploy }),
+						...(postDeploy && { postDeploy }),
+					},
+				}),
+			};
+
+			saveCredentials(credentials);
+
+			logger.debug(
+				`Linked app "${appName}" (${args.appId}) to instance "${instanceName}"`,
 			);
-		}
 
-		// Check if smss.json already exists
-		const smssPath = path.join(process.cwd(), "smss.json");
-		if (fs.existsSync(smssPath) && !flags.force) {
-			this.error(
-				chalk.red("\n✗ This directory is already linked.\n") +
-					chalk.dim(
-						`Use ${chalk.cyan("--force")} flag to overwrite.`,
-					),
+			this.log(chalk.green.bold("\n✓ Directory linked successfully!\n"));
+			this.log(chalk.dim(`App ID: ${args.appId}`));
+			this.log(chalk.dim(`App Name: ${appName}`));
+			this.log(chalk.dim(`Instance: ${instanceName}`));
+			this.log(chalk.dim(`Directory: ${process.cwd()}`));
+			if (targets) {
+				this.log(chalk.dim(`Targets: ${targets.join(", ")}`));
+			}
+			if (ignore) {
+				this.log(chalk.dim(`Ignore: ${ignore.join(", ")}`));
+			}
+			if (preDeploy || postDeploy) {
+				this.log(chalk.dim("Hooks configured"));
+			}
+			this.log(
+				chalk.dim(
+					`\n💡 Use ${chalk.cyan("@semoss/cli deploy")} to deploy this app`,
+				),
 			);
+		} finally {
+			await logger.close();
 		}
-
-		// Use provided name or app ID
-		const appName = flags.name || args.appId;
-
-		// Parse deployment settings
-		const targets = flags.targets
-			? flags.targets.split(",").map((t) => t.trim())
-			: undefined;
-		const ignore = flags.ignore
-			? flags.ignore.split(",").map((p) => p.trim())
-			: undefined;
-		const preDeploy = flags["pre-deploy"]
-			? flags["pre-deploy"].split(",").map((c) => c.trim())
-			: undefined;
-		const postDeploy = flags["post-deploy"]
-			? flags["post-deploy"].split(",").map((c) => c.trim())
-			: undefined;
-
-		// Create the project config
-		const _projectConfig: Config = {
-			...DEFAULT_CONFIG,
-			app: args.appId,
-			name: appName,
-		};
-
-		// Write smss.json (commented: may be useful for backward compat)
-		// fs.writeFileSync(smssPath, JSON.stringify(projectConfig, null, 4));
-
-		// Update instance's app registry with deployment settings
-		const credentials = loadCredentials();
-		if (!credentials.instances[instanceName].apps) {
-			credentials.instances[instanceName].apps = {};
-		}
-
-		// biome-ignore lint/style/noNonNullAssertion: Apps object is initialized above
-		credentials.instances[instanceName].apps![appName] = {
-			appId: args.appId,
-			name: appName,
-			path: process.cwd(),
-			...(targets && { targets }),
-			...(ignore && { ignore }),
-			...((preDeploy || postDeploy) && {
-				hooks: {
-					...(preDeploy && { preDeploy }),
-					...(postDeploy && { postDeploy }),
-				},
-			}),
-		};
-
-		saveCredentials(credentials);
-
-		this.log(chalk.green.bold("\n✓ Directory linked successfully!\n"));
-		this.log(chalk.dim(`App ID: ${args.appId}`));
-		this.log(chalk.dim(`App Name: ${appName}`));
-		this.log(chalk.dim(`Instance: ${instanceName}`));
-		this.log(chalk.dim(`Directory: ${process.cwd()}`));
-		if (targets) {
-			this.log(chalk.dim(`Targets: ${targets.join(", ")}`));
-		}
-		if (ignore) {
-			this.log(chalk.dim(`Ignore: ${ignore.join(", ")}`));
-		}
-		if (preDeploy || postDeploy) {
-			this.log(chalk.dim("Hooks configured"));
-		}
-		this.log(
-			chalk.dim(
-				`\n💡 Use ${chalk.cyan("@semoss/cli deploy")} to deploy this app`,
-			),
-		);
 	}
 }

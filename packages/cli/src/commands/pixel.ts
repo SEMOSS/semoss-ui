@@ -2,6 +2,7 @@ import { Args, Command } from "@oclif/core";
 import chalk from "chalk";
 import { Env, Insight } from "@semoss/sdk";
 import { getCurrentContext } from "../utils/config.js";
+import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Pixel extends Command {
 	static description = "Execute a Pixel command from the CLI";
@@ -22,81 +23,104 @@ export default class Pixel extends Command {
 	async run(): Promise<void> {
 		const { args } = await this.parse(Pixel);
 
-		// Get current context
-		const { instance, instanceName, app } = getCurrentContext();
-
-		if (!instance) {
-			this.error(
-				chalk.red("✗ No instance connected") +
-					"\n\n" +
-					chalk.yellow("Run: ") +
-					chalk.cyan("semoss connect") +
-					chalk.yellow(" to add an instance"),
-				{ exit: 1 },
-			);
-		}
-
-		// Show context
-		this.log(chalk.dim("Instance: ") + chalk.cyan(instanceName));
-		if (app) {
-			this.log(chalk.dim("App: ") + chalk.cyan(app.name));
-		}
-		this.log(chalk.dim("Command: ") + chalk.yellow(args.command));
-		this.log("");
+		const logger = new Logger({
+			command: "pixel",
+			console: this.log.bind(this),
+		});
+		setDefaultLogger(logger);
 
 		try {
-			// Update environment
-			Env.update({
-				MODULE: instance.module,
-				ACCESS_KEY: instance.accessKey,
-				SECRET_KEY: instance.secretKey,
-			});
+			// Get current context
+			const { instance, instanceName, app } = getCurrentContext();
+			logger.debug(`Executing pixel command: ${args.command}`);
 
-			// Initialize insight
-			this.log(chalk.dim("Connecting..."));
-			const insight = new Insight();
-			await insight.initialize({ python: false });
-
-			if (insight.error) {
-				throw new Error(
-					`Connection failed: ${insight.error.message || String(insight.error)}`,
+			if (!instance) {
+				logger.error("No instance connected");
+				this.error(
+					chalk.red("✗ No instance connected") +
+						"\n\n" +
+						chalk.yellow("Run: ") +
+						chalk.cyan("semoss connect") +
+						chalk.yellow(" to add an instance"),
+					{ exit: 1 },
 				);
 			}
 
-			if (!insight.isAuthorized) {
-				throw new Error(
-					"Authentication failed. Check your credentials.",
+			// Show context
+			this.log(chalk.dim("Instance: ") + chalk.cyan(instanceName));
+			if (app) {
+				this.log(chalk.dim("App: ") + chalk.cyan(app.name));
+			}
+			this.log(chalk.dim("Command: ") + chalk.yellow(args.command));
+			this.log("");
+
+			try {
+				logger.debug("Initializing Insight for pixel execution");
+
+				// Update environment
+				Env.update({
+					MODULE: instance.module,
+					ACCESS_KEY: instance.accessKey,
+					SECRET_KEY: instance.secretKey,
+				});
+
+				// Initialize insight
+				this.log(chalk.dim("Connecting..."));
+				const insight = new Insight();
+				await insight.initialize({ python: false });
+
+				if (insight.error) {
+					throw new Error(
+						`Connection failed: ${insight.error.message || String(insight.error)}`,
+					);
+				}
+
+				if (!insight.isAuthorized) {
+					throw new Error(
+						"Authentication failed. Check your credentials.",
+					);
+				}
+
+				if (!insight.isReady) {
+					throw new Error(
+						"Server connection failed. Is the SEMOSS server running?",
+					);
+				}
+
+				// Execute command
+				this.log(chalk.dim("Executing..."));
+				const { pixelReturn } = await insight.actions.run(args.command);
+
+				logger.debug("Pixel command executed successfully");
+				logger.fileOnly(
+					"debug",
+					`Pixel result: ${JSON.stringify(pixelReturn)}`,
 				);
-			}
 
-			if (!insight.isReady) {
-				throw new Error(
-					"Server connection failed. Is the SEMOSS server running?",
+				this.log("");
+				this.log(chalk.green("✓ Success"));
+				this.log("");
+
+				// Format output
+				if (pixelReturn && pixelReturn.length > 0) {
+					const output = pixelReturn[0].output;
+					this.log(chalk.bold("Output:"));
+					this.log(this.formatOutput(output));
+				} else {
+					this.log(chalk.yellow("No output returned"));
+				}
+			} catch (error) {
+				this.log("");
+				this.log(chalk.red("✗ Pixel command failed"));
+				this.log("");
+				logger.error(
+					`Pixel command failed: ${error instanceof Error ? error.message : String(error)}`,
 				);
+				this.log(this.formatErrorMessage(error));
+				this.exit(1);
 			}
-
-			// Execute command
-			this.log(chalk.dim("Executing..."));
-			const { pixelReturn } = await insight.actions.run(args.command);
-
-			this.log("");
-			this.log(chalk.green("✓ Success"));
-			this.log("");
-
-			// Format output
-			if (pixelReturn && pixelReturn.length > 0) {
-				const output = pixelReturn[0].output;
-				this.log(chalk.bold("Output:"));
-				this.log(this.formatOutput(output));
-			} else {
-				this.log(chalk.yellow("No output returned"));
-			}
-		} catch (error) {
-			this.log("");
-			this.log(chalk.red("✗ Pixel command failed"));
-			this.log("");
-			this.log(this.formatErrorMessage(error));
-			this.exit(1);
+		} finally {
+			await logger.close();
 		}
 	}
 

@@ -5,6 +5,7 @@ import * as path from "node:path";
 import { Env, Insight } from "@semoss/sdk";
 import type { Config } from "../types.js";
 import { initializeAndTestInsight } from "../utils/index.js";
+import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -110,38 +111,56 @@ Output status as JSON for scripting
 	public async run(): Promise<void> {
 		const { flags } = await this.parse(Status);
 
-		const envSource = this.loadEnv(flags.env);
+		const logger = new Logger({
+			command: "status",
+			console: this.log.bind(this),
+		});
+		setDefaultLogger(logger);
 
-		const configPath = flags.config ?? "smss.json";
-		const { config: smssConfig, status: configStatus } =
-			this.loadSmssConfig(configPath);
-
-		const project = this.getProjectInfo(
-			smssConfig,
-			configPath,
-			configStatus,
-			envSource,
-		);
-		const deployment = this.getDeploymentInfo();
-		const backups = this.getBackupInfo();
-		const server = flags.check ? await this.getServerInfo() : undefined;
-
-		if (flags.json) {
-			this.log(
-				JSON.stringify(
-					{ project, deployment, backups, server },
-					null,
-					2,
-				),
+		try {
+			logger.debug(
+				`Status check (check: ${flags.check}, json: ${flags.json})`,
 			);
-			return;
-		}
 
-		this.printProject(project);
-		this.printDeployment(deployment);
-		this.printBackups(backups);
-		if (server) {
-			this.printServer(server);
+			const envSource = this.loadEnv(flags.env);
+
+			const configPath = flags.config ?? "smss.json";
+			const { config: smssConfig, status: configStatus } =
+				this.loadSmssConfig(configPath);
+
+			const project = this.getProjectInfo(
+				smssConfig,
+				configPath,
+				configStatus,
+				envSource,
+			);
+			const deployment = this.getDeploymentInfo();
+			const backups = this.getBackupInfo();
+			const server = flags.check ? await this.getServerInfo() : undefined;
+
+			logger.debug(
+				`Status gathered (config: ${configStatus}, deployments: ${deployment.total}, backups: ${backups.count}${server ? `, server: ${server.reachable ? "reachable" : "unreachable"}` : ""})`,
+			);
+
+			if (flags.json) {
+				this.log(
+					JSON.stringify(
+						{ project, deployment, backups, server },
+						null,
+						2,
+					),
+				);
+				return;
+			}
+
+			this.printProject(project);
+			this.printDeployment(deployment);
+			this.printBackups(backups);
+			if (server) {
+				this.printServer(server);
+			}
+		} finally {
+			await logger.close();
 		}
 	}
 

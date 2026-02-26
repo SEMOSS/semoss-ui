@@ -5,6 +5,7 @@ import * as fs from "node:fs";
 import path from "node:path";
 import { Env, Insight } from "@semoss/sdk";
 import { getBatchConfig, initializeAndTestInsight } from "../utils/index.js";
+import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Publish extends Command {
 	static description =
@@ -29,131 +30,155 @@ export default class Publish extends Command {
 	async run(): Promise<void> {
 		const { flags } = await this.parse(Publish);
 
-		// Batch support
-		if (flags.batch) {
-			try {
-				const { batchNames, batchConfig } = await getBatchConfig({
-					configPath: flags.config || "smss.json",
-					batchInput: flags.batch || "all",
-				});
-
-				this.log(
-					`\n🔄 Running batch publish for: ${batchNames.join(", ")}\n`,
-				);
-
-				const successful: { name: string; duration: number }[] = [];
-				const failed: { name: string; error: string }[] = [];
-
-				for (const batchName of batchNames) {
-					const batchStartTime = Date.now();
-					const batchSettings = batchConfig[batchName];
-					if (
-						typeof batchSettings !== "object" ||
-						batchSettings === null
-					) {
-						const errorMsg = `❌ Batch "${batchName}" must be an object with instance configuration`;
-						this.log(errorMsg);
-						failed.push({ name: batchName, error: errorMsg });
-						continue;
-					}
-					this.log(
-						`\n📦 Publishing to batch instance: "${batchName}" [${new Date(batchStartTime).toISOString()}]`,
-					);
-					this.log(
-						`   Endpoint: ${batchSettings.endpoint || "from .env"}`,
-					);
-					this.log(
-						`   Module: ${batchSettings.module || "from .env"}`,
-					);
-
-					try {
-						await this.publishToInstance({
-							endpoint: batchSettings.endpoint as
-								| string
-								| undefined,
-							module: batchSettings.module as string | undefined,
-							accessKey: batchSettings.accessKey as
-								| string
-								| undefined,
-							secretKey: batchSettings.secretKey as
-								| string
-								| undefined,
-							app: batchSettings.app as string | undefined,
-						});
-						const batchEndTime = Date.now();
-						const duration = batchEndTime - batchStartTime;
-						this.log(
-							`   ✅ Successfully published to "${batchName}" [completed in ${duration}ms]`,
-						);
-						successful.push({ name: batchName, duration });
-					} catch (publishError) {
-						const batchEndTime = Date.now();
-						const duration = batchEndTime - batchStartTime;
-						const errorMsg =
-							publishError instanceof Error
-								? publishError.message
-								: String(publishError);
-						this.log(
-							`   ❌ Publish failed for "${batchName}" [completed in ${duration}ms]: ${errorMsg}`,
-						);
-						failed.push({ name: batchName, error: errorMsg });
-					}
-				}
-
-				this.log(`\n${"=".repeat(60)}`);
-				this.log("📋 Batch Publish Summary");
-				this.log("=".repeat(60));
-				this.log(
-					`✅ Successful: ${successful.length}/${batchNames.length}`,
-				);
-				if (successful.length > 0) {
-					for (const { name, duration } of successful) {
-						this.log(`   • "${name}" (${duration}ms)`);
-					}
-				}
-				if (failed.length > 0) {
-					this.log(
-						`❌ Failed: ${failed.length}/${batchNames.length}`,
-					);
-					for (const { name, error } of failed) {
-						this.log(`   • "${name}": ${error}`);
-					}
-				}
-				this.log(`${"=".repeat(60)}\n`);
-
-				if (failed.length > 0) {
-					throw new Error(
-						`${failed.length} publish instance(s) failed`,
-					);
-				}
-				return;
-			} catch (err) {
-				this.error(err instanceof Error ? err.message : String(err));
-			}
-		}
-
-		// Load environment variables from .env and .env.local
-		// If --env is provided, use only that file
-		// Otherwise, load .env first, then .env.local (which overrides .env values)
-		const envPath = path.resolve(process.cwd(), ".env");
-		const envLocalPath = path.resolve(process.cwd(), ".env.local");
-		if (flags.env) {
-			config({ path: flags.env });
-		} else {
-			config({ path: envPath });
-			if (fs.existsSync(envLocalPath)) {
-				config({ path: envLocalPath, override: true });
-			}
-		}
-
-		// Normal (non-batch) publish logic
-		await this.publishToInstance({
-			endpoint: process.env.ENDPOINT,
-			module: process.env.MODULE,
-			accessKey: process.env.ACCESS_KEY,
-			secretKey: process.env.SECRET_KEY,
-			app: process.env.APP,
+		const logger = new Logger({
+			command: "publish",
+			console: this.log.bind(this),
 		});
+		setDefaultLogger(logger);
+
+		try {
+			// Batch support
+			if (flags.batch) {
+				try {
+					const { batchNames, batchConfig } = await getBatchConfig({
+						configPath: flags.config || "smss.json",
+						batchInput: flags.batch || "all",
+					});
+
+					this.log(
+						`\n🔄 Running batch publish for: ${batchNames.join(", ")}\n`,
+					);
+					logger.debug(
+						`Batch publish started for: ${batchNames.join(", ")}`,
+					);
+
+					const successful: { name: string; duration: number }[] = [];
+					const failed: { name: string; error: string }[] = [];
+
+					for (const batchName of batchNames) {
+						const batchStartTime = Date.now();
+						const batchSettings = batchConfig[batchName];
+						if (
+							typeof batchSettings !== "object" ||
+							batchSettings === null
+						) {
+							const errorMsg = `❌ Batch "${batchName}" must be an object with instance configuration`;
+							this.log(errorMsg);
+							failed.push({ name: batchName, error: errorMsg });
+							continue;
+						}
+						this.log(
+							`\n📦 Publishing to batch instance: "${batchName}" [${new Date(batchStartTime).toISOString()}]`,
+						);
+						this.log(
+							`   Endpoint: ${batchSettings.endpoint || "from .env"}`,
+						);
+						this.log(
+							`   Module: ${batchSettings.module || "from .env"}`,
+						);
+
+						try {
+							await this.publishToInstance({
+								endpoint: batchSettings.endpoint as
+									| string
+									| undefined,
+								module: batchSettings.module as
+									| string
+									| undefined,
+								accessKey: batchSettings.accessKey as
+									| string
+									| undefined,
+								secretKey: batchSettings.secretKey as
+									| string
+									| undefined,
+								app: batchSettings.app as string | undefined,
+							});
+							const batchEndTime = Date.now();
+							const duration = batchEndTime - batchStartTime;
+							logger.debug(
+								`Batch "${batchName}" published in ${duration}ms`,
+							);
+							this.log(
+								`   ✅ Successfully published to "${batchName}" [completed in ${duration}ms]`,
+							);
+							successful.push({ name: batchName, duration });
+						} catch (publishError) {
+							const batchEndTime = Date.now();
+							const duration = batchEndTime - batchStartTime;
+							const errorMsg =
+								publishError instanceof Error
+									? publishError.message
+									: String(publishError);
+							logger.error(
+								`Batch "${batchName}" failed: ${errorMsg}`,
+							);
+							this.log(
+								`   ❌ Publish failed for "${batchName}" [completed in ${duration}ms]: ${errorMsg}`,
+							);
+							failed.push({ name: batchName, error: errorMsg });
+						}
+					}
+
+					this.log(`\n${"=".repeat(60)}`);
+					this.log("📋 Batch Publish Summary");
+					this.log("=".repeat(60));
+					this.log(
+						`✅ Successful: ${successful.length}/${batchNames.length}`,
+					);
+					if (successful.length > 0) {
+						for (const { name, duration } of successful) {
+							this.log(`   • "${name}" (${duration}ms)`);
+						}
+					}
+					if (failed.length > 0) {
+						this.log(
+							`❌ Failed: ${failed.length}/${batchNames.length}`,
+						);
+						for (const { name, error } of failed) {
+							this.log(`   • "${name}": ${error}`);
+						}
+					}
+					this.log(`${"=".repeat(60)}\n`);
+
+					if (failed.length > 0) {
+						throw new Error(
+							`${failed.length} publish instance(s) failed`,
+						);
+					}
+					return;
+				} catch (err) {
+					this.error(
+						err instanceof Error ? err.message : String(err),
+					);
+				}
+			}
+
+			// Load environment variables from .env and .env.local
+			// If --env is provided, use only that file
+			// Otherwise, load .env first, then .env.local (which overrides .env values)
+			const envPath = path.resolve(process.cwd(), ".env");
+			const envLocalPath = path.resolve(process.cwd(), ".env.local");
+			if (flags.env) {
+				config({ path: flags.env });
+			} else {
+				config({ path: envPath });
+				if (fs.existsSync(envLocalPath)) {
+					config({ path: envLocalPath, override: true });
+				}
+			}
+
+			// Normal (non-batch) publish logic
+			logger.debug(`Publishing to ${process.env.ENDPOINT ?? "(env)"}`);
+			await this.publishToInstance({
+				endpoint: process.env.ENDPOINT,
+				module: process.env.MODULE,
+				accessKey: process.env.ACCESS_KEY,
+				secretKey: process.env.SECRET_KEY,
+				app: process.env.APP,
+			});
+		} finally {
+			await logger.close();
+		}
 	}
 
 	// Helper to publish to a single instance with explicit config values
@@ -210,11 +235,8 @@ export default class Publish extends Command {
 				title: "Initializing and Testing Insight",
 				task: async (ctx) => {
 					try {
-						ctx.reactorResult = await initializeAndTestInsight(
-							insight,
-							this.log.bind(this),
-							false, // verbose flags not supported in batch helper for now
-						);
+						ctx.reactorResult =
+							await initializeAndTestInsight(insight);
 					} catch (err) {
 						this.error(
 							err instanceof Error ? err.message : String(err),

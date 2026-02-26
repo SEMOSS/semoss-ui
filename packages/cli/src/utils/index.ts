@@ -17,4 +17,4 @@ export {
 } from "./config.js";
 export * from "./gitignore.js";
 export * from "./insightHelpers.js";
-export * from "./logHelpers.js";
+export * from "./logger.js";

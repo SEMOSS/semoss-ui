@@ -4,6 +4,7 @@ import open, { type AppName } from "open";
 import fs from "node:fs";
 import path from "node:path";
 import { getBatchConfig } from "../utils/index.js";
+import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Open extends Command {
 	static description =
@@ -32,79 +33,93 @@ export default class Open extends Command {
 
 	async run(): Promise<void> {
 		const { flags } = await this.parse(Open);
-		// Validate browser flag if provided
-		if (flags.browser) {
-			const allowed: Array<AppName> = [
-				"chrome",
-				"brave",
-				"firefox",
-				"edge",
-				"browser",
-				"browserPrivate",
-			];
-			if (!allowed.includes(flags.browser as AppName)) {
-				this.error(
-					`Invalid browser: '${flags.browser}'. Allowed values: ${allowed.join(", ")}`,
-				);
-			}
-		}
 
-		if (flags.batch) {
-			try {
-				const { batchNames, batchConfig } = await getBatchConfig({
-					configPath: "smss.json",
-					batchInput: flags.batch || "all",
-				});
-				for (const name of batchNames) {
-					const entry = batchConfig[name];
-					if (!entry || !entry.endpoint) {
-						this.log(
-							`Skipping batch '${name}': no endpoint defined.`,
-						);
-						continue;
-					}
-					await this.openApp(
-						entry.endpoint,
-						entry.app,
-						name,
-						flags.browser,
+		const logger = new Logger({
+			command: "open",
+			console: this.log.bind(this),
+		});
+		setDefaultLogger(logger);
+
+		try {
+			// Validate browser flag if provided
+			if (flags.browser) {
+				const allowed: Array<AppName> = [
+					"chrome",
+					"brave",
+					"firefox",
+					"edge",
+					"browser",
+					"browserPrivate",
+				];
+				if (!allowed.includes(flags.browser as AppName)) {
+					this.error(
+						`Invalid browser: '${flags.browser}'. Allowed values: ${allowed.join(", ")}`,
 					);
 				}
-				return;
-			} catch (err) {
-				this.error(err instanceof Error ? err.message : String(err));
 			}
-		}
 
-		// Load environment variables from .env and .env.local
-		// If --env is provided, use only that file
-		// Otherwise, load .env first, then .env.local (which overrides .env values)
-		const envPath = path.resolve(process.cwd(), ".env");
-		const envLocalPath = path.resolve(process.cwd(), ".env.local");
-		if (flags.env) {
-			config({ path: flags.env });
-		} else {
-			config({ path: envPath });
-			if (fs.existsSync(envLocalPath)) {
-				config({ path: envLocalPath, override: true });
+			if (flags.batch) {
+				try {
+					const { batchNames, batchConfig } = await getBatchConfig({
+						configPath: "smss.json",
+						batchInput: flags.batch || "all",
+					});
+					for (const name of batchNames) {
+						const entry = batchConfig[name];
+						if (!entry || !entry.endpoint) {
+							this.log(
+								`Skipping batch '${name}': no endpoint defined.`,
+							);
+							continue;
+						}
+						await this.openApp(
+							entry.endpoint,
+							entry.app,
+							name,
+							flags.browser,
+						);
+					}
+					return;
+				} catch (err) {
+					this.error(
+						err instanceof Error ? err.message : String(err),
+					);
+				}
 			}
-		}
 
-		const endpoint = flags.endpoint || process.env.ENDPOINT;
+			// Load environment variables from .env and .env.local
+			// If --env is provided, use only that file
+			// Otherwise, load .env first, then .env.local (which overrides .env values)
+			const envPath = path.resolve(process.cwd(), ".env");
+			const envLocalPath = path.resolve(process.cwd(), ".env.local");
+			if (flags.env) {
+				config({ path: flags.env });
+			} else {
+				config({ path: envPath });
+				if (fs.existsSync(envLocalPath)) {
+					config({ path: envLocalPath, override: true });
+				}
+			}
 
-		if (!endpoint) {
-			this.error(
-				"No endpoint specified. Use --endpoint flag or set ENDPOINT in your environment.",
+			const endpoint = flags.endpoint || process.env.ENDPOINT;
+
+			if (!endpoint) {
+				this.error(
+					"No endpoint specified. Use --endpoint flag or set ENDPOINT in your environment.",
+				);
+			}
+
+			// Single endpoint mode
+			logger.debug(`Opening endpoint: ${endpoint}`);
+			await this.openApp(
+				endpoint,
+				process.env.APP ?? process.env.VITE_APP,
+				undefined,
+				flags.browser,
 			);
+		} finally {
+			await logger.close();
 		}
-
-		// Single endpoint mode
-		await this.openApp(
-			endpoint,
-			process.env.APP ?? process.env.VITE_APP,
-			undefined,
-			flags.browser,
-		);
 	}
 
 	// Helper to open a browser for a given endpoint and optional app
