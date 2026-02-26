@@ -9,8 +9,8 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ onExit, onHelp, onClear }) => {
 	useInput((input, key) => {
-		// Ctrl+/ for help, Ctrl+L for clear
-		if (key.ctrl && input === "/") {
+		// Ctrl+? for help, Ctrl+L for clear
+		if (key.ctrl && input === "?") {
 			onHelp();
 		} else if (key.ctrl && input === "l") {
 			onClear();
@@ -26,8 +26,8 @@ export const Footer: React.FC<FooterProps> = ({ onExit, onHelp, onClear }) => {
 		{ key: "Shift+↑↓", label: "Scroll" },
 		{ key: "!cmd", label: "Shell" },
 		{ key: ":help", label: "Commands" },
-		{ key: "Ctrl+L", label: "Clear" },
-		{ key: "Ctrl+C", label: "Exit" },
+		{ key: ":clear", label: "Clear" },
+		{ key: "Esc", label: "Exit" },
 	];
 
 	return (

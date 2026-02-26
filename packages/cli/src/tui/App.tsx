@@ -1,7 +1,7 @@
 import { Box, useApp, useInput, useStdout } from "ink";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { spawn } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import type { InstanceConfig } from "../types.js";
 import {
 	loadCredentials,
@@ -34,10 +34,27 @@ export const App: React.FC = () => {
 	const [connected, setConnected] = useState(false);
 	const [user, setUser] = useState<string | undefined>();
 	const [loading, setLoading] = useState(false);
+	const [gitBranch, setGitBranch] = useState<string | undefined>();
+	const [konamiIndex, setKonamiIndex] = useState(0);
+
+	/** Get current git branch if in a git repository */
+	const getGitBranch = (): string | undefined => {
+		try {
+			const branch = execSync("git rev-parse --abbrev-ref HEAD", {
+				encoding: "utf-8",
+				stdio: ["pipe", "pipe", "pipe"],
+			}).trim();
+			return branch || undefined;
+		} catch {
+			// Not a git repo or git not available
+			return undefined;
+		}
+	};
 
 	// Load initial state and clean up the SDK session on unmount.
 	useEffect(() => {
 		loadInitialState();
+		setGitBranch(getGitBranch());
 		return () => {
 			destroySession();
 		};
@@ -322,6 +339,8 @@ export const App: React.FC = () => {
 		} finally {
 			removeLoadingEntries();
 			setLoading(false);
+			// Refresh git branch in case it changed (e.g., git checkout)
+			setGitBranch(getGitBranch());
 		}
 	};
 
@@ -360,7 +379,7 @@ Deploy Examples:
 Keyboard Shortcuts:
   ↑ / ↓              Navigate command history
   Shift+↑ / Shift+↓  Scroll output (also PgUp/PgDn)
-  Ctrl+/              Show this help
+  Ctrl+?              Show this help
   Ctrl+L / :clear     Clear output
   Ctrl+C / Esc        Exit
         `.trim();
@@ -662,10 +681,54 @@ Keyboard Shortcuts:
 		addEntry({ type: "info", content: statusText });
 	};
 
-	// Handle Ctrl+C to exit gracefully
+	// Handle Ctrl+C to exit gracefully and konami code easter egg
+	const KONAMI = [
+		"up",
+		"up",
+		"down",
+		"down",
+		"left",
+		"right",
+		"left",
+		"right",
+		"b",
+		"a",
+	];
 	useInput((input, key) => {
 		if (key.ctrl && input === "c") {
 			exit();
+		}
+
+		// Konami code easter egg
+		let pressed = "";
+		if (key.upArrow) pressed = "up";
+		else if (key.downArrow) pressed = "down";
+		else if (key.leftArrow) pressed = "left";
+		else if (key.rightArrow) pressed = "right";
+		else if (input === "b") pressed = "b";
+		else if (input === "a") pressed = "a";
+
+		if (pressed) {
+			if (pressed === KONAMI[konamiIndex]) {
+				const nextIndex = konamiIndex + 1;
+				if (nextIndex === KONAMI.length) {
+					addEntry({
+						type: "success",
+						content: `
+✨ You found the secret! ✨
+
+Crafted with care by Travon, Stella, and Parth
+`,
+					});
+					setKonamiIndex(0);
+				} else {
+					setKonamiIndex(nextIndex);
+				}
+			} else if (pressed === KONAMI[0]) {
+				setKonamiIndex(1);
+			} else {
+				setKonamiIndex(0);
+			}
 		}
 	});
 
@@ -698,6 +761,7 @@ Keyboard Shortcuts:
 				placeholder={
 					loading ? "Executing..." : "Enter Pixel command or :help"
 				}
+				gitBranch={gitBranch}
 			/>
 			<Footer
 				onExit={exit}

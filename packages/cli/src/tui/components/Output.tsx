@@ -15,6 +15,22 @@ interface OutputProps {
 	height?: number;
 }
 
+// ASCII art welcome screen - defined outside component to prevent re-creation
+const ASCII_LOGO = [
+	"",
+	"   ███████╗███████╗███╗   ███╗ ██████╗ ███████╗███████╗",
+	"   ██╔════╝██╔════╝████╗ ████║██╔═══██╗██╔════╝██╔════╝",
+	"   ███████╗█████╗  ██╔████╔██║██║   ██║███████╗███████╗",
+	"   ╚════██║██╔══╝  ██║╚██╔╝██║██║   ██║╚════██║╚════██║",
+	"   ███████║███████╗██║ ╚═╝ ██║╚██████╔╝███████║███████║",
+	"   ╚══════╝╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚══════╝",
+	"",
+	"Semantic Open Source Software",
+	"",
+	"   Type :help for commands or enter a Pixel query",
+	"",
+] as const;
+
 export const Output: React.FC<OutputProps> = ({ entries, height = 20 }) => {
 	const [scrollOffset, setScrollOffset] = useState(0);
 
@@ -112,6 +128,9 @@ export const Output: React.FC<OutputProps> = ({ entries, height = 20 }) => {
 	const scrollPercentage =
 		maxScroll > 0 ? Math.round((scrollOffset / maxScroll) * 100) : 100;
 
+	// Show welcome screen when there are no entries or just initial welcome messages
+	const showWelcome = entries.length <= 2;
+
 	return (
 		<Box flexDirection="column">
 			<Box
@@ -122,7 +141,24 @@ export const Output: React.FC<OutputProps> = ({ entries, height = 20 }) => {
 				paddingY={0}
 				height={height}
 			>
-				{visibleLines.length > 0 ? (
+				{showWelcome ? (
+					<Box
+						flexDirection="column"
+						alignItems="center"
+						justifyContent="center"
+						height={height - 2}
+					>
+						{ASCII_LOGO.map((line, index) => (
+							<Text
+								key={line}
+								color={index >= 8 ? "gray" : "cyan"}
+								dimColor={index >= 8}
+							>
+								{line}
+							</Text>
+						))}
+					</Box>
+				) : visibleLines.length > 0 ? (
 					visibleLines.map((line, index) => renderLine(line, index))
 				) : (
 					<Text dimColor>

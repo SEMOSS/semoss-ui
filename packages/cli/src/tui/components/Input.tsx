@@ -9,6 +9,7 @@ interface InputProps {
 	disabled?: boolean;
 	onHistoryUp?: () => string | null;
 	onHistoryDown?: () => string | null;
+	gitBranch?: string | undefined;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -17,6 +18,7 @@ export const Input: React.FC<InputProps> = ({
 	disabled = false,
 	onHistoryUp,
 	onHistoryDown,
+	gitBranch,
 }) => {
 	const [value, setValue] = useState("");
 
@@ -54,21 +56,27 @@ export const Input: React.FC<InputProps> = ({
 
 	return (
 		<Box
-			flexDirection="row"
+			flexDirection="column"
 			borderStyle="single"
 			borderColor={disabled ? "gray" : "cyan"}
 			paddingX={1}
 		>
-			<Text color={disabled ? "gray" : "cyan"} bold>
-				{process.cwd()} ›{" "}
+			<Text>
+				<Text color={disabled ? "gray" : "cyan"} bold>
+					{process.cwd()}
+				</Text>
+				{gitBranch && <Text color="green"> ({gitBranch})</Text>}
 			</Text>
-			<TextInput
-				value={value}
-				onChange={handleChange}
-				onSubmit={handleSubmit}
-				placeholder={disabled ? "Executing..." : placeholder}
-				showCursor
-			/>
+			<Box flexDirection="row">
+				<Text>› </Text>
+				<TextInput
+					value={value}
+					onChange={handleChange}
+					onSubmit={handleSubmit}
+					placeholder={disabled ? "Executing..." : placeholder}
+					showCursor
+				/>
+			</Box>
 		</Box>
 	);
 };
