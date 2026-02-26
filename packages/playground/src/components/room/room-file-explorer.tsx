@@ -86,32 +86,27 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 										}
 									},
 								},
-								item.type !== "directory"
-									? {
-											name: t("fileExplorer.download"),
-											action: async (item) => {
-												// save it
-												const { pixelReturn } =
-													await insight.actions.run<
-														[string]
-													>(
-														`DownloadInsightAsset(filePath=["${item.path}"]);`,
-													);
+								{
+									name: t("fileExplorer.download"),
+									action: async (item) => {
+										// save it
+										const { pixelReturn } =
+											await insight.actions.run<[string]>(
+												`DownloadInsightAsset(filePath=["${item.path}"]);`,
+											);
 
-												// get the file key
-												const fileKey =
-													pixelReturn[0].output;
+										// get the file key
+										const fileKey = pixelReturn[0].output;
 
-												// download the file
-												await download(
-													insight.insightId,
-													fileKey,
-												);
+										// download the file
+										await download(
+											insight.insightId,
+											fileKey,
+										);
 
-												refresh();
-											},
-										}
-									: null,
+										refresh();
+									},
+								},
 								{
 									name: t("fileExplorer.delete"),
 									action: async (item) => {
