@@ -144,7 +144,7 @@ export const RoomPage = observer(() => {
 
 	return (
 		<InsightProvider
-			key={roomId}
+			key={room.roomId}
 			options={{ insightId: room.insightId }}
 			destroyOnUnmount={false}
 		>
