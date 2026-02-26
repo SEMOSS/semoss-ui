@@ -208,6 +208,11 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 				<Markdown
 					components={components}
 					className="[&>*:first-child]:mt-0"
+					urlTransform={(url) => {
+						if (url.startsWith("room://")) return url;
+						if (/^(https?:|mailto:|#)/.test(url)) return url;
+						return "";
+					}}
 				>
 					{typewriter.isTyping ? typewriter.rendered : part.text}
 				</Markdown>
