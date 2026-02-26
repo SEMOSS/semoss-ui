@@ -44,6 +44,7 @@ import {
 	type modelledDependency,
 } from "@/components/app";
 import { UpdateSMSS } from "@/components/settings";
+import { McpUsage } from "@/components/shared/mcp-usage";
 import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
@@ -559,9 +560,16 @@ export const AppDetailPage = observer(() => {
 			"Dependencies",
 			"Settings",
 			"SMSS",
+			"MCP Usage",
 		],
-		editor: ["Overview", "Files", "Access Control", "Dependencies"],
-		readOnly: ["Overview", "Files", "Dependencies"],
+		editor: [
+			"Overview",
+			"Files",
+			"Access Control",
+			"Dependencies",
+			"MCP Usage",
+		],
+		readOnly: ["Overview", "Dependencies", "MCP Usage"],
 		discoverable: ["Overview"],
 	};
 
@@ -779,6 +787,12 @@ export const AppDetailPage = observer(() => {
 											value="SMSS"
 										/>
 									)}
+									{visibleTabs.includes("MCP Usage") && (
+										<StyledToggleTabsGroupItem
+											label="MCP Usage"
+											value="MCP Usage"
+										/>
+									)}
 								</StyledToggleTabsGroup>
 							</StyledContentContainer>
 							<StyledTabsSection>
@@ -855,6 +869,15 @@ export const AppDetailPage = observer(() => {
 											type={"PROJECT"}
 											id={appId}
 										/>
+									</SettingsContext.Provider>
+								)}
+								{selectedTab === "MCP Usage" && (
+									<SettingsContext.Provider
+										value={{
+											adminMode: false,
+										}}
+									>
+										<McpUsage id={appId} />
 									</SettingsContext.Provider>
 								)}
 							</StyledTabsSection>
