@@ -282,7 +282,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		// }
 
 		// Fallback to original message or default
-		return "Unable to process request. Please check your connection, copy your message, and refresh.";
+		return t("content.errorDefault");
     };
 
 	return (
