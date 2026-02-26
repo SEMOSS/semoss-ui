@@ -13,7 +13,12 @@ import { Header } from "./components/Header.js";
 import { Input } from "./components/Input.js";
 import { Output, type OutputEntry } from "./components/Output.js";
 import { useCommandHistory } from "./hooks/useCommandHistory.js";
-import { executePixelCommand, formatOutput } from "./utils/pixel.js";
+import {
+	createSession,
+	destroySession,
+	executePixelCommand,
+	formatOutput,
+} from "./utils/pixel.js";
 
 export const App: React.FC = () => {
 	const { exit } = useApp();
@@ -27,32 +32,51 @@ export const App: React.FC = () => {
 		name?: string;
 	}>();
 	const [connected, setConnected] = useState(false);
-	const [user, _setUser] = useState<string | undefined>();
+	const [user, setUser] = useState<string | undefined>();
 	const [loading, setLoading] = useState(false);
 
-	// Load initial state
+	// Load initial state and clean up the SDK session on unmount.
 	useEffect(() => {
 		loadInitialState();
+		return () => {
+			destroySession();
+		};
 	}, []);
 
 	const loadInitialState = async () => {
 		try {
-			const _config = loadGlobalConfig();
 			const credentials = loadCredentials();
-
 			const currentName = credentials.currentInstance;
 
 			if (currentName && credentials.instances[currentName]) {
 				const current = credentials.instances[currentName];
 				setInstanceName(currentName);
 				setInstance(current);
-				setConnected(true);
+
+				// Create a reusable SDK session and fetch user info
+				const session = await createSession({
+					module: current.module,
+					accessKey: current.accessKey,
+					secretKey: current.secretKey,
+				});
+
+				if (session.success) {
+					setConnected(true);
+					if (session.user) {
+						setUser(session.user.name ?? session.user.id);
+					}
+				} else {
+					addEntry({
+						type: "error",
+						content: `Connection failed: ${session.error}`,
+					});
+				}
 
 				// Check if there's a linked app
 				if (current.apps) {
 					const apps = Object.values(current.apps);
 					if (apps.length > 0) {
-						const app = apps[0]; // Get first app for now
+						const app = apps[0];
 						setCurrentApp({ id: app.appId, name: app.name });
 					}
 				}
@@ -85,6 +109,11 @@ export const App: React.FC = () => {
 				timestamp: new Date(),
 			},
 		]);
+	};
+
+	/** Remove spinner entries once a command finishes. */
+	const removeLoadingEntries = (): void => {
+		setEntries((prev) => prev.filter((e) => e.type !== "loading"));
 	};
 
 	const handleCommand = async (command: string) => {
@@ -178,7 +207,7 @@ export const App: React.FC = () => {
 	};
 
 	const handlePixelCommand = async (command: string) => {
-		if (!connected || !instance) {
+		if (!connected) {
 			addEntry({
 				type: "error",
 				content:
@@ -194,11 +223,7 @@ export const App: React.FC = () => {
 		});
 
 		try {
-			const result = await executePixelCommand(command, {
-				module: instance.module,
-				accessKey: instance.accessKey,
-				secretKey: instance.secretKey,
-			});
+			const result = await executePixelCommand(command);
 
 			if (result.success) {
 				const formatted = formatOutput(result.output);
@@ -218,6 +243,7 @@ export const App: React.FC = () => {
 				content: `Error: ${error instanceof Error ? error.message : String(error)}`,
 			});
 		} finally {
+			removeLoadingEntries();
 			setLoading(false);
 		}
 	};
@@ -294,6 +320,7 @@ export const App: React.FC = () => {
 				content: `Shell error: ${error instanceof Error ? error.message : String(error)}`,
 			});
 		} finally {
+			removeLoadingEntries();
 			setLoading(false);
 		}
 	};
@@ -321,7 +348,7 @@ File Operations (exit TUI first):
 
 Pixel Commands:
   Enter any Pixel command directly (without colon prefix)
-  Example: MyInfo();
+  Example: GetUserInfo();
   Example: MyProjects();
 
 Deploy Examples:
@@ -329,6 +356,13 @@ Deploy Examples:
   :deploy --dry-run         Preview deployment
   :deploy --target=java     Deploy only java folder
   :deploy --rollback        Rollback to previous version
+
+Keyboard Shortcuts:
+  ↑ / ↓              Navigate command history
+  Shift+↑ / Shift+↓  Scroll output (also PgUp/PgDn)
+  Ctrl+/              Show this help
+  Ctrl+L / :clear     Clear output
+  Ctrl+C / Esc        Exit
         `.trim();
 
 		addEntry({ type: "info", content: helpText });
@@ -348,7 +382,7 @@ Deploy Examples:
 	};
 
 	const handleAppsCommand = async () => {
-		if (!connected || !instance) {
+		if (!connected) {
 			addEntry({
 				type: "error",
 				content: "Not connected to any instance. Cannot list apps.",
@@ -363,11 +397,7 @@ Deploy Examples:
 		});
 
 		try {
-			const result = await executePixelCommand("MyProjects();", {
-				module: instance.module,
-				accessKey: instance.accessKey,
-				secretKey: instance.secretKey,
-			});
+			const result = await executePixelCommand("MyProjects();");
 
 			if (result.success) {
 				const formatted = formatOutput(result.output);
@@ -387,6 +417,7 @@ Deploy Examples:
 				content: `Error: ${error instanceof Error ? error.message : String(error)}`,
 			});
 		} finally {
+			removeLoadingEntries();
 			setLoading(false);
 		}
 	};
@@ -601,6 +632,7 @@ Deploy Examples:
 				content: `Deployment failed: ${error instanceof Error ? error.message : String(error)}`,
 			});
 		} finally {
+			removeLoadingEntries();
 			setLoading(false);
 		}
 	};
@@ -661,6 +693,8 @@ Deploy Examples:
 			<Input
 				onSubmit={handleCommand}
 				disabled={loading}
+				onHistoryUp={commandHistory.navigateUp}
+				onHistoryDown={commandHistory.navigateDown}
 				placeholder={
 					loading ? "Executing..." : "Enter Pixel command or :help"
 				}

@@ -22,11 +22,12 @@ export const Footer: React.FC<FooterProps> = ({ onExit, onHelp, onClear }) => {
 	});
 
 	const shortcuts = [
-		{ key: "↑↓ PgUp/PgDn", label: "Scroll output" },
-		{ key: "!cmd", label: "Run shell command" },
-		{ key: ":help/Ctrl+/", label: "Show Commands" },
-		{ key: ":clear/Ctrl+L", label: "Clear" },
-		{ key: "Ctrl+C/Esc", label: "Exit" },
+		{ key: "↑↓", label: "History" },
+		{ key: "Shift+↑↓", label: "Scroll" },
+		{ key: "!cmd", label: "Shell" },
+		{ key: ":help", label: "Commands" },
+		{ key: "Ctrl+L", label: "Clear" },
+		{ key: "Ctrl+C", label: "Exit" },
 	];
 
 	return (

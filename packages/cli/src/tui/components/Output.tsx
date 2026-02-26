@@ -1,6 +1,7 @@
 import { Box, Text, useInput } from "ink";
 import Spinner from "ink-spinner";
-import React, { useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 
 export interface OutputEntry {
 	id: string;
@@ -34,19 +35,17 @@ export const Output: React.FC<OutputProps> = ({ entries, height = 20 }) => {
 	const maxScroll = Math.max(0, totalLines - height);
 
 	// Auto-scroll to bottom when new content arrives
-	React.useEffect(() => {
+	useEffect(() => {
 		setScrollOffset(maxScroll);
 	}, [maxScroll]);
 
-	// Handle scroll input
+	// Handle scroll input — PgUp/PgDn only.
+	// Up/Down arrows are used for command history in the Input component.
+	// Scroll: PgUp/PgDn or Shift+↑/↓ (for MacBook keyboards without PgUp/PgDn)
 	useInput((_input, key) => {
-		if (key.upArrow) {
-			setScrollOffset((prev) => Math.max(0, prev - 1));
-		} else if (key.downArrow) {
-			setScrollOffset((prev) => Math.min(maxScroll, prev + 1));
-		} else if (key.pageUp) {
+		if (key.pageUp || (key.shift && key.upArrow)) {
 			setScrollOffset((prev) => Math.max(0, prev - height));
-		} else if (key.pageDown) {
+		} else if (key.pageDown || (key.shift && key.downArrow)) {
 			setScrollOffset((prev) => Math.min(maxScroll, prev + height));
 		}
 	});
@@ -97,6 +96,12 @@ export const Output: React.FC<OutputProps> = ({ entries, height = 20 }) => {
 						{line.line}
 					</Text>
 				);
+			case "success":
+				return (
+					<Text key={key} color="green" bold>
+						{line.line}
+					</Text>
+				);
 			default:
 				return <Text key={key}>{line.line}</Text>;
 		}
@@ -127,7 +132,7 @@ export const Output: React.FC<OutputProps> = ({ entries, height = 20 }) => {
 			</Box>
 			{showScrollIndicator && (
 				<Box justifyContent="space-between" paddingX={1}>
-					<Text dimColor>↑↓ PgUp/PgDn to scroll</Text>
+					<Text dimColor>Shift+↑↓ or PgUp/PgDn to scroll</Text>
 					<Text dimColor>
 						{scrollPercentage}% ({scrollOffset + 1}-
 						{Math.min(scrollOffset + height, totalLines)} of{" "}
