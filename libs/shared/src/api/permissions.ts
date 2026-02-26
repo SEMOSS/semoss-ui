@@ -263,25 +263,38 @@ export const denyProjectUserAccessRequest = async (
 	return response.data.success;
 };
 
+type PropagateUserResult = {
+	couldNotAddRequest: string[];
+	accessGranted: string[];
+	requestAlreadyExists: string[];
+	alreadyHaveAccess: string[];
+	newRequestAdded: string[];
+};
+
+export type PropagateResult = {
+	success: boolean;
+	users: Record<string, PropagateUserResult>;
+};
+
 /**
  * Propagate user permissions to project dependencies
  * @param projectId - The project ID
  * @param users - Array of users with their permissions to propagate
  * @param admin - Whether to use admin endpoint
- * @returns Whether the operation was successful
+ * @returns The full propagation result including per-user, per-engine outcomes
  */
 export const propagateUserPermissions = async (
 	projectId: string,
 	users: PostUser[],
 	admin = false,
-): Promise<boolean> => {
+): Promise<PropagateResult> => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
 		url += "admin/";
 	}
 	url += "project/propagateProjectDependencyPermissions";
 
-	const response = await post<{ success: boolean }>(
+	const response = await post<PropagateResult>(
 		url,
 		{
 			projectId,
@@ -290,5 +303,5 @@ export const propagateUserPermissions = async (
 		{},
 	);
 
-	return response.data.success;
+	return response.data;
 };

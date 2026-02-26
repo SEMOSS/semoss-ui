@@ -39,6 +39,7 @@
 		"buttonShareDependencies": "Share Dependencies",
 		"buttonSkip": "Skip",
 		"dependenciesSuccess": "Dependencies shared successfully",
+		"dependenciesSoftFailed": "Could not add permissions. Someone else will need to provision.",
 		"dependenciesFailed": "Could not share all dependencies. You may not have owner or editor access on some of them."
 	},
 	"members": {

@@ -262,15 +262,39 @@ export const WorkspaceSharingModal = ({
 	const handleShareDependencies = async () => {
 		setIsSubmitting(true);
 		try {
-			const propagateOk = await propagateUserPermissions(
+			const result = await propagateUserPermissions(
 				workspaceId,
 				sharedUsers,
 			);
-			if (!propagateOk) throw new Error("Server returned failure");
-			toast.success(t("workspace:sharing.dependenciesSuccess"));
+			if (!result.success) throw new Error("Server returned failure");
+
+			const allUsers = Object.values(result.users);
+			const hasCouldNotAdd = allUsers.some(
+				(u) => u.couldNotAddRequest.length > 0,
+			);
+			const hasNewRequestAdded = allUsers.some(
+				(u) => u.newRequestAdded.length > 0,
+			);
+
+			// Each condition shows independently — mixed outcomes get multiple toasts
+			if (hasCouldNotAdd) {
+				toast.error(t("workspace:sharing.dependenciesFailed"), {
+					duration: 6000,
+				});
+			}
+			if (hasNewRequestAdded) {
+				toast.warning(t("workspace:sharing.dependenciesSoftFailed"), {
+					duration: 6000,
+				});
+			}
+			if (!hasCouldNotAdd && !hasNewRequestAdded) {
+				toast.success(t("workspace:sharing.dependenciesSuccess"));
+			}
 			handleClose(true);
 		} catch {
-			toast.error(t("workspace:sharing.dependenciesFailed"));
+			toast.error(t("workspace:sharing.dependenciesFailed"), {
+				duration: 6000,
+			});
 		} finally {
 			setIsSubmitting(false);
 		}
