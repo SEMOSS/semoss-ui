@@ -467,9 +467,11 @@ export const GlobalNav = observer(() => {
 																}
 															>
 																<span className="truncate text-sm font-medium leading-none">{name}</span>
+															{root.theme.sidebar.chatHistoryDate && (
 																<span className="text-xs text-muted-foreground leading-none">
 																	{date}
 																</span>
+															)}
 															</Link>
 														</SidebarMenuButton>
 														<DropdownMenu
