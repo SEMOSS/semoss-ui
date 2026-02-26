@@ -1,5 +1,6 @@
 import { Box, useApp, useInput, useStdout } from "ink";
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { spawn } from "node:child_process";
 import type { InstanceConfig } from "../types.js";
 import {
@@ -93,8 +94,12 @@ export const App: React.FC = () => {
 		// Add to history
 		commandHistory.addCommand(command);
 
+		// Check if it's a shell command (! prefix)
+		if (command.startsWith("!")) {
+			await handleShellCommand(command.slice(1).trim());
+		}
 		// Check if it's a built-in command
-		if (command.startsWith(":")) {
+		else if (command.startsWith(":")) {
 			await handleBuiltinCommand(command);
 		} else {
 			await handlePixelCommand(command);
@@ -217,6 +222,82 @@ export const App: React.FC = () => {
 		}
 	};
 
+	// Handle shell commands prefixed with !
+	const handleShellCommand = async (command: string) => {
+		if (!command) {
+			addEntry({
+				type: "error",
+				content: "No command provided. Usage: !<command>",
+			});
+			return;
+		}
+
+		setLoading(true);
+		addEntry({
+			type: "loading",
+			content: `Running: ${command}`,
+		});
+
+		try {
+			const shellProcess = spawn(command, {
+				cwd: process.cwd(),
+				shell: true,
+				stdio: ["pipe", "pipe", "pipe"],
+			});
+
+			let output = "";
+			let errorOutput = "";
+
+			shellProcess.stdout?.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+
+			shellProcess.stderr?.on("data", (data: Buffer) => {
+				errorOutput += data.toString();
+			});
+
+			const exitCode = await new Promise<number | null>(
+				(resolve, reject) => {
+					shellProcess.on("close", (code) => {
+						resolve(code);
+					});
+
+					shellProcess.on("error", (err) => {
+						reject(err);
+					});
+				},
+			);
+
+			if (output.trim()) {
+				addEntry({
+					type: "result",
+					content: output.trim(),
+				});
+			}
+
+			if (errorOutput.trim()) {
+				addEntry({
+					type: exitCode === 0 ? "info" : "error",
+					content: errorOutput.trim(),
+				});
+			}
+
+			if (exitCode !== 0) {
+				addEntry({
+					type: "error",
+					content: `Command exited with code ${exitCode}`,
+				});
+			}
+		} catch (error) {
+			addEntry({
+				type: "error",
+				content: `Shell error: ${error instanceof Error ? error.message : String(error)}`,
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	const showHelp = () => {
 		const helpText = `
 Built-in Commands:
@@ -229,6 +310,9 @@ Built-in Commands:
                   Options: --dry-run, --rollback, --target=<dir>
   :clear          Clear output history
   :exit           Exit interactive mode (or press Ctrl+C)
+
+Shell Commands:
+  !<command>      Run a shell command (e.g., !ls, !dir, !git status)
 
 File Operations (exit TUI first):
   semoss init       Initialize a new app in current directory
@@ -581,7 +665,14 @@ Deploy Examples:
 					loading ? "Executing..." : "Enter Pixel command or :help"
 				}
 			/>
-			<Footer />
+			<Footer
+				onExit={exit}
+				onHelp={showHelp}
+				onClear={() => {
+					setEntries([]);
+					addEntry({ type: "info", content: "Output cleared" });
+				}}
+			/>
 		</Box>
 	);
 };

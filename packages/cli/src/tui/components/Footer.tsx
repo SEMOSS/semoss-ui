@@ -1,12 +1,32 @@
-import { Box, Text } from "ink";
-import React from "react";
+import { Box, Text, useInput } from "ink";
+import type React from "react";
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+	onExit: () => void;
+	onHelp: () => void;
+	onClear: () => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onExit, onHelp, onClear }) => {
+	useInput((input, key) => {
+		// Ctrl+/ for help, Ctrl+L for clear
+		if (key.ctrl && input === "/") {
+			onHelp();
+		} else if (key.ctrl && input === "l") {
+			onClear();
+		}
+		// Escape to exit
+		if (key.escape || (key.ctrl && input === "c")) {
+			onExit();
+		}
+	});
+
 	const shortcuts = [
-		{ key: "Ctrl+C", desc: "Exit" },
-		{ key: ":help", desc: "Show commands" },
-		{ key: "↑↓ PgUp/PgDn", desc: "Scroll output" },
-		{ key: ":clear", desc: "Clear output" },
+		{ key: "↑↓ PgUp/PgDn", label: "Scroll output" },
+		{ key: "!cmd", label: "Run shell command" },
+		{ key: ":help/Ctrl+/", label: "Show Commands" },
+		{ key: ":clear/Ctrl+L", label: "Clear" },
+		{ key: "Ctrl+C/Esc", label: "Exit" },
 	];
 
 	return (
@@ -17,13 +37,15 @@ export const Footer: React.FC = () => {
 			paddingX={1}
 			justifyContent="space-between"
 		>
-			{shortcuts.map((shortcut, index) => (
-				<Box key={shortcut.key} flexDirection="row" gap={1}>
-					{index > 0 && <Text dimColor>│</Text>}
-					<Text color="yellow">{shortcut.key}</Text>
-					<Text dimColor>{shortcut.desc}</Text>
-				</Box>
-			))}
+			<Box flexDirection="row" gap={1}>
+				{shortcuts.map((shortcut, index) => (
+					<Box key={shortcut.key} flexDirection="row">
+						{index > 0 && <Text dimColor> │ </Text>}
+						<Text color="yellow">{shortcut.key}</Text>
+						<Text dimColor> {shortcut.label}</Text>
+					</Box>
+				))}
+			</Box>
 		</Box>
 	);
 };

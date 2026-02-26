@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import TextInput from "ink-text-input";
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 
 interface InputProps {
 	onSubmit: (command: string) => void;
@@ -37,7 +38,7 @@ export const Input: React.FC<InputProps> = ({
 			paddingX={1}
 		>
 			<Text color="cyan" bold>
-				›{" "}
+				{process.cwd()} ›{" "}
 			</Text>
 			<TextInput
 				value={value}
