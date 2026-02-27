@@ -186,3 +186,29 @@ export function formatConnectionError(error: unknown): {
 		],
 	};
 }
+
+/**
+ * Execute an async function with all stderr output suppressed.
+ *
+ * The SEMOSS SDK (via Node's built-in fetch / undici) can print raw
+ * stack traces directly to stderr before an error reaches our catch
+ * block.  This helper temporarily silences both `console.error` and
+ * `process.stderr.write` so that only our formatted messages appear.
+ */
+export async function withSuppressedErrors<T>(
+	fn: () => Promise<T>,
+): Promise<T> {
+	const origConsoleError = console.error;
+	const origStderrWrite = process.stderr.write;
+
+	console.error = () => undefined;
+	process.stderr.write = (() =>
+		true) as unknown as typeof process.stderr.write;
+
+	try {
+		return await fn();
+	} finally {
+		console.error = origConsoleError;
+		process.stderr.write = origStderrWrite;
+	}
+}

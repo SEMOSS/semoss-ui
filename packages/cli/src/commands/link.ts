@@ -2,12 +2,14 @@ import { Args, Command, Flags } from "@oclif/core";
 import chalk from "chalk";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { Env, Insight } from "@semoss/sdk";
 import {
 	getCurrentInstance,
 	getCurrentInstanceName,
 	loadCredentials,
 	saveCredentials,
 } from "../utils/config.js";
+import { withSuppressedErrors } from "../utils/errors.js";
 import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Link extends Command {
@@ -88,8 +90,57 @@ export default class Link extends Command {
 				);
 			}
 
-			// Use provided name or app ID
-			const appName = flags.name || args.appId;
+			// Validate app ID on server and look up app name
+			let serverAppName: string | null = null;
+			try {
+				Env.update({
+					MODULE: instance.module,
+					ACCESS_KEY: instance.accessKey,
+					SECRET_KEY: instance.secretKey,
+				});
+
+				const insight = new Insight();
+				await withSuppressedErrors(() =>
+					insight.initialize({ python: false }),
+				);
+
+				if (insight.isReady && insight.isAuthorized) {
+					const { pixelReturn } =
+						await insight.actions.run<
+							[
+								Array<{
+									project_id: string;
+									project_name: string;
+								}>,
+							]
+						>("MyProjects()");
+					const apps = pixelReturn[0].output;
+					const matched = apps.find(
+						(a) => a.project_id === args.appId,
+					);
+					if (matched) {
+						serverAppName = matched.project_name;
+					} else {
+						this.log(
+							chalk.yellow(
+								`\n⚠️  App ID "${args.appId}" was not found on the server.`,
+							),
+						);
+						this.log(
+							chalk.dim(
+								"   The ID may be incorrect, or you may not have access.\n",
+							),
+						);
+					}
+				}
+			} catch {
+				logger.debug(
+					"Could not validate app ID on server — continuing with local-only link",
+				);
+			}
+
+			// Use provided name, server name, or fall back to app ID
+			const appName = flags.name || serverAppName || args.appId;
 
 			// Parse deployment settings
 			const targets = flags.targets
@@ -116,7 +167,7 @@ export default class Link extends Command {
 			}
 
 			// biome-ignore lint/style/noNonNullAssertion: Apps object is initialized above
-			credentials.instances[instanceName].apps![appName] = {
+			credentials.instances[instanceName].apps![args.appId] = {
 				appId: args.appId,
 				name: appName,
 				path: process.cwd(),

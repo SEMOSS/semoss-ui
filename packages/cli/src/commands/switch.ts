@@ -43,6 +43,22 @@ export default class Switch extends Command {
 				);
 			}
 
+			// Check if already on this instance
+			if (credentials.currentInstance === args.instance) {
+				logger.debug(`Already on instance "${args.instance}"`);
+				this.log(
+					chalk.cyan(
+						`\n✓ "${args.instance}" is already the active instance.\n`,
+					),
+				);
+				this.log(
+					chalk.dim(
+						`💡 Use ${chalk.cyan("semoss status")} to view current configuration`,
+					),
+				);
+				return;
+			}
+
 			// Switch to the instance
 			const previousInstance = credentials.currentInstance;
 			credentials.currentInstance = args.instance;

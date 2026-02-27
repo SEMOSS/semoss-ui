@@ -3,7 +3,10 @@ import chalk from "chalk";
 import inquirer from "inquirer";
 import { Env, Insight } from "@semoss/sdk";
 import { loadCredentials, saveCredentials } from "../utils/config.js";
-import { formatConnectionError } from "../utils/errors.js";
+import {
+	formatConnectionError,
+	withSuppressedErrors,
+} from "../utils/errors.js";
 import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Connect extends Command {
@@ -40,6 +43,7 @@ export default class Connect extends Command {
 			char: "t",
 			description: "Test connection before saving",
 			default: true,
+			allowNo: true,
 		}),
 	};
 
@@ -139,7 +143,9 @@ export default class Connect extends Command {
 						});
 
 						const insight = new Insight();
-						await insight.initialize({ python: false });
+						await withSuppressedErrors(() =>
+							insight.initialize({ python: false }),
+						);
 
 						if (insight.error) {
 							throw insight.error;

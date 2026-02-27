@@ -329,8 +329,31 @@ create in specific directory
 		const envExamplePath = path.join(absolutePath, ".env.example");
 
 		if (fs.existsSync(envExamplePath)) {
-			// Copy .env.example to .env and replace the APP= placeholder
+			// Copy .env.example to .env and replace placeholders with real values
 			let envContent = fs.readFileSync(envExamplePath, "utf-8");
+
+			// Extract endpoint (host) and module path from the full URL
+			const endpointMatch = instance.module.match(/^(https?:\/\/[^/]+)/);
+			const endpoint = endpointMatch ? endpointMatch[1] : instance.module;
+			const modulePath =
+				instance.module.replace(endpoint, "") || "/Monolith";
+
+			envContent = envContent.replace(
+				/^ENDPOINT=.*$/m,
+				`ENDPOINT=${endpoint}`,
+			);
+			envContent = envContent.replace(
+				/^MODULE=.*$/m,
+				`MODULE=${modulePath}`,
+			);
+			envContent = envContent.replace(
+				/^ACCESS_KEY=.*$/m,
+				`ACCESS_KEY=${instance.accessKey}`,
+			);
+			envContent = envContent.replace(
+				/^SECRET_KEY=.*$/m,
+				`SECRET_KEY=${instance.secretKey}`,
+			);
 			envContent = envContent.replace(/^APP=.*$/m, `APP=${appId}`);
 			fs.writeFileSync(envPath, envContent);
 		} else {

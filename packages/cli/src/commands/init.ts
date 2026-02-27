@@ -84,11 +84,13 @@ init (./src/commands/init.ts)
 				}
 
 				// Update Env with resolved configuration
+				// Note: APP is intentionally omitted — init creates a new app.
+				// The appId from configResult may come from global config's
+				// currentApp, which should not prevent creating new apps.
 				Env.update({
 					ACCESS_KEY: configResult.accessKey || undefined,
 					MODULE: configResult.module || undefined,
 					SECRET_KEY: configResult.secretKey || undefined,
-					APP: configResult.appId || undefined,
 				});
 			} catch (error) {
 				this.error(error as Error);
@@ -119,9 +121,25 @@ init (./src/commands/init.ts)
 				);
 			}
 
-			if (Env.APP || process.env.VITE_APP) {
+			// Check if APP is defined in a LOCAL config file in this directory.
+			// Global config's currentApp tracks the last-used app and should
+			// not prevent creating new apps from any directory.
+			const hasAppInFile = (filePath: string): boolean => {
+				try {
+					return /^(?:VITE_)?APP=.+/m.test(
+						fs.readFileSync(filePath, "utf-8"),
+					);
+				} catch {
+					return false;
+				}
+			};
+
+			if (
+				hasAppInFile(flags.env ?? ".env") ||
+				hasAppInFile(".env.local")
+			) {
 				this.error(
-					"APP is already defined. Delete from your environment variables (.env) to create a new app",
+					"APP is already defined in your local environment file. Remove the APP line from your .env or .env.local to create a new app",
 				);
 			}
 

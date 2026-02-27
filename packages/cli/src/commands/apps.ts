@@ -4,6 +4,10 @@ import Table from "cli-table3";
 import ora from "ora";
 import { Env, Insight } from "@semoss/sdk";
 import { getCurrentInstanceName, resolveCredentials } from "../utils/config.js";
+import {
+	formatConnectionError,
+	withSuppressedErrors,
+} from "../utils/errors.js";
 import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Apps extends Command {
@@ -68,7 +72,9 @@ export default class Apps extends Command {
 
 				// Initialize insight
 				const insight = new Insight();
-				await insight.initialize({ python: false });
+				await withSuppressedErrors(() =>
+					insight.initialize({ python: false }),
+				);
 
 				if (insight.error) {
 					throw insight.error;
@@ -159,15 +165,18 @@ export default class Apps extends Command {
 				);
 				this.log("");
 			} catch (error) {
+				const { message, suggestions } = formatConnectionError(error);
 				if (spinner) spinner.fail("Failed to fetch apps");
-				logger.error(
-					`Apps listing failed: ${error instanceof Error ? error.message : String(error)}`,
-				);
-				this.error(
-					chalk.red(
-						`\n✗ ${error instanceof Error ? error.message : String(error)}`,
-					),
-				);
+				logger.error(`Apps listing failed: ${message}`);
+				let errorMsg = `\n✗ ${message}\n`;
+				if (suggestions.length > 0) {
+					errorMsg += "\n💡 Suggestions:";
+					for (const suggestion of suggestions) {
+						errorMsg += `\n   • ${suggestion}`;
+					}
+					errorMsg += "\n";
+				}
+				this.error(errorMsg);
 			}
 		} finally {
 			await logger.close();
