@@ -161,29 +161,14 @@ export default class Publish extends Command {
 		secretKey?: string;
 		app?: string;
 	}) {
-		// Set process.env from batch config
-		if (opts.module && typeof opts.module === "string") {
-			process.env.MODULE = opts.module;
-		}
-		if (opts.accessKey && typeof opts.accessKey === "string") {
-			process.env.ACCESS_KEY = opts.accessKey;
-		}
-		if (opts.secretKey && typeof opts.secretKey === "string") {
-			process.env.SECRET_KEY = opts.secretKey;
-		}
-		if (opts.app && typeof opts.app === "string") {
-			process.env.APP = opts.app;
-			process.env.VITE_APP = opts.app;
-		}
-
-		// Update Env singleton immediately with batch config values
-		const envUpdate: Record<string, string | undefined> = {
-			MODULE: process.env.MODULE,
-			ACCESS_KEY: process.env.ACCESS_KEY,
-			SECRET_KEY: process.env.SECRET_KEY,
-			APP: process.env.APP,
-		};
-		Env.update(envUpdate);
+		// Update Env singleton directly — do NOT mutate process.env to avoid
+		// credential leakage between batch iterations.
+		Env.update({
+			MODULE: opts.module,
+			ACCESS_KEY: opts.accessKey,
+			SECRET_KEY: opts.secretKey,
+			APP: opts.app,
+		});
 
 		const insight = new Insight();
 		const tasks = new Listr([
@@ -213,9 +198,8 @@ export default class Publish extends Command {
 				title: "Publishing App",
 				task: async (ctx) => {
 					const { pixelReturn: publishReturn } =
-						await insight.actions.run(
-							`[string]` +
-								`PublishProject(project='${opts.app}', release=true);`,
+						await insight.actions.run<[string]>(
+							`PublishProject(project='${opts.app}', release=true);`,
 						);
 					ctx.publishUrl = publishReturn[0].output;
 				},

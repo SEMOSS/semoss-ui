@@ -178,22 +178,24 @@ init (./src/commands/init.ts)
 							const { pixelReturn } =
 								await insight.actions.run(saveIndexFilePixel);
 
-							let output = pixelReturn[0].output;
-							let operationType = pixelReturn[0].operationType;
+							const output0 = pixelReturn[0].output;
+							const operationType0 = pixelReturn[0].operationType;
 
-							if (operationType.indexOf("ERROR") > -1) {
-								this.error(
-									`Error creating index.html file: ${String(output)}`,
-								); // log the error but don't throw, we still want to save the app even if the index file creation fails
+							if (operationType0.indexOf("ERROR") > -1) {
+								// Log but don't throw — we still want to save the app
+								this.log(
+									`⚠️  Warning: Could not create index.html: ${String(output0)}`,
+								);
 							}
 
-							output = pixelReturn[1].output;
-							operationType = pixelReturn[1].operationType;
+							const output1 = pixelReturn[1].output;
+							const operationType1 = pixelReturn[1].operationType;
 
-							if (operationType.indexOf("ERROR") > -1) {
-								this.error(
-									`Error committing index.html file: ${String(output)}`,
-								); // log the error but don't throw, we still want to save the app even if the index file commit fails
+							if (operationType1.indexOf("ERROR") > -1) {
+								// Log but don't throw — we still want to save the app
+								this.log(
+									`⚠️  Warning: Could not commit index.html: ${String(output1)}`,
+								);
 							}
 						}
 
@@ -304,28 +306,23 @@ init (./src/commands/init.ts)
 				},
 			]);
 
-			tasks
-				.run()
-				.then((context) => {
-					if (!context.APP) {
-						throw new Error("Id Missing");
-					}
+			try {
+				const context = await tasks.run();
 
-					logger.debug(`Project created with ID: ${context.APP}`);
-					this.log("Success");
-					this.log(`ID: ${context.APP}`);
-				})
-				.catch((err) => {
-					logger.error(
-						`Init failed: ${err instanceof Error ? err.message : String(err)}`,
-					);
-					// log the error
-					this.error(err);
-				})
-				.finally(() => logger.close());
+				if (!context.APP) {
+					throw new Error("Id Missing");
+				}
+
+				logger.debug(`Project created with ID: ${context.APP}`);
+				this.log("Success");
+				this.log(`ID: ${context.APP}`);
+			} catch (err) {
+				logger.error(
+					`Init failed: ${err instanceof Error ? err.message : String(err)}`,
+				);
+				this.error(err as Error);
+			}
 		} finally {
-			// Logger.close() is also called in the .finally() above for the
-			// Listr chain, but calling it twice is safe (idempotent).
 			await logger.close();
 		}
 	}
