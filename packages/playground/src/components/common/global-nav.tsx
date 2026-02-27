@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import {
+	BrainCircuit,
 	ComputerIcon,
 	MoreVertical,
 	PencilIcon,
@@ -335,31 +336,44 @@ export const GlobalNav = observer(() => {
 								{t("new")}
 							</Link>
 						</SidebarMenuButton>
-					</SidebarMenuItem>
 
-					{ENABLE_AGENT && (
-						<SidebarMenuItem>
-							<SidebarMenuButton
-								asChild
-								isActive={!!matchPath("/agent", pathname)}
+						{ENABLE_AGENT && (
+							<SidebarMenuItem>
+								<SidebarMenuButton
+									asChild
+									isActive={!!matchPath("/agent", pathname)}
+								>
+									<Link to={"/agent"} aria-label={"agent"}>
+										<ComputerIcon />
+										{t("agents")}
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+						)}
+						{root.theme.sidebar.headerItems.map((item) => (
+							<GlobalNavItem
+								key={item.path}
+								name={item.name}
+								icon={item.icon}
+								path={item.path}
+								url={item.url}
+								embed={item.embed}
+							/>
+						))}
+
+						<SidebarMenuButton
+							asChild
+							isActive={!!matchPath("/knowledge", pathname)}
+						>
+							<Link
+								to={"/knowledge"}
+								aria-label={"knowledgeLibrary"}
 							>
-								<Link to={"/agent"} aria-label={"agent"}>
-									<ComputerIcon />
-									{t("agents")}
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-					)}
-					{root.theme.sidebar.headerItems.map((item) => (
-						<GlobalNavItem
-							key={item.path}
-							name={item.name}
-							icon={item.icon}
-							path={item.path}
-							url={item.url}
-							embed={item.embed}
-						/>
-					))}
+								<BrainCircuit />
+								{t("Knowledge Library")}
+							</Link>
+						</SidebarMenuButton>
+					</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent
