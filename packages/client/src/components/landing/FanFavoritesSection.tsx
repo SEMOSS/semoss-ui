@@ -1,4 +1,4 @@
-import { Button, Stack, styled, Typography } from "@semoss/ui";
+import { P } from "@semoss/ui/next";
 import { type AppMetadata, AppTileCard } from "../app";
 
 const BUSINESS_INTELLIGENCE_APP: AppMetadata = {
@@ -53,37 +53,19 @@ const TERMINAL_APP: AppMetadata = {
 	description: "Execute commands and see a response",
 };
 
-const StyledSeeAllButton = styled(Button)(({ theme }) => ({
-	justifyContent: "flex-end",
-	color: theme.palette.text.primary,
-	fontWeight: 500,
-	"&.MuiButtonBase-root: hover": {
-		backgroundColor: "#F5F5F5",
-	},
-}));
-
 export const FanFavoritesSection = () => {
 	return (
-		<Stack gap={1}>
-			<Stack
-				direction={"row"}
-				justifyContent={"space-between"}
-				alignItems={"baseline"}
-				width={"100%"}
-			>
-				<Typography variant={"body1"}>
-					Try these fan favorites
-				</Typography>
-				{/* <StyledSeeAllButton
-          type="button"
-          size="small"
-          variant="text"
-          color="secondary"
-        >
-          See All
-        </StyledSeeAllButton> */}
-			</Stack>
-			<Stack direction={"row"} gap={3}>
+		<div className="flex flex-col gap-2">
+			<div className="flex w-full flex-row items-baseline justify-between">
+				<P>Try these fan favorites</P>
+				{/* <button
+                    type="button"
+                    className="text-sm font-medium text-foreground hover:bg-secondary rounded-md px-3 py-1"
+                >
+                    See All
+                </button> */}
+			</div>
+			<div className="flex flex-row gap-6">
 				<AppTileCard
 					app={BUSINESS_INTELLIGENCE_APP}
 					background="#BADEFF"
@@ -102,7 +84,7 @@ export const FanFavoritesSection = () => {
 					isLoading={false}
 					showSkeleton={false}
 				/>
-			</Stack>
-		</Stack>
+			</div>
+		</div>
 	);
 };

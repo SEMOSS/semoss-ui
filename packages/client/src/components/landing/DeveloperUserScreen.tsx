@@ -2,7 +2,6 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { STATE_VERSION, type Variable } from "@semoss/renderer";
-import { Box, Stack, styled } from "@semoss/ui";
 import AIConductor from "@/assets/img/AIConductor.png";
 import DevBanner from "@/assets/img/DevBanner.png";
 import playground from "@/assets/img/playground.png";
@@ -17,13 +16,6 @@ import {
 } from "../../pages/app/app.constants";
 import { FanFavoritesSection } from "./FanFavoritesSection";
 import { LandingHeader } from "./landing-header";
-
-const StyledAppCard = styled("div")({
-	display: "flex",
-	width: "100%",
-	gap: "24px",
-	flexDirection: "column",
-});
 
 export const DeveloperUserScreen = observer(() => {
 	const { configStore } = useRootStore();
@@ -57,7 +49,7 @@ export const DeveloperUserScreen = observer(() => {
 	}
 
 	return (
-		<Stack direction="column" spacing={3}>
+		<div className="flex flex-col gap-6">
 			<BannerSection
 				imageUrl={DevBanner}
 				tagline={`Empower your ideas with ${configStore.theme.name}`}
@@ -69,15 +61,8 @@ export const DeveloperUserScreen = observer(() => {
 					to: "/app/new",
 				}}
 			/>
-			<StyledAppCard>
-				<Box
-					sx={{
-						display: "flex",
-						gap: "24px",
-						flexGrow: 1,
-						flexDirection: "row",
-					}}
-				>
+			<div className="flex w-full flex-col gap-6">
+				<div className="flex grow flex-row gap-6">
 					<FeaturedAppCard
 						href={"../../playground/dist/"}
 						tagline="Experiment in our Playground™"
@@ -85,7 +70,7 @@ export const DeveloperUserScreen = observer(() => {
 						imageUrl={playground}
 						chip={{
 							label: "FEATURED",
-							color: "#FDF0E5",
+							color: "var(--accent)",
 						}}
 					/>
 					<FeaturedAppCard
@@ -96,10 +81,10 @@ export const DeveloperUserScreen = observer(() => {
 						imageUrl={AIConductor}
 						chip={{
 							label: "NEW",
-							color: "#FDF0E5",
+							color: "var(--accent)",
 						}}
 					/>
-				</Box>
+				</div>
 				{isNameOpen ? (
 					<NewAppModal
 						open={isNameOpen}
@@ -139,9 +124,9 @@ export const DeveloperUserScreen = observer(() => {
 						}
 					}}
 				/>
-			</StyledAppCard>
+			</div>
 
 			<FanFavoritesSection />
-		</Stack>
+		</div>
 	);
 });
