@@ -29,7 +29,7 @@
         "@mui/x-date-pickers": "6.8.0",
         "dayjs": "1.11.8",
         "echarts-wordcloud": "^2.1.0",
-        "mermaid": "^10.9.1"
+        "mermaid": "^11.12.3"
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "28.0.6",
