@@ -586,7 +586,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 												removeApp(app);
 											}}
 											isDiscoverable={mode !== "Mine"}
-											isLoading={true}
+											isLoading={false}
 											showSkeleton={false}
 										/>
 									);
@@ -696,7 +696,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 												onDelete={() => {
 													removeApp(app);
 												}}
-												isLoading={true}
+												isLoading={false}
 												showSkeleton={false}
 											/>
 										);
