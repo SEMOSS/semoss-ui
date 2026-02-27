@@ -68,7 +68,7 @@ import { getBlockElement } from "@/stores";
 import DuplicateIcon from "../../../assets/img/Duplicate.svg";
 import RenameIcon from "../../../assets/img/Rename.svg";
 import { BlockSettingsRegistry } from "../blocks";
-import { CircleCheck } from "lucide-react";
+import { CircleCheck, Pencil } from "lucide-react";
 
 const customCollisionDetection = (args) => {
 	const collisions = closestCenter(args);
@@ -1068,11 +1068,7 @@ export const LayersPanel = observer(
                   }}
                   className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
                 >
-                  <img
-                    src={RenameIcon}
-                    alt="Rename Icon"
-                    className="relative left-1 mr-3"
-                  />
+				  <Pencil className="relative left-1 mr-3 size-4" />
                   Rename
                 </DropdownMenuItem>
               )}
