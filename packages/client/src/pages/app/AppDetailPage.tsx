@@ -43,6 +43,7 @@ import {
 	type modelledDependency,
 } from "@/components/app";
 import { UpdateSMSS } from "@/components/settings";
+import { McpUsage } from "@/components/shared/mcp-usage";
 import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
@@ -567,14 +568,21 @@ export const AppDetailPage = () => {
 	const TABS_BY_PERMISSION: Record<string, string[]> = {
 		author: [
 			"Overview",
-			"Files",
-			"Access Control",
 			"Dependencies",
+			"MCP Usage",
 			"Settings",
+			"Access Control",
+			"Files",
 			"SMSS",
 		],
-		editor: ["Overview", "Files", "Access Control", "Dependencies"],
-		readOnly: ["Overview", "Files", "Dependencies"],
+		editor: [
+			"Overview",
+			"Dependencies",
+			"MCP Usage",
+			"Access Control",
+			"Files",
+		],
+		readOnly: ["Overview", "Dependencies", "MCP Usage"],
 		discoverable: ["Overview"],
 	};
 
@@ -764,10 +772,22 @@ export const AppDetailPage = () => {
 											value="Overview"
 										/>
 									)}
-									{visibleTabs.includes("Files") && (
+									{visibleTabs.includes("Dependencies") && (
 										<StyledToggleTabsGroupItem
-											label="Files"
-											value="Files"
+											label="Dependencies"
+											value="Dependencies"
+										/>
+									)}
+									{visibleTabs.includes("MCP Usage") && (
+										<StyledToggleTabsGroupItem
+											label="MCP Usage"
+											value="MCP Usage"
+										/>
+									)}
+									{visibleTabs.includes("Settings") && (
+										<StyledToggleTabsGroupItem
+											label="Settings"
+											value="Settings"
 										/>
 									)}
 									{visibleTabs.includes("Access Control") && (
@@ -776,16 +796,10 @@ export const AppDetailPage = () => {
 											value="Access Control"
 										/>
 									)}
-									{visibleTabs.includes("Dependencies") && (
+									{visibleTabs.includes("Files") && (
 										<StyledToggleTabsGroupItem
-											label="Dependencies"
-											value="Dependencies"
-										/>
-									)}
-									{visibleTabs.includes("Settings") && (
-										<StyledToggleTabsGroupItem
-											label="Settings"
-											value="Settings"
+											label="Files"
+											value="Files"
 										/>
 									)}
 									{visibleTabs.includes("SMSS") && (
@@ -799,19 +813,6 @@ export const AppDetailPage = () => {
 							<StyledTabsSection>
 								{selectedTab === "Overview" && (
 									<Overview appInfo={appInfo} />
-								)}
-								{selectedTab === "Files" && (
-									<AppFileManagerPage appId={appId || ""} />
-								)}
-								{selectedTab === "Access Control" && (
-									<AccessControl
-										appInfo={appInfo}
-										appId={appId}
-										fetchUserSpecificData={
-											fetchUserSpecificData
-										}
-										permission={permission}
-									/>
 								)}
 								{selectedTab === "Dependencies" && (
 									<StyledStack>
@@ -851,6 +852,15 @@ export const AppDetailPage = () => {
 										/>
 									</StyledStack>
 								)}
+								{selectedTab === "MCP Usage" && (
+									<SettingsContext.Provider
+										value={{
+											adminMode: false,
+										}}
+									>
+										<McpUsage id={appId} />
+									</SettingsContext.Provider>
+								)}
 								{selectedTab === "Settings" && (
 									<SettingsContext.Provider
 										value={{
@@ -859,6 +869,19 @@ export const AppDetailPage = () => {
 									>
 										<SettingsTab id={appId} />
 									</SettingsContext.Provider>
+								)}
+								{selectedTab === "Access Control" && (
+									<AccessControl
+										appInfo={appInfo}
+										appId={appId}
+										fetchUserSpecificData={
+											fetchUserSpecificData
+										}
+										permission={permission}
+									/>
+								)}
+								{selectedTab === "Files" && (
+									<AppFileManagerPage appId={appId || ""} />
 								)}
 								{selectedTab === "SMSS" && (
 									<SettingsContext.Provider
