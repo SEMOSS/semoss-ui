@@ -88,6 +88,10 @@ export default class Open extends Command {
 			// Extract endpoint from module or use flag
 			const endpoint = flags.endpoint ?? configResult.module;
 
+			this.log(
+				`Using source: ${configResult.source}; Using app: ${configResult.appId}`,
+			);
+
 			if (!endpoint) {
 				this.error(
 					"No endpoint specified. Use --endpoint flag or set ENDPOINT in your environment.",
@@ -117,6 +121,10 @@ export default class Open extends Command {
 		let url = endpoint;
 		if (url.endsWith("/")) {
 			url = url.slice(0, -1);
+		}
+
+		if (url.endsWith("/Monolith")) {
+			url = url.slice(0, -"/Monolith".length);
 		}
 
 		url = `${url}/packages/client/dist/#`;
