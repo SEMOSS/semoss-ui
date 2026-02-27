@@ -101,6 +101,10 @@ export const EngineHeader: React.FC = () => {
 		setExportLoading(false);
 	};
 
+	/**
+	 * Generates an MCP for the given engine.
+	 * @throws {string} If the generation fails, it throws an error message.
+	 */
 	const generateMCP = async () => {
 		const pixel = `MakeEngineMCP(engine="${active.id}");`;
 
@@ -111,6 +115,13 @@ export const EngineHeader: React.FC = () => {
 		}
 	};
 
+	/**
+	 * Revert the MCP for the given engine.
+	 * This function will delete the current MCP file associated with the engine
+	 * and return the engine to its original state.
+	 * If the deletion fails, it will throw an error message.
+	 * @throws {string} If the deletion fails, it throws an error message.
+	 */
 	const revertMCP = async () => {
 		const mcpFilePath = `/mcp/pixel_mcp.json`;
 		const pixel = `DeleteEngineAssets(filePath=["${mcpFilePath}"], engine=["${active.id}"]);`;
@@ -122,6 +133,18 @@ export const EngineHeader: React.FC = () => {
 		}
 	};
 
+	/**
+	 * Handles the click on the MCP button in the engine header.
+	 * If the button is set to "Generate", it will call the generateMCP function
+	 * and navigate to the specified path. If the button is set to "Revert", it will
+	 * call the revertMCP function and navigate to the specified path.
+	 * If either call fails, it will display an error message and set the MCP status
+	 * to the original state.
+	 * @param {string} mcpStatus - The current status of the MCP button.
+	 * @param {string} type - The type of engine.
+	 * @param {string} active.id - The ID of the active engine.
+	 * @param {string} navigationPath - The path to navigate to.
+	 */
 	const handleMCPClick = async () => {
 		const mcpAction = mcpStatus === "generated" ? "Revert" : "Generate";
 		const navigationPath = `/engine/${type}/${active.id}/files?mcp=${mcpAction}`;
@@ -339,15 +362,16 @@ export const EngineHeader: React.FC = () => {
 								);
 							})}
 						{/* FE MCP chip addition to avoid full page refresh */}
-						{!(active.metadata?.tag as string[])?.includes("MCP") && mcpStatus === "generated" && (
-							<Badge
-								variant="outline"
-								className="border-(--primary) text-(--primary)"
-								data-testid="tag-chip"
-							>
-								MCP
-							</Badge>
-						)}
+						{!(active.metadata?.tag as string[])?.includes("MCP") &&
+							mcpStatus === "generated" && (
+								<Badge
+									variant="outline"
+									className="border-(--primary) text-(--primary)"
+									data-testid="tag-chip"
+								>
+									MCP
+								</Badge>
+							)}
 					</div>
 				</div>
 				<div className="flex flex-col items-end gap-1 text-right">
