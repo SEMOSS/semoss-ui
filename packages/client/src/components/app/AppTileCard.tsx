@@ -9,9 +9,8 @@ import {
 	OpenInNewOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Env } from "@semoss/sdk/react";
 import {
 	Card,
 	type CardProps,
@@ -422,9 +421,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isAppDeleteModalOpen, setIsAppDeleteModalOpen] = useState(false);
 	const [loading, setLoading] = useState(true); // Add loading state
-	const cardRef = useRef<HTMLDivElement>(null);
-	const [isInView, setIsInView] = useState(false);
-	const [hasDownloaded, setHasDownloaded] = useState(false);
 
 	const open = Boolean(anchorEl);
 	const navigateApp = (appId: string) => {
@@ -448,11 +444,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
 				message: e.message,
 			});
 		}
-	};
-
-	// Function to generate the API URL
-	const generateProjectImageURL = (appId: string): string => {
-		return `${Env.MODULE}/api/project-${appId}/projectImage/download`;
 	};
 
 	useEffect(() => {
@@ -511,65 +502,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
 			WebkitFontSmoothing: "antialiased",
 		}),
 	);
-
-	// Intersection Observer to detect if card is in viewport
-	useEffect(() => {
-		const observer = new window.IntersectionObserver(
-			(entries) => {
-				entries.forEach((entry) => {
-					// console.log(entry, 'entry');
-					if (entry.isIntersecting) {
-						// console.log('Card is in view');
-						setIsInView(true);
-					}
-				});
-			},
-			{
-				threshold: 0.1, // Adjust as needed
-			},
-		);
-		if (cardRef.current) {
-			observer.observe(cardRef.current);
-		}
-		return () => {
-			if (cardRef.current) {
-				observer.unobserve(cardRef.current);
-			}
-		};
-	}, []);
-
-	// Fetch the image when the component mounts or when the app changes
-	useEffect(() => {
-		if (app?.project_id && isInView && isLoading && !hasDownloaded) {
-			const fetchImage = async () => {
-				try {
-					setLoading(true);
-					const img = new Image();
-					img.src = generateProjectImageURL(app.project_id);
-					img.crossOrigin = "Anonymous"; // Set crossOrigin to allow CORS
-					img.onload = () => {
-						const canvas = document.createElement("canvas");
-						const ctx = canvas.getContext("2d");
-						canvas.width = img.width;
-						canvas.height = img.height;
-						ctx?.drawImage(img, 0, 0);
-						setLoading(false);
-						setHasDownloaded(true); // Set hasDownloaded to true after loading
-					};
-					img.onerror = () => {
-						console.error("Error loading image");
-						setLoading(false);
-						setHasDownloaded(true); // Mark as downloaded even on error to prevent retries
-					};
-				} catch (error) {
-					console.error("Error fetching image:", error);
-					setLoading(false);
-					setHasDownloaded(true); // Mark as downloaded even on error to prevent retries
-				}
-			};
-			fetchImage();
-		}
-	}, [app, isInView, isLoading, hasDownloaded]);
 
 	// pretty format the data
 	const createdDate = useMemo(() => {
@@ -646,7 +578,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	// Show skeleton when image is loading or when showSkeleton is true
 	if ((loading && isLoading) || showSkeleton) {
 		return (
-			<StyledMainDiv ref={cardRef}>
+			<StyledMainDiv>
 				<StyledTileCard disabled>
 					{/* Skeleton for the favorite icon */}
 					<StyledContainer>
@@ -750,7 +682,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	}
 
 	return (
-		<StyledMainDiv ref={cardRef}>
+		<StyledMainDiv>
 			<StyledTileCard
 				disabled={!href}
 				style={{ position: "relative" }}
