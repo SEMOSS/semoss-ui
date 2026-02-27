@@ -132,10 +132,6 @@ export const EngineHeader: React.FC = () => {
 				await generateMCP(); // your async API call
 				setMCPStatus("generated");
 				navigate(navigationPath);
-				active.metadata.tag = [
-					...(active.metadata.tag as string[]),
-					"MCP",
-				];
 			} catch (error) {
 				toast.error(error as string);
 				setMCPStatus("idle");
@@ -148,11 +144,6 @@ export const EngineHeader: React.FC = () => {
 				navigate("/files");
 				setMCPStatus("idle");
 				navigate(navigationPath);
-				active.metadata.tag = [
-					...(active.metadata.tag as string[]).filter(
-						(tag) => tag !== "MCP",
-					),
-				];
 			} catch (error) {
 				toast.error(error as string);
 				setMCPStatus("generated");
@@ -347,6 +338,16 @@ export const EngineHeader: React.FC = () => {
 									</Badge>
 								);
 							})}
+						{/* FE MCP chip addition to avoid full page refresh */}
+						{!(active.metadata?.tag as string[])?.includes("MCP") && mcpStatus === "generated" && (
+							<Badge
+								variant="outline"
+								className="border-(--primary) text-(--primary)"
+								data-testid="tag-chip"
+							>
+								MCP
+							</Badge>
+						)}
 					</div>
 				</div>
 				<div className="flex flex-col items-end gap-1 text-right">
