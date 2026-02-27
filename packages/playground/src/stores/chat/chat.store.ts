@@ -183,6 +183,9 @@ export class ChatStore {
 		// set the mode
 		room.setMode(mode);
 
+		// set default name
+		room.setMetadata({ name: prompt.substring(0, 15) });
+
 		// initialize the room
 		await room.initialize();
 
