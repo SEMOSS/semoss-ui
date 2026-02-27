@@ -34,7 +34,7 @@ export interface ToolsDefaultViewProps {
 	toolResponse?: string;
 
 	/** Parameters that were executed */
-	executedParameters?: Record<string, unknown>;
+	toolParameters?: Record<string, unknown>;
 }
 
 interface FieldSchema {
@@ -52,7 +52,7 @@ interface FieldSchema {
 }
 
 export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
-	({ room, app, message, tool, toolResponse, executedParameters }) => {
+	({ room, app, message, tool, toolResponse, toolParameters }) => {
 		/*
 		 * Library hooks
 		 */
@@ -88,9 +88,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		 * State
 		 */
 		const [data, setData] = useState<Record<string, unknown>>(() => {
-			return toolResponse === undefined
-				? tool?.parameters
-				: executedParameters;
+			return toolParameters || {};
 		});
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
@@ -261,33 +259,35 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 									)
 								) : (
 									<form onSubmit={handleSubmit}>
-										{/* Required fields */}
-										{renderFields(requiredFields, true)}
+										<div className="space-y-4">
+											{/* Required fields */}
+											{renderFields(requiredFields, true)}
 
-										{/* Optional fields toggle */}
-										{optionalFields.length > 0 && (
-											<>
-												<Button
-													type="button"
-													variant="outline"
-													size="sm"
-													onClick={() =>
-														setShowOptional(
-															!showOptional,
-														)
-													}
-													className="w-full"
-												>
-													{`${showOptional ? "Hide" : "Show"} Optional Fields (${optionalFields.length})`}
-												</Button>
+											{/* Optional fields toggle */}
+											{optionalFields.length > 0 && (
+												<>
+													<Button
+														type="button"
+														variant="outline"
+														size="sm"
+														onClick={() =>
+															setShowOptional(
+																!showOptional,
+															)
+														}
+														className="w-full"
+													>
+														{`${showOptional ? "Hide" : "Show"} Optional Fields (${optionalFields.length})`}
+													</Button>
 
-												{showOptional &&
-													renderFields(
-														optionalFields,
-														false,
-													)}
-											</>
-										)}
+													{showOptional &&
+														renderFields(
+															optionalFields,
+															false,
+														)}
+												</>
+											)}
+										</div>
 									</form>
 								)
 							) : (
