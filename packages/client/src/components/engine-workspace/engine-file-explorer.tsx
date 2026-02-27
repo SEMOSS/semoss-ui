@@ -1,5 +1,7 @@
 import { HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { download, useInsight } from "@semoss/sdk/react";
 import { FileExplorer, FileExplorerItem, FlexLayout } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
@@ -19,6 +21,7 @@ interface EngineFileExplorerProps {
 export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 	({ layout, node, engine }) => {
 		const insight = useInsight();
+		const [searchParams, setSearchParams] = useSearchParams();
 
 		/**
 		 * Add a node to the layout
@@ -64,6 +67,47 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 				),
 			);
 		};
+
+		useEffect(() => {
+			const mcpParam = searchParams.get("mcp");
+			const mcpFilePath = "/mcp/pixel_mcp.json";
+			if (mcpParam === "Generate") {
+				addNode(`ENGINE_MCP_EDITOR--${mcpFilePath}`, {
+					type: "tab",
+					name: `Toolbox Editor - pixel_mcp.json`,
+					component: "engine-mcp-editor",
+					config: {
+						name: "pixel_mcp.json",
+						path: mcpFilePath,
+					},
+					enableClose: true,
+				});
+				toast.success("MCP generated");
+			} else if (mcpParam === "Revert") {
+				const model = node.getModel();
+				if(model.getNodeById(`ENGINE_FILE--${mcpFilePath}`)) {
+					model.doAction(
+						FlexLayout.Actions.deleteTab(
+							model
+								.getNodeById(`ENGINE_FILE--${mcpFilePath}`)
+								?.getId() || "",
+						),
+					);
+				}
+				if(model.getNodeById(`ENGINE_MCP_EDITOR--${mcpFilePath}`)) {
+					model.doAction(
+						FlexLayout.Actions.deleteTab(
+							model
+								.getNodeById(`ENGINE_MCP_EDITOR--${mcpFilePath}`)
+								?.getId() || "",
+						),
+					)
+				}
+				toast.success("MCP reverted");
+			}
+			searchParams.delete("mcp");
+			setSearchParams(searchParams);
+		}, [searchParams]);
 
 		return (
 			<FileExplorer

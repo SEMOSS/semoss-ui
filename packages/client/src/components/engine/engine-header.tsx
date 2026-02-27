@@ -1,7 +1,7 @@
-import { ChevronRight, Copy, Download } from "lucide-react";
+import { Bot, ChevronRight, Copy, Download } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
 	Badge,
 	Breadcrumb,
@@ -27,8 +27,9 @@ import BRAIN from "@/assets/img/BRAIN.png";
 import { useEngine, useRootStore } from "@/hooks";
 import { ENGINE_IMAGES } from "@/pages/import";
 import { formatToDataTestId } from "@/utility";
-import { EditEngineDetails, EngineAccessButton } from ".";
+import { EditEngineDetails } from ".";
 
+type MCPStatus = "idle" | "generating" | "generated";
 /**
  * Engine Header
  */
@@ -39,10 +40,19 @@ export const EngineHeader: React.FC = () => {
 	// Service for Axios calls
 	const { monolithStore } = useRootStore();
 
+	const navigate = useNavigate();
+
 	const [openExportModal, setOpenExportModal] = useState(false);
 
 	// export loading state
 	const [exportLoading, setExportLoading] = useState(false);
+
+	// mcp state
+	const [mcpStatus, setMCPStatus] = useState<MCPStatus>(
+		(active.metadata.tag as string[])?.includes("MCP")
+			? "generated"
+			: "idle",
+	);
 
 	const findDBImage = (appType: string, appSubType: string) => {
 		const obj = ENGINE_IMAGES[appType]?.find(
@@ -89,6 +99,65 @@ export const EngineHeader: React.FC = () => {
 				});
 		});
 		setExportLoading(false);
+	};
+
+	const generateMCP = async () => {
+		const pixel = `MakeEngineMCP(engine="${active.id}");`;
+
+		const { pixelReturn } = await monolithStore.runQuery(pixel);
+
+		if (pixelReturn[0].operationType.includes("ERROR")) {
+			throw pixelReturn[0].output as string;
+		}
+	};
+
+	const revertMCP = async () => {
+		const mcpFilePath = `/mcp/pixel_mcp.json`;
+		const pixel = `DeleteEngineAssets(filePath=["${mcpFilePath}"], engine=["${active.id}"]);`;
+
+		const { pixelReturn } = await monolithStore.runQuery(pixel);
+
+		if (pixelReturn[0].operationType.includes("ERROR")) {
+			throw pixelReturn[0].output as string;
+		}
+	};
+
+	const handleMCPClick = async () => {
+		const mcpAction = mcpStatus === "generated" ? "Revert" : "Generate";
+		const navigationPath = `/engine/${type}/${active.id}/files?mcp=${mcpAction}`;
+		if (mcpAction === "Generate") {
+			try {
+				setMCPStatus("generating");
+
+				await generateMCP(); // your async API call
+				setMCPStatus("generated");
+				navigate(navigationPath);
+				active.metadata.tag = [
+					...(active.metadata.tag as string[]),
+					"MCP",
+				];
+			} catch (error) {
+				toast.error(error as string);
+				setMCPStatus("idle");
+			}
+		} else if (mcpAction === "Revert") {
+			try {
+				setMCPStatus("generating");
+
+				await revertMCP(); // your async API call
+				navigate("/files");
+				setMCPStatus("idle");
+				navigate(navigationPath);
+				active.metadata.tag = [
+					...(active.metadata.tag as string[]).filter(
+						(tag) => tag !== "MCP",
+					),
+				];
+			} catch (error) {
+				toast.error(error as string);
+				setMCPStatus("generated");
+			}
+		}
 	};
 
 	return (
@@ -174,7 +243,25 @@ export const EngineHeader: React.FC = () => {
 				</div>
 
 				<div className="flex flex-shrink-0 flex-row gap-2">
-					<EngineAccessButton />
+					<Button
+						variant="outline"
+						size="lg"
+						onClick={() => handleMCPClick()}
+						data-testid="make-mcp-btn"
+					>
+						<div className="flex flex-row items-center">
+							{mcpStatus === "generating" ? (
+								<Spinner className="mr-2 size-4" />
+							) : (
+								<Bot className="mr-2 size-4" />
+							)}
+							{mcpStatus === "generating"
+								? "Processing..."
+								: mcpStatus === "generated"
+									? "Revert MCP"
+									: "Generate MCP"}
+						</div>
+					</Button>
 					{active.role === "OWNER" && (
 						<Button
 							disabled={exportLoading}
