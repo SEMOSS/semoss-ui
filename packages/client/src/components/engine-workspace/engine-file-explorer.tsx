@@ -134,6 +134,9 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 					});
 				}}
 				ItemComponent={({ item, refresh, ...otherProps }) => {
+					const isDriverFile =
+						item.type !== "directory" &&
+						MCP.DRIVER_PATHS.some((f) => item.path === f);
 					return (
 						<FileExplorerItem
 							draggable={item.type !== "directory"}
@@ -160,10 +163,9 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 									},
 								);
 							}}
+							{...otherProps}
 							actions={[
-								MCP.DRIVER_PATHS.some((f) =>
-									item.path.startsWith(f),
-								) && item.type !== "directory"
+								isDriverFile
 									? {
 											name: "Create",
 											icon: <HammerIcon />,
@@ -291,7 +293,6 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 									},
 								},
 							]}
-							{...otherProps}
 						/>
 					);
 				}}
