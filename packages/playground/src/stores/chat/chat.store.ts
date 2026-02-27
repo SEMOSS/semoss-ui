@@ -40,6 +40,14 @@ interface ChatStoreInterface {
 		 */
 		roomCounter: number;
 	};
+
+	/**
+	 * Current user info
+	 */
+	user: {
+		id: string;
+		name: string;
+	};
 }
 
 /**
@@ -59,11 +67,25 @@ export class ChatStore {
 		keys: {
 			roomCounter: 0,
 		},
+		user: {
+			id: "",
+			name: "",
+		},
 	};
 
-	constructor(theme: ThemeMap["playground"], actions: Insight["actions"]) {
+	constructor(
+		theme: ThemeMap["playground"],
+		actions: Insight["actions"],
+		user?: {
+			id: string;
+			name: string;
+		},
+	) {
 		this._theme = theme;
 		this._actions = actions;
+		if (user) {
+			this._store.user = user;
+		}
 
 		// make it observable
 		makeAutoObservable(this);
@@ -94,6 +116,13 @@ export class ChatStore {
 	}
 
 	/**
+	 * Get the current user
+	 */
+	get user() {
+		return this._store.user;
+	}
+
+	/**
 	 * Initialize the store
 	 */
 	initialize = async (): Promise<void> => {
@@ -117,6 +146,9 @@ export class ChatStore {
 	 */
 	createRoom = async (
 		mode: "planning" | "chat",
+		prompt: string,
+		files: File[],
+		options: RoomStore["options"],
 		workspaceId?: string,
 	): Promise<RoomStore> => {
 		// create the room in a new insight
@@ -151,8 +183,14 @@ export class ChatStore {
 		// set the mode
 		room.setMode(mode);
 
+		// set default name
+		room.setMetadata({ name: prompt.substring(0, 15) });
+
 		// initialize the room
 		await room.initialize();
+
+		// set the options
+		await room.updateRoomOptions(options);
 
 		runInAction(() => {
 			// save it to the cache
@@ -160,6 +198,14 @@ export class ChatStore {
 
 			// increment the roomCounter to force re-render of the nav
 			this._store.keys.roomCounter++;
+		});
+
+		// ask the room
+		room.askMessage(prompt, files).then(() => {
+			runInAction(() => {
+				// increment the roomCounter to force re-render of the nav
+				this._store.keys.roomCounter++;
+			});
 		});
 
 		// return the room
@@ -171,6 +217,9 @@ export class ChatStore {
 	 * @param roomId - Room to remove
 	 */
 	closeRoom = async (roomId: string): Promise<void> => {
+		const room = this._store.rooms[roomId];
+		const insightId = room?.insightId;
+
 		// wait for the pixel to run
 		await this._actions.run<[boolean]>(
 			`RemoveUserRoom(roomId=["${roomId}"]);`,
@@ -179,6 +228,18 @@ export class ChatStore {
 		// throw errors
 		if (this._error) {
 			throw new Error(this._error.message);
+		}
+
+		// only drop if the room was opened and has a real insightId
+		if (insightId && insightId !== "new") {
+			try {
+				await runPixel<[Record<string, unknown>]>(
+					"DropInsight()",
+					insightId,
+				);
+			} catch (e) {
+				console.warn(e);
+			}
 		}
 
 		runInAction(() => {

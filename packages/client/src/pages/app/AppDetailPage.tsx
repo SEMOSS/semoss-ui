@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
+import { getUserProjectPermission } from "@semoss/shared";
 import {
 	Box,
 	Breadcrumbs,
@@ -26,7 +27,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { getUserProjectPermission, uploadImage } from "@/api";
+import { uploadImage } from "@/api";
 import {
 	type AppDetailsFormTypes,
 	AppDetailsFormValues,
@@ -42,6 +43,7 @@ import {
 	type modelledDependency,
 } from "@/components/app";
 import { UpdateSMSS } from "@/components/settings";
+import { McpUsage } from "@/components/shared/mcp-usage";
 import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
@@ -51,6 +53,7 @@ import { AccessControl } from "./AppDetailTabs/AccessControl";
 import { Dependencies } from "./AppDetailTabs/Dependencies";
 import { Overview } from "./AppDetailTabs/Overview";
 import { SettingsTab } from "./AppDetailTabs/Settings";
+import { AppFileManagerPage } from "./app-file-manager-page";
 
 const OuterContainer = styled("div")({
 	height: "100%",
@@ -281,7 +284,7 @@ export const AppDetailPage = () => {
 	}, [appId]);
 
 	async function getPermission() {
-		const { permission: role } = await getUserProjectPermission(appId);
+		const role = await getUserProjectPermission(appId);
 
 		setValue("userRole", role);
 		const permission = determineUserPermission(role);
@@ -565,13 +568,21 @@ export const AppDetailPage = () => {
 	const TABS_BY_PERMISSION: Record<string, string[]> = {
 		author: [
 			"Overview",
-			"Access Control",
 			"Dependencies",
+			"MCP Usage",
 			"Settings",
+			"Access Control",
+			"Files",
 			"SMSS",
 		],
-		editor: ["Overview", "Access Control"],
-		readOnly: ["Overview"],
+		editor: [
+			"Overview",
+			"Dependencies",
+			"MCP Usage",
+			"Access Control",
+			"Files",
+		],
+		readOnly: ["Overview", "Dependencies", "MCP Usage"],
 		discoverable: ["Overview"],
 	};
 
@@ -761,16 +772,16 @@ export const AppDetailPage = () => {
 											value="Overview"
 										/>
 									)}
-									{visibleTabs.includes("Access Control") && (
-										<StyledToggleTabsGroupItem
-											label="Access Control"
-											value="Access Control"
-										/>
-									)}
 									{visibleTabs.includes("Dependencies") && (
 										<StyledToggleTabsGroupItem
 											label="Dependencies"
 											value="Dependencies"
+										/>
+									)}
+									{visibleTabs.includes("MCP Usage") && (
+										<StyledToggleTabsGroupItem
+											label="MCP Usage"
+											value="MCP Usage"
 										/>
 									)}
 									{visibleTabs.includes("Settings") && (
@@ -779,28 +790,29 @@ export const AppDetailPage = () => {
 											value="Settings"
 										/>
 									)}
+									{visibleTabs.includes("Access Control") && (
+										<StyledToggleTabsGroupItem
+											label="Access Control"
+											value="Access Control"
+										/>
+									)}
+									{visibleTabs.includes("Files") && (
+										<StyledToggleTabsGroupItem
+											label="Files"
+											value="Files"
+										/>
+									)}
 									{visibleTabs.includes("SMSS") && (
 										<StyledToggleTabsGroupItem
 											label="SMSS"
 											value="SMSS"
 										/>
 									)}
-									Hi
 								</StyledToggleTabsGroup>
 							</StyledContentContainer>
 							<StyledTabsSection>
 								{selectedTab === "Overview" && (
 									<Overview appInfo={appInfo} />
-								)}
-								{selectedTab === "Access Control" && (
-									<AccessControl
-										appInfo={appInfo}
-										appId={appId}
-										fetchUserSpecificData={
-											fetchUserSpecificData
-										}
-										permission={permission}
-									/>
 								)}
 								{selectedTab === "Dependencies" && (
 									<StyledStack>
@@ -840,6 +852,15 @@ export const AppDetailPage = () => {
 										/>
 									</StyledStack>
 								)}
+								{selectedTab === "MCP Usage" && (
+									<SettingsContext.Provider
+										value={{
+											adminMode: false,
+										}}
+									>
+										<McpUsage id={appId} />
+									</SettingsContext.Provider>
+								)}
 								{selectedTab === "Settings" && (
 									<SettingsContext.Provider
 										value={{
@@ -848,6 +869,19 @@ export const AppDetailPage = () => {
 									>
 										<SettingsTab id={appId} />
 									</SettingsContext.Provider>
+								)}
+								{selectedTab === "Access Control" && (
+									<AccessControl
+										appInfo={appInfo}
+										appId={appId}
+										fetchUserSpecificData={
+											fetchUserSpecificData
+										}
+										permission={permission}
+									/>
+								)}
+								{selectedTab === "Files" && (
+									<AppFileManagerPage appId={appId || ""} />
 								)}
 								{selectedTab === "SMSS" && (
 									<SettingsContext.Provider

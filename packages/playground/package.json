@@ -13,6 +13,7 @@
     },
     "dependencies": {
         "@lexical/react": "^0.39.0",
+        "@semoss/i18n": "workspace:*",
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",

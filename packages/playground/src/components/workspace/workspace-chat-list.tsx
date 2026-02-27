@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import { Muted, ScrollArea, Spinner, useInfiniteScroll } from "@semoss/ui/next";
 
@@ -23,6 +24,8 @@ export const WorkspaceChatList = ({
 	workspaceId,
 	search,
 }: WorkspaceChatListProps) => {
+	const { t } = useTranslation("workspace");
+
 	// get the data
 	const getWorkspaceRooms = useIteratorPixel<
 		{
@@ -69,7 +72,7 @@ export const WorkspaceChatList = ({
 	if (getWorkspaceRooms.isError) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
-				Error: ${getWorkspaceRooms.error?.message}
+				{t("chat.error")} {getWorkspaceRooms.error?.message}
 			</div>
 		);
 	}
@@ -77,7 +80,7 @@ export const WorkspaceChatList = ({
 	if (getWorkspaceRooms.data.length === 0) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
-				<Muted>No chats found</Muted>
+				<Muted>{t("chat.noChats")}</Muted>
 			</div>
 		);
 	}
@@ -89,7 +92,7 @@ export const WorkspaceChatList = ({
 					<Link
 						key={r.room_id}
 						to={`/room/${r.room_id}`}
-						aria-label={"Select room"}
+						aria-label={t("chat.selectRoom")}
 						className="flex flex-row justify-between rounded-lg border border-border bg-card px-3 py-4"
 					>
 						<div
