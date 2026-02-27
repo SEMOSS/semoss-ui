@@ -151,7 +151,7 @@ export default class Open extends Command {
 					`\n⚠️  Unable to open the browser automatically. Please copy and paste this URL into your browser:\n${urlToOpen}\n`,
 				);
 			});
-		setTimeout(() => {
+		const fallbackTimer = setTimeout(() => {
 			if (!browserOpened) {
 				this.log(
 					`\n⚠️  The CLI attempted to open your browser, but it may not have launched. Please copy and paste this URL into your browser:\n${urlToOpen}\n`,
@@ -159,5 +159,6 @@ export default class Open extends Command {
 			}
 		}, 3000);
 		await openPromise;
+		clearTimeout(fallbackTimer);
 	}
 }

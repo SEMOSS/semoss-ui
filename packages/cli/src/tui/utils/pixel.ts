@@ -177,7 +177,7 @@ export async function executePixelCommand(
 export async function destroySession(): Promise<void> {
 	if (activeInsight) {
 		try {
-			activeInsight.destroy();
+			await activeInsight.destroy();
 		} catch {
 			// Best-effort cleanup
 		}

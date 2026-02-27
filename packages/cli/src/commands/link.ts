@@ -2,8 +2,6 @@ import { Args, Command, Flags } from "@oclif/core";
 import chalk from "chalk";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { DEFAULT_CONFIG } from "../constants.js";
-import type { Config } from "../types.js";
 import {
 	getCurrentInstance,
 	getCurrentInstanceName,
@@ -74,7 +72,7 @@ export default class Link extends Command {
 				this.error(
 					chalk.red("\n✗ No active instance found.\n") +
 						chalk.dim(
-							`Use ${chalk.cyan("@semoss/cli connect")} to add an instance first.`,
+							`Use ${chalk.cyan("semoss connect")} to add an instance first.`,
 						),
 				);
 			}
@@ -107,15 +105,9 @@ export default class Link extends Command {
 				? flags["post-deploy"].split(",").map((c) => c.trim())
 				: undefined;
 
-			// Create the project config
-			const _projectConfig: Config = {
-				...DEFAULT_CONFIG,
-				app: args.appId,
-				name: appName,
-			};
-
-			// Write smss.json (commented: may be useful for backward compat)
-			// fs.writeFileSync(smssPath, JSON.stringify(projectConfig, null, 4));
+			// App config is persisted to the credential store below.
+			// smss.json is no longer written; settings live in the per-instance
+			// app registry inside the credential store.
 
 			// Update instance's app registry with deployment settings
 			const credentials = loadCredentials();
@@ -160,7 +152,7 @@ export default class Link extends Command {
 			}
 			this.log(
 				chalk.dim(
-					`\n💡 Use ${chalk.cyan("@semoss/cli deploy")} to deploy this app`,
+					`\n💡 Use ${chalk.cyan("semoss deploy")} to deploy this app`,
 				),
 			);
 		} finally {

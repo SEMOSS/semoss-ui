@@ -48,7 +48,7 @@ export default class Apps extends Command {
 				this.error(
 					chalk.red("\n✗ No credentials found.\n") +
 						chalk.dim(
-							`Use ${chalk.cyan("@semoss/cli connect")} to add an instance.`,
+							`Use ${chalk.cyan("semoss connect")} to add an instance.`,
 						),
 				);
 			}
@@ -154,7 +154,7 @@ export default class Apps extends Command {
 				this.log(table.toString());
 				this.log(
 					chalk.dim(
-						`\n💡 Use ${chalk.cyan("@semoss/cli link <app-id>")} to link an app to this directory`,
+						`\n💡 Use ${chalk.cyan("semoss link <app-id>")} to link an app to this directory`,
 					),
 				);
 				this.log("");

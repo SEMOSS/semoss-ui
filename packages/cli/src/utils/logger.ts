@@ -419,8 +419,10 @@ export function toLogLevel(flagValue: string | undefined): LogLevel {
 			return "debug";
 		case "verbose":
 			return "info";
+		case "normal":
+			return "info";
 		default:
-			return "warn";
+			return "info";
 	}
 }
 

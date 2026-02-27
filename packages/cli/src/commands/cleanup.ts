@@ -1,6 +1,7 @@
 import { Command, Flags, ux } from "@oclif/core";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { formatBytes, getDirSize } from "../utils/deploy.js";
 import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Cleanup extends Command {
@@ -86,7 +87,7 @@ List all backups without deleting
 					const stat = fs.statSync(backupPath);
 
 					if (stat.isDirectory()) {
-						const size = this.getDirSize(backupPath);
+						const size = getDirSize(backupPath);
 						totalSize += size;
 						backupDirs.push({
 							name: backup,
@@ -94,14 +95,12 @@ List all backups without deleting
 							size,
 						});
 
-						const sizeStr = this.formatBytes(size);
+						const sizeStr = formatBytes(size);
 						this.log(`  • ${backup} (${sizeStr})`);
 					}
 				}
 
-				this.log(
-					`\n💾 Total backup size: ${this.formatBytes(totalSize)}`,
-				);
+				this.log(`\n💾 Total backup size: ${formatBytes(totalSize)}`);
 
 				// If list flag, stop here
 				if (flags.list) {
@@ -151,10 +150,10 @@ List all backups without deleting
 				}
 
 				this.log(
-					`\n🎉 Cleanup complete! Freed up ${this.formatBytes(totalSize)}`,
+					`\n🎉 Cleanup complete! Freed up ${formatBytes(totalSize)}`,
 				);
 				logger.debug(
-					`Cleanup complete — freed ${this.formatBytes(totalSize)}`,
+					`Cleanup complete — freed ${formatBytes(totalSize)}`,
 				);
 			} catch (error) {
 				logger.error(`Cleanup failed: ${error}`);
@@ -165,44 +164,9 @@ List all backups without deleting
 		}
 	}
 
-	private getDirSize(dirPath: string): number {
-		let size = 0;
-
-		try {
-			const files = fs.readdirSync(dirPath);
-			for (const file of files) {
-				const filePath = path.join(dirPath, file);
-				const stat = fs.statSync(filePath);
-
-				if (stat.isDirectory()) {
-					size += this.getDirSize(filePath);
-				} else {
-					size += stat.size;
-				}
-			}
-		} catch (error) {
-			if (error instanceof Error) {
-				this.log(
-					`⚠️  Could not read directory ${dirPath}: ${error.message}`,
-				);
-			}
-		}
-
-		return size;
-	}
-
-	private formatBytes(bytes: number): string {
-		if (bytes === 0) return "0 Bytes";
-
-		const k = 1024;
-		const sizes = ["Bytes", "KB", "MB", "GB"];
-		const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-		return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
-	}
-
 	private async confirm(message: string): Promise<boolean> {
 		const answer = await ux.prompt(message);
-		return answer.toLowerCase() === "yes";
+		const normalized = answer.toLowerCase().trim();
+		return normalized === "yes" || normalized === "y";
 	}
 }

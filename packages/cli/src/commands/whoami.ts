@@ -112,7 +112,7 @@ export default class Whoami extends Command {
 				this.error(
 					chalk.red("\n✗ No credentials found.\n") +
 						chalk.dim(
-							`Use ${chalk.cyan("@semoss/cli connect")} to add an instance.`,
+							`Use ${chalk.cyan("semoss connect")} to add an instance.`,
 						),
 				);
 				return; // `this.error()` throws, but explicit return aids readability

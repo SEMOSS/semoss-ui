@@ -105,7 +105,6 @@ export default class Connect extends Command {
 
 			const instanceName = flags.name || answers.name;
 			const module = flags.module || answers.module;
-			const _endpoint = module; // endpoint and module are the same in SEMOSS
 			const accessKey = flags.accessKey || answers.accessKey;
 			const secretKey = flags.secretKey || answers.secretKey;
 			const isDefault = flags.default || answers.default;
@@ -256,7 +255,7 @@ export default class Connect extends Command {
 
 			this.log(
 				chalk.dim(
-					`\n💡 Use ${chalk.cyan("@semoss/cli status")} to view current configuration`,
+					`\n💡 Use ${chalk.cyan("semoss status")} to view current configuration`,
 				),
 			);
 		} finally {

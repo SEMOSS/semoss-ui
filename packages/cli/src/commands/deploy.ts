@@ -890,7 +890,11 @@ deploy java and python folders
 			this.log(`Module:   ${chalk.dim(configResult.module)}`);
 			this.log(`App:      ${appInfo}`);
 			this.log(chalk.dim("─".repeat(50)));
-			this.log(chalk.red("This action is irreversible."));
+			this.log(
+				chalk.red(
+					"This action will replace the current deployment. Use --rollback to revert if needed.",
+				),
+			);
 			this.log("");
 
 			const { confirm } = await inquirer.prompt([
@@ -1335,14 +1339,14 @@ deploy java and python folders
 						await Promise.all(
 							paths.map((p) => {
 								return new Promise((resolve) => {
-									fs.stat(p, (_err, stats) => {
-										// add the non directory
+									fs.stat(p, (err, stats) => {
 										try {
-											if (!stats.isDirectory()) {
-												// get the directory name
+											if (err || !stats) {
+												logger.debug(
+													`⚠️ Skipping ${p}: ${err?.message ?? "stat returned no data"}`,
+												);
+											} else if (!stats.isDirectory()) {
 												const dirname = path.dirname(p);
-
-												// add it
 												zip.addLocalFile(
 													p,
 													dirname === "."
@@ -1351,7 +1355,7 @@ deploy java and python folders
 												);
 											}
 										} catch (e) {
-											logger.info(`⚠️ Warning: ${e}`);
+											logger.debug(`⚠️ Warning: ${e}`);
 										} finally {
 											resolve(null);
 										}

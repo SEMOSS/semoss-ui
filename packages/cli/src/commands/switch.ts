@@ -59,7 +59,7 @@ export default class Switch extends Command {
 			this.log(chalk.cyan(`To:   ${args.instance}`));
 			this.log(
 				chalk.dim(
-					`\n💡 Use ${chalk.cyan("@semoss/cli status")} to view current configuration`,
+					`\n💡 Use ${chalk.cyan("semoss status")} to view current configuration`,
 				),
 			);
 		} finally {

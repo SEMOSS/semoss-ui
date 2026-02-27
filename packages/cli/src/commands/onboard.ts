@@ -376,27 +376,27 @@ export default class Onboard extends Command {
 			this.log(chalk.green.bold("✓ Configuration saved!\n"));
 			this.log(
 				chalk.bold.cyan(
-					"╔═══════════════════════════════════════════════╗",
+					"╔════════════════════════════════════════════════╗",
 				),
 			);
 			this.log(
 				chalk.bold.cyan(
-					"║                                               ║",
+					"║                                                ║",
 				),
 			);
 			this.log(
 				chalk.bold.cyan(
-					"║          Setup Complete! 🎉                   ║",
+					"║           Setup Complete! 🎉                  ║",
 				),
 			);
 			this.log(
 				chalk.bold.cyan(
-					"║                                               ║",
+					"║                                                ║",
 				),
 			);
 			this.log(
 				chalk.bold.cyan(
-					"╚═══════════════════════════════════════════════╝",
+					"╚════════════════════════════════════════════════╝",
 				),
 			);
 			this.log();

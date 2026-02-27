@@ -43,7 +43,7 @@ export default class Instances extends Command {
 					this.log(chalk.yellow("\n⚠️  No instances configured.\n"));
 					this.log(
 						chalk.dim(
-							`Use ${chalk.cyan("@semoss/cli connect")} to add an instance.`,
+							`Use ${chalk.cyan("semoss connect")} to add an instance.`,
 						),
 					);
 				}
@@ -104,7 +104,7 @@ export default class Instances extends Command {
 			this.log(table.toString());
 			this.log(
 				chalk.dim(
-					`\n💡 Use ${chalk.cyan("@semoss/cli switch <name>")} to change active instance`,
+					`\n💡 Use ${chalk.cyan("semoss switch <name>")} to change active instance`,
 				),
 			);
 		} finally {

@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-const GITIGNORE_HEADER = "# Semoss Cli Deployment";
+const GITIGNORE_HEADER = "# SEMOSS CLI Deployment";
 const GITIGNORE_ENTRIES = [
 	".semoss-backups/",
 	".semoss-deployments",
