@@ -1,24 +1,13 @@
 import { Command, Flags } from "@oclif/core";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import {
+	type DeployRecord,
+	formatBytes,
+	HISTORY_FILE,
+	loadDeployHistory,
+} from "../utils/deploy.js";
 import { Logger } from "../utils/logger.js";
-
-const HISTORY_FILE = ".semoss-deployments";
-
-/** A single deployment history record written by the deploy command. */
-interface DeployRecord {
-	timestamp: string;
-	targets: string[] | "all";
-	status: "success" | "failure" | "dry-run";
-	zipSize?: number;
-	duration?: number;
-	backupDir?: string;
-	rollback?: boolean;
-	app?: string;
-	module?: string;
-}
-
-const VALID_DEPLOY_STATUSES = new Set(["success", "failure", "dry-run"]);
 
 export default class Log extends Command {
 	static description =
@@ -101,7 +90,7 @@ Print the log directory path
 			return;
 		}
 
-		const history = this.loadDeployHistory();
+		const history = loadDeployHistory();
 
 		if (history.length === 0) {
 			if (flags.json) {
@@ -209,24 +198,6 @@ Print the log directory path
 		}
 	}
 
-	private loadDeployHistory(): DeployRecord[] {
-		try {
-			const content = fs.readFileSync(HISTORY_FILE, "utf-8");
-			const parsed: unknown = JSON.parse(content);
-			if (!Array.isArray(parsed)) return [];
-
-			return parsed.filter(
-				(r): r is DeployRecord =>
-					r != null &&
-					typeof r === "object" &&
-					typeof (r as DeployRecord).timestamp === "string" &&
-					VALID_DEPLOY_STATUSES.has((r as DeployRecord).status),
-			);
-		} catch {
-			return [];
-		}
-	}
-
 	private printRecord(record: DeployRecord, verbose: boolean): void {
 		const statusIcon = this.getStatusIcon(record.status);
 		const timestamp = this.formatTimestamp(record.timestamp);
@@ -250,7 +221,7 @@ Print the log directory path
 				);
 			}
 			if (record.zipSize) {
-				this.log(`   Zip size: ${this.formatBytes(record.zipSize)}`);
+				this.log(`   Zip size: ${formatBytes(record.zipSize)}`);
 			}
 			if (record.backupDir) {
 				this.log(`   Backup:   ${record.backupDir}`);
@@ -293,13 +264,5 @@ Print the log directory path
 		const minutes = Math.floor(seconds / 60);
 		const remainingSeconds = seconds % 60;
 		return `${minutes}m ${remainingSeconds}s`;
-	}
-
-	private formatBytes(bytes: number): string {
-		if (bytes === 0) return "0 Bytes";
-		const k = 1024;
-		const sizes = ["Bytes", "KB", "MB", "GB"];
-		const i = Math.floor(Math.log(bytes) / Math.log(k));
-		return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 	}
 }

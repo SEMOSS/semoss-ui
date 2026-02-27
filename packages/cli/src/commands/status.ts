@@ -4,26 +4,18 @@ import * as path from "node:path";
 import { Env, Insight } from "@semoss/sdk";
 import type { Config } from "../types.js";
 import {
+	BACKUP_DIR_NAME,
+	type DeployRecord,
+	formatBytes,
 	getConfigSources,
 	getConfiguration,
+	getDirSize,
 	initializeAndTestInsight,
+	loadDeployHistory,
 } from "../utils/index.js";
 import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 // ── Types ───────────────────────────────────────────────────────
-
-/** A single deployment history record written by the deploy command. */
-interface DeployRecord {
-	timestamp: string;
-	targets: string[] | "all";
-	status: "success" | "failure" | "dry-run";
-	zipSize?: number;
-	duration?: number;
-	backupDir?: string;
-	rollback?: boolean;
-	app?: string;
-	module?: string;
-}
 
 interface ProjectInfo {
 	name: string | null;
@@ -67,11 +59,7 @@ type ConfigStatus = "found" | "not-found" | "invalid";
 // ── Constants ───────────────────────────────────────────────────
 
 const SEPARATOR = "─".repeat(48);
-const HISTORY_FILE = ".semoss-deployments";
-const BACKUP_DIR_NAME = ".semoss-backups";
 const SERVER_TIMEOUT_MS = 10_000;
-
-const VALID_DEPLOY_STATUSES = new Set(["success", "failure", "dry-run"]);
 
 // ── Command ─────────────────────────────────────────────────────
 
@@ -261,36 +249,8 @@ Output status as JSON for scripting
 		};
 	}
 
-	private getProjectInfo(
-		smssConfig: Config | null,
-		configPath: string,
-		configStatus: ConfigStatus,
-		envSource: string,
-	): ProjectInfo {
-		const batchInstances =
-			smssConfig?.deploy?.batch &&
-			typeof smssConfig.deploy.batch === "object"
-				? Object.keys(smssConfig.deploy.batch)
-				: [];
-
-		return {
-			name: smssConfig?.name || null,
-			appId: this.resolveEnv("APP") || smssConfig?.app || null,
-			endpoint: this.resolveEnv("ENDPOINT") || null,
-			module: this.resolveEnv("MODULE") || null,
-			accessKeySet: !!this.resolveEnv("ACCESS_KEY"),
-			secretKeySet: !!this.resolveEnv("SECRET_KEY"),
-			configStatus,
-			configPath,
-			targets: smssConfig?.targets ?? [],
-			ignoreCount: smssConfig?.ignore?.length ?? 0,
-			batchInstances,
-			envSource,
-		};
-	}
-
 	private getDeploymentInfo(): DeploymentInfo {
-		const history = this.loadDeployHistory();
+		const history = loadDeployHistory();
 
 		const counts = { success: 0, failure: 0, "dry-run": 0 };
 		let rollbackAvailable = false;
@@ -312,25 +272,6 @@ Output status as JSON for scripting
 		};
 	}
 
-	/** Parse and validate deployment history, discarding malformed records. */
-	private loadDeployHistory(): DeployRecord[] {
-		try {
-			const content = fs.readFileSync(HISTORY_FILE, "utf-8");
-			const parsed: unknown = JSON.parse(content);
-			if (!Array.isArray(parsed)) return [];
-
-			return parsed.filter(
-				(r): r is DeployRecord =>
-					r != null &&
-					typeof r === "object" &&
-					typeof (r as DeployRecord).timestamp === "string" &&
-					VALID_DEPLOY_STATUSES.has((r as DeployRecord).status),
-			);
-		} catch {
-			return [];
-		}
-	}
-
 	private getBackupInfo(): BackupInfo {
 		const backupDir = path.join(process.cwd(), BACKUP_DIR_NAME);
 
@@ -346,9 +287,7 @@ Output status as JSON for scripting
 			for (const entry of entries) {
 				if (entry.isDirectory()) {
 					count++;
-					totalSize += this.getDirSize(
-						path.join(backupDir, entry.name),
-					);
+					totalSize += getDirSize(path.join(backupDir, entry.name));
 				}
 			}
 		} catch {
@@ -596,23 +535,6 @@ Output status as JSON for scripting
 	}
 
 	// ── Utilities ───────────────────────────────────────────────────
-
-	/** Recursively compute total byte size of a directory. */
-	private getDirSize(dirPath: string): number {
-		let size = 0;
-		try {
-			for (const file of fs.readdirSync(dirPath)) {
-				const filePath = path.join(dirPath, file);
-				const stat = fs.statSync(filePath);
-				size += stat.isDirectory()
-					? this.getDirSize(filePath)
-					: stat.size;
-			}
-		} catch {
-			// Ignore unreadable entries
-		}
-		return size;
-	}
 }
 
 // ── Module-level Utilities ──────────────────────────────────────
@@ -641,16 +563,4 @@ function formatTimestamp(ts?: string): string {
 	}
 
 	return `${ts} (${relative})`;
-}
-
-/** Format a byte count into a human-readable string (e.g. "1.5 MB"). */
-function formatBytes(bytes: number): string {
-	if (bytes <= 0) return "0 Bytes";
-	const k = 1024;
-	const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-	const i = Math.min(
-		Math.floor(Math.log(bytes) / Math.log(k)),
-		sizes.length - 1,
-	);
-	return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 }
