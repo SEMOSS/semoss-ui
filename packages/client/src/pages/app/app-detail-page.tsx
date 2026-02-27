@@ -389,19 +389,19 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	const TABS_BY_PERMISSION: Record<string, string[]> = {
 		author: [
 			"Overview",
-			"Files",
-			"Access Control",
 			"Dependencies",
-			"Settings",
-			"SMSS",
 			"MCP Usage",
+			"Settings",
+			"Access Control",
+			"Files",
+			"SMSS",
 		],
 		editor: [
 			"Overview",
-			"Files",
-			"Access Control",
 			"Dependencies",
 			"MCP Usage",
+			"Access Control",
+			"Files",
 		],
 		readOnly: ["Overview", "Dependencies", "MCP Usage"],
 		discoverable: ["Overview"],
@@ -617,25 +617,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 												</TabsTrigger>
 											)}
 											{visibleTabs.includes(
-												"Access Control",
-											) && (
-												<TabsTrigger
-													value="Access Control"
-													className="p-3"
-												>
-													Access Control
-												</TabsTrigger>
-											)}
-											{visibleTabs.includes("Files") &&
-												showNav && (
-													<TabsTrigger
-														value="Files"
-														className="p-3"
-													>
-														Files
-													</TabsTrigger>
-												)}
-											{visibleTabs.includes(
 												"Dependencies",
 											) && (
 												<TabsTrigger
@@ -643,14 +624,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 													className="p-3"
 												>
 													Dependencies
-												</TabsTrigger>
-											)}
-											{visibleTabs.includes("SMSS") && (
-												<TabsTrigger
-													value="SMSS"
-													className="p-3"
-												>
-													SMSS
 												</TabsTrigger>
 											)}
 											{visibleTabs.includes(
@@ -673,6 +646,34 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 													Settings
 												</TabsTrigger>
 											)}
+											{visibleTabs.includes(
+												"Access Control",
+											) && (
+												<TabsTrigger
+													value="Access Control"
+													className="p-3"
+												>
+													Access Control
+												</TabsTrigger>
+											)}
+											{visibleTabs.includes("Files") &&
+												showNav && (
+													<TabsTrigger
+														value="Files"
+														className="p-3"
+													>
+														Files
+													</TabsTrigger>
+												)}
+
+											{visibleTabs.includes("SMSS") && (
+												<TabsTrigger
+													value="SMSS"
+													className="p-3"
+												>
+													SMSS
+												</TabsTrigger>
+											)}
 										</TabsList>
 									</div>
 									<TabsContent
@@ -681,29 +682,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 									>
 										<Overview appInfo={appInfo} />
 									</TabsContent>
-									<TabsContent
-										value="Access Control"
-										className="mt-2 w-full"
-									>
-										<div className="w-full">
-											<AccessControl
-												appInfo={appInfo}
-												appId={appId}
-												fetchUserSpecificData={
-													fetchUserSpecificData
-												}
-												permission={permission}
-											/>
-										</div>
-									</TabsContent>
-									{showNav && (
-										<TabsContent
-											value="Files"
-											className="mt-2 w-full"
-										>
-											<AppFileManagerPage appId={appId} />
-										</TabsContent>
-									)}
 									<TabsContent
 										value="Dependencies"
 										className="mt-2 w-full"
@@ -755,6 +733,14 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 										</div>
 									</TabsContent>
 									<TabsContent
+										value="MCP Usage"
+										className="mt-2 w-full"
+									>
+										<div className="w-full">
+											<McpUsage id={appId} />
+										</div>
+									</TabsContent>
+									<TabsContent
 										value="Settings"
 										className="mt-2 w-full"
 									>
@@ -768,6 +754,30 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 											</SettingsContext.Provider>
 										</div>
 									</TabsContent>
+									<TabsContent
+										value="Access Control"
+										className="mt-2 w-full"
+									>
+										<div className="w-full">
+											<AccessControl
+												appInfo={appInfo}
+												appId={appId}
+												fetchUserSpecificData={
+													fetchUserSpecificData
+												}
+												permission={permission}
+											/>
+										</div>
+									</TabsContent>
+									{showNav && (
+										<TabsContent
+											value="Files"
+											className="mt-2 w-full"
+										>
+											<AppFileManagerPage appId={appId} />
+										</TabsContent>
+									)}
+
 									<TabsContent
 										value="SMSS"
 										className="mt-2 w-full"
@@ -783,14 +793,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 													id={appId}
 												/>
 											</SettingsContext.Provider>
-										</div>
-									</TabsContent>
-									<TabsContent
-										value="MCP Usage"
-										className="mt-2 w-full"
-									>
-										<div className="w-full">
-											<McpUsage id={appId} />
 										</div>
 									</TabsContent>
 								</Tabs>
