@@ -568,19 +568,19 @@ export const AppDetailPage = () => {
 	const TABS_BY_PERMISSION: Record<string, string[]> = {
 		author: [
 			"Overview",
-			"Files",
-			"Access Control",
 			"Dependencies",
-			"Settings",
-			"SMSS",
 			"MCP Usage",
+			"Settings",
+			"Access Control",
+			"Files",
+			"SMSS",
 		],
 		editor: [
 			"Overview",
-			"Files",
-			"Access Control",
 			"Dependencies",
 			"MCP Usage",
+			"Access Control",
+			"Files",
 		],
 		readOnly: ["Overview", "Dependencies", "MCP Usage"],
 		discoverable: ["Overview"],
@@ -772,34 +772,10 @@ export const AppDetailPage = () => {
 											value="Overview"
 										/>
 									)}
-									{visibleTabs.includes("Files") && (
-										<StyledToggleTabsGroupItem
-											label="Files"
-											value="Files"
-										/>
-									)}
-									{visibleTabs.includes("Access Control") && (
-										<StyledToggleTabsGroupItem
-											label="Access Control"
-											value="Access Control"
-										/>
-									)}
 									{visibleTabs.includes("Dependencies") && (
 										<StyledToggleTabsGroupItem
 											label="Dependencies"
 											value="Dependencies"
-										/>
-									)}
-									{visibleTabs.includes("Settings") && (
-										<StyledToggleTabsGroupItem
-											label="Settings"
-											value="Settings"
-										/>
-									)}
-									{visibleTabs.includes("SMSS") && (
-										<StyledToggleTabsGroupItem
-											label="SMSS"
-											value="SMSS"
 										/>
 									)}
 									{visibleTabs.includes("MCP Usage") && (
@@ -808,24 +784,35 @@ export const AppDetailPage = () => {
 											value="MCP Usage"
 										/>
 									)}
+									{visibleTabs.includes("Settings") && (
+										<StyledToggleTabsGroupItem
+											label="Settings"
+											value="Settings"
+										/>
+									)}
+									{visibleTabs.includes("Access Control") && (
+										<StyledToggleTabsGroupItem
+											label="Access Control"
+											value="Access Control"
+										/>
+									)}
+									{visibleTabs.includes("Files") && (
+										<StyledToggleTabsGroupItem
+											label="Files"
+											value="Files"
+										/>
+									)}
+									{visibleTabs.includes("SMSS") && (
+										<StyledToggleTabsGroupItem
+											label="SMSS"
+											value="SMSS"
+										/>
+									)}
 								</StyledToggleTabsGroup>
 							</StyledContentContainer>
 							<StyledTabsSection>
 								{selectedTab === "Overview" && (
 									<Overview appInfo={appInfo} />
-								)}
-								{selectedTab === "Files" && (
-									<AppFileManagerPage appId={appId || ""} />
-								)}
-								{selectedTab === "Access Control" && (
-									<AccessControl
-										appInfo={appInfo}
-										appId={appId}
-										fetchUserSpecificData={
-											fetchUserSpecificData
-										}
-										permission={permission}
-									/>
 								)}
 								{selectedTab === "Dependencies" && (
 									<StyledStack>
@@ -865,6 +852,15 @@ export const AppDetailPage = () => {
 										/>
 									</StyledStack>
 								)}
+								{selectedTab === "MCP Usage" && (
+									<SettingsContext.Provider
+										value={{
+											adminMode: false,
+										}}
+									>
+										<McpUsage id={appId} />
+									</SettingsContext.Provider>
+								)}
 								{selectedTab === "Settings" && (
 									<SettingsContext.Provider
 										value={{
@@ -873,6 +869,19 @@ export const AppDetailPage = () => {
 									>
 										<SettingsTab id={appId} />
 									</SettingsContext.Provider>
+								)}
+								{selectedTab === "Access Control" && (
+									<AccessControl
+										appInfo={appInfo}
+										appId={appId}
+										fetchUserSpecificData={
+											fetchUserSpecificData
+										}
+										permission={permission}
+									/>
+								)}
+								{selectedTab === "Files" && (
+									<AppFileManagerPage appId={appId || ""} />
 								)}
 								{selectedTab === "SMSS" && (
 									<SettingsContext.Provider
@@ -884,15 +893,6 @@ export const AppDetailPage = () => {
 											type={"PROJECT"}
 											id={appId}
 										/>
-									</SettingsContext.Provider>
-								)}
-								{selectedTab === "MCP Usage" && (
-									<SettingsContext.Provider
-										value={{
-											adminMode: false,
-										}}
-									>
-										<McpUsage id={appId} />
 									</SettingsContext.Provider>
 								)}
 							</StyledTabsSection>
