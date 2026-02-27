@@ -12,6 +12,7 @@ import { Footer } from "./components/Footer.js";
 import { Header } from "./components/Header.js";
 import { Input } from "./components/Input.js";
 import { Output, type OutputEntry } from "./components/Output.js";
+import { SnakeGame } from "./components/SnakeGame.js";
 import { useCommandHistory } from "./hooks/useCommandHistory.js";
 import {
 	createSession,
@@ -36,6 +37,7 @@ export const App: React.FC = () => {
 	const [loading, setLoading] = useState(false);
 	const [gitBranch, setGitBranch] = useState<string | undefined>();
 	const [konamiIndex, setKonamiIndex] = useState(0);
+	const [gameMode, setGameMode] = useState<"snake" | null>(null);
 
 	/** Get current git branch if in a git repository */
 	const getGitBranch = (): string | undefined => {
@@ -214,6 +216,9 @@ export const App: React.FC = () => {
 				break;
 			case "pwd":
 				showWorkingDirectory();
+				break;
+			case "snake":
+				setGameMode("snake");
 				break;
 			default:
 				addEntry({
@@ -742,6 +747,11 @@ Crafted with care by Travon, Stella, and Parth
 	const headerHeight = currentApp?.id ? 3 : 2;
 	const chromeHeight = headerHeight + 3 + 3; // header + input + footer
 	const outputHeight = Math.max(10, terminalHeight - chromeHeight - 2); // -2 for padding
+
+	// Render snake game if in game mode
+	if (gameMode === "snake") {
+		return <SnakeGame onExit={() => setGameMode(null)} />;
+	}
 
 	return (
 		<Box flexDirection="column" padding={0}>
