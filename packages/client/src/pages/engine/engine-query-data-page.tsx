@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Card, cn } from "@semoss/ui/next";
@@ -70,15 +69,15 @@ export const EngineQueryDataPage = observer(() => {
 		},
 	});
 
-	const executeQuery = async () => {
-		await executeQueryInternal();
-		setRefreshMessage("Refreshing database structure after query...");
+	const executeQuery = async (queryOverride?: string) => {
+		await executeQueryInternal(queryOverride);
 		refreshDatabaseStructure();
-		setTimeout(() => setRefreshMessage(null), 3000);
 	};
 
 	const { handleEditorMount, setValue } = useQueryEditor({
-		onRun: executeQuery,
+		onRun: (value) => {
+			executeQuery(value);
+		},
 		tables: structure.tables,
 	});
 
@@ -277,10 +276,12 @@ export const EngineQueryDataPage = observer(() => {
 				</div>
 
 				{/* Horizontal Resize Handle - Invisible */}
-				<div
+				<button
+					type="button"
 					onMouseDown={handleHorizontalResizeStart}
 					className="w-2 flex-shrink-0 cursor-col-resize transition-colors hover:bg-primary/5"
 					data-testid="horizontal-resize-handle"
+					aria-label="Resize panels horizontally"
 				/>
 
 				{/* Right Panel - SQL Query Editor */}
@@ -318,10 +319,12 @@ export const EngineQueryDataPage = observer(() => {
 			>
 				{/* Vertical Resize Handle - Invisible */}
 				{!isQueryResultsExpanded && (
-					<div
+					<button
+						type="button"
 						onMouseDown={handleVerticalResizeStart}
 						className="h-2 w-full flex-shrink-0 cursor-row-resize transition-colors hover:bg-primary/5"
 						data-testid="vertical-resize-handle"
+						aria-label="Resize panels vertically"
 					/>
 				)}
 
