@@ -61,17 +61,12 @@ export const EngineQueryDataPage = observer(() => {
 		executeQuery: executeQueryInternal,
 	} = useQueryExecution(active.id || "", {
 		onSchemaChange: () => {
-			setRefreshMessage(
-				"Database schema changed. Refreshing structure...",
-			);
 			refreshDatabaseStructure();
-			setTimeout(() => setRefreshMessage(null), 3000);
 		},
 	});
 
 	const executeQuery = async (queryOverride?: string) => {
 		await executeQueryInternal(queryOverride);
-		refreshDatabaseStructure();
 	};
 
 	const { handleEditorMount, setValue } = useQueryEditor({

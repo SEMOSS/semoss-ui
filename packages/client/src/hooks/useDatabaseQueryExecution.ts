@@ -34,10 +34,6 @@ function removeComments(query: string): string {
 	return parser.sqlify(ast);
 }
 
-export const isSchemaChangingQuery = (queryType: string): boolean => {
-	return ["OTHER"].includes(queryType);
-};
-
 export const isErrorResponse = (response: unknown): boolean => {
 	if (typeof response !== "object" || response === null) {
 		return false;
@@ -135,28 +131,34 @@ export function useQueryExecution(
 			const response = await runPixel(pixel);
 			console.log("Full response:", response);
 
+			let resultToStore: QueryResult;
 			if (response?.pixelReturn && response.pixelReturn.length > 0) {
 				const firstResult = response.pixelReturn[0];
 				console.log("Setting data to:", firstResult);
-				setPreviewData({
+				resultToStore = {
 					...firstResult,
 					queryType: queryType as "SELECT" | "OTHER",
-				});
+				};
 			} else {
 				console.log("No pixelReturn found, using full response");
-				setPreviewData({
+				resultToStore = {
 					output: response,
 					queryType: queryType as "SELECT" | "OTHER",
 					timeToRun: 0,
-				});
+				};
 			}
 
-			if (isSchemaChangingQuery(queryType)) {
-				console.log("Schema-changing query detected:", queryType);
-				if (!isErrorResponse(previewData) && options.onSchemaChange) {
-					console.log("Triggering schema refresh");
-					setTimeout(() => options.onSchemaChange(), 100);
-				}
+			setPreviewData(resultToStore);
+
+			if (
+				options.onSchemaChange &&
+				!isErrorResponse(resultToStore) &&
+				!hasTabularData(resultToStore)
+			) {
+				console.log(
+					"Non-tabular response detected. Refreshing schema.",
+				);
+				setTimeout(() => options.onSchemaChange?.(), 100);
 			}
 		} catch (error: unknown) {
 			const message =
