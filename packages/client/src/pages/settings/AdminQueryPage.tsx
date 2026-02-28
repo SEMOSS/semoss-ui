@@ -4,7 +4,7 @@ import {
 	Close,
 	OpenInFullSharp,
 } from "@mui/icons-material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Navigate } from "react-router-dom";
 import {
@@ -406,6 +406,13 @@ export const AdminQueryPage = () => {
 		return null;
 	};
 
+	const outputPanel = useMemo(() => displayQueryOutput(), [
+		output,
+		lastQuery,
+		page,
+		rowsPerPage,
+	]);
+
 	return (
 		<StyledContainer>
 			<StyledLeft>
@@ -538,7 +545,7 @@ export const AdminQueryPage = () => {
 					<StyledRight>
 						{!output.type
 							? "Execute a query to display the results here."
-							: displayQueryOutput()}
+							: outputPanel}
 					</StyledRight>
 				</Styledform>
 			</StyledLeft>
