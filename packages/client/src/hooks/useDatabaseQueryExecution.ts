@@ -1,4 +1,3 @@
-import { Parser } from "node-sql-parser";
 import { useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 
@@ -11,27 +10,7 @@ export interface QueryResult {
 	executionInfo?: string;
 	queryType: "SELECT" | "OTHER";
 	numCollected?: number;
-}
-
-function detectQueryType(query: string): string {
-	const parser = new Parser();
-	const ast = parser.astify(query);
-	console.log("AST:", ast);
-
-	if (Array.isArray(ast)) {
-		if (ast.length === 0) {
-			return "OTHER";
-		}
-		return ast[0].type.toUpperCase();
-	}
-
-	return ast.type.toUpperCase();
-}
-
-function removeComments(query: string): string {
-	const parser = new Parser();
-	const ast = parser.astify(query);
-	return parser.sqlify(ast);
+	queryText?: string;
 }
 
 export const isErrorResponse = (response: unknown): boolean => {
@@ -45,7 +24,9 @@ export const isErrorResponse = (response: unknown): boolean => {
 	}
 
 	return (
-		typeof typed.output === "string" && typed.output.startsWith("ERROR:")
+		typeof typed.output === "string" &&
+		(/^(error|ERROR)/.test(typed.output) ||
+			typed.output.startsWith("ERROR:"))
 	);
 };
 
@@ -119,14 +100,7 @@ export function useQueryExecution(
 		setPreviewLoading(true);
 
 		try {
-			const queryType = detectQueryType(queryToRun);
-			console.log("Detected query type:", queryType);
-
-			const sanitizedQuery = removeComments(queryToRun).replaceAll(
-				"`",
-				"",
-			);
-			const pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${sanitizedQuery}</encode>"], commit = [true]);`;
+			const pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${queryToRun.replaceAll("`", "")}</encode>"], commit = [true]);`;
 
 			const response = await runPixel(pixel);
 			console.log("Full response:", response);
@@ -137,16 +111,22 @@ export function useQueryExecution(
 				console.log("Setting data to:", firstResult);
 				resultToStore = {
 					...firstResult,
-					queryType: queryType as "SELECT" | "OTHER",
+					queryType: "OTHER",
+					queryText: queryToRun,
 				};
 			} else {
 				console.log("No pixelReturn found, using full response");
 				resultToStore = {
 					output: response,
-					queryType: queryType as "SELECT" | "OTHER",
+					queryType: "OTHER",
 					timeToRun: 0,
+					queryText: queryToRun,
 				};
 			}
+
+			resultToStore.queryType = hasTabularData(resultToStore)
+				? "SELECT"
+				: "OTHER";
 
 			setPreviewData(resultToStore);
 
@@ -168,7 +148,8 @@ export function useQueryExecution(
 				error: true,
 				output: `Error: ${message}`,
 				operationType: ["ERROR"],
-				queryType: detectQueryType(queryToRun) as "SELECT" | "OTHER",
+				queryType: "OTHER",
+				queryText: queryToRun,
 			});
 		} finally {
 			setPreviewLoading(false);
