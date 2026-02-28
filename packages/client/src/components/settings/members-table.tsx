@@ -99,6 +99,7 @@ interface User {
 
 interface AllAuthorsResponseData {
 	members: SETTINGS_PROVISIONED_USER[];
+	totalMembers: number;
 }
 
 interface GetMembersData {
@@ -173,12 +174,12 @@ export const MembersTable = (props: MembersTableProps) => {
 		];
 		getAllAuthorsApi = [
 			"getProjectUsers",
-			adminMode,
 			id,
+			adminMode,
 			undefined, // no search
 			"OWNER", // OWNER Permission Filter
-			undefined, // limit
-			undefined, // offset
+			2, // limit
+			0, // offset
 		];
 	} else if (
 		type === "DATABASE" ||
@@ -204,8 +205,8 @@ export const MembersTable = (props: MembersTableProps) => {
 			id,
 			undefined, // no search
 			"OWNER", // OWNER Permission Filter
-			undefined, // offset
-			undefined, // limit
+			0, // offset
+			2, // limit
 		];
 	}
 
@@ -225,6 +226,7 @@ export const MembersTable = (props: MembersTableProps) => {
 	const [allAuthors, setAllAuthors] = useState<SETTINGS_PROVISIONED_USER[]>(
 		[],
 	);
+	const [allAuthorsTotal, setAllAuthorsTotal] = useState<number>(0);
 
 	console.log(getMembers);
 
@@ -235,8 +237,10 @@ export const MembersTable = (props: MembersTableProps) => {
 		) {
 			const data = allAuthorsResponse.data as AllAuthorsResponseData;
 			setAllAuthors(data.members);
+			setAllAuthorsTotal(data.totalMembers ?? data.members.length);
 		} else {
 			setAllAuthors([]);
+			setAllAuthorsTotal(0);
 		}
 	}, [allAuthorsResponse.status, allAuthorsResponse.data]);
 
@@ -417,8 +421,8 @@ export const MembersTable = (props: MembersTableProps) => {
 				permissionPriorityMapper(m.permission)?.permission === "Author",
 		);
 		if (
-			allAuthors.length > 0 &&
-			authorsToDelete.length === allAuthors.length
+			allAuthorsTotal > 0 &&
+			authorsToDelete.length >= allAuthorsTotal
 		) {
 			toast.error(
 				`You cannot delete all the admins(Authors) from the table.`,
@@ -546,7 +550,7 @@ export const MembersTable = (props: MembersTableProps) => {
 		return (
 			permissionPriorityMapper(user.permission)?.permission ===
 				"Author" &&
-			authors.length === 1 &&
+			allAuthorsTotal === 1 &&
 			authors[0].id === user.id
 		);
 	};
