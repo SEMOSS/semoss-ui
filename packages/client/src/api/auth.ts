@@ -835,6 +835,21 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
 	return response.data;
 };
 
+export const setUserDefaultModel = async (metaKey: string, metaValue: string) => {
+	const url = `${Env.MODULE}/api/auth/user/setUserMetadata`;
+	const response = await post<boolean>(
+		url,
+		{
+			metaKey,
+			metaValue,
+		},
+		{},
+	).catch((e) => {
+		throw Error(e);
+	});
+	return response;
+};
+
 const processPostData = (data: unknown) => {
 	const postRecordData: Record<string, unknown> = {};
 	Object.keys(data).forEach((item) => {

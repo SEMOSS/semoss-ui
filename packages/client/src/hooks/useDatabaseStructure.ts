@@ -60,7 +60,6 @@ export function useDatabaseStructure(engineId: string) {
 				const tableName = String(row[5] ?? row[0] ?? "");
 				const columnName = String(row[4] ?? row[1] ?? "");
 				const columnType = String(row[2] ?? "UNKNOWN");
-
 				if (!tableName || !columnName) {
 					return;
 				}
@@ -144,35 +143,32 @@ export function useDatabaseStructure(engineId: string) {
 	}, [structure.tables, searchTerm]);
 
 	const toggleTable = (tableName: string) => {
+		// Toggle a single table and update toggleState immediately based on the new expanded state
 		setExpandedTables((prev) => {
 			const newState = {
 				...prev,
 				[tableName]: !prev[tableName],
 			};
+			const anyExpanded = Object.values(newState).some(Boolean);
+			setToggleState(anyExpanded);
 			return newState;
 		});
-
-		setTimeout(() => checkToggle(), 0);
 	};
 
 	const toggleAllTables = () => {
-		const newState = !toggleState;
-		const newExpanded: Record<string, boolean> = {};
-		searchedStructure.forEach((table: TableStructure) => {
-			newExpanded[table.table] = newState;
+		// Derive current expand state from latest expandedTables and flip it
+		setExpandedTables((prev) => {
+			const areAllExpanded =
+				searchedStructure.length > 0 &&
+				searchedStructure.every((table) => !!prev[table.table]);
+			const newState = !areAllExpanded;
+			const newExpanded: Record<string, boolean> = {};
+			searchedStructure.forEach((table: TableStructure) => {
+				newExpanded[table.table] = newState;
+			});
+			setToggleState(newState);
+			return newExpanded;
 		});
-		setExpandedTables(newExpanded);
-		setToggleState(newState);
-	};
-
-	const checkToggle = () => {
-		for (const table of structure.tables) {
-			if (expandedTables[table.table]) {
-				setToggleState(true);
-				return;
-			}
-		}
-		setToggleState(false);
 	};
 
 	const toggleColumnSelection = (tableName: string, columnName: string) => {
