@@ -1,214 +1,34 @@
-import { Edit, HdrAuto, Visibility } from "@mui/icons-material";
-import BlockIcon from "@mui/icons-material/Block";
-import PersonIcon from "@mui/icons-material/Person";
-import { useMemo, useState } from "react";
+import { Ban, Eye, Pencil, User } from "lucide-react";
+import { type ReactNode, useMemo, useState } from "react";
 import { type Control, Controller } from "react-hook-form";
+import { Link } from "react-router-dom";
 import {
-	Box,
+	Badge,
 	Button,
-	Chip,
-	Link,
-	Modal,
+	Card,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Label,
 	RadioGroup,
-	Stack,
-	styled,
-	Tab,
+	RadioGroupItem,
 	Tabs,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+	Textarea,
+	toast,
+} from "@semoss/ui/next";
 import OPEN_AI from "@/assets/img/OPEN_AI.png";
 import type { modelledDependency } from "@/components/app";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
 import { useRootStore } from "@/hooks";
 import type { AppDetailsFormTypes } from "./app-details.utility";
-
-const StyledContentBox = styled(Stack)(({ theme }) => ({
-	backgroundColor: theme.palette.background.default,
-	padding: theme.spacing(1),
-	borderRadius: "4px",
-}));
-
-const StyledContentCard = styled(Stack)(({ theme }) => ({
-	backgroundColor: theme.palette.background.paper,
-	padding: theme.spacing(2),
-	borderRadius: "4px",
-}));
-
-const StyledRoleInfo = styled("div")({
-	width: "100%",
-});
-
-const StyledHdrAutoIcon = styled(HdrAuto)(({ theme }) => ({
-	color: theme.palette.text.secondary,
-}));
-
-const StyledEditIcon = styled(Edit)(({ theme }) => ({
-	color: theme.palette.text.secondary,
-}));
-
-const StyledVisibilityIcon = styled(Visibility)(({ theme }) => ({
-	color: theme.palette.text.secondary,
-}));
-
-const ModalSectionHeading = styled(Typography)({
-	fontWeight: 500,
-	margin: "1rem 0 0.5rem 0",
-});
-
-const StyledDivider = styled(Box)(({ theme }) => ({
-	borderBottom: `1px solid ${theme.palette.secondary.main}`,
-	marginLeft: "40px",
-	marginRight: "40px",
-}));
-
-const ModelSubHeading = styled(Typography)({
-	fontSize: "14px",
-	paddingBottom: "8px",
-});
-
-const StyledButtonBox = styled(Box)(({ theme }) => ({
-	display: "flex",
-	justifyContent: "flex-end",
-	paddingBottom: theme.spacing(2), // pb: 2
-}));
-
-const StyledButton = styled(Button)(({ theme }) => ({
-	borderRadius: "12px",
-	paddingLeft: theme.spacing(2),
-	paddingRight: theme.spacing(2),
-	paddingTop: theme.spacing(0.5),
-	paddingBottom: theme.spacing(0.5),
-}));
-
-const CardContentOuterBox = styled(Box)(({ theme }) => ({
-	maxHeight: "400px",
-	overflow: "auto",
-	backgroundColor: theme.palette.background.default,
-	padding: theme.spacing(1),
-}));
-
-const CardSubContentOuterBox = styled(Box)(({ theme }) => ({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "flex-start",
-	padding: theme.spacing(2),
-	borderRadius: "12px",
-	backgroundColor: theme.palette.background.paper,
-	width: "100%",
-}));
-
-const CardContentInnerBox = styled(Box)({
-	flex: 1,
-});
-
-const Container = styled(Box)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(1),
-	marginBottom: theme.spacing(1),
-}));
-
-const EngineImage = styled("img")({
-	width: 48,
-	height: 48,
-});
-
-const Title = styled(Typography)(({ theme }) => ({
-	color: theme.palette.primary.main,
-	fontWeight: 400,
-	fontSize: 16,
-}));
-
-const PermissionWrapper = styled(Box)({
-	display: "flex",
-	alignItems: "center",
-});
-
-const StyledBlockIcon = styled(BlockIcon)(({ theme }) => ({
-	color: theme.palette.secondary.main,
-	width: "0.75em",
-	height: "0.75em",
-}));
-
-const StyledEditorIcon = styled(Edit)(({ theme }) => ({
-	color: theme.palette.secondary.main,
-	width: "0.75em",
-	height: "0.75em",
-}));
-
-const StyledReadonlyIcon = styled(Visibility)(({ theme }) => ({
-	color: theme.palette.secondary.main,
-	width: "0.75em",
-	height: "0.75em",
-}));
-
-const StyledOwnerIcon = styled(PersonIcon)(({ theme }) => ({
-	color: theme.palette.secondary.main,
-	width: "0.75em",
-	height: "0.75em",
-}));
-
-const PermissionText = styled(Typography)(({ theme }) => ({
-	fontSize: 12,
-	marginLeft: 1,
-	color: theme.palette.text.secondary,
-}));
-
-const ActionsWrapper = styled(Stack)({
-	justifyContent: "space-between",
-	width: "100%",
-});
-
-const PublicChip = styled(Chip)({
-	height: 32,
-});
-
-const CardDescription = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.secondary,
-}));
-
-const TabPanel = (props: {
-	children?: React.ReactNode;
-	value: number;
-	index: number;
-}) => {
-	const { children, value, index, ...other } = props;
-	return (
-		<div
-			role="tabpanel"
-			hidden={value !== index}
-			id={`tab-panel-${index}`}
-			aria-labelledby={`tab-${index}`}
-			{...other}
-		>
-			{value === index && <Box sx={{ p: 2 }}>{children}</Box>}
-		</div>
-	);
-};
-
-const ActionButton = ({ label, onClick }) => (
-	<Button
-		variant="outlined"
-		size="small"
-		sx={{ borderRadius: 10, px: 2, py: 0.5, fontSize: "13px" }}
-		onClick={onClick}
-	>
-		{label}
-	</Button>
-);
-
-const PendingButton = () => (
-	<Button
-		variant="outlined"
-		size="small"
-		sx={{ borderRadius: 10, px: 2, py: 0.5 }}
-		disabled
-	>
-		Pending Access
-	</Button>
-);
 
 interface ChangeAccessModalProps {
 	open: boolean;
@@ -219,6 +39,61 @@ interface ChangeAccessModalProps {
 	onSuccess: () => void;
 	permission: string;
 }
+
+const PermissionCard = ({
+	icon,
+	title,
+	description,
+	value,
+}: {
+	icon: ReactNode;
+	title: string;
+	description: string;
+	value: string;
+}) => {
+	return (
+		<Card className="rounded-xl p-2">
+			<CardHeader className="px-3 py-2">
+				<div className="flex items-start justify-between gap-4">
+					<div className="flex items-start gap-3">
+						<div className="mt-0.5 flex h-6 w-6 items-center justify-center text-muted-foreground">
+							{icon}
+						</div>
+						<div className="space-y-1">
+							<CardTitle className="text-base">{title}</CardTitle>
+							<CardDescription className="text-sm">
+								{description}
+							</CardDescription>
+						</div>
+					</div>
+					<RadioGroupItem value={value} />
+				</div>
+			</CardHeader>
+		</Card>
+	);
+};
+
+const PermissionBadge = ({ permission }: { permission?: string }) => {
+	let Icon = Ban;
+	if (permission === "OWNER") {
+		Icon = User;
+	} else if (permission === "EDIT") {
+		Icon = Pencil;
+	} else if (permission === "READ_ONLY") {
+		Icon = Eye;
+	}
+
+	const label = permission
+		? permission.charAt(0) + permission.slice(1).toLowerCase()
+		: "None";
+
+	return (
+		<div className="flex items-center gap-2 text-muted-foreground text-xs">
+			<Icon className="size-3.5" />
+			<span>{label}</span>
+		</div>
+	);
+};
 
 export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 	const {
@@ -232,21 +107,8 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 	} = props;
 	const permissionDescriptions = PERMISSION_DESCRIPTION_MAP.PROJECT;
 	const { monolithStore } = useRootStore();
-	const notification = useNotification();
-	const [tabValue, setTabValue] = useState(0);
+	const [tabValue, setTabValue] = useState("permissions");
 	const [requestedDeps, setRequestedDeps] = useState<Set<string>>(new Set());
-
-	const toCapitalized = (word: string): string => {
-		if (!word) return "";
-		return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-	};
-
-	const handleTabChange = (
-		_event: React.SyntheticEvent,
-		newValue: number,
-	) => {
-		setTabValue(newValue);
-	};
 
 	const requestAccessForDependency = async (
 		depId: string,
@@ -266,7 +128,11 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 				return { depId, success: true, message: output };
 			}
 		} catch (error) {
-			return { depId, success: false, message: error.message };
+			return {
+				depId,
+				success: false,
+				message: (error as Error).message,
+			};
 		}
 	};
 
@@ -277,18 +143,10 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 		const id = getValues("appId");
 
 		if (requested === current || requested === "") {
-			notification.add({
-				color: "error",
-				message:
-					"No change in Access has been requested. Please select another and try again.",
-			});
+			toast.error(
+				"No change in Access has been requested. Please select another and try again.",
+			);
 			return;
-			//  } else if (!comment) {
-			// notification.add({
-			//     color: 'error',
-			//     message: 'A comment is required to request access.',
-			// });
-			// return;
 		}
 
 		try {
@@ -299,26 +157,16 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 			const { operationType, output } = res.pixelReturn[0];
 
 			if (operationType.indexOf("ERROR") > -1) {
-				notification.add({
-					color: "error",
-					message: output,
-				});
-
+				toast.error(String(output));
 				return;
 			}
 
-			notification.add({
-				color: "success",
-				message: output,
-			});
+			toast.success(String(output));
 
 			onSuccess();
 			onClose(true); // Close modal after successful RequestProject call
 		} catch (_e) {
-			notification.add({
-				color: "error",
-				message: "Request failed.",
-			});
+			toast.error("Request failed.");
 		}
 	};
 
@@ -335,12 +183,10 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 			const comment = getValues("roleChangeComment");
 
 			if (!requestedRole || requestedRole === "") {
-				notification.add({
-					color: "error",
-					message:
-						"Please select a permission role on the first tab before requesting access.",
-				});
-				setTabValue(0);
+				toast.error(
+					"Please select a permission role on the first tab before requesting access.",
+				);
+				setTabValue("permissions");
 				return;
 			}
 
@@ -351,10 +197,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 			);
 
 			if (dependenciesToRequest.length === 0) {
-				notification.add({
-					color: "info",
-					message: "No new dependencies require access request.",
-				});
+				toast.info("No new dependencies require access request.");
 				return;
 			}
 
@@ -368,21 +211,12 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 					const { depId, success, message } = result.value;
 					if (success) {
 						setRequestedDeps((prev) => new Set(prev).add(depId));
-						notification.add({
-							color: "success",
-							message: `Dependency ${depId}: ${message}`,
-						});
+						toast.success(`Dependency ${depId}: ${message}`);
 					} else {
-						notification.add({
-							color: "error",
-							message: `Dependency ${depId}: ${message}`,
-						});
+						toast.error(`Dependency ${depId}: ${message}`);
 					}
 				} else {
-					notification.add({
-						color: "error",
-						message: "Request failed for a dependency.",
-					});
+					toast.error("Request failed for a dependency.");
 				}
 			});
 		} finally {
@@ -396,12 +230,10 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 		const comment = getValues("roleChangeComment");
 
 		if (!requestedRole || requestedRole === "") {
-			notification.add({
-				color: "error",
-				message:
-					"Please select a permission role on the first tab before requesting access.",
-			});
-			setTabValue(0);
+			toast.error(
+				"Please select a permission role on the first tab before requesting access.",
+			);
+			setTabValue("permissions");
 			return;
 		}
 
@@ -413,362 +245,264 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 
 		if (success) {
 			setRequestedDeps((prev) => new Set(prev).add(depId));
-			notification.add({
-				color: "success",
-				message: `Dependency ${depId}: ${message}`,
-			});
+			toast.success(`Dependency ${depId}: ${message}`);
 			// onSuccess();
 		} else {
-			notification.add({
-				color: "error",
-				message: `Dependency ${depId}: ${message}`,
-			});
+			toast.error(`Dependency ${depId}: ${message}`);
 		}
 	};
 
 	return (
-		<Box>
-			<Modal open={open} maxWidth={"md"} onClose={onClose} scroll="body">
-				<Modal.Title>
-					{getValues("requestedPermission") === "discoverable" ? (
-						<Typography variant={"button"}>
-							Request Access
-						</Typography>
-					) : (
-						<Typography variant={"button"}>
-							Change Access
-						</Typography>
-					)}
-				</Modal.Title>
-				{permission !== "discoverable" ? (
-					<StyledDivider>
-						<Tabs
-							value={tabValue}
-							onChange={handleTabChange}
-							aria-label="Access Tabs"
-						>
-							<Tab
-								label="App Permissions"
-								aria-controls="tab-panel-0"
-							/>
-							<Tab
-								label="Dependency Permissions"
-								aria-controls="tab-panel-1"
-							/>
-						</Tabs>
-					</StyledDivider>
-				) : null}
-				<TabPanel value={tabValue} index={0}>
-					<Modal.Content>
+		<Dialog
+			open={open}
+			onOpenChange={(nextOpen) => {
+				if (!nextOpen) {
+					onClose(false);
+					setTabValue("permissions");
+				}
+			}}
+		>
+			<DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
+				<DialogHeader>
+					<DialogTitle>
+						{getValues("requestedPermission") === "discoverable"
+							? "Request Access"
+							: "Change Access"}
+					</DialogTitle>
+				</DialogHeader>
+
+				<Tabs value={tabValue} onValueChange={setTabValue}>
+					{permission !== "discoverable" ? (
+						<TabsList className="mb-4">
+							<TabsTrigger value="permissions">
+								App Permissions
+							</TabsTrigger>
+							<TabsTrigger value="dependencies">
+								Dependency Permissions
+							</TabsTrigger>
+						</TabsList>
+					) : null}
+
+					<TabsContent value="permissions" className="space-y-4">
 						<Controller
 							name="requestedPermission"
 							control={control}
-							render={({ field }) => {
-								return (
-									<StyledContentBox
-										direction="column"
-										gap={1}
-									>
-										<StyledContentCard
-											direction="row"
-											gap={1}
-										>
-											<StyledHdrAutoIcon />
-											<StyledRoleInfo>
-												<Typography variant="subtitle1">
-													Author
-												</Typography>
-												<span>
-													{
-														permissionDescriptions.author
-													}
-												</span>
-											</StyledRoleInfo>
-											<RadioGroup
-												label=""
-												value={field.value}
-												onChange={(val) =>
-													field.onChange(val)
-												}
-											>
-												<RadioGroup.Item
-													value="OWNER"
-													label=""
-												/>
-											</RadioGroup>
-										</StyledContentCard>
-
-										<StyledContentCard
-											direction="row"
-											gap={1}
-										>
-											<StyledEditIcon />
-											<StyledRoleInfo>
-												<Typography variant="subtitle1">
-													Editor
-												</Typography>
-												<span>
-													{
-														permissionDescriptions.editor
-													}
-												</span>
-											</StyledRoleInfo>
-											<RadioGroup
-												label=""
-												value={field.value}
-												onChange={(val) =>
-													field.onChange(val)
-												}
-											>
-												<RadioGroup.Item
-													value="EDIT"
-													label=""
-												/>
-											</RadioGroup>
-										</StyledContentCard>
-
-										<StyledContentCard
-											direction="row"
-											gap={1}
-										>
-											<StyledVisibilityIcon />
-											<StyledRoleInfo>
-												<Typography variant="subtitle1">
-													Read-Only
-												</Typography>
-												<span>
-													{
-														permissionDescriptions.readonly
-													}
-												</span>
-											</StyledRoleInfo>
-											<RadioGroup
-												label=""
-												value={field.value}
-												onChange={(val) =>
-													field.onChange(val)
-												}
-											>
-												<RadioGroup.Item
-													value="READ_ONLY"
-													label=""
-												/>
-											</RadioGroup>
-										</StyledContentCard>
-									</StyledContentBox>
-								);
-							}}
+							render={({ field }) => (
+								<RadioGroup
+									value={field.value}
+									onValueChange={field.onChange}
+									className="space-y-2"
+								>
+									<PermissionCard
+										icon={<User className="size-4" />}
+										title="Author"
+										description={
+											permissionDescriptions.author
+										}
+										value="OWNER"
+									/>
+									<PermissionCard
+										icon={<Pencil className="size-4" />}
+										title="Editor"
+										description={
+											permissionDescriptions.editor
+										}
+										value="EDIT"
+									/>
+									<PermissionCard
+										icon={<Eye className="size-4" />}
+										title="Read-Only"
+										description={
+											permissionDescriptions.readonly
+										}
+										value="READ_ONLY"
+									/>
+								</RadioGroup>
+							)}
 						/>
-						<ModalSectionHeading variant="subtitle1">
-							Reason For Access
-						</ModalSectionHeading>
-						<StyledContentBox>
+
+						<div className="space-y-2">
+							<Label>Reason For Access</Label>
 							<Controller
 								name="roleChangeComment"
 								control={control}
-								render={({ field }) => {
-									return (
-										<StyledContentCard>
-											<TextField
-												multiline
-												fullWidth
-												placeholder="Optional"
-												rows={2}
-												value={field.value}
-												onChange={field.onChange}
-											/>
-										</StyledContentCard>
-									);
-								}}
+								render={({ field }) => (
+									<Textarea
+										rows={3}
+										placeholder="Optional"
+										value={field.value ?? ""}
+										onChange={(event) =>
+											field.onChange(event.target.value)
+										}
+									/>
+								)}
 							/>
-						</StyledContentBox>
-					</Modal.Content>
-					<Modal.Actions>
-						<Button
-							color="primary"
-							variant="text"
-							onClick={() => onClose(false)}
-						>
-							Cancel
-						</Button>
-						{permission !== "discoverable" ? (
+						</div>
+
+						<DialogFooter>
 							<Button
-								color="primary"
-								variant="contained"
-								onClick={() => setTabValue(1)}
+								variant="outline"
+								onClick={() => onClose(false)}
 							>
-								Next
+								Cancel
 							</Button>
-						) : (
-							<Button
-								color="primary"
-								variant="contained"
-								onClick={handleChangeAccess}
-							>
-								Submit
-							</Button>
-						)}
-					</Modal.Actions>
-				</TabPanel>
-				<TabPanel value={tabValue} index={1}>
-					<Modal.Content>
-						<ModelSubHeading variant={"body2"}>
-							The app will not work for you without having at
-							least read-only access to the following
-							dependencies. Click request access to be provisioned
-							as a read-only user.
-						</ModelSubHeading>
-						<StyledButtonBox>
-							<StyledButton
-								variant="outlined"
-								size="small"
-								onClick={handleRequestAllAccess}
-								disabled={
-									isAllRequested ||
-									isRequestAllLoading ||
-									dependencies.some(
-										(dep) => dep.access_permission,
-									)
-								}
-							>
-								{isRequestAllLoading
-									? "Requesting..."
-									: "Request All Access"}
-							</StyledButton>
-						</StyledButtonBox>
-						<CardContentOuterBox>
-							<Stack spacing={2}>
+							{permission !== "discoverable" ? (
+								<Button
+									onClick={() => setTabValue("dependencies")}
+								>
+									Next
+								</Button>
+							) : (
+								<Button onClick={handleChangeAccess}>
+									Submit
+								</Button>
+							)}
+						</DialogFooter>
+					</TabsContent>
+
+					{permission !== "discoverable" ? (
+						<TabsContent value="dependencies" className="space-y-4">
+							<p className="text-muted-foreground text-sm">
+								The app will not work for you without having at
+								least read-only access to the following
+								dependencies. Click request access to be
+								provisioned as a read-only user.
+							</p>
+
+							<div className="flex justify-end">
+								<Button
+									variant="outline"
+									onClick={handleRequestAllAccess}
+									disabled={
+										isAllRequested ||
+										isRequestAllLoading ||
+										dependencies.some(
+											(dep) => dep.access_permission,
+										)
+									}
+								>
+									{isRequestAllLoading
+										? "Requesting..."
+										: "Request All Access"}
+								</Button>
+							</div>
+
+							<div className="space-y-3">
 								{dependencies.map((dep) => (
-									<CardSubContentOuterBox key={dep.id}>
-										{/* Left side: Icon, Name, Tags, Description */}
-										<CardContentInnerBox>
-											<Container>
-												<EngineImage
+									<div
+										key={dep.id}
+										className="flex flex-col gap-3 rounded-xl border bg-background p-4"
+									>
+										<div className="flex flex-wrap items-start justify-between gap-4">
+											<div className="flex items-start gap-4">
+												<img
 													src={OPEN_AI}
 													alt={dep.name}
+													className="h-12 w-12 rounded-lg object-cover"
 												/>
-												<Box>
-													<Title variant="subtitle1">
-														<Link
-															href={`./#/engine/${dep.type}/${dep.id}`}
-														>
-															<Typography variant="body2">
-																{dep.name}
-															</Typography>
-														</Link>
-													</Title>
-													<PermissionWrapper>
-														{dep.userPermission ===
-														"OWNER" ? (
-															<StyledOwnerIcon fontSize="small" />
-														) : dep.userPermission ===
-															"READ_ONLY" ? (
-															<StyledReadonlyIcon fontSize="small" />
-														) : dep.userPermission ===
-															"EDIT" ? (
-															<StyledEditorIcon fontSize="small" />
-														) : (
-															<StyledBlockIcon fontSize="small" />
-														)}
-
-														<PermissionText variant="subtitle1">
-															{toCapitalized(
-																dep.userPermission ||
-																	"NONE",
-															)}
-														</PermissionText>
-													</PermissionWrapper>
-												</Box>
-												<ActionsWrapper
-													direction="row"
-													spacing={1}
-												>
-													<Stack
-														direction="row"
-														spacing={1}
+												<div className="space-y-1">
+													<Link
+														to={`/engine/${dep.type}/${dep.id}`}
+														className="text-primary"
 													>
-														{dep.isPublic ? (
-															<PublicChip label="Public" />
-														) : dep.isDiscoverable ? (
-															<PublicChip label="Discoverable" />
-														) : (
-															<>
-																<PublicChip label="Non-Discoverable" />
-																<PublicChip label="Private" />
-															</>
-														)}
-														<PublicChip
-															label={toCapitalized(
-																dep.type,
-															)}
-														/>
-													</Stack>
+														<p className="font-medium text-sm">
+															{dep.name}
+														</p>
+													</Link>
+													<PermissionBadge
+														permission={
+															dep.userPermission
+														}
+													/>
+												</div>
+											</div>
 
-													<Box>
-														{dep.access_permission ? (
-															<PendingButton />
-														) : requestedDeps.has(
-																dep.id,
-															) ? (
-															<PendingButton />
-														) : !dep.userPermission ? (
-															<ActionButton
-																label="Request Access"
-																onClick={() =>
-																	handleSingleDependencyRequest(
-																		dep.id,
-																	)
-																}
-															/>
-														) : (
-															<ActionButton
-																label="Change Access"
-																onClick={() =>
-																	handleSingleDependencyRequest(
-																		dep.id,
-																	)
-																}
-															/>
-														)}
-													</Box>
-												</ActionsWrapper>
-											</Container>
+											<div className="flex flex-wrap items-center gap-2">
+												{dep.isPublic ? (
+													<Badge variant="outline">
+														Public
+													</Badge>
+												) : dep.isDiscoverable ? (
+													<Badge variant="outline">
+														Discoverable
+													</Badge>
+												) : (
+													<>
+														<Badge variant="outline">
+															Non-Discoverable
+														</Badge>
+														<Badge variant="outline">
+															Private
+														</Badge>
+													</>
+												)}
+												<Badge variant="outline">
+													{dep.type}
+												</Badge>
+											</div>
+										</div>
 
-											<CardDescription variant="body2">
-												{dep.description &&
-												dep.description.trim() !== ""
-													? dep.description
-													: "No Description Available"}
-											</CardDescription>
-										</CardContentInnerBox>
+										<p className="text-muted-foreground text-sm">
+											{dep.description?.trim()
+												? dep.description
+												: "No Description Available"}
+										</p>
 
-										{/* Right side: Button */}
-									</CardSubContentOuterBox>
+										<div className="flex justify-end">
+											{dep.access_permission ||
+											requestedDeps.has(dep.id) ? (
+												<Button
+													variant="outline"
+													disabled
+												>
+													Pending Access
+												</Button>
+											) : !dep.userPermission ? (
+												<Button
+													variant="outline"
+													onClick={() =>
+														handleSingleDependencyRequest(
+															dep.id,
+														)
+													}
+												>
+													Request Access
+												</Button>
+											) : (
+												<Button
+													variant="outline"
+													onClick={() =>
+														handleSingleDependencyRequest(
+															dep.id,
+														)
+													}
+												>
+													Change Access
+												</Button>
+											)}
+										</div>
+									</div>
 								))}
-							</Stack>
-						</CardContentOuterBox>
-					</Modal.Content>
-					<Modal.Actions>
-						<Button
-							color="primary"
-							variant="text"
-							onClick={() => {
-								onClose(false);
-								setTabValue(0);
-							}}
-						>
-							Cancel
-						</Button>
-						<Button
-							color="primary"
-							variant="contained"
-							onClick={handleChangeAccess}
-						>
-							Submit
-						</Button>
-					</Modal.Actions>
-				</TabPanel>
-			</Modal>
-		</Box>
+							</div>
+
+							<DialogFooter>
+								<Button
+									variant="outline"
+									onClick={() => {
+										onClose(false);
+										setTabValue("permissions");
+									}}
+								>
+									Cancel
+								</Button>
+								<Button onClick={handleChangeAccess}>
+									Submit
+								</Button>
+							</DialogFooter>
+						</TabsContent>
+					) : null}
+				</Tabs>
+			</DialogContent>
+		</Dialog>
 	);
 };

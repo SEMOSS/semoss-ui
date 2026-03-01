@@ -1,22 +1,5 @@
-import { Box, styled, Typography } from "@semoss/ui";
-
-const StyledBox = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(3),
-	width: "100%",
-}));
-
-// Text
-const StyledDescription = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.disabled,
-	fontSize: "16px",
-}));
-
-const StyledPlaceholderBox = styled(Box)(({ theme }) => ({
-	border: `1px solid ${theme.palette.secondary.main}`,
-	borderRadius: 2,
-	padding: theme.spacing(4),
-	textAlign: "center",
-}));
+import type { HTMLAttributes } from "react";
+import { H4, Markdown, P } from "@semoss/ui/next";
 
 interface OverviewProps {
 	appInfo: {
@@ -25,22 +8,28 @@ interface OverviewProps {
 }
 
 export const Overview = ({ appInfo }: OverviewProps) => {
+	const markdownComponents = {
+		p: ({ children, ...props }: HTMLAttributes<HTMLParagraphElement>) => (
+			<P {...props}>{children}</P>
+		),
+	};
+
 	return (
-		<StyledBox>
-			<Typography variant="h6" gutterBottom>
-				Details
-			</Typography>
-			{appInfo?.markdown ? (
-				<StyledDescription variant="body2">
-					{appInfo?.markdown}
-				</StyledDescription>
-			) : (
-				<StyledPlaceholderBox>
-					<Typography variant="body1" color="text.secondary">
-						No markdown available
-					</Typography>
-				</StyledPlaceholderBox>
-			)}
-		</StyledBox>
+		<div className="relative z-0">
+			<section className="mb-1 border-border border-b pb-2 last:mb-0 last:border-b-0">
+				<H4 className="mb-2">Details</H4>
+				{appInfo?.markdown ? (
+					<div className="overflow-scroll">
+						<Markdown components={markdownComponents}>
+							{appInfo?.markdown}
+						</Markdown>
+					</div>
+				) : (
+					<div className="text-muted-foreground">
+						No Markdown available
+					</div>
+				)}
+			</section>
+		</div>
 	);
 };

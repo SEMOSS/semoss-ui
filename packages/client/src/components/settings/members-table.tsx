@@ -244,9 +244,11 @@ export const MembersTable = (props: MembersTableProps) => {
 		}
 	}, [allAuthorsResponse.status, allAuthorsResponse.data]);
 
-	//Below UseEffect has been added so that search supersedes pagination , when the user goes to a different page and searches any user the pagination is set 0 and the user is being displayed.
+	// Reset pagination when search changes.
 	useEffect(() => {
-		setPage(0);
+		if (debouncedSearch !== undefined) {
+			setPage(0);
+		}
 	}, [debouncedSearch]);
 
 	/**
@@ -255,12 +257,14 @@ export const MembersTable = (props: MembersTableProps) => {
 	 * Otherwise, it sets the user permission based on the user's permission in the members array.
 	 * @param members The array of members to set the user details from
 	 */
-	const setUserDetails = () => {
-		if (!userDetails.data) {
+	/**
+	 * Updates user details when userDetails API call succeeds.
+	 **/
+	useEffect(() => {
+		if (userDetails.status !== "SUCCESS" || !userDetails.data) {
 			return;
 		}
-
-		const userPermission =
+		const resolvedPermission =
 			type === "PROJECT"
 				? (userDetails.data as Awaited<
 						ReturnType<typeof getUserProjectPermission>
@@ -270,6 +274,7 @@ export const MembersTable = (props: MembersTableProps) => {
 							ReturnType<typeof getUserEnginePermission>
 						>
 					).permission;
+
 		if (adminMode) {
 			const adminPermissionPriority = "Author";
 			setUserPermission(
@@ -279,23 +284,15 @@ export const MembersTable = (props: MembersTableProps) => {
 		} else {
 			setUserPermission(
 				permissionPriorityMapper(
-					userPermission === "OWNER" ? "Author" : userPermission,
+					resolvedPermission === "OWNER"
+						? "Author"
+						: resolvedPermission,
 				)?.permission as SETTINGS_ROLE,
 			);
 		}
 
 		setUserData(userData);
-	};
-
-	/**
-	 * Updates user details when userDetails API call succeeds.
-	 **/
-	useEffect(() => {
-		if (userDetails.status !== "SUCCESS" || !userDetails.data) {
-			return;
-		}
-		setUserDetails();
-	}, [userDetails.status]);
+	}, [adminMode, type, userDetails.data, userDetails.status, userData]);
 
 	/**
 	 * Determines if the read-only option should be restricted for a given member.
@@ -420,10 +417,7 @@ export const MembersTable = (props: MembersTableProps) => {
 			(m) =>
 				permissionPriorityMapper(m.permission)?.permission === "Author",
 		);
-		if (
-			allAuthorsTotal > 0 &&
-			authorsToDelete.length >= allAuthorsTotal
-		) {
+		if (allAuthorsTotal > 0 && authorsToDelete.length >= allAuthorsTotal) {
 			toast.error(
 				`You cannot delete all the admins(Authors) from the table.`,
 			);
@@ -517,30 +511,16 @@ export const MembersTable = (props: MembersTableProps) => {
 		setPermissionOrder((prev) => (prev === "asc" ? "desc" : "asc"));
 	};
 
-	// Avatars rendered
-	const Avatars = useMemo(() => {
-		if (!renderedMembers.length) {
-			return [];
-		}
+	const avatarMembers = useMemo(() => {
+		return renderedMembers.slice(0, 5);
+	}, [renderedMembers]);
 
-		let i = 0;
-		const avatarList = [];
-		while (i < 5 && i < renderedMembers.length) {
-			avatarList.push(
-				<Avatar key={i} className="size-8">
-					<AvatarFallback>
-						{(renderedMembers[i].name || " ")
-							.charAt(0)
-							.toUpperCase()}
-					</AvatarFallback>
-				</Avatar>,
-			);
-
-			i++;
-		}
-
-		return avatarList;
-	}, [renderedMembers.length]);
+	const skeletonRows = useMemo(() => {
+		return Array.from(
+			{ length: rowsPerPage },
+			(_, idx) => `skeleton-${idx}`,
+		);
+	}, [rowsPerPage]);
 
 	const isLastAuthor = (user) => {
 		const authors = allAuthors.filter(
@@ -564,16 +544,28 @@ export const MembersTable = (props: MembersTableProps) => {
 							<H4 data-testid="permissions-title">Permissions</H4>
 						</div>
 						<div className="flex flex-1 items-start">
-							{Avatars.length > 0 ? (
+							{avatarMembers.length > 0 ? (
 								<div className="flex h-14 w-[130px] flex-col items-center justify-center gap-2.5 px-4 py-2.5">
 									<div
 										className="-space-x-2 flex"
 										data-testid="membersTable-avatarGroup"
 									>
-										{Avatars.slice(0, 4).map((el, idx) => {
-											// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-											return <div key={idx}>{el}</div>;
-										})}
+										{avatarMembers
+											.slice(0, 4)
+											.map((member) => (
+												<div key={member.id}>
+													<Avatar className="size-8">
+														<AvatarFallback>
+															{(
+																member.name ||
+																" "
+															)
+																.charAt(0)
+																.toUpperCase()}
+														</AvatarFallback>
+													</Avatar>
+												</div>
+											))}
 										{totalMembers > 4 && (
 											<Avatar className="size-8">
 												<AvatarFallback>
@@ -673,28 +665,25 @@ export const MembersTable = (props: MembersTableProps) => {
 						<div className="relative flex items-center justify-center">
 							<Table className="bg-background">
 								<TableBody>
-									{[...Array(rowsPerPage)].map(
-										(item, idx) => (
-											// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-											<TableRow key={idx}>
-												<TableCell className="w-12">
-													<Skeleton className="h-5 w-5" />
-												</TableCell>
-												<TableCell>
-													<Skeleton className="h-9 w-40" />
-												</TableCell>
-												<TableCell>
-													<Skeleton className="h-9 w-60" />
-												</TableCell>
-												<TableCell>
-													<Skeleton className="h-9 w-40" />
-												</TableCell>
-												<TableCell>
-													<Skeleton className="h-9 w-20" />
-												</TableCell>
-											</TableRow>
-										),
-									)}
+									{skeletonRows.map((rowKey) => (
+										<TableRow key={rowKey}>
+											<TableCell className="w-12">
+												<Skeleton className="h-5 w-5" />
+											</TableCell>
+											<TableCell>
+												<Skeleton className="h-9 w-40" />
+											</TableCell>
+											<TableCell>
+												<Skeleton className="h-9 w-60" />
+											</TableCell>
+											<TableCell>
+												<Skeleton className="h-9 w-40" />
+											</TableCell>
+											<TableCell>
+												<Skeleton className="h-9 w-20" />
+											</TableCell>
+										</TableRow>
+									))}
 								</TableBody>
 							</Table>
 						</div>
@@ -706,7 +695,7 @@ export const MembersTable = (props: MembersTableProps) => {
 										<TableHeader>
 											<TableRow>
 												<TableHead className="w-12">
-													<TableCell className="p-2 pr-0 pl-2">
+													<div className="p-2 pr-0 pl-2">
 														<Checkbox
 															disabled={
 																userPermission ===
@@ -733,7 +722,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																}
 															}}
 														/>
-													</TableCell>
+													</div>
 												</TableHead>
 												<TableHead>
 													<Button
