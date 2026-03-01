@@ -200,10 +200,13 @@ const StyledPlaceholder = styled("div")({
 	height: "20px",
 });
 
-const StyledMainDiv = styled("div")({
-	width: "322px",
+const StyledMainDiv = styled("div", {
+	shouldForwardProp: (prop) => prop !== "layout",
+})<{ layout: "fixed" | "responsive" }>(({ layout }) => ({
+	width: layout === "responsive" ? "100%" : "322px",
+	minWidth: layout === "responsive" ? "240px" : "322px",
 	minHeight: "307px",
-});
+}));
 
 const StyledSkeletonImage = styled("div")(({ theme }) => ({
 	borderRadius: "4px",
@@ -397,6 +400,11 @@ interface AppTileCardProps {
 	 * Whether to show the skeleton loader
 	 */
 	showSkeleton?: boolean;
+
+	/**
+	 * Layout sizing for the card container
+	 */
+	layout?: "fixed" | "responsive";
 }
 
 export const AppTileCard = (props: AppTileCardProps) => {
@@ -412,6 +420,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 		onDelete,
 		isLoading,
 		showSkeleton,
+		layout = "fixed",
 	} = props;
 
 	const notification = useNotification();
@@ -578,7 +587,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	// Show skeleton when image is loading or when showSkeleton is true
 	if ((loading && isLoading) || showSkeleton) {
 		return (
-			<StyledMainDiv>
+			<StyledMainDiv layout={layout}>
 				<StyledTileCard disabled>
 					{/* Skeleton for the favorite icon */}
 					<StyledContainer>
@@ -682,7 +691,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	}
 
 	return (
-		<StyledMainDiv>
+		<StyledMainDiv layout={layout}>
 			<StyledTileCard
 				disabled={!href}
 				style={{ position: "relative" }}

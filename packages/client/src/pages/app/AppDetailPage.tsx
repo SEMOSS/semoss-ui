@@ -1,4 +1,5 @@
 import {
+	ContentCopy,
 	Edit,
 	EditOutlined,
 	InfoRounded,
@@ -6,7 +7,7 @@ import {
 	SimCardDownload,
 } from "@mui/icons-material";
 import UpdateIcon from "@mui/icons-material/Update";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
@@ -105,7 +106,28 @@ const TitleSectionBodyWrapper = styled("div")({
 	flexDirection: "column",
 	gap: "0.5rem",
 	justifyContent: "center",
+	minWidth: 0,
 });
+
+const TitleText = styled(Typography)({
+	fontWeight: 400,
+	fontSize: "34px",
+	lineHeight: "150%",
+});
+
+const IdRow = styled("div")(({ theme }) => ({
+	display: "flex",
+	alignItems: "center",
+	gap: theme.spacing(1),
+	color: theme.palette.text.secondary,
+}));
+
+const TitleSectionLeft = styled("div")(({ theme }) => ({
+	display: "flex",
+	alignItems: "center",
+	gap: theme.spacing(2),
+	minWidth: 0,
+}));
 
 const TagsBodyWrapper = styled("div")({
 	display: "flex",
@@ -166,6 +188,21 @@ const StyledTabsSection = styled("div")(({ theme }) => ({
 	backgroundColor: theme.palette.background.paper,
 	// boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
 }));
+
+const modelDependencies = (
+	dependencies: appDependency[],
+): modelledDependency[] => {
+	return dependencies.map((dep: appDependency) => ({
+		name: dep.engine_name ? dep.engine_name.replace(/_/g, " ") : "",
+		id: dep.engine_id,
+		type: dep.engine_type,
+		userPermission: dep.permission_name as Role, // TODO: no value currently available in the payload
+		isPublic: !!dep.engine_global,
+		isDiscoverable: !!dep.engine_discoverable,
+		description: dep.description,
+		access_permission: dep.access_permission,
+	}));
+};
 
 const StyledUpdateIcon = styled(UpdateIcon)(({ theme }) => ({
 	color: theme.palette.text.disabled,
@@ -246,14 +283,36 @@ export const AppDetailPage = () => {
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
 
-	useEffect(() => {
-		setSelectedTab("Overview");
-		setValue("appId", appId);
-		fetchUserSpecificData();
-		fetchAppData(appId);
-	}, [appId]);
+	const emitMessage = useCallback(
+		(isError: boolean, message: string) => {
+			notification.add({
+				color: isError ? "error" : "success",
+				message,
+			});
+		},
+		[notification],
+	);
 
-	const fetchUserSpecificData = async () => {
+	const getPermission = useCallback(async () => {
+		const role = await getUserProjectPermission(appId);
+
+		setValue("userRole", role);
+		const nextPermission = determineUserPermission(role);
+		setValue("permission", nextPermission);
+
+		if (nextPermission === "author")
+			setValue("requestedPermission", "OWNER");
+		if (nextPermission === "editor")
+			setValue("requestedPermission", "EDIT");
+		if (nextPermission === "readOnly" || nextPermission === "discoverable")
+			setValue("requestedPermission", "READ_ONLY");
+	}, [appId, setValue]);
+
+	const fetchSimilarApps = useCallback(() => {
+		// TODO
+	}, []);
+
+	const fetchUserSpecificData = useCallback(async () => {
 		const currPermission = getValues("permission");
 		await getPermission();
 		const newPermission = getValues("permission");
@@ -261,7 +320,134 @@ export const AppDetailPage = () => {
 		if (newPermission !== currPermission && newPermission === "readOnly") {
 			fetchSimilarApps();
 		}
-	};
+	}, [fetchSimilarApps, getPermission, getValues]);
+
+	const fetchAppData = useCallback(
+		async (id: string) => {
+			await getPermission();
+			const currentPermission = getValues("permission");
+			const promises = [
+				fetchAppInfo(
+					monolithStore,
+					id,
+					configStore.store.config.projectMetaKeys.map(
+						(a) => a.metakey,
+					),
+				),
+				fetchMainUses(monolithStore, id),
+			];
+			if (currentPermission !== "discoverable") {
+				promises.push(fetchDependencies(configStore, id));
+			}
+			const results = await Promise.allSettled(promises);
+			results.forEach((res, idx) => {
+				if (res.status === "rejected") {
+					emitMessage(true, res.reason);
+				} else {
+					if (idx === 0) {
+						if (res.value.type === "error") {
+							emitMessage(true, res.value.output);
+						} else {
+							setValue("appInfo", res.value.output);
+							const output = res.value.output;
+
+							const projectMetaKeys =
+								configStore.store.config.projectMetaKeys;
+							// Keep only relevant project keys defined for app details
+							const parsedMeta = projectMetaKeys
+								.map((k) => k.metakey)
+								.reduce((prev, curr) => {
+									// tag, domain, and etc either come in as a string or a string[], format it to correct type
+									const found = projectMetaKeys.find(
+										(obj) => obj.metakey === curr,
+									);
+
+									if (curr === "tag") {
+										if (typeof output[curr] === "string") {
+											prev[curr] = [output[curr]];
+										} else {
+											prev[curr] = output[curr];
+										}
+									} else if (
+										found.display_options ===
+											"single-typeahead" ||
+										found.display_options ===
+											"select-box" ||
+										found.display_options ===
+											"multi-typeahead"
+									) {
+										if (typeof output[curr] === "string") {
+											prev[curr] = [output[curr]];
+										} else {
+											prev[curr] = output[curr];
+										}
+									} else {
+										prev[curr] = output[curr];
+									}
+
+									return prev;
+								}, {}) as AppDetailsFormTypes["detailsForm"];
+
+							setValue("detailsForm", parsedMeta);
+							setValue("tag", parsedMeta.tag);
+							setValue("markdown", parsedMeta.markdown);
+							setValue(
+								"detailsForm.markdown",
+								parsedMeta.markdown,
+							);
+							setValues((prev) => ({
+								...prev,
+								markdown: parsedMeta.markdown || "",
+							}));
+							setValues((prev) => ({ ...prev, ...parsedMeta }));
+						}
+					} else if (idx === 1) {
+						if (res.value.type === "error") {
+							emitMessage(true, res.value.output);
+						} else {
+							if (res.value.output !== null) {
+								setValue("markdown", res.value.output);
+								setValue(
+									"detailsForm.markdown",
+									res.value.output,
+								);
+								setValues((prev) => ({
+									...prev,
+									markdown: res.value.output || "",
+								}));
+							}
+						}
+					} else if (idx === 2) {
+						if (res.value.type === "error") {
+							emitMessage(true, res.value.output);
+						} else {
+							const modelled = modelDependencies(
+								res.value.output,
+							);
+							setValue("dependencies", modelled);
+						}
+					}
+				}
+			});
+		},
+		[
+			configStore,
+			emitMessage,
+			getPermission,
+			getValues,
+			monolithStore,
+			setValue,
+		],
+	);
+
+	useEffect(() => {
+		setSelectedTab("Overview");
+		setValue("appId", appId);
+		fetchUserSpecificData();
+		if (appId) {
+			fetchAppData(appId);
+		}
+	}, [appId, fetchAppData, fetchUserSpecificData, setValue]);
 	// This runs ONLY when `appId` changes — not when dependencies change
 	useEffect(() => {
 		if (appId) {
@@ -281,140 +467,7 @@ export const AppDetailPage = () => {
 					setPendingRequest(false); // fallback in case of error
 				});
 		}
-	}, [appId]);
-
-	async function getPermission() {
-		const role = await getUserProjectPermission(appId);
-
-		setValue("userRole", role);
-		const permission = determineUserPermission(role);
-		setValue("permission", permission);
-
-		if (permission === "author") setValue("requestedPermission", "OWNER");
-		if (permission === "editor") setValue("requestedPermission", "EDIT");
-		if (permission === "readOnly" || permission === "discoverable")
-			setValue("requestedPermission", "READ_ONLY");
-	}
-
-	const fetchAppData = async (id: string) => {
-		await getPermission();
-		const permission = getValues("permission");
-		const promises = [
-			fetchAppInfo(
-				monolithStore,
-				id,
-				configStore.store.config.projectMetaKeys.map((a) => a.metakey),
-			),
-			fetchMainUses(monolithStore, id),
-		];
-		if (permission !== "discoverable") {
-			promises.push(fetchDependencies(configStore, id));
-		}
-		const results = await Promise.allSettled(promises);
-		results.forEach((res, idx) => {
-			if (res.status === "rejected") {
-				emitMessage(true, res.reason);
-			} else {
-				if (idx === 0) {
-					if (res.value.type === "error") {
-						emitMessage(true, res.value.output);
-					} else {
-						setValue("appInfo", res.value.output);
-						const output = res.value.output;
-
-						const projectMetaKeys =
-							configStore.store.config.projectMetaKeys;
-						// Keep only relevant project keys defined for app details
-						const parsedMeta = projectMetaKeys
-							.map((k) => k.metakey)
-							.reduce((prev, curr) => {
-								// tag, domain, and etc either come in as a string or a string[], format it to correct type
-								const found = projectMetaKeys.find(
-									(obj) => obj.metakey === curr,
-								);
-
-								if (curr === "tag") {
-									if (typeof output[curr] === "string") {
-										prev[curr] = [output[curr]];
-									} else {
-										prev[curr] = output[curr];
-									}
-								} else if (
-									found.display_options ===
-										"single-typeahead" ||
-									found.display_options === "select-box" ||
-									found.display_options === "multi-typeahead"
-								) {
-									if (typeof output[curr] === "string") {
-										prev[curr] = [output[curr]];
-									} else {
-										prev[curr] = output[curr];
-									}
-								} else {
-									prev[curr] = output[curr];
-								}
-
-								return prev;
-							}, {}) as AppDetailsFormTypes["detailsForm"];
-						setValue("detailsForm", parsedMeta);
-						setValue("tag", parsedMeta.tag);
-						setValue("markdown", parsedMeta.markdown);
-						setValue("detailsForm.markdown", parsedMeta.markdown);
-						setValues((prev) => ({
-							...prev,
-							markdown: parsedMeta.markdown || "",
-						}));
-						setValues((prev) => ({ ...prev, ...parsedMeta }));
-					}
-				} else if (idx === 1) {
-					if (res.value.type === "error") {
-						emitMessage(true, res.value.output);
-					} else {
-						if (res.value.output !== null) {
-							setValue("markdown", res.value.output);
-							setValue("detailsForm.markdown", res.value.output);
-							setValues((prev) => ({
-								...prev,
-								markdown: res.value.output || "",
-							}));
-						}
-					}
-				} else if (idx === 2) {
-					if (res.value.type === "error") {
-						emitMessage(true, res.value.output);
-					} else {
-						const modelled = modelDependencies(res.value.output);
-						setValue("dependencies", modelled);
-					}
-				}
-			}
-		});
-	};
-
-	const fetchSimilarApps = () => {
-		// TODO
-	};
-
-	const modelDependencies = (
-		dependencies: appDependency[],
-	): modelledDependency[] => {
-		return dependencies.map((dep: appDependency) => ({
-			name: dep.engine_name ? dep.engine_name.replace(/_/g, " ") : "",
-			id: dep.engine_id,
-			type: dep.engine_type,
-			userPermission: dep.permission_name as Role, // TODO: no value currently available in the payload
-			isPublic: !!dep.engine_global,
-			isDiscoverable: !!dep.engine_discoverable,
-			description: dep.description,
-			access_permission: dep.access_permission,
-		}));
-	};
-	const emitMessage = (isError: boolean, message: string) => {
-		notification.add({
-			color: isError ? "error" : "success",
-			message,
-		});
-	};
+	}, [appId, monolithStore]);
 
 	const handleCloseChangeAccessModal = (refresh?: boolean) => {
 		if (refresh) {
@@ -564,6 +617,23 @@ export const AppDetailPage = () => {
 		setResponseStatus(true);
 	};
 	const [selectedTab, setSelectedTab] = useState("Overview");
+	const handleCopyAppId = async () => {
+		if (!appId) return;
+
+		try {
+			await navigator.clipboard.writeText(appId);
+			notification.add({
+				color: "success",
+				message: "App ID copied to clipboard",
+			});
+		} catch (error) {
+			console.error(error);
+			notification.add({
+				color: "error",
+				message: "Failed to copy App ID",
+			});
+		}
+	};
 
 	const TABS_BY_PERMISSION: Record<string, string[]> = {
 		author: [
@@ -622,22 +692,43 @@ export const AppDetailPage = () => {
 					<div>
 						<PageBody>
 							<TitleSection>
-								<Box>
+								<TitleSectionLeft>
 									<TitleSectionImg
 										src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
 										alt="App Image"
 									/>
 									<TitleSectionBodyWrapper>
-										<div
+										<TitleText
+											variant="h1"
 											title={appInfo?.project_name}
-											className={
-												"mt-1 max-w-[40ch] truncate text-ellipsis font-normal text-[34px] leading-[150%]"
-											}
+											className="mt-1 max-w-[40ch] truncate text-ellipsis"
 										>
 											{appInfo?.project_name}
-										</div>
+										</TitleText>
+										{appId && (
+											<IdRow>
+												<Typography
+													variant="body2"
+													color="text.secondary"
+												>
+													{appId}
+												</Typography>
+												<Tooltip title="Copy App ID">
+													<IconButton
+														size="small"
+														onClick={(event) => {
+															event.preventDefault();
+															handleCopyAppId();
+														}}
+														aria-label="Copy App ID"
+													>
+														<ContentCopy fontSize="inherit" />
+													</IconButton>
+												</Tooltip>
+											</IdRow>
+										)}
 									</TitleSectionBodyWrapper>
-								</Box>
+								</TitleSectionLeft>
 
 								<ActionBar>
 									{permission === "author" ? (
