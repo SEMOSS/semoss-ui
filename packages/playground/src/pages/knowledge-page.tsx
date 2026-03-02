@@ -79,7 +79,8 @@ export const DocumentLibrary = () => {
 
 	const [search, setSearch] = useState("");
 	const [centerFilter, setCenterFilter] = useState<string[]>([]);
-	const [sortBy, setSortBy] = useState<"name" | "date">("name");
+	const [sortBy, setSortBy] = useState<"name-asc" | "name-desc" | "date-desc" | "date-asc">("name-asc");
+	const [sortPopoverOpen, setSortPopoverOpen] = useState(false);
 	const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 	const [libraryTab, setLibraryTab] = useState<"all" | "global" | "mine">(
 		"all",
@@ -203,67 +204,92 @@ export const DocumentLibrary = () => {
 		}, []) || [];
 
 	const filteredItems = formatted
-		.filter((item) => {
-			// NOTE: Today we only have tags; until we have an explicit ownership/global flag,
-			// use conservative heuristics:
-			// - "mine": no FDA/center tags
-			// - "global": has FDA or a known center tag
-			if (libraryTab === "all") {
-				return true;
-			}
+	.filter((item) => {
+		// NOTE: Today we only have tags; until we have an explicit ownership/global flag,
+		// use conservative heuristics:
+		// - "mine": no FDA/center tags
+		// - "global": has FDA or a known center tag
+		if (libraryTab === "all") {
+			return true;
+		}
 
-			const tags = Array.isArray(item.tag) ? item.tag : [];
-			const lowerTags = tags
-				.filter(Boolean)
-				.map((t) => String(t).toLowerCase());
+		const tags = Array.isArray(item.tag) ? item.tag : [];
+		const lowerTags = tags
+			.filter(Boolean)
+			.map((t) => String(t).toLowerCase());
 
-			const isGlobal = lowerTags.includes("fda")
-				? true
-				: centers.some((c) => lowerTags.includes(c.toLowerCase()));
+		const isGlobal = lowerTags.includes("fda")
+			? true
+			: centers.some((c) => lowerTags.includes(c.toLowerCase()));
 
-			return libraryTab === "global" ? isGlobal : !isGlobal;
-		})
-		.filter((item) => {
-			const matchesSearch =
-				!search ||
-				search.trim() === "" ||
-				item?.tag?.some((a) =>
-					a?.toLowerCase()?.includes(search?.toLowerCase()),
+		return libraryTab === "global" ? isGlobal : !isGlobal;
+	})
+	.filter((item) => {
+		const matchesSearch =
+			!search ||
+			search.trim() === "" ||
+			item?.tag?.some((a) =>
+				a?.toLowerCase()?.includes(search?.toLowerCase()),
+			);
+
+		let matchesCenter = true;
+		try {
+			matchesCenter =
+				centerFilter.length === 0 ||
+				centerFilter.some((filter) =>
+					item?.tag?.some((a) =>
+						a?.toLowerCase()?.includes(filter.toLowerCase()),
+					),
 				);
+		} catch (e) {
+			console.error(e);
+		}
 
-			let matchesCenter = true;
-			try {
-				matchesCenter =
-					centerFilter.length === 0 ||
-					centerFilter.some((filter) =>
-						item?.tag?.some((a) =>
-							a?.toLowerCase()?.includes(filter.toLowerCase()),
-						),
-					);
-			} catch (e) {
-				console.error(e);
-			}
+		let matchesName = true;
 
-			let matchesName = true;
+		try {
+			matchesName = item?.name
+				?.toLowerCase()
+				?.includes(search?.toLowerCase());
+		} catch (e) {
+			console.error(e);
+		}
 
-			try {
-				matchesName = item?.name
-					?.toLowerCase()
-					?.includes(search?.toLowerCase());
-			} catch (e) {
-				console.error(e);
-			}
+		return (matchesSearch && matchesCenter) || matchesName;
+	})
+	.filter((item) => {
+		if (!showFavoritesOnly) return true;
+		return favorites[item.id] ?? item.favorite;
+	})
+	.sort((a, b) => {
+		switch (sortBy) {
+			case "name-asc":
+				return a.name.localeCompare(b.name);
+			case "name-desc":
+				return b.name.localeCompare(a.name);
+			case "date-desc":
+				return b.dateCreated.localeCompare(a.dateCreated);
+			case "date-asc":
+				return a.dateCreated.localeCompare(b.dateCreated);
+			default:
+				return a.name.localeCompare(b.name);
+		}
+	});
 
-			return (matchesSearch && matchesCenter) || matchesName;
-		})
-		.filter((item) => {
-			if (!showFavoritesOnly) return true;
-			return favorites[item.id] ?? item.favorite;
-		})
-		.sort((a, b) => {
-			if (sortBy === "name") return a.name.localeCompare(b.name);
-			return b.dateCreated.localeCompare(a.dateCreated);
-		});
+		const getSortDisplayText = (sortBy: string) => {
+		switch (sortBy) {
+			case "name-asc":
+				return "Sort: Name (A-Z)";
+			case "name-desc":
+				return "Sort: Name (Z-A)";
+			case "date-desc":
+				return "Sort: Date (newest)";
+			case "date-asc":
+				return "Sort: Date (oldest)";
+			default:
+				return "Sort: Name (A-Z)";
+		}
+	};
 
 	const documentFiles = useMemo(() => {
 		return engineAssets
@@ -556,15 +582,13 @@ export const DocumentLibrary = () => {
 											Favorites
 										</Button>
 
-										<Popover>
+										<Popover open={sortPopoverOpen} onOpenChange={setSortPopoverOpen}>
 											<PopoverTrigger asChild>
 												<Button
 													variant="outline"
 													size="sm"
 												>
-													{sortBy === "name"
-														? "Sort: Name"
-														: "Sort: Date"}
+													{getSortDisplayText(sortBy)}
 													<ChevronDown className="ml-1 h-4 w-4" />
 												</Button>
 											</PopoverTrigger>
@@ -574,31 +598,59 @@ export const DocumentLibrary = () => {
 											>
 												<Button
 													variant={
-														sortBy === "name"
+														sortBy === "name-asc"
 															? "secondary"
 															: "ghost"
 													}
 													size="sm"
 													className="w-full justify-start"
 													onClick={() =>
-														setSortBy("name")
+														setSortBy("name-asc")
 													}
 												>
 													Name (A-Z)
 												</Button>
 												<Button
 													variant={
-														sortBy === "date"
+														sortBy === "name-desc"
 															? "secondary"
 															: "ghost"
 													}
 													size="sm"
 													className="w-full justify-start"
 													onClick={() =>
-														setSortBy("date")
+														setSortBy("name-desc")
+													}
+												>
+													Name (Z-A)
+												</Button>
+												<Button
+													variant={
+														sortBy === "date-desc"
+															? "secondary"
+															: "ghost"
+													}
+													size="sm"
+													className="w-full justify-start"
+													onClick={() =>
+														setSortBy("date-desc")
 													}
 												>
 													Date (newest)
+												</Button>
+												<Button
+													variant={
+														sortBy === "date-asc"
+															? "secondary"
+															: "ghost"
+													}
+													size="sm"
+													className="w-full justify-start"
+													onClick={() =>
+														setSortBy("date-asc")
+													}
+												>
+													Date (oldest)
 												</Button>
 											</PopoverContent>
 										</Popover>
