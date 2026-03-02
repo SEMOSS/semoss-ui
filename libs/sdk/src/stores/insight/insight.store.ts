@@ -5,6 +5,7 @@ import {
 	logout,
 	oauth,
 	runPixel,
+	runPixelAsync,
 	upload,
 	uploadApp,
 	uploadEngine,
@@ -633,6 +634,27 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				}
 
 				return { pixelReturn };
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No response");
+		},
+
+		/**
+		 * Run a pixel asynchronously against the insight
+		 * @param pixel - pixel command to run asynchronously
+		 * @returns Job ID for tracking the async execution
+		 */
+		runAsync: async (pixel: string) => {
+			try {
+				const { jobId } = await runPixelAsync(
+					pixel,
+					this._store.insightId,
+				);
+
+				return { jobId };
 			} catch (error) {
 				this.processActionError(error as Error);
 			}

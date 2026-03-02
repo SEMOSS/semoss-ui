@@ -84,13 +84,24 @@ export const SettingsLayout = observer(() => {
 	const { pathname, state } = useLocation();
 	const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);
 
+	const ADMIN_MODE_STORAGE_KEY = "semoss.adminMode";
+	const getStoredAdminMode = () => {
+		if (typeof window === "undefined") {
+			return false;
+		}
+		return window.localStorage.getItem(ADMIN_MODE_STORAGE_KEY) === "true";
+	};
+
 	// track the active breadcrumbs
-	const [adminMode, setAdminMode] = useState(false);
+	const [adminMode, setAdminMode] = useState(getStoredAdminMode);
 
 	// if the user is not an admin turn it off
 	useEffect(() => {
 		if (!configStore.store.user.admin) {
 			setAdminMode(false);
+			if (typeof window !== "undefined") {
+				window.localStorage.removeItem(ADMIN_MODE_STORAGE_KEY);
+			}
 		}
 	}, [configStore.store.user.admin]);
 
@@ -107,6 +118,30 @@ export const SettingsLayout = observer(() => {
 	if (!matchedRoute) {
 		return null;
 	}
+
+	// force admin mode on admin-only routes for admins (prevents redirect on refresh)
+	useEffect(() => {
+		if (
+			configStore.store.user.admin &&
+			matchedRoute?.admin &&
+			!adminMode
+		) {
+			setAdminMode(true);
+		}
+	}, [configStore.store.user.admin, matchedRoute?.admin, adminMode]);
+
+	// persist admin mode for admins
+	useEffect(() => {
+		if (!configStore.store.user.admin) {
+			return;
+		}
+		if (typeof window !== "undefined") {
+			window.localStorage.setItem(
+				ADMIN_MODE_STORAGE_KEY,
+				String(adminMode),
+			);
+		}
+	}, [adminMode, configStore.store.user.admin]);
 
 	/**
 	 * Copy text and add it to the clipboard
