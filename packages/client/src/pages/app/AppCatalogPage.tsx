@@ -1,4 +1,4 @@
-import { Filter, Menu, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Filter, Menu, Search } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -6,6 +6,9 @@ import { debounced } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
 	H3,
 	InputGroup,
 	InputGroupAddon,
@@ -178,6 +181,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	const [search, setSearch] = useState("");
 	const appCatalogPageStatus = useRef({ removalChanges: false });
 	const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+	const [isBookmarkedOpen, setIsBookmarkedOpen] = useState(true);
 
 	const applyMetaFilters = useCallback(
 		(nextFilters: Record<string, unknown>) => {
@@ -618,43 +622,74 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				)}
 
 				<div className="flex flex-col gap-6 pb-8">
-					<P className="font-medium text-base">Bookmarked</P>
+					<Collapsible
+						open={isBookmarkedOpen}
+						onOpenChange={setIsBookmarkedOpen}
+					>
+						<div className="flex items-center justify-between">
+							<P className="font-medium text-base">Bookmarked</P>
+							<CollapsibleTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									onClick={() =>
+										setIsBookmarkedOpen(!isBookmarkedOpen)
+									}
+									aria-label={
+										isBookmarkedOpen
+											? "Collapse bookmarked section"
+											: "Expand bookmarked section"
+									}
+								>
+									{isBookmarkedOpen ? (
+										<ChevronUp className="size-4" />
+									) : (
+										<ChevronDown className="size-4" />
+									)}
+								</Button>
+							</CollapsibleTrigger>
+						</div>
 
-					{favoritedApps.length > 0 ? (
-						<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-							{favoritedApps.map((app) => {
-								return (
-									<AppTileCard
-										key={app.project_id}
-										app={app}
-										systemApp={false}
-										layout="responsive"
-										href={`#/app/${app.project_id}/view`}
-										onAction={() => {
-											navigate(
-												`/app/${app.project_id}/view`,
-											);
-										}}
-										appType={app.project_type}
-										isFavorite={isFavorited(app.project_id)}
-										favorite={() => {
-											favoriteApp(app);
-										}}
-										onDelete={() => {
-											removeApp(app);
-										}}
-										isDiscoverable={false}
-										isLoading={false}
-										showSkeleton={false}
-									/>
-								);
-							})}
-						</div>
-					) : (
-						<div className="rounded-lg border border-dashed p-4 text-muted-foreground">
-							<P>No bookmarked apps match your search.</P>
-						</div>
-					)}
+						<CollapsibleContent className="mt-4">
+							{favoritedApps.length > 0 ? (
+								<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+									{favoritedApps.map((app) => {
+										return (
+											<AppTileCard
+												key={app.project_id}
+												app={app}
+												systemApp={false}
+												layout="responsive"
+												href={`#/app/${app.project_id}/view`}
+												onAction={() => {
+													navigate(
+														`/app/${app.project_id}/view`,
+													);
+												}}
+												appType={app.project_type}
+												isFavorite={isFavorited(
+													app.project_id,
+												)}
+												favorite={() => {
+													favoriteApp(app);
+												}}
+												onDelete={() => {
+													removeApp(app);
+												}}
+												isDiscoverable={false}
+												isLoading={false}
+												showSkeleton={false}
+											/>
+										);
+									})}
+								</div>
+							) : (
+								<div className="rounded-lg border border-dashed p-4 text-muted-foreground">
+									<P>No bookmarked apps match your search.</P>
+								</div>
+							)}
+						</CollapsibleContent>
+					</Collapsible>
 
 					<div className="flex flex-wrap items-center justify-between gap-4">
 						<Tabs
