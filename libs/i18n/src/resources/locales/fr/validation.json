@@ -1,0 +1,7 @@
+{
+	"required": "{{field}} est requis",
+	"nameRequired": "Veuillez entrer un nom pour la source de connaissances",
+	"embeddingRequired": "Veuillez sélectionner un moteur d'intégration",
+	"filesRequired": "Veuillez sélectionner au moins un document",
+	"descriptionRequired": "Veuillez entrer une description"
+}

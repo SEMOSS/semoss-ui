@@ -5,6 +5,7 @@ import {
 	TriangleAlert,
 } from "lucide-react";
 import { useMemo } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
@@ -67,6 +68,7 @@ export const WorkspaceMCPList = ({
 	workspaceId,
 	search,
 }: WorkspaceMCPListProps) => {
+	const { t } = useTranslation("workspace");
 	const { actions } = useInsight();
 
 	const getDependencies = usePixel<ProjectDependency[]>(
@@ -77,7 +79,8 @@ export const WorkspaceMCPList = ({
 			data: null,
 			onError: (_d, e) => {
 				toast.error(
-					`Failed to load workspace resources: ${e instanceof Error ? e.message : "Unknown error"}`,
+					t("mcp.failedToLoad") +
+						`: ${e instanceof Error ? e.message : "Unknown error"}`,
 				);
 			},
 		},
@@ -104,9 +107,9 @@ export const WorkspaceMCPList = ({
 		return (
 			<div className="flex h-full w-full items-center justify-center">
 				<Muted>
-					No{" "}
-					{type === "TOOLBOX" ? "toolboxes" : "knowledge libraries"}{" "}
-					found
+					{type === "TOOLBOX"
+						? t("mcp.noToolboxes")
+						: t("mcp.noKnowledge")}
 				</Muted>
 			</div>
 		);
@@ -140,18 +143,18 @@ export const WorkspaceMCPList = ({
 			if (typeof m.access_permission === "number") {
 				return {
 					effectivePermission: "REQUESTED",
-					label: "Access requested",
+					label: t("mcp.accessRequested"),
 				};
 			} else {
 				return {
 					effectivePermission: "DISCOVERABLE",
-					label: "Request access",
+					label: t("mcp.requestAccess"),
 				};
 			}
 		}
 		return {
 			effectivePermission: "FULLY_PRIVATE",
-			label: "No access",
+			label: t("mcp.noAccess"),
 		};
 	};
 
@@ -171,10 +174,10 @@ export const WorkspaceMCPList = ({
 			) {
 				throw new Error("Failed to request access");
 			}
-			toast.success(`Requested access to ${m.engine_name}`);
+			toast.success(t("mcp.requestedSuccess", { name: m.engine_name }));
 			getDependencies.refresh();
 		} catch {
-			toast.error("Failed to request access");
+			toast.error(t("mcp.requestedFailed"));
 		}
 	};
 
@@ -238,10 +241,30 @@ export const WorkspaceMCPList = ({
 										</TooltipTrigger>
 										<TooltipContent>
 											{accessMissing
-												? `You don't have access to this ${type === "TOOLBOX" ? "toolbox" : "knowledge base"}. Please request access from the owner.`
+												? t("mcp.tooltipNoAccess", {
+														type:
+															type === "TOOLBOX"
+																? "toolbox"
+																: "knowledge base",
+													})
 												: missingSubDependencies
-													? `You don't have access to all dependencies of this ${type === "TOOLBOX" ? "toolbox" : "knowledge base"}, so functionality may be limited. Open in the platform for more information.`
-													: `Open this ${type === "TOOLBOX" ? "toolbox" : "knowledge base"} in the platform`}
+													? t(
+															"mcp.tooltipMissingDependencies",
+															{
+																type:
+																	type ===
+																	"TOOLBOX"
+																		? "toolbox"
+																		: "knowledge base",
+															},
+														)
+													: t("mcp.tooltipOpen", {
+															type:
+																type ===
+																"TOOLBOX"
+																	? "toolbox"
+																	: "knowledge base",
+														})}
 										</TooltipContent>
 									</Tooltip>
 								</div>
@@ -284,7 +307,7 @@ export const WorkspaceMCPList = ({
 													handleRequestAccess(m)
 												}
 											>
-												Request Access
+												{t("mcp.requestAccessButton")}
 											</Button>
 										) : (
 											<Badge
@@ -312,8 +335,7 @@ export const WorkspaceMCPList = ({
 
 								{/* Description */}
 								<div className="text-muted-foreground text-xs">
-									{m.description ||
-										"No description available."}
+									{m.description || t("mcp.noDescription")}
 								</div>
 								{m.tags?.length && (
 									<div className="flex flex-wrap gap-1">

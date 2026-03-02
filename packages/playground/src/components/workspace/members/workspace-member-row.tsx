@@ -1,3 +1,4 @@
+import { useTranslation } from "@semoss/i18n";
 import { Avatar, AvatarFallback } from "@semoss/ui/next";
 import type { User } from "@/types";
 import { toInitials } from "@/utility";
@@ -34,6 +35,8 @@ export const WorkspaceMemberRow = ({
 	activeUserPermission,
 	onPermissionChange,
 }: WorkspaceMemberRowProps) => {
+	const { t } = useTranslation("workspace");
+
 	return (
 		<div className="flex items-center gap-3 rounded px-4 py-2 hover:bg-accent">
 			<Avatar className="h-12 w-12 rounded-md">
@@ -46,7 +49,7 @@ export const WorkspaceMemberRow = ({
 					{member.name}{" "}
 					{member.id === currentUserId && (
 						<span className="ml-1 text-muted-foreground">
-							(You)
+							{t("members.you")}
 						</span>
 					)}
 				</span>

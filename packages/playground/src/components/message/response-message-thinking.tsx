@@ -1,6 +1,6 @@
 import { Quote } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Accordion,
 	AccordionContent,
@@ -14,9 +14,9 @@ import {
 	P,
 	Separator,
 } from "@semoss/ui/next";
-import { useMarkdownTypewriter } from "@/hooks";
-import { useLoadingMessage } from "@/hooks/use-loading-messages";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
+import type { ResponseMessageStore } from "@/stores";
+import type { PixelMessageThinkingPart } from "@/types";
 
 const THINKING_MARKDOWN_COMPONENTS = {
 	h1: ({ children, ...props }) => (
@@ -101,52 +101,89 @@ const THINKING_MARKDOWN_COMPONENTS = {
 };
 
 interface ResponseMessageThinkingProps {
-	/** Room */
-	room: RoomStore;
-
 	/** Message to render */
 	message: ResponseMessageStore;
+
+	/** Thinking to render */
+	part: PixelMessageThinkingPart;
+
+	/** Is it the last part */
+	isLast: boolean;
 }
 
 export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
-	observer(({ room, message }) => {
-		const thinkingMessage = useLoadingMessage(room.isLoading);
+	observer(({ message, part, isLast }) => {
 		const [thinking, setThinking] = useState<string>("");
-
-		const typewriter = useMarkdownTypewriter(message.thinking);
+		const typewriter = useMarkdownTypewriter(part.thinking);
+		const previewRef = useRef<HTMLDivElement>(null);
 
 		useEffect(() => {
-			if (message.isThinking) {
+			if (message.isThinking && isLast) {
 				typewriter.start();
 			}
-		}, [message.isThinking, typewriter.start]);
+		}, [message.isThinking, typewriter.start, isLast]);
 
-		if (message.isThinking || message.thinking.length > 0) {
-			return (
-				<Accordion
-					type="single"
-					collapsible
-					className="rounded-lg border border-border p-3 text-muted-foreground text-sm shadow-sm"
-					value={message.isThinking ? "thinking" : thinking}
-					onValueChange={(val) => setThinking(val || "")}
-				>
-					<AccordionItem value="thinking">
-						<AccordionTrigger className="p-0">
+		useEffect(() => {
+			if (!isLast) {
+				typewriter.skipToEnd();
+			}
+		}, [isLast, typewriter.skipToEnd]);
+
+		// Auto-scroll preview to bottom when content changes
+		useEffect(() => {
+			if (previewRef.current && !thinking) {
+				previewRef.current.scrollTop = previewRef.current.scrollHeight;
+			}
+		}, [thinking]);
+
+		if (!part.thinking) {
+			return null;
+		}
+
+		const isOpen = thinking === "thinking";
+
+		return (
+			<Accordion
+				type="single"
+				collapsible
+				className="mb-2 rounded-lg border border-border text-muted-foreground text-sm shadow-sm"
+				value={thinking}
+				onValueChange={(val) => setThinking(val || "")}
+			>
+				<AccordionItem value="thinking" className="border-0">
+					<div className="p-3">
+						<AccordionTrigger className="p-0 hover:no-underline">
 							<span className="font-medium">Thinking</span>
 						</AccordionTrigger>
-						<AccordionContent className="pt-2">
-							<Markdown
-								className="[&>*:first-child]:mt-0"
-								components={THINKING_MARKDOWN_COMPONENTS}
+						{!isOpen && (
+							<div
+								ref={previewRef}
+								className="relative mt-2 max-h-12 overflow-hidden"
 							>
-								{typewriter.isTyping
-									? typewriter.rendered
-									: message.thinking ||
-										thinkingMessage.loadingMessage}
-							</Markdown>
-						</AccordionContent>
-					</AccordionItem>
-				</Accordion>
-			);
-		}
+								<Markdown
+									className="text-xs [&>*:first-child]:mt-0"
+									components={THINKING_MARKDOWN_COMPONENTS}
+								>
+									{typewriter.isTyping
+										? typewriter.rendered
+										: part.thinking}
+								</Markdown>
+								{/* Fade overlay at bottom */}
+								<div className="pointer-events-none absolute right-0 bottom-0 left-0 h-6 bg-linear-to-t from-background to-transparent" />
+							</div>
+						)}
+					</div>
+					<AccordionContent className="px-3 pt-0 pb-3">
+						<Markdown
+							className="[&>*:first-child]:mt-0"
+							components={THINKING_MARKDOWN_COMPONENTS}
+						>
+							{typewriter.isTyping
+								? typewriter.rendered
+								: part.thinking}
+						</Markdown>
+					</AccordionContent>
+				</AccordionItem>
+			</Accordion>
+		);
 	});
