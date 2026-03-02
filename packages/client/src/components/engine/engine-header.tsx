@@ -28,8 +28,6 @@ import { useEngine, useRootStore } from "@/hooks";
 import { ENGINE_IMAGES } from "@/pages/import";
 import { formatToDataTestId } from "@/utility";
 import { EditEngineDetails } from ".";
-
-type MCPStatus = "idle" | "generating" | "generated";
 /**
  * Engine Header
  */
@@ -47,12 +45,8 @@ export const EngineHeader: React.FC = () => {
 	// export loading state
 	const [exportLoading, setExportLoading] = useState(false);
 
-	// mcp state
-	const [mcpStatus, setMCPStatus] = useState<MCPStatus>(
-		(active.metadata.tag as string[])?.includes("MCP")
-			? "generated"
-			: "idle",
-	);
+	// mcp generation loading state
+	const [generatingMCP, setGeneratingMCP] = useState(false);
 
 	const findDBImage = (appType: string, appSubType: string) => {
 		const obj = ENGINE_IMAGES[appType]?.find(
@@ -116,61 +110,23 @@ export const EngineHeader: React.FC = () => {
 	};
 
 	/**
-	 * Revert the MCP for the given engine.
-	 * This function will delete the current MCP file associated with the engine
-	 * and return the engine to its original state.
-	 * If the deletion fails, it will throw an error message.
-	 * @throws {string} If the deletion fails, it throws an error message.
-	 */
-	const revertMCP = async () => {
-		const mcpFilePath = `/mcp/pixel_mcp.json`;
-		const pixel = `DeleteEngineAssets(filePath=["${mcpFilePath}"], engine=["${active.id}"]);`;
-
-		const { pixelReturn } = await monolithStore.runQuery(pixel);
-
-		if (pixelReturn[0].operationType.includes("ERROR")) {
-			throw pixelReturn[0].output as string;
-		}
-	};
-
-	/**
-	 * Handles the click on the MCP button in the engine header.
-	 * If the button is set to "Generate", it will call the generateMCP function
-	 * and navigate to the specified path. If the button is set to "Revert", it will
-	 * call the revertMCP function and navigate to the specified path.
-	 * If either call fails, it will display an error message and set the MCP status
-	 * to the original state.
-	 * @param {string} mcpStatus - The current status of the MCP button.
+	 * Handles clicking the "Generate MCP" button. It triggers the generation
+	 * process and navigates to the files view when complete. Errors are shown as
+	 * toasts and a loading state keeps the button disabled while processing.
 	 * @param {string} type - The type of engine.
 	 * @param {string} active.id - The ID of the active engine.
 	 * @param {string} navigationPath - The path to navigate to.
 	 */
 	const handleMCPClick = async () => {
-		const mcpAction = mcpStatus === "generated" ? "Revert" : "Generate";
-		const navigationPath = `/engine/${type}/${active.id}/files?mcp=${mcpAction}`;
-		if (mcpAction === "Generate") {
-			try {
-				setMCPStatus("generating");
-
-				await generateMCP(); // your async API call
-				setMCPStatus("generated");
-				navigate(navigationPath);
-			} catch (error) {
-				toast.error(error as string);
-				setMCPStatus("idle");
-			}
-		} else if (mcpAction === "Revert") {
-			try {
-				setMCPStatus("generating");
-
-				await revertMCP(); // your async API call
-				navigate("/files");
-				setMCPStatus("idle");
-				navigate(navigationPath);
-			} catch (error) {
-				toast.error(error as string);
-				setMCPStatus("generated");
-			}
+		const navigationPath = `/engine/${type}/${active.id}/files?mcp=Generate`;
+		setGeneratingMCP(true);
+		try {
+			await generateMCP();
+			navigate(navigationPath);
+		} catch (error) {
+			toast.error(error as string);
+		} finally {
+			setGeneratingMCP(false);
 		}
 	};
 
@@ -260,20 +216,16 @@ export const EngineHeader: React.FC = () => {
 					<Button
 						variant="outline"
 						size="lg"
-						onClick={() => handleMCPClick()}
+						onClick={handleMCPClick}
 						data-testid="make-mcp-btn"
 					>
 						<div className="flex flex-row items-center">
-							{mcpStatus === "generating" ? (
-								<Spinner className="mr-2 size-4" />
-							) : (
-								<Bot className="mr-2 size-4" />
-							)}
-							{mcpStatus === "generating"
-								? "Processing..."
-								: mcpStatus === "generated"
-									? "Revert MCP"
-									: "Generate MCP"}
+						{generatingMCP ? (
+							<Spinner className="mr-2 size-4" />
+						) : (
+							<Bot className="mr-2 size-4" />
+						)}
+						{generatingMCP ? "Processing..." : "Generate MCP"}
 						</div>
 					</Button>
 					{active.role === "OWNER" && (
@@ -361,17 +313,6 @@ export const EngineHeader: React.FC = () => {
 									</Badge>
 								);
 							})}
-						{/* FE MCP chip addition to avoid full page refresh */}
-						{!(active.metadata?.tag as string[])?.includes("MCP") &&
-							mcpStatus === "generated" && (
-								<Badge
-									variant="outline"
-									className="border-(--primary) text-(--primary)"
-									data-testid="tag-chip"
-								>
-									MCP
-								</Badge>
-							)}
 					</div>
 				</div>
 				<div className="flex flex-col items-end gap-1 text-right">

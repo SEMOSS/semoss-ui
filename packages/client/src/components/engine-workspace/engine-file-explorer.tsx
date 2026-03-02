@@ -83,27 +83,6 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 					enableClose: true,
 				});
 				toast.success("MCP generated");
-			} else if (mcpParam === "Revert") {
-				const model = node.getModel();
-				if(model.getNodeById(`ENGINE_FILE--${mcpFilePath}`)) {
-					model.doAction(
-						FlexLayout.Actions.deleteTab(
-							model
-								.getNodeById(`ENGINE_FILE--${mcpFilePath}`)
-								?.getId() || "",
-						),
-					);
-				}
-				if(model.getNodeById(`ENGINE_MCP_EDITOR--${mcpFilePath}`)) {
-					model.doAction(
-						FlexLayout.Actions.deleteTab(
-							model
-								.getNodeById(`ENGINE_MCP_EDITOR--${mcpFilePath}`)
-								?.getId() || "",
-						),
-					)
-				}
-				toast.success("MCP reverted");
 			}
 			searchParams.delete("mcp");
 			setSearchParams(searchParams);
