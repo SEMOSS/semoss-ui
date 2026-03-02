@@ -161,19 +161,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			},
 		});
 
-		const getCatalogFilters = usePixel<
-			{
-				METAKEY: string;
-				METAVALUE: string;
-				count: number;
-			}[]
-		>(
-			metaKeys.length > 0
-				? `GetEngineMetaValues( ${
-						route ? `engineTypes=['${route.type}'], ` : ""
-					} metaKeys = ${JSON.stringify(metaKeys)} ) ;`
-				: "",
-		);
+		// Filterbox owns the GetEngineMetaValues call to avoid duplicate requests.
 
 		/**
 		 * @name setGlobal
@@ -265,13 +253,16 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		}, [setScroll]);
 
 		useEffect(() => {
-			setSearch("");
+			if (!route.type) {
+				return;
+			}
 
+			setSearch("");
 			resetScroll();
 		}, [route.type, resetScroll]);
 
 		// if there is an error show this
-		if (getEngines.isError || getCatalogFilters.status === "ERROR") {
+		if (getEngines.isError) {
 			return <P>ERROR</P>;
 		}
 
