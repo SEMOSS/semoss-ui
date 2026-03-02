@@ -393,34 +393,6 @@ export const addInsightUserPermissions = async (
 	// figure out whether we want to do .catch here
 };
 
-export const removeInsightUserPermissions = async (
-	admin: boolean,
-	id: string,
-	users: unknown[],
-	projectId,
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	const postData = {
-		projectId: projectId,
-		insightId: id,
-		ids: JSON.stringify(users),
-	};
-	if (admin) {
-		url += "admin/";
-	}
-	url += "project/removeProjectUserPermissions";
-
-	const response = await post<{
-		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
-	return response;
-	// figure out whether we want to do .catch here
-};
-
 export const editInsightUserPermissions = async (
 	admin: boolean,
 	id: string,
@@ -861,6 +833,24 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
 		throw Error(error);
 	});
 	return response.data;
+};
+
+export const setUserDefaultModel = async (
+	metaKey: string,
+	metaValue: string,
+) => {
+	const url = `${Env.MODULE}/api/auth/user/setUserMetadata`;
+	const response = await post<boolean>(
+		url,
+		{
+			metaKey,
+			metaValue,
+		},
+		{},
+	).catch((e) => {
+		throw Error(e);
+	});
+	return response;
 };
 
 const processPostData = (data: unknown) => {

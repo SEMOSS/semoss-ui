@@ -125,8 +125,6 @@ export function useIteratorPixel<TResponse, TItem>(
 	 */
 	const reset = useCallback(() => {
 		setOffset(0);
-		setAllData([]);
-		setTotalCount(0);
 		isLoadingMoreRef.current = false;
 
 		// get the data

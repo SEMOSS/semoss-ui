@@ -3,13 +3,26 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type BlockDef,
+	type Block,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type PathValue,
+	type Paths,
 } from "@semoss/renderer";
 import { Button, Select, styled, Typography } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { BAR_CHART_DATA, LINE_CHART_DATA } from "../../Visualization.constants";
+
+interface JsonSettingsProps<D extends BlockDef = BlockDef> {
+	/**
+	 * Id of the block that is being worked with
+	 */
+	id: string;
+
+	path: Paths<Block<D>["data"], 4>;
+
+	chartType: string;
+}
 
 //styled select field with width to 100%
 const StyledSelect = styled(Select)(() => ({
@@ -51,16 +64,13 @@ const StyledAxis = styled("div")<{
 
 export const ToggleTrendline = observer(
 	<D extends BlockDef = BlockDef>({
-		options,
-		updateChart,
-		chartType,
 		id,
 		path,
-	}) => {
+		chartType,
+	}: JsonSettingsProps<D>) => {
 		const [toggleTrendlines, setToggleTrendlines] = useState<string>(""); //contains toggle trendlines tool state
-		const { data, setData } =
-			useBlockSettings<EchartVisualizationBlockDef>(id); //chart block data and setdata
-		const [value, setValue] = useState(data.option);
+		const { data, setData } = useBlockSettings<D>(id); //chart block data and setdata
+		const [value, setValue] = useState("");
 		//different trendlines option to draw lines over bar graph in different format
 		const trendLineOptions = [
 			{ label: "Smooth", value: "smooth" },
@@ -88,17 +98,17 @@ export const ToggleTrendline = observer(
 		//update the value, when data is changed
 		useEffect(() => {
 			setValue(computedValue);
-		}, [computedValue]);
+		}, [computedValue, data]);
 		//handles initial setting of toggle trendlines data
 		useEffect(() => {
 			if (BAR_CHART_DATA.JSONVALUE.includes(chartType)) {
-				const seriesIndex = options["series"].findIndex(
+				const seriesIndex = data.option["series"].findIndex(
 					(op) =>
 						LINE_CHART_DATA.JSONVALUE.includes(op.type) &&
 						Object.hasOwn(op, "toggleTrendLineObject"),
 				);
 				if (seriesIndex > -1) {
-					const trendLineOptions = options["series"][seriesIndex];
+					const trendLineOptions = data.option["series"][seriesIndex];
 					if (trendLineOptions.smooth) {
 						setToggleTrendlines("smooth");
 					}
@@ -178,12 +188,12 @@ export const ToggleTrendline = observer(
 							["data"]:
 								option["series"][displayPositionIndex]["data"],
 						};
-						console.log(option["series"], "line exists");
 					}
 
 					if (displayPositionIndex > -1 && lineAlreadyExists == -1) {
 						const toggleLineData = {
 							...trendLinesData,
+							name: `Trendline: ${option["series"][displayPositionIndex]["name"]}`,
 							data:
 								option["series"][displayPositionIndex][
 									"data"
@@ -191,6 +201,15 @@ export const ToggleTrendline = observer(
 							type: "line",
 							toggleTrendLineObject: true,
 							sourceObjectIndex: displayPositionIndex,
+							symbol: "circle",
+							symbolSize: 6,
+							zLevel: 10,
+							z: 1,
+							clip: false,
+							lineStyle: {
+								type: "dashed",
+								width: 2,
+							},
 						};
 
 						option["series"] = [
@@ -268,7 +287,7 @@ export const ToggleTrendline = observer(
 			timeoutRef.current = setTimeout(() => {
 				try {
 					setData(
-						"option",
+						path,
 						updatedOption as PathValue<D["data"], typeof path>,
 					);
 				} catch (e) {

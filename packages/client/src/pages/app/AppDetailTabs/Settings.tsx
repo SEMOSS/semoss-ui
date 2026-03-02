@@ -1,191 +1,20 @@
-import { ContentCopy, OpenInBrowser } from "@mui/icons-material";
-import LockIcon from "@mui/icons-material/Lock";
-import { useEffect, useState } from "react";
+import { Upload } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Env, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
-	Box,
 	Button,
-	FileDropzone,
-	Grid,
-	IconButton,
-	InputAdornment,
-	LoadingScreen,
-	Stack,
-	styled,
+	Separator,
+	Spinner,
 	Table,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TableBody,
+	TableCell,
+	TableRow,
+	toast,
+} from "@semoss/ui/next";
 import { setProjectPortal, uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
 import { useRootStore, useSettings } from "@/hooks";
-
-const StyledTable = styled(Table)(({ theme }) => ({
-	borderRadius: theme.spacing(1),
-	borderColor: theme.palette.secondary.main,
-	borderStyle: "solid",
-	borderCollapse: "initial",
-	borderWidth: "thin",
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	display: "flex",
-	borderRadius: "16px",
-	border: `1px solid ${theme.palette.divider}`,
-	alignItems: "center",
-	justifyContent: "center",
-	width: "100%",
-	height: "70px",
-	color: theme.palette.text.secondary,
-}));
-
-const StyledBox = styled(Box)({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "flex-start",
-	width: "100%",
-	mb: 2,
-	gap: 4,
-	flexWrap: "nowrap",
-});
-
-const StyledContainer = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(2),
-	width: "100%",
-}));
-
-const StyledReactor = styled(Box)({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	mb: 2,
-	flexWrap: "wrap",
-	gap: 2,
-});
-// Root container
-const _RootGrid = styled(Grid)(({ theme }) => ({
-	marginBottom: theme.spacing(4),
-	width: "100%",
-}));
-
-// Column wrapper box
-const _ColumnBox = styled(Box)(({ theme }) => ({
-	display: "flex",
-	justifyContent: "space-between",
-	gap: theme.spacing(2),
-	border: `1px solid ${theme.palette.secondary.main}`,
-	borderRadius: theme.shape.borderRadius * 2,
-	padding: theme.spacing(2),
-	height: 136,
-}));
-
-// Left text block container
-const _LeftTextContainer = styled(Box)(({ theme }) => ({
-	display: "flex",
-	alignItems: "flex-start",
-	gap: theme.spacing(1),
-}));
-
-// Styled Lock icon
-const _StyledLockIcon = styled(LockIcon)(({ theme }) => ({
-	color: theme.palette.text.disabled,
-}));
-
-// Publish title
-const _PublishTitle = styled(Typography)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	fontSize: "16px",
-	gap: theme.spacing(1),
-	marginBottom: theme.spacing(0.5),
-}));
-
-// Publish description
-const Description = styled(Typography)({
-	fontSize: "14px",
-});
-
-const _PublishPortalDescription = styled(Typography)({
-	marginBottom: "0.5px",
-});
-
-// Second column container
-const _SecondColumnBox = styled(Box)(({ theme }) => ({
-	gap: theme.spacing(2),
-	border: `1px solid ${theme.palette.secondary.main}`,
-	borderRadius: theme.shape.borderRadius * 2,
-	padding: theme.spacing(2),
-	height: 136,
-	width: 610,
-}));
-
-// Header section inside second column
-const _SecondColumnHeader = styled(Box)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	gap: theme.spacing(2),
-	flexWrap: "wrap",
-	paddingBottom: theme.spacing(2),
-}));
-
-// Custom text field
-const _StyledTextField = styled(TextField)({
-	"& .MuiOutlinedInput-root": {
-		borderRadius: "8px",
-	},
-});
-
-const SectionDivider = styled("hr")(({ theme }) => ({
-	border: `1px solid ${theme.palette.secondary.divider}`,
-	borderTop: theme.palette.secondary.divider,
-	marginTop: theme.spacing(3),
-	marginBottom: theme.spacing(3),
-}));
-
-const Title = styled(Typography)({
-	fontSize: "20px",
-});
-
-const ReactorActions = styled(Box)(({ theme }) => ({
-	display: "flex",
-	gap: theme.spacing(2),
-}));
-
-const ActionBtnOutlined = styled(Button)({
-	fontSize: "14px",
-});
-
-const LeftPane = styled(Box)({
-	width: 619,
-});
-
-const RightPane = styled(Box)({
-	width: 518,
-});
-
-const UpdateText = styled(Typography)(({ theme }) => ({
-	marginBottom: theme.spacing(2),
-	fontSize: "14px",
-}));
-
-const UploadIcon = styled(OpenInBrowser)(({ theme }) => ({
-	fontSize: 32,
-	color: theme.palette.primary.dark,
-	marginBottom: theme.spacing(1),
-}));
-
-const BrowseText = styled(Typography)({
-	color: "theme.palette.primary.dark",
-	fontWeight: 500,
-	cursor: "pointer",
-});
-
-const SecondaryText = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.secondary,
-}));
 
 interface AppSettingsProps {
 	id: string;
@@ -196,10 +25,75 @@ type EditAppForm = {
 	PROJECT_UPLOAD: File;
 };
 
+interface FileDropAreaProps {
+	disabled: boolean;
+	value: File | null;
+	onChange: (value: File | null) => void;
+}
+
+const FileDropArea = ({ disabled, value, onChange }: FileDropAreaProps) => {
+	const inputRef = useRef<HTMLInputElement | null>(null);
+	const [isDragging, setIsDragging] = useState(false);
+
+	const handleFiles = (files: FileList | null) => {
+		if (!files || files.length === 0) {
+			return;
+		}
+		onChange(files[0]);
+	};
+
+	return (
+		<button
+			type="button"
+			disabled={disabled}
+			onClick={() => inputRef.current?.click()}
+			onKeyDown={(event) => {
+				if (event.key === "Enter" || event.key === " ") {
+					event.preventDefault();
+					inputRef.current?.click();
+				}
+			}}
+			onDragOver={(event) => {
+				if (disabled) return;
+				event.preventDefault();
+				setIsDragging(true);
+			}}
+			onDragLeave={() => setIsDragging(false)}
+			onDrop={(event) => {
+				if (disabled) return;
+				event.preventDefault();
+				setIsDragging(false);
+				handleFiles(event.dataTransfer.files);
+			}}
+			className={`flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed px-6 py-4 text-center transition ${
+				disabled ? "cursor-not-allowed opacity-60" : ""
+			} ${isDragging ? "border-primary bg-muted/50" : "border-border bg-muted/20"}`}
+		>
+			<Upload className="mb-2 size-8 text-primary" />
+			<span className="font-medium text-primary">Browse</span>
+			<span className="text-muted-foreground text-sm">
+				or drop file to upload
+			</span>
+			{value?.name ? (
+				<span className="mt-2 text-muted-foreground text-xs">
+					{value.name}
+				</span>
+			) : null}
+			<input
+				ref={inputRef}
+				type="file"
+				accept=".zip,application/zip"
+				className="hidden"
+				disabled={disabled}
+				onChange={(event) => handleFiles(event.target.files)}
+			/>
+		</button>
+	);
+};
+
 export const SettingsTab = (props: AppSettingsProps) => {
 	const { id } = props;
 	const { monolithStore, configStore } = useRootStore();
-	const notification = useNotification();
 	const { adminMode } = useSettings();
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -212,8 +106,6 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	const uploadFile = watch("PROJECT_UPLOAD");
 
 	const admin = configStore.store.user.admin;
-
-	const mcpUrl = `${Env.MODULE}/api/ext/mcp/${id}/comms`;
 
 	const [portalReactors, setPortalReactors] = useState<{
 		reactors: string[];
@@ -257,6 +149,37 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			: `GetProjectPortalDetails('${id}');`,
 	);
 
+	/**
+	 * @name getPortalReactors
+	 */
+	const getPortalReactors = useCallback(() => {
+		const pixelString = adminMode
+			? `AdminGetProjectAvailableReactors(project=['${id}']);`
+			: `GetProjectAvailableReactors(project=['${id}']);`;
+
+		monolithStore
+			.runQuery(pixelString)
+			.then((response) => {
+				console.log(response, "response");
+				const output: string[] = response.pixelReturn[0].output;
+				const type: string = response.pixelReturn[0].operationType[0];
+
+				if (type.indexOf("ERROR") > -1) {
+					toast.error(String(output));
+
+					return;
+				}
+
+				setPortalReactors((prev) => ({
+					...prev,
+					reactors: output,
+				}));
+			})
+			.catch((error) => {
+				toast.error(String(error));
+			});
+	}, [adminMode, id, monolithStore]);
+
 	useEffect(() => {
 		if (getPortalDetails.status !== "SUCCESS") {
 			return;
@@ -271,53 +194,17 @@ export const SettingsTab = (props: AppSettingsProps) => {
 		if (getPortalDetails.data.project_has_portal) {
 			getPortalReactors();
 		}
-	}, [getPortalDetails.status, getPortalDetails.data]);
+	}, [getPortalDetails.status, getPortalDetails.data, getPortalReactors]);
 
 	/** LOADING */
 	if (getPortalDetails.status !== "SUCCESS") {
 		return (
-			<LoadingScreen>
-				<LoadingScreen.Trigger description="Loading..." />
-			</LoadingScreen>
+			<div className="flex items-center gap-2 text-muted-foreground">
+				<Spinner className="size-4" />
+				<span>Loading...</span>
+			</div>
 		);
 	}
-
-	/**
-	 * @name getPortalReactors
-	 */
-	const getPortalReactors = () => {
-		const pixelString = adminMode
-			? `AdminGetProjectAvailableReactors(project=['${id}']);`
-			: `GetProjectAvailableReactors(project=['${id}']);`;
-
-		monolithStore
-			.runQuery(pixelString)
-			.then((response) => {
-				console.log(response, "response");
-				const output: string[] = response.pixelReturn[0].output;
-				const type: string = response.pixelReturn[0].operationType[0];
-
-				if (type.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
-						message: output,
-					});
-
-					return;
-				}
-
-				setPortalReactors({
-					...portalReactors,
-					reactors: output,
-				});
-			})
-			.catch((error) => {
-				notification.add({
-					color: "error",
-					message: error,
-				});
-			});
-	};
 
 	/**
 	 * @name recompileReactors
@@ -337,30 +224,18 @@ export const SettingsTab = (props: AppSettingsProps) => {
 				const type: string = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
-						message: output,
-					});
+					toast.error(String(output));
 					return;
 				}
 
 				if (release == null) {
-					notification.add({
-						color: "success",
-						message: "Successfully recompiled",
-					});
+					toast.success("Successfully recompiled");
 				} else {
-					notification.add({
-						color: "success",
-						message: "Successfully redeployed",
-					});
+					toast.success("Successfully redeployed");
 				}
 			})
 			.catch((error) => {
-				notification.add({
-					color: "error",
-					message: error,
-				});
+				toast.error(String(error));
 			});
 	};
 
@@ -376,10 +251,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 				const output: string = response.pixelReturn[0].output;
 				const type: string = response.pixelReturn[0].operationType[0];
 				if (type.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
-						message: output,
-					});
+					toast.error(String(output));
 
 					return;
 				}
@@ -389,16 +261,10 @@ export const SettingsTab = (props: AppSettingsProps) => {
 					project_portal_url: output,
 				});
 
-				notification.add({
-					color: "success",
-					message: "Successfully published",
-				});
+				toast.success("Successfully published");
 			})
 			.catch((error) => {
-				notification.add({
-					color: "error",
-					message: error,
-				});
+				toast.error(String(error));
 			});
 	};
 
@@ -414,30 +280,25 @@ export const SettingsTab = (props: AppSettingsProps) => {
 						project_has_portal: !portalDetails.project_has_portal,
 					});
 
-					notification.add({
-						color: "success",
-						message: `Successfully ${
+					toast.success(
+						`Successfully ${
 							!portalDetails.project_has_portal
 								? "enabled"
 								: "disabled"
 						} portal`,
-					});
+					);
 				} else {
-					notification.add({
-						color: "error",
-						message: `Unsuccessfully ${
+					toast.error(
+						`Unsuccessfully ${
 							!portalDetails.project_has_portal
 								? "disabled"
 								: "enabled"
 						} portal`,
-					});
+					);
 				}
 			})
 			.catch((error) => {
-				notification.add({
-					color: "error",
-					message: error,
-				});
+				toast.error(String(error));
 			});
 	};
 
@@ -482,47 +343,21 @@ export const SettingsTab = (props: AppSettingsProps) => {
 				`PublishProject(project='${id}', release=true);`,
 			);
 
-			notification.add({
-				color: "success",
-				message: "Succesfully Updated Project",
-			});
+			toast.success("Succesfully Updated Project");
 
 			reset();
 		} catch (e) {
 			console.error(e);
 
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+			toast.error((e as Error).message);
 		} finally {
 			// turn of loading
 			setIsLoading(false);
 		}
 	});
 
-	/**
-	 * Copy text and add it to the clipboard
-	 * @param text - text to copy
-	 */
-	const copy = async (text: string) => {
-		try {
-			await navigator.clipboard.writeText(text);
-
-			notification.add({
-				color: "success",
-				message: "Successfully copied to clipboard",
-			});
-		} catch (_e) {
-			notification.add({
-				color: "error",
-				message: "Unable to copy to clipboard",
-			});
-		}
-	};
-
 	return (
-		<StyledContainer>
+		<div className="flex w-full flex-col gap-6 p-4">
 			{/* Access Section */}
 			{/* <Typography variant="h6" gutterBottom>
         Access
@@ -605,111 +440,79 @@ export const SettingsTab = (props: AppSettingsProps) => {
       </RootGrid> */}
 			{/* <SectionDivider /> */}
 			{/* Reactors Section */}
-			<StyledReactor>
-				<Box>
-					<Title variant="h6">Reactors</Title>
+			<div className="flex flex-wrap items-center justify-between gap-4">
+				<div className="space-y-1">
+					<h3 className="font-semibold text-lg">Reactors</h3>
 
 					{portalReactors.reactors.length > 0 && (
-						<Description variant="body2">
+						<p className="text-muted-foreground text-sm">
 							Custom reactors created for the portal
-						</Description>
+						</p>
 					)}
-				</Box>
+				</div>
 
 				{portalReactors.reactors.length > 0 && (
-					<ReactorActions>
-						<ActionBtnOutlined
+					<div className="flex flex-wrap gap-2">
+						<Button
 							variant="outlined"
 							onClick={() => {
 								recompileReactors({ release: true });
 							}}
 						>
 							Deploy and Persist Changes
-						</ActionBtnOutlined>
-						<ActionBtnOutlined
-							variant="contained"
+						</Button>
+						<Button
 							onClick={() => {
 								recompileReactors({ release: null });
 							}}
 						>
 							Compile Changes On This Instance
-						</ActionBtnOutlined>
-					</ReactorActions>
+						</Button>
+					</div>
 				)}
-			</StyledReactor>
+			</div>
 
 			{portalReactors.reactors.length > 0 ? (
-				<StyledTable>
-					<Table.Body>
+				<Table>
+					<TableBody>
 						{portalReactors.reactors.map((reactor) => (
-							<Table.Row key={`reactor-${reactor}`}>
-								<Table.Cell>{reactor}</Table.Cell>
-								<Table.Cell align="right">
+							<TableRow key={`reactor-${reactor}`}>
+								<TableCell>{reactor}</TableCell>
+								<TableCell className="text-right">
 									<Java />
-								</Table.Cell>
-							</Table.Row>
+								</TableCell>
+							</TableRow>
 						))}
-					</Table.Body>
-				</StyledTable>
+					</TableBody>
+				</Table>
 			) : (
-				<StyledTypography variant="body2">
+				<div className="flex h-[70px] items-center justify-center rounded-2xl border text-muted-foreground">
 					No reactors found
-				</StyledTypography>
+				</div>
 			)}
 
-			<SectionDivider />
-
-			<Stack direction="row">
-				<TextField
-					label="MCP URL"
-					size="small"
-					value={mcpUrl}
-					fullWidth={true}
-					slotProps={{
-						input: {
-							endAdornment: (
-								<InputAdornment position="end">
-									<IconButton
-										aria-label="copy"
-										color="default"
-										size="small"
-										onClick={() => copy(`{{${mcpUrl}}}`)}
-									>
-										<ContentCopy fontSize="small" />
-									</IconButton>
-								</InputAdornment>
-							),
-						},
-					}}
-				/>
-			</Stack>
-
-			<SectionDivider />
+			<Separator className="my-6" />
 
 			{/* Update Project Section */}
-			<StyledBox>
-				{/* Left Content */}
-				<LeftPane>
-					{isLoading && (
-						<LoadingScreen>
-							<LoadingScreen.Trigger description="Loading..." />
-						</LoadingScreen>
-					)}
-					<Title variant="h6">Update Project</Title>
-					<UpdateText variant="body2">
+			<div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+				<div className="flex flex-1 flex-col gap-2">
+					<div className="flex items-center gap-2 text-muted-foreground">
+						{isLoading ? <Spinner className="size-4" /> : null}
+					</div>
+					<h3 className="font-semibold text-lg">Update Project</h3>
+					<p className="text-muted-foreground text-sm">
 						The maximum file size we can handle is 5MB per Zip
-					</UpdateText>
+					</p>
 					<Button
-						variant="contained"
 						disabled={isLoading || !uploadFile}
 						onClick={editApp}
+						className="w-fit"
 					>
 						Update
 					</Button>
-				</LeftPane>
+				</div>
 
-				{/* Right Upload Box */}
-				<RightPane>
+				<div className="w-full max-w-[520px]">
 					<Controller
 						name={"PROJECT_UPLOAD"}
 						control={control}
@@ -721,8 +524,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 							) || isLoading
 						}
 						render={({ field }) => (
-							<FileDropzone
-								multiple={false}
+							<FileDropArea
 								value={field.value}
 								disabled={
 									!configStore.isEngineOperationAvailable(
@@ -730,20 +532,14 @@ export const SettingsTab = (props: AppSettingsProps) => {
 										"access",
 									) || isLoading
 								}
-								onChange={(newValues) =>
-									field.onChange(newValues)
+								onChange={(newValue) =>
+									field.onChange(newValue)
 								}
-							>
-								<UploadIcon />
-								<BrowseText variant="body2">Browse</BrowseText>
-								<SecondaryText variant="caption">
-									or drop file to upload
-								</SecondaryText>
-							</FileDropzone>
+							/>
 						)}
 					/>
-				</RightPane>
-			</StyledBox>
-		</StyledContainer>
+				</div>
+			</div>
+		</div>
 	);
 };

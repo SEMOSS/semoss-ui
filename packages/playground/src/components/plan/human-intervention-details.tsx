@@ -1,5 +1,6 @@
 import type React from "react";
 import { useId } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { Field, FieldLabel, Textarea } from "@semoss/ui/next";
 import type { PlanStep } from "@/types";
 
@@ -19,12 +20,15 @@ interface HumanInterventionDetailsProps {
 export const HumanInterventionDetails: React.FC<
 	HumanInterventionDetailsProps
 > = (props) => {
+	const { t } = useTranslation("common");
 	const { details, onDetailsChange } = props;
 	const instructionsId = useId();
 
 	return (
 		<Field>
-			<FieldLabel htmlFor={instructionsId}>Instructions</FieldLabel>
+			<FieldLabel htmlFor={instructionsId}>
+				{t("labels.instructions")}
+			</FieldLabel>
 			<Textarea
 				id={instructionsId}
 				value={details.instructions}
@@ -35,7 +39,7 @@ export const HumanInterventionDetails: React.FC<
 					});
 				}}
 				rows={4}
-				placeholder="Instructions for the ai to process the user's feedback"
+				placeholder={t("plan.instructionsPlaceholder")}
 				required
 			/>
 		</Field>

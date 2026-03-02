@@ -1,6 +1,7 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
 	ResizableHandle,
@@ -9,20 +10,22 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { RoomContent, RoomSidebar } from "@/components";
+import { RoomContent, RoomSidebar, SaveWorkspaceDialog } from "@/components";
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine } from "@/types";
-
 /**
  * The page for a room
  *
  * @component
  */
 export const RoomPage = observer(() => {
+	const { t } = useTranslation("workspace");
+
 	// set the get the room based on the params
 	const { roomId } = useParams();
 	const { chat } = useChat();
+	// const { setBreadcrumbs } = useGlobalBreadcrumbs();
 	const navigate = useNavigate();
 
 	/**
@@ -35,16 +38,18 @@ export const RoomPage = observer(() => {
 	 * Library hooks
 	 */
 	// set the breadcrumbs
-	const { setBreadcrumbs } = useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: room?.metadata?.name || "Room",
-			path: `/room/${roomId}`,
-		},
-	]);
+	const { setBreadcrumbs } = useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: t("breadcrumbs.home"),
+				path: "/",
+			},
+			{
+				name: room?.metadata?.name || t("breadcrumbs.room"),
+				path: `/room/${roomId}`,
+			},
+		],
+	});
 
 	/**
 	 * Effects
@@ -70,21 +75,21 @@ export const RoomPage = observer(() => {
 				if (room.options.workspace)
 					setBreadcrumbs([
 						{
-							name: "Home",
+							name: t("breadcrumbs.home"),
 							path: "/",
 						},
 						{
-							name: "Workspace",
-							path: "/workspace",
+							name: t("breadcrumbs.agent"),
+							path: "/agent",
 						},
 						{
 							name:
 								room.options.workspace?.name ||
 								room.options.workspace.workspace_id,
-							path: `/workspace/${room.options.workspace.workspace_id}`,
+							path: `/agent/${room.options.workspace.workspace_id}`,
 						},
 						{
-							name: "Room",
+							name: t("breadcrumbs.room"),
 							path: `/room/${room.roomId}`,
 						},
 					]);
@@ -107,6 +112,27 @@ export const RoomPage = observer(() => {
 		setBreadcrumbs,
 	]);
 
+	const { setNavbarActions } = useGlobalBreadcrumbs({});
+
+	const navbarActions = useMemo<React.ReactNode>(() => {
+		if (room?.options) {
+			return (
+				<SaveWorkspaceDialog
+					systemPrompt={room?.options?.instructions}
+					mcps={room?.options?.mcp}
+				/>
+			);
+		}
+	}, [room?.options]);
+
+	useEffect(() => {
+		setNavbarActions(navbarActions);
+
+		return () => {
+			setNavbarActions(null);
+		};
+	}, [navbarActions, setNavbarActions]);
+
 	// if there is no room, return null
 	if (!room) {
 		return (
@@ -117,7 +143,11 @@ export const RoomPage = observer(() => {
 	}
 
 	return (
-		<InsightProvider key={roomId} options={{ insightId: room.insightId }}>
+		<InsightProvider
+			key={room.roomId}
+			options={{ insightId: room.insightId }}
+			destroyOnUnmount={false}
+		>
 			<div className="flex h-full w-full flex-col overflow-hidden">
 				<ResizablePanelGroup
 					direction="horizontal"

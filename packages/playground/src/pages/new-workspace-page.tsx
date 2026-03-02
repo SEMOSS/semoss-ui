@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { ScrollArea } from "@semoss/ui/next";
 import { WorkspaceForm } from "@/components";
 import { useGlobalBreadcrumbs } from "@/hooks";
@@ -10,29 +11,32 @@ import { useGlobalBreadcrumbs } from "@/hooks";
  * @component
  */
 export const NewWorkspacePage = observer(() => {
+	const { t } = useTranslation("workspace");
 	const navigate = useNavigate();
 
 	// set the breadcrumbs
-	useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: "Workspace",
-			path: "/workspace",
-		},
-		{
-			name: "New",
-			path: "/workspace/new",
-		},
-	]);
+	useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: t("breadcrumbs.home"),
+				path: "/",
+			},
+			{
+				name: t("breadcrumbs.agent"),
+				path: "/agent",
+			},
+			{
+				name: t("breadcrumbs.new"),
+				path: "/agent/new",
+			},
+		],
+	});
 
 	const handleClose = (newWorkspaceId?: string) => {
 		if (newWorkspaceId) {
-			navigate(`/workspace/${newWorkspaceId}`);
+			navigate(`/agent/${newWorkspaceId}`);
 		} else {
-			navigate("/workspace");
+			navigate("/agent");
 		}
 	};
 
@@ -42,10 +46,10 @@ export const NewWorkspacePage = observer(() => {
 				<div className="flex flex-row gap-2">
 					<div className="space-y-2.5">
 						<div className="font-semibold text-2xl text-foreground leading-none">
-							New Workspace
+							{t("new.title")}
 						</div>
 						<div className="text-base text-muted-foreground">
-							Create a new workspace to get started
+							{t("new.subtitle")}
 						</div>
 					</div>
 					<div className="flex-1" />

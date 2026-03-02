@@ -1,0 +1,68 @@
+{
+	"buttons": {
+		"save": "حفظ",
+		"cancel": "إلغاء",
+		"create": "إنشاء",
+		"back": "رجوع",
+		"close": "إغلاق",
+		"confirm": "تأكيد",
+		"upload": "رفع",
+		"search": "بحث"
+	},
+	"labels": {
+		"name": "الاسم",
+		"description": "الوصف",
+		"type": "النوع",
+		"model": "النموذج",
+		"instructions": "التعليمات",
+		"temperature": "درجة الحرارة",
+		"maxToken": "الحد الأقصى للرموز"
+	},
+	"placeholders": {
+		"enterName": "أدخل الاسم",
+		"enterDescription": "أدخل الوصف",
+		"enterInstructions": "أدخل التعليمات",
+		"updateInstructions": "تحديث التعليمات",
+		"updateTokenLength": "تحديث طول الرموز",
+		"uploadFiles": "رفع الملفات",
+		"search": "بحث..."
+	},
+	"actions": {
+		"addKnowledge": "إضافة معرفة",
+		"addToolbox": "إضافة صندوق أدوات",
+		"deleteMCP": "حذف MCP"
+	},
+	"badges": {
+		"fromAgent": "من الوكيل"
+	},
+	"messages": {
+		"noKnowledgeFound": "لم يتم العثور على معرفة",
+		"noToolboxFound": "لم يتم العثور على صندوق أدوات"
+	},
+	"tooltips": {
+		"cannotDeleteWorkspaceMCPs": "لا يمكن حذف MCPs الخاصة بمساحة العمل",
+		"cannotDeleteAgentMCPs": "لا يمكن حذف MCPs الخاصة بالوكيل"
+	},
+	"plan": {
+		"newStep": "خطوة جديدة",
+		"editStep": "تعديل الخطوة",
+		"selectType": "اختر النوع",
+		"selectMcp": "اختر MCP",
+		"selectTool": "اختر الأداة",
+		"tool": "أداة",
+		"ai": "الذكاء الاصطناعي",
+		"prompt": "موجه",
+		"promptPlaceholder": "أدخل التعليمات للذكاء الاصطناعي",
+		"instructionsPlaceholder": "تعليمات للذكاء الاصطناعي لمعالجة ملاحظات المستخدم"
+	},
+	"navigation": {
+		"logOut": "تسجيل الخروج",
+		"acknowledge": "إقرار"
+	},
+	"pagination": {
+		"rowsPerPage": "الصفوف لكل صفحة:"
+	},
+	"images": {
+		"logoAlt": "الشعار"
+	}
+}

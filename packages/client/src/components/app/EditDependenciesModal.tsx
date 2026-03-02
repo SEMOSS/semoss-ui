@@ -1,19 +1,26 @@
-import { Close } from "@mui/icons-material";
+import { Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Env, useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
-	Autocomplete,
+	Badge,
 	Button,
-	Chip,
-	CircularProgress,
-	IconButton,
-	Modal,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+	Spinner,
+	toast,
+} from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import {
 	type modelledDependency,
@@ -44,44 +51,6 @@ interface Dependency {
 	type: string;
 }
 
-const StyledModalHeading = styled(Modal.Title)({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-});
-
-const StyledHeader = styled(Typography)({
-	fontWeight: 500,
-});
-
-const StyledModalSubHeading = styled(Typography)(({ theme }) => ({
-	paddingBottom: theme.spacing(2),
-	fontWeight: 500,
-}));
-
-const StyledDependencyListItem = styled("li")(({ theme }) => ({
-	margin: `${theme.spacing(1)} 0`,
-	padding: `0 ${theme.spacing(2)}`,
-	gap: theme.spacing(2),
-	display: "grid",
-	gridTemplateColumns: "auto 1fr auto",
-	alignItems: "center",
-}));
-
-const StyledCardImage = styled("img")({
-	display: "flex",
-	width: "50px",
-	height: "50px",
-	borderRadius: "8px",
-	flexDirection: "column",
-	justifyContent: "center",
-	alignItems: "center",
-
-	overflowClipMargin: "content-box",
-	overflow: "clip",
-	objectFit: "cover",
-});
-
 /**
  * Capitalizes the first letter of each word in a string
  */
@@ -111,12 +80,12 @@ export const EditDependenciesModal = ({
 	const [selectedDeps, setSelectedDeps] =
 		useState<Dependency[]>(currentDependencies);
 	const [search, setSearch] = useState<string>("");
+	const [open, setOpen] = useState(false);
 
 	/**
 	 * Library Hooks
 	 */
 	const { configStore } = useRootStore();
-	const notification = useNotification();
 	const debouncedSearch = useDebouncedValue(search);
 	const getEngines = usePixel<
 		(MyEngineProjectEngine | MyEngineProjectProject)[]
@@ -140,16 +109,10 @@ export const EditDependenciesModal = ({
 		);
 
 		if (res.type === "success") {
-			notification.add({
-				color: "success",
-				message: "Successfully updated dependencies",
-			});
+			toast.success("Successfully updated dependencies");
 			onClose(true);
 		} else {
-			notification.add({
-				color: "error",
-				message: res.output,
-			});
+			toast.error(res.output);
 		}
 	};
 
@@ -158,6 +121,19 @@ export const EditDependenciesModal = ({
 			(dep: modelledDependency) => dep.id !== id,
 		);
 		setSelectedDeps(newDependencies);
+	};
+
+	const toggleDependency = (dep: Dependency) => {
+		const isSelected = selectedDeps.some(
+			(selected) => selected.id === dep.id,
+		);
+		if (isSelected) {
+			setSelectedDeps((prev) =>
+				prev.filter((selected) => selected.id !== dep.id),
+			);
+			return;
+		}
+		setSelectedDeps((prev) => [...prev, dep]);
 	};
 
 	/**
@@ -169,24 +145,27 @@ export const EditDependenciesModal = ({
 		}
 
 		setAllDeps(
-			getEngines.data.map((engineProject) => {
-				const eng = engineProject as MyEngineProjectEngine;
-				const proj = engineProject as MyEngineProjectProject;
-				if (eng.app_id) {
-					return {
-						id: eng.app_id,
-						name: eng.app_name,
-						type: eng.app_type,
-					};
-				} else if (proj.project_id) {
-					return {
-						id: proj.project_id,
-						name: proj.project_name,
-						type: "PROJECT",
-					};
-				}
-				return null;
-			}),
+			getEngines.data
+				.map((engineProject) => {
+					const eng = engineProject as MyEngineProjectEngine;
+					const proj = engineProject as MyEngineProjectProject;
+					if (eng.app_id) {
+						return {
+							id: eng.app_id,
+							name: eng.app_name,
+							type: eng.app_type,
+						};
+					}
+					if (proj.project_id) {
+						return {
+							id: proj.project_id,
+							name: proj.project_name,
+							type: "PROJECT",
+						};
+					}
+					return null;
+				})
+				.filter(Boolean) as Dependency[],
 		);
 	}, [getEngines.status, getEngines.data]);
 
@@ -195,125 +174,154 @@ export const EditDependenciesModal = ({
 	}, [currentDependencies]);
 
 	return (
-		<Modal open={isOpen} fullWidth onClose={() => onClose(false)}>
-			<StyledModalHeading>
-				<StyledHeader variant="h6">
-					Add and Edit Dependencies
-				</StyledHeader>
+		<Dialog
+			open={isOpen}
+			onOpenChange={(nextOpen) => {
+				if (!nextOpen) {
+					onClose(false);
+				}
+			}}
+		>
+			<DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
+				<DialogHeader>
+					<div className="flex items-center justify-between">
+						<DialogTitle>Add and Edit Dependencies</DialogTitle>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							onClick={() => onClose(false)}
+						>
+							<X className="size-4" />
+						</Button>
+					</div>
+				</DialogHeader>
 
-				<IconButton size="small" onClick={() => onClose(false)}>
-					<Close />
-				</IconButton>
-			</StyledModalHeading>
+				<div className="space-y-4">
+					<p className="font-medium text-sm">Linked Dependencies</p>
 
-			<Modal.Content>
-				<StyledModalSubHeading variant="subtitle1">
-					Linked Dependencies
-				</StyledModalSubHeading>
-
-				<Autocomplete
-					options={allDeps}
-					value={selectedDeps}
-					fullWidth
-					multiple
-					onChange={(_, val: Dependency[]) => setSelectedDeps(val)}
-					renderInput={(params) => (
-						<TextField
-							{...params}
-							placeholder="Search..."
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							slotProps={{
-								input: {
-									...params.InputProps,
-									endAdornment: (
-										<>
-											{search !== debouncedSearch ||
-											getEngines.status !== "SUCCESS" ? (
-												<CircularProgress size={24} />
-											) : null}
-											{params.InputProps.endAdornment}
-										</>
-									),
-								},
-							}}
-							onKeyDown={() => {
-								if (
-									!(
-										params.inputProps.ref as {
-											current: { value: string };
-										}
-									)?.current?.value
-								) {
-									setSearch("");
-								}
-							}}
-						/>
-					)}
-					getOptionLabel={(option: modelledDependency) => option.name}
-					isOptionEqualToValue={(
-						option: modelledDependency,
-						value: modelledDependency,
-					) => {
-						return option.id === value.id;
-					}}
-					renderOption={(props, option: modelledDependency) => (
-						<li {...props}>
-							<Stack
-								direction="row"
-								spacing={1}
-								alignItems="center"
+					<Popover open={open} onOpenChange={setOpen}>
+						<PopoverTrigger asChild>
+							<Button
+								variant="outline"
+								role="combobox"
+								className="w-full justify-between"
 							>
-								<Chip
-									label={capitalizeType(option.type)}
-									size="small"
+								{selectedDeps.length === 0
+									? "Search dependencies"
+									: selectedDeps.length === 1
+										? selectedDeps[0].name
+										: `${selectedDeps.length} dependencies selected`}
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent className="w-[600px] p-0">
+							<Command shouldFilter={false}>
+								<CommandInput
+									placeholder="Search dependencies..."
+									value={search}
+									onValueChange={(value) => {
+										setSearch(value);
+									}}
 								/>
-								<Typography variant="body1">
-									{option.name}
-								</Typography>
-							</Stack>
-						</li>
-					)}
-					filterOptions={(x) => x}
-					disableCloseOnSelect
-				/>
+								<CommandList>
+									{getEngines.status !== "SUCCESS" ? (
+										<div className="flex items-center justify-center p-4">
+											<Spinner />
+										</div>
+									) : (
+										<>
+											<CommandEmpty>
+												No dependencies found.
+											</CommandEmpty>
+											<CommandGroup>
+												{allDeps.map((option) => {
+													const isSelected =
+														selectedDeps.some(
+															(selected) =>
+																selected.id ===
+																option.id,
+														);
+													return (
+														<CommandItem
+															key={option.id}
+															onSelect={() => {
+																toggleDependency(
+																	option,
+																);
+															}}
+															className="justify-between"
+														>
+															<div className="flex items-center gap-2">
+																<Badge variant="outline">
+																	{capitalizeType(
+																		option.type,
+																	)}
+																</Badge>
+																<span className="text-sm">
+																	{
+																		option.name
+																	}
+																</span>
+															</div>
+															{isSelected && (
+																<Check className="size-4 text-primary" />
+															)}
+														</CommandItem>
+													);
+												})}
+											</CommandGroup>
+										</>
+									)}
+								</CommandList>
+							</Command>
+						</PopoverContent>
+					</Popover>
 
-				{selectedDeps.map((dep, idx: number) => {
-					return (
-						<StyledDependencyListItem key={`${dep.id}-${idx}`}>
-							<StyledCardImage
-								src={
-									dep.type === "PROJECT"
-										? `${Env.MODULE}/api/project-${dep.id}/projectImage/download`
-										: `${Env.MODULE}/api/e-${dep.id}/image/download`
-								}
-							/>
-							<div>
-								<Typography variant="h6">{dep.name}</Typography>
-								<Stack direction="row">
-									<Typography variant="body2">
-										{`${capitalizeType(dep.type)} | Engine ID: ${dep.id}`}
-									</Typography>
-								</Stack>
-							</div>
-							<IconButton
-								onClick={() => handleRemoveDependency(dep.id)}
-							>
-								<Close />
-							</IconButton>
-						</StyledDependencyListItem>
-					);
-				})}
-			</Modal.Content>
+					<div className="space-y-3">
+						{selectedDeps.map((dep, idx: number) => {
+							return (
+								<div
+									key={`${dep.id}-${idx}`}
+									className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-lg border p-3"
+								>
+									<img
+										className="h-12 w-12 rounded-lg object-cover"
+										src={
+											dep.type === "PROJECT"
+												? `${Env.MODULE}/api/project-${dep.id}/projectImage/download`
+												: `${Env.MODULE}/api/e-${dep.id}/image/download`
+										}
+										alt={dep.name}
+									/>
+									<div>
+										<p className="font-medium text-sm">
+											{dep.name}
+										</p>
+										<p className="text-muted-foreground text-xs">
+											{`${capitalizeType(dep.type)} | Engine ID: ${dep.id}`}
+										</p>
+									</div>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										onClick={() =>
+											handleRemoveDependency(dep.id)
+										}
+									>
+										<X className="size-4" />
+									</Button>
+								</div>
+							);
+						})}
+					</div>
+				</div>
 
-			<Modal.Actions>
-				<Button onClick={() => onClose(false)} variant="text">
-					Cancel
-				</Button>
-				<Button onClick={handleUpdateDependencies} variant="contained">
-					Save
-				</Button>
-			</Modal.Actions>
-		</Modal>
+				<DialogFooter>
+					<Button variant="outline" onClick={() => onClose(false)}>
+						Cancel
+					</Button>
+					<Button onClick={handleUpdateDependencies}>Save</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 };
