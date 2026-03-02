@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Token } from '../../prompt.types';
-import { Autocomplete } from '@mui/material';
 import { InfoOutlined } from '@mui/icons-material';
 
 import {
@@ -55,14 +54,6 @@ export const PromptBuilderInputTypeSelection = (props: {
 }) => {
     const [inputLabelText, setInputLabelText] = useState(props.LlmInputLabel);
 
-    // Setting TextField label as LLM input label if it exists
-    useEffect(() => {
-        if (props.LlmInputLabel && props.LlmInputLabel.trim() !== '') {
-            setInputLabelText(props.LlmInputLabel);
-            handleInputChange({ target: { value: props.LlmInputLabel } });
-        }
-    }, [props.LlmInputLabel]);
-
     const showMetaAutocomplete =
         props.inputType === INPUT_TYPE_VECTOR ||
         props.inputType === INPUT_TYPE_DATABASE;
@@ -112,11 +103,19 @@ export const PromptBuilderInputTypeSelection = (props: {
     };
 
     // Handle input label change for textfield
-    const handleInputChange = (e) => {
+    const handleInputChange = useCallback((e) => {
         const newValue = e.target.value;
         setInputLabelText(newValue);
         props.setInputLabel(props.inputToken.index, newValue);
-    };
+    }, [props.setInputLabel, props.inputToken.index]);
+
+    // Setting TextField label as LLM input label if it exists
+    useEffect(() => {
+        if (props.LlmInputLabel && props.LlmInputLabel.trim() !== '') {
+            setInputLabelText(props.LlmInputLabel);
+            handleInputChange({ target: { value: props.LlmInputLabel } });
+        }
+    }, [props.LlmInputLabel, handleInputChange]);
 
     return (
         <Grid
