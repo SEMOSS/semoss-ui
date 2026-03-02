@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Separator,
@@ -13,7 +14,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import type { ResponseMessageStore, RoomStore, ToolStore } from "@/stores";
 import { ToolsView } from "../mcp";
 
 interface RoomInlineToolProps {
@@ -24,11 +25,12 @@ interface RoomInlineToolProps {
 	message: ResponseMessageStore;
 
 	/** Tool to render */
-	tool: ResponseMessageStore["tools"][number];
+	tool: ToolStore;
 }
 
 export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 	({ room, message, tool }) => {
+		const { t } = useTranslation("room");
 		const [isMaximized, setIsMaximized] = useState(false);
 
 		return (
@@ -65,7 +67,9 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 									<PanelRightIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Open in Sidebar</TooltipContent>
+							<TooltipContent>
+								{t("inlineTool.openInSidebar")}
+							</TooltipContent>
 						</Tooltip>
 						<Tooltip>
 							<TooltipTrigger asChild>
@@ -84,7 +88,9 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent>
-								{isMaximized ? "Minimize" : "Maximize"}
+								{isMaximized
+									? t("inlineTool.minimize")
+									: t("inlineTool.maximize")}
 							</TooltipContent>
 						</Tooltip>
 						<Separator
@@ -108,7 +114,9 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 									<XIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Close</TooltipContent>
+							<TooltipContent>
+								{t("inlineTool.close")}
+							</TooltipContent>
 						</Tooltip>
 					</div>
 					<div className="w-full flex-1 overflow-hidden">
@@ -117,6 +125,12 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 							app={tool.json._meta.SMSS_PROJECT_ID}
 							message={message.id}
 							tool={tool.json}
+							toolResponse={
+								tool.status === "SUCCESS"
+									? tool.response
+									: undefined
+							}
+							toolParameters={tool.parameters}
 						/>
 					</div>
 				</div>

@@ -1,17 +1,17 @@
 import {
 	AutoFixHighOutlined,
+	Close,
 	ContentCopy,
-	Delete,
-	Edit,
 	MoreVert,
 } from "@mui/icons-material";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import { observer } from "mobx-react-lite";
 import { useMemo, useRef, useState } from "react";
 import { ActionMessages, useBlocks, type Variable } from "@semoss/renderer";
 import {
 	Box,
 	Button,
-	Icon,
 	IconButton,
 	List,
 	Menu,
@@ -24,6 +24,19 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useWorkspace } from "@/hooks";
+import VariableArray from "../../assets/img/VariableArray.svg";
+import VariableBlock from "../../assets/img/VariableBlock.svg";
+import VariableBrain from "../../assets/img/VariableBrain.png";
+import VariableCell from "../../assets/img/VariableCell.svg";
+import VariableDatabase from "../../assets/img/VariableDatabase.svg";
+import VariableDate from "../../assets/img/VariableDate.svg";
+import VariableFunction from "../../assets/img/VariableFunction.svg";
+import VariableJSON from "../../assets/img/VariableJSON.svg";
+import VariableNumber from "../../assets/img/VariableNumber.svg";
+import VariableQuery from "../../assets/img/VariableQuery.svg";
+import VariableStorage from "../../assets/img/VariableStorage.svg";
+import VariableString from "../../assets/img/VariableString.svg";
+import VariableVector from "../../assets/img/VariableVector.svg";
 import { suggestVariableRenames } from "../blocks-workspace/utils";
 import { AddVariablePopover } from "./AddVariablePopover";
 import { VariablePreview } from "./VariablePreview";
@@ -33,6 +46,7 @@ const StyledListItem = styled(List.Item)(() => ({
 		paddingTop: "0px",
 		paddingBottom: "0px",
 	},
+	padding: "4px 16px",
 }));
 
 const StyledTooltip = styled(Tooltip)(() => ({
@@ -54,7 +68,7 @@ const StyledButton = styled("button")(({ theme }) => ({
 
 const StyledPointerStack = styled(Stack)(({ theme }) => ({
 	width: "80%",
-	overflow: "scroll",
+	paddingLeft: "20px",
 	"&:hover": {
 		cursor: "pointer",
 	},
@@ -67,16 +81,14 @@ const StyledListItemText = styled(List.ItemText)(({ theme }) => ({
 	},
 }));
 
-const StyledIcon = styled(Icon)(({ theme }) => ({
-	color: "rgb(0,0,0)",
-}));
-
-const StyledErrorTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.error.main,
-}));
-
 const StyledCapitalizedTypography = styled(Typography)(() => ({
 	textTransform: "capitalize",
+	color: "#666",
+	fontFamily: "Inter",
+	fontWeight: "400",
+	fontSize: "14px",
+	lineHeight: "150%",
+	letterSpacing: "0.17px",
 }));
 
 const StyledAnchorSpan = styled("span")(({ theme }) => ({
@@ -85,7 +97,8 @@ const StyledAnchorSpan = styled("span")(({ theme }) => ({
 }));
 
 const StyledStack = styled(Stack)(({ theme }) => ({
-	width: "80%",
+	paddingLeft: "20px",
+	width: "128px",
 }));
 
 const StyledTextField = styled(TextField)(() => ({
@@ -96,6 +109,137 @@ const StyledEmptyDiv = styled("div")(() => ({
 	padding: "0px",
 }));
 
+const StyledStackVariable = styled(Stack)(() => ({
+	height: "40px",
+	width: "80px",
+}));
+
+const StyledIconButton = styled(IconButton)(() => ({
+	width: "40px",
+	gap: "10px",
+	color: "#757575",
+}));
+
+const StyledMenu = styled(Menu)(() => ({
+	".MuiPopover-paper": {
+		borderRadius: "4px",
+		padding: "8px 0px",
+		boxShadow: "0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
+	},
+}));
+
+const StyledMenuItem = styled(Menu.Item)(() => ({
+	padding: "6px 16px",
+	height: "36px",
+	"&:hover": {
+		backgroundColor: "#EBF4FE",
+	},
+}));
+
+const StyledEditIconButton = styled(IconButton)(() => ({
+	color: "#757575",
+	fontSize: "small",
+	height: "20px",
+	width: "20px",
+}));
+
+const StyledEditTypography = styled(Typography)(() => ({
+	height: "24px",
+	color: "#212121",
+	fontSize: "16px",
+	fontWeight: "400",
+	lineHeight: "150%",
+	letterSpacing: "0.15px",
+}));
+
+const StyledAutoFixIconButton = styled(IconButton)(() => ({
+	fontSize: "small",
+	height: "20px",
+	width: "20px",
+}));
+const StyledDeleteIconButton = styled(IconButton)(() => ({
+	color: "#757575",
+	fontSize: "small",
+	height: "20px",
+	width: "20px",
+}));
+
+const StyledModal = styled(Modal)(() => ({
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+}));
+
+const StyledModalBox = styled(Box)(() => ({
+	width: "600px",
+	minHeight: "156px",
+	borderRadius: "12px",
+	background: "var(--Background-Paper-1, #FFF)",
+	boxShadow: "0 9px 46px 0 rgba(0, 0, 0, 0.08)",
+	padding: "8px 16px",
+	display: "flex",
+	flexDirection: "column",
+	gap: "16px",
+	position: "relative",
+}));
+
+const StyledCloseBox = styled(Box)(() => ({
+	height: "32px",
+	padding: "8px 0px",
+}));
+
+const StyledCloseIconButton = styled(IconButton)(() => ({
+	position: "absolute",
+	right: 8,
+	top: 11,
+}));
+
+const StyledTitleTypography = styled(Typography)(() => ({
+	fontSize: "20px",
+	fontWeight: 500,
+	color: "#212121",
+	lineHeight: "160%",
+	letterSpacing: "0.15px",
+}));
+
+const StyledContentBox = styled(Box)(() => ({
+	paddingTop: "8px",
+	paddingBottom: "8px",
+}));
+const StyledContentTypography = styled(Typography)(() => ({
+	fontSize: "16px",
+	fontWeight: 400,
+	color: "#212121",
+	lineHeight: "150%",
+	letterSpacing: "0.15px",
+}));
+
+const StyledCancelButton = styled(Button)(() => ({
+	textTransform: "none",
+	fontSize: "14px",
+	color: "#212121",
+	fontWeight: "500",
+}));
+
+const StyledDeleteButton = styled(Button)(() => ({
+	textTransform: "none",
+	fontSize: "14px",
+	color: "#FFF",
+}));
+
+const StyledBoxId = styled(Box)(() => ({
+	height: "42px",
+	width: "128px",
+	display: "flex",
+	flexDirection: "column",
+	alignItems: "flex-start",
+}));
+
+const StyledVariableIcon = styled(Box)(() => ({
+	display: "flex",
+	alignItems: "center",
+	width: "24px",
+}));
 interface NotebookTokenProps {
 	/** Id of the variable */
 	id: string;
@@ -160,6 +304,8 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 	const [isProcessing, setIsProcessing] = useState(false);
 
 	const spanRef = useRef();
+
+	const [isOpen, setIsOpen] = useState<boolean>(false);
 
 	/**
 	 * Handle auto-rename for this specific variable
@@ -377,81 +523,192 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 		}
 	}, [variable.type, engines, id]);
 
+	const getImage = (type: string) => {
+		if (type === "block") {
+			return VariableBlock;
+		} else if (type === "cell") {
+			return VariableCell;
+		} else if (type === "query") {
+			return VariableQuery;
+		} else if (type === "string") {
+			return VariableString;
+		} else if (type === "number") {
+			return VariableNumber;
+		} else if (type === "database") {
+			return VariableDatabase;
+		} else if (type === "model") {
+			return VariableBrain;
+		} else if (type === "vector") {
+			return VariableVector;
+		} else if (type === "storage") {
+			return VariableStorage;
+		} else if (type === "function") {
+			return VariableFunction;
+		} else if (type === "JSON") {
+			return VariableJSON;
+		} else if (type === "date") {
+			return VariableDate;
+		} else {
+			return VariableArray;
+		}
+	};
+
 	return (
 		<>
 			<StyledListItem
 				key={id}
 				secondaryAction={
-					<Stack
+					<StyledStackVariable
 						direction="row"
 						spacing={1}
 						alignItems="center"
 						paddingY="8px"
 					>
-						<IconButton
+						<StyledIconButton
 							onClick={() => {
 								copyAlias(id);
 								setAnchorEl(null);
 							}}
+							data-testid={"notebook-variable-copy-btn"}
 						>
 							<ContentCopy />
-						</IconButton>
-						<IconButton
+						</StyledIconButton>
+						<StyledIconButton
 							title="Open Menu"
 							onClick={(e) => {
 								e.preventDefault();
 								setAnchorEl(e.currentTarget);
 							}}
+							data-testid={"notebook-variable-more-btn"}
 						>
 							<MoreVert />
-						</IconButton>
+						</StyledIconButton>
 						<StyledAnchorSpan ref={spanRef} />
-						<Menu
+						<StyledMenu
 							anchorEl={anchorEl}
 							open={Boolean(anchorEl)}
 							onClose={() => {
 								setAnchorEl(null);
 							}}
+							data-testid={"notebook-variable-menu"}
+							anchorOrigin={{
+								vertical: "bottom",
+								horizontal: "right",
+							}}
+							transformOrigin={{
+								vertical: "top",
+								horizontal: "right",
+							}}
 						>
-							<Menu.Item
+							<StyledMenuItem
 								value="Edit"
 								onClick={(e) => {
 									setPopoverAnchorEl(spanRef.current);
 									setAnchorEl(null);
 								}}
+								data-testid={"notebook-variable-edit-menuitem"}
 							>
 								<Stack direction="row" alignItems="center">
-									<StyledIcon color="secondary">
-										<Edit />
-									</StyledIcon>
-									<Typography variant="body2">
+									<StyledEditIconButton>
+										<EditOutlinedIcon />
+									</StyledEditIconButton>
+									<StyledEditTypography variant="body2">
 										Edit
-									</Typography>
+									</StyledEditTypography>
 								</Stack>
-							</Menu.Item>
-							<Menu.Item
+							</StyledMenuItem>
+							<StyledMenuItem
 								value="AutoRename"
 								onClick={() => {
 									handleAutoRename();
 									setAnchorEl(null);
 								}}
+								data-testid={
+									"notebook-variable-auto-rename-menuitem"
+								}
 								disabled={
 									isProcessing || !workspace.agentModelEngine
 								}
 							>
 								<Stack direction="row" alignItems="center">
-									<StyledIcon color="primary">
+									<StyledAutoFixIconButton color="primary">
 										<AutoFixHighOutlined />
-									</StyledIcon>
-									<Typography variant="body2">
+									</StyledAutoFixIconButton>
+									<StyledEditTypography variant="body2">
 										{isProcessing
 											? "Processing..."
 											: "Auto Rename"}
-									</Typography>
+									</StyledEditTypography>
 								</Stack>
-							</Menu.Item>
-							<Menu.Item
+							</StyledMenuItem>
+							<StyledMenuItem
 								value="Delete"
+								onClick={() => {
+									setIsOpen(true);
+									setAnchorEl(null);
+								}}
+								data-testid={
+									"notebook-variable-delete-menuitem"
+								}
+							>
+								<Stack direction="row" alignItems="center">
+									<StyledDeleteIconButton>
+										<DeleteOutlineOutlinedIcon />
+									</StyledDeleteIconButton>
+									<StyledEditTypography variant="body2">
+										Delete
+									</StyledEditTypography>
+								</Stack>
+							</StyledMenuItem>
+						</StyledMenu>
+					</StyledStackVariable>
+				}
+			>
+				<StyledModal open={isOpen} onClose={() => setIsOpen(false)}>
+					<StyledModalBox>
+						{/* Close button */}
+						<StyledCloseBox>
+							<StyledCloseIconButton
+								onClick={() => setIsOpen(false)}
+								data-testid={
+									"notebook-variable-delete-close-btn"
+								}
+							>
+								<Close />
+							</StyledCloseIconButton>
+
+							{/* Title */}
+							<StyledTitleTypography variant="h6">
+								Delete Selected Item?
+							</StyledTitleTypography>
+						</StyledCloseBox>
+
+						{/* Content with striped background */}
+						<StyledContentBox>
+							<StyledContentTypography variant="body1">
+								You will permanently remove the item from your
+								workspace.
+							</StyledContentTypography>
+						</StyledContentBox>
+
+						{/* Actions */}
+						<Stack
+							direction="row"
+							spacing={2}
+							justifyContent="flex-end"
+						>
+							<StyledCancelButton
+								variant="text"
+								onClick={() => setIsOpen(false)}
+								data-testid={
+									"notebook-variable-delete-cancel-btn"
+								}
+							>
+								Cancel
+							</StyledCancelButton>
+							<StyledDeleteButton
+								color="error"
+								variant="contained"
 								onClick={() => {
 									state.dispatch({
 										message: ActionMessages.DELETE_VARIABLE,
@@ -459,32 +716,27 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 											id: id,
 										},
 									});
-
 									notification.add({
 										color: "warning",
 										message: `Successfully deleted ${id}, please be aware this likely will affect your data notebook.`,
 									});
-
-									setAnchorEl(null);
+									setIsOpen(false);
 								}}
+								data-testid={
+									"notebook-variable-delete-confirm-btn"
+								}
 							>
-								<Stack direction="row" alignItems="center">
-									<Delete color="error" />
-									<StyledErrorTypography variant="body2">
-										Delete
-									</StyledErrorTypography>
-								</Stack>
-							</Menu.Item>
-						</Menu>
-					</Stack>
-				}
-			>
+								Delete
+							</StyledDeleteButton>
+						</Stack>
+					</StyledModalBox>
+				</StyledModal>
 				<StyledListItemText
 					disableTypography
 					primary={
 						<Stack>
 							<StyledTooltip
-								placement={"right"}
+								placement={"right-start"}
 								title={
 									<VariablePreview
 										variable={variable}
@@ -516,15 +768,27 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 												setOpenRenameAlias(true);
 											}}
 										>
-											<Typography
-												variant="body1"
-												fontWeight="medium"
-											>
-												{id}
-											</Typography>
-											<StyledCapitalizedTypography variant="body2">
-												{getVariableTypeDisplay}
-											</StyledCapitalizedTypography>
+											<Stack direction="row">
+												<StyledVariableIcon>
+													<img
+														src={getImage(
+															variable.type,
+														)}
+														alt="variable-type-icon"
+													/>
+												</StyledVariableIcon>
+												<StyledBoxId>
+													<span className="inline-block min-w-0 max-w-[128px] flex-shrink overflow-hidden text-ellipsis whitespace-nowrap font-normal text-[#202020] text-[14px] leading-[20px]">
+														{id.length > 12
+															? id.slice(0, 12) +
+																"…"
+															: id}
+													</span>
+													<StyledCapitalizedTypography variant="body2">
+														{getVariableTypeDisplay}
+													</StyledCapitalizedTypography>
+												</StyledBoxId>
+											</Stack>
 										</StyledPointerStack>
 									) : (
 										<StyledStack
@@ -552,6 +816,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 														e.target.value,
 													);
 												}}
+												data-testid={
+													"notebook-variable-rename-input"
+												}
 												onKeyDown={async (e) => {
 													if (e.key === "Enter") {
 														setOpenRenameAlias(
@@ -605,6 +872,13 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 												}}
 												InputProps={{
 													disableUnderline: true,
+												}}
+												inputProps={{
+													style: {
+														fontWeight: "400",
+														fontSize: "14px",
+														color: "#212121",
+													},
 												}}
 											/>
 										</StyledStack>

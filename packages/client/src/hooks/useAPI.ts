@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as SharedAPI from "@semoss/shared/api";
 import * as API from "@/api";
 
-type ApiType = typeof API;
+type ApiType = typeof API & typeof SharedAPI;
 
 interface APIState<A extends keyof ApiType> {
 	/** Status of the api call */
@@ -117,8 +118,23 @@ export function useAPI<A extends keyof ApiType>(
 			try {
 				const [func, ...args] = api;
 
-				// biome-ignore lint/performance/noDynamicNamespaceImportAccess: this is necessary
-				const response = await API[func].apply(null, args);
+				// This is a bit of a hack to allow us to call both the client and shared API without worrying about where the function is coming from. We check the client API first, then the shared API.
+				const response = await (
+					(
+						API as {
+							[key: string]: (
+								...args: unknown[]
+							) => Promise<unknown>;
+						}
+					)[func] ??
+					(
+						SharedAPI as {
+							[key: string]: (
+								...args: unknown[]
+							) => Promise<unknown>;
+						}
+					)[func]
+				).apply(null, args);
 
 				// ignore if its cancelled
 				if (isCancelled) {

@@ -1,18 +1,17 @@
-import { action, makeObservable, observable, runInAction } from "mobx";
 import {
-	MCP_EXECUTION_ASK,
+	action,
+	computed,
+	makeObservable,
+	observable,
+	runInAction,
+} from "mobx";
+import {
 	MCP_EXECUTION_AUTO,
+	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 } from "@/constants";
-import { ToolStore } from "@/stores";
-import type {
-	InputMediaPixelMessage,
-	InputTextPixelMessage,
-	InputToolExecPixelMessage,
-	PixelMessage,
-	ResponseTextPixelMessage,
-	ResponseToolPixelMessage,
-} from "@/types";
+import type { ToolStore } from "@/stores";
+import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
 import { PlanMessageStore } from "./plan-message.store";
@@ -21,32 +20,17 @@ import { PlanMessageStore } from "./plan-message.store";
  * Response Message Store
  */
 export class ResponseMessageStore extends AbstractMessageStore {
-	readonly type = "RESPONSE";
+	readonly type = "OUTPUT";
+
+	/**
+	 * Parts associated with the message
+	 */
+	parts: ResponsePixelMessage["parts"] = [];
 
 	/**
 	 *  Track if the message is thinking
 	 */
 	isThinking: boolean = false;
-
-	/**
-	 * Thinking for the tool
-	 */
-	thinking: string = "";
-
-	/**
-	 * Text associated with the message
-	 */
-	text: string = "";
-
-	/**
-	 * Tools associated with the message
-	 */
-	tools: ToolStore[] = [];
-
-	/**
-	 * Current execution index of the tool, used for auto execution
-	 */
-	toolAutoExecutionIdx: number = 0;
 
 	/**
 	 * Response to an execution
@@ -56,12 +40,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	/**
 	 * Feedback provided by the user; only applicable to messages provided via the LLM
 	 */
-	rating: {
+	feedback: {
 		/** Sentiment */
-		positive: boolean;
+		rating: boolean;
 
-		/** Associated comment */
-		comment: string;
+		/** Comment, unused for now */
+		feedbackText: string;
 	} | null = null;
 
 	/**
@@ -80,24 +64,21 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 	constructor(
 		room: AbstractMessageStore["room"],
-		message: ResponseTextPixelMessage | ResponseToolPixelMessage,
+		message: ResponsePixelMessage,
 	) {
 		super(room, message);
 
 		makeObservable(this, {
 			isThinking: observable,
-			thinking: observable,
-			text: observable,
-			tools: observable,
-			rating: observable,
+			parts: observable,
+			feedback: observable,
 			sync: action,
 			runMessage: action,
+			savePart: action,
 			recordFeedback: action,
 			rewriteMessage: action,
-			getTool: action,
-			startToolExecution: action,
+			hasUnfinishedTools: computed,
 			continueToolExecution: action,
-			hasUnfinishedTools: action,
 			saveToolExecution: action,
 		});
 
@@ -108,44 +89,19 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	/**
 	 * Sync store properties from the pixel message
 	 */
-	sync = (message: PixelMessage) => {
-		// type guard + specifics
-		if (message.type === "RESPONSE_TEXT") {
-			this.thinking = message.thinking || "";
-			this.text = message.content;
-		} else if (message.type === "RESPONSE_TOOL") {
-			this.thinking = message.thinking || "";
-			this.tools = message.tool_responses.map(
-				(t) =>
-					new ToolStore(this.room, this, {
-						id: t.id,
-						_meta: {
-							SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
-							// On 12/16/25 we changed from _meta.map to just _meta, so support both
-							...(t._meta as { map?: Record<string, unknown> })
-								?.map,
-							...t._meta,
-						},
-						title: t.title,
-						name: t.name,
-						original_name: t.original_name,
-						parameters: t.arguments,
-					}),
-			);
-		} else {
-			throw new Error(
-				`Invalid message object passed to ResponseMessageStore.update: ${JSON.stringify(message)}`,
-			);
-		}
-
-		// cast the types
-		message = message as
-			| ResponseTextPixelMessage
-			| ResponseToolPixelMessage
-			| InputToolExecPixelMessage;
-
+	sync = (message: ResponsePixelMessage) => {
 		// set the id
 		this.id = message.messageId;
+
+		// set the parts
+		this.parts = message.parts;
+
+		// sync the tools
+		for (const part of message.parts) {
+			if (part.type === "TOOL_CALL") {
+				this.room.syncTool(part.toolCall.id, this, part);
+			}
+		}
 
 		// set tokens
 		this.tokens = message.tokens;
@@ -155,6 +111,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			id: message.modelId,
 			name: message.ornaments?.modelName || "AI",
 		};
+
+		// set feedback if there
+		if (message.feedback) {
+			this.feedback = {
+				rating: message.feedback.rating,
+				feedbackText: message.feedback.feedbackText,
+			};
+		}
 	};
 
 	/**
@@ -166,21 +130,18 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 		// Create a placeholder response message to show streaming content
 		const responseMessage = new ResponseMessageStore(room, {
+			io: "OUTPUT",
 			messageId: "STREAMING_PLACEHOLDER_ID",
-			type: "RESPONSE_TEXT",
 			visible: true,
-			content: "",
+			platform_generated: true,
 			modelId: room.model.app_id,
-			paramMap: {
-				max_new_tokens: room.options.tokenLength,
-				temperature: room.options.temperature,
-			},
+			dateCreated: new Date().toISOString(),
+			parts: [],
+			tokens: 0,
 			ornaments: {
 				modelName: room.model.app_name,
 			},
-			dateCreated: new Date().toISOString(),
-			tokens: 0,
-		} as ResponseTextPixelMessage);
+		} as ResponsePixelMessage);
 
 		try {
 			// connect to the parent
@@ -198,26 +159,38 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			// turn on thinking
 			responseMessage.isThinking = true;
 
+			// get the text
+			const text = inputMessage.parts.reduce((acc, part) => {
+				if (part.type === "TEXT") {
+					return acc + part.text;
+				}
+
+				return acc;
+			}, "");
+
+			const media = inputMessage.parts.reduce((acc, part) => {
+				if (part.type === "MEDIA") {
+					acc.push(part.mediaInfo.fileLocation);
+				}
+
+				return acc;
+			}, []);
+
 			// wait for the pixel to run with streaming
 			const response = await room.runRoomPixelStreaming<
 				[
 					{
-						inputMessage:
-							| InputTextPixelMessage
-							| InputMediaPixelMessage;
-						responseMessage:
-							| ResponseTextPixelMessage
-							| ResponseToolPixelMessage
-							| InputToolExecPixelMessage;
+						inputMessage: InputPixelMessage;
+						responseMessage: ResponsePixelMessage;
 					},
 				]
 			>(
 				`AskPlayground(
 engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"],
-command=["<encode>${inputMessage.text}</encode>"],
+command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${inputMessage.mediaInputs.length ? `image=${JSON.stringify(inputMessage.mediaInputs.map((info) => info.fileLocation))},` : "image=[],"}
+${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
 					max_new_tokens: room.options.tokenLength,
@@ -228,11 +201,18 @@ paramValues=[${JSON.stringify({
 					runInAction(() => {
 						if (chunk.stream_type === "content") {
 							if (chunk.data.content) {
-								responseMessage.text += chunk.data.content;
+								responseMessage.savePart({
+									type: "TEXT",
+									text: chunk.data.content,
+									uiText: chunk.data.content,
+								});
 							}
 						} else if (chunk.stream_type === "thinking") {
 							if (chunk.data.thinking) {
-								responseMessage.thinking += chunk.data.thinking;
+								responseMessage.savePart({
+									type: "THINKING",
+									thinking: chunk.data.thinking,
+								});
 							}
 						} else if (chunk.stream_type === "tool") {
 							//noop
@@ -249,12 +229,15 @@ paramValues=[${JSON.stringify({
 			inputMessage.sync(output.inputMessage);
 			responseMessage.sync(output.responseMessage);
 
-			// TODO: clean up
-
 			// start running tools if there are any
-			responseMessage.startToolExecution();
+			responseMessage.continueToolExecution();
 
 			return response;
+		} catch (e) {
+			// remove as a child
+			this.removeChild(responseMessage);
+
+			throw e;
 		} finally {
 			runInAction(() => {
 				// turn off thinking
@@ -264,25 +247,56 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
+	 * Run a new user message and receive a response with streaming
+	 * @param inputMessage - input message to send
+	 */
+	savePart = async (part: ResponsePixelMessage["parts"][number]) => {
+		const lastPart = this.parts[this.parts.length - 1];
+
+		if (part.type === "TEXT") {
+			if (lastPart?.type === "TEXT") {
+				lastPart.text += part.text;
+				lastPart.uiText += part.uiText;
+			} else {
+				this.parts.push(part);
+			}
+		} else if (part.type === "THINKING") {
+			if (lastPart?.type === "THINKING") {
+				lastPart.thinking += part.thinking;
+			} else {
+				this.parts.push(part);
+			}
+		}
+	};
+
+	/**
 	 * Record Feedback
 	 * @param rating
-	 * @param comment
+	 * @param feedbackText
 	 */
-	recordFeedback = async (rating: boolean, comment = ""): Promise<void> => {
+	recordFeedback = async (
+		rating: boolean | null,
+		feedbackText = "",
+	): Promise<void> => {
 		const room = this.room;
 
 		try {
 			// wait for the pixel to run
 			await room.runRoomPixel<[boolean]>(
-				`SubmitLlmFeedback(messageId = ["${this.id}"], feedbackText=["${comment}"], rating=[${rating}], roomId=["${room.roomId}"]);`,
+				`SubmitLlmFeedback(messageId=${JSON.stringify(this.id)}, feedbackText=${JSON.stringify(feedbackText)}, rating=${JSON.stringify(rating)}, roomId=${JSON.stringify(room.roomId)});`,
 				false,
 			);
 
 			// save the feedback to the message's state
-			this.rating = {
-				positive: rating,
-				comment: comment,
-			};
+			runInAction(() => {
+				this.feedback =
+					rating === null
+						? null
+						: {
+								rating,
+								feedbackText,
+							};
+			});
 		} finally {
 			// noop
 		}
@@ -313,133 +327,128 @@ paramValues=[${JSON.stringify({
 
 		// create a new input message
 		const rewrittenMessage = new InputMessageStore(room, {
+			io: "INPUT",
 			messageId: "REWRITE_PLACEHOLDER_ID",
-			type: "INPUT_TEXT",
 			visible: true,
-			inputUIPrompt: parentMessage.text,
-			mediaInputs: parentMessage.mediaInputs,
+			platform_generated: true,
 			modelId: room.model.app_id,
-			paramMap: {
-				max_new_tokens: room.options.tokenLength,
-				temperature: room.options.temperature,
-			},
-			dateCreated: "",
+			modelType: room.model.app_type,
+			dateCreated: new Date().toISOString(),
+			parts: parentMessage.parts,
 			tokens: parentMessage.tokens,
+			ornaments: {
+				modelName: room.model.app_name,
+			},
 		});
+
+		// Update room options with current modelId before running message
+		await room.updateRoomOptions(room.options);
 
 		grandParentMessage.runMessage(rewrittenMessage);
 	};
 
 	/**
-	 * Get a tool
-	 * @param toolId - id of the tool
-	 * @param toolName - func of the tool to run
-	 */
-	getTool = (
-		toolId: string,
-		toolName: string,
-	): ResponseMessageStore["tools"][number] | null => {
-		const tool = this.tools.find(
-			(tool) => tool.id === toolId && tool.json.name === toolName,
-		);
-
-		if (!tool) {
-			return null;
-		}
-
-		return tool;
-	};
-
-	/**
 	 * Execution
 	 */
+	/**
+	 * Check if there are any unfinished tools
+	 */
+	get hasUnfinishedTools() {
+		for (const part of this.parts) {
+			if (part.type === "TOOL_CALL") {
+				const tool = this.room.getTool(part.toolCall.id);
+				if (tool) {
+					if (
+						tool.status === "LOADING" ||
+						tool.status === "INITIAL"
+					) {
+						console.log("unfinished", tool);
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
+	}
 
 	/**
-	 * Start executing from the first step
+	 * Run tools associated with the message
 	 */
-	startToolExecution = async (): Promise<void> => {
-		// reset it
-		this.toolAutoExecutionIdx = 0;
-		this.toolResponseMessage = null;
+	continueToolExecution = () => {
+		// Find the tools that can be run
+		let numRunningTools: number = 0;
+		const toolsToRun: ToolStore[] = [];
+		for (const part of this.parts) {
+			if (part.type === "TOOL_CALL") {
+				const tool = this.room.getTool(part.toolCall.id);
+				if (tool.json._meta.SMSS_MCP_EXECUTION === MCP_EXECUTION_AUTO) {
+					if (tool.status === "INITIAL") {
+						toolsToRun.push(tool);
+					} else if (tool.status === "LOADING") {
+						numRunningTools++;
+					}
+				}
+			}
+		}
 
-		await this.runToolExecution();
-	};
-
-	/**
-	 * Continue executing the tools from the current tool
-	 *
-	 * @param current - current tool that was executed
-	 */
-	continueToolExecution = async (
-		current: ResponseMessageStore["tools"][number],
-	): Promise<void> => {
-		const currentIdx = this.tools.findIndex((t) => t.id === current.id);
-
-		if (currentIdx === this.toolAutoExecutionIdx) {
-			// we just finished this tool, move to the next
-			this.toolAutoExecutionIdx += 1;
-			await this.runToolExecution();
+		const toolLimit = this.room.theme.toolAutoExecutionLimit;
+		// Check how many tools can be run. If toolLimit is null or undefined, then limit to 5
+		const numToolsToRun = (toolLimit > 0 ? toolLimit : 5) - numRunningTools;
+		if (numToolsToRun > 0) {
+			toolsToRun.slice(0, numToolsToRun).forEach((tool) => {
+				this.runToolExecution(tool);
+			});
 		}
 	};
 
 	/**
-	 * Check if all tools have been completed
-	 * @returns if all tools have been completed
+	 * Run a tool
 	 */
-	hasUnfinishedTools = (): boolean => {
-		return this.tools.some((tool) => !tool.response);
-	};
-
-	/**
-	 * Run a tool if possible
-	 */
-	private runToolExecution = async (): Promise<void> => {
-		const room = this.room;
-
-		// skip if the index is out of bounds
+	private runToolExecution = async (tool: ToolStore): Promise<void> => {
 		if (
-			this.toolAutoExecutionIdx < 0 ||
-			this.toolAutoExecutionIdx >= this.tools.length
+			!tool ||
+			tool.status !== "INITIAL" ||
+			tool.json._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO
 		) {
-			// all tools have run
+			// skip
 			return;
 		}
 
-		const tool = this.tools[this.toolAutoExecutionIdx];
-		if (!tool) {
-			return;
-		} else if (tool.status === "SUCCESS" || tool.status === "CANCELLED") {
-			// already has a response, skip
-			this.toolAutoExecutionIdx += 1;
-			await this.runToolExecution();
-			return;
-		} else if (tool.status === "ERROR") {
-			return;
-		}
-
-		// only run if it is set to auto execute
-		if (tool.json._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
-			return;
-		}
-
+		// mark as loading
 		runInAction(() => {
 			tool.status = "LOADING";
 		});
 
 		try {
 			// wait for the pixel to run
-			const response = await room.runRoomPixel<[string]>(
-				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.json.parameters)} ]);`,
+			const response = await this.room.runRoomPixel<[unknown]>(
+				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+				false,
 				false,
 			);
 
-			const { output } = response.pixelReturn[0];
+			const rawOutput = response.pixelReturn[0].output;
+			const output =
+				typeof rawOutput === "string"
+					? rawOutput
+					: JSON.stringify(rawOutput);
 
 			// save the response
-			await this.saveToolExecution(tool, output);
-		} catch {
+			await this.saveToolExecution(
+				tool,
+				output,
+				"success",
+				tool.parameters,
+			);
+		} catch (e) {
 			// mark the failure
-			await this.saveToolExecution(tool, TOOL_ERROR_PROMPT, "error");
+			await this.saveToolExecution(
+				tool,
+				e.toString(),
+				"error",
+				tool.parameters,
+			);
 		}
 	};
 
@@ -450,11 +459,19 @@ paramValues=[${JSON.stringify({
 	 * @param toolStatus - status of the tool
 	 */
 	saveToolExecution = async (
-		tool: ResponseMessageStore["tools"][number],
+		tool: ToolStore,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled",
+		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		const room = this.room;
+
+		// wrap the message
+		if (toolStatus === "error") {
+			toolResponse = `${TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
+		} else if (toolStatus === "cancelled") {
+			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
+		}
 
 		// skip if the tool is already completed
 		if (tool.status === "SUCCESS" || tool.status === "CANCELLED") {
@@ -467,7 +484,7 @@ paramValues=[${JSON.stringify({
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
-
+			tool.parameters = executedParameters;
 			if (toolStatus === "success") {
 				tool.status = "SUCCESS";
 			} else if (toolStatus === "cancelled") {
@@ -481,21 +498,18 @@ paramValues=[${JSON.stringify({
 		let responseMessage = this.toolResponseMessage;
 		if (!responseMessage) {
 			this.toolResponseMessage = new ResponseMessageStore(room, {
+				io: "OUTPUT",
 				messageId: "STREAMING_TOOL_PLACEHOLDER_ID",
-				type: "RESPONSE_TEXT",
 				visible: true,
-				content: "",
+				platform_generated: true,
 				modelId: this.room.model.app_id,
-				paramMap: {
-					max_new_tokens: room.options.tokenLength,
-					temperature: room.options.temperature,
-				},
-				ornaments: {
-					modelName: this.room.model.app_name,
-				},
-				tokens: 0,
 				dateCreated: new Date().toISOString(),
-			} as ResponseTextPixelMessage);
+				parts: [],
+				tokens: 0,
+				ornaments: {
+					modelName: room.model.app_name,
+				},
+			} as ResponsePixelMessage);
 
 			// add as a child
 			this.addChild(this.toolResponseMessage);
@@ -512,7 +526,7 @@ paramValues=[${JSON.stringify({
 			const response = await room.runRoomPixelStreaming<
 				[
 					{
-						responseMessage: PixelMessage | string;
+						responseMessage: ResponsePixelMessage | string;
 					},
 				]
 			>(
@@ -524,17 +538,25 @@ toolId = ["${tool.id}"],
 toolName=["${tool.json.name}"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
-mcpToolStatus=${JSON.stringify(toolStatus)}
+mcpToolStatus=${JSON.stringify(toolStatus)},
+toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 );`,
 				(chunk) => {
 					runInAction(() => {
 						if (chunk.stream_type === "content") {
 							if (chunk.data.content) {
-								responseMessage.text += chunk.data.content;
+								responseMessage.savePart({
+									type: "TEXT",
+									text: chunk.data.content,
+									uiText: chunk.data.content,
+								});
 							}
 						} else if (chunk.stream_type === "thinking") {
 							if (chunk.data.thinking) {
-								responseMessage.thinking += chunk.data.thinking;
+								responseMessage.savePart({
+									type: "THINKING",
+									thinking: chunk.data.thinking,
+								});
 							}
 						} else if (chunk.stream_type === "tool") {
 							//noop
@@ -553,17 +575,28 @@ mcpToolStatus=${JSON.stringify(toolStatus)}
 				typeof output.responseMessage === "string"
 			) {
 				// Keep executing tools
-				await this.continueToolExecution(tool);
+				this.continueToolExecution();
 			} else {
 				// create the response and link to the message
 				responseMessage.sync(output.responseMessage);
 
 				// start running tools if there are any
-				responseMessage.startToolExecution();
+				responseMessage.continueToolExecution();
 
 				// clear it
 				this.toolResponseMessage = null;
 			}
+		} catch (e) {
+			// set error status
+			tool.status = "ERROR";
+
+			// remove as a child
+			this.removeChild(responseMessage);
+
+			// clear it
+			this.toolResponseMessage = null;
+
+			throw e;
 		} finally {
 			runInAction(() => {
 				// turn off thinking

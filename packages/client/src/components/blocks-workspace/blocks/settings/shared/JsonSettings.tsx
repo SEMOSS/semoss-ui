@@ -12,11 +12,9 @@ import {
 	type QueryState,
 	useBlocks,
 } from "@semoss/renderer";
+import { MonacoEditor } from "@semoss/shared";
 import { Button, Stack, styled, Typography } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
-
-// Reduce Initial Bundle
-const Editor = lazy(() => import("@monaco-editor/react"));
 
 const StyledErrorContainer = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -298,7 +296,7 @@ export const JsonSettings = observer(
 					alignItems="flex-end"
 					spacing={1}
 				>
-					<Editor
+					<MonacoEditor
 						height={height}
 						width={width}
 						value={value}

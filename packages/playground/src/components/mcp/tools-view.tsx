@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { Skeleton } from "@semoss/ui/next";
-import type { RoomStore } from "@/stores";
+import type { RoomStore, ToolStore } from "@/stores";
 import type { MCPTool } from "@/types";
 import { usePlaywrightScripts } from "./playwright-search";
 import { ToolsDefaultView } from "./tools-default-view";
@@ -23,23 +23,23 @@ interface ToolsViewProps {
 	message: string;
 
 	/** Connected tool */
-	tool: {
-		id: string;
-		name: string;
-		parameters: Record<string, unknown>;
-		original_name: string;
-	};
+	tool: ToolStore["json"];
+
+	/** Response to the tool */
+	toolResponse?: string;
+
+	/** Parameters that were executed */
+	toolParameters?: Record<string, unknown>;
 }
 
 export const ToolsView: React.FC<ToolsViewProps> = observer(
-	({ room, app, message, tool }) => {
+	({ room, app, message, tool, toolResponse, toolParameters }) => {
 		/**
 		 * State
 		 */
 		const iframeRef = useRef<HTMLIFrameElement>(null);
 		const [isLoading, setIsLoading] = useState<boolean>(true);
 		const [url, setUrl] = useState("");
-		const [selectedTool, setSelectedTool] = useState<MCPTool>(null);
 
 		/**
 		 * Library Hooks
@@ -106,6 +106,9 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 			},
 		});
 
+		/**
+		 * Functions
+		 */
 
 		/**
 		 * Process iframe on load
@@ -120,9 +123,11 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						message: message || "",
 						id: tool?.id || "",
 						name: tool?.name || "",
-						parameters: toJS(tool?.parameters || {}),
+						parameters: toJS(toolParameters || {}),
 						roomId: room.roomId,
-						original_name: selectedTool?.original_name || "",
+						original_name: tool.original_name || "",
+						tool_response: toolResponse,
+						executedParameters: toJS(toolParameters || {}),
 					} satisfies MCPToolRequest,
 				},
 				"*",
@@ -132,17 +137,6 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 		/**
 		 * Effects
 		 */
-
-		// Initialize selected tool from tool info
-		useEffect(() => {
-			if (getMCP.status === "SUCCESS" && tool?.original_name) {
-				setSelectedTool(
-					getMCP.data.tools.find(
-						(a) => a.name === tool.original_name,
-					),
-				);
-			}
-		}, [getMCP, tool.original_name]);
 
 		useEffect(() => {
 			const chooseUrl = async () => {
@@ -169,7 +163,15 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 
 			setIsLoading(true);
 
-			if (!selectedTool._meta?.SMSS_MCP_UI) {
+			if (!tool._meta.SMSS_MCP_UI) {
+				// Legacy, check for portals
+
+				if (getAppInfo.data.project_type === "BLOCKS") {
+					// Low code app
+					setUrl(`${PLATFORM_URL}/#/s/${app}/`);
+				}
+
+				if (!selectedTool._meta?.SMSS_MCP_UI) {
 					// Check if portals exists
 					let foundApp = false;
 					try {
@@ -194,8 +196,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 					);
 				} else {
 					// Modern
-					const resourceURI =
-						selectedTool._meta.SMSS_MCP_UI?.resourceURI;
+					const resourceURI = tool._meta.SMSS_MCP_UI?.resourceURI;
 					if (!resourceURI) {
 						// No UI defined, show form
 						setUrl(null);
@@ -213,7 +214,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 			};
 
 			chooseUrl();
-		}, [app, tool, getAppInfo.status, getAppInfo.data, selectedTool]);
+		}, [app, tool, getAppInfo.status, getAppInfo.data]);
 
 		return (
 			<div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
@@ -227,7 +228,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						onLoad={() => handleOnLoad()}
 					/>
 				)}
-				{!url && !isLoading && selectedTool && (
+				{!url && !isLoading && tool && (
 					<ToolsDefaultView
 						room={room}
 						app={app}
@@ -235,6 +236,8 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						tool={tool}
 						mcp={selectedTool}
 						playwrightScripts={playwrightScripts}
+						toolResponse={toolResponse}
+						toolParameters={toolParameters}
 					/>
 				)}
 			</div>

@@ -1,5 +1,5 @@
-import { PlusIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Field,
@@ -8,9 +8,6 @@ import {
 	FieldSeparator,
 	Input,
 	Textarea,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { MCPSelector, NewKnowledgeOverlay } from "@/components";
@@ -35,6 +32,8 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	values,
 	onClose,
 }) => {
+	const { t } = useTranslation(["workspace", "common", "notifications"]);
+
 	/**
 	 * IDs
 	 */
@@ -98,7 +97,9 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 			console.error(e);
 
 			toast.error(
-				e instanceof Error ? e.message : "Failed to save workspace",
+				e instanceof Error
+					? e.message
+					: t("notifications:workspace.saveError"),
 			);
 		} finally {
 			// stop the loading screen
@@ -110,10 +111,12 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 		<form onSubmit={onSubmit} className="flex w-full flex-col gap-6">
 			<FieldGroup>
 				<Field>
-					<FieldLabel htmlFor={nameId}>Name</FieldLabel>
+					<FieldLabel htmlFor={nameId}>
+						{t("workspace:form.nameLabel")}
+					</FieldLabel>
 					<Input
 						id={nameId}
-						placeholder="Enter Name"
+						placeholder={t("common:placeholders.enterName")}
 						value={name}
 						disabled={isLoading}
 						onChange={(e) => setName(e.target.value)}
@@ -121,10 +124,12 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 					/>
 				</Field>
 				<Field>
-					<FieldLabel htmlFor={descriptionId}>Description</FieldLabel>
+					<FieldLabel htmlFor={descriptionId}>
+						{t("workspace:form.descriptionLabel")}
+					</FieldLabel>
 					<Input
 						id={descriptionId}
-						placeholder="Enter Description"
+						placeholder={t("common:placeholders.enterDescription")}
 						value={description}
 						disabled={isLoading}
 						onChange={(e) => setDescription(e.target.value)}
@@ -136,12 +141,12 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 			<FieldGroup>
 				<Field>
 					<FieldLabel htmlFor={instructionId}>
-						Instructions
+						{t("workspace:form.instructionsLabel")}
 					</FieldLabel>
 					<Textarea
 						id={instructionId}
-						placeholder="Enter Instructions"
-						value={instructions}
+						placeholder={t("common:placeholders.enterInstructions")}
+						value={instructions.replace(/\\n/g, "\n")}
 						onChange={(e) => setInstructions(e.target.value)}
 						rows={4}
 						data-testid="workspaceForm-system_prompt-txt"
@@ -156,26 +161,9 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 							setIsKnowledgeOverlayOpen(true);
 						}}
 					>
-						<div className="flex-1">Knowledge</div>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={(event) => {
-										event.preventDefault();
-										event.stopPropagation();
-
-										setIsKnowledgeOverlayOpen(true);
-									}}
-								>
-									<PlusIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								Create Knowledge Source
-							</TooltipContent>
-						</Tooltip>
+						<div className="flex-1">
+							{t("workspace:form.knowledgeLabel")}
+						</div>
 					</FieldLabel>
 
 					<MCPSelector
@@ -198,7 +186,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 					/>
 				</Field>
 				<Field>
-					<FieldLabel>Toolbox</FieldLabel>
+					<FieldLabel>{t("workspace:form.toolboxLabel")}</FieldLabel>
 					<MCPSelector
 						type="TOOLBOX"
 						values={toolbox}
@@ -209,14 +197,16 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 			</FieldGroup>
 			<div className="flex items-center justify-between">
 				<Button variant="ghost" onClick={() => onClose()}>
-					Back
+					{t("common:buttons.back")}
 				</Button>
 				<Button
 					disabled={isLoading || !name}
 					data-testid="workspaceForm-submit-btn"
 					type="submit"
 				>
-					{isNew ? "Create" : "Save"}
+					{isNew
+						? t("workspace:actions.create")
+						: t("workspace:actions.save")}
 				</Button>
 			</div>
 		</form>

@@ -1,0 +1,68 @@
+{
+	"buttons": {
+		"save": "Enregistrer",
+		"cancel": "Annuler",
+		"create": "Créer",
+		"back": "Retour",
+		"close": "Fermer",
+		"confirm": "Confirmer",
+		"upload": "Téléverser",
+		"search": "Rechercher"
+	},
+	"labels": {
+		"name": "Nom",
+		"description": "Description",
+		"type": "Type",
+		"model": "Modèle",
+		"instructions": "Instructions",
+		"temperature": "Température",
+		"maxToken": "Jeton maximum"
+	},
+	"placeholders": {
+		"enterName": "Entrer le nom",
+		"enterDescription": "Entrer la description",
+		"enterInstructions": "Entrer les instructions",
+		"updateInstructions": "Mettre à jour les instructions",
+		"updateTokenLength": "Mettre à jour la longueur du jeton",
+		"uploadFiles": "Téléverser des fichiers",
+		"search": "Rechercher..."
+	},
+	"actions": {
+		"addKnowledge": "Ajouter des connaissances",
+		"addToolbox": "Ajouter une boîte à outils",
+		"deleteMCP": "Supprimer MCP"
+	},
+	"badges": {
+		"fromAgent": "De l'agent"
+	},
+	"messages": {
+		"noKnowledgeFound": "Aucune connaissance trouvée",
+		"noToolboxFound": "Aucune boîte à outils trouvée"
+	},
+	"tooltips": {
+		"cannotDeleteWorkspaceMCPs": "Impossible de supprimer les MCP de l'espace de travail",
+		"cannotDeleteAgentMCPs": "Impossible de supprimer les MCP de l'agent"
+	},
+	"plan": {
+		"newStep": "Nouvelle étape",
+		"editStep": "Modifier l'étape",
+		"selectType": "Sélectionner le type",
+		"selectMcp": "Sélectionner MCP",
+		"selectTool": "Sélectionner l'outil",
+		"tool": "Outil",
+		"ai": "IA",
+		"prompt": "Invite",
+		"promptPlaceholder": "Entrez les instructions pour l'IA",
+		"instructionsPlaceholder": "Instructions pour que l'IA traite les commentaires de l'utilisateur"
+	},
+	"navigation": {
+		"logOut": "Se déconnecter",
+		"acknowledge": "Reconnaître"
+	},
+	"pagination": {
+		"rowsPerPage": "Lignes par page :"
+	},
+	"images": {
+		"logoAlt": "logo"
+	}
+}
