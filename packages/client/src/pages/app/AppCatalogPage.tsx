@@ -2,7 +2,7 @@ import { ChevronDown, ChevronUp, Filter, Menu, Search } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { debounced } from "@semoss/sdk/react";
+import { debounced, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -17,10 +17,12 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
+	Spinner,
 	Tabs,
 	TabsList,
 	TabsTrigger,
 	toast,
+	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { setProjectFavorite } from "@/api";
 import { type AppMetadata, AppTileCard } from "@/components/app";
@@ -37,6 +39,7 @@ const initialState = {
 	apps: [],
 };
 const SKELETON_CARD_COUNT = 6;
+const APP_PAGE_LIMIT = 50;
 
 const skeletonKeys = Array.from(
 	{ length: SKELETON_CARD_COUNT },
@@ -233,23 +236,45 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	const metaKeys = projectMetaKeys.map((k) => {
 		return k.metakey;
 	});
+	const metaKeysWithDescription = [...metaKeys, "description"];
+	const metaFiltersKey = JSON.stringify(metaFilters);
 
-	let pixel = mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects";
-
-	pixel += `(metaKeys = ${JSON.stringify([
-		...metaKeys,
-		"description",
-	])}, metaFilters=[${JSON.stringify(
-		metaFilters,
-	)}], filterWord=["${search}"], onlyPortals=[true]);`;
+	const isSystemMode = mode === "System";
+	const pixel = mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects";
 
 	/**
 	 * @desc Get & Set Apps
 	 */
-	const getApps = usePixel<AppMetadata[]>(pixel);
+	const getApps = useIteratorPixel<AppMetadata[], AppMetadata>(
+		(limit, offset) => {
+			if (isSystemMode) {
+				return "";
+			}
+
+			return `${pixel}(metaKeys = ${JSON.stringify(
+				metaKeysWithDescription,
+			)}, metaFilters=[${JSON.stringify(
+				metaFilters,
+			)}], filterWord=["${search}"], onlyPortals=[true], limit=[${limit}], offset=[${offset}]);`;
+		},
+		(response) => {
+			if (response.length < APP_PAGE_LIMIT) {
+				return -1;
+			}
+
+			return Infinity;
+		},
+		(response) => {
+			return response;
+		},
+		{
+			limit: APP_PAGE_LIMIT,
+		},
+		[mode, search, metaFiltersKey],
+	);
 
 	useEffect(() => {
-		if (getApps.status !== "SUCCESS") {
+		if (getApps.isError) {
 			dispatch({
 				type: "field",
 				field: "apps",
@@ -263,16 +288,15 @@ export const AppCatalogPage = observer((): JSX.Element => {
 			field: "apps",
 			value: getApps.data,
 		});
-	}, [getApps.status, getApps.data]);
+	}, [getApps.data, getApps.isError]);
 
 	/**
 	 * @desc Get & Sets Favorited Apps
 	 */
 	let favoritePixel = "MyProjects";
-	favoritePixel += `(metaKeys = ${JSON.stringify([
-		...metaKeys,
-		"description",
-	])}, metaFilters=[${JSON.stringify(
+	favoritePixel += `(metaKeys = ${JSON.stringify(
+		metaKeysWithDescription,
+	)}, metaFilters=[${JSON.stringify(
 		metaFilters,
 	)}], filterWord=["${search}"], onlyFavorites=[true]);`;
 	const getFavoritedApps = usePixel(favoritePixel);
@@ -300,6 +324,30 @@ export const AppCatalogPage = observer((): JSX.Element => {
 			setUpdatedNewApps(getApps.data);
 		}
 	}, [metaFilters, getApps.data]);
+
+	const { setScroll, resetScroll } = useInfiniteScroll({
+		disabled: mode === "System" || getApps.isLoading || !getApps.hasMore,
+		triggerOnMount: false,
+		onNext: () => {
+			getApps.next();
+		},
+	});
+
+	useEffect(() => {
+		const scrollEle = document.querySelector(
+			"#home__content",
+		) as HTMLDivElement;
+
+		setScroll(scrollEle);
+
+		return () => {
+			setScroll(null);
+		};
+	}, [setScroll]);
+
+	useEffect(() => {
+		resetScroll();
+	}, [mode, search, metaFiltersKey, resetScroll]);
 
 	const debouncedSet = debounced((newInputValue: string) => {
 		setSearch(newInputValue);
@@ -757,7 +805,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 						</div>
 					)}
 
-					{mode !== "System" && getApps.status !== "SUCCESS" ? (
+					{mode !== "System" &&
+					getApps.isLoading &&
+					apps.length === 0 ? (
 						<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 							{skeletonKeys.map((key) => (
 								<AppTileCard
@@ -823,6 +873,14 @@ export const AppCatalogPage = observer((): JSX.Element => {
 										/>
 									);
 								})}
+						</div>
+					) : null}
+
+					{mode !== "System" &&
+					getApps.isLoading &&
+					apps.length > 0 ? (
+						<div className="flex items-center justify-center py-4">
+							<Spinner className="size-5" />
 						</div>
 					) : null}
 				</div>
