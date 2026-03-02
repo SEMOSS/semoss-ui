@@ -2,12 +2,9 @@ import { Box, useApp, useInput, useStdout } from "ink";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { execSync, spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import type { InstanceConfig } from "../types.js";
-import {
-	loadCredentials,
-	loadGlobalConfig,
-	saveGlobalConfig,
-} from "../utils/config.js";
+import { loadCredentials, saveCredentials } from "../utils/config.js";
 import { Footer } from "./components/Footer.js";
 import { Header } from "./components/Header.js";
 import { Input } from "./components/Input.js";
@@ -38,6 +35,13 @@ export const App: React.FC = () => {
 	const [gitBranch, setGitBranch] = useState<string | undefined>();
 	const [konamiIndex, setKonamiIndex] = useState(0);
 	const [gameMode, setGameMode] = useState<"snake" | null>(null);
+	const [pendingAction, setPendingAction] = useState<{
+		type: "deploy";
+		args: string[];
+		flags: string[];
+		dryRun: boolean;
+		targets: string[];
+	} | null>(null);
 
 	/** Get current git branch if in a git repository */
 	const getGitBranch = (): string | undefined => {
@@ -136,6 +140,24 @@ export const App: React.FC = () => {
 	};
 
 	const handleCommand = async (command: string) => {
+		// Check if there's a pending confirmation
+		if (pendingAction) {
+			const response = command.toLowerCase().trim();
+			addEntry({ type: "command", content: command });
+
+			if (response === "y" || response === "yes") {
+				const { flags, dryRun, targets } = pendingAction;
+				setPendingAction(null);
+				await executeDeploy(flags, dryRun, targets);
+			} else if (response === "n" || response === "no") {
+				setPendingAction(null);
+				addEntry({ type: "info", content: "Deploy cancelled." });
+			} else {
+				addEntry({ type: "info", content: "Please enter 'y' or 'n'" });
+			}
+			return;
+		}
+
 		// Add command to output
 		addEntry({ type: "command", content: command });
 
@@ -176,37 +198,16 @@ export const App: React.FC = () => {
 				showStatus();
 				break;
 			case "init":
-				addEntry({
-					type: "info",
-					content:
-						"To initialize a new app, exit the TUI and run: semoss init",
-				});
-				addEntry({
-					type: "info",
-					content:
-						"The TUI is for running Pixel commands, not creating apps.",
-				});
+				await handleInitCommand(args);
 				break;
 			case "deploy":
 				await handleDeployCommand(args);
 				break;
 			case "link":
-				addEntry({
-					type: "info",
-					content:
-						"To link a directory to an app, exit the TUI and run: semoss link <app-id>",
-				});
+				await handleLinkCommand(args);
 				break;
 			case "switch":
-				addEntry({
-					type: "info",
-					content:
-						"To switch instances, exit the TUI and run: semoss switch <instance-name>",
-				});
-				addEntry({
-					type: "info",
-					content: "Then re-launch the TUI with: semoss interactive",
-				});
+				await handleSwitchCommand(args);
 				break;
 			case "apps":
 				await handleAppsCommand();
@@ -216,6 +217,47 @@ export const App: React.FC = () => {
 				break;
 			case "pwd":
 				showWorkingDirectory();
+				break;
+			case "instances":
+				handleInstancesCommand();
+				break;
+			case "whoami":
+				await handleWhoamiCommand();
+				break;
+			case "log":
+				await handleLogCommand(args);
+				break;
+			case "open":
+				await handleOpenCommand(args);
+				break;
+			case "publish":
+				await handlePublishCommand(args);
+				break;
+			case "config":
+				await handleConfigCommand(args);
+				break;
+			case "cleanup":
+				await handleCleanupCommand(args);
+				break;
+			case "onboard":
+				await handleOnboardCommand();
+				break;
+			case "create":
+				await handleCreateCommand(args);
+				break;
+			case "connect":
+				await handleConnectCommand(args);
+				break;
+			case "pixel":
+				addEntry({
+					type: "info",
+					content:
+						"Enter Pixel commands directly without the :pixel prefix.",
+				});
+				addEntry({
+					type: "info",
+					content: "Example: GetUserInfo();",
+				});
 				break;
 			case "snake":
 				setGameMode("snake");
@@ -280,6 +322,59 @@ export const App: React.FC = () => {
 			return;
 		}
 
+		// Special handling for cd command - subprocess cd doesn't affect parent process
+		const cdMatch = command.match(/^cd\s+(.+)$/);
+		if (cdMatch || command === "cd") {
+			const targetDir = cdMatch
+				? cdMatch[1].trim()
+				: process.env.HOME || process.env.USERPROFILE || "/";
+			try {
+				// Handle ~ for home directory
+				const resolvedDir = targetDir.startsWith("~")
+					? targetDir.replace(
+							"~",
+							process.env.HOME || process.env.USERPROFILE || "",
+						)
+					: targetDir;
+				process.chdir(resolvedDir);
+				addEntry({
+					type: "success",
+					content: `Changed directory to: ${process.cwd()}`,
+				});
+				// Refresh git branch since we changed directories
+				setGitBranch(getGitBranch());
+			} catch (error) {
+				addEntry({
+					type: "error",
+					content: `cd: ${error instanceof Error ? error.message : String(error)}`,
+				});
+			}
+			return;
+		}
+
+		// Map common Unix commands to Windows equivalents
+		let processedCommand = command;
+		if (process.platform === "win32") {
+			const unixToWindows: Record<string, string> = {
+				ls: "dir",
+				cat: "type",
+				clear: "cls",
+				cp: "copy",
+				mv: "move",
+				rm: "del",
+				pwd: "cd",
+				touch: "echo. >",
+			};
+
+			// Replace command if it's a simple Unix command at the start
+			const parts = command.split(/\s+/);
+			const cmd = parts[0].toLowerCase();
+			if (unixToWindows[cmd]) {
+				parts[0] = unixToWindows[cmd];
+				processedCommand = parts.join(" ");
+			}
+		}
+
 		setLoading(true);
 		addEntry({
 			type: "loading",
@@ -287,7 +382,7 @@ export const App: React.FC = () => {
 		});
 
 		try {
-			const shellProcess = spawn(command, {
+			const shellProcess = spawn(processedCommand, {
 				cwd: process.cwd(),
 				shell: true,
 				stdio: ["pipe", "pipe", "pipe"],
@@ -354,21 +449,33 @@ export const App: React.FC = () => {
 Built-in Commands:
   :help           Show this help message
   :status         Display current instance and app info
+  :whoami         Show current user from server
   :pwd            Show current working directory
+  :instances      List all configured instances
   :apps           List available apps from server
   :app [name]     Show or switch to an app
   :deploy [opts]  Deploy current app to instance
                   Options: --dry-run, --rollback, --target=<dir>
+  :publish        Publish current app (init, run reactors, publish)
+  :open           Open app in browser
+  :log [opts]     Show deployment history
+                  Options: --limit=N, --verbose, --files
+  :config [opts]  Generate smss.json config file
+                  Options: --force
+  :cleanup [opts] Clean up backup files
+                  Options: --force, --list
+  :init           Initialize a new app in current directory
+  :link [app-id]  Link directory to an app (uses .env APP if omitted)
+  :switch <name>  Switch to a different instance
+  :connect [url]  Connect to a new instance
+  :create [opts]  Create a new app from template
+                  Options: --name="App Name", --template=react|next
+  :onboard        Run onboarding wizard (exits TUI)
   :clear          Clear output history
   :exit           Exit interactive mode (or press Ctrl+C)
 
 Shell Commands:
   !<command>      Run a shell command (e.g., !ls, !dir, !git status)
-
-File Operations (exit TUI first):
-  semoss init       Initialize a new app in current directory
-  semoss link       Link directory to an app
-  semoss switch     Switch to a different instance
 
 Pixel Commands:
   Enter any Pixel command directly (without colon prefix)
@@ -511,10 +618,10 @@ Keyboard Shortcuts:
 		// Update current app
 		setCurrentApp({ id: app.appId, name: app.name });
 
-		// Update global config
-		const config = loadGlobalConfig();
-		config.currentApp = app.appId;
-		saveGlobalConfig(config);
+		// Update credentials with current app
+		const creds = loadCredentials();
+		creds.currentApp = app.appId;
+		saveCredentials(creds);
 
 		addEntry({
 			type: "success",
@@ -552,12 +659,16 @@ Keyboard Shortcuts:
 		let dryRun = false;
 		const targets: string[] = [];
 
+		let skipConfirm = false;
+
 		for (const arg of args) {
 			if (arg === "--dry-run" || arg === "-d") {
 				dryRun = true;
 				flags.push("--dryRun");
 			} else if (arg === "--rollback" || arg === "-r") {
 				flags.push("--rollback");
+			} else if (arg === "--yes" || arg === "-y") {
+				skipConfirm = true;
 			} else if (arg.startsWith("--target=")) {
 				const target = arg.split("=")[1];
 				targets.push(target);
@@ -571,6 +682,45 @@ Keyboard Shortcuts:
 			}
 		}
 
+		// Dry-run doesn't need confirmation
+		if (dryRun) {
+			skipConfirm = true;
+		}
+
+		// Show confirmation prompt if not skipped
+		if (!skipConfirm) {
+			const targetMsg =
+				targets.length > 0 ? `\nTargets:  ${targets.join(", ")}` : "";
+			const appInfo = currentApp?.name
+				? `${currentApp.name} (${currentApp.id})`
+				: currentApp?.id || "unknown";
+			const confirmMsg = `⚠️  Deployment Confirmation
+${"─".repeat(50)}
+Source:   ${process.cwd()}
+Instance: ${instanceName}
+Module:   ${instance?.module || "unknown"}
+App:      ${appInfo}${targetMsg}
+${"─".repeat(50)}
+This action will replace the current deployment. Use --rollback to revert if needed.
+
+Proceed? (y/n)`;
+			addEntry({
+				type: "info",
+				content: confirmMsg,
+			});
+
+			setPendingAction({ type: "deploy", args, flags, dryRun, targets });
+			return;
+		}
+
+		await executeDeploy(flags, dryRun, targets);
+	};
+
+	const executeDeploy = async (
+		flags: string[],
+		dryRun: boolean,
+		targets: string[],
+	) => {
 		setLoading(true);
 
 		const deployMsg = dryRun
@@ -586,30 +736,58 @@ Keyboard Shortcuts:
 
 		try {
 			// Get the CLI executable path
-			const cliPath = new URL("../../bin/run.js", import.meta.url)
-				.pathname;
+			const cliPath = fileURLToPath(
+				new URL("../../bin/run.js", import.meta.url),
+			);
 
 			// Spawn deploy command as child process
+			// Always pass --yes since confirmation is handled at TUI level
 			const deployProcess = spawn(
 				"node",
-				[cliPath, "deploy", "--logLevel", "normal", ...flags],
+				[cliPath, "deploy", "--logLevel", "debug", "--yes", ...flags],
 				{
 					cwd: process.cwd(),
 					stdio: ["pipe", "pipe", "pipe"],
 				},
 			);
 
-			let output = "";
-			let _errorOutput = "";
+			// Stream output in real-time
+			let outputBuffer = "";
 
 			deployProcess.stdout?.on("data", (data: Buffer) => {
 				const text = data.toString();
-				output += text;
+				outputBuffer += text;
+
+				// Process complete lines
+				const lines = outputBuffer.split("\n");
+				outputBuffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+				for (const line of lines) {
+					const trimmed = line.trim();
+					if (trimmed) {
+						// Remove loading entry when we get first output
+						removeLoadingEntries();
+						addEntry({
+							type: "info",
+							content: trimmed,
+						});
+					}
+				}
 			});
 
 			deployProcess.stderr?.on("data", (data: Buffer) => {
 				const text = data.toString();
-				_errorOutput += text;
+				const lines = text.split("\n");
+				for (const line of lines) {
+					const trimmed = line.trim();
+					if (trimmed) {
+						removeLoadingEntries();
+						addEntry({
+							type: "error",
+							content: trimmed,
+						});
+					}
+				}
 			});
 
 			await new Promise<void>((resolve, reject) => {
@@ -637,23 +815,733 @@ Keyboard Shortcuts:
 					? "✓ Dry-run complete - no files were deployed"
 					: "✓ Deployment successful!",
 			});
-
-			// Show output if there's interesting info
-			if (output.trim()) {
-				const lines = output.trim().split("\n");
-				// Show last few lines of output
-				const relevantLines = lines.slice(-5).join("\n");
-				if (relevantLines) {
-					addEntry({
-						type: "info",
-						content: relevantLines,
-					});
-				}
-			}
 		} catch (error) {
 			addEntry({
 				type: "error",
 				content: `Deployment failed: ${error instanceof Error ? error.message : String(error)}`,
+			});
+		} finally {
+			removeLoadingEntries();
+			setLoading(false);
+		}
+	};
+
+	const handleInstancesCommand = () => {
+		const credentials = loadCredentials();
+		const instanceCount = Object.keys(credentials.instances).length;
+
+		if (instanceCount === 0) {
+			addEntry({
+				type: "info",
+				content:
+					"No instances configured. Exit TUI and run: semoss connect",
+			});
+			return;
+		}
+
+		addEntry({
+			type: "info",
+			content: "Configured Instances:",
+		});
+
+		Object.entries(credentials.instances).forEach(([name, config]) => {
+			const isCurrent = credentials.currentInstance === name;
+			const marker = isCurrent ? "●" : "○";
+			const appCount = Object.keys(config.apps || {}).length;
+			addEntry({
+				type: "info",
+				content: `  ${marker} ${name} - ${config.module} (${appCount} app${appCount !== 1 ? "s" : ""})`,
+			});
+		});
+
+		addEntry({
+			type: "info",
+			content:
+				"\nTo switch instances, exit TUI and run: semoss switch <name>",
+		});
+	};
+
+	const handleWhoamiCommand = async () => {
+		if (!connected) {
+			addEntry({
+				type: "error",
+				content: "Not connected to any instance.",
+			});
+			return;
+		}
+
+		setLoading(true);
+		addEntry({
+			type: "loading",
+			content: "Fetching user info...",
+		});
+
+		try {
+			const result = await executePixelCommand("GetUserInfo();");
+
+			if (result.success) {
+				const formatted = formatOutput(result.output);
+				addEntry({
+					type: "result",
+					content: formatted,
+				});
+			} else {
+				addEntry({
+					type: "error",
+					content: result.error || "Failed to get user info",
+				});
+			}
+		} catch (error) {
+			addEntry({
+				type: "error",
+				content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+			});
+		} finally {
+			removeLoadingEntries();
+			setLoading(false);
+		}
+	};
+
+	const handleLogCommand = async (args: string[]) => {
+		setLoading(true);
+		addEntry({
+			type: "loading",
+			content: "Fetching deployment history...",
+		});
+
+		try {
+			const cliPath = fileURLToPath(
+				new URL("../../bin/run.js", import.meta.url),
+			);
+
+			const logProcess = spawn("node", [cliPath, "log", ...args], {
+				cwd: process.cwd(),
+				stdio: ["pipe", "pipe", "pipe"],
+			});
+
+			let output = "";
+
+			logProcess.stdout?.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+
+			logProcess.stderr?.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+
+			await new Promise<void>((resolve) => {
+				logProcess.on("close", () => resolve());
+			});
+
+			if (output.trim()) {
+				addEntry({
+					type: "result",
+					content: output.trim(),
+				});
+			} else {
+				addEntry({
+					type: "info",
+					content: "No deployment history found.",
+				});
+			}
+		} catch (error) {
+			addEntry({
+				type: "error",
+				content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+			});
+		} finally {
+			removeLoadingEntries();
+			setLoading(false);
+		}
+	};
+
+	const handleOpenCommand = async (args: string[]) => {
+		setLoading(true);
+		addEntry({
+			type: "loading",
+			content: "Opening in browser...",
+		});
+
+		try {
+			const cliPath = fileURLToPath(
+				new URL("../../bin/run.js", import.meta.url),
+			);
+
+			const openProcess = spawn("node", [cliPath, "open", ...args], {
+				cwd: process.cwd(),
+				stdio: ["pipe", "pipe", "pipe"],
+			});
+
+			let output = "";
+			let errorOutput = "";
+
+			openProcess.stdout?.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+
+			openProcess.stderr?.on("data", (data: Buffer) => {
+				errorOutput += data.toString();
+			});
+
+			const exitCode = await new Promise<number | null>((resolve) => {
+				openProcess.on("close", (code) => resolve(code));
+			});
+
+			if (exitCode === 0 && output.trim()) {
+				addEntry({
+					type: "success",
+					content: output.trim(),
+				});
+			} else if (errorOutput.trim()) {
+				addEntry({
+					type: "error",
+					content: errorOutput.trim(),
+				});
+			} else if (output.trim()) {
+				addEntry({
+					type: "info",
+					content: output.trim(),
+				});
+			} else {
+				addEntry({
+					type: "info",
+					content: "Open command completed",
+				});
+			}
+		} catch (error) {
+			addEntry({
+				type: "error",
+				content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+			});
+		} finally {
+			removeLoadingEntries();
+			setLoading(false);
+		}
+	};
+
+	const handlePublishCommand = async (args: string[]) => {
+		if (!connected || !instance) {
+			addEntry({
+				type: "error",
+				content: "Not connected to any instance. Cannot publish.",
+			});
+			return;
+		}
+
+		setLoading(true);
+		addEntry({
+			type: "loading",
+			content: `📤 Publishing to ${instanceName}...`,
+		});
+
+		try {
+			const cliPath = fileURLToPath(
+				new URL("../../bin/run.js", import.meta.url),
+			);
+
+			const publishProcess = spawn(
+				"node",
+				[cliPath, "publish", ...args],
+				{
+					cwd: process.cwd(),
+					stdio: ["pipe", "pipe", "pipe"],
+				},
+			);
+
+			let output = "";
+			let errorOutput = "";
+
+			publishProcess.stdout?.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+
+			publishProcess.stderr?.on("data", (data: Buffer) => {
+				errorOutput += data.toString();
+			});
+
+			const exitCode = await new Promise<number | null>((resolve) => {
+				publishProcess.on("close", (code) => resolve(code));
+			});
+
+			if (exitCode === 0) {
+				addEntry({
+					type: "success",
+					content: "✓ Publish successful!",
+				});
+				if (output.trim()) {
+					const lines = output.trim().split("\n");
+					const relevantLines = lines.slice(-5).join("\n");
+					if (relevantLines) {
+						addEntry({
+							type: "info",
+							content: relevantLines,
+						});
+					}
+				}
+			} else {
+				addEntry({
+					type: "error",
+					content: `Publish failed${errorOutput ? `: ${errorOutput.trim()}` : ""}`,
+				});
+			}
+		} catch (error) {
+			addEntry({
+				type: "error",
+				content: `Publish failed: ${error instanceof Error ? error.message : String(error)}`,
+			});
+		} finally {
+			removeLoadingEntries();
+			setLoading(false);
+		}
+	};
+
+	const handleConfigCommand = async (args: string[]) => {
+		setLoading(true);
+		addEntry({
+			type: "loading",
+			content: "Generating smss.json config...",
+		});
+
+		try {
+			const cliPath = fileURLToPath(
+				new URL("../../bin/run.js", import.meta.url),
+			);
+
+			const configProcess = spawn("node", [cliPath, "config", ...args], {
+				cwd: process.cwd(),
+				stdio: ["pipe", "pipe", "pipe"],
+			});
+
+			let output = "";
+
+			configProcess.stdout?.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+
+			const exitCode = await new Promise<number | null>((resolve) => {
+				configProcess.on("close", (code) => resolve(code));
+			});
+
+			if (exitCode === 0) {
+				addEntry({
+					type: "success",
+					content: output.trim() || "✓ Config file generated",
+				});
+			} else {
+				addEntry({
+					type: "error",
+					content: output.trim() || "Failed to generate config",
+				});
+			}
+		} catch (error) {
+			addEntry({
+				type: "error",
+				content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+			});
+		} finally {
+			removeLoadingEntries();
+			setLoading(false);
+		}
+	};
+
+	const handleCleanupCommand = async (args: string[]) => {
+		// Check if --force or --list is provided, otherwise prompt to exit TUI
+		const hasForce = args.includes("--force") || args.includes("-f");
+		const hasList = args.includes("--list") || args.includes("-l");
+
+		if (!hasForce && !hasList) {
+			addEntry({
+				type: "info",
+				content:
+					"Cleanup requires confirmation. Use :cleanup --list to preview or :cleanup --force to delete.",
+			});
+			addEntry({
+				type: "info",
+				content:
+					"Or exit the TUI and run: semoss cleanup (for interactive mode)",
+			});
+			return;
+		}
+
+		setLoading(true);
+		addEntry({
+			type: "loading",
+			content: hasList ? "Listing backups..." : "Cleaning up backups...",
+		});
+
+		try {
+			const cliPath = fileURLToPath(
+				new URL("../../bin/run.js", import.meta.url),
+			);
+
+			const cleanupProcess = spawn(
+				"node",
+				[cliPath, "cleanup", ...args],
+				{
+					cwd: process.cwd(),
+					stdio: ["pipe", "pipe", "pipe"],
+				},
+			);
+
+			let output = "";
+
+			cleanupProcess.stdout?.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+
+			await new Promise<void>((resolve) => {
+				cleanupProcess.on("close", () => resolve());
+			});
+
+			addEntry({
+				type: hasList ? "result" : "success",
+				content: output.trim() || "✓ Cleanup complete",
+			});
+		} catch (error) {
+			addEntry({
+				type: "error",
+				content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+			});
+		} finally {
+			removeLoadingEntries();
+			setLoading(false);
+		}
+	};
+
+	const handleInitCommand = async (args: string[]) => {
+		setLoading(true);
+		addEntry({
+			type: "loading",
+			content: "Initializing app...",
+		});
+
+		try {
+			const cliPath = fileURLToPath(
+				new URL("../../bin/run.js", import.meta.url),
+			);
+
+			const initProcess = spawn("node", [cliPath, "init", ...args], {
+				cwd: process.cwd(),
+				stdio: ["pipe", "pipe", "pipe"],
+			});
+
+			let output = "";
+			let errorOutput = "";
+
+			initProcess.stdout?.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+
+			initProcess.stderr?.on("data", (data: Buffer) => {
+				errorOutput += data.toString();
+			});
+
+			const exitCode = await new Promise<number | null>((resolve) => {
+				initProcess.on("close", (code) => resolve(code));
+			});
+
+			if (exitCode === 0) {
+				addEntry({
+					type: "success",
+					content: output.trim() || "✓ App initialized",
+				});
+			} else {
+				addEntry({
+					type: "error",
+					content:
+						errorOutput.trim() ||
+						output.trim() ||
+						"Failed to initialize app",
+				});
+			}
+		} catch (error) {
+			addEntry({
+				type: "error",
+				content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+			});
+		} finally {
+			removeLoadingEntries();
+			setLoading(false);
+		}
+	};
+
+	const handleLinkCommand = async (args: string[]) => {
+		setLoading(true);
+		addEntry({
+			type: "loading",
+			content: "Linking directory to app...",
+		});
+
+		try {
+			const cliPath = fileURLToPath(
+				new URL("../../bin/run.js", import.meta.url),
+			);
+
+			const linkProcess = spawn("node", [cliPath, "link", ...args], {
+				cwd: process.cwd(),
+				stdio: ["pipe", "pipe", "pipe"],
+			});
+
+			let output = "";
+			let errorOutput = "";
+
+			linkProcess.stdout?.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+
+			linkProcess.stderr?.on("data", (data: Buffer) => {
+				errorOutput += data.toString();
+			});
+
+			const exitCode = await new Promise<number | null>((resolve) => {
+				linkProcess.on("close", (code) => resolve(code));
+			});
+
+			if (exitCode === 0) {
+				addEntry({
+					type: "success",
+					content: output.trim() || "✓ Directory linked to app",
+				});
+			} else {
+				addEntry({
+					type: "error",
+					content:
+						errorOutput.trim() ||
+						output.trim() ||
+						"Failed to link directory",
+				});
+			}
+		} catch (error) {
+			addEntry({
+				type: "error",
+				content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+			});
+		} finally {
+			removeLoadingEntries();
+			setLoading(false);
+		}
+	};
+
+	const handleSwitchCommand = async (args: string[]) => {
+		if (args.length === 0) {
+			addEntry({
+				type: "error",
+				content: "Usage: :switch <instance-name>",
+			});
+			return;
+		}
+
+		setLoading(true);
+		addEntry({
+			type: "loading",
+			content: `Switching to instance: ${args[0]}...`,
+		});
+
+		try {
+			const cliPath = fileURLToPath(
+				new URL("../../bin/run.js", import.meta.url),
+			);
+
+			const switchProcess = spawn("node", [cliPath, "switch", ...args], {
+				cwd: process.cwd(),
+				stdio: ["pipe", "pipe", "pipe"],
+			});
+
+			let output = "";
+			let errorOutput = "";
+
+			switchProcess.stdout?.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+
+			switchProcess.stderr?.on("data", (data: Buffer) => {
+				errorOutput += data.toString();
+			});
+
+			const exitCode = await new Promise<number | null>((resolve) => {
+				switchProcess.on("close", (code) => resolve(code));
+			});
+
+			if (exitCode === 0) {
+				addEntry({
+					type: "success",
+					content: output.trim() || `✓ Switched to ${args[0]}`,
+				});
+				addEntry({
+					type: "info",
+					content:
+						"Restart TUI to use new instance: exit and run 'semoss interactive'",
+				});
+			} else {
+				addEntry({
+					type: "error",
+					content:
+						errorOutput.trim() ||
+						output.trim() ||
+						"Failed to switch instance",
+				});
+			}
+		} catch (error) {
+			addEntry({
+				type: "error",
+				content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+			});
+		} finally {
+			removeLoadingEntries();
+			setLoading(false);
+		}
+	};
+
+	const handleOnboardCommand = async () => {
+		addEntry({
+			type: "info",
+			content:
+				"The onboard wizard requires interactive prompts that cannot run inside the TUI.",
+		});
+		addEntry({
+			type: "info",
+			content: "Exit and run: semoss onboard",
+		});
+	};
+
+	const handleCreateCommand = async (args: string[]) => {
+		if (args.length === 0) {
+			addEntry({
+				type: "info",
+				content:
+					'Usage: :create --name="App Name" [--template=react|next]',
+			});
+			return;
+		}
+
+		setLoading(true);
+		addEntry({
+			type: "loading",
+			content: "Creating app from template...",
+		});
+
+		try {
+			const cliPath = fileURLToPath(
+				new URL("../../bin/run.js", import.meta.url),
+			);
+
+			const createProcess = spawn("node", [cliPath, "create", ...args], {
+				cwd: process.cwd(),
+				stdio: ["pipe", "pipe", "pipe"],
+			});
+
+			let output = "";
+			let errorOutput = "";
+
+			createProcess.stdout?.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+
+			createProcess.stderr?.on("data", (data: Buffer) => {
+				errorOutput += data.toString();
+			});
+
+			const exitCode = await new Promise<number | null>((resolve) => {
+				createProcess.on("close", (code) => resolve(code));
+			});
+
+			if (exitCode === 0) {
+				addEntry({
+					type: "success",
+					content: output.trim() || "✓ App created",
+				});
+			} else {
+				addEntry({
+					type: "error",
+					content:
+						errorOutput.trim() ||
+						output.trim() ||
+						"Failed to create app",
+				});
+			}
+		} catch (error) {
+			addEntry({
+				type: "error",
+				content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+			});
+		} finally {
+			removeLoadingEntries();
+			setLoading(false);
+		}
+	};
+
+	const handleConnectCommand = async (args: string[]) => {
+		if (args.length === 0) {
+			addEntry({
+				type: "info",
+				content:
+					"The connect wizard requires interactive prompts. Exit and run: semoss connect",
+			});
+			addEntry({
+				type: "info",
+				content: "Or use: :connect <url> to connect directly",
+			});
+			return;
+		}
+
+		setLoading(true);
+		addEntry({
+			type: "loading",
+			content: `Connecting to ${args[0]}...`,
+		});
+
+		try {
+			const cliPath = fileURLToPath(
+				new URL("../../bin/run.js", import.meta.url),
+			);
+
+			const connectProcess = spawn(
+				"node",
+				[cliPath, "connect", ...args],
+				{
+					cwd: process.cwd(),
+					stdio: ["pipe", "pipe", "pipe"],
+				},
+			);
+
+			let output = "";
+			let errorOutput = "";
+
+			connectProcess.stdout?.on("data", (data: Buffer) => {
+				output += data.toString();
+			});
+
+			connectProcess.stderr?.on("data", (data: Buffer) => {
+				errorOutput += data.toString();
+			});
+
+			const exitCode = await new Promise<number | null>((resolve) => {
+				connectProcess.on("close", (code) => resolve(code));
+			});
+
+			if (exitCode === 0) {
+				addEntry({
+					type: "success",
+					content: output.trim() || "✓ Connected",
+				});
+				addEntry({
+					type: "info",
+					content:
+						"Restart TUI to use new instance: exit and run 'semoss interactive'",
+				});
+			} else {
+				addEntry({
+					type: "error",
+					content:
+						errorOutput.trim() ||
+						output.trim() ||
+						"Failed to connect",
+				});
+			}
+		} catch (error) {
+			addEntry({
+				type: "error",
+				content: `Error: ${error instanceof Error ? error.message : String(error)}`,
 			});
 		} finally {
 			removeLoadingEntries();

@@ -7,13 +7,10 @@ export {
 	getCurrentContext,
 	getCurrentInstance,
 	getCurrentInstanceName,
-	getGlobalConfigPath,
 	getInstance,
 	loadCredentials,
-	loadGlobalConfig,
 	resolveCredentials,
 	saveCredentials,
-	saveGlobalConfig,
 } from "./config.js";
 export * from "./deploy.js";
 export * from "./getConfiguration.js";

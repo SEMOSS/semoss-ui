@@ -139,26 +139,53 @@ export default class Open extends Command {
 		} else {
 			this.log(`Opening browser to: ${url}`);
 		}
-		let browserOpened = false;
+
 		const urlToOpen = url;
-		const openOptions = browser ? { app: { name: browser } } : undefined;
-		const openPromise = open(urlToOpen, openOptions)
-			.then(() => {
-				browserOpened = true;
-			})
-			.catch(() => {
-				this.log(
-					`\n⚠️  Unable to open the browser automatically. Please copy and paste this URL into your browser:\n${urlToOpen}\n`,
-				);
+		const openOptions = browser
+			? { app: { name: browser as AppName }, wait: false }
+			: { wait: false };
+
+		try {
+			const childProcess = await open(urlToOpen, openOptions);
+
+			// Wait a bit for the process to potentially fail
+			await new Promise<void>((resolve, reject) => {
+				let resolved = false;
+
+				// Listen for error events (spawn failure)
+				childProcess.on("error", (err) => {
+					if (!resolved) {
+						resolved = true;
+						reject(err);
+					}
+				});
+
+				// On Windows, check if process exited with error quickly
+				childProcess.on("close", (code) => {
+					if (!resolved && code !== 0 && code !== null) {
+						resolved = true;
+						reject(
+							new Error(
+								`Browser process exited with code ${code}`,
+							),
+						);
+					}
+				});
+
+				// Give the browser process a moment to start or fail
+				setTimeout(() => {
+					if (!resolved) {
+						resolved = true;
+						resolve();
+					}
+				}, 1500);
 			});
-		const fallbackTimer = setTimeout(() => {
-			if (!browserOpened) {
-				this.log(
-					`\n⚠️  The CLI attempted to open your browser, but it may not have launched. Please copy and paste this URL into your browser:\n${urlToOpen}\n`,
-				);
-			}
-		}, 3000);
-		await openPromise;
-		clearTimeout(fallbackTimer);
+
+			this.log(`✓ Browser opened`);
+		} catch (_error) {
+			this.log(
+				`\n⚠️  Unable to open the browser automatically. Please copy and paste this URL into your browser:\n${urlToOpen}\n`,
+			);
+		}
 	}
 }

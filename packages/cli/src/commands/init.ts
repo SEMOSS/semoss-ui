@@ -3,12 +3,7 @@ import Listr from "listr";
 import * as fs from "node:fs";
 import { Env, Insight } from "@semoss/sdk";
 import type { AppConfig, Config } from "../types.js";
-import {
-	loadCredentials,
-	loadGlobalConfig,
-	saveCredentials,
-	saveGlobalConfig,
-} from "../utils/config.js";
+import { loadCredentials, saveCredentials } from "../utils/config.js";
 import {
 	ensureSemossGitignore,
 	getConfiguration,
@@ -309,13 +304,9 @@ init (./src/commands/init.ts)
 								};
 								instance.apps[context.APP] = appConfig;
 
-								// Save credentials
+								// Save credentials with currentApp
+								credentials.currentApp = context.APP;
 								saveCredentials(credentials);
-
-								// Update current app in global config
-								const globalConfig = loadGlobalConfig();
-								globalConfig.currentApp = context.APP;
-								saveGlobalConfig(globalConfig);
 							}
 						}
 

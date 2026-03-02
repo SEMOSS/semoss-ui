@@ -2,6 +2,7 @@ import { Command, Flags } from "@oclif/core";
 import chalk from "chalk";
 import inquirer from "inquirer";
 import { Env, Insight } from "@semoss/sdk";
+import { DEFAULT_CONFIG } from "../constants.js";
 import {
 	getConfigDir,
 	loadCredentials,
@@ -370,6 +371,14 @@ export default class Onboard extends Command {
 				apps: {},
 			};
 			credentials.currentInstance = answers.name;
+
+			// Set default global ignore patterns if not already set
+			if (!credentials.settings) {
+				credentials.settings = {};
+			}
+			if (!credentials.settings.globalIgnore) {
+				credentials.settings.globalIgnore = DEFAULT_CONFIG.ignore || [];
+			}
 
 			saveCredentials(credentials);
 

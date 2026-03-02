@@ -3,15 +3,14 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Env, Insight } from "@semoss/sdk";
+import { DEFAULT_CONFIG } from "../constants.js";
 import type { Config } from "../types.js";
 import {
 	ensureSemossGitignore,
 	getCurrentContext,
 	initializeAndTestInsight,
 	loadCredentials,
-	loadGlobalConfig,
 	saveCredentials,
-	saveGlobalConfig,
 } from "../utils/index.js";
 import { Logger, setDefaultLogger } from "../utils/logger.js";
 
@@ -304,21 +303,50 @@ create in specific directory
 		}
 
 		// Save smss.json in the new app directory
+		// Combine DEFAULT_CONFIG with global settings (deduplicated)
+		const creds = loadCredentials();
+		const globalTargets = creds.settings?.defaultTargets || [];
+		const globalIgnore = creds.settings?.globalIgnore || [];
+
+		// Extract module path from full module URL
+		// instance.endpoint is the base URL (e.g., https://semoss.example.com)
+		// instance.module is the full URL (e.g., https://semoss.example.com/Monolith)
+		let modulePath = "/Monolith";
+		let endpoint = instance.endpoint || instance.module;
+		if (instance.module && instance.endpoint) {
+			modulePath =
+				instance.module.replace(instance.endpoint, "") || "/Monolith";
+		} else if (instance.module) {
+			// Parse module path from URL
+			try {
+				const url = new URL(instance.module);
+				modulePath = url.pathname || "/Monolith";
+				endpoint = `${url.protocol}//${url.host}`;
+			} catch {
+				modulePath = "/Monolith";
+			}
+		}
+
 		const localConfig: Config = {
+			...DEFAULT_CONFIG,
 			app: appId,
 			name: appName,
-			targets: [],
-			ignore: [
-				"node_modules/**",
-				"**/.git/**",
-				"**/*.local",
-				"*.local",
-				".semoss-backups/**",
-				".semoss-deployments",
-				"smss.json",
-			],
+			targets: Array.from(
+				new Set([...(DEFAULT_CONFIG.targets || []), ...globalTargets]),
+			),
+			ignore: Array.from(
+				new Set([...(DEFAULT_CONFIG.ignore || []), ...globalIgnore]),
+			),
 			deploy: {
-				batch: {},
+				batch: {
+					[instanceName]: {
+						module: modulePath,
+						app: appId,
+						accessKey: instance.accessKey,
+						secretKey: instance.secretKey,
+						endpoint: endpoint,
+					},
+				},
 			},
 		};
 		const configPath = path.join(absolutePath, "smss.json");
@@ -332,19 +360,30 @@ create in specific directory
 			// Copy .env.example to .env and replace placeholders with real values
 			let envContent = fs.readFileSync(envExamplePath, "utf-8");
 
-			// Extract endpoint (host) and module path from the full URL
-			const endpointMatch = instance.module.match(/^(https?:\/\/[^/]+)/);
-			const endpoint = endpointMatch ? endpointMatch[1] : instance.module;
-			const modulePath =
-				instance.module.replace(endpoint, "") || "/Monolith";
+			// Extract endpoint and module path - module path is /Monolith or similar suffix
+			let envModulePath = "/Monolith";
+			let envEndpoint = instance.endpoint || instance.module;
+			if (instance.module && instance.endpoint) {
+				envModulePath =
+					instance.module.replace(instance.endpoint, "") ||
+					"/Monolith";
+			} else if (instance.module) {
+				try {
+					const url = new URL(instance.module);
+					envModulePath = url.pathname || "/Monolith";
+					envEndpoint = `${url.protocol}//${url.host}`;
+				} catch {
+					envModulePath = "/Monolith";
+				}
+			}
 
 			envContent = envContent.replace(
 				/^ENDPOINT=.*$/m,
-				`ENDPOINT=${endpoint}`,
+				`ENDPOINT=${envEndpoint}`,
 			);
 			envContent = envContent.replace(
 				/^MODULE=.*$/m,
-				`MODULE=${modulePath}`,
+				`MODULE=${envModulePath}`,
 			);
 			envContent = envContent.replace(
 				/^ACCESS_KEY=.*$/m,
@@ -372,13 +411,11 @@ create in specific directory
 				name: appName,
 				path: absolutePath,
 			};
-			saveCredentials(credentials);
 		}
 
-		// Set as current app in global config
-		const globalConfig = loadGlobalConfig();
-		globalConfig.currentApp = appId;
-		saveGlobalConfig(globalConfig);
+		// Set as current app
+		credentials.currentApp = appId;
+		saveCredentials(credentials);
 
 		this.log(`   ✅ App initialized on server`);
 		this.log(`   📋 App ID: ${appId}\n`);

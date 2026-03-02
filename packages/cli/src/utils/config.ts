@@ -1,11 +1,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import type {
-	CredentialsStore,
-	GlobalConfig,
-	InstanceConfig,
-} from "../types.js";
+import type { CredentialsStore, InstanceConfig } from "../types.js";
 import { getDefaultLogger } from "./logger.js";
 
 /**
@@ -23,13 +19,6 @@ export function getConfigDir(): string {
  */
 export function getCredentialsPath(): string {
 	return path.join(getConfigDir(), "credentials.json");
-}
-
-/**
- * Get the global config file path
- */
-export function getGlobalConfigPath(): string {
-	return path.join(getConfigDir(), "config.json");
 }
 
 /**
@@ -97,20 +86,6 @@ export function loadCredentials(): CredentialsStore {
  */
 export function saveCredentials(credentials: CredentialsStore): void {
 	writeJsonFile(getCredentialsPath(), credentials);
-}
-
-/**
- * Load the global config
- */
-export function loadGlobalConfig(): GlobalConfig {
-	return readJsonFile<GlobalConfig>(getGlobalConfigPath(), {});
-}
-
-/**
- * Save the global config
- */
-export function saveGlobalConfig(config: GlobalConfig): void {
-	writeJsonFile(getGlobalConfigPath(), config);
 }
 
 /**
@@ -212,7 +187,6 @@ export function getCurrentContext(): {
 	appId: string | null;
 } {
 	const credentials = loadCredentials();
-	const globalConfig = loadGlobalConfig();
 
 	// Get current instance
 	const instanceName = credentials.currentInstance || null;
@@ -238,8 +212,8 @@ export function getCurrentContext(): {
 		}
 	}
 
-	// Get current app
-	const appId = globalConfig.currentApp || null;
+	// Get current app from credentials
+	const appId = credentials.currentApp || null;
 	let app: import("../types.js").AppConfig | null = null;
 
 	if (appId && instance) {

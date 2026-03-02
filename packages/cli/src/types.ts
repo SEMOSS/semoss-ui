@@ -79,19 +79,13 @@ export interface CredentialsStore {
 	/** Currently active instance name */
 	currentInstance?: string;
 
+	/** Currently active app ID */
+	currentApp?: string;
+
 	/** All configured instances */
 	instances: {
 		[instanceName: string]: InstanceConfig;
 	};
-}
-
-/** Global CLI configuration */
-export interface GlobalConfig {
-	/** Currently active instance name */
-	currentInstance?: string;
-
-	/** Currently active app ID */
-	currentApp?: string;
 
 	/** General settings */
 	settings?: {

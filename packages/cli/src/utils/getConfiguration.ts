@@ -6,7 +6,6 @@ import {
 	getCurrentContext,
 	getCurrentInstance,
 	loadCredentials,
-	loadGlobalConfig,
 } from "./config.js";
 
 /**
@@ -225,11 +224,10 @@ export function getConfiguration(
 	if (!skipGlobal) {
 		try {
 			const globalContext = getCurrentContext();
-			const globalConfig = loadGlobalConfig();
+			const credentials = loadCredentials();
 
 			if (instanceName) {
 				// Use specific instance if requested
-				const credentials = loadCredentials();
 				instance = credentials.instances[instanceName] || null;
 				resolvedInstanceName = instanceName;
 			} else if (globalContext.instance) {
@@ -243,8 +241,8 @@ export function getConfiguration(
 				secretKey = instance.secretKey;
 				source = "global";
 
-				// Get app from the resolved instance's apps using currentApp from global config
-				const currentAppId = globalConfig.currentApp;
+				// Get app from the resolved instance's apps using currentApp from credentials
+				const currentAppId = credentials.currentApp;
 				if (
 					currentAppId &&
 					instance.apps &&
@@ -253,8 +251,17 @@ export function getConfiguration(
 					app = instance.apps[currentAppId];
 					appId = app.appId;
 					appName = app.name;
-					targets = app.targets || [];
-					ignore = app.ignore || [];
+					// Fall back to global settings if app doesn't have targets/ignore
+					targets =
+						app.targets ||
+						credentials.settings?.defaultTargets ||
+						[];
+					ignore =
+						app.ignore || credentials.settings?.globalIgnore || [];
+				} else {
+					// No specific app, use global settings as defaults
+					targets = credentials.settings?.defaultTargets || [];
+					ignore = credentials.settings?.globalIgnore || [];
 				}
 			}
 		} catch {

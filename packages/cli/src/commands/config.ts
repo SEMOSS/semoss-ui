@@ -1,7 +1,12 @@
 import { Command, Flags, ux } from "@oclif/core";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { ensureSemossGitignore } from "../utils/index.js";
+import { DEFAULT_CONFIG } from "../constants.js";
+import {
+	ensureSemossGitignore,
+	getCurrentContext,
+	loadCredentials,
+} from "../utils/index.js";
 import { Logger, setDefaultLogger } from "../utils/logger.js";
 
 export default class Config extends Command {
@@ -33,31 +38,67 @@ Generate skeleton config
 
 		try {
 			const configPath = path.join(process.cwd(), "smss.json");
+
+			// Load global credentials for default targets/ignore and current instance
+			let globalTargets: string[] = [];
+			let globalIgnore: string[] = [];
+			const batchConfig: Record<string, unknown> = {};
+
+			try {
+				const credentials = loadCredentials();
+				globalTargets = credentials.settings?.defaultTargets || [];
+				globalIgnore = credentials.settings?.globalIgnore || [];
+
+				// Add current instance to batch config
+				const context = getCurrentContext();
+				if (context.instance && context.instanceName) {
+					const instance = context.instance;
+					// Extract module path from full module URL
+					// instance.endpoint is the base URL (e.g., https://semoss.example.com)
+					// instance.module is the full URL (e.g., https://semoss.example.com/Monolith)
+					let modulePath = "/Monolith";
+					if (instance.module && instance.endpoint) {
+						modulePath =
+							instance.module.replace(instance.endpoint, "") ||
+							"/Monolith";
+					} else if (instance.module) {
+						// Parse module path from URL
+						try {
+							const url = new URL(instance.module);
+							modulePath = url.pathname || "/Monolith";
+						} catch {
+							modulePath = "/Monolith";
+						}
+					}
+
+					batchConfig[context.instanceName] = {
+						module: modulePath,
+						app: credentials.currentApp || "",
+						accessKey: instance.accessKey,
+						secretKey: instance.secretKey,
+						endpoint: instance.endpoint || instance.module,
+					};
+				}
+			} catch {
+				// No global config available
+			}
+
+			// Combine DEFAULT_CONFIG with global settings (deduplicated)
 			const skeletonConfig = {
-				targets: [],
-				ignore: [
-					"node_modules/**",
-					"**/.git/**",
-					"**/*.local",
-					"client/**",
-					"**/package.json",
-					"**/package-lock.json",
-					"**/pnpm-lock.yaml",
-					"**/vite.config.ts",
-					"**/vite.config.js",
-					"**/vitest.config.ts",
-					"**/vitest.config.js",
-					"**/tsconfig.json",
-					"**/components.json",
-					"target/**",
-					"test_classes/**",
-					"classes/**",
-					".semoss-backups/**",
-					".semoss-deployments",
-					"smss.json",
-				],
+				targets: Array.from(
+					new Set([
+						...(DEFAULT_CONFIG.targets || []),
+						...globalTargets,
+					]),
+				),
+				ignore: Array.from(
+					new Set([
+						...(DEFAULT_CONFIG.ignore || []),
+						...globalIgnore,
+					]),
+				),
 				deploy: {
-					batch: {},
+					batch: batchConfig,
 				},
 			};
 
@@ -99,10 +140,10 @@ Generate skeleton config
 					) {
 						batch = {
 							...existing.deploy.batch,
-							...skeletonConfig.deploy.batch,
+							...(skeletonConfig.deploy.batch || {}),
 						};
 					} else {
-						batch = skeletonConfig.deploy.batch;
+						batch = skeletonConfig.deploy.batch || {};
 					}
 					// If merging is possible, update mergedConfig
 					mergedConfig = {
