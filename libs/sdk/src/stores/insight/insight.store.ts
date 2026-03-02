@@ -59,6 +59,9 @@ interface InsightStoreInterface {
 		};
 	} | null;
 
+	/** User meta data */
+	meta: Record<string, unknown>;
+
 	/** Options assocaited with the insight */
 	options: {
 		/** Id of an app if associated with the insight */
@@ -80,6 +83,7 @@ export class InsightStore {
 		isReady: false,
 		error: null,
 		system: null,
+		meta: {},
 		options: {
 			appId: "",
 			python: null,
@@ -126,6 +130,54 @@ export class InsightStore {
 	 */
 	get system() {
 		return this._store.system;
+	}
+
+	/**
+	 * Update user meta with a model selection
+	 * @param modelName - The model name (e.g., "text-generation-model", "code-generation-model")
+	 * @param modelId - The model ID to set
+	 */
+	updateUserDefaultModel(modelName: string, modelId: string): void {
+		this._store.meta = {
+			...this._store.meta,
+			[modelName]: modelId,
+		};
+	}
+
+	/**
+	 * Get the default Text Generation model ID (UUID) from user meta
+	 */
+	get defaultTextGenerationModel(): string {
+		const meta = this._store.meta;
+		if (meta && typeof meta === "object") {
+			const tg = meta["text-generation-model"];
+			if (tg) {
+				return typeof tg === "string" ? tg : "";
+			}
+		}
+		return "";
+	}
+
+	/**
+	 * Get the default Code Generation model ID (UUID) from user meta
+	 */
+	get defaultCodeGenerationModel(): string {
+		const meta = this._store.meta;
+		if (meta && typeof meta === "object") {
+			const tg = meta["code-generation-model"];
+			if (tg) {
+				return typeof tg === "string" ? tg : "";
+			}
+		}
+		return "";
+	}
+
+	/**
+	 * Set the user meta with a full meta record
+	 * @param meta - full meta record to store
+	 */
+	setUserDefaultModel(meta: Record<string, unknown>): void {
+		this._store.meta = { ...meta };
 	}
 
 	/** Methods */

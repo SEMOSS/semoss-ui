@@ -1,18 +1,26 @@
 /* eslint-disable */
 /** biome-ignore-all lint/nursery/useSortedClasses: using existing Tailwind order in this file */
 
-import { Folder, Info, Search } from "lucide-react";
-import { useEffect, useId, useMemo, useState } from "react";
+import { Bookmark, ChevronDown, Info, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { useInsight } from "@semoss/sdk/react";
+import { Env, post, useInsight } from "@semoss/sdk/react";
 import {
+	Badge,
 	Button,
 	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
+	Checkbox,
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -21,11 +29,9 @@ import {
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
 	Tabs,
 	TabsContent,
 	TabsList,
@@ -44,6 +50,8 @@ type DocumentLibraryEngine = {
 	id: string;
 	app_name: string;
 	tag: string[];
+	dateCreated: string;
+	favorite: boolean;
 };
 
 type EngineAsset = {
@@ -55,13 +63,27 @@ type EngineAsset = {
 	fileSize?: string;
 };
 
+const formatDateTime = (dateStr: string): string => {
+	const d = new Date(dateStr.replace(" ", "T"));
+	if (isNaN(d.getTime())) return dateStr;
+	return d.toLocaleString(undefined, {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+		hour12: true,
+	});
+};
+
 export const DocumentLibrary = () => {
 	const { t } = useTranslation(["knowledge", "common"]);
-	const centerId = useId();
 	const navigate = useNavigate();
 
 	const [search, setSearch] = useState("");
-	const [centerFilter, setCenterFilter] = useState<string | null>(null);
+	const [centerFilter, setCenterFilter] = useState<string[]>([]);
+	const [sortBy, setSortBy] = useState<"name" | "date">("name");
+	const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 	const [libraryTab, setLibraryTab] = useState<"all" | "global" | "mine">(
 		"all",
 	);
@@ -73,6 +95,7 @@ export const DocumentLibrary = () => {
 	const [engineAssets, setEngineAssets] = useState<EngineAsset[]>([]);
 	const [isLoadingAssets, setIsLoadingAssets] = useState(false);
 	const [assetsError, setAssetsError] = useState<string | null>(null);
+	const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
 	const { actions } = useInsight();
 	const [data, setData] = useState([]);
@@ -162,7 +185,7 @@ export const DocumentLibrary = () => {
 
 	const formatted: DocumentLibraryEngine[] =
 		data[0]?.reduce((acc, item) => {
-			const name = item?.tag || item?.app_name || "Untitled";
+			const name = item?.app_name || item?.tag || "Untitled";
 			acc.push({
 				name,
 				subheader: item.database_name || "",
@@ -174,6 +197,9 @@ export const DocumentLibrary = () => {
 					: item?.tag
 						? [item.tag]
 						: [],
+				dateCreated: item.database_date_created || "",
+				favorite:
+					item.app_favorite === 1 || item.database_favorite === 1,
 			});
 
 			return acc;
@@ -211,9 +237,11 @@ export const DocumentLibrary = () => {
 			let matchesCenter = true;
 			try {
 				matchesCenter =
-					!centerFilter ||
-					item?.tag?.some((a) =>
-						a?.toLowerCase()?.includes(centerFilter?.toLowerCase()),
+					centerFilter.length === 0 ||
+					centerFilter.some((filter) =>
+						item?.tag?.some((a) =>
+							a?.toLowerCase()?.includes(filter.toLowerCase()),
+						),
 					);
 			} catch (e) {
 				console.error(e);
@@ -230,6 +258,14 @@ export const DocumentLibrary = () => {
 			}
 
 			return (matchesSearch && matchesCenter) || matchesName;
+		})
+		.filter((item) => {
+			if (!showFavoritesOnly) return true;
+			return favorites[item.id] ?? item.favorite;
+		})
+		.sort((a, b) => {
+			if (sortBy === "name") return a.name.localeCompare(b.name);
+			return b.dateCreated.localeCompare(a.dateCreated);
 		});
 
 	const documentFiles = useMemo(() => {
@@ -249,6 +285,26 @@ export const DocumentLibrary = () => {
 
 	const getDisplayPath = (f: EngineAsset) => {
 		return f.path || "";
+	};
+
+	const toggleFavorite = async (
+		e: React.MouseEvent,
+		item: DocumentLibraryEngine,
+	) => {
+		e.stopPropagation();
+		const current = favorites[item.id] ?? item.favorite;
+		const next = !current;
+		setFavorites((prev) => ({ ...prev, [item.id]: next }));
+		try {
+			await post<{ success: boolean }>(
+				`${Env.MODULE}/api/auth/engine/setEngineFavorite`,
+				{ engineId: item.id, isFavorite: next },
+				{},
+			);
+		} catch {
+			// Revert on failure
+			setFavorites((prev) => ({ ...prev, [item.id]: current }));
+		}
 	};
 
 	return (
@@ -415,49 +471,140 @@ export const DocumentLibrary = () => {
 											</InputGroupAddon>
 										</InputGroup>
 
-										<div className="grid gap-4 md:grid-cols-2">
-											<div className="space-y-2">
-												<Select
-													value={centerFilter ?? ""}
-													onValueChange={(v) =>
-														setCenterFilter(
-															v === "" ? null : v,
-														)
+										<Popover>
+											<PopoverTrigger asChild>
+												<Button
+													variant="outline"
+													size="sm"
+												>
+													{centerFilter.length === 0
+														? "Tags"
+														: `Tags (${centerFilter.length})`}
+													<ChevronDown className="ml-1 h-4 w-4" />
+												</Button>
+											</PopoverTrigger>
+											<PopoverContent
+												className="w-56 p-0"
+												align="start"
+											>
+												<Command>
+													<CommandInput placeholder="Search tags…" />
+													<CommandList className="max-h-[50vh]">
+														<CommandEmpty>
+															No tags found.
+														</CommandEmpty>
+														<CommandGroup>
+															{centers.map(
+																(center) => (
+																	<CommandItem
+																		key={
+																			center
+																		}
+																		onSelect={() =>
+																			setCenterFilter(
+																				(
+																					prev,
+																				) =>
+																					prev.includes(
+																						center,
+																					)
+																						? prev.filter(
+																								(
+																									c,
+																								) =>
+																									c !==
+																									center,
+																							)
+																						: [
+																								...prev,
+																								center,
+																							],
+																			)
+																		}
+																	>
+																		<Checkbox
+																			checked={centerFilter.includes(
+																				center,
+																			)}
+																			className="mr-2"
+																		/>
+																		{center}
+																	</CommandItem>
+																),
+															)}
+														</CommandGroup>
+													</CommandList>
+												</Command>
+											</PopoverContent>
+										</Popover>
+
+										<Button
+											variant={
+												showFavoritesOnly
+													? "secondary"
+													: "outline"
+											}
+											size="sm"
+											onClick={() =>
+												setShowFavoritesOnly((v) => !v)
+											}
+										>
+											<Bookmark
+												className={
+													showFavoritesOnly
+														? "h-4 w-4 fill-current"
+														: "h-4 w-4"
+												}
+											/>
+											Favorites
+										</Button>
+
+										<Popover>
+											<PopoverTrigger asChild>
+												<Button
+													variant="outline"
+													size="sm"
+												>
+													{sortBy === "name"
+														? "Sort: Name"
+														: "Sort: Date"}
+													<ChevronDown className="ml-1 h-4 w-4" />
+												</Button>
+											</PopoverTrigger>
+											<PopoverContent
+												className="w-44 p-1"
+												align="start"
+											>
+												<Button
+													variant={
+														sortBy === "name"
+															? "secondary"
+															: "ghost"
+													}
+													size="sm"
+													className="w-full justify-start"
+													onClick={() =>
+														setSortBy("name")
 													}
 												>
-													<SelectTrigger
-														id={centerId}
-													>
-														<SelectValue
-															placeholder={t(
-																"knowledge:filters.allCenters",
-															)}
-														/>
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem
-															value={null}
-														>
-															{t(
-																"knowledge:filters.all",
-															)}
-														</SelectItem>
-														{centers.map(
-															(center) => (
-																<SelectItem
-																	key={center}
-																	value={
-																		center
-																	}
-																>
-																	{center}
-																</SelectItem>
-															),
-														)}
-													</SelectContent>
-												</Select>
-											</div>
-										</div>
+													Name (A-Z)
+												</Button>
+												<Button
+													variant={
+														sortBy === "date"
+															? "secondary"
+															: "ghost"
+													}
+													size="sm"
+													className="w-full justify-start"
+													onClick={() =>
+														setSortBy("date")
+													}
+												>
+													Date (newest)
+												</Button>
+											</PopoverContent>
+										</Popover>
 
 										<Button
 											variant="default"
@@ -476,96 +623,81 @@ export const DocumentLibrary = () => {
 					</CardContent>
 				</Card>
 
-				{/* Cards */}
 				{filteredItems.length > 0 ? (
 					<div className="max-h-[70vh] overflow-y-auto pr-1">
-						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+						<div className="flex flex-col gap-2 max-w-3xl">
 							{filteredItems.map((item, index) => (
 								<button
 									type="button"
 									key={item.app_name || item.id || index}
-									className="text-left"
-									onClick={() => {
-										navigate(`/knowledge/${item.id}`);
-									}}
+									className="text-left w-full"
+									onClick={() =>
+										navigate(`/knowledge/${item.id}`)
+									}
 								>
-									<Card className="group flex h-full flex-col transition hover:bg-muted/40">
-										<CardHeader className="space-y-1">
-											<CardTitle className="line-clamp-1 text-base">
-												{item.name}
-											</CardTitle>
-											<CardDescription className="line-clamp-2">
-												{item.subheader ||
-													t(
-														"knowledge:messages.noDescription",
+									<Card className="group transition hover:bg-muted/40">
+										<CardContent className="flex items-center gap-4 py-2">
+											<div className="min-w-0 flex-1">
+												<div className="flex min-w-0 items-center gap-2">
+													<p className="min-w-0 truncate text-sm font-medium">
+														{item.name}
+													</p>
+													{item.tag.length > 0 && (
+														<div className="flex shrink-0 flex-wrap gap-1">
+															{item.tag.map(
+																(tag) => (
+																	<Badge
+																		key={
+																			tag
+																		}
+																		variant="secondary"
+																		className="text-xs"
+																	>
+																		{tag}
+																	</Badge>
+																),
+															)}
+														</div>
 													)}
-											</CardDescription>
-										</CardHeader>
-										{/* <CardContent className="flex items-center justify-between gap-2">
-											<div className="flex gap-1">
+												</div>
+											</div>
+											{item.dateCreated && (
+												<p className="w-44 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+													{formatDateTime(
+														item.dateCreated,
+													)}
+												</p>
+											)}
+											<div className="flex shrink-0 items-center gap-2">
 												<Tooltip>
 													<TooltipTrigger asChild>
 														<Button
 															variant="ghost"
-															size="icon"
-															className="h-8 w-8 text-muted-foreground"
-															onClick={(e) => {
-																e.stopPropagation();
-																setSelectedEngine(
+															size="icon-sm"
+															onClick={(e) =>
+																toggleFavorite(
+																	e,
 																	item,
-																);
-																setDocumentsModalOpen(
-																	true,
-																);
-															}}
-															aria-label="View documents"
+																)
+															}
+															aria-label="Toggle favorite"
 														>
-															<Folder className="h-4 w-4" />
+															<Bookmark
+																className={`h-4 w-4 ${
+																	(favorites[
+																		item.id
+																	] ??
+																	item.favorite)
+																		? "fill-current text-primary"
+																		: "text-muted-foreground"
+																}`}
+															/>
 														</Button>
 													</TooltipTrigger>
 													<TooltipContent>
-														View documents
+														Favorite
 													</TooltipContent>
 												</Tooltip>
-											</div>
-										</CardContent> */}
-
-										<hr
-											className="w-full"
-											style={{
-												borderTop:
-													"1px solid var(--base-border, #E5E5E5)",
-											}}
-										/>
-
-										<CardContent className="mt-auto px-6 ">
-											<div className="flex items-center justify-between gap-2">
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={(e) => {
-																e.stopPropagation();
-																setSelectedEngine(
-																	item,
-																);
-																setDocumentsModalOpen(
-																	true,
-																);
-															}}
-															aria-label="View documents"
-														>
-															<Folder />
-														</Button>
-													</TooltipTrigger>
-													<TooltipContent>
-														{t(
-															"knowledge:actions.viewDocuments",
-														)}
-													</TooltipContent>
-												</Tooltip>
-
 												<Button
 													size="sm"
 													variant="outline"
