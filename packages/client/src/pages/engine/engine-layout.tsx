@@ -30,6 +30,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
 	const { adminMode } = useSettings();
+	const isAdminContext = adminMode && configStore.store.user.admin;
 
 	// filter metakeys to the ones we want
 	const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -121,22 +122,30 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 
 	// get the user's role
 	const getUserEnginePermission = useAPI(
-		!adminMode && engineId ? ["getUserEnginePermission", engineId] : null,
+		!isAdminContext && engineId
+			? ["getUserEnginePermission", engineId]
+			: null,
 	);
 
 	// get the tabs based on permission and database type
 	const tabs = useMemo(() => {
 		// must be valid
+		if (!route) {
+			return [];
+		}
+
 		if (
-			!route ||
-			getUserEnginePermission.status !== "SUCCESS" ||
-			!getUserEnginePermission.data
+			!isAdminContext &&
+			(getUserEnginePermission.status !== "SUCCESS" ||
+				!getUserEnginePermission.data)
 		) {
 			return [];
 		}
 
 		// check the permission
-		const permission = getUserEnginePermission.data.permission;
+		const permission = isAdminContext
+			? "OWNER"
+			: getUserEnginePermission.data.permission;
 
 		// get the routes based on permission
 		let filteredTabs = route.specific.filter((t) =>
@@ -158,6 +167,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		return filteredTabs;
 	}, [
 		route,
+		isAdminContext,
 		getUserEnginePermission.status,
 		getUserEnginePermission.data
 			? getUserEnginePermission.data.permission
@@ -189,12 +199,15 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	}, [route, tabs, resolvedPath, pathname]);
 
 	// if the engine isn't found, navigate to the Home Page
-	if (!engineId || getUserEnginePermission.status === "ERROR") {
+	if (
+		!engineId ||
+		(!isAdminContext && getUserEnginePermission.status === "ERROR")
+	) {
 		return <Navigate to={`${route.path}`} replace />;
 	}
 
 	// show a loading screen when it is pending
-	if (getUserEnginePermission.status !== "SUCCESS") {
+	if (!isAdminContext && getUserEnginePermission.status !== "SUCCESS") {
 		return (
 			<div>
 				<Spinner className="size-8" />
@@ -231,7 +244,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 				name: route.name,
 				active: {
 					id: engineId,
-					role: getUserEnginePermission.data.permission,
+					role: isAdminContext
+						? "OWNER"
+						: getUserEnginePermission.data.permission,
 					name:
 						(getEngineMetadata.data?.database_name as string) || "",
 					metadata: values,
@@ -258,9 +273,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 								}
 								className="gap-0 bg-transparent"
 							>
-								<div className="w-[80%]">
-									<TabsList className="gap-2">
-										{tabs.map((t, idx) => (
+								<div className="w-full overflow-x-auto md:w-[80%]">
+									<TabsList className="w-max flex-nowrap gap-2">
+										{tabs.map((t) => (
 											<TabsTrigger
 												key={t.path}
 												value={t.path}
