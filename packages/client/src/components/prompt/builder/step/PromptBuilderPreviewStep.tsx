@@ -7,19 +7,11 @@ export const PromptBuilderPreviewStep = (props: {
     builder: Builder;
     setBuilderValue: (builderStepKey: string, value: Token[]) => void;
     isLLMVersionSelected: boolean;
-    LLMResponse: string;
     LLMTokens: Token[];
 }) => {
     const getBuilderTokens = (builder: Builder) => {
         return Array.isArray(builder.inputs.value) ? builder.inputs.value : [];
     };
-
-    console.log(
-        'Preview Tokens:',
-        props.isLLMVersionSelected
-            ? props.LLMTokens
-            : getBuilderTokens(props.builder),
-    );
 
     return (
         <StyledStepPaper elevation={2} square>

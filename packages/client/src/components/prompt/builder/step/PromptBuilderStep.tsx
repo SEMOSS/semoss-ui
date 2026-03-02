@@ -57,7 +57,6 @@ export const PromptBuilderStep = (props: {
             return (
                 <PromptBuilderPreviewStep
                     {...props}
-                    LLMResponse={LLMResponse}
                     LLMTokens={LLMTokens}
                     isLLMVersionSelected={isLLMVersionSelected}
                 />

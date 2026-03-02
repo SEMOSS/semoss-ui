@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Builder, Token } from '../../prompt.types';
 import {
     styled,
@@ -203,7 +203,7 @@ export const PromptBuilderInputTypeStep = (props: {
         return matches;
     };
 
-    const handleLLMResponse = (LLMResponse: string) => {
+    const handleLLMResponse = useCallback((LLMResponse: string) => {
         const tokens = LLMResponse.split(/(\s+|\{[^}]+\})/g)
             .filter(Boolean)
             .map((part, index) => {
@@ -220,14 +220,14 @@ export const PromptBuilderInputTypeStep = (props: {
             });
         props.setLLMResponse(LLMResponse);
         props.setLLMTokens(tokens);
-    };
+    }, [props.setLLMResponse, props.setLLMTokens]);
 
     // Call handleLLMResponse with the LLM response when the LLM version is selected to set the builder values
     useEffect(() => {
         if (props.isLLMVersionSelected) {
             handleLLMResponse(LllmPromptResponse);
         }
-    }, [LllmPromptResponse, props.isLLMVersionSelected]);
+    }, [LllmPromptResponse, props.isLLMVersionSelected, handleLLMResponse]);
 
     // Extract the words in braces from the LLM response
     const wordsInBraces = extractCategorisedLabels(LllmPromptResponse);
