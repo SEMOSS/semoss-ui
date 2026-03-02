@@ -1,360 +1,31 @@
-import {
-	BarChartRounded,
-	Bookmark,
-	BookmarkBorder,
-	CodeRounded,
-	DashboardRounded,
-	MoreVert,
-	OpenInNewOutlined,
-} from "@mui/icons-material";
 import dayjs from "dayjs";
-import React, { useEffect, useMemo, useState } from "react";
+import {
+	Bookmark,
+	BookmarkCheck,
+	ExternalLink,
+	MoreVertical,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+	Badge,
 	Button,
 	Card,
-	type CardProps,
-	IconButton,
-	Link,
-	Menu,
+	CardContent,
+	CardFooter,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	P,
 	Skeleton,
-	styled,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
-import ImageSkeleton from "@/assets/img/Image_Skeleton.svg";
+	Small,
+	toast,
+} from "@semoss/ui/next";
 import { AppDeleteModal } from "@/components/app";
 import { AddAppCloneModal } from "@/components/app/save-app/AddAppCloneModal";
 import { formatToDataTestId, removeUnderscores } from "@/utility";
 import type { AppMetadata } from "./app.types";
-
-const StyledTileCard = styled(
-	React.forwardRef<HTMLDivElement, CardProps & { disabled: boolean }>(
-		({ disabled, ...props }, ref) => (
-			<div ref={ref}>
-				<Card {...props} />
-			</div>
-		),
-	),
-)<{ disabled: boolean }>(({ disabled, theme }) => ({
-	minHeight: "247px",
-	display: "flex",
-	flexDirection: "column",
-	height: "100%",
-	overflow: "hidden",
-	"&:hover": {
-		cursor: disabled ? "default" : "pointer",
-		boxShadow: "none",
-	},
-	borderRadius: theme.shape.borderRadius,
-	"& .MuiCard-root": {
-		height: "100%",
-		display: "flex",
-		flexDirection: "column",
-		overflow: "hidden",
-	},
-}));
-
-const StyledContainer = styled("div")({
-	position: "relative",
-});
-
-const StyledOverlayContent = styled("div")(({ theme }) => ({
-	position: "absolute",
-	top: 0,
-	right: 0,
-	display: "flex",
-	justifyContent: "flex-end",
-	alignItems: "center",
-	height: "77px",
-	paddingRight: theme.spacing(2),
-}));
-
-const StyledHeaderActions = styled("div")(({ theme }) => ({
-	display: "flex",
-	gap: theme.spacing(1),
-}));
-
-const StyledPublishedByContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	justifyContent: "flex-start",
-	alignItems: "center",
-	gap: theme.spacing(0.5),
-	alignSelf: "stretch",
-	color: theme.palette.text.secondary,
-	height: "24px",
-}));
-
-const StyledPublishedByLabel = styled(Typography)(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	flex: "1 0 0",
-	fontSize: "12px",
-	color: theme.palette.text.disabled,
-	fontFamily: "Roboto",
-	fontStyle: "normal",
-	fontWeight: "400",
-	letterSpacing: "0.4px",
-}));
-
-const StyledCardDescription = styled(Typography)(({ theme }) => ({
-	margin: 0,
-	fontSize: "13px",
-	fontStyle: "normal",
-	fontWeight: 400,
-	lineHeight: "20px",
-	letterSpacing: "0.4px",
-	fontFamily: "Roboto",
-	display: "-webkit-box",
-	WebkitLineClamp: 2,
-	WebkitBoxOrient: "vertical",
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	wordWrap: "break-word",
-	color: theme.palette.text.secondary,
-	minHeight: "40px",
-}));
-
-const StyledTitleRow = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(1),
-	width: "100%",
-	minHeight: "46px",
-}));
-
-const StyledTitleText = styled("div")(({ theme }) => ({
-	fontSize: "18px",
-	fontWeight: 600,
-	lineHeight: "1.3",
-	color: theme.palette.text.primary,
-	flex: "1 1 auto",
-	minWidth: 0,
-	display: "-webkit-box",
-	WebkitLineClamp: 2,
-	WebkitBoxOrient: "vertical",
-	overflow: "hidden",
-}));
-
-const StyledInlineTag = styled("span")(({ theme }) => ({
-	fontSize: "11px",
-	textTransform: "uppercase",
-	letterSpacing: "0.08em",
-	color: theme.palette.text.secondary,
-	background: theme.palette.grey[100],
-	borderRadius: "999px",
-	padding: theme.spacing(0.25, 0.75),
-	whiteSpace: "nowrap",
-}));
-
-const StyledTagRow = styled("div", {
-	shouldForwardProp: (prop) => prop !== "hasTags",
-})<{ hasTags: boolean }>(({ hasTags }) => ({
-	width: "100%",
-	display: "flex",
-	alignItems: "center",
-	height: "24px",
-	minHeight: "24px",
-	visibility: hasTags ? "visible" : "hidden",
-	pointerEvents: hasTags ? "auto" : "none",
-}));
-
-const StyledTagScroll = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(1),
-	overflowX: "auto",
-	whiteSpace: "nowrap",
-	width: "100%",
-	scrollbarWidth: "thin",
-	height: "20px",
-}));
-
-const StyledCardContent = styled(Card.Content)(({ theme }) => ({
-	"&.MuiCardContent-root": {
-		padding: 0,
-		margin: 0,
-		// gap: '0px',//default spacing is 8px
-	},
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(2),
-	width: "100%",
-	flex: 1,
-	minHeight: 0,
-}));
-
-const StyledCardActions = styled(Card.Actions)(({ theme }) => ({
-	display: "flex",
-	padding: theme.spacing(0.5, 2),
-	alignItems: "center",
-	justifyContent: "flex-start",
-	gap: theme.spacing(0.75),
-	alignSelf: "stretch",
-	width: "100%",
-	margin: 0,
-	"&.MuiCardActions-root": {
-		padding: theme.spacing(0.5, 2),
-		margin: 0,
-		position: "relative",
-		gap: theme.spacing(0.75),
-	},
-	marginTop: "auto",
-	"&.MuiCardActions-spacing": {
-		"> :not(style) ~ :not(style)": {
-			marginLeft: 0,
-		},
-	},
-}));
-
-const StyledPlaceholder = styled("div")({
-	height: "20px",
-});
-
-const StyledMainDiv = styled("div", {
-	shouldForwardProp: (prop) => prop !== "layout",
-})<{ layout: "fixed" | "responsive" }>(({ layout }) => ({
-	width: layout === "responsive" ? "100%" : "322px",
-	minWidth: layout === "responsive" ? "240px" : "322px",
-	height: "100%",
-	minHeight: "307px",
-}));
-
-const StyledSkeletonImage = styled("div")(({ theme }) => ({
-	borderRadius: "4px",
-	backgroundColor: theme.palette.grey[500],
-	position: "relative",
-	overflow: "hidden",
-	display: "flex",
-}));
-
-const StyledSkeletonContent = styled("div")(({ theme }) => ({
-	display: "flex",
-	padding: theme.spacing(2),
-	flexDirection: "column",
-	gap: theme.spacing(1.5),
-	alignItems: "flex-start",
-}));
-
-const StyledSkeletonChip = styled("div")({
-	display: "flex",
-	flexDirection: "row",
-});
-
-const StyledSkeletonDate = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(0.5),
-	flexDirection: "row",
-}));
-
-const StyledSkeletonFooter = styled("div")({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-	width: "100%",
-});
-
-const StyledContent = styled("div")(({ theme }) => ({
-	display: "flex",
-	padding: theme.spacing(2),
-	flexDirection: "column",
-	gap: theme.spacing(1.5),
-	alignItems: "flex-start",
-	borderTopLeftRadius: theme.shape.borderRadius,
-	borderTopRightRadius: theme.shape.borderRadius,
-	position: "relative",
-	flex: 1,
-	minHeight: 0,
-}));
-
-const StyledActionGroup = styled("div")(({ theme }) => ({
-	display: "grid",
-	gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-	gap: theme.spacing(1),
-	width: "100%",
-}));
-
-const StyledMetaSection = styled("div")(({ theme }) => ({
-	width: "100%",
-	paddingBottom: theme.spacing(0.5),
-	minHeight: "44px",
-}));
-
-const StyledMetaGrid = styled("div")(({ theme }) => ({
-	display: "grid",
-	gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-	gap: theme.spacing(1.5, 2),
-}));
-
-const StyledMetaItem = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	gap: "4px",
-});
-
-const StyledMetaLabel = styled("span")(({ theme }) => ({
-	fontSize: "10px",
-	letterSpacing: "0.08em",
-	textTransform: "uppercase",
-	color: theme.palette.text.disabled,
-}));
-
-const StyledMetaValue = styled("span")(({ theme }) => ({
-	fontSize: "13px",
-	fontWeight: 500,
-	color: theme.palette.text.primary,
-}));
-
-const StyledContentDivider = styled("div")(() => ({
-	width: "100%",
-	borderTop: "1px solid #f1f5f9",
-}));
-
-const StyledContentSpacer = styled("div")({
-	flex: 1,
-});
-
-const SkeletonMain = styled(Skeleton)(({ theme }) => ({
-	backgroundImage: `url(${ImageSkeleton})`,
-	backgroundRepeat: "no-repeat",
-	backgroundPosition: "center",
-	backgroundSize: "contain",
-	position: "relative",
-	top: theme.spacing(0.625), // 5px
-	"&.MuiSkeleton-root": {
-		backgroundColor: theme.palette.secondary.light,
-	},
-}));
-
-const SkeletonIcon = styled(Skeleton)(({ theme }) => ({
-	borderRadius: theme.shape.borderRadius, // 8px (assuming theme default is 8)
-	background: `linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, ${theme.palette.grey[600]} 50%)`,
-	position: "absolute",
-	top: theme.spacing(1), // 8px
-	right: theme.spacing(2), // 16px
-}));
-
-const SkeletonDefault = styled(Skeleton)(({ theme }) => ({
-	borderRadius: "17.5px",
-	background: `linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, ${theme.palette.grey[600]} 50%)`,
-}));
-
-const SkeletonMoreVertIcon = styled(Skeleton)(({ theme }) => ({
-	borderRadius: "8px",
-	background: `linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, ${theme.palette.grey[600]} 50%)`,
-}));
-
-const StyledMenu = styled(Menu)(({ theme }) => ({
-	".MuiPopover-paper": {
-		display: "flex",
-		alignItems: "center",
-		borderRadius: 4,
-		background: theme.palette.background.paper,
-		boxShadow: "0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
-	},
-}));
 
 interface AppTileCardProps {
 	/**
@@ -439,44 +110,14 @@ export const AppTileCard = (props: AppTileCardProps) => {
 		layout = "fixed",
 	} = props;
 
-	const notification = useNotification();
 	const navigate = useNavigate();
 
-	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isAppDeleteModalOpen, setIsAppDeleteModalOpen] = useState(false);
-	const [loading, setLoading] = useState(true); // Add loading state
-
-	const open = Boolean(anchorEl);
-	const navigateApp = (appId: string) => {
-		if (!appId) {
-			return;
-		}
-
-		navigate(`/app/${appId}`);
-	};
-	const copyProjectId = (projectId: string) => {
-		try {
-			navigator.clipboard.writeText(projectId);
-
-			notification.add({
-				color: "success",
-				message: "Successfully copied to clipboard",
-			});
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
-		}
-	};
+	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		if (isLoading) {
-			setLoading(true);
-		} else {
-			setLoading(false);
-		}
+		setLoading(Boolean(isLoading));
 	}, [isLoading]);
 
 	const tags = app.tag
@@ -485,6 +126,22 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	const showBookmark = !systemApp && !isDiscoverable;
 	const showMenu = app.project_created_by !== "SYSTEM";
 	const showInfo = app.project_created_by !== "SYSTEM";
+
+	const navigateApp = (appId: string) => {
+		if (!appId) {
+			return;
+		}
+		navigate(`/app/${appId}`);
+	};
+
+	const copyProjectId = (projectId: string) => {
+		try {
+			navigator.clipboard.writeText(projectId);
+			toast.success("Successfully copied to clipboard");
+		} catch {
+			toast.error("Unable to copy to clipboard");
+		}
+	};
 
 	// --- Gradient avatar logic (from ModelTileCard) ---
 	function hashString(str: string): number {
@@ -497,7 +154,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	}
 
 	function pickGradient(name: string): string {
-		// Subtle pastel gradient derived from hash: lower saturation + higher lightness.
 		const base = hashString(name) % 360;
 		const hue2 = (base + 35) % 360;
 		const hue3 = (base + 70) % 360;
@@ -510,28 +166,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
 		return chars.slice(0, 3).join("");
 	}
 
-	const StyledAppAvatar = styled("div")<{ gradientBg: string }>(
-		({ gradientBg }) => ({
-			display: "flex",
-			height: "77px",
-			width: "100%",
-			alignItems: "center",
-			justifyContent: "center",
-			fontWeight: 600,
-			fontSize: "32px",
-			color: "#fff",
-			borderRadius: "4px",
-			textTransform: "uppercase",
-			background: gradientBg,
-			boxShadow:
-				"0 0 0 1px rgba(0,0,0,0.08) inset, 0 2px 4px -1px rgba(0,0,0,0.12)",
-			transition: "filter 0.25s ease",
-			userSelect: "none",
-			WebkitFontSmoothing: "antialiased",
-		}),
-	);
-
-	// pretty format the data
 	const createdDate = useMemo(() => {
 		const d = dayjs(app.project_date_created);
 		if (!d.isValid()) {
@@ -540,6 +174,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
 		return d.format("MMM D, YYYY");
 	}, [app.project_date_created]);
+
 	const lastEditedDate = useMemo(() => {
 		const d = dayjs(app.project_date_last_edited);
 		if (!d.isValid()) {
@@ -549,446 +184,254 @@ export const AppTileCard = (props: AppTileCardProps) => {
 		return d.format("MMM D, YYYY");
 	}, [app.project_date_last_edited]);
 
-	/**
-	 * @name findAppImage
-	 * @params appType
-	 * @returns image
-	 */
+	const cardWidthClass =
+		layout === "responsive"
+			? "min-w-[240px] w-full"
+			: "min-w-[322px] w-[322px]";
 
-	/**
-	 * @name findAppDetails
-	 * @params appType
-	 * @returns set app type description
-	 */
-	const findAppDetails = (appType: string) => {
-		if (appType === "BLOCKS") {
-			return (
-				<StyledPublishedByContainer>
-					<DashboardRounded />
-					<StyledPublishedByLabel variant="body2">
-						Drag & Drop App
-					</StyledPublishedByLabel>
-				</StyledPublishedByContainer>
-			);
-		} else if (appType === "CODE") {
-			return (
-				<StyledPublishedByContainer>
-					<CodeRounded />
-					<StyledPublishedByLabel variant="body2">
-						Code App
-					</StyledPublishedByLabel>
-				</StyledPublishedByContainer>
-			);
-		} else if (appType === "INSIGHTS") {
-			return (
-				<StyledPublishedByContainer>
-					<BarChartRounded />
-					<StyledPublishedByLabel variant="body2">
-						Insight App
-					</StyledPublishedByLabel>
-				</StyledPublishedByContainer>
-			);
-		} else {
-			//if no app_type is defined default to Code App
-			return (
-				<StyledPublishedByContainer>
-					<CodeRounded />
-					<StyledPublishedByLabel variant="body2">
-						Code App
-					</StyledPublishedByLabel>
-				</StyledPublishedByContainer>
-			);
-		}
-	};
-
-	const appDetails = findAppDetails(appType);
-
-	// Show skeleton when image is loading or when showSkeleton is true
 	if ((loading && isLoading) || showSkeleton) {
 		return (
-			<StyledMainDiv layout={layout}>
-				<StyledTileCard disabled>
-					{/* Skeleton for the favorite icon */}
-					<StyledContainer>
-						<StyledOverlayContent></StyledOverlayContent>
-					</StyledContainer>
-
-					{/* Skeleton for the image */}
-					<StyledSkeletonImage>
-						<SkeletonMain
-							variant="rectangular"
-							width="100%"
-							height="77px"
-						/>
-						<SkeletonIcon
-							variant="rectangular"
-							width="32px"
-							height="32px"
-						/>
-					</StyledSkeletonImage>
-
-					<StyledSkeletonContent>
-						{/* Skeleton for the header name */}
-						<SkeletonDefault
-							variant="rectangular"
-							width="60%"
-							height="20px"
-						/>
-
-						{/* Skeleton for the description */}
-						<SkeletonDefault
-							variant="rectangular"
-							width="80%"
-							height="12px"
-						/>
-						<SkeletonDefault
-							variant="rectangular"
-							width="40%"
-							height="12px"
-						/>
-
-						{/* Skeleton for the chips */}
-						<StyledSkeletonChip>
-							<SkeletonDefault
-								variant="rectangular"
-								width="75px"
-								height="24px"
-							/>
-							<SkeletonDefault
-								variant="rectangular"
-								width="75px"
-								height="24px"
-							/>
-							<SkeletonDefault
-								variant="rectangular"
-								width="75px"
-								height="24px"
-							/>
-						</StyledSkeletonChip>
-
-						{/* Skeleton for the created date */}
-						<StyledSkeletonDate>
-							<SkeletonDefault
-								variant="rectangular"
-								width="16px"
-								height="16px"
-							/>
-							<SkeletonDefault
-								variant="rectangular"
-								width="120px"
-								height="16px"
-							/>
-						</StyledSkeletonDate>
-
-						{/* Skeleton for the actions */}
-						<StyledSkeletonFooter>
-							{/* Skeleton for the Open button */}
-
-							<SkeletonDefault
-								variant="rectangular"
-								width="123px"
-								height="30px"
-							/>
-							<SkeletonDefault
-								variant="rectangular"
-								width="123px"
-								height="30px"
-							/>
-
-							{/* Skeleton for the MoreVert icon */}
-
-							<SkeletonMoreVertIcon
-								variant="rectangular"
-								width="28px"
-								height="28px"
-							/>
-						</StyledSkeletonFooter>
-					</StyledSkeletonContent>
-				</StyledTileCard>
-			</StyledMainDiv>
+			<div className={cardWidthClass}>
+				<Card className="h-full overflow-hidden p-0">
+					<div className="relative h-[77px] w-full">
+						<Skeleton className="h-full w-full" />
+						<Skeleton className="-translate-y-1/2 absolute top-1/2 right-2 size-8" />
+					</div>
+					<CardContent className="flex flex-1 flex-col gap-3 px-4 py-4">
+						<Skeleton className="h-6 w-2/3" />
+						<Skeleton className="h-4 w-full" />
+						<Skeleton className="h-4 w-3/4" />
+						<div className="grid grid-cols-2 gap-3">
+							<Skeleton className="h-4 w-24" />
+							<Skeleton className="h-4 w-24" />
+						</div>
+						<Skeleton className="h-6 w-full" />
+						<div className="flex-1" />
+					</CardContent>
+					<div className="border-t" />
+					<CardFooter className="px-4 py-2">
+						<div className="grid w-full grid-cols-2 gap-2">
+							<Skeleton className="h-8 w-full" />
+							<Skeleton className="h-8 w-full" />
+						</div>
+					</CardFooter>
+				</Card>
+			</div>
 		);
 	}
 
 	return (
-		<StyledMainDiv layout={layout}>
-			<StyledTileCard
-				disabled={!href}
-				style={{ position: "relative" }}
+		<div className={cardWidthClass}>
+			<Card
+				className="h-full cursor-pointer overflow-hidden p-0"
+				onClick={() => {
+					if (href) {
+						navigate(href.replace(/^#/, ""));
+					}
+				}}
 				data-testid={formatToDataTestId(
 					`appTileCard-${app.project_name}-tile`,
 				)}
 			>
-				<StyledContainer>
-					<StyledOverlayContent>
-						<StyledHeaderActions>
-							{showBookmark ? (
-								<IconButton
-									size="small"
-									title={
-										isFavorite
-											? `Unbookmark ${app.project_name ? app.project_name : ""}`
-											: `Bookmark ${app.project_name ? app.project_name : ""}`
-									}
-									onClick={(e) => {
-										e.stopPropagation();
-										favorite(isFavorite);
-									}}
-								>
-									{isFavorite ? (
-										<Bookmark color="primary" />
-									) : (
-										<BookmarkBorder />
-									)}
-								</IconButton>
-							) : null}
-							{showMenu ? (
-								<IconButton
-									size="small"
-									onClick={(e) => {
-										e.preventDefault();
-										e.stopPropagation();
-										setAnchorEl(
-											e.currentTarget as HTMLElement,
-										);
-									}}
-								>
-									<MoreVert />
-								</IconButton>
-							) : null}
-						</StyledHeaderActions>
-					</StyledOverlayContent>
-				</StyledContainer>
-				<Link
-					href={href}
-					rel="noopener noreferrer"
-					color="inherit"
-					underline="none"
+				<div
+					className="relative h-[77px] w-full"
+					style={{
+						background:
+							props.background ||
+							pickGradient(app.project_name || appType || "App"),
+					}}
 				>
-					{loading && isLoading ? (
-						// Show skeleton for image when loading
-						<StyledSkeletonImage>
-							<SkeletonMain
-								variant="rectangular"
-								width="100%"
-								height="77px"
-							/>
-						</StyledSkeletonImage>
-					) : (
-						<StyledAppAvatar
-							gradientBg={pickGradient(
-								app.project_name || appType || "App",
-							)}
-						>
-							{buildInitials(
-								app.project_name || appType || "App",
-							)}
-						</StyledAppAvatar>
-					)}
-					<StyledContent>
-						<StyledTitleRow>
-							<StyledTitleText
-								title={removeUnderscores(app?.project_name)}
+					<div className="flex h-full items-center justify-center font-semibold text-2xl text-white">
+						{buildInitials(app.project_name || appType || "App")}
+					</div>
+					<div className="-translate-y-1/2 absolute top-1/2 right-2 flex items-center gap-2">
+						{showBookmark ? (
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								title={
+									isFavorite
+										? `Unbookmark ${app.project_name ?? ""}`
+										: `Bookmark ${app.project_name ?? ""}`
+								}
+								onClick={(e) => {
+									e.stopPropagation();
+									favorite?.(!isFavorite);
+								}}
 							>
-								{removeUnderscores(app?.project_name)}
-							</StyledTitleText>
-						</StyledTitleRow>
-
-						<StyledCardContent>
-							<StyledCardDescription variant={"caption"}>
-								{app.description
-									? app.description
-									: "No description available"}
-							</StyledCardDescription>
-							{(createdDate || lastEditedDate) && (
-								<StyledMetaSection>
-									<StyledMetaGrid>
-										{createdDate && (
-											<StyledMetaItem>
-												<StyledMetaLabel>
-													Published
-												</StyledMetaLabel>
-												<StyledMetaValue>
-													{createdDate}
-												</StyledMetaValue>
-											</StyledMetaItem>
-										)}
-										{lastEditedDate && (
-											<StyledMetaItem>
-												<StyledMetaLabel>
-													Last Edited
-												</StyledMetaLabel>
-												<StyledMetaValue>
-													{lastEditedDate}
-												</StyledMetaValue>
-											</StyledMetaItem>
-										)}
-									</StyledMetaGrid>
-								</StyledMetaSection>
-							)}
-							<StyledTagRow hasTags={tags.length > 0}>
-								{tags.length > 0 ? (
-									<StyledTagScroll>
-										{tags.map((tag) => (
-											<StyledInlineTag
-												key={`${app.project_id}-${tag}`}
-											>
-												{String(tag)}
-											</StyledInlineTag>
-										))}
-									</StyledTagScroll>
-								) : null}
-							</StyledTagRow>
-							{systemApp && !appDetails && <StyledPlaceholder />}
-							<StyledContentSpacer />
-						</StyledCardContent>
-						<StyledContentDivider />
-						<StyledCardActions disableSpacing>
-							<StyledActionGroup>
-								{!href ? (
-									<Button
-										variant="outlined"
-										size="small"
-										fullWidth
-										onClick={onAction}
-										style={
-											showInfo
-												? undefined
-												: { gridColumn: "1 / -1" }
-										}
-										endIcon={
-											<OpenInNewOutlined fontSize="small" />
-										}
-									>
-										Open
-									</Button>
+								{isFavorite ? (
+									<BookmarkCheck className="size-4" />
 								) : (
-									<Button
-										variant="outlined"
-										size="small"
-										fullWidth
-										onClick={(e) => {
-											e.preventDefault();
-											e.stopPropagation();
-											if (href) {
-												window.open(
-													href,
-													"_blank",
-													"noopener,noreferrer",
-												);
-											}
-										}}
-										style={
-											showInfo
-												? undefined
-												: { gridColumn: "1 / -1" }
-										}
-										endIcon={
-											<OpenInNewOutlined fontSize="small" />
-										}
-									>
-										Open
-									</Button>
+									<Bookmark className="size-4" />
 								)}
-								{showInfo ? (
+							</Button>
+						) : null}
+						{showMenu ? (
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
 									<Button
-										variant="outlined"
-										size="small"
-										fullWidth
-										onClick={(e) => {
-											e.preventDefault();
-											navigateApp(app.project_id);
+										variant="ghost"
+										size="icon-sm"
+										onClick={(e) => e.stopPropagation()}
+									>
+										<MoreVertical className="size-4" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem
+										onClick={(event) => {
+											event.stopPropagation();
+											navigate(
+												`/app/${app.project_id}/dashboard`,
+											);
 										}}
 									>
-										Info
-									</Button>
-								) : null}
-							</StyledActionGroup>
-						</StyledCardActions>
-					</StyledContent>
-				</Link>
-				<StyledMenu
-					anchorEl={anchorEl}
-					open={open}
-					onClose={() => {
-						setAnchorEl(null);
-					}}
-					anchorOrigin={{
-						vertical: "bottom", // Anchor to the bottom of the card
-						horizontal: "right", // Anchor to the right of the card
-					}}
-					transformOrigin={{
-						vertical: "top", // Transform from the top of the menu
-						horizontal: "right", // Transform from the right of the menu
-					}}
-				>
-					<Menu.Item
-						value="edit"
-						onClick={(event: React.MouseEvent) => {
-							navigate(`/app/${app.project_id}/dashboard`);
-							setAnchorEl(null);
-							event.stopPropagation();
-						}}
-					>
-						View Dashboard
-					</Menu.Item>
-					<Menu.Item
-						value="copy"
-						onClick={() => {
-							copyProjectId(app.project_id);
-							setAnchorEl(null);
-						}}
-					>
-						Copy App ID
-					</Menu.Item>
-					{app?.user_permission && app.user_permission < 2 && (
-						<Menu.Item
-							value="clone"
-							onClick={() => {
-								setIsUploadOpen(true);
+										View Dashboard
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={(event) => {
+											event.stopPropagation();
+											copyProjectId(app.project_id);
+										}}
+									>
+										Copy App ID
+									</DropdownMenuItem>
+									{app?.user_permission &&
+										app.user_permission < 2 && (
+											<DropdownMenuItem
+												onClick={(event) => {
+													event.stopPropagation();
+													setIsUploadOpen(true);
+												}}
+											>
+												Clone This App
+											</DropdownMenuItem>
+										)}
+									{app?.user_permission &&
+										app.user_permission < 2 && (
+											<DropdownMenuItem
+												onClick={(event) => {
+													event.stopPropagation();
+													setIsAppDeleteModalOpen(
+														true,
+													);
+												}}
+											>
+												Delete App
+											</DropdownMenuItem>
+										)}
+								</DropdownMenuContent>
+							</DropdownMenu>
+						) : null}
+					</div>
+				</div>
+				<CardContent className="flex flex-1 flex-col gap-3 px-4 py-4">
+					<div className="line-clamp-2 min-h-[46px] font-semibold text-lg leading-snug">
+						{removeUnderscores(app.project_name)}
+					</div>
+					<P className="line-clamp-2 min-h-[40px] text-muted-foreground text-sm">
+						{app.description
+							? app.description
+							: "No description available"}
+					</P>
+					{(createdDate || lastEditedDate) && (
+						<div className="grid min-h-[44px] grid-cols-2 gap-3">
+							{createdDate && (
+								<div className="flex flex-col gap-1">
+									<Small className="text-muted-foreground uppercase">
+										Published
+									</Small>
+									<div className="font-medium text-sm">
+										{createdDate}
+									</div>
+								</div>
+							)}
+							{lastEditedDate && (
+								<div className="flex flex-col gap-1">
+									<Small className="text-muted-foreground uppercase">
+										Last Edited
+									</Small>
+									<div className="font-medium text-sm">
+										{lastEditedDate}
+									</div>
+								</div>
+							)}
+						</div>
+					)}
+					{tags.length > 0 ? (
+						<div className="flex h-6 w-full items-center">
+							<div className="flex w-full items-center gap-2 overflow-x-auto whitespace-nowrap">
+								{tags.map((tag) => (
+									<Badge
+										key={`${app.project_id}-${tag}`}
+										variant="secondary"
+										className="text-[11px] uppercase"
+									>
+										{String(tag)}
+									</Badge>
+								))}
+							</div>
+						</div>
+					) : null}
+					<div className="flex-1" />
+				</CardContent>
+				<div className="border-t" />
+				<CardFooter className="px-4 py-2">
+					<div className="grid w-full grid-cols-2 gap-2">
+						<Button
+							variant="outline"
+							size="sm"
+							className={showInfo ? "" : "col-span-2"}
+							onClick={(e) => {
+								e.stopPropagation();
+								if (!href) {
+									onAction();
+									return;
+								}
+								window.open(
+									href,
+									"_blank",
+									"noopener,noreferrer",
+								);
 							}}
 						>
-							Clone This App
-						</Menu.Item>
-					)}
-					{app?.user_permission && app.user_permission < 2 && (
-						<Menu.Item
-							value="delete"
-							onClick={() => {
-								setIsAppDeleteModalOpen(true);
-							}}
-						>
-							Delete App
-						</Menu.Item>
-					)}
-				</StyledMenu>
-				<AppDeleteModal
-					isOpen={isAppDeleteModalOpen}
-					onClose={() => {
-						setIsAppDeleteModalOpen(false);
-						setAnchorEl(null);
-					}}
+							Open
+							<ExternalLink className="size-4" />
+						</Button>
+						{showInfo ? (
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={(e) => {
+									e.stopPropagation();
+									navigateApp(app.project_id);
+								}}
+							>
+								Info
+							</Button>
+						) : null}
+					</div>
+				</CardFooter>
+			</Card>
+			<AppDeleteModal
+				isOpen={isAppDeleteModalOpen}
+				onClose={() => {
+					setIsAppDeleteModalOpen(false);
+				}}
+				appId={app.project_id}
+				onDelete={() => {
+					onDelete?.();
+				}}
+			/>
+			{isUploadOpen ? (
+				<AddAppCloneModal
+					open={isUploadOpen}
 					appId={app.project_id}
-					onDelete={() => {
-						onDelete();
+					handleClose={() => {
+						setIsUploadOpen(false);
 					}}
 				/>
-				{isUploadOpen ? (
-					<AddAppCloneModal
-						open={isUploadOpen}
-						appId={app.project_id}
-						handleClose={(appId) => {
-							console.log("ok");
-							// if there is an appId navigate to it
-							if (appId) {
-								navigateApp(appId);
-							}
-
-							// close it
-							setIsUploadOpen(false);
-						}}
-					/>
-				) : null}
-			</StyledTileCard>
-		</StyledMainDiv>
+			) : null}
+		</div>
 	);
 };
