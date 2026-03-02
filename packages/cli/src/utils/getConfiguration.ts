@@ -332,10 +332,12 @@ export function getConfiguration(
 			}
 			if (envVars.APP) {
 				appId = envVars.APP;
+				appName = "";
 				source = "env";
 			}
 			if (envVars.VITE_APP) {
 				appId = envVars.VITE_APP;
+				appName = "";
 				source = "env";
 			}
 		}
@@ -377,10 +379,12 @@ export function getConfiguration(
 			}
 			if (envLocalVars.APP) {
 				appId = envLocalVars.APP;
+				appName = "";
 				source = sourceName;
 			}
 			if (envLocalVars.VITE_APP) {
 				appId = envLocalVars.VITE_APP;
+				appName = "";
 				source = sourceName;
 			}
 		}

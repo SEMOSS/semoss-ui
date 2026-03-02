@@ -36,44 +36,133 @@ npm install -g @semoss/cli
 
 If you encounter issues with either installation method, try the opposite one or rebuild from source.
 
+## Command Reference
+
+| Command | Description |
+|---------|-------------|
+| `semoss onboard` | Interactive onboarding wizard for new users |
+| `semoss connect` | Connect to a SEMOSS instance (add credentials) |
+| `semoss instances` | List all configured SEMOSS instances |
+| `semoss switch <name>` | Switch the active SEMOSS instance |
+| `semoss apps` | List all apps on the current instance |
+| `semoss whoami` | Show current user information from the server |
+| `semoss create` | Create a new SEMOSS app from template |
+| `semoss init` | Initialize an existing directory as a SEMOSS app |
+| `semoss link [appId]` | Link current directory to an existing app |
+| `semoss config` | Generate a skeleton smss.json config file |
+| `semoss deploy` | Deploy an app to the server |
+| `semoss publish` | Publish an app (runs init, load reactors, publish) |
+| `semoss status` | Show project status, deployment history, backups |
+| `semoss log` | Show deployment history and CLI log files |
+| `semoss cleanup` | Clean up backup and deployment history files |
+| `semoss open` | Open the app in a browser |
+| `semoss pixel <cmd>` | Execute a Pixel command from the CLI |
+| `semoss interactive` | Launch interactive Terminal UI mode (TUI) |
+
 ## Setup
 
-First, define environment variables in your `.env` file:
+### Step 1: Onboard (Required)
+
+After installing the CLI, the **first thing you must do** is run the onboarding wizard to connect to a SEMOSS instance:
+
+```sh
+semoss onboard
+```
+
+This interactive wizard will:
+- Guide you through connecting to your SEMOSS server
+- Collect your server URL and authentication credentials
+- Test the connection before saving
+- Store credentials securely in `~/.config/semoss/`
+- Set up default ignore patterns for deployments
+
+Once onboarded, choose the workflow that fits your needs:
+
+---
+
+### Workflow A: Create a New App from Template
+
+If you're starting fresh and want a complete base template:
+
+```sh
+semoss create --name="My App Name"
+cd my-app-name
+pnpm install
+pnpm dev      # Optional: preview locally
+semoss deploy # Deploy to server
+```
+
+This creates a new directory with Java, Python, and Portal examples, plus all configuration files pre-configured.
+
+---
+
+### Workflow B: Initialize an Existing Codebase
+
+If you already have a project directory and want to create a new app on the server:
+
+```sh
+cd your-existing-project
+semoss init --name="My App Name"
+semoss deploy
+```
+
+This will:
+- Create a new project on the server
+- Save the app ID to your `.env` file and `~/.config/semoss/credentials.json`
+- Create `smss.json` with default ignore patterns
+
+---
+
+### Workflow C: Link to an Existing App
+
+If you have code locally AND an app already exists on the server:
+
+```sh
+cd your-project
+
+# If your .env already has APP defined:
+semoss link
+
+# Or specify the app ID directly:
+semoss link abc-123-def-456
+
+semoss deploy
+```
+
+---
+
+### Workflow D: Quick Config Generation
+
+If you already have a `.env` file with all credentials (ENDPOINT, MODULE, ACCESS_KEY, SECRET_KEY, APP):
+
+```sh
+semoss config   # Generate smss.json
+semoss deploy   # Deploy to server
+```
+
+---
+
+## Environment Variables (Reference)
+
+These variables can be set in `.env` or `.env.local` files:
 
 ```env
 ENDPOINT    = https://your-semoss-server.com      # Server endpoint
-MODULE      = /Monolith                           # Application module path
+MODULE      = /Monolith                           # Application module path. can also be the full http url
 ACCESS_KEY  = your-access-key-here               # Access key for server
 SECRET_KEY  = your-secret-key-here               # Secret key for server
 APP         = your-app-id                        # Application ID (set by init/create)
 ```
 
-## Initialize a New App
+> **Note:** After running `semoss onboard`, credentials are stored globally in `~/.config/semoss/`. You only need `.env` files for project-specific overrides or legacy workflows.
 
-### Option 1: Start with an Existing Codebase (init)
+## Create Command (Detailed)
 
-If you already have a SEMOSS project directory, initialize it with the CLI:
+Create a new SEMOSS app from template:
 
 ```sh
-semoss init --name="My App Name"
+semoss create
 # or
-semoss init -n="My App Name"
-```
-
-This will:
-- Validate your environment variables
-- Create a new project on the server
-- Save the app ID to your `.env` file
-- Create a `smss.json` configuration file with:
-  - Default ignore patterns (node_modules, .git, etc.)
-  - Empty targets and batch sections ready to customize
-  - Template comments for batch deployment setup
-
-### Option 2: Get a Head Start with a Template (create)
-
-If you don't have a codebase yet, use the create command to generate a complete base template app:
-
-```sh
 semoss create --name="My App Name"
 # or
 semoss create -n="My App Name"
@@ -83,56 +172,32 @@ This will:
 - Create a new project directory with your app name
 - Generate a base template structure with Java, Python, and Portal examples
 - Set up package.json and configuration files
+- Create `smss.json` with default ignore patterns and current instance in batch config
 - Automatically include `.gitignore` with deployment artifact exclusions
 
-Then navigate to your new directory and set up:
+After creation:
 
 ```sh
 cd my-app-name
+pnpm install       # Install dependencies
+pnpm dev           # Optional: preview locally
+semoss deploy      # Deploy to server
+```
 
-# Install dependencies
-pnpm install
+## Init Command (Detailed)
 
-# Configure your server details
-cp .env.example .env
-# Edit .env with your SEMOSS server details
+Initialize an existing directory as a SEMOSS app:
 
-# Initialize the project on the server
+```sh
 semoss init --name="My App Name"
+# or
+semoss init -n="My App Name"
 ```
 
-Optionally, you can see the app running locally:
-
-```sh
-# Start development server
-pnpm dev
-```
-
-When ready to deploy:
-
-```sh
-semoss deploy
-```
-
-## Quick Setup (If you already have a .env file)
-
-If you already have a `.env` file with your SEMOSS server configuration (ENDPOINT, MODULE, ACCESS_KEY, SECRET_KEY, APP), you can quickly generate the `smss.json` configuration file:
-
-```bash
-# Generate smss.json with default targets and ignore patterns
-semoss config
-```
-
-This creates a ready-to-use configuration including:
-- Default ignore patterns (node_modules, .git, etc.)
-- Empty targets and batch sections you can customize
-- Template comments for batch deployment setup
-
-Then you're ready to deploy:
-
-```bash
-semoss deploy
-```
+This will:
+- Create a new project on the server
+- Save the app ID to your `.env` file
+- Create `smss.json` with default ignore patterns
 
 ## Configuration
 
@@ -444,6 +509,226 @@ semoss publish --batch dev,prod
 ```sh
 semoss publish --batch dev,prod
 ```
+
+## Onboard Command
+
+Interactive onboarding wizard that guides new users through initial setup:
+
+```sh
+semoss onboard
+# Force re-run setup even if already configured
+semoss onboard --force
+```
+
+### What it does
+- Displays an overview of CLI features
+- Prompts for SEMOSS server URL and credentials
+- Tests the connection before saving
+- Saves credentials to `~/.config/semoss/`
+- Sets up default ignore patterns
+
+## Connect Command
+
+Add a new SEMOSS instance to your configuration:
+
+```sh
+# Interactive mode
+semoss connect
+
+# Non-interactive with flags
+semoss connect --name production --module https://server.com/Monolith --accessKey xxx --secretKey yyy
+
+# Set as default instance
+semoss connect --name staging --default
+```
+
+### Flags
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--name` | `-n` | Name for this instance (e.g., production, staging) |
+| `--module` | `-m` | Module URL (SEMOSS server endpoint) |
+| `--accessKey` | `-a` | Access key for authentication |
+| `--secretKey` | `-s` | Secret key for authentication |
+| `--default` | `-d` | Set as default instance |
+| `--test` | `-t` | Test connection before saving (default: true) |
+
+## Instances Command
+
+List all configured SEMOSS instances:
+
+```sh
+semoss instances
+# Output as JSON
+semoss instances --json
+```
+
+Shows:
+- Instance name and endpoint
+- Which instance is currently active
+- Number of linked apps per instance
+
+## Switch Command
+
+Switch between configured SEMOSS instances:
+
+```sh
+semoss switch production
+semoss switch staging
+```
+
+This changes the active instance used by all other commands.
+
+## Apps Command
+
+List all apps available on the current SEMOSS instance:
+
+```sh
+semoss apps
+# Output as JSON
+semoss apps --json
+```
+
+Shows app ID, name, and other metadata from the server.
+
+## Whoami Command
+
+Show current user information from the SEMOSS server:
+
+```sh
+semoss whoami
+# Output as JSON
+semoss whoami --json
+```
+
+Displays:
+- User ID and name
+- Email address
+- Admin status
+- Current instance and app context
+
+## Link Command
+
+Link the current directory to an existing SEMOSS app:
+
+```sh
+# Link to a specific app ID
+semoss link abc-123-def-456
+
+# Link using APP from .env file
+semoss link
+
+# Link with a display name
+semoss link abc-123 --name "My Dashboard"
+
+# Force overwrite existing smss.json
+semoss link abc-123 --force
+```
+
+### Flags
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--name` | `-n` | Display name for the app |
+| `--force` | `-f` | Overwrite existing smss.json |
+| `--targets` | `-t` | Deployment targets (comma-separated) |
+| `--ignore` | `-i` | Additional ignore patterns (comma-separated) |
+
+This is useful when you want to connect an existing codebase to an app that's already on the server.
+
+## Log Command
+
+Show deployment history and CLI log files:
+
+```sh
+# Show recent deployments
+semoss log
+
+# Show last 5 deployments
+semoss log --limit=5
+
+# Show detailed deployment info
+semoss log --verbose
+
+# Output as JSON
+semoss log --json
+
+# Filter by status
+semoss log --status=success
+
+# List CLI log files
+semoss log --files
+
+# Show last 50 lines of today's log
+semoss log --files --tail=50
+
+# Print log directory path
+semoss log --dir
+```
+
+### Flags
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--limit` | `-l` | Number of deployments to show (default: 10) |
+| `--verbose` | `-v` | Show detailed deployment information |
+| `--json` | | Output as JSON |
+| `--status` | `-s` | Filter by status: success, failure, dry-run |
+| `--files` | | List CLI log files in ~/.config/semoss/logs/ |
+| `--tail` | | Show last N lines of log file (use with --files) |
+| `--dir` | | Print the log directory path |
+
+## Pixel Command
+
+Execute a Pixel command directly from the CLI:
+
+```sh
+semoss pixel "MyInfo()"
+semoss pixel "MyEngines()"
+semoss pixel "Database(\"db\").query(\"SELECT 1\")"
+```
+
+This is useful for quick queries or scripting. For interactive Pixel execution, use `semoss interactive`.
+
+## Interactive Command
+
+Launch the interactive Terminal UI (TUI) mode:
+
+```sh
+semoss interactive
+```
+
+The TUI provides a full-screen terminal interface with:
+- Real-time Pixel command execution
+- Command history (up/down arrows)
+- Autocomplete for TUI commands (Tab to accept)
+- Status display showing current instance and app
+- Built-in commands prefixed with `:` (e.g., `:help`, `:deploy`, `:status`)
+
+### TUI Commands
+| Command | Description |
+|---------|-------------|
+| `:help` | Show available commands |
+| `:status` | Display current instance and app info |
+| `:clear` | Clear the output screen |
+| `:exit` / `:quit` / `:q` | Exit the TUI |
+| `:deploy [opts]` | Deploy current app (supports --dry-run, --target, etc.) |
+| `:init` | Initialize a new app |
+| `:create` | Create a new app from template |
+| `:link [appId]` | Link current directory to an app |
+| `:apps` | List apps on instance |
+| `:app <id>` | Switch to a different app |
+| `:instances` | List configured instances |
+| `:switch <name>` | Switch active instance |
+| `:connect` | Connect to a new instance |
+| `:onboard` | Run onboarding wizard |
+| `:whoami` | Show current user info |
+| `:open` | Open app in browser |
+| `:publish` | Publish current app |
+| `:config` | Generate smss.json |
+| `:cleanup` | Clean up backups |
+| `:log` | Show deployment history |
+| `:pwd` | Show current working directory |
+| `:pixel` | Show Pixel command help |
+
+Type Pixel commands directly (without `:` prefix) to execute them.
 
 ## Ignored Files
 

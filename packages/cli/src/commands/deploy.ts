@@ -10,6 +10,7 @@ import * as http from "node:http";
 import * as https from "node:https";
 import * as path from "node:path";
 import { Env, Insight, upload } from "@semoss/sdk";
+import { DEFAULT_CONFIG } from "../constants.js";
 import {
 	getBatchConfig,
 	getConfiguration,
@@ -22,25 +23,7 @@ import {
 	toLogLevel,
 } from "../utils/logger.js";
 
-const DEFAULT_IGNORE = [
-	"node_modules/**",
-	"**/.git/**",
-	"**/*.local",
-	"client/**",
-	"**/package.json",
-	"**/package-lock.json",
-	"**/pnpm-lock.yaml",
-	"**/vite.config.ts",
-	"**/vite.config.js",
-	"**/vite-env.d.ts",
-	"**/vitest.config.ts",
-	"**/vitest.config.js",
-	"**/tsconfig.json",
-	"**/components.json",
-	"target/**",
-	"test_classes/**",
-	"classes/**",
-];
+const DEFAULT_IGNORE = DEFAULT_CONFIG.ignore;
 
 export default class Deploy extends Command {
 	static args = {};
