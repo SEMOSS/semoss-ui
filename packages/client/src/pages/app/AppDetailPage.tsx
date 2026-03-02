@@ -503,7 +503,7 @@ export const AppDetailPage = () => {
 						</BreadcrumbList>
 					</Breadcrumb>
 
-					<div className="flex w-full flex-row items-center gap-4">
+					<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
 						<div className="h-16 w-16 flex-shrink-0 rounded-lg bg-muted">
 							<img
 								src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
@@ -514,7 +514,7 @@ export const AppDetailPage = () => {
 
 						<div className="flex min-w-0 flex-1 flex-col gap-1">
 							<h1
-								className="overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[30px] text-foreground leading-normal"
+								className="break-words font-semibold text-2xl text-foreground leading-normal md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]"
 								title={appInfo?.project_name}
 							>
 								{appInfo?.project_name}
@@ -546,7 +546,7 @@ export const AppDetailPage = () => {
 							)}
 						</div>
 
-						<div className="flex flex-shrink-0 flex-row gap-2">
+						<div className="flex w-full flex-wrap gap-2 md:w-auto md:flex-nowrap md:justify-end">
 							{permission === "author" ? (
 								<Button
 									disabled={exportLoading}
@@ -607,7 +607,7 @@ export const AppDetailPage = () => {
 						</div>
 					</div>
 
-					<div className="mt-4 flex w-full justify-between gap-4">
+					<div className="mt-4 flex w-full flex-col gap-4 md:flex-row md:justify-between">
 						<div className="flex flex-1 flex-col gap-4">
 							<p className="text-muted-foreground text-sm">
 								{appInfo?.description ||
@@ -630,7 +630,7 @@ export const AppDetailPage = () => {
 								</div>
 							) : null}
 						</div>
-						<div className="flex flex-col items-end gap-1 text-right text-muted-foreground text-sm">
+						<div className="flex flex-col items-start gap-1 text-left text-muted-foreground text-sm md:items-end md:text-right">
 							<span>
 								Published by:{" "}
 								{appInfo?.project_created_by || "Unknown"}
@@ -661,8 +661,8 @@ export const AppDetailPage = () => {
 							onValueChange={(val) => setSelectedTab(String(val))}
 							className="gap-0 bg-transparent"
 						>
-							<div className="w-full">
-								<TabsList className="gap-2">
+							<div className="w-full overflow-x-auto">
+								<TabsList className="w-max flex-nowrap gap-2">
 									{visibleTabs.includes("Overview") && (
 										<TabsTrigger value="Overview">
 											Overview
@@ -702,7 +702,7 @@ export const AppDetailPage = () => {
 							</div>
 						</Tabs>
 					)}
-					<div className="w-full bg-(--card) p-4">
+					<div className="w-full bg-(--card) p-3 md:p-4">
 						{selectedTab === "Overview" && (
 							<Overview appInfo={appInfo} />
 						)}
