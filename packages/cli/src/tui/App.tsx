@@ -11,6 +11,7 @@ import { Input } from "./components/Input.js";
 import { Output, type OutputEntry } from "./components/Output.js";
 import { SnakeGame } from "./components/SnakeGame.js";
 import { useCommandHistory } from "./hooks/useCommandHistory.js";
+import { DEFAULT_THEME, getTheme, getThemeNames } from "./themes.js";
 import {
 	createSession,
 	destroySession,
@@ -35,6 +36,7 @@ export const App: React.FC = () => {
 	const [gitBranch, setGitBranch] = useState<string | undefined>();
 	const [konamiIndex, setKonamiIndex] = useState(0);
 	const [gameMode, setGameMode] = useState<"snake" | null>(null);
+	const [themeName, setThemeName] = useState<string>(DEFAULT_THEME);
 	const [pendingAction, setPendingAction] = useState<{
 		type: "deploy";
 		args: string[];
@@ -102,6 +104,14 @@ export const App: React.FC = () => {
 						const app = apps[0];
 						setCurrentApp({ id: app.appId, name: app.name });
 					}
+				}
+			}
+
+			// Load saved theme preference
+			if (credentials.settings?.theme) {
+				const savedTheme = credentials.settings.theme;
+				if (getThemeNames().includes(savedTheme)) {
+					setThemeName(savedTheme);
 				}
 			}
 
@@ -261,6 +271,9 @@ export const App: React.FC = () => {
 				break;
 			case "snake":
 				setGameMode("snake");
+				break;
+			case "theme":
+				handleThemeCommand(args);
 				break;
 			default:
 				addEntry({
@@ -471,6 +484,7 @@ Built-in Commands:
   :create [opts]  Create a new app from template
                   Options: --name="App Name", --template=react|next
   :onboard        Run onboarding wizard (exits TUI)
+  :theme [name]   List themes or switch to a theme
   :clear          Clear output history
   :exit           Exit interactive mode (or press Ctrl+C)
 
@@ -497,6 +511,55 @@ Keyboard Shortcuts:
         `.trim();
 
 		addEntry({ type: "info", content: helpText });
+	};
+
+	const handleThemeCommand = (args: string[]) => {
+		const themes = getThemeNames();
+
+		if (args.length === 0) {
+			// Show available themes
+			addEntry({
+				type: "info",
+				content: "Available themes:",
+			});
+			for (const name of themes) {
+				const theme = getTheme(name);
+				const isCurrent = name === themeName;
+				const marker = isCurrent ? "●" : "○";
+				addEntry({
+					type: "info",
+					content: `  ${marker} ${name} - ${theme.name}`,
+				});
+			}
+			addEntry({
+				type: "info",
+				content: "\nUse: :theme <name> to switch",
+			});
+			return;
+		}
+
+		const newTheme = args[0].toLowerCase();
+		if (!themes.includes(newTheme)) {
+			addEntry({
+				type: "error",
+				content: `Unknown theme: ${newTheme}. Use :theme to see available themes.`,
+			});
+			return;
+		}
+
+		setThemeName(newTheme);
+		const theme = getTheme(newTheme);
+
+		// Persist theme preference
+		const creds = loadCredentials();
+		creds.settings = creds.settings || {};
+		creds.settings.theme = newTheme;
+		saveCredentials(creds);
+
+		addEntry({
+			type: "success",
+			content: `Theme changed to: ${theme.name}`,
+		});
 	};
 
 	const showWorkingDirectory = () => {
@@ -1641,6 +1704,8 @@ Crafted with care by Travon, Stella, and Parth
 		return <SnakeGame onExit={() => setGameMode(null)} />;
 	}
 
+	const theme = getTheme(themeName);
+
 	return (
 		<Box flexDirection="column" padding={0}>
 			<Header
@@ -1649,6 +1714,7 @@ Crafted with care by Travon, Stella, and Parth
 				appName={currentApp?.name}
 				connected={connected}
 				user={user}
+				theme={theme}
 			/>
 			<Output entries={entries} height={outputHeight} />
 			<Input
@@ -1660,6 +1726,7 @@ Crafted with care by Travon, Stella, and Parth
 					loading ? "Executing..." : "Enter Pixel command or :help"
 				}
 				gitBranch={gitBranch}
+				theme={theme}
 			/>
 			<Footer
 				onExit={exit}
@@ -1668,6 +1735,7 @@ Crafted with care by Travon, Stella, and Parth
 					setEntries([]);
 					addEntry({ type: "info", content: "Output cleared" });
 				}}
+				theme={theme}
 			/>
 		</Box>
 	);

@@ -2,6 +2,7 @@ import { Box, Text, useInput } from "ink";
 import TextInput from "ink-text-input";
 import type React from "react";
 import { useMemo, useState } from "react";
+import type { Theme } from "../themes.js";
 
 // Available TUI commands for autocomplete
 const TUI_COMMANDS = [
@@ -29,6 +30,7 @@ const TUI_COMMANDS = [
 	"create",
 	"connect",
 	"pixel",
+	"theme",
 ];
 
 interface InputProps {
@@ -38,6 +40,7 @@ interface InputProps {
 	onHistoryUp?: () => string | null;
 	onHistoryDown?: () => string | null;
 	gitBranch?: string | undefined;
+	theme: Theme;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -47,6 +50,7 @@ export const Input: React.FC<InputProps> = ({
 	onHistoryUp,
 	onHistoryDown,
 	gitBranch,
+	theme,
 }) => {
 	const [value, setValue] = useState("");
 
@@ -108,14 +112,14 @@ export const Input: React.FC<InputProps> = ({
 		<Box
 			flexDirection="column"
 			borderStyle="single"
-			borderColor={disabled ? "gray" : "cyan"}
+			borderColor={disabled ? theme.muted : theme.primary}
 			paddingX={1}
 		>
 			<Text>
-				<Text color={disabled ? "gray" : "cyan"} bold>
+				<Text color={disabled ? theme.muted : theme.primary} bold>
 					{process.cwd()}
 				</Text>
-				{gitBranch && <Text color="green"> ({gitBranch})</Text>}
+				{gitBranch && <Text color={theme.success}> ({gitBranch})</Text>}
 			</Text>
 			<Box flexDirection="row">
 				<Text>› </Text>

@@ -1,5 +1,6 @@
 import { Box, Text } from "ink";
 import type React from "react";
+import type { Theme } from "../themes.js";
 
 interface HeaderProps {
 	instance?: string;
@@ -7,6 +8,7 @@ interface HeaderProps {
 	appName?: string;
 	connected: boolean;
 	user?: string;
+	theme: Theme;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -15,8 +17,9 @@ export const Header: React.FC<HeaderProps> = ({
 	appName,
 	connected,
 	user,
+	theme,
 }) => {
-	const statusColor = connected ? "green" : "red";
+	const statusColor = connected ? theme.success : theme.error;
 	const statusText = connected ? "●" : "○";
 	const statusLabel = connected ? "Connected" : "Disconnected";
 
@@ -24,19 +27,19 @@ export const Header: React.FC<HeaderProps> = ({
 		<Box
 			flexDirection="column"
 			borderStyle="single"
-			borderColor="cyan"
+			borderColor={theme.primary}
 			paddingX={1}
 		>
 			<Box flexDirection="row" justifyContent="space-between">
 				<Box flexDirection="row" gap={2}>
-					<Text color="cyan" bold>
+					<Text color={theme.primary} bold>
 						SEMOSS CLI
 					</Text>
 					<Text dimColor>│</Text>
 					{instance ? (
 						<Text>
-							<Text color="yellow">Instance:</Text>{" "}
-							<Text color="white">{instance}</Text>
+							<Text color={theme.warning}>Instance:</Text>{" "}
+							<Text color={theme.text}>{instance}</Text>
 						</Text>
 					) : (
 						<Text dimColor>No instance selected</Text>
@@ -49,8 +52,8 @@ export const Header: React.FC<HeaderProps> = ({
 						<>
 							<Text dimColor>│</Text>
 							<Text>
-								<Text color="blue">User:</Text>{" "}
-								<Text color="white">{user}</Text>
+								<Text color={theme.secondary}>User:</Text>{" "}
+								<Text color={theme.text}>{user}</Text>
 							</Text>
 						</>
 					)}
@@ -59,12 +62,12 @@ export const Header: React.FC<HeaderProps> = ({
 			{appId && (
 				<Box marginTop={0}>
 					<Text>
-						<Text color="magenta">App:</Text>{" "}
-						<Text color="white">{appId}</Text>
+						<Text color={theme.info}>App:</Text>{" "}
+						<Text color={theme.text}>{appId}</Text>
 						{appName && (
 							<>
 								<Text dimColor> (</Text>
-								<Text color="white">{appName}</Text>
+								<Text color={theme.text}>{appName}</Text>
 								<Text dimColor>)</Text>
 							</>
 						)}

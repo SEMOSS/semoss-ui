@@ -1,13 +1,20 @@
 import { Box, Text, useInput } from "ink";
 import type React from "react";
+import type { Theme } from "../themes.js";
 
 interface FooterProps {
 	onExit: () => void;
 	onHelp: () => void;
 	onClear: () => void;
+	theme: Theme;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onExit, onHelp, onClear }) => {
+export const Footer: React.FC<FooterProps> = ({
+	onExit,
+	onHelp,
+	onClear,
+	theme,
+}) => {
 	useInput((input, key) => {
 		// Ctrl+? for help, Ctrl+L for clear
 		if (key.ctrl && input === "?") {
@@ -34,7 +41,7 @@ export const Footer: React.FC<FooterProps> = ({ onExit, onHelp, onClear }) => {
 		<Box
 			flexDirection="row"
 			borderStyle="single"
-			borderColor="gray"
+			borderColor={theme.muted}
 			paddingX={1}
 			justifyContent="space-between"
 		>
@@ -42,7 +49,7 @@ export const Footer: React.FC<FooterProps> = ({ onExit, onHelp, onClear }) => {
 				{shortcuts.map((shortcut, index) => (
 					<Box key={shortcut.key} flexDirection="row">
 						{index > 0 && <Text dimColor> │ </Text>}
-						<Text color="yellow">{shortcut.key}</Text>
+						<Text color={theme.warning}>{shortcut.key}</Text>
 						<Text dimColor> {shortcut.label}</Text>
 					</Box>
 				))}

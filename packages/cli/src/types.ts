@@ -95,5 +95,7 @@ export interface CredentialsStore {
 		globalIgnore?: string[];
 		/** Show deployment tips */
 		showTips?: boolean;
+		/** TUI theme name */
+		theme?: string;
 	};
 }
