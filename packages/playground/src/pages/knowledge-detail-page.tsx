@@ -362,7 +362,7 @@ export const KnowledgeDetailPage = observer(() => {
 		if (activeTab === "permissions") {
 			void loadMembers();
 		}
-	}, [activeTab, loadMembers]);
+	}, [activeTab]);
 
 	useEffect(() => {
 		if (!userSearch || !addOpen) {
