@@ -14,7 +14,6 @@ import { RoomContent, RoomSidebar, SaveWorkspaceDialog } from "@/components";
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine } from "@/types";
-
 /**
  * The page for a room
  *
@@ -144,7 +143,11 @@ export const RoomPage = observer(() => {
 	}
 
 	return (
-		<InsightProvider key={roomId} options={{ insightId: room.insightId }}>
+		<InsightProvider
+			key={room.roomId}
+			options={{ insightId: room.insightId }}
+			destroyOnUnmount={false}
+		>
 			<div className="flex h-full w-full flex-col overflow-hidden">
 				<ResizablePanelGroup
 					direction="horizontal"

@@ -30,6 +30,7 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 	Muted,
+	Separator,
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
@@ -41,7 +42,6 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarRail,
-	Spinner,
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
@@ -113,7 +113,9 @@ export const GlobalNav = observer(() => {
 		}
 	>(
 		(limit, offset) =>
-			`GetPlaygroundRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""} limit = ${limit} , offset = ${offset} , sort = [ "DESC" ] ) ;`,
+			open
+				? `GetPlaygroundRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""} limit = ${limit} , offset = ${offset} , sort = [ "DESC" ] ) ;`
+				: "",
 
 		(response) => {
 			// if its less than the limit, we know its the end
@@ -385,13 +387,9 @@ export const GlobalNav = observer(() => {
 						<Muted>{t("messages.noRoomsFound")}</Muted>
 					</div>
 				)}
-				{open && getRooms.isLoading && (
-					<div className="flex items-center justify-center py-4">
-						<Spinner className="size-4" />
-					</div>
-				)}
 				{BUCKETS.map((bucket) => {
 					const rooms = bucketedRooms[bucket];
+					console.log(rooms);
 
 					if (!open || rooms.length === 0) {
 						return null;
@@ -592,7 +590,8 @@ export const GlobalNav = observer(() => {
 				})}
 			</SidebarContent>
 			<SidebarFooter>
-				<SidebarMenu className="gap-2 px-2 pt-2">
+				<Separator className="group-data-[collapsible=icon]:hidden" />
+				<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
 					{root.theme.sidebar.footerItems.map((item) => (
 						<GlobalNavItem
 							key={item.path}
