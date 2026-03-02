@@ -273,9 +273,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 								}
 								className="gap-0 bg-transparent"
 							>
-								<div className="w-[80%]">
-									<TabsList className="gap-2">
-										{tabs.map((t, idx) => (
+								<div className="w-full overflow-x-auto md:w-[80%]">
+									<TabsList className="w-max flex-nowrap gap-2">
+										{tabs.map((t) => (
 											<TabsTrigger
 												key={t.path}
 												value={t.path}

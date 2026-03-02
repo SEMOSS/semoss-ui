@@ -1,142 +1,31 @@
-import { FilterList } from "@mui/icons-material";
+import { Filter, Menu, Search } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { debounced } from "@semoss/sdk/react";
 import {
+	Badge,
 	Button,
-	Chip,
+	H3,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	P,
 	Popover,
-	Stack,
-	styled,
-	TextField,
-	ToggleTabsGroup,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	PopoverContent,
+	PopoverTrigger,
+	Tabs,
+	TabsList,
+	TabsTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { setProjectFavorite } from "@/api";
 import { type AppMetadata, AppTileCard } from "@/components/app";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
-import { usePixel, useRootStore } from "@/hooks";
+import { usePage, usePixel, useRootStore } from "@/hooks";
 import { removeUnderscores, toTitleCase } from "@/utility";
-import { NavbarHeader, NavbarLeft } from "../../components/shared";
-
-const StyledSection = styled("div")(({ theme }) => ({
-	display: "grid",
-	gridTemplateColumns: "repeat(3, minmax(240px, 1fr))",
-	gap: theme.spacing(3),
-	justifyContent: "start",
-	alignItems: "stretch",
-	[theme.breakpoints.down("lg")]: {
-		gridTemplateColumns: "repeat(2, minmax(240px, 1fr))",
-	},
-	[theme.breakpoints.down("md")]: {
-		gridTemplateColumns: "repeat(1, minmax(240px, 1fr))",
-	},
-}));
-
-const StyledContentContainer = styled("div")(({ theme }) => ({
-	width: "100%",
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(3),
-}));
-
-const StyledSectionLabel = styled(Typography)(() => ({
-	size: "16px",
-	fontWeight: "500",
-}));
-
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
-	border: "1px",
-	minHeight: "42px",
-	color: theme.palette.secondary.light,
-	borderRadius: theme.shape.borderRadius,
-	alignItems: "center",
-	padding: "0px 3px",
-}));
-
-const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
-	height: "38px",
-	padding: "8px 11px",
-	"&.MuiTab-root": {
-		borderRadius: theme.shape.borderRadius,
-	},
-	"&.Mui-selected": {
-		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
-	},
-}));
-
-const StyledTopBar = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(2),
-	padding: theme.spacing(2),
-	borderRadius: theme.shape.borderRadius,
-	border: `1px solid ${theme.palette.divider}`,
-	background: theme.palette.background.paper,
-	boxShadow: "0px 8px 18px rgba(0, 0, 0, 0.08)",
-}));
-
-const StyledControlsRow = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexWrap: "wrap",
-	gap: theme.spacing(2),
-	alignItems: "center",
-	justifyContent: "flex-start",
-}));
-
-const StyledSearchRow = styled("div")(({ theme }) => ({
-	display: "flex",
-	flex: "1 1 100%",
-	gap: theme.spacing(1.5),
-	alignItems: "center",
-	justifyContent: "flex-start",
-}));
-
-const StyledSearchField = styled(TextField)(({ theme }) => ({
-	flex: "1 1 auto",
-	maxWidth: "100%",
-	background: theme.palette.background.paper,
-}));
-
-const StyledFilterChipsRow = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexWrap: "wrap",
-	gap: theme.spacing(1),
-	alignItems: "center",
-}));
-
-const StyledFilterChip = styled(Chip)(({ theme }) => ({
-	borderRadius: "999px",
-	background: theme.palette.background.default,
-}));
-
-const StyledFilterPopover = styled(Popover)(({ theme }) => ({
-	".MuiPopover-paper": {
-		marginTop: theme.spacing(1),
-		borderRadius: theme.shape.borderRadius,
-		boxShadow: "0px 14px 34px rgba(0, 0, 0, 0.16)",
-		maxHeight: "calc(100vh - 180px)",
-		overflowY: "auto",
-	},
-}));
-
-const StyledAppsSectionHeader = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexWrap: "wrap",
-	gap: theme.spacing(2),
-	alignItems: "center",
-	justifyContent: "space-between",
-}));
-
-const StyledEmptyState = styled("div")(({ theme }) => ({
-	borderRadius: theme.shape.borderRadius,
-	border: `1px dashed ${theme.palette.divider}`,
-	padding: theme.spacing(2),
-	color: theme.palette.text.secondary,
-}));
+import { NavbarLeft } from "../../components/shared";
 
 type MODE = "Mine" | "Discoverable" | "System";
 
@@ -215,6 +104,46 @@ const TERMINAL_APP: AppMetadata = {
 	description: "Execute commands and see a response",
 };
 
+const AppCatalogNavbarHeader = observer((): JSX.Element | null => {
+	const { page } = usePage();
+	const { configStore } = useRootStore();
+
+	if (page.sidebar.pinned) {
+		return null;
+	}
+
+	return (
+		<div className="flex items-center gap-2">
+			<Button
+				variant="outline"
+				size="icon-sm"
+				className="h-8 w-8 rounded-md border border-border"
+				onMouseOver={() => page.openSidebar()}
+				aria-label="Open sidebar"
+			>
+				<Menu className="size-4" />
+			</Button>
+			<Link
+				to="/"
+				aria-label="Go Home"
+				className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-foreground no-underline hover:bg-muted/50"
+			>
+				{configStore.theme.logo ? (
+					<img
+						alt="logo"
+						src={configStore.theme.logo}
+						className="h-5 w-auto"
+					/>
+				) : null}
+				<span className="truncate font-semibold text-sm">
+					{configStore.theme.landingPageName ||
+						configStore.theme.name}
+				</span>
+			</Link>
+		</div>
+	);
+});
+
 /**
  * App page
  */
@@ -248,9 +177,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	const [inputValue, setInputValue] = useState("");
 	const [search, setSearch] = useState("");
 	const appCatalogPageStatus = useRef({ removalChanges: false });
-	const [filtersAnchorEl, setFiltersAnchorEl] = useState<HTMLElement | null>(
-		null,
-	);
+	const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
 	const applyMetaFilters = useCallback(
 		(nextFilters: Record<string, unknown>) => {
@@ -384,16 +311,15 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	 * @desc action to favorite app
 	 * @param app
 	 */
-	const notification = useNotification();
+	const notify = toast;
 
 	const favoriteApp = (app) => {
 		const favorite = !isFavorited(app.project_id);
 		setProjectFavorite(app.project_id, favorite)
 			.then(() => {
-				notification.add({
-					color: "success",
-					message: `Project ${favorite ? "bookmarked" : "unbookmarked"}`,
-				});
+				notify.success(
+					`Project ${favorite ? "bookmarked" : "unbookmarked"}`,
+				);
 
 				if (!favorite) {
 					// Create a new array before modifying
@@ -417,10 +343,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				}
 			})
 			.catch((err) => {
-				notification.add({
-					color: "error",
-					message: "Unable to update favorite status",
-				});
+				notify.error("Unable to update favorite status");
 				console.error(err);
 			});
 	};
@@ -581,7 +504,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		},
 	);
 	const activeFilterCount = activeFilters.length;
-	const isFiltersOpen = Boolean(filtersAnchorEl);
 	const showFilters =
 		mode !== "System" &&
 		!configStore.store.config.adminOnlyViewMenuBarFlag &&
@@ -590,126 +512,116 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	return (
 		<>
 			<NavbarLeft>
-				<NavbarHeader />
+				<AppCatalogNavbarHeader />
 			</NavbarLeft>
-			<Stack direction="column" gap={2}>
-				<Stack>
-					<Stack
-						direction="row"
-						alignItems={"center"}
-						justifyContent={"space-between"}
-						spacing={4}
-					>
-						<Typography
-							data-tour="app-library-title"
-							variant={"h4"}
+			<div className="flex flex-col gap-6">
+				<div className="flex flex-wrap items-center justify-between gap-4">
+					<H3 data-tour="app-library-title" className="text-2xl">
+						Apps
+					</H3>
+					{configStore.isEngineOperationAvailable(
+						"PROJECT",
+						"add",
+					) && (
+						<Button
+							variant="default"
+							size="lg"
+							onClick={() => {
+								navigate("/app/new");
+							}}
+							aria-label="Open the App Model"
+							data-testid="appCatalogPage-create-new-app-btn"
 						>
-							Apps
-						</Typography>
-						{configStore.isEngineOperationAvailable(
-							"PROJECT",
-							"add",
-						) && (
-							<Button
-								size={"large"}
-								variant={"contained"}
-								onClick={() => {
-									navigate("/app/new");
-								}}
-								aria-label={`Open the App Model`}
-								data-testid={
-									"appCatalogPage-create-new-app-btn"
-								}
-							>
-								Create New App
-							</Button>
-						)}
-					</Stack>
-				</Stack>
-				<StyledTopBar>
-					<StyledControlsRow>
-						<StyledSearchRow>
-							<StyledSearchField
-								size="small"
-								label="Search"
-								value={inputValue}
-								onChange={(e) =>
-									handleInputChange(e.target.value)
-								}
-							/>
+							Create New App
+						</Button>
+					)}
+				</div>
+
+				<div className="flex flex-col gap-4 rounded-lg border bg-card p-4 shadow-sm">
+					<div className="flex flex-wrap items-center gap-4">
+						<div className="flex w-full items-center gap-3">
+							<InputGroup className="flex-1">
+								<InputGroupAddon>
+									<Search className="size-4" />
+								</InputGroupAddon>
+								<InputGroupInput
+									placeholder="Search"
+									value={inputValue}
+									onChange={(e) =>
+										handleInputChange(e.target.value)
+									}
+								/>
+							</InputGroup>
 							{showFilters && (
-								<Button
-									variant="outlined"
-									startIcon={<FilterList />}
-									onClick={(event) => {
-										setFiltersAnchorEl(event.currentTarget);
-									}}
+								<Popover
+									open={isFiltersOpen}
+									onOpenChange={setIsFiltersOpen}
 								>
-									Filters
-									{activeFilterCount > 0
-										? ` (${activeFilterCount})`
-										: ""}
-								</Button>
+									<PopoverTrigger asChild>
+										<Button variant="outline">
+											<Filter className="size-4" />
+											Filters
+											{activeFilterCount > 0
+												? ` (${activeFilterCount})`
+												: ""}
+										</Button>
+									</PopoverTrigger>
+									<PopoverContent
+										align="end"
+										className="mt-2 max-h-[calc(100vh-180px)] overflow-y-auto p-0"
+									>
+										<Filterbox
+											type={"PROJECT"}
+											applyOnMount={false}
+											showHeader={false}
+											onChange={(
+												filters: Record<
+													string,
+													unknown
+												>,
+											) => {
+												applyMetaFilters(filters);
+											}}
+											filteredCatalogIds={renderedAppIds}
+											filterBoxRefresh={
+												appCatalogPageStatus.current
+													.removalChanges
+											}
+											onfilterBoxRefreshCompleted={() => {
+												appCatalogPageStatus.current.removalChanges = false;
+											}}
+										/>
+									</PopoverContent>
+								</Popover>
 							)}
-						</StyledSearchRow>
-					</StyledControlsRow>
-				</StyledTopBar>
+						</div>
+					</div>
+				</div>
+
 				{showFilters && (
-					<StyledFilterChipsRow>
+					<div className="flex flex-wrap items-center gap-2">
 						{activeFilterCount > 0 ? (
 							activeFilters.map((filter) => (
-								<StyledFilterChip
+								<Badge
 									key={`${filter.key}-${filter.value}`}
-									label={filter.label}
-									variant="outlined"
-									size="small"
-								/>
+									variant="outline"
+								>
+									{filter.label}
+								</Badge>
 							))
 						) : (
-							<Typography variant="body2" color="text.secondary">
+							<P className="text-muted-foreground">
 								No filters applied
-							</Typography>
+							</P>
 						)}
-					</StyledFilterChipsRow>
+					</div>
 				)}
-				{showFilters && (
-					<StyledFilterPopover
-						open={isFiltersOpen}
-						anchorEl={filtersAnchorEl}
-						onClose={() => setFiltersAnchorEl(null)}
-						anchorOrigin={{
-							vertical: "bottom",
-							horizontal: "right",
-						}}
-						transformOrigin={{
-							vertical: "top",
-							horizontal: "right",
-						}}
-					>
-						<Filterbox
-							type={"PROJECT"}
-							applyOnMount={false}
-							showHeader={false}
-							onChange={(filters: Record<string, unknown>) => {
-								applyMetaFilters(filters);
-							}}
-							filteredCatalogIds={renderedAppIds}
-							filterBoxRefresh={
-								appCatalogPageStatus.current.removalChanges
-							}
-							onfilterBoxRefreshCompleted={() => {
-								appCatalogPageStatus.current.removalChanges = false;
-							}}
-						/>
-					</StyledFilterPopover>
-				)}
-				<StyledContentContainer>
-					<StyledSectionLabel variant="subtitle1">
-						Bookmarked
-					</StyledSectionLabel>
+
+				<div className="flex flex-col gap-6 pb-8">
+					<P className="font-medium text-base">Bookmarked</P>
 
 					{favoritedApps.length > 0 ? (
-						<StyledSection>
+						<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 							{favoritedApps.map((app) => {
 								return (
 									<AppTileCard
@@ -737,19 +649,17 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									/>
 								);
 							})}
-						</StyledSection>
+						</div>
 					) : (
-						<StyledEmptyState>
-							<Typography variant="body2">
-								No bookmarked apps match your search.
-							</Typography>
-						</StyledEmptyState>
+						<div className="rounded-lg border border-dashed p-4 text-muted-foreground">
+							<P>No bookmarked apps match your search.</P>
+						</div>
 					)}
 
-					<StyledAppsSectionHeader>
-						<StyledToggleTabsGroup
+					<div className="flex flex-wrap items-center justify-between gap-4">
+						<Tabs
 							value={mode}
-							onChange={(_e: React.SyntheticEvent, val) => {
+							onValueChange={(val) => {
 								dispatch({
 									type: "field",
 									field: "databases",
@@ -758,26 +668,31 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								setMode(val as MODE);
 							}}
 						>
-							<StyledToggleTabsGroupItem
-								label="My Apps"
-								value={"Mine"}
-								data-testid={`appCatalogPage-myApps-btn`}
-							/>
-							<StyledToggleTabsGroupItem
-								label="Discoverable"
-								value={"Discoverable"}
-								data-testid={`appCatalogPage-discoverable-btn`}
-							/>
-							<StyledToggleTabsGroupItem
-								label="System Apps"
-								value={"System"}
-								data-testid={`appCatalogPage-systemApps-btn`}
-							/>
-						</StyledToggleTabsGroup>
-					</StyledAppsSectionHeader>
+							<TabsList>
+								<TabsTrigger
+									value="Mine"
+									data-testid="appCatalogPage-myApps-btn"
+								>
+									My Apps
+								</TabsTrigger>
+								<TabsTrigger
+									value="Discoverable"
+									data-testid="appCatalogPage-discoverable-btn"
+								>
+									Discoverable
+								</TabsTrigger>
+								<TabsTrigger
+									value="System"
+									data-testid="appCatalogPage-systemApps-btn"
+								>
+									System Apps
+								</TabsTrigger>
+							</TabsList>
+						</Tabs>
+					</div>
 
 					{mode === "System" && (
-						<StyledSection>
+						<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 							{"bi".includes(search.toLowerCase()) && (
 								<AppTileCard
 									app={BUSINESS_INTELLIGENCE_APP}
@@ -804,11 +719,11 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									showSkeleton={false}
 								/>
 							)}
-						</StyledSection>
+						</div>
 					)}
 
 					{mode !== "System" && getApps.status !== "SUCCESS" ? (
-						<StyledSection>
+						<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 							{skeletonKeys.map((key) => (
 								<AppTileCard
 									key={key.toString()}
@@ -820,12 +735,11 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									showSkeleton={true}
 								/>
 							))}
-						</StyledSection>
+						</div>
 					) : null}
 
-					{/* do not show favorited apps in all apps view */}
 					{mode !== "System" && apps.length > 0 ? (
-						<StyledSection>
+						<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 							{apps
 								.filter(
 									(app) =>
@@ -874,11 +788,11 @@ export const AppCatalogPage = observer((): JSX.Element => {
 										/>
 									);
 								})}
-						</StyledSection>
+						</div>
 					) : null}
-				</StyledContentContainer>
+				</div>
 				<Help />
-			</Stack>
+			</div>
 		</>
 	);
 });
