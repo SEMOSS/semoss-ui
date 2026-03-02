@@ -65,5 +65,10 @@
 		"newKnowledgeCreated": "A new knowledge source was created. You can now select it to embed additional documents.",
 		"documentsDescription": "Documents currently embedded in this knowledge source.",
 		"failedToLoadDocuments": "Failed to load documents."
+	},
+		"permissions": {
+		"title": "User Access",
+		"aboutTitle": "About User Access",
+		"description": "Knowledge Libraries by default are private, but they can be shared with others. Use the 'Add User' button to add other FDA employees with owner, editor, or read-only permissions. Please note that all users will be able to interact with documents uploaded to this workspace. Please ensure all members are authorized to view these materials before adding members. Remember, employees are responsible for protecting all FDA data, including confidential commercial information, trade secrets, internal or non-public FDA data and personally identifiable information, through appropriate access controls, in accordance with federal requirements."
 	}
 }

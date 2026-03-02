@@ -447,7 +447,7 @@ export const DocumentLibrary = () => {
 												"knowledge:whatIsKnowledgeLibrary",
 											)}
 										</p>
-										<p className="text-muted-foreground text-sm leading-relaxed">
+										<p className="text-sm leading-relaxed">
 											{t("knowledge:ragDescription")}
 										</p>
 									</div>

@@ -8,6 +8,7 @@ import {
 	FileSpreadsheetIcon,
 	FileTextIcon,
 	FolderPlusIcon,
+	Info,
 	MessageSquarePlusIcon,
 	Trash2,
 } from "lucide-react";
@@ -812,7 +813,31 @@ export const KnowledgeDetailPage = observer(() => {
 						<Card className="rounded-xl border-border bg-card shadow-sm">
 							<CardHeader>
 								<div className="flex items-center justify-between">
-									<CardTitle>User Access</CardTitle>
+									<CardTitle>
+										{t("knowledge:permissions.title")}{" "}
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-8 w-8 text-muted-foreground"
+												>
+													<Info className="h-4 w-4" />
+													<span className="sr-only">
+														{t("knowledge:permissions.aboutTitle")}
+													</span>
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent
+												side="right"
+												className="max-w-sm"
+											>
+												<p className="text-sm leading-relaxed">
+													{t("knowledge:permissions.description")}
+												</p>
+											</TooltipContent>
+										</Tooltip>
+									</CardTitle>
 									<Button
 										size="sm"
 										onClick={() => setAddOpen(true)}
