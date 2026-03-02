@@ -1,5 +1,4 @@
 import {
-	AccessTime,
 	BarChartRounded,
 	Bookmark,
 	BookmarkBorder,
@@ -12,14 +11,13 @@ import dayjs from "dayjs";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+	Button,
 	Card,
 	type CardProps,
-	Chip,
 	IconButton,
 	Link,
 	Menu,
 	Skeleton,
-	Stack,
 	styled,
 	Typography,
 	useNotification,
@@ -40,11 +38,21 @@ const StyledTileCard = styled(
 	),
 )<{ disabled: boolean }>(({ disabled, theme }) => ({
 	minHeight: "247px",
+	display: "flex",
+	flexDirection: "column",
+	height: "100%",
+	overflow: "hidden",
 	"&:hover": {
 		cursor: disabled ? "default" : "pointer",
 		boxShadow: "none",
 	},
 	borderRadius: theme.shape.borderRadius,
+	"& .MuiCard-root": {
+		height: "100%",
+		display: "flex",
+		flexDirection: "column",
+		overflow: "hidden",
+	},
 }));
 
 const StyledContainer = styled("div")({
@@ -57,8 +65,14 @@ const StyledOverlayContent = styled("div")(({ theme }) => ({
 	right: 0,
 	display: "flex",
 	justifyContent: "flex-end",
-	paddingTop: theme.spacing(2),
+	alignItems: "center",
+	height: "77px",
 	paddingRight: theme.spacing(2),
+}));
+
+const StyledHeaderActions = styled("div")(({ theme }) => ({
+	display: "flex",
+	gap: theme.spacing(1),
 }));
 
 const StyledPublishedByContainer = styled("div")(({ theme }) => ({
@@ -84,20 +98,12 @@ const StyledPublishedByLabel = styled(Typography)(({ theme }) => ({
 	letterSpacing: "0.4px",
 }));
 
-const StyledAccessTimeIcon = styled(AccessTime)(({ theme }) => ({
-	"&.MuiSvgIcon-root": {
-		color: theme.palette.text.disabled,
-		height: "16px",
-		width: "16px",
-	},
-}));
-
 const StyledCardDescription = styled(Typography)(({ theme }) => ({
 	margin: 0,
-	fontSize: "12px",
+	fontSize: "13px",
 	fontStyle: "normal",
 	fontWeight: 400,
-	lineHeight: "19.92px",
+	lineHeight: "20px",
 	letterSpacing: "0.4px",
 	fontFamily: "Roboto",
 	display: "-webkit-box",
@@ -107,92 +113,98 @@ const StyledCardDescription = styled(Typography)(({ theme }) => ({
 	textOverflow: "ellipsis",
 	wordWrap: "break-word",
 	color: theme.palette.text.secondary,
-	height: "40px",
+	minHeight: "40px",
 }));
 
-const StyledCardHeader = styled(Card.Header)({
-	"&.MuiCardHeader-root": {
-		padding: 0,
-		margin: 0,
-	},
+const StyledTitleRow = styled("div")(({ theme }) => ({
 	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	alignSelf: "stretch",
-});
-
-const ButtonName = styled("p")(({ theme }) => ({
-	fontSize: "13px",
-	color: theme.palette.primary.main,
-	fontFamily: "Inter",
-	fontStyle: "normal",
-	fontWeight: "500",
-	lineHeight: "22px",
-	letterSpacing: "0.46px",
+	alignItems: "center",
+	gap: theme.spacing(1),
+	width: "100%",
+	minHeight: "46px",
 }));
 
-const ViewDetailsButtonName = styled("p")(({ theme }) => ({
-	fontSize: "13px",
-	color: theme.palette.primary.main,
-	fontFamily: "Inter",
-	fontStyle: "normal",
-	fontWeight: "500",
-	lineHeight: "22px",
-	letterSpacing: "0.46px",
+const StyledTitleText = styled("div")(({ theme }) => ({
+	fontSize: "18px",
+	fontWeight: 600,
+	lineHeight: "1.3",
+	color: theme.palette.text.primary,
+	flex: "1 1 auto",
+	minWidth: 0,
+	display: "-webkit-box",
+	WebkitLineClamp: 2,
+	WebkitBoxOrient: "vertical",
+	overflow: "hidden",
 }));
 
-const StyledCardContent = styled(Card.Content)({
+const StyledInlineTag = styled("span")(({ theme }) => ({
+	fontSize: "11px",
+	textTransform: "uppercase",
+	letterSpacing: "0.08em",
+	color: theme.palette.text.secondary,
+	background: theme.palette.grey[100],
+	borderRadius: "999px",
+	padding: theme.spacing(0.25, 0.75),
+	whiteSpace: "nowrap",
+}));
+
+const StyledTagRow = styled("div", {
+	shouldForwardProp: (prop) => prop !== "hasTags",
+})<{ hasTags: boolean }>(({ hasTags }) => ({
+	width: "100%",
+	display: "flex",
+	alignItems: "center",
+	height: "24px",
+	minHeight: "24px",
+	visibility: hasTags ? "visible" : "hidden",
+	pointerEvents: hasTags ? "auto" : "none",
+}));
+
+const StyledTagScroll = styled("div")(({ theme }) => ({
+	display: "flex",
+	alignItems: "center",
+	gap: theme.spacing(1),
+	overflowX: "auto",
+	whiteSpace: "nowrap",
+	width: "100%",
+	scrollbarWidth: "thin",
+	height: "20px",
+}));
+
+const StyledCardContent = styled(Card.Content)(({ theme }) => ({
 	"&.MuiCardContent-root": {
 		padding: 0,
 		margin: 0,
 		// gap: '0px',//default spacing is 8px
 	},
-});
-
-const StyledTagChip = styled(Chip, {
-	shouldForwardProp: (prop) => prop !== "maxWidth",
-})<{ maxWidth?: string }>(({ maxWidth = "200px" }) => ({
-	maxWidth: maxWidth,
-	textOverflow: "ellipsis",
-	height: "24px",
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(2),
+	width: "100%",
+	flex: 1,
+	minHeight: 0,
 }));
 
-const StyledCardActions = styled(Card.Actions)({
+const StyledCardActions = styled(Card.Actions)(({ theme }) => ({
 	display: "flex",
-	padding: "0px 8px 0px 11px",
+	padding: theme.spacing(0.5, 2),
 	alignItems: "center",
-	justifyContent: "space-between",
+	justifyContent: "flex-start",
+	gap: theme.spacing(0.75),
 	alignSelf: "stretch",
+	width: "100%",
+	margin: 0,
 	"&.MuiCardActions-root": {
-		padding: 0,
+		padding: theme.spacing(0.5, 2),
+		margin: 0,
 		position: "relative",
-		gap: 0,
+		gap: theme.spacing(0.75),
 	},
-});
-
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
-	backgroundColor: theme.palette.background.paper,
-	height: "28px",
-	width: "28px",
-	borderRadius: "24px",
-	zIndex: 1,
-	"&.MuiButtonBase-root :hover": {
-		backgroundColor: theme.palette.background.paper,
-		borderRadius: "24px",
-		$icon: {
-			color: "red",
+	marginTop: "auto",
+	"&.MuiCardActions-spacing": {
+		"> :not(style) ~ :not(style)": {
+			marginLeft: 0,
 		},
-	},
-}));
-
-const StyledOpenButton = styled(IconButton)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	"&.MuiIconButton-root": {
-		padding: 0,
-	},
-	"&.MuiIconButton-root :hover": {
-		backgroundColor: theme.palette.primary.hover,
 	},
 }));
 
@@ -205,6 +217,7 @@ const StyledMainDiv = styled("div", {
 })<{ layout: "fixed" | "responsive" }>(({ layout }) => ({
 	width: layout === "responsive" ? "100%" : "322px",
 	minWidth: layout === "responsive" ? "240px" : "322px",
+	height: "100%",
 	minHeight: "307px",
 }));
 
@@ -218,9 +231,9 @@ const StyledSkeletonImage = styled("div")(({ theme }) => ({
 
 const StyledSkeletonContent = styled("div")(({ theme }) => ({
 	display: "flex",
-	padding: theme.spacing(1, 2),
+	padding: theme.spacing(2),
 	flexDirection: "column",
-	gap: theme.spacing(1),
+	gap: theme.spacing(1.5),
 	alignItems: "flex-start",
 }));
 
@@ -245,44 +258,63 @@ const StyledSkeletonFooter = styled("div")({
 
 const StyledContent = styled("div")(({ theme }) => ({
 	display: "flex",
-	padding: theme.spacing(1, 2),
+	padding: theme.spacing(2),
 	flexDirection: "column",
-	gap: theme.spacing(1),
+	gap: theme.spacing(1.5),
 	alignItems: "flex-start",
 	borderTopLeftRadius: theme.shape.borderRadius,
 	borderTopRightRadius: theme.shape.borderRadius,
 	position: "relative",
+	flex: 1,
+	minHeight: 0,
 }));
 
-const StyledFooter = styled("div")({
+const StyledActionGroup = styled("div")(({ theme }) => ({
+	display: "grid",
+	gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+	gap: theme.spacing(1),
+	width: "100%",
+}));
+
+const StyledMetaSection = styled("div")(({ theme }) => ({
+	width: "100%",
+	paddingBottom: theme.spacing(0.5),
+	minHeight: "44px",
+}));
+
+const StyledMetaGrid = styled("div")(({ theme }) => ({
+	display: "grid",
+	gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+	gap: theme.spacing(1.5, 2),
+}));
+
+const StyledMetaItem = styled("div")({
 	display: "flex",
-	alignItems: "center",
+	flexDirection: "column",
+	gap: "4px",
 });
 
-const StyledFooterDiv = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	height: "30px",
-	width: "123px",
-	gap: theme.spacing(1),
-	justifyContent: "center",
-	flex: "1 0 0",
-	borderRadius: "12px",
-	background: theme.palette.background.paper,
-	border: `1px solid ${theme.palette.primary.main}`,
+const StyledMetaLabel = styled("span")(({ theme }) => ({
+	fontSize: "10px",
+	letterSpacing: "0.08em",
+	textTransform: "uppercase",
+	color: theme.palette.text.disabled,
 }));
 
-const ViewDetailsButton = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	height: "30px",
-	width: "123px",
-	gap: theme.spacing(1),
-	justifyContent: "center",
-	flex: "1 0 0",
-	borderRadius: "12px",
-	background: theme.palette.background.paper,
+const StyledMetaValue = styled("span")(({ theme }) => ({
+	fontSize: "13px",
+	fontWeight: 500,
+	color: theme.palette.text.primary,
 }));
+
+const StyledContentDivider = styled("div")(() => ({
+	width: "100%",
+	borderTop: "1px solid #f1f5f9",
+}));
+
+const StyledContentSpacer = styled("div")({
+	flex: 1,
+});
 
 const StyledCardContentSection = styled("div")(({ theme }) => ({
 	height: "8px",
@@ -323,11 +355,6 @@ const SkeletonDefault = styled(Skeleton)(({ theme }) => ({
 const SkeletonMoreVertIcon = styled(Skeleton)(({ theme }) => ({
 	borderRadius: "8px",
 	background: `linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, ${theme.palette.grey[600]} 50%)`,
-}));
-
-const OpenInNewOutlinedIcon = styled(OpenInNewOutlined)(({ theme }) => ({
-	background: theme.palette.background.paper,
-	color: theme.palette.primary.main,
 }));
 
 const StyledMenu = styled(Menu)(({ theme }) => ({
@@ -466,6 +493,9 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	const tags = app.tag
 		? (Array.isArray(app.tag) ? app.tag : [app.tag]).filter(Boolean)
 		: [];
+	const showBookmark = !systemApp && !isDiscoverable;
+	const showMenu = app.project_created_by !== "SYSTEM";
+	const showInfo = app.project_created_by !== "SYSTEM";
 
 	// --- Gradient avatar logic (from ModelTileCard) ---
 	function hashString(str: string): number {
@@ -519,7 +549,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 			return null;
 		}
 
-		return `Published ${d.format("MMMM D, YYYY")}`;
+		return d.format("MMM D, YYYY");
 	}, [app.project_date_created]);
 	const lastEditedDate = useMemo(() => {
 		const d = dayjs(app.project_date_last_edited);
@@ -527,7 +557,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 			return null;
 		}
 
-		return `Last Edited ${d.format("MMMM D, YYYY")}`;
+		return d.format("MMM D, YYYY");
 	}, [app.project_date_last_edited]);
 
 	/**
@@ -603,8 +633,8 @@ export const AppTileCard = (props: AppTileCardProps) => {
 						/>
 						<SkeletonIcon
 							variant="rectangular"
-							width="28px"
-							height="28px"
+							width="32px"
+							height="32px"
 						/>
 					</StyledSkeletonImage>
 
@@ -663,7 +693,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
 						{/* Skeleton for the actions */}
 						<StyledSkeletonFooter>
-							{/* Skeleton for the Open App button */}
+							{/* Skeleton for the Open button */}
 
 							<SkeletonDefault
 								variant="rectangular"
@@ -699,30 +729,46 @@ export const AppTileCard = (props: AppTileCardProps) => {
 					`appTileCard-${app.project_name}-tile`,
 				)}
 			>
-				{!systemApp && !isDiscoverable && (
-					<StyledContainer>
-						<StyledOverlayContent>
-							<StyledIconButton
-								size={"small"}
-								title={
-									isFavorite
-										? `Unbookmark ${app.project_name ? app.project_name : ""}`
-										: `Bookmark ${app.project_name ? app.project_name : ""}`
-								}
-								onClick={(e) => {
-									e.stopPropagation();
-									favorite(isFavorite);
-								}}
-							>
-								{isFavorite ? (
-									<Bookmark color="primary" />
-								) : (
-									<BookmarkBorder />
-								)}
-							</StyledIconButton>
-						</StyledOverlayContent>
-					</StyledContainer>
-				)}
+				<StyledContainer>
+					<StyledOverlayContent>
+						<StyledHeaderActions>
+							{showBookmark ? (
+								<IconButton
+									size="small"
+									title={
+										isFavorite
+											? `Unbookmark ${app.project_name ? app.project_name : ""}`
+											: `Bookmark ${app.project_name ? app.project_name : ""}`
+									}
+									onClick={(e) => {
+										e.stopPropagation();
+										favorite(isFavorite);
+									}}
+								>
+									{isFavorite ? (
+										<Bookmark color="primary" />
+									) : (
+										<BookmarkBorder />
+									)}
+								</IconButton>
+							) : null}
+							{showMenu ? (
+								<IconButton
+									size="small"
+									onClick={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										setAnchorEl(
+											e.currentTarget as HTMLElement,
+										);
+									}}
+								>
+									<MoreVert />
+								</IconButton>
+							) : null}
+						</StyledHeaderActions>
+					</StyledOverlayContent>
+				</StyledContainer>
 				<Link
 					href={href}
 					rel="noopener noreferrer"
@@ -751,16 +797,13 @@ export const AppTileCard = (props: AppTileCardProps) => {
 					)}
 					<StyledCardContentSection>&nbsp;</StyledCardContentSection>
 					<StyledContent>
-						<StyledCardHeader
-							title={
-								<div
-									title={removeUnderscores(app?.project_name)}
-									className="truncate text-ellipsis font-normal text-[14px] leading-[143%]"
-								>
-									{removeUnderscores(app?.project_name)}
-								</div>
-							}
-						/>
+						<StyledTitleRow>
+							<StyledTitleText
+								title={removeUnderscores(app?.project_name)}
+							>
+								{removeUnderscores(app?.project_name)}
+							</StyledTitleText>
+						</StyledTitleRow>
 
 						<StyledCardContent>
 							<StyledCardDescription variant={"caption"}>
@@ -768,72 +811,76 @@ export const AppTileCard = (props: AppTileCardProps) => {
 									? app.description
 									: "No description available"}
 							</StyledCardDescription>
-							<Stack
-								direction="row"
-								alignItems="center"
-								spacing={0.5}
-								height={"24px"}
-							>
-								{tags.length > 0 && (
-									<>
-										{tags.slice(0, 3).map((tag, i) => (
-											<StyledTagChip
-												key={`${app.project_id}${i}`}
-												maxWidth={
-													tags.length === 2
-														? "100px"
-														: tags.length === 1
-															? "200px"
-															: "75px"
-												}
-												label={tag}
-											/>
-										))}
-										{tags.length > 3 && (
-											<Typography variant="caption">
-												+{tags.length - 3}
-											</Typography>
+							{(createdDate || lastEditedDate) && (
+								<StyledMetaSection>
+									<StyledMetaGrid>
+										{createdDate && (
+											<StyledMetaItem>
+												<StyledMetaLabel>
+													Published
+												</StyledMetaLabel>
+												<StyledMetaValue>
+													{createdDate}
+												</StyledMetaValue>
+											</StyledMetaItem>
 										)}
-									</>
-								)}
-							</Stack>
-							{createdDate && (
-								<StyledPublishedByContainer>
-									<StyledAccessTimeIcon />
-									<StyledPublishedByLabel variant={"body2"}>
-										{createdDate}
-									</StyledPublishedByLabel>
-								</StyledPublishedByContainer>
+										{lastEditedDate && (
+											<StyledMetaItem>
+												<StyledMetaLabel>
+													Last Edited
+												</StyledMetaLabel>
+												<StyledMetaValue>
+													{lastEditedDate}
+												</StyledMetaValue>
+											</StyledMetaItem>
+										)}
+									</StyledMetaGrid>
+								</StyledMetaSection>
 							)}
-							{lastEditedDate && (
-								<StyledPublishedByContainer>
-									<StyledAccessTimeIcon />
-									<StyledPublishedByLabel variant={"body2"}>
-										{lastEditedDate}
-									</StyledPublishedByLabel>
-								</StyledPublishedByContainer>
-							)}
+							<StyledTagRow hasTags={tags.length > 0}>
+								{tags.length > 0 ? (
+									<StyledTagScroll>
+										{tags.map((tag) => (
+											<StyledInlineTag
+												key={`${app.project_id}-${tag}`}
+											>
+												{String(tag)}
+											</StyledInlineTag>
+										))}
+									</StyledTagScroll>
+								) : null}
+							</StyledTagRow>
 							{systemApp && !appDetails && <StyledPlaceholder />}
+							<StyledContentSpacer />
 						</StyledCardContent>
-						<StyledCardActions>
-							{!href ? (
-								<StyledFooter>
-									<StyledOpenButton
-										onClick={onAction}
+						<StyledContentDivider />
+						<StyledCardActions disableSpacing>
+							<StyledActionGroup>
+								{!href ? (
+									<Button
+										variant="outlined"
 										size="small"
+										fullWidth
+										onClick={onAction}
+										style={
+											showInfo
+												? undefined
+												: { gridColumn: "1 / -1" }
+										}
+										endIcon={
+											<OpenInNewOutlined fontSize="small" />
+										}
 									>
-										<StyledFooterDiv>
-											<ButtonName>Open App</ButtonName>
-											<OpenInNewOutlinedIcon fontSize="small" />
-										</StyledFooterDiv>
-									</StyledOpenButton>
-								</StyledFooter>
-							) : (
-								<StyledFooter>
-									<StyledOpenButton
+										Open
+									</Button>
+								) : (
+									<Button
+										variant="outlined"
+										size="small"
+										fullWidth
 										onClick={(e) => {
-											e.preventDefault(); // Prevent <Link> navigation
-											e.stopPropagation(); // Prevent bubbling to <Link>
+											e.preventDefault();
+											e.stopPropagation();
 											if (href) {
 												window.open(
 													href,
@@ -842,45 +889,32 @@ export const AppTileCard = (props: AppTileCardProps) => {
 												);
 											}
 										}}
-										size="small"
+										style={
+											showInfo
+												? undefined
+												: { gridColumn: "1 / -1" }
+										}
+										endIcon={
+											<OpenInNewOutlined fontSize="small" />
+										}
 									>
-										<StyledFooterDiv>
-											<ButtonName>Open App</ButtonName>
-											<OpenInNewOutlinedIcon fontSize="small" />
-										</StyledFooterDiv>
-									</StyledOpenButton>
-								</StyledFooter>
-							)}
-							{app.project_created_by !== "SYSTEM" ? (
-								<StyledOpenButton
-									onClick={(e) => {
-										e.preventDefault();
-										navigateApp(app.project_id);
-									}}
-									size="small"
-								>
-									<ViewDetailsButton>
-										<ViewDetailsButtonName>
-											View Details
-										</ViewDetailsButtonName>
-									</ViewDetailsButton>
-								</StyledOpenButton>
-							) : null}
-							{app.project_created_by !== "SYSTEM" ? (
-								<IconButton
-									onClick={(e) => {
-										e.preventDefault();
-										setAnchorEl(
-											e.currentTarget.closest(
-												".MuiCard-root",
-											) as HTMLElement | null,
-										); // Set the card as the anchor element
-									}}
-									size="small"
-								>
-									<MoreVert />
-								</IconButton>
-							) : null}
+										Open
+									</Button>
+								)}
+								{showInfo ? (
+									<Button
+										variant="outlined"
+										size="small"
+										fullWidth
+										onClick={(e) => {
+											e.preventDefault();
+											navigateApp(app.project_id);
+										}}
+									>
+										Info
+									</Button>
+								) : null}
+							</StyledActionGroup>
 						</StyledCardActions>
 					</StyledContent>
 				</Link>

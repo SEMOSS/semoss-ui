@@ -24,8 +24,16 @@ import { NavbarHeader, NavbarLeft } from "../../components/shared";
 
 const StyledSection = styled("div")(({ theme }) => ({
 	display: "grid",
-	gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+	gridTemplateColumns: "repeat(3, minmax(240px, 1fr))",
 	gap: theme.spacing(3),
+	justifyContent: "start",
+	alignItems: "stretch",
+	[theme.breakpoints.down("lg")]: {
+		gridTemplateColumns: "repeat(2, minmax(240px, 1fr))",
+	},
+	[theme.breakpoints.down("md")]: {
+		gridTemplateColumns: "repeat(1, minmax(240px, 1fr))",
+	},
 }));
 
 const StyledContentContainer = styled("div")(({ theme }) => ({
