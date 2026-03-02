@@ -316,17 +316,6 @@ const StyledContentSpacer = styled("div")({
 	flex: 1,
 });
 
-const StyledCardContentSection = styled("div")(({ theme }) => ({
-	height: "8px",
-	backgroundColor: theme.palette.background.paper,
-	position: "absolute",
-	borderTopLeftRadius: "50px",
-	borderTopRightRadius: "50px",
-	width: "100%",
-	top: "70px",
-	border: "1px solid transparent",
-}));
-
 const SkeletonMain = styled(Skeleton)(({ theme }) => ({
 	backgroundImage: `url(${ImageSkeleton})`,
 	backgroundRepeat: "no-repeat",
@@ -795,7 +784,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
 							)}
 						</StyledAppAvatar>
 					)}
-					<StyledCardContentSection>&nbsp;</StyledCardContentSection>
 					<StyledContent>
 						<StyledTitleRow>
 							<StyledTitleText
