@@ -265,7 +265,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	}, [filterProjects, count]);
 
 	useEffect(() => {
-		if (!groupId) {
+		const refreshToken = count;
+		if (refreshToken < 0 || !groupId) {
 			return;
 		}
 		const trimmed = debouncedSearch.trim();
@@ -287,7 +288,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 					setProjectCount(0);
 				}
 			});
-	}, [groupId, groupType, debouncedSearch]);
+	}, [groupId, groupType, debouncedSearch, count]);
 
 	useEffect(() => {
 		if (!addProjectModal) {
@@ -369,7 +370,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			setSelectedNonCredentialedProjects([]);
 			toast.error(String(e));
 		} finally {
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 			setOffset(0);
 		}
 	};
@@ -385,11 +386,10 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 						};
 				  }
 				| null = null;
-			response = await deleteProjectPermission(
-				groupId,
-				groupType,
-				project,
-			);
+			response = await deleteProjectPermission(groupId, groupType, {
+				projectid: project.projectid ?? project.project_id,
+				group_type: groupType,
+			});
 
 			if (!response) {
 				return;
@@ -400,7 +400,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			toast.error(String(e));
 		} finally {
 			setDeleteProjectModal(false);
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 		}
 	};
 
@@ -420,7 +420,12 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 					response = await deleteProjectPermission(
 						groupId,
 						groupType,
-						selectedProjects[i],
+						{
+							projectid:
+								selectedProjects[i].projectid ??
+								selectedProjects[i].project_id,
+							group_type: groupType,
+						},
 					);
 
 					if (!response) {
@@ -434,7 +439,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			}
 		} finally {
 			toast.success("Successfully removed apps");
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 			setDeleteProjectsModal(false);
 			setSelectedProojects([]);
 		}
@@ -511,6 +516,12 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 		projectCount === 0 ? 0 : (projectsPage - 1) * rowsPerPage + 1;
 	const endRow = Math.min(projectsPage * rowsPerPage, projectCount);
 
+	useEffect(() => {
+		if (projectsPage > totalPages) {
+			setProjectsPage(totalPages);
+		}
+	}, [projectsPage, totalPages]);
+
 	const isAllSelected =
 		selectedProjects.length === projects.length && projects.length > 0;
 
@@ -543,20 +554,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									}}
 								/>
 							</InputGroup>
-							<div className="flex flex-wrap items-center gap-2">
-								{selectedProjects.length > 0 && (
-									<Button
-										variant="outline"
-										className="border-destructive text-destructive hover:bg-destructive/10"
-										onClick={() =>
-											setDeleteProjectsModal(true)
-										}
-									>
-										<Trash2 className="size-4" />
-										Delete Selected
-									</Button>
-								)}
+							<div className="flex items-center gap-2 sm:flex-nowrap">
 								<Button
+									className="shrink-0"
 									onClick={() => {
 										setAddProjectRole(undefined);
 										setOffset(0);
@@ -568,6 +568,18 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									<Plus className="size-4" />
 									Add Apps
 								</Button>
+								{selectedProjects.length > 0 && (
+									<Button
+										variant="outline"
+										className="whitespace-nowrap border-destructive text-destructive hover:bg-destructive/10"
+										onClick={() =>
+											setDeleteProjectsModal(true)
+										}
+									>
+										<Trash2 className="size-4" />
+										Delete Selected
+									</Button>
+								)}
 							</div>
 						</div>
 					</CardHeader>
@@ -576,8 +588,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead className="w-[45%]">
-											<div className="flex items-center gap-2">
+										<TableHead className="w-12">
+											<div className="flex justify-center">
 												<Checkbox
 													checked={isAllSelected}
 													onCheckedChange={() => {
@@ -592,9 +604,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 														}
 													}}
 												/>
-												<span>Name</span>
 											</div>
 										</TableHead>
+										<TableHead>Name</TableHead>
 										<TableHead className="w-[220px]">
 											Access
 										</TableHead>
@@ -616,7 +628,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 											const projectKey =
 												projectId ??
 												project.project_name ??
-												project.name;
+												project.project_portal_name;
 											const isSelected =
 												selectedProjects.some(
 													(value) =>
@@ -629,8 +641,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 												<TableRow
 													key={`project-${projectKey}`}
 												>
-													<TableCell>
-														<div className="flex items-start gap-3">
+													<TableCell className="w-12">
+														<div className="flex justify-center">
 															<Checkbox
 																checked={
 																	isSelected
@@ -660,15 +672,17 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 																	}
 																}}
 															/>
-															<div className="min-w-0">
-																<div className="truncate font-medium text-sm">
-																	{
-																		project.project_name
-																	}
-																</div>
-																<div className="text-muted-foreground text-xs">
-																	{`App ID: ${projectId}`}
-																</div>
+														</div>
+													</TableCell>
+													<TableCell>
+														<div className="min-w-0">
+															<div className="truncate font-medium text-sm">
+																{
+																	project.project_name
+																}
+															</div>
+															<div className="text-muted-foreground text-xs">
+																{`App ID: ${projectId}`}
 															</div>
 														</div>
 													</TableCell>
@@ -737,7 +751,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									) : (
 										<TableRow>
 											<TableCell
-												colSpan={4}
+												colSpan={5}
 												className="text-center"
 											>
 												No Apps found.
@@ -747,7 +761,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 								</TableBody>
 								<TableFooter>
 									<TableRow>
-										<TableCell colSpan={4}>
+										<TableCell colSpan={5}>
 											<div className="flex flex-wrap items-center justify-end gap-4">
 												<div className="flex items-center gap-2 text-sm">
 													<span>Rows per page:</span>
@@ -1100,9 +1114,17 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 					<DialogHeader>
 						<DialogTitle>Are you sure?</DialogTitle>
 						<DialogDescription>
-							{projectToDelete
-								? `This will remove ${projectToDelete.project_name}.`
-								: "This will remove the selected app."}
+							{projectToDelete ? (
+								<>
+									This will remove{" "}
+									<span className="font-medium text-foreground">
+										{projectToDelete.project_name}
+									</span>
+									.
+								</>
+							) : (
+								"This will remove the selected app."
+							)}
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>

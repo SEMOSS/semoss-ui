@@ -1,189 +1,46 @@
-import { Add, Delete, Edit } from "@mui/icons-material";
-import SearchIcon from "@mui/icons-material/Search";
-import { useMemo, useRef, useState } from "react";
+import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Avatar,
-	AvatarGroup,
-	Box,
+	AvatarFallback,
+	Badge,
 	Button,
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
 	Checkbox,
-	IconButton,
-	LoadingScreen,
-	Search,
-	Stack,
-	styled,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	Label,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Spinner,
 	Table,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TableBody,
+	TableCell,
+	TableFooter,
+	TableHead,
+	TableHeader,
+	TableRow,
+	toast,
+} from "@semoss/ui/next";
 import { deleteMember, editMemberInfo } from "@/api";
 import { useAPI, useSettings } from "@/hooks";
 import { UserAddOverlay } from "./UserAddOverlay";
 import { UserPopover } from "./user-popover";
 
-const AvatarWrapper = styled("div")({
-	display: "inline-block",
-	width: "50px",
-});
-
-const StyledMemberContent = styled("div")({
-	display: "flex",
-	width: "100%",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: "25px",
-	flexShrink: "0",
-});
-
-const StyledMemberInnerContent = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: "20px",
-	alignSelf: "stretch",
-});
-
-const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
-	borderRadius: "12px",
-	border: `1px solid ${theme.palette.secondary.border}`,
-}));
-
-const StyledMemberLoading = styled("div")(() => ({
-	position: "relative",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	height: "160px",
-}));
-
-const StyledMemberTable = styled(Table)({
-	backgroundColor: "white",
-});
-
-const StyledTableTitleContainer = styled("div")({
-	display: "flex",
-	alignItems: "center",
-	alignSelf: "stretch",
-	boxShadow: "0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset",
-	backgroundColor: "white",
-});
-
-const StyledTableTitleDiv = styled("div")({
-	display: "flex",
-	padding: "12px 24px 12px 16px",
-	alignItems: "center",
-	gap: "10px",
-});
-
-const StyledTableTitleMemberContainer = styled("div")({
-	display: "flex",
-	alignItems: "flex-start",
-	flex: "1 0 0",
-});
-
-const StyledAvatarGroupContainer = styled("div")({
-	display: "flex",
-	width: "130px",
-	height: "56px",
-	padding: "10px 16px",
-	flexDirection: "column",
-	justifyContent: "center",
-	alignItems: "center",
-	gap: "10px",
-});
-
-const StyledPrimaryText = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.primary,
-}));
-
-const _StyledSecondaryText = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.secondary,
-}));
-
-const StyledTableTitleMemberCountContainer = styled("div")({
-	display: "flex",
-	height: "56px",
-	padding: "6px 16px 6px 8px",
-	flexDirection: "column",
-	justifyContent: "center",
-	alignItems: "center",
-	gap: "10px",
-});
-
-const StyledTableTitleMemberCount = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-});
-
-const StyledSearchButtonContainer = styled("div")({
-	display: "flex",
-	alignItems: "center",
-	// gap: '10px',
-});
-
-const StyledDeleteSelectedContainer = styled("div")({
-	display: "flex",
-	padding: "10px 8px 10px 16px",
-	flexDirection: "column",
-	justifyContent: "center",
-	alignItems: "center",
-	gap: "10px",
-});
-
-const StyledAddMemberContainer = styled("div")({
-	display: "flex",
-	padding: "10px 24px 10px 8px",
-	flexDirection: "column",
-	justifyContent: "center",
-	alignItems: "center",
-	gap: "10px",
-});
-
-const StyledTableCell = styled(Table.Cell)({
-	paddingLeft: "16px",
-});
-
-const StyledCheckbox = styled(Checkbox)({
-	paddingBottom: "0px",
-});
-
-const StyledCenteredBox = styled(Box)({
-	display: "flex",
-	alignItems: "center",
-	gap: "8px",
-});
-
-const StyledNoUsersDiv = styled("div")(({ theme }) => ({
-	width: "100%",
-	height: "503px",
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-	justifyContent: "center",
-	alignItems: "center",
-}));
-
-const StyledTableDiv = styled("div")({});
-
-const formatValue = (input: string) => {
-	if (input !== undefined) {
-		const mappings: Record<string, string> = {
-			TOKEN: "Token",
-			COMPUTE: "Compute time",
-			DAY: "Daily",
-			WEEK: "Weekly",
-			MONTH: "Monthly",
-		};
-		return mappings[input.toUpperCase()] || input;
-	}
-	return "";
-};
-const StyledNameStack = styled(Stack)({
-	alignItems: "center",
-	flex: 1,
-});
 interface User {
 	id: string;
 	type: string;
@@ -210,29 +67,43 @@ interface UserTableProps {
 	onChange?: () => void;
 }
 
+const formatValue = (input: string) => {
+	if (input !== undefined) {
+		const mappings: Record<string, string> = {
+			TOKEN: "Token",
+			COMPUTE: "Compute time",
+			DAY: "Daily",
+			WEEK: "Weekly",
+			MONTH: "Monthly",
+		};
+		return mappings[input.toUpperCase()] || input;
+	}
+	return "";
+};
+
 export const UserTable = (props: UserTableProps) => {
 	const { onChange = () => null } = props;
 
 	const { adminMode } = useSettings();
-	const notification = useNotification();
 
 	const [page, setPage] = useState<number>(0);
-	const [rowsPerPage, setRowsPerPage] = useState<number>(10);
-	const [isSearch, setIsSearch] = useState<boolean>(false);
+	const [rowsPerPage, setRowsPerPage] = useState<number>(50);
 	const [search, setSearch] = useState<string>("");
 
 	// debounce the input
 	const debouncedSearch = useDebouncedValue(search);
 
 	/** Member Table State */
-	const [selectedMembers, setSelectedMembers] = useState([]);
-
+	const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
 
 	/** Add User State*/
 	const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
 	const [addModalUser, setAddModalUser] = useState<User | null>(null);
-
-	const userSearchRef = useRef(null);
+	const [cachedTotalUsers, setCachedTotalUsers] = useState<number>(0);
+	const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+	const [deleteMode, setDeleteMode] = useState<"single" | "bulk">("single");
+	const [userToDelete, setUserToDelete] = useState<User | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	const getUsers = useAPI([
 		"getAllUsers",
@@ -248,9 +119,27 @@ export const UserTable = (props: UserTableProps) => {
 	const renderedMembers =
 		getUsers.status === "SUCCESS" ? getUsers.data?.users : [];
 	const totalUsers =
-		getUsers.status === "SUCCESS" ? getUsers.data?.totalUsers : 0;
-	const hasUsers =
-		getUsers.status === "SUCCESS" && getUsers.data?.totalUsers > 0;
+		getUsers.status === "SUCCESS" &&
+		typeof getUsers.data?.totalUsers === "number"
+			? getUsers.data.totalUsers
+			: cachedTotalUsers;
+	const filteredUsers =
+		getUsers.status === "SUCCESS"
+			? (getUsers.data?.filteredUsers ?? totalUsers)
+			: 0;
+	const hasSearch = (debouncedSearch ?? "").trim().length > 0;
+	const activeTotalUsers = hasSearch ? filteredUsers : totalUsers;
+	const hasUsers = getUsers.status === "SUCCESS" && activeTotalUsers > 0;
+	const totalPages = Math.max(1, Math.ceil(activeTotalUsers / rowsPerPage));
+
+	useEffect(() => {
+		if (
+			getUsers.status === "SUCCESS" &&
+			typeof getUsers.data?.totalUsers === "number"
+		) {
+			setCachedTotalUsers(getUsers.data.totalUsers);
+		}
+	}, [getUsers.status, getUsers.data?.totalUsers]);
 
 	/**
 	 * Update a user
@@ -276,26 +165,17 @@ export const UserTable = (props: UserTableProps) => {
 
 			// ignore if there is no response
 			if (response.data) {
-				notification.add({
-					color: "success",
-					message: "Successfully updated user",
-				});
+				toast.success("Successfully updated user");
 
 				onChange();
 
 				// refresh the users
 				getUsers.refresh();
 			} else {
-				notification.add({
-					color: "error",
-					message: `Error changing user`,
-				});
+				toast.error("Error changing user");
 			}
 		} catch (e) {
-			notification.add({
-				color: "error",
-				message: String(e),
-			});
+			toast.error(String(e));
 		}
 	};
 	/**
@@ -312,26 +192,17 @@ export const UserTable = (props: UserTableProps) => {
 
 			// ignore if there is no response
 			if (response.data) {
-				notification.add({
-					color: "success",
-					message: "Successfully deleting user",
-				});
+				toast.success("Successfully deleting user");
 
 				onChange();
 
 				// refresh the users
 				getUsers.refresh();
 			} else {
-				notification.add({
-					color: "error",
-					message: `Error deleting user`,
-				});
+				toast.error("Error deleting user");
 			}
 		} catch (e) {
-			notification.add({
-				color: "error",
-				message: String(e),
-			});
+			toast.error(String(e));
 		}
 	};
 
@@ -354,23 +225,14 @@ export const UserTable = (props: UserTableProps) => {
 
 					// ignore if there is no response
 					if (response.data) {
-						notification.add({
-							color: "success",
-							message: "Successfully deleted users",
-						});
+						toast.success("Successfully deleted users");
 
 						onChange();
 					} else {
-						notification.add({
-							color: "error",
-							message: `Error deleting user`,
-						});
+						toast.error("Error deleting user");
 					}
 				} catch (e) {
-					notification.add({
-						color: "error",
-						message: String(e),
-					});
+					toast.error(String(e));
 				}
 			}
 		} finally {
@@ -380,409 +242,483 @@ export const UserTable = (props: UserTableProps) => {
 		}
 	};
 
+	const handleDeleteConfirm = async () => {
+		setIsDeleting(true);
+		try {
+			if (deleteMode === "single" && userToDelete) {
+				await deleteUser(userToDelete);
+			}
+			if (deleteMode === "bulk" && selectedMembers.length > 0) {
+				await deleteUsers();
+			}
+		} finally {
+			setIsDeleting(false);
+			setDeleteModalOpen(false);
+			setUserToDelete(null);
+		}
+	};
+
 	// Avatars rendered
-	const Avatars = useMemo(() => {
+	const avatarUsers = useMemo(() => {
 		if (!renderedMembers.length) {
 			return [];
 		}
 
-		let i = 0;
-		const avatarList = [];
-		while (i < 5 && i < renderedMembers.length) {
-			avatarList.push(
-				<Avatar key={i}>
-					{(renderedMembers[i].name || " ").charAt(0).toUpperCase()}
-				</Avatar>,
+		return renderedMembers.slice(0, 5).map((user, index) => {
+			const label = (user.name || user.id || "U").charAt(0).toUpperCase();
+			return (
+				<Avatar
+					key={`${user.id}-${index}`}
+					className="size-7 border border-background"
+				>
+					<AvatarFallback>{label}</AvatarFallback>
+				</Avatar>
 			);
+		});
+	}, [renderedMembers]);
 
-			i++;
-		}
-
-		return avatarList;
-	}, [renderedMembers.length]);
+	const allSelected =
+		renderedMembers.length > 0 &&
+		selectedMembers.length === renderedMembers.length;
+	const someSelected =
+		selectedMembers.length > 0 &&
+		!allSelected &&
+		renderedMembers.length > 0;
 
 	return (
-		<StyledMemberContent>
-			<StyledMemberInnerContent>
-				<StyledTableContainer>
-					<StyledTableTitleContainer>
-						<StyledTableTitleDiv>
-							<Typography variant={"h6"}>Members</Typography>
-						</StyledTableTitleDiv>
-						<StyledTableTitleMemberContainer>
-							{Avatars.length > 0 ? (
-								<StyledAvatarGroupContainer>
-									<AvatarGroup
-										spacing={"small"}
-										variant={"circular"}
-										max={4}
-										total={totalUsers}
-									>
-										{Avatars.map((el) => {
-											return el;
-										})}
-									</AvatarGroup>
-								</StyledAvatarGroupContainer>
-							) : null}
-							<StyledTableTitleMemberCountContainer>
-								<StyledTableTitleMemberCount>
-									<Typography variant={"caption"}>
-										{totalUsers} Members
-									</Typography>
-								</StyledTableTitleMemberCount>
-							</StyledTableTitleMemberCountContainer>
-						</StyledTableTitleMemberContainer>
-						<StyledSearchButtonContainer>
-							{isSearch ? (
-								<Search
-									inputRef={userSearchRef}
-									placeholder="Search Users"
-									size="small"
-									value={search}
-									onChange={(
-										e: React.ChangeEvent<HTMLInputElement>,
-									) => {
-										setSearch(e.target.value);
-									}}
-								/>
-							) : (
-								<IconButton
-									onClick={() => setIsSearch(!isSearch)}
-								>
-									<SearchIcon />
-								</IconButton>
-							)}
-						</StyledSearchButtonContainer>
-						<StyledDeleteSelectedContainer>
-							{selectedMembers.length > 0 && (
-								<Button
-									variant={"outlined"}
-									color="primary"
-									onClick={() => deleteUsers()}
-								>
-									Delete Selected
-								</Button>
-							)}
-						</StyledDeleteSelectedContainer>
-						<StyledAddMemberContainer>
-							<Button
-								disabled={isLoading}
-								variant={"contained"}
-								onClick={() => {
-									// open the modal to a new user
-									setAddModalOpen(true);
-									setAddModalUser(null);
+		<Card className="border border-border/60">
+			<CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+				<div className="flex flex-wrap items-center gap-3">
+					<CardTitle>Members</CardTitle>
+					<Badge variant="secondary" className="rounded-full">
+						{hasSearch
+							? `${filteredUsers} of ${totalUsers} members`
+							: `${totalUsers} members`}
+					</Badge>
+				</div>
+				<div className="flex flex-wrap items-center gap-2">
+					{avatarUsers.length > 0 ? (
+						<div className="-space-x-2 flex">{avatarUsers}</div>
+					) : null}
+					<div className="min-w-[220px]">
+						<InputGroup>
+							<InputGroupAddon>
+								<Search className="size-4" />
+							</InputGroupAddon>
+							<InputGroupInput
+								placeholder="Search Users"
+								value={search}
+								onChange={(
+									e: React.ChangeEvent<HTMLInputElement>,
+								) => {
+									setSearch(e.target.value);
 								}}
-							>
-								<StyledCenteredBox>
-									<Add />
-									Add Members
-								</StyledCenteredBox>
-							</Button>
-						</StyledAddMemberContainer>
-					</StyledTableTitleContainer>
-
-					{isLoading ? (
-						<StyledMemberLoading>
-							<LoadingScreen relative={true}>
-								<LoadingScreen.Trigger description="Getting Members" />
-							</LoadingScreen>
-						</StyledMemberLoading>
-					) : (
-						<StyledTableDiv>
-							{hasUsers ? (
-								<StyledMemberTable>
-									<Table.Head>
-										<Table.Row>
-											<Table.Cell
-												size="small"
-												padding="checkbox"
-											>
-												<Checkbox
-													id={
-														"userTable-checkbox-selectAll"
+							/>
+						</InputGroup>
+					</div>
+					{selectedMembers.length > 0 ? (
+						<Button
+							variant="outline"
+							size="sm"
+							className="border-destructive text-destructive hover:bg-destructive/10"
+							onClick={() => {
+								setDeleteMode("bulk");
+								setDeleteModalOpen(true);
+							}}
+						>
+							<Trash2 className="size-4" />
+							Delete Selected
+						</Button>
+					) : null}
+					<Button
+						disabled={isLoading}
+						onClick={() => {
+							setAddModalOpen(true);
+							setAddModalUser(null);
+						}}
+					>
+						<Plus className="size-4" />
+						Add Members
+					</Button>
+				</div>
+			</CardHeader>
+			<CardContent className="p-0">
+				{isLoading ? (
+					<div className="flex h-40 items-center justify-center">
+						<Spinner className="size-6" />
+					</div>
+				) : hasUsers ? (
+					<div>
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead className="w-10">
+										<div className="flex justify-center">
+											<Checkbox
+												checked={
+													allSelected
+														? true
+														: someSelected
+															? "indeterminate"
+															: false
+												}
+												aria-label="Select all members"
+												onCheckedChange={(checked) => {
+													if (checked === true) {
+														setSelectedMembers(
+															renderedMembers,
+														);
+													} else {
+														setSelectedMembers([]);
 													}
-													checked={
-														selectedMembers.length ===
-															renderedMembers.length &&
-														renderedMembers.length >
-															0
-													}
-													onChange={() => {
-														if (
-															selectedMembers.length !==
-															renderedMembers.length
-														) {
-															setSelectedMembers(
-																renderedMembers,
-															);
-														} else {
-															setSelectedMembers(
-																[],
-															);
-														}
-													}}
-												/>
-											</Table.Cell>
-											<Table.Cell size="small">
-												Name
-											</Table.Cell>
-											<Table.Cell size="small">
-												Type
-											</Table.Cell>
-											<Table.Cell size="small">
-												Model Limit Type
-											</Table.Cell>
-											<Table.Cell size="small">
-												Limit Value
-											</Table.Cell>
-											<Table.Cell size="small">
-												Frequency
-											</Table.Cell>
-											<Table.Cell size="small">
-												Role
-											</Table.Cell>
-											<Table.Cell size="small">
-												Actions
-											</Table.Cell>
-										</Table.Row>
-									</Table.Head>
-									<Table.Body>
-										{renderedMembers.map((user) => {
-											let isSelected = false;
-											if (user) {
-												isSelected =
-													selectedMembers.some(
-														(value) => {
-															return (
-																value.id ===
-																user.id
-															);
-														},
-													);
-												return (
-													<Table.Row key={user.id}>
-														<StyledTableCell
-															size="medium"
-															padding="checkbox"
-														>
-															<StyledCheckbox
-																checked={
-																	isSelected
-																}
-																onChange={() => {
-																	if (
-																		isSelected
-																	) {
-																		const selMembers =
-																			[];
-																		selectedMembers.forEach(
-																			(
-																				u,
-																			) => {
-																				if (
-																					u.id !==
-																					user.id
-																				)
-																					selMembers.push(
-																						u,
-																					);
-																			},
-																		);
-																		setSelectedMembers(
-																			selMembers,
-																		);
-																	} else {
-																		setSelectedMembers(
-																			[
-																				...selectedMembers,
-																				user,
-																			],
-																		);
-																	}
-																}}
-															/>
-														</StyledTableCell>
-														<Table.Cell>
-															<StyledCenteredBox>
-																<UserPopover
-																	user={{
-																		id: user.id,
-																		name: user.name || "Unknown",
-																		email: user.email || "",
-																	}}
-																>
-																	<div
-																		style={{
-																			display: "flex",
-																			flexDirection: "row",
-																			alignItems: "center",
-																			flex: 1,
-																			cursor: "pointer",
-																		}}
-																	>
-																		<AvatarWrapper>
-																			<Avatar>
-																				{user.name[0].toUpperCase()}
-																			</Avatar>
-																		</AvatarWrapper>
-																		<StyledPrimaryText
-																			variant="body1"
-																			noWrap={true}
-																			title={`Name: ${user.name}`}
-																		>
-																			{user.name || (
-																				<>&nbsp;</>
-																			)}
-																		</StyledPrimaryText>
-																	</div>
-																</UserPopover>
-															</StyledCenteredBox>
-														</Table.Cell>
-												<Table.Cell>
-													{user.type}
-												</Table.Cell>
-												<Table.Cell>
-													{formatValue(
-														user?.model_usage_restriction,
-													)}
-												</Table.Cell>
-												<Table.Cell>
-													{user?.model_usage_restriction ===
-														"compute" &&
-														`${user?.model_max_response_time?.toLocaleString()} ms`}
-
-													{user?.model_usage_restriction ===
-														"token" &&
-														`${user?.model_max_tokens?.toLocaleString()}`}
-												</Table.Cell>
-												<Table.Cell>
-													{formatValue(
-														user?.model_usage_frequency,
-													)}
-												</Table.Cell>
-												<Table.Cell>
-													<StyledCenteredBox>
-														<Checkbox
-															label="Publisher"
-															checked={
-																user.publisher
-															}
-															onChange={() => {
-																updateUser({
-																	...user,
-																	publisher:
-																		!user.publisher,
-																});
-															}}
-														/>
-														<Checkbox
-															label="Exporter"
-															checked={
-																user.exporter
-															}
-															onChange={() => {
-																updateUser({
-																	...user,
-																	exporter:
-																		!user.exporter,
-																});
-															}}
-														/>
-														<Checkbox
-															label="Admin"
-															checked={user.admin}
-															onChange={() => {
-																updateUser({
-																	...user,
-																	admin:
-																		!user.admin,
-																});
-															}}
-														/>
-													</StyledCenteredBox>
-												</Table.Cell>
-												<Table.Cell>
-													<StyledCenteredBox>
-														<IconButton
-															onClick={() => {
-																setAddModalOpen(
-																	true,
-																);
-
-																setAddModalUser(
-																	user,
-																);
-															}}
-														>
-															<Edit />
-														</IconButton>
-														<IconButton
-															onClick={() => {
-																deleteUser(
-																	user,
-																);
-															}}
-														>
-															<Delete />
-														</IconButton>
-													</StyledCenteredBox>
-												</Table.Cell>
-											</Table.Row>
-										);
-									}
-									return null;
-								})}
-							</Table.Body>
-
-									<Table.Footer>
-										<Table.Row>
-											<Table.Pagination
-												disabled={isLoading}
-												onPageChange={(e, v) => {
-													setPage(v);
 												}}
-												page={page}
-												rowsPerPage={rowsPerPage}
-												rowsPerPageOptions={[
-													10, 25, 50, 100,
-												]}
-												onRowsPerPageChange={(e) => {
-													// set the new limit
-													setRowsPerPage(
-														parseInt(
-															e.target.value,
-															10,
-														),
-													);
-												}}
-												count={totalUsers}
 											/>
-										</Table.Row>
-									</Table.Footer>
-								</StyledMemberTable>
-							) : (
-								<StyledNoUsersDiv>
-									<Typography variant={"body2"}>
-										No Members
-									</Typography>
-									<Button
-										disabled={isLoading}
-										variant={"contained"}
-										onClick={() => {
-											// open the modal to a new user
-											setAddModalOpen(true);
-											setAddModalUser(null);
-										}}
-									>
-										Add Member
-									</Button>
-								</StyledNoUsersDiv>
-							)}
-						</StyledTableDiv>
-					)}
-				</StyledTableContainer>
-			</StyledMemberInnerContent>
+										</div>
+									</TableHead>
+									<TableHead>Name</TableHead>
+									<TableHead>Type</TableHead>
+									<TableHead>Model Limit Type</TableHead>
+									<TableHead>Limit Value</TableHead>
+									<TableHead>Frequency</TableHead>
+									<TableHead>Role</TableHead>
+									<TableHead>Actions</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{renderedMembers.map((user) => {
+									const isSelected = selectedMembers.some(
+										(value) => value.id === user.id,
+									);
+									const displayName =
+										user.name || user.id || "Unknown";
+									const avatarLabel = displayName
+										.charAt(0)
+										.toUpperCase();
+
+									return (
+										<TableRow
+											key={user.id}
+											data-state={
+												isSelected
+													? "selected"
+													: undefined
+											}
+										>
+											<TableCell className="w-10">
+												<div className="flex justify-center">
+													<Checkbox
+														checked={isSelected}
+														aria-label={`Select ${displayName}`}
+														onCheckedChange={(
+															checked,
+														) => {
+															if (
+																checked === true
+															) {
+																setSelectedMembers(
+																	[
+																		...selectedMembers,
+																		user,
+																	],
+																);
+															} else {
+																setSelectedMembers(
+																	selectedMembers.filter(
+																		(
+																			member,
+																		) =>
+																			member.id !==
+																			user.id,
+																	),
+																);
+															}
+														}}
+													/>
+												</div>
+											</TableCell>
+											<TableCell>
+												<UserPopover
+													user={{
+														id: user.id,
+														name:
+															user.name ||
+															"Unknown",
+														email: user.email || "",
+													}}
+												>
+													<div className="flex items-center gap-3">
+														<Avatar className="size-8">
+															<AvatarFallback>
+																{avatarLabel}
+															</AvatarFallback>
+														</Avatar>
+														<div className="flex flex-col">
+															<span className="max-w-[220px] truncate font-medium">
+																{displayName}
+															</span>
+															<span className="text-muted-foreground text-xs">
+																{user.email ||
+																	"No email"}
+															</span>
+														</div>
+													</div>
+												</UserPopover>
+											</TableCell>
+											<TableCell>{user.type}</TableCell>
+											<TableCell>
+												{formatValue(
+													user?.model_usage_restriction,
+												)}
+											</TableCell>
+											<TableCell>
+												{user?.model_usage_restriction ===
+													"compute" &&
+													`${user?.model_max_response_time?.toLocaleString()} ms`}
+
+												{user?.model_usage_restriction ===
+													"token" &&
+													`${user?.model_max_tokens?.toLocaleString()}`}
+											</TableCell>
+											<TableCell>
+												{formatValue(
+													user?.model_usage_frequency,
+												)}
+											</TableCell>
+											<TableCell>
+												<div className="flex flex-col gap-2">
+													<div className="flex items-center gap-2">
+														<Checkbox
+															id={`publisher-${user.id}`}
+															checked={Boolean(
+																user.publisher,
+															)}
+															onCheckedChange={(
+																checked,
+															) => {
+																if (
+																	checked ===
+																	true
+																) {
+																	updateUser({
+																		...user,
+																		publisher: true,
+																	});
+																} else {
+																	updateUser({
+																		...user,
+																		publisher: false,
+																	});
+																}
+															}}
+														/>
+														<Label
+															htmlFor={`publisher-${user.id}`}
+															className="text-sm"
+														>
+															Publisher
+														</Label>
+													</div>
+													<div className="flex items-center gap-2">
+														<Checkbox
+															id={`exporter-${user.id}`}
+															checked={Boolean(
+																user.exporter,
+															)}
+															onCheckedChange={(
+																checked,
+															) => {
+																if (
+																	checked ===
+																	true
+																) {
+																	updateUser({
+																		...user,
+																		exporter: true,
+																	});
+																} else {
+																	updateUser({
+																		...user,
+																		exporter: false,
+																	});
+																}
+															}}
+														/>
+														<Label
+															htmlFor={`exporter-${user.id}`}
+															className="text-sm"
+														>
+															Exporter
+														</Label>
+													</div>
+													<div className="flex items-center gap-2">
+														<Checkbox
+															id={`admin-${user.id}`}
+															checked={Boolean(
+																user.admin,
+															)}
+															onCheckedChange={(
+																checked,
+															) => {
+																if (
+																	checked ===
+																	true
+																) {
+																	updateUser({
+																		...user,
+																		admin: true,
+																	});
+																} else {
+																	updateUser({
+																		...user,
+																		admin: false,
+																	});
+																}
+															}}
+														/>
+														<Label
+															htmlFor={`admin-${user.id}`}
+															className="text-sm"
+														>
+															Admin
+														</Label>
+													</div>
+												</div>
+											</TableCell>
+											<TableCell>
+												<div className="flex items-center gap-2">
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														onClick={() => {
+															setAddModalOpen(
+																true,
+															);
+															setAddModalUser(
+																user,
+															);
+														}}
+													>
+														<Pencil className="size-4" />
+													</Button>
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														onClick={() => {
+															setUserToDelete(
+																user,
+															);
+															setDeleteMode(
+																"single",
+															);
+															setDeleteModalOpen(
+																true,
+															);
+														}}
+													>
+														<Trash2 className="size-4" />
+													</Button>
+												</div>
+											</TableCell>
+										</TableRow>
+									);
+								})}
+							</TableBody>
+							<TableFooter>
+								<TableRow>
+									<TableCell colSpan={8} className="py-3">
+										<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+											<div className="flex items-center gap-2 text-sm">
+												<span className="text-muted-foreground">
+													Rows per page
+												</span>
+												<Select
+													value={String(rowsPerPage)}
+													onValueChange={(value) => {
+														setRowsPerPage(
+															Number(value),
+														);
+														setPage(0);
+													}}
+												>
+													<SelectTrigger className="h-8 w-[90px]">
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent>
+														{[
+															50, 100, 150, 200,
+														].map((value) => (
+															<SelectItem
+																key={`rows-${value}`}
+																value={String(
+																	value,
+																)}
+															>
+																{value}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</div>
+											<div className="flex items-center gap-2">
+												<Button
+													variant="outline"
+													size="sm"
+													disabled={page === 0}
+													onClick={() =>
+														setPage((prev) =>
+															Math.max(
+																0,
+																prev - 1,
+															),
+														)
+													}
+												>
+													Previous
+												</Button>
+												<span className="text-muted-foreground text-sm">
+													{page + 1} of {totalPages}
+												</span>
+												<Button
+													variant="outline"
+													size="sm"
+													disabled={
+														page + 1 >= totalPages
+													}
+													onClick={() =>
+														setPage((prev) =>
+															Math.min(
+																totalPages - 1,
+																prev + 1,
+															),
+														)
+													}
+												>
+													Next
+												</Button>
+											</div>
+										</div>
+									</TableCell>
+								</TableRow>
+							</TableFooter>
+						</Table>
+					</div>
+				) : (
+					<div className="flex h-[360px] flex-col items-center justify-center gap-3">
+						<p className="text-muted-foreground text-sm">
+							No Members
+						</p>
+						<Button
+							disabled={isLoading}
+							onClick={() => {
+								setAddModalOpen(true);
+								setAddModalUser(null);
+							}}
+						>
+							Add Member
+						</Button>
+					</div>
+				)}
+			</CardContent>
 
 			<UserAddOverlay
 				user={addModalUser}
@@ -802,6 +738,48 @@ export const UserTable = (props: UserTableProps) => {
 					}
 				}}
 			/>
-		</StyledMemberContent>
+			<Dialog
+				open={deleteModalOpen}
+				onOpenChange={(open) => !open && setDeleteModalOpen(false)}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>
+							{deleteMode === "bulk"
+								? "Delete members"
+								: "Delete member"}
+						</DialogTitle>
+						<DialogDescription>
+							{deleteMode === "bulk" ? (
+								`Are you sure you want to delete ${selectedMembers.length} members? This action cannot be undone.`
+							) : (
+								<>
+									Are you sure you want to delete{" "}
+									<span className="font-medium text-foreground">
+										{userToDelete?.id || "this member"}
+									</span>
+									? This action cannot be undone.
+								</>
+							)}
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setDeleteModalOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={handleDeleteConfirm}
+							disabled={isDeleting}
+						>
+							{isDeleting ? "Deleting..." : "Delete"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</Card>
 	);
 };
