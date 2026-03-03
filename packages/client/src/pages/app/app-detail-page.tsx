@@ -143,7 +143,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 
 	const fetchAppData = useCallback(
 		async (id: string) => {
-			console.log("fetching app data for id:", id);
 			await getPermission();
 			const currentPermission = getValues("permission");
 			const promises = [
