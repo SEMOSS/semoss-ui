@@ -139,6 +139,7 @@ export const Filterbox = (props: FilterboxProps) => {
 	});
 	const appliedParamsRef = useRef<string | null>(null);
 	const skipParamSyncRef = useRef(false);
+	const refreshHandledRef = useRef(false);
 	const allowedKeys = useMemo(() => {
 		return new Set(fieldList.map((field) => field.metakey));
 	}, [fieldList]);
@@ -169,9 +170,21 @@ export const Filterbox = (props: FilterboxProps) => {
 	);
 	//Refresh the pixel call, if any tagrefresh is needed
 	useEffect(() => {
-		if (filterBoxRefresh && filteredCatalogIds.length === 0) {
+		if (!filterBoxRefresh) {
+			refreshHandledRef.current = false;
+			return;
+		}
+
+		if (refreshHandledRef.current) {
+			return;
+		}
+
+		refreshHandledRef.current = true;
+
+		if (filteredCatalogIds.length === 0) {
 			getCatalogFilters.refresh();
 		}
+
 		onfilterBoxRefreshCompleted();
 	}, [
 		filterBoxRefresh,
@@ -388,14 +401,21 @@ export const Filterbox = (props: FilterboxProps) => {
 
 		Object.entries(filterVisibility).forEach((obj) => {
 			if (obj[1].value.length) {
-				constructedFilters[obj[0]] = obj[1].value;
+				constructedFilters[obj[0]] = [...obj[1].value];
 			}
 		});
 		// Pass filters to parent
 		onChange(constructedFilters);
 		// Update query params in the URL
 		skipParamSyncRef.current = true;
-		setSearchParams(constructedFilters);
+		const nextParams = new URLSearchParams();
+		Object.entries(constructedFilters).forEach(([key, value]) => {
+			const values = Array.isArray(value) ? value : [value];
+			values.forEach((val) => {
+				nextParams.append(key, String(val));
+			});
+		});
+		setSearchParams(nextParams);
 	};
 
 	const filterBody = (
