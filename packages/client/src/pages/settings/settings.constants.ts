@@ -190,7 +190,7 @@ export const SETTINGS_ROUTES: {
 		title: "Team Permissions",
 		path: "team-permissions/:type/:id",
 		description:
-			"View member permissions, pending requests, and all other viewable settings pertaining to the team",
+			"View team permissions and members assigned to custom teams",
 		icon: mdiDatabase,
 		history: ["team-permissions", "team-permissions/<type>/<id>"],
 		admin: true,
