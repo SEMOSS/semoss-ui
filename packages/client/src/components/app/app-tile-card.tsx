@@ -627,7 +627,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					<CardFooter className="px-3 pt-0.5 pb-3">
 						<div className="flex w-full items-center gap-2">
 							<Button
-								variant="default"
+								variant="outline"
 								size="sm"
 								className={
 									showInfo ? "w-1/2 px-6" : "w-full px-6"
