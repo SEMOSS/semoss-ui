@@ -197,19 +197,65 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			return;
 		}
 
-		getTeamUsers(
-			groupId,
-			rowsPerPage,
-			membersPage * rowsPerPage - rowsPerPage,
-			searchFilter,
-		).then((data: unknown[]) => {
-			setTeamMembers(data as TeamMember[]);
-			setHasMembers(data?.length > 0);
-		});
-	}, [groupId, count, membersPage, searchFilter, rowsPerPage]);
+		let isMounted = true;
+
+		const loadMembers = async () => {
+			try {
+				const offset = membersPage * rowsPerPage - rowsPerPage;
+				const response = await getTeamUsers(
+					groupId,
+					rowsPerPage,
+					offset,
+					searchFilter,
+				);
+				if (!isMounted) {
+					return;
+				}
+
+				let members = Array.isArray(response)
+					? (response as TeamMember[])
+					: [];
+				const total = memberCount;
+
+				if (
+					members.length < rowsPerPage &&
+					total > offset + members.length
+				) {
+					const remaining = rowsPerPage - members.length;
+					const extraResponse = await getTeamUsers(
+						groupId,
+						remaining,
+						offset + members.length,
+						searchFilter,
+					);
+					if (!isMounted) {
+						return;
+					}
+					const extraMembers = Array.isArray(extraResponse)
+						? (extraResponse as TeamMember[])
+						: [];
+					members = [...members, ...extraMembers];
+				}
+
+				setTeamMembers(members);
+				setHasMembers(members.length > 0);
+			} catch (e) {
+				toast.error(String(e));
+				setTeamMembers([]);
+				setHasMembers(false);
+			}
+		};
+
+		loadMembers();
+
+		return () => {
+			isMounted = false;
+		};
+	}, [groupId, count, membersPage, searchFilter, rowsPerPage, memberCount]);
 
 	useEffect(() => {
-		if (!groupId) {
+		const refreshToken = count;
+		if (refreshToken < 0 || !groupId) {
 			return;
 		}
 		const trimmed = searchFilter.trim();
@@ -231,7 +277,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 					setMemberCount(0);
 				}
 			});
-	}, [groupId, searchFilter]);
+	}, [groupId, searchFilter, count]);
 
 	useEffect(() => {
 		if (!addMembersModal) {
@@ -332,7 +378,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			toast.error(String(e));
 		} finally {
 			// refresh the members
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 			setOffset(0);
 		}
 	};
@@ -348,7 +394,11 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 						};
 				  }
 				| null = null;
-			response = await deleteTeamUser(user);
+			response = await deleteTeamUser({
+				groupid: groupId,
+				type: user.type,
+				userid: user.userid ?? user.id,
+			});
 
 			if (!response) {
 				return;
@@ -359,7 +409,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			toast.error(String(e));
 		} finally {
 			setDeleteMemberModal(false);
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 		}
 	};
 
@@ -376,7 +426,12 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								};
 						  }
 						| null = null;
-					response = await deleteTeamUser(selectedMembers[i]);
+					response = await deleteTeamUser({
+						groupid: groupId,
+						type: selectedMembers[i].type,
+						userid:
+							selectedMembers[i].userid ?? selectedMembers[i].id,
+					});
 
 					if (!response) {
 						return;
@@ -423,6 +478,12 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const startRow =
 		memberCount === 0 ? 0 : (membersPage - 1) * rowsPerPage + 1;
 	const endRow = Math.min(membersPage * rowsPerPage, memberCount);
+
+	useEffect(() => {
+		if (membersPage > totalPages) {
+			setMembersPage(totalPages);
+		}
+	}, [membersPage, totalPages]);
 
 	const handleToggleMember = (user: TeamMember) => {
 		const isSelected = selectedMembers.some(
@@ -488,21 +549,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									}}
 								/>
 							</InputGroup>
-							<div className="flex flex-wrap items-center gap-2">
-								{selectedMembers.length > 0 && (
-									<Button
-										variant="outline"
-										className="border-destructive text-destructive hover:bg-destructive/10"
-										onClick={() =>
-											setDeleteMembersModal(true)
-										}
-									>
-										<Trash2 className="size-4" />
-										Delete Selected
-									</Button>
-								)}
+							<div className="flex items-center gap-2 sm:flex-nowrap">
 								<Button
 									variant="default"
+									className="shrink-0"
 									onClick={() => {
 										setOffset(0);
 										setNonCredentialedUsers([]);
@@ -513,6 +563,18 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									<UserPlus className="size-4" />
 									Add Members
 								</Button>
+								{selectedMembers.length > 0 && (
+									<Button
+										variant="outline"
+										className="whitespace-nowrap border-destructive text-destructive hover:bg-destructive/10"
+										onClick={() =>
+											setDeleteMembersModal(true)
+										}
+									>
+										<Trash2 className="size-4" />
+										Delete Selected
+									</Button>
+								)}
 							</div>
 						</div>
 					</CardHeader>
@@ -521,8 +583,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead className="w-[60%]">
-											<div className="flex items-center gap-2">
+										<TableHead className="w-12">
+											<div className="flex justify-center">
 												<Checkbox
 													checked={isAllSelected}
 													onCheckedChange={() => {
@@ -537,9 +599,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 														}
 													}}
 												/>
-												<span>Name</span>
 											</div>
 										</TableHead>
+										<TableHead>Name</TableHead>
 										<TableHead>Added Date</TableHead>
 										<TableHead className="text-right">
 											Action
@@ -551,8 +613,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									teamMembers.length > 0 ? (
 										teamMembers.map((user) => (
 											<TableRow key={user.userid}>
-												<TableCell>
-													<div className="flex items-start gap-3">
+												<TableCell className="w-12">
+													<div className="flex justify-center">
 														<Checkbox
 															checked={selectedMembers.some(
 																(value) =>
@@ -565,21 +627,23 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 																)
 															}
 														/>
-														<div className="flex items-center gap-3">
-															<Avatar className="h-8 w-8">
-																<AvatarFallback className="text-xs">
-																	{user.name
-																		? user.name[0].toUpperCase()
-																		: "U"}
-																</AvatarFallback>
-															</Avatar>
-															<div className="min-w-0">
-																<div className="truncate font-medium text-sm">
-																	{user.name}
-																</div>
-																<div className="text-muted-foreground text-xs">
-																	{`${user.type} ID: ${user.userid}`}
-																</div>
+													</div>
+												</TableCell>
+												<TableCell>
+													<div className="flex items-center gap-3">
+														<Avatar className="h-8 w-8">
+															<AvatarFallback className="text-xs">
+																{user.name
+																	? user.name[0].toUpperCase()
+																	: "U"}
+															</AvatarFallback>
+														</Avatar>
+														<div className="min-w-0">
+															<div className="truncate font-medium text-sm">
+																{user.name}
+															</div>
+															<div className="text-muted-foreground text-xs">
+																{`${user.type} ID: ${user.userid}`}
 															</div>
 														</div>
 													</div>
@@ -608,7 +672,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									) : (
 										<TableRow>
 											<TableCell
-												colSpan={3}
+												colSpan={4}
 												className="text-center"
 											>
 												No Members found.
@@ -618,7 +682,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								</TableBody>
 								<TableFooter>
 									<TableRow>
-										<TableCell colSpan={3}>
+										<TableCell colSpan={4}>
 											<div className="flex flex-wrap items-center justify-end gap-4">
 												<div className="flex items-center gap-2 text-sm">
 													<span>Rows per page:</span>
@@ -924,9 +988,17 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 					<DialogHeader>
 						<DialogTitle>Are you sure?</DialogTitle>
 						<DialogDescription>
-							{userToDelete
-								? `This will remove ${userToDelete.name}.`
-								: "This will remove the selected user."}
+							{userToDelete ? (
+								<>
+									This will remove{" "}
+									<span className="font-medium text-foreground">
+										{userToDelete.name}
+									</span>
+									.
+								</>
+							) : (
+								"This will remove the selected user."
+							)}
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
