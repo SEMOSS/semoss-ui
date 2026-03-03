@@ -1,19 +1,10 @@
-import { Add, ArrowBack, ArrowForward, ExpandMore } from "@mui/icons-material";
+import { Plus, Users } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { debounced } from "@semoss/sdk/react";
-import {
-	Box,
-	Button,
-	Grid,
-	IconButton,
-	Menu,
-	Search,
-	styled,
-	Typography,
-} from "@semoss/ui";
-import { getTeams } from "@/api";
+import { Search, styled } from "@semoss/ui";
+import { Badge, Button, Card, CardContent, H3, H4, P } from "@semoss/ui/next";
+import { getTeams, getTeamsCount } from "@/api";
 import { AddTeamModal } from "@/components/teams/add-team-modal";
 import { TeamTileCard } from "@/components/teams/TeamTileCard";
 import { useSettings } from "@/hooks/useSettings";
@@ -43,40 +34,10 @@ export interface Database {
 	user_permission?: number;
 }
 
-const StyledContainer = styled("div")({
-	display: "flex",
-	width: "100%",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: "24px",
-});
-
-const StyledSearchbarContainer = styled("div")({
-	display: "flex",
-	width: "100%",
-	alignItems: "flex-start",
-	justifyContent: "space-between",
-	gap: "24px",
-});
-
-const StyledSearchbar = styled(Search)({
-	width: "80%",
-});
-
 const initialState = {
 	favoritedDbs: [],
 	teams: [],
 };
-
-const StyledSearchbarDiv = styled("div")({
-	display: "flex",
-	gap: "16px",
-});
-
-const StyledAddButton = styled(Button)({
-	width: "150px",
-	borderRadius: "12px",
-});
 
 const reducer = (state, action) => {
 	switch (action.type) {
@@ -90,209 +51,297 @@ const reducer = (state, action) => {
 	return state;
 };
 
-const TeamsList = styled("div")({
+const StyledSearchbarContainer = styled("div")(({ theme }) => ({
+	display: "flex",
+	width: "100%",
+	alignItems: "flex-start",
+	gap: theme.spacing(3),
+}));
+
+const StyledSearch = styled(Search)({
 	width: "100%",
 });
+
+const PAGE_SIZE = 50;
 
 export const TeamsSettingsPage = observer(() => {
 	const { adminMode } = useSettings();
 	const navigate = useNavigate();
 
 	const [addModal, setAddModal] = useState(false);
-	const [filteredTeams, setFilteredTeams] = useState([]);
+	const [debouncedSearch, setDebouncedSearch] = useState("");
+	const [isLoading, setIsLoading] = useState(false);
+	const [offset, setOffset] = useState(0);
+	const [totalTeamsAll, setTotalTeamsAll] = useState(0);
+	const [totalTeamsFiltered, setTotalTeamsFiltered] = useState(0);
 	const [state, dispatch] = useReducer(reducer, initialState);
 	const { teams } = state;
-	const [anchorEl, setAnchorEl] = useState(null);
 
 	const [search, setSearch] = useState("");
 
-	const searchbarRef = useRef(null);
+	const searchbarRef = useRef<HTMLInputElement | null>(null);
+	const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
 	useEffect(() => {
-		getTeams(true).then((data) => {
+		const timer = setTimeout(() => {
+			setDebouncedSearch(search.trim());
+		}, 300);
+		return () => clearTimeout(timer);
+	}, [search]);
+
+	useEffect(() => {
+		let isMounted = true;
+
+		const loadTeams = async () => {
+			setIsLoading(true);
+			try {
+				const [teamsResponse, countResponse] = await Promise.all([
+					getTeams(adminMode, debouncedSearch, PAGE_SIZE, 0),
+					getTeamsCount(adminMode, debouncedSearch),
+				]);
+
+				if (!isMounted) {
+					return;
+				}
+
+				const loadedTeams = Array.isArray(teamsResponse)
+					? teamsResponse
+					: [];
+				const totalCount =
+					typeof countResponse === "number"
+						? countResponse
+						: Number(
+								(countResponse as { count?: number })?.count ??
+									(countResponse as { numGroups?: number })
+										?.numGroups ??
+									0,
+							);
+				const safeTotalCount = Number.isFinite(totalCount)
+					? totalCount
+					: 0;
+
+				dispatch({
+					type: "field",
+					field: "teams",
+					value: loadedTeams,
+				});
+				if (debouncedSearch.length === 0) {
+					setTotalTeamsAll(safeTotalCount);
+				}
+				setTotalTeamsFiltered(safeTotalCount);
+				setOffset(loadedTeams.length);
+			} catch (error) {
+				if (!isMounted) {
+					return;
+				}
+				console.error(error);
+				dispatch({
+					type: "field",
+					field: "teams",
+					value: [],
+				});
+				if (debouncedSearch.length === 0) {
+					setTotalTeamsAll(0);
+				}
+				setTotalTeamsFiltered(0);
+				setOffset(0);
+			} finally {
+				if (isMounted) {
+					setIsLoading(false);
+				}
+			}
+		};
+
+		loadTeams();
+
+		return () => {
+			isMounted = false;
+		};
+	}, [adminMode, debouncedSearch]);
+
+	const loadMoreTeams = useCallback(async () => {
+		const activeTotalTeams =
+			debouncedSearch.length > 0 ? totalTeamsFiltered : totalTeamsAll;
+		if (isLoading) {
+			return;
+		}
+		if (offset >= activeTotalTeams) {
+			return;
+		}
+
+		setIsLoading(true);
+		try {
+			const teamsResponse = await getTeams(
+				adminMode,
+				debouncedSearch,
+				PAGE_SIZE,
+				offset,
+			);
+			const loadedTeams = Array.isArray(teamsResponse)
+				? teamsResponse
+				: [];
+
 			dispatch({
 				type: "field",
 				field: "teams",
-				value: data,
+				value: [...teams, ...loadedTeams],
 			});
-		});
-	}, [adminMode, search]);
+			setOffset((prev) => prev + loadedTeams.length);
+		} catch (error) {
+			console.error(error);
+		} finally {
+			setIsLoading(false);
+		}
+	}, [
+		adminMode,
+		debouncedSearch,
+		isLoading,
+		offset,
+		teams,
+		totalTeamsAll,
+		totalTeamsFiltered,
+	]);
 
-	// Updated debounced filtering function
-	const filterTeams = useCallback(() => {
-		setFilteredTeams(
-			teams
-				.filter((d) =>
-					d.id.toLowerCase().includes(search.toLowerCase()),
-				)
-				.sort((a, b) => a.id.localeCompare(b.id)),
-		);
-	}, [teams, search]);
-
-	const debouncedFilterTeams = debounced(filterTeams, 150);
-
-	// Trigger debounced filtering when teams or search changes
 	useEffect(() => {
-		debouncedFilterTeams();
-	}, [teams, search, debouncedFilterTeams]);
+		if (!loadMoreRef.current) {
+			return;
+		}
+		const activeTotalTeams =
+			debouncedSearch.length > 0 ? totalTeamsFiltered : totalTeamsAll;
+		if (isLoading || offset >= activeTotalTeams) {
+			return;
+		}
 
-	const handleMenuClick = (event) => {
-		setAnchorEl(event.currentTarget);
-	};
-	const handleMenuClose = () => {
-		setAnchorEl(null);
-	};
-	const handleSort = (order) => {
-		const sorted = [...filteredTeams].sort((a, b) => {
-			if (order === "asc") {
-				return a.id.localeCompare(b.id);
-			} else {
-				return b.id.localeCompare(a.id);
-			}
-		});
-		setFilteredTeams(sorted);
-		handleMenuClose();
-	};
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0]?.isIntersecting) {
+					loadMoreTeams();
+				}
+			},
+			{
+				root: null,
+				rootMargin: "200px",
+				threshold: 0,
+			},
+		);
 
-	const isAsc = () => {
-		const sorted = [...filteredTeams].sort((a, b) => {
-			return a.id.localeCompare(b.id);
-		});
-		return JSON.stringify(filteredTeams) === JSON.stringify(sorted);
-	};
+		observer.observe(loadMoreRef.current);
 
-	const isDesc = () => {
-		const sorted = [...filteredTeams].sort((a, b) => {
-			return b.id.localeCompare(a.id);
-		});
-		return JSON.stringify(filteredTeams) === JSON.stringify(sorted);
-	};
+		return () => {
+			observer.disconnect();
+		};
+	}, [
+		debouncedSearch,
+		isLoading,
+		loadMoreTeams,
+		offset,
+		totalTeamsAll,
+		totalTeamsFiltered,
+	]);
 
 	// Build a URL-safe slug for a team id WITHOUT mutating case or removing characters (just encode)
 	const teamSlug = useCallback((id: string) => encodeURIComponent(id), []);
 
+	const visibleTeams = teams.length || 0;
+	const resultLabel =
+		debouncedSearch.length > 0
+			? `${visibleTeams} of ${totalTeamsAll} teams`
+			: `${totalTeamsAll} teams`;
+
 	return (
-		<StyledContainer>
-			<StyledSearchbarContainer>
-				<Typography
-					variant="h5"
-					sx={{
-						fontSize: "24px",
-						fontWeight: 500,
-						fontFamily: "Inter",
-					}}
-				>
-					Teams
-				</Typography>
-				<StyledSearchbarDiv>
-					<StyledSearchbar
-						value={search}
-						onChange={(e) => {
-							setSearch(e.target.value);
-						}}
-						size="small"
-						ref={searchbarRef}
-					/>
-					<StyledAddButton
-						variant="contained"
-						startIcon={<Add />}
+		<div className="flex w-full flex-col gap-6">
+			<div className="flex w-full flex-col gap-3">
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+					<div className="space-y-1">
+						<H3>Teams</H3>
+						<P className="text-muted-foreground">
+							Manage team access, members, and permissions across
+							your workspace.
+						</P>
+					</div>
+					<Button
+						className="h-10 gap-2"
 						onClick={() => setAddModal(true)}
 						data-testid={"teamsSettings-add-btn"}
 					>
+						<Plus className="size-4" />
 						Add Team
-					</StyledAddButton>
-				</StyledSearchbarDiv>
+					</Button>
+				</div>
+				<div className="flex flex-wrap items-center gap-2 text-muted-foreground text-sm">
+					<Badge
+						variant="secondary"
+						className="rounded-full px-3 py-1"
+					>
+						{resultLabel}
+					</Badge>
+				</div>
+			</div>
+
+			<StyledSearchbarContainer>
+				<StyledSearch
+					size="small"
+					inputRef={searchbarRef}
+					value={search}
+					onChange={(e) => {
+						setSearch(e.target.value);
+					}}
+					placeholder="Search teams by name"
+					aria-label="Search teams"
+				/>
 			</StyledSearchbarContainer>
 
-			<TeamsList>
-				<Box
-					sx={{
-						display: "flex",
-						justifyContent: "flex-end",
-						mb: 2,
-					}}
-				>
-					<IconButton
-						onClick={handleMenuClick}
-						data-testid={"teamsSettings-sort-btn"}
+			<div className="min-h-[220px]">
+				{visibleTeams === 0 && !isLoading ? (
+					<Card className="border-dashed">
+						<CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+							<div className="rounded-full bg-muted p-3">
+								<Users className="size-5 text-muted-foreground" />
+							</div>
+							<H4>No teams found</H4>
+							<P className="max-w-md text-muted-foreground">
+								Try adjusting your search or create a new team
+								to start managing permissions.
+							</P>
+						</CardContent>
+					</Card>
+				) : (
+					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+						{teams.map((team, i) => (
+							<div key={team.id || i} className="h-full">
+								<TeamTileCard
+									key={team.id || i}
+									id={team.id}
+									type={team.type}
+									description={team.description}
+									dispatch={dispatch}
+									teams={teams}
+									onClick={() =>
+										navigate(
+											`${teamSlug(team.type)}/${teamSlug(team.id)}`,
+										)
+									}
+								/>
+							</div>
+						))}
+					</div>
+				)}
+				{visibleTeams > 0 && (
+					<div
+						ref={loadMoreRef}
+						className="flex w-full items-center justify-center py-6 text-muted-foreground text-sm"
 					>
-						<Typography
-							sx={{ color: "#212121", borderRadius: "0px" }}
-							variant="body2"
-						>
-							Sort By
-						</Typography>
-						<ExpandMore />
-					</IconButton>
-				</Box>
-
-				<Menu
-					anchorEl={anchorEl}
-					open={Boolean(anchorEl)}
-					onClose={handleMenuClose}
-					anchorOrigin={{
-						vertical: "bottom",
-						horizontal: "right",
-					}}
-					transformOrigin={{
-						vertical: "top",
-						horizontal: "left",
-					}}
-					sx={{
-						"& .MuiList-root": {
-							width: "218px",
-							margin: "0px",
-						},
-						"& .MuiPaper-root": {
-							borderRadius: "4px",
-						},
-					}}
-				>
-					<Menu.Item
-						onClick={() => handleSort("asc")}
-						sx={{
-							backgroundColor: isAsc() ? "#EBF3F8" : "inherit",
-						}}
-					>
-						A<ArrowForward fontSize="small" />Z
-					</Menu.Item>
-					<Menu.Item
-						onClick={() => handleSort("desc")}
-						sx={{
-							backgroundColor: isDesc() ? "#EBF3F8" : "inherit",
-						}}
-					>
-						Z<ArrowBack fontSize="small" />A
-					</Menu.Item>
-				</Menu>
-
-				<Grid container spacing={3}>
-					{filteredTeams.map((team, i) => (
-						<Grid
-							item
-							key={team.id || i}
-							sm={12}
-							md={6}
-							lg={4}
-							xl={3}
-						>
-							<TeamTileCard
-								key={team.id || i}
-								id={team.id}
-								type={team.type}
-								description={team.description}
-								dispatch={dispatch}
-								teams={teams}
-								onClick={() =>
-									navigate(
-										`${teamSlug(team.type)}/${teamSlug(team.id)}`,
-									)
-								}
-							/>
-						</Grid>
-					))}
-				</Grid>
-			</TeamsList>
+						{isLoading
+							? "Loading more teams..."
+							: offset <
+									(debouncedSearch.length > 0
+										? totalTeamsFiltered
+										: totalTeamsAll)
+								? "Scroll to load more"
+								: "All teams loaded"}
+					</div>
+				)}
+			</div>
 
 			<AddTeamModal
 				open={addModal}
@@ -309,10 +358,15 @@ export const TeamsSettingsPage = observer(() => {
 							field: "teams",
 							value: [...teams, obj],
 						});
+						setTotalTeamsAll((prev) => prev + 1);
+						if (debouncedSearch.length === 0) {
+							setTotalTeamsFiltered((prev) => prev + 1);
+							setOffset((prev) => prev + 1);
+						}
 					}
 					setAddModal(false);
 				}}
 			/>
-		</StyledContainer>
+		</div>
 	);
 });

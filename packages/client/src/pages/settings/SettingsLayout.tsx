@@ -27,12 +27,12 @@ import { useRootStore } from "@/hooks";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
 
-const StyledHeader = styled("div")(({ theme }) => ({
+const StyledHeader = styled("div")(() => ({
 	display: "flex",
 	justifyContent: "space-between",
 }));
 
-const StyledAdminHeader = styled("div")(({ theme }) => ({
+const StyledAdminHeader = styled("div")(() => ({
 	display: "flex",
 	flexDirection: "row",
 	justifyContent: "space-between",
@@ -62,7 +62,7 @@ const StyledChip = styled(Chip, {
 	},
 }));
 
-const IdContainer = styled("span")(({ theme }) => ({
+const IdContainer = styled("span")(() => ({
 	display: "flex",
 	alignItems: "center",
 }));
@@ -73,14 +73,11 @@ const StyledAdminContainer = styled("div")(({ theme }) => ({
 	zIndex: 1,
 }));
 
-const StyledLink = styled(Link)(({ theme }) => ({
-	textDecoration: "none",
-	color: "inherit",
-}));
+// StyledLink removed (unused)
 
 export const SettingsLayout = observer(() => {
 	const { configStore } = useRootStore();
-	const { id } = useParams();
+	const { id, type } = useParams();
 	const { pathname, state } = useLocation();
 	const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);
 
@@ -115,17 +112,12 @@ export const SettingsLayout = observer(() => {
 		return null;
 	}, [pathname]);
 
-	if (!matchedRoute) {
-		return null;
-	}
+	const isTeamPermissionsDetail =
+		matchedRoute?.path === "team-permissions/:type/:id";
 
 	// force admin mode on admin-only routes for admins (prevents redirect on refresh)
 	useEffect(() => {
-		if (
-			configStore.store.user.admin &&
-			matchedRoute?.admin &&
-			!adminMode
-		) {
+		if (configStore.store.user.admin && matchedRoute?.admin && !adminMode) {
 			setAdminMode(true);
 		}
 	}, [configStore.store.user.admin, matchedRoute?.admin, adminMode]);
@@ -150,6 +142,10 @@ export const SettingsLayout = observer(() => {
 	const copy = (text: string) => {
 		navigator.clipboard.writeText(text);
 	};
+
+	if (!matchedRoute) {
+		return null;
+	}
 
 	return (
 		<>
@@ -206,13 +202,34 @@ export const SettingsLayout = observer(() => {
 						)}
 						<StyledAdminContainer>
 							<StyledAdminHeader>
-								<Typography variant="h4">
-									{matchedRoute.history.length < 2
-										? matchedRoute.title
-										: state
-											? state.name
-											: matchedRoute.title}
-								</Typography>
+								{isTeamPermissionsDetail && id ? (
+									<Stack
+										direction="row"
+										spacing={1}
+										alignItems="center"
+									>
+										<Typography variant="h4">
+											{id}
+										</Typography>
+										{type ? (
+											<Chip
+												size="small"
+												label={String(
+													type,
+												).toUpperCase()}
+												variant="outlined"
+											/>
+										) : null}
+									</Stack>
+								) : (
+									<Typography variant="h4">
+										{matchedRoute.history.length < 2
+											? matchedRoute.title
+											: state
+												? state.name
+												: matchedRoute.title}
+									</Typography>
+								)}
 
 								<StyledAdminActionButtons>
 									<Button
