@@ -55,7 +55,7 @@ export const Dependencies = ({
 											: `${Env.MODULE}/api/e-${dep.id}/image/download`
 									}
 									alt={dep.name}
-									className="h-12 w-12 flex-shrink-0 rounded-lg object-cover"
+									className="h-12 w-12 shrink-0 rounded-lg object-cover"
 								/>
 								<div className="flex min-w-0 flex-col">
 									<Link
@@ -77,7 +77,7 @@ export const Dependencies = ({
 										</Muted>
 									</div>
 								</div>
-								<div className="ml-auto flex flex-shrink-0 items-center gap-2">
+								<div className="ml-auto flex shrink-0 items-center gap-2">
 									{dep.isPublic && (
 										<Badge variant="outline">Public</Badge>
 									)}
