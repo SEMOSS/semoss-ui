@@ -235,90 +235,67 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 				?.getNodeById("main-tabset")
 				?.getAttr("weight");
 
+			// Find a tab node's id by its display name
+			const findTabIdByName = (name: string): string | null => {
+				let id: string | null = null;
+				model.visitNodes((node) => {
+					if (
+						node instanceof FlexLayout.TabNode &&
+						node.getName() === name
+					) {
+						id = node.getId();
+					}
+				});
+				return id;
+			};
+
+			// Collapse all border panels
+			const collapseAllBorders = () => {
+				model
+					.getBorderSet()
+					.getBorders()
+					.forEach((b) => {
+						b.setSelected(-1);
+					});
+			};
+
+			// Toggle the settings sidebar highlight
+			const setSettingsActive = (active: boolean) =>
+				model.doAction(
+					FlexLayout.Actions.updateNodeAttributes("settings", {
+						config: { isSettingsActive: active },
+					}),
+				);
+
 			if (isSettingsTab) {
 				try {
-					let settingsNode: FlexLayout.TabNode | null = null;
-					model.visitNodes((node) => {
-						if (
-							node instanceof FlexLayout.TabNode &&
-							node.getId() === "settings"
-						) {
-							settingsNode = node;
-						}
-					});
-
+					// getNodeById is sufficient — no visitNodes needed for an id lookup
+					const settingsNode = model.getNodeById(
+						"settings",
+					) as FlexLayout.TabNode | null;
 					const isAlreadyActive =
 						settingsNode?.getConfig()?.isSettingsActive;
 
 					if (isAlreadyActive) {
-						// Remove highlight
-						model.doAction(
-							FlexLayout.Actions.updateNodeAttributes(
-								"settings",
-								{
-									config: { isSettingsActive: false },
-								},
-							),
-						);
-
-						// Close the AppSettings tab
-						let existingId: string | null = null;
-						model.visitNodes((node) => {
-							if (
-								node instanceof FlexLayout.TabNode &&
-								node.getName() === "AppSettings"
-							) {
-								existingId = node.getId();
-							}
-						});
+						setSettingsActive(false);
+						const existingId = findTabIdByName("AppSettings");
 						if (existingId) {
 							model.doAction(
 								FlexLayout.Actions.deleteTab(existingId),
 							);
 						}
-
 						return true;
 					}
-					model.doAction(
-						FlexLayout.Actions.updateNodeAttributes("settings", {
-							config: { isSettingsActive: true },
-						}),
-					);
 
-					model
-						.getBorderSet()
-						.getBorders()
-						.forEach((border) => {
-							border.setSelected(-1);
-						});
-					model.doAction(
-						FlexLayout.Actions.updateNodeAttributes("settings", {
-							config: { isSettingsActive: true },
-						}),
-					);
-
-					// close left borders to restrict left panel
-					model
-						.getBorderSet()
-						.getBorders()
-						.forEach((border) => {
-							border.setSelected(-1);
-						});
+					setSettingsActive(true);
+					collapseAllBorders();
 
 					const mainTabsetId =
 						model.getNodeById("main-tabset")?.getId() ||
 						model.getRoot().getChildren()[0]?.getId() ||
 						"";
 
-					let existingId: string | null = null;
-					model.visitNodes((node) => {
-						if (
-							node instanceof FlexLayout.TabNode &&
-							node.getName() === "AppSettings"
-						) {
-							existingId = node.getId();
-						}
-					});
+					let existingId = findTabIdByName("AppSettings");
 
 					if (!existingId) {
 						model.doAction(
@@ -336,14 +313,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 								true,
 							),
 						);
-						model.visitNodes((node) => {
-							if (
-								node instanceof FlexLayout.TabNode &&
-								node.getName() === "AppSettings"
-							) {
-								existingId = node.getId();
-							}
-						});
+						existingId = findTabIdByName("AppSettings");
 					}
 
 					if (existingId) {
@@ -356,13 +326,9 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 				}
 
 				return true;
-			} else {
-				model.doAction(
-					FlexLayout.Actions.updateNodeAttributes("settings", {
-						config: { isSettingsActive: false },
-					}),
-				);
 			}
+
+			setSettingsActive(false);
 			model
 				.getBorderSet()
 				.getBorders()
