@@ -12,6 +12,7 @@ import {
 	FileTextIcon,
 	FolderPlusIcon,
 	MessageSquarePlusIcon,
+	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
@@ -234,6 +235,9 @@ export const KnowledgeDetailPage = observer(() => {
 	const [selectedUser, setSelectedUser] = useState<SearchUser | null>(null);
 	const [selectedRole, setSelectedRole] = useState<string>("READ_ONLY");
 	const [removeTarget, setRemoveTarget] = useState<EngineUser | null>(null);
+	const [localTags, setLocalTags] = useState<string[]>([]);
+	const [tagInput, setTagInput] = useState("");
+	const [tagSaving, setTagSaving] = useState(false);
 	const insight = useInsight();
 	useEffect(() => {
 		if (!previewDoc) {
@@ -410,6 +414,39 @@ export const KnowledgeDetailPage = observer(() => {
 		await download(insight.insightId, fileKey);
 	};
 
+	const saveTagsToServer = async (newTags: string[]) => {
+		if (!knowledgeId) return;
+		setTagSaving(true);
+		try {
+			await insight.actions.run(
+				`SetEngineMetadata(engine=["${knowledgeId}"], meta=[${JSON.stringify({ tag: newTags })}], jsonCleanup=[true]);`,
+			);
+		} catch {
+			toast.error("Failed to save tags.");
+		} finally {
+			setTagSaving(false);
+		}
+	};
+
+	const addTag = (value: string) => {
+		const trimmed = value.trim();
+		if (!trimmed || localTags.includes(trimmed)) return;
+		const newTags = [...localTags, trimmed];
+		setLocalTags(newTags);
+		setTagInput("");
+		void saveTagsToServer(newTags);
+	};
+
+	const removeTag = (tag: string) => {
+		const newTags = localTags.filter((t) => t !== tag);
+		setLocalTags(newTags);
+		void saveTagsToServer(newTags);
+	};
+
+	useEffect(() => {
+		setLocalTags(tags);
+	}, [knowledge?.app_id]);
+
 	if (!knowledgeId) {
 		return <Navigate to="/knowledge" replace />;
 	}
@@ -448,15 +485,40 @@ export const KnowledgeDetailPage = observer(() => {
 							{knowledge?.description ||
 								t("knowledge:messages.noDescription")}
 						</p>
-						{tags.length > 0 ? (
-							<div className="flex flex-wrap gap-2 pt-2">
-								{tags.map((tag) => (
-									<Badge key={tag} variant="secondary">
-										{tag}
-									</Badge>
-								))}
-							</div>
-						) : null}
+						<div className="flex flex-wrap items-center gap-2 pt-2">
+							{localTags.map((tag) => (
+								<Badge
+									key={tag}
+									variant="secondary"
+									className="flex items-center gap-1 pr-1"
+								>
+									{tag}
+									<button
+										type="button"
+										className="hover:opacity-70"
+										onClick={() => removeTag(tag)}
+										disabled={tagSaving}
+										aria-label={"Remove tag " + tag}
+									>
+										<XIcon className="h-3 w-3" />
+									</button>
+								</Badge>
+							))}
+							<input
+								type="text"
+								value={tagInput}
+								onChange={(e) => setTagInput(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										e.preventDefault();
+										addTag(tagInput);
+									}
+								}}
+								placeholder="Add tag…"
+								disabled={tagSaving}
+								className="h-6 min-w-[80px] max-w-[140px] rounded border border-dashed border-input bg-transparent px-2 text-xs text-muted-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-ring"
+							/>
+						</div>
 					</div>
 
 					<div className="flex gap-2">

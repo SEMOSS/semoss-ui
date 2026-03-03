@@ -52,6 +52,7 @@ type DocumentLibraryEngine = {
 	tag: string[];
 	dateCreated: string;
 	favorite: boolean;
+	global: boolean;
 };
 
 type EngineAsset = {
@@ -200,6 +201,8 @@ export const DocumentLibrary = () => {
 				dateCreated: item.database_date_created || "",
 				favorite:
 					item.app_favorite === 1 || item.database_favorite === 1,
+				global:
+					item.database_global === 1 || item.database_global === true,
 			});
 
 			return acc;
@@ -207,24 +210,8 @@ export const DocumentLibrary = () => {
 
 	const filteredItems = formatted
 		.filter((item) => {
-			// NOTE: Today we only have tags; until we have an explicit ownership/global flag,
-			// use conservative heuristics:
-			// - "mine": no FDA/center tags
-			// - "global": has FDA or a known center tag
-			if (libraryTab === "all") {
-				return true;
-			}
-
-			const tags = Array.isArray(item.tag) ? item.tag : [];
-			const lowerTags = tags
-				.filter(Boolean)
-				.map((t) => String(t).toLowerCase());
-
-			const isGlobal = lowerTags.includes("fda")
-				? true
-				: centers.some((c) => lowerTags.includes(c.toLowerCase()));
-
-			return libraryTab === "global" ? isGlobal : !isGlobal;
+			if (libraryTab === "all") return true;
+			return libraryTab === "global" ? item.global : !item.global;
 		})
 		.filter((item) => {
 			const matchesSearch =
