@@ -53,6 +53,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	// get the metadata
 	const getEngineMetadata = usePixel<{
 		database_name?: string;
+		database_display_name?: string;
 		database_discoverable?: boolean;
 		database_created_by?: string;
 		database_date_created?: string;
@@ -248,7 +249,10 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 						? "OWNER"
 						: getUserEnginePermission.data.permission,
 					name:
-						(getEngineMetadata.data?.database_name as string) || "",
+						(getEngineMetadata.data
+							?.database_display_name as string) ||
+						(getEngineMetadata.data?.database_name as string) ||
+						"",
 					metadata: values,
 					database_subtype: getEngineMetadata.data?.database_subtype,
 					database_created_by:

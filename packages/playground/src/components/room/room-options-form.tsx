@@ -100,7 +100,11 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 										{t("room:form.modelLabel")}
 									</FieldLabel>
 									<EngineSelect
-										name={model?.app_name || ""}
+										name={
+											model?.database_display_name ||
+											model?.app_name ||
+											""
+										}
 										value={model?.app_id || ""}
 										engineTypes={["MODEL"]}
 										metaFilters={[
