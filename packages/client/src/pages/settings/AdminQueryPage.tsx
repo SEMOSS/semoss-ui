@@ -4,7 +4,7 @@ import {
 	Close,
 	OpenInFullSharp,
 } from "@mui/icons-material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Navigate } from "react-router-dom";
 import {
@@ -17,7 +17,6 @@ import {
 	styled,
 	Table,
 	TextArea,
-	TextField,
 	useNotification,
 } from "@semoss/ui";
 import { useRootStore, useSettings } from "@/hooks";
@@ -140,19 +139,17 @@ const StyledButton = styled(Button)({
 });
 
 const DATABASE_OPTIONS = [
-	"AuditLogs",
-	"LocalMasterDatabase",
-	"scheduler",
-	"security",
-	"themes",
-	"UserTrackingDatabase",
-	"Notification",
+	{ label: "Audit Logs", value: "AuditLogs" },
+	{ label: "Local Master Database", value: "LocalMasterDatabase" },
+	{ label: "Scheduler", value: "scheduler" },
+	{ label: "Security", value: "security" },
+	{ label: "Themes", value: "themes" },
+	{ label: "User Tracking Database", value: "UserTrackingDatabase" },
 ];
 
 interface TypeDbQuery {
 	SELECTED_DATABASE: string;
 	QUERY: string;
-	ROWS: number;
 }
 
 export const AdminQueryPage = () => {
@@ -166,16 +163,14 @@ export const AdminQueryPage = () => {
 		type: "",
 		value: "",
 	});
-	const [showRowsField, setShowRowsField] = useState(false);
-	const { control, watch, setValue, handleSubmit } = useForm<{
+	const [lastQuery, setLastQuery] = useState<string>("");
+	const { control, watch, handleSubmit } = useForm<{
 		SELECTED_DATABASE: string;
 		QUERY: string;
-		ROWS: number;
 	}>({
 		defaultValues: {
 			SELECTED_DATABASE: "",
 			QUERY: "",
-			ROWS: 100,
 		},
 	});
 
@@ -203,25 +198,7 @@ export const AdminQueryPage = () => {
 	const query = watch("QUERY");
 	const selectedDatabase = watch("SELECTED_DATABASE");
 
-	const verifySelectQuery = useCallback(() => {
-		if (query?.toUpperCase()?.startsWith("SELECT")) {
-			setShowRowsField(true);
-		} else {
-			if (showRowsField) {
-				setShowRowsField(false);
-				setValue("ROWS", 1);
-			}
-		}
-	}, [query, showRowsField, setValue]);
-
-	useEffect(() => {
-		verifySelectQuery();
-	}, [verifySelectQuery]);
-
-	const trimmedQuery = query?.trim() || "";
-
-	// Final condition to enable Run button
-	const disableButton = Boolean(selectedDatabase) && trimmedQuery.length > 0;
+	const disableButton = !selectedDatabase || !query?.trim();
 	useEffect(() => {
 		setPage(0);
 		setRowsPerPage(10);
@@ -236,24 +213,25 @@ export const AdminQueryPage = () => {
 	 * @desc make runQuery API call based on submitted fields
 	 */
 	const submitQuery = handleSubmit((data: TypeDbQuery) => {
-		const trimmedQuery = data.QUERY?.trim() ?? "";
-		let pixelString = `META | AdminDatabase("${data.SELECTED_DATABASE}") | Query("<encode>${trimmedQuery}</encode>")`;
-
-		if (showRowsField) {
-			pixelString += `| Collect(${data.ROWS});`;
-		} else {
-			pixelString += "| AdminExecQuery();";
-		}
+		const queryToRun = data.QUERY ?? "";
+		setLastQuery(queryToRun);
+		const pixelString = `AdminSqlQuery(database=["${data.SELECTED_DATABASE}"], query=["<encode>${queryToRun.replaceAll("`", "")}</encode>"], commit=[true]);`;
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
 				let output: string | { data: { headers: string[]; values } };
-				let type: string = response?.pixelReturn[0]?.operationType[0];
+				const type = String(
+					response?.pixelReturn?.[0]?.operationType?.[0] ?? "",
+				);
 
-				output = response?.pixelReturn[0]?.output;
-				type = response?.pixelReturn[0]?.operationType[0];
+				output = response?.pixelReturn?.[0]?.output ?? response;
 
-				if (type.indexOf("ERROR") > -1) {
+				const isError =
+					type.includes("ERROR") ||
+					(typeof output === "string" &&
+						/^(error|ERROR)/.test(output));
+
+				if (isError) {
 					setOutput({
 						type: "error",
 						value: output,
@@ -278,7 +256,7 @@ export const AdminQueryPage = () => {
 				} else {
 					setOutput({
 						type: "success",
-						value: "",
+						value: queryToRun,
 					});
 				}
 
@@ -334,7 +312,18 @@ export const AdminQueryPage = () => {
 
 	const displayQueryOutput = (): JSX.Element | null => {
 		if (output.type === "success") {
-			return <Alert color={"success"}>Successful query!</Alert>;
+			return (
+				<Alert color={"success"}>
+					<div className="flex flex-col gap-1">
+						<span>Successful query!</span>
+						{lastQuery && (
+							<span className="break-all text-muted-foreground text-xs">
+								{lastQuery}
+							</span>
+						)}
+					</div>
+				</Alert>
+			);
 		} else if (output.type === "error") {
 			return <Alert color={"error"}>{output.value}</Alert>;
 		} else if (output.type === "table") {
@@ -417,6 +406,13 @@ export const AdminQueryPage = () => {
 		return null;
 	};
 
+	const outputPanel = useMemo(() => displayQueryOutput(), [
+		output,
+		lastQuery,
+		page,
+		rowsPerPage,
+	]);
+
 	return (
 		<StyledContainer>
 			<StyledLeft>
@@ -425,7 +421,6 @@ export const AdminQueryPage = () => {
 						<Controller
 							name="SELECTED_DATABASE"
 							control={control}
-							rules={{ required: true }}
 							render={({ field }) => (
 								<Field>
 									<Label htmlFor="db-select">Database</Label>
@@ -438,11 +433,11 @@ export const AdminQueryPage = () => {
 									>
 										{DATABASE_OPTIONS?.map((option, i) => (
 											<Select.Item
-												value={option}
-												key={option}
+												value={option.value}
+												key={option.value}
 												data-testid={`adminQueryPage-db-option-${i}`}
 											>
-												{option}
+												{option.label}
 											</Select.Item>
 										))}
 									</StyledSelect>
@@ -451,34 +446,9 @@ export const AdminQueryPage = () => {
 						/>
 					</StyledStack>
 
-					<StyledStack>
-						<Controller
-							name="ROWS"
-							control={control}
-							rules={{ min: 1 }}
-							render={({ field }) => (
-								<Field>
-									<Label htmlFor="rows-input">
-										Max # Rows to Collect
-									</Label>
-									<TextField
-										fullWidth
-										size="small"
-										value={field.value ?? ""}
-										onChange={(e) =>
-											field.onChange(e.target.value)
-										}
-										type="number"
-										placeholder="100"
-									/>
-								</Field>
-							)}
-						/>
-					</StyledStack>
 					<Controller
 						name={"QUERY"}
 						control={control}
-						rules={{ required: true }}
 						render={({ field }) => {
 							return (
 								<>
@@ -566,7 +536,7 @@ export const AdminQueryPage = () => {
 						size="large"
 						variant={"contained"}
 						onClick={() => submitQuery()}
-						disabled={!disableButton}
+						disabled={disableButton}
 						data-testid={"adminQueryPage-run-btn"}
 						endIcon={<ArrowForward />}
 					>
@@ -575,7 +545,7 @@ export const AdminQueryPage = () => {
 					<StyledRight>
 						{!output.type
 							? "Execute a query to display the results here."
-							: displayQueryOutput()}
+							: outputPanel}
 					</StyledRight>
 				</Styledform>
 			</StyledLeft>
