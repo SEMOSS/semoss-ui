@@ -50,6 +50,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 	const [description, setDescription] = useState("");
 	const [embeddingEngine, setEmbeddingEngine] = useState<Engine | null>(null);
 	const [files, setFiles] = useState<File[]>([]);
+	const [tag, setTag] = useState("");
 
 	/**
 	 * Reset the form
@@ -133,6 +134,11 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 				]
 			>(`MakeEngineMCP("${engineId}");`);
 
+			if (tag.length > 0) {
+				await actions.run<[boolean]>(
+					`SetEngineMetadata(engine=["${engineId}"],meta=[{"tag":["${tag}"]}]);`,
+				);
+			}
 			// Success
 			toast.success(t("notifications:knowledge.createSuccess", { name }));
 
@@ -191,6 +197,16 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 								onChange={(e) => setDescription(e.target.value)}
 								disabled={isLoading}
 								required
+							/>
+						</Field>
+
+						<Field>
+							<FieldLabel>Tag</FieldLabel>
+							<Input
+								placeholder="e.g. MCP"
+								value={tag}
+								onChange={(e) => setTag(e.target.value)}
+								disabled={isLoading}
 							/>
 						</Field>
 
