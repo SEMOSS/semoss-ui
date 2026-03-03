@@ -146,7 +146,6 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 				room.processTool(
 					m.id,
 					tool.id,
-					tool.name,
 					output,
 					success ? "success" : "error",
 					data,

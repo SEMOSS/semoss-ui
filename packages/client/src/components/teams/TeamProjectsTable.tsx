@@ -1,35 +1,46 @@
-import {
-	Add,
-	ClearRounded,
-	Delete,
-	EditRounded,
-	RemoveRedEyeRounded,
-} from "@mui/icons-material";
+import { Plus, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { debounced } from "@semoss/sdk/react";
 import {
-	Autocomplete,
 	Avatar,
-	Box,
+	AvatarFallback,
+	AvatarImage,
+	Badge,
 	Button,
 	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
 	Checkbox,
-	Icon,
-	IconButton,
-	Modal,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
 	RadioGroup,
-	Search,
-	Stack,
-	styled,
+	RadioGroupItem,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Table,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TableBody,
+	TableCell,
+	TableFooter,
+	TableHead,
+	TableHeader,
+	TableRow,
+	toast,
+} from "@semoss/ui/next";
 import {
 	addProject,
 	deleteProjectPermission,
 	editProjectPermisison,
+	getNumProjectsForGroup,
 	getTeamProjects,
 	getUnassignedTeamProjects,
 } from "@/api";
@@ -51,148 +62,6 @@ const colors = [
 ];
 
 const projectImages = [codeApp2, codeApp3, codeApp4, codeApp5];
-const _UserInfoTableCell = styled(Table.Cell)({
-	display: "flex",
-	alignItems: "center",
-	height: "84px",
-});
-const NameIDWrapper = styled("div")({
-	display: "inline-block",
-});
-
-const NameTableCell = styled(Table.Cell)({
-	width: "100%",
-	maxWidth: "1px",
-});
-
-const DateTableCell = styled(Table.Cell)({
-	whiteSpace: "nowrap",
-	"@med_DateTableCell: 768px)": {
-		whiteSpace: "normal",
-	},
-});
-
-const StyledTablePagination = styled(Table.Pagination)({
-	border: "none",
-});
-
-const StyledProjectContent = styled("div")({
-	display: "flex",
-	width: "100%",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: "25px",
-	flexShrink: "0",
-});
-
-const StyledProjectInnerContent = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: "20px",
-	alignSelf: "stretch",
-});
-
-const StyledTableContainer = styled(Table.Container)({
-	borderRadius: "12px",
-	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
-});
-
-const StyledProjectTable = styled(Table)({
-	backgroundColor: "white",
-	tableLayout: "fixed",
-});
-
-const StyledTableTitleContainer = styled("div")({
-	display: "flex",
-	alignItems: "center",
-	alignSelf: "stretch",
-	boxShadow: "0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset",
-	backgroundColor: "white",
-});
-
-const StyledTableTitleDiv = styled("div")({
-	display: "flex",
-	padding: "12px 16px 12px 16px",
-	alignItems: "center",
-	gap: "10px",
-	fontWeight: 500,
-});
-
-const StyledTableTitleProjectCountContainer = styled("div")({
-	display: "flex",
-	height: "56px",
-	alignItems: "center",
-	gap: "10px",
-	flex: "1 0 0",
-});
-
-const _StyledTableTitleProjectCount = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-});
-
-const StyledSearchButtonContainer = styled("div")({
-	display: "flex",
-	alignItems: "center",
-});
-
-const StyledDeleteSelectedContainer = styled("div")({
-	display: "flex",
-	padding: "10px 8px 10px 16px",
-	flexDirection: "column",
-	justifyContent: "center",
-	alignItems: "center",
-	gap: "10px",
-});
-
-const StyledAddProjectsContainer = styled("div")({
-	display: "flex",
-	padding: "10px 24px 10px 8px",
-	flexDirection: "column",
-	justifyContent: "center",
-	alignItems: "center",
-	gap: "10px",
-});
-
-const StyledNonProjectsDiv = styled("div")({
-	width: "100%",
-	height: "503px",
-	display: "flex",
-	flexDirection: "column",
-	gap: "1rem",
-	justifyContent: "center",
-	alignItems: "center",
-	background: "white",
-});
-
-const StyledCheckbox = styled(Checkbox)({
-	paddingBottom: "0px",
-});
-
-const StyledModalContentText = styled(Modal.ContentText)({
-	display: "flex",
-	flexDirection: "column",
-	gap: ".5rem",
-	marginTop: "12px",
-});
-
-const StyledCard = styled(Card)({
-	borderRadius: "12px",
-});
-
-const StyledModal = styled(Modal)({
-	"& .MuiPaper-root": {
-		borderRadius: "12px",
-		padding: "24px",
-	},
-});
-
-const StyledRadioGroup = styled(RadioGroup)({
-	flexWrap: "nowrap",
-	whiteSpace: "nowrap",
-});
 
 // maps for permissions,
 const permissionMapper = {
@@ -200,6 +69,30 @@ const permissionMapper = {
 	Editor: 2, // BE: 'DISPLAY'
 	"Read-Only": 3, // DISPLAY: BE
 };
+
+const permissionOptions: {
+	label: SETTINGS_ROLE;
+	description: string;
+	value: string;
+}[] = [
+	{
+		label: "Author",
+		description:
+			"Ability to edit the model connection details, set the model as discoverable, provision other authors, and all editor abilities.",
+		value: "Author",
+	},
+	{
+		label: "Editor",
+		description:
+			"Ability to edit the model details, provision other users as editors and read only users, and all read only abilities.",
+		value: "Editor",
+	},
+	{
+		label: "Read-Only",
+		description: "Ability to view model details and usage instructions.",
+		value: "Read-Only",
+	},
+];
 
 interface ProjectsTableProps {
 	/**
@@ -228,18 +121,23 @@ interface TeamProjects {
 	project_name: string;
 	project_portal_name: string;
 	project_type: string;
+	projectid?: string;
+	type?: string;
+	permission?: string;
+	color?: string;
 }
 
 export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const { groupId, groupType } = props;
 
-	const notification = useNotification();
 	const AUTOCOMPLETE_LIMIT = 10;
 	const AUTOCOMPLETE_OFFSET = 0;
 
 	/** Project Table State */
 	const [projectsPage, setProjectsPage] = useState<number>(1);
-	const [selectedProjects, setSelectedProojects] = useState([]);
+	const [selectedProjects, setSelectedProojects] = useState<TeamProjects[]>(
+		[],
+	);
 	const [count, setCount] = useState(0);
 
 	/** Delete Project */
@@ -247,19 +145,24 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 		useState<boolean>(false);
 	const [deleteProjectModal, setDeleteProjectModal] =
 		useState<boolean>(false);
-	const [projectToDelete, setProjectToDelete] = useState(null);
+	const [projectToDelete, setProjectToDelete] = useState<TeamProjects | null>(
+		null,
+	);
 
 	/** Add Project State */
 	const [addProjectModal, setAddProjectModal] = useState<boolean>(false);
-	const [nonCredentialedProjects, setNonCredentialedProjects] = useState([]);
+	const [nonCredentialedProjects, setNonCredentialedProjects] = useState<
+		TeamProjects[]
+	>([]);
 	const [
 		selectedNonCredentialedProjects,
 		setSelectedNonCredentialedProjects,
-	] = useState([]);
+	] = useState<TeamProjects[]>([]);
 	const [addProjectRole, setAddProjectRole] = useState<SETTINGS_ROLE>();
 
-	const [projects, setProjects] = useState([]);
+	const [projects, setProjects] = useState<TeamProjects[]>([]);
 	const [projectCount, setProjectCount] = useState(0);
+	const [totalProjectsAll, setTotalProjectsAll] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(5);
 	const [hasProjects, setHasProject] = useState(false);
 
@@ -267,12 +170,23 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
 	const [isScrollBottom, setIsScrollBottom] = useState(false);
 	const [canCollect, setCanCollect] = useState<boolean>(true);
-	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [_isLoading, setIsLoading] = useState<boolean>(false);
 	const [searchLoading, setSearchLoading] = useState(false);
 
 	const [projectImageMap, setProjectImageMap] = useState<
 		Record<string, string>
 	>({});
+
+	const [searchFilter, setSearchFilter] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
+	const isLoadingRef = useRef(false);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearch(searchFilter);
+		}, 400);
+		return () => clearTimeout(timer);
+	}, [searchFilter]);
 
 	const nearBottom = (
 		target: {
@@ -285,65 +199,130 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 		return diff - 25 <= target.clientHeight;
 	};
 
-	/**
-	 * @name getAdditionalProjects
-	 */
-	const getAdditionalProjects = () => {
-		setOffset(offset + AUTOCOMPLETE_LIMIT);
-	};
+	const getProjects = useCallback(
+		async (reset: boolean, nextOffset: number, nextSearch: string) => {
+			if (isLoadingRef.current) {
+				return;
+			}
+			isLoadingRef.current = true;
+			setIsLoading(true);
+			try {
+				const response = await getUnassignedTeamProjects(
+					groupId,
+					groupType,
+					AUTOCOMPLETE_LIMIT,
+					nextOffset,
+					nextSearch,
+				);
 
-	const projectSearchRef = useRef(undefined);
+				if (response) {
+					const projects = (
+						response as unknown as TeamProjects[]
+					)?.map((val) => {
+						return {
+							...val,
+							color: colors[
+								Math.floor(Math.random() * colors.length)
+							],
+						};
+					});
 
-	const { watch, setValue } = useForm<{
-		SEARCH_FILTER: string;
-	}>({
-		defaultValues: {
-			// Filters for projects table
-			SEARCH_FILTER: "",
+					setNonCredentialedProjects((prev) =>
+						reset ? projects : prev.concat(projects),
+					);
+					setCanCollect(projects.length === AUTOCOMPLETE_LIMIT);
+					setSearchLoading(false);
+				}
+			} catch (e) {
+				toast.error(String(e));
+				setSearchLoading(false);
+			} finally {
+				isLoadingRef.current = false;
+				setIsLoading(false);
+			}
 		},
-	});
+		[groupId, groupType],
+	);
 
-	const searchFilter = watch("SEARCH_FILTER");
+	const filterProjects = useCallback(() => {
+		getTeamProjects(
+			groupId,
+			groupType,
+			rowsPerPage,
+			projectsPage * rowsPerPage - rowsPerPage, // offset
+			debouncedSearch,
+			false,
+		).then((data: unknown[]) => {
+			setProjects(data as TeamProjects[]);
+			setHasProject(data.length > 0);
+		});
+	}, [groupId, groupType, projectsPage, debouncedSearch, rowsPerPage]);
 
-	/**
-	 * @name useEffect
-	 * @desc - sets projects in react hook form
-	 */
 	useEffect(() => {
-		filterProjects();
-	}, [groupId, groupType, count, projectsPage, searchFilter, rowsPerPage]);
+		if (count >= 0) {
+			filterProjects();
+		}
+	}, [filterProjects, count]);
+
 	useEffect(() => {
+		if (!groupId) {
+			return;
+		}
+		const trimmed = debouncedSearch.trim();
+		getNumProjectsForGroup(groupId, groupType, trimmed || undefined)
+			.then((nextCount) => {
+				if (trimmed) {
+					setProjectCount(nextCount);
+				} else {
+					setTotalProjectsAll(nextCount);
+					setProjectCount(nextCount);
+				}
+			})
+			.catch((e) => {
+				toast.error(String(e));
+				if (trimmed) {
+					setProjectCount(0);
+				} else {
+					setTotalProjectsAll(0);
+					setProjectCount(0);
+				}
+			});
+	}, [groupId, groupType, debouncedSearch]);
+
+	useEffect(() => {
+		if (!addProjectModal) {
+			return;
+		}
 		if (isScrollBottom) {
 			if (canCollect) {
-				getAdditionalProjects();
+				setOffset((prev) => prev + AUTOCOMPLETE_LIMIT);
 			}
 		}
-	}, [isScrollBottom]);
+	}, [addProjectModal, isScrollBottom, canCollect]);
 
 	useEffect(() => {
+		if (!addProjectModal) {
+			return;
+		}
 		if (searchProjectInput) {
 			setSearchLoading(true);
 		}
 		const timer = setTimeout(() => {
 			if (!offset) {
-				getProjects(true);
+				getProjects(true, 0, searchProjectInput);
 			} else {
 				if (canCollect) {
-					getProjects(false);
+					getProjects(false, offset, searchProjectInput);
 				} else {
-					getProjects(true);
+					getProjects(true, offset, searchProjectInput);
 				}
 			}
 		}, 500);
 		return () => clearTimeout(timer);
-	}, [offset, searchProjectInput]);
+	}, [addProjectModal, offset, searchProjectInput, canCollect, getProjects]);
 
-	/**
-	 * @name submitNonGroupProjects
-	 */
 	const submitNonGroupProjects = async () => {
 		try {
-			// construct requests for post data
 			const requests = selectedNonCredentialedProjects.map((m) => {
 				return {
 					project_id: m.project_id,
@@ -352,11 +331,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			});
 
 			if (requests.length === 0) {
-				notification.add({
-					color: "warning",
-					message: `No apps to add`,
-				});
-
+				toast.warning("No apps to add");
 				return;
 			}
 
@@ -373,50 +348,33 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 				response = await addProject(
 					groupId,
 					requests[i].project_id,
-					permissionMapper[addProjectRole],
-					groupType ? groupType : "",
+					requests[i].permission,
+					groupType,
 				);
 
 				if (!response) {
 					return;
 				}
 
-				// ignore if there is no response
-				if (response) {
+				if (response.data) {
 					setAddProjectModal(false);
 					setSelectedNonCredentialedProjects([]);
-
-					notification.add({
-						color: "success",
-						message: "Successfully added app permission",
-					});
+					toast.success("Successfully added app permissions");
 				} else {
-					notification.add({
-						color: "error",
-						message: `Error adding project permission`,
-					});
+					toast.error("Error changing app permissions");
 				}
 			}
 		} catch (e) {
 			setAddProjectModal(false);
 			setSelectedNonCredentialedProjects([]);
-
-			notification.add({
-				color: "error",
-				message: String(e),
-			});
+			toast.error(String(e));
 		} finally {
-			// refresh the projects
 			setCount(count + 1);
 			setOffset(0);
 		}
 	};
 
-	/**
-	 * @name deleteProject
-	 * @param project
-	 */
-	const deleteProject = async (project) => {
+	const deleteProject = async (project: TeamProjects) => {
 		try {
 			let response:
 				| ApiResponse<{ success: boolean }>
@@ -437,26 +395,16 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 				return;
 			}
 
-			notification.add({
-				color: "success",
-				message: `Successfully removed project`,
-			});
+			toast.success("Successfully removed app");
 		} catch (e) {
-			notification.add({
-				color: "error",
-				message: String(e),
-			});
+			toast.error(String(e));
 		} finally {
 			setDeleteProjectModal(false);
 			setCount(count + 1);
 		}
-		// refresh the projects
 	};
 
-	/**
-	 * @name deleteProjectPermissions
-	 */
-	const deleteProjectPermissions = async () => {
+	const deleteProjects = async () => {
 		try {
 			for (let i = 0; i < selectedProjects.length; i++) {
 				try {
@@ -479,84 +427,23 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 						return;
 					}
 				} catch (e) {
-					notification.add({
-						color: "error",
-						message: String(e),
-					});
+					toast.error(String(e));
 				} finally {
 					setDeleteProjectModal(false);
 				}
 			}
 		} finally {
-			notification.add({
-				color: "success",
-				message: `Successfully removed apps`,
-			});
+			toast.success("Successfully removed apps");
 			setCount(count + 1);
 			setDeleteProjectsModal(false);
 			setSelectedProojects([]);
 		}
 	};
 
-	/**
-	 * @name getProjects
-	 * @desc Gets all projects without credentials
-	 */
-	const getProjects = async (reset: boolean) => {
-		if (isLoading) {
-			return;
-		}
-		setIsLoading(true);
-		try {
-			// possibly add more db table columns / keys here to get id type for display under projects
-			// eslint-disable-next-line prefer-const
-			const response = await getUnassignedTeamProjects(
-				groupId,
-				groupType,
-				AUTOCOMPLETE_LIMIT,
-				offset,
-				searchProjectInput,
-			);
-
-			// ignore if there is no response
-			if (response) {
-				let requests = reset ? [] : nonCredentialedProjects;
-				const projects = (response as unknown as TeamProjects[])?.map(
-					(val) => {
-						return {
-							...val,
-							color: colors[
-								Math.floor(Math.random() * colors.length)
-							],
-						};
-					},
-				);
-
-				requests = requests.concat(projects);
-				setNonCredentialedProjects(requests);
-				setCanCollect(projects.length === AUTOCOMPLETE_LIMIT);
-				setIsLoading(false);
-				setSearchLoading(false);
-			}
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: String(e),
-			});
-			setIsLoading(false);
-			setSearchLoading(false);
-		}
-	};
-
-	/** MEMBER TABLE FUNCTIONS */
 	const updateSelectedProjects = async (project) => {
 		try {
 			if (!project.projectid) {
-				notification.add({
-					color: "warning",
-					message: `No permissions to change`,
-				});
-
+				toast.warning("No permissions to change");
 				return;
 			}
 
@@ -575,64 +462,26 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 				return;
 			}
 
-			// ignore if there is no response
-
 			if (response.data) {
-				notification.add({
-					color: "success",
-					message: "Successfully updated permissions",
-				});
+				setProjects((prev) =>
+					prev.map((item) =>
+						item.projectid === project.projectid ||
+						item.project_id === project.projectid
+							? { ...item, permission: project.permission }
+							: item,
+					),
+				);
+				toast.success("Successfully updated permissions");
 			} else {
-				notification.add({
-					color: "error",
-					message: `Error changing permissions`,
-				});
+				toast.error("Error changing permissions");
 			}
 		} catch (e) {
-			notification.add({
-				color: "error",
-				message: String(e),
-			});
-		} finally {
-			// refresh the members
-			// getMembers.refresh();
+			toast.error(String(e));
 		}
 	};
 
-	const paginationOptions = {
-		projectsPageCounts: [5],
-	};
-
-	projectCount > 9 && paginationOptions.projectsPageCounts.push(10);
-	projectCount > 19 && paginationOptions.projectsPageCounts.push(20);
-
-	const filterProjects = useCallback(() => {
-		getTeamProjects(
-			groupId,
-			groupType,
-			rowsPerPage,
-			projectsPage * rowsPerPage - rowsPerPage, // offset
-			searchFilter,
-			false,
-		).then((data: unknown[]) => {
-			setProjects(data);
-			setHasProject(data.length > 0);
-		});
-		getTeamProjects(
-			groupId,
-			groupType,
-			100,
-			0, // offset
-			searchFilter,
-			false,
-		).then((data: unknown[]) => setProjectCount(data.length));
-	}, [count, projectsPage, searchFilter, rowsPerPage]);
-
-	const debouncedFilterProjects = debounced(filterProjects, 400);
-
 	const handleInputChange = (newInputValue) => {
-		setValue("SEARCH_FILTER", newInputValue);
-		debouncedFilterProjects();
+		setSearchFilter(newInputValue);
 	};
 
 	const getRandomImageForProject = useCallback(
@@ -645,7 +494,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			);
 			const newImage = projectImages[randomIndex];
 
-			// Only update state if we don't have an image for this project
 			if (!projectImageMap[projectId]) {
 				setProjectImageMap((prev) => ({
 					...prev,
@@ -658,164 +506,149 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 		[projectImageMap],
 	);
 
+	const totalPages = Math.max(1, Math.ceil(projectCount / rowsPerPage));
+	const startRow =
+		projectCount === 0 ? 0 : (projectsPage - 1) * rowsPerPage + 1;
+	const endRow = Math.min(projectsPage * rowsPerPage, projectCount);
+
+	const isAllSelected =
+		selectedProjects.length === projects.length && projects.length > 0;
+
 	return (
-		<StyledProjectContent>
-			<StyledProjectInnerContent>
-				{(projects && projects.length > 0) ||
-				projectCount > 0 ||
-				hasProjects ||
-				searchFilter ? (
-					<StyledTableContainer>
-						<StyledTableTitleContainer>
-							<StyledTableTitleDiv>Apps</StyledTableTitleDiv>
-							<StyledTableTitleProjectCountContainer>
-								<Typography variant="body1">
-									{projectCount} Apps
-								</Typography>
-							</StyledTableTitleProjectCountContainer>
-							<StyledSearchButtonContainer>
-								<Search
-									ref={projectSearchRef}
+		<div className="flex w-full flex-col gap-6">
+			{(projects && projects.length > 0) ||
+			projectCount > 0 ||
+			hasProjects ||
+			searchFilter ? (
+				<Card>
+					<CardHeader className="flex flex-col gap-4">
+						<div className="flex flex-wrap items-center gap-3">
+							<CardTitle>Apps</CardTitle>
+							<span className="text-muted-foreground text-sm">
+								{debouncedSearch.trim()
+									? `${projectCount} of ${totalProjectsAll} Apps`
+									: `${totalProjectsAll} Apps`}
+							</span>
+						</div>
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+							<InputGroup className="w-full sm:max-w-sm">
+								<InputGroupAddon>
+									<Search className="size-4" />
+								</InputGroupAddon>
+								<InputGroupInput
 									placeholder="Search Apps"
-									size="small"
 									value={searchFilter}
 									onChange={(e) => {
 										handleInputChange(e.target.value);
 									}}
 								/>
-							</StyledSearchButtonContainer>
-
-							<StyledDeleteSelectedContainer>
+							</InputGroup>
+							<div className="flex flex-wrap items-center gap-2">
 								{selectedProjects.length > 0 && (
 									<Button
-										variant={"outlined"}
-										color="error"
+										variant="outline"
+										className="border-destructive text-destructive hover:bg-destructive/10"
 										onClick={() =>
 											setDeleteProjectsModal(true)
 										}
 									>
+										<Trash2 className="size-4" />
 										Delete Selected
 									</Button>
 								)}
-							</StyledDeleteSelectedContainer>
-
-							<StyledAddProjectsContainer>
 								<Button
-									variant={"contained"}
 									onClick={() => {
-										getProjects(true);
 										setAddProjectRole(undefined);
+										setOffset(0);
+										setNonCredentialedProjects([]);
+										setSearchProjectInput("");
 										setAddProjectModal(true);
 									}}
-									startIcon={<Add />}
 								>
+									<Plus className="size-4" />
 									Add Apps
 								</Button>
-							</StyledAddProjectsContainer>
-						</StyledTableTitleContainer>
-						<StyledProjectTable>
-							<Table.Head>
-								<Table.Row>
-									<NameTableCell size="small">
-										<Checkbox
-											checked={
-												selectedProjects.length ===
-													projects.length &&
-												projects.length > 0
-											}
-											onChange={() => {
-												if (
-													selectedProjects.length !==
-													projects.length
-												) {
-													setSelectedProojects(
-														projects,
-													);
-												} else {
-													setSelectedProojects([]);
-												}
-											}}
-										/>
-										Name
-									</NameTableCell>
-									<Table.Cell
-										size="small"
-										sx={{ width: "320px" }}
-									>
-										Access
-									</Table.Cell>
-									<Table.Cell
-										size="small"
-										sx={{
-											width: "200px",
-											textAlign: "left",
-											paddingLeft: "20px",
-										}}
-									>
-										Added Date
-									</Table.Cell>
-									<Table.Cell
-										size="small"
-										sx={{
-											width: "75px",
-											textAlign: "center",
-										}}
-									>
-										Action
-									</Table.Cell>
-								</Table.Row>
-							</Table.Head>
-							<Table.Body>
-								{Array.isArray(projects) &&
-								projects.length > 0 ? (
-									projects.map((project, i) => {
-										let isSelected = false;
-
-										if (project) {
-											isSelected = selectedProjects.some(
-												(value) => {
-													return (
+							</div>
+						</div>
+					</CardHeader>
+					<CardContent>
+						<div className="rounded-md border">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead className="w-[45%]">
+											<div className="flex items-center gap-2">
+												<Checkbox
+													checked={isAllSelected}
+													onCheckedChange={() => {
+														if (!isAllSelected) {
+															setSelectedProojects(
+																projects,
+															);
+														} else {
+															setSelectedProojects(
+																[],
+															);
+														}
+													}}
+												/>
+												<span>Name</span>
+											</div>
+										</TableHead>
+										<TableHead className="w-[220px]">
+											Access
+										</TableHead>
+										<TableHead className="w-[180px]">
+											Added Date
+										</TableHead>
+										<TableHead className="text-right">
+											Action
+										</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{Array.isArray(projects) &&
+									projects.length > 0 ? (
+										projects.map((project) => {
+											const projectId =
+												project.projectid ??
+												project.project_id;
+											const projectKey =
+												projectId ??
+												project.project_name ??
+												project.name;
+											const isSelected =
+												selectedProjects.some(
+													(value) =>
 														value.projectid ===
-														project.projectid
-													);
-												},
-											);
-										}
-										if (project) {
+															projectId ||
+														value.project_id ===
+															projectId,
+												);
 											return (
-												<Table.Row
-													key={`project-${project.projectid}-${i}`}
+												<TableRow
+													key={`project-${projectKey}`}
 												>
-													<Table.Cell size="small">
-														<Stack
-															direction="row"
-															spacing={0}
-														>
-															<StyledCheckbox
+													<TableCell>
+														<div className="flex items-start gap-3">
+															<Checkbox
 																checked={
 																	isSelected
 																}
-																onChange={() => {
+																onCheckedChange={() => {
 																	if (
 																		isSelected
 																	) {
-																		const selProjects =
-																			[];
-																		selectedProjects.forEach(
-																			(
-																				p,
-																			) => {
-																				if (
-																					p.projectid !==
-																					project.projectid
-																				)
-																					selProjects.push(
-																						p,
-																					);
-																			},
-																		);
 																		setSelectedProojects(
-																			selProjects,
+																			selectedProjects.filter(
+																				(
+																					p,
+																				) =>
+																					p.projectid !==
+																						projectId &&
+																					p.project_id !==
+																						projectId,
+																			),
 																		);
 																	} else {
 																		setSelectedProojects(
@@ -827,608 +660,503 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 																	}
 																}}
 															/>
-
-															<NameIDWrapper>
-																<Typography variant="body2">
+															<div className="min-w-0">
+																<div className="truncate font-medium text-sm">
 																	{
 																		project.project_name
 																	}
-																</Typography>
-																<Typography
-																	variant="body2"
-																	color="secondary"
-																>
-																	{`App ID: ${project.projectid}`}
-																</Typography>
-															</NameIDWrapper>
-														</Stack>
-													</Table.Cell>
-													<Table.Cell size="small">
-														<StyledRadioGroup
-															row
-															defaultValue={
-																project.permission
-															}
-															onChange={(e) => {
-																console.log(
-																	"Hit Update Permission fn and fix in state",
-																);
+																</div>
+																<div className="text-muted-foreground text-xs">
+																	{`App ID: ${projectId}`}
+																</div>
+															</div>
+														</div>
+													</TableCell>
+													<TableCell>
+														<Select
+															value={String(
+																project.permission ??
+																	"3",
+															)}
+															onValueChange={(
+																value,
+															) => {
 																updateSelectedProjects(
 																	{
 																		projectid:
-																			project.projectid,
+																			projectId,
 																		type: project.type,
 																		project_type:
 																			project.type,
 																		permission:
-																			e
-																				.target
-																				.value,
+																			value,
 																	},
 																);
 															}}
 														>
-															<RadioGroup.Item
-																value="1"
-																label="Author"
-															/>
-															<RadioGroup.Item
-																value="2"
-																label="Editor"
-															/>
-															<RadioGroup.Item
-																value="3"
-																label="Read-Only"
-															/>
-														</StyledRadioGroup>
-													</Table.Cell>
-													<DateTableCell size="small">
+															<SelectTrigger className="h-8 w-[150px]">
+																<SelectValue />
+															</SelectTrigger>
+															<SelectContent>
+																<SelectItem value="1">
+																	Author
+																</SelectItem>
+																<SelectItem value="2">
+																	Editor
+																</SelectItem>
+																<SelectItem value="3">
+																	Read-Only
+																</SelectItem>
+															</SelectContent>
+														</Select>
+													</TableCell>
+													<TableCell className="whitespace-nowrap text-sm">
 														{
 															project.project_date_created
 														}
-													</DateTableCell>
-													<Table.Cell size="small">
-														<IconButton
+													</TableCell>
+													<TableCell className="text-right">
+														<Button
+															variant="ghost"
+															size="icon-sm"
 															onClick={() => {
-																// set project
 																setProjectToDelete(
 																	project,
 																);
-																// open modal
 																setDeleteProjectModal(
 																	true,
 																);
 															}}
 														>
-															<Delete></Delete>
-														</IconButton>
-													</Table.Cell>
-												</Table.Row>
+															<Trash2 className="size-4" />
+														</Button>
+													</TableCell>
+												</TableRow>
 											);
-										} else {
-											return (
-												<Table.Row
-													key={`No data available`}
-												>
-													<Table.Cell size="small"></Table.Cell>
-													<Table.Cell size="small"></Table.Cell>
-													<Table.Cell size="small"></Table.Cell>
-													<Table.Cell size="small"></Table.Cell>
-												</Table.Row>
-											);
-										}
-									})
-								) : (
-									<Table.Row key="no-apps-found">
-										<Table.Cell colSpan={4} align="center">
-											No Apps found.
-										</Table.Cell>
-									</Table.Row>
-								)}
-							</Table.Body>
-							<Table.Footer>
-								<Table.Row>
-									<StyledTablePagination
-										rowsPerPageOptions={
-											paginationOptions.projectsPageCounts
-										}
-										onPageChange={(_e, v) => {
-											setProjectsPage(v + 1);
-											setSelectedProojects([]);
-										}}
-										onRowsPerPageChange={(e) => {
-											setRowsPerPage(
-												parseInt(e.target.value, 10),
-											);
-											setProjectsPage(1);
-										}}
-										page={projectsPage - 1}
-										rowsPerPage={rowsPerPage}
-										count={projectCount}
-									/>
-								</Table.Row>
-							</Table.Footer>
-						</StyledProjectTable>
-					</StyledTableContainer>
-				) : (
-					<StyledTableContainer>
-						<StyledTableTitleContainer>
-							<StyledTableTitleDiv>
-								<Typography variant={"h6"}>Apps</Typography>
-							</StyledTableTitleDiv>
-						</StyledTableTitleContainer>
-						<StyledNonProjectsDiv>
-							<Typography variant={"body1"}>
+										})
+									) : (
+										<TableRow>
+											<TableCell
+												colSpan={4}
+												className="text-center"
+											>
+												No Apps found.
+											</TableCell>
+										</TableRow>
+									)}
+								</TableBody>
+								<TableFooter>
+									<TableRow>
+										<TableCell colSpan={4}>
+											<div className="flex flex-wrap items-center justify-end gap-4">
+												<div className="flex items-center gap-2 text-sm">
+													<span>Rows per page:</span>
+													<Select
+														value={String(
+															rowsPerPage,
+														)}
+														onValueChange={(
+															value,
+														) => {
+															setRowsPerPage(
+																parseInt(
+																	value,
+																	10,
+																),
+															);
+															setProjectsPage(1);
+														}}
+													>
+														<SelectTrigger className="h-8 w-[70px]">
+															<SelectValue />
+														</SelectTrigger>
+														<SelectContent>
+															{[5, 10, 20]
+																.filter(
+																	(val) =>
+																		val <=
+																			projectCount ||
+																		val ===
+																			5,
+																)
+																.map((val) => (
+																	<SelectItem
+																		key={`rows-${val}`}
+																		value={String(
+																			val,
+																		)}
+																	>
+																		{val}
+																	</SelectItem>
+																))}
+														</SelectContent>
+													</Select>
+												</div>
+												<div className="text-muted-foreground text-sm">
+													{startRow}-{endRow} of{" "}
+													{projectCount}
+												</div>
+												<div className="flex gap-1">
+													<Button
+														variant="outline"
+														size="icon-sm"
+														onClick={() =>
+															setProjectsPage(1)
+														}
+														disabled={
+															projectsPage === 1
+														}
+													>
+														{"<<"}
+													</Button>
+													<Button
+														variant="outline"
+														size="icon-sm"
+														onClick={() =>
+															setProjectsPage(
+																Math.max(
+																	1,
+																	projectsPage -
+																		1,
+																),
+															)
+														}
+														disabled={
+															projectsPage === 1
+														}
+													>
+														{"<"}
+													</Button>
+													<Button
+														variant="outline"
+														size="icon-sm"
+														onClick={() =>
+															setProjectsPage(
+																Math.min(
+																	totalPages,
+																	projectsPage +
+																		1,
+																),
+															)
+														}
+														disabled={
+															projectsPage >=
+															totalPages
+														}
+													>
+														{">"}
+													</Button>
+													<Button
+														variant="outline"
+														size="icon-sm"
+														onClick={() =>
+															setProjectsPage(
+																totalPages,
+															)
+														}
+														disabled={
+															projectsPage >=
+															totalPages
+														}
+													>
+														{">>"}
+													</Button>
+												</div>
+											</div>
+										</TableCell>
+									</TableRow>
+								</TableFooter>
+							</Table>
+						</div>
+					</CardContent>
+				</Card>
+			) : (
+				<Card>
+					<CardHeader>
+						<CardTitle>Apps</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed p-8 text-center">
+							<p className="text-muted-foreground text-sm">
 								No apps present
-							</Typography>
+							</p>
 							<Button
-								variant={"contained"}
 								onClick={() => {
-									getProjects(true);
+									setOffset(0);
+									setNonCredentialedProjects([]);
+									setSearchProjectInput("");
 									setAddProjectModal(true);
 								}}
 							>
+								<Plus className="size-4" />
 								Add Apps
 							</Button>
-						</StyledNonProjectsDiv>
-					</StyledTableContainer>
-				)}
-			</StyledProjectInnerContent>
-			<StyledModal open={addProjectModal} maxWidth="lg">
-				<Modal.Title>
-					<Typography variant="h6">Add Apps</Typography>
-				</Modal.Title>
-				<Modal.Content sx={{ width: "50rem" }}>
-					<StyledModalContentText>
-						<Autocomplete
-							label="Select App"
-							loading={searchLoading}
-							multiple={true}
-							freeSolo={false}
-							filterOptions={(x) => x}
-							options={nonCredentialedProjects}
-							includeInputInList={true}
-							limitTags={2}
-							getLimitTagsText={() =>
-								` +${
-									selectedNonCredentialedProjects.length - 2
-								}`
-							}
-							value={selectedNonCredentialedProjects}
-							inputValue={searchProjectInput}
-							getOptionLabel={(option) => {
-								return `${option.project_name} ID: ${option.project_id}`;
-							}}
-							isOptionEqualToValue={(option, value) => {
-								return (
-									option.project_name === value.project_name
-								);
-							}}
-							onChange={(_event, newValue) => {
-								setSelectedNonCredentialedProjects([
-									...newValue,
-								]);
-							}}
-							ListboxProps={{
-								onScroll: ({ target }) =>
-									setIsScrollBottom(
-										nearBottom(
-											target as {
-												scrollHeight?: number;
-												scrollTop?: number;
-												clientHeight?: number;
-											},
-										),
-									),
-							}}
-							onInputChange={(_event, newValue) => {
-								setSearchProjectInput(newValue);
-								setOffset(0);
-							}}
-						/>
+						</div>
+					</CardContent>
+				</Card>
+			)}
 
-						{selectedNonCredentialedProjects.map((project, idx) => {
-							return (
-								<Box
-									key={`non-credentialed-${project.project_id}`}
-									sx={{
-										display: "flex",
-										justifyContent: "left",
-										align: "center",
-										backgroundColor:
-											idx % 2 !== 0
-												? "rgba(0, 0, 0, .03)"
-												: "",
-									}}
-								>
-									<Box
-										sx={{
-											width: "100%",
-											gap: "8px",
-											position: "relative",
-											paddingBottom: "7px",
-											border: "0px",
-											display: "flex",
-											alignItems: "center",
-										}}
-									>
-										<Box
-											sx={{
-												display: "flex",
-												justifyContent: "center",
-												marginTop: "6px",
-												marginLeft: "8px",
-												marginRight: "8px",
-												float: "left",
-											}}
+			<Dialog
+				open={addProjectModal}
+				onOpenChange={(open) => {
+					if (!open) {
+						setAddProjectModal(false);
+						setOffset(0);
+						setNonCredentialedProjects([]);
+						setSelectedNonCredentialedProjects([]);
+						setSearchProjectInput("");
+					} else {
+						setAddProjectModal(true);
+					}
+				}}
+			>
+				<DialogContent className="max-w-4xl">
+					<DialogHeader>
+						<DialogTitle>Add Apps</DialogTitle>
+						<DialogDescription>
+							Select apps and assign an access level.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="flex flex-col gap-4">
+						<InputGroup>
+							<InputGroupAddon>
+								<Search className="size-4" />
+							</InputGroupAddon>
+							<InputGroupInput
+								placeholder="Search apps"
+								value={searchProjectInput}
+								onChange={(e) => {
+									setSearchProjectInput(e.target.value);
+									setOffset(0);
+								}}
+							/>
+						</InputGroup>
+						<div
+							className="max-h-[280px] overflow-auto rounded-md border p-2"
+							onScroll={({ currentTarget }) =>
+								setIsScrollBottom(nearBottom(currentTarget))
+							}
+						>
+							{nonCredentialedProjects.length === 0 ? (
+								<p className="p-4 text-center text-muted-foreground text-sm">
+									{searchLoading
+										? "Loading apps..."
+										: "No apps found"}
+								</p>
+							) : (
+								nonCredentialedProjects.map((project) => {
+									const isSelected =
+										selectedNonCredentialedProjects.some(
+											(value) =>
+												value.project_id ===
+												project.project_id,
+										);
+									return (
+										<div
+											key={project.project_id}
+											className="flex items-center gap-3 rounded-md p-3 hover:bg-muted/50"
 										>
-											<Box
-												sx={{
-													display: "flex",
-													height: "32px",
-													width: "32px",
-													justifyContent: "center",
-													alignItems: "center",
-													border: "0.5px solid rgba(0, 0, 0, .05)",
-													borderRadius: "50%",
+											<Checkbox
+												checked={isSelected}
+												onCheckedChange={() => {
+													if (isSelected) {
+														setSelectedNonCredentialedProjects(
+															selectedNonCredentialedProjects.filter(
+																(p) =>
+																	p.project_id !==
+																	project.project_id,
+															),
+														);
+													} else {
+														setSelectedNonCredentialedProjects(
+															[
+																...selectedNonCredentialedProjects,
+																project,
+															],
+														);
+													}
 												}}
-											>
-												<Avatar
-													aria-label="avatar"
-													sx={{
-														display: "flex",
-														width: "50px",
-														height: "50px",
-														"& img": {
-															width: "100%",
-															height: "100%",
-															objectFit: "cover",
-														},
-													}}
+											/>
+											<Avatar className="h-8 w-8">
+												<AvatarImage
 													src={getRandomImageForProject(
 														project.project_id,
 													)}
 												/>
-											</Box>
-										</Box>
-										<Card.Header
-											title={
-												<Typography variant="h6">
+												<AvatarFallback className="text-xs">
+													{project.project_name
+														? project
+																.project_name[0]
+														: "A"}
+												</AvatarFallback>
+											</Avatar>
+											<div className="flex-1">
+												<div className="font-medium text-sm">
 													{project.project_name}
-												</Typography>
-											}
-											sx={{
-												color: "#000",
-												maxWidth: "85%",
-												width: "100%",
-												float: "left",
-												gap: "16px",
-												display: "inline-flex",
-												alignItems: "center",
-												paddingBottom: "7px",
-												margin: "0px 0px 0px 0px",
-											}}
-											subheader={
-												<Box
-													sx={{
-														display: "flex",
-														gap: 2,
-													}}
-												>
-													<span
-														style={{
-															opacity: 0.9,
-															fontSize: "11px",
-															width: "70%",
-															gap: "4px",
-														}}
-													>
-														{`App ID: `}
-														<Typography
-															variant="body2"
-															component="span"
-														>
-															{project.project_id}
-														</Typography>
-													</span>
-												</Box>
-											}
-											action={
-												<IconButton
-													sx={{
-														height: "48px",
-														width: "48px",
-														fontSize: "small",
-														color: "rgba( 0, 0, 0, .7)",
-														mr: "2px",
-														top: "20%",
-														position: "absolute",
-														padding: "10px",
-													}}
-													onClick={() => {
-														const filtered =
-															selectedNonCredentialedProjects.filter(
-																(val) =>
-																	val.project_id !==
-																	project.project_id,
-															);
-														setSelectedNonCredentialedProjects(
-															filtered,
-														);
-													}}
-												>
-													<ClearRounded />
-												</IconButton>
-											}
-										/>
-									</Box>
-								</Box>
-							);
-						})}
-
-						<Typography
-							variant="subtitle1"
-							sx={{
-								pt: "12px",
-								pb: "12px",
-								fontWeight: "bold",
-								fontSize: "16",
-								color: "#000",
+												</div>
+												<div className="text-muted-foreground text-xs">
+													App ID: {project.project_id}
+												</div>
+											</div>
+										</div>
+									);
+								})
+							)}
+						</div>
+						{selectedNonCredentialedProjects.length > 0 ? (
+							<div className="flex flex-wrap gap-2">
+								{selectedNonCredentialedProjects.map(
+									(project) => (
+										<Badge
+											key={`selected-${project.project_id}`}
+											variant="secondary"
+											className="flex items-center gap-1"
+										>
+											{project.project_name}
+											<button
+												type="button"
+												className="rounded-full p-0.5 hover:bg-muted"
+												onClick={() => {
+													setSelectedNonCredentialedProjects(
+														selectedNonCredentialedProjects.filter(
+															(p) =>
+																p.project_id !==
+																project.project_id,
+														),
+													);
+												}}
+											>
+												<X className="size-3" />
+											</button>
+										</Badge>
+									),
+								)}
+							</div>
+						) : null}
+						<div className="rounded-md border bg-muted/40 p-3">
+							<p className="font-medium text-sm">App access</p>
+							<div className="mt-3 grid gap-3">
+								<RadioGroup
+									value={addProjectRole}
+									onValueChange={(value) => {
+										setAddProjectRole(
+											value as SETTINGS_ROLE,
+										);
+									}}
+								>
+									{permissionOptions.map((option) => (
+										<div
+											key={option.value}
+											className="flex items-start gap-3 rounded-md border bg-background p-3"
+										>
+											<RadioGroupItem
+												value={option.value}
+											/>
+											<div>
+												<p className="font-medium text-sm">
+													{option.label}
+												</p>
+												<p className="text-muted-foreground text-xs">
+													{option.description}
+												</p>
+											</div>
+										</div>
+									))}
+								</RadioGroup>
+							</div>
+						</div>
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setAddProjectModal(false);
+								setOffset(0);
+								setNonCredentialedProjects([]);
 							}}
 						>
-							App access
-						</Typography>
-						<Box
-							sx={{
-								backgroundColor: "rgba(0,0,0,.03)",
-								padding: "10px",
-								borderRadius: "8px",
-							}}
-						>
-							<RadioGroup
-								label={""}
-								onChange={(e) => {
-									const val = e.target.value;
-									if (val) {
-										setAddProjectRole(val as SETTINGS_ROLE);
-									}
-								}}
-							>
-								<Stack spacing={1}>
-									<StyledCard>
-										<Card.Header
-											title={
-												<Box
-													sx={{
-														display: "flex",
-														fontSize: "16px",
-													}}
-												>
-													<Avatar
-														sx={{
-															width: "20px",
-															height: "20px",
-															mt: "6px",
-															marginRight: "12px",
-															fontSize: "12px",
-															fontWeight: "bold",
-															backgroundColor:
-																"rgba(0, 0, 0, .5)",
-														}}
-													>
-														A
-													</Avatar>
-													Author
-												</Box>
-											}
-											sx={{ color: "#000" }}
-											subheader={
-												<Box
-													sx={{
-														marginLeft: "30px",
-													}}
-												>
-													Ability to edit the model
-													connection details, set the
-													model as discoverable,
-													provision other authors, and
-													all editor abilities.
-												</Box>
-											}
-											action={
-												<RadioGroup.Item
-													value="Author"
-													label=""
-												/>
-											}
-										/>
-									</StyledCard>
-									<StyledCard>
-										<Card.Header
-											title={
-												<Box
-													sx={{
-														display: "flex",
-														fontSize: "16px",
-													}}
-												>
-													<Icon
-														sx={{
-															width: "20px",
-															height: "20px",
-															mt: "6px",
-															marginRight: "12px",
-															fontSize: "12px",
-															fontWeight: "bold",
-															color: "rgba(0, 0, 0, .5)",
-														}}
-													>
-														<EditRounded />
-													</Icon>
-													Editor
-												</Box>
-											}
-											sx={{ color: "#000" }}
-											subheader={
-												<Box
-													sx={{
-														marginLeft: "30px",
-													}}
-												>
-													Ability to edit the model
-													details, provision other
-													users as editors and read
-													only users, and all read
-													only abilities.
-												</Box>
-											}
-											action={
-												<RadioGroup.Item
-													value="Editor"
-													label=""
-												/>
-											}
-										/>
-									</StyledCard>
-									<StyledCard>
-										<Card.Header
-											title={
-												<Box
-													sx={{
-														display: "flex",
-														fontSize: "16px",
-													}}
-												>
-													<Icon
-														sx={{
-															width: "24px",
-															height: "24px",
-															mt: "0px",
-															marginRight: "12px",
-															fontSize: "24px",
-															fontWeight: "bold",
-															color: "rgba(0, 0, 0, .5)",
-															maxWidth: "24px",
-															display: "flex", // Ensure the icon is displayed properly
-															alignItems:
-																"center", // Center the icon vertically
-															justifyContent:
-																"center",
-														}}
-													>
-														<RemoveRedEyeRounded />
-													</Icon>
-													Read-Only
-												</Box>
-											}
-											sx={{ color: "#000" }}
-											subheader={
-												<Box
-													sx={{
-														marginLeft: "30px",
-													}}
-												>
-													Ability to view model
-													details and usage
-													instructions
-												</Box>
-											}
-											action={
-												<RadioGroup.Item
-													value="Read-Only"
-													label=""
-												/>
-											}
-										/>
-									</StyledCard>
-								</Stack>
-							</RadioGroup>
-						</Box>
-					</StyledModalContentText>
-				</Modal.Content>
-				<Modal.Actions>
-					<Button
-						variant="outlined"
-						onClick={() => {
-							setAddProjectModal(false);
-							setOffset(0);
-							setNonCredentialedProjects([]);
-						}}
-					>
-						Cancel
-					</Button>
-					<Button
-						variant={"contained"}
-						disabled={
-							!addProjectRole ||
-							selectedNonCredentialedProjects.length < 1
-						}
-						onClick={() => {
-							submitNonGroupProjects();
-						}}
-					>
-						Save
-					</Button>
-				</Modal.Actions>
-			</StyledModal>
-			<Modal open={deleteProjectModal} maxWidth="md">
-				<Modal.Title>
-					<Typography variant="h6">Are you sure?</Typography>
-				</Modal.Title>
-				<Modal.Content>
-					<Modal.ContentText>
-						{projectToDelete && (
-							<Typography variant="body1">
-								This will remove{" "}
-								<b>{projectToDelete.project_name}</b>
-							</Typography>
-						)}
-					</Modal.ContentText>
-				</Modal.Content>
-				<Modal.Actions>
-					<Button
-						variant="text"
-						onClick={() => setDeleteProjectModal(false)}
-					>
-						Close
-					</Button>
-					<Button
-						color="error"
-						variant={"contained"}
-						onClick={() => {
-							if (!projectToDelete) {
-								console.error("No project to delete");
+							Cancel
+						</Button>
+						<Button
+							disabled={
+								selectedNonCredentialedProjects.length < 1 ||
+								!addProjectRole
 							}
-							deleteProject(projectToDelete);
-						}}
-					>
-						Confirm
-					</Button>
-				</Modal.Actions>
-			</Modal>
-			<Modal open={deleteProjectsModal}>
-				<Modal.Title>Are you sure?</Modal.Title>
-				<Modal.Content>
-					Would you like to delete all selected apps?
-				</Modal.Content>
-				<Modal.Actions>
-					<Button
-						variant="text"
-						onClick={() => setDeleteProjectsModal(false)}
-					>
-						Close
-					</Button>
-					<Button
-						variant={"contained"}
-						color="error"
-						onClick={() => {
-							deleteProjectPermissions();
-						}}
-					>
-						Confirm
-					</Button>
-				</Modal.Actions>
-			</Modal>
-		</StyledProjectContent>
+							onClick={() => {
+								submitNonGroupProjects();
+							}}
+						>
+							Save
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={deleteProjectModal}
+				onOpenChange={setDeleteProjectModal}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Are you sure?</DialogTitle>
+						<DialogDescription>
+							{projectToDelete
+								? `This will remove ${projectToDelete.project_name}.`
+								: "This will remove the selected app."}
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setDeleteProjectModal(false)}
+						>
+							Close
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={() => {
+								if (!projectToDelete) {
+									console.error("No project to delete");
+									return;
+								}
+								deleteProject(projectToDelete);
+							}}
+						>
+							Confirm
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={deleteProjectsModal}
+				onOpenChange={setDeleteProjectsModal}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Are you sure?</DialogTitle>
+						<DialogDescription>
+							Would you like to delete all selected apps?
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setDeleteProjectsModal(false)}
+						>
+							Close
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={() => {
+								deleteProjects();
+							}}
+						>
+							Confirm
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</div>
 	);
 };

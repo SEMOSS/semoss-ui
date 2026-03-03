@@ -1,21 +1,12 @@
-import {
-	ClearRounded,
-	Close,
-	DeleteRounded,
-	MoreVert,
-} from "@mui/icons-material";
+import { Close, DeleteRounded, MoreVert } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Users } from "lucide-react";
 import {
-	Autocomplete,
-	Avatar,
-	Box,
 	Button,
 	Card,
-	Chip,
 	IconButton,
-	Link,
 	Menu,
 	Modal,
 	Stack,
@@ -23,63 +14,61 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { addTeamUser, deleteTeam, getNonTeamUsers } from "@/api/teams";
-import { useRootStore } from "@/hooks";
-import type { ApiResponse } from "@/types";
+import { deleteTeam } from "@/api/teams";
+import AMAZON_S3 from "@/assets/loginProviders/Amazon_S3.png";
+import ADFS from "@/assets/loginProviders/adfs_microsoft_1.png";
+import Dropbox from "@/assets/loginProviders/dropbox.png";
+import Github from "@/assets/loginProviders/github.png";
+import Gitlab from "@/assets/loginProviders/gitlab.png";
+import newGoogle from "@/assets/loginProviders/google.png";
+import Keycloak from "@/assets/loginProviders/keycloak.png";
+import Linkedin from "@/assets/loginProviders/linkedin.png";
+import Microsoft from "@/assets/loginProviders/microsoft.png";
+import Okta from "@/assets/loginProviders/okta.png";
+import ProductHunt from "@/assets/loginProviders/product_hunt.png";
+import Salesforce from "@/assets/loginProviders/salesforce.png";
+import Saml from "@/assets/loginProviders/saml.png";
+import Siteminder from "@/assets/loginProviders/siteminder.png";
+import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
+import Twitter from "@/assets/loginProviders/x_twitter.png";
 import { AddTeamModal } from "./add-team-modal";
 
-const colors = [
-	"rgba(111, 212, 203, 1)",
-	"rgba(195, 165, 240, 1)",
-	"rgba(255, 192, 217, 1)",
-	"rgba(186, 222, 255, 1)",
-	"rgba(79, 36, 155, 1)",
-	"rgba(161, 211, 150, 1)",
-	"rgba(255, 204, 128, 1)",
-	"rgba(128, 222, 234, 1)",
-	"rgba(255, 229, 127, 1)",
-	"rgba(207, 216, 220, 1)",
-];
+const TypeImageObject = {
+	native: AMAZON_S3,
+	google: newGoogle,
+	github: Github,
+	okta: Okta,
+	dropbox: Dropbox,
+	adfs: ADFS,
+	gitlab: Gitlab,
+	keycloak: Keycloak,
+	linkedin: Linkedin,
+	ms: Microsoft,
+	product_hunt: ProductHunt,
+	salesforce: Salesforce,
+	saml: Saml,
+	siteminder: Siteminder,
+	surveymonkey: Surverymonkey,
+	twitter: Twitter,
+};
 
-interface NonCredentialedUser {
-	name: string;
-}
-
-interface NonTeamMembers {
-	admin: boolean;
-	countrycode: string;
-	email: string;
-	exporter: boolean;
-	id: string;
-	name: string;
-	phone: string;
-	phoneextension: string;
-	publisher: boolean;
-	type: string;
-	username: string;
-}
-
-const StyledTileCard = styled(Card, {
-	shouldForwardProp: (prop) => prop !== "color",
-})<{ bordercolor?: string }>(({ bordercolor = "rgba(0, 0, 0, 0.6)" }) => ({
+const StyledTileCard = styled(Card)(() => ({
 	"&:hover": {
 		cursor: "pointer",
 	},
 	width: "100%",
 	padding: "8px",
-	borderTopLeftRadius: "12px",
-	borderBottomLeftRadius: "12px",
-	borderLeft: `solid 10px ${bordercolor}`,
+	borderRadius: "12px",
 	minWidth: "288px",
 	maxHeight: "200px",
 }));
 
 const StyledCardDescription = styled(Typography)({
 	display: "-webkit-box",
-	minHeight: "40px",
-	maxHeight: "40px",
+	minHeight: "80px",
+	maxHeight: "80px",
 	maxWidth: "256px",
-	WebkitLineClamp: 2,
+	WebkitLineClamp: 4,
 	WebkitBoxOrient: "vertical",
 	overflow: "hidden",
 	textOverflow: "ellipsis",
@@ -102,22 +91,10 @@ const StyledTitle = styled(Typography)({
 	letter: "0.15px",
 });
 
-const StyledActionContainer = styled(Card.Actions)({
+const StyledHeaderActions = styled("div")({
 	display: "flex",
+	alignItems: "flex-start",
 	justifyContent: "flex-end",
-	paddingBottom: "2px",
-});
-
-const StyledTagChip = styled(Chip, {
-	shouldForwardProp: (prop) => prop !== "maxWidth",
-})<{ maxWidth?: string }>(({ maxWidth = "200px" }) => ({
-	maxWidth: maxWidth,
-	textOverflow: "ellipsis",
-	backgroundColor: "#fff",
-}));
-
-const StyledChipContainer = styled("div")({
-	paddingTop: "8px",
 });
 
 const StyledMoreVert = styled(MoreVert, {
@@ -128,13 +105,6 @@ const StyledMoreVert = styled(MoreVert, {
 }>(({ theme, hover }) => ({
 	color: hover ? theme.palette.divider : theme.palette.text.secondary,
 }));
-
-const StyledModalContentText = styled(Modal.ContentText)({
-	display: "flex",
-	flexDirection: "column",
-	gap: ".5rem",
-	marginTop: "12px",
-});
 
 const StyledDeleteModal = styled(Modal)({
 	"& .MuiPaper-root": {
@@ -157,9 +127,6 @@ interface TeamCardProps {
 	/** Type of the team */
 	type: string;
 
-	/** Tag of the team */
-	tag?: string[] | string;
-
 	/** dispatch function */
 	dispatch: (val: { type: string; field: string; value: unknown[] }) => void;
 
@@ -177,11 +144,7 @@ const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
 }));
 
 export const TeamTileCard = (props: TeamCardProps) => {
-	const { id, description, type, tag, dispatch, teams, onClick } = props;
-	const AUTOCOMPLETE_OFFSET = 0;
-	const AUTOCOMPLETE_LIMIT = 10;
-
-	const { monolithStore } = useRootStore();
+	const { id, description, type, dispatch, teams, onClick } = props;
 	const notification = useNotification();
 
 	const [hover, setHover] = React.useState(false);
@@ -189,126 +152,11 @@ export const TeamTileCard = (props: TeamCardProps) => {
 	const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(
 		null,
 	);
-	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [searchLoading, setSearchLoading] = useState(false);
-	const [nonCredentialedUsers, setNonCredentialedUsers] = useState([]);
-	const [selectedNonCredentialedUsers, setSelectedNonCredentialedUsers] =
-		useState([]);
-	const [searchMemberInput, setSearchMemberInput] = useState<string>("");
-	const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
-	const [isScrollBottom, setIsScrollBottom] = useState(false);
-	const [addMembersModal, setAddMembersModal] = useState<boolean>(false);
-	const [count, setCount] = useState(0);
-	const [canCollect, setCanCollect] = useState<boolean>(true);
 	const [editTeam, setEditTeam] = useState(false);
 
-	const randomColor = useMemo(() => {
-		return colors[Math.floor(Math.random() * colors.length)];
-	}, []);
-
-	const getAdditionalUsersNonGroup = () => {
-		setOffset(offset + AUTOCOMPLETE_LIMIT);
-	};
-
-	useEffect(() => {
-		if (isScrollBottom) {
-			if (canCollect) {
-				getAdditionalUsersNonGroup();
-			}
-		}
-	}, [isScrollBottom, canCollect]);
-
-	const getUsersNonGroup = useCallback(
-		async (reset: boolean) => {
-			if (isLoading) {
-				return;
-			}
-			setIsLoading(true);
-
-			if (type === "CUSTOM") {
-				try {
-					const response = await getNonTeamUsers(
-						id,
-						AUTOCOMPLETE_LIMIT,
-						offset,
-						searchMemberInput,
-					);
-
-					// ignore if there is no response
-					if (response) {
-						let requests = reset ? [] : nonCredentialedUsers;
-						const users = (
-							response as unknown as NonTeamMembers[]
-						).map((val) => {
-							return {
-								...val,
-								color: colors[
-									Math.floor(Math.random() * colors.length)
-								],
-							};
-						});
-						requests = requests.concat(users);
-						setNonCredentialedUsers(requests);
-						setCanCollect(users.length === AUTOCOMPLETE_LIMIT);
-						setIsLoading(false);
-						setSearchLoading(false);
-					}
-				} catch (e) {
-					notification.add({
-						color: "error",
-						message: String(e),
-					});
-					setIsLoading(false);
-					setSearchLoading(false);
-				}
-			}
-		},
-		[
-			isLoading,
-			type,
-			id,
-			offset,
-			searchMemberInput,
-			nonCredentialedUsers,
-			monolithStore,
-			notification,
-		],
-	);
-
-	useEffect(() => {
-		if (addMembersModal) {
-			if (searchMemberInput) {
-				setSearchLoading(true);
-			}
-			const timer = setTimeout(() => {
-				if (!offset) {
-					getUsersNonGroup(false);
-				} else {
-					if (canCollect) {
-						getUsersNonGroup(false);
-					} else {
-						getUsersNonGroup(true);
-					}
-				}
-			}, 500);
-			return () => clearTimeout(timer);
-		}
-	}, [
-		addMembersModal,
-		offset,
-		searchMemberInput,
-		canCollect,
-		getUsersNonGroup,
-	]);
-
-	const nearBottom = (target: {
-		scrollHeight?: number;
-		scrollTop?: number;
-		clientHeight?: number;
-	}) => {
-		const diff = Math.round(target.scrollHeight - target.scrollTop);
-		return diff - 25 <= target.clientHeight;
-	};
+	const descriptionText = description
+		? description.replace(/['"]+/g, "")
+		: "No description available";
 
 	const deleteGroup = () => {
 		try {
@@ -343,84 +191,12 @@ export const TeamTileCard = (props: TeamCardProps) => {
 		setAnchorEl(null);
 	};
 
-	const submitNonGroupUsers = async () => {
-		try {
-			// construct requests for post data
-			const requests = selectedNonCredentialedUsers.map((m) => {
-				return {
-					userid: m.id,
-					type: m.type,
-				};
-			});
-
-			if (requests.length === 0) {
-				notification.add({
-					color: "warning",
-					message: `No users to add`,
-				});
-
-				return;
-			}
-
-			for (let i = 0; i < requests.length; i++) {
-				const response:
-					| ApiResponse<{ success: boolean }>
-					| {
-							response: Response;
-							data: {
-								success: boolean;
-							};
-					  }
-					| null = await addTeamUser(
-					id,
-					requests[i].type,
-					requests[i].userid,
-					true,
-				);
-
-				if (!response) {
-					return;
-				}
-
-				// ignore if there is no response
-				if (response) {
-					setAddMembersModal(false);
-					setSelectedNonCredentialedUsers([]);
-
-					notification.add({
-						color: "success",
-						message: "Successfully added member permissions",
-					});
-				} else {
-					notification.add({
-						color: "error",
-						message: `Error changing user permissions`,
-					});
-				}
-			}
-		} catch (e) {
-			setAddMembersModal(false);
-			setSelectedNonCredentialedUsers([]);
-
-			notification.add({
-				color: "error",
-				message: String(e),
-			});
-		} finally {
-			// refresh the members
-			setCount(count + 1);
-		}
-	};
-
-	const open = Boolean(anchorEl);
-	const _popoverId = open ? "simple-popover" : undefined;
+	const providerKey = type ? type.toLowerCase() : "";
+	const providerIcon = TypeImageObject[providerKey];
 
 	return (
 		<React.Fragment>
-			<StyledTileCard
-				onClick={() => onClick(id)}
-				bordercolor={randomColor}
-			>
+			<StyledTileCard onClick={() => onClick(id)}>
 				<Card.Header
 					title={
 						<div
@@ -428,142 +204,112 @@ export const TeamTileCard = (props: TeamCardProps) => {
 								display: "flex",
 								flexDirection: "row",
 								gap: "8px",
+								alignItems: "center",
 							}}
 						>
+							{providerIcon ? (
+								<img
+									src={providerIcon}
+									alt={`${type} icon`}
+									style={{
+										height: "20px",
+										width: "20px",
+									}}
+								/>
+							) : (
+								<Users className="size-4 text-muted-foreground" />
+							)}
 							<StyledTitle variant={"body1"}>{id}</StyledTitle>
 						</div>
 					}
-					action={""}
+					action={
+						<StyledHeaderActions>
+							<IconButton
+								size={"small"}
+								color="default"
+								onClick={handleClick}
+							>
+								<StyledMoreVert hover={hover} />
+							</IconButton>
+							<Menu
+								anchorEl={anchorEl}
+								open={Boolean(anchorEl)}
+								onClose={handleClose}
+								anchorOrigin={{
+									vertical: "bottom",
+									horizontal: "right",
+								}}
+								transformOrigin={{
+									vertical: "top",
+									horizontal: "right",
+								}}
+								sx={{
+									"& .MuiPaper-root": {
+										borderRadius: "4px",
+									},
+								}}
+							>
+								<Menu.Item
+									onClick={(e) => {
+										e.stopPropagation();
+										handleClose(e);
+										setEditTeam(true);
+									}}
+								>
+									<Stack direction="row" gap={0.5}>
+										<EditIcon
+											sx={{
+												color: "#0000008A",
+												fontSize: 18,
+											}}
+										/>
+										<Typography variant="body2">
+											Edit team
+										</Typography>
+									</Stack>
+								</Menu.Item>
+								<Menu.Item
+									onClick={(e) => {
+										e.stopPropagation();
+										setDeleteModal(true);
+										handleClose(e);
+									}}
+									onMouseOver={() => {
+										setHover(true);
+									}}
+									sx={{ color: hover ? "red" : "#0000008A" }}
+									onMouseLeave={() => {
+										setHover(false);
+									}}
+								>
+									<Stack direction="row" gap={0.5}>
+										<DeleteRounded
+											sx={{
+												color: hover
+													? "red"
+													: "#0000008A",
+												fontSize: 18,
+											}}
+										/>
+										<Typography
+											variant="body2"
+											sx={{
+												color: hover ? "red" : "black",
+											}}
+										>
+											Delete team
+										</Typography>
+									</Stack>
+								</Menu.Item>
+							</Menu>
+						</StyledHeaderActions>
+					}
 				/>
 				<Card.Content>
 					<StyledCardDescription variant={"body2"}>
-						{description
-							? description.replace(/['"]+/g, "")
-							: "No description available"}
+						{descriptionText}
 					</StyledCardDescription>
-					<Stack
-						direction="row"
-						alignItems="center"
-						spacing={0.5}
-						minHeight="32px"
-					>
-						<StyledChipContainer>
-							{tag !== undefined &&
-								(Array.isArray(tag) ? (
-									tag.map((t, i) => {
-										if (i <= 3) {
-											return (
-												<StyledTagChip
-													maxWidth={
-														tag.length === 2
-															? "100px"
-															: tag.length === 1
-																? "200px"
-																: "75px"
-													}
-													key={`tag-${t}`}
-													label={t}
-													variant="filled"
-												/>
-											);
-										}
-									})
-								) : (
-									<StyledTagChip
-										key={`tag-none`}
-										label={tag}
-										variant="filled"
-									/>
-								))}
-						</StyledChipContainer>
-					</Stack>
 				</Card.Content>
-				<StyledActionContainer>
-					<IconButton
-						size={"small"}
-						color="default"
-						onClick={handleClick}
-					>
-						<StyledMoreVert hover={hover} />
-					</IconButton>
-					<Menu
-						anchorEl={anchorEl}
-						open={Boolean(anchorEl)}
-						onClose={handleClose}
-						anchorOrigin={{
-							vertical: "top",
-							horizontal: "right",
-						}}
-						transformOrigin={{
-							vertical: "top",
-							horizontal: "right",
-						}}
-						sx={{
-							"& .MuiPaper-root": {
-								borderRadius: "4px",
-							},
-						}}
-					>
-						{type === "CUSTOM" && (
-							<Menu.Item
-								onClick={(e) => {
-									e.stopPropagation();
-									handleClose(e);
-									setAddMembersModal(true);
-									getUsersNonGroup(false);
-								}}
-							>
-								<Stack direction="row" gap={2}>
-									<PersonAddIcon
-										sx={{ color: "#0000008A" }}
-									/>
-									<div>Add member to team</div>
-								</Stack>
-							</Menu.Item>
-						)}
-						<Menu.Item
-							onClick={(e) => {
-								e.stopPropagation();
-								handleClose(e);
-								setEditTeam(true);
-							}}
-						>
-							<Stack direction="row" gap={2}>
-								<EditIcon sx={{ color: "#0000008A" }} />
-								<div>Edit team</div>
-							</Stack>
-						</Menu.Item>
-						<Menu.Item
-							onClick={(e) => {
-								e.stopPropagation();
-								setDeleteModal(true);
-								handleClose(e);
-							}}
-							onMouseOver={() => {
-								setHover(true);
-							}}
-							sx={{ color: hover ? "red" : "#0000008A" }}
-							onMouseLeave={() => {
-								setHover(false);
-							}}
-						>
-							<Stack direction="row" gap={2}>
-								<DeleteRounded
-									sx={{
-										color: hover ? "red" : "#0000008A",
-									}}
-								/>
-								<div
-									style={{
-										color: hover ? "red" : "black",
-									}}
-								>
-									Delete team
-								</div>
-							</Stack>
-						</Menu.Item>
-					</Menu>
-				</StyledActionContainer>
 			</StyledTileCard>
 			<StyledDeleteModal open={deleteModal}>
 				<StyledModalTitle>
@@ -598,210 +344,6 @@ export const TeamTileCard = (props: TeamCardProps) => {
 					</StyledDeleteButton>
 				</Modal.Actions>
 			</StyledDeleteModal>
-			<Modal open={addMembersModal} maxWidth="lg">
-				<StyledModalTitle>
-					<Typography sx={{ color: "#000000DE" }} variant="h6">
-						Add Members to Team
-					</Typography>
-					<IconButton onClick={() => setAddMembersModal(false)}>
-						<Close />
-					</IconButton>
-				</StyledModalTitle>
-				<Modal.Content sx={{ width: "50rem" }}>
-					<StyledModalContentText>
-						<Autocomplete
-							label="Search"
-							loading={isLoading || searchLoading}
-							multiple={true}
-							freeSolo={false}
-							filterOptions={(x) => x}
-							options={nonCredentialedUsers}
-							includeInputInList={true}
-							limitTags={2}
-							getLimitTagsText={() =>
-								` +${selectedNonCredentialedUsers.length - 2}`
-							}
-							value={selectedNonCredentialedUsers}
-							inputValue={searchMemberInput}
-							getOptionLabel={(option: NonCredentialedUser) => {
-								return `${option.name}`;
-							}}
-							isOptionEqualToValue={(option, value) => {
-								return option.name === value.name;
-							}}
-							onChange={(
-								_event,
-								newValue: NonCredentialedUser[],
-							) => {
-								setSelectedNonCredentialedUsers([...newValue]);
-							}}
-							ListboxProps={{
-								onScroll: ({ target }) =>
-									setIsScrollBottom(
-										nearBottom(
-											target as {
-												scrollHeight?: number;
-												scrollTop?: number;
-												clientHeight?: number;
-											},
-										),
-									),
-							}}
-							onInputChange={(_event, newValue) => {
-								setSearchMemberInput(newValue);
-								setOffset(0);
-								setNonCredentialedUsers([]);
-							}}
-						/>
-
-						{selectedNonCredentialedUsers &&
-							selectedNonCredentialedUsers.map((user, idx) => {
-								const space = user.name.indexOf(" ");
-								const initial = user.name
-									? space > -1
-										? `${user.name[0].toUpperCase()}${user.name[
-												space + 1
-											].toUpperCase()}`
-										: user.name[0].toUpperCase()
-									: user.id[0].toUpperCase();
-								return (
-									<Box
-										key={idx}
-										sx={{
-											display: "flex",
-											justifyContent: "left",
-											align: "center",
-											backgroundColor:
-												idx % 2 !== 0
-													? "rgba(0, 0, 0, .03)"
-													: "",
-										}}
-									>
-										<Box
-											sx={{
-												display: "flex",
-												justifyContent: "center",
-												marginTop: "6px",
-												marginLeft: "8px",
-												marginRight: "8px",
-											}}
-										>
-											<Box
-												sx={{
-													display: "flex",
-													height: "80px",
-													width: "80px",
-													justifyContent: "center",
-													alignItems: "center",
-													border: "0.5px solid rgba(0, 0, 0, .05)",
-													borderRadius: "50%",
-												}}
-											>
-												<Avatar
-													aria-label="avatar"
-													sx={{
-														display: "flex",
-														width: "60px",
-														height: "60px",
-														fontSize: "24px",
-														backgroundColor:
-															user.color,
-													}}
-												>
-													{initial}
-												</Avatar>
-											</Box>
-										</Box>
-										<Card.Header
-											title={
-												<Typography variant="h5">
-													{user.name}
-												</Typography>
-											}
-											subheader={
-												<Box
-													sx={{
-														display: "flex",
-														gap: 2,
-														marginTop: "4px",
-													}}
-												>
-													<span
-														style={{
-															opacity: 0.9,
-															fontSize: "14px",
-														}}
-													>
-														{`User ID: `}
-														<Chip
-															label={user.id}
-															size="small"
-														/>
-													</span>
-													{`• `}
-													<span>
-														{`Email: `}
-														<Link
-															href={`mailto:${user.email}`}
-															underline="none"
-														>
-															{user.email}
-														</Link>
-													</span>
-												</Box>
-											}
-											action={
-												<IconButton
-													sx={{
-														mt: "16px",
-														color: "rgba( 0, 0, 0, .7)",
-														mr: "24px",
-													}}
-													onClick={() => {
-														const filtered =
-															selectedNonCredentialedUsers.filter(
-																(val) =>
-																	val.id !==
-																	user.id,
-															);
-														setSelectedNonCredentialedUsers(
-															filtered,
-														);
-													}}
-												>
-													<ClearRounded />
-												</IconButton>
-											}
-										/>
-									</Box>
-								);
-							})}
-					</StyledModalContentText>
-				</Modal.Content>
-				<Modal.Actions>
-					<Button
-						variant="text"
-						sx={{ color: "#212121" }}
-						onClick={() => {
-							setAddMembersModal(false);
-							setOffset(0);
-							setNonCredentialedUsers([]);
-						}}
-					>
-						Cancel
-					</Button>
-					<Button
-						variant={"contained"}
-						disabled={selectedNonCredentialedUsers.length < 1}
-						onClick={() => {
-							submitNonGroupUsers();
-						}}
-					>
-						Add
-					</Button>
-				</Modal.Actions>
-			</Modal>
-
 			<AddTeamModal
 				open={editTeam}
 				isEdit={true}
