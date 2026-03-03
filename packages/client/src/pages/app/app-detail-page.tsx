@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import { getUserProjectPermission } from "@semoss/shared";
 import { Modal, useNotification } from "@semoss/ui";
@@ -112,7 +112,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 		},
 		[notification],
 	);
-	const navigate = useNavigate();
 	const getPermission = useCallback(async () => {
 		const role = await getUserProjectPermission(appId);
 
@@ -606,14 +605,14 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 								permission !== "readOnly" &&
 								showNav && (
 									<Button
+										asChild
 										variant="outline"
-										onClick={() =>
-											navigate(`/app/${appId}/view`)
-										}
 										data-testid="appDetail-edit-btn"
 									>
-										<SquareArrowOutUpRight className="size-4" />
-										Open App
+										<Link to={`/app/${appId}/view`}>
+											<SquareArrowOutUpRight className="size-4" />
+											Open App
+										</Link>
 									</Button>
 								)}
 						</div>
@@ -626,7 +625,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 									"No description available"}
 							</p>
 							{tags?.length ? (
-								<div className="flex flex-row flex-wrap gap-2">
+								<div className="flex flex-row flex-wrap gap-2 pb-2">
 									{tags.map((tag) => {
 										if (!tag) return null;
 										return (

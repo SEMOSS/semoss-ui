@@ -38,7 +38,7 @@ import {
 } from "@semoss/ui/next";
 import { deleteMember, editMemberInfo } from "@/api";
 import { useAPI, useSettings } from "@/hooks";
-import { UserAddOverlay } from "./UserAddOverlay";
+import { UserAddOverlay } from "./user-add-overlay";
 import { UserPopover } from "./user-popover";
 
 interface User {

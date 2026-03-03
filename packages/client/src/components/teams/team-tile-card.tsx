@@ -29,7 +29,7 @@ import Siteminder from "@/assets/loginProviders/siteminder.png";
 import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
 import Twitter from "@/assets/loginProviders/x_twitter.png";
 import { AddTeamModal } from "./add-team-modal";
-import { TeamDeleteDialog } from "./TeamDeleteDialog";
+import { TeamDeleteDialog } from "./team-delete-dialog";
 
 const TypeImageObject = {
 	native: AMAZON_S3,
