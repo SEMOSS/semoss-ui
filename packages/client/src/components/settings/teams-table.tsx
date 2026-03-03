@@ -151,19 +151,27 @@ export const TeamsTable = ({ type, id }) => {
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{teams
-							.slice(
-								page * rowsPerPage,
-								page * rowsPerPage + rowsPerPage,
-							)
-							.map((team) => (
-								<TableRow key={team.id}>
-									<TableCell>{team.name}</TableCell>
-									<TableCell>{team.type}</TableCell>
-									<TableCell>{team.permission}</TableCell>
-									<TableCell>{team.dateAdded}</TableCell>
-								</TableRow>
-							))}
+						{teams.length > 0 ? (
+							teams
+								.slice(
+									page * rowsPerPage,
+									page * rowsPerPage + rowsPerPage,
+								)
+								.map((team) => (
+									<TableRow key={team.id}>
+										<TableCell>{team.name}</TableCell>
+										<TableCell>{team.type}</TableCell>
+										<TableCell>{team.permission}</TableCell>
+										<TableCell>{team.dateAdded}</TableCell>
+									</TableRow>
+								))
+						) : (
+							<TableRow>
+								<TableCell colSpan={4} className="text-center">
+									No teams found
+								</TableCell>
+							</TableRow>
+						)}
 					</TableBody>
 					<TableFooter>
 						<TableRow>
