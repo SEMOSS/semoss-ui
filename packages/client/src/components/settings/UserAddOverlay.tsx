@@ -1,60 +1,27 @@
-import {
-	CloudUploadRounded,
-	DownloadForOfflineRounded,
-	LocalPoliceRounded,
-} from "@mui/icons-material";
 import type { AxiosResponse } from "axios";
+import { Download, Shield, Upload } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
 	Button,
-	List,
-	Modal,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Input,
+	Label,
 	Select,
-	Stack,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Switch,
-	styled,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	toast,
+} from "@semoss/ui/next";
 import { createUser, editMemberInfo } from "@/api";
 import { useRootStore, useSettings } from "@/hooks";
-
-const StyledModalContent = styled(Modal.Content)(() => ({
-	maxWidth: "50rem",
-}));
-
-const StyledForm = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-}));
-
-const StyledListItem = styled(List.Item)({
-	padding: "4px 0",
-});
-
-const StyledList = styled(List)({
-	padding: 0,
-});
-
-const StyledCountryCodeExt = styled(TextField)({
-	width: "168px",
-});
-
-const StyledPhoneNumber = styled(TextField)({
-	width: "550px",
-});
-
-const StyledPermissions = styled(Typography)({
-	padding: "25px 0",
-});
-
-const StyledSubmitForm = styled("form")(() => ({
-	overflowY: "auto",
-}));
 
 interface User {
 	id: string;
@@ -169,7 +136,6 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 
 	const { configStore } = useRootStore();
 	const { adminMode } = useSettings();
-	const notification = useNotification();
 
 	const isNewUser = user === null;
 
@@ -206,7 +172,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 			...(user || {}),
 			model_usage_restriction: user?.model_usage_restriction ?? "null", // always set default for new user
 		});
-	}, [user, open]);
+	}, [user, reset]);
 
 	const type = watch("type", "");
 	const limitType = watch("model_usage_restriction", "");
@@ -287,27 +253,20 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 
 				// ignore if there is no response
 				if (response.data) {
-					notification.add({
-						color: "success",
-						message: isNewUser
+					toast.success(
+						isNewUser
 							? "Successfully added user"
 							: "Successfully editted user",
-					});
+					);
 
 					success = true;
 				} else {
-					notification.add({
-						color: "error",
-						message: isNewUser
-							? "Error adding user"
-							: "Error editting user",
-					});
+					toast.error(
+						isNewUser ? "Error adding user" : "Error editting user",
+					);
 				}
 			} catch (e) {
-				notification.add({
-					color: "error",
-					message: String(e),
-				});
+				toast.error(String(e));
 			} finally {
 				// close the overlay
 				onClose(success);
@@ -331,52 +290,67 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 				}
 			}
 
-			notification.add({
-				color: "error",
-				message: `Form is Invalid. ${errorMessages.join(" ")}`,
-			});
+			toast.error(`Form is Invalid. ${errorMessages.join(" ")}`);
 		},
 	);
 
 	return (
-		<Modal open={open} maxWidth="lg">
-			<Modal.Title>
-				{isNewUser ? "Add Member" : "Edit Member"}
-			</Modal.Title>
-			<StyledSubmitForm onSubmit={editUser}>
-				<StyledModalContent>
-					<StyledForm>
-						<Typography variant="subtitle1">Credentials</Typography>
-						<Stack direction={"column"} gap={1}>
+		<Dialog
+			open={open}
+			onOpenChange={(isOpen) => !isOpen && onClose(false)}
+		>
+			<DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+				<DialogHeader>
+					<DialogTitle>
+						{isNewUser ? "Add Member" : "Edit Member"}
+					</DialogTitle>
+				</DialogHeader>
+				<form onSubmit={editUser} className="space-y-6">
+					<section className="space-y-3">
+						<p className="font-medium text-sm">Credentials</p>
+						<div className="grid gap-4">
 							<Controller
 								name="type"
 								control={control}
 								rules={{}}
 								render={({ field }) => {
 									return (
-										<Select
-											label="Type"
-											disabled={!isNewUser}
-											value={
-												field.value ? field.value : ""
-											}
-											onChange={(e) => {
-												field.onChange(e.target.value);
-											}}
-										>
-											{configStore.store.config.availableProviders.map(
-												(option, i) => {
-													return (
-														<Select.Item
-															value={option.label}
-															key={`type-${option.label}-${i}`}
-														>
-															{option.label}
-														</Select.Item>
-													);
-												},
-											)}
-										</Select>
+										<div className="grid gap-1.5">
+											<Label>Type</Label>
+											<Select
+												disabled={!isNewUser}
+												value={
+													field.value
+														? field.value
+														: ""
+												}
+												onValueChange={(value) => {
+													field.onChange(value);
+												}}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder="Select type" />
+												</SelectTrigger>
+												<SelectContent>
+													{configStore.store.config.availableProviders.map(
+														(option, i) => {
+															return (
+																<SelectItem
+																	value={
+																		option.label
+																	}
+																	key={`type-${option.label}-${i}`}
+																>
+																	{
+																		option.label
+																	}
+																</SelectItem>
+															);
+														},
+													)}
+												</SelectContent>
+											</Select>
+										</div>
 									);
 								}}
 							/>
@@ -386,16 +360,22 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 								rules={{}}
 								render={({ field }) => {
 									return (
-										<TextField
-											label="User Id *"
-											disabled={!isNewUser}
-											value={
-												field.value ? field.value : ""
-											}
-											onChange={(e) => {
-												field.onChange(e.target.value);
-											}}
-										></TextField>
+										<div className="grid gap-1.5">
+											<Label>User Id *</Label>
+											<Input
+												disabled={!isNewUser}
+												value={
+													field.value
+														? field.value
+														: ""
+												}
+												onChange={(e) => {
+													field.onChange(
+														e.target.value,
+													);
+												}}
+											/>
+										</div>
 									);
 								}}
 							/>
@@ -405,31 +385,37 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 								rules={{}}
 								render={({ field }) => {
 									return (
-										<TextField
-											label="Username"
-											disabled={
-												!!(
-													user?.type === "NATIVE" ||
+										<div className="grid gap-1.5">
+											<Label>Username</Label>
+											<Input
+												disabled={
+													!!(
+														user?.type ===
+															"NATIVE" ||
+														type === "NATIVE"
+													)
+												}
+												value={
+													isNewUser &&
 													type === "NATIVE"
-												)
-											}
-											value={
-												isNewUser && type === "NATIVE"
-													? "This wil match the User Id"
-													: field.value
-														? field.value
-														: ""
-											}
-											onChange={(e) => {
-												field.onChange(e.target.value);
-											}}
-										></TextField>
+														? "This wil match the User Id"
+														: field.value
+															? field.value
+															: ""
+												}
+												onChange={(e) => {
+													field.onChange(
+														e.target.value,
+													);
+												}}
+											/>
+										</div>
 									);
 								}}
 							/>
-						</Stack>
+						</div>
 						{type.toLowerCase() === "native" && (
-							<>
+							<div className="grid gap-2">
 								<Controller
 									name="password"
 									control={control}
@@ -441,61 +427,69 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 									}}
 									render={({ field }) => {
 										return (
-											<TextField
-												label="Password"
-												type="password"
-												value={
-													field.value
-														? field.value
-														: ""
-												}
-												onChange={(e) => {
-													field.onChange(
-														e.target.value,
-													);
-												}}
-											></TextField>
+											<div className="grid gap-1.5">
+												<Label>Password</Label>
+												<Input
+													type="password"
+													value={
+														field.value
+															? field.value
+															: ""
+													}
+													onChange={(e) => {
+														field.onChange(
+															e.target.value,
+														);
+													}}
+												/>
+											</div>
 										);
 									}}
 								/>
 
 								{errors.password && (
-									<Typography
-										variant={"caption"}
-										color={"error"}
-									>
+									<p className="text-destructive text-xs">
 										Note: Password must have one letter, one
 										capital, one number, one special
 										character, and be a minimum of 8
 										characters.
-									</Typography>
+									</p>
 								)}
-							</>
+							</div>
 						)}
-						<Typography variant="subtitle1">Details</Typography>
-						<Stack direction={"column"} gap={1}>
+					</section>
+
+					<section className="space-y-3">
+						<p className="font-medium text-sm">Details</p>
+						<div className="grid gap-4">
 							<Controller
-								name={"name"}
+								name="name"
 								control={control}
 								rules={{
 									required: true,
 								}}
 								render={({ field }) => {
 									return (
-										<TextField
-											label="Name *"
-											value={
-												field.value ? field.value : ""
-											}
-											onChange={(e) =>
-												field.onChange(e.target.value)
-											}
-										></TextField>
+										<div className="grid gap-1.5">
+											<Label>Name *</Label>
+											<Input
+												value={
+													field.value
+														? field.value
+														: ""
+												}
+												onChange={(e) =>
+													field.onChange(
+														e.target.value,
+													)
+												}
+											/>
+										</div>
 									);
 								}}
 							/>
 							<Controller
-								name={"email"}
+								name="email"
 								control={control}
 								rules={{
 									required: false,
@@ -513,20 +507,26 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 								}}
 								render={({ field }) => {
 									return (
-										<TextField
-											label="Email"
-											value={
-												field.value ? field.value : ""
-											}
-											onChange={(e) =>
-												field.onChange(e.target.value)
-											}
-											type="email"
-										></TextField>
+										<div className="grid gap-1.5">
+											<Label>Email</Label>
+											<Input
+												type="email"
+												value={
+													field.value
+														? field.value
+														: ""
+												}
+												onChange={(e) =>
+													field.onChange(
+														e.target.value,
+													)
+												}
+											/>
+										</div>
 									);
 								}}
 							/>
-							<Stack direction={"row"} gap={1}>
+							<div className="flex flex-col gap-3 md:flex-row">
 								<Controller
 									name="phone"
 									control={control}
@@ -545,10 +545,9 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 									}}
 									render={({ field }) => {
 										return (
-											<Stack>
-												<StyledPhoneNumber
-													label="Phone Number"
-													fullWidth
+											<div className="flex-1 space-y-1.5">
+												<Label>Phone Number</Label>
+												<Input
 													value={
 														field.value
 															? field.value
@@ -559,18 +558,15 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 															e.target.value,
 														)
 													}
-												></StyledPhoneNumber>
+												/>
 												{errors.phone && (
-													<Typography
-														variant={"caption"}
-														color={"error"}
-													>
+													<p className="text-destructive text-xs">
 														Note: Phone number must
 														be in the format (XXX)
 														XXX-XXXX or XXX-XXX-XXXX
-													</Typography>
+													</p>
 												)}
-											</Stack>
+											</div>
 										);
 									}}
 								/>
@@ -582,28 +578,33 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 									}}
 									render={({ field }) => {
 										return (
-											<StyledCountryCodeExt
-												label="Extension"
-												value={
-													field.value
-														? field.value
-														: ""
-												}
-												onChange={(e) =>
-													field.onChange(
-														e.target.value,
-													)
-												}
-											></StyledCountryCodeExt>
+											<div className="w-full max-w-[180px] space-y-1.5">
+												<Label>Extension</Label>
+												<Input
+													value={
+														field.value
+															? field.value
+															: ""
+													}
+													onChange={(e) =>
+														field.onChange(
+															e.target.value,
+														)
+													}
+												/>
+											</div>
 										);
 									}}
 								/>
-							</Stack>
-						</Stack>
-						<Typography variant="subtitle1">
+							</div>
+						</div>
+					</section>
+
+					<section className="space-y-3">
+						<p className="font-medium text-sm">
 							Model Limit Restrictions
-						</Typography>
-						<Stack direction={"column"} gap={1}>
+						</p>
+						<div className="grid gap-4">
 							<Controller
 								name="model_usage_restriction"
 								defaultValue={"null"}
@@ -611,29 +612,40 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 								rules={{ required: true }}
 								render={({ field }) => {
 									return (
-										<Select
-											label="Limit Type"
-											value={
-												field.value ? field.value : ""
-											}
-											onChange={(e) => {
-												field.onChange(e.target.value);
-											}}
-											data-testid="model-usage-restriction"
-										>
-											{Object.entries(
-												usageRestritctionTypes,
-											).map((option, _i) => {
-												return (
-													<Select.Item
-														value={option[0]}
-														key={`LimitType-${option[0]}`}
-													>
-														{option[1]}
-													</Select.Item>
-												);
-											})}
-										</Select>
+										<div className="grid gap-1.5">
+											<Label>Limit Type</Label>
+											<Select
+												value={
+													field.value
+														? field.value
+														: ""
+												}
+												onValueChange={(value) => {
+													field.onChange(value);
+												}}
+												data-testid="model-usage-restriction"
+											>
+												<SelectTrigger>
+													<SelectValue placeholder="Select limit type" />
+												</SelectTrigger>
+												<SelectContent>
+													{Object.entries(
+														usageRestritctionTypes,
+													).map((option, _i) => {
+														return (
+															<SelectItem
+																value={
+																	option[0]
+																}
+																key={`LimitType-${option[0]}`}
+															>
+																{option[1]}
+															</SelectItem>
+														);
+													})}
+												</SelectContent>
+											</Select>
+										</div>
 									);
 								}}
 							/>
@@ -644,41 +656,15 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 									rules={{ required: true }}
 									render={({ field }) => {
 										return (
-											<TextField
-												label="Max Tokens"
-												value={
-													field.value
-														? field.value
-														: ""
-												}
-												type="number"
-												onChange={(e) => {
-													field.onChange(
-														Number(e.target.value),
-													);
-												}}
-												data-testid="model-max-tokens"
-											></TextField>
-										);
-									}}
-								/>
-							)}
-							{limitType === "compute" && (
-								<Stack direction={"row"} gap={1}>
-									<Controller
-										name="model_max_response_time"
-										control={control}
-										rules={{ required: true }}
-										render={({ field }) => {
-											return (
-												<TextField
-													label="Max Response Time"
+											<div className="grid gap-1.5">
+												<Label>Max Tokens</Label>
+												<Input
+													type="number"
 													value={
 														field.value
 															? field.value
 															: ""
 													}
-													type="number"
 													onChange={(e) => {
 														field.onChange(
 															Number(
@@ -686,8 +672,43 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 															),
 														);
 													}}
-													data-testid="model-max-response-time"
-												></TextField>
+													data-testid="model-max-tokens"
+												/>
+											</div>
+										);
+									}}
+								/>
+							)}
+							{limitType === "compute" && (
+								<div className="grid gap-4 md:grid-cols-[2fr_1fr]">
+									<Controller
+										name="model_max_response_time"
+										control={control}
+										rules={{ required: true }}
+										render={({ field }) => {
+											return (
+												<div className="grid gap-1.5">
+													<Label>
+														Max Response Time
+													</Label>
+													<Input
+														type="number"
+														value={
+															field.value
+																? field.value
+																: ""
+														}
+														onChange={(e) => {
+															field.onChange(
+																Number(
+																	e.target
+																		.value,
+																),
+															);
+														}}
+														data-testid="model-max-response-time"
+													/>
+												</div>
 											);
 										}}
 									/>
@@ -697,31 +718,43 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 										rules={{}}
 										render={() => {
 											return (
-												<Select
-													label="Unit"
-													value={unitTypes[0]}
-													data-testid="unit-select"
-												>
-													{unitTypes.map(
-														(option, _i) => {
-															return (
-																<Select.Item
-																	value={
-																		option
-																	}
-																	key={`UnitType-${option}`}
-																	data-testid={`unit-select-${option}`}
-																>
-																	{option}
-																</Select.Item>
-															);
-														},
-													)}
-												</Select>
+												<div className="grid gap-1.5">
+													<Label>Unit</Label>
+													<Select
+														value={unitTypes[0]}
+														data-testid="unit-select"
+													>
+														<SelectTrigger>
+															<SelectValue />
+														</SelectTrigger>
+														<SelectContent>
+															{unitTypes.map(
+																(
+																	option,
+																	_i,
+																) => {
+																	return (
+																		<SelectItem
+																			value={
+																				option
+																			}
+																			key={`UnitType-${option}`}
+																			data-testid={`unit-select-${option}`}
+																		>
+																			{
+																				option
+																			}
+																		</SelectItem>
+																	);
+																},
+															)}
+														</SelectContent>
+													</Select>
+												</div>
 											);
 										}}
 									/>
-								</Stack>
+								</div>
 							)}
 							{limitType !== "null" && (
 								<Controller
@@ -730,154 +763,154 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 									rules={{}}
 									render={({ field }) => {
 										return (
-											<Select
-												label="Frequency"
-												value={
-													field.value
-														? field.value
-														: ""
-												}
-												onChange={(e) => {
-													field.onChange(
-														e.target.value,
-													);
-												}}
-												data-testid="model-usage-frequency"
-											>
-												{Object.entries(
-													frequencyTypes,
-												).map((option, _i) => {
-													return (
-														<Select.Item
-															value={option[0]}
-															key={`FrequencyType-${option[0]}`}
-															data-testid={`frequency-select-${option[0]}`}
-														>
-															{option[1]}
-														</Select.Item>
-													);
-												})}
-											</Select>
+											<div className="grid gap-1.5">
+												<Label>Frequency</Label>
+												<Select
+													value={
+														field.value
+															? field.value
+															: ""
+													}
+													onValueChange={(value) => {
+														field.onChange(value);
+													}}
+													data-testid="model-usage-frequency"
+												>
+													<SelectTrigger>
+														<SelectValue placeholder="Select frequency" />
+													</SelectTrigger>
+													<SelectContent>
+														{Object.entries(
+															frequencyTypes,
+														).map((option, _i) => {
+															return (
+																<SelectItem
+																	value={
+																		option[0]
+																	}
+																	key={`FrequencyType-${option[0]}`}
+																	data-testid={`frequency-select-${option[0]}`}
+																>
+																	{option[1]}
+																</SelectItem>
+															);
+														})}
+													</SelectContent>
+												</Select>
+											</div>
 										);
 									}}
 								/>
 							)}
-						</Stack>
+						</div>
+					</section>
 
-						<StyledPermissions variant="subtitle1">
-							Permissions
-						</StyledPermissions>
-
-						<StyledList>
-							<StyledListItem
-								secondaryAction={
-									<Controller
-										name={"admin"}
-										control={control}
-										render={({ field }) => {
-											return (
-												<Switch
-													color="primary"
-													checked={field.value}
-													onChange={() =>
-														field.onChange(
-															!field.value,
-														)
-													}
-													data-testid={`admin-switch-${field.value}`}
-												/>
-											);
-										}}
-									/>
-								}
-							>
-								<List.ItemIcon>
-									<LocalPoliceRounded />
-								</List.ItemIcon>
-								<List.ItemText
-									primary={<strong>Admin</strong>}
-									secondary="Complete access to platform"
+					<section className="space-y-3">
+						<p className="font-medium text-sm">Permissions</p>
+						<div className="space-y-2">
+							<div className="flex items-start justify-between gap-4 rounded-md border border-border/60 p-3">
+								<div className="flex items-start gap-3">
+									<Shield className="mt-0.5 size-4 text-muted-foreground" />
+									<div>
+										<p className="font-medium text-sm">
+											Admin
+										</p>
+										<p className="text-muted-foreground text-sm">
+											Complete access to platform
+										</p>
+									</div>
+								</div>
+								<Controller
+									name="admin"
+									control={control}
+									render={({ field }) => {
+										return (
+											<Switch
+												checked={Boolean(field.value)}
+												onCheckedChange={(value) =>
+													field.onChange(value)
+												}
+												data-testid={`admin-switch-${field.value}`}
+											/>
+										);
+									}}
 								/>
-							</StyledListItem>
+							</div>
 
-							<StyledListItem
-								secondaryAction={
-									<Controller
-										name={"publisher"}
-										control={control}
-										render={({ field }) => {
-											return (
-												<Switch
-													color="primary"
-													checked={field.value}
-													onChange={() =>
-														field.onChange(
-															!field.value,
-														)
-													}
-													data-testid={`publisher-switch-${field.value}`}
-												/>
-											);
-										}}
-									/>
-								}
-							>
-								<List.ItemIcon>
-									<CloudUploadRounded />
-								</List.ItemIcon>
-								<List.ItemText
-									primary={<strong>Publisher</strong>}
-									secondary=" Able to upload data to platform"
+							<div className="flex items-start justify-between gap-4 rounded-md border border-border/60 p-3">
+								<div className="flex items-start gap-3">
+									<Upload className="mt-0.5 size-4 text-muted-foreground" />
+									<div>
+										<p className="font-medium text-sm">
+											Publisher
+										</p>
+										<p className="text-muted-foreground text-sm">
+											Able to upload data to platform
+										</p>
+									</div>
+								</div>
+								<Controller
+									name="publisher"
+									control={control}
+									render={({ field }) => {
+										return (
+											<Switch
+												checked={Boolean(field.value)}
+												onCheckedChange={(value) =>
+													field.onChange(value)
+												}
+												data-testid={`publisher-switch-${field.value}`}
+											/>
+										);
+									}}
 								/>
-							</StyledListItem>
+							</div>
 
-							<StyledListItem
-								secondaryAction={
-									<Controller
-										name={"exporter"}
-										control={control}
-										render={({ field }) => {
-											return (
-												<Switch
-													color="primary"
-													checked={field.value}
-													onChange={() =>
-														field.onChange(
-															!field.value,
-														)
-													}
-													data-testid={`exporter-switch-${field.value}`}
-												/>
-											);
-										}}
-									/>
-								}
-							>
-								<List.ItemIcon>
-									<DownloadForOfflineRounded />
-								</List.ItemIcon>
-								<List.ItemText
-									primary={<strong>Exporter</strong>}
-									secondary="Able to export data from platform"
+							<div className="flex items-start justify-between gap-4 rounded-md border border-border/60 p-3">
+								<div className="flex items-start gap-3">
+									<Download className="mt-0.5 size-4 text-muted-foreground" />
+									<div>
+										<p className="font-medium text-sm">
+											Exporter
+										</p>
+										<p className="text-muted-foreground text-sm">
+											Able to export data from platform
+										</p>
+									</div>
+								</div>
+								<Controller
+									name="exporter"
+									control={control}
+									render={({ field }) => {
+										return (
+											<Switch
+												checked={Boolean(field.value)}
+												onCheckedChange={(value) =>
+													field.onChange(value)
+												}
+												data-testid={`exporter-switch-${field.value}`}
+											/>
+										);
+									}}
 								/>
-							</StyledListItem>
-						</StyledList>
-					</StyledForm>
-				</StyledModalContent>
-			</StyledSubmitForm>
-			<Modal.Actions>
-				<Button variant="outlined" onClick={() => onClose(false)}>
-					Cancel
-				</Button>
-				<Button
-					variant="contained"
-					color="primary"
-					disabled={isSaveDisabled}
-					onClick={() => editUser()}
-				>
-					Save
-				</Button>
-			</Modal.Actions>
-		</Modal>
+							</div>
+						</div>
+					</section>
+
+					<DialogFooter>
+						<Button
+							variant="outline"
+							type="button"
+							onClick={() => onClose(false)}
+						>
+							Cancel
+						</Button>
+						<Button type="submit" disabled={isSaveDisabled}>
+							Save
+						</Button>
+					</DialogFooter>
+				</form>
+			</DialogContent>
+		</Dialog>
 	);
 });

@@ -112,6 +112,8 @@ interface Engine {
 	color?: string;
 }
 
+type EnginePermissionUpdate = Pick<Engine, "engineid" | "permission" | "type">;
+
 export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const { groupId, groupType } = props;
 
@@ -238,7 +240,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	}, [filterEngines, count]);
 
 	useEffect(() => {
-		if (!groupId) {
+		const refreshToken = count;
+		if (refreshToken < 0 || !groupId) {
 			return;
 		}
 		const trimmed = debouncedSearch.trim();
@@ -260,7 +263,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 					setEngineCount(0);
 				}
 			});
-	}, [groupId, groupType, debouncedSearch]);
+	}, [groupId, groupType, debouncedSearch, count]);
 
 	useEffect(() => {
 		if (!addEngineModal) {
@@ -342,7 +345,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			setSelectedNonCredentialedEngines([]);
 			toast.error(String(e));
 		} finally {
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 			setOffset(0);
 		}
 	};
@@ -369,7 +372,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			toast.error(String(e));
 		} finally {
 			setDeleteEngineModal(false);
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 		}
 	};
 
@@ -403,13 +406,13 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			}
 		} finally {
 			toast.success("Successfully removed engines");
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 			setDeleteEnginesModal(false);
 			setSelectedEngines([]);
 		}
 	};
 
-	const updateSelectedEngines = async (engine: Engine) => {
+	const updateSelectedEngines = async (engine: EnginePermissionUpdate) => {
 		try {
 			if (!engine.engineid) {
 				toast.warning("No permissions to change");
@@ -457,6 +460,12 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 		enginesCount === 0 ? 0 : (enginesPage - 1) * rowsPerPage + 1;
 	const endRow = Math.min(enginesPage * rowsPerPage, enginesCount);
 
+	useEffect(() => {
+		if (enginesPage > totalPages) {
+			setEnginesPage(totalPages);
+		}
+	}, [enginesPage, totalPages]);
+
 	const isAllSelected =
 		selectedEngines.length === engines.length && engines.length > 0;
 
@@ -489,20 +498,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									}}
 								/>
 							</InputGroup>
-							<div className="flex flex-wrap items-center gap-2">
-								{selectedEngines.length > 0 && (
-									<Button
-										variant="outline"
-										className="border-destructive text-destructive hover:bg-destructive/10"
-										onClick={() =>
-											setDeleteEnginesModal(true)
-										}
-									>
-										<Trash2 className="size-4" />
-										Delete Selected
-									</Button>
-								)}
+							<div className="flex items-center gap-2 sm:flex-nowrap">
 								<Button
+									className="shrink-0"
 									onClick={() => {
 										setAddEngineRole(undefined);
 										setOffset(0);
@@ -514,6 +512,18 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									<Plus className="size-4" />
 									Add Engines
 								</Button>
+								{selectedEngines.length > 0 && (
+									<Button
+										variant="outline"
+										className="whitespace-nowrap border-destructive text-destructive hover:bg-destructive/10"
+										onClick={() =>
+											setDeleteEnginesModal(true)
+										}
+									>
+										<Trash2 className="size-4" />
+										Delete Selected
+									</Button>
+								)}
 							</div>
 						</div>
 					</CardHeader>
@@ -522,8 +532,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead className="w-[45%]">
-											<div className="flex items-center gap-2">
+										<TableHead className="w-12">
+											<div className="flex justify-center">
 												<Checkbox
 													checked={isAllSelected}
 													onCheckedChange={() => {
@@ -538,9 +548,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 														}
 													}}
 												/>
-												<span>Name</span>
 											</div>
 										</TableHead>
+										<TableHead>Name</TableHead>
 										<TableHead className="w-[220px]">
 											Access
 										</TableHead>
@@ -566,8 +576,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 												<TableRow
 													key={`engine-${engine.engineid}-${i}`}
 												>
-													<TableCell>
-														<div className="flex items-start gap-3">
+													<TableCell className="w-12">
+														<div className="flex justify-center">
 															<Checkbox
 																checked={
 																	isSelected
@@ -595,15 +605,17 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 																	}
 																}}
 															/>
-															<div className="min-w-0">
-																<div className="truncate font-medium text-sm">
-																	{
-																		engine.engine_name
-																	}
-																</div>
-																<div className="text-muted-foreground text-xs">
-																	{`Engine ID: ${engine.engineid}`}
-																</div>
+														</div>
+													</TableCell>
+													<TableCell>
+														<div className="min-w-0">
+															<div className="truncate font-medium text-sm">
+																{
+																	engine.engine_name
+																}
+															</div>
+															<div className="text-muted-foreground text-xs">
+																{`Engine ID: ${engine.engineid}`}
 															</div>
 														</div>
 													</TableCell>
@@ -670,7 +682,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									) : (
 										<TableRow>
 											<TableCell
-												colSpan={4}
+												colSpan={5}
 												className="text-center"
 											>
 												No Engines found.
@@ -680,7 +692,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 								</TableBody>
 								<TableFooter>
 									<TableRow>
-										<TableCell colSpan={4}>
+										<TableCell colSpan={5}>
 											<div className="flex flex-wrap items-center justify-end gap-4">
 												<div className="flex items-center gap-2 text-sm">
 													<span>Rows per page:</span>
@@ -1034,9 +1046,17 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 					<DialogHeader>
 						<DialogTitle>Are you sure?</DialogTitle>
 						<DialogDescription>
-							{engineToDelete
-								? `This will remove ${engineToDelete.engine_name}.`
-								: "This will remove the selected engine."}
+							{engineToDelete ? (
+								<>
+									This will remove{" "}
+									<span className="font-medium text-foreground">
+										{engineToDelete.engine_name}
+									</span>
+									.
+								</>
+							) : (
+								"This will remove the selected engine."
+							)}
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
