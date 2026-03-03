@@ -1,17 +1,18 @@
 import {
+	ChevronRight,
+	Copy,
 	Download,
-	Edit,
 	Info,
 	LockKeyhole,
-	PencilLine,
-	RefreshCw,
-	SquareArrowOutUpRight,
+	Pencil,
+	RefreshCcw,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import { getUserProjectPermission } from "@semoss/shared";
+import { Modal } from "@semoss/ui";
 import {
 	Badge,
 	Breadcrumb,
@@ -21,18 +22,14 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 	Button,
-	Dialog,
-	DialogContent,
-	H2,
 	Spinner,
 	Tabs,
-	TabsContent,
 	TabsList,
 	TabsTrigger,
+	toast,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
-	toast,
 } from "@semoss/ui/next";
 import { uploadImage } from "@/api";
 import {
@@ -62,12 +59,22 @@ import { Overview } from "./AppDetailTabs/overview-tab";
 import { SettingsTab } from "./AppDetailTabs/settings-tab";
 import { AppFileManagerPage } from "./app-file-manager-page";
 
-interface AppDetailsProps {
-	showNav?: boolean;
-}
+const modelDependencies = (
+	dependencies: appDependency[],
+): modelledDependency[] => {
+	return dependencies.map((dep: appDependency) => ({
+		name: dep.engine_name ? dep.engine_name.replace(/_/g, " ") : "",
+		id: dep.engine_id,
+		type: dep.engine_type,
+		userPermission: dep.permission_name as Role, // TODO: no value currently available in the payload
+		isPublic: !!dep.engine_global,
+		isDiscoverable: !!dep.engine_discoverable,
+		description: dep.description,
+		access_permission: dep.access_permission,
+	}));
+};
 
-export const AppDetailPage = (props: AppDetailsProps) => {
-	const { showNav = true } = props;
+export const AppDetailPage = () => {
 	const { control, setValue, getValues, watch, handleSubmit } =
 		useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
 
@@ -88,14 +95,38 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	const { appId } = useParams();
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
-	useEffect(() => {
-		setSelectedTab("Overview");
-		setValue("appId", appId);
-		fetchUserSpecificData();
-		fetchAppData(appId);
-	}, [appId]);
-	const navigate = useNavigate();
-	const fetchUserSpecificData = async () => {
+
+	const emitMessage = useCallback(
+		(isError: boolean, message: string) => {
+			if (isError) {
+				toast.error(message);
+			} else {
+				toast.success(message);
+			}
+		},
+		[],
+	);
+
+	const getPermission = useCallback(async () => {
+		const role = await getUserProjectPermission(appId);
+
+		setValue("userRole", role);
+		const nextPermission = determineUserPermission(role);
+		setValue("permission", nextPermission);
+
+		if (nextPermission === "author")
+			setValue("requestedPermission", "OWNER");
+		if (nextPermission === "editor")
+			setValue("requestedPermission", "EDIT");
+		if (nextPermission === "readOnly" || nextPermission === "discoverable")
+			setValue("requestedPermission", "READ_ONLY");
+	}, [appId, setValue]);
+
+	const fetchSimilarApps = useCallback(() => {
+		// TODO
+	}, []);
+
+	const fetchUserSpecificData = useCallback(async () => {
 		const currPermission = getValues("permission");
 		await getPermission();
 		const newPermission = getValues("permission");
@@ -103,7 +134,134 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 		if (newPermission !== currPermission && newPermission === "readOnly") {
 			fetchSimilarApps();
 		}
-	};
+	}, [fetchSimilarApps, getPermission, getValues]);
+
+	const fetchAppData = useCallback(
+		async (id: string) => {
+			await getPermission();
+			const currentPermission = getValues("permission");
+			const promises = [
+				fetchAppInfo(
+					monolithStore,
+					id,
+					configStore.store.config.projectMetaKeys.map(
+						(a) => a.metakey,
+					),
+				),
+				fetchMainUses(monolithStore, id),
+			];
+			if (currentPermission !== "discoverable") {
+				promises.push(fetchDependencies(configStore, id));
+			}
+			const results = await Promise.allSettled(promises);
+			results.forEach((res, idx) => {
+				if (res.status === "rejected") {
+					emitMessage(true, res.reason);
+				} else {
+					if (idx === 0) {
+						if (res.value.type === "error") {
+							emitMessage(true, res.value.output);
+						} else {
+							setValue("appInfo", res.value.output);
+							const output = res.value.output;
+
+							const projectMetaKeys =
+								configStore.store.config.projectMetaKeys;
+							// Keep only relevant project keys defined for app details
+							const parsedMeta = projectMetaKeys
+								.map((k) => k.metakey)
+								.reduce((prev, curr) => {
+									// tag, domain, and etc either come in as a string or a string[], format it to correct type
+									const found = projectMetaKeys.find(
+										(obj) => obj.metakey === curr,
+									);
+
+									if (curr === "tag") {
+										if (typeof output[curr] === "string") {
+											prev[curr] = [output[curr]];
+										} else {
+											prev[curr] = output[curr];
+										}
+									} else if (
+										found.display_options ===
+											"single-typeahead" ||
+										found.display_options ===
+											"select-box" ||
+										found.display_options ===
+											"multi-typeahead"
+									) {
+										if (typeof output[curr] === "string") {
+											prev[curr] = [output[curr]];
+										} else {
+											prev[curr] = output[curr];
+										}
+									} else {
+										prev[curr] = output[curr];
+									}
+
+									return prev;
+								}, {}) as AppDetailsFormTypes["detailsForm"];
+
+							setValue("detailsForm", parsedMeta);
+							setValue("tag", parsedMeta.tag);
+							setValue("markdown", parsedMeta.markdown);
+							setValue(
+								"detailsForm.markdown",
+								parsedMeta.markdown,
+							);
+							setValues((prev) => ({
+								...prev,
+								markdown: parsedMeta.markdown || "",
+							}));
+							setValues((prev) => ({ ...prev, ...parsedMeta }));
+						}
+					} else if (idx === 1) {
+						if (res.value.type === "error") {
+							emitMessage(true, res.value.output);
+						} else {
+							if (res.value.output !== null) {
+								setValue("markdown", res.value.output);
+								setValue(
+									"detailsForm.markdown",
+									res.value.output,
+								);
+								setValues((prev) => ({
+									...prev,
+									markdown: res.value.output || "",
+								}));
+							}
+						}
+					} else if (idx === 2) {
+						if (res.value.type === "error") {
+							emitMessage(true, res.value.output);
+						} else {
+							const modelled = modelDependencies(
+								res.value.output,
+							);
+							setValue("dependencies", modelled);
+						}
+					}
+				}
+			});
+		},
+		[
+			configStore,
+			emitMessage,
+			getPermission,
+			getValues,
+			monolithStore,
+			setValue,
+		],
+	);
+
+	useEffect(() => {
+		setSelectedTab("Overview");
+		setValue("appId", appId);
+		fetchUserSpecificData();
+		if (appId) {
+			fetchAppData(appId);
+		}
+	}, [appId, fetchAppData, fetchUserSpecificData, setValue]);
 	// This runs ONLY when `appId` changes — not when dependencies change
 	useEffect(() => {
 		if (appId) {
@@ -123,137 +281,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 					setPendingRequest(false); // fallback in case of error
 				});
 		}
-	}, [appId]);
-
-	async function getPermission() {
-		const role = await getUserProjectPermission(appId);
-
-		setValue("userRole", role);
-		const permission = determineUserPermission(role);
-		setValue("permission", permission);
-
-		if (permission === "author") setValue("requestedPermission", "OWNER");
-		if (permission === "editor") setValue("requestedPermission", "EDIT");
-		if (permission === "readOnly" || permission === "discoverable")
-			setValue("requestedPermission", "READ_ONLY");
-	}
-
-	const fetchAppData = async (id: string) => {
-		await getPermission();
-		const permission = getValues("permission");
-		const promises = [
-			fetchAppInfo(
-				monolithStore,
-				id,
-				configStore.store.config.projectMetaKeys.map((a) => a.metakey),
-			),
-			fetchMainUses(monolithStore, id),
-		];
-		if (permission !== "discoverable") {
-			promises.push(fetchDependencies(configStore, id));
-		}
-		const results = await Promise.allSettled(promises);
-		results.forEach((res, idx) => {
-			if (res.status === "rejected") {
-				emitMessage(true, res.reason);
-			} else {
-				if (idx === 0) {
-					if (res.value.type === "error") {
-						emitMessage(true, res.value.output);
-					} else {
-						setValue("appInfo", res.value.output);
-						const output = res.value.output;
-
-						const projectMetaKeys =
-							configStore.store.config.projectMetaKeys;
-						// Keep only relevant project keys defined for app details
-						const parsedMeta = projectMetaKeys
-							.map((k) => k.metakey)
-							.reduce((prev, curr) => {
-								// tag, domain, and etc either come in as a string or a string[], format it to correct type
-								const found = projectMetaKeys.find(
-									(obj) => obj.metakey === curr,
-								);
-
-								if (curr === "tag") {
-									if (typeof output[curr] === "string") {
-										prev[curr] = [output[curr]];
-									} else {
-										prev[curr] = output[curr];
-									}
-								} else if (
-									found.display_options ===
-										"single-typeahead" ||
-									found.display_options === "select-box" ||
-									found.display_options === "multi-typeahead"
-								) {
-									if (typeof output[curr] === "string") {
-										prev[curr] = [output[curr]];
-									} else {
-										prev[curr] = output[curr];
-									}
-								} else {
-									prev[curr] = output[curr];
-								}
-
-								return prev;
-							}, {}) as AppDetailsFormTypes["detailsForm"];
-						setValue("detailsForm", parsedMeta);
-						setValue("tag", parsedMeta.tag);
-						setValue("markdown", parsedMeta.markdown);
-						setValue("detailsForm.markdown", parsedMeta.markdown);
-						setValues((prev) => ({
-							...prev,
-							markdown: parsedMeta.markdown || "",
-						}));
-						setValues((prev) => ({ ...prev, ...parsedMeta }));
-					}
-				} else if (idx === 1) {
-					if (res.value.type === "error") {
-						emitMessage(true, res.value.output);
-					} else {
-						if (res.value.output !== null) {
-							setValue("markdown", res.value.output);
-							setValue("detailsForm.markdown", res.value.output);
-							setValues((prev) => ({
-								...prev,
-								markdown: res.value.output || "",
-							}));
-						}
-					}
-				} else if (idx === 2) {
-					if (res.value.type === "error") {
-						emitMessage(true, res.value.output);
-					} else {
-						const modelled = modelDependencies(res.value.output);
-						setValue("dependencies", modelled);
-					}
-				}
-			}
-		});
-	};
-
-	const fetchSimilarApps = () => {
-		// TODO
-	};
-
-	const modelDependencies = (
-		dependencies: appDependency[],
-	): modelledDependency[] => {
-		return dependencies.map((dep: appDependency) => ({
-			name: dep.engine_name ? dep.engine_name.replace(/_/g, " ") : "",
-			id: dep.engine_id,
-			type: dep.engine_type,
-			userPermission: dep.permission_name as Role, // TODO: no value currently available in the payload
-			isPublic: !!dep.engine_global,
-			isDiscoverable: !!dep.engine_discoverable,
-			description: dep.description,
-			access_permission: dep.access_permission,
-		}));
-	};
-	const emitMessage = (isError: boolean, message: string) => {
-		toast(message);
-	};
+	}, [appId, monolithStore]);
 
 	const handleCloseChangeAccessModal = (refresh?: boolean) => {
 		if (refresh) {
@@ -385,6 +413,17 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 		setResponseStatus(true);
 	};
 	const [selectedTab, setSelectedTab] = useState("Overview");
+	const handleCopyAppId = async () => {
+		if (!appId) return;
+
+		try {
+			await navigator.clipboard.writeText(appId);
+			toast.success("App ID copied to clipboard");
+		} catch (error) {
+			console.error(error);
+			toast.error("Failed to copy App ID");
+		}
+	};
 
 	const TABS_BY_PERMISSION: Record<string, string[]> = {
 		author: [
@@ -410,434 +449,355 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	const visibleTabs = TABS_BY_PERMISSION[permission] || ["Overview"];
 
 	return (
-		<div className="w-full">
-			{showNav && (
-				<NavbarLeft>
-					<NavbarHeader />
-				</NavbarLeft>
-			)}
-			<div
-				className={`h-full w-full ${
-					showNav ? "flex justify-center" : "p-5"
-				}`}
-			>
-				<div
-					className={`flex h-full w-full flex-col gap-3 ${
-						showNav ? "m-auto max-w-[79rem]" : ""
-					}`}
-				>
-					{showNav && (
-						<Breadcrumb>
-							<BreadcrumbList>
-								<BreadcrumbItem>
-									<BreadcrumbLink href="#/app">
+		<div>
+			<NavbarLeft>
+				<NavbarHeader />
+			</NavbarLeft>
+			<div className="flex w-full flex-col gap-4 p-4">
+				<div className="flex w-full flex-col items-start gap-2 p-0">
+					<Breadcrumb>
+						<BreadcrumbList>
+							<BreadcrumbItem>
+								<BreadcrumbLink asChild>
+									<Link to={"/app"} className="text-inherit">
 										App Catalog
-									</BreadcrumbLink>
-								</BreadcrumbItem>
-								<BreadcrumbSeparator>/</BreadcrumbSeparator>
-								<BreadcrumbItem>
-									<BreadcrumbPage>
-										<div
-											title={appInfo?.project_name}
-											className="w-[40ch] truncate text-ellipsis"
-										>
-											{appInfo?.project_name}
-										</div>
-									</BreadcrumbPage>
-								</BreadcrumbItem>
-							</BreadcrumbList>
-						</Breadcrumb>
-					)}
+									</Link>
+								</BreadcrumbLink>
+							</BreadcrumbItem>
+							<BreadcrumbSeparator>
+								<ChevronRight />
+							</BreadcrumbSeparator>
+							<BreadcrumbItem>
+								<BreadcrumbPage>
+									<span
+										title={appInfo?.project_name}
+										className="inline-block max-w-[40ch] truncate text-ellipsis"
+									>
+										{appInfo?.project_name}
+									</span>
+								</BreadcrumbPage>
+							</BreadcrumbItem>
+						</BreadcrumbList>
+					</Breadcrumb>
 
-					<div>
-						<div className="flex flex-col">
-							<section className="flex flex-wrap items-center justify-between gap-2 pb-2">
-								<div className="flex gap-2">
-									<img
-										src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
-										alt="app"
-										className="h-16 w-16 overflow-hidden rounded-lg"
-									/>
-									<div className="flex flex-col justify-center gap-2">
-										<div
-											title={appInfo?.project_name}
-											className="mt-1 max-w-[40ch] truncate text-ellipsis font-normal text-[34px] leading-[150%]"
-										>
-											{appInfo?.project_name}
-										</div>
-									</div>
-								</div>
+					<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
+						<div className="h-16 w-16 flex-shrink-0 rounded-lg bg-muted">
+							<img
+								src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
+								alt={appInfo?.project_name || "App"}
+								className="size-full object-cover"
+							/>
+						</div>
 
-								<div className="ml-auto flex gap-2">
-									{permission === "author" ? (
-										<Button
-											disabled={exportLoading}
-											variant="outline"
-											onClick={() => exportApp()}
-											data-testid="appDetail-export-btn"
-										>
-											{exportLoading ? (
-												<Spinner className="size-4" />
-											) : (
-												<Download className="size-4" />
-											)}
-											Export
-										</Button>
-									) : (
-										<Button
-											disabled={
-												responseStatus || pendingRequest
-											}
-											variant={
-												responseStatus
-													? "outline"
-													: permission ===
-															"discoverable"
-														? "default"
-														: "outline"
-											}
-											onClick={() =>
-												setIsChangeAccessModalOpen(true)
-											}
-											data-testid="appDetail-access-btn"
-										>
-											{responseStatus ? (
-												<RefreshCw className="size-4 text-muted-foreground" />
-											) : permission ===
-												"discoverable" ? (
-												<LockKeyhole className="size-4" />
-											) : null}
-											{responseStatus || pendingRequest
-												? "Pending Access"
-												: permission === "discoverable"
-													? "Request Access"
-													: "Change Access"}
-										</Button>
-									)}
-									{permission !== "discoverable" &&
-										permission !== "readOnly" && (
+						<div className="flex min-w-0 flex-1 flex-col gap-1">
+							<h1
+								className="break-words font-semibold text-2xl text-foreground leading-normal md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]"
+								title={appInfo?.project_name}
+							>
+								{appInfo?.project_name}
+							</h1>
+							{appId && (
+								<div className="flex items-center gap-1 text-muted-foreground text-sm">
+									<span data-testid="appDetail-id">
+										{appId}
+									</span>
+									<Tooltip>
+										<TooltipTrigger asChild>
 											<Button
-												variant="default"
-												onClick={() => {
-													setIsEditDetailsModalOpen(
-														true,
-													);
+												variant="ghost"
+												size="icon-sm"
+												aria-label="Copy App ID"
+												onClick={(event) => {
+													event.preventDefault();
+													handleCopyAppId();
 												}}
-												data-testid="appDetail-edit-btn"
 											>
-												<PencilLine className="size-4" />
-												Edit
+												<Copy className="size-4" />
 											</Button>
-										)}
-									{permission !== "discoverable" &&
-										permission !== "readOnly" &&
-										showNav && (
-											<Button
-												variant="outline"
-												onClick={() =>
-													navigate(
-														`/app/${appId}/view`,
-													)
-												}
-												data-testid="appDetail-edit-btn"
-											>
-												<SquareArrowOutUpRight className="size-4" />
-												Open App
-											</Button>
-										)}
+										</TooltipTrigger>
+										<TooltipContent>
+											Copy App ID
+										</TooltipContent>
+									</Tooltip>
 								</div>
-							</section>
-							<div className="grid grid-cols-1 items-start gap-2 pb-2 md:grid-cols-12">
-								<div className="md:col-span-8">
-									<p className="pb-2 text-muted-foreground">
-										{appInfo?.description ||
-											"No description available"}
-									</p>
-								</div>
+							)}
+						</div>
 
-								<div className="flex justify-end md:col-span-4">
-									<div className="flex flex-col items-end gap-0.5 text-muted-foreground text-sm">
-										<span>
-											Published by:{" "}
-											{appInfo?.project_created_by ||
-												"Unknown"}
-										</span>
-										<span>
-											Updated{" "}
-											{appInfo?.project_date_created
-												? new Date(
-														appInfo?.project_date_created,
-													).toLocaleString("en-US", {
-														month: "long",
-														day: "2-digit",
-														year: "numeric",
-														hour: "numeric",
-														minute: "2-digit",
-														hour12: true,
-													})
-												: "N/A"}
-										</span>
-									</div>
-								</div>
-							</div>
+						<div className="flex w-full flex-wrap gap-2 md:w-auto md:flex-nowrap md:justify-end">
+							{permission === "author" ? (
+								<Button
+									disabled={exportLoading}
+									variant="ghost"
+									className="gap-2 text-(--primary) hover:bg-transparent hover:text-(--primary)"
+									onClick={() => exportApp()}
+									data-testid={"appDetail-export-btn"}
+								>
+									{exportLoading ? (
+										<Spinner className="size-4" />
+									) : (
+										<Download className="size-4" />
+									)}
+									Export
+								</Button>
+							) : (
+								<Button
+									disabled={responseStatus || pendingRequest}
+									variant={
+										responseStatus
+											? "outline"
+											: permission === "discoverable"
+												? "default"
+												: "outline"
+									}
+									className="gap-2"
+									onClick={() =>
+										setIsChangeAccessModalOpen(true)
+									}
+									data-testid={"appDetail-access-btn"}
+								>
+									{responseStatus ? (
+										<RefreshCcw className="size-4" />
+									) : permission === "discoverable" ? (
+										<LockKeyhole className="size-4" />
+									) : null}
+									{responseStatus || pendingRequest
+										? "Pending Access"
+										: permission === "discoverable"
+											? "Request Access"
+											: "Change Access"}
+								</Button>
+							)}
+							{permission !== "discoverable" &&
+								permission !== "readOnly" && (
+									<Button
+										variant="default"
+										className="gap-2"
+										onClick={() => {
+											setIsEditDetailsModalOpen(true);
+										}}
+										data-testid="appDetail-edit-btn"
+									>
+										<Pencil className="size-4" />
+										Edit
+									</Button>
+								)}
+						</div>
+					</div>
 
-							<div className="pb-2">
-								{tags ? (
-									<div className="flex flex-wrap gap-2.5">
-										{tags.map((tag) => (
+					<div className="mt-4 flex w-full flex-col gap-4 md:flex-row md:justify-between">
+						<div className="flex flex-1 flex-col gap-4">
+							<p className="text-muted-foreground text-sm">
+								{appInfo?.description ||
+									"No description available"}
+							</p>
+							{tags?.length ? (
+								<div className="flex flex-row flex-wrap gap-2">
+									{tags.map((tag) => {
+										if (!tag) return null;
+										return (
 											<Badge
-												key={`tag-${tag}`}
+												key={`tag-${tag}-${tag}`}
 												variant="outline"
+												className="border-(--primary) text-(--primary)"
 											>
 												{tag}
 											</Badge>
-										))}
-									</div>
-								) : (
-									<p className="text-sm">No tags available</p>
-								)}
-							</div>
-
-							<div className="flex w-full flex-col gap-3">
-								<Tabs
-									value={selectedTab}
-									onValueChange={(val) => setSelectedTab(val)}
-									className="gap-0"
-								>
-									<div className="w-full rounded-t-lg bg-muted">
-										<TabsList>
-											{visibleTabs.includes(
-												"Overview",
-											) && (
-												<TabsTrigger
-													value="Overview"
-													className="p-3"
-												>
-													Overview
-												</TabsTrigger>
-											)}
-											{visibleTabs.includes(
-												"Dependencies",
-											) && (
-												<TabsTrigger
-													value="Dependencies"
-													className="p-3"
-												>
-													Dependencies
-												</TabsTrigger>
-											)}
-											{visibleTabs.includes(
-												"MCP Usage",
-											) && (
-												<TabsTrigger
-													value="MCP Usage"
-													className="p-3"
-												>
-													MCP Usage
-												</TabsTrigger>
-											)}
-											{visibleTabs.includes(
-												"Settings",
-											) && (
-												<TabsTrigger
-													value="Settings"
-													className="p-3"
-												>
-													Settings
-												</TabsTrigger>
-											)}
-											{visibleTabs.includes(
-												"Access Control",
-											) && (
-												<TabsTrigger
-													value="Access Control"
-													className="p-3"
-												>
-													Access Control
-												</TabsTrigger>
-											)}
-											{visibleTabs.includes("Files") &&
-												showNav && (
-													<TabsTrigger
-														value="Files"
-														className="p-3"
-													>
-														Files
-													</TabsTrigger>
-												)}
-
-											{visibleTabs.includes("SMSS") && (
-												<TabsTrigger
-													value="SMSS"
-													className="p-3"
-												>
-													SMSS
-												</TabsTrigger>
-											)}
-										</TabsList>
-									</div>
-									<TabsContent
-										value="Overview"
-										className="mt-2 w-full"
-									>
-										<Overview appInfo={appInfo} />
-									</TabsContent>
-									<TabsContent
-										value="Dependencies"
-										className="mt-2 w-full"
-									>
-										<div className="w-full">
-											<div className="flex w-full items-center">
-												{/* Left: Title + Tooltip */}
-												<div className="flex items-center gap-2">
-													<H2 className="font-medium text-xl">
-														Dependencies
-													</H2>
-
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<Info className="size-[15px] cursor-pointer text-muted-foreground" />
-														</TooltipTrigger>
-														<TooltipContent>
-															{appInfo?.project_type ===
-															"CODE"
-																? "Add/Remove dependencies using the Edit Icon"
-																: "Add/Remove dependencies using the Variables Tab"}
-														</TooltipContent>
-													</Tooltip>
-												</div>
-
-												{/* Right: Edit button */}
-												{appInfo?.project_type ===
-													"CODE" &&
-													permission === "author" && (
-														<Button
-															size="icon-sm"
-															variant="ghost"
-															onClick={() =>
-																setIsEditDependenciesModalOpen(
-																	true,
-																)
-															}
-															data-testid="appDetail-edit-btn"
-															className="ml-auto"
-														>
-															<Edit className="size-4" />
-														</Button>
-													)}
-											</div>
-
-											<Dependencies
-												dependencies={dependencies}
-											/>
-										</div>
-									</TabsContent>
-									<TabsContent
-										value="MCP Usage"
-										className="mt-2 w-full"
-									>
-										<div className="w-full">
-											<McpUsage id={appId} />
-										</div>
-									</TabsContent>
-									<TabsContent
-										value="Settings"
-										className="mt-2 w-full"
-									>
-										<div className="w-full">
-											<SettingsContext.Provider
-												value={{
-													adminMode: false,
-												}}
-											>
-												<SettingsTab id={appId} />
-											</SettingsContext.Provider>
-										</div>
-									</TabsContent>
-									<TabsContent
-										value="Access Control"
-										className="mt-2 w-full"
-									>
-										<div className="w-full">
-											<AccessControl
-												appInfo={appInfo}
-												appId={appId}
-												fetchUserSpecificData={
-													fetchUserSpecificData
-												}
-												permission={permission}
-											/>
-										</div>
-									</TabsContent>
-									{showNav && (
-										<TabsContent
-											value="Files"
-											className="mt-2 w-full"
-										>
-											<AppFileManagerPage appId={appId} />
-										</TabsContent>
-									)}
-
-									<TabsContent
-										value="SMSS"
-										className="mt-2 w-full"
-									>
-										<div className="w-full">
-											<SettingsContext.Provider
-												value={{
-													adminMode: false,
-												}}
-											>
-												<UpdateSMSS
-													type={"PROJECT"}
-													id={appId}
-												/>
-											</SettingsContext.Provider>
-										</div>
-									</TabsContent>
-								</Tabs>
-							</div>
+										);
+									})}
+								</div>
+							) : null}
+						</div>
+						<div className="flex flex-col items-start gap-1 text-left text-muted-foreground text-sm md:items-end md:text-right">
+							<span>
+								Published by:{" "}
+								{appInfo?.project_created_by || "Unknown"}
+							</span>
+							<span>
+								Updated{" "}
+								{appInfo?.project_date_created
+									? new Date(
+											appInfo?.project_date_created,
+										).toLocaleString("en-US", {
+											month: "long",
+											day: "2-digit",
+											year: "numeric",
+											hour: "numeric",
+											minute: "2-digit",
+											hour12: true,
+										})
+									: "N/A"}
+							</span>
 						</div>
 					</div>
 				</div>
 
-				<Dialog
-					open={isShareOverlayOpen}
-					onOpenChange={setIsShareOverlayOpen}
-				>
-					<DialogContent>
-						<ShareOverlay
-							appId={appId}
-							diffs={false}
-							onClose={() => setIsShareOverlayOpen(false)}
-						/>
-					</DialogContent>
-				</Dialog>
+				<div className="flex flex-col rounded-lg bg-(--muted)">
+					{visibleTabs.length > 0 && (
+						<Tabs
+							value={selectedTab}
+							onValueChange={(val) => setSelectedTab(String(val))}
+							className="gap-0 bg-transparent"
+						>
+							<div className="w-full overflow-x-auto">
+								<TabsList className="w-max flex-nowrap gap-2">
+									{visibleTabs.includes("Overview") && (
+										<TabsTrigger value="Overview">
+											Overview
+										</TabsTrigger>
+									)}
+									{visibleTabs.includes("Dependencies") && (
+										<TabsTrigger value="Dependencies">
+											Dependencies
+										</TabsTrigger>
+									)}
+									{visibleTabs.includes("MCP Usage") && (
+										<TabsTrigger value="MCP Usage">
+											MCP Usage
+										</TabsTrigger>
+									)}
+									{visibleTabs.includes("Settings") && (
+										<TabsTrigger value="Settings">
+											Settings
+										</TabsTrigger>
+									)}
+									{visibleTabs.includes("Access Control") && (
+										<TabsTrigger value="Access Control">
+											Access Control
+										</TabsTrigger>
+									)}
+									{visibleTabs.includes("Files") && (
+										<TabsTrigger value="Files">
+											Files
+										</TabsTrigger>
+									)}
+									{visibleTabs.includes("SMSS") && (
+										<TabsTrigger value="SMSS">
+											SMSS
+										</TabsTrigger>
+									)}
+								</TabsList>
+							</div>
+						</Tabs>
+					)}
+					<div className="w-full bg-(--card) p-3 md:p-4">
+						{selectedTab === "Overview" && (
+							<Overview appInfo={appInfo} />
+						)}
+						{selectedTab === "Dependencies" && (
+							<div className="flex w-full flex-col gap-3">
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2 font-semibold text-base">
+										<span>Dependencies</span>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span>
+													<Info className="size-4 text-muted-foreground" />
+												</span>
+											</TooltipTrigger>
+											<TooltipContent>
+												{appInfo.project_type === "CODE"
+													? "Add/Remove dependencies using the Edit Icon"
+													: "Add/Remove dependencies using the Variables Tab"}
+											</TooltipContent>
+										</Tooltip>
+									</div>
 
-				<ChangeAccessModal
-					open={isChangeAccessModalOpen}
-					onClose={handleCloseChangeAccessModal}
-					control={control}
-					getValues={getValues}
-					dependencies={dependencies}
-					onSuccess={handleAccessRequested}
-					permission={permission}
-				/>
+									{appInfo.project_type === "CODE" &&
+										permission === "author" && (
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												onClick={() =>
+													setIsEditDependenciesModalOpen(
+														true,
+													)
+												}
+												data-testid="appDetail-edit-btn"
+											>
+												<Pencil className="size-4" />
+											</Button>
+										)}
+								</div>
 
-				<EditDetailsModal
-					isOpen={isEditDetailsModalOpen}
-					onClose={handleCloseEditDetailsModal}
-					control={control}
-					onSubmit={onSubmit}
-				/>
-
-				<EditDependenciesModal
-					currentDependencies={dependencies}
-					isOpen={isEditDependenciesModalOpen}
-					onClose={handleCloseDependenciesModal}
-					appId={appId}
-				/>
+								<Dependencies dependencies={dependencies} />
+							</div>
+						)}
+						{selectedTab === "MCP Usage" && (
+							<SettingsContext.Provider
+								value={{
+									adminMode: false,
+								}}
+							>
+								<McpUsage id={appId} />
+							</SettingsContext.Provider>
+						)}
+						{selectedTab === "Settings" && (
+							<SettingsContext.Provider
+								value={{
+									adminMode: false,
+								}}
+							>
+								<SettingsTab id={appId} />
+							</SettingsContext.Provider>
+						)}
+						{selectedTab === "Access Control" && (
+							<AccessControl
+								appInfo={appInfo}
+								appId={appId}
+								fetchUserSpecificData={fetchUserSpecificData}
+								permission={permission}
+							/>
+						)}
+						{selectedTab === "Files" && (
+							<AppFileManagerPage appId={appId || ""} />
+						)}
+						{selectedTab === "SMSS" && (
+							<SettingsContext.Provider
+								value={{
+									adminMode: false,
+								}}
+							>
+								<UpdateSMSS type={"PROJECT"} id={appId} />
+							</SettingsContext.Provider>
+						)}
+					</div>
+				</div>
 			</div>
+
+			<Modal
+				open={isShareOverlayOpen}
+				onClose={() => setIsShareOverlayOpen(false)}
+			>
+				<ShareOverlay
+					appId={appId}
+					diffs={false}
+					onClose={() => setIsShareOverlayOpen(false)}
+				/>
+			</Modal>
+
+			<ChangeAccessModal
+				open={isChangeAccessModalOpen}
+				onClose={handleCloseChangeAccessModal}
+				control={control}
+				getValues={getValues}
+				dependencies={dependencies}
+				onSuccess={handleAccessRequested}
+				permission={permission}
+			/>
+
+			<EditDetailsModal
+				isOpen={isEditDetailsModalOpen}
+				onClose={handleCloseEditDetailsModal}
+				control={control}
+				onSubmit={onSubmit}
+			/>
+
+			<EditDependenciesModal
+				currentDependencies={dependencies}
+				isOpen={isEditDependenciesModalOpen}
+				onClose={handleCloseDependenciesModal}
+				appId={appId}
+			/>
 		</div>
 	);
 };

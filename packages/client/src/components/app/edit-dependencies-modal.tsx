@@ -1,4 +1,4 @@
-import { ChevronDown, Loader2, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Env, useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
@@ -15,11 +15,10 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	Muted,
-	P,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
+	Spinner,
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
@@ -81,7 +80,7 @@ export const EditDependenciesModal = ({
 	const [selectedDeps, setSelectedDeps] =
 		useState<Dependency[]>(currentDependencies);
 	const [search, setSearch] = useState<string>("");
-	const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
+	const [open, setOpen] = useState(false);
 
 	/**
 	 * Library Hooks
@@ -111,7 +110,7 @@ export const EditDependenciesModal = ({
 
 		if (res.type === "success") {
 			toast.success("Successfully updated dependencies");
-			handleClose(true);
+			onClose(true);
 		} else {
 			toast.error(res.output);
 		}
@@ -124,24 +123,17 @@ export const EditDependenciesModal = ({
 		setSelectedDeps(newDependencies);
 	};
 
-	const handleToggleDependency = (dep: Dependency) => {
-		const isSelected = selectedDeps.some((d) => d.id === dep.id);
+	const toggleDependency = (dep: Dependency) => {
+		const isSelected = selectedDeps.some(
+			(selected) => selected.id === dep.id,
+		);
 		if (isSelected) {
-			setSelectedDeps(selectedDeps.filter((d) => d.id !== dep.id));
-		} else {
-			setSelectedDeps([...selectedDeps, dep]);
+			setSelectedDeps((prev) =>
+				prev.filter((selected) => selected.id !== dep.id),
+			);
+			return;
 		}
-		setDropdownOpen(false);
-	};
-
-	const handleClose = (refresh: boolean) => {
-		// Reset search when closing
-		setSearch("");
-		setDropdownOpen(false);
-		if (!refresh) {
-			setSelectedDeps(currentDependencies);
-		}
-		onClose(refresh);
+		setSelectedDeps((prev) => [...prev, dep]);
 	};
 
 	/**
@@ -153,25 +145,27 @@ export const EditDependenciesModal = ({
 		}
 
 		setAllDeps(
-			getEngines.data.map((engineProject) => {
-				const eng = engineProject as MyEngineProjectEngine;
-				const proj = engineProject as MyEngineProjectProject;
-				if (eng.app_id) {
-					return {
-						id: eng.app_id,
-						name: eng.app_name,
-						type: eng.app_type,
-					};
-				}
-				if (proj.project_id) {
-					return {
-						id: proj.project_id,
-						name: proj.project_name,
-						type: "PROJECT",
-					};
-				}
-				return null;
-			}),
+			getEngines.data
+				.map((engineProject) => {
+					const eng = engineProject as MyEngineProjectEngine;
+					const proj = engineProject as MyEngineProjectProject;
+					if (eng.app_id) {
+						return {
+							id: eng.app_id,
+							name: eng.app_name,
+							type: eng.app_type,
+						};
+					}
+					if (proj.project_id) {
+						return {
+							id: proj.project_id,
+							name: proj.project_name,
+							type: "PROJECT",
+						};
+					}
+					return null;
+				})
+				.filter(Boolean) as Dependency[],
 		);
 	}, [getEngines.status, getEngines.data]);
 
@@ -179,170 +173,150 @@ export const EditDependenciesModal = ({
 		setSelectedDeps(currentDependencies);
 	}, [currentDependencies]);
 
-	// Reset state when modal opens/closes
-	useEffect(() => {
-		if (isOpen) {
-			// Reset to current dependencies when modal opens
-			setSelectedDeps(currentDependencies);
-			setSearch("");
-			setDropdownOpen(false);
-		}
-	}, [isOpen, currentDependencies]);
-
-	const isLoading =
-		search !== debouncedSearch || getEngines.status !== "SUCCESS";
-
 	return (
 		<Dialog
 			open={isOpen}
-			onOpenChange={(open) => !open && handleClose(false)}
+			onOpenChange={(nextOpen) => {
+				if (!nextOpen) {
+					onClose(false);
+				}
+			}}
 		>
-			<DialogContent className="sm:max-w-2xl">
+			<DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
 				<DialogHeader>
 					<div className="flex items-center justify-between">
 						<DialogTitle>Add and Edit Dependencies</DialogTitle>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							onClick={() => onClose(false)}
+						>
+							<X className="size-4" />
+						</Button>
 					</div>
 				</DialogHeader>
 
-				<div className="flex max-h-[80vh] flex-col gap-4 overflow-y-auto p-2">
-					<div>
-						<Muted className="mb-2 font-medium">
-							Add Dependencies
-						</Muted>
+				<div className="space-y-4">
+					<p className="font-medium text-sm">Linked Dependencies</p>
 
-						<Popover
-							open={dropdownOpen}
-							onOpenChange={setDropdownOpen}
-						>
-							<PopoverTrigger asChild>
-								<Button
-									variant="outline"
-									role="combobox"
-									aria-expanded={dropdownOpen}
-									className="w-full justify-between"
-								>
-									Select dependencies...
-									<ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-[600px]" align="start">
-								<Command
-									shouldFilter={false}
-									className="w-full"
-								>
-									<div className="flex items-center border-b px-3">
-										<CommandInput
-											placeholder="Search..."
-											value={search}
-											onValueChange={setSearch}
-											className="flex-1"
-										/>
-										{isLoading && (
-											<Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
-										)}
-									</div>
-									<CommandList className="max-h-[300px]">
-										<CommandEmpty>
-											No results found
-										</CommandEmpty>
-										<CommandGroup className="p-0">
-											{allDeps.map((dep) => {
-												const isSelected =
-													selectedDeps.some(
-														(d) => d.id === dep.id,
-													);
-												return (
-													<CommandItem
-														key={dep.id}
-														onSelect={() =>
-															handleToggleDependency(
-																dep,
-															)
-														}
-														className="flex items-center gap-2"
-													>
-														<div className="flex flex-1 items-center gap-2">
-															<Badge
-																variant="secondary"
-																className="text-xs"
-															>
-																{capitalizeType(
-																	dep.type,
-																)}
-															</Badge>
-															<P className="text-sm">
-																{dep.name}
-															</P>
-														</div>
-														{isSelected && (
-															<div className="h-2 w-2 rounded-full bg-primary" />
-														)}
-													</CommandItem>
-												);
-											})}
-										</CommandGroup>
-									</CommandList>
-								</Command>
-							</PopoverContent>
-						</Popover>
-					</div>
-
-					{selectedDeps.length > 0 && (
-						<div>
-							<Muted className="mb-2 font-medium">
-								Selected Dependencies ({selectedDeps.length})
-							</Muted>
-							<div className="flex flex-col gap-2">
-								{selectedDeps.map((dep, idx: number) => {
-									return (
-										<div
-											key={`${dep.id}-${idx}`}
-											className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-lg border px-2 py-1"
-										>
-											<img
-												src={
-													dep.type === "PROJECT"
-														? `${Env.MODULE}/api/project-${dep.id}/projectImage/download`
-														: `${Env.MODULE}/api/e-${dep.id}/image/download`
-												}
-												alt={dep.name}
-												className="h-12 w-12 rounded-lg object-cover"
-											/>
-											<div className="flex flex-col">
-												<P className="font-semibold text-base">
-													{dep.name}
-												</P>
-												<div className="flex items-center gap-1">
-													<Muted className="text-sm">
-														{`${capitalizeType(dep.type)} | Engine ID: ${dep.id}`}
-													</Muted>
-												</div>
-											</div>
-											<Button
-												variant="ghost"
-												size="icon"
-												onClick={() =>
-													handleRemoveDependency(
-														dep.id,
-													)
-												}
-												className="h-8 w-8"
-											>
-												<X className="h-4 w-4" />
-											</Button>
+					<Popover open={open} onOpenChange={setOpen}>
+						<PopoverTrigger asChild>
+							<Button
+								variant="outline"
+								role="combobox"
+								className="w-full justify-between"
+							>
+								{selectedDeps.length === 0
+									? "Search dependencies"
+									: selectedDeps.length === 1
+										? selectedDeps[0].name
+										: `${selectedDeps.length} dependencies selected`}
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent className="w-[600px] p-0">
+							<Command shouldFilter={false}>
+								<CommandInput
+									placeholder="Search dependencies..."
+									value={search}
+									onValueChange={(value) => {
+										setSearch(value);
+									}}
+								/>
+								<CommandList>
+									{getEngines.status !== "SUCCESS" ? (
+										<div className="flex items-center justify-center p-4">
+											<Spinner />
 										</div>
-									);
-								})}
-							</div>
-						</div>
-					)}
+									) : (
+										<>
+											<CommandEmpty>
+												No dependencies found.
+											</CommandEmpty>
+											<CommandGroup>
+												{allDeps.map((option) => {
+													const isSelected =
+														selectedDeps.some(
+															(selected) =>
+																selected.id ===
+																option.id,
+														);
+													return (
+														<CommandItem
+															key={option.id}
+															onSelect={() => {
+																toggleDependency(
+																	option,
+																);
+															}}
+															className="justify-between"
+														>
+															<div className="flex items-center gap-2">
+																<Badge variant="outline">
+																	{capitalizeType(
+																		option.type,
+																	)}
+																</Badge>
+																<span className="text-sm">
+																	{
+																		option.name
+																	}
+																</span>
+															</div>
+															{isSelected && (
+																<Check className="size-4 text-primary" />
+															)}
+														</CommandItem>
+													);
+												})}
+											</CommandGroup>
+										</>
+									)}
+								</CommandList>
+							</Command>
+						</PopoverContent>
+					</Popover>
+
+					<div className="space-y-3">
+						{selectedDeps.map((dep, idx: number) => {
+							return (
+								<div
+									key={`${dep.id}-${idx}`}
+									className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-lg border p-3"
+								>
+									<img
+										className="h-12 w-12 rounded-lg object-cover"
+										src={
+											dep.type === "PROJECT"
+												? `${Env.MODULE}/api/project-${dep.id}/projectImage/download`
+												: `${Env.MODULE}/api/e-${dep.id}/image/download`
+										}
+										alt={dep.name}
+									/>
+									<div>
+										<p className="font-medium text-sm">
+											{dep.name}
+										</p>
+										<p className="text-muted-foreground text-xs">
+											{`${capitalizeType(dep.type)} | Engine ID: ${dep.id}`}
+										</p>
+									</div>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										onClick={() =>
+											handleRemoveDependency(dep.id)
+										}
+									>
+										<X className="size-4" />
+									</Button>
+								</div>
+							);
+						})}
+					</div>
 				</div>
 
 				<DialogFooter>
-					<Button
-						onClick={() => handleClose(false)}
-						variant="outline"
-					>
+					<Button variant="outline" onClick={() => onClose(false)}>
 						Cancel
 					</Button>
 					<Button onClick={handleUpdateDependencies}>Save</Button>
