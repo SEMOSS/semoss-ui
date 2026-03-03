@@ -6,13 +6,14 @@ import {
 	LockKeyhole,
 	Pencil,
 	RefreshCcw,
+	SquareArrowOutUpRight,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import { getUserProjectPermission } from "@semoss/shared";
-import { Modal } from "@semoss/ui";
+import { Modal, useNotification } from "@semoss/ui";
 import {
 	Badge,
 	Breadcrumb,
@@ -26,10 +27,10 @@ import {
 	Tabs,
 	TabsList,
 	TabsTrigger,
-	toast,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import { uploadImage } from "@/api";
 import {
@@ -74,7 +75,12 @@ const modelDependencies = (
 	}));
 };
 
-export const AppDetailPage = () => {
+interface AppDetailsProps {
+	showNav?: boolean;
+}
+
+export const AppDetailPage = (props: AppDetailsProps) => {
+	const { showNav = true } = props;
 	const { control, setValue, getValues, watch, handleSubmit } =
 		useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
 
@@ -92,21 +98,21 @@ export const AppDetailPage = () => {
 	);
 	const [pendingRequest, setPendingRequest] = useState(false);
 	const { monolithStore, configStore } = useRootStore();
+	const notification = useNotification();
 	const { appId } = useParams();
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
 
 	const emitMessage = useCallback(
 		(isError: boolean, message: string) => {
-			if (isError) {
-				toast.error(message);
-			} else {
-				toast.success(message);
-			}
+			notification.add({
+				color: isError ? "error" : "success",
+				message,
+			});
 		},
-		[],
+		[notification],
 	);
-
+	const navigate = useNavigate();
 	const getPermission = useCallback(async () => {
 		const role = await getUserProjectPermission(appId);
 
@@ -449,36 +455,51 @@ export const AppDetailPage = () => {
 	const visibleTabs = TABS_BY_PERMISSION[permission] || ["Overview"];
 
 	return (
-		<div>
-			<NavbarLeft>
-				<NavbarHeader />
-			</NavbarLeft>
-			<div className="flex w-full flex-col gap-4 p-4">
-				<div className="flex w-full flex-col items-start gap-2 p-0">
-					<Breadcrumb>
-						<BreadcrumbList>
-							<BreadcrumbItem>
-								<BreadcrumbLink asChild>
-									<Link to={"/app"} className="text-inherit">
-										App Catalog
-									</Link>
-								</BreadcrumbLink>
-							</BreadcrumbItem>
-							<BreadcrumbSeparator>
-								<ChevronRight />
-							</BreadcrumbSeparator>
-							<BreadcrumbItem>
-								<BreadcrumbPage>
-									<span
-										title={appInfo?.project_name}
-										className="inline-block max-w-[40ch] truncate text-ellipsis"
-									>
-										{appInfo?.project_name}
-									</span>
-								</BreadcrumbPage>
-							</BreadcrumbItem>
-						</BreadcrumbList>
-					</Breadcrumb>
+		<div className="w-full">
+			{showNav && (
+				<NavbarLeft>
+					<NavbarHeader />
+				</NavbarLeft>
+			)}
+			<div
+				className={`h-full w-full${
+					showNav ? "flex flex-col justify-center gap-4" : "m-2 p-5"
+				}`}
+			>
+				<div
+					className={`flex h-full w-full flex-col gap-3 ${
+						showNav ? "m-auto max-w-[79rem]" : ""
+					}`}
+				>
+					{showNav && (
+						<Breadcrumb>
+							<BreadcrumbList>
+								<BreadcrumbItem>
+									<BreadcrumbLink asChild>
+										<Link
+											to={"/app"}
+											className="text-inherit"
+										>
+											App Catalog
+										</Link>
+									</BreadcrumbLink>
+								</BreadcrumbItem>
+								<BreadcrumbSeparator>
+									<ChevronRight />
+								</BreadcrumbSeparator>
+								<BreadcrumbItem>
+									<BreadcrumbPage>
+										<span
+											title={appInfo?.project_name}
+											className="inline-block max-w-[40ch] truncate text-ellipsis"
+										>
+											{appInfo?.project_name}
+										</span>
+									</BreadcrumbPage>
+								</BreadcrumbItem>
+							</BreadcrumbList>
+						</Breadcrumb>
+					)}
 
 					<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
 						<div className="h-16 w-16 flex-shrink-0 rounded-lg bg-muted">
@@ -581,6 +602,20 @@ export const AppDetailPage = () => {
 										Edit
 									</Button>
 								)}
+							{permission !== "discoverable" &&
+								permission !== "readOnly" &&
+								showNav && (
+									<Button
+										variant="outline"
+										onClick={() =>
+											navigate(`/app/${appId}/view`)
+										}
+										data-testid="appDetail-edit-btn"
+									>
+										<SquareArrowOutUpRight className="size-4" />
+										Open App
+									</Button>
+								)}
 						</div>
 					</div>
 
@@ -665,11 +700,12 @@ export const AppDetailPage = () => {
 											Access Control
 										</TabsTrigger>
 									)}
-									{visibleTabs.includes("Files") && (
-										<TabsTrigger value="Files">
-											Files
-										</TabsTrigger>
-									)}
+									{visibleTabs.includes("Files") &&
+										showNav && (
+											<TabsTrigger value="Files">
+												Files
+											</TabsTrigger>
+										)}
 									{visibleTabs.includes("SMSS") && (
 										<TabsTrigger value="SMSS">
 											SMSS
@@ -748,7 +784,7 @@ export const AppDetailPage = () => {
 								permission={permission}
 							/>
 						)}
-						{selectedTab === "Files" && (
+						{selectedTab === "Files" && showNav && (
 							<AppFileManagerPage appId={appId || ""} />
 						)}
 						{selectedTab === "SMSS" && (
