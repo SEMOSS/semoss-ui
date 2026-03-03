@@ -30,6 +30,32 @@ export const getTeams = async (
 	return response.data;
 };
 
+export const getGroupDetails = async (
+	admin: boolean,
+	groupId: string,
+	type?: string,
+) => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += "group/getGroupDetails";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (type) params.set("type", type);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
+	const response = await get(url).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) {
+		throw Error("No Response to get group details");
+	}
+	return response.data;
+};
+
 export const getTeamsCount = async (admin: boolean, searchTerm?: string) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
