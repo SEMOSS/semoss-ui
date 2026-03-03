@@ -197,7 +197,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 						<Skeleton className="h-full w-full" />
 						<Skeleton className="-translate-y-1/2 absolute top-1/2 right-2 size-8" />
 					</div>
-					<CardContent className="flex flex-1 flex-col gap-3 px-4 py-4">
+					<CardContent className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-0">
 						<Skeleton className="h-6 w-2/3" />
 						<Skeleton className="h-4 w-full" />
 						<Skeleton className="h-4 w-3/4" />
@@ -223,7 +223,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	return (
 		<div className={cardWidthClass}>
 			<Card
-				className="h-full cursor-pointer overflow-hidden p-0"
+				className="h-full cursor-pointer gap-3 overflow-hidden p-0"
 				onClick={() => {
 					if (href) {
 						navigate(href.replace(/^#/, ""));
@@ -325,7 +325,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 						) : null}
 					</div>
 				</div>
-				<CardContent className="flex flex-1 flex-col gap-3 px-4 py-4">
+				<CardContent className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-0">
 					<div className="line-clamp-2 min-h-[46px] font-semibold text-lg leading-snug">
 						{removeUnderscores(app.project_name)}
 					</div>
@@ -359,8 +359,8 @@ export const AppTileCard = (props: AppTileCardProps) => {
 						</div>
 					)}
 					{tags.length > 0 ? (
-						<div className="flex h-6 w-full items-center">
-							<div className="flex w-full items-center gap-2 overflow-x-auto whitespace-nowrap">
+						<div className="group flex h-6 w-full items-center">
+							<div className="flex w-full items-center gap-2 overflow-x-hidden whitespace-nowrap group-hover:overflow-x-auto">
 								{tags.map((tag) => (
 									<Badge
 										key={`${app.project_id}-${tag}`}
