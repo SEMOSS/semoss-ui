@@ -29,5 +29,5 @@
 		}
 	},
 	"include": ["src"],
-	"exclude": ["dist", "node_modules", "**/*.spec.ts", "**/*.stories.tsx"]
+	"exclude": ["dist", "node_modules", "**/*.spec.ts"]
 }
