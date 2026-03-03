@@ -1,6 +1,12 @@
 import { Snackbar, type SxProps } from "@mui/material";
 import type React from "react";
-import { isValidElement, type ReactNode, useEffect, useState } from "react";
+import {
+	isValidElement,
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useState,
+} from "react";
 import type { NotificationMessage } from "./notification.types";
 
 // generate a uuid
@@ -90,7 +96,7 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 	 * Add a new notification
 	 * @param state - state of the Notification Item
 	 */
-	const addNotification = (message: NotificationMessage) => {
+	const addNotification = useCallback((message: NotificationMessage) => {
 		// generate an id if there isn't one
 		if (!message.id) {
 			message.id = getUuid();
@@ -107,28 +113,28 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 				},
 			];
 		});
-	};
+	}, []);
 
 	/**
 	 * Remove a notification
 	 * @param id - id of the notification to remove
 	 */
-	const removeNotification = (id: string) => {
+	const removeNotification = useCallback((id: string) => {
 		setNotifications((notifications) => {
 			return notifications.filter((n) => n.id !== id);
 		});
-	};
+	}, []);
 
 	/**
 	 * Close the notifications
 	 */
-	const closeNotification = () => {
+	const closeNotification = useCallback(() => {
 		// nullify it
 		setActive(null);
 
 		// close it
 		setIsOpen(false);
-	};
+	}, []);
 
 	const getMessage = (): ReactNode => {
 		if (
