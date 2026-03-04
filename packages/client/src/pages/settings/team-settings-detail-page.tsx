@@ -1,30 +1,11 @@
 import { useParams } from "react-router-dom";
-import { styled } from "@semoss/ui";
+import { Separator } from "@semoss/ui/next";
 import {
 	TeamEnginesTable,
 	TeamMembersTable,
 	TeamProjectsTable,
 } from "@/components/teams";
-import { TeamMembersProviderBanner } from "@/components/teams/TeamMembersProviderBanner";
-
-const StyledContainer = styled("div")(({ theme }) => ({
-	width: "100%",
-	display: "flex",
-	alignSelf: "stretch",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: theme.spacing(2),
-	paddingBottom: "16px",
-}));
-
-const StyledContent = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: theme.spacing(2),
-	flexShrink: "0",
-}));
+import { TeamMembersProviderBanner } from "@/components/teams/team-members-provider-banner";
 
 export const TeamSettingsDetailPage = () => {
 	// pull :type and :id from the url
@@ -36,8 +17,8 @@ export const TeamSettingsDetailPage = () => {
 	const id = rawId ? decodeURIComponent(rawId) : undefined;
 
 	return (
-		<StyledContainer>
-			<StyledContent>
+		<div className="flex w-full flex-col gap-6 pb-4">
+			<div className="flex w-full flex-col gap-6">
 				{type && id && (
 					<>
 						{type === "CUSTOM" ? (
@@ -45,11 +26,13 @@ export const TeamSettingsDetailPage = () => {
 						) : (
 							<TeamMembersProviderBanner type={type} />
 						)}
+						<Separator className="bg-border/60" />
 						<TeamProjectsTable
 							groupId={id}
 							groupType={type}
 							name="PROJECTS"
 						/>
+						<Separator className="bg-border/60" />
 						<TeamEnginesTable
 							groupId={id}
 							groupType={type}
@@ -57,7 +40,7 @@ export const TeamSettingsDetailPage = () => {
 						/>
 					</>
 				)}
-			</StyledContent>
-		</StyledContainer>
+			</div>
+		</div>
 	);
 };

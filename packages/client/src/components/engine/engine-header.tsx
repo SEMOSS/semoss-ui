@@ -116,7 +116,7 @@ export const EngineHeader: React.FC = () => {
 				</BreadcrumbList>
 			</Breadcrumb>
 
-			<div className="flex w-full flex-row items-center gap-4">
+			<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
 				{/* Image placeholder - space for engine/database icon */}
 				<div className="h-16 w-16 flex-shrink-0 rounded-lg bg-muted">
 					<img
@@ -131,7 +131,7 @@ export const EngineHeader: React.FC = () => {
 
 				<div className="flex min-w-0 flex-1 flex-col gap-1">
 					<h1
-						className="overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[30px] text-foreground leading-normal"
+						className="break-words font-semibold text-2xl text-foreground leading-normal md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]"
 						data-testid="Title"
 					>
 						{active.name}
@@ -178,7 +178,7 @@ export const EngineHeader: React.FC = () => {
 					</div>
 				</div>
 
-				<div className="flex flex-shrink-0 flex-row gap-2">
+				<div className="flex w-full flex-wrap gap-2 md:w-auto md:flex-nowrap md:justify-end">
 					<EngineAccessButton />
 					{active.role === "OWNER" && (
 						<Button
@@ -255,7 +255,7 @@ export const EngineHeader: React.FC = () => {
 				</DialogContent>
 			</Dialog>
 
-			<div className="mt-4 flex w-full justify-between gap-4">
+			<div className="mt-4 flex w-full flex-col gap-4 md:flex-row md:justify-between">
 				<div className="flex flex-1 flex-col gap-4">
 					<p
 						className="overflow-hidden whitespace-normal text-muted-foreground"
@@ -267,7 +267,7 @@ export const EngineHeader: React.FC = () => {
 
 					<div className="flex flex-row flex-wrap gap-2">
 						{active.metadata.tag &&
-							(active.metadata.tag as string[]).map((tag, i) => {
+							(active.metadata.tag as string[]).map((tag) => {
 								if (tag === "") return null;
 								return (
 									<Badge
@@ -282,7 +282,7 @@ export const EngineHeader: React.FC = () => {
 							})}
 					</div>
 				</div>
-				<div className="flex flex-col items-end gap-1 text-right">
+				<div className="flex flex-col items-start gap-1 text-left md:items-end md:text-right">
 					{active?.PERMISSIONGRANTEDBY ? (
 						<span
 							className="text-muted-foreground text-sm"
