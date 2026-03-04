@@ -189,22 +189,23 @@ export const fetchDependencies = async (
 			output: string;
 	  }
 > => {
-	const res = await configStore.runPixel(
-		`GetProjectDependencies(project="${appId}")`,
-	);
+	const res = await configStore.runPixel<
+		[
+			{
+				engines: appDependency[];
+				dependencies: string[]; // Top-level dependency IDs
+			},
+		]
+	>(`GetProjectDependencies(project="${appId}")`);
 
 	const type = res.pixelReturn[0].operationType;
 	const output = res.pixelReturn[0].output;
 
 	if (type.indexOf("ERROR") === -1) {
-		const responseData = output as {
-			engines: appDependency[];
-			dependencies: string[]; // Top-level dependency IDs
-		};
 		// Filter engines to return only top-level dependencies
 		const topLevelDeps =
-			responseData.engines?.filter((engine) =>
-				responseData.dependencies?.includes(engine.engine_id),
+			output.engines?.filter((engine) =>
+				output.dependencies?.includes(engine.engine_id),
 			) || [];
 		return {
 			type: "success",
@@ -213,7 +214,7 @@ export const fetchDependencies = async (
 	} else {
 		return {
 			type: "error",
-			output: output as string,
+			output: output as unknown as string,
 		};
 	}
 };

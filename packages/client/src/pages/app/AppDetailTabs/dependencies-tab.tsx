@@ -82,9 +82,7 @@ export const Dependencies = ({
 													<TriangleAlert className="size-4 shrink-0 text-amber-500" />
 												</TooltipTrigger>
 												<TooltipContent>
-													This dependency has
-													sub-dependencies that you
-													cannot view
+													{`You don't have access to all dependencies of this ${dep.type.toLowerCase()}, so functionality may be limited. View its details page for more information.`}
 												</TooltipContent>
 											</Tooltip>
 										)}
