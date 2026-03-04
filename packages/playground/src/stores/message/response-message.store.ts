@@ -225,7 +225,7 @@ paramValues=[${JSON.stringify({
 
 			const { output } = response.results[0];
 
-			// sync withe the results
+			// sync with the results
 			inputMessage.sync(output.inputMessage);
 			responseMessage.sync(output.responseMessage);
 

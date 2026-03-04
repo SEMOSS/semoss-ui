@@ -1092,6 +1092,8 @@ export class RoomStore {
 
 			// show the error
 			this._store.error = e;
+
+			throw e;
 		} finally {
 			this.setIsLoading(false);
 		}
