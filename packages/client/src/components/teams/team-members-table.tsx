@@ -41,16 +41,7 @@ import {
 	getTeamUsers,
 	getTeamUsersCount,
 } from "@/api/teams";
-
-const colors = [
-	"#22A4FF",
-	"#FA3F20",
-	"#FA3F20",
-	"#FF9800",
-	"#FF9800",
-	"#22A4FF",
-	"#4CAF50",
-];
+import { useServerPagination } from "@/hooks";
 
 interface MembersTableProps {
 	/**
@@ -75,7 +66,6 @@ interface TeamMember {
 	username: string;
 	userid?: string;
 	dateadded?: string;
-	color?: string;
 }
 
 export const TeamMembersTable = (props: MembersTableProps) => {
@@ -85,7 +75,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const AUTOCOMPLETE_OFFSET = 0;
 
 	/** Member Table State */
-	const [membersPage, setMembersPage] = useState<number>(1);
 	const [selectedMembers, setSelectedMembers] = useState<TeamMember[]>([]);
 	const [count, setCount] = useState(0);
 
@@ -106,7 +95,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 	const [memberCount, setMemberCount] = useState(0);
 	const [totalMembersAll, setTotalMembersAll] = useState(0);
-	const [rowsPerPage, setRowsPerPage] = useState(5);
 	const [hasMembers, setHasMembers] = useState(false);
 
 	const [searchFilter, setSearchFilter] = useState("");
@@ -119,6 +107,21 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const [canCollect, setCanCollect] = useState<boolean>(true);
 	const [_isLoading, setIsLoading] = useState<boolean>(false);
 	const [searchLoading, setSearchLoading] = useState(false);
+
+	const {
+		page: membersPage,
+		rowsPerPage,
+		setPage: setMembersPage,
+		setRowsPerPage,
+		offset: pageOffset,
+		totalPages,
+		startRow,
+		endRow,
+	} = useServerPagination({
+		totalCount: memberCount,
+		initialRowsPerPage: 5,
+		pageIndexBase: 1,
+	});
 
 	const nearBottom = (
 		target: {
@@ -168,9 +171,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 						(val) => {
 							return {
 								...val,
-								color: colors[
-									Math.floor(Math.random() * colors.length)
-								],
 							};
 						},
 					);
@@ -201,11 +201,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 		const loadMembers = async () => {
 			try {
-				const offset = membersPage * rowsPerPage - rowsPerPage;
 				const response = await getTeamUsers(
 					groupId,
 					rowsPerPage,
-					offset,
+					pageOffset,
 					searchFilter,
 				);
 				if (!isMounted) {
@@ -219,13 +218,13 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 				if (
 					members.length < rowsPerPage &&
-					total > offset + members.length
+					total > pageOffset + members.length
 				) {
 					const remaining = rowsPerPage - members.length;
 					const extraResponse = await getTeamUsers(
 						groupId,
 						remaining,
-						offset + members.length,
+						pageOffset + members.length,
 						searchFilter,
 					);
 					if (!isMounted) {
@@ -251,7 +250,15 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		return () => {
 			isMounted = false;
 		};
-	}, [groupId, count, membersPage, searchFilter, rowsPerPage, memberCount]);
+	}, [
+		groupId,
+		count,
+		membersPage,
+		searchFilter,
+		rowsPerPage,
+		memberCount,
+		pageOffset,
+	]);
 
 	useEffect(() => {
 		const refreshToken = count;
@@ -313,8 +320,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			} else {
 				if (canCollect) {
 					getUsersNonGroup(false, offset, searchMemberInput);
-				} else {
-					getUsersNonGroup(true, offset, searchMemberInput);
 				}
 			}
 		}, 500);
@@ -473,17 +478,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 		return avatarList;
 	}, [teamMembers]);
-
-	const totalPages = Math.max(1, Math.ceil(memberCount / rowsPerPage));
-	const startRow =
-		memberCount === 0 ? 0 : (membersPage - 1) * rowsPerPage + 1;
-	const endRow = Math.min(membersPage * rowsPerPage, memberCount);
-
-	useEffect(() => {
-		if (membersPage > totalPages) {
-			setMembersPage(totalPages);
-		}
-	}, [membersPage, totalPages]);
 
 	const handleToggleMember = (user: TeamMember) => {
 		const isSelected = selectedMembers.some(
@@ -699,22 +693,14 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 																	10,
 																),
 															);
-															setMembersPage(1);
 														}}
 													>
 														<SelectTrigger className="h-8 w-[70px]">
 															<SelectValue />
 														</SelectTrigger>
 														<SelectContent>
-															{[5, 10, 20]
-																.filter(
-																	(val) =>
-																		val <=
-																			memberCount ||
-																		val ===
-																			5,
-																)
-																.map((val) => (
+															{[5, 10, 20].map(
+																(val) => (
 																	<SelectItem
 																		key={`rows-${val}`}
 																		value={String(
@@ -723,7 +709,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 																	>
 																		{val}
 																	</SelectItem>
-																))}
+																),
+															)}
 														</SelectContent>
 													</Select>
 												</div>
@@ -895,7 +882,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									return (
 										<div
 											key={user.id}
-											className="flex items-start gap-3 rounded-md p-3 hover:bg-muted/50"
+											className="flex items-center gap-3 rounded-md p-3 hover:bg-muted/50"
 										>
 											<Checkbox
 												checked={isSelected}
@@ -904,13 +891,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												}
 											/>
 											<Avatar className="h-8 w-8">
-												<AvatarFallback
-													style={{
-														backgroundColor:
-															user.color,
-													}}
-													className="text-xs"
-												>
+												<AvatarFallback className="text-xs">
 													{initials}
 												</AvatarFallback>
 											</Avatar>

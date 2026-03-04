@@ -45,16 +45,7 @@ import {
 	getUnassignedTeamEngines,
 } from "@/api";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
-
-const colors = [
-	"#22A4FF",
-	"#FA3F20",
-	"#FA3F20",
-	"#FF9800",
-	"#FF9800",
-	"#22A4FF",
-	"#4CAF50",
-];
+import { useServerPagination } from "@/hooks";
 
 // maps for permissions,
 const permissionMapper = {
@@ -109,7 +100,6 @@ interface Engine {
 	engine_date_created: string;
 	permission: string;
 	type: string;
-	color?: string;
 }
 
 type EnginePermissionUpdate = Pick<Engine, "engineid" | "permission" | "type">;
@@ -121,7 +111,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const AUTOCOMPLETE_OFFSET = 0;
 
 	/** Engine Table State */
-	const [enginesPage, setEnginesPage] = useState<number>(1);
 	const [selectedEngines, setSelectedEngines] = useState<Engine[]>([]);
 	const [count, setCount] = useState(0);
 
@@ -143,7 +132,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const [engines, setEngines] = useState<Engine[]>([]);
 	const [enginesCount, setEngineCount] = useState<number>(0);
 	const [totalEnginesAll, setTotalEnginesAll] = useState(0);
-	const [rowsPerPage, setRowsPerPage] = useState(5);
 	const [hasEngines, setHasEngines] = useState(false);
 
 	const [searchEngineInput, setSearchEngineInput] = useState<string>("");
@@ -156,6 +144,21 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const [searchFilter, setSearchFilter] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const isLoadingRef = useRef(false);
+
+	const {
+		page: enginesPage,
+		rowsPerPage,
+		setPage: setEnginesPage,
+		setRowsPerPage,
+		offset: pageOffset,
+		totalPages,
+		startRow,
+		endRow,
+	} = useServerPagination({
+		totalCount: enginesCount,
+		initialRowsPerPage: 5,
+		pageIndexBase: 1,
+	});
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -196,9 +199,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 						(val: Engine) => {
 							return {
 								...val,
-								color: colors[
-									Math.floor(Math.random() * colors.length)
-								],
 							};
 						},
 					);
@@ -225,13 +225,20 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			groupId,
 			groupType,
 			rowsPerPage,
-			enginesPage * rowsPerPage - rowsPerPage, // offset
+			pageOffset, // offset
 			debouncedSearch,
 		).then((data: unknown[]) => {
 			setEngines(data as Engine[]);
 			setHasEngines(data.length > 0);
 		});
-	}, [groupId, groupType, enginesPage, debouncedSearch, rowsPerPage]);
+	}, [
+		groupId,
+		groupType,
+		enginesPage,
+		debouncedSearch,
+		rowsPerPage,
+		pageOffset,
+	]);
 
 	useEffect(() => {
 		if (count >= 0) {
@@ -289,8 +296,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			} else {
 				if (canCollect) {
 					getEngines(false, offset, searchEngineInput);
-				} else {
-					getEngines(true, offset, searchEngineInput);
 				}
 			}
 		}, 500);
@@ -454,17 +459,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const handleInputChange = (newInputValue) => {
 		setSearchFilter(newInputValue);
 	};
-
-	const totalPages = Math.max(1, Math.ceil(enginesCount / rowsPerPage));
-	const startRow =
-		enginesCount === 0 ? 0 : (enginesPage - 1) * rowsPerPage + 1;
-	const endRow = Math.min(enginesPage * rowsPerPage, enginesCount);
-
-	useEffect(() => {
-		if (enginesPage > totalPages) {
-			setEnginesPage(totalPages);
-		}
-	}, [enginesPage, totalPages]);
 
 	const isAllSelected =
 		selectedEngines.length === engines.length && engines.length > 0;
@@ -709,22 +703,14 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 																	10,
 																),
 															);
-															setEnginesPage(1);
 														}}
 													>
 														<SelectTrigger className="h-8 w-[70px]">
 															<SelectValue />
 														</SelectTrigger>
 														<SelectContent>
-															{[5, 10, 20]
-																.filter(
-																	(val) =>
-																		val <=
-																			enginesCount ||
-																		val ===
-																			5,
-																)
-																.map((val) => (
+															{[5, 10, 20].map(
+																(val) => (
 																	<SelectItem
 																		key={`rows-${val}`}
 																		value={String(
@@ -733,7 +719,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 																	>
 																		{val}
 																	</SelectItem>
-																))}
+																),
+															)}
 														</SelectContent>
 													</Select>
 												</div>
@@ -923,13 +910,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 												}}
 											/>
 											<Avatar className="h-8 w-8">
-												<AvatarFallback
-													style={{
-														backgroundColor:
-															engine.color,
-													}}
-													className="text-xs"
-												>
+												<AvatarFallback className="text-xs">
 													{engine.engine_name
 														? engine.engine_name[0]
 														: "E"}
@@ -993,7 +974,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									{permissionOptions.map((option) => (
 										<div
 											key={option.value}
-											className="flex items-start gap-3 rounded-md border bg-background p-3"
+											className="flex items-center gap-3 rounded-md border bg-background p-3"
 										>
 											<RadioGroupItem
 												value={option.value}
