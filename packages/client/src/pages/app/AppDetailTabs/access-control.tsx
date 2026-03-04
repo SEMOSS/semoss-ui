@@ -30,7 +30,7 @@ export const AccessControl = ({
 		<div className="w-full">
 			{permission === "author" && (
 				<section className="w-full pb-6">
-					<H2 className="mb-2 font-medium text-xl">Access</H2>
+					<H2 className="mb-2 font-medium text-xl">Acess Settings</H2>
 					<SettingsContext.Provider value={{ adminMode: false }}>
 						<SettingsTiles
 							type="PROJECT"
@@ -46,7 +46,7 @@ export const AccessControl = ({
 			)}
 
 			<section className="w-full pb-6">
-				<H2 className="mb-2 font-medium text-xl">Current Member</H2>
+				<H2 className="mb-2 font-medium text-xl">Member Permissions</H2>
 				<SettingsContext.Provider value={{ adminMode: false }}>
 					<div className="flex flex-col gap-4">
 						<PendingMembersTable type="PROJECT" id={appId} />
