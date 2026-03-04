@@ -1,308 +1,554 @@
-import { useEffect, useState } from 'react';
-
 import {
-    styled,
-    useNotification,
-    Alert,
-    Button,
-    Table,
-    TextField,
-    Select,
-    Stack,
-    TextArea,
-} from '@semoss/ui';
+	ArrowForward,
+	Check,
+	Close,
+	OpenInFullSharp,
+} from "@mui/icons-material";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { Navigate } from "react-router-dom";
+import {
+	Alert,
+	Box,
+	Button,
+	IconButton,
+	Modal,
+	Select,
+	styled,
+	Table,
+	TextArea,
+	useNotification,
+} from "@semoss/ui";
+import { useRootStore, useSettings } from "@/hooks";
 
-import { useRootStore, useSettings } from '@/hooks';
-
-import { Controller, useForm } from 'react-hook-form';
-import { Navigate } from 'react-router-dom';
-
-const StyledContainer = styled('div')(() => ({
-    display: 'flex',
-    width: '100%',
-    gap: '24px',
+const StyledContainer = styled("div")(() => ({
+	display: "flex",
+	width: "100%",
+	gap: "24px",
 }));
 
-const StyledLeft = styled('div')(() => ({
-    display: 'flex',
-    flexDirection: 'column',
-    width: '40%',
+const StyledLeft = styled("div")(() => ({
+	display: "flex",
+	flexDirection: "column",
+	width: "100%",
 }));
 
-const StyledRight = styled('div')(() => ({
-    flex: '1',
+const StyledRight = styled("div")(() => ({
+	overflow: "scroll",
+	width: "100%",
+	marginTop: "20px",
 }));
+const PaginationContainer = styled(Box)(() => ({
+	display: "flex",
+	justifyContent: "flex-end",
+	width: "100%",
+}));
+const Styledform = styled("div")(() => ({
+	width: "100%",
+}));
+const StyledStack = styled("div")(() => ({
+	width: "100%",
+	gap: "20px",
+	flexDirection: "column",
+	display: "flex",
+	marginBottom: "20px",
+}));
+
+const Field = styled(Box)(() => ({
+	display: "flex",
+	flexDirection: "column",
+	width: "100%",
+	gap: "8px",
+}));
+
+const Label = styled("label")(({ theme }) => ({
+	fontSize: "0.875rem",
+	lineHeight: 1.4,
+	color: theme.palette.text.secondary,
+}));
+const TableContainer = styled(Table.Container)(() => ({
+	maxHeight: "400px",
+	overflow: "auto",
+}));
+const Pagination = styled(Table.Pagination)(() => ({
+	border: "none",
+	width: "auto",
+}));
+const TableHeader = styled(Table.Head)(({ theme }) => ({
+	backgroundColor: theme.palette.primary.hover,
+}));
+const TableHeaderCell = styled(Table.Cell)(({ theme }) => ({
+	padding: "10px",
+	fontWeight: 600,
+	color: theme.palette.primary.main,
+}));
+const StyledBox = styled(Box)({
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	minWidth: 32,
+});
+const CheckIcon = styled(Check)(({ theme }) => ({
+	color: theme.palette.success.main,
+}));
+const CloseIcon = styled(Close)(({ theme }) => ({
+	color: theme.palette.error.main,
+}));
+
+const StyledSelect = styled(Select)(() => ({
+	width: "100%",
+}));
+
+const StyledTextArea = styled(TextArea)({
+	width: "100%",
+	overflow: "none",
+	"& .MuiInputBase-root.MuiOutlinedInput-root": {
+		alignItems: "flex-start",
+	},
+});
+
+const StyledTextAreaPopup = styled(TextArea)({
+	width: "100%",
+	overflow: "none",
+});
+
+const StyledIconButton = styled(IconButton)({
+	padding: 0,
+	color: "text.secondary",
+});
+const StyledCloseIconButton = styled(IconButton)({
+	position: "absolute",
+	right: "8px",
+	top: "15px",
+});
+const ModalTitle = styled(Modal.Title)({
+	m: 0,
+	p: 2,
+});
+const ModalActions = styled(Modal.Actions)({
+	p: 2,
+});
+const StyledTableCell = styled(Table.Cell)<{ $isBoolean?: boolean }>(
+	({ $isBoolean }) => ({
+		padding: "10px",
+		textAlign: $isBoolean ? "center" : "left",
+	}),
+);
+const StyledButton = styled(Button)({
+	marginTop: "16px",
+});
 
 const DATABASE_OPTIONS = [
-    'LocalMasterDatabase',
-    'security',
-    'scheduler',
-    'themes',
-    'UserTrackingDatabase',
+	{ label: "Audit Logs", value: "AuditLogs" },
+	{ label: "Local Master Database", value: "LocalMasterDatabase" },
+	{ label: "Scheduler", value: "scheduler" },
+	{ label: "Security", value: "security" },
+	{ label: "Themes", value: "themes" },
+	{ label: "User Tracking Database", value: "UserTrackingDatabase" },
 ];
 
 interface TypeDbQuery {
-    SELECTED_DATABASE: string;
-    QUERY: string;
-    ROWS: number;
+	SELECTED_DATABASE: string;
+	QUERY: string;
 }
 
 export const AdminQueryPage = () => {
-    const { monolithStore } = useRootStore();
-    const { adminMode } = useSettings();
-    const notification = useNotification();
+	const { monolithStore } = useRootStore();
+	const { adminMode } = useSettings();
+	const notification = useNotification();
+	const [output, setOutput] = useState<{
+		type: string;
+		value;
+	}>({
+		type: "",
+		value: "",
+	});
+	const [lastQuery, setLastQuery] = useState<string>("");
+	const { control, watch, handleSubmit } = useForm<{
+		SELECTED_DATABASE: string;
+		QUERY: string;
+	}>({
+		defaultValues: {
+			SELECTED_DATABASE: "",
+			QUERY: "",
+		},
+	});
 
-    if (!adminMode) {
-        return <Navigate to={'/settings'} />;
-    }
-    const [output, setOutput] = useState<{
-        type: string;
-        value: any;
-    }>({
-        type: '',
-        value: '',
-    });
+	const [open, setOpen] = useState(false);
+	const [draft, setDraft] = useState("");
+	const [page, setPage] = useState<number>(0);
+	const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
-    const [showRowsField, setShowRowsField] = useState(false);
+	const openModal = (value: string) => {
+		setDraft(value ?? "");
+		setOpen(true);
+	};
 
-    const { control, watch, setValue, handleSubmit } = useForm<{
-        SELECTED_DATABASE: string;
-        QUERY: string;
-        ROWS: number;
-    }>({
-        defaultValues: {
-            SELECTED_DATABASE: '',
-            QUERY: '',
-            ROWS: 100,
-        },
-    });
+	const closeModal = () => {
+		setOpen(false);
+	};
 
-    const query = watch('QUERY');
-    const selectedDatabase = watch('SELECTED_DATABASE');
+	const handleDone = useCallback(
+		(onChange: (v: string) => void) => {
+			onChange(draft);
+			setOpen(false);
+		},
+		[draft],
+	);
+	const query = watch("QUERY");
+	const selectedDatabase = watch("SELECTED_DATABASE");
 
-    const disableButton = query && selectedDatabase ? true : false;
+	const disableButton = !selectedDatabase || !query?.trim();
+	useEffect(() => {
+		setPage(0);
+		setRowsPerPage(10);
+	}, [output]);
 
-    useEffect(() => {
-        verifySelectQuery();
-    }, [query]);
+	if (!adminMode) {
+		return <Navigate to={"/settings"} />;
+	}
 
-    /**
-     * @name verifySelectQuery
-     * @desc check whether the query contains SELECT,
-     * and if so update the ROWS field and show or hide field
-     */
-    function verifySelectQuery() {
-        if (query.toUpperCase().startsWith('SELECT')) {
-            // show rows field
-            setShowRowsField(true);
-        } else {
-            if (showRowsField) {
-                // don't show rows field
-                setShowRowsField(false);
-                setValue('ROWS', 0);
-            }
-        }
-    }
+	/**
+	 * @name submitQuery
+	 * @desc make runQuery API call based on submitted fields
+	 */
+	const submitQuery = handleSubmit((data: TypeDbQuery) => {
+		const queryToRun = data.QUERY ?? "";
+		setLastQuery(queryToRun);
+		const pixelString = `AdminSqlQuery(database=["${data.SELECTED_DATABASE}"], query=["<encode>${queryToRun.replaceAll("`", "")}</encode>"], commit=[true]);`;
+		monolithStore
+			.runQuery(pixelString)
+			.then((response) => {
+				let output: string | { data: { headers: string[]; values } };
+				const type = String(
+					response?.pixelReturn?.[0]?.operationType?.[0] ?? "",
+				);
 
-    /**
-     * @name submitQuery
-     * @desc make runQuery API call based on submitted fields
-     */
-    const submitQuery = handleSubmit((data: TypeDbQuery) => {
-        let pixelString = `META | AdminDatabase("${data.SELECTED_DATABASE}") | Query("<encode>${data.QUERY}</encode>")`;
+				output = response?.pixelReturn?.[0]?.output ?? response;
 
-        if (showRowsField) {
-            pixelString += `| Collect(${data.ROWS});`;
-        } else {
-            // No collect
-            pixelString += '| AdminExecQuery();';
-        }
+				const isError =
+					type.includes("ERROR") ||
+					(typeof output === "string" &&
+						/^(error|ERROR)/.test(output));
 
-        monolithStore
-            .runQuery(pixelString)
-            .then((response) => {
-                let output = undefined;
-                let type = undefined;
+				if (isError) {
+					setOutput({
+						type: "error",
+						value: output,
+					});
+					notification.add({
+						color: "error",
+						message:
+							typeof output === "string"
+								? output
+								: JSON.stringify(output),
+					});
 
-                output = response.pixelReturn[0].output;
-                type = response.pixelReturn[0].operationType[0];
+					return;
+				} else if (output instanceof Object) {
+					setOutput({
+						type: "table",
+						value: {
+							headers: output?.data?.headers,
+							values: output?.data?.values,
+						},
+					});
+				} else {
+					setOutput({
+						type: "success",
+						value: queryToRun,
+					});
+				}
 
-                if (type.indexOf('ERROR') > -1) {
-                    setOutput({
-                        type: 'error',
-                        value: output,
-                    });
-                    notification.add({
-                        color: 'error',
-                        message: output,
-                    });
+				notification.add({
+					color: "success",
+					message: "Successfully submitted query",
+				});
+			})
+			.catch((error) => {
+				notification.add({
+					color: "error",
+					message: error,
+				});
+			});
+	});
 
-                    return;
-                }
+	const isBooleanColumn = (colIndex: number): boolean => {
+		const response = output?.value?.headerInfo?.[colIndex];
+		if (response && typeof response?.dataType === "string") {
+			const dt = response?.dataType?.toUpperCase();
+			if (dt === "BOOLEAN" || dt === "BOOL") return true;
+		}
+		return false;
+	};
 
-                // if we have a select query returning data
-                else if (output instanceof Object) {
-                    setOutput({
-                        type: 'table',
-                        value: {
-                            headers: output.data.headers,
-                            values: output.data.values,
-                        },
-                    });
-                }
+	const renderCell = (val, colIndex: number) => {
+		const isBool = isBooleanColumn(colIndex);
+		const normalized = typeof val === "boolean" ? Boolean(val) : null;
 
-                // if we have a non-select query
-                else {
-                    setOutput({
-                        type: 'success',
-                        value: '',
-                    });
-                }
+		if (isBool || normalized !== null) {
+			const b = normalized;
+			return (
+				<StyledBox>
+					{b === true && <CheckIcon fontSize="small" />}
+					{b === false && <CloseIcon fontSize="small" />}
+				</StyledBox>
+			);
+		}
+		return String(val ?? "");
+	};
 
-                notification.add({
-                    color: 'success',
-                    message: 'Successfully submitted query',
-                });
-            })
-            .catch((error) => {
-                notification.add({
-                    color: 'error',
-                    message: error,
-                });
-            });
-    });
+	const handleChangePage = (_event: unknown, newPage: number) => {
+		setPage(newPage);
+	};
 
-    /**
-     * @name displayQueryOutput
-     * @desc return alert or table based on the queryOutputType
-     * @returns JSX.Element
-     */
-    const displayQueryOutput = (): JSX.Element => {
-        if (output.type === 'success') {
-            return <Alert color={'success'}>Successful query!</Alert>;
-        } else if (output.type === 'error') {
-            return <Alert color={'error'}>{output.value}</Alert>;
-        } else if (output.type === 'table') {
-            return (
-                <Table>
-                    <Table.Head>
-                        <Table.Row>
-                            {output.value.headers.map((header, index) => {
-                                return (
-                                    <Table.Cell key={index}>
-                                        {header}
-                                    </Table.Cell>
-                                );
-                            })}
-                        </Table.Row>
-                    </Table.Head>
-                    <Table.Body>
-                        {output.value.values.map((row, index) => {
-                            return (
-                                <Table.Row key={index}>
-                                    {row.map((column, i) => {
-                                        return (
-                                            <Table.Cell key={i}>
-                                                {column}
-                                            </Table.Cell>
-                                        );
-                                    })}
-                                </Table.Row>
-                            );
-                        })}
-                    </Table.Body>
-                </Table>
-            );
-        }
-    };
+	const handleChangeRowsPerPage = (
+		event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+	) => {
+		const next = parseInt(event.target.value, 10);
+		setRowsPerPage(next);
+		setPage(0);
+	};
 
-    return (
-        <StyledContainer>
-            <StyledLeft>
-                <form>
-                    <Stack spacing={2}>
-                        <Controller
-                            name={'SELECTED_DATABASE'}
-                            control={control}
-                            rules={{ required: true }}
-                            render={({ field }) => {
-                                return (
-                                    <Select
-                                        label="Database"
-                                        value={field.value ? field.value : ''}
-                                        onChange={(e) =>
-                                            field.onChange(e.target.value)
-                                        }
-                                    >
-                                        {DATABASE_OPTIONS.map((option, i) => {
-                                            return (
-                                                <Select.Item
-                                                    value={option}
-                                                    key={i}
-                                                >
-                                                    {option}
-                                                </Select.Item>
-                                            );
-                                        })}
-                                    </Select>
-                                );
-                            }}
-                        />
+	const displayQueryOutput = (): JSX.Element | null => {
+		if (output.type === "success") {
+			return (
+				<Alert color={"success"}>
+					<div className="flex flex-col gap-1">
+						<span>Successful query!</span>
+						{lastQuery && (
+							<span className="break-all text-muted-foreground text-xs">
+								{lastQuery}
+							</span>
+						)}
+					</div>
+				</Alert>
+			);
+		} else if (output.type === "error") {
+			return <Alert color={"error"}>{output.value}</Alert>;
+		} else if (output.type === "table") {
+			const headers = output?.value?.headers ?? [];
+			const rows = output?.value?.values ?? [];
 
-                        <Controller
-                            name={'QUERY'}
-                            control={control}
-                            rules={{ required: true }}
-                            render={({ field }) => {
-                                return (
-                                    <TextArea
-                                        label="Enter query to run on database"
-                                        value={field.value ? field.value : ''}
-                                        onChange={(e) =>
-                                            field.onChange(e.target.value)
-                                        }
-                                        minRows={4}
-                                        maxRows={12}
-                                    ></TextArea>
-                                );
-                            }}
-                        />
-                        {showRowsField && (
-                            <Controller
-                                name={'ROWS'}
-                                control={control}
-                                rules={{ min: 1 }}
-                                render={({ field }) => {
-                                    return (
-                                        <TextField
-                                            label="Max # Rows to Collect"
-                                            value={
-                                                field.value ? field.value : ''
-                                            }
-                                            onChange={(e) =>
-                                                field.onChange(e.target.value)
-                                            }
-                                            type={'number'}
-                                        ></TextField>
-                                    );
-                                }}
-                            />
-                        )}
-                        <Button
-                            variant={'contained'}
-                            onClick={() => submitQuery()}
-                            disabled={!disableButton}
-                        >
-                            Execute Query
-                        </Button>
-                    </Stack>
-                </form>
-            </StyledLeft>
-            <StyledRight>
-                {!output.type
-                    ? 'Execute a query to display the results here.'
-                    : displayQueryOutput()}
-            </StyledRight>
-        </StyledContainer>
-    );
+			// slice rows for current page
+			const start = page * rowsPerPage;
+			const end = start + rowsPerPage;
+			const paginatedRows = rows.slice(start, end);
+			console.log(paginatedRows, "paginatedRows");
+			return (
+				<>
+					<TableContainer>
+						<Table stickyHeader aria-label="sticky table">
+							<TableHeader>
+								<Table.Row>
+									{headers.map(
+										(header: string, index: number) => (
+											<TableHeaderCell
+												key={header || index}
+												data-testid={`adminQueryPage-table-header-c${index}`}
+											>
+												{header}
+											</TableHeaderCell>
+										),
+									)}
+								</Table.Row>
+							</TableHeader>
+							<Table.Body>
+								{paginatedRows?.length > 0 &&
+								paginatedRows.some((row) => row.length > 0) ? (
+									paginatedRows?.map((row, rIdx: number) => (
+										<Table.Row key={row}>
+											{row?.map((col, cIdx) => (
+												<StyledTableCell
+													key={col}
+													data-testid={`adminQueryPage-table-r${rIdx}-c${cIdx}`}
+												>
+													{renderCell(col, cIdx)}
+												</StyledTableCell>
+											))}
+										</Table.Row>
+									))
+								) : (
+									<Table.Row>
+										<Table.Cell
+											colSpan={Math.max(
+												headers.length,
+												1,
+											)}
+											align="center"
+										>
+											No data
+										</Table.Cell>
+									</Table.Row>
+								)}
+							</Table.Body>
+						</Table>
+					</TableContainer>
+					{paginatedRows?.length > 0 &&
+						paginatedRows.some((row) => row.length > 0) && (
+							<PaginationContainer>
+								<Pagination
+									count={rows.length}
+									page={page}
+									rowsPerPage={rowsPerPage}
+									onPageChange={handleChangePage}
+									onRowsPerPageChange={
+										handleChangeRowsPerPage
+									}
+									rowsPerPageOptions={[5, 10, 25]}
+								/>
+							</PaginationContainer>
+						)}
+				</>
+			);
+		}
+
+		return null;
+	};
+
+	const outputPanel = useMemo(() => displayQueryOutput(), [
+		output,
+		lastQuery,
+		page,
+		rowsPerPage,
+	]);
+
+	return (
+		<StyledContainer>
+			<StyledLeft>
+				<Styledform>
+					<StyledStack>
+						<Controller
+							name="SELECTED_DATABASE"
+							control={control}
+							render={({ field }) => (
+								<Field>
+									<Label htmlFor="db-select">Database</Label>
+									<StyledSelect
+										size="small"
+										value={field.value ?? ""}
+										onChange={(e) =>
+											field.onChange(e.target.value)
+										}
+									>
+										{DATABASE_OPTIONS?.map((option, i) => (
+											<Select.Item
+												value={option.value}
+												key={option.value}
+												data-testid={`adminQueryPage-db-option-${i}`}
+											>
+												{option.label}
+											</Select.Item>
+										))}
+									</StyledSelect>
+								</Field>
+							)}
+						/>
+					</StyledStack>
+
+					<Controller
+						name={"QUERY"}
+						control={control}
+						render={({ field }) => {
+							return (
+								<>
+									<Field>
+										<Label htmlFor="query-textarea">
+											Enter query to run on database
+										</Label>
+										<StyledTextArea
+											value={field.value ?? ""}
+											onChange={(e) =>
+												field.onChange(e.target.value)
+											}
+											minRows={4}
+											maxRows={4}
+											placeholder="SELECT * FROM engine"
+											InputProps={{
+												endAdornment: (
+													<StyledIconButton
+														size="small"
+														onClick={() =>
+															openModal(
+																field.value ??
+																	"",
+															)
+														}
+													>
+														<OpenInFullSharp />
+													</StyledIconButton>
+												),
+											}}
+										/>
+									</Field>
+									<Modal
+										open={open}
+										onClose={closeModal}
+										fullWidth
+										maxWidth="md"
+										scroll="paper"
+									>
+										<ModalTitle>
+											Enter query to run on database
+											<StyledCloseIconButton
+												onClick={closeModal}
+												aria-label="close"
+												size="small"
+											>
+												<Close fontSize="small" />
+											</StyledCloseIconButton>
+										</ModalTitle>
+
+										<Modal.Content>
+											<StyledTextAreaPopup
+												minRows={16}
+												maxRows={16}
+												value={draft}
+												onChange={(
+													e: React.ChangeEvent<HTMLInputElement>,
+												) => setDraft(e.target.value)}
+											/>
+										</Modal.Content>
+
+										<ModalActions>
+											<Button
+												onClick={closeModal}
+												data-testid="adminQueryPage-modal-cancel-btn"
+											>
+												Cancel
+											</Button>
+											<Button
+												variant="contained"
+												onClick={() =>
+													handleDone(field.onChange)
+												}
+												data-testid="adminQueryPage-modal-done-btn"
+											>
+												Done
+											</Button>
+										</ModalActions>
+									</Modal>
+								</>
+							);
+						}}
+					/>
+					<StyledButton
+						size="large"
+						variant={"contained"}
+						onClick={() => submitQuery()}
+						disabled={disableButton}
+						data-testid={"adminQueryPage-run-btn"}
+						endIcon={<ArrowForward />}
+					>
+						Run Query
+					</StyledButton>
+					<StyledRight>
+						{!output.type
+							? "Execute a query to display the results here."
+							: outputPanel}
+					</StyledRight>
+				</Styledform>
+			</StyledLeft>
+		</StyledContainer>
+	);
 };

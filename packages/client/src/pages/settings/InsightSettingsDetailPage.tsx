@@ -1,3 +1,3 @@
 export const InsightSettingsDetailPage = () => {
-    return null;
+	return null;
 };

@@ -1,870 +1,909 @@
-import { Builder, Token, LLMSelectionType } from './prompt.types';
 import {
-    INPUT_TYPE_TEXT,
-    INPUT_TYPE_SELECT,
-    TOKEN_TYPE_TEXT,
-    INPUT_TYPE_VECTOR,
-    INPUT_TYPE_CUSTOM_QUERY,
-    INPUT_TYPE_DATABASE,
-    SELECT_TYPE_MODELS,
-    SELECT_TYPE_VECTORS,
-    SELECT_TYPE_STORAGES,
-    SELECT_TYPE_DATABASES,
-} from './prompt.constants';
+	ActionMessages,
+	type Block,
+	type QueryStateConfig,
+	type SerializedState,
+} from "@semoss/renderer";
+import type { MonolithStore } from "@/stores";
+import type { AppMetadata } from "../app";
 import {
-    ActionMessages,
-    Block,
-    MonolithStore,
-    QueryStateConfig,
-    SerializedState,
-} from '@/stores';
-import { AppMetadata } from '../app';
+	INPUT_TYPE_CUSTOM_QUERY,
+	INPUT_TYPE_DATABASE,
+	INPUT_TYPE_SELECT,
+	INPUT_TYPE_TEXT,
+	INPUT_TYPE_VECTOR,
+	SELECT_TYPE_DATABASES,
+	SELECT_TYPE_MODELS,
+	SELECT_TYPE_STORAGES,
+	SELECT_TYPE_VECTORS,
+	TOKEN_TYPE_TEXT,
+} from "./prompt.constants";
+import { type Builder, LLMSelectionType, type Token } from "./prompt.types";
 
-export const DESCRIPTION_CONTAINER = 'description-container';
-export const PROMPT_CONTAINER_BLOCK_ID = 'prompt-container';
-export const APP_TITLE_BLOCK_ID = 'title';
-export const HELP_TEXT_BLOCK_ID = 'help-text';
-export const PROMPT_SUBMIT_BLOCK_ID = 'prompt-submit';
-export const PROMPT_RESPONSE_BLOCK_ID = 'prompt-response';
-export const PROMPT_QUERY_ID = 'Prompt Query';
-export const PROMPT_QUERY_DEFINITION_ID = 'Query Definitions';
-export const MODEL_ID = 'Model';
-export const PROMPT_MY_ENGINES_ID = 'MyEngines';
-export const MODELS_CELL_ID = 'models-query';
-export const VECTORS_CELL_ID = 'vectors-query';
-export const STORAGE_CELL_ID = 'storages-query';
-export const DATABASE_CELL_ID = 'databases-query';
-export const MODELS_ID = 'Models';
-export const VECTORS_ID = 'Vectors';
-export const STORAGE_ID = 'Storages';
-export const DATABASE_ID = 'Databases';
-export const PROMPT_MY_ENGINES_MODELS_ID = 'My Engines Models';
-export const PROMPT_MY_ENGINES_VECTORS_ID = 'My Engines Vectors';
+export const DESCRIPTION_CONTAINER = "description-container";
+export const PROMPT_CONTAINER_BLOCK_ID = "prompt-container";
+export const APP_TITLE_BLOCK_ID = "title";
+export const HELP_TEXT_BLOCK_ID = "help-text";
+export const PROMPT_SUBMIT_BLOCK_ID = "prompt-submit";
+export const PROMPT_RESPONSE_BLOCK_ID = "prompt-response";
+export const PROMPT_QUERY_ID = "Prompt Query";
+export const PROMPT_QUERY_DEFINITION_ID = "Query Definitions";
+export const MODEL_ID = "Model";
+export const PROMPT_MY_ENGINES_ID = "MyEngines";
+export const MODELS_CELL_ID = "models-query";
+export const VECTORS_CELL_ID = "vectors-query";
+export const STORAGE_CELL_ID = "storages-query";
+export const DATABASE_CELL_ID = "databases-query";
+export const MODELS_ID = "Models";
+export const VECTORS_ID = "Vectors";
+export const STORAGE_ID = "Storages";
+export const DATABASE_ID = "Databases";
+export const PROMPT_MY_ENGINES_MODELS_ID = "My Engines Models";
+export const PROMPT_MY_ENGINES_VECTORS_ID = "My Engines Vectors";
 
 function capitalizeLabel(label: string): string {
-    const words = label.split(' ');
-    for (let i = 0; i < words.length; i++) {
-        words[i] = words[i][0].toUpperCase() + words[i].substring(1);
-    }
-    return words.join(' ');
+	const words = label.split(" ");
+	for (let i = 0; i < words.length; i++) {
+		words[i] = words[i][0].toUpperCase() + words[i].substring(1);
+	}
+	return words.join(" ");
 }
 
 export function getIdForInput(inputType: string, index: number) {
-    return `${inputType}-input-${index}`;
+	return `${inputType}-input-${index}`;
 }
 
 function getTextFieldInputBlock(
-    inputType: string,
-    index: number,
-    label: string,
-) {
-    return {
-        id: getIdForInput(inputType, index),
-        widget: 'input',
-        parent: {
-            id: PROMPT_CONTAINER_BLOCK_ID,
-            slot: 'children',
-        },
-        data: {
-            label: label,
-            value: '',
-            type: inputType,
-            style: {
-                width: '100%',
-                padding: '4px',
-            },
-        },
-        listeners: {
-            onChange: [],
-        },
-        slots: {},
-    };
+	inputType: string,
+	index: number,
+	label: string,
+): Block {
+	return {
+		id: getIdForInput(inputType, index),
+		widget: "input",
+		parent: {
+			id: PROMPT_CONTAINER_BLOCK_ID,
+			slot: "children",
+		},
+		data: {
+			label: label,
+			value: "",
+			type: inputType,
+			style: {
+				width: "100%",
+				padding: "4px",
+			},
+		},
+		listeners: {
+			onChange: {
+				type: "sync",
+				order: [],
+			},
+			preProcess: {
+				type: "sync",
+				order: [],
+			},
+		},
+		slots: {},
+	};
 }
 
 function getSelectInputBlock(
-    inputType: string,
-    index: number,
-    label: string,
-    inputTypeMeta: string | null,
-) {
-    let optionsVariable = '';
-    if (
-        inputTypeMeta === SELECT_TYPE_MODELS ||
-        inputTypeMeta === 'auto_model'
-    ) {
-        optionsVariable = MODELS_ID;
-    } else if (inputTypeMeta === SELECT_TYPE_VECTORS) {
-        optionsVariable = VECTORS_ID;
-    } else if (inputTypeMeta === SELECT_TYPE_DATABASES) {
-        optionsVariable = DATABASE_ID;
-    } else if (inputTypeMeta === SELECT_TYPE_STORAGES) {
-        optionsVariable = STORAGE_ID;
-    }
-    return {
-        id:
-            inputTypeMeta === 'auto_model'
-                ? 'auto-model-select'
-                : getIdForInput(inputType, index),
-        widget: 'select',
-        parent: {
-            id: PROMPT_CONTAINER_BLOCK_ID,
-            slot: 'children',
-        },
-        data: {
-            style: {
-                padding: '4px',
-            },
-            label: label,
-            value: '',
-            options: optionsVariable ? `{{${optionsVariable}.output}}` : [], // Added .output
-            optionLabel: optionsVariable ? 'app_name' : '',
-        },
-        listeners: {
-            onChange: [],
-        },
-        slots: {},
-    };
+	inputType: string,
+	index: number,
+	label: string,
+	inputTypeMeta: string | null,
+): Block {
+	let optionsVariable = "";
+	if (
+		inputTypeMeta === SELECT_TYPE_MODELS ||
+		inputTypeMeta === "auto_model"
+	) {
+		optionsVariable = MODELS_ID;
+	} else if (inputTypeMeta === SELECT_TYPE_VECTORS) {
+		optionsVariable = VECTORS_ID;
+	} else if (inputTypeMeta === SELECT_TYPE_DATABASES) {
+		optionsVariable = DATABASE_ID;
+	} else if (inputTypeMeta === SELECT_TYPE_STORAGES) {
+		optionsVariable = STORAGE_ID;
+	}
+	return {
+		id:
+			inputTypeMeta === "auto_model"
+				? "auto-model-select"
+				: getIdForInput(inputType, index),
+		widget: "select",
+		parent: {
+			id: PROMPT_CONTAINER_BLOCK_ID,
+			slot: "children",
+		},
+		data: {
+			style: {
+				padding: "4px",
+			},
+			label: label,
+			value: "",
+			options: optionsVariable ? `{{${optionsVariable}.output}}` : [], // Added .output
+			optionLabel: optionsVariable ? "app_name" : "",
+		},
+		listeners: {
+			onChange: {
+				type: "sync",
+				order: [],
+			},
+			preProcess: {
+				type: "sync",
+				order: [],
+			},
+		},
+		slots: {},
+	};
 }
 
 export function getBlockForInput(
-    token: Token,
-    inputType: string,
-    inputTypeMeta: string | null,
+	token: Token,
+	inputType: string,
+	inputTypeMeta: string | null,
 ): Block | null {
-    switch (inputType) {
-        case INPUT_TYPE_TEXT:
-        case INPUT_TYPE_VECTOR:
-        case INPUT_TYPE_CUSTOM_QUERY:
-            return getTextFieldInputBlock(
-                inputType,
-                token.index,
-                capitalizeLabel(token.key),
-            );
-        case INPUT_TYPE_DATABASE: {
-            const label = capitalizeLabel(token.key).includes('Query')
-                ? capitalizeLabel(token.key)
-                : `${capitalizeLabel(token.key)} Query`;
-            return getTextFieldInputBlock(inputType, token.index, label);
-        }
-        case INPUT_TYPE_SELECT:
-            return getSelectInputBlock(
-                inputType,
-                token.index,
-                capitalizeLabel(token.key),
-                inputTypeMeta,
-            );
-        default:
-            alert('Block not implemented for this input type yet.');
-            return null;
-    }
+	switch (inputType) {
+		case INPUT_TYPE_TEXT:
+		case INPUT_TYPE_VECTOR:
+		case INPUT_TYPE_CUSTOM_QUERY:
+			return getTextFieldInputBlock(
+				inputType,
+				token.index,
+				capitalizeLabel(token.key),
+				inputTypeMeta,
+			);
+		case INPUT_TYPE_DATABASE: {
+			const label = capitalizeLabel(token.key).includes("Query")
+				? capitalizeLabel(token.key)
+				: `${capitalizeLabel(token.key)} Query`;
+			return getTextFieldInputBlock(inputType, token.index, label);
+		}
+		case INPUT_TYPE_SELECT:
+			return getSelectInputBlock(
+				inputType,
+				token.index,
+				capitalizeLabel(token.key),
+			);
+		default:
+			alert("Block not implemented for this input type yet.");
+			return null;
+	}
 }
 
 export function getInputFormatPrompt(
-    tokens: Token[],
-    inputTypes: object,
+	tokens: Token[],
+	inputTypes: object,
 ): string {
-    const tokenStrings: string[] = [];
-    // compose tokens into a command
-    tokens.forEach((token: Token) => {
-        if (token.type === TOKEN_TYPE_TEXT) {
-            tokenStrings.push(token.display);
-        } else if (!token.isHiddenPhraseInputToken) {
-            // do this to preserve punctuation attached to the token from the prompt
-            const inputTokenParts = token.display.split(
-                new RegExp(`(${token.key})`),
-            );
-            // don't pass database query into the prompt itself
-            // we will just use the query results to supplement the prompt at the end
-            if (
-                inputTypes[token?.linkedInputToken ?? token.index].type ===
-                INPUT_TYPE_DATABASE
-            ) {
-                tokenStrings.push(token.display);
-            } else {
-                const keyIndex = inputTokenParts.indexOf(token.key);
-                inputTokenParts[keyIndex] = `{{${getIdForInput(
-                    token.linkedInputToken !== undefined
-                        ? inputTypes[token.linkedInputToken].type
-                        : inputTypes[token.index].type,
-                    token.linkedInputToken ?? token.index,
-                )}.value}}`;
-                tokenStrings.push(inputTokenParts.join(''));
-            }
-        }
-    });
+	const tokenStrings: string[] = [];
+	// compose tokens into a command
+	tokens.forEach((token: Token) => {
+		if (token.type === TOKEN_TYPE_TEXT) {
+			tokenStrings.push(token.display);
+		} else if (!token.isHiddenPhraseInputToken) {
+			// do this to preserve punctuation attached to the token from the prompt
+			const inputTokenParts = token.display.split(
+				new RegExp(`(${token.key})`),
+			);
+			// don't pass database query into the prompt itself
+			// we will just use the query results to supplement the prompt at the end
+			if (
+				inputTypes[token?.linkedInputToken ?? token.index].type ===
+				INPUT_TYPE_DATABASE
+			) {
+				tokenStrings.push(token.display);
+			} else {
+				const keyIndex = inputTokenParts.indexOf(token.key);
+				inputTokenParts[keyIndex] = `{{${getIdForInput(
+					token.linkedInputToken !== undefined
+						? inputTypes[token.linkedInputToken].type
+						: inputTypes[token.index].type,
+					token.linkedInputToken ?? token.index,
+				)}.value}}`;
+				tokenStrings.push(inputTokenParts.join(""));
+			}
+		}
+	});
 
-    let prompt = tokenStrings.join(' ');
-    // check if prompt ends with a period
-    // if not add it so it doesn't disrupt the "Ask based on" attachment in the function
-    if (
-        prompt[prompt.length - 1] !== '.' &&
-        prompt[prompt.length - 1] !== '!' &&
-        prompt[prompt.length - 1] !== '?'
-    ) {
-        prompt = prompt + '.';
-    }
+	let prompt = tokenStrings.join(" ");
+	// check if prompt ends with a period
+	// if not add it so it doesn't disrupt the "Ask based on" attachment in the function
+	if (
+		prompt[prompt.length - 1] !== "." &&
+		prompt[prompt.length - 1] !== "!" &&
+		prompt[prompt.length - 1] !== "?"
+	) {
+		prompt = `${prompt}.`;
+	}
 
-    return prompt;
+	return prompt;
 }
 
 function getVectorQuery() {
-    return `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int) -> str:
+	return `def runVectorSearch(search_statement:str, vector_engine_id:str, limit:int) -> str:
     from gaas_gpt_vector import VectorEngine
-    vector = VectorEngine(engine_id = vector_engine_id, insight_id = '\${i}', insight_folder = '\${if}')
+    vector = VectorEngine(engine_id = vector_engine_id)
     matches = vector.nearestNeighbor(search_statement = search_statement, limit = limit)
     return ' '.join([matchItem['Content'] for matchItem in matches])`;
 }
 
 function getCustomQuery(index: number) {
-    return `def runCustom_${index}(search_statement:str) -> str:
+	return `def runCustom_${index}(search_statement:str) -> str:
     return search_statement`;
 }
 
 function getDatabaseQuery() {
-    return `def runDatabaseQuery(query:str, database_engine_id:str) -> str:
+	return `def runDatabaseQuery(query:str, database_engine_id:str) -> str:
     from gaas_gpt_database import DatabaseEngine
-    databaseEngine = DatabaseEngine(engine_id = database_engine_id, insight_id = '\${i}')
+    databaseEngine = DatabaseEngine(engine_id = database_engine_id)
     result_df = databaseEngine.execQuery(query = query)
     return f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}"`;
 }
 
 export function getQueryForPrompt(
-    builder: Builder,
-    tokens: Token[],
-    inputTypes: object,
-    temperature = '0.7', // Added temperature parameter
+	builder: Builder,
+	tokens: Token[],
+	inputTypes: object,
+	temperature = "0.7", // Added temperature parameter
 ): Record<string, QueryStateConfig> {
-    const prompt = getInputFormatPrompt(tokens, inputTypes);
-    const llmSelection = builder.llmSelection.value as LLMSelectionType | null;
-    // filter out custom input types
-    const customInputTypes = Object.fromEntries(
-        Object.entries(inputTypes ?? {}).filter(
-            ([_, value]) =>
-                value?.type === INPUT_TYPE_VECTOR ||
-                value?.type === INPUT_TYPE_CUSTOM_QUERY ||
-                value?.type === INPUT_TYPE_DATABASE,
-        ),
-    );
+	const prompt = getInputFormatPrompt(tokens, inputTypes);
+	const llmSelection = builder.llmSelection.value as LLMSelectionType | null;
+	// filter out custom input types
+	const customInputTypes = Object.fromEntries(
+		Object.entries(inputTypes ?? {}).filter(
+			([_, value]) =>
+				value?.type === INPUT_TYPE_VECTOR ||
+				value?.type === INPUT_TYPE_CUSTOM_QUERY ||
+				value?.type === INPUT_TYPE_DATABASE,
+		),
+	);
 
-    const buildQueryDefinitionFunctionCalls = (): string => {
-        let functionCalls = '';
-        Object.keys(customInputTypes).forEach(
-            (customInputTokenIndex, index: number) => {
-                if (
-                    customInputTypes[customInputTokenIndex]?.type ===
-                    INPUT_TYPE_VECTOR
-                ) {
-                    functionCalls += `
+	const buildQueryDefinitionFunctionCalls = (): string => {
+		let functionCalls = "";
+		Object.keys(customInputTypes).forEach(
+			(customInputTokenIndex, index: number) => {
+				if (
+					customInputTypes[customInputTokenIndex]?.type ===
+					INPUT_TYPE_VECTOR
+				) {
+					functionCalls += `
     ${customInputTypes[customInputTokenIndex].type}_${index} = runVectorSearch(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement,"${customInputTypes[customInputTokenIndex]?.meta}",limit)
 `;
-                }
-                if (
-                    customInputTypes[customInputTokenIndex]?.type ===
-                    INPUT_TYPE_CUSTOM_QUERY
-                ) {
-                    functionCalls += `
+				}
+				if (
+					customInputTypes[customInputTokenIndex]?.type ===
+					INPUT_TYPE_CUSTOM_QUERY
+				) {
+					functionCalls += `
     ${customInputTypes[customInputTokenIndex].type}_${index} = runCustom_${index}(${customInputTypes[customInputTokenIndex]?.type}_${index}_statement)
 `;
-                }
-                if (
-                    customInputTypes[customInputTokenIndex]?.type ===
-                    INPUT_TYPE_DATABASE
-                ) {
-                    functionCalls += `
+				}
+				if (
+					customInputTypes[customInputTokenIndex]?.type ===
+					INPUT_TYPE_DATABASE
+				) {
+					functionCalls += `
     ${customInputTypes[customInputTokenIndex].type}_${index} = runDatabaseQuery(${customInputTypes[customInputTokenIndex]?.type}_${index}_query,"${customInputTypes[customInputTokenIndex]?.meta}")
 `;
-                }
-            },
-        );
-        return functionCalls;
-    };
+				}
+			},
+		);
+		return functionCalls;
+	};
 
-    const buildQueryDefinitionPromptStatement = (): string => {
-        let promptQueryFunctionString = `prompt = search_statement`;
-        if (
-            Object.values(customInputTypes).some(
-                (inputType) =>
-                    inputType?.type === INPUT_TYPE_VECTOR ||
-                    inputType?.type === INPUT_TYPE_CUSTOM_QUERY,
-            )
-        ) {
-            promptQueryFunctionString += ` + ' Ask based on ' + ${Object.keys(
-                customInputTypes,
-            )
-                .filter(
-                    (customInputTokenIndex) =>
-                        customInputTypes[customInputTokenIndex].type ===
-                            INPUT_TYPE_VECTOR ||
-                        customInputTypes[customInputTokenIndex].type ===
-                            INPUT_TYPE_CUSTOM_QUERY,
-                )
-                .map((customInputTokenIndex, index: number) => {
-                    return `${customInputTypes[customInputTokenIndex].type}_${index}`;
-                })
-                .join(` + ' and ' + `)} + '.'`;
-        }
-        if (
-            Object.values(customInputTypes).some(
-                (inputType) => inputType?.type === INPUT_TYPE_DATABASE,
-            )
-        ) {
-            promptQueryFunctionString += ` + ${Object.keys(customInputTypes)
-                .filter(
-                    (customInputTokenIndex) =>
-                        customInputTypes[customInputTokenIndex].type ===
-                        INPUT_TYPE_DATABASE,
-                )
-                .map((customInputTokenIndex, index: number) => {
-                    return `' ' + ${customInputTypes[customInputTokenIndex].type}_${index}`;
-                })
-                .join(` + `)}`;
-        }
-        promptQueryFunctionString += ` + ' Format the result as markdown.'`;
-        return promptQueryFunctionString;
-    };
+	const buildQueryDefinitionPromptStatement = (): string => {
+		let promptQueryFunctionString = `prompt = search_statement`;
+		if (
+			Object.values(customInputTypes).some(
+				(inputType) =>
+					inputType?.type === INPUT_TYPE_VECTOR ||
+					inputType?.type === INPUT_TYPE_CUSTOM_QUERY,
+			)
+		) {
+			promptQueryFunctionString += ` + ' Ask based on ' + ${Object.keys(
+				customInputTypes,
+			)
+				.filter(
+					(customInputTokenIndex) =>
+						customInputTypes[customInputTokenIndex].type ===
+							INPUT_TYPE_VECTOR ||
+						customInputTypes[customInputTokenIndex].type ===
+							INPUT_TYPE_CUSTOM_QUERY,
+				)
+				.map((customInputTokenIndex, index: number) => {
+					return `${customInputTypes[customInputTokenIndex].type}_${index}`;
+				})
+				.join(` + ' and ' + `)} + '.'`;
+		}
+		if (
+			Object.values(customInputTypes).some(
+				(inputType) => inputType?.type === INPUT_TYPE_DATABASE,
+			)
+		) {
+			promptQueryFunctionString += ` + ${Object.keys(customInputTypes)
+				.filter(
+					(customInputTokenIndex) =>
+						customInputTypes[customInputTokenIndex].type ===
+						INPUT_TYPE_DATABASE,
+				)
+				.map((customInputTokenIndex, index: number) => {
+					return `' ' + ${customInputTypes[customInputTokenIndex].type}_${index}`;
+				})
+				.join(` + `)}`;
+		}
+		promptQueryFunctionString += ` + ' Format the result as markdown.'`;
+		return promptQueryFunctionString;
+	};
 
-    const engineIdValue =
-        llmSelection === LLMSelectionType.USER_INPUT
-            ? '{{auto-model-select.value}}'
-            : '{{Model}}';
+	const engineIdValue =
+		llmSelection === LLMSelectionType.USER_INPUT
+			? "{{auto-model-select.value}}"
+			: "{{Model}}";
 
-    const queryDefinition = `def promptQuery(search_statement:str, ${Object.keys(
-        customInputTypes,
-    )
-        .map((customInputTokenIndex, index: number) => {
-            return `${customInputTypes[customInputTokenIndex]?.type}_${index}_${
-                customInputTypes[customInputTokenIndex]?.type ===
-                INPUT_TYPE_DATABASE
-                    ? 'query'
-                    : 'statement'
-            }:str`;
-        })
-        .join(', ')}${
-        Object.keys(customInputTypes).length ? ', ' : ''
-    }limit = 5) -> str:
+	const queryDefinition = `def promptQuery(search_statement:str, ${Object.keys(
+		customInputTypes,
+	)
+		.map((customInputTokenIndex, index: number) => {
+			return `${customInputTypes[customInputTokenIndex]?.type}_${index}_${
+				customInputTypes[customInputTokenIndex]?.type ===
+				INPUT_TYPE_DATABASE
+					? "query"
+					: "statement"
+			}:str`;
+		})
+		.join(", ")}${
+		Object.keys(customInputTypes).length ? ", " : ""
+	}limit = 5) -> str:
     import json
     from gaas_gpt_model import ModelEngine
     model = ModelEngine(engine_id = "${engineIdValue}", insight_id = '\${i}', temperature = ${temperature})
     ${buildQueryDefinitionFunctionCalls()}
     ${buildQueryDefinitionPromptStatement()}
     response = model.ask(question = prompt)
-    return json.dumps(response[0]['response'])
+    return (response[0]['response'])
 `;
-    // Triple quotes allow for multiline prompts
-    const query = `promptQuery("""${prompt}"""${
-        Object.keys(customInputTypes).length ? ', ' : ''
-    }${Object.keys(customInputTypes)
-        .map((customInputTokenIndex) => {
-            return `"{{${getIdForInput(
-                customInputTypes[customInputTokenIndex].type,
-                parseInt(customInputTokenIndex),
-            )}.value}}"`;
-        })
-        .join(', ')})`;
+	// Triple quotes allow for multiline prompts
+	const query = `promptQuery("""${prompt}"""${
+		Object.keys(customInputTypes).length ? ", " : ""
+	}${Object.keys(customInputTypes)
+		.map((customInputTokenIndex) => {
+			return `"{{${getIdForInput(
+				customInputTypes[customInputTokenIndex].type,
+				parseInt(customInputTokenIndex),
+			)}.value}}"`;
+		})
+		.join(", ")})`;
 
-    const queryDefinitionCells = [
-        {
-            id: 'py-prompt-query-definition',
-            widget: 'code',
-            parameters: {
-                type: 'py',
-                code: queryDefinition,
-            },
-        },
-    ];
+	const queryDefinitionCells = [
+		{
+			id: "py-prompt-query-definition",
+			widget: "code",
+			parameters: {
+				type: "py",
+				code: queryDefinition,
+			},
+		},
+	];
 
-    // Need models if using USER_INPUT LLM selection
-    const needsModels = llmSelection === LLMSelectionType.USER_INPUT;
+	// Need models if using USER_INPUT LLM selection
+	const needsModels = llmSelection === LLMSelectionType.USER_INPUT;
 
-    const needsVectors = Object.values(inputTypes ?? {}).some(
-        (inputType) =>
-            inputType.type === INPUT_TYPE_SELECT &&
-            inputType.meta === SELECT_TYPE_VECTORS,
-    );
+	const needsVectors = Object.values(inputTypes ?? {}).some(
+		(inputType) =>
+			inputType.type === INPUT_TYPE_SELECT &&
+			inputType.meta === SELECT_TYPE_VECTORS,
+	);
 
-    const needsStorages = Object.values(inputTypes ?? {}).some(
-        (inputType) =>
-            inputType.type === INPUT_TYPE_SELECT &&
-            inputType.meta === SELECT_TYPE_STORAGES,
-    );
-    const needsDatabases = Object.values(inputTypes ?? {}).some(
-        (inputType) =>
-            inputType.type === INPUT_TYPE_SELECT &&
-            inputType.meta === SELECT_TYPE_DATABASES,
-    );
+	const needsStorages = Object.values(inputTypes ?? {}).some(
+		(inputType) =>
+			inputType.type === INPUT_TYPE_SELECT &&
+			inputType.meta === SELECT_TYPE_STORAGES,
+	);
+	const needsDatabases = Object.values(inputTypes ?? {}).some(
+		(inputType) =>
+			inputType.type === INPUT_TYPE_SELECT &&
+			inputType.meta === SELECT_TYPE_DATABASES,
+	);
 
-    Object.keys(customInputTypes).forEach(
-        (customInputTokenIndex, index: number) => {
-            if (
-                customInputTypes[customInputTokenIndex]?.type ===
-                INPUT_TYPE_CUSTOM_QUERY
-            ) {
-                queryDefinitionCells.unshift({
-                    id: `py-custom-query-${tokens[customInputTokenIndex].key}-definition`,
-                    widget: 'code',
-                    parameters: {
-                        type: 'py',
-                        code: getCustomQuery(index),
-                    },
-                });
-            }
-        },
-    );
-    if (
-        Object.values(customInputTypes).some(
-            (inputType) => inputType?.type === INPUT_TYPE_VECTOR,
-        )
-    ) {
-        queryDefinitionCells.unshift({
-            id: 'py-vector-search-query-definition',
-            widget: 'code',
-            parameters: {
-                type: 'py',
-                code: getVectorQuery(),
-            },
-        });
-    }
-    if (
-        Object.values(customInputTypes).some(
-            (inputType) => inputType?.type === INPUT_TYPE_DATABASE,
-        )
-    ) {
-        queryDefinitionCells.unshift({
-            id: 'py-database-query-definition',
-            widget: 'code',
-            parameters: {
-                type: 'py',
-                code: getDatabaseQuery(),
-            },
-        });
-    }
+	Object.keys(customInputTypes).forEach(
+		(customInputTokenIndex, index: number) => {
+			if (
+				customInputTypes[customInputTokenIndex]?.type ===
+				INPUT_TYPE_CUSTOM_QUERY
+			) {
+				queryDefinitionCells.unshift({
+					id: `py-custom-query-${tokens[customInputTokenIndex].key}-definition`,
+					widget: "code",
+					parameters: {
+						type: "py",
+						code: getCustomQuery(index),
+					},
+				});
+			}
+		},
+	);
+	if (
+		Object.values(customInputTypes).some(
+			(inputType) => inputType?.type === INPUT_TYPE_VECTOR,
+		)
+	) {
+		queryDefinitionCells.unshift({
+			id: "py-vector-search-query-definition",
+			widget: "code",
+			parameters: {
+				type: "py",
+				code: getVectorQuery(),
+			},
+		});
+	}
+	if (
+		Object.values(customInputTypes).some(
+			(inputType) => inputType?.type === INPUT_TYPE_DATABASE,
+		)
+	) {
+		queryDefinitionCells.unshift({
+			id: "py-database-query-definition",
+			widget: "code",
+			parameters: {
+				type: "py",
+				code: getDatabaseQuery(),
+			},
+		});
+	}
 
-    const queryJson: Record<string, QueryStateConfig> = {
-        [PROMPT_QUERY_DEFINITION_ID]: {
-            id: PROMPT_QUERY_DEFINITION_ID,
-            cells: queryDefinitionCells,
-        },
-        [PROMPT_QUERY_ID]: {
-            id: PROMPT_QUERY_ID,
-            cells: [
-                {
-                    id: 'py-query',
-                    widget: 'code',
-                    parameters: {
-                        type: 'py',
-                        code: query,
-                    },
-                },
-            ],
-        },
-    };
+	const queryJson: Record<string, QueryStateConfig> = {
+		[PROMPT_QUERY_DEFINITION_ID]: {
+			id: PROMPT_QUERY_DEFINITION_ID,
+			cells: queryDefinitionCells,
+		},
+		[PROMPT_QUERY_ID]: {
+			id: PROMPT_QUERY_ID,
+			cells: [
+				{
+					id: "py-query",
+					widget: "code",
+					parameters: {
+						type: "py",
+						code: query,
+					},
+				},
+			],
+		},
+	};
 
-    // If we need any engine types, create the MyEngines notebook
-    if (needsModels || needsVectors || needsStorages || needsDatabases) {
-        queryJson[PROMPT_MY_ENGINES_ID] = {
-            id: PROMPT_MY_ENGINES_ID,
-            cells: [],
-        };
+	// If we need any engine types, create the MyEngines notebook
+	if (needsModels || needsVectors || needsStorages || needsDatabases) {
+		queryJson[PROMPT_MY_ENGINES_ID] = {
+			id: PROMPT_MY_ENGINES_ID,
+			cells: [],
+		};
 
-        // Add cells for each needed engine type
-        if (needsModels) {
-            queryJson[PROMPT_MY_ENGINES_ID].cells.push({
-                id: MODELS_CELL_ID,
-                widget: 'code',
-                parameters: {
-                    type: 'pixel',
-                    code: "MyEngines(engineTypes=['MODEL']);",
-                },
-            });
-        }
+		// Add cells for each needed engine type
+		if (needsModels) {
+			queryJson[PROMPT_MY_ENGINES_ID].cells.push({
+				id: MODELS_CELL_ID,
+				widget: "code",
+				parameters: {
+					type: "pixel",
+					code: "MyEngines(engineTypes=['MODEL']);",
+				},
+			});
+		}
 
-        if (needsVectors) {
-            queryJson[PROMPT_MY_ENGINES_ID].cells.push({
-                id: VECTORS_CELL_ID,
-                widget: 'code',
-                parameters: {
-                    type: 'pixel',
-                    code: "MyEngines(engineTypes=['VECTOR']);",
-                },
-            });
-        }
+		if (needsVectors) {
+			queryJson[PROMPT_MY_ENGINES_ID].cells.push({
+				id: VECTORS_CELL_ID,
+				widget: "code",
+				parameters: {
+					type: "pixel",
+					code: "MyEngines(engineTypes=['VECTOR']);",
+				},
+			});
+		}
 
-        if (needsStorages) {
-            queryJson[PROMPT_MY_ENGINES_ID].cells.push({
-                id: STORAGE_CELL_ID,
-                widget: 'code',
-                parameters: {
-                    type: 'pixel',
-                    code: "MyEngines(engineTypes=['STORAGE']);",
-                },
-            });
-        }
+		if (needsStorages) {
+			queryJson[PROMPT_MY_ENGINES_ID].cells.push({
+				id: STORAGE_CELL_ID,
+				widget: "code",
+				parameters: {
+					type: "pixel",
+					code: "MyEngines(engineTypes=['STORAGE']);",
+				},
+			});
+		}
 
-        if (needsDatabases) {
-            queryJson[PROMPT_MY_ENGINES_ID].cells.push({
-                id: DATABASE_CELL_ID,
-                widget: 'code',
-                parameters: {
-                    type: 'pixel',
-                    code: "MyEngines(engineTypes=['DATABASE']);",
-                },
-            });
-        }
-    }
+		if (needsDatabases) {
+			queryJson[PROMPT_MY_ENGINES_ID].cells.push({
+				id: DATABASE_CELL_ID,
+				widget: "code",
+				parameters: {
+					type: "pixel",
+					code: "MyEngines(engineTypes=['DATABASE']);",
+				},
+			});
+		}
+	}
 
-    return queryJson;
+	return queryJson;
 }
 
 export async function setBlocksAndOpenUIBuilder(
-    builder: Builder,
-    monolithStore: MonolithStore,
-    navigate: (route: string) => void,
+	builder: Builder,
+	monolithStore: MonolithStore,
+	navigate: (route: string) => void,
 ) {
-    // Get the temperature value and llmselection status
-    const temperature = String(builder.temperature?.value ?? '0.7');
-    const llmSelection = builder.llmSelection.value as LLMSelectionType | null;
-    const needsModels = llmSelection === LLMSelectionType.USER_INPUT;
+	// Get the temperature value and llmselection status
+	const temperature = String(builder.temperature?.value ?? "0.7");
+	const llmSelection = builder.llmSelection.value as LLMSelectionType | null;
+	const needsModels = llmSelection === LLMSelectionType.USER_INPUT;
 
-    const needsVectors = Object.values(builder.inputTypes.value as object).some(
-        (inputType) =>
-            inputType.type === INPUT_TYPE_SELECT &&
-            inputType.meta === SELECT_TYPE_VECTORS,
-    );
+	const needsVectors = Object.values(builder.inputTypes.value as object).some(
+		(inputType) =>
+			inputType.type === INPUT_TYPE_SELECT &&
+			inputType.meta === SELECT_TYPE_VECTORS,
+	);
 
-    const needsStorages = Object.values(
-        builder.inputTypes.value as object,
-    ).some(
-        (inputType) =>
-            inputType.type === INPUT_TYPE_SELECT &&
-            inputType.meta === SELECT_TYPE_STORAGES,
-    );
-    const needsDatabases = Object.values(
-        builder.inputTypes.value as object,
-    ).some(
-        (inputType) =>
-            inputType.type === INPUT_TYPE_SELECT &&
-            inputType.meta === SELECT_TYPE_DATABASES,
-    );
+	const needsStorages = Object.values(
+		builder.inputTypes.value as object,
+	).some(
+		(inputType) =>
+			inputType.type === INPUT_TYPE_SELECT &&
+			inputType.meta === SELECT_TYPE_STORAGES,
+	);
+	const needsDatabases = Object.values(
+		builder.inputTypes.value as object,
+	).some(
+		(inputType) =>
+			inputType.type === INPUT_TYPE_SELECT &&
+			inputType.meta === SELECT_TYPE_DATABASES,
+	);
 
-    // create the state
-    const state: SerializedState = {
-        version: '1.0.0-alpha.4',
-        executionOrder: [],
-        variables: {
-            [PROMPT_QUERY_DEFINITION_ID]: {
-                type: 'query',
-                to: PROMPT_QUERY_DEFINITION_ID,
-                isOutput: true,
-                isInput: false,
-            },
-            [PROMPT_QUERY_ID]: {
-                type: 'query',
-                to: PROMPT_QUERY_ID,
-                isOutput: true,
-                isInput: false,
-            },
-            [MODEL_ID]: {
-                type: 'model',
-                value: builder.model.value,
-                isOutput: false,
-                isInput: true,
-            },
-            ...(needsModels && {
-                [MODELS_ID]: {
-                    type: 'cell',
-                    cellId: MODELS_CELL_ID,
-                    to: PROMPT_MY_ENGINES_ID,
-                },
-            }),
-            ...(needsVectors && {
-                [VECTORS_ID]: {
-                    type: 'cell',
-                    cellId: VECTORS_CELL_ID,
-                    to: PROMPT_MY_ENGINES_ID,
-                },
-            }),
-            ...(needsStorages && {
-                [STORAGE_ID]: {
-                    type: 'cell',
-                    cellId: STORAGE_CELL_ID,
-                    to: PROMPT_MY_ENGINES_ID,
-                },
-            }),
-            ...(needsDatabases && {
-                [DATABASE_ID]: {
-                    type: 'cell',
-                    cellId: DATABASE_CELL_ID,
-                    to: PROMPT_MY_ENGINES_ID,
-                },
-            }),
-        },
-        queries: {},
-        blocks: {
-            'page-1': {
-                id: 'page-1',
-                widget: 'page',
-                parent: null,
-                data: {
-                    route: '',
-                    style: {
-                        fontFamily: 'roboto',
-                    },
-                    loading: `{{${PROMPT_QUERY_DEFINITION_ID}.isLoading}}`,
-                },
-                listeners: {
-                    onPageLoad: [
-                        {
-                            message: ActionMessages.RUN_QUERY,
-                            payload: {
-                                queryId: PROMPT_QUERY_DEFINITION_ID,
-                            },
-                        },
-                        // If needed, also run Models/Vectors queries
-                        ...(needsModels ||
-                        needsVectors ||
-                        needsStorages ||
-                        needsDatabases
-                            ? [
-                                  {
-                                      message:
-                                          ActionMessages.RUN_QUERY as ActionMessages.RUN_QUERY,
-                                      payload: {
-                                          queryId: PROMPT_MY_ENGINES_ID,
-                                      },
-                                  },
-                              ]
-                            : []),
-                    ],
-                },
-                slots: {
-                    content: {
-                        name: 'content',
-                        children: [
-                            DESCRIPTION_CONTAINER,
-                            PROMPT_CONTAINER_BLOCK_ID,
-                        ],
-                    },
-                },
-            },
-            [DESCRIPTION_CONTAINER]: {
-                id: DESCRIPTION_CONTAINER,
-                widget: 'container',
-                parent: {
-                    id: 'page-1',
-                    slot: 'content',
-                },
-                data: {
-                    style: {
-                        display: 'flex',
-                        flexDirection: 'column',
-                        flexWrap: 'wrap',
-                        padding: '24px',
-                        gap: '8px',
-                    },
-                },
-                listeners: {},
-                slots: {
-                    children: {
-                        name: 'children',
-                        children: [APP_TITLE_BLOCK_ID, HELP_TEXT_BLOCK_ID],
-                    },
-                },
-            },
-            [APP_TITLE_BLOCK_ID]: {
-                id: APP_TITLE_BLOCK_ID,
-                widget: 'text',
-                parent: {
-                    id: DESCRIPTION_CONTAINER,
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        fontSize: '2.5rem',
-                        textAlign: 'center',
-                        padding: '4px',
-                    },
-                    text: 'My App',
-                },
-                listeners: {},
-                slots: {},
-            },
-            [HELP_TEXT_BLOCK_ID]: {
-                id: HELP_TEXT_BLOCK_ID,
-                widget: 'text',
-                parent: {
-                    id: DESCRIPTION_CONTAINER,
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        textAlign: 'center',
-                        padding: '4px',
-                    },
-                    text: 'Welcome! Below are pre-configured blocks for your prompt inputs to use in your app.',
-                },
-                listeners: {},
-                slots: {},
-            },
-            [PROMPT_CONTAINER_BLOCK_ID]: {
-                id: PROMPT_CONTAINER_BLOCK_ID,
-                widget: 'container',
-                parent: {
-                    id: 'page-1',
-                    slot: 'content',
-                },
-                data: {
-                    style: {
-                        display: 'flex',
-                        flexDirection: 'column',
-                        flexWrap: 'wrap',
-                        padding: '24px',
-                        gap: '8px',
-                    },
-                },
-                listeners: {},
-                slots: {
-                    children: {
-                        name: 'children',
-                        children: [
-                            PROMPT_SUBMIT_BLOCK_ID,
-                            PROMPT_RESPONSE_BLOCK_ID,
-                        ],
-                    },
-                },
-            },
-            [PROMPT_SUBMIT_BLOCK_ID]: {
-                id: PROMPT_SUBMIT_BLOCK_ID,
-                widget: 'button',
-                parent: {
-                    id: PROMPT_CONTAINER_BLOCK_ID,
-                    slot: 'children',
-                },
-                data: {
-                    style: {},
-                    label: 'Submit',
-                    loading: `{{${PROMPT_QUERY_ID}.isLoading}}`,
-                    variant: 'contained',
-                },
-                listeners: {
-                    onClick: [
-                        {
-                            message: ActionMessages.RUN_QUERY,
-                            payload: {
-                                queryId: PROMPT_QUERY_ID,
-                            },
-                        },
-                    ],
-                },
-                slots: {},
-            },
-            [PROMPT_RESPONSE_BLOCK_ID]: {
-                id: PROMPT_RESPONSE_BLOCK_ID,
-                widget: 'markdown',
-                parent: {
-                    id: PROMPT_CONTAINER_BLOCK_ID,
-                    slot: 'children',
-                },
-                data: {
-                    style: {
-                        padding: '4px',
-                    },
-                    markdown: `{{${PROMPT_QUERY_ID}.output}}`,
-                },
-                listeners: {},
-                slots: {},
-            },
-        },
-    };
+	// create the state
+	const state: SerializedState = {
+		version: "1.0.0-alpha.7",
+		executionOrder: [],
+		variables: {
+			[PROMPT_QUERY_DEFINITION_ID]: {
+				type: "query",
+				to: PROMPT_QUERY_DEFINITION_ID,
+			},
+			[PROMPT_QUERY_ID]: {
+				type: "query",
+				to: PROMPT_QUERY_ID,
+			},
+			[MODEL_ID]: {
+				type: "model",
+				value: builder.model.value,
+			},
+			...(needsModels && {
+				[MODELS_ID]: {
+					type: "cell",
+					cellId: MODELS_CELL_ID,
+					to: PROMPT_MY_ENGINES_ID,
+				},
+			}),
+			...(needsVectors && {
+				[VECTORS_ID]: {
+					type: "cell",
+					cellId: VECTORS_CELL_ID,
+					to: PROMPT_MY_ENGINES_ID,
+				},
+			}),
+			...(needsStorages && {
+				[STORAGE_ID]: {
+					type: "cell",
+					cellId: STORAGE_CELL_ID,
+					to: PROMPT_MY_ENGINES_ID,
+				},
+			}),
+			...(needsDatabases && {
+				[DATABASE_ID]: {
+					type: "cell",
+					cellId: DATABASE_CELL_ID,
+					to: PROMPT_MY_ENGINES_ID,
+				},
+			}),
+		},
+		queries: {},
+		blocks: {
+			"page-1": {
+				id: "page-1",
+				widget: "page",
+				parent: null,
+				data: {
+					route: "",
+					style: {
+						fontFamily: "roboto",
+					},
+					loading: `{{${PROMPT_QUERY_DEFINITION_ID}.isLoading}}`,
+				},
+				listeners: {
+					onPageLoad: {
+						type: "sync",
+						order: [
+							{
+								message: ActionMessages.RUN_QUERY,
+								payload: {
+									queryId: PROMPT_QUERY_DEFINITION_ID,
+								},
+							},
+							// If needed, also run Models/Vectors queries
+							...(needsModels ||
+							needsVectors ||
+							needsStorages ||
+							needsDatabases
+								? [
+										{
+											message:
+												ActionMessages.RUN_QUERY as ActionMessages.RUN_QUERY,
+											payload: {
+												queryId: PROMPT_MY_ENGINES_ID,
+											},
+										},
+									]
+								: []),
+						],
+					},
+				},
+				slots: {
+					content: {
+						name: "content",
+						children: [
+							DESCRIPTION_CONTAINER,
+							PROMPT_CONTAINER_BLOCK_ID,
+						],
+					},
+				},
+			},
+			[DESCRIPTION_CONTAINER]: {
+				id: DESCRIPTION_CONTAINER,
+				widget: "container",
+				parent: {
+					id: "page-1",
+					slot: "content",
+				},
+				data: {
+					style: {
+						display: "flex",
+						flexDirection: "column",
+						flexWrap: "wrap",
+						padding: "24px",
+						gap: "8px",
+					},
+				},
+				listeners: {
+					preProcess: {
+						type: "sync",
+						order: [],
+					},
+				},
+				slots: {
+					children: {
+						name: "children",
+						children: [APP_TITLE_BLOCK_ID, HELP_TEXT_BLOCK_ID],
+					},
+				},
+			},
+			[APP_TITLE_BLOCK_ID]: {
+				id: APP_TITLE_BLOCK_ID,
+				widget: "text",
+				parent: {
+					id: DESCRIPTION_CONTAINER,
+					slot: "children",
+				},
+				data: {
+					style: {
+						fontSize: "2.5rem",
+						textAlign: "center",
+						padding: "4px",
+					},
+					text: "My App",
+				},
+				listeners: {
+					preProcess: {
+						type: "sync",
+						order: [],
+					},
+				},
+				slots: {},
+			},
+			[HELP_TEXT_BLOCK_ID]: {
+				id: HELP_TEXT_BLOCK_ID,
+				widget: "text",
+				parent: {
+					id: DESCRIPTION_CONTAINER,
+					slot: "children",
+				},
+				data: {
+					style: {
+						textAlign: "center",
+						padding: "4px",
+					},
+					text: "Welcome! Below are pre-configured blocks for your prompt inputs to use in your app.",
+				},
+				listeners: {
+					preProcess: {
+						type: "sync",
+						order: [],
+					},
+				},
+				slots: {},
+			},
+			[PROMPT_CONTAINER_BLOCK_ID]: {
+				id: PROMPT_CONTAINER_BLOCK_ID,
+				widget: "container",
+				parent: {
+					id: "page-1",
+					slot: "content",
+				},
+				data: {
+					style: {
+						display: "flex",
+						flexDirection: "column",
+						flexWrap: "wrap",
+						padding: "24px",
+						gap: "8px",
+					},
+				},
+				listeners: {
+					preProcess: {
+						type: "sync",
+						order: [],
+					},
+				},
+				slots: {
+					children: {
+						name: "children",
+						children: [
+							PROMPT_SUBMIT_BLOCK_ID,
+							PROMPT_RESPONSE_BLOCK_ID,
+						],
+					},
+				},
+			},
+			[PROMPT_SUBMIT_BLOCK_ID]: {
+				id: PROMPT_SUBMIT_BLOCK_ID,
+				widget: "button",
+				parent: {
+					id: PROMPT_CONTAINER_BLOCK_ID,
+					slot: "children",
+				},
+				data: {
+					style: {},
+					label: "Submit",
+					loading: `{{${PROMPT_QUERY_ID}.isLoading}}`,
+					variant: "contained",
+				},
+				listeners: {
+					onClick: {
+						type: "sync",
+						order: [
+							{
+								message: ActionMessages.RUN_QUERY,
+								payload: {
+									queryId: PROMPT_QUERY_ID,
+								},
+							},
+						],
+					},
+					preProcess: {
+						type: "sync",
+						order: [],
+					},
+				},
+				slots: {},
+			},
+			[PROMPT_RESPONSE_BLOCK_ID]: {
+				id: PROMPT_RESPONSE_BLOCK_ID,
+				widget: "markdown",
+				parent: {
+					id: PROMPT_CONTAINER_BLOCK_ID,
+					slot: "children",
+				},
+				data: {
+					style: {
+						padding: "4px",
+					},
+					markdown: `{{${PROMPT_QUERY_ID}.output}}`,
+				},
+				listeners: {
+					preProcess: {
+						type: "sync",
+						order: [],
+					},
+				},
+				slots: {},
+			},
+		},
+	};
 
-    // updat the title
-    state.blocks[APP_TITLE_BLOCK_ID].data.text = builder.title.value;
+	// updat the title
+	state.blocks[APP_TITLE_BLOCK_ID].data.text = builder.title.value;
 
-    // inputs
-    let childInputIds = [];
+	// inputs
+	let childInputIds = [];
 
-    // Add auto model select if using USER_INPUT
-    if (llmSelection === LLMSelectionType.USER_INPUT) {
-        const modelSelectBlock = getSelectInputBlock(
-            'select',
-            -1,
-            'Select Model',
-            'auto_model',
-        );
-        childInputIds.push('auto-model-select');
-        state.blocks['auto-model-select'] = modelSelectBlock;
+	// Add auto model select if using USER_INPUT
+	if (llmSelection === LLMSelectionType.USER_INPUT) {
+		const modelSelectBlock = getSelectInputBlock(
+			"select",
+			-1,
+			"Select Model",
+			"auto_model",
+		);
+		childInputIds.push("auto-model-select");
+		state.blocks["auto-model-select"] = modelSelectBlock;
 
-        state.variables['auto-model-select'] = {
-            type: 'block',
-            to: 'auto-model-select',
-            isInput: true,
-            isOutput: false,
-        };
-    }
+		state.variables["auto-model-select"] = {
+			type: "block",
+			to: "auto-model-select",
+			isInput: true,
+			isOutput: false,
+		};
+	}
 
-    for (const [tokenIndex, inputType] of Object.entries(
-        (builder.inputTypes.value as object) ?? {},
-    )) {
-        const token = builder.inputs.value[tokenIndex] as Token;
-        const inputBlock = getBlockForInput(
-            token,
-            inputType.type,
-            inputType.meta,
-        );
-        if (inputBlock) {
-            childInputIds = [...childInputIds, inputBlock.id];
-            state.blocks = { ...state.blocks, [inputBlock.id]: inputBlock };
+	for (const [tokenIndex, inputType] of Object.entries(
+		(builder.inputTypes.value as object) ?? {},
+	)) {
+		const token = builder.inputs.value[tokenIndex] as Token;
+		const inputBlock = getBlockForInput(
+			token,
+			inputType.type,
+			inputType.meta,
+		);
+		if (inputBlock) {
+			childInputIds = [...childInputIds, inputBlock.id];
+			state.blocks = { ...state.blocks, [inputBlock.id]: inputBlock };
 
-            // for each input add a variable
-            const inputId = getIdForInput(inputType.type, token.index);
+			// for each input add a variable
+			const inputId = getIdForInput(inputType.type, token.index);
 
-            state.variables[inputId] = {
-                type: 'block',
-                to: inputId,
-                isInput: true,
-                isOutput: false,
-            };
-        }
-    }
+			state.variables[inputId] = {
+				type: "block",
+				to: inputId,
+			};
+		}
+	}
 
-    // submit
-    state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children = [
-        ...childInputIds,
-        ...state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
-    ];
+	// submit
+	state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children = [
+		...childInputIds,
+		...state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
+	];
 
-    state.queries = getQueryForPrompt(
-        builder,
-        builder.inputs.value as Token[],
-        builder.inputTypes.value as object,
-        temperature, // Pass temperature to query generation
-    );
+	state.queries = getQueryForPrompt(
+		builder,
+		builder.inputs.value as Token[],
+		builder.inputTypes.value as object,
+		temperature, // Pass temperature to query generation
+	);
 
-    const pixel = `CreateAppFromBlocks ( project = [ "${
-        builder.title.value
-    }" ] , json =["<encode>${JSON.stringify(state)}</encode>"]  ) ;`;
+	const pixel = `CreateAppFromBlocks ( project = [ "${
+		builder.title.value
+	}" ] , json =["<encode>${JSON.stringify(state)}</encode>"]  ) ;`;
 
-    // create the app
-    const { errors, pixelReturn } = await monolithStore.runQuery<[AppMetadata]>(
-        pixel,
-    );
+	// create the app
+	const { errors, pixelReturn } =
+		await monolithStore.runQuery<[AppMetadata]>(pixel);
 
-    if (errors.length > 0) {
-        throw new Error(errors.join(','));
-    }
+	if (errors.length > 0) {
+		throw new Error(errors.join(","));
+	}
 
-    const appId = pixelReturn[0].output.project_id;
+	const appId = pixelReturn[0].output.project_id;
 
-    await monolithStore.runQuery(
-        `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify({
-            tag: builder.tags.value,
-            description: builder.context.value,
-            llmSelection,
-            ...(llmSelection === LLMSelectionType.DEFAULT && {
-                model: builder.model.value,
-                temperature,
-            }),
-        })}])`,
-    );
+	await monolithStore.runQuery(
+		`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify({
+			description: builder.context.value,
+			llmSelection,
+			...(llmSelection === LLMSelectionType.DEFAULT && {
+				model: builder.model.value,
+				temperature,
+			}),
+		})}])`,
+	);
 
-    navigate(`/app/${appId}`);
+	navigate(`/app/${appId}/view`);
 }

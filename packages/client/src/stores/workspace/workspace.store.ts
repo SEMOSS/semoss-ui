@@ -1,479 +1,354 @@
-import { makeAutoObservable, reaction } from 'mobx';
-
-import { Role } from '@/types';
-import { RootStore, WorkspaceOptions } from '@/stores';
-
-import { AppMetadata } from '@/components/app';
-import { Model } from 'flexlayout-react';
+import { makeAutoObservable } from "mobx";
+import { runPixel } from "@semoss/sdk/react";
+import type { AppMetadata } from "@/components/app";
+import { FlexLayout } from "@/components/flex-layout";
+import type { RootStore, WorkspaceOptions } from "@/stores";
+import type { Role } from "@/types";
 
 export interface WorkspaceStoreInterface {
-    /**
-     * ID of App
-     */
-    appId: string;
+	/**
+	 * ID of App
+	 */
+	appId: string;
 
-    /**
-     * Show Loading or not
-     */
-    isLoading: boolean;
+	/**
+	 * ID of Workspace Insight
+	 */
+	insightId: string;
 
-    /**
-     * User's role relative to the app
-     */
-    role: Role;
+	/**
+	 * Show Loading or not
+	 */
+	isLoading: boolean;
 
-    /**
-     * Metadata associated with the loaded app
-     */
-    metadata: AppMetadata;
+	/**
+	 * User's role relative to the app
+	 */
+	role: Role;
 
-    /**
-     * Optional Model Engine to use
-     */
-    agentModelEngine: string;
+	/**
+	 * Metadata associated with the loaded app
+	 */
+	metadata: AppMetadata;
 
-    /**
-     * Type of the app
-     */
-    type: 'BLOCKS' | 'CODE';
+	/**
+	 * Optional Model Engine to use
+	 */
+	agentModelEngine: string;
 
-    /** layout information */
-    layout: {
-        /**
-         * Selected layouts
-         */
-        selected: string;
+	/**
+	 * Type of the app
+	 */
+	type: "BLOCKS" | "CODE";
 
-        /**
-         * List of available layouts
-         */
-        available: Record<
-            string,
-            {
-                /** id of the layout */
-                id: string;
+	/**
+	 * Model associated with the layout
+	 **/
+	model: FlexLayout.Model | null;
 
-                /** name of the layout */
-                name: string;
+	/**
+	 * Overlay information
+	 **/
+	overlay: {
+		/**
+		 * Track if the overlay is open or closed
+		 */
+		open: boolean;
 
-                /** Model associated with the layout */
-                model: Model;
-            }
-        >;
-    };
+		/**
+		 * Options associated with the overlay
+		 */
+		options: {
+			/**
+			 * Set the maxWidth of the overlay
+			 */
+			maxWidth: "sm" | "md" | "lg" | "xl" | null;
+		};
 
-    /** overlay information */
-    drawer: {
-        /**
-         * Track if he drawer is open
-         */
-        isOpen: boolean;
-    };
-
-    /** overlay information */
-    overlay: {
-        /**
-         * Track if the overlay is open or closed
-         */
-        open: boolean;
-
-        /**
-         * Options associated with the overlay
-         */
-        options: {
-            /**
-             * Set the maxWidth of the overlay
-             */
-            maxWidth: 'sm' | 'md' | 'lg' | 'xl' | null;
-        };
-
-        /**
-         * Content to display in the overlay
-         */
-        content: () => JSX.Element;
-    };
+		/**
+		 * Content to display in the overlay
+		 */
+		content: () => JSX.Element;
+	};
 }
 
 export interface WorkspaceConfigInterface {
-    /**
-     * Get the ID of the connected app
-     */
-    appId: string;
+	/**
+	 * Get the ID of the connected app
+	 */
+	appId: string;
 
-    /**
-     * User's role relative to the app
-     */
-    role: Role;
+	/**
+	 * Get the ID of the Insight tied to app workspace
+	 */
+	insightId: string;
 
-    /**
-     * Type of the app
-     */
-    type: 'BLOCKS' | 'CODE';
+	/**
+	 * User's role relative to the app
+	 */
+	role: Role;
 
-    /**
-     * Metadata associated with the loaded app
-     */
-    metadata: AppMetadata;
+	/**
+	 * Type of the app
+	 */
+	type: "BLOCKS" | "CODE";
+
+	/**
+	 * Metadata associated with the loaded app
+	 */
+	metadata: AppMetadata;
 }
 
 /**
  * Store that manages instances of the insights and handles applicaiton level querying
  */
 export class WorkspaceStore {
-    private _root: RootStore;
-    private _store: WorkspaceStoreInterface = {
-        appId: '',
-        isLoading: false,
-        role: 'READ_ONLY',
-        type: 'CODE',
-        agentModelEngine: '',
-        metadata: {
-            project_id: '',
-            project_name: '',
-            project_type: '',
-            project_cost: '',
-            project_global: '',
-            project_catalog_name: '',
-            project_created_by: '',
-            project_created_by_type: '',
-            project_date_created: '',
-        },
-        layout: {
-            selected: '',
-            available: {},
-        },
-        drawer: {
-            isOpen: false,
-        },
-        overlay: {
-            open: false,
-            options: {
-                maxWidth: 'sm',
-            },
-            content: () => null,
-        },
-    };
+	private _root: RootStore;
+	private _store: WorkspaceStoreInterface = {
+		appId: "",
+		insightId: "",
+		isLoading: false,
+		role: "READ_ONLY",
+		type: "CODE",
+		agentModelEngine: "",
+		metadata: {
+			project_id: "",
+			project_name: "",
+			project_type: "",
+			project_cost: "",
+			project_global: "",
+			project_catalog_name: "",
+			project_created_by: "",
+			project_date_last_edited: "",
+			project_created_by_type: "",
+			project_date_created: "",
+		},
+		model: null,
+		overlay: {
+			open: false,
+			options: {
+				maxWidth: "sm",
+			},
+			content: () => null,
+		},
+	};
 
-    constructor(root: RootStore, config: WorkspaceConfigInterface) {
-        // register the root
-        this._root = root;
+	constructor(root: RootStore, config: WorkspaceConfigInterface) {
+		// register the root
+		this._root = root;
 
-        // set the appId
-        this._store.appId = config.appId;
-        this._store.type = config.type;
+		// set the app and insight Id
+		this._store.appId = config.appId;
+		this._store.insightId = config.insightId;
+		this._store.type = config.type;
 
-        // update the data
-        if (config.role) {
-            this._store.role = config.role;
-        }
+		// update the data
+		if (config.role) {
+			this._store.role = config.role;
+		}
 
-        if (config.role) {
-            this._store.metadata = config.metadata;
-        }
+		if (config.role) {
+			this._store.metadata = config.metadata;
+		}
 
-        // make it observable
-        makeAutoObservable(this);
+		// make it observable
+		makeAutoObservable(this);
+	}
 
-        // update the cache automatically when the drawer or layout change
-        reaction(
-            () => ({
-                version: '',
-                drawer: {
-                    isOpen: this._store.drawer.isOpen,
-                },
-                layout: {
-                    selected: this._store.layout.selected,
-                    available: Object.values(
-                        this._store.layout.available,
-                    ).reduce((acc, val) => {
-                        acc[val.id] = {
-                            id: val.id,
-                            name: val.name,
-                            data: {}, // tracked via onModelChange on <Layout
-                        };
+	/**
+	 * Getters
+	 */
+	/**
+	 * Get the ID of the connected app
+	 */
+	get appId() {
+		return this._store.appId;
+	}
 
-                        return acc;
-                    }, {}),
-                },
-            }),
-            () => {
-                this.saveToCache();
-            },
-        );
-    }
+	/**
+	 * Get the ID of the workspace insight
+	 */
+	get insightId() {
+		return this._store.insightId;
+	}
 
-    /**
-     * Getters
-     */
-    /**
-     * Get the ID of the connected app
-     */
-    get appId() {
-        return this._store.appId;
-    }
+	/**
+	 * Get the agentModelEngine
+	 */
+	get agentModelEngine() {
+		return this._store.agentModelEngine;
+	}
 
-    /**
-     * Get the agentModelEngine
-     */
-    get agentModelEngine() {
-        return this._store.agentModelEngine;
-    }
+	/**
+	 * Get if the app is loading
+	 */
+	get isLoading() {
+		return this._store.isLoading;
+	}
 
-    /**
-     * Get if the app is loading
-     */
-    get isLoading() {
-        return this._store.isLoading;
-    }
+	/**
+	 * Get model
+	 */
+	get model() {
+		return this._store.model;
+	}
 
-    /**
-     * Get layout
-     */
-    get layout() {
-        return this._store.layout;
-    }
+	/**
+	 * Get the user's role in relation to the app
+	 */
+	get role() {
+		return this._store.role;
+	}
+	/**
+	 * Type of the app
+	 */
+	get type() {
+		return this._store.type;
+	}
 
-    /**
-     * Get drawer
-     */
-    get drawer() {
-        return this._store.drawer;
-    }
+	/**
+	 * Get metadata associated with the app
+	 */
+	get metadata() {
+		return this._store.metadata;
+	}
 
-    /**
-     * Get the selected layout of the workspace
-     */
-    get selectedLayout() {
-        for (const sId in this._store.layout.available) {
-            const s = this._store.layout.available[sId];
-            if (s.id === this._store.layout.selected) {
-                return s;
-            }
-        }
+	/**
+	 * The key for the local storage cache
+	 */
+	get cacheKey() {
+		return `smss-workspace--${this._store.appId}-v4`;
+	}
 
-        return null;
-    }
+	/**
+	 * Actions
+	 */
 
-    /**
-     * Get the selected layout of the workspace
-     */
-    get availableLayouts() {
-        return Object.values(this._store.layout.available);
-    }
+	/**
+	 * runs pixel off of workspace insight
+	 */
+	runWorkspacePixel = async (command: string) => {
+		return await runPixel(command, this._store.insightId);
+	};
 
-    /**
-     * Get the user's role in relation to the app
-     */
-    get role() {
-        return this._store.role;
-    }
-    /**
-     * Type of the app
-     */
-    get type() {
-        return this._store.type;
-    }
+	/**
+	 * Load the workspace
+	 * @param options - options to configure the workspace with
+	 */
+	load = (options: WorkspaceOptions): boolean => {
+		try {
+			// add the new layout
+			if (options.layout) {
+				this._store.model = FlexLayout.Model.fromJson(options.layout);
+			}
+			return true;
+		} catch (e) {
+			console.error(e);
+			return false;
+		}
+	};
 
-    /**
-     * Get metadata associated with the app
-     */
-    get metadata() {
-        return this._store.metadata;
-    }
+	/**
+	 * Load from the cache
+	 */
+	loadFromCache = (): boolean => {
+		// TODO::Version Check
 
-    /**
-     * The key for the local storage cache
-     */
-    get cacheKey() {
-        return `smss-workspace--${this._store.appId}-v2`;
-    }
+		let isLoaded = false;
+		try {
+			const item = localStorage.getItem(this.cacheKey);
+			if (item) {
+				const options = JSON.parse(item) as WorkspaceOptions;
+				isLoaded = this.load(options);
+			}
+		} catch (e) {
+			console.error(e);
+			return false;
+		}
 
-    /**
-     * Actions
-     */
+		return isLoaded;
+	};
 
-    /**
-     * Load the workspace
-     * @param options - options to configure the workspace with
-     */
-    load = (options: Partial<WorkspaceOptions>): boolean => {
-        try {
-            // TODO::Version Check
+	/**
+	 * Save the workspace to local storage
+	 */
+	saveToCache = (): void => {
+		try {
+			const options: WorkspaceOptions = {
+				version: "",
+				layout: this._store.model.toJson(),
+			};
 
-            // update the drawer
-            if (options.drawer) {
-                this._store.drawer.isOpen = options.drawer.isOpen;
-            }
+			// save cache
+			localStorage.setItem(this.cacheKey, JSON.stringify(options));
+		} catch (e) {
+			console.error(e);
+		}
+	};
 
-            // add the new layout
-            if (options.layout) {
-                this._store.layout.selected = options.layout.selected;
+	/**
+	 * Set the loading screen for the app
+	 * @param isLoading - true if loading screen is on
+	 */
+	setLoading = (isLoading: boolean) => {
+		this._store.isLoading = isLoading;
+	};
 
-                //  add the new options
-                for (const lId in options.layout.available) {
-                    const l = options.layout.available[lId];
+	/**
+	 * Update the layout
+	 *
+	 * @param id - id of the layout
+	 * @param layout - layout that is being added
+	 */
+	updateLayout = (layout: FlexLayout.IJsonModel) => {
+		this._store.model = FlexLayout.Model.fromJson(layout);
 
-                    // add the layout
-                    this._store.layout.available[l.id] = {
-                        // add the old
-                        ...this._store.layout.available[l.id],
+		// trigger the save manually as the Model is recreated
+		this.saveToCache();
+	};
 
-                        // add the new
-                        ...l,
+	/**
+	 * Open the overlay
+	 */
+	openOverlay = (
+		content: WorkspaceStoreInterface["overlay"]["content"],
+		options: WorkspaceStoreInterface["overlay"]["options"] = {
+			maxWidth: "sm",
+		},
+	) => {
+		// open the overlay
+		this._store.overlay.open = true;
 
-                        // recreate the model
-                        model: Model.fromJson(l.data),
-                    };
-                }
-            }
-            return true;
-        } catch (e) {
-            console.error(e);
-            return false;
-        }
-    };
+		// set the content
+		this._store.overlay.content = content;
+		this._store.overlay.options = options;
+	};
 
-    /**
-     * Load from the cache
-     */
-    loadFromCache = (): boolean => {
-        // TODO::Version Check
+	/**
+	 * Close the overlay
+	 */
+	closeOverlay = () => {
+		// close the overlay
+		this._store.overlay.open = false;
 
-        let isLoaded = false;
-        try {
-            const item = localStorage.getItem(this.cacheKey);
-            if (item) {
-                const options = JSON.parse(item);
-                isLoaded = this.load(options);
-            }
-        } catch (e) {
-            console.error(e);
-            return false;
-        }
+		// clear the content
+		this._store.overlay.content = null;
+	};
 
-        return isLoaded;
-    };
+	/**
+	 * Helpers
+	 */
+	/**
+	 * Get overlay information associated with the workspace
+	 */
+	get overlay() {
+		return this._store.overlay;
+	}
 
-    /**
-     * Save the workspace to local storage
-     */
-    saveToCache = (): void => {
-        try {
-            const options: WorkspaceOptions = {
-                version: '',
-                drawer: {
-                    isOpen: this._store.drawer.isOpen,
-                },
-                layout: {
-                    selected: this._store.layout.selected,
-                    available: {},
-                },
-            };
-
-            // add each layout in manually
-            for (const lId in this._store.layout.available) {
-                const l = this._store.layout.available[lId];
-
-                const data = l.model.toJson();
-
-                // add the layout
-                options.layout.available[l.id] = {
-                    id: l.id,
-                    name: l.name,
-                    data: data,
-                };
-            }
-
-            // save cache
-            localStorage.setItem(this.cacheKey, JSON.stringify(options));
-        } catch (e) {
-            console.error(e);
-            // noop
-        }
-    };
-
-    /**
-     * Set the loading screen for the app
-     * @param isLoading - true if loading screen is on
-     */
-    setLoading = (isLoading: boolean) => {
-        this._store.isLoading = isLoading;
-    };
-
-    /**
-     * Select the layout
-     */
-    selectLayout = (selected: string) => {
-        this._store.layout.selected = selected;
-    };
-
-    /**
-     * Update the layout
-     *
-     * @param id - id of the layout
-     * @param layout - layout that is being added
-     */
-    updateLayout = (
-        id: string,
-        layout: Partial<WorkspaceOptions['layout']['available'][string]>,
-    ) => {
-        this._store.layout.available[id] = {
-            // add the old
-            ...this._store.layout.available[id],
-
-            // add the new
-            ...layout,
-
-            // recreate the model
-            model: Model.fromJson(layout.data),
-        };
-
-        // trigger the save manually as the Model is recreated
-        this.saveToCache();
-    };
-
-    /**
-     * Toggle opening and closing of the drawer
-     */
-    toggleDrawer = () => {
-        this._store.drawer.isOpen = !this._store.drawer.isOpen;
-    };
-
-    /**
-     * Open the overlay
-     */
-    openOverlay = (
-        content: WorkspaceStoreInterface['overlay']['content'],
-        options: WorkspaceStoreInterface['overlay']['options'] = {
-            maxWidth: 'sm',
-        },
-    ) => {
-        // open the overlay
-        this._store.overlay.open = true;
-
-        // set the content
-        this._store.overlay.content = content;
-        this._store.overlay.options = options;
-    };
-
-    /**
-     * Close the overlay
-     */
-    closeOverlay = () => {
-        // close the overlay
-        this._store.overlay.open = false;
-
-        // clear the content
-        this._store.overlay.content = null;
-    };
-
-    /**
-     * Helpers
-     */
-    /**
-     * Get overlay information associated with the workspace
-     */
-    get overlay() {
-        return this._store.overlay;
-    }
+	/**
+	 * Set the agentModelEngine
+	 */
+	setAgentModelEngine = (id: string) => {
+		this._store.agentModelEngine = id;
+	};
 }

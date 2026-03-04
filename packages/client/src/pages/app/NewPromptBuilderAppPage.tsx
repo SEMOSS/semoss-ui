@@ -1,21 +1,17 @@
-import { useNavigate } from 'react-router-dom';
-
-import { NewAppStep } from '@/components/app';
-import { PromptBuilder } from '@/components/prompt';
+import { useNavigate } from "react-router-dom";
+import { NewAppStep } from "@/components/app";
+import { PromptBuilder } from "@/components/prompt";
+import { NavbarHeader, NavbarLeft } from "../../components/shared";
 
 export const NewPromptBuilderAppPage = () => {
-    const navigate = useNavigate();
-
-    return (
-        <NewAppStep
-            title={'Agent Builder'}
-            previous={{
-                title: 'New App',
-                onClick: () => navigate('/app/new'),
-            }}
-            isLoading={false}
-        >
-            <PromptBuilder />
-        </NewAppStep>
-    );
+	return (
+		<>
+			<NavbarLeft>
+				<NavbarHeader />
+			</NavbarLeft>
+			<NewAppStep>
+				<PromptBuilder />
+			</NewAppStep>
+		</>
+	);
 };

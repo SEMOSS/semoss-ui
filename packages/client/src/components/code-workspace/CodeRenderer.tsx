@@ -1,24 +1,29 @@
-import { styled } from '@semoss/ui';
-import { Env } from '@/env';
+import { Env } from "@semoss/sdk/react";
+import { styled } from "@semoss/ui";
 
-const StyledIframe = styled('iframe')(() => ({
-    flex: '1',
-    height: '100%',
-    width: '100%',
-    border: 'none',
+const StyledIframe = styled("iframe")(() => ({
+	flex: "1",
+	height: "100%",
+	width: "100%",
+	border: "none",
 }));
 
 interface CodeRendererProps {
-    /** Id of the app to render */
-    appId: string;
+	/** Id of the app to render */
+	appId: string;
 }
 
 /**
  * Render an app based on an id
  */
 export const CodeRenderer = (props: CodeRendererProps) => {
-    const { appId } = props;
+	const { appId } = props;
 
-    // return the app
-    return <StyledIframe src={`${Env.MODULE}/public_home/${appId}/portals/`} />;
+	// return the app
+	return (
+		<StyledIframe
+			src={`${Env.MODULE}/public_home/${appId}/portals/`}
+			data-test={`iframe--${appId}`}
+		/>
+	);
 };

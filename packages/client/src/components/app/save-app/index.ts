@@ -1,4 +1,4 @@
-import { SaveAppModal } from './SaveAppModal';
-import { AddAppModal } from './AddAppModal';
+import { AddAppModal } from "./AddAppModal";
+import { SaveAppModal } from "./SaveAppModal";
 
 export { AddAppModal, SaveAppModal };

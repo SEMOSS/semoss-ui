@@ -1,28 +1,37 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNotification } from '@semoss/ui';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as SharedAPI from "@semoss/shared/api";
+import * as API from "@/api";
 
-import { useRootStore } from './useRootStore';
-import { MonolithStore } from '@/stores';
+type ApiType = typeof API & typeof SharedAPI;
 
-interface APIState<A extends keyof MonolithStore> {
-    /** Status of the api call */
-    status: 'INITIAL' | 'LOADING' | 'SUCCESS' | 'ERROR';
-    /** Data returned from the api call */
-    data?: Awaited<ReturnType<MonolithStore[A]>>;
-    /** Error returned from the api call */
-    error?: Error;
+interface APIState<A extends keyof ApiType> {
+	/** Status of the api call */
+	status: "INITIAL" | "LOADING" | "SUCCESS" | "ERROR";
+	/** Data returned from the api call */
+	data?: Awaited<ReturnType<ApiType[A]>>;
+	/** Error returned from the api call */
+	error?: Error;
 }
 
-interface APIConfig<A extends keyof MonolithStore> {
-    /** Initial Data */
-    data: APIState<A>['data'];
+interface APIConfig<A extends keyof ApiType> {
+	/** Initial Data */
+	data: APIState<A>["data"];
+
+	/** Callback triggered on success */
+	onSuccess: (data: APIState<A>["data"]) => void;
+
+	/** Callback triggered on error */
+	onError: (data: APIState<A>["data"], error: Error) => void;
+
+	/** Callback triggered at the end */
+	onFinal: () => void;
 }
 
-interface useAPI<A extends keyof MonolithStore> extends APIState<A> {
-    /** Refresh and reexecute the api */
-    refresh: () => void;
-    /** Update the data with new information */
-    update: (data: APIState<A>['data']) => void;
+interface useAPI<A extends keyof ApiType> extends APIState<A> {
+	/** Refresh and reexecute the api */
+	refresh: () => void;
+	/** Update the data with new information */
+	update: (data: APIState<A>["data"]) => void;
 }
 
 /**
@@ -32,119 +41,144 @@ interface useAPI<A extends keyof MonolithStore> extends APIState<A> {
  *
  * @returns Information about the api response
  */
-export function useAPI<A extends keyof MonolithStore>(
-    api: [A, ...Parameters<MonolithStore[A]>] | [] | undefined | null,
-    config?: Partial<APIConfig<A>>,
+export function useAPI<A extends keyof ApiType>(
+	api: [A, ...Parameters<ApiType[A]>],
+	config?: Partial<APIConfig<A>>,
 ): useAPI<A> {
-    const { monolithStore } = useRootStore();
-    const notification = useNotification();
+	// Memoize the initial data
+	// biome-ignore lint/correctness/useExhaustiveDependencies: config?.data is handled by deep check
+	const initialData = useMemo(() => {
+		return config?.data;
+	}, [JSON.stringify(config?.data)]);
 
-    // store the initial config options
-    const options: APIConfig<A> = useMemo(() => {
-        return {
-            data: undefined,
-            ...config,
-        };
-    }, [config]);
+	// track the call backs in a config
+	const callbacksRef = useRef<{
+		onSuccess: APIConfig<A>["onSuccess"];
+		onError: APIConfig<A>["onError"];
+		onFinal: APIConfig<A>["onFinal"];
+	}>({
+		onSuccess: () => null,
+		onError: () => null,
+		onFinal: () => null,
+	});
 
-    // store the state
-    const [count, setCount] = useState(0);
-    const [state, setState] = useState<APIState<A>>(() => {
-        const s: APIState<A> = {
-            status: 'INITIAL',
-        };
+	useEffect(() => {
+		callbacksRef.current = {
+			onSuccess: config?.onSuccess || (() => null),
+			onError: config?.onError || (() => null),
+			onFinal: config?.onFinal || (() => null),
+		};
+	}, [config?.onSuccess, config?.onError, config?.onFinal]);
 
-        if (options.data !== undefined) {
-            s.data = options.data;
-        }
+	// store the state
+	const [count, setCount] = useState(0);
+	const [state, setState] = useState<APIState<A>>({
+		status: "INITIAL",
+		data: config?.data,
+	});
 
-        return s;
-    });
+	/**
+	 * Increment the count, triggering a refresh of the api
+	 */
+	const refresh = useCallback(() => {
+		setCount((prev) => prev + 1);
+	}, []);
 
-    /**
-     * Increment the count, triggering a refresh of the api
-     */
-    const refresh = useCallback(() => {
-        setCount(count + 1);
-    }, [count]);
+	/**
+	 * Update the state with new data
+	 */
+	const update = useCallback((data: APIState<A>["data"], error?: Error) => {
+		setState((prev) => ({
+			...prev,
+			data: data,
+			error: error,
+		}));
+	}, []);
 
-    /**
-     * Update the data with new data
-     */
-    const update = useCallback(
-        (data: APIState<A>['data']) => {
-            setState({
-                ...state,
-                data: data,
-            });
-        },
-        [state],
-    );
+	// biome-ignore lint/correctness/useExhaustiveDependencies: this is okay
+	useEffect(() => {
+		// track if it has been cancelled
+		let isCancelled = false;
 
-    // get the data
-    useEffect(() => {
-        // track if it has been cancelled
-        let isCancelled = false;
+		const run = async () => {
+			// no api reset it
+			if (!api || api.length === 0) {
+				setState({
+					status: "INITIAL",
+					data: initialData,
+				});
 
-        const run = async () => {
-            // no api reset it
-            if (!api || api.length === 0) {
-                setState({
-                    status: 'INITIAL',
-                    data: options.data,
-                });
+				return;
+			}
 
-                return;
-            }
+			setState({
+				status: "LOADING",
+			});
 
-            setState({
-                status: 'LOADING',
-            });
+			try {
+				const [func, ...args] = api;
 
-            try {
-                const [func, ...args] = api;
+				// This is a bit of a hack to allow us to call both the client and shared API without worrying about where the function is coming from. We check the client API first, then the shared API.
+				const response = await (
+					(
+						API as {
+							[key: string]: (
+								...args: unknown[]
+							) => Promise<unknown>;
+						}
+					)[func] ??
+					(
+						SharedAPI as {
+							[key: string]: (
+								...args: unknown[]
+							) => Promise<unknown>;
+						}
+					)[func]
+				).apply(null, args);
 
-                const response = await monolithStore[func].apply(null, args);
+				// ignore if its cancelled
+				if (isCancelled) {
+					return;
+				}
 
-                // ignore if its cancelled
-                if (isCancelled) {
-                    return;
-                }
+				// set as success
+				setState({
+					status: "SUCCESS",
+					data: response,
+				});
 
-                // set as success
-                setState({
-                    status: 'SUCCESS',
-                    data: response,
-                });
-            } catch (error) {
-                // ignore if its cancelled
-                if (isCancelled) {
-                    return;
-                }
+				callbacksRef.current.onSuccess(response);
+			} catch (error) {
+				// ignore if its cancelled
+				if (isCancelled) {
+					return;
+				}
 
-                notification.add({
-                    color: 'error',
-                    message: error.message,
-                });
+				setState({
+					status: "ERROR",
+					error: error,
+				});
 
-                setState({
-                    status: 'ERROR',
-                    error: error,
-                });
-            }
-        };
+				callbacksRef.current.onError(initialData, error);
+			} finally {
+				// ignore if its cancelled
+				if (!isCancelled) {
+					callbacksRef.current.onFinal();
+				}
+			}
+		};
 
-        // run it
-        run();
+		// run it
+		run();
 
-        return () => {
-            isCancelled = true;
-        };
-    }, [JSON.stringify(api), count]);
+		return () => {
+			isCancelled = true;
+		};
+	}, [count, JSON.stringify(api), initialData]);
 
-    return {
-        ...state,
-        refresh: refresh,
-        update: update,
-    };
+	return {
+		...state,
+		refresh: refresh,
+		update: update,
+	};
 }

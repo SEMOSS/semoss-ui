@@ -1,206 +1,211 @@
-import { useMemo, useState, createElement } from 'react';
+import { Close, KeyboardArrowRight } from "@mui/icons-material";
+import { createElement, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import {
-    Button,
-    Modal,
-    Typography,
-    styled,
-    Stack,
-    Breadcrumbs,
-    Chip,
-    IconButton,
-} from '@semoss/ui';
-import { useForm } from 'react-hook-form';
-import { KeyboardArrowRight, Close } from '@mui/icons-material';
-import { AppFormStep } from './save-app.types';
+	Breadcrumbs,
+	Button,
+	Chip,
+	IconButton,
+	Modal,
+	Stack,
+	styled,
+	Typography,
+} from "@semoss/ui";
+import type { AppFormStep } from "./save-app.types";
 
 const StyledModalContent = styled(Modal.Content)(() => ({
-    height: '300px',
+	height: "300px",
 }));
 
 interface SaveAppProps {
-    /** Track if the model is open */
-    open: boolean;
+	/** Track if the model is open */
+	open: boolean;
 
-    /** Callback that is triggered handleClose */
-    handleClose: (appId?: string) => void;
+	/** Callback that is triggered handleClose */
+	handleClose: (appId?: string) => void;
 
-    /** Modal title */
-    title: string;
+	/** Modal title */
+	title: string;
 
-    /** Steps for modal */
-    steps: AppFormStep[];
+	/** Steps for modal */
+	steps: AppFormStep[];
 
-    /** Default form values */
-    defaultFormValues: object;
+	/** Default form values */
+	defaultFormValues: object;
 
-    /** Submit handler */
-    handleFormSubmit: Function;
+	/** Submit handler */
+	handleFormSubmit: (data: object) => void;
 
-    /** Error message to display */
-    errorMessage: string;
+	/** Error message to display */
+	errorMessage: string;
+
+	submitBtnText: string;
 }
 
 export const SaveAppModal = (props: SaveAppProps) => {
-    const {
-        errorMessage,
-        defaultFormValues,
-        handleFormSubmit,
-        handleClose,
-        open,
-        steps,
-        title,
-    } = props;
+	const {
+		errorMessage,
+		defaultFormValues,
+		handleFormSubmit,
+		handleClose,
+		open,
+		steps,
+		title,
+		submitBtnText = "Upload",
+	} = props;
 
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [showErrorMessage, setShowErrorMessage] = useState<boolean>(false);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [showErrorMessage, setShowErrorMessage] = useState<boolean>(false);
 
-    const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
+	const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
 
-    const { getValues, handleSubmit, watch, control } = useForm({
-        defaultValues: defaultFormValues,
-    });
+	const { getValues, handleSubmit, watch, control } = useForm({
+		defaultValues: defaultFormValues,
+	});
 
-    const watchAll = watch();
+	const watchAll = watch();
 
-    const isStepComplete = useMemo(() => {
-        return (steps[currentStepIndex].requiredFields as any[]).every(
-            (field) => {
-                return !!getValues(field);
-            },
-        );
-    }, [watchAll]);
+	const isStepComplete = useMemo(() => {
+		// TODO: Why is this in dependecy array
+		console.log(watchAll);
+		return (steps[currentStepIndex].requiredFields as string[]).every(
+			(field) => {
+				return !!getValues(field as never);
+			},
+		);
+	}, [
+		watchAll,
+		currentStepIndex,
+		steps[currentStepIndex].requiredFields,
+		getValues,
+	]);
 
-    const isStepSelected = (index: number): boolean => {
-        return currentStepIndex === index;
-    };
+	const isStepSelected = (index: number): boolean => {
+		return currentStepIndex === index;
+	};
 
-    const handlePreviousStep = () => {
-        if (currentStepIndex === 0) {
-            handleClose();
-        } else {
-            setCurrentStepIndex(currentStepIndex - 1);
-        }
-    };
+	const handlePreviousStep = () => {
+		if (currentStepIndex === 0) {
+			handleClose();
+		} else {
+			setCurrentStepIndex(currentStepIndex - 1);
+		}
+	};
 
-    const previousStepLabel = currentStepIndex === 0 ? 'Cancel' : 'Back';
+	const previousStepLabel = currentStepIndex === 0 ? "Cancel" : "Back";
 
-    const handleNextStep = () => {
-        if (currentStepIndex === steps.length - 1) {
-            createApp();
-        } else {
-            setCurrentStepIndex(currentStepIndex + 1);
-        }
-    };
+	const handleNextStep = () => {
+		if (currentStepIndex === steps.length - 1) {
+			createApp();
+		} else {
+			setCurrentStepIndex(currentStepIndex + 1);
+		}
+	};
 
-    const nextStepLabel =
-        currentStepIndex === steps.length - 1 ? 'Upload' : 'Next';
+	const nextStepLabel =
+		currentStepIndex === steps.length - 1 ? submitBtnText : "Next";
 
-    /**
-     * Method that is called to create the app
-     */
-    const createApp = handleSubmit(async (data) => {
-        // turn on loading
-        setIsLoading(true);
+	/**
+	 * Method that is called to create the app
+	 */
+	const createApp = handleSubmit(async (data) => {
+		// turn on loading
+		setIsLoading(true);
+		try {
+			await handleFormSubmit(data);
+		} catch (e) {
+			console.error(e);
+			setShowErrorMessage(true);
+		} finally {
+			// turn of loading
+			setIsLoading(false);
+		}
+	});
 
-        try {
-            handleFormSubmit(data);
-        } catch (e) {
-            console.error(e);
-            setShowErrorMessage(true);
-        } finally {
-            // turn of loading
-            setIsLoading(false);
-        }
-    });
+	return (
+		<Modal open={open} fullWidth>
+			<Modal.Title>
+				<Stack>
+					<Stack
+						direction="row"
+						justifyContent="space-between"
+						alignItems="center"
+					>
+						<span>{title}</span>
+						<IconButton
+							aria-label="close"
+							onClick={() => handleClose()}
+							disabled={isLoading}
+						>
+							<Close />
+						</IconButton>
+					</Stack>
+					<Breadcrumbs
+						separator={<KeyboardArrowRight color="disabled" />}
+					>
+						{Array.from(steps, (step, i) => {
+							return (
+								<Chip
+									key={i}
+									size="small"
+									color={
+										isStepSelected(i)
+											? "primary"
+											: "default"
+									}
+									label={step.name}
+									avatar={step.icon}
+								/>
+							);
+						})}
+					</Breadcrumbs>
+				</Stack>
+			</Modal.Title>
+			<form onSubmit={createApp}>
+				<StyledModalContent>
+					<Stack spacing={2}>
+						<Typography variant="subtitle2">
+							{steps[currentStepIndex].title}
+						</Typography>
+						{createElement(steps[currentStepIndex].component, {
+							control: control,
+							disabled: isLoading,
+						})}
+					</Stack>
+				</StyledModalContent>
+				<Modal.Actions>
+					<Stack
+						flex={1}
+						direction="row"
+						justifyContent="end"
+						alignItems="center"
+						spacing={1}
+						padding={2}
+					>
+						{showErrorMessage ? (
+							<Typography variant="caption" color="error">
+								{errorMessage}
+							</Typography>
+						) : null}
 
-    console.log({ steps });
-
-    return (
-        <Modal open={open} fullWidth>
-            <Modal.Title>
-                <Stack>
-                    <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                    >
-                        <span>{title}</span>
-                        <IconButton
-                            aria-label="close"
-                            onClick={() => handleClose()}
-                            disabled={isLoading}
-                        >
-                            <Close />
-                        </IconButton>
-                    </Stack>
-                    <Breadcrumbs
-                        separator={<KeyboardArrowRight color="disabled" />}
-                    >
-                        {Array.from(steps, (step, i) => {
-                            return (
-                                <Chip
-                                    key={i}
-                                    size="small"
-                                    color={
-                                        isStepSelected(i)
-                                            ? 'primary'
-                                            : 'default'
-                                    }
-                                    label={step.name}
-                                    avatar={step.icon}
-                                />
-                            );
-                        })}
-                    </Breadcrumbs>
-                </Stack>
-            </Modal.Title>
-            <form onSubmit={createApp}>
-                <StyledModalContent>
-                    <Stack spacing={2}>
-                        <Typography variant="subtitle2">
-                            {steps[currentStepIndex].title}
-                        </Typography>
-                        {createElement(steps[currentStepIndex].component, {
-                            control: control,
-                            disabled: isLoading,
-                        })}
-                    </Stack>
-                </StyledModalContent>
-                <Modal.Actions>
-                    <Stack
-                        flex={1}
-                        direction="row"
-                        justifyContent="end"
-                        alignItems="center"
-                        spacing={1}
-                        padding={2}
-                    >
-                        {showErrorMessage ? (
-                            <Typography variant="caption" color="error">
-                                {errorMessage}
-                            </Typography>
-                        ) : (
-                            <></>
-                        )}
-
-                        <Button
-                            disabled={isLoading}
-                            variant="text"
-                            onClick={handlePreviousStep}
-                        >
-                            {previousStepLabel}
-                        </Button>
-                        <Button
-                            variant="contained"
-                            disabled={isLoading || !isStepComplete}
-                            loading={isLoading}
-                            onClick={handleNextStep}
-                        >
-                            {nextStepLabel}
-                        </Button>
-                    </Stack>
-                </Modal.Actions>
-            </form>
-        </Modal>
-    );
+						<Button
+							disabled={isLoading}
+							variant="text"
+							onClick={handlePreviousStep}
+						>
+							{previousStepLabel}
+						</Button>
+						<Button
+							variant="contained"
+							disabled={isLoading || !isStepComplete}
+							loading={isLoading}
+							onClick={handleNextStep}
+						>
+							{nextStepLabel}
+						</Button>
+					</Stack>
+				</Modal.Actions>
+			</form>
+		</Modal>
+	);
 };

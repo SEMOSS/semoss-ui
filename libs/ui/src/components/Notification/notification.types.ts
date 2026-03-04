@@ -1,18 +1,18 @@
-import { AlertProps } from "../Alert";
+import type { AlertProps } from "../Alert";
 
 export interface NotificationMessage {
-    /**
-     * Id of the message
-     */
-    id: string;
+	/**
+	 * Id of the message
+	 */
+	id: string;
 
-    /**
-     * Color color of the message
-     */
-    color: AlertProps["color"];
+	/**
+	 * Color color of the message
+	 */
+	color: AlertProps["color"];
 
-    /**
-     * Content of the message
-     */
-    message: React.ReactNode;
+	/**
+	 * Content of the message
+	 */
+	message: React.ReactNode;
 }

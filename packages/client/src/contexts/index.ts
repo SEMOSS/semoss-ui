@@ -1,38 +1,42 @@
-import { BlocksContext } from './Blocks.context';
-import { DesignerContextType, DesignerContext } from './DesignerContext';
-import { EngineContextType, EngineContext } from './EngineContext';
-import { LLMContext, LLMContextType } from './LLMContext';
-import { MetamodelContextType, MetamodelContext } from './MetamodelContext';
-import { SettingsContextType, SettingsContext } from './SettingsContext';
-import { RootStoreContextType, RootStoreContext } from './RootStoreContext';
-import { StepperContext, StepperContextType } from './StepperContext';
-import { WorkspaceContextProps, WorkspaceContext } from './WorkspaceContext';
+import { DesignerContext, type DesignerContextType } from "./DesignerContext";
+import { EngineContext, type EngineContextType } from "./EngineContext";
+import { LLMContext, type LLMContextType } from "./LLMContext";
 import {
-    LLMComparisonContextType,
-    LLMComparisonContext,
-} from './LLMComparisonContext';
+	MetamodelContext,
+	type MetamodelContextType,
+} from "./MetamodelContext";
+import { PageContext, type PageContextType } from "./PageContext";
+import {
+	RootStoreContext,
+	type RootStoreContextType,
+} from "./RootStoreContext";
+import { SettingsContext, type SettingsContextType } from "./SettingsContext";
+import { StepperContext, type StepperContextType } from "./StepperContext";
+import {
+	WorkspaceContext,
+	type WorkspaceContextType,
+} from "./WorkspaceContext";
 
 export type {
-    DesignerContextType,
-    EngineContextType,
-    LLMContextType,
-    MetamodelContextType,
-    RootStoreContextType,
-    SettingsContextType,
-    StepperContextType,
-    WorkspaceContextProps,
-    LLMComparisonContextType,
+	DesignerContextType,
+	EngineContextType,
+	LLMContextType,
+	MetamodelContextType,
+	RootStoreContextType,
+	SettingsContextType,
+	StepperContextType,
+	PageContextType,
+	WorkspaceContextType,
 };
 
 export {
-    BlocksContext,
-    DesignerContext,
-    EngineContext,
-    LLMContext,
-    MetamodelContext,
-    RootStoreContext,
-    SettingsContext,
-    StepperContext,
-    WorkspaceContext,
-    LLMComparisonContext,
+	DesignerContext,
+	EngineContext,
+	LLMContext,
+	MetamodelContext,
+	RootStoreContext,
+	SettingsContext,
+	StepperContext,
+	PageContext,
+	WorkspaceContext,
 };

@@ -1,4 +1,7 @@
 node_modules
+.nx
+.husky
+.turbo
 target
 .DS_Store
 dist
@@ -8,21 +11,20 @@ dist
 .eslintcache
 *.rollup.cache
 tsconfig.tsbuildinfo
+.turbo
 
-# Only ignore the top level
-index.html
-index.html.gz
-!packages/**/index.html
-!packages/**/index.html.gz
+# Ignore the generated files for vscode extension
+*.vsix
+out/
+.vscode-test/
+.vscode-test-web/
+coverage/
+.nyc_output/
+npm-debug.log
+yarn-error.log
+*.tgz
+.vscode/.ropeproject
+.idea/
 
-# Ignore legacy playsheet branch
-packages/playsheet/
-
-# Project teams keep pushing their module into app.constants.js
-# will gitignore this now
-packages/legacy/app.constants.js
-
-
-
-.nx/cache
-.nx/workspace-data
+# Ignore legacy
+packages/legacy

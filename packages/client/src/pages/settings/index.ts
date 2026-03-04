@@ -1,5 +1,5 @@
-export * from './settings.constants';
+export * from "./settings.constants";
 
-import { SettingsRouter } from './SettingsRouter';
+import { SettingsRouter } from "./SettingsRouter";
 
 export { SettingsRouter };

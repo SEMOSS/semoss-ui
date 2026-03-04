@@ -1,13 +1,12 @@
-import { createContext } from 'react';
-
-import { DesignerStore } from '@/stores';
+import { createContext } from "react";
+import type { DesignerStore } from "@/stores";
 
 /**
  * Value
  */
 export type DesignerContextType = {
-    /** Store holding designer information */
-    designer: DesignerStore;
+	/** Store holding designer information */
+	designer: DesignerStore;
 };
 
 /**

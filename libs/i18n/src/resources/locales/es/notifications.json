@@ -1,0 +1,10 @@
+{
+	"knowledge": {
+		"createSuccess": "Fuente de conocimiento \"{{name}}\" creada exitosamente",
+		"createError": "No se pudo crear la fuente de conocimiento"
+	},
+	"workspace": {
+		"saveError": "No se pudo guardar el agente",
+		"deleteError": "No se pudo eliminar el espacio de trabajo"
+	}
+}

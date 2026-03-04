@@ -1,4 +1,2 @@
-export * from './panels';
-
-export * from './BlocksWorkspace';
-export * from './BlocksRenderer';
+export * from "./BlocksWorkspace";
+export * from "./panels";

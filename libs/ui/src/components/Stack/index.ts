@@ -1,4 +1,4 @@
-import { Stack, StackProps } from "./Stack";
+import { Stack, type StackProps } from "./Stack";
 
 export type { StackProps };
 

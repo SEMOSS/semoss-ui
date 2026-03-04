@@ -1,8 +1,8 @@
-import { Tabs, TabsProps } from "./Tabs";
-import { Tab, TabProps } from "./Tab";
+import { Tab, type TabProps } from "./Tab";
+import { Tabs, type TabsProps } from "./Tabs";
 
 const TabsNameSpace = Object.assign(Tabs, {
-    Item: Tab,
+	Item: Tab,
 });
 
 export type { TabsProps, TabProps };

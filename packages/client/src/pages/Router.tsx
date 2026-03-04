@@ -1,95 +1,74 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { observer } from 'mobx-react-lite';
-import { useEffect, useState } from 'react';
-
-import { useRootStore } from '@/hooks';
-import { LoadingScreen } from '@/components/ui';
-
-import { AppRouter } from './app';
-import { EngineRouter } from './engine';
-import { ImportRouter } from './import';
-import { PromptRouter } from './prompt';
-import { SettingsRouter } from './settings';
-
-import { AuthenticatedLayout } from './AuthenticatedLayout';
-import { NavigatorLayout } from './NavigatorLayout';
-
-import { LoginPage } from './LoginPage';
-import { HomePage } from './HomePage';
-import { SharePage } from './SharePage';
-
-import { CookieNotice } from './legal/CookieNotice';
-import { PrivacyNotice } from './legal/PrivacyNotice';
-
-import { WorkspacePage } from './WorkspacePage';
-
-import { PlatformMessages } from './PlatformMessages';
+import { observer } from "mobx-react-lite";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { LoadingScreen } from "@semoss/ui";
+import { useRootStore } from "@/hooks";
+import { AuditLogsDashboard } from "./AuditLogsDashboard";
+import { AuthenticatedLayout } from "./AuthenticatedLayout";
+import {
+	AppCatalogPage,
+	AppDetailPage,
+	CreateAppPage,
+	EditAppPage,
+	NewPromptBuilderAppPage,
+	ViewAppPage,
+} from "./app";
+import { EngineRouter } from "./engine";
+import { LandingPage } from "./LandingPage";
+import { LoginPage } from "./LoginPage";
+import { CookieNotice } from "./legal/CookieNotice";
+import { PrivacyNotice } from "./legal/PrivacyNotice";
+import { PageLayout } from "./PageLayout";
+import { PromptRouter } from "./prompt";
+import { SharePage } from "./SharePage";
+import { SettingsRouter } from "./settings";
 
 export const Router = observer(() => {
-    const { configStore } = useRootStore();
+	const { configStore } = useRootStore();
 
-    // don't load anything if it is pending
-    if (configStore.store.status === 'INITIALIZING') {
-        return <LoadingScreen.Trigger message={'Initializing'} />;
-    }
+	// don't load anything if it is pending
+	if (configStore.store.status === "INITIALIZING") {
+		return <LoadingScreen.Trigger message={"Initializing"} />;
+	}
 
-    const parseThemeMapForValue = (value: string): boolean => {
-        const theme = configStore.store.config.theme;
-        if (theme && theme['THEME_MAP']) {
-            try {
-                const map = JSON.parse(theme['THEME_MAP'] as string);
-                console.log('THEME MAP', map);
+	const showCookieNotice = !!configStore.theme.cookiePolicyNoticePage;
+	const showPrivacyNotice = !!configStore.theme.privacyNoticePage;
 
-                return !!map['cookiePolicyNoticePage'];
-            } catch {
-                console.error(
-                    `Unable to parse theme for the Router for ${value}`,
-                );
-                return false;
-            }
-        } else {
-            return false;
-        }
-    };
-    const showCookieNotice = parseThemeMapForValue('cookiePolicyNoticePage');
-    const showPrivacyNotice = parseThemeMapForValue('privacyNoticePage');
-
-    return (
-        <Routes>
-            <Route path="/" element={<AuthenticatedLayout />}>
-                <Route path="*" element={<NavigatorLayout />}>
-                    <Route index element={<HomePage />} />
-                    <Route path="import" element={<ImportRouter />} />
-                    <Route path="settings/*" element={<SettingsRouter />} />
-                    <Route path="engine/*" element={<EngineRouter />} />
-                    <Route path="app/*" element={<AppRouter />} />
-                    <Route path="prompt/*" element={<PromptRouter />} />
-                </Route>
-                <Route
-                    path="workspace/:appId/*"
-                    element={
-                        <PlatformMessages platformAssist={false}>
-                            <WorkspacePage />
-                        </PlatformMessages>
-                    }
-                />
-                <Route
-                    path="s/:appId/*"
-                    element={
-                        <PlatformMessages platformAssist={false}>
-                            <SharePage />
-                        </PlatformMessages>
-                    }
-                />
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-            {showCookieNotice && (
-                <Route path="/cookie-notice" element={<CookieNotice />} />
-            )}
-            {showPrivacyNotice && (
-                <Route path="/privacy-notice" element={<PrivacyNotice />} />
-            )}
-            <Route path="/login" element={<LoginPage />}></Route>
-        </Routes>
-    );
+	return (
+		<Routes>
+			<Route path="/" element={<AuthenticatedLayout />}>
+				<Route path="s/:appId/*" element={<SharePage />} />
+				<Route path="*" element={<PageLayout />}>
+					<Route index element={<LandingPage />} />
+					<Route path="app/*">
+						<Route index element={<AppCatalogPage />} />
+						<Route path="new" element={<CreateAppPage />} />
+						<Route
+							path="new/prompt"
+							element={<NewPromptBuilderAppPage />}
+						/>
+						<Route path=":appId" element={<AppDetailPage />} />
+						<Route path=":appId/view/*" element={<ViewAppPage />} />
+						<Route path=":appId/edit/*" element={<EditAppPage />} />
+						<Route
+							path=":appId/dashboard/*"
+							element={
+								<AuditLogsDashboard catalogName={"Apps"} />
+							}
+						/>
+					</Route>
+					<Route path="engine/*" element={<EngineRouter />} />
+					<Route path="prompt/*" element={<PromptRouter />} />
+					<Route path="settings/*" element={<SettingsRouter />} />
+					<Route path="*" element={<Navigate to="/" replace />} />
+				</Route>
+			</Route>
+			{showCookieNotice && (
+				<Route path="/cookie-notice" element={<CookieNotice />} />
+			)}
+			{showPrivacyNotice && (
+				<Route path="/privacy-notice" element={<PrivacyNotice />} />
+			)}
+			<Route path="/login" element={<LoginPage />}></Route>
+		</Routes>
+	);
 });

@@ -1,8 +1,9 @@
-import { FormControl, FormControlProps } from "./FormControl";
-
-import { FormControlLabel, FormControlLabelProps } from "./FormControlLabel";
-
-import { FormLabel, FormLabelProps } from "./FormLabel";
+import { FormControl, type FormControlProps } from "./FormControl";
+import {
+	FormControlLabel,
+	type FormControlLabelProps,
+} from "./FormControlLabel";
+import { FormLabel, type FormLabelProps } from "./FormLabel";
 
 export type { FormControlProps, FormControlLabelProps, FormLabelProps };
 

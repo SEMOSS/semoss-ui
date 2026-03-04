@@ -1,192 +1,279 @@
-import { useEffect, useCallback } from 'react';
-import { observer } from 'mobx-react-lite';
-import { IconButton, Stack, useNotification, Tooltip } from '@semoss/ui';
-import { ShareRounded, SaveOutlined, PlayArrow } from '@mui/icons-material';
-
-import { useWorkspace, useRootStore, useBlocks } from '@/hooks';
-import { PreviewOverlay } from '@/components/workspace';
-import { ShareOverlay } from '@/components/ui';
+import { PreviewRounded, SaveRounded, ShareRounded } from "@mui/icons-material";
+import { observer } from "mobx-react-lite";
+import { useEffect } from "react";
+import { useBlocks } from "@semoss/renderer";
+import { runPixel } from "@semoss/sdk/react";
+import { IconButton, Stack, Tooltip, useNotification } from "@semoss/ui";
+import { ModelBrain } from "@/assets/img/ModelBrain";
+import { ShareOverlay } from "@/components/ui";
+import { PreviewOverlay } from "@/components/workspace";
+import { useRootStore, useWorkspace } from "@/hooks";
+import { LLMSelectOverlay } from "../llms";
 
 export const BlocksWorkspaceActions = observer(() => {
-    const { state } = useBlocks();
+	const { state } = useBlocks();
 
-    const { monolithStore } = useRootStore();
-    const notification = useNotification();
-    const { workspace } = useWorkspace();
+	const { monolithStore } = useRootStore();
+	const notification = useNotification();
+	const { workspace } = useWorkspace();
 
-    /**
-     * Preview the current App
-     */
-    const previewApp = () => {
-        try {
-            // get the current state
-            const json = state.toJSON();
+	const removePageIdsFromURL = () => {
+		const url = window.location.href;
+		const pages = state.getAllBlocksOfType("page").map((page) => page.id);
+		const matchedSubstring = pages.find((sub) => url.includes(sub));
+		if (matchedSubstring) {
+			const cleanedUrl = matchedSubstring
+				? url
+						.replace(matchedSubstring, "")
+						.replace(/\/+$/, "") // remove trailing slash if left
+				: url;
+			window.location.href = cleanedUrl;
+		}
+	};
+	/**
+	 * Select default model
+	 * TODO: We should probably just make this call in workspace so it persists across app
+	 */
+	const selectModel = async () => {
+		let modelList = [];
+		if (workspace.role === "OWNER" || workspace.role === "EDIT") {
+			const pixel = `MyEngines(engineTypes=["MODEL"])`;
+			const res = await runPixel(pixel);
 
-            workspace.openOverlay(
-                () => (
-                    <PreviewOverlay
-                        state={json}
-                        onClose={() => {
-                            workspace.closeOverlay();
-                        }}
-                    />
-                ),
-                {
-                    maxWidth: 'lg',
-                },
-            );
-        } catch (e) {
-            console.error(e);
+			const list = res.pixelReturn[0].output as Array<{
+				database_subtype: string;
+				database_type: string;
+				database_name: string;
+				database_id: string;
+				app_name: string;
+			}>;
 
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        }
-    };
+			modelList = list.map((model) => {
+				return {
+					label: model.database_name,
+					value: model.database_id,
+				};
+			});
+		}
+		workspace.openOverlay(
+			() => (
+				<LLMSelectOverlay
+					llmList={modelList || []}
+					selectedLLM={workspace.agentModelEngine || ""}
+					onSelect={(id: string) => {
+						workspace.setAgentModelEngine(id);
+					}}
+					onClose={() => {
+						workspace.closeOverlay();
+					}}
+				/>
+			),
+			{
+				maxWidth: "sm",
+			},
+		);
+	};
 
-    /**
-     * Save the current app
-     */
-    const saveApp = async () => {
-        // turn on loading
-        workspace.setLoading(true);
+	/**
+	 * Preview the current App
+	 */
+	const previewApp = () => {
+		try {
+			//before entering preview, remove page id's from the url if any exsist
+			removePageIdsFromURL();
+			// get the current state
+			const json = state.toJSON();
 
-        // convert the state to json
-        const json = state.toJSON();
+			workspace.openOverlay(
+				() => (
+					<PreviewOverlay
+						state={json}
+						onClose={() => {
+							workspace.closeOverlay();
+						}}
+					/>
+				),
+				{
+					maxWidth: "lg",
+				},
+			);
+		} catch (e) {
+			console.error(e);
 
-        try {
-            // save the json
-            const { errors } = await monolithStore.runQuery<[true]>(
-                `SaveAppBlocksJson(project=["${
-                    workspace.appId
-                }"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
-            );
+			notification.add({
+				color: "error",
+				message: e.message,
+			});
+		}
+	};
 
-            if (errors.length > 0) {
-                throw new Error(errors.join(''));
-            }
+	/**
+	 * Save the current app
+	 */
+	const saveApp = async () => {
+		// turn on loading
+		workspace.setLoading(true);
 
-            notification.add({
-                color: 'success',
-                message:
-                    'Save successful! Make sure to double-check your changes for correctness',
-            });
-        } catch (e) {
-            console.error(e);
+		// convert the state to json
+		const json = state.toJSON();
 
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        } finally {
-            // turn of loading
-            workspace.setLoading(false);
-        }
-    };
+		// remove the visual from the json
+		Object.keys(json?.blocks).forEach((key) => {
+			if (key.startsWith("e-chart")) {
+				if (json?.blocks[key]?.data?.option?.["visual"]) {
+					json.blocks[key].data.option["visual"] = false;
+				}
+			}
+		});
+		try {
+			// save the json
+			const { errors } = await monolithStore.runQuery<[true]>(
+				`SaveAppBlocksJson(project=["${
+					workspace.appId
+				}"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
+			);
 
-    /**
-     * Share the current App
-     */
-    const shareApp = async () => {
-        // turn on loading
-        workspace.setLoading(true);
+			if (errors.length > 0) {
+				throw new Error(errors.join(""));
+			}
 
-        try {
-            let isChanged = false;
+			notification.add({
+				color: "success",
+				message:
+					"Save successful! Make sure to double-check your changes for correctness",
+			});
+		} catch (e) {
+			console.error(e);
 
-            // only get the json if the user can edit
-            if (workspace.role === 'OWNER' || workspace.role === 'EDIT') {
-                const { pixelReturn, errors } = await monolithStore.runQuery<
-                    [true]
-                >(`GetAppBlocksJson ( project=['${workspace.appId}']);`);
+			notification.add({
+				color: "error",
+				message: e.message,
+			});
+		} finally {
+			// turn of loading
+			workspace.setLoading(false);
+		}
+	};
 
-                if (errors.length > 0) {
-                    throw new Error(errors.join(''));
-                }
+	/**
+	 * Share the current App
+	 */
+	const shareApp = async () => {
+		// turn on loading
+		workspace.setLoading(true);
 
-                const { output } = pixelReturn[0];
+		try {
+			let isChanged = false;
 
-                // TODO: Do we want a better way to check if it is changed
-                isChanged =
-                    JSON.stringify(output) !== JSON.stringify(state.toJSON());
-            }
+			// only get the json if the user can edit
+			if (workspace.role === "OWNER" || workspace.role === "EDIT") {
+				const { pixelReturn, errors } = await monolithStore.runQuery<
+					[true]
+				>(`GetAppBlocksJson ( project=['${workspace.appId}']);`);
 
-            workspace.openOverlay(() => (
-                <ShareOverlay
-                    diffs={isChanged}
-                    appId={workspace.appId}
-                    onClose={() => workspace.closeOverlay()}
-                />
-            ));
-        } catch (e) {
-            console.error(e);
+				if (errors.length > 0) {
+					throw new Error(errors.join(""));
+				}
 
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        } finally {
-            // turn of loading
-            workspace.setLoading(false);
-        }
-    };
+				const { output } = pixelReturn[0];
 
-    /**
-     * Trigger save on ctrl+s
-     */
-    const onDocumentKeydown = useCallback((event: KeyboardEvent) => {
-        if (event.key === 's' && event.ctrlKey) {
-            event.preventDefault();
-            saveApp();
-        }
-    }, []);
+				// TODO: Do we want a better way to check if it is changed
+				isChanged =
+					JSON.stringify(output) !== JSON.stringify(state.toJSON());
+			}
 
-    useEffect(() => {
-        // attach the event listener
-        document.addEventListener('keydown', onDocumentKeydown);
+			workspace.openOverlay(() => (
+				<ShareOverlay
+					diffs={isChanged}
+					appId={workspace.appId}
+					onClose={() => workspace.closeOverlay()}
+				/>
+			));
+		} catch (e) {
+			console.error(e);
 
-        // remove the event listener
-        return () => {
-            document.removeEventListener('keydown', onDocumentKeydown);
-        };
-    }, [onDocumentKeydown]);
+			notification.add({
+				color: "error",
+				message: e.message,
+			});
+		} finally {
+			// turn of loading
+			workspace.setLoading(false);
+		}
+	};
 
-    return (
-        <Stack direction="row" spacing={1} alignItems={'center'}>
-            <Tooltip title="Preview App">
-                <IconButton
-                    size={'small'}
-                    color="default"
-                    onClick={() => {
-                        previewApp();
-                    }}
-                >
-                    <PlayArrow fontSize="inherit" />
-                </IconButton>
-            </Tooltip>
-            <Tooltip title={'Share App'}>
-                <IconButton
-                    size={'small'}
-                    color="default"
-                    onClick={() => {
-                        shareApp();
-                    }}
-                >
-                    <ShareRounded fontSize="inherit" />
-                </IconButton>
-            </Tooltip>
-            <Tooltip title={'Save App (ctrl + s)'}>
-                <IconButton
-                    size={'small'}
-                    color={'primary'}
-                    onClick={() => {
-                        saveApp();
-                    }}
-                >
-                    <SaveOutlined fontSize="inherit" />
-                </IconButton>
-            </Tooltip>
-        </Stack>
-    );
+	useEffect(() => {
+		/**
+		 * Trigger save on ctrl + s or command + s
+		 */
+		const onDocumentKeydown = (event: KeyboardEvent) => {
+			if ((event.ctrlKey || event.metaKey) && event.key === "s") {
+				event.preventDefault();
+				saveApp();
+			}
+		};
+
+		// attach the event listener
+		document.addEventListener("keydown", onDocumentKeydown);
+
+		// remove the event listener
+		return () => {
+			document.removeEventListener("keydown", onDocumentKeydown);
+		};
+	}, []);
+
+	return (
+		<Stack direction="row" spacing={1} alignItems={"center"}>
+			<Tooltip title={"Modal Selection"}>
+				<IconButton
+					size={"small"}
+					color="default"
+					onClick={() => {
+						selectModel();
+					}}
+				>
+					<ModelBrain
+						width={"18"}
+						height={"18"}
+						color={
+							workspace.agentModelEngine ? "#0471f0" : "#666666"
+						}
+					/>
+				</IconButton>
+			</Tooltip>
+			<Tooltip title="Preview App">
+				<IconButton
+					size={"small"}
+					color="default"
+					onClick={() => {
+						previewApp();
+					}}
+				>
+					<PreviewRounded fontSize="inherit" />
+				</IconButton>
+			</Tooltip>
+			<Tooltip title={"Share App"}>
+				<IconButton
+					size={"small"}
+					color="default"
+					onClick={() => {
+						shareApp();
+					}}
+				>
+					<ShareRounded fontSize="inherit" />
+				</IconButton>
+			</Tooltip>
+			<Tooltip title={"Save App (ctrl/command + s)"}>
+				<IconButton
+					size={"small"}
+					color="default"
+					onClick={() => {
+						saveApp();
+					}}
+				>
+					<SaveRounded fontSize="inherit" />
+				</IconButton>
+			</Tooltip>
+		</Stack>
+	);
 });

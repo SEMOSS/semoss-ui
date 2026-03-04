@@ -1,76 +1,79 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import { LoadingScreen } from '@/components/ui';
+import { useMemo, useState } from "react";
+import { LoadingScreen } from "@semoss/ui";
+import { StepperContext, type StepperContextType } from "@/contexts";
 
-import { StepperContext, StepperContextType } from '@/contexts';
-
+/**
+ * @deprecated Handle steps at engine level
+ */
 export const ImportLayout = (props) => {
-    const [isLoading, setIsLoading] =
-        useState<StepperContextType['isLoading']>(false);
-    const [internalSteps, setInternalSteps] = useState<
-        StepperContextType['steps']
-    >([]);
-    const [internalActiveStepIdx, setInternalActiveStepIdx] =
-        useState<StepperContextType['activeStepIdx']>(-1);
+	const { children } = props;
 
-    /**
-     * Get the active step
-     */
-    const activeStep = useMemo(() => {
-        if (
-            internalActiveStepIdx !== -1 &&
-            internalSteps[internalActiveStepIdx]
-        ) {
-            return internalSteps[internalActiveStepIdx];
-        }
+	const [isLoading, setIsLoading] =
+		useState<StepperContextType["isLoading"]>(false);
+	const [internalSteps, setInternalSteps] = useState<
+		StepperContextType["steps"]
+	>([]);
+	const [internalActiveStepIdx, setInternalActiveStepIdx] =
+		useState<StepperContextType["activeStepIdx"]>(-1);
 
-        return null;
-    }, [internalSteps, internalActiveStepIdx]);
+	/**
+	 * Get the active step
+	 */
+	const activeStep = useMemo(() => {
+		if (
+			internalActiveStepIdx !== -1 &&
+			internalSteps[internalActiveStepIdx]
+		) {
+			return internalSteps[internalActiveStepIdx];
+		}
 
-    /**
-     * Update the steps in the flow
-     *
-     * step - step to add
-     * activeStepIdx - new step idx
-     */
-    const setSteps: StepperContextType['setSteps'] = (
-        updatedSteps,
-        updatedActiveStepIdx,
-    ) => {
-        // set the step
-        setInternalSteps(updatedSteps);
+		return null;
+	}, [internalSteps, internalActiveStepIdx]);
 
-        // navigate if open
-        if (updatedActiveStepIdx) {
-            setInternalActiveStepIdx(updatedActiveStepIdx);
-        }
-    };
+	/**
+	 * Update the steps in the flow
+	 *
+	 * step - step to add
+	 * activeStepIdx - new step idx
+	 */
+	const setSteps: StepperContextType["setSteps"] = (
+		updatedSteps,
+		updatedActiveStepIdx,
+	) => {
+		// set the step
+		setInternalSteps(updatedSteps);
 
-    /**
-     * Set the new active step
-     *
-     * activeStepIdx - new step idx
-     */
-    const setActiveStep: StepperContextType['setActiveStep'] = (
-        updatedActiveStepIdx,
-    ) => {
-        setInternalActiveStepIdx(updatedActiveStepIdx);
-    };
+		// navigate if open
+		if (updatedActiveStepIdx) {
+			setInternalActiveStepIdx(updatedActiveStepIdx);
+		}
+	};
 
-    return (
-        <StepperContext.Provider
-            value={{
-                isLoading: isLoading,
-                steps: internalSteps,
-                activeStepIdx: internalActiveStepIdx,
-                activeStep: activeStep,
-                setIsLoading: setIsLoading,
-                setSteps: setSteps,
-                setActiveStep: setActiveStep,
-            }}
-        >
-            {isLoading && <LoadingScreen.Trigger />}
-            <Outlet />
-        </StepperContext.Provider>
-    );
+	/**
+	 * Set the new active step
+	 *
+	 * activeStepIdx - new step idx
+	 */
+	const setActiveStep: StepperContextType["setActiveStep"] = (
+		updatedActiveStepIdx,
+	) => {
+		setInternalActiveStepIdx(updatedActiveStepIdx);
+	};
+
+	return (
+		<StepperContext.Provider
+			value={{
+				isLoading: isLoading,
+				steps: internalSteps,
+				activeStepIdx: internalActiveStepIdx,
+				activeStep: activeStep,
+				setIsLoading: setIsLoading,
+				setSteps: setSteps,
+				setActiveStep: setActiveStep,
+			}}
+		>
+			{isLoading && <LoadingScreen.Trigger />}
+			{children}{" "}
+		</StepperContext.Provider>
+	);
 };

@@ -36,6 +36,7 @@
 		<project.build.sourceEncoding>cp1252</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>cp1252</project.reporting.outputEncoding>
 	</properties>
+	<!-- legacy
 	<distributionManagement>
 		<snapshotRepository>
 			<id>ossrh</id>
@@ -46,8 +47,9 @@
 			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
 		</repository>
 	</distributionManagement>
+	-->
 	<build>
-		<sourceDirectory>dist</sourceDirectory>
+		<sourceDirectory>packages</sourceDirectory>
 	</build>
 	<profiles>
 		<profile>
@@ -57,6 +59,34 @@
 			</activation>
 			<build>
 				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<version>3.1.0</version>
+						<executions>
+							<execution>
+								<phase>process-resources</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<target>
+   									<mkdir dir="${basedir}/WEB-INF/classes/META-INF/maven/${project.groupId}/${project.artifactId}"/>
+										<tstamp>
+											<format property="build.timestamp.utc" pattern="yyyy-MM-dd HH:mm:ss z" timezone="UTC" />
+										</tstamp>
+    									<propertyfile file="${basedir}/WEB-INF/classes/META-INF/maven/${project.groupId}/${project.artifactId}/pom.properties">
+											<entry key="groupId" value="${project.groupId}" />
+											<entry key="artifactId" value="${project.artifactId}" />
+											<entry key="version" value="${project.version}" />
+											<entry key="ci.version" value="${project.version}" />
+											<entry key="build.date" value="${build.timestamp.utc}" />
+										</propertyfile>
+									</target>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-war-plugin</artifactId>
@@ -70,13 +100,17 @@
 								.gitlab-ci.yml,
 								.svnignore,
 								.gitignore,
+								.github/,
+								.nx/,
+								.turbo/,
 								.m2/,
 								.husky/,
 								.vscode/,
 								**/node_modules,
 								**/node_modules/**,
-								packages/sdk/,
-								packages/sdk-react/,
+								packages/cli/,
+								packages/example/,
+								packages/vscode-extension/,
 								packages/client/coverage/,
 								target/,
 								pom.xml,
@@ -88,13 +122,17 @@
 								.gitlab-ci.yml,
 								.svnignore,
 								.gitignore,
+								.github/,
+								.nx/,
+								.turbo/,
 								.m2/,
 								.husky/,
 								.vscode/,
 								**/node_modules,
 								**/node_modules/**,
-								packages/sdk/,
-								packages/sdk-react/,
+								packages/cli/,
+								packages/example/,
+								packages/vscode-extension/,
 								packages/client/coverage/,
 								target/,
 								pom.xml,
@@ -123,6 +161,34 @@
 				<plugins>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<version>3.1.0</version>
+						<executions>
+							<execution>
+								<phase>process-resources</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<target>
+    								<mkdir dir="${basedir}/WEB-INF/classes/META-INF/maven/${project.groupId}/${project.artifactId}"/>
+										<tstamp>
+											<format property="build.timestamp.utc" pattern="yyyy-MM-dd HH:mm:ss z" timezone="UTC" />
+										</tstamp>
+    									<propertyfile file="${basedir}/WEB-INF/classes/META-INF/maven/${project.groupId}/${project.artifactId}/pom.properties">
+											<entry key="groupId" value="${project.groupId}" />
+											<entry key="artifactId" value="${project.artifactId}" />
+											<entry key="version" value="${project.version}" />
+											<entry key="ci.version" value="${project.version}" />
+											<entry key="build.date" value="${build.timestamp.utc}" />
+										</propertyfile>
+									</target>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-war-plugin</artifactId>
 						<version>3.3.1</version>
 						<configuration>
@@ -134,13 +200,17 @@
 								.gitlab-ci.yml,
 								.svnignore,
 								.gitignore,
+								.github/,
+								.nx/,
+								.turbo/,
 								.m2/,
 								.husky/,
 								.vscode/,
 								**/node_modules,
 								**/node_modules/**,
-								packages/sdk/,
-								packages/sdk-react/,
+								packages/cli/,
+								packages/example/,
+								packages/vscode-extension/,
 								packages/client/coverage/,
 								target/,
 								pom.xml,
@@ -152,13 +222,17 @@
 								.gitlab-ci.yml,
 								.svnignore,
 								.gitignore,
+								.github/,
+								.nx/,
+								.turbo/,
 								.m2/,
 								.husky/,
 								.vscode/,
 								**/node_modules,
 								**/node_modules/**,
-								packages/sdk/,
-								packages/sdk-react/,
+								packages/cli/,
+								packages/example/,
+								packages/vscode-extension/,
 								packages/client/coverage/,
 								target/,
 								pom.xml,
@@ -167,6 +241,7 @@
 							</packagingExcludes>
 						</configuration>
 					</plugin>
+					<!-- legacy
 					<plugin>
 						<groupId>org.sonatype.plugins</groupId>
 						<artifactId>nexus-staging-maven-plugin</artifactId>
@@ -175,14 +250,14 @@
 						<configuration>
 							<serverId>ossrh</serverId>
 							<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-							<!-- set to true to disable manual review of release -->
 							<autoReleaseAfterClose>false</autoReleaseAfterClose>
 						</configuration>
 					</plugin>
+					-->					
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.5</version>
+						<version>3.2.8</version>
 						<executions>
 							<execution>
 								<id>sign-artifacts</id>
@@ -191,14 +266,16 @@
 									<goal>sign</goal>
 								</goals>
 								<configuration>
+									<bestPractices>true</bestPractices>
+									<executable>gpg</executable>
 									<gpgArguments>
 										<arg>--pinentry-mode</arg>
 										<arg>loopback</arg>
-									</gpgArguments> 
+									</gpgArguments>
 								</configuration>
 							</execution>
 						</executions>
-					</plugin>
+					</plugin>					
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-source-plugin</artifactId>
@@ -227,6 +304,15 @@
 								</configuration>
 							</execution>
 						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.sonatype.central</groupId>
+						<artifactId>central-publishing-maven-plugin</artifactId>
+						<version>0.8.0</version>
+						<extensions>true</extensions>
+						<configuration>
+						<publishingServerId>central</publishingServerId>
+						</configuration>
 					</plugin>
 				</plugins>
 			</build>

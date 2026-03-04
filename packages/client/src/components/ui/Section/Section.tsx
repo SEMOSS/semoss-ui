@@ -1,33 +1,35 @@
-import React from 'react';
-import { ComponentPropsWithRef, forwardRef, ForwardedRef } from 'react';
+import React, {
+	type ComponentPropsWithRef,
+	type ForwardedRef,
+	forwardRef,
+} from "react";
+import { styled } from "@semoss/ui";
 
-import { styled } from '@semoss/ui';
-
-const StyledSection = styled('section')(({ theme }) => ({
-    paddingBottom: theme.spacing(2),
-    marginBottom: theme.spacing(1),
-    borderBottomWidth: '1px',
-    borderBottomStyle: 'solid',
-    borderBottomColor: theme.palette.divider,
-    '&:last-child': {
-        borderBottom: 'none',
-        marginBottom: 0,
-    },
+const StyledSection = styled("section")(({ theme }) => ({
+	paddingBottom: theme.spacing(2),
+	marginBottom: theme.spacing(1),
+	borderBottomWidth: "1px",
+	borderBottomStyle: "solid",
+	borderBottomColor: theme.palette.divider,
+	"&:last-child": {
+		borderBottom: "none",
+		marginBottom: 0,
+	},
 }));
 
-export type SectionProps = ComponentPropsWithRef<'section'>;
+export type SectionProps = ComponentPropsWithRef<"section">;
 
 const _Section = (
-    props: SectionProps,
-    ref: ForwardedRef<HTMLDivElement>,
+	props: SectionProps,
+	ref: ForwardedRef<HTMLDivElement>,
 ): JSX.Element => {
-    const { children, ...otherProps } = props;
+	const { children, ...otherProps } = props;
 
-    return (
-        <StyledSection ref={ref} {...otherProps}>
-            {children}
-        </StyledSection>
-    );
+	return (
+		<StyledSection ref={ref} {...otherProps}>
+			{children}
+		</StyledSection>
+	);
 };
 
 export const Section = forwardRef(_Section);

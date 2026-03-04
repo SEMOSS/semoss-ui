@@ -9,11 +9,7 @@ Where it is consumed, and why it is needed on that particular workflow/component
 
     useRootStore:
 
-    useStepper:
-
 2. SPECIFIC WORKFLOW HOOKS
-   useEngine:
-
     useImport:
 
     useMetamodel:

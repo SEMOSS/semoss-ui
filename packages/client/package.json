@@ -1,92 +1,14 @@
 {
     "name": "@semoss/client",
     "scripts": {
-        "dev-old": "cross-env NODE_OPTIONS=--max-old-space-size=8192 webpack --watch --mode=development --node-env=development",
-        "lint": "nx eslint:lint",
-        "lint:fix": "nx eslint:lint --fix",
-        "format": "prettier . --check --plugin-search-dir=.",
-        "format:fix": "prettier . --write --plugin-search-dir=.",
-        "fix": "run-s format:fix lint:fix",
-        "type-check": "tsc --pretty --noEmit"
-    },
-    "nx": {
-        "targets": {
-            "build": {
-                "options": {
-                    "cwd": "packages/client",
-                    "args": [
-                        "--node-env=production"
-                    ],
-                    "command": "webpack-cli build"
-                },
-                "cache": true,
-                "dependsOn": [
-                    "^build"
-                ],
-                "inputs": [
-                    "production",
-                    "^production",
-                    {
-                        "externalDependencies": [
-                            "webpack-cli"
-                        ]
-                    }
-                ],
-                "outputs": [
-                    "{projectRoot}/dist"
-                ],
-                "metadata": {
-                    "technologies": [
-                        "webpack"
-                    ],
-                    "description": "Runs Webpack build",
-                    "help": {
-                        "command": "pnpm exec webpack-cli build --help",
-                        "example": {
-                            "options": {
-                                "json": "stats.json"
-                            },
-                            "args": [
-                                "--profile"
-                            ]
-                        }
-                    }
-                },
-                "executor": "nx:run-commands",
-                "configurations": {},
-                "parallelism": true
-            },
-            "dev": {
-                "options": {
-                    "cwd": "packages/client",
-                    "args": [
-                        "--mode=development",
-                        "--node-env=development",
-                        "--watch"
-                    ],
-                    "command": "webpack-cli"
-                },
-                "metadata": {
-                    "technologies": [
-                        "webpack"
-                    ],
-                    "description": "Starts Webpack dev",
-                    "help": {
-                        "command": "pnpm exec webpack-cli --help",
-                        "example": {
-                            "options": {
-                                "args": [
-                                    "--client-progress",
-                                    "--history-api-fallback "
-                                ]
-                            }
-                        }
-                    }
-                },
-                "executor": "nx:run-commands",
-                "configurations": {}
-            }
-        }
+        "dev": "vite --mode development",
+        "build": "vite build --mode production",
+        "build:dev": "vite build --mode development",
+        "type-check": "tsc --pretty --noEmit",
+        "test": "vitest run",
+        "test:ui": "vitest --ui",
+        "test:watch": "vitest --watch",
+        "test:coverage": "vitest --coverage --watch=false"
     },
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",
@@ -95,71 +17,50 @@
         "@dnd-kit/utilities": "^3.2.2",
         "@emotion/react": "^11.11.1",
         "@emotion/styled": "^11.11.0",
-        "@textea/json-viewer": "^4.0.0",
         "@mdi/js": "^6.9.96",
-        "@mdi/react": "^1.6.1",
-        "@monaco-editor/react": "^4.5.1",
-        "@mui/icons-material": "^5.11.16",
-        "@mui/material": "^5.13.5",
+        "@mui/icons-material": "6.0.0",
         "@mui/x-data-grid": "^7.1.0",
+        "@semoss/renderer": "workspace:*",
+        "@semoss/sdk": "workspace:*",
         "@semoss/ui": "workspace:*",
+        "@semoss/shared": "workspace:*",
+        "@tailwindcss/vite": "^4.1.14",
+        "@textea/json-viewer": "^4.0.0",
         "@xyflow/react": "^12.0.4",
         "axios": "^1.5.0",
-        "dayjs": "^1.11.4",
-        "dompurify": "^2.3.10",
-        "flexlayout-react": "^0.8.1",
-        "marked": "^4.0.18",
+        "dayjs": "1.11.8",
+        "echarts": "^5.6.0",
+        "echarts-for-react": "^3.0.2",
+        "lucide-react": "^0.545.0",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",
-        "monaco-editor": "^0.45.0",
-        "nanoid": "^5.0.6",
-        "node-sql-parser": "^4.18.0",
+        "node-sql-parser": "^4.17.0",
         "react": "18.3.1",
         "react-beautiful-dnd": "^13.1.1",
         "react-dom": "18.3.1",
         "react-hook-form": "^7.34.2",
-        "react-markdown": "9.0.1",
         "react-router-dom": "^6.3.0",
-        "react-vega": "^7.6.0",
-        "remark-gfm": "^4.0.0",
-        "vega": "^5.27.0",
-        "vega-lite": "^5.16.3"
+        "react-color": "^2.19.3",
+        "flexlayout-react": "^0.8.1",
+        "prettier": "^2.4.1",
+        "tailwindcss": "^4.1.14"
     },
     "devDependencies": {
-        "@babel/preset-react": "^7.25.9",
-        "@cypress/code-coverage": "^3.12.33",
-        "@cypress/webpack-preprocessor": "^6.0.1",
-        "@types/node": "^16.11.47",
+        "@testing-library/jest-dom": "^6.6.3",
+        "@testing-library/react": "^16.2.0",
+        "@types/jest": "^29.5.14",
         "@types/react": "18.3.1",
         "@types/react-dom": "18.3.0",
         "@types/react-router-dom": "^5.3.3",
-        "@types/webpack": "^5.28.0",
-        "@typescript-eslint/eslint-plugin": "^5.32.0",
-        "@typescript-eslint/parser": "^5.32.0",
-        "babel-loader": "9.1.2",
-        "babel-plugin-istanbul": "^6.1.1",
-        "css-loader": "^6.7.1",
-        "cypress": "^13.7.1",
-        "dotenv": "^16.0.1",
-        "eslint": "^8.21.0",
-        "eslint-config-prettier": "^8.5.0",
-        "eslint-plugin-prettier": "^4.2.1",
-        "eslint-plugin-react": "^7.30.1",
-        "html-webpack-plugin": "^5.5.0",
-        "identity-obj-proxy": "^3.0.0",
-        "mini-css-extract-plugin": "^2.6.1",
-        "monaco-editor-webpack-plugin": "^7.1.0",
-        "npm-run-all": "^4.1.5",
-        "prettier": "^2.4.1",
-        "raw-loader": "^4.0.2",
-        "style-loader": "^3.3.1",
-        "terser-webpack-plugin": "^5.3.10",
-        "ts-loader": "^9.3.1",
-        "tslib": "^2.4.0",
-        "typescript": "^4.7.4",
-        "webpack": "^5.74.0",
-        "webpack-bundle-analyzer": "^4.10.2",
-        "webpack-cli": "^4.10.0",
-        "webpack-dev-server": "^4.9.3"
+        "@vitejs/plugin-react": "^4.6.0",
+        "typescript": "~5.5.2",
+        "vite": "^7.0.0",
+        "vitest": "^4.0.0",
+        "@vitest/ui": "^4.0.0",
+        "@vitest/coverage-v8": "^4.0.0",
+        "@vitest/browser-playwright": "^4.0.0",
+        "@testing-library/user-event": "^14.4.3",
+        "vite-plugin-svgr": "^4.5.0",
+        "html2canvas": "^1.4.1"
     }
 }
