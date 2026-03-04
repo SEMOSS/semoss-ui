@@ -240,17 +240,37 @@ const filteredPrompts = useMemo(() => {
 	const lower = search.trim().toLowerCase();
 	let filtered = visiblePrompts;
 
-	// Filter by categories (your existing logic)
+	// Filter by categories
 	if (selectedCategories.length > 0) {
 		const hasMyPrompts = selectedCategories.some(cat => cat.label === "My Prompts");
 		const selectedTagCategories = selectedCategories
 			.filter(cat => cat.label !== "My Prompts")
 			.map(cat => cat.label);
 
-		// ... your existing filtering logic ...
+		// If no categories selected, show nothing
+		if (!hasMyPrompts && selectedTagCategories.length === 0) {
+			filtered = [];
+		}
+		// If only "My Prompts" is selected, show all user prompts
+		else if (hasMyPrompts && selectedTagCategories.length === 0) {
+			filtered = visiblePrompts.filter(p => isMinePrompt(p, userId));
+		}
+		// If only tag categories are selected (no "My Prompts"), show prompts with those tags
+		else if (!hasMyPrompts && selectedTagCategories.length > 0) {
+			filtered = visiblePrompts.filter(p => 
+				p.tags?.some(tag => selectedTagCategories.includes(tag)) ?? false
+			);
+		}
+		// If both "My Prompts" AND tag categories are selected:
+		// Show prompts that have the selected tags (regardless of ownership)
+		else if (hasMyPrompts && selectedTagCategories.length > 0) {
+			filtered = visiblePrompts.filter(p => 
+				p.tags?.some(tag => selectedTagCategories.includes(tag)) ?? false
+			);
+		}
 	}
 
-	// Apply search filter (your existing logic)
+	// Apply search filter
 	if (lower) {
 		filtered = filtered.filter(p => 
 			(p.title ?? "").toLowerCase().includes(lower) ||
@@ -258,7 +278,7 @@ const filteredPrompts = useMemo(() => {
 		);
 	}
 
-	// Apply additional tag filter (your existing logic)
+	// Apply additional tag filter
 	if (selectedTags.length > 0) {
 		filtered = filtered.filter(p => {
 			if (!Array.isArray(p.tags) || p.tags.length === 0) return false;
@@ -266,7 +286,7 @@ const filteredPrompts = useMemo(() => {
 		});
 	}
 
-	// ADD SORTING HERE
+	// Sort the results
 	const sorted = [...filtered].sort((a, b) => {
 		const dateA = new Date(a.dateCreated || 0).getTime();
 		const dateB = new Date(b.dateCreated || 0).getTime();
@@ -279,9 +299,7 @@ const filteredPrompts = useMemo(() => {
 	});
 
 	return sorted;
-}, [visiblePrompts, selectedCategories, search, selectedTags, userId, sortOrder]); // Add sortOrder to dependencies
-
-
+}, [visiblePrompts, selectedCategories, search, selectedTags, userId, sortOrder]);
 
 // Add these separate arrays for PromptGrid
 const filteredMyPrompts = useMemo(() => 
