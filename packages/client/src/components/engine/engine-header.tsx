@@ -129,6 +129,8 @@ export const EngineHeader: React.FC = () => {
 			setGeneratingMCP(false);
 		}
 	};
+	
+	const canShowGenerateMCP = type !== "GUARDRAIL";
 
 	return (
 		<div className="flex w-full flex-col items-start gap-2 p-0">
@@ -213,22 +215,26 @@ export const EngineHeader: React.FC = () => {
 				</div>
 
 				<div className="flex w-full flex-wrap gap-2 md:w-auto md:flex-nowrap md:justify-end">
+					{canShowGenerateMCP && (
+						<Button
+							variant="outline"
+							size="lg"
+							onClick={handleMCPClick}
+							data-testid="make-mcp-btn"
+						>
+							<div className="flex flex-row items-center">
+								{generatingMCP ? (
+									<Spinner className="mr-2 size-4" />
+								) : (
+									<Bot className="mr-2 size-4" />
+								)}
+								{generatingMCP
+									? "Processing..."
+									: "Generate MCP"}
+							</div>
+						</Button>
+					)}
 					<EngineAccessButton />
-					<Button
-						variant="outline"
-						size="lg"
-						onClick={handleMCPClick}
-						data-testid="make-mcp-btn"
-					>
-						<div className="flex flex-row items-center">
-						{generatingMCP ? (
-							<Spinner className="mr-2 size-4" />
-						) : (
-							<Bot className="mr-2 size-4" />
-						)}
-						{generatingMCP ? "Processing..." : "Generate MCP"}
-						</div>
-					</Button>
 					{active.role === "OWNER" && (
 						<Button
 							disabled={exportLoading}
