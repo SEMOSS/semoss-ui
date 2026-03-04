@@ -16,9 +16,9 @@ import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import type { FlexLayout } from "@/components/flex-layout";
 import { useWorkspace } from "@/hooks";
+import { AppDetailPage } from "@/pages/app";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
 import {
-	SettingsPanel,
 	TerminalPanel,
 	WorkspaceManager,
 } from "../../components/workspace";
@@ -36,7 +36,6 @@ import {
 	NotebookExplorerPanel,
 	NotebookViewerPanel,
 	SelectedBlockPanel,
-	SettingsNavPanel,
 	VariablesPanel,
 } from "./panels";
 
@@ -98,7 +97,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						type: "tab",
 						id: "settings",
 						name: "Settings",
-						component: "settings",
+						component: "settingsPanel",
 						config: {},
 						// maxWidth: 1,
 						helpText: "Settings",
@@ -363,9 +362,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "graph") {
 			return <GraphPanel />;
 		} else if (component === "settingsPanel") {
-			return <SettingsPanel value={config.value} />;
-		} else if (component === "settings") {
-			return <SettingsNavPanel />; // This is a placeholder for the settings tab, which is handled in the border layout
+			return <AppDetailPage showNav={false} />;
 		} else if (component === "export-button") {
 			return <ExportButtonPanel />;
 		}
