@@ -5,7 +5,7 @@ import {
 	TeamMembersTable,
 	TeamProjectsTable,
 } from "@/components/teams";
-import { TeamMembersProviderBanner } from "@/components/teams/TeamMembersProviderBanner";
+import { TeamMembersProviderBanner } from "@/components/teams/team-members-provider-banner";
 
 export const TeamSettingsDetailPage = () => {
 	// pull :type and :id from the url
