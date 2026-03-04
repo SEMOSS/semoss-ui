@@ -41,16 +41,7 @@ import {
 	getTeamUsers,
 	getTeamUsersCount,
 } from "@/api/teams";
-
-const colors = [
-	"#22A4FF",
-	"#FA3F20",
-	"#FA3F20",
-	"#FF9800",
-	"#FF9800",
-	"#22A4FF",
-	"#4CAF50",
-];
+import { useServerPagination } from "@/hooks";
 
 interface MembersTableProps {
 	/**
@@ -75,7 +66,6 @@ interface TeamMember {
 	username: string;
 	userid?: string;
 	dateadded?: string;
-	color?: string;
 }
 
 export const TeamMembersTable = (props: MembersTableProps) => {
@@ -85,7 +75,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const AUTOCOMPLETE_OFFSET = 0;
 
 	/** Member Table State */
-	const [membersPage, setMembersPage] = useState<number>(1);
 	const [selectedMembers, setSelectedMembers] = useState<TeamMember[]>([]);
 	const [count, setCount] = useState(0);
 
@@ -106,7 +95,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 	const [memberCount, setMemberCount] = useState(0);
 	const [totalMembersAll, setTotalMembersAll] = useState(0);
-	const [rowsPerPage, setRowsPerPage] = useState(5);
 	const [hasMembers, setHasMembers] = useState(false);
 
 	const [searchFilter, setSearchFilter] = useState("");
@@ -119,6 +107,21 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const [canCollect, setCanCollect] = useState<boolean>(true);
 	const [_isLoading, setIsLoading] = useState<boolean>(false);
 	const [searchLoading, setSearchLoading] = useState(false);
+
+	const {
+		page: membersPage,
+		rowsPerPage,
+		setPage: setMembersPage,
+		setRowsPerPage,
+		offset: pageOffset,
+		totalPages,
+		startRow,
+		endRow,
+	} = useServerPagination({
+		totalCount: memberCount,
+		initialRowsPerPage: 5,
+		pageIndexBase: 1,
+	});
 
 	const nearBottom = (
 		target: {
@@ -168,9 +171,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 						(val) => {
 							return {
 								...val,
-								color: colors[
-									Math.floor(Math.random() * colors.length)
-								],
 							};
 						},
 					);
@@ -197,19 +197,72 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			return;
 		}
 
-		getTeamUsers(
-			groupId,
-			rowsPerPage,
-			membersPage * rowsPerPage - rowsPerPage,
-			searchFilter,
-		).then((data: unknown[]) => {
-			setTeamMembers(data as TeamMember[]);
-			setHasMembers(data?.length > 0);
-		});
-	}, [groupId, count, membersPage, searchFilter, rowsPerPage]);
+		let isMounted = true;
+
+		const loadMembers = async () => {
+			try {
+				const response = await getTeamUsers(
+					groupId,
+					rowsPerPage,
+					pageOffset,
+					searchFilter,
+				);
+				if (!isMounted) {
+					return;
+				}
+
+				let members = Array.isArray(response)
+					? (response as TeamMember[])
+					: [];
+				const total = memberCount;
+
+				if (
+					members.length < rowsPerPage &&
+					total > pageOffset + members.length
+				) {
+					const remaining = rowsPerPage - members.length;
+					const extraResponse = await getTeamUsers(
+						groupId,
+						remaining,
+						pageOffset + members.length,
+						searchFilter,
+					);
+					if (!isMounted) {
+						return;
+					}
+					const extraMembers = Array.isArray(extraResponse)
+						? (extraResponse as TeamMember[])
+						: [];
+					members = [...members, ...extraMembers];
+				}
+
+				setTeamMembers(members);
+				setHasMembers(members.length > 0);
+			} catch (e) {
+				toast.error(String(e));
+				setTeamMembers([]);
+				setHasMembers(false);
+			}
+		};
+
+		loadMembers();
+
+		return () => {
+			isMounted = false;
+		};
+	}, [
+		groupId,
+		count,
+		membersPage,
+		searchFilter,
+		rowsPerPage,
+		memberCount,
+		pageOffset,
+	]);
 
 	useEffect(() => {
-		if (!groupId) {
+		const refreshToken = count;
+		if (refreshToken < 0 || !groupId) {
 			return;
 		}
 		const trimmed = searchFilter.trim();
@@ -231,7 +284,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 					setMemberCount(0);
 				}
 			});
-	}, [groupId, searchFilter]);
+	}, [groupId, searchFilter, count]);
 
 	useEffect(() => {
 		if (!addMembersModal) {
@@ -267,8 +320,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			} else {
 				if (canCollect) {
 					getUsersNonGroup(false, offset, searchMemberInput);
-				} else {
-					getUsersNonGroup(true, offset, searchMemberInput);
 				}
 			}
 		}, 500);
@@ -332,7 +383,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			toast.error(String(e));
 		} finally {
 			// refresh the members
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 			setOffset(0);
 		}
 	};
@@ -348,7 +399,11 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 						};
 				  }
 				| null = null;
-			response = await deleteTeamUser(user);
+			response = await deleteTeamUser({
+				groupid: groupId,
+				type: user.type,
+				userid: user.userid ?? user.id,
+			});
 
 			if (!response) {
 				return;
@@ -359,7 +414,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			toast.error(String(e));
 		} finally {
 			setDeleteMemberModal(false);
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 		}
 	};
 
@@ -376,7 +431,12 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								};
 						  }
 						| null = null;
-					response = await deleteTeamUser(selectedMembers[i]);
+					response = await deleteTeamUser({
+						groupid: groupId,
+						type: selectedMembers[i].type,
+						userid:
+							selectedMembers[i].userid ?? selectedMembers[i].id,
+					});
 
 					if (!response) {
 						return;
@@ -418,11 +478,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 		return avatarList;
 	}, [teamMembers]);
-
-	const totalPages = Math.max(1, Math.ceil(memberCount / rowsPerPage));
-	const startRow =
-		memberCount === 0 ? 0 : (membersPage - 1) * rowsPerPage + 1;
-	const endRow = Math.min(membersPage * rowsPerPage, memberCount);
 
 	const handleToggleMember = (user: TeamMember) => {
 		const isSelected = selectedMembers.some(
@@ -488,21 +543,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									}}
 								/>
 							</InputGroup>
-							<div className="flex flex-wrap items-center gap-2">
-								{selectedMembers.length > 0 && (
-									<Button
-										variant="outline"
-										className="border-destructive text-destructive hover:bg-destructive/10"
-										onClick={() =>
-											setDeleteMembersModal(true)
-										}
-									>
-										<Trash2 className="size-4" />
-										Delete Selected
-									</Button>
-								)}
+							<div className="flex items-center gap-2 sm:flex-nowrap">
 								<Button
 									variant="default"
+									className="shrink-0"
 									onClick={() => {
 										setOffset(0);
 										setNonCredentialedUsers([]);
@@ -513,6 +557,18 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									<UserPlus className="size-4" />
 									Add Members
 								</Button>
+								{selectedMembers.length > 0 && (
+									<Button
+										variant="outline"
+										className="whitespace-nowrap border-destructive text-destructive hover:bg-destructive/10"
+										onClick={() =>
+											setDeleteMembersModal(true)
+										}
+									>
+										<Trash2 className="size-4" />
+										Delete Selected
+									</Button>
+								)}
 							</div>
 						</div>
 					</CardHeader>
@@ -521,8 +577,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead className="w-[60%]">
-											<div className="flex items-center gap-2">
+										<TableHead className="w-12">
+											<div className="flex justify-center">
 												<Checkbox
 													checked={isAllSelected}
 													onCheckedChange={() => {
@@ -537,9 +593,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 														}
 													}}
 												/>
-												<span>Name</span>
 											</div>
 										</TableHead>
+										<TableHead>Name</TableHead>
 										<TableHead>Added Date</TableHead>
 										<TableHead className="text-right">
 											Action
@@ -551,8 +607,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									teamMembers.length > 0 ? (
 										teamMembers.map((user) => (
 											<TableRow key={user.userid}>
-												<TableCell>
-													<div className="flex items-start gap-3">
+												<TableCell className="w-12">
+													<div className="flex justify-center">
 														<Checkbox
 															checked={selectedMembers.some(
 																(value) =>
@@ -565,21 +621,23 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 																)
 															}
 														/>
-														<div className="flex items-center gap-3">
-															<Avatar className="h-8 w-8">
-																<AvatarFallback className="text-xs">
-																	{user.name
-																		? user.name[0].toUpperCase()
-																		: "U"}
-																</AvatarFallback>
-															</Avatar>
-															<div className="min-w-0">
-																<div className="truncate font-medium text-sm">
-																	{user.name}
-																</div>
-																<div className="text-muted-foreground text-xs">
-																	{`${user.type} ID: ${user.userid}`}
-																</div>
+													</div>
+												</TableCell>
+												<TableCell>
+													<div className="flex items-center gap-3">
+														<Avatar className="h-8 w-8">
+															<AvatarFallback className="text-xs">
+																{user.name
+																	? user.name[0].toUpperCase()
+																	: "U"}
+															</AvatarFallback>
+														</Avatar>
+														<div className="min-w-0">
+															<div className="truncate font-medium text-sm">
+																{user.name}
+															</div>
+															<div className="text-muted-foreground text-xs">
+																{`${user.type} ID: ${user.userid}`}
 															</div>
 														</div>
 													</div>
@@ -608,7 +666,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									) : (
 										<TableRow>
 											<TableCell
-												colSpan={3}
+												colSpan={4}
 												className="text-center"
 											>
 												No Members found.
@@ -618,7 +676,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								</TableBody>
 								<TableFooter>
 									<TableRow>
-										<TableCell colSpan={3}>
+										<TableCell colSpan={4}>
 											<div className="flex flex-wrap items-center justify-end gap-4">
 												<div className="flex items-center gap-2 text-sm">
 													<span>Rows per page:</span>
@@ -635,22 +693,14 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 																	10,
 																),
 															);
-															setMembersPage(1);
 														}}
 													>
 														<SelectTrigger className="h-8 w-[70px]">
 															<SelectValue />
 														</SelectTrigger>
 														<SelectContent>
-															{[5, 10, 20]
-																.filter(
-																	(val) =>
-																		val <=
-																			memberCount ||
-																		val ===
-																			5,
-																)
-																.map((val) => (
+															{[5, 10, 20].map(
+																(val) => (
 																	<SelectItem
 																		key={`rows-${val}`}
 																		value={String(
@@ -659,7 +709,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 																	>
 																		{val}
 																	</SelectItem>
-																))}
+																),
+															)}
 														</SelectContent>
 													</Select>
 												</div>
@@ -831,7 +882,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									return (
 										<div
 											key={user.id}
-											className="flex items-start gap-3 rounded-md p-3 hover:bg-muted/50"
+											className="flex items-center gap-3 rounded-md p-3 hover:bg-muted/50"
 										>
 											<Checkbox
 												checked={isSelected}
@@ -840,13 +891,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												}
 											/>
 											<Avatar className="h-8 w-8">
-												<AvatarFallback
-													style={{
-														backgroundColor:
-															user.color,
-													}}
-													className="text-xs"
-												>
+												<AvatarFallback className="text-xs">
 													{initials}
 												</AvatarFallback>
 											</Avatar>
@@ -924,9 +969,17 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 					<DialogHeader>
 						<DialogTitle>Are you sure?</DialogTitle>
 						<DialogDescription>
-							{userToDelete
-								? `This will remove ${userToDelete.name}.`
-								: "This will remove the selected user."}
+							{userToDelete ? (
+								<>
+									This will remove{" "}
+									<span className="font-medium text-foreground">
+										{userToDelete.name}
+									</span>
+									.
+								</>
+							) : (
+								"This will remove the selected user."
+							)}
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>

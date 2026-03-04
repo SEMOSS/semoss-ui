@@ -1,11 +1,4 @@
-import {
-	ArrowDown,
-	ArrowUp,
-	Pencil,
-	Plus,
-	Search as SearchIcon,
-	Trash2,
-} from "lucide-react";
+import { Pencil, Plus, Search as SearchIcon, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
@@ -38,8 +31,12 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { editEngineUserPermissions, type getUserEnginePermission } from "@/api";
-import FilteredIcon from "@/assets/img/FilteredIcon.png";
-import { useAPI, useRootStore, useSettings } from "@/hooks";
+import {
+	useAPI,
+	useRootStore,
+	useServerPagination,
+	useSettings,
+} from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
 import { MembersAddOverlay } from "./members-add-overlay";
@@ -124,28 +121,37 @@ export const MembersTable = (props: MembersTableProps) => {
 	const { adminMode } = useSettings();
 
 	/** Member Table States */
-	const [page, setPage] = useState<number>(0);
-	const [rowsPerPage, setRowsPerPage] = useState<number>(5);
 	const [search, setSearch] = useState<string>("");
 	const [isSearch, setIsSearch] = useState<boolean>(false);
 	const [permissionFilter, _setPermissionFilter] = useState<string>("");
 	const [selectedMembers, setSelectedMembers] = useState<
 		SETTINGS_PROVISIONED_USER[]
 	>([]);
-	/* Table Sorting */
-	const [nameOrder, setNameOrder] = useState<"asc" | "desc">("asc");
-	const [permissionOrder, setPermissionOrder] = useState<"asc" | "desc">(
-		"asc",
-	);
-
 	const [userData, setUserData] = useState<SETTINGS_PROVISIONED_USER>(
 		{} as SETTINGS_PROVISIONED_USER,
 	);
 	const [userPermission, setUserPermission] =
 		useState<SETTINGS_ROLE>("Read-Only");
+	const [totalMembers, setTotalMembers] = useState(0);
 
 	// debounce the input
 	const debouncedSearch = useDebouncedValue(search);
+
+	const {
+		page,
+		rowsPerPage,
+		setPage,
+		setRowsPerPage,
+		offset,
+		totalPages,
+		startRow,
+		endRow,
+		resetPage,
+	} = useServerPagination({
+		totalCount: totalMembers,
+		initialRowsPerPage: 5,
+		pageIndexBase: 0,
+	});
 
 	/** Delete Member */
 	const [deleteMembersModal, setDeleteMembersModal] =
@@ -171,7 +177,7 @@ export const MembersTable = (props: MembersTableProps) => {
 			debouncedSearch ? debouncedSearch : undefined,
 			permissionPriorityMapper(permissionFilter)?.permission,
 			rowsPerPage, // limit
-			(page + 1) * rowsPerPage - rowsPerPage, // offset
+			offset, // offset
 		];
 		getAllAuthorsApi = [
 			"getProjectUsers",
@@ -197,7 +203,7 @@ export const MembersTable = (props: MembersTableProps) => {
 			id,
 			debouncedSearch ? debouncedSearch : undefined,
 			permissionPriorityMapper(permissionFilter)?.permission,
-			(page + 1) * rowsPerPage - rowsPerPage, // offset
+			offset, // offset
 			rowsPerPage, // limit
 		];
 		getAllAuthorsApi = [
@@ -232,6 +238,14 @@ export const MembersTable = (props: MembersTableProps) => {
 	console.log(getMembers);
 
 	useEffect(() => {
+		if (getMembers.status !== "SUCCESS" || !getMembers.data) {
+			return;
+		}
+		const data = getMembers.data as GetMembersData;
+		setTotalMembers(data.totalMembers ?? data.members.length);
+	}, [getMembers.data, getMembers.status]);
+
+	useEffect(() => {
 		if (
 			allAuthorsResponse.status === "SUCCESS" &&
 			allAuthorsResponse.data
@@ -248,9 +262,9 @@ export const MembersTable = (props: MembersTableProps) => {
 	// Reset pagination when search changes.
 	useEffect(() => {
 		if (debouncedSearch !== undefined) {
-			setPage(0);
+			resetPage();
 		}
-	}, [debouncedSearch]);
+	}, [debouncedSearch, resetPage]);
 
 	/**
 	 * Sets the user details based on the current user in the members array.
@@ -448,70 +462,8 @@ export const MembersTable = (props: MembersTableProps) => {
 		getMembers.status === "SUCCESS"
 			? (getMembers.data as GetMembersData).members
 			: [];
-	const totalMembers =
-		getMembers.status === "SUCCESS"
-			? (getMembers.data as GetMembersData).totalMembers
-			: 0;
 	const hasMembers =
-		getMembers.status === "SUCCESS" &&
-		(getMembers.data as GetMembersData).totalMembers > 0;
-
-	/**
-	 * Sort Members
-	 *
-	 * @returns sorted members
-	 */
-	const sortedMembers = useMemo(() => {
-		/**
-		 *
-		 * @param permission
-		 * @returns order of the permission
-		 */
-		const getPermissionOrder = (permission: string): number => {
-			const permissionOrder = {
-				Author: 1,
-				Editor: 2,
-				"Read-Only": 3,
-			};
-			return (
-				permissionOrder[
-					permissionPriorityMapper(permission)?.permission
-				] || 0
-			);
-		};
-		return [...renderedMembers].sort((a, b) => {
-			// sort by permission
-			const permissionA = getPermissionOrder(a.permission);
-			const permissionB = getPermissionOrder(b.permission);
-			//A - B means A is before B
-			const permissionComparison =
-				permissionOrder === "asc"
-					? permissionA - permissionB
-					: permissionB - permissionA;
-
-			if (permissionComparison === 0) {
-				return nameOrder === "asc"
-					? a.name.localeCompare(b.name)
-					: b.name.localeCompare(a.name);
-			}
-			return permissionComparison;
-		});
-	}, [renderedMembers, nameOrder, permissionOrder]);
-
-	/**
-	 * Handle Table Sorting Logic for Names
-	 *
-	 */
-	const handleNameSort = () => {
-		setNameOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-	};
-	/**
-	 * Handle Table Sorting Logic for Permissions
-	 *
-	 */
-	const handlePermissionSort = () => {
-		setPermissionOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-	};
+		getMembers.status === "SUCCESS" && renderedMembers.length > 0;
 
 	const avatarMembers = useMemo(() => {
 		return renderedMembers.slice(0, 5);
@@ -586,16 +538,6 @@ export const MembersTable = (props: MembersTableProps) => {
 								</div>
 							</div>
 						</div>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => {
-								//setIsSearch(!isSearch);
-							}}
-							data-testid="membersTable-filterIcon"
-						>
-							<img src={FilteredIcon} alt="Filter" />
-						</Button>
 						<div className="flex items-center">
 							{isSearch ? (
 								<Input
@@ -726,40 +668,9 @@ export const MembersTable = (props: MembersTableProps) => {
 														/>
 													</div>
 												</TableHead>
+												<TableHead>Name</TableHead>
 												<TableHead>
-													<Button
-														variant="ghost"
-														size="sm"
-														onClick={() =>
-															handleNameSort()
-														}
-														className="h-8 gap-1"
-													>
-														Name
-														{nameOrder === "asc" ? (
-															<ArrowUp className="size-4" />
-														) : (
-															<ArrowDown className="size-4" />
-														)}
-													</Button>
-												</TableHead>
-												<TableHead>
-													<Button
-														variant="ghost"
-														size="sm"
-														onClick={() =>
-															handlePermissionSort()
-														}
-														className="h-8 gap-1"
-													>
-														Permission
-														{permissionOrder ===
-														"asc" ? (
-															<ArrowUp className="size-4" />
-														) : (
-															<ArrowDown className="size-4" />
-														)}
-													</Button>
+													Permission
 												</TableHead>
 												<TableHead>
 													Permission Date
@@ -781,8 +692,8 @@ export const MembersTable = (props: MembersTableProps) => {
 											</TableRow>
 										</TableHeader>
 										<TableBody>
-											{sortedMembers.map((_x, i) => {
-												const user = sortedMembers[i];
+											{renderedMembers.map((_x, i) => {
+												const user = renderedMembers[i];
 
 												let isSelected = false;
 
@@ -1133,6 +1044,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																onValueChange={(
 																	value,
 																) => {
+																	setPage(0);
 																	setRowsPerPage(
 																		parseInt(
 																			value,
@@ -1158,15 +1070,7 @@ export const MembersTable = (props: MembersTableProps) => {
 															</Select>
 														</div>
 														<div className="text-sm">
-															{page *
-																rowsPerPage +
-																1}
-															-
-															{Math.min(
-																(page + 1) *
-																	rowsPerPage,
-																totalMembers,
-															)}{" "}
+															{startRow}-{endRow}{" "}
 															of {totalMembers}
 														</div>
 														<div className="flex gap-1">
@@ -1210,10 +1114,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																onClick={() =>
 																	setPage(
 																		Math.min(
-																			Math.ceil(
-																				totalMembers /
-																					rowsPerPage,
-																			) -
+																			totalPages -
 																				1,
 																			page +
 																				1,
@@ -1222,10 +1123,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																}
 																disabled={
 																	page >=
-																		Math.ceil(
-																			totalMembers /
-																				rowsPerPage,
-																		) -
+																		totalPages -
 																			1 ||
 																	isLoading
 																}
@@ -1237,18 +1135,13 @@ export const MembersTable = (props: MembersTableProps) => {
 																size="icon-sm"
 																onClick={() =>
 																	setPage(
-																		Math.ceil(
-																			totalMembers /
-																				rowsPerPage,
-																		) - 1,
+																		totalPages -
+																			1,
 																	)
 																}
 																disabled={
 																	page >=
-																		Math.ceil(
-																			totalMembers /
-																				rowsPerPage,
-																		) -
+																		totalPages -
 																			1 ||
 																	isLoading
 																}

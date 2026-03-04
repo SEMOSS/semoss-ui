@@ -6,6 +6,7 @@ import {
 	LockKeyhole,
 	Pencil,
 	RefreshCcw,
+	SquareArrowOutUpRight,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useState } from "react";
@@ -30,6 +31,7 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import { uploadImage } from "@/api";
 import {
@@ -53,10 +55,10 @@ import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import type { Role } from "@/types";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
-import { AccessControl } from "./AppDetailTabs/AccessControl";
-import { Dependencies } from "./AppDetailTabs/Dependencies";
-import { Overview } from "./AppDetailTabs/Overview";
-import { SettingsTab } from "./AppDetailTabs/Settings";
+import { AccessControl } from "./AppDetailTabs/access-control";
+import { Dependencies } from "./AppDetailTabs/dependencies-tab";
+import { Overview } from "./AppDetailTabs/overview-tab";
+import { SettingsTab } from "./AppDetailTabs/settings-tab";
 import { AppFileManagerPage } from "./app-file-manager-page";
 
 const modelDependencies = (
@@ -74,7 +76,12 @@ const modelDependencies = (
 	}));
 };
 
-export const AppDetailPage = observer(() => {
+interface AppDetailsProps {
+	showNav?: boolean;
+}
+
+export const AppDetailPage = observer((props: AppDetailsProps) => {
+	const { showNav = true } = props;
 	const { control, setValue, getValues, watch, handleSubmit } =
 		useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
 
@@ -108,7 +115,6 @@ export const AppDetailPage = observer(() => {
 		},
 		[notification],
 	);
-
 	const getPermission = useCallback(async () => {
 		const role = await getUserProjectPermission(appId);
 
@@ -342,10 +348,7 @@ export const AppDetailPage = observer(() => {
 				const modelled = modelDependencies(res.output);
 				setValue("dependencies", modelled);
 			} else {
-				notification.add({
-					color: "error",
-					message: res.output,
-				});
+				toast.error(res.output);
 			}
 		}
 		setIsEditDependenciesModalOpen(false);
@@ -375,11 +378,7 @@ export const AppDetailPage = observer(() => {
 		}
 
 		if (Object.keys(meta).length === 0) {
-			notification.add({
-				color: "warning",
-				message: "Nothing to Save",
-			});
-
+			toast.info("Nothing to Save");
 			return;
 		}
 
@@ -395,11 +394,7 @@ export const AppDetailPage = observer(() => {
 
 				// track the errors
 				if (operationType.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
-						message: output as string,
-					});
-
+					toast.error(output as string);
 					return;
 				}
 				// upload the image
@@ -420,19 +415,12 @@ export const AppDetailPage = observer(() => {
 				}
 
 				// close it, refresh and succesfully message
-				notification.add({
-					color: "success",
-					message: additionalOutput[0].output,
-				});
-
+				toast.success(additionalOutput[0].output);
 				fetchAppData(appId);
 				handleCloseEditDetailsModal();
 			})
 			.catch((error) => {
-				notification.add({
-					color: "error",
-					message: error.message,
-				});
+				toast.error(error.message);
 			});
 	});
 
@@ -445,16 +433,10 @@ export const AppDetailPage = observer(() => {
 
 		try {
 			await navigator.clipboard.writeText(appId);
-			notification.add({
-				color: "success",
-				message: "App ID copied to clipboard",
-			});
+			toast.success("App ID copied to clipboard");
 		} catch (error) {
 			console.error(error);
-			notification.add({
-				color: "error",
-				message: "Failed to copy App ID",
-			});
+			toast.error("Failed to copy App ID");
 		}
 	};
 
@@ -482,36 +464,51 @@ export const AppDetailPage = observer(() => {
 	const visibleTabs = TABS_BY_PERMISSION[permission] || ["Overview"];
 
 	return (
-		<div>
-			<NavbarLeft>
-				<NavbarHeader />
-			</NavbarLeft>
-			<div className="flex w-full flex-col gap-4 p-4">
-				<div className="flex w-full flex-col items-start gap-2 p-0">
-					<Breadcrumb>
-						<BreadcrumbList>
-							<BreadcrumbItem>
-								<BreadcrumbLink asChild>
-									<Link to={"/app"} className="text-inherit">
-										App Catalog
-									</Link>
-								</BreadcrumbLink>
-							</BreadcrumbItem>
-							<BreadcrumbSeparator>
-								<ChevronRight />
-							</BreadcrumbSeparator>
-							<BreadcrumbItem>
-								<BreadcrumbPage>
-									<span
-										title={appInfo?.project_name}
-										className="inline-block max-w-[40ch] truncate text-ellipsis"
-									>
-										{appInfo?.project_name}
-									</span>
-								</BreadcrumbPage>
-							</BreadcrumbItem>
-						</BreadcrumbList>
-					</Breadcrumb>
+		<div className="w-full">
+			{showNav && (
+				<NavbarLeft>
+					<NavbarHeader />
+				</NavbarLeft>
+			)}
+			<div
+				className={`h-full w-full${
+					showNav ? "flex flex-col justify-center gap-4" : "m-2 p-5"
+				}`}
+			>
+				<div
+					className={`flex h-full w-full flex-col gap-3 ${
+						showNav ? "m-auto max-w-[79rem]" : ""
+					}`}
+				>
+					{showNav && (
+						<Breadcrumb>
+							<BreadcrumbList>
+								<BreadcrumbItem>
+									<BreadcrumbLink asChild>
+										<Link
+											to={"/app"}
+											className="text-inherit"
+										>
+											App Catalog
+										</Link>
+									</BreadcrumbLink>
+								</BreadcrumbItem>
+								<BreadcrumbSeparator>
+									<ChevronRight />
+								</BreadcrumbSeparator>
+								<BreadcrumbItem>
+									<BreadcrumbPage>
+										<span
+											title={appInfo?.project_name}
+											className="inline-block max-w-[40ch] truncate text-ellipsis"
+										>
+											{appInfo?.project_name}
+										</span>
+									</BreadcrumbPage>
+								</BreadcrumbItem>
+							</BreadcrumbList>
+						</Breadcrumb>
+					)}
 
 					<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
 						<div className="h-16 w-16 flex-shrink-0 rounded-lg bg-muted">
@@ -614,6 +611,20 @@ export const AppDetailPage = observer(() => {
 										Edit
 									</Button>
 								)}
+							{permission !== "discoverable" &&
+								permission !== "readOnly" &&
+								showNav && (
+									<Button
+										asChild
+										variant="outline"
+										data-testid="appDetail-edit-btn"
+									>
+										<Link to={`/app/${appId}/view`}>
+											<SquareArrowOutUpRight className="size-4" />
+											Open App
+										</Link>
+									</Button>
+								)}
 						</div>
 					</div>
 
@@ -624,7 +635,7 @@ export const AppDetailPage = observer(() => {
 									"No description available"}
 							</p>
 							{tags?.length ? (
-								<div className="flex flex-row flex-wrap gap-2">
+								<div className="flex flex-row flex-wrap gap-2 pb-2">
 									{tags.map((tag) => {
 										if (!tag) return null;
 										return (
@@ -698,11 +709,12 @@ export const AppDetailPage = observer(() => {
 											Access Control
 										</TabsTrigger>
 									)}
-									{visibleTabs.includes("Files") && (
-										<TabsTrigger value="Files">
-											Files
-										</TabsTrigger>
-									)}
+									{visibleTabs.includes("Files") &&
+										showNav && (
+											<TabsTrigger value="Files">
+												Files
+											</TabsTrigger>
+										)}
 									{visibleTabs.includes("SMSS") && (
 										<TabsTrigger value="SMSS">
 											SMSS
@@ -781,7 +793,7 @@ export const AppDetailPage = observer(() => {
 								permission={permission}
 							/>
 						)}
-						{selectedTab === "Files" && (
+						{selectedTab === "Files" && showNav && (
 							<AppFileManagerPage appId={appId || ""} />
 						)}
 						{selectedTab === "SMSS" && (
