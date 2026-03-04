@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { STATE_VERSION } from "@semoss/renderer";
+import { STATE_VERSION, type Variable } from "@semoss/renderer";
 import { Box, Stack, styled } from "@semoss/ui";
 import AIConductor from "@/assets/img/AIConductor.png";
 import DevBanner from "@/assets/img/DevBanner.png";
@@ -10,16 +10,20 @@ import { NewAppModal } from "@/components/app";
 import { BannerSection } from "@/components/landing/BannerSection";
 import { FeaturedAppCard } from "@/components/landing/FeaturedAppCard";
 import { useRootStore } from "@/hooks";
-import { BASE_PAGE_BLOCKS } from "../../pages/app/app.constants";
-import CreateAppSection from "./CreateAppSection";
+import {
+	BASE_APP_QUERIES,
+	BASE_APP_VARIABLES,
+	BASE_PAGE_BLOCKS,
+} from "../../pages/app/app.constants";
 import { FanFavoritesSection } from "./FanFavoritesSection";
+import { LandingHeader } from "./landing-header";
 
-const StyledAppCard = styled("div")(({}) => ({
+const StyledAppCard = styled("div")({
 	display: "flex",
 	width: "100%",
 	gap: "24px",
 	flexDirection: "column",
-}));
+});
 
 export const DeveloperUserScreen = observer(() => {
 	const { configStore } = useRootStore();
@@ -44,40 +48,13 @@ export const DeveloperUserScreen = observer(() => {
 		navigate(`/app/${appId}/edit`);
 	};
 
-	const isRestricted = !configStore.isEngineOperationAvailable("APP", "add");
+	const isRestricted = !configStore.isEngineOperationAvailable(
+		"PROJECT",
+		"add",
+	);
 	if (isRestricted) {
 		return <Navigate to="/" replace />;
 	}
-
-	/**
-	 * @name setupApp
-	 *
-	 * @description Sets initial app meta based on tile click,
-	 * in order to open the modal and gather more meta
-	 *
-	 * @param type - What type of app is user trying to create
-	 * @returns void
-	 */
-	const setupApp = (type: "blocks" | "code" | "agent"): void => {
-		if (type === "blocks") {
-			setNewAppOptions({
-				type: "blocks",
-				state: {
-					version: STATE_VERSION,
-					variables: {},
-					queries: {},
-					blocks: BASE_PAGE_BLOCKS,
-					executionOrder: [],
-				},
-			});
-		} else if (type === "code") {
-			setNewAppOptions({
-				type: "code",
-			});
-		} else if (type === "agent") {
-			navigate("/app/new/prompt");
-		}
-	};
 
 	return (
 		<Stack direction="column" spacing={3}>
@@ -89,7 +66,7 @@ export const DeveloperUserScreen = observer(() => {
 				}
 				link={{
 					label: "Browse Templates",
-					to: "/app/new/template",
+					to: "/app/new",
 				}}
 			/>
 			<StyledAppCard>
@@ -103,9 +80,7 @@ export const DeveloperUserScreen = observer(() => {
 				>
 					<FeaturedAppCard
 						href={"../../playground/dist/"}
-						tagline={
-							<span>Experiment in our Playground&trade;</span>
-						}
+						tagline="Experiment in our Playground™"
 						description={`Chat with different LLMs and try out different prompts from our prompt library. Or chat with multiple LLMs in one room to hold a focus group or round table.`}
 						imageUrl={playground}
 						chip={{
@@ -139,7 +114,31 @@ export const DeveloperUserScreen = observer(() => {
 						}}
 					/>
 				) : null}
-				<CreateAppSection setupApp={setupApp} />
+				<LandingHeader
+					onCreate={(type) => {
+						if (type === "blocks") {
+							setNewAppOptions({
+								type: "blocks",
+								state: {
+									version: STATE_VERSION,
+									variables: BASE_APP_VARIABLES as Record<
+										string,
+										Variable
+									>,
+									queries: BASE_APP_QUERIES,
+									blocks: BASE_PAGE_BLOCKS,
+									executionOrder: [],
+								},
+							});
+						} else if (type === "code") {
+							setNewAppOptions({
+								type: "code",
+							});
+						} else if (type === "agent") {
+							navigate("/app/new/prompt");
+						}
+					}}
+				/>
 			</StyledAppCard>
 
 			<FanFavoritesSection />

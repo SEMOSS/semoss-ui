@@ -1,11 +1,12 @@
-import {
-	Tooltip as MuiTooltip,
-	type TooltipProps as MuiTooltipProps,
-	type SxProps,
-} from "@mui/material";
-import React from "react";
+import { Tooltip as MuiTooltip, type SxProps } from "@mui/material";
+import type React from "react";
 
-export interface TooltipProps extends MuiTooltipProps {
+export interface TooltipProps {
+	/**
+	 * The element that will trigger the tooltip when hovered over or focused on.
+	 */
+	children?: React.ReactElement;
+
 	/**
 	 * if `true`, adds an arrow to the tooltip
 	 * @default false
@@ -79,7 +80,9 @@ export interface TooltipProps extends MuiTooltipProps {
 	title: string;
 }
 
-export const Tooltip = (props: MuiTooltipProps) => {
-	const { children, ...rest } = props;
-	return <MuiTooltip {...rest}>{children}</MuiTooltip>;
+export const Tooltip: React.FC<TooltipProps> = ({
+	children,
+	...otherProps
+}) => {
+	return <MuiTooltip {...otherProps}>{children}</MuiTooltip>;
 };

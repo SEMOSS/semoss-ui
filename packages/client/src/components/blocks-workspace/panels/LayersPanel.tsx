@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noExplicitAny: TODO
 import {
 	closestCenter,
 	DndContext,
@@ -14,6 +15,7 @@ import { restrictToFirstScrollableAncestor } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import {
 	Add,
+	Check as CheckIcon,
 	ChevronRight,
 	ContentCopy,
 	Delete,
@@ -33,14 +35,12 @@ import {
 	INPUT_BLOCK_TYPES,
 	useBlocks,
 } from "@semoss/renderer";
-import { FlexLayout } from "@semoss/shared";
 import {
 	Divider,
 	Grid,
 	Icon,
 	IconButton,
 	InputAdornment,
-	Menu,
 	Stack,
 	styled,
 	TextField,
@@ -48,12 +48,27 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import {
+	Button,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	Input,
+	Tooltip,
+    TooltipContent,
+  	TooltipProvider,
+  	TooltipTrigger,
+} from "@semoss/ui/next";
+import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useDesigner, useWorkspace } from "@/hooks";
 import { getBlockElement } from "@/stores";
 import DuplicateIcon from "../../../assets/img/Duplicate.svg";
+import RenameIcon from "../../../assets/img/Rename.svg";
 import { BlockSettingsRegistry } from "../blocks";
+import { CircleCheck, Pencil } from "lucide-react";
 
 const customCollisionDetection = (args) => {
 	const collisions = closestCenter(args);
@@ -64,10 +79,10 @@ const customCollisionDetection = (args) => {
 const StyledMenu = styled("div")(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
-	height: "auto",
+	height: "100%",
 	maxHeight: "100%",
 	width: "100%",
-	paddingTop: theme.spacing(1),
+	paddingTop: theme.spacing(0.5),
 }));
 
 const StyledMenuHeader = styled("div")(({ theme }) => ({
@@ -103,15 +118,13 @@ const StyledLabelContainer = styled("div", {
 	overflow: "hidden",
 }));
 
-const StyledLabelTitle = styled("div")(({ theme }) => ({
-	...theme.typography.body2,
+const StyledLabelTitle = styled(Typography)(({ theme }) => ({
 	overflow: "hidden",
 	textOverflow: "ellipsis",
 	whiteSpace: "nowrap",
 }));
 
-const StyledLabelSubtitleText = styled("div")(({ theme }) => ({
-	...theme.typography.caption,
+const StyledLabelSubtitleText = styled(Typography)(({ theme }) => ({
 	overflow: "hidden",
 	textOverflow: "ellipsis",
 	whiteSpace: "nowrap",
@@ -119,6 +132,14 @@ const StyledLabelSubtitleText = styled("div")(({ theme }) => ({
 
 const StyledTreeItemIcon = styled(Icon)(() => ({
 	color: "#757575",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	height: "100%",
+}));
+
+const StyledRouteText = styled(Typography)(() => ({
+	lineHeight: "normal",
 }));
 
 const StyledTreeItemIconButton = styled(IconButton)(() => ({
@@ -211,6 +232,13 @@ const StyledTypography = styled(Typography)(() => ({
 	letterSpacing: "0.15px",
 }));
 
+const StyledPageScroll = styled("div")(({ theme }) => ({
+	flex: 1,
+	overflow: "auto",
+	width: "100%",
+	paddingBottom: theme.spacing(1),
+}));
+
 const StyledHomePageDiv = styled("div")(() => ({
 	display: "flex",
 	alignItems: "center",
@@ -254,7 +282,7 @@ type TreeNode = {
 };
 
 const findNode = (
-	root: any,
+	root,
 	id: UniqueIdentifier,
 ): { node: TreeNode; parent: TreeNode | null; slot: string | null } | null => {
 	const stack: {
@@ -291,6 +319,13 @@ export interface AddBlocksLayersProps {
 	title: string;
 }
 
+const DroppableContainer = React.forwardRef<
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement>
+>(function DroppableContainer(props, ref) {
+	return <div ref={ref} {...props} />;
+});
+
 /**
  * Render the Layers
  */
@@ -298,7 +333,7 @@ export const LayersPanel = observer(
 	(props: AddBlocksLayersProps): JSX.Element => {
 		const { title } = props;
 		// get the store
-		const { registry, state } = useBlocks();
+		const { state } = useBlocks();
 		const { designer } = useDesigner();
 		const notification = useNotification();
 		const { workspace } = useWorkspace();
@@ -316,6 +351,13 @@ export const LayersPanel = observer(
 		const accordionRefs = useRef({});
 
 		const [_activeNode, setActiveNode] = useState<TreeNode | null>(null);
+		const [editingBlockId, setEditingBlockId] = useState<string | null>(
+			null,
+		);
+		const [editBlockId, setEditBlockId] = useState<string | null>(null);
+		const [rename, setRename] = useState(true);
+		const editableAreaRef = useRef<HTMLDivElement | null>(null);
+		const inputRef = useRef<HTMLInputElement>(null);
 
 		const sensors = useSensors(
 			useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -365,9 +407,89 @@ export const LayersPanel = observer(
 		}, [designer.selected]);
 
 		useEffect(() => {
-			const block = state.blocks[selectedPages];
-			handlePageSelection(block);
+			const handleClickOutside = (event: MouseEvent) => {
+				if (
+					editableAreaRef.current &&
+					!editableAreaRef.current.contains(event.target as Node)
+				) {
+					const target = event.target as HTMLElement;
+
+					if (target.closest(".MuiOutlinedInput-root")) {
+						return;
+					}
+
+					setEditingBlockId(null);
+				}
+			};
+
+			document.addEventListener("mousedown", handleClickOutside);
+
+			return () => {
+				document.removeEventListener("mousedown", handleClickOutside);
+			};
 		}, []);
+
+		useEffect(() => {
+			const block = state.blocks[selectedPages];
+			if (block) {
+				handlePageSelection(block);
+			}
+		}, []);
+
+		// When searching, auto-expand ancestors and scroll to the first matching layer
+		useEffect(() => {
+			if (!search) return;
+
+			const lower = search.toLowerCase();
+
+			const collectDescendants = (rootId: string): string[] => {
+				const out: string[] = [];
+				const visit = (id: string) => {
+					const blk = state.blocks[id];
+					if (!blk) return;
+					out.push(id);
+					for (const s in blk.slots) {
+						blk.slots[s]?.children?.forEach((cid: string) => visit(cid));
+					}
+				};
+				visit(rootId);
+				return out;
+			};
+
+			const allIds = collectDescendants(selectedPages);
+			const matchId = allIds.find((id) => {
+				const blk = state.blocks[id];
+				if (!blk) return false;
+				const label = `${blk.widget}${blk.id}`.toLowerCase();
+				return label.indexOf(lower) > -1;
+			});
+
+			if (matchId) {
+				// Expand all ancestors so the node will render
+				const parents = state.getAllParents(matchId);
+				if (parents?.length) {
+					setExpanded((prev) => [...new Set([...prev, ...parents])]);
+				}
+				// After expansion renders, scroll the matched item into view
+				setTimeout(() => {
+					const el = accordionRefs.current[matchId] as HTMLElement | null;
+					if (el) {
+						scrollIntoView(el, { block: "center" });
+					}
+				}, 120);
+			}
+		}, [search, selectedPages]);
+
+		const handleRename = (id: string) => {
+			state.dispatch({
+				message: ActionMessages.SET_BLOCK_DATA,
+				payload: {
+					id: id,
+					path: "id",
+					value: editBlockId.trim(),
+				},
+			});
+		};
 
 		const handleDragStart = (event: DragStartEvent) => {
 			const { active } = event;
@@ -483,13 +605,7 @@ export const LayersPanel = observer(
 			selectLayer(selectedPages);
 		};
 
-		const DraggableTreeItem = ({
-			node,
-			children,
-		}: {
-			node: any;
-			children: any;
-		}) => {
+		const DraggableTreeItem = ({ node, children }: { node; children }) => {
 			const { attributes, listeners, setNodeRef, transform } =
 				useDraggable({
 					id: node.id,
@@ -516,8 +632,8 @@ export const LayersPanel = observer(
 			children,
 			onDropPositionChange,
 		}: {
-			node: any;
-			children: any;
+			node;
+			children;
 			onDropPositionChange: (
 				position: "top" | "bottom" | "inside",
 			) => void;
@@ -563,7 +679,7 @@ export const LayersPanel = observer(
 			};
 
 			return (
-				<div
+				<DroppableContainer
 					ref={setNodeRef}
 					data-id={node.id}
 					style={{ position: "relative" }}
@@ -627,7 +743,7 @@ export const LayersPanel = observer(
 						</>
 					)}
 					{children}
-				</div>
+				</DroppableContainer>
 			);
 		};
 
@@ -651,9 +767,9 @@ export const LayersPanel = observer(
 			WidgetIcon,
 			canVariabilize,
 		}: {
-			block: any;
+			block;
 			variableName: string;
-			WidgetIcon: any;
+			WidgetIcon;
 			canVariabilize: boolean;
 		}) => {
 			const [menuAnchorEl, setMenuAnchorEl] =
@@ -704,7 +820,7 @@ export const LayersPanel = observer(
 				handleMenuClose();
 			};
 
-			const handleDuplicate = (
+			const handleDuplicate = async (
 				event: React.MouseEvent<HTMLElement>,
 				duplicateId: string,
 			) => {
@@ -715,11 +831,16 @@ export const LayersPanel = observer(
 
 					const blockJson = {
 						widget: toJS(block.widget),
-						data: toJS(block.data),
+						data: (() => {
+							const data = toJS(block.data);
+							if (data.id) {
+								delete data.id; // Remove the id property if it exists
+							}
+							return data;
+						})(),
 						listeners: toJS(block.listeners),
 						slots: {},
 					};
-
 					// generate the slots
 					for (const slot in block.slots) {
 						if (block.slots[slot]) {
@@ -753,7 +874,7 @@ export const LayersPanel = observer(
 						}
 					: undefined;
 
-				const id = state.dispatch({
+				const id = await state.dispatch({
 					message: ActionMessages.ADD_BLOCK,
 					payload: {
 						json: getJsonForBlock(duplicateId) as BlockJSON,
@@ -762,130 +883,224 @@ export const LayersPanel = observer(
 				});
 				setSelectedLayers([]); // Clear first
 
+				const newId = id as string;
+				selectLayer(selectedPages); // Refresh the layer list
 				// Apply selection and hover
-				designer.setSelected(id as string);
-				designer.setHovered(id as string);
-
+				designer.setSelected(newId);
+				designer.setHovered(newId);
 				// Ensure visual selection state is fully synced
-				const nodeIds = [id as string];
-				setSelectedLayers(nodeIds);
-
+				setSelectedLayers([newId]);
 				// Render and scroll to the new block (if your system supports it)
-				renderBlock(id as string);
+				renderBlock(newId);
 				handleMenuClose();
 			};
+			const handleRenameBlock = (id: string) => {
+				setEditingBlockId(id);
+				const block = state.blocks[id];
+				setEditBlockId(
+					(block?.data?.id as string)
+						? (block?.data?.id as string)
+						: (block?.id as string),
+				);
+			};
+			const handleValidation = (id: string) => {
+				if (!id) {
+					setRename(true);
+					return;
+				}
 
+				const blocks = Object.values(state.blocks);
+
+				const exists = blocks.some(
+					(block: any) => block.id === id || block?.data?.id === id,
+				);
+
+				setRename(exists);
+			};
 			return (
-				<>
-					<StyledTreeItemLabel>
-						<StyledTreeItemIcon>
-							<WidgetIcon />
-						</StyledTreeItemIcon>
-						<StyledLabelContainer
-							search={
-								search
-									? [block.widget, block.id]
-											.join("")
-											.toLowerCase()
-											.indexOf(search.toLowerCase()) > -1
-									: false
-							}
-						>
-							<StyledLabelTitle>
-								{block.widget.charAt(0).toUpperCase() +
-									block.widget.slice(1)}
-							</StyledLabelTitle>
-							<StyledLabelSubtitleText>
-								{variableName || block.id}
-							</StyledLabelSubtitleText>
-						</StyledLabelContainer>
-						{variableName ? (
-							<StyledTreeItemIconButton
-								aria-label="copy"
-								title={`Copy variable`}
-								color="default"
-								size="small"
-								onClick={async (e: React.SyntheticEvent) => {
-									e.stopPropagation();
-									await copy(`{{${variableName}}}`);
-								}}
-								data-onhover
-							>
-								<ContentCopy fontSize="small" />
-							</StyledTreeItemIconButton>
-						) : canVariabilize ? (
-							<StyledTreeItemIconButton
-								aria-label="add"
-								title={`Add variable`}
-								size="small"
-								color="primary"
-								onClick={(e: React.SyntheticEvent) => {
-									e.stopPropagation();
-									setVariableModal(block.id);
-								}}
-								data-onhover
-							>
-								<LibraryAdd fontSize="small" />
-							</StyledTreeItemIconButton>
-						) : null}
+        <>
+          <StyledTreeItemLabel>
+            <StyledTreeItemIcon>
+              <WidgetIcon />
+            </StyledTreeItemIcon>
+            <StyledLabelContainer
+              search={
+                search
+                  ? [block.widget, block.id, block.data.id]
+                      .join("")
+                      .toLowerCase()
+                      .indexOf(search.toLowerCase()) > -1
+                  : false
+              }
+            >
+              <StyledLabelTitle variant="body2">
+                {block.widget.charAt(0).toUpperCase() + block.widget.slice(1)}
+              </StyledLabelTitle>
+              <div ref={editableAreaRef}>
+                {editingBlockId === block.id ? ( // Check if the current block is being edited
+                  <div className="flex flex-row items-center gap-1">
+                    <div className="flex flex-row items-center gap-1">
+                      <Input
+                        ref={inputRef}
+                        className="w-full max-w-xs h-5 px-1 shadow-none rounded border border-primary focus-visible:border-primary font-sans font-normal text-sm tracking-normal text-muted-foreground focus-visible:outline-none focus-visible:ring-0"
+                        value={editBlockId}
+                        onChange={(e) => {
+                          const newVal = e.target.value;
+                          setEditBlockId(newVal);
+                          handleValidation(newVal);
+                          const cursorPosition = e.target.selectionStart;
+                          if (inputRef.current && cursorPosition !== null) {
+                            requestAnimationFrame(() => {
+                              if (inputRef.current) {
+                                inputRef.current.setSelectionRange(
+                                  cursorPosition,
+                                  cursorPosition,
+                                );
+                              }
+                            });
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                        }}
+                        autoFocus
+                      />
+                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Button
+                              disabled={rename}
+                              size="icon"
+                              onMouseDown={(e) => e.stopPropagation()}
+                              className="h-6 w-6 p-0 bg-transparent"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRename(block.id);
+                                setRename(true);
+                                setEditingBlockId(null);
+                              }}
+                              variant="secondary"
+                            >
+                              <CircleCheck
+                                className={`w-4 h-4 ${
+                                  rename ? "text-muted-foreground" : "text-primary"
+                                }`}
+                              />
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
 
-						{/* 3-dot menu button */}
-						<IconButton
-							size="small"
-							aria-label="more"
-							onClick={(e) => handleMenuOpen(e, block.id)}
-						>
-							<MoreVert fontSize="small" />
-						</IconButton>
-					</StyledTreeItemLabel>
-					<Menu
-						anchorEl={menuAnchorEl}
-						open={Boolean(menuAnchorEl)}
-						onClose={handleMenuClose}
-						anchorOrigin={{
-							vertical: "bottom",
-							horizontal: "right",
-						}}
-						transformOrigin={{
-							vertical: "top",
-							horizontal: "right",
-						}}
-						sx={{
-							".MuiPopover-paper": {
-								borderRadius: "4px",
-								padding: "8px 0px",
-								boxShadow:
-									"0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
-							},
-						}}
-					>
-						<Menu.Item
-							value="duplicate"
-							sx={{ display: "flex" }}
-							onClick={(e: React.MouseEvent<HTMLElement>) =>
-								handleDuplicate(e, block.id)
-							}
-						>
-							<img
-								src={DuplicateIcon}
-								alt="Duplicate Icon"
-								style={{ marginRight: "8px" }}
-							/>{" "}
-							Duplicate
-						</Menu.Item>
-						<Menu.Item
-							value="delete"
-							sx={{ display: "flex" }}
-							onClick={() => handleDelete(block.id)}
-						>
-							<DeleteOutlineOutlinedIcon
-								style={{ color: "#757575", marginRight: "6px" }}
-							/>{" "}
-							Delete
-						</Menu.Item>
-					</Menu>
-				</>
-			);
+                        {rename && (
+                          <TooltipContent side="top" >
+                            Block name already exists
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                ) : (
+                  <StyledLabelSubtitleText variant="caption">
+                    {variableName || block.data.id || block.id}
+                  </StyledLabelSubtitleText>
+                )}
+              </div>
+            </StyledLabelContainer>
+            {variableName ? (
+              <StyledTreeItemIconButton
+                aria-label="copy"
+                title={`Copy variable`}
+                color="default"
+                size="small"
+                onClick={async (e: React.SyntheticEvent) => {
+                  e.stopPropagation();
+                  await copy(`{{${variableName}}}`);
+                }}
+                data-onhover
+              >
+                <ContentCopy fontSize="small" />
+              </StyledTreeItemIconButton>
+            ) : canVariabilize ? (
+              <StyledTreeItemIconButton
+                aria-label="add"
+                title={`Add variable`}
+                size="small"
+                color="primary"
+                onClick={(e: React.SyntheticEvent) => {
+                  e.stopPropagation();
+                  setVariableModal(block.id);
+                }}
+                data-onhover
+              >
+                <LibraryAdd fontSize="small" />
+              </StyledTreeItemIconButton>
+            ) : null}
+
+            {/* 3-dot menu button */}
+            <IconButton
+              size="small"
+              aria-label="more"
+              onClick={(e) => handleMenuOpen(e, block.id)}
+            >
+              <MoreVert fontSize="small" />
+            </IconButton>
+          </StyledTreeItemLabel>
+          <DropdownMenu
+            open={Boolean(menuAnchorEl)}
+            onOpenChange={handleMenuClose}
+          >
+            <DropdownMenuTrigger asChild>
+              <div />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              side="bottom"
+              className="rounded-md border bg-popover p-1 shadow-md"
+            >
+              {!INPUT_BLOCK_TYPES.includes(block.widget) && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRenameBlock(block.id);
+                    handleMenuClose();
+                  }}
+                  className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+                >
+				<Pencil className="relative left-1 mr-3 size-4" />
+                  Rename
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                onClick={(e: React.MouseEvent<HTMLElement>) => {
+                  e.stopPropagation();
+                  handleDuplicate(e, block.id);
+                  handleMenuClose();
+                }}
+                className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+              >
+                <img
+                  src={DuplicateIcon}
+                  alt="Duplicate Icon"
+                  className="mr-2"
+                />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  handleDelete(block.id);
+                  handleMenuClose();
+                }}
+                className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-outline text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+              >
+                <DeleteOutlineOutlinedIcon className="mr-1.5 size-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
+      );
 		};
 		const renderBlock = (id: string) => {
 			const block = state.blocks[id];
@@ -994,9 +1209,11 @@ export const LayersPanel = observer(
 								</StyledTreeItemIcon>
 							)}
 						</StyledHomePageChildDiv>
-						<Typography variant="subtitle1">
-							/{block.data.route as string}
-						</Typography>
+						<StyledRouteText variant="subtitle1">
+							{id === "page-1"
+								? "/page-1"
+								: `/${block.data.route as string}`}
+						</StyledRouteText>
 					</StyledHomePageDiv>
 					{id !== "page-1" && pageHovered === block.id && (
 						<StyledTreeItemIcon>
@@ -1284,28 +1501,31 @@ export const LayersPanel = observer(
 		};
 
 		return (
-			<Panel>
-				<Stack spacing={undefined}>
-					<StyledTitle>
-						<StyledTitleSpan>{title}</StyledTitleSpan>
-					</StyledTitle>
-					<StyledStack>
-						<StyledTextFiled
-							placeholder="Search"
-							size="small"
-							fullWidth
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<Search />
-									</InputAdornment>
-								),
-							}}
-						/>
-					</StyledStack>
-				</Stack>
+			<Panel
+				actions={
+					<Stack spacing={undefined}>
+						<StyledTitle>
+							<StyledTitleSpan>{title}</StyledTitleSpan>
+						</StyledTitle>
+						<StyledStack>
+							<StyledTextFiled
+								placeholder="Search"
+								size="small"
+								fullWidth
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								InputProps={{
+									startAdornment: (
+										<InputAdornment position="start">
+											<Search />
+										</InputAdornment>
+									),
+								}}
+							/>
+						</StyledStack>
+					</Stack>
+				}
+			>
 				<Grid
 					container
 					direction="column"
@@ -1314,8 +1534,8 @@ export const LayersPanel = observer(
 						height: "100%",
 					}}
 				>
-					<Grid item xs={12} width={"100%"} height={"100%"}>
-						<Grid item xs={12}>
+					<Grid item xs={12} width={"100%"} sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+						<Grid item xs={12} sx={{ display: "flex", flexDirection: "column", flex: "0 0 140px", minHeight: "80px", maxHeight: "230px", overflow: "hidden" }}>
 							<StyledMenu>
 								<StyledMenuHeader>
 									<Stack
@@ -1342,7 +1562,7 @@ export const LayersPanel = observer(
 										</Stack>
 									</Stack>
 								</StyledMenuHeader>
-								<StyledMenuScroll>
+								<StyledPageScroll>
 									{allPages?.length ? (
 										allPages.map((page) =>
 											renderPage(page.id),
@@ -1354,13 +1574,11 @@ export const LayersPanel = observer(
 											</Typography>
 										</StyledTreeItemMessage>
 									)}
-								</StyledMenuScroll>
+								</StyledPageScroll>
 							</StyledMenu>
 						</Grid>
-						<Grid item xs={12} height={"1%"}>
-							<Divider />
-						</Grid>
-						<Grid item xs={12} height={"69%"}>
+						<Divider sx={{ margin: 0 }} />
+						<Grid item xs={12} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
 							<DndContext
 								sensors={sensors}
 								collisionDetection={customCollisionDetection}

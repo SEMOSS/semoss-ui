@@ -10,11 +10,13 @@ import {
 	KeyboardArrowDown,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { DATA_FRAME_TYPES } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
+import { MonacoEditor } from "@semoss/shared";
 import {
 	Button,
+	Checkbox,
 	IconButton,
 	InputAdornment,
 	Modal,
@@ -53,9 +55,6 @@ const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
 	gap: theme.spacing(1),
 	color: theme.palette.text.secondary,
 }));
-
-// Reduce Initial Bundle
-const Editor = lazy(() => import("@monaco-editor/react"));
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
@@ -188,7 +187,10 @@ export interface DataImportCellDef extends CellDef<"data-import"> {
 		columnAliases: string[];
 		tableNames: string[];
 		joins: JoinObject[];
-
+		dataLimit: number;
+		enableBatching?: boolean;
+		batchSize?: number;
+		currentOffset?: number;
 		// TODO add filters and summaries
 		// filters: FilterObject[];
 		// summaries: FilterObject[];
@@ -210,10 +212,34 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 			display: {},
 			ids: [],
 		});
+		const [dataLimit, setDataLimit] = useState(
+			cell.parameters.dataLimit || null,
+		);
 
 		const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
 			`MyEngines(engineTypes=['DATABASE']);`,
 		);
+
+		// Ensure offset starts at 0 when component first mounts with batching enabled
+		const hasInitialized = useRef(false);
+		useEffect(() => {
+			if (
+				!hasInitialized.current &&
+				cell.parameters.enableBatching &&
+				(cell.parameters.currentOffset ?? 0) !== 0
+			) {
+				hasInitialized.current = true;
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						queryId: cell.query.id,
+						cellId: cell.id,
+						path: "parameters.currentOffset",
+						value: 0,
+					},
+				});
+			}
+		}, []);
 
 		useEffect(() => {
 			if (myDbs.status !== "SUCCESS") {
@@ -364,6 +390,63 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 			setIsDataImportModalOpen(true);
 		};
 
+		const updateDataLimit = (query: string): string => {
+			return query.replace(
+				/Limit\s*\(\s*-*\d+\s*\)/,
+				`Limit ( ${cell.parameters.dataLimit || -1} )`,
+			);
+		};
+
+		const handleDataLimitUpdate = (
+			e: React.ChangeEvent<HTMLInputElement>,
+		) => {
+			let value = parseInt(e.target.value);
+			if (Number.isNaN(value)) {
+				value = -1;
+			} else {
+				if (value <= 0) {
+					value = 1;
+				}
+				if (value >= 10000) {
+					value = 10000;
+				}
+			}
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					path: "parameters.dataLimit",
+					queryId: cell.query.id,
+					cellId: cell.id,
+					value: value,
+				},
+			});
+			const updatedSelectQuery = updateDataLimit(
+				cell.parameters.selectQuery,
+			);
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					path: "parameters.selectQuery",
+					queryId: cell.query.id,
+					cellId: cell.id,
+					value: updatedSelectQuery,
+				},
+			});
+			setDataLimit(value === -1 ? null : value);
+		};
+		const updateFrameType = (e: React.ChangeEvent<HTMLInputElement>) => {
+			const value = e.target.value;
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					path: "parameters.frameType",
+					queryId: cell.query.id,
+					cellId: cell.id,
+					value: value,
+				},
+			});
+		};
+
 		return (
 			<StyledContent>
 				<Stack direction="column" spacing={1}>
@@ -397,6 +480,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 											},
 										});
 									}}
+									key={`database-${cell.parameters.databaseId}`}
 								>
 									{Array.from(
 										cfgLibraryDatabases.ids,
@@ -419,6 +503,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 										openEditModal();
 									}}
 									startIcon={<Edit />}
+									key={`cell-edit-data-import-${cell.id}`}
 								>
 									Edit
 								</Button>
@@ -428,29 +513,28 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 					{showStyledView ? (
 						<>
 							<StyledFlexDiv>
-								{cell.parameters.tableNames &&
-									cell.parameters.tableNames.map(
-										(tableName, tableIdx) => (
-											<Tooltip
-												title={`${tableName} Table`}
-												key={tableIdx}
-											>
-												<StyledTableTitleBubble>
-													<StyledCalendarViewMonth fontSize="small" />
-													{tableName}
-												</StyledTableTitleBubble>
-											</Tooltip>
-										),
-									)}
+								{cell.parameters.tableNames?.map(
+									(tableName) => (
+										<Tooltip
+											title={`${tableName} Table`}
+											key={`table-key-${tableName}`}
+										>
+											<StyledTableTitleBubble>
+												<StyledCalendarViewMonth fontSize="small" />
+												{tableName}
+											</StyledTableTitleBubble>
+										</Tooltip>
+									),
+								)}
 							</StyledFlexDiv>
 
 							{isExpanded &&
 								cell.parameters.joins &&
-								cell.parameters.joins.map((join, joinIdx) => (
+								cell.parameters.joins.map((join) => (
 									<StyledBlockStack
 										direction="column"
 										spacing={1}
-										key={joinIdx}
+										key={`column-${join.leftTable}-${join.joinType}}`}
 									>
 										<StyledModalTitleWrapper>
 											<StyledPaddedFlexDiv>
@@ -508,14 +592,18 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 					) : (
 						<div>
 							<Suspense fallback={<>...</>}>
-								<Editor
+								<MonacoEditor
 									// value is appended to make pixel valid for copy / paste to other pixel cell
 									defaultValue={
-										cell.parameters.selectQuery.slice(
-											0,
-											-1,
-										) +
-										` | Import ( frame = [ CreateFrame ( frameType = [ \"${cell.parameters.frameType}\" ] , override = [ true ] ) .as ( [ \"${cell.parameters.frameVariableName}\" ] ) ] ) ; Frame ( frame = [ \"${cell.parameters.frameVariableName}\" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`
+										cell.parameters.selectQuery
+											.slice(0, -1)
+											.replace(
+												/\s*\|\s*Limit\s*\(\s*[^)]*\s*\)/,
+												"",
+											) +
+										(cell.parameters.enableBatching
+											? ` | Offset ( ${cell.parameters.currentOffset ?? 0} ) | Limit ( ${cell.parameters.batchSize ?? 100} ) | Import ( frame = [ CreateFrame ( frameType = [ "${cell.parameters.frameType}" ] , override = [ true ] ) .as ( [ "${cell.parameters.frameVariableName}" ] ) ] ) ; Frame ( frame = [ "${cell.parameters.frameVariableName}" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`
+											: ` | Import ( frame = [ CreateFrame ( frameType = [ "${cell.parameters.frameType}" ] , override = [ true ] ) .as ( [ "${cell.parameters.frameVariableName}" ] ) ] ) ; Frame ( frame = [ "${cell.parameters.frameVariableName}" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`)
 									}
 									language="pixel"
 									options={{
@@ -545,7 +633,19 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 							alignItems={"center"}
 							paddingTop={"0px"}
 							direction="row"
+							spacing={1}
 						>
+							<TextField
+								type="number"
+								size="small"
+								label="Data Limit"
+								value={dataLimit}
+								onChange={handleDataLimitUpdate}
+								disabled={
+									cell.parameters.enableBatching ?? false
+								}
+								key={`data-limit-number`}
+							/>
 							<Button
 								variant={"text"}
 								color={"primary"}
@@ -553,6 +653,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 								onClick={() => {
 									setShowStyledView(!showStyledView);
 								}}
+								key={`show-hide-pixel-button`}
 							>
 								{showStyledView ? "Show" : "Hide"} Pixel
 							</Button>
@@ -574,18 +675,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 										</InputAdornment>
 									),
 								}}
-								onChange={(e) => {
-									const value = e.target.value;
-									state.dispatch({
-										message: ActionMessages.UPDATE_CELL,
-										payload: {
-											path: "parameters.frameType",
-											queryId: cell.query.id,
-											cellId: cell.id,
-											value: value,
-										},
-									});
-								}}
+								onChange={updateFrameType}
 							>
 								{Object.values(DATA_FRAME_TYPES).map(
 									(frame, i) => (
@@ -601,6 +691,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 							<StyledTextField
 								title="Set Frame Variable Name"
 								value={cell.parameters.frameVariableName}
+								key={`frame-variable-name-${cell.id}`}
 								disabled={cell.isLoading}
 								InputProps={{
 									startAdornment: (
@@ -619,6 +710,148 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 									});
 								}}
 							/>
+							<Tooltip
+								title={
+									cell.parameters.enableBatching
+										? "Disable Batching"
+										: "Enable Batching"
+								}
+							>
+								<Checkbox
+									checked={
+										cell.parameters.enableBatching ?? false
+									}
+									label={
+										cell.parameters.enableBatching
+											? ""
+											: "Enable Batching"
+									}
+									disabled={cell.isLoading}
+									onChange={(
+										e: React.ChangeEvent<HTMLInputElement>,
+									) => {
+										const isEnabling = e.target.checked;
+										state.dispatch({
+											message: ActionMessages.UPDATE_CELL,
+											payload: {
+												queryId: cell.query.id,
+												cellId: cell.id,
+												path: "parameters.enableBatching",
+												value: isEnabling,
+											},
+										});
+
+										// ALWAYS reset offset to 0 when toggling batching
+										state.dispatch({
+											message: ActionMessages.UPDATE_CELL,
+											payload: {
+												queryId: cell.query.id,
+												cellId: cell.id,
+												path: "parameters.currentOffset",
+												value: 0,
+											},
+										});
+
+										if (isEnabling) {
+											// Set initial batch size when enabling batching
+											state.dispatch({
+												message:
+													ActionMessages.UPDATE_CELL,
+												payload: {
+													queryId: cell.query.id,
+													cellId: cell.id,
+													path: "parameters.batchSize",
+													value: 100,
+												},
+											});
+										}
+									}}
+									sx={{
+										color: "text.secondary",
+									}}
+								/>
+							</Tooltip>
+							{cell.parameters.enableBatching && (
+								<>
+									<TextField
+										size="small"
+										title="Batch Size"
+										type="number"
+										placeholder="Batch Amount..."
+										value={cell.parameters.batchSize ?? 100}
+										disabled={cell.isLoading}
+										onChange={(e) => {
+											const inputValue = e.target.value;
+
+											// Allow empty string for deletion
+											if (inputValue === "") {
+												state.dispatch({
+													message:
+														ActionMessages.UPDATE_CELL,
+													payload: {
+														queryId: cell.query.id,
+														cellId: cell.id,
+														path: "parameters.batchSize",
+														value: "",
+													},
+												});
+												return;
+											}
+
+											const value = Number.parseInt(
+												inputValue,
+												10,
+											);
+											if (
+												!Number.isNaN(value) &&
+												value >= 0
+											) {
+												state.dispatch({
+													message:
+														ActionMessages.UPDATE_CELL,
+													payload: {
+														queryId: cell.query.id,
+														cellId: cell.id,
+														path: "parameters.batchSize",
+														value: value,
+													},
+												});
+											}
+										}}
+										sx={{ width: "120px" }}
+									/>
+									<TextField
+										size="small"
+										title="Current Offset"
+										type="number"
+										value={
+											cell.parameters.currentOffset ?? 0
+										}
+										disabled
+										sx={{ width: "80px" }}
+									/>
+									<Button
+										variant="outlined"
+										size="small"
+										onClick={() => {
+											state.dispatch({
+												message:
+													ActionMessages.UPDATE_CELL,
+												payload: {
+													queryId: cell.query.id,
+													cellId: cell.id,
+													path: "parameters.currentOffset",
+													value: 0,
+												},
+											});
+										}}
+										disabled={cell.isLoading}
+										sx={{ minWidth: "60px" }}
+									>
+										Reset
+									</Button>
+								</>
+							)}
 						</Stack>
 					)}
 				</Stack>

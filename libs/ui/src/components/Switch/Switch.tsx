@@ -13,7 +13,7 @@ const StyledSwitch = styled(MuiSwitch)(({ theme, size }) => ({
 		"&.Mui-checked": {
 			transform:
 				size === "small" ? "translateX(16px)" : "translateX(20px)",
-			color: "#fff",
+			color: theme.palette.common.white,
 
 			"& + .MuiSwitch-track": {
 				backgroundColor: theme.palette.primary.main,
@@ -108,10 +108,10 @@ export interface SwitchProps {
 	 * @default 'medium'
 	 */
 	size?: "medium" | "small";
-    /**
-     * Props applied to the input element.
-     */
-    inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
+	/**
+	 * Props applied to the input element.
+	 */
+	inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
 	/**
 	 * The value of the component. The DOM API casts this to a string.
 	 * The browser uses "on" as the default value.
@@ -123,5 +123,7 @@ export interface SwitchProps {
 
 export const Switch = (props: SwitchProps) => {
 	const { sx, size = "medium", inputProps } = props;
-	return <StyledSwitch sx={sx} size={size} inputProps={inputProps} {...props} />;
+	return (
+		<StyledSwitch sx={sx} size={size} inputProps={inputProps} {...props} />
+	);
 };

@@ -60,11 +60,11 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 		yAxisColumn: { name: "", selector: "", width: undefined },
 		chartInstance: { setOption: null },
 	});
-	let fields = "",
-		xAxis = "",
-		yAxis = "",
-		category = "",
-		tooltip = "";
+	let fields: Record<string, any> = {};
+	let xAxis = "";
+	let yAxis = "";
+	let category = "";
+	let tooltip = "";
 	if (Object.hasOwn(data.option, "_state")) {
 		fields = data.option["_state"]["fields"];
 		xAxis = fields["XAxis"];

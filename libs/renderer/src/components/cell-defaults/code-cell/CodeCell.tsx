@@ -1,7 +1,8 @@
 import { Code, KeyboardArrowDown } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
+import { MonacoDiffEditor, MonacoEditor } from "@semoss/shared";
 import {
 	Button,
 	Markdown,
@@ -38,14 +39,6 @@ const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
 	gap: theme.spacing(1),
 	color: theme.palette.text.secondary,
 }));
-
-// Reduce Initial Bundle
-const Editor = lazy(() => import("@monaco-editor/react"));
-const DiffEditor = lazy(() =>
-	import("@monaco-editor/react").then((module) => ({
-		default: module.DiffEditor,
-	})),
-);
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
@@ -153,8 +146,20 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
 	const [isLLMRejected, setIsLLMRejected] = useState(false);
 	const [count, setCount] = useState(0);
+	const [allFunctions, setAllFunctions] = useState([]);
 	const [modelId, setModelId] = useState(agentModelEngine);
-
+	useEffect(() => {
+		async function fetchData() {
+			const response = await runPixel(`HelpJson();`);
+			const outputKeys = Object.keys(response.pixelReturn[0].output);
+			const allOutputs = outputKeys.map((key) => ({
+				key,
+				value: response.pixelReturn[0].output[key],
+			}));
+			setAllFunctions(allOutputs);
+		}
+		fetchData();
+	}, []);
 	/**
 	 * Ask a LLM a question to generate a response
 	 * @param prompt - prompt passed to the LLM
@@ -380,7 +385,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 			},
 		});
 
-		const exposedQueryParameterDescription = (
+		const _exposedQueryParameterDescription = (
 			exposedParameter: string,
 			queryId: string,
 		): string => {
@@ -464,9 +469,35 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 								// we need to chack for wrapping curly brackets manually to know what to replace
 								const word =
 									model.getWordUntilPosition(position);
+								const languageFunctions =
+									allFunctions.find(
+										(f) =>
+											f.key.toLowerCase() ===
+											"General".toLowerCase(),
+									)?.value || []; // General is name for key for reactors
 
 								//trigger reactor suggestions
 								if (word.word !== "") {
+									const suggestions = languageFunctions.map(
+										(reactor) => ({
+											label: {
+												label: reactor,
+												description: "Reactor",
+											},
+											kind: monaco.languages
+												.CompletionItemKind.Function,
+											insertText: reactor + "();",
+											range: {
+												startLineNumber:
+													position.lineNumber,
+												endLineNumber:
+													position.lineNumber,
+												startColumn: word.startColumn,
+												endColumn: word.endColumn,
+											},
+										}),
+									);
+									return { suggestions };
 								}
 
 								// triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
@@ -531,15 +562,35 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 							provideCompletionItems: async (model, position) => {
 								const word =
 									model.getWordUntilPosition(position);
+								const languageFunctions =
+									allFunctions.find(
+										(f) =>
+											f.key.toLowerCase() ===
+											language.toLowerCase(),
+									)?.value || [];
 
-								// word is not empty, completion was triggered by a non-special character
 								if (word.word !== "") {
-									// return empty suggestions to trigger built in typeahead
-									return {
-										suggestions: [],
-									};
+									const suggestions = languageFunctions.map(
+										(fn) => ({
+											label: {
+												label: fn,
+												description: "Function",
+											},
+											kind: monaco.languages
+												.CompletionItemKind.Function,
+											insertText: fn + "()",
+											range: {
+												startLineNumber:
+													position.lineNumber,
+												endLineNumber:
+													position.lineNumber,
+												startColumn: word.startColumn,
+												endColumn: word.endColumn,
+											},
+										}),
+									);
+									return { suggestions };
 								}
-
 								const specialCharacterStartRange = {
 									startLineNumber: position.lineNumber,
 									endLineNumber: position.lineNumber,
@@ -586,7 +637,10 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
 								return { suggestions: variableSuggestions };
 							},
-							triggerCharacters: ["{"],
+							triggerCharacters: [
+								"{",
+								..."abcdefghijklmnopqrstuvwxyz".split(""),
+							],
 						},
 					),
 				};
@@ -642,7 +696,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
 	useEffect(() => {
 		setModelId(agentModelEngine);
-		setCount(count + 1);
+		setCount((count) => count + 1);
 	}, [agentModelEngine]);
 
 	return (
@@ -650,146 +704,157 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 			{LLMLoading && <div>Loading...</div>}
 
 			<Stack direction="row" spacing={1}>
-				<StyledContainer>
-					{!isExpanded ? (
-						<Suspense fallback={<>...</>}>
-							{EDITOR_TYPE[cell.parameters.type].language ===
-								"Markdown" && cell.isExecuted ? (
-								<Markdown>
-									{typeof cell.parameters.code === "string"
-										? cell.parameters.code
-										: cell.parameters.code.join("\n")}
-								</Markdown>
-							) : (
-								<Editor
-									width="100%"
-									height={getHeight()}
-									language={
-										EDITOR_TYPE[cell.parameters.type]
-											.language
-									}
-									value={
-										typeof cell.parameters.code === "string"
-											? cell.parameters.code
-											: cell.parameters.code.join("\n")
-									}
-									options={{
-										scrollbar: {
-											alwaysConsumeMouseWheel: false,
-										},
-										lineNumbers: "on",
-										readOnly: false,
-										minimap: { enabled: false },
-										automaticLayout: true,
-										scrollBeyondLastLine: false,
-										lineHeight: EDITOR_LINE_HEIGHT,
-										overviewRulerBorder: false,
-										wordWrap: "on",
-										glyphMargin: false,
-										folding: false,
-										lineNumbersMinChars: 2,
-									}}
-									onChange={handleChange}
-									onMount={handleMount}
-								/>
-							)}
-						</Suspense>
-					) : diffEditMode ? (
-						<>
+				{allFunctions.length > 0 && (
+					<StyledContainer>
+						{!isExpanded ? (
 							<Suspense fallback={<>...</>}>
-								<DiffEditor
-									width="100%"
-									height={getHeight()}
-									original={oldContentDiffEdit}
-									modified={newContentDiffEdit}
-									language={
-										EDITOR_TYPE[cell.parameters.type].value
-									}
-									options={{
-										// lineNumbers: 'on',
-										readOnly: true,
-										minimap: { enabled: false },
-										automaticLayout: true,
-										scrollBeyondLastLine: false,
-										lineHeight: EDITOR_LINE_HEIGHT,
-										overviewRulerBorder: false,
-										wordWrap: "on",
-									}}
-									onMount={handleDiffEditorMount}
-								/>
-							</Suspense>
-							<Stack
-								direction="row"
-								alignItems={"center"}
-								justifyContent={"center"}
-								margin={1}
-							>
-								<Button
-									title="Accept changes"
-									size="small"
-									color="primary"
-									variant="contained"
-									onClick={acceptDiffEditHandler}
-								>
-									Keep
-								</Button>
-								<Button
-									title="Reject changes"
-									size="small"
-									color="primary"
-									variant="text"
-									onClick={rejectDiffEditHandler}
-								>
-									Reject
-								</Button>
-							</Stack>
-						</>
-					) : (
-						<Suspense fallback={<>...</>}>
-							{EDITOR_TYPE[cell.parameters.type].language ===
-								"Markdown" && cell.isExecuted ? (
-								<Markdown>
-									{typeof cell.parameters.code === "string"
-										? cell.parameters.code
-										: cell.parameters.code.join("\n")}
-								</Markdown>
-							) : (
-								<Editor
-									key={count}
-									width="100%"
-									height={getHeight()}
-									language={
-										EDITOR_TYPE[cell.parameters.type]
-											.language
-									}
-									value={
-										typeof cell.parameters.code === "string"
+								{EDITOR_TYPE[cell.parameters.type].language ===
+									"Markdown" && cell.isExecuted ? (
+									<Markdown>
+										{typeof cell.parameters.code ===
+										"string"
 											? cell.parameters.code
-											: cell.parameters.code.join("\n")
-									}
-									options={{
-										scrollbar: {
-											alwaysConsumeMouseWheel: false,
-										},
-										lineNumbers: "on",
-										readOnly: false,
-										minimap: { enabled: false },
-										automaticLayout: true,
-										scrollBeyondLastLine: false,
-										lineHeight: EDITOR_LINE_HEIGHT,
-										overviewRulerBorder: false,
-										wordWrap: "on",
-										glyphMargin: false,
-										folding: false,
-										lineNumbersMinChars: 2,
-									}}
-									onChange={handleChange}
-									onMount={handleMount}
-								/>
-							)}
-						</Suspense>
-					)}
-				</StyledContainer>
+											: cell.parameters.code.join("\n")}
+									</Markdown>
+								) : (
+									<MonacoEditor
+										width="100%"
+										height={getHeight()}
+										language={
+											EDITOR_TYPE[cell.parameters.type]
+												.language
+										}
+										value={
+											typeof cell.parameters.code ===
+											"string"
+												? cell.parameters.code
+												: cell.parameters.code.join(
+														"\n",
+													)
+										}
+										options={{
+											scrollbar: {
+												alwaysConsumeMouseWheel: false,
+											},
+											lineNumbers: "on",
+											readOnly: false,
+											minimap: { enabled: false },
+											automaticLayout: true,
+											scrollBeyondLastLine: false,
+											lineHeight: EDITOR_LINE_HEIGHT,
+											overviewRulerBorder: false,
+											wordWrap: "on",
+											glyphMargin: false,
+											folding: false,
+											lineNumbersMinChars: 2,
+										}}
+										onChange={handleChange}
+										onMount={handleMount}
+									/>
+								)}
+							</Suspense>
+						) : diffEditMode ? (
+							<>
+								<Suspense fallback={<>...</>}>
+									<MonacoDiffEditor
+										width="100%"
+										height={getHeight()}
+										original={oldContentDiffEdit}
+										modified={newContentDiffEdit}
+										language={
+											EDITOR_TYPE[cell.parameters.type]
+												.value
+										}
+										options={{
+											// lineNumbers: 'on',
+											readOnly: true,
+											minimap: { enabled: false },
+											automaticLayout: true,
+											scrollBeyondLastLine: false,
+											lineHeight: EDITOR_LINE_HEIGHT,
+											overviewRulerBorder: false,
+											wordWrap: "on",
+										}}
+										onMount={handleDiffEditorMount}
+									/>
+								</Suspense>
+								<Stack
+									direction="row"
+									alignItems={"center"}
+									justifyContent={"center"}
+									margin={1}
+								>
+									<Button
+										title="Accept changes"
+										size="small"
+										color="primary"
+										variant="contained"
+										onClick={acceptDiffEditHandler}
+									>
+										Keep
+									</Button>
+									<Button
+										title="Reject changes"
+										size="small"
+										color="primary"
+										variant="text"
+										onClick={rejectDiffEditHandler}
+									>
+										Reject
+									</Button>
+								</Stack>
+							</>
+						) : (
+							<Suspense fallback={<>...</>}>
+								{EDITOR_TYPE[cell.parameters.type].language ===
+									"Markdown" && cell.isExecuted ? (
+									<Markdown>
+										{typeof cell.parameters.code ===
+										"string"
+											? cell.parameters.code
+											: cell.parameters.code.join("\n")}
+									</Markdown>
+								) : (
+									<MonacoEditor
+										key={count}
+										width="100%"
+										height={getHeight()}
+										language={
+											EDITOR_TYPE[cell.parameters.type]
+												.language
+										}
+										value={
+											typeof cell.parameters.code ===
+											"string"
+												? cell.parameters.code
+												: cell.parameters.code.join(
+														"\n",
+													)
+										}
+										options={{
+											scrollbar: {
+												alwaysConsumeMouseWheel: false,
+											},
+											lineNumbers: "on",
+											readOnly: false,
+											minimap: { enabled: false },
+											automaticLayout: true,
+											scrollBeyondLastLine: false,
+											lineHeight: EDITOR_LINE_HEIGHT,
+											overviewRulerBorder: false,
+											wordWrap: "on",
+											glyphMargin: false,
+											folding: false,
+											lineNumbersMinChars: 2,
+										}}
+										onChange={handleChange}
+										onMount={handleMount}
+									/>
+								)}
+							</Suspense>
+						)}
+					</StyledContainer>
+				)}
 				{/* {isExpanded && ( */}
 				<Stack direction="row" sx={{ paddingLeft: "10px" }}>
 					<StyledSelect

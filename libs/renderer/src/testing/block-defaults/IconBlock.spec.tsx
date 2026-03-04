@@ -1,9 +1,6 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { expect, test } from "vitest";
-import { render } from "../utils";
-import "@testing-library/jest-dom";
-
+import { expect } from "vitest";
 import { IconBlock } from "../../components/block-defaults/icon-block";
+import { render } from "../utils";
 
 const blocks = {
 	icon: {
@@ -30,18 +27,18 @@ const blocks = {
 
 describe("icon block", () => {
 	it("renders correctly", async () => {
-		const { container } = render(<IconBlock id="icon" />, {
+		const { container } = render(<IconBlock id={blocks.icon.id} />, {
 			blocks: blocks,
 		});
 
 		const icon = container.querySelector("[data-block='icon']");
 		expect(icon).toBeInTheDocument();
 
-		screen.debug();
+		// screen.debug();
 	});
 
 	it("shows default icon", async () => {
-		const { container } = render(<IconBlock id="icon" />, {
+		const { container } = render(<IconBlock id={blocks.icon.id} />, {
 			blocks: blocks,
 		});
 

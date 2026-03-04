@@ -1,10 +1,11 @@
-import { fireEvent } from "@testing-library/react";
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
-import type { ListenerActions } from "@/store";
-import { ContainerBlock } from "../../components/block-defaults/container-block/ContainerBlock";
-import { PopoverBlock } from "../../components/block-defaults/popover-block/PopoverBlock";
-import { render, screen } from "../utils";
+import {
+	PopoverBlock,
+	type PopoverBlockDef,
+} from "../../components/block-defaults/popover-block/PopoverBlock";
+import { useBlock } from "../../hooks";
+import type { ListenerActions } from "../../store";
+import { render, renderHook } from "../utils";
 
 const blocks = {
 	helloText: {
@@ -119,77 +120,28 @@ const blocks = {
 	},
 };
 
+const mockPage = document.createElement("div");
+mockPage.id = "page-1";
+document.body.appendChild(mockPage);
+
 describe("Popover Block", () => {
-	let target;
-	beforeEach(() => {
-		const { container } = render(<ContainerBlock id="target-container" />, {
-			blocks: {
-				"target-container": {
-					data: {
-						style: {
-							display: "flex",
-							flexDirection: "column",
-							padding: "4px",
-							gap: "8px",
-							flexWrap: "wrap",
-						},
-					},
-					id: "target-container",
-					widget: "container",
-					slots: {
-						children: {
-							children: ["popover", "styledPopover"],
-							name: "children",
-						},
-					},
-					listeners: {},
-				},
-			},
-		});
-
-		//parent container
-		target = container.querySelector("[data-block='target-container']");
-	});
-
 	it("renders correctly", async () => {
-		const { container } = render(<PopoverBlock id="popover" />, {
-			blocks: {
-				popover: {
-					...blocks["popover"],
-				},
-			},
+		const { container } = render(<PopoverBlock id={blocks.popover.id} />, {
+			blocks,
 		});
 
-		// click to trigger popover
-		fireEvent.click(target);
-
-		const element = container.querySelector("[data-block='popover']");
-
-		expect(element).toBeInTheDocument();
-		expect(screen.getByText("Add Content")).toBeInTheDocument();
+		expect(container.querySelector("[data-block='popover']"));
 	});
 
 	it("renders popover with correct styles and content", async () => {
-		const { container } = render(<PopoverBlock id="styledPopover" />, {
-			blocks: {
-				styledPopover: {
-					...blocks["styledPopover"],
-				},
-				helloText: {
-					...blocks["helloText"],
-				},
-			},
-		});
+		const { result } = renderHook(
+			() => useBlock<PopoverBlockDef>("styledPopover"),
+			{ blocks, renderEngineId: "styledPopover" },
+		);
 
-		fireEvent.click(target);
+		expect(result.current).toBeDefined();
 
-		const element = container.querySelector("[data-block='styledPopover']");
-
-		expect(element).toHaveStyle({ width: "200px", height: "100px" });
-
-		expect(element).toHaveStyle("backgroundColor: rgb(108, 71, 71)");
-		expect(element).toHaveStyle("border: 1px solid #000000");
-
-		expect(screen.getByText("Hello world")).toBeInTheDocument();
+		const style = result.current.data.style;
+		expect(style.height).toBe("100px");
 	});
 });

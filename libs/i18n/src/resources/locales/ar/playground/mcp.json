@@ -1,0 +1,52 @@
+{
+	"embedDocuments": {
+		"title": "تضمين المستندات في مصدر موجود",
+		"description": "اختر مصدر معرفة ورفع المستندات للتضمين.",
+		"knowledgeSource": "مصدر المعرفة",
+		"documents": "المستندات",
+		"selectFiles": "انقر لتحديد الملفات أو اسحب وأفلت",
+		"embedButton": "تضمين المستندات",
+		"embedding": "جارٍ التضمين...",
+		"removeFile": "إزالة الملف",
+		"selectPlaceholder": "اختر مصدر معرفة"
+	},
+	"selector": {
+		"title": "اختر MCP",
+		"search": "بحث",
+		"searchPlaceholder": "بحث...",
+		"noResults": "لم يتم العثور على نتائج",
+		"createKnowledgeSource": "إنشاء مصدر معرفة",
+		"viewDetails": "عرض التفاصيل",
+		"noToolboxesFound": "لم يتم العثور على صناديق أدوات",
+		"noKnowledgeFound": "لم يتم العثور على معرفة"
+	},
+	"overlay": {
+		"title": "تكوين MCP",
+		"description": "تكوين إعدادات MCP الخاصة بك",
+		"editToolbox": "تعديل صندوق الأدوات",
+		"editKnowledge": "تعديل المعرفة",
+		"toolboxDescription": "إضافة قدرات إلى وكيلك وتوسيع ما يمكنه القيام به",
+		"knowledgeDescription": "تعديل مصادر المعرفة التي يمكن لوكيلك الوصول إليها"
+	},
+	"tools": {
+		"selectMcp": "اختر MCP",
+		"selectTool": "اختر الأداة",
+		"enterValues": "أدخل القيم المفصولة بفواصل",
+		"selectField": "اختر {{field}}",
+		"enterField": "أدخل {{field}}"
+	},
+	"messages": {
+		"selectKnowledgeSource": "الرجاء اختيار مصدر معرفة",
+		"selectDocument": "الرجاء اختيار مستند واحد على الأقل",
+		"embedSuccess": "تم تضمين المستندات بنجاح",
+		"embedFailed": "فشل تضمين المستندات",
+		"loadFailed": "فشل تحميل مصادر المعرفة.",
+		"noSources": "لم يتم العثور على مصادر معرفة."
+	},
+	"buttons": {
+		"cancel": "إلغاء",
+		"embed": "تضمين",
+		"save": "حفظ",
+		"close": "إغلاق"
+	}
+}

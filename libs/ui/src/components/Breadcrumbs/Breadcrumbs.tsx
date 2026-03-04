@@ -1,11 +1,7 @@
-import {
-	Breadcrumbs as MuiBreadcrumbs,
-	type BreadcrumbsProps as MuiBreadcrumbsProps,
-	type SxProps,
-} from "@mui/material";
+import { Breadcrumbs as MuiBreadcrumbs, type SxProps } from "@mui/material";
 import type { ReactNode } from "react";
 
-export interface BreadcrumbsProps extends MuiBreadcrumbsProps {
+export interface BreadcrumbsProps {
 	/** children to be rendered */
 	children?: ReactNode;
 
@@ -38,10 +34,14 @@ export interface BreadcrumbsProps extends MuiBreadcrumbsProps {
 	 */
 	separator?: React.ReactNode;
 }
-export const Breadcrumbs = (props: BreadcrumbsProps) => {
-	const { children, sx, separator = "/" } = props;
+export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
+	children,
+	sx,
+	separator = "/",
+	...otherProps
+}) => {
 	return (
-		<MuiBreadcrumbs sx={sx} separator={separator} {...props}>
+		<MuiBreadcrumbs sx={sx} separator={separator} {...otherProps}>
 			{children}
 		</MuiBreadcrumbs>
 	);

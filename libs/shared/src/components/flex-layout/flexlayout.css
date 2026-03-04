@@ -1,0 +1,75 @@
+@reference "@semoss/ui/globals.css";
+
+/**
+ * SMSS Theme for FlexLayout
+ */
+
+ /** Layout **/
+.flexlayout__theme_smss .flexlayout__layout {
+    --color-background: transparent;
+    --color-tabset-background: transparent;
+    --color-tabset-background-selected: transparent;
+    --font-family: 'Inter', sans-serif;
+    --font-size: 0.875rem;
+    --smss-tab-border-radius: 4px;
+}
+
+ /** Tabs **/
+.flexlayout__theme_smss .flexlayout__tabset_tabbar_outer {
+    @apply p-2;
+    min-height: 51px;
+}
+
+.flexlayout__theme_smss .flexlayout__tabset_tabbar_outer_top {
+    padding-right: 85px;
+}
+
+.flexlayout__theme_smss .flexlayout__tab_button {
+    @apply flex h-8 px-2 py-3 justify-center items-center gap-2 rounded-md bg-background;
+}
+
+.flexlayout__theme_smss .flexlayout__tab_button--selected {
+    @apply dark:bg-input/30 shadow-xs border border-input;
+}
+
+.flexlayout__theme_smss .flexlayout__tab_button__content {
+    @apply truncate text-foreground text-xs leading-normal font-medium;
+}
+
+.flexlayout__theme_smss .flexlayout__tab_button--selected .flexlayout__tab_button_leading {
+    @apply text-primary;
+}
+
+.flexlayout__theme_smss .flexlayout__tabset_tab_divider {
+    @apply w-2;
+}
+
+ /** Popover **/
+.flexlayout__theme_smss .flexlayout__popup_menu_container {
+    @apply border border-input rounded-md shadow-xs;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_item {
+    @apply h-8 px-2 py-3;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_item:hover {
+    @apply bg-secondary;
+}
+
+/** Borders **/
+.flexlayout__theme_smss .flexlayout__border {
+    @apply p-2;
+}
+
+.flexlayout__theme_smss .flexlayout__border_button {
+    @apply flex h-8 px-2 py-3 justify-center items-center gap-2 rounded-md bg-background;
+}
+
+.flexlayout__theme_smss .flexlayout__border_button--selected {
+    @apply dark:bg-input/30 shadow-xs border border-input;
+}
+
+.flexlayout__theme_smss .flexlayout__border_button--selected .flexlayout__border_button_leading {
+    @apply text-primary;
+}

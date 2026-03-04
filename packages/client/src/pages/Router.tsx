@@ -1,12 +1,12 @@
 import { observer } from "mobx-react-lite";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { LoadingScreen } from "@/components/ui";
+import { LoadingScreen } from "@semoss/ui";
 import { useRootStore } from "@/hooks";
+import { AuditLogsDashboard } from "./AuditLogsDashboard";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
 import {
 	AppCatalogPage,
 	AppDetailPage,
-	AppMarketplacePage,
 	CreateAppPage,
 	EditAppPage,
 	NewPromptBuilderAppPage,
@@ -43,16 +43,18 @@ export const Router = observer(() => {
 						<Route index element={<AppCatalogPage />} />
 						<Route path="new" element={<CreateAppPage />} />
 						<Route
-							path="new/template"
-							element={<AppMarketplacePage />}
-						/>
-						<Route
 							path="new/prompt"
 							element={<NewPromptBuilderAppPage />}
 						/>
 						<Route path=":appId" element={<AppDetailPage />} />
 						<Route path=":appId/view/*" element={<ViewAppPage />} />
 						<Route path=":appId/edit/*" element={<EditAppPage />} />
+						<Route
+							path=":appId/dashboard/*"
+							element={
+								<AuditLogsDashboard catalogName={"Apps"} />
+							}
+						/>
 					</Route>
 					<Route path="engine/*" element={<EngineRouter />} />
 					<Route path="prompt/*" element={<PromptRouter />} />

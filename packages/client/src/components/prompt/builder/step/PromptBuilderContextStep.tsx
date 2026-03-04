@@ -97,8 +97,8 @@ export const PromptBuilderContextStep = (props: {
 						<Autocomplete
 							disableClearable
 							fullWidth
-                            multiple={false}
-							id="model-autocomplete"
+							multiple={false}
+							id={"model-autocomplete"}
 							loading={cfgLibraryModels.loading}
 							options={cfgLibraryModels.ids}
 							value={props.builder.model.value ?? null}

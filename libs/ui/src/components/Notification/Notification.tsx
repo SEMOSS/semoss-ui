@@ -1,6 +1,6 @@
 import { Snackbar, type SxProps } from "@mui/material";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { isValidElement, type ReactNode, useEffect, useState } from "react";
 import type { NotificationMessage } from "./notification.types";
 
 // generate a uuid
@@ -69,7 +69,7 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 				// set the active one
 				setActive(notifications[0]);
 
-				// remove from the notitications
+				// remove from the notifications
 				setNotifications((notifications) => notifications.slice(1));
 
 				// open it
@@ -130,6 +130,30 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 		setIsOpen(false);
 	};
 
+	const getMessage = (): ReactNode => {
+		if (
+			isValidElement(active?.message) ||
+			typeof active?.message === "string"
+		) {
+			return active.message;
+		} else if (
+			typeof active?.message === "object" &&
+			Object.keys(active.message).length
+		) {
+			return JSON.stringify(active.message);
+		}
+		switch (active?.color) {
+			case "success":
+				return "Success";
+			case "warning":
+				return "Warning";
+			case "info":
+				return "Info";
+			default:
+				return "Error during operation";
+		}
+	};
+
 	return (
 		<NotificationContext.Provider
 			value={{
@@ -146,7 +170,7 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 				anchorOrigin={anchorOrigin}
 				autoHideDuration={autoHideDuration}
 				className={"notification-bubble"}
-				onClose={(event, reason) => {
+				onClose={(_event, reason) => {
 					if (reason === "clickaway") {
 						return;
 					}
@@ -162,19 +186,19 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 			>
 				<div>
 					{active ? (
-						<>
-							<Alert
-								onClose={() => setIsOpen(false)}
-								severity={active.color}
-								sx={{ width: "100%" }}
-								data-testid={`notification-${active.color}-alert`}
+						<Alert
+							onClose={() => setIsOpen(false)}
+							severity={active.color}
+							sx={{ width: "100%" }}
+							data-testid={`notification-${active.color}-alert`}
+						>
+							<span
+								data-testid={`notification-${active.color}-message`}
 							>
-								{active.message}
-							</Alert>
-						</>
-					) : (
-						<></>
-					)}
+								{getMessage()}
+							</span>
+						</Alert>
+					) : null}
 				</div>
 			</Snackbar>
 		</NotificationContext.Provider>

@@ -98,12 +98,18 @@ export const DeleteDuplicateMask = observer(
 		const isIterationOrContainer =
 			block == null
 				? false
-				: block.widget === "iteration" || block.widget === "container";
-		const isChangeable = hasChildren && block.widget !== "container";
+				: block.widget === "iteration" ||
+					block.widget === "container" ||
+					block.widget === "form";
+		const isForm = block?.widget === "form";
+		const isChangeable =
+			hasChildren && block?.widget !== "container" && !isForm;
+		const showQuickMenu = isIterationOrContainer && !isForm;
 		// check if it is visible
 		const isVisible =
 			block && registry[block.widget] && block.widget !== "page";
-		const [anchorEl, setAnchorEl] = useState(null);
+
+		const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
 		// get the root, watch changes, and reposition the mask
 		useLayoutEffect(() => {
@@ -138,7 +144,7 @@ export const DeleteDuplicateMask = observer(
 			repositionMask();
 
 			return () => observer.disconnect();
-		}, [designer.selected, isVisible]);
+		}, [designer.selected, isVisible, screenEle]);
 
 		if (!size || !isVisible) {
 			return null;
@@ -201,6 +207,30 @@ export const DeleteDuplicateMask = observer(
 
 			// clear the selected value
 			designer.setSelected("");
+		};
+
+		const addVariable = (id: string) => {
+			const block = state.getBlock(id as string);
+			if (block.slots) {
+				if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
+					state.dispatch({
+						message: ActionMessages.ADD_VARIABLE,
+						payload: {
+							id: id as string,
+							type: "block",
+							to: id as string,
+						},
+					});
+				}
+				Object.keys(block.slots).forEach((slot) => {
+					const children = block.slots[slot].children;
+					if (children?.length) {
+						children.forEach((childId) => {
+							addVariable(childId);
+						});
+					}
+				});
+			}
 		};
 
 		/**
@@ -288,8 +318,6 @@ export const DeleteDuplicateMask = observer(
 			});
 
 			// TODO: REFACTOR
-			// Add variables for all blocks that are inputs from user
-			// TODO: What about grouping of inputs
 			if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
 				state.dispatch({
 					message: ActionMessages.ADD_VARIABLE,
@@ -299,6 +327,8 @@ export const DeleteDuplicateMask = observer(
 						to: id as string,
 					},
 				});
+			} else {
+				addVariable(id as string);
 			}
 
 			designer.setSelected(id ? (id as string) : "");
@@ -337,36 +367,37 @@ export const DeleteDuplicateMask = observer(
 						}
 					}
 
-					const id = state.dispatch({
-						message: ActionMessages.ADD_BLOCK,
-						payload: {
-							json: blockJson as BlockJSON,
-							position: {
-								parent: block.id,
-								slot: "children",
-							},
-						},
-					}) as string;
-
-					if (block.widget === "iteration") {
-						state.dispatch({
-							message: ActionMessages.SET_BLOCK_DATA,
+					// Make this function async and await the dispatch
+					(async () => {
+						const id = await state.dispatch({
+							message: ActionMessages.ADD_BLOCK,
 							payload: {
-								id: block.id,
-								path: "child",
-								value: state.getBlock(id),
+								json: blockJson as BlockJSON,
+								position: {
+									parent: block.id,
+									slot: "children",
+								},
 							},
 						});
-					}
 
-					setAnchorEl(null);
+						if (block.widget === "iteration") {
+							state.dispatch({
+								message: ActionMessages.SET_BLOCK_DATA,
+								payload: {
+									id: block.id,
+									path: "child",
+									value: state.getBlock(id as string),
+								},
+							});
+						}
+
+						setAnchorEl(null);
+					})();
 				}
 			: null;
 
-		// TODO: revisit these actions for the base page once multiple pages/routing is enabled
-
 		return (
-			<StyledContainer id="delete-duplicate-mask" style={getStyle()}>
+			<StyledContainer style={getStyle()}>
 				<StyledButtonGroup>
 					{isIterationOrContainer && (
 						<>
@@ -379,14 +410,30 @@ export const DeleteDuplicateMask = observer(
 							>
 								<StyledButtonGroupIconButton
 									sx={{ color: "#757575" }}
-									onClick={(e) =>
-										setAnchorEl(e.currentTarget)
-									}
+									onClick={(e) => {
+										if (isForm) {
+											window.dispatchEvent(
+												new CustomEvent(
+													"FORM_MENU_OPEN",
+													{
+														detail: {
+															formId: block.id,
+														},
+													},
+												),
+											);
+										} else {
+											setAnchorEl(
+												e.currentTarget as HTMLElement,
+											);
+										}
+									}}
 								>
 									{isChangeable ? <SwapHoriz /> : <Add />}
 								</StyledButtonGroupIconButton>
 							</Tooltip>
-							{anchorEl && (
+
+							{anchorEl && showQuickMenu && (
 								<QuickMenu
 									parentId={block.id}
 									anchorEl={anchorEl}

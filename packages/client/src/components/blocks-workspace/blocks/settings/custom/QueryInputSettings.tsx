@@ -66,6 +66,10 @@ interface QueryInputSettingsProps<D extends BlockDef = BlockDef> {
 	 * Default path map by default {}
 	 */
 	defaultPathMap?: any;
+	/**
+	 * Spell check for the input
+	 */
+	spellCheck?: boolean;
 }
 
 interface Option {
@@ -170,6 +174,7 @@ export const QueryInputSettings = observer(
 		path,
 		label,
 		defaultPathMap = {},
+		spellCheck,
 	}: QueryInputSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings(id);
 		const { state, notebook } = useBlocks();
@@ -610,6 +615,7 @@ export const QueryInputSettings = observer(
 								overflowX: "auto",
 								scrollBehavior: "smooth",
 							},
+							spellCheck: spellCheck ?? false,
 						}}
 						onKeyDown={(e) => {
 							if (e.key === "Tab" && suggestionToDisplay) {
@@ -686,7 +692,7 @@ export const QueryInputSettings = observer(
 						size="small"
 						freeSolo
 						style={{ marginTop: "10px" }}
-                        multiple={false}
+						multiple={false}
 						value={value}
 						inputValue={inputValue}
 						onInputChange={handleInputChange}

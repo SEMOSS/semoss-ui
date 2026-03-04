@@ -325,7 +325,9 @@ export const ValueLabelStackChart = observer(
 									sans-serif
 								</Menu.Item>
 								<Menu.Item value="serif">serif</Menu.Item>
-								<Menu.Item value="monospace">monospace</Menu.Item>
+								<Menu.Item value="monospace">
+									monospace
+								</Menu.Item>
 							</Select>
 						</StyledAxisColDiv>
 
@@ -337,7 +339,7 @@ export const ValueLabelStackChart = observer(
 								Select Font Size
 							</Typography>
 							<TextField
-								id="Select Font Size"
+								id={"Select Font Size"}
 								size="small"
 								value={labelFontSize}
 								onChange={handleLabelSize}

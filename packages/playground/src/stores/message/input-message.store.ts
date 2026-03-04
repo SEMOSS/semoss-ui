@@ -1,4 +1,5 @@
-import { makeObservable, observable } from "mobx";
+import { action, makeObservable, observable } from "mobx";
+import type { InputPixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 
 /**
@@ -8,17 +9,43 @@ export class InputMessageStore extends AbstractMessageStore {
 	readonly type = "INPUT";
 
 	/**
-	 * Text associated with the message
+	 * Parts associated with the message
 	 */
-	text: string = "";
+	parts: InputPixelMessage["parts"] = [];
 
-	constructor(id: string, text: string) {
-		super(id);
-
-		this.text = text;
+	constructor(
+		room: AbstractMessageStore["room"],
+		message: InputPixelMessage,
+	) {
+		super(room, message);
 
 		makeObservable(this, {
-			text: observable,
+			parts: observable,
+			sync: action,
 		});
+
+		// sync the message (must be after makeObservable so sync action is registered)
+		this.sync(message);
 	}
+
+	/**
+	 * Sync store properties from the pixel message
+	 */
+	sync = (message: InputPixelMessage) => {
+		// set the id
+		this.id = message.messageId;
+
+		// set the parts
+		this.parts = message.parts;
+
+		// sync the tools
+		for (const part of message.parts) {
+			if (part.type === "TOOL_RESULT") {
+				this.room.syncTool(part.toolResult.toolCallId, this, part);
+			}
+		}
+
+		// set tokens
+		this.tokens = message.tokens;
+	};
 }

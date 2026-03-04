@@ -1,9 +1,7 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { expect, test } from "vitest";
+import { screen } from "@testing-library/react";
+import { expect } from "vitest";
+import { TextBlock } from "../../components/block-defaults/text-block/TextBlock";
 import { render } from "../utils";
-import "@testing-library/jest-dom";
-
-import { TextBlock } from "@/components/block-defaults/text-block/TextBlock";
 
 const blocks = {
 	text: {
@@ -42,7 +40,7 @@ const blocks = {
 
 describe("text block", () => {
 	it("renders Hello world", async () => {
-		const { container } = render(<TextBlock id="text" />, {
+		const { container } = render(<TextBlock id={blocks.text.id} />, {
 			blocks: blocks,
 		});
 
@@ -52,7 +50,7 @@ describe("text block", () => {
 	});
 
 	it("does not show", async () => {
-		const { container } = render(<TextBlock id="text2" />, {
+		const { container } = render(<TextBlock id={blocks.text2.id} />, {
 			blocks: blocks,
 		});
 
@@ -64,8 +62,8 @@ describe("text block", () => {
 		const tagNames = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "span"];
 		const variantBlock = blocks;
 		tagNames.forEach((tag) => {
-			variantBlock.text.data["variant"] = tag;
-			const { container } = render(<TextBlock id="text" />, {
+			variantBlock.text.data.variant = tag;
+			const { container } = render(<TextBlock id={blocks.text.id} />, {
 				blocks: variantBlock,
 			});
 			const textBlock = container.querySelector(`${tag}`);

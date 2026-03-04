@@ -11,12 +11,11 @@ import {
 	IconButton,
 	Link,
 	Menu,
-	Popover,
 	styled,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { useRootStore } from "@/hooks";
+import { setProjectFavorite } from "@/api";
 import { removeUnderscores } from "@/utility";
 import type { AppMetadata } from "./app.types";
 
@@ -128,7 +127,7 @@ const StyledChip = styled(Chip)({
 	textOverflow: "ellipsis",
 });
 
-const StyledBookmark = styled(BookmarkBorderOutlined)({
+const _StyledBookmark = styled(BookmarkBorderOutlined)({
 	color: "rgba(0, 0, 0, 0.54)",
 	fontSize: "18px",
 });
@@ -138,7 +137,7 @@ const StyledVert = styled(MoreVert)({
 	fontSize: "18px",
 });
 
-const StyledPopoverItem = styled(Typography)({
+const _StyledPopoverItem = styled(Typography)({
 	padding: "12px",
 	"&:hover": {
 		cursor: "pointer",
@@ -169,10 +168,9 @@ interface AppTileCardProps {
 }
 
 export const AppLandscapeCard = (props: AppTileCardProps) => {
-	const { app, image, onAction = () => null, href } = props;
-	const navigate = useNavigate();
+	const { app, image, href } = props;
+	const _navigate = useNavigate();
 	const notification = useNotification();
-	const { monolithStore } = useRootStore();
 
 	const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(
 		null,
@@ -187,7 +185,7 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
 	};
 
 	const open = Boolean(anchorEl);
-	const id = open ? "simple-popover" : undefined;
+	const _id = open ? "simple-popover" : undefined;
 
 	// pretty format the data
 	const createdDate = useMemo(() => {
@@ -224,9 +222,8 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
 	 * @name favoriteDb
 	 * @param db
 	 */
-	const favoriteProject = (project) => {
-		monolithStore
-			.setProjectFavorite(project.project_id, true)
+	const _favoriteProject = (project) => {
+		setProjectFavorite(project.project_id, true)
 			.then(() => {
 				return;
 			})
@@ -259,7 +256,7 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
 									return (
 										<StyledChip
 											size="small"
-											key={app.project_id + i}
+											key={`${app.project_id + i}`}
 											label={t}
 										/>
 									);
@@ -299,9 +296,7 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
 							<IconButton onClick={handleClick}>
 								<StyledVert />
 							</IconButton>
-						) : (
-							<></>
-						)}
+						) : null}
 						<Menu
 							open={open}
 							anchorEl={anchorEl}

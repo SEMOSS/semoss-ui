@@ -1,6 +1,6 @@
 import {
+	type Breakpoint,
 	Dialog as MuiModal,
-	type DialogProps as MuiModalProps,
 	type SxProps,
 } from "@mui/material";
 
@@ -40,21 +40,18 @@ export interface ModalProps {
 	 * Set to `false` to disable `maxWidth`.
 	 * @default 'sm'
 	 */
-	maxWidth?: MuiModalProps["maxWidth"];
+	maxWidth?: Breakpoint;
 
 	/**
 	 * Callback fired when the component requests to be closed.
-	 *
-	 * @param {object} event The event source of the callback.
-	 * @param {string} reason Can be: `"escapeKeyDown"`, `"backdropClick"`.
 	 */
-	onClose?: MuiModalProps["onClose"];
+	onClose?: () => void;
 
 	/**
 	 * If `true`, the backdrop is not rendered.
 	 * @default false
 	 */
-	hideBackdrop?: MuiModalProps["hideBackdrop"];
+	hideBackdrop?: boolean;
 
 	/**
 	 * If `true`, the component is shown.
@@ -73,7 +70,6 @@ export interface ModalProps {
 	sx?: SxProps;
 }
 
-export const Modal = (props: ModalProps) => {
-	const { sx } = props;
-	return <MuiModal sx={sx} {...props} />;
+export const Modal: React.FC<ModalProps> = ({ sx, ...otherProps }) => {
+	return <MuiModal sx={sx} {...otherProps} />;
 };

@@ -51,7 +51,7 @@ export interface ButtonBlockDef extends BlockDef<"button"> {
 }
 
 const StyledContainer = styled("div")(({ theme }) => ({
-	padding: "4px",
+	padding: theme.spacing(0.5),
 }));
 
 export const ButtonBlock: BlockComponent = observer(({ id }) => {
@@ -81,9 +81,7 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
 				<StyledLabel loading={data?.loading}>{data.label}</StyledLabel>
 				{data.loading ? (
 					<StyledCircularProgress color="inherit" size="2em" />
-				) : (
-					<></>
-				)}
+				) : null}
 			</StyledButton>
 		</StyledContainer>
 	);
