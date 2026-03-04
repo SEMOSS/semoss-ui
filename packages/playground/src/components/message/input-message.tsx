@@ -1,79 +1,147 @@
+import { CopyIcon, FileIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
+	Button,
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
-import type { InputMessageStore } from "@/stores";
+import type { InputMessageStore, RoomStore } from "@/stores";
 
 interface InputMessageProps {
+	/** Room */
+	room: RoomStore;
+
 	/** Message to render */
 	message: InputMessageStore;
 }
 
 export const InputMessage: React.FC<InputMessageProps> = observer(
-	({ message }) => {
-		const [selectedImage, setSelectedImage] = useState<
-			InputMessageStore["imageInfos"][number] | null
-		>(null);
+	({ room, message }) => {
+		const { t } = useTranslation("chat");
 
 		return (
-			<div>
-				<div className="ml-auto max-w-[600px] items-start self-stretch rounded-lg bg-accent px-5 py-4 leading-normal">
-					<span className="text-base text-foreground">
-						{message.text}
-					</span>
-				</div>
-				{message.imageInfos.length > 0 ? (
-					<div className="ml-auto flex max-w-[600px] flex-row items-center gap-2 pt-2">
-						{message.imageInfos.map((info) => {
-							return (
-								<button
-									type="button"
-									key={`${info.fileName}`}
-									className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border"
-									onClick={() => setSelectedImage(info)}
-									aria-label={`View ${info.fileName}`}
-								>
-									<img
-										className="width-100"
-										src={`data:image/png;base64,${info.base64Data}`}
-										alt={info.fileName}
-									/>
-								</button>
-							);
+			<HoverCard>
+				<HoverCardTrigger asChild>
+					<div className="ml-auto max-w-[600px] items-start self-stretch rounded-lg bg-accent px-4 py-3 leading-normal">
+						{message.parts.map((p, pIdx) => {
+							if (p.type === "TEXT") {
+								return (
+									<span
+										key={`${message.id}-part-${pIdx}`}
+										className="text-foreground text-small"
+									>
+										{p.text}
+									</span>
+								);
+							} else if (p.type === "MEDIA") {
+								return (
+									<div key={`${message.id}-part-${pIdx}`}>
+										<button
+											type="button"
+											className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted"
+											onClick={() => {
+												// this will select if there or open if not
+												room.addSidebarNode(
+													`FILE--${p.mediaInfo.fileLocation}`,
+													{
+														type: "tab",
+														name: p.mediaInfo
+															.fileName,
+														component:
+															"room-file-editor",
+														config: {
+															name: p.mediaInfo
+																.fileName,
+															path: p.mediaInfo
+																.fileLocation,
+														},
+														enableClose: true,
+													},
+												);
+											}}
+											aria-label={`View ${p.mediaInfo.fileName}`}
+										>
+											{p.mediaInfo.mimeType?.startsWith(
+												"image/",
+											) ? (
+												<img
+													className="w-full"
+													src={`data:image/png;base64,${p.mediaInfo.base64Data}`}
+													alt={p.mediaInfo.fileName}
+												/>
+											) : (
+												<FileIcon className="size-6 text-muted-foreground" />
+											)}
+										</button>
+									</div>
+								);
+							}
+
+							return null;
 						})}
 					</div>
-				) : null}
-
-				<Dialog
-					open={selectedImage !== null}
-					onOpenChange={(open) => {
-						if (!open) {
-							setSelectedImage(null);
-						}
-					}}
+				</HoverCardTrigger>
+				<HoverCardContent
+					className="flex w-auto flex-col items-center gap-0.5 p-1"
+					side="right"
+					align="start"
 				>
-					<DialogContent className="max-w-4xl">
-						<DialogHeader>
-							<DialogTitle>
-								{selectedImage?.fileName || "Image"}
-							</DialogTitle>
-						</DialogHeader>
-						<div className="flex items-center justify-center">
-							{selectedImage?.base64Data && (
-								<img
-									src={`data:image/png;base64,${selectedImage.base64Data}`}
-									alt={selectedImage.fileName || "Image"}
-									className="max-h-[70vh] max-w-full object-contain"
-								/>
-							)}
-						</div>
-					</DialogContent>
-				</Dialog>
-			</div>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								disabled={message.parts.length === 0}
+								onClick={() => {
+									const text = message.parts
+										.map((part) => {
+											if (part.type === "TEXT") {
+												return part.text;
+											} else if (part.type === "MEDIA") {
+												return `<${part.mediaInfo.fileName}?`;
+											} else if (
+												part.type === "TOOL_RESULT"
+											) {
+												return `<${part.toolResult.toolName}?`;
+											}
+
+											return "";
+										})
+										.join("\n");
+
+									if (!text) {
+										toast.warning(
+											t("notifications.noCopyContent"),
+										);
+										return;
+									}
+
+									try {
+										navigator.clipboard.writeText(text);
+
+										toast.success(
+											t("notifications.copySuccess"),
+										);
+									} catch (e) {
+										toast.error(e.message);
+									}
+								}}
+							>
+								<CopyIcon />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">
+							{t("input.copyMessage")}
+						</TooltipContent>
+					</Tooltip>
+				</HoverCardContent>
+			</HoverCard>
 		);
 	},
 );

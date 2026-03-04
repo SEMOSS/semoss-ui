@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { JobsPage } from "../jobs/JobsPage";
 import { AdminQueryPage } from "./AdminQueryPage";
 import { AppSettingsDetailPage } from "./AppSettingsDetailPage";
+import { AdminThemePage } from "./admin-theme-page";
 import { ConfigurationsPage } from "./ConfigurationsPage";
 import { EngineSettingsDetailPage } from "./EngineSettingsDetailPage";
 import { EngineSettingsIndexPage } from "./EngineSettingsIndexPage";
@@ -11,12 +12,12 @@ import { InsightSettingsPage } from "./InsightSettingsPage";
 import { MemberSettingsPage } from "./MemberSettingsPage";
 import { MyProfilePage } from "./MyProfilePage";
 import { ProjectSettingsPage } from "./ProjectSettingsPage";
-import { RDFMapPage } from "./RDFMapPage";
+import { RDFMapPage } from "./rdf-map-page";
 import { SettingsIndexPage } from "./SettingsIndexPage";
-import { SettingsLayout } from "./SettingsLayout";
 import { SETTINGS_ROUTES } from "./settings.constants";
-import { TeamSettingsDetailPage } from "./TeamSettingsDetailPage";
-import { TeamsSettingsPage } from "./TeamsSettingsPage";
+import { SettingsLayout } from "./settings-layout";
+import { TeamSettingsDetailPage } from "./team-settings-detail-page";
+import { TeamsSettingsPage } from "./teams-settings-page";
 
 // map each route to a component
 const SETTINGS_COMPONETS = {
@@ -28,6 +29,7 @@ const SETTINGS_COMPONETS = {
 	members: MemberSettingsPage,
 	"social-properties": ConfigurationsPage,
 	"admin-query": AdminQueryPage,
+	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,
 	jobs: JobsPage,
 	"team-permissions": TeamsSettingsPage,
@@ -45,6 +47,8 @@ const SETTINGS_COMPONETS = {
 	"function/:id": () => <EngineSettingsDetailPage type="FUNCTION" />,
 	vector: () => <EngineSettingsIndexPage type="VECTOR" />,
 	"vector/:id": () => <EngineSettingsDetailPage type="VECTOR" />,
+	guardrail: () => <EngineSettingsIndexPage type="GUARDRAIL" />,
+	"guardrail/:id": () => <EngineSettingsDetailPage type="GUARDRAIL" />,
 };
 
 export const SettingsRouter = observer(() => {

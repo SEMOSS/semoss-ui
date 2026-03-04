@@ -1,10 +1,7 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePixel } from "./usePixel";
 
 export interface UseIteratorPixelOptions<T> {
-	/** Initial data state */
-	data?: T[];
-
 	/** Number of items to fetch per page */
 	limit?: number;
 
@@ -19,8 +16,11 @@ export interface UseIteratorPixelReturn<T> {
 	/** Current accumulated data */
 	data: T[];
 
-	/** Current loading status */
-	status: "INITIAL" | "LOADING" | "SUCCESS" | "ERROR";
+	/** Total count of the data */
+	totalCount: number;
+
+	/** Track if errored */
+	isError: boolean;
 
 	/** Error if status is ERROR */
 	error: Error | null;
@@ -31,13 +31,10 @@ export interface UseIteratorPixelReturn<T> {
 	/** Whether there are more items to load */
 	hasMore: boolean;
 
-	/** Total count of items available */
-	totalCount: number;
-
 	/** Load the next set of items */
 	next: () => void;
 
-	/** Reset to initial state */
+	/** Reset the state */
 	reset: () => void;
 }
 
@@ -56,8 +53,8 @@ export interface UseIteratorPixelReturn<T> {
  *   (limit, offset) => `GetWorkspaceRooms(workspaceId=["${id}"], limit=[${limit}], offset=[${offset}]);`,
  *   (response) => response.total_count,
  *   (response) => response.rooms,
- *   [id],
- *   { limit: 25 }
+ *   { limit: 25 },
+ *   [id]
  * );
  * ```
  */
@@ -66,11 +63,12 @@ export function useIteratorPixel<TResponse, TItem>(
 	getTotalCount: (response: TResponse) => number,
 	getData: (response: TResponse) => TItem[],
 	options: UseIteratorPixelOptions<TItem> = {},
+	dependencies: React.DependencyList = [],
 ): UseIteratorPixelReturn<TItem> {
-	const { data: initialData = [], limit = 25, onSuccess, onError } = options;
+	const { limit = 25, onSuccess, onError } = options;
 
 	const [offset, setOffset] = useState(0);
-	const [allData, setAllData] = useState<TItem[]>(initialData);
+	const [allData, setAllData] = useState<TItem[]>([]);
 	const [totalCount, setTotalCount] = useState(0);
 	const isLoadingMoreRef = useRef(false);
 
@@ -94,17 +92,17 @@ export function useIteratorPixel<TResponse, TItem>(
 				setAllData((prev) => [...prev, ...newData]);
 			}
 
-			isLoadingMoreRef.current = false;
-
 			if (onSuccess) {
 				onSuccess(newData, offset > 0);
 			}
 		},
 		onError: (_data, error) => {
-			isLoadingMoreRef.current = false;
 			if (onError && error instanceof Error) {
 				onError(error);
 			}
+		},
+		onFinal: () => {
+			isLoadingMoreRef.current = false;
 		},
 	});
 
@@ -123,25 +121,38 @@ export function useIteratorPixel<TResponse, TItem>(
 	}, [pixel.status, allData.length, totalCount, limit]);
 
 	/**
-	 * Reset to initial state
+	 * Reset the state
 	 */
 	const reset = useCallback(() => {
 		setOffset(0);
-		setAllData(initialData);
-		setTotalCount(0);
 		isLoadingMoreRef.current = false;
 
-		// refresh the data
+		// get the data
 		pixel.refresh();
-	}, [initialData, pixel.refresh]);
+	}, [pixel.refresh]);
+
+	/**
+	 * Reset when dependencies change
+	 */
+	useEffect(
+		() => {
+			setOffset(0);
+			setAllData([]);
+			setTotalCount(0);
+			isLoadingMoreRef.current = false;
+		},
+
+		// biome-ignore lint/correctness/useExhaustiveDependencies: suppress exhaustive dependencies check
+		dependencies,
+	);
 
 	return {
 		data: allData,
-		status: pixel.status,
+		totalCount: totalCount,
+		isError: pixel.status === "ERROR",
 		error: pixel.error,
 		isLoading: pixel.status === "LOADING" || isLoadingMoreRef.current,
 		hasMore: allData.length < totalCount,
-		totalCount: totalCount,
 		next: next,
 		reset: reset,
 	};

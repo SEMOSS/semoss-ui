@@ -1,8 +1,6 @@
 import { describe, expect, test } from "vitest";
-import "@testing-library/jest-dom";
-
 import { MermaidBlock } from "../../components/block-defaults/mermaid-block/MermaidBlock.tsx";
-import { render, screen } from "../utils";
+import { render, screen, waitFor } from "../utils";
 
 const blockIds = {
 	mermaid: "mermaid",
@@ -41,7 +39,7 @@ const blocks = {
 	},
 	invalidMermaid: {
 		data: {
-			text: "graph TD;\nA-->B;\nA-->C;\nB-->D;\nC-->D;\nF--",
+			text: "graph TD;\nA-->B;\nA-->C;\nB-->D;\nC-->D;\nF--\n",
 		},
 		id: "invalidMermaid",
 		widget: "mermaid",
@@ -55,13 +53,10 @@ describe("Mermaid block", () => {
 		const { container } = render(<MermaidBlock id={blockIds.mermaid} />, {
 			blocks: blocks,
 		});
-
 		const element = container.querySelector("[data-block='mermaid']");
 		expect(element).toBeInTheDocument();
-
 		const mermaidElement = screen.getByText(/graph TD;/);
 		expect(mermaidElement).toBeInTheDocument();
-
 		expect(element).toHaveTextContent(
 			"graph TD; A-->B; A-->C; B-->D; C-->D;",
 		);
@@ -74,12 +69,10 @@ describe("Mermaid block", () => {
 				blocks: blocks,
 			},
 		);
-
 		const element = container.querySelector(
 			"[data-block='mermaidComplex']",
 		);
 		expect(element).toBeInTheDocument();
-
 		expect(element).toHaveTextContent(
 			"graph TD; A-->B; A-->C; B-->D; C-->D; C-->E; F-->H; C-->C; C-->I; I-->C; C-->K; D-->A; S",
 		);
@@ -100,9 +93,17 @@ describe("Mermaid block", () => {
 		expect(mermaidElement).not.toBeInTheDocument();
 		expect(element).toHaveTextContent("A-->B; A-->C; B-->D; C-->D;");
 
-		const errorElement = await screen.findByRole("alert");
-		expect(errorElement).toBeInTheDocument();
-		expect(errorElement).toHaveTextContent(/invalid mermaid syntax/i);
+		// Wait for async validation to complete
+		await waitFor(
+			() => {
+				const errorElement = screen.getByRole("alert");
+				expect(errorElement).toBeInTheDocument();
+				expect(errorElement).toHaveTextContent(
+					/invalid mermaid syntax/i,
+				);
+			},
+			{ timeout: 3000 },
+		);
 	});
 
 	test("displays error message for invalid mermaid syntax", async () => {
@@ -117,13 +118,19 @@ describe("Mermaid block", () => {
 			"[data-block='invalidMermaid']",
 		);
 		expect(element).toBeInTheDocument();
-
 		expect(element).toHaveTextContent(
 			"graph TD; A-->B; A-->C; B-->D; C-->D; F--",
 		);
 
-		const errorElement = await screen.findByRole("alert");
-		expect(errorElement).toBeInTheDocument();
-		expect(errorElement).toHaveTextContent(/invalid mermaid syntax/i);
+		await waitFor(
+			() => {
+				const errorElement = screen.getByRole("alert");
+				expect(errorElement).toBeInTheDocument();
+				expect(errorElement).toHaveTextContent(
+					/invalid mermaid syntax/i,
+				);
+			},
+			{ timeout: 3000 },
+		);
 	});
 });

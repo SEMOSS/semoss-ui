@@ -1,38 +1,70 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export interface UseInfiniteScrollOptions {
+	/** disable the scroll */
+	disabled?: boolean;
+
+	/** Trigger on mount if content is already short */
+	triggerOnMount?: boolean;
+
 	/** Callback to trigger when reaching the bottom */
 	onNext: () => void;
+}
+
+export interface UseInfiniteScrollReturn {
+	/** Ref setter to attach to the scrollable container */
+	setScroll: (ele: HTMLDivElement | null) => void;
+
+	/** Reset the scroll position to top */
+	resetScroll: () => void;
 }
 
 /**
  * Hook that triggers a callback when user scrolls near the bottom of a container
  *
  * @param options - Configuration options
- * @returns Ref to attach to the scrollable container
+ * @returns Object containing setScroll ref setter and reset function to scroll to top
  *
  * @example
  * ```tsx
- * const scrollRef = useInfiniteScroll({
- *   onLoad
+ * const { setScroll, reset } = useInfiniteScroll({
+ *   onNext: loadMore
  * });
  *
- * return <ScrollArea ref={scrollRef}>...</ScrollArea>;
+ * return <ScrollArea ref={setScroll}>...</ScrollArea>;
  * ```
  */
-export function useInfiniteScroll({ onNext }: UseInfiniteScrollOptions) {
+export function useInfiniteScroll({
+	disabled = false,
+	triggerOnMount = true,
+	onNext,
+}: UseInfiniteScrollOptions): UseInfiniteScrollReturn {
 	const threshold = 100; // pixels from bottom to trigger load more
-	const [containerEle, setContainerEle] = useState<HTMLDivElement | null>(
-		null,
-	);
+	const [scrollEle, setScroll] = useState<HTMLDivElement | null>(null);
 
+	/**
+	 * Reset the scroll
+	 */
+	const resetScroll = useCallback(() => {
+		if (scrollEle) {
+			scrollEle.scrollTop = 0;
+		}
+	}, [scrollEle]);
+
+	/**
+	 * Add the scroll listener
+	 */
 	useEffect(() => {
-		if (!containerEle) {
+		if (!scrollEle) {
 			return;
 		}
 
 		const handleScroll = () => {
-			const { scrollTop, scrollHeight, clientHeight } = containerEle;
+			if (disabled) {
+				return;
+			}
+
+			const { scrollTop, scrollHeight, clientHeight } = scrollEle;
 			const distanceFromBottom =
 				scrollHeight - (scrollTop + clientHeight);
 
@@ -43,15 +75,17 @@ export function useInfiniteScroll({ onNext }: UseInfiniteScrollOptions) {
 		};
 
 		// Add scroll listener
-		containerEle.addEventListener("scroll", handleScroll);
+		scrollEle.addEventListener("scroll", handleScroll);
 
 		// Check on mount in case content is already short
-		handleScroll();
+		if (triggerOnMount) {
+			handleScroll();
+		}
 
 		return () => {
-			containerEle.removeEventListener("scroll", handleScroll);
+			scrollEle.removeEventListener("scroll", handleScroll);
 		};
-	}, [containerEle, onNext]);
+	}, [scrollEle, onNext, disabled, triggerOnMount]);
 
-	return setContainerEle;
+	return { setScroll, resetScroll };
 }

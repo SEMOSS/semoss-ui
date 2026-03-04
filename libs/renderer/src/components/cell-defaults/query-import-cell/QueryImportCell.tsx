@@ -4,11 +4,14 @@ import {
 	KeyboardArrowDown,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { DATA_FRAME_TYPES } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
+import { MonacoEditor } from "@semoss/shared";
 import {
 	Button,
+	Checkbox,
+	FormControlLabel,
 	InputAdornment,
 	Select,
 	Stack,
@@ -44,9 +47,6 @@ const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
 	color: theme.palette.text.secondary,
 }));
 
-// Reduce Initial Bundle
-const Editor = lazy(() => import("@monaco-editor/react"));
-
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
 
@@ -55,26 +55,12 @@ const StyledContent = styled("div")(({ theme }) => ({
 	width: "100%",
 }));
 
-const StyledButton = styled(Button)(({ theme }) => ({
-	color: theme.palette.text.secondary,
-	border: `1px solid ${theme.palette.divider}`,
-}));
-
-const StyledButtonLabel = styled("span", {
-	shouldForwardProp: (prop) => prop !== "width",
-})<{ width: number }>(({ theme, width }) => ({
-	width: theme.spacing(width),
-	display: "block",
-	textAlign: "start",
-}));
-
 const StyledTextField = styled(TextField)(({ theme }) => ({
 	"& .MuiInputBase-root": {
 		color: theme.palette.text.secondary,
 		display: "flex",
 		gap: theme.spacing(1),
 		height: "30px",
-		width: "200px",
 	},
 }));
 
@@ -94,6 +80,15 @@ export interface QueryImportCellDef extends CellDef<"query-import"> {
 
 		/** Select query rendered in the cell */
 		selectQuery: string;
+
+		/** Enable batching for query results */
+		enableBatching?: boolean;
+
+		/** Number of rows per batch */
+		batchSize?: number;
+
+		/** Current offset for batching */
+		currentOffset?: number;
 	};
 }
 
@@ -115,6 +110,29 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 		const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
 			`MyEngines(engineTypes=['DATABASE']);`,
 		);
+
+		// Ensure offset starts at 0 when component first mounts with batching enabled
+		// This handles the case where cell was saved with batching enabled and a non-zero offset
+		const hasInitialized = useRef(false);
+		useEffect(() => {
+			if (
+				!hasInitialized.current &&
+				cell.parameters.enableBatching &&
+				(cell.parameters.currentOffset ?? 0) !== 0
+			) {
+				hasInitialized.current = true;
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						queryId: cell.query.id,
+						cellId: cell.id,
+						path: "parameters.currentOffset",
+						value: 0,
+					},
+				});
+			}
+		}, []);
+
 		useEffect(() => {
 			if (myDbs.status !== "SUCCESS") {
 				return;
@@ -189,13 +207,38 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 						},
 					});
 
-					state.dispatch({
-						message: ActionMessages.RUN_CELL,
-						payload: {
-							queryId: cell.query.id,
-							cellId: cell.id,
-						},
-					});
+					// If batching is enabled, reset offset to 0 when manually running the cell
+					if (cell.parameters.enableBatching) {
+						state.dispatch({
+							message: ActionMessages.UPDATE_CELL,
+							payload: {
+								queryId: cell.query.id,
+								cellId: cell.id,
+								path: "parameters.currentOffset",
+								value: 0,
+							},
+						});
+
+						// Small delay to ensure offset is updated before running
+						setTimeout(() => {
+							state.dispatch({
+								message: ActionMessages.RUN_CELL,
+								payload: {
+									queryId: cell.query.id,
+									cellId: cell.id,
+								},
+							});
+						}, 50);
+					} else {
+						// No batching - run immediately
+						state.dispatch({
+							message: ActionMessages.RUN_CELL,
+							payload: {
+								queryId: cell.query.id,
+								cellId: cell.id,
+							},
+						});
+					}
 				},
 			});
 
@@ -323,14 +366,12 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 								<DatabaseTables
 									databaseId={cell.parameters.databaseId}
 								/>
-							) : (
-								<></>
-							)}
+							) : null}
 						</Stack>
 					)}
 					<StyledContainer>
 						<Suspense fallback={<>...</>}>
-							<Editor
+							<MonacoEditor
 								value={cell.parameters.selectQuery}
 								defaultValue="--SELECT * FROM..."
 								language="sql" /** TODO: language support? can we tell this from the database type? */
@@ -359,7 +400,8 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 							direction="row"
 							alignItems={"center"}
 							justifyContent={"flex-end"}
-							borderColor={"red"}
+							spacing={2}
+							sx={{ flexWrap: "nowrap" }}
 						>
 							<StyledSelect
 								size={"small"}
@@ -370,7 +412,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 									IconComponent: KeyboardArrowDown,
 									style: {
 										height: "30px",
-										width: "140px",
+										width: "120px",
 									},
 									startAdornment: (
 										<InputAdornment position="start">
@@ -422,7 +464,155 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 										},
 									});
 								}}
+								sx={{ width: "150px" }}
 							/>
+							<FormControlLabel
+								control={
+									<Checkbox
+										checked={
+											cell.parameters.enableBatching ??
+											false
+										}
+										disabled={cell.isLoading}
+										label="Enable Batching"
+										onChange={(
+											e: React.ChangeEvent<HTMLInputElement>,
+										) => {
+											const isEnabling = e.target.checked;
+
+											state.dispatch({
+												message:
+													ActionMessages.UPDATE_CELL,
+												payload: {
+													queryId: cell.query.id,
+													cellId: cell.id,
+													path: "parameters.enableBatching",
+													value: isEnabling,
+												},
+											});
+
+											// ALWAYS reset offset to 0 when toggling batching
+											state.dispatch({
+												message:
+													ActionMessages.UPDATE_CELL,
+												payload: {
+													queryId: cell.query.id,
+													cellId: cell.id,
+													path: "parameters.currentOffset",
+													value: 0,
+												},
+											});
+
+											if (isEnabling) {
+												// Set initial batch size when enabling batching
+												state.dispatch({
+													message:
+														ActionMessages.UPDATE_CELL,
+													payload: {
+														queryId: cell.query.id,
+														cellId: cell.id,
+														path: "parameters.batchSize",
+														value: 100,
+													},
+												});
+											}
+										}}
+										sx={{
+											color: "text.secondary",
+											paddingLeft: "4px",
+										}}
+									/>
+								}
+								label=""
+								sx={{
+									color: "text.secondary",
+									marginRight: 0,
+									marginLeft: 0,
+									gap: 0,
+									"& .MuiFormControlLabel-label": {
+										fontSize: "14px",
+									},
+								}}
+							/>
+							{cell.parameters.enableBatching && (
+								<>
+									<StyledTextField
+										title="Batch Size"
+										type="number"
+										placeholder="Batch Amount..."
+										value={cell.parameters.batchSize ?? 100}
+										disabled={cell.isLoading}
+										onChange={(e) => {
+											const inputValue = e.target.value;
+
+											// Allow empty string for deletion
+											if (inputValue === "") {
+												state.dispatch({
+													message:
+														ActionMessages.UPDATE_CELL,
+													payload: {
+														queryId: cell.query.id,
+														cellId: cell.id,
+														path: "parameters.batchSize",
+														value: "",
+													},
+												});
+												return;
+											}
+
+											const value = Number.parseInt(
+												inputValue,
+												10,
+											);
+											if (
+												!Number.isNaN(value) &&
+												value >= 0
+											) {
+												state.dispatch({
+													message:
+														ActionMessages.UPDATE_CELL,
+													payload: {
+														queryId: cell.query.id,
+														cellId: cell.id,
+														path: "parameters.batchSize",
+														value: value,
+													},
+												});
+											}
+										}}
+										sx={{ width: "120px" }}
+									/>
+									<StyledTextField
+										title="Current Offset"
+										type="number"
+										value={
+											cell.parameters.currentOffset ?? 0
+										}
+										disabled
+										sx={{ width: "80px" }}
+									/>
+									<Button
+										variant="outlined"
+										size="small"
+										onClick={() => {
+											state.dispatch({
+												message:
+													ActionMessages.UPDATE_CELL,
+												payload: {
+													queryId: cell.query.id,
+													cellId: cell.id,
+													path: "parameters.currentOffset",
+													value: 0,
+												},
+											});
+										}}
+										disabled={cell.isLoading}
+										sx={{ minWidth: "60px" }}
+									>
+										Reset
+									</Button>
+								</>
+							)}
 						</Stack>
 					)}
 				</Stack>

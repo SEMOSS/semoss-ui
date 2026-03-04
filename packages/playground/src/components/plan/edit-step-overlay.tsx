@@ -1,5 +1,6 @@
 import type React from "react";
 import { useId, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Dialog,
@@ -23,7 +24,7 @@ import {
 	Textarea,
 } from "@semoss/ui/next";
 import type { PlanStep } from "@/types";
-import { HumanInterventionDetails } from "./human-intervention-details";
+// import { HumanInterventionDetails } from "./human-intervention-details";
 import { LLMReasoningDetails } from "./llm-reasoning-details";
 import { ToolCallDetails } from "./tool-call-details";
 
@@ -38,10 +39,8 @@ const getStepDetailsDefaults = (
 			parameters: {},
 			rationaleForStep: "",
 			_meta: {
-				map: {
-					SMSS_PROJECT_NAME: "",
-					SMSS_PROJECT_ID: "",
-				},
+				SMSS_PROJECT_NAME: "",
+				SMSS_PROJECT_ID: "",
 			},
 		};
 	} else if (type === "llm_reasoning") {
@@ -50,14 +49,15 @@ const getStepDetailsDefaults = (
 			prompt: "",
 			rationaleForStep: "",
 		};
-	} else if (type === "human_intervention") {
-		return {
-			stepType: "human_intervention",
-			required_role: "",
-			instructions: "",
-			rationaleForStep: "",
-		};
 	}
+	// } else if (type === "human_intervention") {
+	// 	return {
+	// 		stepType: "human_intervention",
+	// 		required_role: "",
+	// 		instructions: "",
+	// 		rationaleForStep: "",
+	// 	};
+	// }
 };
 
 interface EditStepOverlayProps {
@@ -78,6 +78,7 @@ interface EditStepOverlayProps {
 }
 
 export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
+	const { t } = useTranslation("common");
 	const {
 		mode,
 		current = {
@@ -112,27 +113,31 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 		step.description.trim() === "" ||
 		!step.details.stepType ||
 		(step.details.stepType === "tool_call" &&
-			(!step.details._meta.map.SMSS_PROJECT_ID ||
-				!step.details.tool_name)) ||
+			(!step.details._meta.SMSS_PROJECT_ID || !step.details.tool_name)) ||
 		(step.details.stepType === "llm_reasoning" &&
 			step.details.prompt.trim() === "") ||
-		(step.details.stepType === "human_intervention" &&
-			step.details.instructions.trim() === "");
+		step.details.stepType === "human_intervention";
 
 	return (
 		<Dialog open={open} onOpenChange={(open) => onOpenChange(open)}>
 			<DialogContent
 				aria-describedby="Edit the details of the step"
-				className="sm:max-w-lg"
+				className="sm:max-w-4xl"
 			>
 				<DialogHeader>
-					<DialogTitle>{mode} Step</DialogTitle>
+					<DialogTitle>
+						{mode === "New"
+							? t("plan.newStep")
+							: t("plan.editStep")}
+					</DialogTitle>
 				</DialogHeader>
 				<form>
 					<FieldSet>
 						<FieldGroup>
 							<Field>
-								<FieldLabel htmlFor={nameId}>Name</FieldLabel>
+								<FieldLabel htmlFor={nameId}>
+									{t("labels.name")}
+								</FieldLabel>
 								<Input
 									id={nameId}
 									value={step.step_name}
@@ -146,7 +151,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 							</Field>
 							<Field>
 								<FieldLabel htmlFor={descriptionId}>
-									Description
+									{t("labels.description")}
 								</FieldLabel>
 								<Textarea
 									id={descriptionId}
@@ -161,7 +166,9 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 								/>
 							</Field>
 							<Field>
-								<FieldLabel htmlFor={typeId}>Type</FieldLabel>
+								<FieldLabel htmlFor={typeId}>
+									{t("labels.type")}
+								</FieldLabel>
 								<Select
 									value={step.type}
 									onValueChange={(value) => {
@@ -175,21 +182,25 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 									}}
 								>
 									<SelectTrigger>
-										<SelectValue placeholder="Select type" />
+										<SelectValue
+											placeholder={t("plan.selectType")}
+										/>
 									</SelectTrigger>
 									<SelectContent>
 										<SelectGroup>
-											<SelectLabel>Type</SelectLabel>
+											<SelectLabel>
+												{t("labels.type")}
+											</SelectLabel>
 
 											<SelectItem value="tool_call">
-												Tool
+												{t("plan.tool")}
 											</SelectItem>
 											<SelectItem value="llm_reasoning">
-												AI
+												{t("plan.ai")}
 											</SelectItem>
-											<SelectItem value="human_intervention">
+											{/* <SelectItem value="human_intervention">
 												User
-											</SelectItem>
+											</SelectItem> */}
 										</SelectGroup>
 									</SelectContent>
 								</Select>
@@ -220,7 +231,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 									}}
 								/>
 							)}
-							{step.details.stepType === "human_intervention" && (
+							{/* {step.details.stepType === "human_intervention" && (
 								<HumanInterventionDetails
 									details={step.details}
 									onDetailsChange={(details) => {
@@ -230,7 +241,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 										});
 									}}
 								/>
-							)}
+							)} */}
 						</FieldGroup>
 					</FieldSet>
 				</form>
@@ -241,7 +252,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 							onOpenChange(false);
 						}}
 					>
-						Cancel
+						{t("buttons.cancel")}
 					</Button>
 					<Button
 						variant="default"
@@ -254,7 +265,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 							onOpenChange(false);
 						}}
 					>
-						Confirm
+						{t("buttons.confirm")}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

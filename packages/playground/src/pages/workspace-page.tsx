@@ -1,7 +1,9 @@
 import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
+import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	InputGroup,
@@ -9,14 +11,14 @@ import {
 	InputGroupInput,
 	Muted,
 	ScrollArea,
-	SidebarTrigger,
 	Spinner,
 	toast,
 	useDebouncedValue,
+	useInfiniteScroll,
 } from "@semoss/ui/next";
-import workspaceGraphic from "@/assets/img/workspace-graphic.png";
-import { WorkspaceCard, WorkspaceOverlay } from "@/components";
-import { useChat } from "@/hooks";
+import workspaceImage from "@/assets/img/workspace.png";
+import { WorkspaceCard } from "@/components";
+import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { App } from "@/types";
 
 /**
@@ -25,83 +27,84 @@ import type { App } from "@/types";
  * @component
  */
 export const WorkspacePage = observer(() => {
-	/**
-	 * State
-	 */
-	const [search, setSearch] = useState("");
-	const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] =
-		useState<boolean>(false);
-	const [workspaceId, setWorkspaceId] = useState<string | null>(null);
-	const [isLoadingDelete, setIsLoadingDelete] = useState<boolean>(false);
+	const { t } = useTranslation(["workspace", "notifications", "common"]);
+	const { root } = useRoot();
+	const navigate = useNavigate();
+	// set the breadcrumbs
+	useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: t("workspace:breadcrumbs.home"),
+				path: "/",
+			},
+			{
+				name: t("workspace:breadcrumbs.agent"),
+				path: "/agent",
+			},
+		],
+	});
 
-	/**
-	 * Library Hooks
-	 */
+	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
-	const listWorkspaces = usePixel<App[]>(
-		`MyProjects ( type = "WORKSPACE" , filterWord = "${debouncedSearch}", limit = 10 ) ;`,
-		{ data: [] },
-	);
 	const { chat } = useChat();
 
 	/**
-	 * Delete Workspace
+	 * Get all of the workspaces with lazy loading
 	 */
-	const handleDeleteWorkspace = async (workspaceId: string) => {
-		setIsLoadingDelete(true);
-		try {
-			await chat.deleteWorkspace(workspaceId);
-			listWorkspaces.refresh();
-		} catch (e) {
-			toast.error(
-				e instanceof Error ? e.message : "Failed to delete workspace",
-			);
-			setIsLoadingDelete(false);
-			return;
-		}
-		setIsLoadingDelete(false);
-	};
+	const getWorkspaces = useIteratorPixel<App[], App>(
+		(limit, offset) =>
+			`MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} type = "WORKSPACE", limit=[${limit}], offset=[${offset}]);`,
+		(response) => {
+			// if its less than the limit, we know its the end
+			if (response.length < 25) {
+				return -1;
+			}
+
+			return Infinity;
+		},
+		(response) => {
+			return response;
+		},
+		{
+			limit: 25,
+		},
+		[debouncedSearch],
+	);
 
 	/**
-	 * Constants
+	 * Setup infinite scroll for the command list
 	 */
-	const isLoading =
-		listWorkspaces.status !== "SUCCESS" ||
-		search !== debouncedSearch ||
-		isLoadingDelete;
+	const { setScroll } = useInfiniteScroll({
+		disabled: getWorkspaces.isLoading || !getWorkspaces.hasMore,
+		onNext: () => {
+			getWorkspaces.next();
+		},
+	});
 
 	return (
-		<div className="flex w-full flex-col px-2">
-			<div className="absolute top-2 left-2 z-10 flex h-12.5 items-center px-4">
-				<SidebarTrigger />
-			</div>
-			<div className="mx-auto flex h-screen w-full max-w-[950px] flex-col gap-12 px-12 pt-8 pb-4">
-				<div className="flex w-full rounded-lg bg-sky-100">
+		<div className="relative h-full w-full overflow-hidden">
+			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-12 px-12 pt-8 pb-4">
+				<div className="flex w-full rounded-lg bg-primary/10">
 					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
 						<div className="font-medium text-primary text-xl leading-normal">
-							Welcome to Workspace Manager
+							{t("workspace:welcomeTitle")}
 						</div>
 						<div className="font-normal text-base text-primary leading-normal">
-							Explore custom AI workspaces designed to meet your
-							unique needs and integrate seamlessly into your
-							processes.
+							{t("workspace:welcomeDescription")}
 						</div>
 						<Button
-							onClick={() => {
-								setWorkspaceId(null);
-								setIsWorkspaceModalOpen(true);
-							}}
+							onClick={() => navigate("/agent/new")}
 							className="w-auto"
 						>
-							Create a Workspace
+							{t("workspace:actions.createAgent")}
 						</Button>
 					</div>
 					{/* Image appears only on large screens and above */}
 					<div className="relative hidden w-[351px] overflow-hidden rounded-r-lg lg:block">
 						<img
-							src={workspaceGraphic}
-							alt="Workspace illustration"
-							className="-translate-y-1/2 absolute top-1/2 left-0 h-[351px] w-full object-cover"
+							src={root.theme.images.workspace || workspaceImage}
+							alt={t("workspace:images.agentIllustration")}
+							className="-translate-y-1/2 absolute top-1/2 left-0 h-[351px] w-full select-none object-cover"
 						/>
 					</div>
 				</div>
@@ -109,30 +112,28 @@ export const WorkspacePage = observer(() => {
 				<div className="flex flex-col gap-4 overflow-auto">
 					<InputGroup className="bg-background">
 						<InputGroupInput
-							placeholder="Search Workspaces"
+							placeholder={t("common:buttons.search")}
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 						/>
 						<InputGroupAddon>
 							<SearchIcon />
 						</InputGroupAddon>
-						<InputGroupAddon align="inline-end">
-							{isLoading ? (
-								<Spinner />
-							) : (
-								`${listWorkspaces.data.length} results`
-							)}
-						</InputGroupAddon>
 					</InputGroup>
 
-					<ScrollArea className="flex-1 overflow-auto">
-						{isLoading ? (
+					<ScrollArea
+						className="flex-1 overflow-auto"
+						viewportRef={(ele) => setScroll(ele)}
+					>
+						{getWorkspaces.data.length === 0 ? (
 							<div className="flex items-center justify-center py-12">
-								<Spinner />
+								<Muted>
+									{t("workspace:messages.noResults")}
+								</Muted>
 							</div>
-						) : listWorkspaces.data.length > 0 ? (
+						) : (
 							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
-								{listWorkspaces.data.map((w) => (
+								{getWorkspaces.data.map((w) => (
 									<WorkspaceCard
 										key={w.project_id}
 										workspace={{
@@ -140,37 +141,38 @@ export const WorkspacePage = observer(() => {
 											name: w.project_name,
 											description: w.description,
 										}}
-										onEditClick={() => {
-											setWorkspaceId(w.project_id);
-											setIsWorkspaceModalOpen(true);
+										onDeleteClick={async () => {
+											try {
+												await chat.deleteWorkspace(
+													w.project_id,
+												);
+
+												getWorkspaces.reset();
+											} catch (e) {
+												toast.error(
+													e instanceof Error
+														? e.message
+														: t(
+																"notifications:workspace.deleteError",
+															),
+												);
+											}
 										}}
-										onDeleteClick={() =>
-											handleDeleteWorkspace(w.project_id)
-										}
 									/>
 								))}
 							</div>
-						) : (
-							<div className="flex items-center justify-center py-12">
-								<Muted>No results found</Muted>
-							</div>
 						)}
+
+						{/* Loading more indicator */}
+						{getWorkspaces.isLoading &&
+							getWorkspaces.data.length > 0 && (
+								<div className="flex items-center justify-center p-4">
+									<Spinner className="size-4" />
+								</div>
+							)}
 					</ScrollArea>
 				</div>
 			</div>
-
-			{isWorkspaceModalOpen && (
-				<WorkspaceOverlay
-					open={isWorkspaceModalOpen}
-					workspaceId={workspaceId}
-					onClose={(newWorkspaceId) => {
-						setIsWorkspaceModalOpen(false);
-						if (newWorkspaceId) {
-							listWorkspaces.refresh();
-						}
-					}}
-				/>
-			)}
 		</div>
 	);
 });

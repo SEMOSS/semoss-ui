@@ -6,11 +6,11 @@ import {
 	PublishedWithChanges,
 	ToggleOff,
 } from "@mui/icons-material";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
 	Avatar,
-	Button,
 	Divider,
 	FileDropzone,
 	LoadingScreen,
@@ -23,6 +23,13 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import {
+	Button,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	Large,
+} from "@semoss/ui/next";
 import { setProjectPortal, uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
@@ -34,6 +41,7 @@ import { useEngineDependenciesState } from "@/utility/engineDependencies";
 
 type ExtractOutput = { engineIds: Record<string, unknown> };
 
+import { McpUsage } from "../shared/mcp-usage";
 import EngineIdsModal from "./save-app/EngineIdsModal";
 
 const StyledAppSettings = styled("div")(({ theme }) => ({
@@ -75,6 +83,7 @@ const StyledRightSwitch = styled(Switch)(({ theme }) => ({
 const StyledRightButton = styled(Button)(({ theme }) => ({
 	marginLeft: "auto",
 	paddingRight: theme.spacing(1),
+	borderColor: theme.palette.primary.main,
 }));
 
 const StyledCardDiv = styled("div")(({ theme }) => ({
@@ -169,8 +178,9 @@ const StyledPersonIcon = styled(Person)(() => ({
 	alignItems: "flex-start",
 }));
 
-const StyledPublishedIcon = styled(PublishedWithChanges)(() => ({
+const StyledPublishedIcon = styled(PublishedWithChanges)(({ theme }) => ({
 	marginRight: "5px",
+	color: theme.palette.primary.main,
 }));
 
 const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
@@ -237,6 +247,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 	const [showEngineModal, setShowEngineModal] = useState(false);
 	const { engineDependenciesState, updateEngineDependencies } =
 		useEngineDependenciesState();
+	const [openMcp, setOpenMcp] = useState(false);
 
 	const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
 		defaultValues: {
@@ -324,7 +335,9 @@ export const AppSettings = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				const output = response.pixelReturn[0].output;
+				const output = Array.isArray(response.pixelReturn[0].output)
+					? (response.pixelReturn[0].output as string[])
+					: [response.pixelReturn[0].output as string];
 				const type = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
@@ -363,8 +376,8 @@ export const AppSettings = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				const output = response.pixelReturn[0].output;
-				const type = response.pixelReturn[0].operationType[0];
+				const output: string = response.pixelReturn[0].output as string;
+				const type: string = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
 					notification.add({
@@ -404,7 +417,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				const output = response.pixelReturn[0].output;
+				const output: string = response.pixelReturn[0].output as string;
 				const type = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
@@ -602,7 +615,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 
 							<StyledRightButton
 								disabled={!portalDetails.project_has_portal}
-								variant="outlined"
+								variant="outline"
 								onClick={() => {
 									publish();
 								}}
@@ -619,7 +632,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 
 						<StyledSubRow>
 							<TextField
-								focused={false}
 								label={"Link"}
 								variant={"outlined"}
 								value={

@@ -6,8 +6,8 @@ import { useEffect, useRef, useState } from "react";
  * @param delay - delay timer
  * @returns debounced value
  */
-export const useDebouncedValue = <T>(value: T, delay = 500) => {
-	const [debouncedValue, setDebouncedValue] = useState<T>(undefined);
+export const useDebouncedValue = <T>(value: T, delay: number = 300) => {
+	const [debouncedValue, setDebouncedValue] = useState<T>(value);
 	const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
 	useEffect(() => {
@@ -16,7 +16,9 @@ export const useDebouncedValue = <T>(value: T, delay = 500) => {
 		}, delay);
 
 		return () => {
-			clearTimeout(timeoutRef.current);
+			if (timeoutRef.current) {
+				clearTimeout(timeoutRef.current);
+			}
 		};
 	}, [value, delay]);
 

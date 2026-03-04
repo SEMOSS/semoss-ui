@@ -1,23 +1,14 @@
-import { configure, makeAutoObservable, runInAction } from "mobx";
-import type { Theme } from "@/types";
+import { configure, makeAutoObservable } from "mobx";
+import type React from "react";
+import type { ThemeMap } from "@semoss/shared";
+import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 
 configure({
 	enforceActions: "always",
 });
 
-const APP_NAME = import.meta.env.VITE_APP_NAME
-	? import.meta.env.VITE_APP_NAME
-	: "";
-const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
-	? import.meta.env.VITE_APP_DESCRIPTION
-	: "";
-const APP_LOGO_PATH = import.meta.env.VITE_APP_LOGO_PATH
-	? import.meta.env.VITE_APP_LOGO_PATH
-	: "";
-
-const APP_THEME = import.meta.env.VITE_APP_THEME
-	? import.meta.env.VITE_APP_THEME
-	: "{}";
+const NAME = import.meta.env.VITE_NAME ? import.meta.env.VITE_NAME : "";
+const THEME = import.meta.env.VITE_THEME ? import.meta.env.VITE_THEME : "{}";
 
 interface RootStoreInterface {
 	/**
@@ -28,7 +19,20 @@ interface RootStoreInterface {
 	/**
 	 * Current theme setting
 	 */
-	theme: Theme;
+	theme: ThemeMap["playground"];
+
+	/**
+	 * Custom breadcrumbs for the main layout
+	 */
+	breadcrumbs: {
+		name: string;
+		path: string;
+	}[];
+
+	/**
+	 * Optional right-side actions to render in the main layout header
+	 */
+	navbarActions?: React.ReactNode | null;
 }
 
 /**
@@ -37,39 +41,54 @@ interface RootStoreInterface {
 export class RootStore {
 	private _store: RootStoreInterface = {
 		isInitialized: false,
+		breadcrumbs: [],
+		navbarActions: null,
 		theme: {
 			name: "",
 			description: "",
-			styles: {
+			variables: {
 				backgroundColor: "",
 				primaryColor: "",
+				secondaryColor: "",
 			},
 			images: {
+				app: "",
 				logo: "",
+				login: "",
+				landing: "",
+				workspace: "",
 			},
 			overrides: {
 				"main-layout": {},
 			},
+			footer: "",
+			landing: "",
+			sidebar: {
+				//workspaceAlias: "Workspace",
+				headerItems: [],
+				footerItems: [],
+			},
+			dialog: undefined,
+			toolAutoExecutionLimit: null,
+			defaultRoomSettings: {
+				model: undefined,
+				temperature: TEMPERATURE,
+				tokenLength: TOKEN_LENGTH,
+			},
+			allowedFileTypes: [],
+			defaultTools: [],
 		},
 	};
 
 	constructor() {
 		// If parsing fails, fall back to environment variables only
-		if (APP_NAME) {
-			this._store.theme.name = APP_NAME;
-		}
-
-		if (APP_DESCRIPTION) {
-			this._store.theme.description = APP_DESCRIPTION;
-		}
-
-		if (APP_LOGO_PATH) {
-			this._store.theme.images.logo = APP_LOGO_PATH;
+		if (NAME) {
+			this._store.theme.name = NAME;
 		}
 
 		// merge with the environment variables
 		try {
-			const theme = JSON.parse(APP_THEME) as Partial<Theme>;
+			const theme = JSON.parse(THEME) as Partial<ThemeMap["playground"]>;
 
 			// update the theme
 			this.updateTheme(theme);
@@ -99,14 +118,57 @@ export class RootStore {
 	}
 
 	/**
+	 * Get the current breadcrumbs
+	 */
+	get breadcrumbs() {
+		return this._store.breadcrumbs;
+	}
+
+	/**
+	 * Get the current navbar actions
+	 */
+	get navbarActions() {
+		return this._store.navbarActions;
+	}
+
+	/**
+	 * Set custom breadcrumbs
+	 */
+	setBreadcrumbs = (breadcrumbs: RootStore["breadcrumbs"]) => {
+		this._store.breadcrumbs = breadcrumbs;
+	};
+
+	/**
+	 * Clear breadcrumbs (use default route-based breadcrumbs)
+	 */
+	clearBreadcrumbs = () => {
+		this._store.breadcrumbs = [];
+	};
+
+	/**
+	 * Set right-side navbar actions
+	 */
+	setNavbarActions = (actions: React.ReactNode | null) => {
+		this._store.navbarActions = actions;
+	};
+
+	/**
+	 * Clear right-side navbar actions
+	 */
+	clearNavbarActions = () => {
+		this._store.navbarActions = null;
+	};
+
+	/**
 	 * Set the default theme
 	 */
-	initialize = async (theme: Partial<Theme>): Promise<void> => {
+	initialize = async (
+		theme: Partial<ThemeMap["playground"]>,
+	): Promise<void> => {
 		this.updateTheme(theme);
 
-		runInAction(() => {
-			this._store.isInitialized = true;
-		});
+		// set as initialized
+		this._store.isInitialized = true;
 	};
 
 	/**
@@ -117,14 +179,15 @@ export class RootStore {
 	 * Update the theme
 	 * @param theme Theme
 	 */
-	private updateTheme = (theme: Partial<Theme> | undefined) => {
-		// deep merge from the environmentf
+	private updateTheme = (theme: Partial<ThemeMap["playground"]>) => {
+		// deep merge from the environment
 		this._store.theme = {
+			...this._store.theme,
 			name: theme?.name || this._store.theme.name,
 			description: theme?.description || this._store.theme.description,
-			styles: {
-				...this._store.theme.styles,
-				...(theme?.styles || {}),
+			variables: {
+				...this._store.theme.variables,
+				...(theme?.variables || {}),
 			},
 			images: {
 				...this._store.theme.images,
@@ -134,21 +197,54 @@ export class RootStore {
 				...this._store.theme.overrides,
 				...(theme?.overrides || {}),
 			},
+			footer: theme?.footer || this._store.theme.footer,
+			landing: theme?.landing || this._store.theme.landing,
+			sidebar: {
+				...this._store.theme.sidebar,
+				...(theme?.sidebar || {}),
+			},
+			dialog: theme?.dialog || this._store.theme.dialog,
+			defaultRoomSettings: {
+				...this._store.theme.defaultRoomSettings,
+				...(theme?.defaultRoomSettings || {}),
+			},
+			toolAutoExecutionLimit:
+				theme?.toolAutoExecutionLimit ||
+				this._store.theme.toolAutoExecutionLimit,
+			allowedFileTypes:
+				theme?.allowedFileTypes ||
+				this._store.theme.allowedFileTypes ||
+				[],
+			defaultTools: [
+				...new Map(
+					[
+						...this._store.theme.defaultTools,
+						...(theme?.defaultTools || []),
+					].map((tool) => [tool.id, tool]),
+				).values(),
+			],
 		};
 
 		// apply the theme to document root
 		const root = document.documentElement;
-		if (this._store.theme.styles.backgroundColor) {
+		if (this._store.theme.variables.backgroundColor) {
 			root.style.setProperty(
 				"--background",
-				this._store.theme.styles.backgroundColor,
+				this._store.theme.variables.backgroundColor,
 			);
 		}
 
-		if (this._store.theme.styles.primaryColor) {
+		if (this._store.theme.variables.primaryColor) {
 			root.style.setProperty(
 				"--primary",
-				this._store.theme.styles.primaryColor,
+				this._store.theme.variables.primaryColor,
+			);
+		}
+
+		if (this._store.theme.variables.secondaryColor) {
+			root.style.setProperty(
+				"--secondary",
+				this._store.theme.variables.secondaryColor,
 			);
 		}
 	};

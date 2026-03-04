@@ -1,8 +1,4 @@
-import {
-	Diversity3,
-	MoreVert,
-	Search as SearchIcon,
-} from "@mui/icons-material";
+import { Diversity3, MoreVert } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -20,9 +16,10 @@ import { ArchiveBox } from "@/assets/img/ArchiveBox";
 import { Construction } from "@/assets/img/Construction";
 import { DatabaseLayers } from "@/assets/img/DatabaseLayers";
 import { Folder } from "@/assets/img/Folder";
-import { Function } from "@/assets/img/Function";
+import { Function as FunctionImg } from "@/assets/img/Function";
 import { Group } from "@/assets/img/Group";
 import { GroupRounded } from "@/assets/img/GroupRounded";
+import { GuardrailIcon } from "@/assets/img/Guardrail";
 import { Jobs } from "@/assets/img/Jobs";
 import { Link } from "@/assets/img/Link";
 import { ModelBrain } from "@/assets/img/ModelBrain";
@@ -94,19 +91,20 @@ const IconMapper = {
 	"Storage Settings": <ArchiveBox />,
 	"App Settings": <Folder />,
 	"Vector Settings": <Vector />,
-	"Function Settings": <Function />,
+	"Function Settings": <FunctionImg />,
 	"Insight Settings": <SEMOSS />,
 	"Member Settings": <Group />,
 	Configuration: <Construction />,
 	"Admin Query": <AdminPanel />,
+	"Admin Theme": <PaintRounded />,
 	"External Connections": <Link />,
 	Teams: <GroupRounded />,
 	"Teams Management": <GroupRounded />,
 	"Team Permissions": <Diversity3 />,
 	"My Profile": <PersonRounded />,
-	Theming: <PaintRounded />,
 	Jobs: <Jobs />,
 	"View RDF Map": <Folder />,
+	"Guardrail Settings": <GuardrailIcon />,
 };
 
 export const SettingsIndexPage = () => {
@@ -156,10 +154,17 @@ export const SettingsIndexPage = () => {
 			<Grid container spacing={2}>
 				{cards.map((c, i) => {
 					if (c.admin && !adminMode) {
-						return;
+						return null;
 					} else {
 						return (
-							<Grid item key={i} sm={12} md={6} lg={4} xl={3}>
+							<Grid
+								item
+								key={`settingsIndexPage-${c.title}-${c.path}-${i}-card`}
+								sm={12}
+								md={6}
+								lg={4}
+								xl={3}
+							>
 								<StyledCard
 									onClick={() => navigate(c.path)}
 									data-testid={formatToDataTestId(

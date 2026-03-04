@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
-import { ScrollArea, Spinner, useInfiniteScroll } from "@semoss/ui/next";
+import { Muted, ScrollArea, Spinner, useInfiniteScroll } from "@semoss/ui/next";
 
-export interface WorkspaceChatListProps {
+interface WorkspaceChatListProps {
 	/**
 	 * List of chats associated with the workspace
 	 */
@@ -23,6 +24,8 @@ export const WorkspaceChatList = ({
 	workspaceId,
 	search,
 }: WorkspaceChatListProps) => {
+	const { t } = useTranslation("workspace");
+
 	// get the data
 	const getWorkspaceRooms = useIteratorPixel<
 		{
@@ -43,29 +46,22 @@ export const WorkspaceChatList = ({
 			`GetWorkspaceRooms(workspaceId=["${workspaceId}"], ${search ? `filters=[Filter(room_name ?like "${search}")],` : ""} limit=[${limit}], offset=[${offset}]);`,
 		(response) => response.total_count,
 		(response) => response.rooms,
-		{ limit: 25 },
+		{
+			limit: 25,
+		},
+		[search, workspaceId],
 	);
 
 	// Attach infinite scroll
-	const setScroll = useInfiniteScroll({
+	const { setScroll } = useInfiniteScroll({
+		disabled: getWorkspaceRooms.isLoading || !getWorkspaceRooms.hasMore,
 		onNext: () => {
-			if (getWorkspaceRooms.isLoading) {
-				return;
-			}
-
-			if (!getWorkspaceRooms.hasMore) {
-				return;
-			}
-			// get more
 			getWorkspaceRooms.next();
 		},
 	});
 
 	// initial loading
-	if (
-		getWorkspaceRooms.status === "LOADING" &&
-		getWorkspaceRooms.data.length === 0
-	) {
+	if (getWorkspaceRooms.isLoading && getWorkspaceRooms.data.length === 0) {
 		return (
 			<div className="flex h-full w-full items-center justify-center px-2 py-4">
 				<Spinner />
@@ -73,21 +69,18 @@ export const WorkspaceChatList = ({
 		);
 	}
 
-	if (getWorkspaceRooms.status === "ERROR") {
+	if (getWorkspaceRooms.isError) {
 		return (
-			<div className="px-2 py-4 text-center text-destructive text-sm">
-				Error: ${getWorkspaceRooms.error?.message}
+			<div className="flex h-full w-full items-center justify-center">
+				{t("chat.error")} {getWorkspaceRooms.error?.message}
 			</div>
 		);
 	}
 
-	if (
-		getWorkspaceRooms.status === "SUCCESS" &&
-		getWorkspaceRooms.data.length === 0
-	) {
+	if (getWorkspaceRooms.data.length === 0) {
 		return (
-			<div className="px-2 py-4 text-center text-muted-foreground text-sm">
-				No chats
+			<div className="flex h-full w-full items-center justify-center">
+				<Muted>{t("chat.noChats")}</Muted>
 			</div>
 		);
 	}
@@ -99,7 +92,7 @@ export const WorkspaceChatList = ({
 					<Link
 						key={r.room_id}
 						to={`/room/${r.room_id}`}
-						aria-label={"Select room"}
+						aria-label={t("chat.selectRoom")}
 						className="flex flex-row justify-between rounded-lg border border-border bg-card px-3 py-4"
 					>
 						<div
@@ -115,7 +108,7 @@ export const WorkspaceChatList = ({
 				))}
 
 				{/* Loading more indicator */}
-				{getWorkspaceRooms.status === "LOADING" &&
+				{getWorkspaceRooms.isLoading &&
 					getWorkspaceRooms.data.length > 0 && (
 						<div className="flex items-center justify-center p-4">
 							<Spinner className="size-4" />

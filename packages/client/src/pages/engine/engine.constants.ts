@@ -6,15 +6,16 @@ import {
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { ENGINE_TYPES, Role } from "@/types";
-import { EngineFilePage } from "./EngineFilePage";
-import { EngineMetadataPage } from "./EngineMetadataPage";
-import { EngineModelChatPage } from "./EngineModelChatPage";
-import { EngineOverviewPage } from "./EngineOverviewPage";
-import { EngineQAPage } from "./EngineQAPage";
-import { EngineQueryDataPage } from "./EngineQueryDataPage";
-import { EngineSettingsPage } from "./EngineSettingsPage";
-import { EngineSmssPage } from "./EngineSmssPage";
-import { EngineUsagePage } from "./EngineUsagePage";
+import { EngineFileManagerPage } from "./engine-file-manager-page";
+import { EngineFilePage } from "./engine-file-page";
+import { EngineMetadataPage } from "./engine-metadata-page";
+import { EngineModelChatPage } from "./engine-model-chat-page";
+import { EngineOverviewPage } from "./engine-overview-page";
+import { EngineQAPage } from "./engine-qa-page";
+import { EngineQueryDataPage } from "./engine-query-data-page";
+import { EngineSettingsPage } from "./engine-settingsPage";
+import { EngineSmssPage } from "./engine-smss-page";
+import { EngineUsagePage } from "./engine-usage-page";
 
 export const ENGINE_ROUTES: {
 	/** Name of the route */
@@ -65,12 +66,18 @@ export const ENGINE_ROUTES: {
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
 				path: "access-control",
 				component: EngineSettingsPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
@@ -96,21 +103,27 @@ export const ENGINE_ROUTES: {
 				restrict: false,
 			},
 			{
-				name: "Chat",
-				path: "chat",
-				component: EngineModelChatPage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
-			},
-			{
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Chat",
+				path: "chat",
+				component: EngineModelChatPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
 				path: "access-control",
 				component: EngineSettingsPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
@@ -136,27 +149,33 @@ export const ENGINE_ROUTES: {
 				restrict: false,
 			},
 			{
-				name: "Metadata",
-				path: "metadata",
-				component: EngineMetadataPage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
-			},
-			{
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Metadata",
+				path: "metadata",
+				component: EngineMetadataPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Query",
 				path: "query",
 				component: EngineQueryDataPage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
 				path: "access-control",
 				component: EngineSettingsPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
@@ -185,24 +204,30 @@ export const ENGINE_ROUTES: {
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
-				name: "Files",
-				path: "files",
+				name: "Documents",
+				path: "documents",
 				component: EngineFilePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Q&A",
 				path: "qa",
 				component: EngineQAPage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
 				path: "access-control",
 				component: EngineSettingsPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
@@ -231,12 +256,58 @@ export const ENGINE_ROUTES: {
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
 				path: "access-control",
 				component: EngineSettingsPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
+				name: "SMSS",
+				path: "smss",
+				component: EngineSmssPage,
+				restrict: ["OWNER"],
+			},
+		],
+	},
+	{
+		name: "Guardrail",
+		path: "guardrail",
+		type: "GUARDRAIL",
+		description:
+			"Guardrail Catalog is a centralized hub for managing and deploying guardrails that ensure safety, compliance, and reliability across the platform. It provides ready-to-use options like Gliner and Detoxify, and supports custom guardrail uploads via ZIP files, enabling consistent, secure, and scalable interactions.",
+		icon: Inventory2Outlined,
+		specific: [
+			{
+				name: "Overview",
+				path: "",
+				component: EngineOverviewPage,
+				restrict: false,
+			},
+			{
+				name: "Usage",
+				path: "usage",
+				component: EngineUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Access Control",
+				path: "access-control",
+				component: EngineSettingsPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
 				restrict: ["EDIT", "OWNER"],
 			},
 			{

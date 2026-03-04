@@ -1,16 +1,20 @@
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
+	CircleAlert,
 	CopyIcon,
-	MessageCircleIcon,
+	FileIcon,
 	RefreshCwIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
-	Markdown,
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -19,19 +23,25 @@ import {
 import {
 	InputMessageStore,
 	type ResponseMessageStore,
-	RootMessageStore,
+	type RoomStore,
 } from "@/stores";
+import { RoomInlineTool } from "../room/room-inline-tool";
+import { ResponseMessageText } from "./response-message-text";
+import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
 
-// Styled components replaced with Tailwind classes inline
-
 interface ResponseMessageProps {
+	/** Room */
+	room: RoomStore;
+
 	/** Message to render */
 	message: ResponseMessageStore;
 }
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
-	({ message }) => {
+	({ room, message }) => {
+		const { t } = useTranslation("chat");
+
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
 		if (message.parent instanceof InputMessageStore) {
@@ -39,28 +49,16 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		}
 
 		/**
-		 * Copy the text
-		 * @param text - text to copy
-		 */
-		const copyMessage = (text: string) => {
-			try {
-				navigator.clipboard.writeText(text);
-
-				toast.success("Successfully copied to clipboar");
-			} catch (e) {
-				toast.error(e.message);
-			}
-		};
-
-		/**
 		 * Record the feedback
 		 * @param rating - positive or negative
 		 */
 		const recordFeedback = async (rating: boolean) => {
+			const isDeleting = message.feedback?.rating === rating;
 			try {
-				await message.recordFeedback(rating);
-
-				toast.success("Successfully saved feedback");
+				await message.recordFeedback(isDeleting ? null : rating);
+				if (!isDeleting) {
+					toast.success(t("notifications.feedbackSuccess"));
+				}
 			} catch (e) {
 				toast.error(e.message);
 			}
@@ -74,32 +72,126 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			try {
 				await message.rewriteMessage();
 
-				toast.success("Successfully rewrote message");
+				toast.success(t("notifications.rewriteSuccess"));
 			} catch (e) {
 				toast.error(e.message);
 			}
 		};
 
 		return (
-			<div className="group mb-0 flex w-full flex-col gap-4 overflow-hidden">
-				<div className="group flex flex-row items-center gap-2">
-					<MessageCircleIcon className="size-4" />
-					<span className="mr-0.5 font-medium text-base">
-						{message.model.name}
-					</span>
-				</div>
-				{message.text ? <Markdown>{message.text}</Markdown> : null}
-				{message.tools.map((t) => (
-					<ResponseMessageTool
-						key={`tool-${t.id}`}
-						message={message}
-						tool={t}
-					/>
-				))}
+			<HoverCard>
+				<HoverCardTrigger asChild>
+					<div className="mb-0 flex w-full flex-col gap-4 pr-3 sm:pr-10">
+						{message.parts.map((p, pIdx) => {
+							const key = `message-part-${pIdx}`;
+							const isLast = pIdx === message.parts.length - 1;
 
-				<div className="flex flex-1 flex-row items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+							if (p.type === "TEXT") {
+								return (
+									<ResponseMessageText
+										key={key}
+										message={message}
+										part={p}
+										isLast={isLast}
+									/>
+								);
+							} else if (p.type === "MEDIA") {
+								return (
+									<div key={`${message.id}-part-${pIdx}`}>
+										<button
+											type="button"
+											className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted"
+											onClick={() => {
+												// this will select if there or open if not
+												room.addSidebarNode(
+													`FILE--${p.mediaInfo.fileLocation}`,
+													{
+														type: "tab",
+														name: p.mediaInfo
+															.fileName,
+														component:
+															"room-file-editor",
+														config: {
+															name: p.mediaInfo
+																.fileName,
+															path: p.mediaInfo
+																.fileLocation,
+														},
+														enableClose: true,
+													},
+												);
+											}}
+											aria-label={`View ${p.mediaInfo.fileName}`}
+										>
+											{p.mediaInfo.mimeType?.startsWith(
+												"image/",
+											) ? (
+												<img
+													className="w-full"
+													src={`data:image/png;base64,${p.mediaInfo.base64Data}`}
+													alt={p.mediaInfo.fileName}
+												/>
+											) : (
+												<FileIcon className="size-6 text-muted-foreground" />
+											)}
+										</button>
+									</div>
+								);
+							} else if (p.type === "THINKING") {
+								return (
+									<ResponseMessageThinking
+										key={key}
+										message={message}
+										part={p}
+										isLast={isLast}
+									/>
+								);
+							} else if (p.type === "TOOL_CALL") {
+								const tool = room.getTool(p.toolCall.id);
+
+								// if tool is not found, return null
+								if (!tool) {
+									return null;
+								}
+
+								return (
+									<div
+										key={key}
+										className="flex flex-col gap-2"
+									>
+										<ResponseMessageTool
+											message={message}
+											tool={tool}
+										/>
+										{tool.display === "inline" &&
+											tool.isOpen && (
+												<RoomInlineTool
+													room={room}
+													message={message}
+													tool={tool}
+												/>
+											)}
+									</div>
+								);
+							}
+
+							return null;
+						})}
+						{message.hasUnfinishedTools && (
+							<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
+								<CircleAlert className="size-4" />
+								{t("response.completeTools")}
+							</p>
+						)}
+					</div>
+				</HoverCardTrigger>
+				<HoverCardContent
+					className="flex w-auto flex-col items-center gap-0.5 p-1"
+					side="right"
+					align="start"
+				>
 					{inputMessage?.siblings.length > 1 && (
-						<>
+						<div className="flex flex-row items-center gap-0.5">
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
@@ -117,8 +209,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										<ArrowLeftIcon />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>
-									Previous Message
+								<TooltipContent side="bottom">
+									{t("response.previousMessage")}
 								</TooltipContent>
 							</Tooltip>
 							<span className="text-muted-foreground text-xs">
@@ -143,9 +235,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										<ArrowRightIcon />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>Next Message</TooltipContent>
+								<TooltipContent side="bottom">
+									{t("response.nextMessage")}
+								</TooltipContent>
 							</Tooltip>
-						</>
+						</div>
 					)}
 
 					{inputMessage && (
@@ -153,8 +247,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							<TooltipTrigger asChild>
 								<Button
 									disabled={
-										inputMessage.parent instanceof
-										RootMessageStore
+										!inputMessage.parent?.parent ||
+										message.room.mode === "executing"
 									}
 									variant="ghost"
 									size="icon"
@@ -165,7 +259,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									<RefreshCwIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Rewrite Message</TooltipContent>
+							<TooltipContent side="bottom">
+								{t("response.rewriteMessage")}
+							</TooltipContent>
 						</Tooltip>
 					)}
 
@@ -178,10 +274,18 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									recordFeedback(true);
 								}}
 							>
-								<ThumbsUpIcon />
+								<ThumbsUpIcon
+									fill={
+										message.feedback?.rating === true
+											? "currentColor"
+											: "none"
+									}
+								/>
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Share Positive Feedback</TooltipContent>
+						<TooltipContent side="bottom">
+							{t("response.goodResponse")}
+						</TooltipContent>
 					</Tooltip>
 
 					<Tooltip>
@@ -193,10 +297,18 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									recordFeedback(false);
 								}}
 							>
-								<ThumbsDownIcon />
+								<ThumbsDownIcon
+									fill={
+										message.feedback?.rating === false
+											? "currentColor"
+											: "none"
+									}
+								/>
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Share Negative Feedback</TooltipContent>
+						<TooltipContent side="bottom">
+							{t("response.poorResponse")}
+						</TooltipContent>
 					</Tooltip>
 
 					<Tooltip>
@@ -204,22 +316,51 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							<Button
 								variant="ghost"
 								size="icon"
-								disabled={!message.text}
+								disabled={message.parts.length === 0}
 								onClick={() => {
-									if (!message.text) {
+									const text = message.parts
+										.map((part) => {
+											if (part.type === "TEXT") {
+												return part.text;
+											} else if (part.type === "MEDIA") {
+												return `<${part.mediaInfo.fileName}?`;
+											} else if (
+												part.type === "TOOL_CALL"
+											) {
+												return `<${part.toolCall.name}?`;
+											}
+
+											return "";
+										})
+										.join("\n");
+
+									if (!text) {
+										toast.warning(
+											t("notifications.noCopyContent"),
+										);
 										return;
 									}
 
-									copyMessage(message.text);
+									try {
+										navigator.clipboard.writeText(text);
+
+										toast.success(
+											t("notifications.copySuccess"),
+										);
+									} catch (e) {
+										toast.error(e.message);
+									}
 								}}
 							>
 								<CopyIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Copy Response</TooltipContent>
+						<TooltipContent side="bottom">
+							{t("response.copyResponse")}
+						</TooltipContent>
 					</Tooltip>
-				</div>
-			</div>
+				</HoverCardContent>
+			</HoverCard>
 		);
 	},
 );

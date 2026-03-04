@@ -49,16 +49,13 @@ export const AppSettingsUserDetailPage = () => {
 			return;
 		}
 
-		if (
-			!getUserEnginePermission.data ||
-			!getUserEnginePermission.data.permission
-		) {
+		if (!getUserEnginePermission.data) {
 			setPermission(null);
 			return;
 		}
 
 		// set the permission
-		setPermission(getUserEnginePermission.data.permission);
+		setPermission(getUserEnginePermission.data);
 	}, [getUserEnginePermission.status, getUserEnginePermission.data]);
 
 	// if there is no permission, ignore
@@ -70,7 +67,7 @@ export const AppSettingsUserDetailPage = () => {
 		<StyledContainer>
 			{permission === "OWNER" ? (
 				<SettingsTiles
-					type={"APP"}
+					type={"PROJECT"}
 					name={"app"}
 					id={id}
 					direction={"row"}
@@ -104,12 +101,12 @@ export const AppSettingsUserDetailPage = () => {
 				{view === "CURRENT" && (
 					<MembersTable
 						id={id}
-						type={"APP"}
+						type={"PROJECT"}
 						onChange={() => getUserEnginePermission.refresh()}
 					/>
 				)}
 				{view === "PENDING" && (
-					<PendingMembersTable id={id} type={"APP"} />
+					<PendingMembersTable id={id} type={"PROJECT"} />
 				)}
 				{view === "APP" && <AppSettings id={id} />}
 				{view === "DEPENDENCIES" && <DependencyList id={id} />}
@@ -127,7 +124,7 @@ export const AppSettingsAdminDetailPage = () => {
 	return (
 		<StyledContainer>
 			<SettingsTiles
-				type={"APP"}
+				type={"PROJECT"}
 				name={"app"}
 				id={id}
 				direction={"row"}
@@ -148,9 +145,11 @@ export const AppSettingsAdminDetailPage = () => {
 					<ToggleTabsGroup.Item label="Data Apps" value={"APP"} />
 					<ToggleTabsGroup.Item label="Dependencies" value={"DEPENDENCIES"} />
 				</ToggleTabsGroup>
-				{view === "CURRENT" && <MembersTable id={id} type={"APP"} />}
+				{view === "CURRENT" && (
+					<MembersTable id={id} type={"PROJECT"} />
+				)}
 				{view === "PENDING" && (
-					<PendingMembersTable id={id} type={"APP"} />
+					<PendingMembersTable id={id} type={"PROJECT"} />
 				)}
 				{view === "APP" && <AppSettings id={id} />}
 				{view === "DEPENDENCIES" && <DependencyList id={id} />}
