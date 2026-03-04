@@ -2,6 +2,7 @@ import {
 	AdminPanelSettingsOutlined,
 	ContentCopyOutlined,
 } from "@mui/icons-material";
+import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -9,6 +10,7 @@ import {
 	matchPath,
 	Outlet,
 	useLocation,
+	useNavigate,
 	useParams,
 } from "react-router-dom";
 import {
@@ -21,7 +23,16 @@ import {
 	Tooltip,
 	Typography,
 } from "@semoss/ui";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	toast,
+} from "@semoss/ui/next";
+import { deleteTeam, getGroupDetails } from "@/api";
 import { PrivacyPreferenceCenterModal } from "@/components/cookies/PrivacyPreferenceCenterModal";
+import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
@@ -79,6 +90,7 @@ export const SettingsLayout = observer(() => {
 	const { configStore } = useRootStore();
 	const { id, type } = useParams();
 	const { pathname, state } = useLocation();
+	const navigate = useNavigate();
 	const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);
 
 	const ADMIN_MODE_STORAGE_KEY = "semoss.adminMode";
@@ -114,6 +126,14 @@ export const SettingsLayout = observer(() => {
 
 	const isTeamPermissionsDetail =
 		matchedRoute?.path === "team-permissions/:type/:id";
+	const teamId = id ? decodeURIComponent(id) : undefined;
+	const teamType = type ? decodeURIComponent(type) : undefined;
+	const [teamDescription, setTeamDescription] = useState<
+		string | undefined
+	>();
+	const [editTeam, setEditTeam] = useState(false);
+	const [deleteModal, setDeleteModal] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	// force admin mode on admin-only routes for admins (prevents redirect on refresh)
 	useEffect(() => {
@@ -135,6 +155,60 @@ export const SettingsLayout = observer(() => {
 		}
 	}, [adminMode, configStore.store.user.admin]);
 
+	useEffect(() => {
+		let isMounted = true;
+
+		const loadTeamDetails = async () => {
+			if (!isTeamPermissionsDetail || !teamId || !teamType) {
+				setTeamDescription(undefined);
+				return;
+			}
+
+			try {
+				const response = await getGroupDetails(
+					adminMode,
+					teamId,
+					teamType,
+				);
+				if (!isMounted) {
+					return;
+				}
+				const details =
+					response && typeof response === "object" ? response : null;
+				setTeamDescription(
+					(details as { description?: string })?.description,
+				);
+			} catch (error) {
+				console.error(error);
+			}
+		};
+
+		loadTeamDetails();
+
+		return () => {
+			isMounted = false;
+		};
+	}, [adminMode, isTeamPermissionsDetail, teamId, teamType]);
+
+	const handleDelete = async () => {
+		if (!teamId || !teamType) {
+			return;
+		}
+
+		setIsDeleting(true);
+		try {
+			await deleteTeam(teamId, teamType);
+			toast.success("Successfully deleted team");
+			navigate("/settings/team-permissions");
+		} catch (error) {
+			console.error(error);
+			toast.error("Failed to delete team");
+		} finally {
+			setIsDeleting(false);
+			setDeleteModal(false);
+		}
+	};
+
 	/**
 	 * Copy text and add it to the clipboard
 	 * @param text - text to copy
@@ -146,6 +220,14 @@ export const SettingsLayout = observer(() => {
 	if (!matchedRoute) {
 		return null;
 	}
+
+	const descriptionText =
+		!adminMode || matchedRoute.path !== ""
+			? matchedRoute.description
+			: matchedRoute.adminDescription;
+	const teamDescriptionText = teamDescription
+		? teamDescription.replace(/['"]+/g, "")
+		: "No description available";
 
 	return (
 		<>
@@ -287,17 +369,90 @@ export const SettingsLayout = observer(() => {
 								</IconButton>
 							</IdContainer>
 						) : null}
-						<Typography variant="body1">
-							{!adminMode || matchedRoute.path !== ""
-								? matchedRoute.description
-								: matchedRoute.adminDescription}
-						</Typography>
+						{isTeamPermissionsDetail ? (
+							<>
+								<div className="flex w-full items-start justify-between gap-3">
+									<Typography variant="body1">
+										{descriptionText}
+									</Typography>
+									{teamId && teamType ? (
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<IconButton
+													size="small"
+													aria-label="Team actions"
+												>
+													<MoreVertical className="size-4" />
+												</IconButton>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent align="end">
+												<DropdownMenuItem
+													onClick={() =>
+														setEditTeam(true)
+													}
+												>
+													<span className="flex items-center gap-2">
+														<Pencil className="size-4" />
+														Edit team
+													</span>
+												</DropdownMenuItem>
+												<DropdownMenuItem
+													onClick={() =>
+														setDeleteModal(true)
+													}
+												>
+													<span className="flex items-center gap-2 text-destructive">
+														<Trash2 className="size-4" />
+														Delete team
+													</span>
+												</DropdownMenuItem>
+											</DropdownMenuContent>
+										</DropdownMenu>
+									) : null}
+								</div>
+								<Typography
+									variant="body2"
+									color="textSecondary"
+								>
+									{teamDescriptionText}
+								</Typography>
+							</>
+						) : (
+							<Typography variant="body1">
+								{descriptionText}
+							</Typography>
+						)}
 					</Stack>
 					<Outlet />
 
 					<PrivacyPreferenceCenterModal
 						isOpen={privacyCenterOpen}
 						onClose={() => setPrivacyCenterOpen(false)}
+					/>
+					<AddTeamModal
+						open={editTeam}
+						isEdit={true}
+						type={teamType}
+						id={teamId}
+						description={teamDescription}
+						onClose={(team) => {
+							if (team?.id && team?.type) {
+								setTeamDescription(team.description);
+								navigate(
+									`/settings/team-permissions/${encodeURIComponent(
+										team.type,
+									)}/${encodeURIComponent(team.id)}`,
+								);
+							}
+							setEditTeam(false);
+						}}
+					/>
+					<TeamDeleteDialog
+						open={deleteModal}
+						onOpenChange={setDeleteModal}
+						teamId={teamId}
+						onConfirm={handleDelete}
+						isLoading={isDeleting}
 					/>
 				</Stack>
 			</SettingsContext.Provider>
