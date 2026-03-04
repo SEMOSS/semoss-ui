@@ -82,11 +82,6 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 				return;
 			}
 
-			if (!description) {
-				toast.error(t("validation:descriptionRequired"));
-				return;
-			}
-
 			setIsLoading(true);
 
 			// create the base vector engine
