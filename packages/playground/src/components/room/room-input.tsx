@@ -239,8 +239,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					const root = $getRoot();
 					root.clear();
 
+					const paragraphNode = $createParagraphNode();
 					const textNode = $createTextNode(userInput);
-					root.append(textNode);
+					paragraphNode.append(textNode);
+					root.append(paragraphNode);
 				});
 			}
 		};
