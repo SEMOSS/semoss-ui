@@ -19,7 +19,6 @@ export interface appDependency {
 	description?: string;
 	access_permission?: number; // the permission that the user has requested
 	can_view_dependencies?: boolean;
-	permission: number;
 	tags?: string;
 	engine_date_created?: string;
 	dependencies?: string[]; // Array of dependency engine IDs
