@@ -331,7 +331,6 @@ export class RoomStore {
 				}
 			}
 		}
-
 		return false;
 	}
 
@@ -923,7 +922,6 @@ export class RoomStore {
 	 * Process a tool call
 	 * @param messageId - id of the message
 	 * @param toolId - id of the tool
-	 * @param toolName - name of the tool
 	 * @param toolResponse - response from the tool
 	 * @param toolStatus - status of the tool execution
 	 * @param executedParameters - parameters used by the tool
@@ -931,9 +929,8 @@ export class RoomStore {
 	processTool = async (
 		messageId: string,
 		toolId: string,
-		toolName: string,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled",
+		toolStatus: "success" | "error" | "cancelled" = "success",
 		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {

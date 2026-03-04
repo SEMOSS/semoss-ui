@@ -4,6 +4,9 @@ export interface UseInfiniteScrollOptions {
 	/** disable the scroll */
 	disabled?: boolean;
 
+	/** Trigger on mount if content is already short */
+	triggerOnMount?: boolean;
+
 	/** Callback to trigger when reaching the bottom */
 	onNext: () => void;
 }
@@ -33,6 +36,7 @@ export interface UseInfiniteScrollReturn {
  */
 export function useInfiniteScroll({
 	disabled = false,
+	triggerOnMount = true,
 	onNext,
 }: UseInfiniteScrollOptions): UseInfiniteScrollReturn {
 	const threshold = 100; // pixels from bottom to trigger load more
@@ -74,12 +78,14 @@ export function useInfiniteScroll({
 		scrollEle.addEventListener("scroll", handleScroll);
 
 		// Check on mount in case content is already short
-		handleScroll();
+		if (triggerOnMount) {
+			handleScroll();
+		}
 
 		return () => {
 			scrollEle.removeEventListener("scroll", handleScroll);
 		};
-	}, [scrollEle, onNext, disabled]);
+	}, [scrollEle, onNext, disabled, triggerOnMount]);
 
 	return { setScroll, resetScroll };
 }
