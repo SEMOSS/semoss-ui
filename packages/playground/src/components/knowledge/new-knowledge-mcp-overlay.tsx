@@ -239,46 +239,59 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = (
 								required
 							/>
 							{files.length > 0 ? (
-								<div className="flex flex-row items-center gap-2 pt-4">
-									{files.map((f, fIdx) => {
-										const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
-										return (
-											<Tooltip key={fileKey}>
-												<TooltipTrigger asChild>
-													<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted">
-														<FileIcon className="size-6 text-muted-foreground" />{" "}
-														<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
-															<Button
-																variant="ghost"
-																size={"icon-sm"}
-																onClick={() => {
-																	const updated =
-																		[
-																			...files,
-																		];
-
-																	// remove it
-																	updated.splice(
-																		fIdx,
-																		1,
-																	);
-
-																	setFiles(
-																		updated,
-																	);
-																}}
-															>
-																<XIcon />
-															</Button>
+								<div className="pt-4">
+									<div className="mb-2 text-sm text-muted-foreground">
+										{files.length} file{files.length > 1 ? 's' : ''} selected
+									</div>
+									<div className="max-h-48 overflow-y-auto border border-border rounded-md bg-muted/30">
+										<div className="grid grid-cols-1 gap-1 p-2">
+											{files.map((f, fIdx) => {
+												const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
+												const fileSizeKB = Math.round(f.size / 1024);
+												
+												return (
+													<div
+														key={fileKey}
+														className="group flex items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-muted/50"
+													>
+														<div className="flex items-center gap-2 min-w-0 flex-1">
+															<FileIcon className="size-4 text-muted-foreground flex-shrink-0" />
+															<div className="min-w-0 flex-1">
+																<Tooltip>
+																	<TooltipTrigger asChild>
+																		<div className="text-sm truncate">
+																			{f.name}
+																		</div>
+																	</TooltipTrigger>
+																	<TooltipContent>
+																		{f.name}
+																	</TooltipContent>
+																</Tooltip>
+																<div className="text-xs text-muted-foreground">
+																	{fileSizeKB < 1024 
+																		? `${fileSizeKB} KB`
+																		: `${Math.round(fileSizeKB / 1024 * 10) / 10} MB`
+																	}
+																</div>
+															</div>
 														</div>
+														<Button
+															variant="ghost"
+															size="icon-sm"
+															className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+															onClick={() => {
+																const updated = [...files];
+																updated.splice(fIdx, 1);
+																setFiles(updated);
+															}}
+														>
+															<XIcon className="size-3" />
+														</Button>
 													</div>
-												</TooltipTrigger>
-												<TooltipContent>
-													{f.name}
-												</TooltipContent>
-											</Tooltip>
-										);
-									})}
+												);
+											})}
+										</div>
+									</div>
 								</div>
 							) : null}
 						</Field>
