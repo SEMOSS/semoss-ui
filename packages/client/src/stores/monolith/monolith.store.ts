@@ -1,5 +1,5 @@
 import { makeAutoObservable } from "mobx";
-import { Env, get, logout, post } from "@semoss/sdk/react";
+import { CSRF, Env, get, logout, post } from "@semoss/sdk/react";
 import type { RootStore } from "@/stores";
 
 /**
@@ -167,6 +167,7 @@ export class MonolithStore {
 	 * @returns true if successful
 	 */
 	async login(username: string, password: string): Promise<boolean> {
+		CSRF.token = "";
 		const postData = {
 			username,
 			password,
