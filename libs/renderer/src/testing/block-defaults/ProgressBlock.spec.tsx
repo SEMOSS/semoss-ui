@@ -1,8 +1,9 @@
-import { ProgressBlock, ProgressBlockDef } from "@/components/block-defaults/progress-block/ProgressBlock";
-import { act, render, renderHook, screen, waitFor } from "../utils";
-// import { useBlock } from "../../hooks/useBlock";
-import { useBlocks } from "../../hooks/useBlocks";
-import { useBlock } from "@/hooks";
+import {
+	ProgressBlock,
+	type ProgressBlockDef,
+} from "../../components/block-defaults/progress-block/ProgressBlock";
+import { useBlock } from "../../hooks";
+import { render, renderHook, screen } from "../utils";
 
 const blocks = {
 	"progress-id": {
@@ -36,20 +37,17 @@ describe("Progress Block", async () => {
 				renderEngineId: "progress-id",
 			},
 		);
-		console.log({ result });
 
 		expect(result.current).toBeDefined();
-		expect(result.current.data.type).toBe("linear")
+		expect(result.current.data.type).toBe("linear");
 		// screen.debug()
-
-		// await console.log({ result: result });
-		// await act(async () => {
-		// 	await waitFor(() => console.log({result}))
-		// });
 	});
 	it("Should render the Progress Block", async () => {
-		const { container } = render(
-			<ProgressBlock data-testid="progressId" id="progress-id" />,
+		render(
+			<ProgressBlock
+				data-testid="progressId"
+				id={blocks["progress-id"].id}
+			/>,
 			{
 				blocks: blocks,
 			},
@@ -72,10 +70,10 @@ describe("Progress Block", async () => {
 				},
 			},
 		};
-		const { container } = await render(<ProgressBlock id="progress-id" />, {
+		await render(<ProgressBlock id={blocks["progress-id"].id} />, {
 			blocks: localBlocks,
 		});
-		// screen.debug();
+
 		const element = screen.queryByRole("progressbar");
 		expect(element).not.toBeInTheDocument();
 	});
@@ -92,16 +90,19 @@ describe("Progress Block", async () => {
 				},
 			},
 		};
-		const { container } = await render(<ProgressBlock id="progress-id" />, {
+		await render(<ProgressBlock id={blocks["progress-id"].id} />, {
 			blocks: localBlocks,
 		});
-		// screen.debug();
+
 		expect(screen.queryByText("25%")).not.toBeInTheDocument();
 	});
 
 	it("Should render 0%", async () => {
-		const { container } = render(
-			<ProgressBlock data-testid="progressId" id="progress-id" />,
+		render(
+			<ProgressBlock
+				data-testid="progressId"
+				id={blocks["progress-id"].id}
+			/>,
 			{
 				blocks: {
 					"progress-id": {
@@ -120,8 +121,11 @@ describe("Progress Block", async () => {
 		expect(screen.getByText("0%")).toBeInTheDocument();
 	});
 	it("Should render 25%", async () => {
-		const { container } = render(
-			<ProgressBlock data-testid="progressId" id="progress-id" />,
+		render(
+			<ProgressBlock
+				data-testid="progressId"
+				id={blocks["progress-id"].id}
+			/>,
 			{
 				blocks: blocks,
 			},
@@ -129,8 +133,11 @@ describe("Progress Block", async () => {
 		expect(screen.getByText("25%")).toBeInTheDocument();
 	});
 	it("Should render 100%", async () => {
-		const { container } = render(
-			<ProgressBlock data-testid="progressId" id="progress-id" />,
+		render(
+			<ProgressBlock
+				data-testid="progressId"
+				id={blocks["progress-id"].id}
+			/>,
 			{
 				blocks: {
 					"progress-id": {
@@ -150,8 +157,11 @@ describe("Progress Block", async () => {
 	});
 
 	it("Should check if type is circular", async () => {
-		const { container } = render(
-			<ProgressBlock data-testid="progressId" id="progress-id" />,
+		render(
+			<ProgressBlock
+				data-testid="progressId"
+				id={blocks["progress-id"].id}
+			/>,
 			{
 				blocks: {
 					"progress-id": {
@@ -172,8 +182,11 @@ describe("Progress Block", async () => {
 		expect(element).toHaveClass("MuiCircularProgress-root");
 	});
 	it("Should check if type is linear", async () => {
-		const { container } = render(
-			<ProgressBlock data-testid="progressId" id="progress-id" />,
+		render(
+			<ProgressBlock
+				data-testid="progressId"
+				id={blocks["progress-id"].id}
+			/>,
 			{
 				blocks: {
 					"progress-id": {
@@ -189,7 +202,7 @@ describe("Progress Block", async () => {
 				},
 			},
 		);
-		// expect(container.getAttribute("class")).toContain("MuiCircularProgress-root")
+
 		const element = screen.getByRole("progressbar");
 		expect(element).toHaveClass("MuiLinearProgress-root");
 	});

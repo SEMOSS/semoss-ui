@@ -3,11 +3,11 @@
  *
  */
 export interface MigrationState {
-    /**
-     * Version of the Migration
-     */
-    version: string;
-    [key: string]: unknown;
+	/**
+	 * Version of the Migration
+	 */
+	version: string;
+	[key: string]: unknown;
 }
 
 /**
@@ -18,21 +18,21 @@ export interface MigrationState {
  *
  */
 export type Migration<
-    F extends MigrationState = MigrationState,
-    T extends MigrationState = MigrationState,
+	F extends MigrationState = MigrationState,
+	T extends MigrationState = MigrationState,
 > = {
-    /**
-     * Version that the state will be transition from
-     */
-    versionFrom: string;
+	/**
+	 * Version that the state will be transition from
+	 */
+	versionFrom: string;
 
-    /**
-     * Version that the state will be transition from
-     */
-    versionTo: string;
+	/**
+	 * Version that the state will be transition from
+	 */
+	versionTo: string;
 
-    /**
-     * Run the migration and transform the state
-     */
-    run: (state: F) => T | Promise<T>;
+	/**
+	 * Run the migration and transform the state
+	 */
+	run: (state: F) => T | Promise<T>;
 };

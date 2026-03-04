@@ -1,21 +1,21 @@
 import {
-    AccordionDetails as MuiAccordionDetails,
-    SxProps,
+	AccordionDetails as MuiAccordionDetails,
+	type SxProps,
 } from "@mui/material";
 
 export type AccordionDetailsProps = {
-    /**
-     * The content of the component.
-     */
-    children?: React.ReactNode;
+	/**
+	 * The content of the component.
+	 */
+	children?: React.ReactNode;
 
-    /** custom style object */
-    sx?: SxProps;
+	/** custom style object */
+	sx?: SxProps;
 };
 export const AccordionDetails = (props: AccordionDetailsProps) => {
-    const { children, ...otherProps } = props;
+	const { children, ...otherProps } = props;
 
-    return (
-        <MuiAccordionDetails {...otherProps}>{children}</MuiAccordionDetails>
-    );
+	return (
+		<MuiAccordionDetails {...otherProps}>{children}</MuiAccordionDetails>
+	);
 };

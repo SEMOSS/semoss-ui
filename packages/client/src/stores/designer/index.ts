@@ -1,2 +1,2 @@
-export * from './designer.utility';
-export * from './designer.store';
+export * from "./designer.store";
+export * from "./designer.utility";

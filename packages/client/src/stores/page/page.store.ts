@@ -1,171 +1,171 @@
-import { autorun, makeAutoObservable } from 'mobx';
-
-import { PageCache } from './page.types';
+import { autorun, makeAutoObservable } from "mobx";
+import type { PageCache } from "./page.types";
 
 const CACHE_KEY = `PAGE_STORE_CACHE--1`;
 
 export interface PageStoreInterface {
-    /**
-     * Navigation bar information
-     **/
-    navbar: {
-        /**
-         *  Save the element of the navbar
-         */
-        element: HTMLElement;
+	/**
+	 * Navigation bar information
+	 **/
+	navbar: {
+		/**
+		 *  Save the element of the navbar
+		 */
+		element: HTMLElement;
 
-        /**
-         *  Show the logo
-         */
-        logo: boolean;
+		/**
+		 *  Show the logo
+		 */
+		logo: boolean;
 
-        /**
-         *  Show the search
-         */
-        search: boolean;
-    };
+		/**
+		 *  Show the search
+		 */
+		search: boolean;
+	};
 
-    /**
-     * Sidebar information
-     **/
-    sidebar: {
-        /**
-         * Track if it is open or closed
-         */
-        open: boolean;
+	/**
+	 * Sidebar information
+	 **/
+	sidebar: {
+		/**
+		 * Track if it is open or closed
+		 */
+		open: boolean;
 
-        /**
-         * Track if it is pinned
-         */
-        pinned: boolean;
-    };
+		/**
+		 * Track if it is pinned
+		 */
+		pinned: boolean;
+	};
 }
 
 /**
  * Store that manages instances of the insights and handles applicaiton level querying
  */
 export class PageStore {
-    private _store: PageStoreInterface = {
-        navbar: {
-            element: null,
-            logo: true,
-            search: true,
-        },
-        sidebar: {
-            open: false,
-            pinned: false,
-        },
-    };
+	private _store: PageStoreInterface = {
+		navbar: {
+			element: null,
+			logo: true,
+			search: true,
+		},
+		sidebar: {
+			open: false,
+			pinned: false,
+		},
+	};
 
-    constructor() {
-        // set from the catch
-        try {
-            const cached = JSON.parse(
-                localStorage.getItem(CACHE_KEY),
-            ) as PageCache;
+	constructor() {
+		// set from the catch
+		try {
+			const cached = JSON.parse(
+				localStorage.getItem(CACHE_KEY),
+			) as PageCache;
 
-            if (cached) {
-                this._store.sidebar.pinned = cached.sidebar.pinned;
-            }
-        } catch (e) {
-            // noop
-        }
+			if (cached) {
+				this._store.sidebar.pinned = cached.sidebar.pinned;
+			}
+		} catch (e) {
+			console.error(e);
+		}
 
-        // make it observable
-        makeAutoObservable(this);
+		// make it observable
+		makeAutoObservable(this);
 
-        // auto run and save to cache
-        autorun(() => {
-            try {
-                const item: PageCache = {
-                    sidebar: {
-                        pinned: this._store.sidebar.pinned,
-                    },
-                };
+		// auto run and save to cache
+		autorun(() => {
+			try {
+				const item: PageCache = {
+					sidebar: {
+						pinned: this._store.sidebar.pinned,
+					},
+				};
 
-                // save cache
-                localStorage.setItem(CACHE_KEY, JSON.stringify(item));
-            } catch (e) {
-                // noop
-            }
-        });
-    }
+				// save cache
+				localStorage.setItem(CACHE_KEY, JSON.stringify(item));
+			} catch (e) {
+				console.error(e);
+			}
+		});
+	}
 
-    /**
-     * Getters
-     */
-    /**
-     * Get top navigation information
-     */
-    get navbar() {
-        return this._store.navbar;
-    }
+	/**
+	 * Getters
+	 */
+	/**
+	 * Get top navigation information
+	 */
+	get navbar() {
+		return this._store.navbar;
+	}
 
-    /**
-     * Get sidebar information
-     */
-    get sidebar() {
-        return this._store.sidebar;
-    }
+	/**
+	 * Get sidebar information
+	 */
+	get sidebar() {
+		return this._store.sidebar;
+	}
 
-    /**
-     * Actions
-     */
-    /**
-     * Update the navbar logo
-     */
-    setNavbarElement = (ele: HTMLElement) => {
-        this._store.navbar.element = ele;
-    };
+	/**
+	 * Actions
+	 */
+	/**
+	 * Update the navbar logo
+	 */
+	setNavbarElement = (ele: HTMLElement) => {
+		this._store.navbar.element = ele;
+	};
 
-    /**
-     * Update the navbar logo
-     */
-    updateNavbarLogo = (logo = true) => {
-        this._store.navbar.logo = logo;
-    };
+	/**
+	 * Update the navbar logo
+	 */
+	updateNavbarLogo = (logo = true) => {
+		this._store.navbar.logo = logo;
+	};
 
-    /**
-     * Update the navbar search
-     */
-    updateNavbarSearch = (search = true) => {
-        this._store.navbar.search = search;
-    };
+	/**
+	 * Update the navbar search
+	 */
+	updateNavbarSearch = (search = true) => {
+		this._store.navbar.search = search;
+	};
 
-    /**
-     * Set the sidebar
-     */
-    setSidebar = (
-        content: PageStoreInterface['sidebar'] = { open: false, pinned: false },
-    ) => {
-        this._store.sidebar = content;
-    };
+	/**
+	 * Set the sidebar
+	 */
+	setSidebar = (
+		content: PageStoreInterface["sidebar"] = { open: false, pinned: false },
+	) => {
+		this._store.sidebar = content;
+	};
 
-    /**
-     * Open the sidebar
-     */
-    openSidebar = () => {
-        this._store.sidebar.open = true;
-    };
+	/**
+	 * Open the sidebar
+	 */
+	openSidebar = () => {
+		this._store.sidebar.open = true;
+	};
 
-    /**
-     * Close the sidebar
-     */
-    closeSidebar = () => {
-        this._store.sidebar.open = false;
-    };
+	/**
+	 * Close the sidebar
+	 */
+	closeSidebar = () => {
+		this._store.sidebar.pinned = false;
+		this._store.sidebar.open = false;
+	};
 
-    /**
-     * Pin the sidebar
-     */
-    pinSidebar = () => {
-        this._store.sidebar.pinned = true;
-    };
+	/**
+	 * Pin the sidebar
+	 */
+	pinSidebar = () => {
+		this._store.sidebar.pinned = true;
+	};
 
-    /**
-     * Unpin the sidebar
-     */
-    unpinSidebar = () => {
-        this._store.sidebar.pinned = false;
-    };
+	/**
+	 * Unpin the sidebar
+	 */
+	unpinSidebar = () => {
+		this._store.sidebar.pinned = false;
+	};
 }

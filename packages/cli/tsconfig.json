@@ -1,15 +1,15 @@
 {
-    "compilerOptions": {
-        "declaration": true,
-        "outDir": "dist",
-        "rootDir": "src",
-        "strict": true,
-        "target": "es2022",
-        "module": "esnext",
-        "moduleResolution": "bundler",
-    },
-    "include": ["./src/**/*"],
-    "ts-node": {
-        "esm": true
-    }
+	"compilerOptions": {
+		"declaration": true,
+		"outDir": "dist",
+		"rootDir": "src",
+		"strict": true,
+		"target": "es2022",
+		"module": "esnext",
+		"moduleResolution": "bundler"
+	},
+	"include": ["./src/**/*"],
+	"ts-node": {
+		"esm": true
+	}
 }

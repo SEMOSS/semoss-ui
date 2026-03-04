@@ -1,2 +1,2 @@
-export * from "./ModalBlock";
 export * from "./config";
+export * from "./ModalBlock";

@@ -1,3 +1,2 @@
+export { MigrationManager, STATE_VERSION } from "./MigrationManager";
 export * from "./migration.types";
-
-export { STATE_VERSION, MigrationManager } from "./MigrationManager";

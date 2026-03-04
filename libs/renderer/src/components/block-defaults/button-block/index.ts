@@ -1,2 +1,2 @@
-export * from "./config";
 export * from "./ButtonBlock";
+export * from "./config";

@@ -1,6 +1,6 @@
-import { BlockConfig } from "../../../store";
-import { FlipCardBlockDef, FlipCardBlock } from "./FlipCardBlock";
+import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
+import { FlipCardBlock, type FlipCardBlockDef } from "./FlipCardBlock";
 
 // TODO:
 // -------------------------------------------------------------
@@ -12,29 +12,29 @@ import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 
 // export the config for the block
 export const config: BlockConfig<FlipCardBlockDef> = {
-    widget: "flip-card",
-    type: BLOCK_TYPE_LAYOUT,
-    data: {
-        style: {
-            display: "flex",
-            flexDirection: "column",
-            padding: "4px",
-            gap: "8px",
-        },
-        frontBgColor: "#ffffff",
-        backBgColor: "#ffffff",
-        isFlipped: false,
-        show: "true",
-    },
-    listeners: {
-        preProcess: {
-            type: "sync",
-            order: [],
-        },
-    },
-    slots: {
-        front: [],
-        back: [],
-    },
-    render: FlipCardBlock,
+	widget: "flip-card",
+	type: BLOCK_TYPE_LAYOUT,
+	data: {
+		style: {
+			display: "flex",
+			flexDirection: "column",
+			padding: "4px",
+			gap: "8px",
+		},
+		frontBgColor: "#ffffff",
+		backBgColor: "#ffffff",
+		isFlipped: false,
+		show: "true",
+	},
+	listeners: {
+		preProcess: {
+			type: "sync",
+			order: [],
+		},
+	},
+	slots: {
+		front: [],
+		back: [],
+	},
+	render: FlipCardBlock,
 };

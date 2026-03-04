@@ -1,6 +1,5 @@
-import { createContext } from 'react';
-
-import { RootStore } from '@/stores';
+import { createContext } from "react";
+import type { RootStore } from "@/stores";
 
 /**
  * Value

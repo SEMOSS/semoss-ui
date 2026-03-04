@@ -1,62 +1,61 @@
-import { useMemo } from "react";
+import type { SxProps } from "@mui/material";
 import {
-    DatePicker as MuiDatePicker,
-    LocalizationProvider,
-    PickersDay,
-    pickersDayClasses,
-    PickersDayProps,
-    DayCalendarSkeleton,
+	DayCalendarSkeleton,
+	LocalizationProvider,
+	DatePicker as MuiDatePicker,
+	PickersDay,
+	type PickersDayProps,
+	pickersDayClasses,
 } from "@mui/x-date-pickers";
-import { SxProps } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
 import dayjs from "dayjs";
+import { useMemo } from "react";
 
 export interface DatePickerProps {
-    /** custom style object */
-    sx?: SxProps;
+	/** custom style object */
+	sx?: SxProps;
 
-    //** date value */
-    value: string;
+	//** date value */
+	value: string;
 
-    //** onChange function for datepicket to intercept dayjs object */
-    onChange: (e: string, c: unknown) => void;
+	//** onChange function for datepicket to intercept dayjs object */
+	onChange: (e: string, c: unknown) => void;
 
-    /**
-     * Years rendered per row.
-     * @default 4 on desktop, 3 on mobile
-     */
-    yearsPerRow?: 3 | 4;
+	/**
+	 * Years rendered per row.
+	 * @default 4 on desktop, 3 on mobile
+	 */
+	yearsPerRow?: 3 | 4;
 }
 
 const DayPicker = (props: PickersDayProps<dayjs.Dayjs>) => {
-    return (
-        <PickersDay
-            sx={{
-                [`&&.${pickersDayClasses.selected}`]: {
-                    backgroundColor: "#40a0ff",
-                },
-            }}
-            {...props}
-        />
-    );
+	return (
+		<PickersDay
+			sx={{
+				[`&&.${pickersDayClasses.selected}`]: {
+					backgroundColor: (theme) => theme.palette.primary.main,
+				},
+			}}
+			{...props}
+		/>
+	);
 };
 
 export const DatePicker = (props: DatePickerProps) => {
-    const { sx, value, onChange = () => null } = props;
+	const { sx, value, onChange = () => null } = props;
 
-    const memoValue = useMemo(() => dayjs(value), [value]);
+	const memoValue = useMemo(() => dayjs(value), [value]);
 
-    return (
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <MuiDatePicker
-                sx={sx}
-                {...props}
-                value={memoValue}
-                onChange={(d, c) => onChange(d.toISOString(), c)}
-                slots={{ day: (props) => <DayPicker {...props} /> }}
-                renderLoading={() => <DayCalendarSkeleton />}
-            />
-        </LocalizationProvider>
-    );
+	return (
+		<LocalizationProvider dateAdapter={AdapterDayjs}>
+			<MuiDatePicker
+				sx={sx}
+				{...props}
+				value={memoValue}
+				onChange={(d, c) => onChange(d.toISOString(), c)}
+				slots={{ day: (props) => <DayPicker {...props} /> }}
+				renderLoading={() => <DayCalendarSkeleton />}
+			/>
+		</LocalizationProvider>
+	);
 };

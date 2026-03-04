@@ -1,1 +1,1 @@
-export { GridSettings } from './GridSettings';
+export { GridSettings } from "./GridSettings";

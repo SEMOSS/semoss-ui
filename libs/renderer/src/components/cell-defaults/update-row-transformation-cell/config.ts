@@ -1,38 +1,38 @@
-import { CellConfig } from "../../../store";
+import type { CellConfig } from "../../../store";
 import {
-    UpdateRowTransformationCell,
-    UpdateRowTransformationCellDef,
+	UpdateRowTransformationCell,
+	type UpdateRowTransformationCellDef,
 } from "./UpdateRowTransformationCell";
 
 export const UpdateRowTransformationCellConfig: CellConfig<UpdateRowTransformationCellDef> =
-    {
-        name: "Update Row",
-        widget: "update-row-transformation",
-        view: UpdateRowTransformationCell,
-        parameters: {
-            transformation: {
-                key: "update-row",
-                parameters: {
-                    compareColumn: {
-                        name: "",
-                        dataType: "",
-                    },
-                    compareOperation: "==",
-                    compareValue: "",
-                    targetColumn: {
-                        name: "",
-                        dataType: "",
-                    },
-                    targetValue: "",
-                },
-            },
-            targetCell: {
-                id: "",
-                frameVariableName: "",
-            },
-        },
+	{
+		name: "Update Row",
+		widget: "update-row-transformation",
+		view: UpdateRowTransformationCell,
+		parameters: {
+			transformation: {
+				key: "update-row",
+				parameters: {
+					compareColumn: {
+						name: "",
+						dataType: "",
+					},
+					compareOperation: "==",
+					compareValue: "",
+					targetColumn: {
+						name: "",
+						dataType: "",
+					},
+					targetValue: "",
+				},
+			},
+			targetCell: {
+				id: "",
+				frameVariableName: "",
+			},
+		},
 
-        toPixel: ({ transformation, targetCell }) => {
-            return `${targetCell.frameVariableName} | UpdateRowValues (${transformation.parameters.targetColumn}, ${transformation.parameters.targetValue}, Filter (${transformation.parameters.compareColumn} ${transformation.parameters.compareOperation} ${transformation.parameters.compareValue}))`;
-        },
-    };
+		toPixel: ({ transformation, targetCell }) => {
+			return `${targetCell.frameVariableName} | UpdateRowValues (${transformation.parameters.targetColumn?.name}, ${transformation.parameters.targetValue}, Filter (${transformation.parameters.compareColumn?.name} ${transformation.parameters.compareOperation} ${transformation.parameters.compareValue}))`;
+		},
+	};

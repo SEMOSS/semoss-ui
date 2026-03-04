@@ -1,16 +1,16 @@
+import { HighlightAlt } from "@mui/icons-material";
+import { ColorSettings, SwitchSettings } from "../../settings/shared";
+import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import {
-    buildLayoutSection,
-    buildSpacingSection,
-    buildDimensionsSection,
-    buildBorderSection,
-    buildPositionSection,
-    buildListener,
-    buildShowField,
-} from '../block-defaults.shared';
-import { HighlightAlt } from '@mui/icons-material';
-import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
-import { SwitchSettings, ColorSettings } from '../../settings/shared';
-import { BlockSettingsConfig } from '../settings.types';
+	buildBorderSection,
+	buildDimensionsSection,
+	buildLayoutSection,
+	buildListener,
+	buildPositionSection,
+	buildShowField,
+	buildSpacingSection,
+} from "../block-defaults.shared";
+import type { BlockSettingsConfig } from "../settings.types";
 
 // TODO:
 // -------------------------------------------------------------
@@ -22,64 +22,64 @@ import { BlockSettingsConfig } from '../settings.types';
 
 // export the config for the block
 export const config: BlockSettingsConfig = {
-    type: BLOCK_TYPE_LAYOUT,
-    icon: HighlightAlt,
-    contentMenu: [
-        {
-            name: 'General',
-            children: [
-                {
-                    description: 'Flip back',
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Flip back"
-                            path="isFlipped"
-                            description="Enable to flip back the card"
-                        />
-                    ),
-                },
-            ],
-        },
-        {
-            name: 'Conditional',
-            children: [...buildShowField()],
-        },
-        {
-            name: 'Pre Process',
-            children: [...buildListener('preProcess')],
-        },
-    ],
-    styleMenu: [
-        buildLayoutSection(),
-        buildPositionSection(),
-        buildSpacingSection(),
-        buildDimensionsSection(),
-        buildBorderSection(),
-        {
-            name: 'Color',
-            children: [
-                {
-                    description: 'Front Background Color',
-                    render: ({ id }) => (
-                        <ColorSettings
-                            id={id}
-                            label="Front Background Color"
-                            path="frontBgColor"
-                        />
-                    ),
-                },
-                {
-                    description: 'Back Background Color',
-                    render: ({ id }) => (
-                        <ColorSettings
-                            id={id}
-                            label="Back Background Color"
-                            path="backBgColor"
-                        />
-                    ),
-                },
-            ],
-        },
-    ],
+	type: BLOCK_TYPE_LAYOUT,
+	icon: HighlightAlt,
+	contentMenu: [
+		{
+			name: "General",
+			children: [
+				{
+					description: "Flip back",
+					render: ({ id }) => (
+						<SwitchSettings
+							id={id}
+							label="Flip back"
+							path="isFlipped"
+							description="Enable to flip back the card"
+						/>
+					),
+				},
+			],
+		},
+		{
+			name: "Conditional",
+			children: [...buildShowField()],
+		},
+		{
+			name: "Pre Process",
+			children: [...buildListener("preProcess")],
+		},
+	],
+	styleMenu: [
+		buildLayoutSection(),
+		buildPositionSection(),
+		buildSpacingSection(),
+		buildDimensionsSection(),
+		buildBorderSection(),
+		{
+			name: "Color",
+			children: [
+				{
+					description: "Front Background Color",
+					render: ({ id }) => (
+						<ColorSettings
+							id={id}
+							label="Front Background Color"
+							path="frontBgColor"
+						/>
+					),
+				},
+				{
+					description: "Back Background Color",
+					render: ({ id }) => (
+						<ColorSettings
+							id={id}
+							label="Back Background Color"
+							path="backBgColor"
+						/>
+					),
+				},
+			],
+		},
+	],
 };

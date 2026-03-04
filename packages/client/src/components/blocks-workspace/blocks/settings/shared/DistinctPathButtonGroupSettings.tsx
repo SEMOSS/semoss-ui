@@ -1,10 +1,8 @@
-import { observer } from 'mobx-react-lite';
-
-import { ButtonGroup } from '@semoss/ui';
-import { Paths, Block, BlockDef } from '@semoss/renderer';
-
-import { DistinctPathButtonGroupButton } from './DistinctPathButtonGroupButton';
-import { BaseSettingSection } from '../BaseSettingSection';
+import { observer } from "mobx-react-lite";
+import type { Block, BlockDef, Paths } from "@semoss/renderer";
+import { ButtonGroup } from "@semoss/ui";
+import { BaseSettingSection } from "../BaseSettingSection";
+import { DistinctPathButtonGroupButton } from "./DistinctPathButtonGroupButton";
 
 /**
  * Each button in this component points to a distinct path
@@ -13,52 +11,52 @@ import { BaseSettingSection } from '../BaseSettingSection';
  */
 
 interface DistinctPathButtonGroupSettingsProps<D extends BlockDef = BlockDef> {
-    /**
-     * Id of the block that is being worked with
-     */
-    id: string;
+	/**
+	 * Id of the block that is being worked with
+	 */
+	id: string;
 
-    /**
-     * Label for setting
-     */
-    label: string;
+	/**
+	 * Label for setting
+	 */
+	label: string;
 
-    /**
-     * Button options
-     */
-    options: Array<{
-        value: string;
-        icon: any;
-        path: Paths<Block<D>['data'], 4>;
-        title: string;
-        isDefault: boolean;
-    }>;
+	/**
+	 * Button options
+	 */
+	options: Array<{
+		value: string;
+		icon: any;
+		path: Paths<Block<D>["data"], 4>;
+		title: string;
+		isDefault: boolean;
+	}>;
 }
 
 export const DistinctPathButtonGroupSettings = observer(
-    <D extends BlockDef = BlockDef>({
-        id,
-        label,
-        options,
-    }: DistinctPathButtonGroupSettingsProps<D>) => {
-        return (
-            <BaseSettingSection label={label}>
-                <ButtonGroup>
-                    {Array.from(options, (option, i) => {
-                        return (
-                            <DistinctPathButtonGroupButton
-                                key={i}
-                                id={id}
-                                path={option.path}
-                                styleValue={option.value}
-                                title={option.title}
-                                isDefault={option.isDefault}
-                                ButtonIcon={option.icon}
-                            />
-                        );
-                    })}
-                </ButtonGroup>
-            </BaseSettingSection>
-        );
-    },
+	<D extends BlockDef = BlockDef>({
+		id,
+		label,
+		options,
+	}: DistinctPathButtonGroupSettingsProps<D>) => {
+		return (
+			<BaseSettingSection label={label}>
+				<ButtonGroup>
+					{Array.from(options, (option, i) => {
+						return (
+							<DistinctPathButtonGroupButton
+								key={i}
+								id={id}
+								path={option.path}
+								styleValue={option.value}
+								title={option.title}
+								isDefault={option.isDefault}
+								ButtonIcon={option.icon}
+							/>
+						);
+					})}
+				</ButtonGroup>
+			</BaseSettingSection>
+		);
+	},
 );

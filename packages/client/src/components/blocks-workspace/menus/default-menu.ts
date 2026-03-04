@@ -1,3653 +1,3682 @@
-import { BlockJSON } from '@semoss/renderer';
-import { lightTheme } from '@semoss/ui';
+import type { BlockJSON } from "@semoss/renderer";
+import { lightTheme } from "@semoss/ui";
+import * as BLOCK_IMAGES from "@/assets/blocks";
+import type { DesignerMenuItem } from "./menu-types";
 
-import type { DesignerMenuItem } from './menu-types';
-import * as BLOCK_IMAGES from '@/assets/blocks';
+const SECTION_ELEMENT = "Element";
+const SECTION_INPUT = "Input";
+const SECTION_LAYOUT = "Layout";
+const SECTION_PROGRESS = "Progress";
+const SECTION_TEXT = "Text";
 
-const SECTION_ELEMENT = 'Element';
-const SECTION_INPUT = 'Input';
-const SECTION_LAYOUT = 'Layout';
-const SECTION_PROGRESS = 'Progress';
-const SECTION_TEXT = 'Text';
-
-const SECTION_CHARTS = 'Data Charts';
-const SECTION_MISC = 'Miscellaneous';
-const SECTION_GROUPED = 'Grouped Blocks';
+const SECTION_CHARTS = "Data Charts";
+const SECTION_MISC = "Miscellaneous";
+const SECTION_GROUPED = "Grouped Blocks";
 
 export const SECTION_ORDER = [
-    SECTION_LAYOUT,
-    SECTION_TEXT,
-    SECTION_INPUT,
-    SECTION_PROGRESS,
-    SECTION_ELEMENT,
-    SECTION_MISC,
-    SECTION_CHARTS,
-    // SECTION_GROUPED,
+	SECTION_LAYOUT,
+	SECTION_TEXT,
+	SECTION_INPUT,
+	SECTION_PROGRESS,
+	SECTION_ELEMENT,
+	SECTION_MISC,
+	SECTION_CHARTS,
+	// SECTION_GROUPED,
 ];
 
 // Development Environment Blocks
 const DEV_BLOCKS = [];
 // update the json structure also in VisualMapConstant.tsx
-if (process.env.NODE_ENV === 'development') {
-    console.warn('PUSH DEV ENV BLOCKS');
+if (import.meta.env.DEV) {
+	console.warn("PUSH DEV ENV BLOCKS");
 }
 
 // TODO: Alphabetical order by name
 export const DEFAULT_MENU: DesignerMenuItem[] = [
-    // TODO: You will still be able to drop configs on the UI.  Beta version of blocks
-    ...DEV_BLOCKS,
-    // -------------------------------------------------------------
-    // PROD BLOCKS START
-    // ----------------------------------------------------------
-    {
-        section: SECTION_LAYOUT,
-        name: 'Accordion',
-        activeImage: BLOCK_IMAGES['ACCORDION_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['ACCORDION_HOVER'],
-        helperText: 'Click to expand and collapse sections for more details',
-        json: {
-            widget: 'accordion',
-            data: {
-                style: {
-                    padding: '20px',
-                },
-                triggerBgColor: '',
-                contentBgColor: '',
-                showExpandIcon: false,
-                show: 'true',
-                // -------------------------------------------
-                // John B:
-                // We may need to track styles differently.
-                // Can handle this in a migration function
-                // accordionStyles:
-                // accordionHeaderStyles:
-                // accordionContentStyles:
-                // -------------------------------------------
-            },
-            listeners: {
-                preProcess: {
-                    type: 'sync',
-                    order: [],
-                },
-            },
-            slots: {
-                header: [],
-                content: [],
-            },
-        },
-    },
+	// TODO: You will still be able to drop configs on the UI.  Beta version of blocks
+	...DEV_BLOCKS,
+	// -------------------------------------------------------------
+	// PROD BLOCKS START
+	// ----------------------------------------------------------
+	{
+		section: SECTION_LAYOUT,
+		name: "Tab",
+		helperText: "Show content in tabular manner",
+		json: {
+			widget: "tab",
+			data: {
+				style: {},
+				triggerBgColor: "",
+				contentBgColor: "",
+				showExpandIcon: false,
+				activeTab: 1,
+				show: "true",
+				tabLabels: ["Tab 1", "Tab 2"],
+			},
+			listeners: {
+				preProcess: {
+					type: "sync",
+					order: [],
+				},
+				onChange: {
+					type: "sync",
+					order: [],
+				},
+			},
+			slots: {
+				"1": [],
+				"2": [],
+			},
+		},
+	},
+	{
+		section: SECTION_LAYOUT,
+		name: "Accordion",
+		activeImage: BLOCK_IMAGES["ACCORDION_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["ACCORDION_HOVER"],
+		helperText: "Click to expand and collapse sections for more details",
+		json: {
+			widget: "accordion",
+			data: {
+				style: {
+					padding: "20px",
+				},
+				triggerBgColor: "",
+				contentBgColor: "",
+				showExpandIcon: false,
+				show: "true",
+			},
+			listeners: {
+				preProcess: {
+					type: "sync",
+					order: [],
+				},
+			},
+			slots: {
+				header: [],
+				content: [],
+			},
+		},
+	},
+	{
+		section: SECTION_LAYOUT,
+		name: "Popover",
+		activeImage: BLOCK_IMAGES["POPOVER_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["POPOVER_HOVER"],
+		helperText: "Click or Hover to show the popover",
+		json: {
+			widget: "popover",
+			data: {
+				style: {},
+				open: false,
+				designMode: true,
+				openTrigger: "click",
+				contentBgColor: "",
+			},
+			listeners: {
+				onOpen: {
+					type: "sync",
+					order: [],
+				},
+				onClose: {
+					type: "sync",
+					order: [],
+				},
+			},
+			slots: {
+				header: [],
+				content: [],
+			},
+		},
+	},
+	{
+		section: SECTION_MISC,
+		name: "Theme Block",
+		helperText: "Determine the theme of your page with our Theme Block",
+		activeImage: BLOCK_IMAGES["THEME_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["THEME_HOVER"],
+		json: {
+			widget: "theme",
+			data: {
+				theme: lightTheme,
+			},
+			listeners: {},
+			slots: {
+				children: [],
+			},
+		},
+	},
+	{
+		section: SECTION_INPUT,
+		name: "Audio Player",
+		helperText: "Play back audio responses or other files",
+		activeImage: BLOCK_IMAGES["AUDIO_PLAYER_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["AUDIO_PLAYER_HOVER"],
+		json: {
+			widget: "audio-player",
+			data: {
+				label: "Audio Player",
+				autoplay: false,
+				controls: true,
+				loop: false,
+				source: "",
+				show: "true",
+			},
+			listeners: {
+				preProcess: {
+					type: "sync",
+					order: [],
+				},
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_ELEMENT,
+		name: "Divider",
+		helperText: "Separate content with a horizontal line",
+		activeImage: BLOCK_IMAGES["DIVIDER_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["DIVIDER_HOVER"],
+		json: {
+			widget: "divider",
+			data: {
+				style: {
+					padding: "0px",
+					width: "100%",
+				},
+				variant: "fullWidth",
+				orientation: "horizontal",
+				textAlign: "center",
+				flexItem: false,
+				light: false,
+				text: "",
+				showText: false,
+				show: "true",
+			},
+			listeners: {
+				preProcess: {
+					type: "sync",
+					order: [],
+				},
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_ELEMENT,
+		name: "Ratings ",
+		helperText: "Add an rating to your layout",
+		activeImage: BLOCK_IMAGES["RATING_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["RATING_HOVER"],
+		json: {
+			widget: "ratings",
+			data: {
+				style: {},
+				size: "small",
+				type: "star",
+				value: 2,
+				max: 5,
+			},
+			listeners: {
+				onChange: {
+					type: "sync",
+					order: [],
+				},
+				preProcess: {
+					type: "sync",
+					order: [],
+				},
+			},
+			slots: {
+				children: [],
+			},
+		},
+	},
+	{
+		section: SECTION_INPUT,
+		name: "Switch",
+		helperText: "Switch between multiple options",
+		activeImage: BLOCK_IMAGES["SWITCH_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["SWITCH_HOVER"],
+		json: {
+			widget: "switch",
+			data: {
+				style: {
+					width: "fit-content",
+					padding: "4px",
+				},
+				label: "Toggle Switch",
+				value: false,
+				disabled: false,
+				color: "primary",
+				size: "medium",
+				helperText: "",
+				required: false,
+				labelPlacement: "end",
+			},
+			listeners: {
+				preProcess: {
+					type: "sync",
+					order: [],
+				},
+				onChange: {
+					type: "sync",
+					order: [],
+				},
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_INPUT,
+		name: "Time Picker",
+		helperText: "Select a time from a time picker",
+		activeImage: BLOCK_IMAGES["TIME_PICKER_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["TIME_PICKER_HOVER"],
+		json: {
+			widget: "timepicker",
+			data: {
+				style: {
+					width: "25%",
+					padding: "4px",
+				},
+				label: "Select Time",
+				value: "",
+				variant: "picker",
+				ampm: true,
+				format: "hh:mm a",
+				disabled: false,
+				required: false,
+				fullWidth: false,
+				placeholder: "",
+				clearable: true,
+				size: "small",
+				views: ["hours", "minutes"],
+			},
+			listeners: {
+				preProcess: {
+					type: "sync",
+					order: [],
+				},
+				onChange: {
+					type: "sync",
+					order: [],
+				},
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_INPUT,
+		name: "Button",
+		helperText: "Creates a click event",
+		activeImage: BLOCK_IMAGES["BUTTON_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["BUTTON_HOVER"],
+		json: {
+			widget: "button",
+			data: {
+				style: {},
+				label: "Submit",
+				loading: false,
+				disabled: false,
+				variant: "contained",
+				color: "primary",
+				show: true,
+				type: "button",
+			},
+			listeners: {
+				onClick: {
+					type: "sync",
+					order: [],
+				},
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_INPUT,
+		name: "Checkbox",
+		helperText: "Add a checkbox for user selection",
+		activeImage: BLOCK_IMAGES["CHECKBOX_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["CHECKBOX_HOVER"],
+		json: {
+			widget: "checkbox",
+			data: {
+				style: {
+					padding: "none",
+				},
+				label: "Example Checkbox",
+				required: false,
+				disabled: false,
+				value: false,
+				show: "true",
+			},
+			listeners: {
+				onChange: { type: "sync", order: [] },
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_INPUT,
+		name: "Radio",
+		activeImage: BLOCK_IMAGES["RADIO_BUTTON_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["RADIO_BUTTON_HOVER"],
+		helperText: "User select between multiple items",
+		json: {
+			widget: "radio",
+			data: {
+				style: {
+					padding: "4px",
+				},
+				value: "no_value",
+				label: "Radio Input",
+				isGroup: false,
+				options: [{ label: "Default", value: "no_value" }],
+				size: "medium",
+				direction: "column",
+				color: "primary",
+				labelPlacement: "end",
+				required: false,
+				disabled: false,
+				show: "true",
+			},
+			listeners: {
+				onChange: { type: "sync", order: [] },
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_LAYOUT,
+		name: "Modal",
+		activeImage: BLOCK_IMAGES["MODAL_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["MODAL_HOVER"],
+		helperText: "Overlay to show more info or action to user",
+		json: {
+			widget: "modal",
+			data: {
+				style: {},
+				title: "Modal Title",
+				open: false,
+				fullWidth: true,
+				maxWidth: "sm",
+				minWidth: "sm",
+				designMode: true,
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+				onClose: { type: "sync", order: [] },
+			},
+			slots: {
+				content: [],
+				footer: [],
+			},
+		},
+	},
+	{
+		section: SECTION_INPUT,
+		name: "Input",
+		helperText: "Add an input box for typing text",
+		activeImage: BLOCK_IMAGES["INPUT_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["INPUT_HOVER"],
+		json: {
+			widget: "input",
+			data: {
+				style: {
+					width: "100%",
+					padding: "4px",
+				},
+				value: "",
+				label: "Example Input",
+				hint: "",
+				type: "text",
+				rows: 1,
+				multiline: false,
+				disabled: false,
+				required: false,
+				loading: false,
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+				onChange: { type: "sync", order: [] },
+			},
+			slots: {
+				content: [],
+			},
+		},
+	},
+	{
+		section: SECTION_INPUT,
+		name: "Audio Input",
+		helperText: "Input audio from the user",
+		activeImage: BLOCK_IMAGES["AUDIO_INPUT_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["AUDIO_INPUT_HOVER"],
+		json: {
+			widget: "audio-input",
+			data: {
+				style: {
+					width: "50px",
+					height: "60px",
+				},
+				loading: false,
+				disabled: false,
+				variant: "contained",
+				color: "primary",
+				value: "",
+				mode: "transcribe",
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+				onComplete: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_INPUT,
+		name: "Select",
+		helperText: "Choose an option from a dropdown list",
+		activeImage: BLOCK_IMAGES["SELECT_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["SELECT_HOVER"],
+		json: {
+			widget: "select",
+			data: {
+				style: {
+					padding: "4px",
+				},
+				value: "",
+				label: "Example Select Input",
+				hint: "",
+				options: [],
+				required: false,
+				disabled: false,
+				loading: false,
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+				onChange: { type: "sync", order: [] },
+				onOpen: { type: "sync", order: [] },
+			},
+			slots: {
+				content: [],
+			},
+		},
+	},
+	{
+		section: SECTION_INPUT,
+		name: "Upload",
+		helperText: "Upload files like documents or images",
+		activeImage: BLOCK_IMAGES["UPLOAD_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["UPLOAD_HOVER"],
+		json: {
+			widget: "upload",
+			data: {
+				style: {
+					width: "100%",
+					padding: "4px",
+				},
+				value: "",
+				label: "Example Input",
+				hint: "",
+				loading: false,
+				disabled: false,
+				required: false,
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+				onChange: { type: "sync", order: [] },
+			},
+			slots: {
+				content: [],
+			},
+		},
+	},
+	{
+		section: SECTION_LAYOUT,
+		name: "Container",
+		helperText: "Create a layout element for custom design",
+		activeImage: BLOCK_IMAGES["CONTAINER_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["CONTAINER_HOVER"],
+		json: {
+			widget: "container",
+			data: {
+				style: {
+					display: "flex",
+					flexDirection: "column",
+					padding: "4px",
+					gap: "8px",
+					flexWrap: "wrap",
+				},
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+				boxShadowParts: {
+					offsetX: "",
+					offsetY: "",
+					blurRadius: "",
+					spreadRadius: "",
+					color: "",
+				},
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {
+				children: [],
+			},
+		},
+	},
+	{
+		section: SECTION_LAYOUT,
+		name: "Form",
+		helperText: "Create a layout element for custom design",
+		activeImage: BLOCK_IMAGES["CONTAINER_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["CONTAINER_HOVER"],
+		json: {
+			widget: "form",
+			data: {
+				style: {
+					display: "flex",
+					flexDirection: "column",
+					padding: "4px",
+					gap: "8px",
+					flexWrap: "wrap",
+				},
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+				onSubmit: { type: "sync", order: [] },
+			},
+			slots: {
+				children: [],
+			},
+		},
+	},
+	{
+		section: SECTION_LAYOUT,
+		name: "Flip Card",
+		helperText: "Flip content on hover or click to reveal more information",
+		activeImage: BLOCK_IMAGES["FLIP_CARD_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["FLIP_CARD_HOVER"],
+		json: {
+			widget: "flip-card",
+			data: {
+				style: {
+					display: "flex",
+					flexDirection: "column",
+					padding: "4px",
+					gap: "8px",
+				},
+				frontBgColor: "#ffffff",
+				backBgColor: "#ffffff",
+				isFlipped: false,
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {
+				front: [],
+				back: [],
+			},
+		},
+	},
+	{
+		section: SECTION_ELEMENT,
+		name: "Progress",
+		helperText: "Display progress tracking or status",
+		activeImage: BLOCK_IMAGES["PROGRESS_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["PROGRESS_HOVER"],
+		json: {
+			widget: "progress",
+			data: {
+				type: "linear",
+				value: 50,
+				includeLabel: true,
+				size: "300px",
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_ELEMENT,
+		name: "Iframe",
+		helperText: "Embed a webpage using a source link",
+		activeImage: BLOCK_IMAGES["IFRAME_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["IFRAME_HOVER"],
+		json: {
+			widget: "iframe",
+			data: {
+				style: {},
+				src: "",
+				title: "",
+				enableFrameInteractions: true,
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_ELEMENT,
+		name: "PDF Viewer",
+		helperText: "Embed a PDF for viewing",
+		activeImage: BLOCK_IMAGES["PDF_VIEWER_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["PDF_VIEWER_HOVER"],
+		json: {
+			widget: "pdfViewer",
+			data: {
+				style: {
+					width: "100%",
+					height: "82%",
+					padding: "8px",
+				},
+				selectedPdf: null,
+				engineId: "",
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_ELEMENT,
+		name: "Image",
+		helperText: "Add an image to your layout",
+		activeImage: BLOCK_IMAGES["IMAGE_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["IMAGE_HOVER"],
+		json: {
+			widget: "image",
+			data: {
+				style: {
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center",
+					width: "100%",
+					height: "200px",
+					backgroundSize: "contain",
+					backgroundRepeat: "no-repeat",
+					backgroundPosition: "center center",
+				},
+				src: "",
+				title: "",
+				show: "true",
+				unavailable: "",
+				placeholderText: "",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_ELEMENT,
+		name: "Icon",
+		helperText: "Add an icon to your layout",
+		activeImage: BLOCK_IMAGES["ICON_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["ICON_HOVER"],
+		json: {
+			widget: "icon",
+			data: {
+				style: {
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center",
+					width: "50px",
+					height: "50px",
+					backgroundSize: "contain",
+					backgroundRepeat: "no-repeat",
+					backgroundPosition: "center center",
+					show: "true",
+				},
 
-    {
-        section: SECTION_LAYOUT,
-        name: 'Multi-Accordion Block',
-        activeImage: BLOCK_IMAGES['ACCORDION_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['ACCORDION_HOVER'],
-        helperText: 'Click to expand and collapse sections for more details',
-        json: {
-            widget: 'container',
-            data: {
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '16px',
-                },
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {
-                children: [
-                    {
-                        widget: 'accordion',
-                        data: {
-                            style: {
-                                borderBottom: '1px solid #ccc',
-                                borderRadius: '0',
-                                padding: '16px',
-                            },
-                            triggerBgColor: '',
-                            contentBgColor: '',
-                            showExpandIcon: false,
-                            show: 'true',
-                        },
-                        listeners: {
-                            preProcess: { type: 'sync', order: [] },
-                        },
-                        slots: {
-                            header: [
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                            padding: '16px',
-                                            gap: '30%',
-                                        },
-                                    },
-                                    listeners: {
-                                        preProcess: { type: 'sync', order: [] },
-                                    },
-                                    slots: {
-                                        children: [
-                                            {
-                                                widget: 'text',
-                                                data: {
-                                                    style: {
-                                                        whiteSpace: 'pre-line',
-                                                        textOverflow:
-                                                            'ellipsis',
-                                                        padding: '16px',
-                                                    },
-                                                    text: 'Accordion 1',
-                                                    variant: 'p',
-                                                    show: 'true',
-                                                },
-                                                listeners: {
-                                                    preProcess: {
-                                                        type: 'sync',
-                                                        order: [],
-                                                    },
-                                                },
-                                                slots: {},
-                                            },
-                                            {
-                                                widget: 'text',
-                                                data: {
-                                                    style: {
-                                                        padding: '16px',
-                                                        whiteSpace: 'pre-line',
-                                                        textOverflow:
-                                                            'ellipsis',
-                                                        color: '#9c9696',
-                                                        fontWeight: 'normal',
-                                                    },
-                                                    text: 'I am an accordion',
-                                                    variant: 'h4',
-                                                    show: 'true',
-                                                },
-                                                listeners: {
-                                                    preProcess: {
-                                                        type: 'sync',
-                                                        order: [],
-                                                    },
-                                                },
-                                                slots: {},
-                                            },
-                                        ],
-                                    },
-                                },
-                            ],
-                            content: [
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            gap: '18px',
-                                        },
-                                    },
-                                    listeners: {
-                                        preProcess: { type: 'sync', order: [] },
-                                    },
-                                    slots: {
-                                        children: [
-                                            {
-                                                widget: 'text',
-                                                data: {
-                                                    style: {
-                                                        padding: '16px',
-                                                        paddingTop: '8px',
-                                                        whiteSpace: 'pre-line',
-                                                        textOverflow:
-                                                            'ellipsis',
-                                                    },
-                                                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
-                                                    variant: 'p',
-                                                    show: 'true',
-                                                },
-                                                listeners: {
-                                                    preProcess: {
-                                                        type: 'sync',
-                                                        order: [],
-                                                    },
-                                                },
-                                                slots: {},
-                                            },
-                                        ],
-                                    },
-                                },
-                            ],
-                        },
-                    },
-                    {
-                        widget: 'accordion',
-                        data: {
-                            style: {
-                                borderBottom: '1px solid #ccc',
-                                padding: '16px',
-                            },
-                            triggerBgColor: '',
-                            contentBgColor: '',
-                            showExpandIcon: false,
-                            show: 'true',
-                        },
-                        listeners: {
-                            preProcess: { type: 'sync', order: [] },
-                        },
-                        slots: {
-                            header: [
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                            gap: '30%',
-                                            padding: '16px',
-                                        },
-                                    },
-                                    listeners: {
-                                        preProcess: { type: 'sync', order: [] },
-                                    },
-                                    slots: {
-                                        children: [
-                                            {
-                                                widget: 'text',
-                                                data: {
-                                                    style: {
-                                                        padding: '16px',
-                                                        whiteSpace: 'pre-line',
-                                                        textOverflow:
-                                                            'ellipsis',
-                                                    },
-                                                    text: 'Accordion 2',
-                                                    variant: 'p',
-                                                    show: 'true',
-                                                },
-                                                listeners: {
-                                                    preProcess: {
-                                                        type: 'sync',
-                                                        order: [],
-                                                    },
-                                                },
-                                                slots: {},
-                                            },
-                                            {
-                                                widget: 'text',
-                                                data: {
-                                                    style: {
-                                                        whiteSpace: 'pre-line',
-                                                        textOverflow:
-                                                            'ellipsis',
-                                                        color: '#9c9696',
-                                                        fontWeight: 'normal',
-                                                        padding: '16px',
-                                                    },
-                                                    text: 'I am an accordion',
-                                                    variant: 'h4',
-                                                    show: 'true',
-                                                },
-                                                listeners: {
-                                                    preProcess: {
-                                                        type: 'sync',
-                                                        order: [],
-                                                    },
-                                                },
-                                                slots: {},
-                                            },
-                                        ],
-                                    },
-                                },
-                            ],
-                            content: [
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            gap: '18px',
-                                            padding: '16px',
-                                        },
-                                    },
-                                    listeners: {
-                                        preProcess: { type: 'sync', order: [] },
-                                    },
-                                    slots: {
-                                        children: [
-                                            {
-                                                widget: 'text',
-                                                data: {
-                                                    style: {
-                                                        padding: '16px',
-                                                        paddingTop: '8px',
-                                                        whiteSpace: 'pre-line',
-                                                        textOverflow:
-                                                            'ellipsis',
-                                                    },
-                                                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
-                                                    variant: 'p',
-                                                    show: 'true',
-                                                },
-                                                listeners: {
-                                                    preProcess: {
-                                                        type: 'sync',
-                                                        order: [],
-                                                    },
-                                                },
-                                                slots: {},
-                                            },
-                                        ],
-                                    },
-                                },
-                            ],
-                        },
-                    },
-                    {
-                        widget: 'accordion',
-                        data: {
-                            style: {
-                                borderBottom: '1px solid #ccc',
-                                padding: '16px',
-                            },
-                            triggerBgColor: '',
-                            contentBgColor: '',
-                            showExpandIcon: false,
-                            show: 'true',
-                        },
-                        listeners: {
-                            preProcess: { type: 'sync', order: [] },
-                        },
-                        slots: {
-                            header: [
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                            gap: '30%',
-                                            padding: '16px',
-                                        },
-                                    },
-                                    listeners: {
-                                        preProcess: { type: 'sync', order: [] },
-                                    },
-                                    slots: {
-                                        children: [
-                                            {
-                                                widget: 'text',
-                                                data: {
-                                                    style: {
-                                                        padding: '16px',
-                                                        whiteSpace: 'pre-line',
-                                                        textOverflow:
-                                                            'ellipsis',
-                                                    },
-                                                    text: 'Accordion 3',
-                                                    variant: 'p',
-                                                    show: 'true',
-                                                },
-                                                listeners: {
-                                                    preProcess: {
-                                                        type: 'sync',
-                                                        order: [],
-                                                    },
-                                                },
-                                                slots: {},
-                                            },
-                                            {
-                                                widget: 'text',
-                                                data: {
-                                                    style: {
-                                                        whiteSpace: 'pre-line',
-                                                        textOverflow:
-                                                            'ellipsis',
-                                                        color: '#9c9696',
-                                                        fontWeight: 'normal',
-                                                        padding: '16px',
-                                                    },
-                                                    text: 'I am an accordion',
-                                                    variant: 'h4',
-                                                    show: 'true',
-                                                },
-                                                listeners: {
-                                                    preProcess: {
-                                                        type: 'sync',
-                                                        order: [],
-                                                    },
-                                                },
-                                                slots: {},
-                                            },
-                                        ],
-                                    },
-                                },
-                            ],
-                            content: [
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            gap: '18px',
-                                            padding: '16px',
-                                        },
-                                    },
-                                    listeners: {
-                                        preProcess: { type: 'sync', order: [] },
-                                    },
-                                    slots: {
-                                        children: [
-                                            {
-                                                widget: 'text',
-                                                data: {
-                                                    style: {
-                                                        padding: '16px',
-                                                        paddingTop: '8px',
-                                                        whiteSpace: 'pre-line',
-                                                        textOverflow:
-                                                            'ellipsis',
-                                                    },
-                                                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
-                                                    variant: 'p',
-                                                    show: 'true',
-                                                },
-                                                listeners: {
-                                                    preProcess: {
-                                                        type: 'sync',
-                                                        order: [],
-                                                    },
-                                                },
-                                                slots: {},
-                                            },
-                                        ],
-                                    },
-                                },
-                            ],
-                        },
-                    },
-                ],
-            },
-        },
-    },
+				icon: "Home",
+				src: "",
+				title: "",
+				show: "true",
+				badgeContent: 0,
+				color: "default",
+				showBadge: false,
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_TEXT,
+		name: "Logs",
+		helperText: "Show logs from the notebook",
+		activeImage: BLOCK_IMAGES["LOGS_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["LOGS_HOVER"],
+		json: {
+			widget: "logs",
+			data: {
+				style: {},
+				queryId: "",
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_LAYOUT,
+		name: "Iterator",
+		helperText: "Render a template for each item in a list/array",
+		activeImage: BLOCK_IMAGES["ITERATOR_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["ITERATOR_HOVER"],
+		isBeta: true,
+		json: {
+			widget: "iteration",
+			data: {
+				style: {
+					display: "flex",
+					flexDirection: "column",
+				},
+				source: "",
+				child: null,
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {
+				children: [],
+			},
+		},
+	},
+	{
+		section: SECTION_ELEMENT,
+		activeImage: BLOCK_IMAGES["CHIP_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["CHIP_HOVER"],
+		name: "Chip",
+		json: {
+			widget: "chip",
+			data: {
+				style: {
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center",
+					width: "100%",
+					height: "200px",
+				},
+				src: "",
+				title: "",
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_INPUT,
+		name: "Toggle Button",
+		helperText: "Switch between multiple options",
+		activeImage: BLOCK_IMAGES["TOGGLE_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["TOGGLE_HOVER"],
+		json: {
+			widget: "toggle-button",
+			data: {
+				disabled: false,
+				color: "primary",
+				size: "small",
+				options: [
+					{
+						display: "on",
+						value: "on",
+					},
+					{
+						display: "off",
+						value: "off",
+					},
+				],
+				value: null,
+				mandatory: true,
+				multiple: false,
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+				onChange: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_TEXT,
+		name: "Link",
+		helperText: "Access a webpage through a clickable URL",
+		activeImage: BLOCK_IMAGES["LINK_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["LINK_HOVER"],
+		json: {
+			widget: "link",
+			data: {
+				style: {
+					padding: "4px",
+					whiteSpace: "pre-line",
+					textOverflow: "ellipsis",
+				},
+				href: "",
+				text: "Insert text",
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {},
+		},
+	},
+	{
+		section: SECTION_TEXT,
+		name: "Markdown",
+		helperText: "Show text in markdown format",
+		activeImage: BLOCK_IMAGES["MARKDOWN_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["MARKDOWN_HOVER"],
+		json: {
+			widget: "markdown",
+			data: {
+				style: {
+					padding: "4px",
+				},
+				markdown: "**Hello world**",
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_ELEMENT,
+		name: "HTML",
+		helperText: "Write custom HTML manually or with AI assistance",
+		activeImage: BLOCK_IMAGES["HTML_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["HTML_HOVER"],
+		json: {
+			widget: "html",
+			data: {
+				style: {
+					padding: "4px",
+				},
+				// default html includes place-holder text and basic styling
+				html: "<html>\r\n    <style>\r\n        html {\r\n            font-family: Roboto;\r\n            text-align: center;\r\n            overflow: hidden;\r\n        }\r\n    </style>\r\n    <body>\r\n        <h2>HTML Block</h2>\r\n    </body>\r\n</html>",
+				show: "true",
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_TEXT,
+		name: "Text (h1)",
+		helperText: "Display Text in header 1",
+		activeImage: BLOCK_IMAGES["H1_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["H1_HOVER"],
+		json: {
+			widget: "text",
+			data: {
+				style: {
+					padding: "4px",
+					whiteSpace: "pre-line",
+					textOverflow: "ellipsis",
+					fontSize: "revert",
+					fontWeight: "revert",
+				},
+				text: "Hello world",
+				variant: "h1",
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_TEXT,
+		name: "Text (h2)",
+		helperText: "Display Text in header 2",
+		activeImage: BLOCK_IMAGES["H2_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["H2_HOVER"],
+		json: {
+			widget: "text",
+			data: {
+				style: {
+					padding: "4px",
+					whiteSpace: "pre-line",
+					textOverflow: "ellipsis",
+					fontSize: "revert",
+					fontWeight: "revert",
+				},
+				text: "Hello world",
+				variant: "h2",
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_TEXT,
+		name: "Text (h3)",
+		helperText: "Display Text in header 3",
+		activeImage: BLOCK_IMAGES["H3_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["H3_HOVER"],
+		json: {
+			widget: "text",
+			data: {
+				style: {
+					padding: "4px",
+					whiteSpace: "pre-line",
+					textOverflow: "ellipsis",
+					fontSize: "revert",
+					fontWeight: "revert",
+				},
+				text: "Hello world",
+				variant: "h3",
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_TEXT,
+		name: "Text (h4)",
+		helperText: "Display Text in header 4",
+		activeImage: BLOCK_IMAGES["H4_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["H4_HOVER"],
+		json: {
+			widget: "text",
+			data: {
+				style: {
+					padding: "4px",
+					whiteSpace: "pre-line",
+					textOverflow: "ellipsis",
+					fontSize: "revert",
+					fontWeight: "revert",
+				},
+				text: "Hello world",
+				variant: "h4",
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_TEXT,
+		name: "Text (h5)",
+		helperText: "Display Text in header 5",
+		activeImage: BLOCK_IMAGES["H5_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["H5_HOVER"],
+		json: {
+			widget: "text",
+			data: {
+				style: {
+					padding: "4px",
+					whiteSpace: "pre-line",
+					textOverflow: "ellipsis",
+					fontSize: "revert",
+					fontWeight: "revert",
+				},
+				text: "Hello world",
+				variant: "h5",
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_TEXT,
+		name: "Text (h6)",
+		helperText: "Display Text in header 6",
+		activeImage: BLOCK_IMAGES["H6_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["H6_HOVER"],
+		json: {
+			widget: "text",
+			data: {
+				style: {
+					padding: "4px",
+					whiteSpace: "pre-line",
+					textOverflow: "ellipsis",
+					fontSize: "revert",
+					fontWeight: "revert",
+				},
+				text: "Hello world",
+				variant: "h6",
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_TEXT,
+		name: "Text",
+		helperText: "Show text in a regular paragraph style",
+		activeImage: BLOCK_IMAGES["PARAGRAPH_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["PARAGRAPH_HOVER"],
+		json: {
+			widget: "text",
+			data: {
+				style: {
+					padding: "4px",
+					whiteSpace: "pre-line",
+					textOverflow: "ellipsis",
+				},
+				text: "Hello world",
+				variant: "p",
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	// -------------------------------------------------------------
+	// BLOCK END
+	// ----------------------------------------------------------
+	// -------------------------------------------------------------
+	// CHART START
+	// ----------------------------------------------------------
+	{
+		section: SECTION_CHARTS,
+		name: "Pie Chart",
+		helperText: "Show proportions of a whole",
+		activeImage: BLOCK_IMAGES["PIE_CHART_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["PIE_CHART_HOVER"],
+		json: {
+			widget: "e-chart",
+			data: {
+				variation: "echart-pie-chart",
+				frame: {
+					name: "",
+				},
+				style: {
+					display: "flex",
+					flexDirection: "column",
+					padding: "4px",
+					gap: "8px",
+					flexWrap: "wrap",
+					width: "450px",
+					height: "350px",
+				},
+				option: {
+					dataset: {
+						source: [
+							{ name: "a", value: 85 },
+							{ name: "b", value: 79 },
+						],
+					},
+					color: [
+						"#ff6f61",
+						"#6b5b95",
+						"#88b04b",
+						"#f7cac9",
+						"#92a8d1",
+						"#034f84",
+						"#f7786b",
+						"#deeaee",
+					],
+					title: {
+						text: "Pie Chart",
+						left: "left",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					tooltip: {
+						trigger: "item",
+						show: false,
+					},
+					legend: {
+						show: false,
+						orient: "vertical",
+						left: "left",
+						top: "top",
+						textStyle: {
+							fontSize: 10,
+							color: "#000000",
+						},
+					},
+					series: [
+						{
+							name: "",
+							type: "pie",
+							radius: "50%",
+							label: {
+								show: true,
+								position: "outside",
+								fontSize: 10,
+								color: "#000000",
+								backgroundColor: "",
+								rotate: 0,
+							},
+							labelLine: {
+								length: 30,
+							},
+							data: [],
+							emphasis: {
+								itemStyle: {
+									shadowBlur: 10,
+									shadowOffsetX: 0,
+									shadowColor: "rgba(0.5, 0, 0, 0.5)",
+								},
+							},
+						},
+					],
+					reset: {
+						radius: "50%",
+						title: {
+							text: "Pie Chart",
+							left: "left",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
+						label: {
+							show: true,
+							position: "outside",
+							fontSize: 10,
+							color: "#000000",
+							backgroundColor: "",
+							rotate: 0,
+							fontFamily: "",
+						},
+						labelLine: {
+							length: 30,
+						},
+					},
+				},
 
-    {
-        section: SECTION_LAYOUT,
-        name: 'Popover',
-        activeImage: BLOCK_IMAGES['POPOVER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['POPOVER_HOVER'],
-        helperText: 'Click or Hover to show the popover',
-        json: {
-            widget: 'popover',
-            data: {
-                style: {},
-                open: false,
-                designMode: true,
-                openTrigger: 'click',
-                contentBgColor: '',
-            },
-            listeners: {
-                onOpen: {
-                    type: 'sync',
-                    order: [],
-                },
-                onClose: {
-                    type: 'sync',
-                    order: [],
-                },
-            },
-            slots: {
-                header: [],
-                content: [],
-            },
-        },
-    },
-    {
-        section: SECTION_MISC,
-        name: 'Theme Block',
-        helperText: 'Determine the theme of your page with our Theme Block',
-        activeImage: BLOCK_IMAGES['THEME_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['THEME_HOVER'],
-        json: {
-            widget: 'theme',
-            data: {
-                theme: lightTheme,
-            },
-            listeners: {},
-            slots: {
-                children: [],
-            },
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Audio Player',
-        helperText: 'Play back audio responses or other files',
-        activeImage: BLOCK_IMAGES['AUDIO_PLAYER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['AUDIO_PLAYER_HOVER'],
-        json: {
-            widget: 'audio-player',
-            data: {
-                label: 'Audio Player',
-                autoplay: false,
-                controls: true,
-                loop: false,
-                source: '',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: {
-                    type: 'sync',
-                    order: [],
-                },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        name: 'Divider',
-        helperText: 'Separate content with a horizontal line',
-        activeImage: BLOCK_IMAGES['DIVIDER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['DIVIDER_HOVER'],
-        json: {
-            widget: 'divider',
-            data: {
-                style: {
-                    padding: '0px',
-                    width: '100%',
-                },
-                variant: 'fullWidth',
-                orientation: 'horizontal',
-                textAlign: 'center',
-                flexItem: false,
-                light: false,
-                text: '',
-                showText: false,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: {
-                    type: 'sync',
-                    order: [],
-                },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        name: 'Ratings ',
-        helperText: 'Add an rating to your layout',
-        activeImage: BLOCK_IMAGES['RATING_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['RATING_HOVER'],
-        json: {
-            widget: 'ratings',
-            data: {
-                style: {},
-                size: 'small',
-                type: 'star',
-                value: 2,
-                max: 5,
-            },
-            listeners: {
-                onChange: {
-                    type: 'sync',
-                    order: [],
-                },
-                preProcess: {
-                    type: 'sync',
-                    order: [],
-                },
-            },
-            slots: {
-                children: [],
-            },
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Switch',
-        helperText: 'Switch between multiple options',
-        activeImage: BLOCK_IMAGES['SWITCH_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['SWITCH_HOVER'],
-        json: {
-            widget: 'switch',
-            data: {
-                style: {
-                    width: 'fit-content',
-                    padding: '4px',
-                },
-                label: 'Toggle Switch',
-                value: false,
-                disabled: false,
-                color: 'primary',
-                size: 'medium',
-                helperText: '',
-                required: false,
-                labelPlacement: 'end',
-            },
-            listeners: {
-                preProcess: {
-                    type: 'sync',
-                    order: [],
-                },
-                onChange: {
-                    type: 'sync',
-                    order: [],
-                },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Time Picker',
-        helperText: 'Select a time from a time picker',
-        activeImage: BLOCK_IMAGES['TIME_PICKER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['TIME_PICKER_HOVER'],
-        json: {
-            widget: 'timepicker',
-            data: {
-                style: {
-                    width: '25%',
-                    padding: '4px',
-                },
-                label: 'Select Time',
-                value: '',
-                variant: 'picker',
-                ampm: true,
-                format: 'hh:mm a',
-                disabled: false,
-                required: false,
-                fullWidth: false,
-                placeholder: '',
-                clearable: true,
-                size: 'small',
-                views: ['hours', 'minutes'],
-            },
-            listeners: {
-                preProcess: {
-                    type: 'sync',
-                    order: [],
-                },
-                onChange: {
-                    type: 'sync',
-                    order: [],
-                },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Button',
-        helperText: 'Creates a click event',
-        activeImage: BLOCK_IMAGES['BUTTON_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['BUTTON_HOVER'],
-        json: {
-            widget: 'button',
-            data: {
-                style: {},
-                label: 'Submit',
-                loading: false,
-                disabled: false,
-                variant: 'contained',
-                color: 'primary',
-                show: true,
-            },
-            listeners: {
-                onClick: {
-                    type: 'sync',
-                    order: [],
-                },
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Checkbox',
-        helperText: 'Add a checkbox for user selection',
-        activeImage: BLOCK_IMAGES['CHECKBOX_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['CHECKBOX_HOVER'],
-        json: {
-            widget: 'checkbox',
-            data: {
-                style: {
-                    padding: 'none',
-                },
-                label: 'Example Checkbox',
-                required: false,
-                disabled: false,
-                value: false,
-                show: 'true',
-            },
-            listeners: {
-                onChange: { type: 'sync', order: [] },
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Radio',
-        activeImage: BLOCK_IMAGES['RADIO_BUTTON_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['RADIO_BUTTON_HOVER'],
-        helperText: 'User select between multiple items',
-        json: {
-            widget: 'radio',
-            data: {
-                style: {
-                    padding: '4px',
-                },
-                value: 'no_value',
-                label: 'Radio Input',
-                isGroup: false,
-                options: [{ label: 'Default', value: 'no_value' }],
-                size: 'medium',
-                direction: 'column',
-                color: 'primary',
-                labelPlacement: 'end',
-                required: false,
-                disabled: false,
-                show: 'true',
-            },
-            listeners: {
-                onChange: { type: 'sync', order: [] },
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_LAYOUT,
-        name: 'Modal',
-        activeImage: BLOCK_IMAGES['MODAL_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['MODAL_HOVER'],
-        helperText: 'Overlay to show more info or action to user',
-        json: {
-            widget: 'modal',
-            data: {
-                style: {},
-                title: 'Modal Title',
-                open: false,
-                fullWidth: true,
-                maxWidth: 'sm',
-                minWidth: 'sm',
-                designMode: true,
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-                onClose: { type: 'sync', order: [] },
-            },
-            slots: {
-                content: [],
-                footer: [],
-            },
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Input',
-        helperText: 'Add an input box for typing text',
-        activeImage: BLOCK_IMAGES['INPUT_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['INPUT_HOVER'],
-        json: {
-            widget: 'input',
-            data: {
-                style: {
-                    width: '100%',
-                    padding: '4px',
-                },
-                value: '',
-                label: 'Example Input',
-                hint: '',
-                type: 'text',
-                rows: 1,
-                multiline: false,
-                disabled: false,
-                required: false,
-                loading: false,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-                onChange: { type: 'sync', order: [] },
-            },
-            slots: {
-                content: [],
-            },
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Audio Input',
-        helperText: 'Input audio from the user',
-        activeImage: BLOCK_IMAGES['AUDIO_INPUT_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['AUDIO_INPUT_HOVER'],
-        json: {
-            widget: 'audio-input',
-            data: {
-                style: {
-                    width: '50px',
-                    height: '60px',
-                },
-                loading: false,
-                disabled: false,
-                variant: 'contained',
-                color: 'primary',
-                value: '',
-                mode: 'transcribe',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-                onComplete: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Select',
-        helperText: 'Choose an option from a dropdown list',
-        activeImage: BLOCK_IMAGES['SELECT_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['SELECT_HOVER'],
-        json: {
-            widget: 'select',
-            data: {
-                style: {
-                    padding: '4px',
-                },
-                value: '',
-                label: 'Example Select Input',
-                hint: '',
-                options: [],
-                required: false,
-                disabled: false,
-                loading: false,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-                onChange: { type: 'sync', order: [] },
-            },
-            slots: {
-                content: [],
-            },
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Upload',
-        helperText: 'Upload files like documents or images',
-        activeImage: BLOCK_IMAGES['UPLOAD_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['UPLOAD_HOVER'],
-        json: {
-            widget: 'upload',
-            data: {
-                style: {
-                    width: '100%',
-                    padding: '4px',
-                },
-                value: '',
-                label: 'Example Input',
-                hint: '',
-                loading: false,
-                disabled: false,
-                required: false,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-                onChange: { type: 'sync', order: [] },
-            },
-            slots: {
-                content: [],
-            },
-        },
-    },
-    {
-        section: SECTION_LAYOUT,
-        name: 'Container',
-        helperText: 'Create a layout element for custom design',
-        activeImage: BLOCK_IMAGES['CONTAINER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['CONTAINER_HOVER'],
-        json: {
-            widget: 'container',
-            data: {
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '4px',
-                    gap: '8px',
-                    flexWrap: 'wrap',
-                },
-                show: 'true',
-                boxShadowParts: {
-                    offsetX: '',
-                    offsetY: '',
-                    blurRadius: '',
-                    spreadRadius: '',
-                    color: '',
-                },
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {
-                children: [],
-            },
-        },
-    },
-    {
-        section: SECTION_LAYOUT,
-        name: 'Flip Card',
-        helperText: 'Flip content on hover or click to reveal more information',
-        activeImage: BLOCK_IMAGES['FLIP_CARD_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['FLIP_CARD_HOVER'],
-        json: {
-            widget: 'flip-card',
-            data: {
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '4px',
-                    gap: '8px',
-                },
-                frontBgColor: '#ffffff',
-                backBgColor: '#ffffff',
-                isFlipped: false,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {
-                front: [],
-                back: [],
-            },
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        name: 'Progress',
-        helperText: 'Display progress tracking or status',
-        activeImage: BLOCK_IMAGES['PROGRESS_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['PROGRESS_HOVER'],
-        json: {
-            widget: 'progress',
-            data: {
-                type: 'linear',
-                value: 50,
-                includeLabel: true,
-                size: '300px',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        name: 'Iframe',
-        helperText: 'Embed a webpage using a source link',
-        activeImage: BLOCK_IMAGES['IFRAME_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['IFRAME_HOVER'],
-        json: {
-            widget: 'iframe',
-            data: {
-                style: {},
-                src: '',
-                title: '',
-                enableFrameInteractions: true,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    // {
-    //     section: SECTION_ELEMENT,
-    //     name: 'PDF Viewer',
-    //     helperText: 'Embed a PDF for viewing',
-    //     activeImage: BLOCK_IMAGES['PDF_VIEWER_ACTIVE'],
-    //     hoverImage: BLOCK_IMAGES['PDF_VIEWER_HOVER'],
-    //     json: {
-    //         widget: 'pdfViewer',
-    //         data: {
-    //             style: {
-    //                 width: '100%',
-    //                 height: '82%',
-    //                 padding: '8px',
-    //             },
-    //             selectedPdf: null,
-    //             show: 'true',
-    //         },
-    //         listeners: {
-    //             preProcess: { type: 'sync', order: [] },
-    //         },
-    //         slots: {} as BlockJSON['slots'],
-    //     },
-    // },
-    {
-        section: SECTION_ELEMENT,
-        name: 'Image',
-        helperText: 'Add an image to your layout',
-        activeImage: BLOCK_IMAGES['IMAGE_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['IMAGE_HOVER'],
-        json: {
-            widget: 'image',
-            data: {
-                style: {
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: '100%',
-                    height: '200px',
-                    backgroundSize: 'contain',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center center',
-                },
-                src: '',
-                title: '',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        name: 'Icon',
-        helperText: 'Add an icon to your layout',
-        activeImage: BLOCK_IMAGES['ICON_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['ICON_HOVER'],
-        json: {
-            widget: 'icon',
-            data: {
-                style: {
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: '50px',
-                    height: '50px',
-                    backgroundSize: 'contain',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center center',
-                    show: 'true',
-                },
+				specJson: JSON.stringify(
+					{
+						$schema: "",
+						title: "E Pie Chart",
+						width: 300,
+						height: 200,
+						data: {
+							values: [
+								{ a: "A", b: 28 },
+								{ a: "B", b: 55 },
+								{ a: "C", b: 43 },
+								{ a: "D", b: 91 },
+								{ a: "E", b: 81 },
+								{ a: "F", b: 53 },
+								{ a: "G", b: 19 },
+								{ a: "H", b: 87 },
+								{ a: "I", b: 52 },
+							],
+						},
+						mark: "pie",
+						encoding: {
+							x: { field: "a", type: "ordinal" },
+							y: { field: "b", type: "quantitative" },
+						},
+					},
+					null,
+					2,
+				),
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Bar Chart",
+		helperText:
+			"Compare cumulative totals and individual segments across categories",
+		activeImage: BLOCK_IMAGES["BAR_CHART_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["BAR_CHART_HOVER"],
+		json: {
+			widget: "e-chart",
+			data: {
+				variation: "echart-bar-graph",
+				style: {
+					display: "flex",
+					flexDirection: "column",
+					padding: "4px",
+					gap: "8px",
+					flexWrap: "wrap",
+					width: "450px",
+					height: "350px",
+				},
+				frame: {
+					name: "",
+				},
+				option: {
+					xAxis: {
+						type: "category",
+						data: [],
+						nameLocation: "middle",
+						nameGap: 25,
+					},
+					yAxis: {
+						type: "value",
+						nameLocation: "middle",
+						nameGap: 25,
+						axisLabel: {},
+					},
+					color: [
+						"#5470c6",
+						"#91cc75",
+						"#fac858",
+						"#ee6666",
+						"#73c0de",
+						"#3ba272",
+						"#fc8452",
+						"#9a60b4",
+						"#ea7ccc",
+					],
+					series: [
+						{
+							name: "Category",
+							data: [],
+							type: "bar",
+							labelLine: {
+								show: true,
+							},
+							label: {
+								color: "#000000",
+							},
+							itemStyle: {
+								color: "#5470c6",
+							},
+						},
+					],
+					tooltip: {
+						show: true,
+						trigger: "axis",
+					},
+					dataZoom: [
+						{
+							show: true,
+							start: 0,
+							end: 100,
+							yAxisIndex: 0,
+						},
+					],
+					brush: {
+						toolbox: ["rect", "polygon"],
+					},
+					toolbox: {
+						show: true,
+						feature: {
+							dataZoom: {
+								show: true,
+							},
+						},
+					},
+					title: {
+						text: "Bar Graph",
+						show: true,
+						left: "left",
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					reset: {
+						title: {
+							text: "Bar Graph",
+							left: "left",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
+					},
+				},
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Scatter Plot",
+		helperText: "Show relationships between two variables",
+		activeImage: BLOCK_IMAGES["SCATTER_PLOT_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["SCATTER_PLOT_HOVER"],
+		json: {
+			widget: "e-chart",
+			data: {
+				variation: "echart-scatter-plots",
+				style: {
+					height: 500,
+					width: 400,
+				},
+				option: {
+					title: {
+						text: "Scatter Plot",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					tooltip: {
+						show: true,
+						trigger: "item",
+						position: "bottom",
+					},
+					xAxis: {
+						name: "",
+						pixelName: "",
+						nameLocation: "middle",
+						show: true,
+						type: "value",
+						nameGap: 30,
+						axisLine: {
+							show: true,
+						},
+						axisTick: {
+							show: true,
+							alignWithLabel: true,
+						},
+						nameTextStyle: {
+							fontSize: 12,
+						},
+						axisLabel: {
+							show: true,
+							rotate: 0,
+							fontSize: 11,
+							color: "#000000",
+						},
+					},
+					yAxis: {
+						name: "",
+						pixelName: "",
+						type: "value",
+						show: true,
+						axisLine: {
+							show: true,
+						},
+						axisTick: {
+							show: true,
+							alignWithLabel: true,
+						},
+						nameTextStyle: {
+							fontSize: 12,
+						},
+						axisLabel: {
+							show: true,
+							rotate: 0,
+							fontSize: 12,
+							color: "#000000",
+						},
+					},
+					series: [
+						{
+							data: [],
+							label: {
+								show: true,
+								rotate: 0,
+								name: "",
+								position: "top",
+								fontFamily: "sans-serif",
+								fontSize: 12,
+								color: "#000000",
+							},
+							symbolSize: 15,
+							symbol: "circle",
+							type: "scatter",
+						},
+					],
+					color: [
+						"#5470c6",
+						"#91cc75",
+						"#fac858",
+						"#ee6666",
+						"#73c0de",
+						"#3ba272",
+						"#fc8452",
+						"#9a60b4",
+						"#ea7ccc",
+					],
+					toolbox: {
+						feature: {
+							brush: {
+								type: ["rect"],
+							},
+						},
+					},
+					brush: {
+						// Brush configuration
+						brushType: "rect", // You can also use 'polygon', 'lineX', or 'lineY'
+						throttleType: "debounce", // Throttle brush events
+						throttleDelay: 300, // Delay for throttle (in ms)
+						inBrush: {
+							color: "rgba(255, 0, 0, 0.3)", // Highlight color for the brushed region
+						},
+						outBrush: {
+							color: "rgba(0, 0, 0, 0.1)", // Color for points outside the brushed region
+						},
+					},
+					reset: {
+						axis: {
+							xaxis: {
+								show: true,
+								axisLine: {
+									show: true,
+								},
+								axisTick: {
+									show: true,
+									alignWithLabel: true,
+								},
+								nameTextStyle: {
+									fontSize: 12,
+								},
+								axisLabel: {
+									show: true,
+									rotate: 0,
+									fontSize: 11,
+									color: "#000000",
+								},
+							},
+							yaxis: {
+								show: true,
+								axisLine: {
+									show: true,
+								},
+								axisTick: {
+									show: true,
+									alignWithLabel: true,
+								},
+								nameTextStyle: {
+									fontSize: 12,
+								},
+								axisLabel: {
+									show: true,
+									rotate: 0,
+									fontSize: 12,
+									color: "#000000",
+								},
+							},
+						},
+						label: {
+							show: true,
+							rotate: 0,
+							name: "",
+							position: "top",
+							fontFamily: "sans-serif",
+							fontSize: 12,
+							color: "#000000",
+						},
+						title: {
+							text: "Scatter Plot",
+							left: "left",
+							top: "top",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
+					},
+				},
+				frame: {
+					name: "",
+				},
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Line Chart",
+		helperText: "Show relationships between two variables",
+		activeImage: BLOCK_IMAGES["LINE_CHART_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["LINE_CHART_HOVER"],
+		json: {
+			widget: "e-chart",
+			data: {
+				variation: "echart-line-graph",
+				style: {
+					height: 500,
+					width: 400,
+				},
+				option: {
+					title: {
+						text: "Line Chart",
+						top: 20,
+						left: "left",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					tooltip: {
+						trigger: "axis",
+						show: true,
+					},
+					legend: {
+						show: true,
+					},
+					xAxis: {
+						type: "category",
+						name: "",
+						nameLocation: "middle",
+						nameGap: 30,
+						axisTick: {
+							show: true,
+						},
+						axisLabel: {
+							rotate: 0,
+						},
+						nameTextStyle: {
+							fontSize: 10,
+						},
+						data: [],
+						show: true,
+					},
+					axisTick: {
+						show: true,
+					},
+					yAxis: {
+						type: "value",
+						name: "",
+						nameLocation: "middle",
+						nameGap: 40,
+						axisLabel: {
+							rotate: 0,
+						},
+						axisLine: {
+							show: true,
+						},
+						axisTick: {
+							show: true,
+						},
+						legend: {
+							show: true,
+						},
+						tooltip: {
+							show: true,
+						},
+						nameTextStyle: {
+							fontSize: 10,
+						},
+						show: true,
+					},
+					color: [
+						"#ff6f61",
+						"#6b5b95",
+						"#88b04b",
+						"#f7cac9",
+						"#92a8d1",
+						"#034f84",
+						"#f7786b",
+						"#deeaee",
+					],
+					series: [
+						{
+							name: "",
+							type: "line",
+							data: [],
+							lineStyle: {
+								type: "solid",
+								width: 1,
+							},
+							label: {
+								show: true,
+								position: "top",
+								rotate: 0,
+								fontSize: 12,
+								color: "#000000",
+							},
+						},
+					],
+					reset: {
+						title: {
+							text: "Line Chart",
+							left: "left",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
+						xAxis: {
+							name: "",
+							updatedName: null,
+							axisTick: true,
+							axisLabelFont: 10,
+						},
+						yAxis: {
+							name: "",
+							updatedName: null,
+							axisTick: true,
+							axisLabelFont: 10,
+						},
+						label: {
+							show: true,
+							position: "top",
+							fontSize: 10,
+							color: "#000000",
+							backgroundColor: "",
+							rotate: 0,
+							fontFamily: "",
+						},
+					},
+					toolbox: {
+						feature: {
+							brush: {
+								type: ["rect", "clear"],
+								brushType: "rect",
+								xAxisIndex: "all",
+								yAxisIndex: "all",
+								brushMode: "single",
+								brushLink: "all",
+							},
+						},
+					},
+					brush: {
+						// Brush configuration
+						brushType: "rect", // You can also use 'polygon', 'lineX', or 'lineY'
+						throttleType: "debounce", // Throttle brush events
+						throttleDelay: 300, // Delay for throttle (in ms)
+						inBrush: {
+							color: "rgba(255, 0, 0, 0.3)", // Highlight color for the brushed region
+						},
+						outBrush: {
+							color: "rgba(0, 0, 0, 0.1)", // Color for points outside the brushed region
+						},
+						xAxisIndex: "all", // Apply brush on x-axis
+						brushMode: "single",
+						brushLink: "all",
+					},
+				},
+				frame: {
+					name: "",
+				},
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Bar Chart - Stacked",
+		helperText:
+			"Compare cumulative totals and individual segments across categories",
+		activeImage: BLOCK_IMAGES["STACK_CHART_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["STACK_CHART_HOVER"],
+		json: {
+			widget: "e-chart",
+			data: {
+				variation: "echart-stack-chart",
+				style: {
+					height: 500,
+					width: 400,
+				},
+				option: {
+					title: {
+						text: "Stacked Bar Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					tooltip: {
+						show: false,
+						trigger: "axis",
+						position: "bottom",
+						axisPointer: {
+							type: "line",
+						},
+					},
+					xAxis: {
+						name: "",
+						pixelName: "",
+						flipAxisName: "",
+						axisName: "",
+						nameLocation: "middle",
+						show: true,
+						data: [],
+						type: "category",
+						axisLine: {
+							show: true,
+						},
+						axisTick: {
+							show: true,
+							alignWithLabel: true,
+						},
+						nameTextStyle: {
+							fontSize: 12,
+						},
+						axisLabel: {
+							show: true,
+							rotate: 0,
+							fontSize: 11,
+							color: "#000000",
+						},
+						nameGap: 25,
+					},
+					yAxis: {
+						name: "",
+						pixelName: "",
+						axisName: "",
+						flipAxisName: "",
+						type: "value",
+						data: [],
+						show: true,
+						axisLine: {
+							show: true,
+						},
+						axisTick: {
+							show: true,
+							alignWithLabel: true,
+						},
+						nameTextStyle: {
+							fontSize: 12,
+						},
+						axisLabel: {
+							show: true,
+							rotate: 0,
+							fontSize: 12,
+							color: "#000000",
+						},
+						axisPointer: {
+							show: false,
+						},
+						splitLine: {
+							show: true,
+						},
+					},
+					legend: {
+						show: false,
+						data: [],
+						selectedMode: "multiple",
+						orient: "horizontal",
+						bottom: "bottom",
+						textStyle: {
+							fontSize: 10,
+						},
+						type: "scroll",
+						pageButtonItemGap: 5,
+						pageTextSize: {
+							color: "#000000",
+							fontSize: 10,
+						},
+						left: "center",
+						top: "bottom",
+						itemWidth: 15,
+						itemHeight: 10,
+					},
+					series: [],
+					label: {
+						show: true,
+						rotate: 0,
+						name: "",
+						position: "top",
+						fontFamily: "sans-serif",
+						fontSize: 12,
+						color: "#000000",
+					},
+					barWidth: 10,
+					flipAxis: false,
+					color: [
+						"#5470c6",
+						"#91cc75",
+						"#fac858",
+						"#ee6666",
+						"#73c0de",
+						"#3ba272",
+						"#fc8452",
+						"#9a60b4",
+						"#ea7ccc",
+					],
+					toolbox: {
+						feature: {
+							brush: {
+								type: ["rect", "clear"],
+							},
+						},
+					},
+					brush: {
+						// Brush configuration
+						brushType: "rect", // You can also use 'polygon', 'lineX', or 'lineY'
+						throttleType: "debounce", // Throttle brush events
+						xAxisIndex: "0", // Apply brushing to all x-axis
+						throttleDelay: 300, // Delay for throttle (in ms)
+						brushMode: "single",
+						inBrush: {
+							color: "rgba(255, 0, 0, 0.3)", // Highlight color for the brushed region
+						},
+						outBrush: {
+							color: "rgba(0, 0, 0, 0.1)", // Color for points outside the brushed region
+						},
+					},
+					reset: {
+						axis: {
+							xaxis: {
+								show: true,
+								axisLine: {
+									show: true,
+								},
+								axisTick: {
+									show: true,
+									alignWithLabel: true,
+								},
+								nameTextStyle: {
+									fontSize: 12,
+								},
+								axisLabel: {
+									show: true,
+									rotate: 0,
+									fontSize: 11,
+									color: "#000000",
+								},
+							},
+							yaxis: {
+								show: true,
+								axisLine: {
+									show: true,
+								},
+								axisTick: {
+									show: true,
+									alignWithLabel: true,
+								},
+								nameTextStyle: {
+									fontSize: 12,
+								},
+								axisLabel: {
+									show: true,
+									rotate: 0,
+									fontSize: 12,
+									color: "#000000",
+								},
+							},
+						},
+						label: {
+							show: true,
+							rotate: 0,
+							name: "",
+							position: "top",
+							fontFamily: "sans-serif",
+							fontSize: 12,
+							color: "#000000",
+						},
+						barWidth: 10,
+						title: {
+							text: "Stacked Bar Chart",
+							left: "left",
+							top: "top",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
+					},
+				},
+				frame: {
+					name: "",
+				},
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Word Cloud",
+		helperText: "Display text data in a visually engaging way",
+		activeImage: BLOCK_IMAGES["WORD_CLOUD_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["WORD_CLOUD_HOVER"],
+		json: {
+			widget: "e-chart",
+			data: {
+				variation: "echart-word-cloud",
+				frame: {
+					name: "",
+				},
+				style: {
+					display: "flex",
+					flexDirection: "column",
+					padding: "4px",
+					gap: "8px",
+					flexWrap: "wrap",
+					width: "450px",
+					height: "350px",
+				},
+				option: {
+					title: {
+						text: "Word Cloud",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					series: [
+						{
+							type: "wordCloud",
+							gridSize: 2,
+							sizeRange: [12, 60],
+							rotationRange: [-90, 90],
+							rotationStep: 45,
+							shape: "pentagon",
+							width: "100%",
+							height: "100%",
+							drawOutOfBound: false,
+							layoutAnimation: true,
+							textStyle: {
+								fontFamily: "sans-serif",
+								fontWeight: "bold",
+							},
+							emphasis: {
+								focus: "self",
+								textStyle: {
+									shadowBlur: 10,
+									shadowColor: "#333",
+								},
+							},
+							data: [
+								{
+									name: "A",
+									value: 26,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "B",
+									value: 25,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "C",
+									value: 24,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "D",
+									value: 23,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "E",
+									value: 22,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "F",
+									value: 21,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "G",
+									value: 20,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "H",
+									value: 19,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "I",
+									value: 18,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "J",
+									value: 17,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "K",
+									value: 16,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "L",
+									value: 15,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "M",
+									value: 14,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "N",
+									value: 13,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "O",
+									value: 12,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "P",
+									value: 11,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "Q",
+									value: 10,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "R",
+									value: 9,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "S",
+									value: 8,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "T",
+									value: 7,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "U",
+									value: 6,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "V",
+									value: 5,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "W",
+									value: 4,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "X",
+									value: 3,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "Y",
+									value: 2,
+									// Style of single text
+									textStyle: {},
+								},
+								{
+									name: "Z",
+									value: 1,
+									// Style of single text
+									textStyle: {},
+								},
+							],
+						},
+					],
+					tooltip: {
+						show: true,
+						trigger: "item",
+					},
+					color: [
+						"#5470c6",
+						"#91cc75",
+						"#fac858",
+						"#ee6666",
+						"#73c0de",
+						"#3ba272",
+						"#fc8452",
+						"#9a60b4",
+						"#ea7ccc",
+						"#45b7d1",
+					],
+					reset: {
+						title: {
+							text: "Word Cloud",
+							left: "left",
+							top: "top",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
+						series: {
+							gridSize: 2,
+							sizeRange: [12, 60],
+							rotationRange: [-90, 90],
+							rotationStep: 45,
+							shape: "pentagon",
+							textStyle: {
+								fontFamily: "sans-serif",
+								fontWeight: "bold",
+							},
+						},
+					},
+				},
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "World Map Chart",
+		activeImage: BLOCK_IMAGES["WORLD_MAP_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["WORLD_MAP_HOVER"],
+		helperText: "Show data on a map",
+		json: {
+			widget: "e-chart",
+			data: {
+				variation: "echart-world-map-chart",
+				style: {
+					height: 500,
+					width: 400,
+				},
+				option: {
+					series: [
+						{
+							data: [],
+							name: "",
+							label: {
+								show: false,
+								rotate: 0,
+								name: "",
+								position: "top",
+								fontFamily: "sans-serif",
+								fontSize: 12,
+								color: "#000000",
+							},
+							symbolSize: 15,
+							symbol: "circle",
+						},
+					],
+					symbolSize: 15,
+					tooltip: {
+						show: true,
+						trigger: "item",
+						position: "bottom",
+					},
+					color: [
+						"#5470c6",
+						"#91cc75",
+						"#fac858",
+						"#ee6666",
+						"#73c0de",
+						"#3ba272",
+						"#fc8452",
+						"#9a60b4",
+						"#ea7ccc",
+					],
+					legend: {
+						show: true,
+						orient: "horizontal",
+						bottom: "bottom",
+						textStyle: {
+							fontSize: 10,
+						},
+						type: "scroll",
+						pageButtonItemGap: 5,
+						pageTextSize: {
+							color: "#000000",
+							fontSize: 10,
+						},
+						left: "center",
+						top: "bottom",
+						itemWidth: 15,
+						itemHeight: 10,
+					},
+					toolbox: {
+						feature: {
+							brush: {
+								type: ["rect"],
+							},
+						},
+					},
+					brush: {
+						// Brush configuration
+						brushType: "rect", // You can also use 'polygon', 'lineX', or 'lineY'
+						throttleType: "debounce", // Throttle brush events
+						throttleDelay: 300, // Delay for throttle (in ms)
+						inBrush: {
+							color: "rgba(255, 0, 0, 0.3)", // Highlight color for the brushed region
+						},
+						outBrush: {
+							color: "rgba(0, 0, 0, 0.1)", // Color for points outside the brushed region
+						},
+					},
+					title: {
+						text: "Map Graph",
+						show: true,
+						left: "left",
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					reset: {
+						title: {
+							text: "Map Graph",
+							left: "left",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
+					},
+				},
+				frame: {
+					name: "",
+				},
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Gantt Chart",
+		helperText: "Gannt chart for task management",
+		activeImage: BLOCK_IMAGES["GANTT_CHART_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["GANTT_CHART_HOVER"],
+		json: {
+			widget: "e-chart",
+			data: {
+				style: {
+					width: "450px",
+					height: "350px",
+				},
+				variation: "echart-gantt-chart",
+				option: {
+					title: {
+						text: "Gantt Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					reset: {
+						title: {
+							text: "Gantt Chart",
+							left: "left",
+							top: "top",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
+					},
+					grid: {},
+					tooltip: {
+						show: true,
+					},
+					xAxis: {
+						type: "time",
+						splitLine: {
+							show: false,
+						},
+						axisLabel: {},
+					},
+					yAxis: {
+						type: "category",
+						data: [],
+						axisLabel: {},
+					},
+					series: [
+						{
+							type: "custom",
 
-                icon: 'Home',
-                src: '',
-                title: '',
-                show: 'true',
-                badgeContent: 0,
-                color: 'default',
-                showBadge: false,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Logs',
-        helperText: 'Show logs from the notebook',
-        activeImage: BLOCK_IMAGES['LOGS_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['LOGS_HOVER'],
-        json: {
-            widget: 'logs',
-            data: {
-                style: {},
-                queryId: '',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_LAYOUT,
-        name: 'Iterator',
-        helperText: 'Render a template for each item in a list/array',
-        activeImage: BLOCK_IMAGES['ITERATOR_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['ITERATOR_HOVER'],
-        isBeta: true,
-        json: {
-            widget: 'iteration',
-            data: {
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                },
-                source: '',
-                child: null,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {
-                children: [],
-            },
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        activeImage: BLOCK_IMAGES['CHIP_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['CHIP_HOVER'],
-        name: 'Chip',
-        json: {
-            widget: 'chip',
-            data: {
-                style: {
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: '100%',
-                    height: '200px',
-                },
-                src: '',
-                title: '',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Toggle Button',
-        helperText: 'Switch between multiple options',
-        activeImage: BLOCK_IMAGES['TOGGLE_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['TOGGLE_HOVER'],
-        json: {
-            widget: 'toggle-button',
-            data: {
-                disabled: false,
-                color: 'primary',
-                size: 'small',
-                options: [
-                    {
-                        display: 'on',
-                        value: 'on',
-                    },
-                    {
-                        display: 'off',
-                        value: 'off',
-                    },
-                ],
-                value: null,
-                mandatory: true,
-                multiple: false,
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-                onChange: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Link',
-        helperText: 'Access a webpage through a clickable URL',
-        activeImage: BLOCK_IMAGES['LINK_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['LINK_HOVER'],
-        json: {
-            widget: 'link',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                href: '',
-                text: 'Insert text',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {},
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Markdown',
-        helperText: 'Show text in markdown format',
-        activeImage: BLOCK_IMAGES['MARKDOWN_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['MARKDOWN_HOVER'],
-        json: {
-            widget: 'markdown',
-            data: {
-                style: {
-                    padding: '4px',
-                },
-                markdown: '**Hello world**',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_ELEMENT,
-        name: 'HTML',
-        helperText: 'Write custom HTML manually or with AI assistance',
-        activeImage: BLOCK_IMAGES['HTML_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['HTML_HOVER'],
-        json: {
-            widget: 'html',
-            data: {
-                style: {
-                    padding: '4px',
-                },
-                // default html includes place-holder text and basic styling
-                html: '<html>\r\n    <style>\r\n        html {\r\n            font-family: Roboto;\r\n            text-align: center;\r\n            overflow: hidden;\r\n        }\r\n    </style>\r\n    <body>\r\n        <h2>HTML Block</h2>\r\n    </body>\r\n</html>',
-                show: 'true',
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text (h1)',
-        helperText: 'Display Text in header 1',
-        activeImage: BLOCK_IMAGES['H1_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['H1_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'h1',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text (h2)',
-        helperText: 'Display Text in header 2',
-        activeImage: BLOCK_IMAGES['H2_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['H2_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'h2',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text (h3)',
-        helperText: 'Display Text in header 3',
-        activeImage: BLOCK_IMAGES['H3_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['H3_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'h3',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text (h4)',
-        helperText: 'Display Text in header 4',
-        activeImage: BLOCK_IMAGES['H4_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['H4_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'h4',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text (h5)',
-        helperText: 'Display Text in header 5',
-        activeImage: BLOCK_IMAGES['H5_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['H5_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'h5',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text (h6)',
-        helperText: 'Display Text in header 6',
-        activeImage: BLOCK_IMAGES['H6_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['H6_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'h6',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_TEXT,
-        name: 'Text',
-        helperText: 'Show text in a regular paragraph style',
-        activeImage: BLOCK_IMAGES['PARAGRAPH_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['PARAGRAPH_HOVER'],
-        json: {
-            widget: 'text',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: 'Hello world',
-                variant: 'p',
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_MISC,
-        name: 'Compare LLMs',
-        helperText: 'Compare large language models against the same context',
-        activeImage: BLOCK_IMAGES['COMPARE_LLMS_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['COMPARE_LLMS_HOVER'],
-        json: {
-            widget: 'llmComparison',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                text: '',
-                variants: {},
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    // -------------------------------------------------------------
-    // BLOCK END
-    // ----------------------------------------------------------
-    // -------------------------------------------------------------
-    // CHART START
-    // ----------------------------------------------------------
-    {
-        section: SECTION_CHARTS,
-        name: 'Pie Chart',
-        helperText: 'Show proportions of a whole',
-        activeImage: BLOCK_IMAGES['PIE_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['PIE_CHART_HOVER'],
-        json: {
-            widget: 'e-chart',
-            data: {
-                variation: 'echart-pie-chart',
-                frame: {
-                    name: '',
-                },
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '4px',
-                    gap: '8px',
-                    flexWrap: 'wrap',
-                    width: '450px',
-                    height: '350px',
-                },
-                option: {
-                    dataset: {
-                        source: [
-                            { name: 'a', value: 85 },
-                            { name: 'b', value: 79 },
-                        ],
-                    },
-                    // color: ['#40A0FF','#9A74B6','#FBB83A','#F18630','#51ACA8','#187687','#CD5498','#364A90'],
-                    color: [
-                        '#ff6f61',
-                        '#6b5b95',
-                        '#88b04b',
-                        '#f7cac9',
-                        '#92a8d1',
-                        '#034f84',
-                        '#f7786b',
-                        '#deeaee',
-                    ],
-                    title: {
-                        text: '',
-                        left: 'center',
-                        show: true,
-                        textStyle: {
-                            fontSize: 18,
-                            color: '#ff6f61',
-                            fontWeight: 'normal',
-                        },
-                    },
-                    tooltip: {
-                        trigger: 'item',
-                        show: false,
-                    },
-                    legend: {
-                        show: false,
-                        orient: 'vertical',
-                        left: 'left',
-                        top: 'top',
-                        textStyle: {
-                            fontSize: 10,
-                            color: '#000000',
-                        },
-                    },
-                    series: [
-                        {
-                            name: 'Access From',
-                            type: 'pie',
-                            radius: '50%',
-                            label: {
-                                show: true,
-                                position: 'outside',
-                                fontSize: 10,
-                                color: '#000000',
-                                backgroundColor: '',
-                                rotate: 0,
-                            },
-                            labelLine: {
-                                length: 30,
-                            },
-                            data: [
-                                { value: 1048, name: 'Search Engine' },
-                                { value: 735, name: 'Direct' },
-                                { value: 580, name: 'Email' },
-                                { value: 484, name: 'Union Ads' },
-                                { value: 300, name: 'Video Ads' },
-                            ],
-                            emphasis: {
-                                itemStyle: {
-                                    shadowBlur: 10,
-                                    shadowOffsetX: 0,
-                                    shadowColor: 'rgba(0.5, 0, 0, 0.5)',
-                                },
-                            },
-                        },
-                    ],
-                    reset: {
-                        radius: '50%',
-                        title: {
-                            text: '',
-                            left: 'center',
-                            show: true,
-                            textStyle: {
-                                fontSize: 18,
-                                color: '#ff6f61',
-                                fontWeight: 'normal',
-                                fontFamily: '',
-                            },
-                        },
-                        label: {
-                            show: true,
-                            position: 'outside',
-                            fontSize: 10,
-                            color: '#000000',
-                            backgroundColor: '',
-                            rotate: 0,
-                            fontFamily: '',
-                        },
-                        labelLine: {
-                            length: 30,
-                        },
-                    },
-                },
-
-                specJson: JSON.stringify(
-                    {
-                        $schema: '',
-                        title: 'E Pie Chart',
-                        width: 300,
-                        height: 200,
-                        data: {
-                            values: [
-                                { a: 'A', b: 28 },
-                                { a: 'B', b: 55 },
-                                { a: 'C', b: 43 },
-                                { a: 'D', b: 91 },
-                                { a: 'E', b: 81 },
-                                { a: 'F', b: 53 },
-                                { a: 'G', b: 19 },
-                                { a: 'H', b: 87 },
-                                { a: 'I', b: 52 },
-                            ],
-                        },
-                        mark: 'pie',
-                        encoding: {
-                            x: { field: 'a', type: 'ordinal' },
-                            y: { field: 'b', type: 'quantitative' },
-                        },
-                    },
-                    null,
-                    2,
-                ),
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Bar Chart',
-        helperText:
-            'Compare cumulative totals and individual segments across categories',
-        activeImage: BLOCK_IMAGES['BAR_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['BAR_CHART_HOVER'],
-        json: {
-            widget: 'e-chart',
-            data: {
-                variation: 'echart-bar-graph',
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '4px',
-                    gap: '8px',
-                    flexWrap: 'wrap',
-                    width: '450px',
-                    height: '350px',
-                },
-                frame: {
-                    name: '',
-                },
-                option: {
-                    xAxis: {
-                        type: 'category',
-                        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    },
-                    yAxis: {
-                        type: 'value',
-                    },
-                    color: [
-                        '#5470c6',
-                        '#91cc75',
-                        '#fac858',
-                        '#ee6666',
-                        '#73c0de',
-                        '#3ba272',
-                        '#fc8452',
-                        '#9a60b4',
-                        '#ea7ccc',
-                    ],
-                    series: [
-                        {
-                            name: 'Category',
-                            data: [
-                                {
-                                    value: 120,
-                                },
-                                200,
-                                150,
-                                80,
-                                70,
-                                110,
-                                130,
-                            ],
-                            type: 'bar',
-                            labelLine: {
-                                show: true,
-                            },
-                            label: {
-                                color: '#000000',
-                            },
-                            itemStyle: {
-                                color: '#5470c6',
-                            },
-                        },
-                    ],
-                    tooltip: {
-                        show: true,
-                        trigger: 'axis',
-                    },
-                    dataZoom: [
-                        {
-                            show: true,
-                            start: 0,
-                            end: 100,
-                            yAxisIndex: 0,
-                        },
-                    ],
-                    brush: {
-                        toolbox: ['rect', 'polygon'],
-                    },
-                    toolbox: {
-                        show: true,
-                        feature: {
-                            dataZoom: {
-                                show: true,
-                            },
-                        },
-                    },
-                    title: {
-                        text: 'Bar Graph',
-                        show: true,
-                        left: 'left',
-                        textStyle: {
-                            color: '#000000',
-                            fontWeight: 'bold',
-                            fontFamily: 'Arial Narrow',
-                            fontSize: 12,
-                        },
-                    },
-                },
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Scatter Plot',
-        helperText: 'Show relationships between two variables',
-        activeImage: BLOCK_IMAGES['SCATTER_PLOT_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['SCATTER_PLOT_HOVER'],
-        json: {
-            widget: 'e-chart',
-            data: {
-                variation: 'echart-scatter-plots',
-                style: {
-                    height: 500,
-                    width: 400,
-                },
-                option: {
-                    title: {
-                        text: '',
-                        left: 'center',
-                        top: 'top',
-                    },
-                    tooltip: {
-                        show: true,
-                        trigger: 'item',
-                        position: 'bottom',
-                    },
-                    xAxis: {
-                        name: '',
-                        pixelName: '',
-                        nameLocation: 'middle',
-                        show: true,
-                        type: 'value',
-                        axisLine: {
-                            show: true,
-                        },
-                        axisTick: {
-                            show: true,
-                            alignWithLabel: true,
-                        },
-                        nameTextStyle: {
-                            fontSize: 12,
-                        },
-                        axisLabel: {
-                            show: true,
-                            rotate: 0,
-                            fontSize: 11,
-                            color: '#000000',
-                        },
-                    },
-                    yAxis: {
-                        name: '',
-                        pixelName: '',
-                        type: 'value',
-                        show: true,
-                        axisLine: {
-                            show: true,
-                        },
-                        axisTick: {
-                            show: true,
-                            alignWithLabel: true,
-                        },
-                        nameTextStyle: {
-                            fontSize: 12,
-                        },
-                        axisLabel: {
-                            show: true,
-                            rotate: 0,
-                            fontSize: 12,
-                            color: '#000000',
-                        },
-                    },
-                    series: [
-                        {
-                            data: [],
-                            label: {
-                                show: true,
-                                rotate: 0,
-                                name: '',
-                                position: 'top',
-                                fontFamily: 'sans-serif',
-                                fontSize: 12,
-                                color: '#000000',
-                            },
-                            symbolSize: 15,
-                            symbol: 'circle',
-                            type: 'scatter',
-                        },
-                    ],
-                    color: [
-                        '#5470c6',
-                        '#91cc75',
-                        '#fac858',
-                        '#ee6666',
-                        '#73c0de',
-                        '#3ba272',
-                        '#fc8452',
-                        '#9a60b4',
-                        '#ea7ccc',
-                    ],
-                    toolbox: {
-                        feature: {
-                            brush: {
-                                type: ['rect'],
-                            },
-                        },
-                    },
-                    brush: {
-                        // Brush configuration
-                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
-                        throttleType: 'debounce', // Throttle brush events
-                        throttleDelay: 300, // Delay for throttle (in ms)
-                        inBrush: {
-                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
-                        },
-                        outBrush: {
-                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
-                        },
-                    },
-                    reset: {
-                        axis: {
-                            xaxis: {
-                                show: true,
-                                axisLine: {
-                                    show: true,
-                                },
-                                axisTick: {
-                                    show: true,
-                                    alignWithLabel: true,
-                                },
-                                nameTextStyle: {
-                                    fontSize: 12,
-                                },
-                                axisLabel: {
-                                    show: true,
-                                    rotate: 0,
-                                    fontSize: 11,
-                                    color: '#000000',
-                                },
-                            },
-                            yaxis: {
-                                show: true,
-                                axisLine: {
-                                    show: true,
-                                },
-                                axisTick: {
-                                    show: true,
-                                    alignWithLabel: true,
-                                },
-                                nameTextStyle: {
-                                    fontSize: 12,
-                                },
-                                axisLabel: {
-                                    show: true,
-                                    rotate: 0,
-                                    fontSize: 12,
-                                    color: '#000000',
-                                },
-                            },
-                        },
-                        label: {
-                            show: true,
-                            rotate: 0,
-                            name: '',
-                            position: 'top',
-                            fontFamily: 'sans-serif',
-                            fontSize: 12,
-                            color: '#000000',
-                        },
-                    },
-                },
-                frame: {
-                    name: '',
-                },
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Line Chart',
-        helperText: 'Show relationships between two variables',
-        activeImage: BLOCK_IMAGES['LINE_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['LINE_CHART_HOVER'],
-        json: {
-            widget: 'e-chart',
-            data: {
-                variation: 'echart-line-graph',
-                style: {
-                    height: 500,
-                    width: 400,
-                },
-                option: {
-                    title: {
-                        text: 'ECharts Line Chart',
-                        left: 'center',
-                        top: 20,
-                        textStyle: {
-                            fontSize: 18,
-                            fontWeight: 'normal',
-                            color: '#000000',
-                        },
-                    },
-                    tooltip: {
-                        trigger: 'axis',
-                        show: true,
-                    },
-                    legend: {
-                        show: true,
-                    },
-                    xAxis: {
-                        type: 'category',
-                        name: 'a',
-                        nameLocation: 'middle',
-                        nameGap: 30,
-                        axisTick: {
-                            show: true,
-                        },
-                        axisLabel: {
-                            rotate: 0,
-                        },
-                        nameTextStyle: {
-                            fontSize: 10,
-                        },
-                        data: ['A', 'B', 'C', 'D', 'E'],
-                        show: true,
-                    },
-                    axisTick: {
-                        show: true,
-                    },
-                    yAxis: {
-                        type: 'value',
-                        name: 'b',
-                        nameLocation: 'middle',
-                        nameGap: 40,
-                        axisLabel: {
-                            rotate: 0,
-                        },
-                        axisLine: {
-                            show: true,
-                        },
-                        axisTick: {
-                            show: true,
-                        },
-                        legend: {
-                            show: true,
-                        },
-                        tooltip: {
-                            show: true,
-                        },
-                        nameTextStyle: {
-                            fontSize: 10,
-                        },
-                        show: true,
-                    },
-                    color: [
-                        '#ff6f61',
-                        '#6b5b95',
-                        '#88b04b',
-                        '#f7cac9',
-                        '#92a8d1',
-                        '#034f84',
-                        '#f7786b',
-                        '#deeaee',
-                    ],
-                    series: [
-                        {
-                            name: 'a',
-                            type: 'line',
-                            data: [28, 30, 22, 35, 30],
-                            lineStyle: {
-                                type: 'solid',
-                                width: 1,
-                            },
-                            label: {
-                                show: true,
-                                position: 'top',
-                                rotate: 0,
-                                fontSize: 12,
-                                color: '#000000',
-                            },
-                        },
-                    ],
-                    reset: {
-                        title: {
-                            text: '',
-                            left: 'center',
-                            show: true,
-                            textStyle: {
-                                fontSize: 18,
-                                color: '#ff6f61',
-                                fontWeight: 'normal',
-                                fontFamily: '',
-                            },
-                        },
-                        xAxis: {
-                            name: '',
-                            updatedName: null,
-                            axisTick: true,
-                            axisLabelFont: 10,
-                        },
-                        yAxis: {
-                            name: '',
-                            updatedName: null,
-                            axisTick: true,
-                            axisLabelFont: 10,
-                        },
-                        label: {
-                            show: true,
-                            position: 'top',
-                            fontSize: 10,
-                            color: '#000000',
-                            backgroundColor: '',
-                            rotate: 0,
-                            fontFamily: '',
-                        },
-                    },
-                    toolbox: {
-                        feature: {
-                            brush: {
-                                type: ['rect', 'clear'],
-                                brushType: 'rect',
-                                xAxisIndex: 'all',
-                                yAxisIndex: 'all',
-                                brushMode: 'single',
-                                brushLink: 'all',
-                            },
-                        },
-                    },
-                    brush: {
-                        // Brush configuration
-                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
-                        throttleType: 'debounce', // Throttle brush events
-                        throttleDelay: 300, // Delay for throttle (in ms)
-                        inBrush: {
-                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
-                        },
-                        outBrush: {
-                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
-                        },
-                        xAxisIndex: 'all', // Apply brush on x-axis
-                        brushMode: 'single',
-                        brushLink: 'all',
-                    },
-                },
-                frame: {
-                    name: '',
-                },
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Bar Chart - Stacked',
-        helperText:
-            'Compare cumulative totals and individual segments across categories',
-        activeImage: BLOCK_IMAGES['STACK_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['STACK_CHART_HOVER'],
-        json: {
-            widget: 'e-chart',
-            data: {
-                variation: 'echart-stack-chart',
-                style: {
-                    height: 500,
-                    width: 400,
-                },
-                option: {
-                    title: {
-                        text: '',
-                        left: 'center',
-                        top: 'top',
-                    },
-                    tooltip: {
-                        show: false,
-                        trigger: 'axis',
-                        position: 'bottom',
-                        axisPointer: {
-                            type: 'line',
-                        },
-                    },
-                    xAxis: {
-                        name: '',
-                        pixelName: '',
-                        flipAxisName: '',
-                        axisName: '',
-                        nameLocation: 'middle',
-                        show: true,
-                        data: [],
-                        type: 'category',
-                        axisLine: {
-                            show: true,
-                        },
-                        axisTick: {
-                            show: true,
-                            alignWithLabel: true,
-                        },
-                        nameTextStyle: {
-                            fontSize: 12,
-                        },
-                        axisLabel: {
-                            show: true,
-                            rotate: 0,
-                            fontSize: 11,
-                            color: '#000000',
-                        },
-                        nameGap: 25,
-                    },
-                    yAxis: {
-                        name: '',
-                        pixelName: '',
-                        axisName: '',
-                        flipAxisName: '',
-                        type: 'value',
-                        data: [],
-                        show: true,
-                        axisLine: {
-                            show: true,
-                        },
-                        axisTick: {
-                            show: true,
-                            alignWithLabel: true,
-                        },
-                        nameTextStyle: {
-                            fontSize: 12,
-                        },
-                        axisLabel: {
-                            show: true,
-                            rotate: 0,
-                            fontSize: 12,
-                            color: '#000000',
-                        },
-                        axisPointer: {
-                            show: false,
-                        },
-                        splitLine: {
-                            show: true,
-                        },
-                    },
-                    legend: {
-                        show: false,
-                        data: [],
-                        selectedMode: 'multiple',
-                        orient: 'horizontal',
-                        bottom: 'bottom',
-                        textStyle: {
-                            fontSize: 10,
-                        },
-                        type: 'scroll',
-                        pageButtonItemGap: 5,
-                        pageTextSize: {
-                            color: '#000000',
-                            fontSize: 10,
-                        },
-                        left: 'center',
-                        top: 'bottom',
-                        itemWidth: 15,
-                        itemHeight: 10,
-                    },
-                    series: [],
-                    label: {
-                        show: true,
-                        rotate: 0,
-                        name: '',
-                        position: 'top',
-                        fontFamily: 'sans-serif',
-                        fontSize: 12,
-                        color: '#000000',
-                    },
-                    barWidth: 10,
-                    flipAxis: false,
-                    color: [
-                        '#5470c6',
-                        '#91cc75',
-                        '#fac858',
-                        '#ee6666',
-                        '#73c0de',
-                        '#3ba272',
-                        '#fc8452',
-                        '#9a60b4',
-                        '#ea7ccc',
-                    ],
-                    toolbox: {
-                        feature: {
-                            brush: {
-                                type: ['rect', 'clear'],
-                            },
-                        },
-                    },
-                    brush: {
-                        // Brush configuration
-                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
-                        throttleType: 'debounce', // Throttle brush events
-                        xAxisIndex: '0', // Apply brushing to all x-axis
-                        throttleDelay: 300, // Delay for throttle (in ms)
-                        brushMode: 'single',
-                        inBrush: {
-                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
-                        },
-                        outBrush: {
-                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
-                        },
-                    },
-                    reset: {
-                        axis: {
-                            xaxis: {
-                                show: true,
-                                axisLine: {
-                                    show: true,
-                                },
-                                axisTick: {
-                                    show: true,
-                                    alignWithLabel: true,
-                                },
-                                nameTextStyle: {
-                                    fontSize: 12,
-                                },
-                                axisLabel: {
-                                    show: true,
-                                    rotate: 0,
-                                    fontSize: 11,
-                                    color: '#000000',
-                                },
-                            },
-                            yaxis: {
-                                show: true,
-                                axisLine: {
-                                    show: true,
-                                },
-                                axisTick: {
-                                    show: true,
-                                    alignWithLabel: true,
-                                },
-                                nameTextStyle: {
-                                    fontSize: 12,
-                                },
-                                axisLabel: {
-                                    show: true,
-                                    rotate: 0,
-                                    fontSize: 12,
-                                    color: '#000000',
-                                },
-                            },
-                        },
-                        label: {
-                            show: true,
-                            rotate: 0,
-                            name: '',
-                            position: 'top',
-                            fontFamily: 'sans-serif',
-                            fontSize: 12,
-                            color: '#000000',
-                        },
-                        barWidth: 10,
-                    },
-                },
-                frame: {
-                    name: '',
-                },
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'World Map Chart',
-        activeImage: BLOCK_IMAGES['WORLD_MAP_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['WORLD_MAP_HOVER'],
-        helperText: 'Show data on a map',
-        json: {
-            widget: 'e-chart',
-            data: {
-                variation: 'echart-world-map-chart',
-                style: {
-                    height: 500,
-                    width: 400,
-                },
-                option: {
-                    series: [
-                        {
-                            data: [],
-                            name: '',
-                            label: {
-                                show: false,
-                                rotate: 0,
-                                name: '',
-                                position: 'top',
-                                fontFamily: 'sans-serif',
-                                fontSize: 12,
-                                color: '#000000',
-                            },
-                            symbolSize: 15,
-                            symbol: 'circle',
-                        },
-                    ],
-                    symbolSize: 15,
-                    tooltip: {
-                        show: true,
-                        trigger: 'item',
-                        position: 'bottom',
-                    },
-                    color: [
-                        '#5470c6',
-                        '#91cc75',
-                        '#fac858',
-                        '#ee6666',
-                        '#73c0de',
-                        '#3ba272',
-                        '#fc8452',
-                        '#9a60b4',
-                        '#ea7ccc',
-                    ],
-                    legend: {
-                        show: true,
-                        orient: 'horizontal',
-                        bottom: 'bottom',
-                        textStyle: {
-                            fontSize: 10,
-                        },
-                        type: 'scroll',
-                        pageButtonItemGap: 5,
-                        pageTextSize: {
-                            color: '#000000',
-                            fontSize: 10,
-                        },
-                        left: 'center',
-                        top: 'bottom',
-                        itemWidth: 15,
-                        itemHeight: 10,
-                    },
-                    toolbox: {
-                        feature: {
-                            brush: {
-                                type: ['rect'],
-                            },
-                        },
-                    },
-                    brush: {
-                        // Brush configuration
-                        brushType: 'rect', // You can also use 'polygon', 'lineX', or 'lineY'
-                        throttleType: 'debounce', // Throttle brush events
-                        throttleDelay: 300, // Delay for throttle (in ms)
-                        inBrush: {
-                            color: 'rgba(255, 0, 0, 0.3)', // Highlight color for the brushed region
-                        },
-                        outBrush: {
-                            color: 'rgba(0, 0, 0, 0.1)', // Color for points outside the brushed region
-                        },
-                    },
-                    title: {
-                        text: 'Map Graph',
-                        show: true,
-                        left: 'left',
-                        textStyle: {
-                            color: '#000000',
-                            fontWeight: 'bold',
-                            fontFamily: 'Arial Narrow',
-                            fontSize: 12,
-                        },
-                    },
-                },
-                frame: {
-                    name: '',
-                },
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Gantt Chart',
-        helperText: 'Gannt chart for task management',
-        activeImage: BLOCK_IMAGES['GANTT_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['GANTT_CHART_HOVER'],
-        json: {
-            widget: 'e-chart',
-            data: {
-                style: {
-                    width: '450px',
-                    height: '350px',
-                },
-                variation: 'echart-gantt-chart',
-                option: {
-                    tooltip: {
-                        show: true,
-                    },
-                    xAxis: {
-                        type: 'time',
-                        splitLine: {
-                            show: false,
-                        },
-                    },
-                    yAxis: {
-                        type: 'category',
-                        data: ['Task A', 'Task B', 'Task C'],
-                    },
-                    series: [
-                        {
-                            type: 'custom',
-
-                            data: [
-                                {
-                                    task: 'Task A',
-                                    start: '2024-02-01',
-                                    end: '2024-02-05',
-                                    resource: 'A',
-                                },
-                                {
-                                    task: 'Task B',
-                                    start: '2024-02-03',
-                                    end: '2024-02-08',
-                                    resource: 'B',
-                                },
-                                {
-                                    task: 'Task C',
-                                    start: '2024-02-06',
-                                    end: '2024-02-12',
-                                    resource: 'C',
-                                },
-                                {
-                                    task: 'Task D',
-                                    start: '2024-02-02',
-                                    end: '2024-02-11',
-                                    resource: 'B',
-                                },
-                                {
-                                    task: 'Task E',
-                                    start: '2024-02-03',
-                                    end: '2024-02-10',
-                                    resource: 'A',
-                                },
-                                {
-                                    task: 'Task F',
-                                    start: '2024-02-07',
-                                    end: '2024-02-11',
-                                    resource: 'C',
-                                },
-                            ],
-                        },
-                    ],
-                    customSettings: {
-                        columnDetails: {},
-                    },
-                },
-                show: 'true',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Dendrogram Chart',
-        helperText: 'Dendrogram chart',
-        activeImage: BLOCK_IMAGES['DENDROGRAM_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['DENDROGRAM_CHART_HOVER'],
-        json: {
-            widget: 'e-chart',
-            data: {
-                variation: 'echart-dendrogram-chart',
-                style: {
-                    height: 500,
-                    width: 400,
-                },
-                option: {
-                    tooltip: {
-                        trigger: 'item',
-                        triggerOn: 'mousemove',
-                    },
-                    toolbox: {
-                        show: true,
-                        feature: {
-                            dataZoom: {
-                                show: true,
-                            },
-                        },
-                        brush: {
-                            toolbox: ['rect', 'polygon'],
-                        },
-                    },
-                    series: [
-                        {
-                            type: 'tree',
-                            data: [
-                                {
-                                    name: 'Root',
-                                    children: [
-                                        {
-                                            name: 'Child A',
-                                            children: [
-                                                { name: 'Leaf A1' },
-                                                { name: 'Leaf A2' },
-                                            ],
-                                        },
-                                        {
-                                            name: 'Child B',
-                                            children: [
-                                                { name: 'Leaf B1' },
-                                                { name: 'Leaf B2' },
-                                            ],
-                                        },
-                                    ],
-                                },
-                            ],
-                            top: '5%',
-                            left: '10%',
-                            bottom: '5%',
-                            right: '10%',
-                            symbolSize: 10,
-                            label: {
-                                position: 'left',
-                                verticalAlign: 'middle',
-                                align: 'right',
-                                color: '#000000',
-                                fontSize: '12',
-                                show: true,
-                                formatter: '{c}',
-                            },
-                            leaves: {
-                                label: {
-                                    position: 'right',
-                                    verticalAlign: 'middle',
-                                    align: 'left',
-                                },
-                            },
-                            expandAndCollapse: true,
-                            animationDuration: 750,
-                            animationDurationUpdate: 750,
-                            initialTreeDepth: -1,
-                        },
-                    ],
-                    ['_state']: {
-                        dimensions: [],
-                        facet: [],
-                    },
-                },
-                frame: {
-                    name: '',
-                },
-                show: 'true',
-                facet: {
-                    facetSelected: [],
-                    facetList: [],
-                },
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Vega',
-        helperText: 'Paste JSON to make a custom chart',
-        activeImage: BLOCK_IMAGES['VEGA_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['VEGA_HOVER'],
-        json: {
-            widget: 'vega',
-            data: {
-                specJson: '',
-                variation: undefined,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Dynamic Data Grid',
-        helperText: 'Organize and display dynamic data in a tabular format',
-        activeImage: BLOCK_IMAGES['DATA_GRID_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['DATA_GRID_HOVER'],
-        json: {
-            widget: 'grid-dynamic-frame',
-            data: {
-                frame: {
-                    name: '',
-                },
-                option: {},
-                columns: [],
-                view: {
-                    pagination: true,
-                },
-                style: {
-                    display: 'flex',
-                    flexDirection: 'row',
-                    flexWrap: 'wrap',
-                    width: '450px',
-                    height: '350px',
-                },
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Data Grid',
-        recentChanges:
-            'If you are looking to build a table with unstructured headers, please use the Dynamic Data Grid block.',
-        helperText: 'Organize and display known data in a tabular format',
-        activeImage: BLOCK_IMAGES['DATA_GRID_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['DATA_GRID_HOVER'],
-        json: {
-            widget: 'grid',
-            data: {
-                variation: 'grid-block',
-                frame: {
-                    name: '',
-                },
-                style: {
-                    display: 'flex',
-                    flexDirection: 'row',
-                    flexWrap: 'wrap',
-                    width: '450px',
-                    height: '350px',
-                },
-                option: {},
-                columns: [],
-                view: {
-                    pagination: true,
-                },
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Grouped Bar Chart',
-        helperText:
-            'Compare individual values across multiple categories side by side',
-        activeImage: BLOCK_IMAGES['BAR_CHART_GROUPED_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['BAR_CHART_GROUPED_HOVER'],
-        json: {
-            widget: 'vega',
-            data: {
-                variation: 'grouped-bar-chart',
-                specJson: JSON.stringify(
-                    {
-                        $schema:
-                            'https://vega.github.io/schema/vega-lite/v5.json',
-                        title: 'Grouped Bar Chart',
-                        width: 300,
-                        height: 300,
-                        data: {
-                            values: [
-                                { category: 'A', group: 'x', value: 0.1 },
-                                { category: 'A', group: 'y', value: 0.6 },
-                                { category: 'A', group: 'z', value: 0.9 },
-                                { category: 'B', group: 'x', value: 0.7 },
-                                { category: 'B', group: 'y', value: 0.2 },
-                                { category: 'B', group: 'z', value: 1.1 },
-                                { category: 'C', group: 'x', value: 0.6 },
-                                { category: 'C', group: 'y', value: 0.1 },
-                                { category: 'C', group: 'z', value: 0.2 },
-                            ],
-                        },
-                        mark: 'bar',
-                        encoding: {
-                            x: { field: 'category' },
-                            y: { field: 'value', type: 'quantitative' },
-                            xOffset: { field: 'group' },
-                            color: { field: 'group' },
-                        },
-                    },
-                    null,
-                    2,
-                ),
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Radial Plot',
-        helperText: 'Compare multiple variables relative to a central point',
-        activeImage: BLOCK_IMAGES['RADIAL_PLOT_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['RADIAL_PLOT_HOVER'],
-        json: {
-            widget: 'vega',
-            data: {
-                variation: 'radial-plot',
-                specJson: JSON.stringify(
-                    {
-                        $schema:
-                            'https://vega.github.io/schema/vega-lite/v5.json',
-                        title: 'Radial Plot',
-                        width: 300,
-                        height: 300,
-                        description:
-                            'A simple radial chart with embedded data.',
-                        data: {
-                            values: [12, 23, 47, 6, 52, 19],
-                        },
-                        layer: [
-                            {
-                                mark: {
-                                    type: 'arc',
-                                    innerRadius: 20,
-                                    stroke: '#fff',
-                                },
-                            },
-                            {
-                                mark: { type: 'text', radiusOffset: 10 },
-                                encoding: {
-                                    text: {
-                                        field: 'data',
-                                        type: 'quantitative',
-                                    },
-                                },
-                            },
-                        ],
-                        encoding: {
-                            theta: {
-                                field: 'data',
-                                type: 'quantitative',
-                                stack: true,
-                            },
-                            radius: {
-                                field: 'data',
-                                scale: {
-                                    type: 'sqrt',
-                                    zero: true,
-                                    rangeMin: 20,
-                                },
-                            },
-                            color: {
-                                field: 'data',
-                                type: 'nominal',
-                                legend: null,
-                            },
-                        },
-                    },
-                    null,
-                    2,
-                ),
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Area Chart',
-        helperText: 'Show trends over time with cumulative data',
-        activeImage: BLOCK_IMAGES['AREA_CHART_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['AREA_CHART_HOVER'],
-        json: {
-            widget: 'vega',
-            data: {
-                variation: 'area-chart',
-                specJson: JSON.stringify(
-                    {
-                        $schema:
-                            'https://vega.github.io/schema/vega-lite/v5.json',
-                        title: 'Area Chart',
-                        width: 300,
-                        height: 300,
-                        data: {
-                            values: [
-                                { a: 'A', b: 28 },
-                                { a: 'B', b: 55 },
-                                { a: 'D', b: 91 },
-                                { a: 'E', b: 81 },
-                                { a: 'E', b: 81 },
-                                { a: 'G', b: 19 },
-                                { a: 'H', b: 87 },
-                            ],
-                        },
-                        mark: 'area',
-                        encoding: {
-                            x: {
-                                field: 'a',
-                            },
-                            y: {
-                                aggregate: 'sum',
-                                field: 'b',
-                                title: 'count',
-                            },
-                        },
-                    },
-                    null,
-                    2,
-                ),
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Area Chart with Gradient',
-        activeImage: BLOCK_IMAGES['AREA_CHART_GRADIENT_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['AREA_CHART_GRADIENT_HOVER'],
-        helperText:
-            'Show trends over time with cumulative data in a different style',
-        json: {
-            widget: 'vega',
-            data: {
-                variation: 'area-chart-with-gradient',
-                specJson: JSON.stringify(
-                    {
-                        $schema:
-                            'https://vega.github.io/schema/vega-lite/v5.json',
-                        title: 'Area Chart with Gradient',
-                        width: 300,
-                        height: 300,
-                        description: 'Simple area chart with gradient.',
-                        data: {
-                            values: [
-                                { a: 'A', b: 28 },
-                                { a: 'B', b: 55 },
-                                { a: 'D', b: 91 },
-                                { a: 'E', b: 81 },
-                                { a: 'E', b: 81 },
-                                { a: 'G', b: 19 },
-                                { a: 'H', b: 87 },
-                            ],
-                        },
-                        mark: {
-                            type: 'area',
-                            line: {
-                                color: 'darkgreen',
-                            },
-                            color: {
-                                x1: 1,
-                                y1: 1,
-                                x2: 1,
-                                y2: 0,
-                                gradient: 'linear',
-                                stops: [
-                                    {
-                                        offset: 0,
-                                        color: 'white',
-                                    },
-                                    {
-                                        offset: 1,
-                                        color: 'darkgreen',
-                                    },
-                                ],
-                            },
-                        },
-                        encoding: {
-                            x: {
-                                field: 'a',
-                            },
-                            y: {
-                                aggregate: 'sum',
-                                field: 'b',
-                                title: 'count',
-                            },
-                        },
-                    },
-                    null,
-                    2,
-                ),
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    // -------------------------------------------------------------
-    // MERMAID START
-    // ----------------------------------------------------------
-    {
-        section: SECTION_CHARTS,
-        name: 'Mermaid Chart',
-        activeImage: BLOCK_IMAGES['MERMAIDJS_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['MERMAIDJS_HOVER'],
-        helperText: 'Customize and display MermaidJS diagrams',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `graph TD;
+							data: [],
+						},
+					],
+					customSettings: {
+						columnDetails: {},
+					},
+				},
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Dendrogram Chart",
+		helperText: "Dendrogram chart",
+		activeImage: BLOCK_IMAGES["DENDROGRAM_CHART_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["DENDROGRAM_CHART_HOVER"],
+		json: {
+			widget: "e-chart",
+			data: {
+				variation: "echart-dendrogram-chart",
+				style: {
+					height: 500,
+					width: 400,
+				},
+				option: {
+					tooltip: {
+						trigger: "item",
+						triggerOn: "mousemove",
+					},
+					title: {
+						text: "Dendrogram Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					reset: {
+						title: {
+							text: "Dendrogram Chart",
+							left: "left",
+							top: "top",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
+					},
+					toolbox: {
+						show: true,
+						feature: {
+							dataZoom: {
+								show: true,
+							},
+						},
+						brush: {
+							toolbox: ["rect", "polygon"],
+						},
+					},
+					series: [
+						{
+							type: "tree",
+							data: [
+								{
+									name: "Root",
+									children: [
+										{
+											name: "Child A",
+											children: [
+												{ name: "Leaf A1" },
+												{ name: "Leaf A2" },
+											],
+										},
+										{
+											name: "Child B",
+											children: [
+												{ name: "Leaf B1" },
+												{ name: "Leaf B2" },
+											],
+										},
+									],
+								},
+							],
+							top: "5%",
+							left: "10%",
+							bottom: "5%",
+							right: "10%",
+							symbolSize: 10,
+							label: {
+								position: "left",
+								verticalAlign: "middle",
+								align: "right",
+								color: "#000000",
+								fontSize: "12",
+								show: true,
+								formatter: "{c}",
+							},
+							leaves: {
+								label: {
+									position: "right",
+									verticalAlign: "middle",
+									align: "left",
+								},
+							},
+							expandAndCollapse: true,
+							animationDuration: 750,
+							animationDurationUpdate: 750,
+							initialTreeDepth: -1,
+						},
+					],
+					["_state"]: {
+						dimensions: [],
+						facet: [],
+					},
+				},
+				frame: {
+					name: "",
+				},
+				show: "true",
+				facet: {
+					facetSelected: [],
+					facetList: [],
+				},
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Vega",
+		helperText: "Paste JSON to make a custom chart",
+		activeImage: BLOCK_IMAGES["VEGA_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["VEGA_HOVER"],
+		json: {
+			widget: "vega",
+			data: {
+				specJson: "",
+				variation: undefined,
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Dynamic Data Grid",
+		helperText: "Organize and display dynamic data in a tabular format",
+		activeImage: BLOCK_IMAGES["DATA_GRID_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["DATA_GRID_HOVER"],
+		json: {
+			widget: "grid-dynamic-frame",
+			data: {
+				frame: {
+					name: "",
+				},
+				option: {},
+				columns: [],
+				view: {
+					pagination: true,
+				},
+				style: {
+					display: "flex",
+					flexDirection: "row",
+					flexWrap: "wrap",
+					width: "450px",
+					height: "350px",
+				},
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Data Grid",
+		recentChanges:
+			"If you are looking to build a table with unstructured headers, please use the Dynamic Data Grid block.",
+		helperText: "Organize and display known data in a tabular format",
+		activeImage: BLOCK_IMAGES["DATA_GRID_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["DATA_GRID_HOVER"],
+		json: {
+			widget: "grid",
+			data: {
+				variation: "grid-block",
+				frame: {
+					name: "",
+				},
+				style: {
+					display: "flex",
+					flexDirection: "row",
+					flexWrap: "wrap",
+					width: "450px",
+					height: "350px",
+				},
+				option: {},
+				columns: [],
+				view: {
+					pagination: true,
+				},
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Grouped Bar Chart",
+		helperText:
+			"Compare individual values across multiple categories side by side",
+		activeImage: BLOCK_IMAGES["BAR_CHART_GROUPED_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["BAR_CHART_GROUPED_HOVER"],
+		json: {
+			widget: "vega",
+			data: {
+				variation: "grouped-bar-chart",
+				specJson: JSON.stringify(
+					{
+						$schema:
+							"https://vega.github.io/schema/vega-lite/v5.json",
+						title: "Grouped Bar Chart",
+						width: 300,
+						height: 300,
+						data: {
+							values: [
+								{ category: "A", group: "x", value: 0.1 },
+								{ category: "A", group: "y", value: 0.6 },
+								{ category: "A", group: "z", value: 0.9 },
+								{ category: "B", group: "x", value: 0.7 },
+								{ category: "B", group: "y", value: 0.2 },
+								{ category: "B", group: "z", value: 1.1 },
+								{ category: "C", group: "x", value: 0.6 },
+								{ category: "C", group: "y", value: 0.1 },
+								{ category: "C", group: "z", value: 0.2 },
+							],
+						},
+						mark: "bar",
+						encoding: {
+							x: { field: "category" },
+							y: { field: "value", type: "quantitative" },
+							xOffset: { field: "group" },
+							color: { field: "group" },
+						},
+					},
+					null,
+					2,
+				),
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Radial Plot",
+		helperText: "Compare multiple variables relative to a central point",
+		activeImage: BLOCK_IMAGES["RADIAL_PLOT_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["RADIAL_PLOT_HOVER"],
+		json: {
+			widget: "vega",
+			data: {
+				variation: "radial-plot",
+				specJson: JSON.stringify(
+					{
+						$schema:
+							"https://vega.github.io/schema/vega-lite/v5.json",
+						title: "Radial Plot",
+						width: 300,
+						height: 300,
+						description:
+							"A simple radial chart with embedded data.",
+						data: {
+							values: [12, 23, 47, 6, 52, 19],
+						},
+						layer: [
+							{
+								mark: {
+									type: "arc",
+									innerRadius: 20,
+									stroke: "#fff",
+								},
+							},
+							{
+								mark: { type: "text", radiusOffset: 10 },
+								encoding: {
+									text: {
+										field: "data",
+										type: "quantitative",
+									},
+								},
+							},
+						],
+						encoding: {
+							theta: {
+								field: "data",
+								type: "quantitative",
+								stack: true,
+							},
+							radius: {
+								field: "data",
+								scale: {
+									type: "sqrt",
+									zero: true,
+									rangeMin: 20,
+								},
+							},
+							color: {
+								field: "data",
+								type: "nominal",
+								legend: null,
+							},
+						},
+					},
+					null,
+					2,
+				),
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Area Chart",
+		helperText: "Show trends over time with cumulative data",
+		activeImage: BLOCK_IMAGES["AREA_CHART_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["AREA_CHART_HOVER"],
+		json: {
+			widget: "vega",
+			data: {
+				variation: "area-chart",
+				specJson: JSON.stringify(
+					{
+						$schema:
+							"https://vega.github.io/schema/vega-lite/v5.json",
+						title: "Area Chart",
+						width: 300,
+						height: 300,
+						data: {
+							values: [
+								{ a: "A", b: 28 },
+								{ a: "B", b: 55 },
+								{ a: "D", b: 91 },
+								{ a: "E", b: 81 },
+								{ a: "E", b: 81 },
+								{ a: "G", b: 19 },
+								{ a: "H", b: 87 },
+							],
+						},
+						mark: "area",
+						encoding: {
+							x: {
+								field: "a",
+							},
+							y: {
+								aggregate: "sum",
+								field: "b",
+								title: "count",
+							},
+						},
+					},
+					null,
+					2,
+				),
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Area Chart with Gradient",
+		activeImage: BLOCK_IMAGES["AREA_CHART_GRADIENT_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["AREA_CHART_GRADIENT_HOVER"],
+		helperText:
+			"Show trends over time with cumulative data in a different style",
+		json: {
+			widget: "vega",
+			data: {
+				variation: "area-chart-with-gradient",
+				specJson: JSON.stringify(
+					{
+						$schema:
+							"https://vega.github.io/schema/vega-lite/v5.json",
+						title: "Area Chart with Gradient",
+						width: 300,
+						height: 300,
+						description: "Simple area chart with gradient.",
+						data: {
+							values: [
+								{ a: "A", b: 28 },
+								{ a: "B", b: 55 },
+								{ a: "D", b: 91 },
+								{ a: "E", b: 81 },
+								{ a: "E", b: 81 },
+								{ a: "G", b: 19 },
+								{ a: "H", b: 87 },
+							],
+						},
+						mark: {
+							type: "area",
+							line: {
+								color: "darkgreen",
+							},
+							color: {
+								x1: 1,
+								y1: 1,
+								x2: 1,
+								y2: 0,
+								gradient: "linear",
+								stops: [
+									{
+										offset: 0,
+										color: "white",
+									},
+									{
+										offset: 1,
+										color: "darkgreen",
+									},
+								],
+							},
+						},
+						encoding: {
+							x: {
+								field: "a",
+							},
+							y: {
+								aggregate: "sum",
+								field: "b",
+								title: "count",
+							},
+						},
+					},
+					null,
+					2,
+				),
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	// -------------------------------------------------------------
+	// MERMAID START
+	// ----------------------------------------------------------
+	{
+		section: SECTION_CHARTS,
+		name: "Mermaid Chart",
+		activeImage: BLOCK_IMAGES["MERMAIDJS_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["MERMAIDJS_HOVER"],
+		helperText: "Customize and display MermaidJS diagrams",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `graph TD;
                         A-->B;
                         A-->C;
                         B-->D;
                         C-->D;
                     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_LAYOUT,
-        name: 'Sidebar-Menu',
-        activeImage: BLOCK_IMAGES['SIDEBAR_MENU_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['SIDEBAR_MENU_HOVER'],
-        helperText:
-            'Use the sidebar to navigate between the tools and components',
-        json: {
-            widget: 'sidebar',
-            data: {
-                style: {
-                    width: '240px',
-                    height: '100%',
-                },
-                open: false,
-                anchor: 'left',
-                designMode: true,
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-                postProcess: { type: 'sync', order: [] },
-            },
-            slots: {
-                content: [],
-            },
-        },
-    },
-    {
-        section: SECTION_INPUT,
-        name: 'Slider',
-        helperText: 'Allows user to select a value from a specified range',
-        activeImage: BLOCK_IMAGES['SLIDER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['SLIDER_HOVER'],
-        json: {
-            widget: 'slider',
-            data: {
-                type: 'continuous',
-                style: {
-                    color: 'primary',
-                },
-                marks: [],
-                steps: 1,
-                value: 0,
-                min: 0,
-                max: 100,
-                size: '300px',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-                onChange: { type: 'sync', order: [] },
-            },
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    // -----------------------------------------------
-    // Grouped Components
-    // -----------------------------------------------
-    {
-        section: SECTION_CHARTS,
-        name: 'Visualization Filter',
-        helperText: 'Filter data based on set criteria',
-        activeImage: BLOCK_IMAGES['VISUALIZATION_FILTER_ACTIVE'],
-        hoverImage: BLOCK_IMAGES['VISUALIZATION_FILTER_HOVER'],
-        json: {
-            widget: 'visualization-filter',
-            data: {
-                style: {
-                    padding: '4px',
-                    whiteSpace: 'pre-line',
-                    textOverflow: 'ellipsis',
-                },
-                displayType: '',
-                frame: '',
-                column: '',
-                showPanelTitle: false,
-                searchable: false,
-                multipleSelection: false,
-                show: 'true',
-                listOptions: [],
-                selectedValues: [],
-                filterLabel: '',
-                sliderSensitivity: 0,
-                color: 'primary',
-                size: 'medium',
-            },
-            listeners: {
-                preProcess: { type: 'sync', order: [] },
-            },
-            slots: {},
-        },
-    },
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_LAYOUT,
+		name: "Sidebar-Menu",
+		activeImage: BLOCK_IMAGES["SIDEBAR_MENU_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["SIDEBAR_MENU_HOVER"],
+		helperText:
+			"Use the sidebar to navigate between the tools and components",
+		json: {
+			widget: "sidebar",
+			data: {
+				style: {
+					width: "240px",
+					height: "100%",
+				},
+				open: false,
+				anchor: "left",
+				designMode: true,
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+				postProcess: { type: "sync", order: [] },
+			},
+			slots: {
+				content: [],
+			},
+		},
+	},
+	{
+		section: SECTION_INPUT,
+		name: "Slider",
+		helperText: "Allows user to select a value from a specified range",
+		activeImage: BLOCK_IMAGES["SLIDER_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["SLIDER_HOVER"],
+		json: {
+			widget: "slider",
+			data: {
+				type: "continuous",
+				style: {
+					color: "primary",
+				},
+				marks: [],
+				steps: 1,
+				value: 0,
+				min: 0,
+				max: 100,
+				size: "300px",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+				onChange: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	// -----------------------------------------------
+	// Grouped Components
+	// -----------------------------------------------
+	{
+		section: SECTION_CHARTS,
+		name: "Visualization Filter",
+		helperText: "Filter data based on set criteria",
+		activeImage: BLOCK_IMAGES["VISUALIZATION_FILTER_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["VISUALIZATION_FILTER_HOVER"],
+		json: {
+			widget: "visualization-filter",
+			data: {
+				style: {
+					padding: "4px",
+					whiteSpace: "pre-line",
+					textOverflow: "ellipsis",
+				},
+				displayType: "",
+				frame: "",
+				column: "",
+				showPanelTitle: false,
+				searchable: false,
+				multipleSelection: false,
+				show: "true",
+				listOptions: [],
+				selectedValues: [],
+				filterLabel: "",
+				sliderSensitivity: 0,
+				color: "primary",
+				size: "medium",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {},
+		},
+	},
 ];
 
 // TODO: Move to the backend
 export const CLIENT_BLOCKS_MENU = [
-    {
-        section: SECTION_GROUPED,
-        name: 'Contact Info Fields',
-        helperText: 'Starting point for a contact in form',
-        json: {
-            widget: 'container',
-            parent: {
-                // can be null
-                id: 'page-1',
-                slot: 'content',
-            },
-            data: {
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: 'px',
-                    gap: 'px',
-                    flexWrap: 'wrap',
-                },
-            },
-            listeners: {},
-            slots: {
-                children: [
-                    {
-                        widget: 'text',
-                        data: {
-                            style: {
-                                whiteSpace: 'pre-line',
-                                textOverflow: 'ellipsis',
-                                fontWeight: 'bold',
-                            },
-                            text: 'Contact Information',
-                            variant: 'p',
-                        },
-                        listeners: {},
-                        slots: {},
-                    },
-                    {
-                        widget: 'container',
-                        data: {
-                            style: {
-                                display: 'flex',
-                                flexDirection: 'column',
-                                padding: '16px',
-                                gap: '8px',
-                                flexWrap: 'wrap',
-                                border: '2px dotted #4a4a4a',
-                            },
-                        },
-                        listeners: {},
-                        slots: {
-                            children: [
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            padding: '4px',
-                                            gap: '8px',
-                                            flexWrap: 'wrap',
-                                            border: '0px  ',
-                                            width: '100%',
-                                            justifyContent: 'center',
-                                        },
-                                    },
-                                    listeners: {},
-                                    slots: {
-                                        children: [
-                                            {
-                                                widget: 'container',
-                                                data: {
-                                                    style: {
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        padding: '0px',
-                                                        gap: '8px',
-                                                        flexWrap: 'wrap',
-                                                        maxWidth: '50%',
-                                                        width: '49%',
-                                                    },
-                                                },
-                                                listeners: {},
-                                                slots: {
-                                                    children: [
-                                                        {
-                                                            widget: 'input',
-                                                            data: {
-                                                                style: {
-                                                                    width: '100%',
-                                                                    padding:
-                                                                        '4px',
-                                                                },
-                                                                value: '',
-                                                                label: 'First Name',
-                                                                hint: '',
-                                                                type: 'text',
-                                                                rows: 1,
-                                                                multiline:
-                                                                    false,
-                                                                disabled: false,
-                                                                required: false,
-                                                                loading: false,
-                                                            },
-                                                            listeners: {
-                                                                onChange: {
-                                                                    type: 'sync',
-                                                                    order: [],
-                                                                },
-                                                            },
-                                                            slots: {
-                                                                content: [],
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-                                            },
-                                            {
-                                                widget: 'container',
-                                                data: {
-                                                    style: {
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        padding: '0px',
-                                                        gap: '8px',
-                                                        flexWrap: 'wrap',
-                                                        maxWidth: '50%',
-                                                        width: '49%',
-                                                    },
-                                                },
-                                                listeners: {},
-                                                slots: {
-                                                    children: [
-                                                        {
-                                                            widget: 'input',
-                                                            data: {
-                                                                style: {
-                                                                    width: '100%',
-                                                                    padding:
-                                                                        '4px',
-                                                                },
-                                                                value: '',
-                                                                label: 'Last Name',
-                                                                hint: '',
-                                                                type: 'text',
-                                                                rows: 1,
-                                                                multiline:
-                                                                    false,
-                                                                disabled: false,
-                                                                required: false,
-                                                                loading: false,
-                                                            },
-                                                            listeners: {
-                                                                onChange: {
-                                                                    type: 'sync',
-                                                                    order: [],
-                                                                },
-                                                            },
-                                                            slots: {
-                                                                content: [],
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-                                            },
-                                        ],
-                                    },
-                                },
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            padding: '4px',
-                                            gap: '8px',
-                                            flexWrap: 'wrap',
-                                            border: '0px  ',
-                                            width: '100%',
-                                            justifyContent: 'center',
-                                        },
-                                    },
-                                    listeners: {},
-                                    slots: {
-                                        children: [
-                                            {
-                                                widget: 'container',
-                                                data: {
-                                                    style: {
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        padding: '0px',
-                                                        gap: '8px',
-                                                        flexWrap: 'wrap',
-                                                        maxWidth: '50%',
-                                                        width: '49%',
-                                                    },
-                                                },
-                                                listeners: {},
-                                                slots: {
-                                                    children: [
-                                                        {
-                                                            widget: 'input',
-                                                            data: {
-                                                                style: {
-                                                                    width: '100%',
-                                                                    padding:
-                                                                        '4px',
-                                                                },
-                                                                value: '',
-                                                                label: 'Phone Number',
-                                                                hint: '',
-                                                                type: 'text',
-                                                                rows: 1,
-                                                                multiline:
-                                                                    false,
-                                                                disabled: false,
-                                                                required: false,
-                                                                loading: false,
-                                                            },
-                                                            listeners: {
-                                                                onChange: {
-                                                                    type: 'sync',
-                                                                    order: [],
-                                                                },
-                                                            },
-                                                            slots: {
-                                                                content: [],
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-                                            },
-                                            {
-                                                widget: 'container',
-                                                data: {
-                                                    style: {
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        padding: '0px',
-                                                        gap: '8px',
-                                                        flexWrap: 'wrap',
-                                                        maxWidth: '50%',
-                                                        width: '49%',
-                                                    },
-                                                },
-                                                listeners: {},
-                                                slots: {
-                                                    children: [
-                                                        {
-                                                            widget: 'input',
-                                                            data: {
-                                                                style: {
-                                                                    width: '100%',
-                                                                    padding:
-                                                                        '4px',
-                                                                },
-                                                                value: '',
-                                                                label: 'Email',
-                                                                hint: '',
-                                                                type: 'text',
-                                                                rows: 1,
-                                                                multiline:
-                                                                    false,
-                                                                disabled: false,
-                                                                required: false,
-                                                                loading: false,
-                                                            },
-                                                            listeners: {
-                                                                onChange: {
-                                                                    type: 'sync',
-                                                                    order: [],
-                                                                },
-                                                            },
-                                                            slots: {
-                                                                content: [],
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-                                            },
-                                        ],
-                                    },
-                                },
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            padding: '4px',
-                                            gap: '8px',
-                                            flexWrap: 'wrap',
-                                            border: '0px  ',
-                                            width: '100%',
-                                            justifyContent: 'center',
-                                        },
-                                    },
-                                    listeners: {},
-                                    slots: {
-                                        children: [
-                                            {
-                                                widget: 'container',
-                                                data: {
-                                                    style: {
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        padding: '0px',
-                                                        gap: '8px',
-                                                        flexWrap: 'wrap',
-                                                        maxWidth: '50%',
-                                                        width: '49%',
-                                                    },
-                                                },
-                                                listeners: {},
-                                                slots: {
-                                                    children: [
-                                                        {
-                                                            widget: 'input',
-                                                            data: {
-                                                                style: {
-                                                                    width: '100%',
-                                                                    padding:
-                                                                        '4px',
-                                                                },
-                                                                value: '',
-                                                                label: 'Address',
-                                                                hint: '',
-                                                                type: 'text',
-                                                                rows: 1,
-                                                                multiline:
-                                                                    false,
-                                                                disabled: false,
-                                                                required: false,
-                                                                loading: false,
-                                                            },
-                                                            listeners: {
-                                                                onChange: {
-                                                                    type: 'sync',
-                                                                    order: [],
-                                                                },
-                                                            },
-                                                            slots: {
-                                                                content: [],
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-                                            },
-                                            {
-                                                widget: 'container',
-                                                parent: null,
-                                                data: {
-                                                    style: {
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        padding: '0px',
-                                                        gap: '8px',
-                                                        flexWrap: 'wrap',
-                                                        maxWidth: '50%',
-                                                        width: '49%',
-                                                    },
-                                                },
-                                                listeners: {},
-                                                slots: {
-                                                    children: [
-                                                        {
-                                                            widget: 'input',
-                                                            data: {
-                                                                style: {
-                                                                    width: '100%',
-                                                                    padding:
-                                                                        '4px',
-                                                                },
-                                                                value: '',
-                                                                label: 'Apartment, Suite, Etc.',
-                                                                hint: '',
-                                                                type: 'text',
-                                                                rows: 1,
-                                                                multiline:
-                                                                    false,
-                                                                disabled: false,
-                                                                required: false,
-                                                                loading: false,
-                                                            },
-                                                            listeners: {
-                                                                onChange: {
-                                                                    type: 'sync',
-                                                                    order: [],
-                                                                },
-                                                            },
-                                                            slots: {
-                                                                content: [],
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-                                            },
-                                        ],
-                                    },
-                                },
-                                {
-                                    widget: 'container',
-                                    data: {
-                                        style: {
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            padding: '4px',
-                                            gap: '8px',
-                                            flexWrap: 'wrap',
-                                            border: '0px  ',
-                                            width: '100%',
-                                            justifyContent: 'left',
-                                            alignItems: 'center',
-                                        },
-                                    },
-                                    listeners: {},
-                                    slots: {
-                                        children: [
-                                            {
-                                                widget: 'container',
-                                                data: {
-                                                    style: {
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        padding: 'px',
-                                                        gap: '8px',
-                                                        flexWrap: 'wrap',
-                                                        width: '32%',
-                                                    },
-                                                },
-                                                listeners: {},
-                                                slots: {
-                                                    children: [
-                                                        {
-                                                            widget: 'input',
-                                                            data: {
-                                                                style: {
-                                                                    width: '100%',
-                                                                    padding:
-                                                                        '4px',
-                                                                },
-                                                                value: '',
-                                                                label: 'City',
-                                                                hint: '',
-                                                                type: 'text',
-                                                                rows: 1,
-                                                                multiline:
-                                                                    false,
-                                                                disabled: false,
-                                                                required: false,
-                                                                loading: false,
-                                                            },
-                                                            listeners: {
-                                                                onChange: {
-                                                                    type: 'sync',
-                                                                    order: [],
-                                                                },
-                                                            },
-                                                            slots: {
-                                                                content: [],
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-                                            },
-                                            {
-                                                widget: 'container',
-                                                data: {
-                                                    style: {
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        padding: 'px',
-                                                        gap: '8px',
-                                                        flexWrap: 'wrap',
-                                                        width: '32%',
-                                                    },
-                                                },
-                                                listeners: {},
-                                                slots: {
-                                                    children: [
-                                                        {
-                                                            widget: 'input',
-                                                            parent: null,
-                                                            data: {
-                                                                style: {
-                                                                    width: '100%',
-                                                                    padding:
-                                                                        '4px',
-                                                                },
-                                                                value: '',
-                                                                label: 'State',
-                                                                hint: '',
-                                                                type: 'text',
-                                                                rows: 1,
-                                                                multiline:
-                                                                    false,
-                                                                disabled: false,
-                                                                required: false,
-                                                                loading: false,
-                                                            },
-                                                            listeners: {
-                                                                onChange: {
-                                                                    type: 'sync',
-                                                                    order: [],
-                                                                },
-                                                            },
-                                                            slots: {
-                                                                content: [],
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-                                            },
-                                            {
-                                                widget: 'container',
-                                                data: {
-                                                    style: {
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        padding: 'px',
-                                                        gap: '8px',
-                                                        flexWrap: 'wrap',
-                                                        width: '33%',
-                                                    },
-                                                },
-                                                listeners: {},
-                                                slots: {
-                                                    children: [
-                                                        {
-                                                            widget: 'input',
-                                                            data: {
-                                                                style: {
-                                                                    width: '100%',
-                                                                    padding:
-                                                                        '4px',
-                                                                },
-                                                                value: '',
-                                                                label: 'Zip-Code',
-                                                                hint: '',
-                                                                type: 'text',
-                                                                rows: 1,
-                                                                multiline:
-                                                                    false,
-                                                                disabled: false,
-                                                                required: false,
-                                                                loading: false,
-                                                            },
-                                                            listeners: {
-                                                                onChange: {
-                                                                    type: 'sync',
-                                                                    order: [],
-                                                                },
-                                                            },
-                                                            slots: {
-                                                                content: [],
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-                                            },
-                                        ],
-                                    },
-                                },
-                            ],
-                        },
-                    },
-                ],
-            },
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Class Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: '---\ntitle: Alien example\n---\nclassDiagram\n    note "From Duck till Zebra"\n    Animal <|-- Duck\n    note for Duck "can fly\ncan swim\ncan dive\ncan help in debugging"\n    Animal <|-- Fish\n    Animal <|-- Zebra\n    Animal : +int age\n    Animal : +String gender\n    Animal: +isMammal()\n    Animal: +mate()\n    class Duck{\n        +String beakColor\n        +swim()\n        +quack()\n    }\n    class Fish{\n        -int sizeInFeet\n        -canEat()\n    }\n    class Zebra{\n        +bool is_wild\n        +run()\n    }\n',
-            },
-            listeners: {},
-            slots: {},
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Sequence Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `sequenceDiagram
+	{
+		section: SECTION_GROUPED,
+		name: "Contact Info Fields",
+		helperText: "Starting point for a contact in form",
+		json: {
+			widget: "container",
+			parent: {
+				// can be null
+				id: "page-1",
+				slot: "content",
+			},
+			data: {
+				style: {
+					display: "flex",
+					flexDirection: "column",
+					padding: "px",
+					gap: "px",
+					flexWrap: "wrap",
+				},
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {},
+			slots: {
+				children: [
+					{
+						widget: "text",
+						data: {
+							style: {
+								whiteSpace: "pre-line",
+								textOverflow: "ellipsis",
+								fontWeight: "bold",
+							},
+							text: "Contact Information",
+							variant: "p",
+							loading: false,
+							loadType: "Skeleton",
+						},
+						listeners: {},
+						slots: {},
+					},
+					{
+						widget: "container",
+						data: {
+							style: {
+								display: "flex",
+								flexDirection: "column",
+								padding: "16px",
+								gap: "8px",
+								flexWrap: "wrap",
+								border: "2px dotted #4a4a4a",
+							},
+							loading: false,
+							loadType: "Skeleton",
+						},
+						listeners: {},
+						slots: {
+							children: [
+								{
+									widget: "container",
+									data: {
+										style: {
+											display: "flex",
+											flexDirection: "row",
+											padding: "4px",
+											gap: "8px",
+											flexWrap: "wrap",
+											border: "0px  ",
+											width: "100%",
+											justifyContent: "center",
+										},
+										loading: false,
+										loadType: "Skeleton",
+									},
+									listeners: {},
+									slots: {
+										children: [
+											{
+												widget: "container",
+												data: {
+													style: {
+														display: "flex",
+														flexDirection: "column",
+														padding: "0px",
+														gap: "8px",
+														flexWrap: "wrap",
+														maxWidth: "50%",
+														width: "49%",
+													},
+													loading: false,
+													loadType: "Skeleton",
+												},
+												listeners: {},
+												slots: {
+													children: [
+														{
+															widget: "input",
+															data: {
+																style: {
+																	width: "100%",
+																	padding:
+																		"4px",
+																},
+																value: "",
+																label: "First Name",
+																hint: "",
+																type: "text",
+																rows: 1,
+																multiline: false,
+																disabled: false,
+																required: false,
+																loading: false,
+															},
+															listeners: {
+																onChange: {
+																	type: "sync",
+																	order: [],
+																},
+															},
+															slots: {
+																content: [],
+															},
+														},
+													],
+												},
+											},
+											{
+												widget: "container",
+												data: {
+													style: {
+														display: "flex",
+														flexDirection: "column",
+														padding: "0px",
+														gap: "8px",
+														flexWrap: "wrap",
+														maxWidth: "50%",
+														width: "49%",
+													},
+													loading: false,
+													loadType: "Skeleton",
+												},
+												listeners: {},
+												slots: {
+													children: [
+														{
+															widget: "input",
+															data: {
+																style: {
+																	width: "100%",
+																	padding:
+																		"4px",
+																},
+																value: "",
+																label: "Last Name",
+																hint: "",
+																type: "text",
+																rows: 1,
+																multiline: false,
+																disabled: false,
+																required: false,
+																loading: false,
+															},
+															listeners: {
+																onChange: {
+																	type: "sync",
+																	order: [],
+																},
+															},
+															slots: {
+																content: [],
+															},
+														},
+													],
+												},
+											},
+										],
+									},
+								},
+								{
+									widget: "container",
+									data: {
+										style: {
+											display: "flex",
+											flexDirection: "row",
+											padding: "4px",
+											gap: "8px",
+											flexWrap: "wrap",
+											border: "0px  ",
+											width: "100%",
+											justifyContent: "center",
+										},
+										loading: false,
+										loadType: "Skeleton",
+									},
+									listeners: {},
+									slots: {
+										children: [
+											{
+												widget: "container",
+												data: {
+													style: {
+														display: "flex",
+														flexDirection: "column",
+														padding: "0px",
+														gap: "8px",
+														flexWrap: "wrap",
+														maxWidth: "50%",
+														width: "49%",
+													},
+													loading: false,
+													loadType: "Skeleton",
+												},
+												listeners: {},
+												slots: {
+													children: [
+														{
+															widget: "input",
+															data: {
+																style: {
+																	width: "100%",
+																	padding:
+																		"4px",
+																},
+																value: "",
+																label: "Phone Number",
+																hint: "",
+																type: "text",
+																rows: 1,
+																multiline: false,
+																disabled: false,
+																required: false,
+																loading: false,
+															},
+															listeners: {
+																onChange: {
+																	type: "sync",
+																	order: [],
+																},
+															},
+															slots: {
+																content: [],
+															},
+														},
+													],
+												},
+											},
+											{
+												widget: "container",
+												data: {
+													style: {
+														display: "flex",
+														flexDirection: "column",
+														padding: "0px",
+														gap: "8px",
+														flexWrap: "wrap",
+														maxWidth: "50%",
+														width: "49%",
+													},
+													loading: false,
+													loadType: "Skeleton",
+												},
+												listeners: {},
+												slots: {
+													children: [
+														{
+															widget: "input",
+															data: {
+																style: {
+																	width: "100%",
+																	padding:
+																		"4px",
+																},
+																value: "",
+																label: "Email",
+																hint: "",
+																type: "text",
+																rows: 1,
+																multiline: false,
+																disabled: false,
+																required: false,
+																loading: false,
+															},
+															listeners: {
+																onChange: {
+																	type: "sync",
+																	order: [],
+																},
+															},
+															slots: {
+																content: [],
+															},
+														},
+													],
+												},
+											},
+										],
+									},
+								},
+								{
+									widget: "container",
+									data: {
+										style: {
+											display: "flex",
+											flexDirection: "row",
+											padding: "4px",
+											gap: "8px",
+											flexWrap: "wrap",
+											border: "0px  ",
+											width: "100%",
+											justifyContent: "center",
+										},
+										loading: false,
+										loadType: "Skeleton",
+									},
+									listeners: {},
+									slots: {
+										children: [
+											{
+												widget: "container",
+												data: {
+													style: {
+														display: "flex",
+														flexDirection: "column",
+														padding: "0px",
+														gap: "8px",
+														flexWrap: "wrap",
+														maxWidth: "50%",
+														width: "49%",
+													},
+												},
+												listeners: {},
+												slots: {
+													children: [
+														{
+															widget: "input",
+															data: {
+																style: {
+																	width: "100%",
+																	padding:
+																		"4px",
+																},
+																value: "",
+																label: "Address",
+																hint: "",
+																type: "text",
+																rows: 1,
+																multiline: false,
+																disabled: false,
+																required: false,
+																loading: false,
+															},
+															listeners: {
+																onChange: {
+																	type: "sync",
+																	order: [],
+																},
+															},
+															slots: {
+																content: [],
+															},
+														},
+													],
+												},
+											},
+											{
+												widget: "container",
+												parent: null,
+												data: {
+													style: {
+														display: "flex",
+														flexDirection: "column",
+														padding: "0px",
+														gap: "8px",
+														flexWrap: "wrap",
+														maxWidth: "50%",
+														width: "49%",
+													},
+													loading: false,
+													loadType: "Skeleton",
+												},
+												listeners: {},
+												slots: {
+													children: [
+														{
+															widget: "input",
+															data: {
+																style: {
+																	width: "100%",
+																	padding:
+																		"4px",
+																},
+																value: "",
+																label: "Apartment, Suite, Etc.",
+																hint: "",
+																type: "text",
+																rows: 1,
+																multiline: false,
+																disabled: false,
+																required: false,
+																loading: false,
+															},
+															listeners: {
+																onChange: {
+																	type: "sync",
+																	order: [],
+																},
+															},
+															slots: {
+																content: [],
+															},
+														},
+													],
+												},
+											},
+										],
+									},
+								},
+								{
+									widget: "container",
+									data: {
+										style: {
+											display: "flex",
+											flexDirection: "row",
+											padding: "4px",
+											gap: "8px",
+											flexWrap: "wrap",
+											border: "0px  ",
+											width: "100%",
+											justifyContent: "left",
+											alignItems: "center",
+										},
+										loading: false,
+										loadType: "Skeleton",
+									},
+									listeners: {},
+									slots: {
+										children: [
+											{
+												widget: "container",
+												data: {
+													style: {
+														display: "flex",
+														flexDirection: "column",
+														padding: "px",
+														gap: "8px",
+														flexWrap: "wrap",
+														width: "32%",
+													},
+													loading: false,
+													loadType: "Skeleton",
+												},
+												listeners: {},
+												slots: {
+													children: [
+														{
+															widget: "input",
+															data: {
+																style: {
+																	width: "100%",
+																	padding:
+																		"4px",
+																},
+																value: "",
+																label: "City",
+																hint: "",
+																type: "text",
+																rows: 1,
+																multiline: false,
+																disabled: false,
+																required: false,
+																loading: false,
+															},
+															listeners: {
+																onChange: {
+																	type: "sync",
+																	order: [],
+																},
+															},
+															slots: {
+																content: [],
+															},
+														},
+													],
+												},
+											},
+											{
+												widget: "container",
+												data: {
+													style: {
+														display: "flex",
+														flexDirection: "column",
+														padding: "px",
+														gap: "8px",
+														flexWrap: "wrap",
+														width: "32%",
+													},
+													loading: false,
+													loadType: "Skeleton",
+												},
+												listeners: {},
+												slots: {
+													children: [
+														{
+															widget: "input",
+															parent: null,
+															data: {
+																style: {
+																	width: "100%",
+																	padding:
+																		"4px",
+																},
+																value: "",
+																label: "State",
+																hint: "",
+																type: "text",
+																rows: 1,
+																multiline: false,
+																disabled: false,
+																required: false,
+																loading: false,
+															},
+															listeners: {
+																onChange: {
+																	type: "sync",
+																	order: [],
+																},
+															},
+															slots: {
+																content: [],
+															},
+														},
+													],
+												},
+											},
+											{
+												widget: "container",
+												data: {
+													style: {
+														display: "flex",
+														flexDirection: "column",
+														padding: "px",
+														gap: "8px",
+														flexWrap: "wrap",
+														width: "33%",
+													},
+													loading: false,
+													loadType: "Skeleton",
+												},
+												listeners: {},
+												slots: {
+													children: [
+														{
+															widget: "input",
+															data: {
+																style: {
+																	width: "100%",
+																	padding:
+																		"4px",
+																},
+																value: "",
+																label: "Zip-Code",
+																hint: "",
+																type: "text",
+																rows: 1,
+																multiline: false,
+																disabled: false,
+																required: false,
+																loading: false,
+															},
+															listeners: {
+																onChange: {
+																	type: "sync",
+																	order: [],
+																},
+															},
+															slots: {
+																content: [],
+															},
+														},
+													],
+												},
+											},
+										],
+									},
+								},
+							],
+						},
+					},
+				],
+			},
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Class Diagram",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: '---\ntitle: Alien example\n---\nclassDiagram\n    note "From Duck till Zebra"\n    Animal <|-- Duck\n    note for Duck "can fly\ncan swim\ncan dive\ncan help in debugging"\n    Animal <|-- Fish\n    Animal <|-- Zebra\n    Animal : +int age\n    Animal : +String gender\n    Animal: +isMammal()\n    Animal: +mate()\n    class Duck{\n        +String beakColor\n        +swim()\n        +quack()\n    }\n    class Fish{\n        -int sizeInFeet\n        -canEat()\n    }\n    class Zebra{\n        +bool is_wild\n        +run()\n    }\n',
+			},
+			listeners: {},
+			slots: {},
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Sequence Diagram",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `sequenceDiagram
         participant Alice
         participant Bob
         Alice->>Bob: Hi Bob
         Bob->>Alice: Hi Alice
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'State Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `---
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "State Diagram",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `---
     title: Simple sample
     ---
     stateDiagram-v2
@@ -3660,19 +3689,19 @@ export const CLIENT_BLOCKS_MENU = [
         Crash --> [*]
     
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Entity Relationship Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `---
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Entity Relationship Diagram",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `---
     title: Order example
     ---
     erDiagram
@@ -3680,19 +3709,19 @@ export const CLIENT_BLOCKS_MENU = [
         ORDER ||--|{ LINE-ITEM : contains
         CUSTOMER }|..|{ DELIVERY-ADDRESS : uses
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'User Journey',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `journey
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "User Journey",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `journey
         title My working day
         section Go to work
           Make tea: 5: Me
@@ -3703,19 +3732,19 @@ export const CLIENT_BLOCKS_MENU = [
           Sit down: 5: Me
     
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Gantt',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `gantt
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Gantt",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `gantt
         title A Gantt Diagram
         dateFormat YYYY-MM-DD
         section Section
@@ -3725,36 +3754,36 @@ export const CLIENT_BLOCKS_MENU = [
             Task in Another :2014-01-12, 12d
             another task    :24d
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Pie Chart',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `pie title Pets adopted by volunteers
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Pie Chart",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `pie title Pets adopted by volunteers
         "Dogs" : 386
         "Cats" : 85
         "Rats" : 15
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Quadrant Chart',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `quadrantChart
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Quadrant Chart",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `quadrantChart
         title Reach and engagement of campaigns
         x-axis Low Reach --> High Reach
         y-axis Low Engagement --> High Engagement
@@ -3770,19 +3799,19 @@ export const CLIENT_BLOCKS_MENU = [
         Campaign F: [0.35, 0.78]
     
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Requirement Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `requirementDiagram
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Requirement Diagram",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `requirementDiagram
     
     requirement test_req {
     id: 1
@@ -3798,19 +3827,19 @@ export const CLIENT_BLOCKS_MENU = [
     test_entity - satisfies -> test_req
     
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Git Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `---
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Git Diagram",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `---
     title: Example Git diagram
     ---
     gitGraph
@@ -3825,19 +3854,19 @@ export const CLIENT_BLOCKS_MENU = [
        commit
        commit
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: SECTION_CHARTS,
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `C4Context
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: SECTION_CHARTS,
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `C4Context
       title System Context diagram for Internet Banking System
       Enterprise_Boundary(b0, "BankBoundary0") {
         Person(customerA, "Banking Customer A", "A customer of the bank, with personal bank accounts.")
@@ -3883,19 +3912,19 @@ export const CLIENT_BLOCKS_MENU = [
     
     
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Mindmap',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `mindmap
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Mindmap",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `mindmap
       root((mindmap))
         Origins
           Long history
@@ -3913,19 +3942,19 @@ export const CLIENT_BLOCKS_MENU = [
           Pen and paper
           Mermaid
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Timeline',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `timeline
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Timeline",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `timeline
         title History of Social Media Platform
         2002 : LinkedIn
         2004 : Facebook
@@ -3933,19 +3962,19 @@ export const CLIENT_BLOCKS_MENU = [
         2005 : Youtube
         2006 : Twitter
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Sankey',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `---
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Sankey",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `---
     config:
       sankey:
         showValues: false
@@ -4021,38 +4050,38 @@ export const CLIENT_BLOCKS_MENU = [
     Wave,Electricity grid,19.013
     Wind,Electricity grid,289.366
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'XY Chart',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `xychart-beta
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "XY Chart",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `xychart-beta
         title "Sales Revenue"
         x-axis [jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec]
         y-axis "Revenue (in $)" 4000 --> 11000
         bar [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
         line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: SECTION_CHARTS,
-        name: 'Block Diagram',
-        helperText: '',
-        json: {
-            widget: 'mermaid',
-            data: {
-                text: `block-beta
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
+		name: "Block Diagram",
+		helperText: "",
+		json: {
+			widget: "mermaid",
+			data: {
+				text: `block-beta
     columns 1
       db(("DB"))
       blockArrowId6<["&nbsp;&nbsp;&nbsp;"]>(down)
@@ -4067,98 +4096,103 @@ export const CLIENT_BLOCKS_MENU = [
       C --> D
       style B fill:#969,stroke:#333,stroke-width:4px
     `,
-            },
-            listeners: {},
-            slots: {} as BlockJSON['slots'],
-        },
-    },
-    {
-        section: 'Grouped Items',
-        name: 'Input within a container',
-        helperText: '',
-        json: {
-            widget: 'container',
-            parent: {
-                id: 'page-1',
-                slot: 'content',
-            },
-            data: {
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '4px',
-                    gap: '8px',
-                    flexWrap: 'wrap',
-                    border: '4px solid ',
-                },
-                route: 'container--6732',
-            },
-            listeners: {},
-            slots: {
-                children: [
-                    {
-                        widget: 'text',
-                        data: {
-                            style: {
-                                padding: '4px',
-                                whiteSpace: 'pre-line',
-                                textOverflow: 'ellipsis',
-                            },
-                            text: 'Grouped Component',
-                            variant: 'h1',
-                        },
-                        listeners: {},
-                        slots: {},
-                    },
-                    {
-                        widget: 'input',
-                        data: {
-                            style: {
-                                width: '100%',
-                                padding: '4px',
-                            },
-                            value: '',
-                            label: 'Example Input',
-                            hint: '',
-                            type: 'text',
-                            rows: 1,
-                            multiline: false,
-                            disabled: false,
-                            required: false,
-                            loading: false,
-                        },
-                        listeners: {
-                            onChange: { type: 'sync', order: [] },
-                        },
-                        slots: {
-                            content: [],
-                        },
-                    },
-                    {
-                        widget: 'audio-input',
-                        parent: {
-                            id: 'page-1',
-                            slot: 'content',
-                        },
-                        data: {
-                            style: {
-                                width: '50px',
-                                height: '60px',
-                            },
-                            loading: false,
-                            disabled: false,
-                            variant: 'contained',
-                            color: 'primary',
-                            value: '',
-                            mode: 'transcribe',
-                        },
-                        listeners: {
-                            onClick: { type: 'sync', order: [] },
-                        },
-                        slots: {},
-                    },
-                ],
-            },
-        },
-    },
+			},
+			listeners: {},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: "Grouped Items",
+		name: "Input within a container",
+		helperText: "",
+		json: {
+			widget: "container",
+			parent: {
+				id: "page-1",
+				slot: "content",
+			},
+			data: {
+				style: {
+					display: "flex",
+					flexDirection: "column",
+					padding: "4px",
+					gap: "8px",
+					flexWrap: "wrap",
+					border: "4px solid ",
+				},
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {},
+			slots: {
+				children: [
+					{
+						widget: "text",
+						data: {
+							style: {
+								padding: "4px",
+								whiteSpace: "pre-line",
+								textOverflow: "ellipsis",
+								fontSize: "revert",
+								fontWeight: "revert",
+							},
+							text: "Grouped Component",
+							variant: "h1",
+							loading: false,
+							loadType: "Skeleton",
+						},
+						listeners: {},
+						slots: {},
+					},
+					{
+						widget: "input",
+						data: {
+							style: {
+								width: "100%",
+								padding: "4px",
+							},
+							value: "",
+							label: "Example Input",
+							hint: "",
+							type: "text",
+							rows: 1,
+							multiline: false,
+							disabled: false,
+							required: false,
+							loading: false,
+						},
+						listeners: {
+							onChange: { type: "sync", order: [] },
+						},
+						slots: {
+							content: [],
+						},
+					},
+					{
+						widget: "audio-input",
+						parent: {
+							id: "page-1",
+							slot: "content",
+						},
+						data: {
+							style: {
+								width: "50px",
+								height: "60px",
+							},
+							loading: false,
+							disabled: false,
+							variant: "contained",
+							color: "primary",
+							value: "",
+							mode: "transcribe",
+						},
+						listeners: {
+							onClick: { type: "sync", order: [] },
+						},
+						slots: {},
+					},
+				],
+			},
+		},
+	},
 ];

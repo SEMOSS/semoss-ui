@@ -55,7 +55,7 @@ const logout = (username, password) => {
 };
 ```
 
--   Query a LLM and return a result
+-   Ask a LLM and return a result
 
 ```js
 const ask = (question) => {
@@ -111,13 +111,6 @@ const askWithStream = async () => {
         insightId,
     );
 
-    // OR
-
-    // const response = await  insight.actions.run(
-    //     `LLM(engine=[MODEL_ID], command=["<encode>${question}</encode>"]);`,
-    //     insightId,
-    // )
-
     isCollecting = false;
 };
 ```
@@ -163,6 +156,17 @@ const upload = (file, path) => {
 ```js
 const download = (path) => {
     const { output } = await insight.actions.download(path);
+
+    // log the output
+    console.log(output);
+};
+```
+
+-   Run an MCP tool and send the response to the playground
+
+```js
+const runMCPTool = (name, parameters,)  => {
+    const { output } = await insight.actions.runMCPTool(name, parameters);
 
     // log the output
     console.log(output);
@@ -237,27 +241,32 @@ Env.update({
 
 The app server allows you to write custom `python` to power your app. You can initialize your `python` environment by:
 
-1. Loading via `html` _(default)_
-
-The sdk will scan your html and load in html. Specifically, it will look for an `data-semoss-py` attribute to identify the code block and `data-alias` attribute to define the alias _(default is smss)_. It's recommended to wrap your code in `<pre></pre>` to preserve formatting. An example:
-
-```html
-<pre data-semoss-py data-alias="smss" hidden="true">
-def sayHello(name):
-    print(f'Hello {name}')
-</pre
-```
+1. Loading via `js`
 
 Set the option on initialize:
 
 ```js
+// define it int he js
+const py = `
+def sayHello(name):
+    print(f'Hello {name}')
+`;
+
 // update the environment
 insight.initialize({
     python: {
         /**
-         *  Manually search the html
+         *  Load the python via js
          **/
-        type: "detect",
+        type: "script",
+        /**
+         *  Path to the file
+         **/
+        script: py,
+        /**
+         *  Alias for the file
+         **/
+        alias: "smss",
     },
 });
 ```
@@ -294,37 +303,7 @@ insight.initialize({
 });
 ```
 
-3. Loading via `js`
-
-Set the option on initialize:
-
-```js
-// define it int he js
-const py = `
-def sayHello(name):
-    print(f'Hello {name}')
-`;
-
-// update the environment
-insight.initialize({
-    python: {
-        /**
-         *  Load the python via js
-         **/
-        type: "script",
-        /**
-         *  Path to the file
-         **/
-        script: py,
-        /**
-         *  Alias for the file
-         **/
-        alias: "smss",
-    },
-});
-```
-
-Next you can the preloaded `python` methods by calling the `runPy` action. See
+Next you can call the preloaded `python` methods by calling the `runPy` action. See
 
 ```js
 const hello = (name) => {

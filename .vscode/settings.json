@@ -1,8 +1,28 @@
 {
-    "files.exclude": {
-        "**/*.rollup.cache": true,
-        "**/dist": true,
-        "**/target": true,
-        "**/.nx": true
-    }
+  "search.exclude": {
+    "**/*.rollup.cache": true,
+    "**/dist": true,
+    "**/target": true
+  },
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit",
+    "source.organizeImports.biome": "explicit",
+  },
+  "files.associations": {
+    "*.css":"tailwindcss"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome",
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome",
+  },
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome",
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
 }

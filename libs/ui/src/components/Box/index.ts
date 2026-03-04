@@ -1,4 +1,4 @@
-import { Box, BoxProps } from "./Box";
+import { Box, type BoxProps } from "./Box";
 
 export type { BoxProps };
 

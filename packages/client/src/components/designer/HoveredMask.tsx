@@ -1,137 +1,145 @@
-import { useLayoutEffect, useState } from 'react';
-import { observer } from 'mobx-react-lite';
-
-import { useBlocks } from '@semoss/renderer';
-import { Typography, styled } from '@semoss/ui';
-
-import { useDesigner } from '@/hooks';
-import { getRelativeSize, getBlockElement } from '@/stores';
+import { observer } from "mobx-react-lite";
+import { useLayoutEffect, useState } from "react";
+import { useBlocks } from "@semoss/renderer";
+import { styled, Typography } from "@semoss/ui";
+import { useDesigner } from "@/hooks";
+import { getBlockElement, getRelativeSize } from "@/stores";
 
 interface StyledContainerProps {
-    top: number;
-    left: number;
-    height: number;
-    width: number;
-    hideHoveredMask: boolean;
+	top: number;
+	left: number;
+	height: number;
+	width: number;
+	hideHoveredMask: boolean;
 }
 
-const StyledContainer = styled('div', {
-    shouldForwardProp: (prop) =>
-        !['top', 'left', 'height', 'width', 'hideHoveredMask'].includes(
-            prop as string,
-        ),
+const StyledContainer = styled("div", {
+	shouldForwardProp: (prop) =>
+		!["top", "left", "height", "width", "hideHoveredMask"].includes(
+			prop as string,
+		),
 })<StyledContainerProps>(
-    ({ theme, top, left, height, width, hideHoveredMask }) => ({
-        position: 'absolute',
-        top: `${top}px`,
-        left: `${left}px`,
-        height: `${height}px`,
-        width: `${width}px`,
-        zIndex: '20',
-        opacity: hideHoveredMask ? 0 : 1,
-        pointerEvents: 'none',
-        // outlineWidth: '2px',
-        // outlineStyle: 'solid',
-        // outlineColor: theme.palette.primary.light,
-        // outlineWidth: '2px',
-        // outlineStyle: 'solid',
-        outlineWidth: '3px',
-        outlineStyle: 'dotted',
-        outlineColor: theme.palette.primary.dark,
-    }),
+	({ theme, top, left, height, width, hideHoveredMask }) => ({
+		position: "absolute",
+		top: `${top}px`,
+		left: `${left}px`,
+		height: `${height}px`,
+		width: `${width}px`,
+		zIndex: "20",
+		opacity: hideHoveredMask ? 0 : 1,
+		pointerEvents: "none",
+		// outlineWidth: '2px',
+		// outlineStyle: 'solid',
+		// outlineColor: theme.palette.primary.light,
+		// outlineWidth: '2px',
+		// outlineStyle: 'solid',
+		outlineWidth: "3px",
+		outlineStyle: "dotted",
+		outlineColor: theme.palette.primary.dark,
+	}),
 );
 
-const StyledTitle = styled('div')(({ theme }) => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    position: 'absolute',
-    top: theme.spacing(-3),
-    left: `-1px`,
-    height: theme.spacing(3),
-    paddingLeft: theme.spacing(1),
-    paddingRight: theme.spacing(1),
-    //added to match figma
-    borderRadius: '4px',
-    // backgroundColor: theme.palette.primary.light,
-    backgroundColor: theme.palette.primary.dark,
-    color: theme.palette.common.white,
-    whiteSpace: 'nowrap',
+const StyledTitle = styled("div")(({ theme }) => ({
+	display: "inline-flex",
+	alignItems: "center",
+	position: "absolute",
+	top: theme.spacing(-3),
+	left: `-1px`,
+	height: theme.spacing(3),
+	paddingLeft: theme.spacing(1),
+	paddingRight: theme.spacing(1),
+	//added to match figma
+	borderRadius: "4px",
+	// backgroundColor: theme.palette.primary.light,
+	backgroundColor: theme.palette.primary.dark,
+	color: theme.palette.common.white,
+	whiteSpace: "nowrap",
 }));
 
 interface HoveredMaskProps {
-    /** Element to bind the mask to */
-    screenEle: HTMLDivElement;
+	/** Element to bind the mask to */
+	screenEle: HTMLDivElement;
 }
 
 /**
  * Show the information of a hovered block
  */
 export const HoveredMask = observer((props: HoveredMaskProps) => {
-    const { screenEle } = props;
+	const { screenEle } = props;
 
-    // create the state
-    const [size, setSize] = useState<{
-        top: number;
-        left: number;
-        height: number;
-        width: number;
-    } | null>(null);
+	// create the state
+	const [size, setSize] = useState<{
+		top: number;
+		left: number;
+		height: number;
+		width: number;
+	} | null>(null);
 
-    // get the store
-    const { designer } = useDesigner();
-    const { state } = useBlocks();
-    const variableName = state.getAlias(designer.hovered);
+	// get the store
+	const { designer } = useDesigner();
+	const { state } = useBlocks();
+	const variableName = state.getAlias(designer.hovered);
 
-    // get the root, watch changes, and reposition the mask
-    useLayoutEffect(() => {
-        // reposition the mask
-        const repositionMask = () => {
-            // get the block element
-            const blockEle = getBlockElement(designer.hovered);
+	// get the root, watch changes, and reposition the mask
+	useLayoutEffect(() => {
+		// reposition the mask
+		const repositionMask = () => {
+			// get the block element
+			const blockEle = getBlockElement(designer.hovered);
 
-            if (!blockEle) {
-                return;
-            }
+			if (!blockEle) {
+				return;
+			}
 
-            // calculate and set the side
-            const updated = getRelativeSize(blockEle, screenEle);
-            setSize(updated);
-        };
+			// calculate and set the side
+			const updated = getRelativeSize(blockEle, screenEle);
+			setSize(updated);
+		};
 
-        const observer = new MutationObserver(() => {
-            repositionMask();
-        });
+		const observer = new MutationObserver(() => {
+			repositionMask();
+		});
 
-        observer.observe(screenEle, {
-            subtree: true,
-            childList: true,
-        });
+		observer.observe(screenEle, {
+			subtree: true,
+			childList: true,
+		});
 
-        // reposition it
-        repositionMask();
+		// reposition it
+		repositionMask();
 
-        return () => observer.disconnect();
-    }, [designer.hovered]);
+		return () => observer.disconnect();
+	}, [designer.hovered]);
 
-    if (!size) {
-        return <></>;
-    }
+	if (!size) {
+		return null;
+	}
 
-    return (
-        <StyledContainer
-            top={size.top}
-            left={size.left}
-            height={size.height}
-            width={size.width}
-            hideHoveredMask={
-                designer.hovered === designer.selected || designer.drag.active
-            }
-        >
-            <StyledTitle>
-                <Typography variant={'body2'}>
-                    {variableName ? variableName : designer.hovered}
-                </Typography>
-            </StyledTitle>
-        </StyledContainer>
-    );
+	const handleRename = (id: string): string => {
+		const block = state.getBlock(id);
+		if (block && block?.data?.id) {
+			return block.data.id as string;
+		}
+		return id;
+	};
+
+	return (
+		<StyledContainer
+			top={size.top}
+			left={size.left}
+			height={size.height}
+			width={size.width}
+			hideHoveredMask={
+				designer.hovered === designer.selected || designer.drag.active
+			}
+		>
+			<StyledTitle>
+				<Typography variant={"body2"}>
+					{variableName
+						? variableName
+						: handleRename(designer.hovered)}
+				</Typography>
+			</StyledTitle>
+		</StyledContainer>
+	);
 });

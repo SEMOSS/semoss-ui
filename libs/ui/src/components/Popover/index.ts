@@ -1,4 +1,4 @@
-import { Popover, PopoverProps } from "./Popover";
+import { Popover, type PopoverProps } from "./Popover";
 
 export type { PopoverProps };
 

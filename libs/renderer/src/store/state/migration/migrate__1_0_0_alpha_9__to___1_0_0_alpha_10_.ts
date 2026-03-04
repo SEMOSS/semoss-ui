@@ -1,4 +1,4 @@
-import { Migration } from "./migration.types";
+import type { Migration } from "./migration.types";
 
 /**
  * @name config
@@ -7,56 +7,55 @@ import { Migration } from "./migration.types";
  *  Make every cell a variable if not already
  * */
 const config: Migration = {
-    versionFrom: "1.0.0-alpha.9",
-    versionTo: "1.0.0-alpha.10",
-    run: (state) => {
-        const newState = { ...state };
+	versionFrom: "1.0.0-alpha.9",
+	versionTo: "1.0.0-alpha.10",
+	run: (state) => {
+		const newState = { ...state };
 
-        // check each cell, convert each cell to a 
-        Object.values(state.queries).forEach((q) => {
-            q.cells.forEach((c) => {
-                let found = false
-                Object.values(newState.variables).forEach((variable) => {
-                    if(variable.to === q.id) {
-                        if (c.id === variable.cellId) {
-                            found = true
-                        }
-                    }
-                })
+		// check each cell, convert each cell to a
+		Object.values(state.queries).forEach((q) => {
+			q.cells.forEach((c) => {
+				let found = false;
+				Object.values(newState.variables).forEach((variable) => {
+					if (variable.to === q.id) {
+						if (c.id === variable.cellId) {
+							found = true;
+						}
+					}
+				});
 
-                // create a variable for cells that arent already there
-                if(!found) {
-                    const variableConfig = {
-                        type: "cell",
-                        to: q.id,
-                        cellId: c.id
-                    }
+				// create a variable for cells that arent already there
+				if (!found) {
+					const variableConfig = {
+						type: "cell",
+						to: q.id,
+						cellId: c.id,
+					};
 
-                    // EDGE CASE: Check if someone coincidentally named there variable nbName--cellId
-                    let baseKey = `${q.id}--${c.id}`
-                    let variableKey = baseKey;
-                    let attemptCount = 0;
-                    
-                    while(newState.variables[variableKey]) {
-                        const randomSuffix = Math.floor(Math.random() * 100000)
-                        variableKey = `${baseKey}--${randomSuffix}`
+					// EDGE CASE: Check if someone coincidentally named there variable nbName--cellId
+					const baseKey = `${q.id}--${c.id}`;
+					let variableKey = baseKey;
+					let attemptCount = 0;
 
-                        attemptCount++
+					while (newState.variables[variableKey]) {
+						const randomSuffix = Math.floor(Math.random() * 100000);
+						variableKey = `${baseKey}--${randomSuffix}`;
 
-                        if(attemptCount > 100) {
-                            throw new Error(`Failed to generate unique id for variable pointing to -->  sheet: ${q.id} cell:${c.id}`)
-                        }
-                        
-                    } 
-                    newState.variables[`${q.id}--${c.id}`] = variableConfig
-                }
-                
-            })
+						attemptCount++;
 
-        })
+						if (attemptCount > 100) {
+							throw new Error(
+								`Failed to generate unique id for variable pointing to -->  sheet: ${q.id} cell:${c.id}`,
+							);
+						}
+					}
+					newState.variables[`${q.id}--${c.id}`] = variableConfig;
+				}
+			});
+		});
 
-        return newState;
-    },
+		return newState;
+	},
 };
 
 export default config;

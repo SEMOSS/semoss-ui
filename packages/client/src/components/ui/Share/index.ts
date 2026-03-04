@@ -1,1 +1,1 @@
-export * from './ShareOverlay';
+export * from "./ShareOverlay";

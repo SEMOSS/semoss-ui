@@ -1,1 +1,1 @@
-export * from './TextEditorCodeGeneration';
+export * from "./TextEditorCodeGeneration";

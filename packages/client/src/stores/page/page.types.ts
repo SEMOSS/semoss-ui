@@ -1,5 +1,5 @@
 export type PageCache = {
-    sidebar: {
-        pinned: boolean;
-    };
+	sidebar: {
+		pinned: boolean;
+	};
 };

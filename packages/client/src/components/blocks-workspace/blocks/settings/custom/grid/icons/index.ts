@@ -1,5 +1,5 @@
-export { OneByTwoIcon } from './OneByTwoIcon';
-export { OneByThreeIcon } from './OneByThreeIcon';
-export { TwoByTwoIcon } from './TwoByTwoIcon';
-export { ThreeByThreeIcon } from './ThreeByThreeIcon';
-export { FourByFourIcon } from './FourByFourIcon';
+export { FourByFourIcon } from "./FourByFourIcon";
+export { OneByThreeIcon } from "./OneByThreeIcon";
+export { OneByTwoIcon } from "./OneByTwoIcon";
+export { ThreeByThreeIcon } from "./ThreeByThreeIcon";
+export { TwoByTwoIcon } from "./TwoByTwoIcon";

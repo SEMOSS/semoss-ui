@@ -1,5 +1,3 @@
 export * from "../../";
-export { InsightProvider } from "./InsightProvider";
-
-export { useInsight } from "./useInsight";
-export { usePixel } from "./usePixel";
+export * from "./contexts";
+export * from "./hooks";

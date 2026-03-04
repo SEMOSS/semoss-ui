@@ -1,8 +1,8 @@
-import { Code, CodeProps } from "./Code";
-import { CodeContainer, CodeContainerProps } from "./CodeContainer";
+import { Code, type CodeProps } from "./Code";
+import { CodeContainer, type CodeContainerProps } from "./CodeContainer";
 
 const CodeNameSpace = Object.assign(Code, {
-    Container: CodeContainer,
+	Container: CodeContainer,
 });
 
 export type { CodeProps, CodeContainerProps };

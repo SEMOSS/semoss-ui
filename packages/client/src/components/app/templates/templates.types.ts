@@ -1,24 +1,24 @@
-import { SerializedState } from '@semoss/renderer';
+import type { SerializedState } from "@semoss/renderer";
 
 export type Template = {
-    /** Name of the template */
-    name: string;
+	/** Name of the template */
+	name: string;
 
-    /** Description associated with the template */
-    description: string;
+	/** Description associated with the template */
+	description: string;
 
-    /** State associated with the template */
-    state: SerializedState;
+	/** State associated with the template */
+	state: SerializedState;
 
-    /** Image for the template */
-    image: string;
+	/** Image for the template */
+	image: string;
 
-    /** Author for the template */
-    author: string;
+	/** Author for the template */
+	author: string;
 
-    /** Date updated template */
-    lastUpdatedDate: string;
+	/** Date updated template */
+	lastUpdatedDate: string;
 
-    /** Tags associated with the template */
-    tags: string[];
+	/** Tags associated with the template */
+	tags: string[];
 };

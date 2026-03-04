@@ -1,750 +1,955 @@
-import { Env } from "../../env";
-import { Space, Script } from "../../types";
 import {
-    getSystemConfig,
-    login,
-    logout,
-    oauth,
-    runPixel,
-    upload,
-    download,
+	download,
+	getSystemConfig,
+	login,
+	logout,
+	oauth,
+	runPixel,
+	runPixelAsync,
+	upload,
+	uploadApp,
+	uploadEngine,
+	uploadInsight,
 } from "../../api";
+import { Env } from "../../env";
+import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
 
 interface InsightStoreInterface {
-    /** insightId of the app */
-    insightId: string;
+	/** insightId of the app */
+	insightId: string;
 
-    /** Track if the insight is loaded */
-    isInitialized: boolean;
+	/** Track if the insight is loaded */
+	isInitialized: boolean;
 
-    /** Track if the user is authorized */
-    isAuthorized: boolean;
+	/** Track if the user is authorized */
+	isAuthorized: boolean;
 
-    /** Track if the insight is ready for user input */
-    isReady: boolean;
+	/** Track if the insight is ready for user input */
+	isReady: boolean;
 
-    /** Error if in the error state */
-    error: Error | null;
+	/** Error if in the error state */
+	error: Error | null;
 
-    /** System Information */
-    system: {
-        /** Config information */
-        config: {
-            logins: Record<string, unknown>;
-            /**
-             * List of available providers (logins) that are available
-             */
-            availableProviders: {
-                provider: string;
-                name: string;
-                isOauth: boolean;
-            }[];
-            [key: string]: unknown;
-        };
-    } | null;
+	/** System Information */
+	system: {
+		/** Config information */
+		config: {
+			logins: Record<string, unknown>;
+			/**
+			 * List of available providers (logins) that are available
+			 */
+			availableProviders: {
+				provider: string;
+				name: string;
+				isOauth: boolean;
+			}[];
+			/**
+			 * Theme of the app
+			 */
+			theme: {
+				playground: Record<string, unknown>;
+				[key: string]: unknown;
+			};
+			/**
+			 * System Date
+			 */
+			systemDate: string;
+			[key: string]: unknown;
+		};
+	} | null;
 
-    /** Options assocaited with the insight */
-    options: {
-        /** Id of an app if associated with the insight */
-        appId: string;
+	/** User meta data */
+	meta: Record<string, unknown>;
 
-        /** Python code associated with the insight */
-        python: Script | null;
-    };
+	/** Options assocaited with the insight */
+	options: {
+		/** Id of an app if associated with the insight */
+		appId: string;
+
+		/** Python code associated with the insight */
+		python: Script | null;
+
+		/** Whether to disable connecting the insight to a room */
+		disableRoom: boolean;
+	};
 }
 
 export class InsightStore {
-    private _store: InsightStoreInterface = {
-        insightId: "",
-        isInitialized: false,
-        isAuthorized: false,
-        isReady: false,
-        error: null,
-        system: null,
-        options: {
-            appId: "",
-            python: null,
-        },
-    };
+	private _store: InsightStoreInterface = {
+		insightId: "new",
+		isInitialized: false,
+		isAuthorized: false,
+		isReady: false,
+		error: null,
+		system: null,
+		meta: {},
+		options: {
+			appId: "",
+			python: null,
+			disableRoom: false,
+		},
+	};
 
-    /** Getters */
-    /**
-     * Insight Id
-     */
-    get insightId() {
-        return this._store.insightId;
-    }
-    /**
-     * If the insight is initialied
-     */
-    get isInitialized() {
-        return this._store.isInitialized;
-    }
+	/** Getters */
+	/**
+	 * Insight Id
+	 */
+	get insightId() {
+		return this._store.insightId;
+	}
+	/**
+	 * If the insight is initialied
+	 */
+	get isInitialized() {
+		return this._store.isInitialized;
+	}
 
-    /**
-     * If the user is authorized
-     */
-    get isAuthorized() {
-        return this._store.isAuthorized;
-    }
+	/**
+	 * If the user is authorized
+	 */
+	get isAuthorized() {
+		return this._store.isAuthorized;
+	}
 
-    /**
-     * Track if the insight is ready for user input
-     */
-    get isReady() {
-        return this._store.isReady;
-    }
-    /**
-     * Error if the status is set to "ERROR"
-     */
-    get error() {
-        return this._store.error;
-    }
+	/**
+	 * Track if the insight is ready for user input
+	 */
+	get isReady() {
+		return this._store.isReady;
+	}
+	/**
+	 * Error if the status is set to "ERROR"
+	 */
+	get error() {
+		return this._store.error;
+	}
 
-    /**
-     * System information
-     */
-    get system() {
-        return this._store.system;
-    }
+	/**
+	 * System information
+	 */
+	get system() {
+		return this._store.system;
+	}
 
-    /** Methods */
-    /**
-     * Initialize the insight
-     *
-     * options - options to initialize with
-     */
-    initialize = async (options?: {
-        /**
-         * App to load into the insight
-         */
-        app?: string | false;
+	/**
+	 * Update user meta with a model selection
+	 * @param modelName - The model name (e.g., "text-generation-model", "code-generation-model")
+	 * @param modelId - The model ID to set
+	 */
+	updateUserDefaultModel(modelName: string, modelId: string): void {
+		this._store.meta = {
+			...this._store.meta,
+			[modelName]: modelId,
+		};
+	}
 
-        /**
-         * Python file to load into an insight
-         */
-        python?:
-            | {
-                  type: "detect";
-              }
-            | {
-                  type: "file";
-                  path: string;
-                  alias: string;
-              }
-            | {
-                  type: "script";
-                  script: string;
-                  alias: string;
-              }
-            | false;
-    }): Promise<void> => {
-        // reset it
-        this._store.isInitialized = false;
-        this._store.isAuthorized = false;
-        this._store.isReady = false;
+	/**
+	 * Get the default Text Generation model ID (UUID) from user meta
+	 */
+	get defaultTextGenerationModel(): string {
+		const meta = this._store.meta;
+		if (meta && typeof meta === "object") {
+			const tg = meta["text-generation-model"];
+			if (tg) {
+				return typeof tg === "string" ? tg : "";
+			}
+		}
+		return "";
+	}
 
-        const merged: NonNullable<typeof options> = {
-            app: options && options.app ? options.app : "",
-            python:
-                options && typeof options.python !== "undefined"
-                    ? options.python
-                    : {
-                          type: "detect",
-                      },
-        };
+	/**
+	 * Get the default Code Generation model ID (UUID) from user meta
+	 */
+	get defaultCodeGenerationModel(): string {
+		const meta = this._store.meta;
+		if (meta && typeof meta === "object") {
+			const tg = meta["code-generation-model"];
+			if (tg) {
+				return typeof tg === "string" ? tg : "";
+			}
+		}
+		return "";
+	}
 
-        // save the initial appId
-        this._store.options.appId = "";
-        if (merged.app) {
-            this._store.options.appId = merged.app;
-        }
+	/**
+	 * Set the user meta with a full meta record
+	 * @param meta - full meta record to store
+	 */
+	setUserDefaultModel(meta: Record<string, unknown>): void {
+		this._store.meta = { ...meta };
+	}
 
-        // save the python
-        this._store.options.python = null;
-        if (merged.python) {
-            if (merged.python.type === "detect") {
-                this._store.options.python = await this.detectScript();
-            } else if (merged.python.type === "file") {
-                this._store.options.python = await this.loadScript(
-                    merged.python,
-                );
-            } else if (merged.python.type === "script") {
-                this._store.options.python = {
-                    script: merged.python.script,
-                    alias: merged.python.alias,
-                };
-            }
-        }
+	/** Methods */
+	/**
+	 * Initialize the insight
+	 *
+	 * options - options to initialize with
+	 */
+	initialize = async (options?: {
+		/**
+		 * App to load into the insight
+		 */
+		app?: string | false;
 
-        // load the environment from the document (production)
-        try {
-            if (!document) {
-                return;
-            }
+		/**
+		 * Python file to load into an insight
+		 */
+		python?:
+			| {
+					type: "file";
+					path: string;
+					alias: string;
+			  }
+			| {
+					type: "script";
+					script: string;
+					alias: string;
+			  }
+			| false;
 
-            const env = JSON.parse(
-                document.getElementById("semoss-env")?.textContent || "",
-            ) as {
-                APP: string;
-                MODULE: string;
-            };
+		/**
+		 * Whether to disable connecting the insight to a room
+		 * Defaults to false
+		 */
+		disableRoom?: boolean;
 
-            // update the enviornment variables with the module
-            if (env) {
-                Env.update({
-                    APP: env.APP,
-                    MODULE: env.MODULE,
-                });
-            }
-        } catch (e) {
-            // noop
-        }
+		/**
+		 * Connect this insight to an existing insight ID
+		 */
+		insightId?: string;
+	}): Promise<{
+		tool: (typeof Env)["TOOL"] | null;
+	}> => {
+		// reset it
+		this._store.isInitialized = false;
+		this._store.isAuthorized = false;
+		this._store.isReady = false;
 
-        try {
-            // reset the id based on the Environment if set
-            if (Env.APP) {
-                this._store.options.appId = Env.APP;
-            }
+		const merged: NonNullable<typeof options> = {
+			app: options?.app || "",
+			python:
+				options && typeof options.python !== "undefined"
+					? options.python
+					: false,
+			disableRoom: options?.disableRoom || false,
+			insightId: options?.insightId || "",
+		};
 
-            // validate that the module is available
-            if (!Env.MODULE) {
-                throw new Error("module is required");
-            }
+		// set the insight
+		this._store.insightId = "";
+		if (merged.insightId) {
+			this._store.insightId = merged.insightId;
+		}
 
-            // get the system information
-            await this.setupSystem();
+		// save the initial appId
+		this._store.options.appId = "";
+		if (merged.app) {
+			this._store.options.appId = merged.app;
+		}
 
-            // break if no system
-            if (!this._store.isInitialized) {
-                throw new Error("Error loading system");
-            }
+		// save the python
+		this._store.options.python = null;
+		if (merged.python) {
+			if (merged.python.type === "file") {
+				this._store.options.python = await this.loadScript(
+					merged.python,
+				);
+			} else if (merged.python.type === "script") {
+				this._store.options.python = {
+					script: merged.python.script,
+					alias: merged.python.alias,
+				};
+			}
+		}
 
-            // if security is not enabled or the user is logged in, load the app
-            if (
-                (this._store.system &&
-                    Object.keys(this._store.system.config.logins).length > 0) ||
-                (Env.ACCESS_KEY && Env.SECRET_KEY)
-            ) {
-                // track that the user is authorized
-                this._store.isAuthorized = true;
+		// save the disable room option
+		this._store.options.disableRoom = merged.disableRoom || false;
 
-                // setup the insight
-                await this.setupInsight();
-            } else {
-                // track that the user is unauthorized
-                this._store.isAuthorized = false;
-            }
-        } catch (error) {
-            // log it
-            console.warn(error);
+		// load the environment from the document (production)
+		try {
+			if (typeof document !== "undefined") {
+				const env = JSON.parse(
+					document.getElementById("semoss-env")?.textContent || "",
+				) as {
+					APP: string;
+					MODULE: string;
+				};
 
-            // store the error
-            this._store.error = error as Error;
-        }
-    };
+				// update the enviornment variables with the module
+				if (env) {
+					Env.update({
+						APP: env.APP,
+						MODULE: env.MODULE,
+					});
+				}
+			}
+		} catch (_e) {
+			// noop
+		}
 
-    /**
-     * Destroy the insight
-     */
-    destroy = async () => {
-        try {
-            // destroy the insight
-            await this.destroyInsight();
+		try {
+			// reset the id based on the Environment if set
+			if (Env.APP) {
+				this._store.options.appId = Env.APP;
+			}
 
-            // destroy the system
-            this.destroySystem();
-        } catch (error) {
-            // log it
-            console.warn(error);
+			// validate that the module is available
+			if (!Env.MODULE) {
+				throw new Error("module is required");
+			}
 
-            // store the error
-            this._store.error = error as Error;
-        } finally {
-            // reset it
-            this._store.isInitialized = false;
-            this._store.isAuthorized = false;
-            this._store.isReady = false;
-        }
-    };
+			// get the system information
+			await this.setupSystem();
 
-    /** Helpers */
-    /**
-     * Initialize the system wide information
-     */
-    private setupSystem = async (): Promise<void> => {
-        // reset it
-        this._store.isInitialized = false;
+			// break if no system
+			if (!this._store.isInitialized) {
+				throw new Error("Error loading system");
+			}
 
-        // get the response
-        const data = await getSystemConfig();
+			// if security is not enabled or the user is logged in, load the app
+			if (
+				(this._store.system &&
+					Object.keys(this._store.system.config.logins).length > 0) ||
+				(Env.ACCESS_KEY && Env.SECRET_KEY)
+			) {
+				// track that the user is authorized
+				this._store.isAuthorized = true;
 
-        let system: InsightStoreInterface["system"] = null;
-        if (data) {
-            // create the system
-            system = {
-                config: {
-                    logins: {},
-                    availableProviders: [],
-                },
-            };
+				// setup the insight
+				await this.setupInsight();
 
-            // save the other config data
-            for (const key in data) {
-                system.config[key] = data[key];
-            }
-        }
+				// return the tool (if set)
+				return {
+					tool: Env.TOOL,
+				};
+			} else {
+				// track that the user is unauthorized
+				this._store.isAuthorized = false;
+			}
+		} catch (error) {
+			// log it
+			console.warn(error);
 
-        this._store.system = system;
-        if (this._store.system) {
-            this._store.isInitialized = true;
-        } else {
-            this._store.isInitialized = false;
-        }
-    };
+			// store the error
+			this._store.error = error as Error;
+		}
 
-    /**
-     * Initialize the system wide information
-     */
-    private destroySystem = () => {
-        // clear the system
-        this._store.system = null;
-    };
+		return null;
+	};
 
-    /**
-     * Setup the insight after login
-     */
-    private setupInsight = async (): Promise<void> => {
-        // set as not ready
-        this._store.isReady = false;
+	/**
+	 * Destroy the insight
+	 */
+	destroy = async () => {
+		try {
+			// destroy the insight
+			await this.destroyInsight();
 
-        // load the app reactors (if they exist)
-        let pixel = "";
-        if (this._store.options.appId) {
-            pixel += `SetContext("${this._store.options.appId}");`;
-        }
+			// destroy the system
+			this.destroySystem();
+		} catch (error) {
+			// log it
+			console.warn(error);
 
-        // load the python code int
-        if (this._store.options.python && this._store.options.python.script) {
-            // validate the alias
-            let alias = this._store.options.python.alias;
-            if (!alias) {
-                alias = "smss";
-                console.warn(`Alias not found. Loading python as ${alias}`);
-            }
+			// store the error
+			this._store.error = error as Error;
+		} finally {
+			// reset it
+			this._store.isInitialized = false;
+			this._store.isAuthorized = false;
+			this._store.isReady = false;
+		}
+	};
 
-            pixel += `
+	/** Helpers */
+	/**
+	 * Initialize the system wide information
+	 */
+	private setupSystem = async (): Promise<void> => {
+		// reset it
+		this._store.isInitialized = false;
+
+		// get the response
+		const data = await getSystemConfig();
+
+		let system: InsightStoreInterface["system"] = null;
+		if (data) {
+			// create the system
+			system = {
+				config: {
+					logins: {},
+					availableProviders: [],
+					theme: {
+						playground: {},
+					},
+					systemDate: "",
+				},
+			};
+
+			// save the other config data
+			for (const key in data) {
+				system.config[key] = data[key];
+			}
+		}
+
+		this._store.system = system;
+		if (this._store.system) {
+			this._store.isInitialized = true;
+		} else {
+			this._store.isInitialized = false;
+		}
+	};
+
+	/**
+	 * Initialize the system wide information
+	 */
+	private destroySystem = () => {
+		// clear the system
+		this._store.system = null;
+	};
+
+	/**
+	 * Setup the insight after login
+	 */
+	private setupInsight = async (): Promise<void> => {
+		// set as not ready
+		this._store.isReady = false;
+
+		// load the app reactors (if they exist)
+		let pixel = "";
+		if (this._store.options.appId) {
+			pixel += `SetContext("${this._store.options.appId}");`;
+		}
+
+		// load the python code int
+		if (this._store.options.python?.script) {
+			// validate the alias
+			let alias = this._store.options.python.alias;
+			if (!alias) {
+				alias = "smss";
+				console.warn(`Alias not found. Loading python as ${alias}`);
+			}
+
+			pixel += `
 WriteObjectToFile(value="${this._store.options.python.script}", filePath = "temp.py");
 LoadPyFromFile(alias="${alias}", filePath="temp.py");    
             `;
-        }
+		}
 
-        // default if there is no command to preload
-        if (!pixel) {
-            pixel = "1+1;";
-        }
+		// default if there is no command to preload
+		if (!pixel) {
+			pixel = "1+1;";
+		}
 
-        // create the new insight
-        const { insightId, errors } = await runPixel<[Record<string, unknown>]>(
-            pixel,
-            "new",
-        );
+		// create the new insight
+		const { insightId, errors } = await runPixel<[Record<string, unknown>]>(
+			pixel,
+			this._store.insightId,
+		);
 
-        // log errors if it exists
-        if (errors.length) {
-            throw new Error(errors[0]);
-        }
+		// log errors if it exists
+		if (errors.length) {
+			throw new Error(errors[0]);
+		}
 
-        // set the insight ID
-        this._store.insightId = insightId;
+		// set the insight ID
+		this._store.insightId = insightId;
 
-        // set as ready
-        this._store.isReady = true;
-    };
+		// point the insight space toward the room
+		if (Env?.TOOL?.roomId && !this._store.options.disableRoom) {
+			await runPixel<[boolean]>(
+				`SetRoomForInsight(roomId=${JSON.stringify(Env.TOOL.roomId)});`,
+				insightId,
+			);
+		}
 
-    /**
-     * Destroy the insight
-     */
-    private destroyInsight = async (): Promise<void> => {
-        if (!this._store.insightId) {
-            return;
-        }
+		// set as ready
+		this._store.isReady = true;
+	};
 
-        const { errors } = await runPixel<[Record<string, unknown>]>(
-            `DropInsight()`,
-            this._store.insightId,
-        );
+	/**
+	 * Destroy the insight
+	 */
+	private destroyInsight = async (): Promise<void> => {
+		if (!this._store.insightId) {
+			return;
+		}
 
-        // log errors if it exists
-        if (errors.length) {
-            throw new Error(errors[0]);
-        }
+		const { errors } = await runPixel<[Record<string, unknown>]>(
+			`DropInsight()`,
+			this._store.insightId,
+		);
 
-        // set the insight ID
-        this._store.insightId = "";
-    };
+		// log errors if it exists
+		if (errors.length) {
+			throw new Error(errors[0]);
+		}
 
-    /**
-     * Process and error in action
-     * @param error - error to process
-     */
-    private processActionError = (error: Error) => {
-        // ignore 302 errors
-        if (error instanceof UnauthorizedError) {
-            this._store.isAuthorized = false;
-            return;
-        }
+		// set the insight ID
+		this._store.insightId = "";
+	};
 
-        // propagate it forward
-        throw error;
-    };
+	/**
+	 * Process and error in action
+	 * @param error - error to process
+	 */
+	private processActionError = (error: Error) => {
+		// ignore 302 errors
+		if (error instanceof UnauthorizedError) {
+			this._store.isAuthorized = false;
+			return;
+		}
 
-    /**
-     * Detect a script from the html
-     */
-    private detectScript = async (): Promise<Script | null> => {
-        const output = {
-            script: "",
-            alias: "",
-        };
+		// propagate it forward
+		throw error;
+	};
 
-        try {
-            const scriptEle = document.querySelector("[data-semoss-py]");
-            const content = scriptEle?.textContent;
-            if (!content) {
-                return null;
-            }
+	/**
+	 * Load an external script
+	 */
+	private loadScript = async (config: {
+		path: string;
+		alias: string;
+	}): Promise<Script | null> => {
+		const output = {
+			script: "",
+			alias: config.alias,
+		};
+		try {
+			// get the script
+			const response = await fetch(config.path);
 
-            // get the script
-            output.script = content;
+			const text = await response.text();
+			if (!text) {
+				throw new Error("No Text");
+			}
 
-            // get the alias
-            output.alias = scriptEle?.getAttribute("data-alias") || "";
-        } catch (e) {
-            console.warn(e);
-            return null;
-        }
+			// set the text if it exists
+			output.script = text;
+		} catch (e) {
+			console.warn(e);
 
-        return output;
-    };
+			// don't load anything
+			return null;
+		}
 
-    /**
-     * Load an external script
-     */
-    private loadScript = async (config: {
-        path: string;
-        alias: string;
-    }): Promise<Script | null> => {
-        const output = {
-            script: "",
-            alias: config.alias,
-        };
-        try {
-            // get the script
-            const response = await fetch(config.path);
+		return output;
+	};
 
-            const text = await response.text();
-            if (!text) {
-                throw new Error("No Text");
-            }
+	/** Actions */
+	/** Accessible by the end user */
+	actions = {
+		/**
+		 * Allow the user to login
+		 * @param credentials
+		 * @returns
+		 */
+		login: async (
+			credentials:
+				| {
+						type: "native";
+						username: string;
+						password: string;
+				  }
+				| {
+						type: "oauth";
+						provider: string;
+				  },
+		): Promise<boolean> => {
+			// try to login
+			try {
+				let loggedIn = false;
+				if (credentials.type === "native") {
+					const response = await login(
+						credentials.username,
+						credentials.password,
+					);
 
-            // set the text if it exists
-            output.script = text;
-        } catch (e) {
-            console.warn(e);
+					if (response) {
+						loggedIn = true;
+					}
+				} else if (credentials.type === "oauth") {
+					const response = await oauth(credentials.provider);
+					if (response) {
+						loggedIn = true;
+					}
+				}
 
-            // don't load anything
-            return null;
-        }
+				if (loggedIn) {
+					// track that the user is now authorized
+					this._store.isAuthorized = true;
 
-        return output;
-    };
+					// get the new insight with the new user
+					await this.setupInsight();
+				} else {
+					// track that the user is unauthorized
+					this._store.isAuthorized = false;
+				}
 
-    /**
-     * Get the id of the space
-     * @param space - where to get it
-     * @returns id of the space
-     */
-    private getSpaceId(space: Space) {
-        let id = "";
-        if (space === "insight") {
-            id = this._store.insightId;
-        } else if (space === "app") {
-            if (!this._store.options.appId) {
-                throw new Error("An app is required to run in the app space");
-            }
+				// success
+				return loggedIn;
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
 
-            // set it
-            id = this._store.options.appId;
-        }
+			return false;
+		},
 
-        return id;
-    }
+		/**
+		 * Allow the user to logout
+		 */
+		logout: async (): Promise<boolean> => {
+			try {
+				const response = await logout();
+				if (!response) {
+					return false;
+				}
 
-    /** Actions */
-    /** Accessible by the end user */
-    actions = {
-        /**
-         * Allow the user to login
-         * @param credentials
-         * @returns
-         */
-        login: async (
-            credentials:
-                | {
-                      type: "native";
-                      username: string;
-                      password: string;
-                  }
-                | {
-                      type: "oauth";
-                      provider: string;
-                  },
-        ): Promise<boolean> => {
-            // try to login
-            try {
-                let loggedIn = false;
-                if (credentials.type === "native") {
-                    const response = await login(
-                        credentials.username,
-                        credentials.password,
-                    );
+				// turn off authorized
+				this._store.isAuthorized = false;
 
-                    if (response) {
-                        loggedIn = true;
-                    }
-                } else if (credentials.type === "oauth") {
-                    const response = await oauth(credentials.provider);
-                    if (response) {
-                        loggedIn = true;
-                    }
-                }
+				// success
+				return true;
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
 
-                if (loggedIn) {
-                    // track that the user is now authorized
-                    this._store.isAuthorized = true;
+			return false;
+		},
 
-                    // get the new insight with the new user
-                    await this.setupInsight();
-                } else {
-                    // track that the user is unauthorized
-                    this._store.isAuthorized = false;
-                }
+		/**
+		 * Run a pixel against the insight
+		 * @param pixel - pixel command to run
+		 */
+		run: async <O extends unknown[] | []>(pixel: string) => {
+			try {
+				const { errors, pixelReturn } = await runPixel<O>(
+					pixel,
+					this._store.insightId,
+				);
 
-                // success
-                return loggedIn;
-            } catch (error) {
-                this.processActionError(error as Error);
-            }
+				if (errors.length) {
+					throw new Error(errors.join(""));
+				}
 
-            return false;
-        },
+				return { pixelReturn };
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
 
-        /**
-         * Allow the user to logout
-         */
-        logout: async (): Promise<boolean> => {
-            try {
-                const response = await logout();
-                if (!response) {
-                    return false;
-                }
+			// throw an error
+			throw new Error("No response");
+		},
 
-                // success
-                return true;
-            } catch (error) {
-                this.processActionError(error as Error);
-            }
+		/**
+		 * Run a pixel asynchronously against the insight
+		 * @param pixel - pixel command to run asynchronously
+		 * @returns Job ID for tracking the async execution
+		 */
+		runAsync: async (pixel: string) => {
+			try {
+				const { jobId } = await runPixelAsync(
+					pixel,
+					this._store.insightId,
+				);
 
-            return false;
-        },
+				return { jobId };
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
 
-        /**
-         * Run a pixel against the insight
-         * @param pixel - pixel command to run
-         * @param space - where to run it
-         */
-        run: async <O extends unknown[] | []>(
-            pixel: string,
-            space: Space = "insight",
-        ) => {
-            try {
-                let id = "";
-                if (space === "insight") {
-                    id = this._store.insightId;
-                } else if (space === "app") {
-                    if (!this._store.options.appId) {
-                        throw new Error(
-                            "An app is required to run in the app space",
-                        );
-                    }
+			// throw an error
+			throw new Error("No response");
+		},
 
-                    // set it
-                    id = this._store.options.appId;
-                }
+		/**
+		 * Run a pixel against the insight
+		 * @param pixel - pixel command to run
+		 */
+		runPy: async <O>(python: string) => {
+			const { pixelReturn } = await this.actions.run<
+				[
+					[
+						{
+							output: O;
+						},
+					],
+				]
+			>(`Py("<encode>${python}</encode>")`);
 
-                const { errors, pixelReturn } = await runPixel<O>(pixel, id);
+			return {
+				output: pixelReturn[0].output[0].output,
+			};
+		},
 
-                if (errors.length) {
-                    throw new Error(errors.join(""));
-                }
+		/**
+		 * Ask a model a question
+		 * @param engineId - engine to ask
+		 * @param command - command to ask
+		 */
+		askModel: async (engineId: string, command: string) => {
+			const { pixelReturn } = await this.actions.run<
+				[{ response: string }]
+			>(
+				`LLM(engine=["${engineId}"], command=["<encode>${command}</encode>"]);`,
+			);
 
-                return { pixelReturn };
-            } catch (error) {
-                this.processActionError(error as Error);
-            }
+			return {
+				output: pixelReturn[0].output,
+			};
+		},
 
-            // throw an error
-            throw new Error("No response");
-        },
+		/**
+		 * Send a MCP tool response to the playground
+		 * @param mcpToolResponse - response to send
+		 */
+		sendMCPResponseToPlayground: (
+			mcpToolResponse: string,
+			mcpToolStatus: MCPToolResponse["tool_status"] = "success",
+			executedParameters: Record<string, unknown> = {},
+		) => {
+			if (!Env.TOOL) {
+				throw new Error("No MCP tool execution context found");
+			} else if (
+				typeof window === "undefined" ||
+				typeof window.parent === "undefined"
+			) {
+				throw new Error(
+					"Cannot send MCP tool response outside of embedded browser",
+				);
+			}
 
-        /**
-         * Run a pixel against the insight
-         * @param pixel - pixel command to run
-         * @param space - where to run it
-         */
-        runPy: async <O>(python: string, space: Space = "insight") => {
-            const { pixelReturn } = await this.actions.run<
-                [
-                    [
-                        {
-                            output: O;
-                        },
-                    ],
-                ]
-            >(`Py("<encode>${python}</encode>")`, space);
+			window.parent.postMessage(
+				{
+					type: "SMSS_EXEC_TOOL",
+					tool: {
+						type: "MCP",
+						message: Env.TOOL.message,
+						id: Env.TOOL.id,
+						name: Env.TOOL.name,
+						response: mcpToolResponse,
+						roomId: Env.TOOL.roomId,
+						tool_status: mcpToolStatus,
+						executedParameters: executedParameters,
+					} satisfies MCPToolResponse,
+				},
+				"*",
+			);
+		},
 
-            return {
-                output: pixelReturn[0].output[0].output,
-            };
-        },
+		/**
+		 * Run a MCP tool and send the response to the playground
+		 * @param name - name of the tool
+		 * @param parameters - parameters to pass to the tool
+		 */
+		runMCPTool: async (
+			name: string,
+			parameters: Record<string, unknown>,
+		) => {
+			const { pixelReturn } = await this.actions.run<[unknown]>(
+				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ] );`,
+			);
 
-        /**
-         * Ask a model a question
-         * @param engineId - engine to ask
-         * @param command - command to ask
-         * @param space - where to run it
-         */
-        askModel: async (
-            engineId: string,
-            command: string,
-            space: Space = "insight",
-        ) => {
-            const { pixelReturn } = await this.actions.run<
-                [{ response: string }]
-            >(
-                `LLM(engine=["${engineId}"], command=["<encode>${command}</encode>"]);`,
-                space,
-            );
+			const operationType = pixelReturn[0].operationType || "";
+			const rawOutput = pixelReturn[0].output;
+			const output =
+				typeof rawOutput === "string"
+					? rawOutput
+					: JSON.stringify(rawOutput);
 
-            return {
-                output: pixelReturn[0].output,
-            };
-        },
+			if (!output || operationType.indexOf("MCP_TOOL_EXECUTION") < 0) {
+				throw new Error("Error running MCP tool");
+			}
 
-        /**
-         * Query a database
-         * @param databaseId - database to query
-         * @param query - command to query
-         * @param options - options to query with
-         * @param space - where to run it
-         */
-        queryDatabase: async (
-            databaseId: string,
-            query: string,
-            options: {
-                collect: number;
-            } = {
-                collect: -1,
-            },
-            space: Space = "insight",
-        ) => {
-            const { pixelReturn } = await this.actions.run<
-                [
-                    data: {
-                        values: unknown[][];
-                        headers: string[];
-                    },
-                    numCollected: number,
-                    taskId: string,
-                ]
-            >(
-                `Database(database=["${databaseId}"]) | Query("<encode>${query}</encode>") | Collect(${
-                    typeof options.collect === "number" ? options.collect : -1
-                });;`,
-                space,
-            );
+			if (Env.TOOL) {
+				try {
+					this.actions.sendMCPResponseToPlayground(
+						output,
+						"success",
+						parameters,
+					);
+				} catch (e) {
+					console.warn(
+						`Failed to send MCP response to playground${e.message ? `: ${e.message}` : ""}`,
+					);
+				}
+			}
 
-            return {
-                output: pixelReturn[0].output,
-            };
-        },
+			return {
+				output,
+			};
+		},
 
-        /**
-         * Upload a file to the project space
-         *
-         * @param files- file objects to upload
-         * @param path - relative path
-         * @param space - where to run it
-         */
-        upload: async (
-            files: File | File[],
-            path: string,
-            space: Space = "insight",
-        ): Promise<
-            {
-                fileName: string;
-                fileLocation: string;
-            }[]
-        > => {
-            try {
-                const response = await upload(
-                    files,
-                    this._store.insightId,
-                    space === "app" ? this._store.options.appId : "",
-                    path,
-                );
+		/**
+		 * Query a database
+		 * @param databaseId - database to query
+		 * @param query - command to query
+		 * @param options - options to query with
+		 */
+		queryDatabase: async (
+			databaseId: string,
+			query: string,
+			options: {
+				collect: number;
+			} = {
+				collect: -1,
+			},
+		) => {
+			const { pixelReturn } = await this.actions.run<
+				[
+					data: {
+						values: unknown[][];
+						headers: string[];
+					},
+					numCollected: number,
+					taskId: string,
+				]
+			>(
+				`Database(database=["${databaseId}"]) | Query("<encode>${query}</encode>") | Collect(${
+					typeof options.collect === "number" ? options.collect : -1
+				});`,
+			);
 
-                return response;
-            } catch (error) {
-                this.processActionError(error as Error);
-            }
+			return {
+				output: pixelReturn[0].output,
+			};
+		},
 
-            // throw an error
-            throw new Error("No upload");
-        },
+		/**
+		 * @deprecated use uploadInsight from sdk/api/insight
+		 * Upload a file to the project space
+		 *
+		 * @param files- file objects to upload
+		 * @param path - relative path
+		 */
+		upload: async (
+			files: File | File[],
+			path: string,
+		): Promise<
+			{
+				fileName: string;
+				fileLocation: string;
+			}[]
+		> => {
+			try {
+				const response = await upload(
+					files,
+					this._store.insightId,
+					"",
+					path,
+				);
 
-        /**
-         * Download a file from the app
-         *
-         * @param path - relative path to the file
-         * @param space - where to det it
-         */
-        download: async (
-            path: string | null,
-            space: Space = "insight",
-        ): Promise<boolean> => {
-            const id = this.getSpaceId(space);
+				return response;
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
 
-            const { pixelReturn } = await this.actions.run<[string]>(
-                `DownloadAsset(filePath=["${path}"], space=["${id}"]);`,
-                "insight",
-            );
+			// throw an error
+			throw new Error("No upload");
+		},
 
-            // get the file key
-            const fileKey = pixelReturn[0].output;
+		/**
+		 * Download a file from the app
+		 *
+		 * @param path - relative path to the file
+		 */
+		download: async (path: string | null): Promise<boolean> => {
+			const { pixelReturn } = await this.actions.run<[string]>(
+				`DownloadAsset(filePath=["${path}"], space=["${this._store.insightId}"]);`,
+			);
 
-            try {
-                await download(this._store.insightId, fileKey);
+			// get the file key
+			const fileKey = pixelReturn[0].output;
 
-                return true;
-            } catch (error) {
-                this.processActionError(error as Error);
-            }
+			try {
+				await download(this._store.insightId, fileKey);
 
-            // throw an error
-            throw new Error("No download");
-        },
-    };
+				return true;
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No download");
+		},
+
+		/**
+		 * App
+		 */
+		/**
+		 * Upload file(s) to an app
+		 * @param appId
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadApp: async (
+			appId: string,
+			path: string,
+			files: File | File[],
+		) => {
+			try {
+				return await uploadApp(
+					appId,
+					path,
+					files,
+					this._store.insightId,
+				);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
+		},
+		/**
+		 * Engine
+		 */
+		/**
+		 * Upload file(s) to an engine
+		 * @param engineId
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadEngine: async (
+			engineId: string,
+			path: string,
+			files: File | File[],
+		) => {
+			try {
+				return await uploadEngine(
+					engineId,
+					path,
+					files,
+					this._store.insightId,
+				);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
+		},
+		/**
+		 * Insight
+		 */
+		/**
+		 * Upload file(s) to an insight
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadInsight: async (path: string, files: File | File[]) => {
+			try {
+				return await uploadInsight(this._store.insightId, path, files);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
+		},
+	};
 }

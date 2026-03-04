@@ -1,15 +1,16 @@
-import { PlatformMessages } from './PlatformMessages';
-import { Search } from './Search';
-import { Page } from './Page';
-import { NavbarLeft } from './NavbarLeft';
-import { NavbarRight } from './NavbarRight';
-import { NavbarHeader } from './NavbarHeader';
-
+import { MCPJsonEditor } from "./mcp-json-editor";
+import { NavbarHeader } from "./NavbarHeader";
+import { NavbarLeft } from "./NavbarLeft";
+import { NavbarRight } from "./NavbarRight";
+import { Page } from "./Page";
+import { PlatformMessages } from "./PlatformMessages";
+import { PlatformSearch } from "./platform-search";
 export {
-    Page,
-    PlatformMessages,
-    Search,
-    NavbarLeft,
-    NavbarRight,
-    NavbarHeader,
+	Page,
+	PlatformMessages,
+	PlatformSearch,
+	NavbarLeft,
+	NavbarRight,
+	NavbarHeader,
+	MCPJsonEditor,
 };

@@ -1,76 +1,72 @@
+import type { MCPToolRequest } from "./types";
+
 /**
- * Singleton variable holding environment information
+ * Singleton object holding environment information
  */
-export class Env {
-    /**
-     * Variables that are loaded into the enviornment
-     */
-    private static _store = {
-        APP: "",
-        MODULE: "",
-        ACCESS_KEY: "",
-        SECRET_KEY: "",
-        CSRF: false
-    };
+const envStore: {
+	APP: string;
+	MODULE: string;
+	ACCESS_KEY: string;
+	SECRET_KEY: string;
+	CSRF: boolean;
+	TOOL: MCPToolRequest | null;
+} = {
+	APP: "",
+	MODULE: "",
+	ACCESS_KEY: "",
+	SECRET_KEY: "",
+	CSRF: false,
+	TOOL: null,
+};
 
-    /**
-     * Get the APP ID
-     */
-    static get APP() {
-        return this._store.APP;
-    }
+export const Env = {
+	/**
+	 * Get the APP ID
+	 */
+	get APP() {
+		return envStore.APP;
+	},
 
-    /**
-     * Ready only getter
-     */
-    static get MODULE() {
-        return this._store.MODULE;
-    }
+	/**
+	 * Module for the backend
+	 */
+	get MODULE() {
+		return envStore.MODULE;
+	},
 
-    /**
-     * Ready only getter
-     */
-    static get ACCESS_KEY() {
-        return this._store.ACCESS_KEY;
-    }
+	/**
+	 * Access key to authenticate with. Should only be set in development mode
+	 */
+	get ACCESS_KEY() {
+		return envStore.ACCESS_KEY;
+	},
 
-    /**
-     * Ready only getter
-     */
-    static get SECRET_KEY() {
-        return this._store.SECRET_KEY;
-    }
+	/**
+	 * Secret key to authenticate with. Should only be set in development mode
+	 */
+	get SECRET_KEY() {
+		return envStore.SECRET_KEY;
+	},
 
-    /**
-     * Ready only getter
-     */
-    static get CSRF() {
-        return this._store.CSRF;
-    }
+	/**
+	 * CSRF token for the current session
+	 */
+	get CSRF() {
+		return envStore.CSRF;
+	},
 
-    /**
-     *
-     * @param updated - updated variables
-     */
-    static update = (updated: Partial<(typeof Env)["_store"]> = {}) => {
-        if (updated.hasOwnProperty("APP")) {
-            this._store.APP = updated.APP;
-        }
+	/**
+	 * Current tool information
+	 */
+	get TOOL() {
+		return envStore.TOOL;
+	},
 
-        if (updated.hasOwnProperty("MODULE")) {
-            this._store.MODULE = updated.MODULE;
-        }
-
-        if (updated.hasOwnProperty("ACCESS_KEY")) {
-            this._store.ACCESS_KEY = updated.ACCESS_KEY;
-        }
-
-        if (updated.hasOwnProperty("SECRET_KEY")) {
-            this._store.SECRET_KEY = updated.SECRET_KEY;
-        }
-
-        if (updated.hasOwnProperty("CSRF")) {
-            this._store.CSRF = updated.CSRF;
-        }
-    };
-}
+	/**
+	 * Update the environment variables
+	 * @param updated - updated variables
+	 */
+	update(updated: Partial<typeof envStore>) {
+		Object.assign(envStore, updated);
+	},
+};

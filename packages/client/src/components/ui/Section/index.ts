@@ -1,8 +1,8 @@
-import { Section, SectionProps } from './Section';
-import { SectionHeader, SectionHeaderProps } from './SectionHeader';
+import { Section, type SectionProps } from "./Section";
+import { SectionHeader, type SectionHeaderProps } from "./SectionHeader";
 
 const SectionNameSpace = Object.assign(Section, {
-    Header: SectionHeader,
+	Header: SectionHeader,
 });
 
 export type { SectionProps, SectionHeaderProps };

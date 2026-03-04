@@ -1,41 +1,41 @@
-import { ReactNode } from "react";
-import { Tab as MuiTab, SxProps } from "@mui/material";
+import { Tab as MuiTab, type SxProps } from "@mui/material";
+import type { ReactNode } from "react";
 
 export interface TabProps<V = string | number> {
-    /**
-     * If `true`, the component is disabled.
-     * @default false
-     */
-    disabled?: boolean;
+	/**
+	 * If `true`, the component is disabled.
+	 * @default false
+	 */
+	disabled?: boolean;
 
-    /**
-     * The position of the icon relative to the label.
-     * @default 'top'
-     */
-    iconPosition?: "top" | "bottom" | "start" | "end";
+	/**
+	 * The position of the icon relative to the label.
+	 * @default 'top'
+	 */
+	iconPosition?: "top" | "bottom" | "start" | "end";
 
-    /**
-     * The label element.
-     */
-    label?: ReactNode;
+	/**
+	 * The label element.
+	 */
+	label?: ReactNode;
 
-    /**
-     * The label element.
-     */
-    icon?: string | React.ReactElement;
+	/**
+	 * The label element.
+	 */
+	icon?: string | React.ReactElement;
 
-    /** style object */
-    title?: string;
+	/** style object */
+	title?: string;
 
-    /** style object */
-    sx?: SxProps;
+	/** style object */
+	sx?: SxProps;
 
-    /**
-     * You can provide your own value. Otherwise, we fallback to the child position index.
-     */
-    value?: V;
+	/**
+	 * You can provide your own value. Otherwise, we fallback to the child position index.
+	 */
+	value?: V;
 }
 
 export const Tab = <V,>(props: TabProps<V>) => {
-    return <MuiTab {...props} />;
+	return <MuiTab {...props} />;
 };

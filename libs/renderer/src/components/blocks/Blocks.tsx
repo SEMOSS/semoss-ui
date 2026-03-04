@@ -1,45 +1,45 @@
 import { useMemo } from "react";
-import { StateStore, Registry, NotebookStore } from "../../store";
 import { BlocksContext } from "../../contexts";
+import { NotebookStore, type Registry, type StateStore } from "../../store";
 
 export interface BlocksProps<R extends Registry> {
-    /** Content to render  */
-    children: React.ReactNode;
+	/** Content to render  */
+	children: React.ReactNode;
 
-    /** Store to connect to */
-    state: StateStore;
+	/** Store to connect to */
+	state: StateStore;
 
-    /** Widgets available to all of the blocks */
-    registry: R;
+	/** Widgets available to all of the blocks */
+	registry: R;
 }
 
 export const Blocks = <R extends Registry = Registry>(
-    props: BlocksProps<R>,
+	props: BlocksProps<R>,
 ) => {
-    const { children, registry, state } = props;
+	const { children, registry, state } = props;
 
-    // create a new notebook store
-    const notebook = useMemo(() => {
-        if (!state) {
-            return null;
-        }
+	// create a new notebook store
+	const notebook = useMemo(() => {
+		if (!state) {
+			return null;
+		}
 
-        return new NotebookStore(state);
-    }, []);
+		return new NotebookStore(state);
+	}, []);
 
-    if (!state || !notebook) {
-        return null;
-    }
+	if (!state || !notebook) {
+		return null;
+	}
 
-    return (
-        <BlocksContext.Provider
-            value={{
-                registry: registry,
-                state: state,
-                notebook: notebook,
-            }}
-        >
-            {children}
-        </BlocksContext.Provider>
-    );
+	return (
+		<BlocksContext.Provider
+			value={{
+				registry: registry,
+				state: state,
+				notebook: notebook,
+			}}
+		>
+			{children}
+		</BlocksContext.Provider>
+	);
 };

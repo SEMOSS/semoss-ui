@@ -1,0 +1,31 @@
+{
+  "name": "@semoss/shared",
+  "version": "1.0.0-beta.1",
+  "exports": {
+    "./globals.css": "./src/styles/globals.css",
+    ".": "./src/index.ts",
+    "./api": "./src/api/index.ts"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@monaco-editor/react": "^4.5.1",
+    "@mui/icons-material": "6.0.0",
+    "@semoss/sdk": "workspace:*",
+    "@semoss/ui": "workspace:*",
+    "echarts": "^5.5.1",
+    "echarts-for-react": "^3.0.2",
+    "flexlayout-react": "^0.8.1",
+    "lucide-react": "^0.545.0",
+    "monaco-editor": "^0.45.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.1",
+    "@types/react-dom": "18.3.0",
+    "typescript": "~5.5.2"
+  },
+  "peerDependencies": {
+    "@mui/icons-material": "6.0.0"
+  }
+}

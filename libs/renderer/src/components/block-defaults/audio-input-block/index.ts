@@ -1,2 +1,2 @@
-export * from "./config";
 export * from "./AudioInputBlock";
+export * from "./config";

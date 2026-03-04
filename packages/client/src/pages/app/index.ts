@@ -1,17 +1,15 @@
-import { AppCatalogPage } from './AppCatalogPage';
-import { AppMarketplacePage } from './AppMarketplacePage';
-import { AppDetailPage } from './AppDetailPage';
-import { ViewAppPage } from './ViewAppPage';
-import { NewPromptBuilderAppPage } from './NewPromptBuilderAppPage';
-import { CreateAppPage } from './CreateAppPage';
-import { EditAppPage } from './EditAppPage';
+import { AppCatalogPage } from "./app-catalog-page";
+import { AppDetailPage } from "./app-detail-page";
+import { CreateAppPage } from "./create-app-page";
+import { EditAppPage } from "./edit-app-page";
+import { NewPromptBuilderAppPage } from "./NewPromptBuilderAppPage";
+import { ViewAppPage } from "./ViewAppPage";
 
 export {
-    AppCatalogPage,
-    AppMarketplacePage,
-    AppDetailPage,
-    ViewAppPage,
-    CreateAppPage,
-    EditAppPage,
-    NewPromptBuilderAppPage,
+	AppCatalogPage,
+	AppDetailPage,
+	ViewAppPage,
+	CreateAppPage,
+	EditAppPage,
+	NewPromptBuilderAppPage,
 };

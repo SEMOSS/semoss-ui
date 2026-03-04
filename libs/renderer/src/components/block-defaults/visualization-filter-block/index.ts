@@ -1,2 +1,2 @@
-export * from "./VisualizationFilterBlock";
 export * from "./config";
+export * from "./VisualizationFilterBlock";
