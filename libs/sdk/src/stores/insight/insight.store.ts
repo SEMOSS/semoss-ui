@@ -5,6 +5,7 @@ import {
 	logout,
 	oauth,
 	runPixel,
+	runPixelAsync,
 	upload,
 	uploadApp,
 	uploadEngine,
@@ -58,6 +59,9 @@ interface InsightStoreInterface {
 		};
 	} | null;
 
+	/** User meta data */
+	meta: Record<string, unknown>;
+
 	/** Options assocaited with the insight */
 	options: {
 		/** Id of an app if associated with the insight */
@@ -79,6 +83,7 @@ export class InsightStore {
 		isReady: false,
 		error: null,
 		system: null,
+		meta: {},
 		options: {
 			appId: "",
 			python: null,
@@ -125,6 +130,54 @@ export class InsightStore {
 	 */
 	get system() {
 		return this._store.system;
+	}
+
+	/**
+	 * Update user meta with a model selection
+	 * @param modelName - The model name (e.g., "text-generation-model", "code-generation-model")
+	 * @param modelId - The model ID to set
+	 */
+	updateUserDefaultModel(modelName: string, modelId: string): void {
+		this._store.meta = {
+			...this._store.meta,
+			[modelName]: modelId,
+		};
+	}
+
+	/**
+	 * Get the default Text Generation model ID (UUID) from user meta
+	 */
+	get defaultTextGenerationModel(): string {
+		const meta = this._store.meta;
+		if (meta && typeof meta === "object") {
+			const tg = meta["text-generation-model"];
+			if (tg) {
+				return typeof tg === "string" ? tg : "";
+			}
+		}
+		return "";
+	}
+
+	/**
+	 * Get the default Code Generation model ID (UUID) from user meta
+	 */
+	get defaultCodeGenerationModel(): string {
+		const meta = this._store.meta;
+		if (meta && typeof meta === "object") {
+			const tg = meta["code-generation-model"];
+			if (tg) {
+				return typeof tg === "string" ? tg : "";
+			}
+		}
+		return "";
+	}
+
+	/**
+	 * Set the user meta with a full meta record
+	 * @param meta - full meta record to store
+	 */
+	setUserDefaultModel(meta: Record<string, unknown>): void {
+		this._store.meta = { ...meta };
 	}
 
 	/** Methods */
@@ -590,6 +643,27 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
+		 * Run a pixel asynchronously against the insight
+		 * @param pixel - pixel command to run asynchronously
+		 * @returns Job ID for tracking the async execution
+		 */
+		runAsync: async (pixel: string) => {
+			try {
+				const { jobId } = await runPixelAsync(
+					pixel,
+					this._store.insightId,
+				);
+
+				return { jobId };
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No response");
+		},
+
+		/**
 		 * Run a pixel against the insight
 		 * @param pixel - pixel command to run
 		 */
@@ -633,6 +707,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		sendMCPResponseToPlayground: (
 			mcpToolResponse: string,
 			mcpToolStatus: MCPToolResponse["tool_status"] = "success",
+			executedParameters: Record<string, unknown> = {},
 		) => {
 			if (!Env.TOOL) {
 				throw new Error("No MCP tool execution context found");
@@ -656,6 +731,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						response: mcpToolResponse,
 						roomId: Env.TOOL.roomId,
 						tool_status: mcpToolStatus,
+						executedParameters: executedParameters,
 					} satisfies MCPToolResponse,
 				},
 				"*",
@@ -671,18 +747,28 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			name: string,
 			parameters: Record<string, unknown>,
 		) => {
-			const { pixelReturn } = await this.actions.run<[string]>(
+			const { pixelReturn } = await this.actions.run<[unknown]>(
 				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ] );`,
 			);
 
-			const { output, operationType } = pixelReturn[0];
+			const operationType = pixelReturn[0].operationType || "";
+			const rawOutput = pixelReturn[0].output;
+			const output =
+				typeof rawOutput === "string"
+					? rawOutput
+					: JSON.stringify(rawOutput);
+
 			if (!output || operationType.indexOf("MCP_TOOL_EXECUTION") < 0) {
 				throw new Error("Error running MCP tool");
 			}
 
 			if (Env.TOOL) {
 				try {
-					this.actions.sendMCPResponseToPlayground(output);
+					this.actions.sendMCPResponseToPlayground(
+						output,
+						"success",
+						parameters,
+					);
 				} catch (e) {
 					console.warn(
 						`Failed to send MCP response to playground${e.message ? `: ${e.message}` : ""}`,

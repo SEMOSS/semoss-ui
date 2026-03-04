@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { FlexLayout } from "@semoss/shared";
 import {
 	Button,
@@ -30,6 +31,7 @@ interface RoomSidebarProps {
 }
 
 export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
+	const { t } = useTranslation("sidebar");
 	const layoutRef = useRef<FlexLayout.Layout | null>(null);
 	const [isMaximized, setIsMaximized] = useState(false);
 
@@ -41,6 +43,13 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 	const node = room.sidebar.model.getActiveTabset()?.getSelectedNode();
 	if (node instanceof FlexLayout.TabNode) {
 		activeNode = node;
+	}
+
+	let activeTool = null;
+	if (activeNode) {
+		if (activeNode.getComponent() === "room-tool") {
+			activeTool = room.getToolByNodeId(activeNode.getId());
+		}
 	}
 
 	return (
@@ -56,7 +65,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
 				<div className="absolute top-0 right-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pr-2">
-					{activeNode?.getComponent() === "room-tool" && (
+					{activeTool && (
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
@@ -66,28 +75,23 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 									onClick={(e) => {
 										e.stopPropagation();
 
-										if (!activeNode) {
+										if (!activeTool) {
 											return;
 										}
-
-										const nodeId = activeNode.getId();
-
-										// remove from sidebar
-										room.removeSidebarNode(nodeId);
-
-										const config = activeNode.getConfig();
 
 										// turn off maximized state
 										setIsMaximized(false);
 
 										// add to inline
-										room.addInlineTool(nodeId, config);
+										activeTool.openTool("inline");
 									}}
 								>
 									<PanelBottomIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Open Inline</TooltipContent>
+							<TooltipContent>
+								{t("actions.openInline")}
+							</TooltipContent>
 						</Tooltip>
 					)}
 
@@ -108,7 +112,9 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
-							{isMaximized ? "Minimize" : "Maximize"}
+							{isMaximized
+								? t("actions.minimize")
+								: t("actions.maximize")}
 						</TooltipContent>
 					</Tooltip>
 					<Separator
@@ -132,7 +138,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								<XIcon />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Close</TooltipContent>
+						<TooltipContent>{t("actions.close")}</TooltipContent>
 					</Tooltip>
 				</div>
 				<div className="w-full flex-1 overflow-hidden rounded-md">

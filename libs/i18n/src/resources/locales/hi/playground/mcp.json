@@ -1,0 +1,52 @@
+{
+	"embedDocuments": {
+		"title": "मौजूदा स्रोत में दस्तावेज़ एम्बेड करें",
+		"description": "एक ज्ञान स्रोत चुनें और एम्बेड करने के लिए दस्तावेज़ अपलोड करें।",
+		"knowledgeSource": "ज्ञान स्रोत",
+		"documents": "दस्तावेज़",
+		"selectFiles": "फ़ाइलें चुनने के लिए क्लिक करें या ड्रैग और ड्रॉप करें",
+		"embedButton": "दस्तावेज़ एम्बेड करें",
+		"embedding": "एम्बेड किया जा रहा है...",
+		"removeFile": "फ़ाइल हटाएं",
+		"selectPlaceholder": "एक ज्ञान स्रोत चुनें"
+	},
+	"selector": {
+		"title": "MCP चुनें",
+		"search": "खोजें",
+		"searchPlaceholder": "खोजें...",
+		"noResults": "कोई परिणाम नहीं मिला",
+		"createKnowledgeSource": "ज्ञान स्रोत बनाएं",
+		"viewDetails": "विवरण देखें",
+		"noToolboxesFound": "कोई टूलबॉक्स नहीं मिला",
+		"noKnowledgeFound": "कोई ज्ञान नहीं मिला"
+	},
+	"overlay": {
+		"title": "MCP कॉन्फ़िगरेशन",
+		"description": "अपनी MCP सेटिंग्स कॉन्फ़िगर करें",
+		"editToolbox": "टूलबॉक्स संपादित करें",
+		"editKnowledge": "ज्ञान संपादित करें",
+		"toolboxDescription": "अपने एजेंट में क्षमताएं जोड़ें और इसे बढ़ाएं कि यह क्या कर सकता है",
+		"knowledgeDescription": "उन ज्ञान स्रोतों को संपादित करें जिन तक आपका एजेंट पहुंच सकता है"
+	},
+	"tools": {
+		"selectMcp": "MCP चुनें",
+		"selectTool": "टूल चुनें",
+		"enterValues": "अल्पविराम से अलग किए गए मान दर्ज करें",
+		"selectField": "{{field}} चुनें",
+		"enterField": "{{field}} दर्ज करें"
+	},
+	"messages": {
+		"selectKnowledgeSource": "कृपया एक ज्ञान स्रोत चुनें",
+		"selectDocument": "कृपया कम से कम एक दस्तावेज़ चुनें",
+		"embedSuccess": "दस्तावेज़ सफलतापूर्वक एम्बेड किए गए",
+		"embedFailed": "दस्तावेज़ एम्बेड करने में विफल",
+		"loadFailed": "ज्ञान स्रोत लोड करने में विफल।",
+		"noSources": "कोई ज्ञान स्रोत नहीं मिला।"
+	},
+	"buttons": {
+		"cancel": "रद्द करें",
+		"embed": "एम्बेड करें",
+		"save": "सहेजें",
+		"close": "बंद करें"
+	}
+}

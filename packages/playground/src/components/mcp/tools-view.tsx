@@ -3,8 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { Skeleton } from "@semoss/ui/next";
-import type { RoomStore } from "@/stores";
-import type { MCPTool } from "@/types";
+import type { RoomStore, ToolStore } from "@/stores";
 import { ToolsDefaultView } from "./tools-default-view";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
@@ -18,22 +17,31 @@ interface ToolsViewProps {
 	/** Id of the app */
 	app: string;
 
+	/** Id of the message */
+	message: string;
+
 	/** Connected tool */
-	tool: {
-		message: string;
-		id: string;
-		name: string;
-		parameters: Record<string, unknown>;
-		original_name: string;
-	};
+	tool: ToolStore["json"];
+
+	/** Response to the tool */
+	toolResponse?: string;
+
+	/** Parameters that were executed */
+	toolParameters?: Record<string, unknown>;
 }
 
 export const ToolsView: React.FC<ToolsViewProps> = observer(
-	({ room, app, tool }) => {
+	({ room, app, message, tool, toolResponse, toolParameters }) => {
+		/**
+		 * State
+		 */
 		const iframeRef = useRef<HTMLIFrameElement>(null);
 		const [isLoading, setIsLoading] = useState<boolean>(true);
-
 		const [url, setUrl] = useState("");
+
+		/**
+		 * Library Hooks
+		 */
 
 		// get the metadata
 		const getAppInfo = usePixel<{
@@ -44,41 +52,9 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 			},
 		});
 
-		// Get tool JSON
-		const getMCP = usePixel<{
-			_meta: {
-				SMSS_PROJECT_NAME: string;
-				SMSS_PROJECT_ID: string;
-				SMSS_ENGINE_NAME: string;
-				SMSS_ENGINE_TYPE: string;
-				SMSS_ENGINE_ID: string;
-			};
-			tools: MCPTool[];
-		}>(`GetMCPTools(project=["${app}"]);`, {
-			data: {
-				tools: [
-					{
-						name: "",
-						description: "",
-						title: "",
-						inputSchema: {
-							properties: {},
-							type: "object",
-							required: [],
-							title: "",
-						},
-						original_name: "",
-					},
-				],
-				_meta: {
-					SMSS_ENGINE_ID: "",
-					SMSS_ENGINE_NAME: "",
-					SMSS_ENGINE_TYPE: "",
-					SMSS_PROJECT_ID: "",
-					SMSS_PROJECT_NAME: "",
-				},
-			},
-		});
+		/**
+		 * Functions
+		 */
 
 		/**
 		 * Process iframe on load
@@ -90,20 +66,26 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 					type: "SMSS_INIT_TOOL",
 					tool: {
 						type: "MCP",
-						message: tool?.message || "",
+						message: message || "",
 						id: tool?.id || "",
 						name: tool?.name || "",
-						parameters: toJS(tool?.parameters || {}),
+						parameters: toJS(toolParameters || {}),
 						roomId: room.roomId,
-						original_name: selectedTool?.original_name || "",
+						original_name: tool.original_name || "",
+						tool_response: toolResponse,
+						executedParameters: toJS(toolParameters || {}),
 					} satisfies MCPToolRequest,
 				},
 				"*",
 			);
 		};
 
+		/**
+		 * Effects
+		 */
+
 		useEffect(() => {
-			const checkPortal = async () => {
+			const chooseUrl = async () => {
 				// Finish loading
 				if (
 					getAppInfo.status === "INITIAL" ||
@@ -121,50 +103,57 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 
 				setIsLoading(true);
 
-				// Low code app
-				if (getAppInfo.data.project_type === "BLOCKS") {
-					setUrl(`${PLATFORM_URL}/#/s/${app}/`);
-					setIsLoading(false);
-					return;
+				if (!tool._meta.SMSS_MCP_UI) {
+					// Legacy, check for portals
+
+					if (getAppInfo.data.project_type === "BLOCKS") {
+						// Low code app
+						setUrl(`${PLATFORM_URL}/#/s/${app}/`);
+					}
+
+					// Check if portals exists
+					let foundApp = false;
+					try {
+						const response = await fetch(
+							`${Env.MODULE}/public_home/${app}/portals/`,
+							{ method: "GET" },
+						);
+						const text = await response.text();
+						//FixMe: Always returns a 200 so currently checking against default text returned
+						foundApp =
+							response.status === 200 &&
+							text &&
+							text !==
+								"Publish is not enabled on this project or there was an error publishing this project";
+					} catch (_e) {}
+
+					// Portals view else use default view off tool JSON
+					setUrl(
+						foundApp
+							? `${Env.MODULE}/public_home/${app}/portals/`
+							: null,
+					);
+				} else {
+					// Modern
+					const resourceURI = tool._meta.SMSS_MCP_UI?.resourceURI;
+					if (!resourceURI) {
+						// No UI defined, show form
+						setUrl(null);
+					} else if (getAppInfo.data.project_type === "BLOCKS") {
+						// Low code app
+						setUrl(`${PLATFORM_URL}/#/s/${app}${resourceURI}`);
+					} else {
+						setUrl(
+							`${Env.MODULE}/public_home/${app}/portals${resourceURI}`,
+						);
+					}
 				}
 
-				// Check if portals exists
-				let foundApp = false;
-				try {
-					const response = await fetch(
-						`${Env.MODULE}/public_home/${app}/portals/`,
-						{ method: "GET" },
-					);
-					const text = await response.text();
-					//FixMe: Always returns a 200 so currently checking against default text returned
-					foundApp =
-						response.status === 200 &&
-						text &&
-						text !==
-							"Publish is not enabled on this project or there was an error publishing this project";
-				} catch (_e) {}
-
-				// Portals view else use default view off tool JSON
-				setUrl(
-					foundApp
-						? `${Env.MODULE}/public_home/${app}/portals/`
-						: null,
-				);
 				setIsLoading(false);
 			};
-			checkPortal();
+
+			chooseUrl();
 		}, [app, tool, getAppInfo.status, getAppInfo.data]);
-
-		const selectedTool =
-			getMCP.status === "SUCCESS"
-				? getMCP.data.tools.find((t) => {
-						return t.name === tool.original_name;
-					})
-				: undefined;
-
-		if (!app || !tool) {
-			return <div>No Tool</div>;
-		}
 
 		return (
 			<div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
@@ -178,12 +167,14 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						onLoad={() => handleOnLoad()}
 					/>
 				)}
-				{!url && !isLoading && selectedTool && (
+				{!url && !isLoading && tool && (
 					<ToolsDefaultView
 						room={room}
 						app={app}
+						message={message}
 						tool={tool}
-						mcp={selectedTool}
+						toolResponse={toolResponse}
+						toolParameters={toolParameters}
 					/>
 				)}
 			</div>

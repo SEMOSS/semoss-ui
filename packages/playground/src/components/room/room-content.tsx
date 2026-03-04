@@ -5,14 +5,15 @@ import {
 	TriangleAlertIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	ScrollArea,
+	Separator,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -21,6 +22,7 @@ import {
 	InputMessage,
 	PlanMessage,
 	ResponseMessage,
+	RoomContextChart,
 	RoomInput,
 	RoomInputMenuFileExplorer,
 	RoomInputMenuKnowledge,
@@ -28,11 +30,14 @@ import {
 	RoomInputMenuUpload,
 } from "@/components";
 import { useChat } from "@/hooks";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
+import { RoomSuggestions } from "./room-suggestions";
+
+const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS === "true";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
-const SCROLL_THRESHOLD = 100;
+const SCROLL_THRESHOLD = 150;
 
 interface RoomContentProps {
 	/** Room to load */
@@ -44,7 +49,11 @@ interface RoomContentProps {
  */
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
+	const { t } = useTranslation("room");
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
+	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
+
+	const [contentHeight, setContentHeight] = useState(0);
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
@@ -163,9 +172,9 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				room.processTool(
 					tool.message,
 					tool.id,
-					tool.name,
 					tool.response,
 					tool.tool_status,
+					tool.executedParameters,
 				);
 			} catch {
 				// noop
@@ -182,24 +191,21 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	/**
 	 * Auto-scroll when dependency changes (new messages added)
 	 */
-	// biome-ignore lint/correctness/useExhaustiveDependencies:> needed to trigger scroll
 	useEffect(() => {
 		if (!scrollEle || isScrollLocked) {
 			return;
 		}
 
-		requestAnimationFrame(() => {
-			scrollToTarget(scrollEle.scrollHeight);
-		});
-	}, [
-		scrollEle,
-		scrollToTarget,
-		isScrollLocked,
-		room.history?.length || 0,
-		room.tail?.type === "RESPONSE"
-			? (room.tail as ResponseMessageStore)?.text.length
-			: 0,
-	]);
+		const timeout = setTimeout(() => {
+			const animationFrame = requestAnimationFrame(() => {
+				scrollToTarget(contentHeight);
+			});
+
+			return () => cancelAnimationFrame(animationFrame);
+		}, 100); // ~100ms delay to allow for rendering
+
+		return () => clearTimeout(timeout);
+	}, [scrollEle, scrollToTarget, isScrollLocked, contentHeight]);
 
 	/**
 	 * Set up scroll event listener
@@ -234,63 +240,99 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [scrollEle, handleScroll]);
 
+	/**
+	 * Set up content listener
+	 */
+	useEffect(() => {
+		if (!contentEle) {
+			return;
+		}
+
+		// observe content height changes
+		const observer = new ResizeObserver(() => {
+			if (contentEle) {
+				setContentHeight(contentEle.clientHeight);
+			}
+		});
+
+		observer.observe(contentEle);
+
+		return () => {
+			observer.disconnect();
+		};
+	}, [contentEle]);
+
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
-					className="h-full w-full"
+					className="h-full w-full overflow-hidden"
 					viewportRef={(ele) => {
 						setScrollEle(ele);
 					}}
 				>
-					<div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-6">
-						{room.history.map((m, mIdx) => {
-							if (!m.visible) {
-								return null;
-							}
+					<div
+						ref={(ele) => {
+							setContentEle(ele);
+						}}
+					>
+						<div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-6 sm:gap-6">
+							{room.history.map((m, mIdx) => {
+								if (!m.visible) {
+									return null;
+								}
 
-							if (m.type === "INPUT") {
 								return (
-									<InputMessage
-										key={m.key}
-										room={room}
-										message={m}
-									/>
+									<React.Fragment key={m.key}>
+										{(m.parent.modelId !== m.modelId ||
+											m.parent.parent === null) && (
+											<div className="relative flex flex-col items-center justify-center">
+												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
+													{m.ornaments.modelName}
+												</div>
+												<Separator className="absolute top-1/2" />
+											</div>
+										)}
+										{m.type === "INPUT" && (
+											<InputMessage
+												room={room}
+												message={m}
+											/>
+										)}
+										{m.type === "OUTPUT" && (
+											<ResponseMessage
+												room={room}
+												message={m}
+											/>
+										)}
+										{m.type === "PLAN" && (
+											<PlanMessage
+												message={m}
+												isLast={
+													mIdx ===
+													room.history.length - 1
+												}
+											/>
+										)}
+									</React.Fragment>
 								);
-							} else if (m.type === "RESPONSE") {
-								return (
-									<ResponseMessage
-										key={m.key}
-										room={room}
-										message={m}
-									/>
-								);
-							} else if (m.type === "PLAN") {
-								return (
-									<PlanMessage
-										key={m.key}
-										message={m}
-										isLast={
-											mIdx === room.history.length - 1
-										}
-									/>
-								);
-							}
-
-							return null;
-						})}
-					</div>
-					{room.error ? (
-						<div className="flex items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
-							<div className="flex h-10 w-10 items-center justify-center rounded-full">
-								<TriangleAlertIcon className="h-6 w-6" />
-							</div>
-							<span>
-								Unable to process request. Please check your
-								connection, copy your message, and refresh.
-							</span>
+							})}
+							{ENABLE_SUGGESTIONS && (
+								<RoomSuggestions room={room} />
+							)}
 						</div>
-					) : null}
+						{room.error ? (
+							<div className="mx-auto flex w-screen max-w-4xl items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+								<div className="flex h-10 w-10 items-center justify-center rounded-full">
+									<TriangleAlertIcon className="h-6 w-6" />
+								</div>
+								<span>
+									{room.error.message ||
+										t("content.errorDefault")}
+								</span>
+							</div>
+						) : null}
+					</div>
 				</ScrollArea>
 
 				{showScrollup && (
@@ -301,14 +343,16 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									size="icon-sm"
 									variant={"outline"}
 									onClick={() => scrollToTarget(0)}
-									aria-label="Scroll to top"
+									aria-label={t("content.scrollToTop")}
 									className="shadow-lg"
 								>
 									<MoveUpIcon />
 								</Button>
 							</span>
 						</TooltipTrigger>
-						<TooltipContent>Scroll to top</TooltipContent>
+						<TooltipContent>
+							{t("content.scrollToTop")}
+						</TooltipContent>
 					</Tooltip>
 				)}
 
@@ -319,17 +363,19 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								<Button
 									size="icon-sm"
 									variant={"outline"}
-									onClick={() =>
-										scrollToTarget(scrollEle.scrollHeight)
-									}
-									aria-label="Scroll to bottom"
+									onClick={() => {
+										scrollToTarget(contentHeight);
+									}}
+									aria-label={t("content.scrollToBottom")}
 									className="shadow-lg"
 								>
 									<MoveDownIcon />
 								</Button>
 							</span>
 						</TooltipTrigger>
-						<TooltipContent>Scroll to bottom</TooltipContent>
+						<TooltipContent>
+							{t("content.scrollToBottom")}
+						</TooltipContent>
 					</Tooltip>
 				)}
 			</div>
@@ -388,16 +434,20 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								>
 									<Settings2Icon />
 									<span className="flex-1">
-										Edit Settings
+										{t("settings.edit")}
 									</span>
 								</DropdownMenuItem>
 							</>
 						),
 					)}
 					onPrompt={handlePrompt}
-					tokensMax={chat.models.contextWindow}
-					tokensUsed={room.tokensUsed}
 					hasOutstandingTools={room.hasUnfinishedTools}
+					footer={
+						<RoomContextChart
+							tokensUsed={room.tokensUsed}
+							tokensMax={chat.models.contextWindow}
+						/>
+					}
 				/>
 			</div>
 		</div>
