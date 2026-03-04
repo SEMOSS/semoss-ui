@@ -1,5 +1,5 @@
 import { action, computed, makeObservable, observable } from "mobx";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import type { RoomStore } from "@/stores";
 import type { AbstractPixelMessage, PixelMessage } from "@/types";
 
 /**
@@ -10,6 +10,11 @@ export abstract class AbstractMessageStore {
 	 * Id of the message
 	 */
 	id: string = "";
+
+	/**
+	 * Unique react key for the message. Only should be used to render.
+	 */
+	readonly key: string;
 
 	/**
 	 * Is the message visible to the user
@@ -24,12 +29,7 @@ export abstract class AbstractMessageStore {
 	/**
 	 * Track if it is an root, input, or response message
 	 */
-	abstract type: "ROOT" | "PLAN" | "INPUT" | "RESPONSE";
-
-	/**
-	 * Track its pixelMessageType
-	 */
-	abstract pixelMessageType: PixelMessage["type"];
+	abstract type: "ROOT" | "PLAN" | "INPUT" | "OUTPUT";
 
 	/**
 	 * Parent of the message
@@ -52,14 +52,51 @@ export abstract class AbstractMessageStore {
 	activeChildPosition: number = -1;
 
 	/**
-	 * Set the message
-	 * @param id
+	 * Track if it is an root, input, or response message
+	 */
+	abstract parts: AbstractPixelMessage["parts"];
+
+	/**
+	 * Tokens used in the message, used for cost calculation
+	 */
+	tokens: number = 0;
+
+	/**
+	 * Model Id used for the message
+	 */
+	modelId: string;
+
+	/**
+	 * Model Type used for the message
+	 */
+	modelType: string;
+
+	/**
+	 * Ornaments for the message, used for extra properties that are not essential
+	 */
+	ornaments: {
+		modelName?: string;
+	};
+
+	/**
+	 *
+	 * @param room
+	 * @param message
 	 */
 	constructor(room: RoomStore, message: AbstractPixelMessage) {
 		this.room = room;
 
+		// set the key
+		this.key = `room-${room.roomId}-${Date.now()}-${Math.floor(Math.random() * 100000000)}`;
+
 		this.id = message.messageId;
 		this.visible = message.visible;
+		this.tokens = message.tokens;
+		this.modelId = message.modelId;
+		this.modelType = message.modelType;
+		this.ornaments = {
+			modelName: message.ornaments?.modelName,
+		};
 
 		makeObservable(this, {
 			room: observable,
@@ -68,13 +105,17 @@ export abstract class AbstractMessageStore {
 			position: observable,
 			children: observable,
 			activeChildPosition: observable,
+			tokens: observable,
+			modelId: observable,
+			modelType: observable,
+			ornaments: observable,
 			siblings: computed,
 			previousSibling: computed,
 			nextSibling: computed,
 			activeChild: computed,
-			updateId: action,
 			connectParent: action,
 			addChild: action,
+			removeChild: action,
 			activateMessage: action,
 		});
 	}
@@ -123,12 +164,9 @@ export abstract class AbstractMessageStore {
 
 	/** Actions */
 	/**
-	 * Update the id
+	 * Sync store properties from the pixel message
 	 */
-	updateId = (id: string) => {
-		// update the id
-		this.id = id;
-	};
+	abstract sync: (message: PixelMessage) => void;
 
 	/**
 	 * Connect the parent and store the position
@@ -146,20 +184,6 @@ export abstract class AbstractMessageStore {
 		// store it
 		this.children.push(message);
 
-		// if the child is an INPUT_TOOL_EXEC, find the related tool message and mark its response
-		if (message.pixelMessageType === "INPUT_TOOL_EXEC") {
-			let currentMessage: AbstractMessageStore | null = this;
-			while (currentMessage !== null) {
-				if (currentMessage.pixelMessageType === "RESPONSE_TOOL") break;
-				currentMessage = currentMessage.parent;
-			}
-			if (currentMessage !== null) {
-				(currentMessage as ResponseMessageStore).markToolAsUsed(
-					(message as ResponseMessageStore).inputToolExecData,
-				);
-			}
-		}
-
 		// last idx is the position
 		const position = this.children.length - 1;
 
@@ -171,13 +195,47 @@ export abstract class AbstractMessageStore {
 	};
 
 	/**
+	 * Remove a child message
+	 */
+	removeChild = (message: AbstractMessageStore) => {
+		if (!message) {
+			return;
+		}
+
+		const index = this.children.findIndex(
+			(child) => child.id === message.id,
+		);
+		if (index === -1) {
+			return;
+		}
+
+		// remove the child
+		const [removed] = this.children.splice(index, 1);
+
+		// reset parent linkage on removed child
+		if (removed) {
+			removed.connectParent(null, -1);
+		}
+
+		// reindex remaining children
+		this.children.forEach((child, position) => {
+			child.position = position;
+		});
+
+		// update active child position
+		if (this.activeChildPosition === index) {
+			this.activeChildPosition = this.children.length
+				? Math.min(index, this.children.length - 1)
+				: -1;
+		} else if (this.activeChildPosition > index) {
+			this.activeChildPosition -= 1;
+		}
+	};
+
+	/**
 	 * Set the current message as active
 	 */
 	activateMessage = () => {
 		this.parent.activeChildPosition = this.position;
-		this.room.setHasUnfinishedTools(
-			(this.room.tail as ResponseMessageStore).hasUnfinishedTools?.() ??
-				false,
-		);
 	};
 }

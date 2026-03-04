@@ -1,6 +1,12 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { runPixel, uploadInsight } from "@semoss/sdk/react";
-import { FlexLayout } from "@semoss/shared";
+import {
+	getPixelAsyncResult,
+	getPixelJobStreaming,
+	runPixel,
+	runPixelAsync,
+	uploadInsight,
+} from "@semoss/sdk/react";
+import { FlexLayout, type ThemeMap } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import {
 	type AbstractMessageStore,
@@ -8,9 +14,19 @@ import {
 	InputMessageStore,
 	PlanMessageStore,
 	ResponseMessageStore,
-	RootMessageStore,
+	ToolStore,
 } from "@/stores";
-import type { MCPConfig, PixelMessage, Workspace } from "@/types";
+import type {
+	Engine,
+	MCPConfig,
+	PixelMessage,
+	PixelMessageMediaPart,
+	PixelMessageTextPart,
+	PixelMessageToolCallPart,
+	PixelMessageToolResultPart,
+	ResponsePixelMessage,
+	Workspace,
+} from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -25,19 +41,9 @@ interface RoomStoreInterface {
 	insightId: string;
 
 	/**
-	 *  Track if the room is initialized
-	 */
-	isInitialized: boolean;
-
-	/**
 	 *  Track if the room is loading
 	 */
 	isLoading: boolean;
-
-	/**
-	 *  Track whether the room has tools that need to be finished before the next message can be sent
-	 */
-	hasUnfinishedTools: boolean;
 
 	/**
 	 *  Track if the room has errored
@@ -64,15 +70,20 @@ interface RoomStoreInterface {
 		dateCreated: string;
 	};
 
-	/*
-	 * Model that is being chatted against
-	 */
-	modelId: string;
-
 	/**
 	 * Root message
 	 */
-	root: RootMessageStore;
+	root: ResponseMessageStore | PlanMessageStore | null;
+
+	/**
+	 * Active tools
+	 */
+	tools: Record<string, ToolStore>;
+
+	/*
+	 * Model that is being chatted against
+	 */
+	model: Engine | null;
 
 	/*
 	 * Options that is passed to the model
@@ -103,6 +114,7 @@ interface RoomStoreInterface {
 		 */
 		workspace?: {
 			workspace_id: string;
+			name?: string;
 		};
 	};
 
@@ -129,19 +141,19 @@ interface RoomStoreInterface {
  * Manage the room
  */
 export class RoomStore {
+	private _theme: ThemeMap["playground"];
 	private _store: RoomStoreInterface = {
 		roomId: "",
 		insightId: "new",
-		isInitialized: false,
 		isLoading: false,
-		hasUnfinishedTools: false,
 		mode: "chat",
 		metadata: {
 			name: "",
 			dateCreated: "",
 		},
-		modelId: "",
-		root: new RootMessageStore(this),
+		model: null,
+		root: null,
+		tools: {},
 		options: {
 			instructions: "",
 			mcp: [],
@@ -163,7 +175,12 @@ export class RoomStore {
 		},
 	};
 
-	constructor(roomId: string, insightId: string) {
+	constructor(
+		theme: ThemeMap["playground"],
+		roomId: string,
+		insightId: string = "new",
+	) {
+		this._theme = theme;
 		// register the roomId, insightId, and actions
 		this._store.roomId = roomId;
 		this._store.insightId = insightId;
@@ -172,8 +189,8 @@ export class RoomStore {
 		makeAutoObservable(this);
 
 		// increment the counter whenever the model changes
-		this._store.sidebar.model.addChangeListener(() => {
-			this.tickSidebar();
+		this._store.sidebar.model.addChangeListener((action) => {
+			this.tickSidebar(action);
 		});
 	}
 
@@ -188,10 +205,17 @@ export class RoomStore {
 	}
 
 	/**
-	 * Indicator to chack if it is ready for use
+	 * Get the insightId of the roomId
 	 */
-	get isInitialized() {
-		return this._store.isInitialized;
+	get insightId() {
+		return this._store.insightId;
+	}
+
+	/**
+	 * Get the theme
+	 */
+	get theme() {
+		return this._theme;
 	}
 
 	/**
@@ -199,13 +223,6 @@ export class RoomStore {
 	 */
 	get isLoading() {
 		return this._store.isLoading;
-	}
-
-	/**
-	 * Indicator to check if the room is ready for the next message
-	 */
-	get hasUnfinishedTools() {
-		return this._store.hasUnfinishedTools;
 	}
 
 	/**
@@ -232,8 +249,8 @@ export class RoomStore {
 	/**
 	 * Models that the user is interacting with
 	 */
-	get modelId() {
-		return this._store.modelId;
+	get model() {
+		return this._store.model;
 	}
 
 	/**
@@ -244,6 +261,10 @@ export class RoomStore {
 		const queue: AbstractMessageStore[] = [this._store.root];
 		while (queue.length > 0) {
 			const current = queue.shift();
+
+			if (!current) {
+				continue;
+			}
 
 			if (current.id === messageId) {
 				return current;
@@ -299,6 +320,36 @@ export class RoomStore {
 	}
 
 	/**
+	 * Indicator to check if the room is ready for the next message
+	 */
+	get hasUnfinishedTools(): boolean {
+		if (this.tail instanceof ResponseMessageStore) {
+			for (const toolId in this._store.tools) {
+				const tool = this._store.tools[toolId];
+				if (tool.status === "INITIAL" || tool.status === "LOADING") {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Number of tokens used
+	 */
+	get tokensUsed() {
+		let currMessage = this.tail as AbstractMessageStore;
+		let tokensUsed = 0;
+		while (currMessage) {
+			tokensUsed += currMessage.tokens;
+			if (currMessage.type === "INPUT") break;
+			currMessage = currMessage.parent;
+		}
+
+		return tokensUsed;
+	}
+
+	/**
 	 * Get the most recent plan
 	 */
 	get plan(): PlanMessageStore | null {
@@ -341,11 +392,11 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set the model
+	 * Set the model Id
 	 * @param modelId - model to use in the room
 	 */
-	setModel = (modelId: string) => {
-		this._store.modelId = modelId;
+	setModel = (model: Engine) => {
+		this._store.model = model;
 	};
 
 	/**
@@ -375,11 +426,6 @@ export class RoomStore {
 	 */
 	initialize = async () => {
 		try {
-			// only load messages once
-			if (this._store.isInitialized) {
-				return;
-			}
-
 			// get all of the messages, get all the options
 			const response = await this.runRoomPixel<
 				[
@@ -397,7 +443,49 @@ export class RoomStore {
 				OPTIONS?: RoomStoreInterface["options"];
 			};
 
-			const root = new RootMessageStore(this);
+			// sync the insight ID
+			runInAction(() => {
+				this._store.insightId = response.insightId;
+			});
+
+			// create the root
+			let root = null;
+			if (this.mode === "chat") {
+				root = new ResponseMessageStore(this, {
+					io: "OUTPUT",
+					messageId: "ROOT_PLACEHOLDER_ID",
+					visible: false,
+					platform_generated: true,
+					modelId: this._store.model?.app_id || "",
+					dateCreated: new Date().toISOString(),
+					parts: [],
+					tokens: 0,
+					ornaments: {
+						modelName: this._store.model?.app_name || "",
+					},
+				} as ResponsePixelMessage);
+			} else if (this.mode === "planning") {
+				root = new ResponseMessageStore(this, {
+					io: "OUTPUT",
+					messageId: "ROOT_PLACEHOLDER_ID",
+					visible: false,
+					platform_generated: true,
+					modelId: this._store.model?.app_id || "",
+					dateCreated: new Date().toISOString(),
+					parts: [
+						{
+							type: "TEXT",
+							text: "",
+						},
+					],
+					tokens: 0,
+					ornaments: {
+						PLAYGROUND_MESSAGE_TYPE: "COT",
+						modelName: this._store.model?.app_name || "",
+					},
+				} as ResponsePixelMessage);
+			}
+
 			const messages: Record<
 				string,
 				{
@@ -410,14 +498,11 @@ export class RoomStore {
 			> = {};
 
 			// store the last model
-			let activeModelId = this._store.modelId;
+			let activeModelId = this._store.model?.app_id;
 
-			// This is done as seperate loops because of INPUT_TOOL_EXEC
+			// This is done as seperate loops because of linking
 			for (const pixelMessage of messageOutput) {
-				if (
-					pixelMessage.type === "INPUT_TEXT" ||
-					pixelMessage.type === "INPUT_MEDIA"
-				) {
+				if (pixelMessage.io === "INPUT") {
 					activeModelId = pixelMessage.modelId;
 				}
 
@@ -495,32 +580,33 @@ export class RoomStore {
 				}
 			}
 
-			runInAction(() => {
-				// set the model based on the history
-				this.setModel(activeModelId);
+			// set the model based on the history
+			if (activeModelId) {
+				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
+					` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(activeModelId)})`,
+				);
 
+				runInAction(() => {
+					this.setModel(pixelReturn[0].output[0]);
+				});
+			}
+
+			runInAction(() => {
 				// set the options based on the history
 				this.setOptions(newOptions);
 
 				// store it
 				this._store.root = root;
-
-				// mark as initialized
-				this._store.isInitialized = true;
 			});
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
-			if (this.tail.type === "RESPONSE") {
-				runInAction(() => {
-					this.setHasUnfinishedTools(true);
-				});
-				this.tail.startToolExecution();
+			if (this.tail.type === "OUTPUT") {
+				this.tail.continueToolExecution();
 			}
 		} catch (e) {
 			console.error(e);
 			runInAction(() => {
 				this.setIsLoading(false);
-				this.setHasUnfinishedTools(false);
 			});
 			throw new Error(e.message || "Error initializing room");
 		}
@@ -535,6 +621,7 @@ export class RoomStore {
 			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
 			const optionsToSave = {
 				...options,
+				modelId: this._store.model.app_id,
 				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
 			};
 
@@ -548,6 +635,53 @@ export class RoomStore {
 		} catch (e) {
 			throw new Error(e.message || "Error updating room options");
 		}
+	};
+
+	/**
+	 * Tools
+	 */
+	/**
+	 * Sync a tool based on a message and part that contains tool information. This is used for both tool calls and tool results
+	 * @param toolId - the id of the tool
+	 * @param message - the message that contains the tool information
+	 * @param part - the part of the message that contains the tool information
+	 */
+	syncTool = (
+		toolId: string,
+		message: InputMessageStore | ResponseMessageStore,
+		part: PixelMessageToolCallPart | PixelMessageToolResultPart,
+	) => {
+		let tool = this._store.tools[toolId];
+		if (!tool) {
+			tool = new ToolStore(this, toolId);
+			this._store.tools[tool.id] = tool;
+		}
+
+		tool.syncMessage(message, part);
+	};
+
+	/**
+	 * Get a tool
+	 * @param toolId - the id of the tool
+	 */
+	getTool = (toolId: string): ToolStore => {
+		return this._store.tools[toolId] || null;
+	};
+
+	/**
+	 * Get a tool by nodeId
+	 * @param nodeId - the id of the tool
+	 */
+	getToolByNodeId = (nodeId: string): ToolStore => {
+		if (!nodeId.startsWith("tool--")) {
+			return null;
+		}
+
+		// strip out the id from the nodeId
+		const toolId = nodeId.replace("tool--", "");
+
+		//get the tool based on the id
+		return this._store.tools[toolId] || null;
 	};
 
 	/**
@@ -641,8 +775,16 @@ export class RoomStore {
 	/**
 	 * Increment the counter and close if there are no nodes
 	 */
-	tickSidebar = async (): Promise<void> => {
+	tickSidebar = async (action: FlexLayout.Action): Promise<void> => {
 		this._store.sidebar.counter += 1;
+
+		// if it is a delete
+		if (action.type === FlexLayout.Actions.DELETE_TAB) {
+			const tool = this.getToolByNodeId(action.data.node);
+			if (tool) {
+				tool.setIsOpen(false);
+			}
+		}
 
 		// check if there are any tabs left
 		let hasTabs = false;
@@ -657,7 +799,6 @@ export class RoomStore {
 			this.closeSidebar();
 		}
 	};
-
 	/**
 	 * Helpers
 	 */
@@ -670,27 +811,12 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set the hasUnfinishedTools boolean
-	 * @param hasUnfinishedTools - is it ready
-	 */
-	setHasUnfinishedTools = (isReady: boolean): void => {
-		this._store.hasUnfinishedTools = isReady;
-	};
-
-	/**
-	 * Mark a room as initialized
-	 */
-	setInitialized = (): void => {
-		this._store.isInitialized = true;
-	};
-
-	/**
 	 * Ask a message to the room
 	 * @param prompt - user message
 	 * @param files - files
 	 */
 	askMessage = async (prompt: string, files: File[] = []): Promise<void> => {
-		if (!this.modelId) {
+		if (!this.model) {
 			throw new Error("Model is required");
 		}
 
@@ -699,25 +825,81 @@ export class RoomStore {
 		}
 
 		// upload the files
-		let uploaded = [];
+		let uploaded: {
+			fileName: string;
+			fileLocation: string;
+		}[] = [];
+
+		let mediaInputs: {
+			fileName: string;
+			fileLocation: string;
+		}[] = [];
+
+		// upload the files if there are any
 		if (files.length > 0) {
-			uploaded = (await uploadInsight(this._store.insightId, "", files))
-				.data;
+			const response = await uploadInsight(
+				this._store.insightId,
+				"",
+				files,
+			);
+
+			// set the new files
+			uploaded = response.data;
+
+			// filter the uploaded files to only include allowed file types based on the theme configuration (if configured)
+			mediaInputs = uploaded.filter((f) => {
+				const allowed = this._theme.allowedFileTypes;
+
+				// If not configured (or empty), allow all
+				if (!allowed || allowed.length === 0) {
+					return true;
+				}
+
+				// get the extension
+				const ext = f.fileName.split(".").pop();
+				if (allowed.indexOf(ext) > -1) {
+					return true;
+				}
+
+				return false;
+			});
+		}
+
+		const parts: (PixelMessageTextPart | PixelMessageMediaPart)[] = [
+			{
+				type: "TEXT",
+				text: prompt,
+				uiText: prompt,
+			},
+		];
+		for (const file of mediaInputs) {
+			parts.push({
+				type: "MEDIA",
+				mediaInfo: {
+					base64Data: "",
+					fileFormat: "",
+					fileName: file.fileName,
+					fileLocation: file.fileLocation,
+					mediaInputType: "FILE",
+					mimeType: "",
+				},
+			});
 		}
 
 		// create the input message
 		const inputMessage = new InputMessageStore(this, {
-			messageId: "TEMP",
-			type: "INPUT_TEXT",
+			io: "INPUT",
+			messageId: "ASK_PLACEHOLDER_ID",
 			visible: true,
-			inputUIPrompt: prompt,
-			mediaInputs: uploaded,
-			modelId: this.modelId,
-			paramMap: {
-				max_new_tokens: this.options.tokenLength,
-				temperature: this.options.temperature,
+			platform_generated: true,
+			modelId: this.model?.app_id,
+			modelType: this.model?.app_type,
+			dateCreated: new Date().toISOString(),
+			parts: parts,
+			tokens: 0,
+			ornaments: {
+				modelName: this.model.app_name,
 			},
-			dateCreated: "",
 		});
 
 		// get the parent message
@@ -740,16 +922,16 @@ export class RoomStore {
 	 * Process a tool call
 	 * @param messageId - id of the message
 	 * @param toolId - id of the tool
-	 * @param toolName - name of the tool
 	 * @param toolResponse - response from the tool
 	 * @param toolStatus - status of the tool execution
+	 * @param executedParameters - parameters used by the tool
 	 */
 	processTool = async (
 		messageId: string,
 		toolId: string,
-		toolName: string,
 		toolResponse: string,
 		toolStatus: "success" | "error" | "cancelled" = "success",
+		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {
 			const message = this.getMessage(messageId);
@@ -757,17 +939,28 @@ export class RoomStore {
 				return;
 			}
 
-			const tool = message.getTool(toolId, toolName);
+			const tool = this._store.tools[toolId];
 			if (!tool || tool.response) {
 				return;
 			}
 
 			if (this.mode === "executing") {
 				// save the tool execution
-				await this.plan?.saveToolExecution(message, tool, toolResponse);
+				await this.plan?.saveToolExecution(
+					message,
+					tool,
+					toolResponse,
+					toolStatus,
+					executedParameters,
+				);
 			} else {
 				// save the response with the tool
-				await message.saveToolExecution(tool, toolResponse, toolStatus);
+				await message.saveToolExecution(
+					tool,
+					toolResponse,
+					toolStatus,
+					executedParameters,
+				);
 			}
 		} catch (e) {
 			console.error(e);
@@ -782,6 +975,7 @@ export class RoomStore {
 	runRoomPixel = async <O extends [] | unknown[]>(
 		pixel: string,
 		showLoading: boolean = true,
+		setErrorOnFail: boolean = true,
 	): Promise<{
 		errors: string[];
 		insightId: string;
@@ -813,14 +1007,93 @@ export class RoomStore {
 			});
 			return response;
 		} catch (e) {
-			runInAction(() => {
-				this._store.error = e;
-			});
+			if (setErrorOnFail) {
+				runInAction(() => {
+					this._store.error = e;
+				});
+			}
 			throw e;
 		} finally {
 			if (showLoading) {
 				this.setIsLoading(false);
 			}
+		}
+	};
+
+	/**
+	 * Run a pixel with streaming support for LLM responses
+	 * @param pixel - pixel to execute
+	 * @param onPoll - callback for each streaming chunk
+	 */
+	runRoomPixelStreaming = async <O extends unknown[] | []>(
+		pixel: string,
+		onPoll: (
+			message: Awaited<
+				ReturnType<typeof getPixelJobStreaming>
+			>["message"][number],
+		) => void,
+	) => {
+		try {
+			this.setIsLoading(true);
+
+			// Start async execution to get job ID
+			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
+
+			if (!jobId) {
+				throw new Error("No job ID returned from pixel execution");
+			}
+
+			// Poll for streaming content
+			let isPolling = true;
+
+			const pollingInterval = 300; // 300ms for responsive streaming
+
+			while (isPolling) {
+				try {
+					const response = await getPixelJobStreaming(jobId);
+
+					if (response && response.message.length > 0) {
+						for (const message of response.message) {
+							onPoll(message);
+						}
+					}
+
+					// Check status for completion
+					if (
+						response.status === "ProgressComplete" ||
+						response.status === "Complete"
+					) {
+						isPolling = false;
+					} else if (response.status === "Error") {
+						throw new Error("Streaming job encountered an error");
+					}
+
+					if (isPolling) {
+						await new Promise((resolve) =>
+							setTimeout(resolve, pollingInterval),
+						);
+					}
+				} catch (error) {
+					isPolling = false;
+					throw error;
+				}
+			}
+
+			// get the final result
+			const result = await getPixelAsyncResult<O>(jobId);
+
+			if (result.errors.length > 0) {
+				throw new Error(result.errors.join(""));
+			}
+
+			return result;
+		} catch (e) {
+			console.error(e);
+
+			// show the error
+			this._store.error = e;
+		} finally {
+			this.setIsLoading(false);
 		}
 	};
 }
