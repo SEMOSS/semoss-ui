@@ -59,9 +59,9 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 	const createdText = useMemo(() => formatDate(createdValue), [createdValue]);
 
 	const promptText = useMemo(() => {
-		const raw = prompt?.intent ?? prompt?.context ?? "";
+		const raw = prompt?.context ?? "";
 		return String(raw);
-	}, [prompt?.intent, prompt?.context]);
+	}, [prompt?.context]);
 
 	const tags = useMemo(() => {
 		const raw = prompt?.tags;
@@ -180,8 +180,18 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 
 						{prompt.context ? (
 							<div>
-								<div className="mb-2 font-semibold text-slate-900 text-sm">
-									{t("promptLibrary:details.promptContext")}
+								<div className="mb-2 flex items-center justify-between">
+									<div className="font-semibold text-slate-900 text-sm">
+										{t("promptLibrary:details.description")}
+									</div>
+									<button
+										type="button"
+										onClick={handleCopy}
+										aria-label="Copy context"
+										className="rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+									>
+										<Copy className="h-4 w-4" />
+									</button>
 								</div>
 								<div className="max-h-[250px] overflow-y-auto rounded-md border border-slate-200 bg-slate-50 p-3">
 									<div className="whitespace-pre-wrap text-slate-600 text-sm leading-6">
@@ -190,28 +200,6 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 								</div>
 							</div>
 						) : null}
-
-						<div>
-							<div className="mb-2 flex items-center justify-between">
-								<div className="font-semibold text-slate-900 text-sm">
-									{t("promptLibrary:details.intent")}
-								</div>
-								<button
-									type="button"
-									onClick={handleCopy}
-									aria-label="Copy intent"
-									className="rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-								>
-									<Copy className="h-4 w-4" />
-								</button>
-							</div>
-
-							<div className="max-h-[200px] overflow-y-auto rounded-md border border-slate-200 bg-slate-50 p-3">
-								<div className="whitespace-pre-wrap text-slate-900 text-sm leading-6">
-									{promptText}
-								</div>
-							</div>
-						</div>
 
 
 						{tags.length > 0 ? (

@@ -3,6 +3,7 @@ import { useEffect, useId, useState } from "react";
 import { Button } from "@semoss/ui/next";
 import { ChipsInput } from "@/components/prompt/chips-input";
 import type { Prompt } from "@/types/prompt";
+import { useTranslation } from "@semoss/i18n";
 
 interface EditPromptModalProps {
 	prompt: Prompt;
@@ -19,6 +20,7 @@ export const EditPromptModal = ({
 	onSave,
 	isNewPrompt = false,
 }: EditPromptModalProps) => {
+	const { t } = useTranslation(["prompt-library", "common"]);
 	const [editedPrompt, setEditedPrompt] = useState<Prompt>({ ...prompt });
 	const [isBeingEdited, setIsBeingEdited] = useState(false);
 
@@ -69,7 +71,6 @@ export const EditPromptModal = ({
 
 	const nameId = useId();
 	const contentId = useId();
-	const intentId = useId();
 	const tagsId = useId();
 
 	return (
@@ -96,7 +97,7 @@ export const EditPromptModal = ({
 								className="font-medium text-sm"
 								htmlFor={nameId}
 							>
-								Name
+								{t("promptLibrary:details.name")}
 							</label>
 							<input
 								id={nameId}
@@ -111,7 +112,7 @@ export const EditPromptModal = ({
 								className="mt-4 font-medium text-sm"
 								htmlFor={contentId}
 							>
-								Prompt Content
+								{t("promptLibrary:details.description")}
 							</label>
 							<textarea
 								id={contentId}
@@ -122,27 +123,11 @@ export const EditPromptModal = ({
 								rows={8}
 								className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
 							/>
-
-							<label
-								className="mt-4 font-medium text-sm"
-								htmlFor={intentId}
-							>
-								Intent
-							</label>
-							<input
-								id={intentId}
-								name="intent"
-								value={editedPrompt.intent ?? ""}
-								onChange={handleChange}
-								required
-								className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-							/>
-
 							<label
 								className="mt-4 font-medium text-sm"
 								htmlFor={tagsId}
 							>
-								Tags
+								{t("promptLibrary:details.tags")}
 							</label>
 							<ChipsInput
 								id={tagsId}
@@ -154,20 +139,20 @@ export const EditPromptModal = ({
 										tags: nextTags,
 									}));
 								}}
-								placeholder="Add tags and press Enter"
+								placeholder={t("promptLibrary:buttons.addTagsPlaceholder")}
 							/>
 						</div>
 					</div>
 
 					<div className="flex items-center justify-end gap-2 border-border border-t px-4 py-3">
 						<Button type="button" variant="ghost" onClick={onClose}>
-							Cancel
+							{t("common:buttons.cancel")}
 						</Button>
 						<button
 							type="submit"
 							className="rounded-md bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
 						>
-							{isNewPrompt ? "Create" : "Save Changes"}
+							{isNewPrompt ? t("common:buttons.create") : t("promptLibrary:buttons.saveChanges")}
 						</button>
 					</div>
 				</form>

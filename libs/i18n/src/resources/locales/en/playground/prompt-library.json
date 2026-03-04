@@ -10,15 +10,20 @@
         "deletePrompt": "Delete Prompt",
         "deletePromptConfirm": "Are you sure you want to delete '{{ title }}'? This action cannot be undone.",
         "delete": "Delete",
-        "usePrompt": "Use Prompt"
+        "usePrompt": "Use Prompt",
+        "addTagsPlaceholder": "Add tags and press enter",
+        "saveChanges": "Save Changes"
     },
     "descriptions": {
         "promptsFound": "prompts found"
     },
     "details": {
         "title": "Details",
+        "context": "Context",
         "created": "Created:",
         "createdBy": "Created by:",
+        "description": "Description",
+        "name": "Name",
         "version": "Version:",
         "scope": "Scope:",
         "promptContext": "Prompt Context",

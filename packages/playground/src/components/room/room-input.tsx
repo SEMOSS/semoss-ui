@@ -79,7 +79,7 @@ interface RoomInputProps {
 	/** Prompt and prompt change **/
 	prompt: string;
 
-	onPromptChange: React.Dispatch<React.SetStateAction<string>>;
+	onPromptChange: (prompt: string) => void;
 
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
@@ -92,10 +92,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		model,
 		setModel,
 		MenuComponent,
-		onPrompt = () => null,
+		onPrompt = () => Promise.resolve(false),
 		hasOutstandingTools = false,
 		prompt,
-		onPromptChange,
+		onPromptChange = () => {},
 		footer = null,
 	}) => {
 		const { t } = useTranslation("room");

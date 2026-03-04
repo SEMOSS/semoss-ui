@@ -92,18 +92,18 @@ export const PromptGrid = observer(function PromptGrid({
 					? "bg-amber-600"
 					: "bg-slate-700";
 
-	const listToRender = useMemo(() => {
-		if (selectedCategory.label === "My Prompts") {
-			return myPrompts.length ? myPrompts : [];
-		}
-		return globalPrompts.length ? globalPrompts : [];
-	}, [
-		selectedCategory.label,
-		myPrompts,
-		myPrompts.length,
-		globalPrompts,
-		globalPrompts.length,
-	]);
+const listToRender = useMemo(() => {
+	// Always show both arrays since the filtering is handled in the parent
+	const combined = [...myPrompts, ...globalPrompts];
+	
+	// Remove duplicates (in case a prompt appears in both arrays)
+	const uniquePrompts = combined.filter((prompt, index, self) => 
+		self.findIndex(p => p.id === prompt.id) === index
+	);
+	
+	return uniquePrompts;
+}, [myPrompts, globalPrompts]);
+
 
 	const handleEdit = (prompt: Prompt) => {
 		setCurrentPrompt(prompt);
@@ -212,8 +212,8 @@ export const PromptGrid = observer(function PromptGrid({
 			{!isMobile && (
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 					{Array.isArray(listToRender) &&
-						listToRender.map((prompt) => (
-							<div key={prompt.id} className="h-full">
+						listToRender.map((prompt, index) => (
+							<div key={`${prompt.id}-${index}`} className="h-full">
 								<PromptCard
 									prompt={prompt}
 									category={selectedCategory.label}
@@ -228,7 +228,7 @@ export const PromptGrid = observer(function PromptGrid({
 				</div>
 			)}
 
-			{isMobile && location.pathname === "/prompt-library" && (
+			{/* {isMobile && location.pathname === "/prompt-library" && (
 				<div className="relative flex flex-col flex-nowrap gap-1 px-1">
 					{Array.isArray(listToRender) &&
 						listToRender.map((prompt) => (
@@ -248,7 +248,7 @@ export const PromptGrid = observer(function PromptGrid({
 							</div>
 						))}
 				</div>
-			)}
+			)} */}
 
 			{/* {isMobile && location.pathname === "/" && (
 				<div
