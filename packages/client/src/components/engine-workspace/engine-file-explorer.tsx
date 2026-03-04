@@ -70,8 +70,8 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 
 		useEffect(() => {
 			const mcpParam = searchParams.get("mcp");
-			const mcpFilePath = "/mcp/pixel_mcp.json";
 			if (mcpParam === "Generate") {
+				const mcpFilePath = "/mcp/pixel_mcp.json";
 				addNode(`ENGINE_MCP_EDITOR--${mcpFilePath}`, {
 					type: "tab",
 					name: `Toolbox Editor - pixel_mcp.json`,
@@ -83,9 +83,9 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 					enableClose: true,
 				});
 				toast.success("MCP generated");
+				searchParams.delete("mcp");
+				setSearchParams(searchParams);
 			}
-			searchParams.delete("mcp");
-			setSearchParams(searchParams);
 		}, [searchParams]);
 
 		return (
