@@ -61,7 +61,7 @@ type EngineAsset = {
 };
 
 const formatDateTime = (dateStr: string): string => {
-	const d = new Date(dateStr.replace(" ", "T"));
+	const d = new Date(dateStr.replace(" ", "T") + "Z");
 	if (isNaN(d.getTime())) return dateStr;
 	return d.toLocaleString(undefined, {
 		month: "short",
@@ -79,7 +79,9 @@ export const DocumentLibrary = () => {
 
 	const [search, setSearch] = useState("");
 	const [centerFilter, setCenterFilter] = useState<string[]>([]);
-	const [sortBy, setSortBy] = useState<"name-asc" | "name-desc" | "date-desc" | "date-asc">("name-asc");
+	const [sortBy, setSortBy] = useState<
+		"name-asc" | "name-desc" | "date-desc" | "date-asc"
+	>("name-asc");
 	const [sortPopoverOpen, setSortPopoverOpen] = useState(false);
 	const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 	const [libraryTab, setLibraryTab] = useState<"all" | "global" | "mine">(
@@ -204,79 +206,79 @@ export const DocumentLibrary = () => {
 		}, []) || [];
 
 	const filteredItems = formatted
-	.filter((item) => {
-		// NOTE: Today we only have tags; until we have an explicit ownership/global flag,
-		// use conservative heuristics:
-		// - "mine": no FDA/center tags
-		// - "global": has FDA or a known center tag
-		if (libraryTab === "all") {
-			return true;
-		}
+		.filter((item) => {
+			// NOTE: Today we only have tags; until we have an explicit ownership/global flag,
+			// use conservative heuristics:
+			// - "mine": no FDA/center tags
+			// - "global": has FDA or a known center tag
+			if (libraryTab === "all") {
+				return true;
+			}
 
-		const tags = Array.isArray(item.tag) ? item.tag : [];
-		const lowerTags = tags
-			.filter(Boolean)
-			.map((t) => String(t).toLowerCase());
+			const tags = Array.isArray(item.tag) ? item.tag : [];
+			const lowerTags = tags
+				.filter(Boolean)
+				.map((t) => String(t).toLowerCase());
 
-		const isGlobal = lowerTags.includes("fda")
-			? true
-			: centers.some((c) => lowerTags.includes(c.toLowerCase()));
+			const isGlobal = lowerTags.includes("fda")
+				? true
+				: centers.some((c) => lowerTags.includes(c.toLowerCase()));
 
-		return libraryTab === "global" ? isGlobal : !isGlobal;
-	})
-	.filter((item) => {
-		const matchesSearch =
-			!search ||
-			search.trim() === "" ||
-			item?.tag?.some((a) =>
-				a?.toLowerCase()?.includes(search?.toLowerCase()),
-			);
-
-		let matchesCenter = true;
-		try {
-			matchesCenter =
-				centerFilter.length === 0 ||
-				centerFilter.some((filter) =>
-					item?.tag?.some((a) =>
-						a?.toLowerCase()?.includes(filter.toLowerCase()),
-					),
+			return libraryTab === "global" ? isGlobal : !isGlobal;
+		})
+		.filter((item) => {
+			const matchesSearch =
+				!search ||
+				search.trim() === "" ||
+				item?.tag?.some((a) =>
+					a?.toLowerCase()?.includes(search?.toLowerCase()),
 				);
-		} catch (e) {
-			console.error(e);
-		}
 
-		let matchesName = true;
+			let matchesCenter = true;
+			try {
+				matchesCenter =
+					centerFilter.length === 0 ||
+					centerFilter.some((filter) =>
+						item?.tag?.some((a) =>
+							a?.toLowerCase()?.includes(filter.toLowerCase()),
+						),
+					);
+			} catch (e) {
+				console.error(e);
+			}
 
-		try {
-			matchesName = item?.name
-				?.toLowerCase()
-				?.includes(search?.toLowerCase());
-		} catch (e) {
-			console.error(e);
-		}
+			let matchesName = true;
 
-		return (matchesSearch && matchesCenter) || matchesName;
-	})
-	.filter((item) => {
-		if (!showFavoritesOnly) return true;
-		return favorites[item.id] ?? item.favorite;
-	})
-	.sort((a, b) => {
-		switch (sortBy) {
-			case "name-asc":
-				return a.name.localeCompare(b.name);
-			case "name-desc":
-				return b.name.localeCompare(a.name);
-			case "date-desc":
-				return b.dateCreated.localeCompare(a.dateCreated);
-			case "date-asc":
-				return a.dateCreated.localeCompare(b.dateCreated);
-			default:
-				return a.name.localeCompare(b.name);
-		}
-	});
+			try {
+				matchesName = item?.name
+					?.toLowerCase()
+					?.includes(search?.toLowerCase());
+			} catch (e) {
+				console.error(e);
+			}
 
-		const getSortDisplayText = (sortBy: string) => {
+			return (matchesSearch && matchesCenter) || matchesName;
+		})
+		.filter((item) => {
+			if (!showFavoritesOnly) return true;
+			return favorites[item.id] ?? item.favorite;
+		})
+		.sort((a, b) => {
+			switch (sortBy) {
+				case "name-asc":
+					return a.name.localeCompare(b.name);
+				case "name-desc":
+					return b.name.localeCompare(a.name);
+				case "date-desc":
+					return b.dateCreated.localeCompare(a.dateCreated);
+				case "date-asc":
+					return a.dateCreated.localeCompare(b.dateCreated);
+				default:
+					return a.name.localeCompare(b.name);
+			}
+		});
+
+	const getSortDisplayText = (sortBy: string) => {
 		switch (sortBy) {
 			case "name-asc":
 				return "Sort: Name (A-Z)";
@@ -384,15 +386,15 @@ export const DocumentLibrary = () => {
 
 						<div className="space-y-3">
 							{isLoadingAssets ? (
-								<div className="text-sm text-muted-foreground">
+								<div className="text-muted-foreground text-sm">
 									{t("knowledge:messages.loadingDocuments")}
 								</div>
 							) : assetsError ? (
-								<div className="text-sm text-destructive">
+								<div className="text-destructive text-sm">
 									{assetsError}
 								</div>
 							) : documentFiles.length === 0 ? (
-								<div className="text-sm text-muted-foreground">
+								<div className="text-muted-foreground text-sm">
 									{t("knowledge:messages.noDocuments")}
 								</div>
 							) : (
@@ -403,11 +405,11 @@ export const DocumentLibrary = () => {
 											className="flex items-center justify-between gap-3 px-3 py-2"
 										>
 											<div className="min-w-0">
-												<p className="truncate text-sm font-medium">
+												<p className="truncate font-medium text-sm">
 													{getDisplayName(f)}
 												</p>
 												{getDisplayPath(f) ? (
-													<p className="truncate text-xs text-muted-foreground">
+													<p className="truncate text-muted-foreground text-xs">
 														{getDisplayPath(f)}
 													</p>
 												) : null}
@@ -478,7 +480,7 @@ export const DocumentLibrary = () => {
 							</TabsList>
 							<TabsContent value={libraryTab}>
 								<div className="flex w-full flex-col gap-3">
-									<div className="flex w-full flex-row flex-wrap items-center gap-2 items-bottom">
+									<div className="items-bottom flex w-full flex-row flex-wrap items-center gap-2">
 										<InputGroup className="min-w-[220px] flex-1 bg-background">
 											<InputGroupInput
 												placeholder={t(
@@ -582,7 +584,10 @@ export const DocumentLibrary = () => {
 											Favorites
 										</Button>
 
-										<Popover open={sortPopoverOpen} onOpenChange={setSortPopoverOpen}>
+										<Popover
+											open={sortPopoverOpen}
+											onOpenChange={setSortPopoverOpen}
+										>
 											<PopoverTrigger asChild>
 												<Button
 													variant="outline"
@@ -674,12 +679,12 @@ export const DocumentLibrary = () => {
 
 				{filteredItems.length > 0 ? (
 					<div className="max-h-[70vh] overflow-y-auto pr-1">
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-8xl">
+						<div className="grid max-w-8xl grid-cols-1 gap-4 md:grid-cols-2">
 							{filteredItems.map((item, index) => (
 								<button
 									type="button"
 									key={item.app_name || item.id || index}
-									className="text-left w-full"
+									className="w-full text-left"
 									onClick={() =>
 										navigate(`/knowledge/${item.id}`)
 									}
@@ -688,7 +693,7 @@ export const DocumentLibrary = () => {
 										<CardContent className="flex items-center gap-4 py-2">
 											<div className="min-w-0 flex-1">
 												<div className="flex min-w-0 items-center gap-2">
-													<p className="min-w-0 truncate text-sm font-medium">
+													<p className="min-w-0 truncate font-medium text-sm">
 														{item.name}
 													</p>
 													{item.tag.length > 0 && (
@@ -711,7 +716,7 @@ export const DocumentLibrary = () => {
 												</div>
 											</div>
 											{item.dateCreated && (
-												<p className="w-44 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+												<p className="w-44 shrink-0 text-right text-muted-foreground text-xs tabular-nums">
 													{formatDateTime(
 														item.dateCreated,
 													)}
