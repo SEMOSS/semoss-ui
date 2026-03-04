@@ -1,5 +1,5 @@
-import { AppCatalogPage } from "./AppCatalogPage";
-import { AppDetailPage } from "./AppDetailPage";
+import { AppCatalogPage } from "./app-catalog-page";
+import { AppDetailPage } from "./app-detail-page";
 import { CreateAppPage } from "./create-app-page";
 import { EditAppPage } from "./edit-app-page";
 import { NewPromptBuilderAppPage } from "./NewPromptBuilderAppPage";
