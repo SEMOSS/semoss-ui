@@ -11,6 +11,9 @@ export interface App {
 	description?: string;
 	project_date_created: string;
 	project_type: string;
+	project_favorite?: string;
+	permission?: number;
+	tag?: string | string[];
 }
 
 export interface Workspace {
@@ -20,6 +23,7 @@ export interface Workspace {
 	description: string;
 	system_prompt: string;
 	mcp: MCPConfig[];
+	tag?: string[];
 }
 
 /**

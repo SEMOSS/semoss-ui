@@ -165,16 +165,16 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 			</div>
 
 			<ScrollArea
-				className="h-64 w-full flex-1"
+				className="h-96 w-full flex-1"
 				viewportRef={(e) => setScroll(e)}
 			>
 				{getMCP.isLoading && (
-					<div className="flex h-64 w-full items-center justify-center">
+					<div className="flex h-96 w-full items-center justify-center">
 						<Spinner />
 					</div>
 				)}
 				{!getMCP.isLoading && getMCP.data.length === 0 && (
-					<div className="flex h-64 w-full items-center justify-center">
+					<div className="flex h-96 w-full items-center justify-center">
 						<Muted>
 							{type === "TOOLBOX"
 								? t("selector.noToolboxesFound")
