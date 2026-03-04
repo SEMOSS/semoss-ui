@@ -162,9 +162,7 @@ export const NewRoomPage = observer(() => {
 
 			const options = {
 				...tempRoomStore.options,
-				mcp: tempRoomStore.options.mcp.filter(
-					(mcp) => !mcp?.fromWorkspace,
-				),
+				mcp: tempRoomStore.options.mcp,
 			};
 
 			// add workspace id
@@ -247,7 +245,7 @@ export const NewRoomPage = observer(() => {
 		});
 	}, [mode, getWorkspace.status, getWorkspace.data, tempRoomStore]);
 
-	// // Handle knowledge vector engine from URL parameter
+	// Handle knowledge vector engine from URL parameter
 	useEffect(() => {
 		if (getKnowledge.status !== "SUCCESS" || !getKnowledge.data?.[0]) {
 			return;

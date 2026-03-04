@@ -120,7 +120,6 @@ Components require these peer dependencies in consuming packages:
 
 - **`dist/`** - Build output, regenerated on build
 - **Peer dependency versions** - Must stay synchronized with consuming packages
-- **`storybook-static/`** - Generated Storybook build
 
 ### Be Cautious With
 
@@ -132,18 +131,16 @@ Components require these peer dependencies in consuming packages:
 
 1. **Add new components to `src/next/`** (not `src/components/`)
 2. Follow the shadcn/ui component pattern
-3. Add `.stories.tsx` for Storybook documentation
-4. Export from component's `index.ts`
-5. Add export to `src/next/index.ts`
-6. Use `cn()` for all className composition
-7. Follow existing patterns for props interfaces
+3. Export from component's `index.ts`
+4. Add export to `src/next/index.ts`
+5. Use `cn()` for all className composition
+6. Follow existing patterns for props interfaces
 
 > **Note**: `src/components/` contains legacy MUI-based components. New development should use `src/next/` with Radix primitives.
 
 ### Testing Components
 
 ```bash
-pnpm storybook      # Visual testing in Storybook
 pnpm build          # Verify build succeeds
 ```
 
