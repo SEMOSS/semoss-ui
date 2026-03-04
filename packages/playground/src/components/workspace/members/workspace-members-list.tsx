@@ -51,11 +51,12 @@ export interface WorkspaceMembersListProps {
 		setCurrentPage: (currentPage: number) => void;
 	};
 
-	/**
-	 * Optional callback to trigger when members are updated (e.g., after a permission change or deletion)
-	 */
 	isSharingModalOpen: boolean;
 	onSharingModalClose: (madeChanges: boolean) => void;
+	/** Called once the current user's permission is resolved */
+	onPermissionLoaded?: (permission: string | null) => void;
+	/** Display name of the workspace, forwarded to the sharing modal for toasts */
+	workspaceName?: string;
 }
 
 /**
@@ -69,6 +70,8 @@ export const WorkspaceMembersList = ({
 	search,
 	isSharingModalOpen,
 	onSharingModalClose,
+	onPermissionLoaded,
+	workspaceName,
 }: WorkspaceMembersListProps) => {
 	const { t } = useTranslation(["workspace", "common"]);
 	const { rowsPerPage, offset, setTotalRows, setCurrentPage } =
@@ -112,6 +115,7 @@ export const WorkspaceMembersList = ({
 			const permission = await getUserProjectPermission(workspaceId);
 			if (permission) {
 				setUserPermission(permission);
+				onPermissionLoaded?.(permission);
 			}
 		} catch (error) {
 			toast.error(
@@ -499,6 +503,7 @@ export const WorkspaceMembersList = ({
 						onSharingModalClose(madeChanges);
 						if (madeChanges) fetchMembers();
 					}}
+					workspaceName={workspaceName}
 					activeUserPermission={userPermission}
 				/>
 			)}

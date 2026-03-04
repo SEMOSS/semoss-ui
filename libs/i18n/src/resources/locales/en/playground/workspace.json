@@ -39,7 +39,7 @@
 		"buttonShareDependencies": "Share Dependencies",
 		"buttonSkip": "Skip",
 		"dependenciesSuccess": "Dependencies shared successfully",
-		"dependenciesSoftFailed": "Could not add permissions. Someone else will need to provision.",
+		"dependenciesSoftFailed": "You do not have adequate permissions to share all dependencies with the selected users. Someone else will need to provision them access to dependencies.",
 		"dependenciesFailed": "Could not share all dependencies. You may not have owner or editor access on some of them."
 	},
 	"members": {
@@ -84,8 +84,8 @@
 		"userAlreadyAdded": "User already added",
 		"fetchUsersFailed": "Failed to fetch users",
 		"addAtLeastOne": "Please add at least one user",
-		"addMembersSuccess": "Successfully added {{count}} member",
-		"addMembersSuccess_plural": "Successfully added {{count}} members",
+		"addMembersSuccess": "Successfully added {{count}} member to {{name}}",
+		"addMembersSuccess_plural": "Successfully added {{count}} members to {{name}}",
 		"addMembersFailed": "Failed to add members",
 		"permissionUpdated": "Permission updated successfully",
 		"permissionUpdateFailed": "Failed to update permission",

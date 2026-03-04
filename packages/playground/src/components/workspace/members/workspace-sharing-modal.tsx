@@ -38,6 +38,8 @@ import { WorkspaceMemberRow } from "./workspace-member-row";
 export interface WorkspaceSharingModalProps {
 	/** Id of the workspace */
 	workspaceId: string;
+	/** Display name of the workspace, shown in success toasts */
+	workspaceName?: string;
 
 	open: boolean;
 	onClose: (madeChanges: boolean) => void;
@@ -46,6 +48,7 @@ export interface WorkspaceSharingModalProps {
 
 export const WorkspaceSharingModal = ({
 	workspaceId,
+	workspaceName,
 	open,
 	onClose,
 	activeUserPermission,
@@ -220,6 +223,7 @@ export const WorkspaceSharingModal = ({
 			toast.success(
 				t("workspace:messages.addMembersSuccess", {
 					count: pendingUsersList.length,
+					name: workspaceName ?? workspaceId,
 				}),
 			);
 

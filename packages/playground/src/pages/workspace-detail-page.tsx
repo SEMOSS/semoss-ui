@@ -74,6 +74,9 @@ export const WorkspaceDetailPage = observer(() => {
 	const [deleteModal, setDeleteModal] = useState<boolean>(false);
 	const [isSharingModalOpen, setIsSharingModalOpen] =
 		useState<boolean>(false);
+	const [membersPermission, setMembersPermission] = useState<string | null>(
+		null,
+	);
 
 	/**
 	 * Library Hooks
@@ -252,6 +255,10 @@ export const WorkspaceDetailPage = observer(() => {
 								<Button
 									variant="outline"
 									onClick={() => setIsSharingModalOpen(true)}
+									disabled={
+										membersPermission === null ||
+										membersPermission === "READ_ONLY"
+									}
 								>
 									<PlusIcon />
 									{t("workspace:sharing.title")}
@@ -304,9 +311,11 @@ export const WorkspaceDetailPage = observer(() => {
 									search={debouncedSearch}
 									paginationControl={pagination}
 									isSharingModalOpen={isSharingModalOpen}
+									workspaceName={getWorkspace.data?.name}
 									onSharingModalClose={() =>
 										setIsSharingModalOpen(false)
 									}
+									onPermissionLoaded={setMembersPermission}
 								/>
 							)}
 						</TabsContent>
