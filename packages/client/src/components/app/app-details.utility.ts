@@ -25,7 +25,7 @@ export interface appDependency {
 	parent_id?: string;
 	circular_reference?: boolean;
 	circular_reference_to?: string;
-	dependencies?: appDependency[];
+	dependencies?: string[]; // Array of dependency engine IDs
 }
 
 export interface modelledDependency {
@@ -202,13 +202,17 @@ export const fetchDependencies = async (
 
 	if (type.indexOf("ERROR") === -1) {
 		const responseData = output as {
-			project_id: string;
-			dependencies: appDependency[];
+			engines: appDependency[];
+			dependencies: string[]; // Top-level dependency IDs
 		};
-		// Return only top-level dependencies
+		// Filter engines to return only top-level dependencies
+		const topLevelDeps =
+			responseData.engines?.filter((engine) =>
+				responseData.dependencies?.includes(engine.engine_id),
+			) || [];
 		return {
 			type: "success",
-			output: responseData.dependencies || [],
+			output: topLevelDeps,
 		};
 	} else {
 		return {

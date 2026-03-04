@@ -62,7 +62,7 @@ interface ProjectDependency {
 	parent_id?: string;
 	circular_reference?: boolean;
 	circular_reference_to?: string;
-	dependencies?: ProjectDependency[];
+	dependencies?: string[]; // Array of dependency engine IDs
 }
 
 /**
@@ -79,8 +79,8 @@ export const WorkspaceMCPList = ({
 	const { actions } = useInsight();
 
 	const getDependencies = usePixel<{
-		project_id: string;
-		dependencies: ProjectDependency[];
+		engines: ProjectDependency[];
+		dependencies: string[]; // Top-level dependency IDs
 	}>(
 		workspaceId
 			? `GetProjectDependencies(project=["${workspaceId}"]);`
@@ -97,9 +97,13 @@ export const WorkspaceMCPList = ({
 	);
 
 	const searchedMCP = useMemo(() => {
-		// Return only top-level dependencies
-		const allDeps = getDependencies.data?.dependencies || [];
-		const dataWithType = allDeps.filter((m) =>
+		// Filter engines to get only top-level dependencies
+		const topLevelIds = getDependencies.data?.dependencies || [];
+		const allEngines = getDependencies.data?.engines || [];
+		const topLevelDeps = allEngines.filter((engine) =>
+			topLevelIds.includes(engine.engine_id),
+		);
+		const dataWithType = topLevelDeps.filter((m) =>
 			type === "TOOLBOX"
 				? m.engine_type !== "VECTOR"
 				: m.engine_type === "VECTOR",
