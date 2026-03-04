@@ -1,6 +1,7 @@
 import { HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
 	Badge,
@@ -19,7 +20,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { MCPOverlay, SaveWorkspaceDialog } from "@/components";
+import { MCPOverlay } from "@/components";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 
@@ -29,28 +30,24 @@ interface RoomOptionsFormProps {
 	/** Model of the room */
 	model: RoomStore["model"];
 
+	/** Update model on change */
+	onModelChange: (model: RoomStore["model"]) => void;
+
 	/** Options for the room */
 	options: RoomStore["options"];
 
 	/** Update options on change */
-	onClose: (
-		success: boolean,
-		data?: { model?: RoomStore["model"]; options?: RoomStore["options"] },
-	) => void;
+	onOptionsChange: (options: Partial<RoomStore["options"]>) => void;
 }
 
 export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
-	({ model, options, onClose }) => {
-		const [updatedModel, setUpdatedModel] = useState(model);
-		const [updatedOptions, setUpdatedOptions] = useState(options);
-
-		useEffect(() => {
-			setUpdatedModel(model);
-		}, [model]);
-
-		useEffect(() => {
-			setUpdatedOptions(options);
-		}, [options]);
+	({
+		model,
+		onModelChange = () => null,
+		options,
+		onOptionsChange = () => null,
+	}) => {
+		const { t } = useTranslation(["room", "common"]);
 
 		/**
 		 * State
@@ -63,12 +60,10 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		});
 
 		// All MCPs are in the mcp array (workspace MCPs have fromWorkspace flag)
-		const knowledge = updatedOptions.mcp.filter(
-			(mcp) => mcp.type === "VECTOR",
-		);
-		const toolbox = updatedOptions.mcp.filter(
-			(mcp) => mcp.type !== "VECTOR",
-		);
+		const knowledge =
+			options?.mcp?.filter((mcp) => mcp.type === "VECTOR") || [];
+		const toolbox =
+			options?.mcp?.filter((mcp) => mcp.type !== "VECTOR") || [];
 
 		/**
 		 * Functions
@@ -79,44 +74,40 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 				return;
 			}
 
-			const updatedMCPs = updatedOptions.mcp.filter(
+			const updatedMCPs = options.mcp.filter(
 				(t) => !(t.id === mcp.id && t.type === mcp.type),
 			);
 
-			setUpdatedOptions((prev) => ({
-				...prev,
+			onOptionsChange({
 				mcp: updatedMCPs,
-			}));
+			});
 		};
 
 		return (
 			<form className="p-4">
 				<FieldGroup>
 					<FieldSet>
-						<FieldLegend className="flex w-full flex-1 items-center gap-2">
-							Room Settings
-							<SaveWorkspaceDialog
-								systemPrompt={options.instructions}
-								mcps={options.mcp}
-							/>
+						<FieldLegend className="flex w-full flex-1 items-center justify-between gap-2">
+							{t("room:settings.title")}
 						</FieldLegend>
 						<FieldDescription>
-							Update room settings and modify the behavior of the
-							chat
+							{t("room:settings.description")}
 						</FieldDescription>
 						<FieldGroup>
 							{ENABLE_MODEL_SELECT && (
 								<Field>
-									<FieldLabel>Model</FieldLabel>
+									<FieldLabel>
+										{t("room:form.modelLabel")}
+									</FieldLabel>
 									<EngineSelect
-										name={updatedModel?.app_name || ""}
-										value={updatedModel?.app_id || ""}
+										name={model?.app_name || ""}
+										value={model?.app_id || ""}
 										engineTypes={["MODEL"]}
 										metaFilters={[
 											{ tag: "text-generation" },
 										]}
 										onChange={(v) => {
-											setUpdatedModel(v);
+											onModelChange(v);
 										}}
 										popoverContentProps={{
 											align: "start",
@@ -125,16 +116,19 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 								</Field>
 							)}
 							<Field>
-								<FieldLabel>Instructions</FieldLabel>
+								<FieldLabel>
+									{t("room:form.instructionsLabel")}
+								</FieldLabel>
 								<Textarea
-									placeholder="Update Instructions"
+									placeholder={t(
+										"common:placeholders.updateInstructions",
+									)}
 									className="h-64 resize-none overflow-y-auto"
-									value={updatedOptions.instructions}
+									value={options.instructions}
 									onChange={(e) => {
-										setUpdatedOptions((prev) => ({
-											...prev,
+										onOptionsChange({
 											instructions: e.target.value,
-										}));
+										});
 									}}
 								/>
 							</Field>
@@ -150,7 +144,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 										});
 									}}
 								>
-									<div className="flex-1">Knowledge</div>
+									<div className="flex-1">
+										{t("room:form.knowledgeLabel")}
+									</div>
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<Button
@@ -170,7 +166,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											</Button>
 										</TooltipTrigger>
 										<TooltipContent>
-											Add Knowledge
+											{t("common:actions.addKnowledge")}
 										</TooltipContent>
 									</Tooltip>
 								</FieldLabel>
@@ -192,7 +188,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 															variant="outline"
 															className="disabled: mr-2 border border-primary text-primary text-xs"
 														>
-															From Workspace
+															{t(
+																"common:badges.fromAgent",
+															)}
 														</Badge>
 													) : (
 														<Button
@@ -210,8 +208,12 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 															}
 															title={
 																mcp.fromWorkspace
-																	? "Cannot delete workspace MCPs"
-																	: "Delete MCP"
+																	? t(
+																			"common:tooltips.cannotDeleteWorkspaceMCPs",
+																		)
+																	: t(
+																			"common:actions.deleteMCP",
+																		)
 															}
 														>
 															<TrashIcon
@@ -238,7 +240,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											}
 										>
 											<span className="text-muted-foreground text-xs">
-												No Knowledge Found
+												{t(
+													"common:messages.noKnowledgeFound",
+												)}
 											</span>
 										</button>
 									)}
@@ -256,7 +260,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 										});
 									}}
 								>
-									<div className="flex-1">Toolbox</div>
+									<div className="flex-1">
+										{t("room:form.toolboxLabel")}
+									</div>
 
 									<Tooltip>
 										<TooltipTrigger asChild>
@@ -277,7 +283,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											</Button>
 										</TooltipTrigger>
 										<TooltipContent>
-											Add Toolbox
+											{t("common:actions.addToolbox")}
 										</TooltipContent>
 									</Tooltip>
 								</FieldLabel>
@@ -299,7 +305,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 															variant="outline"
 															className="disabled: mr-2 border border-primary text-primary text-xs"
 														>
-															From Workspace
+															{t(
+																"common:badges.fromAgent",
+															)}
 														</Badge>
 													) : (
 														<Button
@@ -316,8 +324,12 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 															}
 															title={
 																mcp.fromWorkspace
-																	? "Cannot delete workspace MCPs"
-																	: "Delete MCP"
+																	? t(
+																			"common:tooltips.cannotDeleteAgentMCPs",
+																		)
+																	: t(
+																			"common:actions.deleteMCP",
+																		)
 															}
 														>
 															<TrashIcon
@@ -344,7 +356,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											}
 										>
 											<span className="text-muted-foreground text-xs">
-												No Toolbox Found
+												{t(
+													"common:messages.noToolboxFound",
+												)}
 											</span>
 										</button>
 									)}
@@ -366,10 +380,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 												? knowledge
 												: toolbox;
 
-										setUpdatedOptions((prev) => ({
-											...prev,
+										onOptionsChange({
 											mcp: [...otherTypeMCPs, ...mcp],
-										}));
+										});
 									}
 
 									// close it
@@ -382,17 +395,20 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 					<FieldSet>
 						<FieldGroup>
 							<Field>
-								<FieldLabel>Max Token</FieldLabel>
+								<FieldLabel>
+									{t("room:form.maxTokenLabel")}
+								</FieldLabel>
 								<Input
 									type="number"
-									placeholder="Update token length"
-									value={updatedOptions.tokenLength}
+									placeholder={t(
+										"common:placeholders.updateTokenLength",
+									)}
+									value={options.tokenLength}
 									onChange={(e) =>
-										setUpdatedOptions((prev) => ({
-											...prev,
+										onOptionsChange({
 											tokenLength:
 												Number(e.target.value) || 0,
-										}))
+										})
 									}
 									min={0}
 									className="w-full"
@@ -401,48 +417,23 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 
 							<Field>
 								<FieldLabel>
-									Temperature (
-									{updatedOptions.temperature?.toFixed(2)})
+									{t("room:form.temperatureLabel")} (
+									{options.temperature?.toFixed(2)})
 								</FieldLabel>
 								<Slider
 									min={0}
 									max={1}
 									step={0.01}
-									value={[updatedOptions.temperature]}
+									value={[options.temperature]}
 									onValueChange={(value) =>
-										setUpdatedOptions((prev) => ({
-											...prev,
+										onOptionsChange({
 											temperature: value[0],
-										}))
+										})
 									}
 								/>
 							</Field>
 						</FieldGroup>
 					</FieldSet>
-					<Field orientation="horizontal" className="justify-center">
-						<Button
-							type="button"
-							onClick={() => {
-								onClose(true, {
-									options: updatedOptions,
-									model: updatedModel,
-								});
-							}}
-						>
-							Save
-						</Button>
-						<Button
-							variant="outline"
-							type="button"
-							onClick={() => {
-								setUpdatedModel(model);
-								setUpdatedOptions(options);
-								onClose(false);
-							}}
-						>
-							Reset
-						</Button>
-					</Field>
 				</FieldGroup>
 			</form>
 		);

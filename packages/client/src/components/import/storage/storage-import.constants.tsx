@@ -49,6 +49,16 @@ export interface ImportableModels {
 	providers: ProviderDefinition[];
 }
 
+export interface Storage {
+	fields: [];
+	advanced: [];
+	id: number;
+	name: string;
+	icon: string;
+	disable: boolean;
+	description?: string;
+}
+
 export const STORAGE_CONNECTIONS = {
 	description: {
 		General:

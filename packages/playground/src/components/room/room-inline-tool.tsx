@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Separator,
@@ -13,7 +14,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import type { ResponseMessageStore, RoomStore, ToolStore } from "@/stores";
 import { ToolsView } from "../mcp";
 
 interface RoomInlineToolProps {
@@ -24,17 +25,13 @@ interface RoomInlineToolProps {
 	message: ResponseMessageStore;
 
 	/** Tool to render */
-	tool: ResponseMessageStore["tools"][number];
+	tool: ToolStore;
 }
 
 export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 	({ room, message, tool }) => {
+		const { t } = useTranslation("room");
 		const [isMaximized, setIsMaximized] = useState(false);
-
-		/**
-		 * Constants
-		 */
-		const nodeId = `message-${message.id}-tool-${tool.id}`;
 
 		return (
 			<div className="relative h-[60vh] w-full overflow-hidden">
@@ -60,37 +57,19 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 									onClick={(e) => {
 										e.stopPropagation();
 
-										// remove from inline
-										room.removeInlineTool(nodeId);
-
 										// turn off maximized state
 										setIsMaximized(false);
 
-										// add to sidebar
-										room.addSidebarNode(nodeId, {
-											type: "tab",
-											name: tool.title,
-											component: "room-tool",
-											config: {
-												app: tool._meta.SMSS_PROJECT_ID,
-												tool: {
-													message: message.id,
-													id: tool.id,
-													name: tool.name,
-													title: tool.title,
-													parameters: tool.parameters,
-													original_name:
-														tool.original_name,
-												},
-											},
-											enableClose: true,
-										});
+										// open the tool
+										tool.openTool("sidebar");
 									}}
 								>
 									<PanelRightIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Open in Sidebar</TooltipContent>
+							<TooltipContent>
+								{t("inlineTool.openInSidebar")}
+							</TooltipContent>
 						</Tooltip>
 						<Tooltip>
 							<TooltipTrigger asChild>
@@ -109,7 +88,9 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent>
-								{isMaximized ? "Minimize" : "Maximize"}
+								{isMaximized
+									? t("inlineTool.minimize")
+									: t("inlineTool.maximize")}
 							</TooltipContent>
 						</Tooltip>
 						<Separator
@@ -126,27 +107,30 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 										// turn off maximized state when closing sidebar
 										setIsMaximized(false);
 
-										// remove from inline
-										room.removeInlineTool(nodeId);
+										// close the tool
+										tool.closeTool();
 									}}
 								>
 									<XIcon />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Close</TooltipContent>
+							<TooltipContent>
+								{t("inlineTool.close")}
+							</TooltipContent>
 						</Tooltip>
 					</div>
 					<div className="w-full flex-1 overflow-hidden">
 						<ToolsView
 							room={room}
-							app={tool._meta.SMSS_PROJECT_ID}
-							tool={{
-								message: message.id,
-								id: tool.id,
-								name: tool.name,
-								parameters: tool.parameters,
-								original_name: tool.original_name,
-							}}
+							app={tool.json._meta.SMSS_PROJECT_ID}
+							message={message.id}
+							tool={tool.json}
+							toolResponse={
+								tool.status === "SUCCESS"
+									? tool.response
+									: undefined
+							}
+							toolParameters={tool.parameters}
 						/>
 					</div>
 				</div>

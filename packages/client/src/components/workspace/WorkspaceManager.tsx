@@ -235,11 +235,104 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 				?.getNodeById("main-tabset")
 				?.getAttr("weight");
 
+			// Find a tab node's id by its display name
+			const findTabIdByName = (name: string): string | null => {
+				let id: string | null = null;
+				model.visitNodes((node) => {
+					if (
+						node instanceof FlexLayout.TabNode &&
+						node.getName() === name
+					) {
+						id = node.getId();
+					}
+				});
+				return id;
+			};
+
+			// Collapse all border panels
+			const collapseAllBorders = () => {
+				model
+					.getBorderSet()
+					.getBorders()
+					.forEach((b) => {
+						b.setSelected(-1);
+					});
+			};
+
+			// Toggle the settings sidebar highlight
+			const setSettingsActive = (active: boolean) =>
+				model.doAction(
+					FlexLayout.Actions.updateNodeAttributes("settings", {
+						config: { isSettingsActive: active },
+					}),
+				);
+
+			if (isSettingsTab) {
+				try {
+					// getNodeById is sufficient — no visitNodes needed for an id lookup
+					const settingsNode = model.getNodeById(
+						"settings",
+					) as FlexLayout.TabNode | null;
+					const isAlreadyActive =
+						settingsNode?.getConfig()?.isSettingsActive;
+
+					if (isAlreadyActive) {
+						setSettingsActive(false);
+						const existingId = findTabIdByName("AppSettings");
+						if (existingId) {
+							model.doAction(
+								FlexLayout.Actions.deleteTab(existingId),
+							);
+						}
+						return true;
+					}
+
+					setSettingsActive(true);
+					collapseAllBorders();
+
+					const mainTabsetId =
+						model.getNodeById("main-tabset")?.getId() ||
+						model.getRoot().getChildren()[0]?.getId() ||
+						"";
+
+					let existingId = findTabIdByName("AppSettings");
+
+					if (!existingId) {
+						model.doAction(
+							FlexLayout.Actions.addNode(
+								{
+									type: "tab",
+									name: "AppSettings",
+									component: "settingsPanel",
+									config: {},
+									enableClose: true,
+								},
+								mainTabsetId,
+								FlexLayout.DockLocation.CENTER,
+								-1,
+								true,
+							),
+						);
+						existingId = findTabIdByName("AppSettings");
+					}
+
+					if (existingId) {
+						model.doAction(
+							FlexLayout.Actions.selectTab(existingId),
+						);
+					}
+				} catch (err) {
+					console.error(err);
+				}
+
+				return true;
+			}
+
+			setSettingsActive(false);
 			model
 				.getBorderSet()
 				.getBorders()
 				.forEach((border) => {
-					// border.setSelected(isSettingsTab ? -1 : border.getSelected());
 					border.setSelected(
 						action.data.tabNode === "block-settings" &&
 							mainTabsetWeight === 0
@@ -250,7 +343,11 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 
 			if (isSettingsTab || mainTabsetWeight === 0) {
 				model.visitNodes((node) => {
-					if (node.getType() === "tabset") {
+					if (
+						node &&
+						typeof node.getType === "function" &&
+						node.getType() === "tabset"
+					) {
 						const newWeight =
 							(isSettingsTab &&
 								node.getId() === "settings-tabset") ||
@@ -344,120 +441,131 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 											workspace.saveToCache();
 										}}
 										onAction={(action) => {
-											updateModel(action);
-											return action;
+											const handled = updateModel(action);
+											return !handled ? action : false;
 										}}
 										onRenderTab={(
 											tabNode,
 											renderValues,
 										) => {
+											const isSettingsTab =
+												tabNode.getName() ===
+												"Settings";
 											const item = SIDEBAR_MENU.MENU.find(
 												(menuItem) =>
 													menuItem.name ===
 													tabNode.getName(),
 											);
-											const isSelected =
-												tabNode.isSelected();
-	
-										// Base test ID without suffix
-										const baseDataTestId =
-											formatToDataTestId(
-												`workspace-${tabNode.getName()}`,
-											);
+											const isSelected = isSettingsTab
+												? !!tabNode.getConfig()
+														?.isSettingsActive
+												: tabNode.isSelected();
 
-										// Ref callback to set data-testid based on ghost/original state
-										const DynamicDataTestId = (
-											el: HTMLElement | null,
-										) => {
-											if (el) {
-												// Check if this is a ghost/preview element during drag
-												const parent = el.parentElement;
-												const grandParent =
-													parent?.parentElement;
-
-												const isGhost =
-													parent?.classList.contains(
-														"flexlayout__tab_button_stamp",
-													) ||
-													grandParent?.classList.contains(
-														"flexlayout__tab_button_stamp",
-													);
-
-												// Determine suffix: ghost for drag preview, image for original
-												const suffix = isGhost
-													? "ghost"
-													: "image";
-												el.setAttribute(
-													"data-testid",
-													`${baseDataTestId}-${suffix}`,
+											// Base test ID without suffix
+											const baseDataTestId =
+												formatToDataTestId(
+													`workspace-${tabNode.getName()}`,
 												);
-											}
-										};
 
-										if (item?.icon?.component) {
+											// Ref callback to set data-testid based on ghost/original state
+											const DynamicDataTestId = (
+												el: HTMLElement | null,
+											) => {
+												if (el) {
+													// Check if this is a ghost/preview element during drag
+													const parent =
+														el.parentElement;
+													const grandParent =
+														parent?.parentElement;
+
+													const isGhost =
+														parent?.classList.contains(
+															"flexlayout__tab_button_stamp",
+														) ||
+														grandParent?.classList.contains(
+															"flexlayout__tab_button_stamp",
+														);
+
+													// Determine suffix: ghost for drag preview, image for original
+													const suffix = isGhost
+														? "ghost"
+														: "image";
+													el.setAttribute(
+														"data-testid",
+														`${baseDataTestId}-${suffix}`,
+													);
+												}
+											};
+
+											if (item?.icon?.component) {
 												const Icon =
 													item.icon.component;
 
-											renderValues.content = (
-												<Tooltip
-													title={item.icon.tooltip}
-												>
-													<IconButton
-														size={"small"}
-														color="default"
-														ref={DynamicDataTestId}
+												renderValues.content = (
+													<Tooltip
+														title={
+															item.icon.tooltip
+														}
 													>
-														<Icon
-															color={
-																isSelected
-																	? "primary"
-																	: "inherit"
+														<IconButton
+															size={"small"}
+															color="default"
+															ref={
+																DynamicDataTestId
 															}
-															fontSize="inherit"
-														/>
-													</IconButton>
-												</Tooltip>
-											);
-										} else if (item?.icon) {
-											const iconSrc = isSelected
-												? item.icon.active
-												: item.icon.default;
-											renderValues.content = (
-												<StyledLetTabImage
-													src={iconSrc}
-													alt={tabNode.getName()}
-													ref={DynamicDataTestId}
-												/>
-											);
-										}
-										return renderValues;
-									}}
-								/>
-								<StyledActions
-									direction="column"
-									justifyContent={"center"}
-								>
-									<Tooltip title={"Reset workspace"}>
-										<IconButton
-											size={"small"}
-											color="default"
-											onClick={() => {
-												resetWorkspace();
-											}}
-										>
-											<RestartAlt fontSize="inherit" />
-										</IconButton>
-									</Tooltip>
-								</StyledActions>
-							</>
-						) : null}
-					</StyledSpacer>
-				</StyledContent>
-			</StyledMain>
-			<WorkspaceOverlay />
-		</>
-	);
-});
+														>
+															<Icon
+																color={
+																	isSelected
+																		? "primary"
+																		: "inherit"
+																}
+																fontSize="inherit"
+															/>
+														</IconButton>
+													</Tooltip>
+												);
+											} else if (item?.icon) {
+												const iconSrc = isSelected
+													? item.icon.active
+													: item.icon.default;
+												renderValues.content = (
+													<StyledLetTabImage
+														src={iconSrc}
+														alt={tabNode.getName()}
+														ref={DynamicDataTestId}
+													/>
+												);
+											}
+											return renderValues;
+										}}
+									/>
+									<StyledActions
+										direction="column"
+										justifyContent={"center"}
+									>
+										<Tooltip title={"Reset workspace"}>
+											<IconButton
+												size={"small"}
+												color="default"
+												onClick={() => {
+													resetWorkspace();
+												}}
+											>
+												<RestartAlt fontSize="inherit" />
+											</IconButton>
+										</Tooltip>
+									</StyledActions>
+								</>
+							) : null}
+						</StyledSpacer>
+					</StyledContent>
+				</StyledMain>
+				<WorkspaceOverlay />
+			</>
+		);
+	},
+);
 
 // NOTES: WE HAVE TO FIX ALOT HERE.
 // The code specific to blocks apps should not be here.
