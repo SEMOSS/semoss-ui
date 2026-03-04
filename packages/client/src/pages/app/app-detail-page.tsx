@@ -110,7 +110,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 				message,
 			});
 		},
-		[notification],
+		[notification.add],
 	);
 	const getPermission = useCallback(async () => {
 		const role = await getUserProjectPermission(appId);
@@ -467,7 +467,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			>
 				<div
 					className={`flex h-full w-full flex-col gap-3 ${
-						showNav ? "m-auto max-w-[79rem]" : ""
+						showNav ? "m-auto max-w-316" : ""
 					}`}
 				>
 					{showNav && (
@@ -501,7 +501,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 					)}
 
 					<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
-						<div className="h-16 w-16 flex-shrink-0 rounded-lg bg-muted">
+						<div className="h-16 w-16 shrink-0 rounded-lg bg-muted">
 							<img
 								src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
 								alt={appInfo?.project_name || "App"}
@@ -511,7 +511,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 
 						<div className="flex min-w-0 flex-1 flex-col gap-1">
 							<h1
-								className="break-words font-semibold text-2xl text-foreground leading-normal md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]"
+								className="wrap-break-words font-semibold text-2xl text-foreground leading-normal md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]"
 								title={appInfo?.project_name}
 							>
 								{appInfo?.project_name}
@@ -548,7 +548,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 								<Button
 									disabled={exportLoading}
 									variant="ghost"
-									className="gap-2 text-(--primary) hover:bg-transparent hover:text-(--primary)"
+									className="gap-2 text-primary hover:bg-transparent hover:text-primary"
 									onClick={() => exportApp()}
 									data-testid={"appDetail-export-btn"}
 								>
@@ -632,7 +632,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 											<Badge
 												key={`tag-${tag}-${tag}`}
 												variant="outline"
-												className="border-(--primary) text-(--primary)"
+												className="border-primary text-primary"
 											>
 												{tag}
 											</Badge>
@@ -665,7 +665,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 					</div>
 				</div>
 
-				<div className="flex flex-col rounded-lg bg-(--muted)">
+				<div className="flex flex-col rounded-lg bg-muted">
 					{visibleTabs.length > 0 && (
 						<Tabs
 							value={selectedTab}
@@ -714,7 +714,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 							</div>
 						</Tabs>
 					)}
-					<div className="w-full bg-(--card) p-3 md:p-4">
+					<div className="w-full bg-card p-3 md:p-4">
 						{selectedTab === "Overview" && (
 							<Overview appInfo={appInfo} />
 						)}
