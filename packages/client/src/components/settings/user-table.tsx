@@ -37,7 +37,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { deleteMember, editMemberInfo } from "@/api";
-import { useAPI, useSettings } from "@/hooks";
+import { useAPI, useServerPagination, useSettings } from "@/hooks";
 import { UserAddOverlay } from "./user-add-overlay";
 import { UserPopover } from "./user-popover";
 
@@ -86,8 +86,6 @@ export const UserTable = (props: UserTableProps) => {
 
 	const { adminMode } = useSettings();
 
-	const [page, setPage] = useState<number>(0);
-	const [rowsPerPage, setRowsPerPage] = useState<number>(50);
 	const [search, setSearch] = useState<string>("");
 
 	// debounce the input
@@ -100,16 +98,31 @@ export const UserTable = (props: UserTableProps) => {
 	const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
 	const [addModalUser, setAddModalUser] = useState<User | null>(null);
 	const [cachedTotalUsers, setCachedTotalUsers] = useState<number>(0);
+	const [paginationTotalUsers, setPaginationTotalUsers] = useState<number>(0);
 	const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 	const [deleteMode, setDeleteMode] = useState<"single" | "bulk">("single");
 	const [userToDelete, setUserToDelete] = useState<User | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
 
+	const {
+		page,
+		rowsPerPage,
+		setPage,
+		setRowsPerPage,
+		offset,
+		totalPages,
+		resetPage,
+	} = useServerPagination({
+		totalCount: paginationTotalUsers,
+		initialRowsPerPage: 50,
+		pageIndexBase: 0,
+	});
+
 	const getUsers = useAPI([
 		"getAllUsers",
 		adminMode,
 		debouncedSearch ? debouncedSearch : "",
-		(page + 1) * rowsPerPage - rowsPerPage, // offset
+		offset, // offset
 		rowsPerPage, // limit
 	]);
 
@@ -130,16 +143,27 @@ export const UserTable = (props: UserTableProps) => {
 	const hasSearch = (debouncedSearch ?? "").trim().length > 0;
 	const activeTotalUsers = hasSearch ? filteredUsers : totalUsers;
 	const hasUsers = getUsers.status === "SUCCESS" && activeTotalUsers > 0;
-	const totalPages = Math.max(1, Math.ceil(activeTotalUsers / rowsPerPage));
 
 	useEffect(() => {
-		if (
-			getUsers.status === "SUCCESS" &&
+		if (getUsers.status !== "SUCCESS") {
+			return;
+		}
+		const nextTotalUsers =
 			typeof getUsers.data?.totalUsers === "number"
-		) {
+				? getUsers.data.totalUsers
+				: cachedTotalUsers;
+		if (typeof getUsers.data?.totalUsers === "number") {
 			setCachedTotalUsers(getUsers.data.totalUsers);
 		}
-	}, [getUsers.status, getUsers.data?.totalUsers]);
+		const nextFilteredUsers =
+			getUsers.data?.filteredUsers ?? nextTotalUsers;
+		const nextActiveTotal = hasSearch ? nextFilteredUsers : nextTotalUsers;
+		setPaginationTotalUsers(nextActiveTotal);
+	}, [getUsers.status, getUsers.data, cachedTotalUsers, hasSearch]);
+
+	useEffect(() => {
+		resetPage();
+	}, [debouncedSearch, resetPage]);
 
 	/**
 	 * Update a user
@@ -637,7 +661,6 @@ export const UserTable = (props: UserTableProps) => {
 														setRowsPerPage(
 															Number(value),
 														);
-														setPage(0);
 													}}
 												>
 													<SelectTrigger className="h-8 w-[90px]">
