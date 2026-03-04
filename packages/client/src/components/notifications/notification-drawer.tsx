@@ -256,8 +256,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 			) {
 				return null;
 			}
-			if (n.recipient_user_name === loggedInUser) return null;
-
+			if (n.recipient_user_id === loggedInUser) return null;
 			let appPath: string;
 			switch (n.notification_source) {
 				case "app":
