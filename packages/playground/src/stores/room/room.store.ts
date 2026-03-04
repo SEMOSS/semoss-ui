@@ -1091,7 +1091,9 @@ export class RoomStore {
 			console.error(e);
 
 			// show the error
-			this._store.error = e;
+			runInAction(() => {
+				this._store.error = e;
+			});
 
 			throw e;
 		} finally {
