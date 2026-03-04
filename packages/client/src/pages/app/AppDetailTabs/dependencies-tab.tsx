@@ -1,4 +1,4 @@
-import { Ban, Edit, Eye, Pencil, User } from "lucide-react";
+import { Ban, Edit, Eye, Pencil, TriangleAlert, User } from "lucide-react";
 import { Env } from "@semoss/sdk";
 import { Link } from "@semoss/ui";
 import {
@@ -10,6 +10,9 @@ import {
 	Muted,
 	P,
 	TabsContent,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { modelledDependency } from "@/components/app";
 import { EngineAccessButton } from "@/components/engine";
@@ -42,6 +45,8 @@ export const Dependencies = ({
 			) : (
 				dependencies.map((dep) => {
 					const permissionKey = dep.userPermission || "NONE";
+					const missingSubDependencies =
+						dep.can_view_dependencies === false;
 					return (
 						<div
 							key={dep.id}
@@ -58,16 +63,32 @@ export const Dependencies = ({
 									className="h-12 w-12 shrink-0 rounded-lg object-cover"
 								/>
 								<div className="flex min-w-0 flex-col">
-									<Link
-										href={
-											dep.type === "PROJECT"
-												? `./#/app/${dep.id}`
-												: `./#/engine/${dep.type}/${dep.id}`
-										}
-										//className="text-base text-primary"
-									>
-										<P className="truncate">{dep.name}</P>
-									</Link>
+									<div className="flex items-center gap-1.5">
+										<Link
+											href={
+												dep.type === "PROJECT"
+													? `./#/app/${dep.id}`
+													: `./#/engine/${dep.type}/${dep.id}`
+											}
+											//className="text-base text-primary"
+										>
+											<P className="truncate">
+												{dep.name}
+											</P>
+										</Link>
+										{missingSubDependencies && (
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<TriangleAlert className="size-4 shrink-0 text-amber-500" />
+												</TooltipTrigger>
+												<TooltipContent>
+													This dependency has
+													sub-dependencies that you
+													cannot view
+												</TooltipContent>
+											</Tooltip>
+										)}
+									</div>
 									<div className="flex items-center gap-1">
 										{PERMISSION_ICONS[permissionKey]}
 										<Muted className="text-xs">

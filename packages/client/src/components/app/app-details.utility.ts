@@ -16,9 +16,16 @@ export interface appDependency {
 	engine_subtype: string;
 	engine_type: string;
 	permission_name: string;
-	description: string;
-	access_permission: number;
+	description?: string;
+	access_permission?: number;
 	can_view_dependencies?: boolean;
+	permission: number;
+	tags?: string;
+	engine_date_created?: string;
+	parent_id?: string;
+	circular_reference?: boolean;
+	circular_reference_to?: string;
+	dependencies?: appDependency[];
 }
 
 export interface modelledDependency {
@@ -186,7 +193,7 @@ export const fetchDependencies = async (
 			output: string;
 	  }
 > => {
-	const res = await configStore.runPixel<(appDependency[] | string)[]>(
+	const res = await configStore.runPixel(
 		`GetProjectDependencies(project="${appId}")`,
 	);
 
@@ -194,9 +201,14 @@ export const fetchDependencies = async (
 	const output = res.pixelReturn[0].output;
 
 	if (type.indexOf("ERROR") === -1) {
+		const responseData = output as {
+			project_id: string;
+			dependencies: appDependency[];
+		};
+		// Return only top-level dependencies
 		return {
 			type: "success",
-			output: output as appDependency[],
+			output: responseData.dependencies || [],
 		};
 	} else {
 		return {

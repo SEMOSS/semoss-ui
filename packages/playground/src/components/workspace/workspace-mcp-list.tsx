@@ -49,13 +49,20 @@ interface ProjectDependency {
 		| "VECTOR";
 	engine_id: string;
 	engine_name: string;
+	engine_subtype?: string;
 	description?: string;
 	engine_discoverable?: boolean;
 	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
 	engine_global?: boolean;
 	access_permission?: number;
-	tags: string; // comma separated tags
+	tags?: string; // comma separated tags
 	can_view_dependencies?: boolean;
+	permission?: number;
+	engine_date_created?: string;
+	parent_id?: string;
+	circular_reference?: boolean;
+	circular_reference_to?: string;
+	dependencies?: ProjectDependency[];
 }
 
 /**
@@ -71,7 +78,10 @@ export const WorkspaceMCPList = ({
 	const { t } = useTranslation("workspace");
 	const { actions } = useInsight();
 
-	const getDependencies = usePixel<ProjectDependency[]>(
+	const getDependencies = usePixel<{
+		project_id: string;
+		dependencies: ProjectDependency[];
+	}>(
 		workspaceId
 			? `GetProjectDependencies(project=["${workspaceId}"]);`
 			: "",
@@ -87,12 +97,13 @@ export const WorkspaceMCPList = ({
 	);
 
 	const searchedMCP = useMemo(() => {
-		const dataWithType =
-			getDependencies.data?.filter((m) =>
-				type === "TOOLBOX"
-					? m.engine_type !== "VECTOR"
-					: m.engine_type === "VECTOR",
-			) || [];
+		// Return only top-level dependencies
+		const allDeps = getDependencies.data?.dependencies || [];
+		const dataWithType = allDeps.filter((m) =>
+			type === "TOOLBOX"
+				? m.engine_type !== "VECTOR"
+				: m.engine_type === "VECTOR",
+		);
 		if (!search) {
 			return dataWithType;
 		}
