@@ -6,7 +6,7 @@ import { Search, styled } from "@semoss/ui";
 import { Badge, Button, Card, CardContent, H3, H4, P } from "@semoss/ui/next";
 import { getTeams, getTeamsCount } from "@/api";
 import { AddTeamModal } from "@/components/teams/add-team-modal";
-import { TeamTileCard } from "@/components/teams/TeamTileCard";
+import { TeamTileCard } from "@/components/teams/team-tile-card";
 import { useSettings } from "@/hooks/useSettings";
 
 export interface DBMember {
