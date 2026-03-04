@@ -143,7 +143,8 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 		) {
 			return active.message;
 		} else if (
-			typeof active?.message === "object" &&
+			active?.message !== null &&
+			typeof active?.message === "object" && // typeof null = "object", so we need to check if it's not null
 			Object.keys(active.message).length
 		) {
 			return JSON.stringify(active.message);
