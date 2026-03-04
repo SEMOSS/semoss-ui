@@ -157,7 +157,7 @@ export const PromptBuilderInputTypeSelection = (props: {
 						fullWidth
 						disableClearable
 						multiple={false}
-						id={"input-token-autocomplete"}
+						id="input-token-autocomplete"
 						options={INPUT_TYPES}
 						value={props.inputType}
 						getOptionLabel={(option) => INPUT_TYPE_DISPLAY[option]}
@@ -191,7 +191,7 @@ export const PromptBuilderInputTypeSelection = (props: {
 									fullWidth
 									disableClearable
 									size="small"
-									id={"meta-autocomplete"}
+									id="meta-autocomplete"
 									multiple={false}
 									loading={getMetaSelectorLoading()}
 									options={getMetaSelectorOptions()}
