@@ -268,7 +268,7 @@ export const DocumentLibrary = () => {
 			return b.dateCreated.localeCompare(a.dateCreated);
 		});
 
-	const getSortDisplayText = (sortBy: string) => {
+	const _getSortDisplayText = (sortBy: string) => {
 		switch (sortBy) {
 			case "name-asc":
 				return "Sort: Name (A-Z)";
@@ -344,6 +344,7 @@ export const DocumentLibrary = () => {
 										return;
 									}
 									setData([pixelData.output]);
+									navigate(`/knowledge/${knowledge.id}`);
 								});
 						}
 					}}
