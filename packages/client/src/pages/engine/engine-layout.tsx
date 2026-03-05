@@ -12,7 +12,7 @@ import { usePixel } from "@semoss/sdk/react";
 import { Spinner, Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { EngineHeader } from "@/components/engine";
 import { EngineContext } from "@/contexts";
-import { useAPI, useRootStore, useSettings } from "@/hooks";
+import { useAPI, useRootStore } from "@/hooks";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
 interface EngineLayoutProps {
@@ -29,8 +29,6 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	const resolvedPath = useResolvedPath("");
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
-	const { adminMode } = useSettings();
-	const isAdminContext = adminMode && configStore.store.user.admin;
 
 	// filter metakeys to the ones we want
 	const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -122,9 +120,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 
 	// get the user's role
 	const getUserEnginePermission = useAPI(
-		!isAdminContext && engineId
-			? ["getUserEnginePermission", engineId]
-			: null,
+		engineId ? ["getUserEnginePermission", engineId] : null,
 	);
 
 	// get the tabs based on permission and database type
@@ -135,17 +131,14 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		}
 
 		if (
-			!isAdminContext &&
-			(getUserEnginePermission.status !== "SUCCESS" ||
-				!getUserEnginePermission.data)
+			getUserEnginePermission.status !== "SUCCESS" ||
+			!getUserEnginePermission.data
 		) {
 			return [];
 		}
 
 		// check the permission
-		const permission = isAdminContext
-			? "OWNER"
-			: getUserEnginePermission.data.permission;
+		const permission = getUserEnginePermission.data.permission;
 
 		// get the routes based on permission
 		let filteredTabs = route.specific.filter((t) =>
@@ -167,7 +160,6 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		return filteredTabs;
 	}, [
 		route,
-		isAdminContext,
 		getUserEnginePermission.status,
 		getUserEnginePermission.data
 			? getUserEnginePermission.data.permission
@@ -204,15 +196,12 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	);
 
 	// if the engine isn't found, navigate to the Home Page
-	if (
-		!engineId ||
-		(!isAdminContext && getUserEnginePermission.status === "ERROR")
-	) {
+	if (!engineId || getUserEnginePermission.status === "ERROR") {
 		return <Navigate to={`${route.path}`} replace />;
 	}
 
 	// show a loading screen when it is pending
-	if (!isAdminContext && getUserEnginePermission.status !== "SUCCESS") {
+	if (getUserEnginePermission.status !== "SUCCESS") {
 		return (
 			<div>
 				<Spinner className="size-8" />
@@ -249,9 +238,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 				name: route.name,
 				active: {
 					id: engineId,
-					role: isAdminContext
-						? "OWNER"
-						: getUserEnginePermission.data.permission,
+					role: getUserEnginePermission.data.permission,
 					name:
 						(getEngineMetadata.data?.database_name as string) || "",
 					metadata: values,
