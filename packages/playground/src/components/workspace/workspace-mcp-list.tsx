@@ -54,14 +54,10 @@ interface ProjectDependency {
 	engine_discoverable?: boolean;
 	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
 	engine_global?: boolean;
-	access_permission?: number;
+	access_permission?: number; // The permission level the user has requested, if any
 	tags?: string; // comma separated tags
 	can_view_dependencies?: boolean;
-	permission?: number;
 	engine_date_created?: string;
-	parent_id?: string;
-	circular_reference?: boolean;
-	circular_reference_to?: string;
 	dependencies?: string[]; // Array of dependency engine IDs
 }
 
