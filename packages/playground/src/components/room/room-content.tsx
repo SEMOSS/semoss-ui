@@ -1,4 +1,6 @@
 import {
+	ComputerIcon,
+	ExternalLinkIcon,
 	MoveDownIcon,
 	MoveUpIcon,
 	Settings2Icon,
@@ -9,6 +11,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
+	Badge,
 	Button,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
@@ -31,10 +34,14 @@ import {
 } from "@/components";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { MCPConfig } from "@/types";
+import type { MCPConfig, Workspace } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
+import { usePixel } from "@semoss/sdk/react";
 
 const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS === "true";
+const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
+	? import.meta.env.VITE_PLATFORM_URL
+	: "";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 150;
@@ -57,7 +64,17 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
+	const [mode, setMode] = useState("");
+	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("");
 
+	const getWorkspace = usePixel<Workspace | null>(
+		mode === "workspace" && selectedWorkspaceId
+			? `GetWorkspace("${selectedWorkspaceId}");`
+			: null,
+		{
+			data: null,
+		},
+	);
 	/**
 	 * Functions
 	 */
@@ -262,6 +279,16 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [contentEle]);
 
+	/**
+	 * Check if the room has a workspace configured
+	 */
+	useEffect(() => {
+		if (room.options.workspace?.workspace_id) {
+			setMode("workspace");
+			setSelectedWorkspaceId(room.options.workspace.workspace_id);
+		}
+	}, [room.options.workspace]);
+
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
@@ -443,10 +470,45 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					onPrompt={handlePrompt}
 					hasOutstandingTools={room.hasUnfinishedTools}
 					footer={
-						<RoomContextChart
-							tokensUsed={room.tokensUsed}
-							tokensMax={chat.models.contextWindow}
-						/>
+						<>
+							<RoomContextChart
+								tokensUsed={room.tokensUsed}
+								tokensMax={chat.models.contextWindow}
+							/>
+							{
+								mode === "workspace" &&
+								getWorkspace.status === "SUCCESS" ? (
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<span>
+												<Badge
+													variant="secondary"
+													asChild
+												>
+													<a
+														target="_blank"
+														href={`${PLATFORM_URL}/#/app/${getWorkspace.data.workspace_id}`}
+													>
+														<ComputerIcon data-icon="inline-start" />
+														<div className="w-18 truncate">
+															{getWorkspace.data
+																.name ||
+																t(
+																	"room:menuWorkspace.selectAgent",
+																)}
+														</div>
+														<ExternalLinkIcon data-icon="inline-end" />
+													</a>
+												</Badge>
+											</span>
+										</TooltipTrigger>
+										<TooltipContent>
+											Click to view agent details
+										</TooltipContent>
+									</Tooltip>
+								) : null
+							}
+						</>
 					}
 				/>
 			</div>

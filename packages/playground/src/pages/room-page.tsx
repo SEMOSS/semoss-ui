@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { InsightProvider } from "@semoss/sdk/react";
+import { InsightProvider, usePixel } from "@semoss/sdk/react";
 import {
 	ResizableHandle,
 	ResizablePanel,
@@ -13,7 +13,7 @@ import {
 import { RoomContent, RoomSidebar, SaveWorkspaceDialog } from "@/components";
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { Engine } from "@/types";
+import type { Engine, Workspace } from "@/types";
 /**
  * The page for a room
  *
@@ -33,6 +33,17 @@ export const RoomPage = observer(() => {
 	 */
 	const [room, setRoom] = useState<RoomStore | null>(null);
 	const selectedModelRef = useRef<Engine>(chat.models.selected);
+	const [mode, setMode] = useState("");
+	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("");
+
+	const getWorkspace = usePixel<Workspace | null>(
+		mode === "workspace" && selectedWorkspaceId
+			? `GetWorkspace("${selectedWorkspaceId}");`
+			: null,
+		{
+			data: null,
+		},
+	);
 
 	/**
 	 * Library hooks
@@ -59,6 +70,16 @@ export const RoomPage = observer(() => {
 		selectedModelRef.current = chat.models.selected;
 	}, [chat.models.selected]);
 
+	/**
+	 * Check if the room has a workspace configured
+	 */
+	useEffect(() => {
+		if (room?.options?.workspace?.workspace_id) {
+			setMode("workspace");
+			setSelectedWorkspaceId(room.options.workspace.workspace_id);
+		}
+	}, [room?.options?.workspace]);
+
 	// load the room
 	useEffect(() => {
 		const loadRoom = async () => {
@@ -72,7 +93,7 @@ export const RoomPage = observer(() => {
 					chat.setSelectedModel(room.model);
 				}
 
-				if (room.options.workspace)
+				if (mode === "workspace" && getWorkspace.status === "SUCCESS")
 					setBreadcrumbs([
 						{
 							name: t("breadcrumbs.home"),
@@ -84,12 +105,12 @@ export const RoomPage = observer(() => {
 						},
 						{
 							name:
-								room.options.workspace?.name ||
+								getWorkspace.data.name ||
 								room.options.workspace.workspace_id,
 							path: `/agent/${room.options.workspace.workspace_id}`,
 						},
 						{
-							name: t("breadcrumbs.room"),
+							name: room?.metadata?.name || t("breadcrumbs.room"),
 							path: `/room/${room.roomId}`,
 						},
 					]);
@@ -110,6 +131,9 @@ export const RoomPage = observer(() => {
 		chat.loadRoom,
 		chat.setSelectedModel,
 		setBreadcrumbs,
+		mode,
+		getWorkspace.status,
+    	getWorkspace.data
 	]);
 
 	const { setNavbarActions } = useGlobalBreadcrumbs({});
