@@ -55,7 +55,6 @@ export const PromptGrid = observer(function PromptGrid({
 }: PromptGridProps) {
 	const isMobile = useMediaQuery("(max-width: 640px)");
 	const { actions } = useInsight();
-	const location = useLocation();
 
 	const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 	const [selectedPromptForDetails, setSelectedPromptForDetails] =
@@ -227,61 +226,6 @@ const listToRender = useMemo(() => {
 						))}
 				</div>
 			)}
-
-			{/* {isMobile && location.pathname === "/prompt-library" && (
-				<div className="relative flex flex-col flex-nowrap gap-1 px-1">
-					{Array.isArray(listToRender) &&
-						listToRender.map((prompt) => (
-							<div
-								key={prompt.id}
-								className="flex w-fit flex-[0_0_auto]"
-							>
-								<PromptCard
-									prompt={prompt}
-									category={selectedCategory.label}
-									onEdit={() => handleEdit(prompt)}
-									onDelete={() => handleDelete(prompt.id)}
-									onShowDetails={() =>
-										handleShowDetails(prompt)
-									}
-								/>
-							</div>
-						))}
-				</div>
-			)} */}
-
-			{/* {isMobile && location.pathname === "/" && (
-				<div
-					style={{
-						position: "fixed",
-						top: isTextFieldFocused ? "22%" : "40%",
-						width: "100%",
-						overflowX: "auto",
-					}}
-					className="prompt-grid-scroll"
-				>
-					<div className="left-0 flex flex-nowrap gap-1 px-1">
-						{Array.isArray(listToRender) &&
-							listToRender.map((prompt) => (
-								<div
-									key={prompt.id}
-									className="flex w-fit flex-[0_0_auto]"
-								>
-									<PromptCard
-										prompt={prompt}
-										category={selectedCategory.label}
-										onEdit={() => handleEdit(prompt)}
-										onDelete={() => handleDelete(prompt.id)}
-										onShowDetails={() =>
-											handleShowDetails(prompt)
-										}
-									/>
-								</div>
-							))}
-						<div style={{ width: "20px", flexShrink: 0 }} />
-					</div>
-				</div>
-			)} */}
 
 			<PromptDetailsModal
 				open={isDetailsModalOpen}

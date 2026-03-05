@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Button } from "@semoss/ui/next";
+import { useTranslation } from "@semoss/i18n";
 
 type ChipsInputProps = {
 	id?: string;
@@ -23,6 +24,7 @@ export function ChipsInput({
 	className,
 	inputProps,
 }: ChipsInputProps) {
+	const { t } = useTranslation("promptLibrary");
 	const [input, setInput] = React.useState("");
 
 	const addChip = (raw: string) => {
@@ -62,7 +64,7 @@ export function ChipsInput({
 						aria-label={`Remove ${chip}`}
 						className="h-5 w-5 min-w-0 rounded-full p-0 leading-none"
 					>
-						×
+						{t("chips.remove")}
 					</Button>
 				</span>
 			))}

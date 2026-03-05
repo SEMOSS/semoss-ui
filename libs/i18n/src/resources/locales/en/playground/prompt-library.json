@@ -5,17 +5,26 @@
         "title": "Search",
         "placeholder": "Search prompts"
     },
+    "filter": {
+        "newestFirst": "Newest First",
+        "oldestFirst": "Oldest First"
+    },
+    "chips": {
+        "remove": "x"
+    },
     "buttons": {
         "createPrompt": "Create Prompt",
         "deletePrompt": "Delete Prompt",
-        "deletePromptConfirm": "Are you sure you want to delete '{{ title }}'? This action cannot be undone.",
+        "deletePromptConfirm": "Are you sure you want to delete <bold>{{ title }}</bold>? This action cannot be undone.",
         "delete": "Delete",
         "usePrompt": "Use Prompt",
         "addTagsPlaceholder": "Add tags and press enter",
-        "saveChanges": "Save Changes"
+        "saveChanges": "Save Changes",
+        "clearAll": "Clear All"
     },
     "descriptions": {
-        "promptsFound": "prompts found"
+        "promptsFound": "prompts found",
+        "myPrompts": "My Prompts"
     },
     "details": {
         "title": "Details",
@@ -29,6 +38,11 @@
         "promptContext": "Prompt Context",
         "intent": "Intent",
         "tags": "Tags"
+    },
+    "error": {
+        "error": "Error",
+        "fetchPrompts": "Failed to fetch prompts. Please try again.",
+        "retry": "Retry"
     },
     "breadcrumbs": {
 		"home": "Home",

@@ -102,15 +102,6 @@ const CategoryButtons: React.FC<CategoryButtonsProps> = ({
 					);
 				})}
 			</div>
-
-			{/* Selected categories summary - only show in multi-select mode */}
-			{multiSelect && selectedCategories.length > 0 && (
-				<div className="flex flex-wrap gap-1 justify-center">
-					<span className="text-xs text-muted-foreground">
-						Selected: {selectedCategories.length} categor{selectedCategories.length === 1 ? 'y' : 'ies'}
-					</span>
-				</div>
-			)}
 		</div>
 	);
 };

@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Info, Plus, Search, SquareLibrary, X } from "lucide-react";
+import { Info, Plus, Search, SquareLibrary, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
@@ -128,9 +128,6 @@ export const PromptLibrary = observer(() => {
 	const [selectedCategories, setSelectedCategories] = useState<SelectedCategory[]>([
 		{ label: "My Prompts", value: "My Prompts" }
 	]);
-
-	const [availableTags, setAvailableTags] = useState<string[]>([]);
-	const [isTagMenuOpen, setIsTagMenuOpen] = useState(false);
 	const [loadStatus, setLoadStatus] = useState<LoadStatus>("IDLE");
 	const [hasAttemptedInitialLoad, setHasAttemptedInitialLoad] = useState(false);
 	const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
@@ -139,8 +136,6 @@ export const PromptLibrary = observer(() => {
 	const isSmallDevice = useMediaQuery(
 		"(max-width: 320px) and (max-height: 568px)",
 	);
-	const isNarrowDesktop = useMediaQuery("(max-width: 1600px)");
-	const shouldShowChevrons = isNarrowDesktop && categoryArray.length > 1;
 
 	const { actions, system } = useInsight();
 
@@ -155,11 +150,6 @@ export const PromptLibrary = observer(() => {
 	const visiblePrompts = useMemo(
 		() => allPrompts.filter((p) => canSeePrompt(p, userId)),
 		[allPrompts, userId],
-	);
-
-	const myPrompts = useMemo(
-		() => visiblePrompts.filter((p) => isMinePrompt(p, userId)),
-		[visiblePrompts, userId],
 	);
 
 	useGlobalBreadcrumbs({
@@ -212,7 +202,6 @@ export const PromptLibrary = observer(() => {
 				.sort((a, b) => a.localeCompare(b));
 
 			setAllPrompts(normalized);
-			setAvailableTags(tagsSorted);
 			setCategoryArray(["My Prompts", ...tagsSorted]);
 			setLoadStatus("DONE");
 		} catch (e) {
@@ -272,10 +261,14 @@ const filteredPrompts = useMemo(() => {
 
 	// Apply search filter
 	if (lower) {
-		filtered = filtered.filter(p => 
-			(p.title ?? "").toLowerCase().includes(lower) ||
-			String(p.intent ?? p.context ?? "").toLowerCase().includes(lower)
-		);
+		filtered = filtered.filter(p => {
+			const searchableText = [
+				p.title ?? "",
+				p.context ?? ""
+			].join(" ").toLowerCase();
+			
+			return searchableText.includes(lower);
+		});
 	}
 
 	// Apply additional tag filter
@@ -369,7 +362,6 @@ const filteredGlobalPrompts = useMemo(() =>
 	};
 
 	const handleButtonClick = (category: SelectedCategory) => {
-		setIsTagMenuOpen(false);
 		setSelectedTags([]);
 
 		setSelectedCategories(prev => {
@@ -390,22 +382,6 @@ const filteredGlobalPrompts = useMemo(() =>
 	const handleClearAllCategories = () => {
 		setSelectedCategories([{ label: "My Prompts", value: "My Prompts" }]);
 	};
-
-	const handleRemoveTag = (tagToRemove: string) => {
-		setSelectedTags((prev) => prev.filter((tag) => tag !== tagToRemove));
-	};
-
-	const categoryHasTags = useMemo(() => {
-		const nonMyPromptsCategories = selectedCategories.filter(cat => cat.label !== "My Prompts");
-		if (nonMyPromptsCategories.length === 0) return false;
-
-		return visiblePrompts
-			.filter(p => nonMyPromptsCategories.some(cat => p.tags?.includes(cat.label)))
-			.some(p => p.tags?.some(t => !nonMyPromptsCategories.some(cat => cat.label === t)) ?? false);
-	}, [visiblePrompts, selectedCategories]);
-
-	const displayedTags = selectedTags.slice(0, 2);
-	const hiddenCount = Math.max(0, selectedTags.length - 2);
 
 	return (
 		<div className="flex min-h-screen flex-col bg-gray-50">
@@ -455,137 +431,6 @@ const filteredGlobalPrompts = useMemo(() =>
 						/>
 					</div>
 				</div>
-
-				{categoryHasTags && (
-					<div className="w-full md:w-[320px]">
-						{!isMobile && (
-							<div className="mb-1 font-medium text-muted-foreground text-sm">
-								Filter by Tags
-							</div>
-						)}
-
-						<div className="relative">
-							<Button
-								type="button"
-								variant="outline"
-								className="h-10 w-full justify-between"
-								onClick={() => setIsTagMenuOpen((v) => !v)}
-							>
-								<span className="truncate text-left text-sm">
-									{selectedTags.length === 0
-										? "Select tags..."
-										: selectedTags.join(", ")}
-								</span>
-								<span className="text-muted-foreground text-xs">
-									{selectedTags.length
-										? `${selectedTags.length} selected`
-										: ""}
-								</span>
-							</Button>
-
-							{selectedTags.length > 0 && (
-								<div className="mt-2 flex flex-wrap gap-2">
-									{displayedTags.map((tag) => (
-										<span
-											key={tag}
-											className="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-accent-foreground text-xs"
-										>
-											{tag}
-											<button
-												type="button"
-												className="rounded-sm opacity-80 hover:opacity-100"
-												onClick={() =>
-													handleRemoveTag(tag)
-												}
-												aria-label={`Remove ${tag}`}
-											>
-												<X className="h-3 w-3" />
-											</button>
-										</span>
-									))}
-									{hiddenCount > 0 && (
-										<span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-muted-foreground text-xs">
-											+{hiddenCount} more
-										</span>
-									)}
-								</div>
-							)}
-
-							{isTagMenuOpen && (
-								<div className="absolute z-10 mt-2 w-full rounded-md border border-border bg-background p-2 shadow-sm">
-									<div className="max-h-56 overflow-auto">
-										{availableTags
-											.filter(t => !selectedCategories.some(cat => cat.label === t))
-											.map((tag) => {
-												const checked =
-													selectedTags.includes(tag);
-												return (
-													<label
-														key={tag}
-														className="flex cursor-pointer items-center justify-between rounded-sm px-2 py-1 text-sm hover:bg-muted"
-													>
-														<span
-															className={
-																checked
-																	? "font-medium text-primary"
-																	: ""
-															}
-														>
-															{tag}
-														</span>
-														<input
-															type="checkbox"
-															checked={checked}
-															onChange={(e) => {
-																const next = e
-																	.target
-																	.checked
-																	? [
-																			...selectedTags,
-																			tag,
-																		]
-																	: selectedTags.filter(
-																			(
-																				t2,
-																			) =>
-																				t2 !==
-																				tag,
-																		);
-																setSelectedTags(
-																	next,
-																);
-															}}
-														/>
-													</label>
-												);
-											})}
-									</div>
-
-									<div className="mt-2 flex items-center justify-between gap-2">
-										<Button
-											type="button"
-											variant="ghost"
-											className="h-8 px-2 text-xs"
-											onClick={() => setSelectedTags([])}
-											disabled={selectedTags.length === 0}
-										>
-											Clear
-										</Button>
-										<Button
-											type="button"
-											className="h-8 px-2 text-xs"
-											onClick={() =>
-												setIsTagMenuOpen(false)
-											}
-										>
-											Done
-										</Button>
-									</div>
-								</div>
-							)}
-						</div>
-					</div>
-				)}
 
 				<Button
 					className="h-10 whitespace-nowrap"
@@ -656,7 +501,7 @@ const filteredGlobalPrompts = useMemo(() =>
 						) : loadStatus === "ERROR" ? (
 							<div className="flex h-full items-center justify-center">
 								<div className="flex flex-col items-center gap-2">
-									<div className="text-destructive text-sm">Failed to load prompts</div>
+									<div className="text-destructive text-sm">{t("promptLibrary:error.fetchPrompts")}</div>
 									<Button 
 										variant="outline" 
 										size="sm" 
@@ -665,7 +510,7 @@ const filteredGlobalPrompts = useMemo(() =>
 											void refreshPrompts();
 										}}
 									>
-										Retry
+										{t("promptLibrary:error.retry")}
 									</Button>
 								</div>
 							</div>
@@ -699,9 +544,6 @@ const filteredGlobalPrompts = useMemo(() =>
 		</div>
 	</div>
 </div>
-<div>
-
-</div>
 <div className="flex flex-row justify-between items-center">
 			<div className="mt-3 mb-2 text-muted-foreground text-sm">
 				{filteredPrompts.length} {t("promptLibrary:descriptions.promptsFound")}
@@ -718,8 +560,8 @@ const filteredGlobalPrompts = useMemo(() =>
 			onChange={(e) => setSortOrder(e.target.value as "newest" | "oldest")}
 			className="h-8 rounded-md border border-border bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-ring"
 		>
-			<option value="newest">Newest First</option>
-			<option value="oldest">Oldest First</option>
+			<option value="newest">{t("promptLibrary:filter.newestFirst")}</option>
+			<option value="oldest">{t("promptLibrary:filter.oldestFirst")}</option>
 		</select>
 			<Button
 				variant="ghost"
@@ -729,7 +571,7 @@ const filteredGlobalPrompts = useMemo(() =>
 				disabled={selectedCategories.length <= 1}
 			>
 				<X className="mr-1 h-3 w-3" />
-				Clear All
+				{t("promptLibrary:buttons.clearAll")}
 			</Button>
 	</div>
 </div>

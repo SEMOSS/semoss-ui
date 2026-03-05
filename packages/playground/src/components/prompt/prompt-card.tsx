@@ -5,12 +5,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
 	Button,
 	Card,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { Prompt } from "@/types/prompt";
-import { useTranslation } from "@semoss/i18n";
+import { useTranslation, Trans } from "@semoss/i18n";
 
 interface PromptCardProps {
 	prompt: Prompt;
@@ -188,7 +185,11 @@ export function PromptCard({
 					{t("promptLibrary:buttons.deletePrompt")}
 				</div>
 				<div className="px-4 py-4 text-muted-foreground text-sm">
-					{t("promptLibrary:buttons.deletePromptConfirm", { title: String(title ?? "") })}
+					<Trans
+						i18nKey="promptLibrary:buttons.deletePromptConfirm"
+						values={{ title: String(title ?? "") }}
+						components={{ bold: <span className="font-bold" /> }}
+					/>
 				</div>
 				<div className="flex items-center justify-end gap-2 border-border border-t px-4 py-3">
 					<Button
@@ -213,180 +214,106 @@ export function PromptCard({
 		</div>
 	) : null;
 	return (
-		<>
-			{location.pathname === "/prompt-library" ? (
-				<>
-					<Card
-						className={`relative flex h-[220px] w-full flex-col overflow-hidden rounded-lg border bg-background p-0 text-left
-							transition-[transform,box-shadow,background-color,border-color] duration-200
-							border-l-4 ${isHovered ? "border-slate-200 border-l-[#b18950] bg-slate-50 shadow-md" : "border-slate-100 border-l-transparent bg-white shadow-sm"}`}
-						onClick={handleCardClick}
-						onKeyDown={handleCardKeyDown}
-						onMouseEnter={() => setIsHovered(true)}
-						onMouseLeave={() => setIsHovered(false)}
-					>
-						<div className="flex-1 p-4">
-							<div className="mb-1 flex items-start justify-between gap-3">
-								<div className="min-w-0 flex-1">
-									<div className="mb-1 line-clamp-2 font-medium text-[16px] text-slate-800 leading-[1.2]">
-										{String(title ?? "")}
-									</div>
-									{tags.length > 0 ? (
-										<div className="mb-1 flex flex-wrap gap-1">
-											{tags.slice(0, 3).map((tag) => (
-												<span
-													key={`${String(id)}:${tag}`}
-													className="inline-flex h-5 items-center rounded-md bg-sky-100 px-2 font-medium text-[11px] text-sky-700"
-												>
-													{tag}
-												</span>
-											))}
-											{tags.length > 3 ? (
-												<span className="inline-flex h-5 items-center rounded-md bg-slate-100 px-2 font-medium text-[11px] text-slate-600">
-													+{tags.length - 3}
-												</span>
-											) : null}
-										</div>
-									) : null}
+			<>
+				<Card
+					className={`relative flex h-[220px] w-full flex-col overflow-hidden rounded-lg border bg-background p-0 text-left
+						transition-[transform,box-shadow,background-color,border-color] duration-200
+						border-l-4 ${isHovered ? "border-slate-200 border-l-[#b18950] bg-slate-50 shadow-md" : "border-slate-100 border-l-transparent bg-white shadow-sm"}`}
+					onClick={handleCardClick}
+					onKeyDown={handleCardKeyDown}
+					onMouseEnter={() => setIsHovered(true)}
+					onMouseLeave={() => setIsHovered(false)}
+				>
+					<div className="flex-1 p-4">
+						<div className="mb-1 flex items-start justify-between gap-3">
+							<div className="min-w-0 flex-1">
+								<div className="mb-1 line-clamp-2 font-medium text-[16px] text-slate-800 leading-[1.2]">
+									{String(title ?? "")}
 								</div>
-
-								{isHovered ? (
-									<div className="card-actions flex items-center gap-1">
-										{category === "My Prompts" ? (
-											<>
-												<button
-													type="button"
-													onClick={(e) => {
-														e.stopPropagation();
-														onEdit();
-													}}
-													aria-label="edit"
-													className="rounded-md p-1 text-slate-400 hover:bg-black/5 hover:text-slate-500"
-												>
-													<Pencil className="h-4 w-4" />
-												</button>
-												<button
-													type="button"
-													onClick={(e) => {
-														e.stopPropagation();
-														setIsDeleteDialogOpen(
-															true,
-														);
-													}}
-													aria-label="delete"
-													className="rounded-md p-1 text-slate-400 hover:bg-black/5 hover:text-red-500"
-												>
-													<Trash2 className="h-4 w-4" />
-												</button>
-											</>
+								{tags.length > 0 ? (
+									<div className="mb-1 flex flex-wrap gap-1">
+										{tags.slice(0, 3).map((tag) => (
+											<span
+												key={`${String(id)}:${tag}`}
+												className="inline-flex h-5 items-center rounded-md bg-sky-100 px-2 font-medium text-[11px] text-sky-700"
+											>
+												{tag}
+											</span>
+										))}
+										{tags.length > 3 ? (
+											<span className="inline-flex h-5 items-center rounded-md bg-slate-100 px-2 font-medium text-[11px] text-slate-600">
+												+{tags.length - 3}
+											</span>
 										) : null}
-
-										<button
-											type="button"
-											onClick={handleCopy}
-											aria-label="copy"
-											className="rounded-md p-1 text-slate-400 hover:bg-black/5 hover:text-slate-500"
-										>
-											<Copy className="h-4 w-4" />
-										</button>
 									</div>
 								) : null}
 							</div>
 
-							<div className="mt-2 line-clamp-2 text-[14px] text-slate-600 leading-6">
-								{description}
-							</div>
-						</div>
-
-						<div className="card-actions p-4 pt-0">
-							<Button
-								variant="outline"
-								className="h-10 w-full justify-center rounded-md border-slate-200 bg-slate-50 text-slate-500 hover:bg-[#d5d5d5] hover:text-slate-700"
-								onClick={(e) => {
-									e.stopPropagation();
-									handleUse();
-								}}
-							>
-								<span>{t("promptLibrary:buttons.usePrompt")}</span>
-								<ArrowRight className="ml-2 h-4 w-4" />
-							</Button>
-						</div>
-					</Card>
-
-					{deleteDialogNode}
-					{snackbarNode}
-				</>
-			) : null}
-
-			{/* {location.pathname === "/" ? (
-				<div
-					className="flex min-w-[100px] flex-wrap justify-center gap-0"
-					style={{
-						width: isMobile ? "fit-content" : "100%",
-						minHeight: isMobile ? "40px" : "80px",
-					}}
-				>
-					<Button
-						key={id}
-						variant="outline"
-						onClick={() =>
-							navigate("/", {
-								state: {
-									...(location.state ?? {}),
-									description,
-								},
-							})
-						}
-						className="m-1 w-full flex-col items-start justify-start rounded-lg border-slate-200 bg-slate-50 text-slate-500 hover:bg-[#d5d5d5] hover:text-slate-700"
-					>
-						<div className="w-full text-left">
-							<div className="mb-1 font-semibold text-sm">
-								{String(title ?? "")}
-							</div>
-
-							{tags.length > 0 ? (
-								<div className="mb-1 flex flex-wrap gap-1">
-									{tags.slice(0, 3).map((tag) => (
-										<span
-											key={`${String(id)}:${tag}:home`}
-											className="inline-flex h-4 items-center rounded-md bg-sky-100 px-1.5 font-medium text-[9px] text-sky-700"
-										>
-											{tag}
-										</span>
-									))}
-
-									{tags.length > 3 ? (
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<span className="inline-flex h-4 cursor-pointer items-center rounded-md bg-slate-100 px-1.5 font-medium text-[9px] text-slate-600 hover:bg-slate-200">
-													+{tags.length - 3}
-												</span>
-											</TooltipTrigger>
-											<TooltipContent side="top">
-												<div className="flex max-w-xs flex-wrap gap-1 p-1">
-													{tags
-														.slice(3)
-														.map((tag) => (
-															<span
-																key={`${String(id)}:${tag}:more`}
-																className="inline-flex h-5 items-center rounded-md bg-sky-100 px-2 font-medium text-[11px] text-sky-700"
-															>
-																{tag}
-															</span>
-														))}
-												</div>
-											</TooltipContent>
-										</Tooltip>
+							{isHovered ? (
+								<div className="card-actions flex items-center gap-1">
+									{category === "My Prompts" ? (
+										<>
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													onEdit();
+												}}
+												aria-label="edit"
+												className="rounded-md p-1 text-slate-400 hover:bg-black/5 hover:text-slate-500"
+											>
+												<Pencil className="h-4 w-4" />
+											</button>
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													setIsDeleteDialogOpen(
+														true,
+													);
+												}}
+												aria-label="delete"
+												className="rounded-md p-1 text-slate-400 hover:bg-black/5 hover:text-red-500"
+											>
+												<Trash2 className="h-4 w-4" />
+											</button>
+										</>
 									) : null}
+
+									<button
+										type="button"
+										onClick={handleCopy}
+										aria-label="copy"
+										className="rounded-md p-1 text-slate-400 hover:bg-black/5 hover:text-slate-500"
+									>
+										<Copy className="h-4 w-4" />
+									</button>
 								</div>
 							) : null}
 						</div>
-					</Button>
 
-					{deleteDialogNode}
-					{snackbarNode}
-				</div>
-			) : null} */}
-		</>
+						<div className="mt-2 line-clamp-2 text-[14px] text-slate-600 leading-6">
+							{description}
+						</div>
+					</div>
+
+					<div className="card-actions p-4 pt-0">
+						<Button
+							variant="outline"
+							className="h-10 w-full justify-center rounded-md border-slate-200 bg-slate-50 text-slate-500 hover:bg-[#d5d5d5] hover:text-slate-700"
+							onClick={(e) => {
+								e.stopPropagation();
+								handleUse();
+							}}
+						>
+							<span>{t("promptLibrary:buttons.usePrompt")}</span>
+							<ArrowRight className="ml-2 h-4 w-4" />
+						</Button>
+					</div>
+				</Card>
+
+				{deleteDialogNode}
+				{snackbarNode}
+			</>
 	);
 }

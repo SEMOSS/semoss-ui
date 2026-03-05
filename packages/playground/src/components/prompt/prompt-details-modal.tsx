@@ -1,8 +1,8 @@
-import { Copy, X } from "lucide-react";
+import { Copy } from "lucide-react";
 import type React from "react";
 import { useEffect, useId, useMemo, useState } from "react";
 import type { Prompt } from "@/types/prompt";
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from "@semoss/ui/next";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@semoss/ui/next";
 import { useTranslation } from "@semoss/i18n";
 import { formatDate } from "@/utility/utils"
 
@@ -204,12 +204,11 @@ export const PromptDetailsModal: React.FC<PromptDetailsModalProps> = ({
 
 						{tags.length > 0 ? (
 						<>
-						
-						<div className="h-px bg-slate-200" />
-							<div>
-								<div className="mb-2 font-semibold text-slate-900 text-sm">
-									{t("promptLibrary:details.tags")}
-								</div>
+							<div className="h-px bg-slate-200" />
+								<div>
+									<div className="mb-2 font-semibold text-slate-900 text-sm">
+										{t("promptLibrary:details.tags")}
+									</div>
 								<div className="flex flex-wrap gap-2">
 									{tags.map((tag) => (
 										<span
