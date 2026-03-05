@@ -1,155 +1,96 @@
+/** biome-ignore-all lint/a11y/useAriaPropsSupportedByRole: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import {
-	AccountCircleRounded,
-	Functions as FunctionsIcon,
-	GridView as GridViewIcon,
-	GppGoodRounded as GuardrailIcon,
-	Home as HomeIcon,
-	Inventory2Outlined,
-	MenuOpenRounded,
-	Settings as SettingsIcon,
-	TokenRounded,
-} from "@mui/icons-material";
+	Archive,
+	BrainCircuit,
+	CircleUserRound,
+	Cpu,
+	Database,
+	Home,
+	LayoutGrid,
+	PanelLeftOpen,
+	Settings,
+	ShieldCheck,
+	SquareFunction,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
+import type React from "react";
 import { useEffect, useState } from "react";
 import { Link, matchPath, useLocation } from "react-router-dom";
-import {
-	Divider,
-	Drawer,
-	IconButton,
-	List,
-	Stack,
-	styled,
-	Typography,
-} from "@semoss/ui";
-import { Database } from "@/assets/img/Database";
-import { ModelBrain } from "@/assets/img/ModelBrain";
+import { Button, cn, Separator, Sheet, SheetContent } from "@semoss/ui/next";
 import { usePage, useRootStore } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 import { LogoutPopover } from "./LogoutPopover";
 
-const DRAWER_OPEN_WIDTH = 288;
-
 const CATALOG_ROUTES = [
-	{ text: "Apps", icon: <GridViewIcon />, route: "/app" },
+	{
+		text: "Apps",
+		icon: <LayoutGrid className="size-4" />,
+		route: "/app",
+	},
 	{
 		text: "Model",
-		icon: <ModelBrain color="#757575" width="24" height="24" />,
+		icon: <BrainCircuit className="size-4" />,
 		route: "/engine/model",
 	},
 	{
 		text: "Database",
-		icon: <Database color="#757575" />,
+		icon: <Database className="size-4" />,
 		route: "/engine/database",
 	},
-	{ text: "Vector", icon: <TokenRounded />, route: "/engine/vector" },
-	{ text: "Function", icon: <FunctionsIcon />, route: "/engine/function" },
+	{
+		text: "Vector",
+		icon: <Cpu className="size-4" />,
+		route: "/engine/vector",
+	},
+	{
+		text: "Function",
+		icon: <SquareFunction className="size-4" />,
+		route: "/engine/function",
+	},
 	{
 		text: "Storage",
-		icon: <Inventory2Outlined />,
+		icon: <Archive className="size-4" />,
 		route: "/engine/storage",
 	},
-	{ text: "Guardrail", icon: <GuardrailIcon />, route: "/engine/guardrail" },
+	{
+		text: "Guardrail",
+		icon: <ShieldCheck className="size-4" />,
+		route: "/engine/guardrail",
+	},
 ];
 
-const StyledNavHeader = styled(Stack)(({ theme }) => ({
-	position: "relative",
-	background: "transparent",
-	paddingTop: theme.spacing(1.5),
-	paddingRight: theme.spacing(2),
-	paddingBottom: theme.spacing(1),
-	paddingLeft: theme.spacing(2),
-	zIndex: 0,
-}));
+interface NavButtonProps {
+	icon: React.ReactNode;
+	label: React.ReactNode;
+	selected?: boolean;
+	testId?: string;
+	ariaLabel?: string;
+}
 
-const StyledNavHeaderLink = styled(Link)(({ theme }) => ({
-	flex: 1,
-	display: "flex",
-	alignItems: "center",
-	color: "inherit",
-	textDecoration: "none",
-	cursor: "pointer",
-	gap: theme.spacing(1),
-	"&:hover": {
-		background: theme.palette.action.hover,
-	},
-}));
-
-const StyledSidebar = styled(Drawer)(() => ({
-	flexShrink: 0,
-	whiteSpace: "nowrap",
-	boxSizing: "border-box",
-	"& .MuiDrawer-paper": {
-		width: DRAWER_OPEN_WIDTH,
-		borderRadius: 0,
-	},
-	variants: [
-		{
-			props: ({ variant }) => variant === "permanent",
-			style: {
-				width: DRAWER_OPEN_WIDTH,
-			},
-		},
-	],
-}));
-
-const StyledSidebarContent = styled(Stack)(({ theme }) => ({
-	flexDirection: "column",
-	width: "100%",
-	overflowY: "auto",
-}));
-
-const StyledSidebarFooter = styled(Stack)(({ theme }) => ({
-	overflowY: "hidden",
-}));
-
-const StyledList = styled(List)(() => ({
-	padding: 0,
-}));
-
-const StyledListItem = styled(List.Item)(({ theme }) => ({
-	gap: theme.spacing(1),
-	padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
-}));
-
-const StyledListItemButton = styled(List.ItemButton, {
-	shouldForwardProp: (prop) => prop !== "selected",
-})<{ selected: boolean }>(({ theme, selected }) => ({
-	gap: theme.spacing(1),
-	padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
-	backgroundColor: selected ? theme.palette.primary.selected : undefined,
-})) as unknown as typeof List.ItemButton;
-
-const StyledListItemIcon = styled(List.ItemIcon)(() => ({
-	width: "28px",
-	minWidth: "auto",
-}));
-
-const StyledLink = styled(Link)(({ theme }) => ({
-	color: "inherit",
-	textDecoration: "none",
-	cursor: "pointer",
-	padding: theme.spacing(0.5, 0),
-}));
-
-const StyledSettingsArea = styled(Stack)(({ theme }) => ({
-	flexDirection: "column",
-	width: "100%",
-	overflowY: "auto",
-}));
-
-const EllipsisText = styled("span")({
-	display: "block",
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	whiteSpace: "nowrap",
-	maxWidth: "100%", // adjust as needed
-});
-
-const StyledCloseIconButton = styled(IconButton)({
-	borderRadius: "7.5px",
-	border: "0.938px solid #E6E6E6",
-	padding: "3.75px",
-});
+function NavButton({
+	icon,
+	label,
+	selected = false,
+	testId,
+	ariaLabel,
+}: NavButtonProps) {
+	return (
+		<div
+			data-testid={testId}
+			aria-label={ariaLabel}
+			className={cn(
+				"flex w-full cursor-pointer items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+				selected && "bg-primary/10 text-primary",
+			)}
+		>
+			<span className="flex w-7 min-w-0 shrink-0 items-center">
+				{icon}
+			</span>
+			<span className="flex-1 truncate text-left">{label}</span>
+		</div>
+	);
+}
 
 export const Sidebar: React.FC = observer(() => {
 	const { configStore } = useRootStore();
@@ -158,6 +99,7 @@ export const Sidebar: React.FC = observer(() => {
 	const { pathname } = useLocation();
 
 	const [viewSidebar, setViewSidebar] = useState(false);
+	const [isLogoutPopoverOpen, setIsLogoutPopoverOpen] = useState(false);
 	useEffect(() => {
 		if (configStore.store.user.admin) {
 			setViewSidebar(true);
@@ -173,43 +115,36 @@ export const Sidebar: React.FC = observer(() => {
 	]);
 
 	function closeSidebar() {
-		if (page.sidebar.pinned) {
+		if (page.sidebar.pinned || isLogoutPopoverOpen) {
 			return;
 		}
 		page.closeSidebar();
 	}
 
-	return (
-		<StyledSidebar
-			variant={page.sidebar.pinned ? "permanent" : "temporary"}
-			anchor="left"
-			open={page.sidebar.open}
-			onClose={() => {
-				closeSidebar;
-			}}
-			PaperProps={{
-				onMouseLeave: () => {
-					closeSidebar();
-				},
-			}}
+	const sidebarContent = (
+		<div
+			className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground"
+			onMouseLeave={() => closeSidebar()}
 		>
-			<StyledNavHeader
-				direction={"row"}
-				alignItems={"center"}
-				justifyContent={"flex-start"}
-				spacing={2}
-			>
-				<StyledNavHeaderLink to={"/"} aria-label={"Go Home"}>
+			{/* Header: Logo + app name + pin toggle */}
+			<div className="relative z-0 flex items-center px-4 pt-3 pb-3">
+				<Link
+					to={"/"}
+					aria-label={"Go Home"}
+					className="flex flex-1 cursor-pointer items-center gap-2 rounded-md p-1 text-inherit no-underline hover:bg-accent"
+				>
 					{configStore.theme.logo ? (
 						<img src={configStore.theme.logo} alt="theme-icon" />
 					) : null}
-					<Typography variant="h6" sx={{ fontWeight: 700 }}>
+					<span className="font-bold text-lg leading-tight">
 						{configStore.theme.name}
-					</Typography>
-				</StyledNavHeaderLink>
+					</span>
+				</Link>
 
-				<StyledCloseIconButton
-					size="small"
+				<Button
+					variant="outline"
+					size="icon-sm"
+					className="shrink-0 rounded-[7.5px] border border-border p-[3.75px] focus:outline-none focus-visible:border-transparent focus-visible:ring-0"
 					onClick={() => {
 						if (page.sidebar.pinned) {
 							page.unpinSidebar();
@@ -220,105 +155,146 @@ export const Sidebar: React.FC = observer(() => {
 						closeSidebar();
 					}}
 				>
-					<MenuOpenRounded fontSize="medium" />
-				</StyledCloseIconButton>
-			</StyledNavHeader>
-			<Divider light />
-			<StyledSidebarContent>
-				<StyledList dense={true} aria-label="main navigation">
-					<StyledLink to={"/"} aria-label={"Home"}>
-						<StyledListItemButton
-							selected={!!matchPath("/", pathname)}
-							dense={true}
+					<PanelLeftOpen className="size-5" />
+				</Button>
+			</div>
+
+			<Separator />
+
+			{/* Home navigation */}
+			<div className="overflow-y-auto">
+				<ul className="list-none p-0" aria-label="main navigation">
+					<li className="py-0.5">
+						<Link
+							to={"/"}
+							aria-label={"Home"}
+							className="text-inherit no-underline"
 						>
-							<StyledListItemIcon>
-								<HomeIcon />
-							</StyledListItemIcon>
-							<List.ItemText primary={"Home"} />
-						</StyledListItemButton>
-					</StyledLink>
-				</StyledList>
-			</StyledSidebarContent>
-			<Divider light />
-			{viewSidebar ? (
-				<StyledSidebarContent>
-					<StyledList dense={true} aria-label="catalog navigation">
-						<StyledListItem>
-							<List.ItemText
-								primary={"Catalog"}
-								primaryTypographyProps={{
-									variant: "subtitle2",
-								}}
+							<NavButton
+								icon={<Home className="size-4" />}
+								label="Home"
+								ariaLabel="Home"
+								selected={!!matchPath("/", pathname)}
 							/>
-						</StyledListItem>
-						{CATALOG_ROUTES.map((r) => {
-							return (
-								<StyledLink
-									key={r.route}
+						</Link>
+					</li>
+				</ul>
+			</div>
+
+			<Separator />
+
+			{/* Catalog navigation */}
+			{viewSidebar ? (
+				<div className="overflow-y-auto">
+					<ul
+						className="list-none p-0"
+						aria-label="catalog navigation"
+					>
+						<li className="px-4 py-2">
+							<span className="font-semibold text-muted-foreground text-xs">
+								Catalog
+							</span>
+						</li>
+						{CATALOG_ROUTES.map((r) => (
+							<li key={r.route} className="py-0.5">
+								<Link
 									to={r.route}
 									aria-label={r.text}
+									className="text-inherit no-underline"
 								>
-									<StyledListItemButton
+									<NavButton
+										icon={r.icon}
+										label={r.text}
+										ariaLabel={r.text}
 										selected={
 											!!matchPath(
 												`${r.route}/*`,
 												pathname,
 											)
 										}
-										aria-label={r.text}
-										dense={true}
-										data-testid={formatToDataTestId(
+										testId={formatToDataTestId(
 											`sidebar-${r.text}-btn`,
 										)}
-									>
-										<StyledListItemIcon>
-											{r.icon}
-										</StyledListItemIcon>
-										<List.ItemText primary={r.text} />
-									</StyledListItemButton>
-								</StyledLink>
-							);
-						})}
-					</StyledList>
-				</StyledSidebarContent>
+									/>
+								</Link>
+							</li>
+						))}
+					</ul>
+				</div>
 			) : (
-				<Stack />
+				<div />
 			)}
-			<Divider light />
-			<StyledSettingsArea flex={1}>
-				<StyledList>
-					<StyledLink to={"/settings"} aria-label={"Settings"}>
-						<StyledListItemButton
-							selected={!!matchPath(`/settings/*`, pathname)}
-							dense={true}
+
+			<Separator />
+
+			{/* Settings */}
+			<div className="flex-1 overflow-y-auto">
+				<ul className="list-none p-0">
+					<li className="py-0.5">
+						<Link
+							to={"/settings"}
+							aria-label={"Settings"}
+							className="text-inherit no-underline"
 						>
-							<StyledListItemIcon>
-								<SettingsIcon />
-							</StyledListItemIcon>
-							<List.ItemText primary={"Settings"} />
-						</StyledListItemButton>
-					</StyledLink>
-				</StyledList>
-			</StyledSettingsArea>
-			<Divider light />
-			<StyledSidebarFooter>
-				<StyledList dense={true} aria-label="main navigation">
-					<LogoutPopover>
-						<StyledListItemButton aria-label={"Login"} dense={true}>
-							<StyledListItemIcon>
-								<AccountCircleRounded />
-							</StyledListItemIcon>
-							<List.ItemText
-								primary={
-									<EllipsisText>
-										{configStore.store.user.name || ""}
-									</EllipsisText>
-								}
+							<NavButton
+								icon={<Settings className="size-4" />}
+								label="Settings"
+								ariaLabel="Settings"
+								selected={!!matchPath("/settings/*", pathname)}
 							/>
-						</StyledListItemButton>
-					</LogoutPopover>
-				</StyledList>
-			</StyledSidebarFooter>
-		</StyledSidebar>
+						</Link>
+					</li>
+				</ul>
+			</div>
+
+			<Separator />
+
+			{/* Footer: User / Logout */}
+			<div>
+				<ul className="list-none p-0" aria-label="user navigation">
+					<li>
+						<LogoutPopover onOpenChange={setIsLogoutPopoverOpen}>
+							<NavButton
+								icon={<CircleUserRound className="size-6" />}
+								label={
+									<span className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
+										{configStore.store.user.name || ""}
+									</span>
+								}
+								ariaLabel="Login"
+							/>
+						</LogoutPopover>
+					</li>
+				</ul>
+			</div>
+		</div>
+	);
+
+	// Permanent sidebar (pinned): participates in flex layout
+	if (page.sidebar.pinned) {
+		return (
+			<aside className="relative z-10 flex h-full w-72 shrink-0 flex-col border-border border-r bg-sidebar">
+				{sidebarContent}
+			</aside>
+		);
+	}
+
+	// Temporary sidebar (not pinned): renders as an overlay Sheet
+	return (
+		<Sheet
+			open={page.sidebar.open}
+			onOpenChange={(open) => {
+				if (!open && !isLogoutPopoverOpen) {
+					closeSidebar();
+				}
+			}}
+		>
+			<SheetContent
+				side="left"
+				className="w-72 max-w-none gap-0 bg-sidebar p-0 [&>button]:hidden"
+			>
+				{sidebarContent}
+			</SheetContent>
+		</Sheet>
 	);
 });
