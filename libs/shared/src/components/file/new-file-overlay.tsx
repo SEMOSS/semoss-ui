@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
@@ -49,6 +49,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 	onClose = () => null,
 }) => {
 	const insight = useInsight();
+	const fileInputId = useId();
 	const [data, setData] = useState<
 		| {
 				action: "upload";
@@ -68,12 +69,50 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 	});
 
 	const [isLoading, setIsLoading] = useState(false);
+	const [isDragging, setIsDragging] = useState(false);
 
 	const isDisabled =
 		isLoading ||
 		(data.action === "add_file" && data.name.trim().length === 0) ||
 		(data.action === "add_directory" && data.name.trim().length === 0) ||
 		(data.action === "upload" && data.files.length === 0);
+
+	/**
+	 * Handle file selection
+	 */
+	const handleFiles = (files: FileList | null) => {
+		if (files) {
+			const fileArray = Array.from(files);
+			setData((prev) => ({
+				...prev,
+				files: fileArray,
+			}));
+		}
+	};
+
+	/**
+	 * Handle drag events
+	 */
+	const handleDragOver = (e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragging(true);
+	};
+
+	const handleDragLeave = (e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragging(false);
+	};
+
+	const handleDrop = (e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragging(false);
+
+		const files = e.dataTransfer.files;
+		handleFiles(files);
+	};
 
 	/**
 	 * Reset the form
@@ -83,6 +122,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 			action: "upload",
 			files: [],
 		});
+		setIsDragging(false);
 		onClose(false);
 	};
 
@@ -235,25 +275,97 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 						<FieldGroup>
 							{data.action === "upload" && (
 								<Field>
-									<FieldLabel>Select Files</FieldLabel>
-									<Input
-										type="file"
-										multiple
-										onChange={(e) => {
-											const files = Array.from(
-												e.target.files,
-											);
-
-											setData((prev) => ({
-												...prev,
-												files,
-											}));
+									<FieldLabel>Upload File/Zip</FieldLabel>
+									{/* biome-ignore lint/a11y/useSemanticElements: div required for drag-and-drop functionality */}
+									<div
+										role="button"
+										tabIndex={0}
+										onDragOver={handleDragOver}
+										onDragLeave={handleDragLeave}
+										onDrop={handleDrop}
+										className={`relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed transition-colors ${
+											isDragging
+												? "border-primary bg-primary/5"
+												: "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30"
+										}`}
+										onClick={() => {
+											document
+												.getElementById(fileInputId)
+												?.click();
 										}}
-									/>
+										onKeyDown={(e) => {
+											if (
+												e.key === "Enter" ||
+												e.key === " "
+											) {
+												e.preventDefault();
+												document
+													.getElementById(fileInputId)
+													?.click();
+											}
+										}}
+									>
+										<input
+											id={fileInputId}
+											type="file"
+											multiple
+											className="hidden"
+											onChange={(e) =>
+												handleFiles(e.target.files)
+											}
+										/>
+										<div className="flex flex-col items-center gap-2 text-center">
+											<svg
+												className="size-10 text-muted-foreground"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+												role="img"
+												aria-label="Upload icon"
+											>
+												<title>Upload icon</title>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													strokeWidth={2}
+													d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+												/>
+											</svg>
+											<div>
+												<p className="font-medium">
+													Drag and drop files here
+												</p>
+												<p className="text-muted-foreground text-sm">
+													or click to browse
+												</p>
+											</div>
+										</div>
+									</div>
 									{data.files.length > 0 && (
-										<Muted className="text-xs">
-											{data.files.length} file(s) selected
-										</Muted>
+										<div className="mt-2 space-y-1">
+											<Muted className="font-medium text-xs">
+												{data.files.length} file(s)
+												selected:
+											</Muted>
+											<div className="max-h-24 space-y-1 overflow-y-auto">
+												{data.files.map((file) => (
+													<div
+														key={`${file.name}-${file.size}`}
+														className="flex items-center justify-between rounded bg-muted px-2 py-1 text-xs"
+													>
+														<span className="truncate">
+															{file.name}
+														</span>
+														<span className="ml-2 text-muted-foreground">
+															{(
+																file.size / 1024
+															).toFixed(1)}{" "}
+															KB
+														</span>
+													</div>
+												))}
+											</div>
+										</div>
 									)}
 								</Field>
 							)}
