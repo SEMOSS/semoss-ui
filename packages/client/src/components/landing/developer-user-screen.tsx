@@ -1,14 +1,12 @@
+import { ArrowRight } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { STATE_VERSION, type Variable } from "@semoss/renderer";
-import { Box, Stack, styled } from "@semoss/ui";
-import AIConductor from "@/assets/img/AIConductor.png";
+import { Button, H4, Muted } from "@semoss/ui/next";
 import DevBanner from "@/assets/img/DevBanner.png";
-import playground from "@/assets/img/playground.png";
 import { NewAppModal } from "@/components/app";
-import { BannerSection } from "@/components/landing/BannerSection";
-import { FeaturedAppCard } from "@/components/landing/FeaturedAppCard";
+import { BannerSection } from "@/components/landing/banner-section";
 import { useRootStore } from "@/hooks";
 import {
 	BASE_APP_QUERIES,
@@ -17,13 +15,6 @@ import {
 } from "../../pages/app/app.constants";
 import { FanFavoritesSection } from "./FanFavoritesSection";
 import { LandingHeader } from "./landing-header";
-
-const StyledAppCard = styled("div")({
-	display: "flex",
-	width: "100%",
-	gap: "24px",
-	flexDirection: "column",
-});
 
 export const DeveloperUserScreen = observer(() => {
 	const { configStore } = useRootStore();
@@ -57,49 +48,43 @@ export const DeveloperUserScreen = observer(() => {
 	}
 
 	return (
-		<Stack direction="column" spacing={3}>
+		<div className="flex flex-col gap-6">
 			<BannerSection
 				imageUrl={DevBanner}
-				tagline={`Empower your ideas with ${configStore.theme.name}`}
+				tagline={"Experiment with AI in the Playground"}
 				description={
-					"Build, automate, and innovate—all without coding. Harness the power of AI to transform your projects and workflows"
+					"Experience AI that goes beyond chat. Deploy multiple LLMs with powerful tool-calling abilities through MCP integration. Watch AI agents manipulate files, call APIs, and execute real workflows while tackling complex tasks. Turn conversations into actions and ideas into results."
 				}
 				link={{
-					label: "Browse Templates",
-					to: "/app/new",
+					label: "Launch Playground",
+					to: "../../playground/dist/",
 				}}
 			/>
-			<StyledAppCard>
-				<Box
-					sx={{
-						display: "flex",
-						gap: "24px",
-						flexGrow: 1,
-						flexDirection: "row",
-					}}
-				>
-					<FeaturedAppCard
-						href={"../../playground/dist/"}
-						tagline="Experiment in our Playground™"
-						description={`Chat with different LLMs and try out different prompts from our prompt library. Or chat with multiple LLMs in one room to hold a focus group or round table.`}
-						imageUrl={playground}
-						chip={{
-							label: "FEATURED",
-							color: "#FDF0E5",
-						}}
-					/>
-					<FeaturedAppCard
-						tagline={"Simplify tasks with AI Conductor"}
-						description={
-							"Use a chat interface to breakdown goals into subtasks that can be accomplished via an app, a routine, or another user. Simplify your workflows!"
-						}
-						imageUrl={AIConductor}
-						chip={{
-							label: "NEW",
-							color: "#FDF0E5",
-						}}
-					/>
-				</Box>
+			<div className="flex w-full flex-col gap-6">
+				<div className="flex grow flex-row gap-6">
+					<div className="flex w-full items-center justify-between">
+						<div className="flex flex-col gap-1">
+							<H4 className="font-bold text-foreground">
+								Get started with our tool
+							</H4>
+							<Muted>
+								Start building your app in the way that works
+								best for you.
+							</Muted>
+						</div>
+						<Button
+							asChild
+							variant="ghost"
+							size="default"
+							className="shrink-0 text-primary hover:bg-transparent hover:text-primary"
+						>
+							<Link to="/app/new">
+								Browse Templates
+								<ArrowRight className="size-4" />
+							</Link>
+						</Button>
+					</div>
+				</div>
 				{isNameOpen ? (
 					<NewAppModal
 						open={isNameOpen}
@@ -116,7 +101,11 @@ export const DeveloperUserScreen = observer(() => {
 				) : null}
 				<LandingHeader
 					onCreate={(type) => {
-						if (type === "blocks") {
+						if (type === "code") {
+							setNewAppOptions({
+								type: "code",
+							});
+						} else if (type === "blocks") {
 							setNewAppOptions({
 								type: "blocks",
 								state: {
@@ -130,18 +119,14 @@ export const DeveloperUserScreen = observer(() => {
 									executionOrder: [],
 								},
 							});
-						} else if (type === "code") {
-							setNewAppOptions({
-								type: "code",
-							});
 						} else if (type === "agent") {
 							navigate("/app/new/prompt");
 						}
 					}}
 				/>
-			</StyledAppCard>
+			</div>
 
 			<FanFavoritesSection />
-		</Stack>
+		</div>
 	);
 });
