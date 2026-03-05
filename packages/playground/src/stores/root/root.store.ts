@@ -77,6 +77,7 @@ export class RootStore {
 			},
 			allowedFileTypes: [],
 			defaultTools: [],
+			showPlatformLinks: true,
 		},
 	};
 
