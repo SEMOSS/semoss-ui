@@ -2,16 +2,16 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import {
 	Archive,
+	Bolt,
 	BrainCircuit,
 	CircleUserRound,
-	Cpu,
 	Database,
 	Home,
 	LayoutGrid,
 	PanelLeftOpen,
 	Settings,
 	ShieldCheck,
-	SquareFunction,
+	Sigma,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
@@ -40,12 +40,12 @@ const CATALOG_ROUTES = [
 	},
 	{
 		text: "Vector",
-		icon: <Cpu className="size-4" />,
+		icon: <Bolt className="size-4" />,
 		route: "/engine/vector",
 	},
 	{
 		text: "Function",
-		icon: <SquareFunction className="size-4" />,
+		icon: <Sigma className="size-4" />,
 		route: "/engine/function",
 	},
 	{
