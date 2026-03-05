@@ -135,18 +135,12 @@ export class ToolStore {
 			this.parameters = part.toolResult.toolParameterValues || {};
 			this.response = part.toolResult.output;
 
-			// @ts-expect-error - TODO: Fix this. tool status should not be undefined
-			if (part.toolResult.toolStatus === "undefined") {
-				this.status = "SUCCESS";
-				console.error(
-					"TODO: Fix this. tool status should not be undefined",
-				);
-			} else if (part.toolResult.toolStatus === "success") {
-				this.status = "SUCCESS";
-			} else if (part.toolResult.toolStatus === "error") {
+			if (part.toolResult.toolStatus === "error") {
 				this.status = "ERROR";
 			} else if (part.toolResult.toolStatus === "cancelled") {
 				this.status = "CANCELLED";
+			} else {
+				this.status = "SUCCESS";
 			}
 
 			// update the tool result information

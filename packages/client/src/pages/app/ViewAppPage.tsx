@@ -4,6 +4,7 @@ import {
 	EditOutlined,
 	ShareRounded,
 } from "@mui/icons-material";
+import { Settings } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -119,6 +120,17 @@ export const ViewAppPage = observer(() => {
 				/>
 			</NavbarLeft>
 			<NavbarRight>
+				<Tooltip title={"Settings"}>
+					<IconButton
+						size="small"
+						onClick={() => {
+							navigate(`/app/${appId}`);
+						}}
+						data-testid={"settings"}
+					>
+						<Settings className="h-4 w-4" />
+					</IconButton>
+				</Tooltip>
 				<Tooltip title={"Bookmark App"}>
 					<IconButton
 						size="small"

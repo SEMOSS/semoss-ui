@@ -755,7 +755,7 @@ export const KnowledgeDetailPage = observer(() => {
 															/>
 														</td>
 
-														<td className="px-6 py-2">
+														<td className="whitespace-nowrap px-6 py-2">
 															<div className="flex min-w-0 items-center gap-2">
 																{getFileIcon(
 																	d.fileName,
@@ -824,7 +824,9 @@ export const KnowledgeDetailPage = observer(() => {
 												>
 													<Info className="h-4 w-4" />
 													<span className="sr-only">
-														{t("knowledge:permissions.aboutTitle")}
+														{t(
+															"knowledge:permissions.aboutTitle",
+														)}
 													</span>
 												</Button>
 											</TooltipTrigger>
@@ -833,7 +835,9 @@ export const KnowledgeDetailPage = observer(() => {
 												className="max-w-sm"
 											>
 												<p className="text-sm leading-relaxed">
-													{t("knowledge:permissions.description")}
+													{t(
+														"knowledge:permissions.description",
+													)}
 												</p>
 											</TooltipContent>
 										</Tooltip>

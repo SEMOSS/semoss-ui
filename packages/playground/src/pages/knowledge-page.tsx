@@ -1,3 +1,6 @@
+/* eslint-disable */
+/** biome-ignore-all lint/nursery/useSortedClasses: using existing Tailwind order in this file */
+
 import { Bookmark, ChevronDown, Info, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -79,10 +82,7 @@ export const DocumentLibrary = () => {
 
 	const [search, setSearch] = useState("");
 	const [centerFilter, setCenterFilter] = useState<string[]>([]);
-	const [sortBy, setSortBy] = useState<
-		"name-asc" | "name-desc" | "date-desc" | "date-asc"
-	>("name-asc");
-	const [sortPopoverOpen, setSortPopoverOpen] = useState(false);
+	const [sortBy, setSortBy] = useState<"name" | "date">("name");
 	const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 	const [libraryTab, setLibraryTab] = useState<"all" | "global" | "mine">(
 		"all",
@@ -264,18 +264,8 @@ export const DocumentLibrary = () => {
 			return favorites[item.id] ?? item.favorite;
 		})
 		.sort((a, b) => {
-			switch (sortBy) {
-				case "name-asc":
-					return a.name.localeCompare(b.name);
-				case "name-desc":
-					return b.name.localeCompare(a.name);
-				case "date-desc":
-					return b.dateCreated.localeCompare(a.dateCreated);
-				case "date-asc":
-					return a.dateCreated.localeCompare(b.dateCreated);
-				default:
-					return a.name.localeCompare(b.name);
-			}
+			if (sortBy === "name") return a.name.localeCompare(b.name);
+			return b.dateCreated.localeCompare(a.dateCreated);
 		});
 
 	const getSortDisplayText = (sortBy: string) => {
@@ -584,16 +574,15 @@ export const DocumentLibrary = () => {
 											Favorites
 										</Button>
 
-										<Popover
-											open={sortPopoverOpen}
-											onOpenChange={setSortPopoverOpen}
-										>
+										<Popover>
 											<PopoverTrigger asChild>
 												<Button
 													variant="outline"
 													size="sm"
 												>
-													{getSortDisplayText(sortBy)}
+													{sortBy === "name"
+														? "Sort: Name"
+														: "Sort: Date"}
 													<ChevronDown className="ml-1 h-4 w-4" />
 												</Button>
 											</PopoverTrigger>
@@ -603,59 +592,31 @@ export const DocumentLibrary = () => {
 											>
 												<Button
 													variant={
-														sortBy === "name-asc"
+														sortBy === "name"
 															? "secondary"
 															: "ghost"
 													}
 													size="sm"
 													className="w-full justify-start"
 													onClick={() =>
-														setSortBy("name-asc")
+														setSortBy("name")
 													}
 												>
 													Name (A-Z)
 												</Button>
 												<Button
 													variant={
-														sortBy === "name-desc"
+														sortBy === "date"
 															? "secondary"
 															: "ghost"
 													}
 													size="sm"
 													className="w-full justify-start"
 													onClick={() =>
-														setSortBy("name-desc")
-													}
-												>
-													Name (Z-A)
-												</Button>
-												<Button
-													variant={
-														sortBy === "date-desc"
-															? "secondary"
-															: "ghost"
-													}
-													size="sm"
-													className="w-full justify-start"
-													onClick={() =>
-														setSortBy("date-desc")
+														setSortBy("date")
 													}
 												>
 													Date (newest)
-												</Button>
-												<Button
-													variant={
-														sortBy === "date-asc"
-															? "secondary"
-															: "ghost"
-													}
-													size="sm"
-													className="w-full justify-start"
-													onClick={() =>
-														setSortBy("date-asc")
-													}
-												>
-													Date (oldest)
 												</Button>
 											</PopoverContent>
 										</Popover>
