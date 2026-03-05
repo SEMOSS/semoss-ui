@@ -54,19 +54,7 @@ import {
 import workspaceImage from "@/assets/img/workspace.png";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { App, Workspace } from "@/types";
-
-const formatDateTime = (dateStr: string): string => {
-	const d = new Date(dateStr.replace(" ", "T"));
-	if (isNaN(d.getTime())) return dateStr;
-	return d.toLocaleString(undefined, {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-		hour: "numeric",
-		minute: "2-digit",
-		hour12: true,
-	});
-};
+import { formatDateTime } from "@/utility";
 
 /**
  * Renders the WorkspacePage, allowing users to access their workspace or discover new ones

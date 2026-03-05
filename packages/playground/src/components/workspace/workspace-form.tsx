@@ -21,6 +21,7 @@ import {
 import { MCPSelector, NewKnowledgeOverlay } from "@/components";
 import { useChat } from "@/hooks";
 import type { MCPConfig, Workspace } from "@/types";
+import { formatDateTime } from "@/utility";
 
 interface WorkspaceFormProps {
 	/**
@@ -34,19 +35,6 @@ interface WorkspaceFormProps {
 	/** Callback that is fired when the form is closed or submitted. If it is successful, it will return an id */
 	onClose: (workspaceId?: string) => void;
 }
-
-const formatDateTime = (dateStr: string): string => {
-	const d = new Date(dateStr.replace(" ", "T"));
-	if (isNaN(d.getTime())) return dateStr;
-	return d.toLocaleString(undefined, {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-		hour: "numeric",
-		minute: "2-digit",
-		hour12: true,
-	});
-};
 
 export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	isNew,
