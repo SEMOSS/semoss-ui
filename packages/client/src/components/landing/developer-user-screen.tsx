@@ -101,11 +101,7 @@ export const DeveloperUserScreen = observer(() => {
 				) : null}
 				<LandingHeader
 					onCreate={(type) => {
-						if (type === "code") {
-							setNewAppOptions({
-								type: "code",
-							});
-						} else if (type === "blocks") {
+						if (type === "blocks") {
 							setNewAppOptions({
 								type: "blocks",
 								state: {
@@ -118,6 +114,10 @@ export const DeveloperUserScreen = observer(() => {
 									blocks: BASE_PAGE_BLOCKS,
 									executionOrder: [],
 								},
+							});
+						} else if (type === "code") {
+							setNewAppOptions({
+								type: "code",
 							});
 						} else if (type === "agent") {
 							navigate("/app/new/prompt");
