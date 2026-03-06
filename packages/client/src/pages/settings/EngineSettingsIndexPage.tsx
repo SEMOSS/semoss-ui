@@ -23,8 +23,7 @@ import {
 import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard, EngineTileCard } from "@/components/engine";
 import { useAPI, usePixel, useRootStore, useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
-import { removeUnderscores } from "@/utility";
+import type { ENGINE_TYPES } from "@/types";
 
 export interface DBMember {
 	ID: string;
@@ -96,7 +95,7 @@ const reducer = (state, action) => {
  */
 interface EngineSettingsIndexPageProps {
 	/** Type of the page to render */
-	type: ALL_TYPES;
+	type: ENGINE_TYPES;
 }
 
 export const EngineSettingsIndexPage = (
@@ -358,7 +357,10 @@ export const EngineSettingsIndexPage = (
 	};
 
 	//** infinite sroll variables */
-	let scrollEle :HTMLDivElement, scrollTimeout : ReturnType<typeof setTimeout>, currentScroll :number, previousScroll :number;
+	let scrollEle: HTMLDivElement,
+		scrollTimeout: ReturnType<typeof setTimeout>,
+		currentScroll: number,
+		previousScroll: number;
 	const offsetRef = useRef(0);
 	offsetRef.current = offset;
 	const canCollectRef = useRef(true);
@@ -436,7 +438,7 @@ export const EngineSettingsIndexPage = (
 						}}
 						size="small"
 						onClear={() => setSearch("")}
-						ref={searchbarRef}
+						inputRef={searchbarRef}
 					/>
 					<StyledSort
 						size={"small"}
@@ -554,9 +556,7 @@ export const EngineSettingsIndexPage = (
 														`${db.database_id}`,
 														{
 															state: {
-																name: removeUnderscores(
-																	db.database_name,
-																),
+																name: db.database_name,
 																global: db.database_global,
 																permission:
 																	db.permission,
@@ -594,9 +594,7 @@ export const EngineSettingsIndexPage = (
 														`${db.database_id}`,
 														{
 															state: {
-																name: removeUnderscores(
-																	db.database_name,
-																),
+																name: db.database_name,
 																global: db.database_global,
 																permission:
 																	db.permission,

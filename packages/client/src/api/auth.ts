@@ -304,29 +304,10 @@ export const modifyLoginProperties = async (provider, properties) => {
 	return response.data;
 };
 
-export const createAdminTheme = async (data: {
-	name: string;
-	json: unknown;
-	isActive: boolean;
-}) => {
-	const url = `${Env.MODULE}/api/themes/createAdminTheme`;
-	const postData = {
-		name: data.name,
-		json: JSON.stringify(data.json),
-		isActive: data.isActive,
-	};
-
-	const response = await post<boolean>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
-	return response.data;
-};
-
 export const getInsights = async () => {
 	console.error("needs to be added on BE");
 };
+
 export const getInsightUsers = async (
 	admin: boolean,
 	id: string,
@@ -400,34 +381,6 @@ export const addInsightUserPermissions = async (
 		url += "admin/";
 	}
 	url += "insight/addInsightUserPermissions";
-
-	const response = await post<{
-		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
-	return response;
-	// figure out whether we want to do .catch here
-};
-
-export const removeInsightUserPermissions = async (
-	admin: boolean,
-	id: string,
-	users: unknown[],
-	projectId,
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	const postData = {
-		projectId: projectId,
-		insightId: id,
-		ids: JSON.stringify(users),
-	};
-	if (admin) {
-		url += "admin/";
-	}
-	url += "project/removeProjectUserPermissions";
 
 	const response = await post<{
 		success: boolean;
@@ -528,6 +481,7 @@ export const uploadFile = async (
 	insightId: string | null,
 	projectId?: string | null,
 	path?: string | null,
+	type?: string | null,
 ) => {
 	let param = "";
 	if (insightId || projectId || path) {
@@ -541,7 +495,11 @@ export const uploadFile = async (
 			if (param.length > 0) {
 				param += "&";
 			}
-			param += `projectId=${projectId}`;
+			if (type === "engine") {
+				param += `engineId=${projectId}`;
+			} else {
+				param += `projectId=${projectId}`;
+			}
 		}
 		if (path) {
 			if (param.length > 0) {
@@ -656,17 +614,47 @@ export const getAllUsers = async (
 	>(getAllUsersURL).catch((error) => {
 		throw Error(error);
 	});
-	getNumUsersURL += "user/getNumUsers";
-	const count = await get<number>(getNumUsersURL).catch((error) => {
-		throw Error(error);
-	});
+	const buildCountUrl = (filterWord?: string) => {
+		let url = `${getNumUsersURL}user/getNumUsers`;
+		if (filterWord !== undefined) {
+			url += `?filterWord=${encodeURIComponent(filterWord)}`;
+		}
+		return url;
+	};
+	const trimmedSearch = searchTerm?.trim() ?? "";
+	let totalUsers: number | undefined;
+	let filteredUsers = 0;
+
+	if (trimmedSearch.length === 0) {
+		const totalCountResponse = await get<number>(buildCountUrl("")).catch(
+			(error) => {
+				throw Error(error);
+			},
+		);
+		if (!totalCountResponse) {
+			throw Error("No Response to get Members");
+		}
+		totalUsers = Number(totalCountResponse.data ?? 0);
+		filteredUsers = totalUsers;
+	} else {
+		const filteredCountResponse = await get<number>(
+			buildCountUrl(trimmedSearch),
+		).catch((error) => {
+			throw Error(error);
+		});
+		if (!filteredCountResponse) {
+			throw Error("No Response to get Members");
+		}
+		filteredUsers = Number(filteredCountResponse.data ?? 0);
+	}
 	// there was no response, that is an error
-	if (!response || !count) {
+	if (!response) {
 		throw Error("No Response to get Members");
 	}
 	const finalResponse = {
 		users: response.data,
-		totalUsers: searchTerm !== "" ? response.data.length : count.data,
+		totalUsers,
+		filteredUsers,
 	};
 	return finalResponse;
 };
@@ -875,6 +863,24 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
 		throw Error(error);
 	});
 	return response.data;
+};
+
+export const setUserDefaultModel = async (
+	metaKey: string,
+	metaValue: string,
+) => {
+	const url = `${Env.MODULE}/api/auth/user/setUserMetadata`;
+	const response = await post<boolean>(
+		url,
+		{
+			metaKey,
+			metaValue,
+		},
+		{},
+	).catch((e) => {
+		throw Error(e);
+	});
+	return response;
 };
 
 const processPostData = (data: unknown) => {

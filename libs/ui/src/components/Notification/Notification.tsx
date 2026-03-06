@@ -1,6 +1,12 @@
 import { Snackbar, type SxProps } from "@mui/material";
 import type React from "react";
-import { useEffect, useState } from "react";
+import {
+	isValidElement,
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useState,
+} from "react";
 import type { NotificationMessage } from "./notification.types";
 
 // generate a uuid
@@ -69,7 +75,7 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 				// set the active one
 				setActive(notifications[0]);
 
-				// remove from the notitications
+				// remove from the notifications
 				setNotifications((notifications) => notifications.slice(1));
 
 				// open it
@@ -90,7 +96,7 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 	 * Add a new notification
 	 * @param state - state of the Notification Item
 	 */
-	const addNotification = (message: NotificationMessage) => {
+	const addNotification = useCallback((message: NotificationMessage) => {
 		// generate an id if there isn't one
 		if (!message.id) {
 			message.id = getUuid();
@@ -107,27 +113,52 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 				},
 			];
 		});
-	};
+	}, []);
 
 	/**
 	 * Remove a notification
 	 * @param id - id of the notification to remove
 	 */
-	const removeNotification = (id: string) => {
+	const removeNotification = useCallback((id: string) => {
 		setNotifications((notifications) => {
 			return notifications.filter((n) => n.id !== id);
 		});
-	};
+	}, []);
 
 	/**
 	 * Close the notifications
 	 */
-	const closeNotification = () => {
+	const closeNotification = useCallback(() => {
 		// nullify it
 		setActive(null);
 
 		// close it
 		setIsOpen(false);
+	}, []);
+
+	const getMessage = (): ReactNode => {
+		if (
+			isValidElement(active?.message) ||
+			typeof active?.message === "string"
+		) {
+			return active.message;
+		} else if (
+			active?.message !== null &&
+			typeof active?.message === "object" && // typeof null = "object", so we need to check if it's not null
+			Object.keys(active.message).length
+		) {
+			return JSON.stringify(active.message);
+		}
+		switch (active?.color) {
+			case "success":
+				return "Success";
+			case "warning":
+				return "Warning";
+			case "info":
+				return "Info";
+			default:
+				return "Error during operation";
+		}
 	};
 
 	return (
@@ -146,7 +177,7 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 				anchorOrigin={anchorOrigin}
 				autoHideDuration={autoHideDuration}
 				className={"notification-bubble"}
-				onClose={(event, reason) => {
+				onClose={(_event, reason) => {
 					if (reason === "clickaway") {
 						return;
 					}
@@ -171,7 +202,7 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 							<span
 								data-testid={`notification-${active.color}-message`}
 							>
-								{active.message}
+								{getMessage()}
 							</span>
 						</Alert>
 					) : null}

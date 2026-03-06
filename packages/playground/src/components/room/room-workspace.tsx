@@ -8,7 +8,8 @@ import {
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { useTranslation } from "@semoss/i18n";
+import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Command,
@@ -25,6 +26,8 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	useDebouncedValue,
+	useInfiniteScroll,
 } from "@semoss/ui/next";
 import type { App } from "@/types";
 
@@ -48,6 +51,7 @@ type RoomWorkspaceProps = {
 
 export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 	({ mode, onModeChange }) => {
+		const { t } = useTranslation("common");
 		const [open, setOpen] = useState(false);
 
 		const [search, setSearch] = useState("");
@@ -55,25 +59,40 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 		const debouncedSearch = useDebouncedValue(search);
 
 		/**
-		 * Library Hooks
+		 * Get all of the workspaces with lazy loading
 		 */
-		const listWorkspaces = usePixel<App[]>(
-			open
-				? `MyProjects ( type = "WORKSPACE" , filterWord = "${debouncedSearch}", limit = 10 ) ;`
-				: null,
-			{ data: [] },
+		const getWorkspaces = useIteratorPixel<App[], App>(
+			(limit, offset) =>
+				open
+					? `MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} type = "WORKSPACE", limit=[${limit}], offset=[${offset}]);`
+					: "",
+			(response) => {
+				// if its less than the limit, we know its the end
+				if (response.length < 15) {
+					return -1;
+				}
+
+				return Infinity;
+			},
+			(response) => {
+				return response;
+			},
+			{
+				limit: 15,
+			},
+			[open, debouncedSearch],
 		);
 
 		/**
-		 * Constants
+		 * Setup infinite scroll for the command list
 		 */
-		const workspaceMap = listWorkspaces.data.reduce(
-			(acc, curr) => {
-				acc[curr.project_id] = curr;
-				return acc;
+		const { setScroll } = useInfiniteScroll({
+			disabled:
+				getWorkspaces.isLoading || !getWorkspaces.hasMore || !open,
+			onNext: () => {
+				getWorkspaces.next();
 			},
-			{} as Record<string, App>,
-		);
+		});
 
 		return (
 			<Tooltip>
@@ -116,41 +135,26 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 								</Button>
 							</PopoverTrigger>
 							<PopoverContent className="p-0">
-								<Command
-									filter={(val, search) => {
-										if (val === "chat") {
-											return "ask".includes(
-												search.toLowerCase(),
-											)
-												? 1
-												: 0;
-										} else if (
-											val
-												.toLowerCase()
-												.includes(search.toLowerCase())
-										) {
-											return 1;
-										} else if (
-											workspaceMap[val]?.project_name
-												.toLowerCase()
-												.includes(search.toLowerCase())
-										) {
-											return 1;
-										}
-
-										return 0;
-									}}
-								>
+								<Command shouldFilter={false}>
 									<CommandInput
-										placeholder="Search"
+										placeholder={t("placeholders.search")}
 										value={search}
 										onValueChange={setSearch}
 									/>
-									<CommandList>
+									<CommandList
+										className="max-h-[200px]"
+										ref={(ele) => setScroll(ele)}
+									>
 										<CommandEmpty>
-											No results found.
+											{getWorkspaces.isLoading &&
+											getWorkspaces.data.length === 0 ? (
+												<div className="flex items-center justify-center py-4">
+													<Spinner className="size-4" />
+												</div>
+											) : (
+												t("buttons.search")
+											)}
 										</CommandEmpty>
-
 										<CommandGroup>
 											<CommandItem
 												value="chat"
@@ -193,15 +197,7 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 										</CommandGroup>
 										<CommandSeparator />
 										<CommandGroup heading="Workspaces">
-											{(listWorkspaces.status ===
-												"LOADING" ||
-												search !== debouncedSearch) && (
-												<div className="flex w-full flex-row items-center">
-													<Spinner />
-												</div>
-											)}
-
-											{listWorkspaces.data.map((w) => (
+											{getWorkspaces.data.map((w) => (
 												<CommandItem
 													key={w.project_id}
 													value={w.project_id}
@@ -219,6 +215,14 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 													/>
 												</CommandItem>
 											))}
+
+											{getWorkspaces.isLoading &&
+												getWorkspaces.data.length >
+													0 && (
+													<div className="flex items-center justify-center py-2">
+														<Spinner className="size-4" />
+													</div>
+												)}
 										</CommandGroup>
 									</CommandList>
 								</Command>

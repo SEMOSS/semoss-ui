@@ -26,6 +26,7 @@ import { LineLegend } from "../line-chart/LineLegend";
 import { LineStyling } from "../line-chart/LineStyling";
 import { LineTooltip } from "../line-chart/LineTooltip";
 import { LineValueLabels } from "../line-chart/LineValueLabel";
+import { ToggleDataZoom } from "../line-chart/ToggleDataZoom";
 import { XAxisStyling } from "../line-chart/XAxisStyling";
 import { YAxisStyling } from "../line-chart/YAxisStyling";
 import { LegendToggleMapChart } from "../map-chart/LegendToggleMapChart";
@@ -1023,8 +1024,6 @@ const BarToolsList = ({ id }) => {
 				{barSelection === "trendlines" && (
 					<ToggleTrendline
 						id={id}
-						options={data.option}
-						updateChart={updateChart}
 						chartType={BAR_CHART_DATA.JSONVALUE[0]}
 						path="option"
 					/>
@@ -1446,10 +1445,33 @@ const LineChartTools = ({ id }) => {
 					<LineStyling id={id} path="option" />
 				)}
 			</StyledListItem>
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setLineSelection((prevList) =>
+							prevList === "dataZoom" ? "" : "dataZoom",
+						)
+					}
+					selected={lineSelection === "dataZoom"}
+				>
+					<List.ItemIcon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								lineSelection === "dataZoom"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.ItemIcon>
+					<List.ItemText primary="Data Zoom" />
+					<InfoOutlined />
+				</List.ItemButton>
+				{lineSelection === "dataZoom" && <ToggleDataZoom id={id} />}
+			</StyledListItem>
 		</>
 	);
 };
-
 const CloudChartTools = ({ id }) => {
 	const [CloudSelection, setCloudSelection] = useState("");
 

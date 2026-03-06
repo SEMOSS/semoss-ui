@@ -6,12 +6,6 @@ import type { FixedVegaChartProps } from "react-vega/lib/createClassFromSpec";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent } from "../../../store";
 
-const StyledChartContainer = styled("div")(() => ({
-	width: "fit-content",
-	minWidth: "50px",
-	minHeight: "50px",
-}));
-
 const StyledNoDataContainer = styled("div", {
 	shouldForwardProp: (prop) => prop !== "error",
 })<{ error?: boolean }>(({ error = false, theme }) => ({
@@ -51,9 +45,9 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
 			}) as unknown as React.FunctionComponent<FixedVegaChartProps>;
 
 			return (
-				<StyledChartContainer {...attrs}>
+				<div {...attrs}>
 					<Chart actions={false} />
-				</StyledChartContainer>
+				</div>
 			);
 		} catch (e) {
 			return (
@@ -68,9 +62,9 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
 		}) as unknown as React.FunctionComponent<FixedVegaChartProps>;
 
 		return (
-			<StyledChartContainer {...attrs}>
+			<div {...attrs}>
 				<Chart actions={false} />
-			</StyledChartContainer>
+			</div>
 		);
 	}
 });

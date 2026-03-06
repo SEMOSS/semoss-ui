@@ -5,11 +5,6 @@ import { useEffect, useState } from "react";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef } from "../../../store";
 
-const StyledContainer = styled("div")(() => ({
-	width: "100%",
-	minHeight: "10%",
-}));
-
 // Container for Mermaid Diagram
 const MermaidContainer = styled("div")(() => ({
 	width: "fit-content",
@@ -95,7 +90,7 @@ export const MermaidBlock: BlockComponent = observer(({ id }) => {
 
 	// Render Block
 	return (
-		<StyledContainer {...attrs}>
+		<div {...attrs}>
 			<MermaidContainer
 				className="mermaid-container"
 				id={`mermaid-container-${id}`}
@@ -125,6 +120,6 @@ export const MermaidBlock: BlockComponent = observer(({ id }) => {
 
 			{/* Suggestion: Warning Alert for undefined can be added instead of not shwowing */}
 			{!data.text && <div></div>}
-		</StyledContainer>
+		</div>
 	);
 });

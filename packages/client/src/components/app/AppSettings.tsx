@@ -6,11 +6,11 @@ import {
 	PublishedWithChanges,
 	ToggleOff,
 } from "@mui/icons-material";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
 	Avatar,
-	Button,
 	Divider,
 	FileDropzone,
 	LoadingScreen,
@@ -23,9 +23,17 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import {
+	Button,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	Large,
+} from "@semoss/ui/next";
 import { setProjectPortal, uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { McpUsage } from "../shared/mcp-usage";
 
 const StyledAppSettings = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -66,6 +74,7 @@ const StyledRightSwitch = styled(Switch)(({ theme }) => ({
 const StyledRightButton = styled(Button)(({ theme }) => ({
 	marginLeft: "auto",
 	paddingRight: theme.spacing(1),
+	borderColor: theme.palette.primary.main,
 }));
 
 const StyledCardDiv = styled("div")(({ theme }) => ({
@@ -160,8 +169,9 @@ const StyledPersonIcon = styled(Person)(() => ({
 	alignItems: "flex-start",
 }));
 
-const StyledPublishedIcon = styled(PublishedWithChanges)(() => ({
+const StyledPublishedIcon = styled(PublishedWithChanges)(({ theme }) => ({
 	marginRight: "5px",
+	color: theme.palette.primary.main,
 }));
 
 const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
@@ -233,6 +243,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [openMcp, setOpenMcp] = useState(false);
 
 	const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
 		defaultValues: {
@@ -320,7 +331,9 @@ export const AppSettings = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				const output = response.pixelReturn[0].output;
+				const output = Array.isArray(response.pixelReturn[0].output)
+					? (response.pixelReturn[0].output as string[])
+					: [response.pixelReturn[0].output as string];
 				const type = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
@@ -359,7 +372,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				const output = response.pixelReturn[0].output;
+				const output: string = response.pixelReturn[0].output as string;
 				const type: string = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
@@ -400,7 +413,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				const output = response.pixelReturn[0].output;
+				const output: string = response.pixelReturn[0].output as string;
 				const type = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
@@ -579,7 +592,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 
 							<StyledRightButton
 								disabled={!portalDetails.project_has_portal}
-								variant="outlined"
+								variant="outline"
 								onClick={() => {
 									publish();
 								}}
@@ -596,7 +609,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 
 						<StyledSubRow>
 							<TextField
-								focused={false}
 								label={"Link"}
 								variant={"outlined"}
 								value={
@@ -677,7 +689,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 										}}
 										disabled={
 											!configStore.isEngineOperationAvailable(
-												"APP",
+												"PROJECT",
 												"access",
 											)
 										}
@@ -701,12 +713,11 @@ export const AppSettings = (props: AppSettingsProps) => {
 									</Typography>
 
 									<StyledRightButton
-										variant="outlined"
-										startIcon={<StyledPublishedIcon />}
+										variant="outline"
 										disabled={
 											!portalDetails.project_has_portal ||
 											!configStore.isEngineOperationAvailable(
-												"APP",
+												"PROJECT",
 												"access",
 											)
 										}
@@ -714,13 +725,15 @@ export const AppSettings = (props: AppSettingsProps) => {
 											publish();
 										}}
 									>
-										Publish
+										<StyledPublishedIcon />
+										<span className="text-(--primary)">
+											Publish
+										</span>
 									</StyledRightButton>
 								</StyledSubRow>
 
 								<StyledSubRow>
 									<TextField
-										focused={false}
 										label={"Link"}
 										variant={"outlined"}
 										value={
@@ -753,7 +766,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 								Custom reactors created for the portal.
 							</StyledListItemHeader>
 							<Button
-								variant="contained"
+								variant="default"
 								onClick={() => {
 									recompileReactors({ release: null });
 								}}
@@ -761,7 +774,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 								Compile Changes on This Instance
 							</Button>
 							<Button
-								variant="contained"
+								variant="default"
 								onClick={() => {
 									recompileReactors({ release: true });
 								}}
@@ -823,6 +836,33 @@ export const AppSettings = (props: AppSettingsProps) => {
 						</StyledCardRight>
 					</StyledCardDiv>
 				</StyledCardContainer>
+				<StyledCardContainer>
+					<div className="block shrink-0 grow basis-0 p-4">
+						<Collapsible open={openMcp} onOpenChange={setOpenMcp}>
+							<div className="flex flex-row items-center justify-between">
+								<div className="flex w-[19.75rem] flex-col items-start pb-2">
+									<Large>MCP Usage</Large>
+								</div>
+								<CollapsibleTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										data-testid="mcp-usage-toggle"
+									>
+										{openMcp ? (
+											<ChevronUp className="size-4" />
+										) : (
+											<ChevronDown className="size-4" />
+										)}
+									</Button>
+								</CollapsibleTrigger>
+							</div>
+							<CollapsibleContent>
+								<McpUsage id={id}></McpUsage>
+							</CollapsibleContent>
+						</Collapsible>
+					</div>
+				</StyledCardContainer>
 
 				<StyledCardContainer>
 					{isLoading && (
@@ -843,7 +883,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 								rules={{}}
 								disabled={
 									!configStore.isEngineOperationAvailable(
-										"APP",
+										"PROJECT",
 										"access",
 									)
 								}
@@ -860,10 +900,10 @@ export const AppSettings = (props: AppSettingsProps) => {
 									);
 								}}
 							/>
-							<Stack alignItems={"center"}>
+							<Stack alignItems={"center"} className="m-4">
 								<Button
 									type="submit"
-									variant={"contained"}
+									variant={"default"}
 									disabled={isLoading || !uploadFile}
 									onClick={editApp}
 								>

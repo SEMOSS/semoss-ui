@@ -62,7 +62,7 @@ export const Large = createComponent<HTMLDivElement>(
 
 export const Small = createComponent<HTMLParagraphElement>(
 	"p",
-	"font-medium text-lg leading-sm",
+	"font-medium text-sm leading-sm",
 	"Small",
 );
 
