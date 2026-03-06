@@ -375,19 +375,22 @@ export const NewRoomPage = observer(() => {
 										<RoomInputMenuWorkspace
 											workspace={
 												mode === "workspace" &&
-												getWorkspace.status ===
-													"SUCCESS"
+												getWorkspace.status === "SUCCESS"
 													? getWorkspace.data
 													: null
 											}
 											onSelect={(workspace) => {
 												if (workspace) {
-													setMode("workspace");
-													setSelectedWorkspaceId(
-														workspace.workspace_id,
-													);
+													if (mode === "workspace" && selectedWorkspaceId === workspace.workspace_id) {
+														setMode("chat");
+														setSelectedWorkspaceId("");
+													} else {
+														setMode("workspace");
+														setSelectedWorkspaceId(workspace.workspace_id);
+													}
 												} else {
 													setMode("chat");
+													setSelectedWorkspaceId("");
 												}
 											}}
 										/>
