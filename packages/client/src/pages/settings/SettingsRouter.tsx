@@ -12,12 +12,12 @@ import { InsightSettingsPage } from "./InsightSettingsPage";
 import { MemberSettingsPage } from "./MemberSettingsPage";
 import { MyProfilePage } from "./MyProfilePage";
 import { ProjectSettingsPage } from "./ProjectSettingsPage";
-import { RDFMapPage } from "./RDFMapPage";
+import { RDFMapPage } from "./rdf-map-page";
 import { SettingsIndexPage } from "./SettingsIndexPage";
-import { SettingsLayout } from "./SettingsLayout";
 import { SETTINGS_ROUTES } from "./settings.constants";
-import { TeamSettingsDetailPage } from "./TeamSettingsDetailPage";
-import { TeamsSettingsPage } from "./TeamsSettingsPage";
+import { SettingsLayout } from "./settings-layout";
+import { TeamSettingsDetailPage } from "./team-settings-detail-page";
+import { TeamsSettingsPage } from "./teams-settings-page";
 
 // map each route to a component
 const SETTINGS_COMPONETS = {
