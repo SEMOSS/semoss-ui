@@ -552,7 +552,7 @@ stepNumber=["${step.step_number}"]
 		message: ResponseMessageStore,
 		tool: ToolStore,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled",
+		toolStatus: "success" | "error" | "cancelled" = "success",
 		executedParameters: Record<string, unknown>,
 	) => {
 		const step = this.step;

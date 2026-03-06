@@ -172,7 +172,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				room.processTool(
 					tool.message,
 					tool.id,
-					tool.name,
 					tool.response,
 					tool.tool_status,
 					tool.executedParameters,
