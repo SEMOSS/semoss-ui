@@ -122,6 +122,14 @@ export interface ThemeMap {
 			/** Name of the mcp */
 			name: string;
 		}[];
+
+		/**
+		 * Graceful error messages to show in the UI
+		 */
+		gracefulErrors: {
+			pattern: string;
+			errorKey: string;
+		}[];
 	};
 }
 

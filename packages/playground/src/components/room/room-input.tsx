@@ -42,6 +42,7 @@ import {
 } from "@semoss/ui/next";
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
+import { useGracefulErrors } from "@/hooks";
 import type { Engine } from "@/types";
 
 interface RoomInputProps {
@@ -87,6 +88,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		footer = null,
 	}) => {
 		const { t } = useTranslation("room");
+		const { getGracefulErrorMessage } = useGracefulErrors();
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
 
@@ -229,7 +231,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				setFiles([]);
 			} catch (e) {
 				// throw the error
-				toast.error(e.message);
+				toast.error(getGracefulErrorMessage(e));
 
 				// keep the files
 				setFiles(userFiles);

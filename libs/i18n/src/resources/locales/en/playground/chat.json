@@ -45,5 +45,9 @@
 		"copySuccess": "Successfully copied to clipboard",
 		"noCopyContent": "No content to copy",
 		"planStepRemoved": "Successfully removed step {{stepNumber}} from plan"
+	},
+	"gracefulErrors": {
+		"errorDefault": "Unable to process request. Please check your connection, copy your message, and refresh.",
+		"tokenLimit": "The response was cut off because it exceeded the token limit. Please try to be more concise in your messages."
 	}
 }

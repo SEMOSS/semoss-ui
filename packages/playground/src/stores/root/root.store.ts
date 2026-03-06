@@ -77,6 +77,7 @@ export class RootStore {
 			},
 			allowedFileTypes: [],
 			defaultTools: [],
+			gracefulErrors: [],
 		},
 	};
 
@@ -222,6 +223,10 @@ export class RootStore {
 						...(theme?.defaultTools || []),
 					].map((tool) => [tool.id, tool]),
 				).values(),
+			],
+			gracefulErrors: [
+				...this._store.theme.gracefulErrors,
+				...(theme?.gracefulErrors || []),
 			],
 		};
 
