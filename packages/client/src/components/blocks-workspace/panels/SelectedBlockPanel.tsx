@@ -5,8 +5,8 @@ import {
 	SearchOff,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { createElement, useMemo, useState, useEffect } from "react";
-import { INPUT_BLOCK_TYPES, useBlocks, ActionMessages } from "@semoss/renderer";
+import { createElement, useEffect, useMemo, useState } from "react";
+import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from "@semoss/renderer";
 import {
 	Alert,
 	Collapse,
@@ -28,17 +28,25 @@ import VariationIcon from "../../../assets/img/VariationLogo.svg";
 import { BlockSettingsRegistry } from "../blocks";
 
 // IconButtonWrapper parent of UnstyledIconButton
-const IconButtonWrapper = ({ children, onClick, title }: { children: React.ReactNode; onClick?: () => void; title?: string }) => (
+const IconButtonWrapper = ({
+	children,
+	onClick,
+	title,
+}: {
+	children: React.ReactNode;
+	onClick?: () => void;
+	title?: string;
+}) => (
 	<span
 		style={{
-			display: 'inline-flex',
-			flexDirection: 'column',
-			alignItems: 'center',
+			display: "inline-flex",
+			flexDirection: "column",
+			alignItems: "center",
 			gap: 10,
-			border: '1px solid #E6E6E6',
+			border: "1px solid #E6E6E6",
 			borderRadius: 8,
-			boxSizing: 'border-box',
-			cursor: 'pointer',
+			boxSizing: "border-box",
+			cursor: "pointer",
 		}}
 		onClick={onClick}
 		title={title}
@@ -48,13 +56,19 @@ const IconButtonWrapper = ({ children, onClick, title }: { children: React.React
 		{children}
 	</span>
 );
-// UnstyledIconButton parent of Icon 
-const UnstyledIconButton = ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+// UnstyledIconButton parent of Icon
+const UnstyledIconButton = ({
+	children,
+	...props
+}: {
+	children: React.ReactNode;
+	[key: string]: any;
+}) => (
 	<span
 		style={{
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
+			display: "flex",
+			alignItems: "center",
+			justifyContent: "center",
 			padding: 4,
 			borderRadius: 48,
 		}}
@@ -67,9 +81,9 @@ const UnstyledIconButton = ({ children, ...props }: { children: React.ReactNode;
 const Icon = ({ children }: { children: React.ReactNode }) => (
 	<span
 		style={{
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
+			display: "flex",
+			alignItems: "center",
+			justifyContent: "center",
 			width: 16,
 			height: 16,
 		}}
@@ -78,15 +92,15 @@ const Icon = ({ children }: { children: React.ReactNode }) => (
 	</span>
 );
 
-// CssRounded child of Icon 
+// CssRounded child of Icon
 const CssRounded = ({ children }: { children: React.ReactNode }) => (
 	<span
 		style={{
-			display: 'flex',
+			display: "flex",
 			width: 16,
 			height: 16,
-			justifyContent: 'center',
-			alignItems: 'center',
+			justifyContent: "center",
+			alignItems: "center",
 		}}
 	>
 		{children}
@@ -97,16 +111,18 @@ const CssRounded = ({ children }: { children: React.ReactNode }) => (
 const CssRoundedSVG = (props: React.SVGProps<SVGSVGElement>) => (
 	<span
 		style={{
-			display: 'flex',
+			display: "flex",
 			width: 16,
 			height: 16,
-			padding: '0 2px',
-			justifyContent: 'center',
-			alignItems: 'center',
+			padding: "0 2px",
+			justifyContent: "center",
+			alignItems: "center",
 			flexShrink: 0,
 		}}
 	>
-		<Group><Vector /></Group>
+		<Group>
+			<Vector />
+		</Group>
 	</span>
 );
 
@@ -114,12 +130,12 @@ const CssRoundedSVG = (props: React.SVGProps<SVGSVGElement>) => (
 const Group = ({ children }: { children: React.ReactNode }) => (
 	<span
 		style={{
-			display: 'flex',
+			display: "flex",
 			width: 12,
 			height: 4,
 			flexShrink: 0,
-			alignItems: 'center',
-			justifyContent: 'center',
+			alignItems: "center",
+			justifyContent: "center",
 		}}
 	>
 		{children}
@@ -134,8 +150,9 @@ const Vector = () => (
 		height={4}
 		viewBox="0 0 12 4"
 		fill="none"
-		style={{ width: 12, height: 4, flexShrink: 0, display: 'block' }}
+		style={{ width: 12, height: 4, flexShrink: 0, display: "block" }}
 	>
+		<title>CSS Icon</title>
 		<path
 			d="M3.33333 0.833333C3.33333 1.10667 3.10667 1.33333 2.83333 1.33333C2.61333 1.33333 2.43333 1.19333 2.36 1H1V3H2.36C2.42667 2.80667 2.61333 2.66667 2.83333 2.66667C3.10667 2.66667 3.33333 2.89333 3.33333 3.16667V3.33333C3.33333 3.7 3.03333 4 2.66667 4H0.666667C0.3 4 0 3.7 0 3.33333V0.666667C0 0.3 0.3 0 0.666667 0H2.66667C3.03333 0 3.33333 0.3 3.33333 0.666667V0.833333ZM6.69333 1C6.76 1.19333 6.94667 1.33333 7.16667 1.33333C7.44 1.33333 7.66667 1.10667 7.66667 0.833333V0.666667C7.66667 0.3 7.36667 0 7 0H5C4.63333 0 4.33333 0.3 4.33333 0.666667V1.66667C4.33333 2.03333 4.63333 2.33333 5 2.33333H6.66667V3H5.30667C5.24 2.80667 5.05333 2.66667 4.83333 2.66667C4.56 2.66667 4.33333 2.89333 4.33333 3.16667V3.33333C4.33333 3.7 4.63333 4 5 4H7C7.36667 4 7.66667 3.7 7.66667 3.33333V2.33333C7.66667 1.96667 7.36667 1.66667 7 1.66667H5.33333V1H6.69333ZM11.0267 1C11.0933 1.19333 11.28 1.33333 11.5 1.33333C11.7733 1.33333 12 1.10667 12 0.833333V0.666667C12 0.3 11.7 0 11.3333 0H9.33333C8.96667 0 8.66667 0.3 8.66667 0.666667V1.66667C8.66667 2.03333 8.96667 2.33333 9.33333 2.33333H11V3H9.64C9.57333 2.80667 9.38667 2.66667 9.16667 2.66667C8.89333 2.66667 8.66667 2.89333 8.66667 3.16667V3.33333C8.66667 3.7 8.96667 4 9.33333 4H11.3333C11.7 4 12 3.7 12 3.33333V2.33333C12 1.96667 11.7 1.66667 11.3333 1.66667H9.66667V1H11.0267Z"
 			fill="rgba(0, 0, 0, 0.54)"
@@ -147,15 +164,7 @@ const StyledTitle = styled(Typography)(() => ({
 	textTransform: "capitalize",
 	fontWeight: "bold",
 }));
-const StyledBlockTitle = styled("div")(({ theme }) => ({
-	borderRadius: "16px",
-	background: " #EBF4FE",
-	width: "fit-content",
-	paddingRight: theme.spacing(2),
-	paddingLeft: theme.spacing(2),
-	backgroundColor: theme.palette.primary.selected,
-	color: theme.palette.info.dark,
-}));
+
 const StyledMenu = styled("div")(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
@@ -187,7 +196,7 @@ const StyledMenuScroll = styled("div")(({ theme }) => ({
 	},
 }));
 
-const StyledMessage = styled("div")(({ theme }) => ({
+const StyledMessage = styled("div")(() => ({
 	display: "flex",
 	flexDirection: "column",
 	height: "100%",
@@ -196,7 +205,7 @@ const StyledMessage = styled("div")(({ theme }) => ({
 	justifyContent: "center",
 	padding: "6px 0px",
 }));
-const StyledMultiBlockMessage = styled("div")(({ theme }) => ({
+const StyledMultiBlockMessage = styled("div")(() => ({
 	display: "flex",
 	flexDirection: "column",
 	alignItems: "flex-start",
@@ -204,7 +213,7 @@ const StyledMultiBlockMessage = styled("div")(({ theme }) => ({
 	padding: "8px 0px",
 	flex: "1 0 0",
 }));
-const StyledAlertTitle = styled(Alert.Title)(({ theme }) => ({
+const StyledAlertTitle = styled(Alert.Title)(() => ({
 	alignSelf: "stretch",
 	color: "#666",
 	fontFamily: "Inter",
@@ -214,7 +223,7 @@ const StyledAlertTitle = styled(Alert.Title)(({ theme }) => ({
 	lineHeight: "150%",
 	letterSpacing: "0.15px",
 }));
-const StyledTypography = styled(Typography)(({ theme }) => ({
+const StyledTypography = styled(Typography)(() => ({
 	alignSelf: "stretch",
 	color: "#666",
 	fontFamily: "Inter",
@@ -262,13 +271,13 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
 	},
 }));
-const StyledCustomTabPanel = styled("div")(({ theme }) => ({}));
+const StyledCustomTabPanel = styled("div")(() => ({}));
 
-const StyledParentDiv = styled("div")(({ theme }) => ({
+const StyledParentDiv = styled("div")(() => ({
 	padding: "16px 8px",
 }));
 
-const StyledDiv = styled("div")(({ theme }) => ({
+const StyledDiv = styled("div")(() => ({
 	display: "flex",
 	alignItems: "center",
 	padding: "6px 16px",
@@ -278,7 +287,7 @@ const StyledDiv = styled("div")(({ theme }) => ({
 	background: "#F5F5F5",
 }));
 
-const StyledImgDiv = styled("div")(({ theme }) => ({
+const StyledImgDiv = styled("div")(() => ({
 	display: "flex",
 	alignItems: "flex-start",
 	width: "22px",
@@ -294,20 +303,7 @@ export interface SelectedBlocksProps {
 	title: string;
 }
 
-const StyledTitleSpan = styled("span")(() => ({
-	color: "var(--Primary-Dark, #1260DD)",
-	fontFamily: "Inter",
-	fontFeatureSettings: "'liga' off, 'clig' off",
-	fontStyle: "normal",
-	fontSize: "13px",
-	lineHeight: "18px",
-	fontWeight: 400,
-	letterSpacing: "0.16px",
-	marginLeft: "0px !important",
-}));
-
-export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
-	const { title } = props;
+export const SelectedBlockPanel = observer(() => {
 	const { designer } = useDesigner();
 	const { state } = useBlocks();
 	const notification = useNotification();
@@ -330,9 +326,9 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 		: false;
 	const [settingSection, setSettingSection] = useState<string | number>(0); //state to maintain the selected tab in setting appearance tab
 	const [showJsonEditor, setShowJsonEditor] = useState(false);
-    const [jsonValue, setJsonValue] = useState(
-        block ? JSON.stringify(block.data?.style ?? {}, null, 2) : "{}"
-    );
+	const [jsonValue, setJsonValue] = useState(
+		block ? JSON.stringify(block.data?.style ?? {}, null, 2) : "{}",
+	);
 	// get the content menu
 	const contentMenu = useMemo(() => {
 		if (
@@ -436,24 +432,6 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 		return BlockSettingsRegistry[block.widget]?.menu ?? null;
 	}, [BlockSettingsRegistry, block ? block.widget : ""]);
 
-	// get the icon
-	const icon = useMemo(() => {
-		if (
-			!BlockSettingsRegistry ||
-			!block ||
-			!BlockSettingsRegistry[block.widget]
-		) {
-			return null;
-		}
-
-		const w = BlockSettingsRegistry[block.widget];
-		if (!w) {
-			return null;
-		}
-
-		return w.icon;
-	}, [BlockSettingsRegistry, block ? block.widget : ""]);
-
 	/**
 	 * Copy text and add it to the clipboard
 	 * @param text - text to copy
@@ -481,7 +459,7 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 			setShowSearch(false);
 		}
 		setShowJsonEditor(false);
-	}, [block]);  
+	}, [block]);
 	useEffect(() => {
 		if (block) {
 			setJsonValue(JSON.stringify(block.data?.style ?? {}, null, 2));
@@ -548,11 +526,6 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 	return (
 		<Panel>
 			<StyledMenu>
-				{/* <StyledBlockTitle>
-                    <StyledTitleSpan>
-                        {title}
-                    </StyledTitleSpan> 
-                </StyledBlockTitle> */}
 				<StyledMenuHeader>
 					<Stack
 						flex={1}
@@ -595,19 +568,35 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 						</Stack>
 
 						{!menu && (
-							<Stack flex={1} spacing={1} direction="column" alignItems="end" justifyContent="end">
+							<Stack
+								flex={1}
+								spacing={1}
+								direction="column"
+								alignItems="end"
+								justifyContent="end"
+							>
 								{settingSection === 1 && (
-										<IconButtonWrapper onClick={() => setShowJsonEditor((v) => !v)} title="Edit CSS">
-											<UnstyledIconButton>
-												<Icon>
-													<CssRounded>
-														<CssRoundedSVG />
-													</CssRounded>
-												</Icon>
-											</UnstyledIconButton>
-										</IconButtonWrapper>
+									<IconButtonWrapper
+										onClick={() =>
+											setShowJsonEditor((v) => !v)
+										}
+										title="Edit CSS"
+									>
+										<UnstyledIconButton>
+											<Icon>
+												<CssRounded>
+													<CssRoundedSVG />
+												</CssRounded>
+											</Icon>
+										</UnstyledIconButton>
+									</IconButtonWrapper>
 								)}
-								<Stack spacing={1} direction="row" alignItems="center" justifyContent="end">
+								<Stack
+									spacing={1}
+									direction="row"
+									alignItems="center"
+									justifyContent="end"
+								>
 									<Collapse
 										orientation="horizontal"
 										in={showSearch}
@@ -719,16 +708,16 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 								hidden={settingSection !== 1 ? true : false}
 							>
 								{!showJsonEditor ? (
-                                    styleMenu.length ? (
-                                        <SelectedMenuSection
-                                            id={block.id}
-                                            sectionTitle=""
-                                            menu={styleMenu}
-                                            accordion={styleAccordion}
-                                            setAccordion={setStyleAccordion}
-                                        />
-                                    ) : null
-                                ) : (
+									styleMenu.length ? (
+										<SelectedMenuSection
+											id={block.id}
+											sectionTitle=""
+											menu={styleMenu}
+											accordion={styleAccordion}
+											setAccordion={setStyleAccordion}
+										/>
+									) : null
+								) : (
 									<Stack spacing={2} sx={{ mt: 4 }}>
 										<TextField
 											multiline
@@ -737,56 +726,82 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 											fullWidth
 											label="CSS Settings"
 											value={jsonValue}
-											onChange={(e) => setJsonValue(e.target.value)}
+											onChange={(e) =>
+												setJsonValue(e.target.value)
+											}
 											variant="outlined"
 											size="small"
 										/>
-										<Stack direction="row" spacing={2} justifyContent="flex-end">
+										<Stack
+											direction="row"
+											spacing={2}
+											justifyContent="flex-end"
+										>
 											<button
+												type="button"
 												style={{
-													background: '#f5f5f5',
-													color: '#666',
-													border: 'none',
+													background: "#f5f5f5",
+													color: "#666",
+													border: "none",
 													borderRadius: 4,
-													padding: '6px 16px',
-													cursor: 'pointer',
+													padding: "6px 16px",
+													cursor: "pointer",
 												}}
 												onClick={() => {
-													setJsonValue(block ? JSON.stringify(block.data?.style ?? {}, null, 2) : '{}');
+													setJsonValue(
+														block
+															? JSON.stringify(
+																	block.data
+																		?.style ??
+																		{},
+																	null,
+																	2,
+																)
+															: "{}",
+													);
 													setShowJsonEditor(false);
 												}}
 											>
 												Cancel
 											</button>
 											<button
+												type="button"
 												style={{
-													background: '#1260DD',
-													color: '#fff',
-													border: 'none',
+													background: "#1260DD",
+													color: "#fff",
+													border: "none",
 													borderRadius: 4,
-													padding: '6px 16px',
-													cursor: 'pointer',
+													padding: "6px 16px",
+													cursor: "pointer",
 												}}
 												onClick={() => {
 													try {
-														const parsed = JSON.parse(jsonValue);
+														const parsed =
+															JSON.parse(
+																jsonValue,
+															);
 														state.dispatch({
-															message: ActionMessages.SET_BLOCK_DATA,
+															message:
+																ActionMessages.SET_BLOCK_DATA,
 															payload: {
 																id: block.id,
-																path: 'style',
+																path: "style",
 																value: parsed,
 															},
 														});
 														notification.add({
-															color: 'success',
-															message: 'Style updated!',
+															color: "success",
+															message:
+																"Style updated!",
 														});
-														setShowJsonEditor(false);
+														setShowJsonEditor(
+															false,
+														);
 													} catch (err) {
 														notification.add({
-															color: 'error',
-															message: 'Invalid JSON',
+															color: "error",
+															message:
+																"Invalid JSON",
 														});
 													}
 												}}
@@ -795,7 +810,7 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 											</button>
 										</Stack>
 									</Stack>
-                                )}
+								)}
 								{/* Removed Edit CSS button from here, now at top right */}
 							</StyledCustomTabPanel>
 						)
