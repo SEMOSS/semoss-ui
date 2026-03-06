@@ -50,3 +50,23 @@ export const toInitials = (str: string | undefined) => {
 		words[0].charAt(0) + words[words.length - 1].charAt(0)
 	).toUpperCase();
 };
+
+/**
+ * Formats a UTC datetime string (from the API) into a human-readable local time.
+ * The API returns timestamps as "YYYY-MM-DD HH:MM:SS" with no timezone suffix,
+ * so we append "Z" to treat them as UTC before converting to local time.
+ *
+ * @param dateStr - UTC datetime string from the API
+ * @returns Formatted local datetime string, or the original string if parsing fails
+ */
+export const formatDateTime = (dateStr: string): string => {
+	const d = new Date(`${dateStr.replace(" ", "T")}Z`);
+	if (Number.isNaN(d.getTime())) return dateStr;
+	return d.toLocaleString(undefined, {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+	});
+};

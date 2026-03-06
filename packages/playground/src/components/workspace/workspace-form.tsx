@@ -1,4 +1,13 @@
-import { Bookmark, X } from "lucide-react";
+import {
+	Bookmark,
+	BookOpenIcon,
+	FileTextIcon,
+	HammerIcon,
+	PlusIcon,
+	SearchIcon,
+	UsersRound,
+	X,
+} from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Env, post, useInsight } from "@semoss/sdk/react";
@@ -8,18 +17,28 @@ import {
 	Field,
 	FieldGroup,
 	FieldLabel,
-	FieldSeparator,
 	Input,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
 	Spinner,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
 	Textarea,
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 	toast,
+	useDebouncedValue,
 } from "@semoss/ui/next";
-import { MCPSelector, NewKnowledgeOverlay } from "@/components";
-import { useChat } from "@/hooks";
+import { MCPSelector } from "@/components";
+import { PaginationButtons } from "@/components/common/pagination-buttons";
+import { KnowledgeSelector } from "@/components/workspace/knowledge-selector";
+import { WorkspaceMembersList } from "@/components/workspace/members/workspace-members-list";
+import { useChat, usePagination } from "@/hooks";
 import type { MCPConfig, Workspace } from "@/types";
 import { formatDateTime } from "@/utility";
 
@@ -67,7 +86,15 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 		useState<boolean>(false);
 
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [isKnowledgeOverlayOpen, setIsKnowledgeOverlayOpen] = useState(false);
+
+	// Tab state
+	const [tab, setTab] = useState<string>("knowledge");
+
+	// Membership tab state (edit mode only)
+	const [isSharingModalOpen, setIsSharingModalOpen] = useState(false);
+	const [memberSearch, setMemberSearch] = useState("");
+	const debouncedMemberSearch = useDebouncedValue(memberSearch);
+	const pagination = usePagination();
 
 	/**
 	 * Library Hooks
@@ -175,33 +202,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	return (
 		<TooltipProvider>
 			<form onSubmit={onSubmit} className="flex w-full flex-col gap-6">
-				{/* System Prompt — prominent at top */}
-				<div className="rounded-xl border border-border bg-muted/30 p-5">
-					<div className="mb-3 flex items-center justify-between">
-						<label
-							htmlFor={instructionId}
-							className="font-semibold text-base text-foreground"
-						>
-							{t("workspace:form.instructionsLabel")}
-						</label>
-						<span className="text-muted-foreground text-xs">
-							Defines the agent&apos;s behavior and persona
-						</span>
-					</div>
-					<Textarea
-						id={instructionId}
-						placeholder={t("common:placeholders.enterInstructions")}
-						value={instructions.replace(/\\n/g, "\n")}
-						onChange={(e) => setInstructions(e.target.value)}
-						rows={8}
-						className="resize-y"
-						data-testid="workspaceForm-system_prompt-txt"
-					/>
-				</div>
-
-				<FieldSeparator />
-
-				{/* Name, Description, Tags, Favorite */}
+				{/* Basic info: Name, Description, Tags, Favorite — always above tabs */}
 				<FieldGroup>
 					<div className="flex items-start gap-3">
 						<div className="flex-1">
@@ -327,58 +328,140 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 					</Field>
 				</FieldGroup>
 
-				<FieldSeparator />
-
-				{/* Knowledge and Toolbox */}
-				<FieldGroup>
-					<Field>
-						<FieldLabel
-							onClick={(event) => {
-								event.preventDefault();
-								event.stopPropagation();
-								setIsKnowledgeOverlayOpen(true);
-							}}
-						>
-							<div className="flex-1">
+				{/* Tabs: Knowledge, Toolbox, Prompt, Membership */}
+				<Tabs
+					value={tab}
+					onValueChange={setTab}
+					className="flex flex-col gap-4"
+				>
+					<div className="flex items-center justify-between gap-4">
+						<TabsList>
+							<TabsTrigger value="knowledge">
+								<BookOpenIcon />
 								{t("workspace:form.knowledgeLabel")}
+							</TabsTrigger>
+							<TabsTrigger value="toolbox">
+								<HammerIcon />
+								{t("workspace:form.toolboxLabel")}
+							</TabsTrigger>
+							<TabsTrigger value="prompt">
+								<FileTextIcon />
+								Prompt
+							</TabsTrigger>
+							{!isNew && (
+								<TabsTrigger value="membership">
+									<UsersRound />
+									Membership
+								</TabsTrigger>
+							)}
+						</TabsList>
+						{tab === "membership" && !isNew && (
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => setIsSharingModalOpen(true)}
+							>
+								<PlusIcon />
+								{t("workspace:sharing.title")}
+							</Button>
+						)}
+					</div>
+
+					{/* Bordered card wrapping all tab content */}
+					<div className="overflow-hidden rounded-xl border border-border bg-card">
+						{/* Search bar — membership tab only */}
+						{tab === "membership" && !isNew && (
+							<div className="border-border border-b bg-primary-foreground p-4">
+								<InputGroup className="bg-background">
+									<InputGroupInput
+										placeholder={t("common:buttons.search")}
+										value={memberSearch}
+										onChange={(e) =>
+											setMemberSearch(e.target.value)
+										}
+									/>
+									<InputGroupAddon>
+										<SearchIcon />
+									</InputGroupAddon>
+								</InputGroup>
 							</div>
-						</FieldLabel>
+						)}
 
-						<MCPSelector
-							type="KNOWLEDGE"
-							values={knowledge}
-							disabled={isLoading}
-							onChange={(knowledge) => setKnowledge(knowledge)}
-						/>
+						<TabsContent value="knowledge" className="p-4">
+							<KnowledgeSelector
+								values={knowledge}
+								disabled={isLoading}
+								onChange={(vals) => setKnowledge(vals)}
+							/>
+						</TabsContent>
 
-						<NewKnowledgeOverlay
-							open={isKnowledgeOverlayOpen}
-							onClose={(knowledge) => {
-								if (knowledge) {
-									setKnowledge((prev) => [
-										...prev,
-										knowledge,
-									]);
-								}
-								setIsKnowledgeOverlayOpen(false);
-							}}
-						/>
-					</Field>
-					<Field>
-						<FieldLabel>
-							{t("workspace:form.toolboxLabel")}
-						</FieldLabel>
-						<MCPSelector
-							type="TOOLBOX"
-							values={toolbox}
-							disabled={isLoading}
-							onChange={(mcps) => setToolbox(mcps)}
-						/>
-					</Field>
-				</FieldGroup>
+						<TabsContent value="toolbox" className="p-4">
+							<MCPSelector
+								type="TOOLBOX"
+								values={toolbox}
+								disabled={isLoading}
+								onChange={(mcps) => setToolbox(mcps)}
+							/>
+						</TabsContent>
+
+						<TabsContent value="prompt" className="p-4">
+							<div className="flex flex-col gap-2">
+								<label
+									htmlFor={instructionId}
+									className="text-muted-foreground text-xs"
+								>
+									Defines the agent&apos;s behavior and
+									persona
+								</label>
+								<Textarea
+									id={instructionId}
+									placeholder={t(
+										"common:placeholders.enterInstructions",
+									)}
+									value={instructions.replace(/\\n/g, "\n")}
+									onChange={(e) =>
+										setInstructions(e.target.value)
+									}
+									rows={10}
+									className="resize-y"
+									data-testid="workspaceForm-system_prompt-txt"
+								/>
+							</div>
+						</TabsContent>
+
+						{!isNew && values?.workspace_id && (
+							<TabsContent
+								value="membership"
+								className="w-full overflow-hidden"
+							>
+								<WorkspaceMembersList
+									workspaceId={values.workspace_id}
+									search={debouncedMemberSearch}
+									paginationControl={pagination}
+									isSharingModalOpen={isSharingModalOpen}
+									onSharingModalClose={() =>
+										setIsSharingModalOpen(false)
+									}
+								/>
+							</TabsContent>
+						)}
+					</div>
+
+					{/* Pagination — membership tab only */}
+					{tab === "membership" && !isNew && (
+						<div className="flex w-full flex-row items-center justify-end gap-2 border-border border-t bg-primary-foreground px-4 py-3">
+							<PaginationButtons {...pagination} />
+						</div>
+					)}
+				</Tabs>
 
 				<div className="flex items-center justify-between">
-					<Button variant="ghost" onClick={() => onClose()}>
+					<Button
+						type="button"
+						variant="ghost"
+						onClick={() => onClose()}
+					>
 						{t("common:buttons.back")}
 					</Button>
 					<Button
