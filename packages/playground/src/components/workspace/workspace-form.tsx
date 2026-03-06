@@ -346,7 +346,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 							</TabsTrigger>
 							<TabsTrigger value="prompt">
 								<FileTextIcon />
-								Prompt
+								Instructions
 							</TabsTrigger>
 							{!isNew && (
 								<TabsTrigger value="membership">

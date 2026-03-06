@@ -485,7 +485,7 @@ export const WorkspaceDetailPage = observer(() => {
 							</TabsTrigger>
 							<TabsTrigger value="systemPrompt">
 								<FileTextIcon />
-								System Prompt
+								Instructions
 							</TabsTrigger>
 							<TabsTrigger value="members">
 								<UsersRound />
@@ -551,7 +551,7 @@ export const WorkspaceDetailPage = observer(() => {
 											setIsEditingSystemPrompt(true);
 										}}
 									>
-										Edit System Prompt
+										Edit Instructions
 									</Button>
 								)}
 							{tab === "systemPrompt" &&
@@ -656,8 +656,8 @@ export const WorkspaceDetailPage = observer(() => {
 										</div>
 									) : (
 										<p className="text-muted-foreground text-sm italic">
-											No system prompt configured. Click
-											&ldquo;Edit System Prompt&rdquo;
+											No instructions configured. Click
+											&ldquo;Edit Instructions&rdquo;
 											above to add one.
 										</p>
 									)}
