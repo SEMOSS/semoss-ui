@@ -1,4 +1,4 @@
-export * from "./dependency-list";
+export * from "./DependencyList";
 export * from "./engine-model-test-sidebar";
 export * from "./engine-qa-sidebar";
 export * from "./file-table";

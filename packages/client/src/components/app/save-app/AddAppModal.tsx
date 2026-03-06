@@ -144,7 +144,7 @@ export const AddAppModal = (props: AddAppProps) => {
 
 	const { open, handleClose } = props;
 
-	const { monolithStore, configStore } = useRootStore();
+	const { configStore } = useRootStore();
 	const notification = useNotification();
 	const [showEngineModal, setShowEngineModal] = useState(false);
 	const [pendingProjectId, setPendingProjectId] = useState<
