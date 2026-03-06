@@ -152,7 +152,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			if (room.options?.instructions) {
 				context = room.options?.instructions;
 			}
-			console.log("Instructions: ", room.options?.instructions);
 			// Add placeholder as child of input to show streaming text
 			inputMessage.addChild(responseMessage);
 
