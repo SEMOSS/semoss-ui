@@ -26,6 +26,7 @@ export * from "./components/Code";
 export * from "./components/Collapse";
 // export * from "./components/Colorpicker";
 export * from "./components/Container";
+export * from "./components/DatePicker";
 export * from "./components/Divider";
 export * from "./components/Drawer";
 export * from "./components/FileDropzone";
@@ -74,16 +75,34 @@ export * from "./components/Typography";
 import type { SvgIconProps } from "@mui/material";
 // TODO: fix miscellaneous mui components/functions
 import {
+	Autocomplete,
+	Box,
+	Checkbox,
+	Chip,
 	ClickAwayListener,
 	Fade,
 	FormHelperText,
 	Input,
+	ListItem,
+	ListItemButton,
 	ListItemIcon,
 	ListItemText,
+	Menu,
+	MenuItem,
 	MenuList,
 	OutlinedInput,
+	Popover,
 	Popper,
+	Select,
 	SvgIcon,
+	Switch,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableRow,
+	Tooltip,
+	type TooltipProps,
 } from "@mui/material";
 export type { SvgIconProps };
 

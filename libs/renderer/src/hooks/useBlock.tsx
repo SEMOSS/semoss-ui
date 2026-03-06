@@ -218,7 +218,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
 				// try to extract the variable
 				return state.parseVariable(
 					instance,
-					block.widget !== "iteration" ? block.id : null,
+					block.widget !== "iteration" && block.widget !== "calendarviewtext" ? block.id : null,
 				);
 			}
 

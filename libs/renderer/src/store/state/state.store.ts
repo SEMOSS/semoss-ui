@@ -1125,7 +1125,7 @@ export class StateStore {
 		let currentBlock = this._store.blocks[blockId];
 
 		while (currentBlock) {
-			if (currentBlock.widget === "iteration") {
+			if (currentBlock.widget === "iteration" || currentBlock.widget === "calendarviewtext") {
 				return currentBlock;
 			}
 			if (currentBlock.parent && currentBlock.parent.id) {

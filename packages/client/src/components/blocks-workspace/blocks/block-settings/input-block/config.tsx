@@ -1,11 +1,14 @@
-import { FormatShapes } from "@mui/icons-material";
-import type { CSSProperties } from "react";
-import { InputSettings, QuerySelectionSettings } from "../../settings";
-import { InputModalSettings } from "../../settings/shared/InputModalSettings";
-import { SelectInputSettings } from "../../settings/shared/SelectInputSettings";
-import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
-import { buildListener, buildShowField } from "../block-defaults.shared";
-import type { BlockSettingsConfig } from "../settings.types";
+import { CSSProperties, useEffect } from 'react';
+import { observer } from 'mobx-react-lite';
+import { InputSettings, QuerySelectionSettings } from '../../settings';
+import { buildListener, buildShowField } from '../block-defaults.shared';
+import { FormatShapes } from '@mui/icons-material';
+import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
+import { SelectInputSettings } from '../../settings/shared/SelectInputSettings';
+import { InputModalSettings } from '../../settings/shared/InputModalSettings';
+import { SwitchSettings } from '../../settings/shared/SwitchSettings';
+import { BlockSettingsConfig } from '../settings.types';
+import { useBlockSettings } from '@/hooks';
 
 export const DefaultStyles: CSSProperties = {
 	width: "100%",
@@ -50,6 +53,47 @@ export const config: BlockSettingsConfig = {
 						);
 					},
 				},
+                {
+                    description: 'Date Format Options',
+                    render: observer(({ id }) => {
+                        const { data } = useBlockSettings(id);
+                        
+                        // Only show when Date is selected
+                        if (data.type !== 'date') {
+                            return null;
+                        }
+
+                        return (
+                            <div style={{
+                                marginLeft: '16px',
+                                paddingLeft: '12px',
+                                borderLeft: '3px solid #e0e0e0',
+                                backgroundColor: '#fafafa',
+                                borderRadius: '4px',
+                            }}>
+                                <SelectInputSettings
+                                    id={id}
+                                    path="dateFormat"
+                                    label="📅 Choose Date Format"
+                                    options={[
+                                        {
+                                            value: 'mm//dd/yyyy',
+                                            display: '📅 mm//dd/yyyy (Date Picker)',
+                                        },
+                                        {
+                                            value: 'YYYY-MM-DDTHH:mm:ssZ',
+                                            display: '🕒 YYYY-MM-DDTHH:mm:ssZ (DateTime Picker)',
+                                        },
+                                        {
+                                            value: 'YYYYMMDDTHHmmss[Z]',
+                                            display: '🕒 YYYYMMDDTHHmmss[Z] (DateTime Picker)',
+                                        },
+                                    ]}
+                                />
+                            </div>
+                        );
+                    }),
+                },
 				{
 					description: "Label",
 					render: ({ id }) => (
@@ -63,15 +107,31 @@ export const config: BlockSettingsConfig = {
 					),
 				},
 				{
-					description: "Value",
-					render: ({ id }) => (
-						<InputModalSettings
-							id={id}
-							label="Value"
-							path="value"
-						/>
-					),
-				},
+                    description: "Value",
+                    render: observer(({ id }) => {
+                        const { data } = useBlockSettings(id);
+                        
+                        // Use SwitchSettings for boolean type, InputModalSettings for others
+                        if (data.type === "boolean") {
+                            return (
+                                <SwitchSettings
+                                    id={id}
+                                    label="Value"
+                                    path="value"
+                                />
+                            );
+                        }
+                        
+                        // Use InputModalSettings for all other types
+                        return (
+                            <InputModalSettings
+                                id={id}
+                                label="Value"
+                                path="value"
+                            />
+                        );
+                    }),
+                },
 				{
 					description: "Loading",
 					render: ({ id }) => (

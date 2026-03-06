@@ -118,6 +118,7 @@ import {
 	config as VisualizationFilterBlockConfig,
 	type VisualizationFilterBlockDef,
 } from "./visualization-filter-block";
+import {config as CalendarViewBlockConfig, CalendarViewBlockDef } from "./calendarview-block";
 
 export type DefaultBlockDefinitions =
 	| AccordionBlockDef
@@ -161,7 +162,8 @@ export type DefaultBlockDefinitions =
 	| TimePickerBlockDef
 	| VisualizationFilterBlockDef
 	| GridDynamicFrameBlockDef
-	| TabBlockDef;
+	| TabBlockDef
+	| CalendarViewBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 	[AccordionBlockConfig.widget]: AccordionBlockConfig,
@@ -205,6 +207,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 	[VisualizationFilterBlockConfig.widget]: VisualizationFilterBlockConfig,
 	[GridDynamicFrameBlockConfig.widget]: GridDynamicFrameBlockConfig,
 	[TabBlockConfig.widget]: TabBlockConfig,
+    [CalendarViewBlockConfig.widget]: CalendarViewBlockConfig,
 };
 
 export {
@@ -247,4 +250,5 @@ export {
 	VisualizationFilterBlockConfig,
 	GridDynamicFrameBlockConfig,
 	TabBlockConfig,
+    CalendarViewBlockConfig,
 };
