@@ -762,7 +762,7 @@ export const KnowledgeDetailPage = observer(() => {
 																)}
 																<button
 																	type="button"
-																	className="cursor-pointer break-all text-left font-medium text-sm hover:underline"
+																	className="cursor-pointer break-all text-left font-medium text-xs hover:underline"
 																	onClick={() =>
 																		setPreviewDoc(
 																			d,

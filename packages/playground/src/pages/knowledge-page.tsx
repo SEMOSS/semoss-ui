@@ -1,8 +1,15 @@
 /* eslint-disable */
 /** biome-ignore-all lint/nursery/useSortedClasses: using existing Tailwind order in this file */
 
-import { Bookmark, ChevronDown, Info, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import {
+	Bookmark,
+	ChevronDown,
+	Info,
+	MoreHorizontal,
+	Search,
+	Trash2,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { Env, post, useInsight } from "@semoss/sdk/react";
@@ -87,8 +94,12 @@ export const DocumentLibrary = () => {
 	const [libraryTab, setLibraryTab] = useState<"all" | "global" | "mine">(
 		"all",
 	);
-	const [isNewKnowledgeOpen, setIsNewKnowledgeOpen] = useState(false);
+	const [deleteEngineId, setDeleteEngineId] = useState<string | null>(null);
+	const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
+	const menuRef = useRef<HTMLDivElement>(null);
 
+	const [isNewKnowledgeOpen, setIsNewKnowledgeOpen] = useState(false);
 	const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
 	const [selectedEngine, setSelectedEngine] =
 		useState<DocumentLibraryEngine | null>(null);
@@ -100,26 +111,57 @@ export const DocumentLibrary = () => {
 	const { actions } = useInsight();
 	const [data, setData] = useState([]);
 
+	// Close dropdown when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (e: MouseEvent) => {
+			if (
+				menuRef.current &&
+				!menuRef.current.contains(e.target as Node)
+			) {
+				setActiveMenuId(null);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () =>
+			document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
+
+	const handleDeleteEngine = async () => {
+		if (!deleteEngineId) return;
+		setIsDeleting(true);
+		try {
+			await actions.run(`DeleteEngine(engine=['${deleteEngineId}']);`);
+			setData((prev) => {
+				if (!prev[0]) return prev;
+				const updated = prev[0].filter(
+					(i: { app_id: string }) => i.app_id !== deleteEngineId,
+				);
+				return [updated];
+			});
+		} catch (err) {
+			console.error("DeleteEngine failed:", err);
+		} finally {
+			setIsDeleting(false);
+			setDeleteEngineId(null);
+		}
+	};
+
 	useEffect(() => {
 		const getEngines = async () => {
 			try {
 				const result = await actions.run(
 					`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"])`,
 				);
-
 				const pixelData = result?.pixelReturn?.[0];
 				if (!pixelData) {
 					console.warn("No pixelReturn data found.");
 					return;
 				}
-
-				const output = pixelData.output;
-				setData([output]);
+				setData([pixelData.output]);
 			} catch (error) {
 				console.error("Error retrieving vectors", error);
 			}
 		};
-
 		getEngines();
 	}, [actions]);
 
@@ -132,52 +174,37 @@ export const DocumentLibrary = () => {
 					? [item.tag]
 					: [];
 			itemTags.forEach((tag) => {
-				if (tag) {
-					tags.add(String(tag));
-				}
+				if (tag) tags.add(String(tag));
 			});
 		});
 		return Array.from(tags).sort();
 	}, [data]);
 
 	useEffect(() => {
-		if (!documentsModalOpen || !selectedEngine?.id) {
-			return;
-		}
-
+		if (!documentsModalOpen || !selectedEngine?.id) return;
 		let cancelled = false;
 		setIsLoadingAssets(true);
 		setAssetsError(null);
 		setEngineAssets([]);
-
 		void actions
 			.run<
 				{ fileName: string; lastModified: string; fileSize: string }[]
 			>(`ListDocumentsInVectorDatabase(engine=["${selectedEngine.id}"]);`)
 			.then((result) => {
-				if (cancelled) {
-					return;
-				}
-
+				if (cancelled) return;
 				const output = result?.pixelReturn?.[0]?.output;
-				const assets = Array.isArray(output)
-					? (output as EngineAsset[])
-					: [];
-				setEngineAssets(assets);
+				setEngineAssets(
+					Array.isArray(output) ? (output as EngineAsset[]) : [],
+				);
 			})
 			.catch((e) => {
-				if (cancelled) {
-					return;
-				}
+				if (cancelled) return;
 				setAssetsError(e instanceof Error ? e.message : String(e));
 			})
 			.finally(() => {
-				if (cancelled) {
-					return;
-				}
+				if (cancelled) return;
 				setIsLoadingAssets(false);
 			});
-
 		return () => {
 			cancelled = true;
 		};
@@ -185,9 +212,8 @@ export const DocumentLibrary = () => {
 
 	const formatted: DocumentLibraryEngine[] =
 		data[0]?.reduce((acc, item) => {
-			const name = item?.app_name || item?.tag || "Untitled";
 			acc.push({
-				name,
+				name: item?.app_name || item?.tag || "Untitled",
 				subheader: item.database_name || "",
 				description: item.description || "",
 				id: item.app_id || "",
@@ -201,29 +227,18 @@ export const DocumentLibrary = () => {
 				favorite:
 					item.app_favorite === 1 || item.database_favorite === 1,
 			});
-
 			return acc;
 		}, []) || [];
 
 	const filteredItems = formatted
 		.filter((item) => {
-			// NOTE: Today we only have tags; until we have an explicit ownership/global flag,
-			// use conservative heuristics:
-			// - "mine": no FDA/center tags
-			// - "global": has FDA or a known center tag
-			if (libraryTab === "all") {
-				return true;
-			}
-
-			const tags = Array.isArray(item.tag) ? item.tag : [];
-			const lowerTags = tags
+			if (libraryTab === "all") return true;
+			const lowerTags = (Array.isArray(item.tag) ? item.tag : [])
 				.filter(Boolean)
 				.map((t) => String(t).toLowerCase());
-
 			const isGlobal = lowerTags.includes("fda")
 				? true
 				: centers.some((c) => lowerTags.includes(c.toLowerCase()));
-
 			return libraryTab === "global" ? isGlobal : !isGlobal;
 		})
 		.filter((item) => {
@@ -233,7 +248,6 @@ export const DocumentLibrary = () => {
 				item?.tag?.some((a) =>
 					a?.toLowerCase()?.includes(search?.toLowerCase()),
 				);
-
 			let matchesCenter = true;
 			try {
 				matchesCenter =
@@ -246,9 +260,7 @@ export const DocumentLibrary = () => {
 			} catch (e) {
 				console.error(e);
 			}
-
 			let matchesName = true;
-
 			try {
 				matchesName = item?.name
 					?.toLowerCase()
@@ -256,7 +268,6 @@ export const DocumentLibrary = () => {
 			} catch (e) {
 				console.error(e);
 			}
-
 			return (matchesSearch && matchesCenter) || matchesName;
 		})
 		.filter((item) => {
@@ -268,39 +279,19 @@ export const DocumentLibrary = () => {
 			return b.dateCreated.localeCompare(a.dateCreated);
 		});
 
-	const _getSortDisplayText = (sortBy: string) => {
-		switch (sortBy) {
-			case "name-asc":
-				return "Sort: Name (A-Z)";
-			case "name-desc":
-				return "Sort: Name (Z-A)";
-			case "date-desc":
-				return "Sort: Date (newest)";
-			case "date-asc":
-				return "Sort: Date (oldest)";
-			default:
-				return "Sort: Name (A-Z)";
-		}
-	};
-
 	const documentFiles = useMemo(() => {
 		return engineAssets
 			.filter((a) => a && typeof a === "object")
 			.filter((a) => (a.type ? a.type !== "folder" : true));
 	}, [engineAssets]);
 
-	const getDisplayName = (f: EngineAsset) => {
-		return (
-			f.fileName ||
-			f.name ||
-			(f.path ? f.path.split(/[/\\]/).pop() : "") ||
-			"Untitled"
-		);
-	};
+	const getDisplayName = (f: EngineAsset) =>
+		f.fileName ||
+		f.name ||
+		(f.path ? f.path.split(/[/\\]/).pop() : "") ||
+		"Untitled";
 
-	const getDisplayPath = (f: EngineAsset) => {
-		return f.path || "";
-	};
+	const getDisplayPath = (f: EngineAsset) => f.path || "";
 
 	const toggleFavorite = async (
 		e: React.MouseEvent,
@@ -317,7 +308,6 @@ export const DocumentLibrary = () => {
 				{},
 			);
 		} catch {
-			// Revert on failure
 			setFavorites((prev) => ({ ...prev, [item.id]: current }));
 		}
 	};
@@ -329,20 +319,14 @@ export const DocumentLibrary = () => {
 					open={isNewKnowledgeOpen}
 					onClose={(knowledge) => {
 						setIsNewKnowledgeOpen(false);
-
-						// refresh list if a knowledge source was created
 						if (knowledge) {
 							void actions
 								.run(
-									`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"],  metaFilters=[{"tag":${JSON.stringify(
-										["FDA", ...centers],
-									)}}])`,
+									`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"], metaFilters=[{"tag":${JSON.stringify(["FDA", ...centers])}}])`,
 								)
 								.then((result) => {
 									const pixelData = result?.pixelReturn?.[0];
-									if (!pixelData) {
-										return;
-									}
+									if (!pixelData) return;
 									setData([pixelData.output]);
 									navigate(`/knowledge/${knowledge.id}`);
 								});
@@ -350,6 +334,7 @@ export const DocumentLibrary = () => {
 					}}
 				/>
 
+				{/* Documents modal */}
 				<Dialog
 					open={documentsModalOpen}
 					onOpenChange={(open) => {
@@ -374,7 +359,6 @@ export const DocumentLibrary = () => {
 								{t("knowledge:documents.description")}
 							</DialogDescription>
 						</DialogHeader>
-
 						<div className="space-y-3">
 							{isLoadingAssets ? (
 								<div className="text-muted-foreground text-sm">
@@ -413,6 +397,42 @@ export const DocumentLibrary = () => {
 					</DialogContent>
 				</Dialog>
 
+				{/* Delete confirmation dialog — uses only Dialog which we know works */}
+				<Dialog
+					open={!!deleteEngineId}
+					onOpenChange={(open) => {
+						if (!isDeleting && !open) setDeleteEngineId(null);
+					}}
+				>
+					<DialogContent className="max-w-sm">
+						<DialogHeader>
+							<DialogTitle>
+								Delete from Knowledge Library?
+							</DialogTitle>
+							<DialogDescription>
+								This action cannot be undone.
+							</DialogDescription>
+						</DialogHeader>
+						<div className="flex justify-end gap-2 pt-4">
+							<Button
+								variant="outline"
+								disabled={isDeleting}
+								onClick={() => setDeleteEngineId(null)}
+							>
+								Cancel
+							</Button>
+							<Button
+								variant="outline"
+								disabled={isDeleting}
+								onClick={handleDeleteEngine}
+								className="border-red-500 text-red-500 hover:bg-red-50"
+							>
+								{isDeleting ? "Deleting..." : "Delete"}
+							</Button>
+						</div>
+					</DialogContent>
+				</Dialog>
+
 				<Card className="rounded-xl border-border bg-card shadow-sm">
 					<CardHeader className="pb-3">
 						<CardTitle className="text-xl">
@@ -432,7 +452,7 @@ export const DocumentLibrary = () => {
 								</TooltipTrigger>
 								<TooltipContent
 									side="right"
-									className="max-w-sm"
+									className="max-w-xs"
 								>
 									<div className="space-y-2">
 										<p className="font-medium">
@@ -643,95 +663,148 @@ export const DocumentLibrary = () => {
 					<div className="max-h-[70vh] overflow-y-auto pr-1">
 						<div className="grid max-w-8xl grid-cols-1 gap-4 md:grid-cols-2">
 							{filteredItems.map((item, index) => (
-								<button
-									type="button"
+								<div
 									key={item.app_name || item.id || index}
-									className="w-full text-left"
-									onClick={() =>
-										navigate(`/knowledge/${item.id}`)
+									className="relative group"
+									ref={
+										activeMenuId === item.id
+											? menuRef
+											: null
 									}
 								>
-									<Card className="group transition hover:bg-muted/40">
-										<CardContent className="flex items-center gap-4 py-2">
-											<div className="min-w-0 flex-1">
-												<div className="flex min-w-0 items-center gap-2">
-													<p className="min-w-0 truncate font-medium text-sm">
-														{item.name}
-													</p>
-													{item.tag.length > 0 && (
-														<div className="flex shrink-0 flex-wrap gap-1">
-															{item.tag.map(
-																(tag) => (
-																	<Badge
-																		key={
-																			tag
-																		}
-																		variant="secondary"
-																		className="text-xs"
-																	>
-																		{tag}
-																	</Badge>
-																),
-															)}
-														</div>
-													)}
+									{/* Card — navigates to detail page */}
+									<button
+										type="button"
+										className="w-full text-left"
+										onClick={() =>
+											navigate(`/knowledge/${item.id}`)
+										}
+									>
+										<Card className="group transition hover:bg-muted/40">
+											<CardContent className="flex items-center gap-4 py-2">
+												<div className="min-w-0 flex-1">
+													<div className="flex min-w-0 items-center gap-2">
+														<p className="min-w-0 truncate font-medium text-sm">
+															{item.name}
+														</p>
+														{item.tag.length >
+															0 && (
+															<div className="flex shrink-0 flex-wrap gap-1">
+																{item.tag.map(
+																	(tag) => (
+																		<Badge
+																			key={
+																				tag
+																			}
+																			variant="secondary"
+																			className="text-xs"
+																		>
+																			{
+																				tag
+																			}
+																		</Badge>
+																	),
+																)}
+															</div>
+														)}
+													</div>
 												</div>
-											</div>
-											{item.dateCreated && (
-												<p className="w-44 shrink-0 text-right text-muted-foreground text-xs tabular-nums">
-													{formatDateTime(
-														item.dateCreated,
-													)}
-												</p>
-											)}
-											<div className="flex shrink-0 items-center gap-2">
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<Button
-															variant="ghost"
-															size="icon-sm"
-															onClick={(e) =>
-																toggleFavorite(
-																	e,
-																	item,
-																)
-															}
-															aria-label="Toggle favorite"
-														>
-															<Bookmark
-																className={`h-4 w-4 ${
-																	(favorites[
-																		item.id
-																	] ??
-																	item.favorite)
-																		? "fill-current text-primary"
-																		: "text-muted-foreground"
-																}`}
-															/>
-														</Button>
-													</TooltipTrigger>
-													<TooltipContent>
-														Favorite
-													</TooltipContent>
-												</Tooltip>
-												<Button
-													size="sm"
-													variant="outline"
-													onClick={(e) => {
-														e.stopPropagation();
-														navigate(
-															`/new?knowledgeId=${encodeURIComponent(item.id)}`,
+												{item.dateCreated && (
+													<p className="w-44 shrink-0 text-right text-muted-foreground text-xs tabular-nums">
+														{formatDateTime(
+															item.dateCreated,
+														)}
+													</p>
+												)}
+												<div className="flex shrink-0 items-center gap-2">
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Button
+																variant="ghost"
+																size="icon-sm"
+																onClick={(e) =>
+																	toggleFavorite(
+																		e,
+																		item,
+																	)
+																}
+																aria-label="Toggle favorite"
+															>
+																<Bookmark
+																	className={`h-4 w-4 ${
+																		(favorites[
+																			item
+																				.id
+																		] ??
+																		item.favorite)
+																			? "fill-current text-primary"
+																			: "text-muted-foreground"
+																	}`}
+																/>
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent>
+															Favorite
+														</TooltipContent>
+													</Tooltip>
+													<Button
+														size="sm"
+														variant="outline"
+														onClick={(e) => {
+															e.stopPropagation();
+															navigate(
+																`/new?knowledgeId=${encodeURIComponent(item.id)}`,
+															);
+														}}
+													>
+														{t(
+															"knowledge:actions.newChat",
+														)}
+													</Button>
+												</div>
+											</CardContent>
+										</Card>
+									</button>
+
+									<div
+										className="absolute top-2 right-2 z-10"
+										role="none"
+										onClick={(e) => e.stopPropagation()}
+									>
+										<button
+											type="button"
+											className="flex h-7 w-7 items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 text-gray-500"
+											onClick={() =>
+												setActiveMenuId((prev) =>
+													prev === item.id
+														? null
+														: item.id,
+												)
+											}
+											aria-label="More options"
+										>
+											<MoreHorizontal className="h-4 w-4" />
+										</button>
+
+										{activeMenuId === item.id && (
+											<div className="absolute right-0 top-8 z-20 w-52 rounded-md border border-gray-200 bg-white shadow-lg">
+												<button
+													type="button"
+													className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md"
+													onClick={() => {
+														setActiveMenuId(null);
+														setDeleteEngineId(
+															item.id,
 														);
 													}}
 												>
-													{t(
-														"knowledge:actions.newChat",
-													)}
-												</Button>
+													<Trash2 className="h-4 w-4" />
+													Delete Knowledge
+												</button>
 											</div>
-										</CardContent>
-									</Card>
-								</button>
+										)}
+									</div>
+								</div>
 							))}
 						</div>
 					</div>

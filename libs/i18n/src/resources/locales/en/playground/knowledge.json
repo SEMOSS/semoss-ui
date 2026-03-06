@@ -2,7 +2,7 @@
 	"title": "Knowledge Library",
 	"aboutTitle": "About Knowledge Libraries",
 	"whatIsKnowledgeLibrary": "What's Knowledge Library?",
-	"ragDescription": "Knowledge Libraries enable you to leverage both global libraries and create customized document collections for enhanced interactions with Elsa. These libraries serve as curated knowledge bases that allow you to receive more accurate, contextually relevant responses tailored to your specific regulatory needs. With flexible document management, you can add or remove documents based on your permission level, ensuring your library remains current and relevant to your work. Additionally, you can share customized libraries with colleagues while keeping sensitive departmental information protected and accessible only to authorized users. This functionality transforms Elsa from a general AI assistant into a specialized tool that understands the unique context and requirements of your regulatory work.",
+	"ragDescription": "Knowledge Libraries let you create curated knowledge bases. You can add or remove documents and share libraries with colleagues. Choose from the libraries below or create one.",
 	"subtitle": "Search, filter, and create new knowledge libraries.",
 	"newSource": {
 		"title": "New Knowledge Library",
@@ -66,7 +66,7 @@
 		"documentsDescription": "Documents currently embedded in this knowledge source.",
 		"failedToLoadDocuments": "Failed to load documents."
 	},
-		"permissions": {
+	"permissions": {
 		"title": "User Access",
 		"aboutTitle": "About User Access",
 		"description": "Knowledge Libraries by default are private, but they can be shared with others. Use the 'Add User' button to add other FDA employees with owner, editor, or read-only permissions. Please note that all users will be able to interact with documents uploaded to this workspace. Please ensure all members are authorized to view these materials before adding members. Remember, employees are responsible for protecting all FDA data, including confidential commercial information, trade secrets, internal or non-public FDA data and personally identifiable information, through appropriate access controls, in accordance with federal requirements."
