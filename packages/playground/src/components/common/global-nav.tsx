@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import {
-	BrainCircuit,
+	Book,
 	ComputerIcon,
 	MoreVertical,
 	PencilIcon,
@@ -370,7 +370,7 @@ export const GlobalNav = observer(() => {
 								to={"/knowledge"}
 								aria-label={"knowledgeLibrary"}
 							>
-								<BrainCircuit />
+								<Book />
 								{t("Knowledge Library")}
 							</Link>
 						</SidebarMenuButton>
