@@ -12,11 +12,14 @@
         "test:coverage": "vitest --coverage --watch=false"
     },
     "dependencies": {
+        "@lexical/react": "^0.39.0",
+        "@semoss/i18n": "workspace:*",
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",
         "@tailwindcss/vite": "^4.1.14",
         "dayjs": "1.11.8",
+        "lexical": "^0.39.0",
         "lucide-react": "^0.545.0",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",
@@ -28,18 +31,18 @@
         "tailwindcss": "^4.1.14"
     },
     "devDependencies": {
+        "@testing-library/jest-dom": "^6.6.3",
+        "@testing-library/react": "^16.2.0",
+        "@testing-library/user-event": "^14.4.3",
         "@types/react": "18.3.1",
         "@types/react-dom": "18.3.0",
         "@vitejs/plugin-react": "^4.6.0",
+        "@vitest/browser-playwright": "^4.0.0",
+        "@vitest/coverage-v8": "^4.0.0",
+        "@vitest/ui": "^4.0.0",
         "typescript": "~5.5.2",
         "vite": "^7.0.0",
         "vite-plugin-svgr": "^4.5.0",
-        "vitest": "^4.0.0",
-        "@vitest/ui": "^4.0.0",
-        "@vitest/coverage-v8": "^4.0.0",
-        "@vitest/browser-playwright": "^4.0.0",
-        "@testing-library/react": "^16.2.0",
-        "@testing-library/jest-dom": "^6.6.3",
-        "@testing-library/user-event": "^14.4.3"
+        "vitest": "^4.0.0"
     }
 }

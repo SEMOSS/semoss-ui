@@ -1,6 +1,8 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
+import { InsightProvider } from "@semoss/sdk/react";
 import {
 	ResizableHandle,
 	ResizablePanel,
@@ -8,50 +10,92 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { Room, RoomSidebar } from "@/components";
+import { RoomContent, RoomSidebar, SaveWorkspaceDialog } from "@/components";
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
-import { RoomStore } from "@/stores";
-
+import type { RoomStore } from "@/stores";
+import type { Engine } from "@/types";
 /**
  * The page for a room
  *
  * @component
  */
 export const RoomPage = observer(() => {
-	const { chat } = useChat();
-
-	const navigate = useNavigate();
+	const { t } = useTranslation("workspace");
 
 	// set the get the room based on the params
 	const { roomId } = useParams();
+	const { chat } = useChat();
+	// const { setBreadcrumbs } = useGlobalBreadcrumbs();
+	const navigate = useNavigate();
 
-	// create the room
-	const room = useMemo(() => {
-		if (!roomId) {
-			return null;
-		}
+	/**
+	 * State
+	 */
+	const [room, setRoom] = useState<RoomStore | null>(null);
+	const selectedModelRef = useRef<Engine>(chat.models.selected);
 
-		return new RoomStore(roomId);
-	}, [roomId]);
+	/**
+	 * Library hooks
+	 */
+	// set the breadcrumbs
+	const { setBreadcrumbs } = useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: t("breadcrumbs.home"),
+				path: "/",
+			},
+			{
+				name: room?.metadata?.name || t("breadcrumbs.room"),
+				path: `/room/${roomId}`,
+			},
+		],
+	});
 
 	/**
 	 * Effects
 	 */
+	// keep ref updated
+	useEffect(() => {
+		selectedModelRef.current = chat.models.selected;
+	}, [chat.models.selected]);
 
 	// load the room
 	useEffect(() => {
 		const loadRoom = async () => {
 			try {
-				await room.initialize();
-				try {
-					await chat.setSelectedModelById(room.modelId);
-				} catch {
-					// model id is invalid
-					toast.warning(
-						`The model previously selected for this room is no longer available.`,
-					);
-					room.setModel(chat.models?.selected?.app_id);
+				const room = await chat.loadRoom(roomId);
+
+				// update the model based on the room
+				if (!room.model) {
+					room.setModel(selectedModelRef.current);
+				} else {
+					chat.setSelectedModel(room.model);
 				}
+
+				if (room.options.workspace)
+					setBreadcrumbs([
+						{
+							name: t("breadcrumbs.home"),
+							path: "/",
+						},
+						{
+							name: t("breadcrumbs.agent"),
+							path: "/agent",
+						},
+						{
+							name:
+								room.options.workspace?.name ||
+								room.options.workspace.workspace_id,
+							path: `/agent/${room.options.workspace.workspace_id}`,
+						},
+						{
+							name: t("breadcrumbs.room"),
+							path: `/room/${room.roomId}`,
+						},
+					]);
+
+				// set the room
+				setRoom(room);
 			} catch (e) {
 				// if it doesn't load successfully, go back to home
 				toast.error(e.message);
@@ -59,39 +103,38 @@ export const RoomPage = observer(() => {
 			}
 		};
 
-		if (!room || room.isInitialized) {
-			return;
-		} else {
-			loadRoom();
-		}
+		loadRoom();
 	}, [
-		room,
+		roomId,
 		navigate,
-		chat.setSelectedModelById,
-		chat.models?.selected?.app_id,
+		chat.loadRoom,
+		chat.setSelectedModel,
+		setBreadcrumbs,
 	]);
 
-	// set the breadcrumbs
-	useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: room?.isInitialized
-				? room.metadata.name || "Room"
-				: "Loading",
-			path: `/room/${roomId}`,
-		},
-	]);
+	const { setNavbarActions } = useGlobalBreadcrumbs({});
 
-	if (!room && chat.isInitialized) {
-		// if the chat is initialized and there is no room, the room id is invalid - go back to home
-		return <Navigate to="/" replace={true} />;
-	}
+	const navbarActions = useMemo<React.ReactNode>(() => {
+		if (room?.options) {
+			return (
+				<SaveWorkspaceDialog
+					systemPrompt={room?.options?.instructions}
+					mcps={room?.options?.mcp}
+				/>
+			);
+		}
+	}, [room?.options]);
 
-	if (!room || !room.isInitialized) {
-		// room is valid, but not initialized yet
+	useEffect(() => {
+		setNavbarActions(navbarActions);
+
+		return () => {
+			setNavbarActions(null);
+		};
+	}, [navbarActions, setNavbarActions]);
+
+	// if there is no room, return null
+	if (!room) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
 				<Spinner />
@@ -100,26 +143,32 @@ export const RoomPage = observer(() => {
 	}
 
 	return (
-		<div className="flex h-full w-full flex-col overflow-hidden">
-			<ResizablePanelGroup
-				direction="horizontal"
-				className="w-full flex-1 overflow-hidden"
-			>
-				<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
-					<Room room={room} />
-				</ResizablePanel>
-				{room.sidebar.isOpen && (
-					<>
-						<ResizableHandle />
-						<ResizablePanel
-							className={"relative p-2"}
-							defaultSize={70}
-						>
-							<RoomSidebar room={room} />
-						</ResizablePanel>
-					</>
-				)}
-			</ResizablePanelGroup>
-		</div>
+		<InsightProvider
+			key={room.roomId}
+			options={{ insightId: room.insightId }}
+			destroyOnUnmount={false}
+		>
+			<div className="flex h-full w-full flex-col overflow-hidden">
+				<ResizablePanelGroup
+					direction="horizontal"
+					className="w-full flex-1 overflow-hidden"
+				>
+					<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
+						<RoomContent room={room} />
+					</ResizablePanel>
+					{room.sidebar.isOpen && (
+						<>
+							<ResizableHandle />
+							<ResizablePanel
+								className={"relative p-2"}
+								defaultSize={70}
+							>
+								<RoomSidebar room={room} />
+							</ResizablePanel>
+						</>
+					)}
+				</ResizablePanelGroup>
+			</div>
+		</InsightProvider>
 	);
 });

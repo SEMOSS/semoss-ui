@@ -1,5 +1,7 @@
 import { configure, makeAutoObservable } from "mobx";
+import type React from "react";
 import type { ThemeMap } from "@semoss/shared";
+import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 
 configure({
 	enforceActions: "always",
@@ -26,6 +28,11 @@ interface RootStoreInterface {
 		name: string;
 		path: string;
 	}[];
+
+	/**
+	 * Optional right-side actions to render in the main layout header
+	 */
+	navbarActions?: React.ReactNode | null;
 }
 
 /**
@@ -35,6 +42,7 @@ export class RootStore {
 	private _store: RootStoreInterface = {
 		isInitialized: false,
 		breadcrumbs: [],
+		navbarActions: null,
 		theme: {
 			name: "",
 			description: "",
@@ -56,10 +64,19 @@ export class RootStore {
 			footer: "",
 			landing: "",
 			sidebar: {
+				//workspaceAlias: "Workspace",
 				headerItems: [],
 				footerItems: [],
 			},
 			dialog: undefined,
+			toolAutoExecutionLimit: null,
+			defaultRoomSettings: {
+				model: undefined,
+				temperature: TEMPERATURE,
+				tokenLength: TOKEN_LENGTH,
+			},
+			allowedFileTypes: [],
+			defaultTools: [],
 		},
 	};
 
@@ -108,6 +125,13 @@ export class RootStore {
 	}
 
 	/**
+	 * Get the current navbar actions
+	 */
+	get navbarActions() {
+		return this._store.navbarActions;
+	}
+
+	/**
 	 * Set custom breadcrumbs
 	 */
 	setBreadcrumbs = (breadcrumbs: RootStore["breadcrumbs"]) => {
@@ -119,6 +143,20 @@ export class RootStore {
 	 */
 	clearBreadcrumbs = () => {
 		this._store.breadcrumbs = [];
+	};
+
+	/**
+	 * Set right-side navbar actions
+	 */
+	setNavbarActions = (actions: React.ReactNode | null) => {
+		this._store.navbarActions = actions;
+	};
+
+	/**
+	 * Clear right-side navbar actions
+	 */
+	clearNavbarActions = () => {
+		this._store.navbarActions = null;
 	};
 
 	/**
@@ -165,8 +203,26 @@ export class RootStore {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),
 			},
-
 			dialog: theme?.dialog || this._store.theme.dialog,
+			defaultRoomSettings: {
+				...this._store.theme.defaultRoomSettings,
+				...(theme?.defaultRoomSettings || {}),
+			},
+			toolAutoExecutionLimit:
+				theme?.toolAutoExecutionLimit ||
+				this._store.theme.toolAutoExecutionLimit,
+			allowedFileTypes:
+				theme?.allowedFileTypes ||
+				this._store.theme.allowedFileTypes ||
+				[],
+			defaultTools: [
+				...new Map(
+					[
+						...this._store.theme.defaultTools,
+						...(theme?.defaultTools || []),
+					].map((tool) => [tool.id, tool]),
+				).values(),
+			],
 		};
 
 		// apply the theme to document root

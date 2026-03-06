@@ -1,5 +1,6 @@
 import type React from "react";
 import { useId, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Dialog,
@@ -38,10 +39,8 @@ const getStepDetailsDefaults = (
 			parameters: {},
 			rationaleForStep: "",
 			_meta: {
-				map: {
-					SMSS_PROJECT_NAME: "",
-					SMSS_PROJECT_ID: "",
-				},
+				SMSS_PROJECT_NAME: "",
+				SMSS_PROJECT_ID: "",
 			},
 		};
 	} else if (type === "llm_reasoning") {
@@ -79,6 +78,7 @@ interface EditStepOverlayProps {
 }
 
 export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
+	const { t } = useTranslation("common");
 	const {
 		mode,
 		current = {
@@ -113,8 +113,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 		step.description.trim() === "" ||
 		!step.details.stepType ||
 		(step.details.stepType === "tool_call" &&
-			(!step.details._meta.map.SMSS_PROJECT_ID ||
-				!step.details.tool_name)) ||
+			(!step.details._meta.SMSS_PROJECT_ID || !step.details.tool_name)) ||
 		(step.details.stepType === "llm_reasoning" &&
 			step.details.prompt.trim() === "") ||
 		step.details.stepType === "human_intervention";
@@ -126,13 +125,19 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 				className="sm:max-w-4xl"
 			>
 				<DialogHeader>
-					<DialogTitle>{mode} Step</DialogTitle>
+					<DialogTitle>
+						{mode === "New"
+							? t("plan.newStep")
+							: t("plan.editStep")}
+					</DialogTitle>
 				</DialogHeader>
 				<form>
 					<FieldSet>
 						<FieldGroup>
 							<Field>
-								<FieldLabel htmlFor={nameId}>Name</FieldLabel>
+								<FieldLabel htmlFor={nameId}>
+									{t("labels.name")}
+								</FieldLabel>
 								<Input
 									id={nameId}
 									value={step.step_name}
@@ -146,7 +151,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 							</Field>
 							<Field>
 								<FieldLabel htmlFor={descriptionId}>
-									Description
+									{t("labels.description")}
 								</FieldLabel>
 								<Textarea
 									id={descriptionId}
@@ -161,7 +166,9 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 								/>
 							</Field>
 							<Field>
-								<FieldLabel htmlFor={typeId}>Type</FieldLabel>
+								<FieldLabel htmlFor={typeId}>
+									{t("labels.type")}
+								</FieldLabel>
 								<Select
 									value={step.type}
 									onValueChange={(value) => {
@@ -175,17 +182,21 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 									}}
 								>
 									<SelectTrigger>
-										<SelectValue placeholder="Select type" />
+										<SelectValue
+											placeholder={t("plan.selectType")}
+										/>
 									</SelectTrigger>
 									<SelectContent>
 										<SelectGroup>
-											<SelectLabel>Type</SelectLabel>
+											<SelectLabel>
+												{t("labels.type")}
+											</SelectLabel>
 
 											<SelectItem value="tool_call">
-												Tool
+												{t("plan.tool")}
 											</SelectItem>
 											<SelectItem value="llm_reasoning">
-												AI
+												{t("plan.ai")}
 											</SelectItem>
 											{/* <SelectItem value="human_intervention">
 												User
@@ -241,7 +252,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 							onOpenChange(false);
 						}}
 					>
-						Cancel
+						{t("buttons.cancel")}
 					</Button>
 					<Button
 						variant="default"
@@ -254,7 +265,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 							onOpenChange(false);
 						}}
 					>
-						Confirm
+						{t("buttons.confirm")}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

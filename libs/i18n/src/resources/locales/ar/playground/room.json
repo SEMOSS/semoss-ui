@@ -1,0 +1,96 @@
+{
+	"welcome": "مرحباً",
+	"settings": {
+		"title": "إعدادات الغرفة",
+		"description": "تحديث إعدادات الغرفة وتعديل سلوك الدردشة",
+		"open": "فتح الإعدادات",
+		"close": "إغلاق",
+		"edit": "تعديل الإعدادات"
+	},
+	"form": {
+		"modelLabel": "النموذج",
+		"instructionsLabel": "التعليمات",
+		"knowledgeLabel": "المعرفة",
+		"toolboxLabel": "صندوق الأدوات",
+		"maxTokenLabel": "الحد الأقصى للرموز",
+		"temperatureLabel": "درجة الحرارة"
+	},
+	"modes": {
+		"ask": "اسأل",
+		"plan": "خطة"
+	},
+	"workspace": {
+		"publishTooltip": "نشر كوكيل",
+		"publishTitle": "نشر الوكيل",
+		"publishDescription": "نشر وكيل جديد بتكوين الغرفة الحالي، بما في ذلك التعليمات وMCPs.",
+		"nameLabel": "الاسم *",
+		"namePlaceholder": "أدخل اسم الوكيل",
+		"descriptionLabel": "الوصف",
+		"descriptionPlaceholder": "أدخل وصف الوكيل",
+		"cancelButton": "إلغاء",
+		"publishingButton": "جارٍ النشر...",
+		"publishButton": "نشر الوكيل",
+		"nameRequired": "اسم الوكيل مطلوب",
+		"publishSuccess": "تم إنشاء الوكيل بنجاح",
+		"publishError": "فشل إنشاء الوكيل: {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "أدخل النص",
+		"thinking": "جارٍ التفكير...",
+		"menuPrompt": "/ لفتح القائمة",
+		"openSettings": "فتح الإعدادات",
+		"recordLabel": "تسجيل النموذج",
+		"stopRecording": "إيقاف التسجيل",
+		"record": "تسجيل",
+		"askLabel": "اسأل الذكاء الاصطناعي",
+		"thinkingTooltip": "جارٍ التفكير",
+		"enterQuestion": "الرجاء إدخال سؤال",
+		"completeTool": "يرجى إكمال الأداة (الأدوات) للمتابعة",
+		"ask": "اسأل",
+		"errorProcessing": "خطأ في معالجة الدردشة"
+	},
+	"content": {
+		"scrollToTop": "انتقل إلى الأعلى",
+		"scrollToBottom": "انتقل إلى الأسفل",
+		"errorDefault": "غير قادر على معالجة الطلب. يرجى التحقق من اتصالك، ونسخ رسالتك، والتحديث."
+	},
+	"inlineTool": {
+		"openInSidebar": "فتح في الشريط الجانبي",
+		"minimize": "تصغير",
+		"maximize": "تكبير",
+		"close": "إغلاق"
+	},
+	"fileExplorer": {
+		"copyPath": "نسخ المسار",
+		"download": "تنزيل",
+		"delete": "حذف",
+		"copyFailed": "فشل النسخ إلى الحافظة"
+	},
+	"menuToolbox": {
+		"addToolbox": "إضافة صندوق أدوات",
+		"searchPlaceholder": "البحث في صناديق الأدوات",
+		"notFound": "غير موجود",
+		"allTools": "جميع الأدوات"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "إضافة معرفة",
+		"searchPlaceholder": "البحث في المعرفة",
+		"notFound": "غير موجود"
+	},
+	"menuWorkspace": {
+		"selectAgent": "اختر وكيل",
+		"searchPlaceholder": "البحث في مساحات العمل",
+		"notFound": "غير موجود"
+	},
+	"menuUpload": {
+		"attachDocument": "إرفاق مستند"
+	},
+	"menuFileExplorer": {
+		"name": "مستكشف الملفات",
+		"open": "فتح مستكشف الملفات",
+		"close": "إغلاق مستكشف الملفات"
+	},
+	"errors": {
+		"createRoom": "حدث خطأ أثناء إنشاء الغرفة. الخطأ: {{message}}"
+	}
+}

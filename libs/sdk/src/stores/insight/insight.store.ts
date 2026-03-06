@@ -5,7 +5,11 @@ import {
 	logout,
 	oauth,
 	runPixel,
+	runPixelAsync,
 	upload,
+	uploadApp,
+	uploadEngine,
+	uploadInsight,
 } from "../../api";
 import { Env } from "../../env";
 import type { MCPToolResponse, Script } from "../../types";
@@ -55,6 +59,9 @@ interface InsightStoreInterface {
 		};
 	} | null;
 
+	/** User meta data */
+	meta: Record<string, unknown>;
+
 	/** Options assocaited with the insight */
 	options: {
 		/** Id of an app if associated with the insight */
@@ -70,12 +77,13 @@ interface InsightStoreInterface {
 
 export class InsightStore {
 	private _store: InsightStoreInterface = {
-		insightId: "",
+		insightId: "new",
 		isInitialized: false,
 		isAuthorized: false,
 		isReady: false,
 		error: null,
 		system: null,
+		meta: {},
 		options: {
 			appId: "",
 			python: null,
@@ -124,6 +132,54 @@ export class InsightStore {
 		return this._store.system;
 	}
 
+	/**
+	 * Update user meta with a model selection
+	 * @param modelName - The model name (e.g., "text-generation-model", "code-generation-model")
+	 * @param modelId - The model ID to set
+	 */
+	updateUserDefaultModel(modelName: string, modelId: string): void {
+		this._store.meta = {
+			...this._store.meta,
+			[modelName]: modelId,
+		};
+	}
+
+	/**
+	 * Get the default Text Generation model ID (UUID) from user meta
+	 */
+	get defaultTextGenerationModel(): string {
+		const meta = this._store.meta;
+		if (meta && typeof meta === "object") {
+			const tg = meta["text-generation-model"];
+			if (tg) {
+				return typeof tg === "string" ? tg : "";
+			}
+		}
+		return "";
+	}
+
+	/**
+	 * Get the default Code Generation model ID (UUID) from user meta
+	 */
+	get defaultCodeGenerationModel(): string {
+		const meta = this._store.meta;
+		if (meta && typeof meta === "object") {
+			const tg = meta["code-generation-model"];
+			if (tg) {
+				return typeof tg === "string" ? tg : "";
+			}
+		}
+		return "";
+	}
+
+	/**
+	 * Set the user meta with a full meta record
+	 * @param meta - full meta record to store
+	 */
+	setUserDefaultModel(meta: Record<string, unknown>): void {
+		this._store.meta = { ...meta };
+	}
+
 	/** Methods */
 	/**
 	 * Initialize the insight
@@ -157,6 +213,11 @@ export class InsightStore {
 		 * Defaults to false
 		 */
 		disableRoom?: boolean;
+
+		/**
+		 * Connect this insight to an existing insight ID
+		 */
+		insightId?: string;
 	}): Promise<{
 		tool: (typeof Env)["TOOL"] | null;
 	}> => {
@@ -172,7 +233,14 @@ export class InsightStore {
 					? options.python
 					: false,
 			disableRoom: options?.disableRoom || false,
+			insightId: options?.insightId || "",
 		};
+
+		// set the insight
+		this._store.insightId = "";
+		if (merged.insightId) {
+			this._store.insightId = merged.insightId;
+		}
 
 		// save the initial appId
 		this._store.options.appId = "";
@@ -315,6 +383,7 @@ export class InsightStore {
 					theme: {
 						playground: {},
 					},
+					systemDate: "",
 				},
 			};
 
@@ -376,7 +445,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		// create the new insight
 		const { insightId, errors } = await runPixel<[Record<string, unknown>]>(
 			pixel,
-			"new",
+			this._store.insightId,
 		);
 
 		// log errors if it exists
@@ -574,6 +643,27 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
+		 * Run a pixel asynchronously against the insight
+		 * @param pixel - pixel command to run asynchronously
+		 * @returns Job ID for tracking the async execution
+		 */
+		runAsync: async (pixel: string) => {
+			try {
+				const { jobId } = await runPixelAsync(
+					pixel,
+					this._store.insightId,
+				);
+
+				return { jobId };
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No response");
+		},
+
+		/**
 		 * Run a pixel against the insight
 		 * @param pixel - pixel command to run
 		 */
@@ -614,7 +704,11 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 * Send a MCP tool response to the playground
 		 * @param mcpToolResponse - response to send
 		 */
-		sendMCPResponseToPlayground: (mcpToolResponse: string) => {
+		sendMCPResponseToPlayground: (
+			mcpToolResponse: string,
+			mcpToolStatus: MCPToolResponse["tool_status"] = "success",
+			executedParameters: Record<string, unknown> = {},
+		) => {
 			if (!Env.TOOL) {
 				throw new Error("No MCP tool execution context found");
 			} else if (
@@ -636,6 +730,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						name: Env.TOOL.name,
 						response: mcpToolResponse,
 						roomId: Env.TOOL.roomId,
+						tool_status: mcpToolStatus,
+						executedParameters: executedParameters,
 					} satisfies MCPToolResponse,
 				},
 				"*",
@@ -651,18 +747,28 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			name: string,
 			parameters: Record<string, unknown>,
 		) => {
-			const { pixelReturn } = await this.actions.run<[string]>(
+			const { pixelReturn } = await this.actions.run<[unknown]>(
 				`RunMCPTool(project = [ "${this._store.options.appId}" ], function=[ "${name}" ], paramValues=[ ${JSON.stringify(parameters)} ] );`,
 			);
 
-			const { output, operationType } = pixelReturn[0];
-			if (!output || !operationType.indexOf("MCP_TOOL_EXECUTION")) {
+			const operationType = pixelReturn[0].operationType || "";
+			const rawOutput = pixelReturn[0].output;
+			const output =
+				typeof rawOutput === "string"
+					? rawOutput
+					: JSON.stringify(rawOutput);
+
+			if (!output || operationType.indexOf("MCP_TOOL_EXECUTION") < 0) {
 				throw new Error("Error running MCP tool");
 			}
 
 			if (Env.TOOL) {
 				try {
-					this.actions.sendMCPResponseToPlayground(output);
+					this.actions.sendMCPResponseToPlayground(
+						output,
+						"success",
+						parameters,
+					);
 				} catch (e) {
 					console.warn(
 						`Failed to send MCP response to playground${e.message ? `: ${e.message}` : ""}`,
@@ -711,6 +817,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
+		 * @deprecated use uploadInsight from sdk/api/insight
 		 * Upload a file to the project space
 		 *
 		 * @param files- file objects to upload
@@ -765,6 +872,84 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 			// throw an error
 			throw new Error("No download");
+		},
+
+		/**
+		 * App
+		 */
+		/**
+		 * Upload file(s) to an app
+		 * @param appId
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadApp: async (
+			appId: string,
+			path: string,
+			files: File | File[],
+		) => {
+			try {
+				return await uploadApp(
+					appId,
+					path,
+					files,
+					this._store.insightId,
+				);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
+		},
+		/**
+		 * Engine
+		 */
+		/**
+		 * Upload file(s) to an engine
+		 * @param engineId
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadEngine: async (
+			engineId: string,
+			path: string,
+			files: File | File[],
+		) => {
+			try {
+				return await uploadEngine(
+					engineId,
+					path,
+					files,
+					this._store.insightId,
+				);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
+		},
+		/**
+		 * Insight
+		 */
+		/**
+		 * Upload file(s) to an insight
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadInsight: async (path: string, files: File | File[]) => {
+			try {
+				return await uploadInsight(this._store.insightId, path, files);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
 		},
 	};
 }

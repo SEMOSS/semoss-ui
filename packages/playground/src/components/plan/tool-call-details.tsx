@@ -1,5 +1,6 @@
 import type React from "react";
 import { useId, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Field,
@@ -26,6 +27,7 @@ interface ToolCallDetailsProps {
 }
 
 export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
+	const { t } = useTranslation("common");
 	const { details, onDetailsChange } = props;
 
 	const toolboxId = useId();
@@ -70,7 +72,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 					}}
 				>
 					<SelectTrigger id={toolboxId}>
-						<SelectValue placeholder="Select MCP" />
+						<SelectValue placeholder={t("plan.selectMcp")} />
 					</SelectTrigger>
 					<SelectContent>
 						<SelectGroup>
@@ -86,7 +88,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 				</Select>
 			</Field>
 			<Field>
-				<FieldLabel htmlFor={toolId}>Tool</FieldLabel>
+				<FieldLabel htmlFor={toolId}>{t("plan.tool")}</FieldLabel>
 				<Select
 					value={details.tool_name}
 					onValueChange={(value) => {
@@ -95,20 +97,18 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 							tool_name: value,
 							title: toolbox.name,
 							_meta: {
-								map: {
-									SMSS_PROJECT_ID: toolbox.id,
-									SMSS_PROJECT_NAME: toolbox.name,
-								},
+								SMSS_PROJECT_ID: toolbox.id,
+								SMSS_PROJECT_NAME: toolbox.name,
 							},
 						});
 					}}
 				>
 					<SelectTrigger id={toolId}>
-						<SelectValue placeholder="Select Tool" />
+						<SelectValue placeholder={t("plan.selectTool")} />
 					</SelectTrigger>
 					<SelectContent>
 						<SelectGroup>
-							<SelectLabel>Tool</SelectLabel>
+							<SelectLabel>{t("plan.tool")}</SelectLabel>
 							{getMCP.data.tools.map((tool) => (
 								<SelectItem key={tool.name} value={tool.name}>
 									{tool.title}

@@ -1,0 +1,69 @@
+{
+	"title": "مخازن المعرفة",
+	"aboutTitle": "حول مخازن المعرفة",
+	"whatIsKnowledgeStore": "ما هو مخزن المعرفة؟",
+	"ragDescription": "دردشة RAG (التوليد المعزز بالاسترجاع) تعزز محادثات الذكاء الاصطناعي من خلال تأسيس الاستجابات على بيانات موثوقة. اختر من المكتبات أدناه لتلقي استجابة تشير إلى تلك المستندات بشكل خاص.",
+	"subtitle": "البحث والتصفية وإنشاء مصادر معرفة جديدة.",
+	"newSource": {
+		"title": "مصدر معرفة جديد",
+		"description": "رفع المستندات لإنشاء مصدر معرفة جديد"
+	},
+	"form": {
+		"nameLabel": "الاسم",
+		"descriptionLabel": "الوصف",
+		"embeddingLabel": "التضمين",
+		"filesLabel": "الملفات",
+		"descriptionPlaceholder": "أدخل الوصف"
+	},
+	"tabs": {
+		"all": "الكل",
+		"global": "المخازن العالمية",
+		"mine": "مخازني"
+	},
+	"filters": {
+		"allCenters": "جميع المراكز/المكاتب",
+		"all": "الكل"
+	},
+	"actions": {
+		"createSource": "إنشاء مصدر معرفة",
+		"viewDocuments": "عرض المستندات",
+		"newChat": "دردشة جديدة"
+	},
+	"messages": {
+		"noDescription": "لا يوجد وصف",
+		"noLibrariesFound": "لم يتم العثور على مكتبات مستندات تطابق معاييرك.",
+		"loadingDocuments": "جارٍ تحميل المستندات…",
+		"noDocuments": "لم يتم العثور على مستندات."
+	},
+	"documents": {
+		"title": "المستندات",
+		"description": "الملفات المرتبطة حالياً بمصدر المعرفة هذا."
+	},
+	"embedDocuments": {
+		"title": "تضمين المستندات في مصدر موجود",
+		"description": "رفع المستندات لتضمينها في مصدر المعرفة هذا.",
+		"documents": "المستندات",
+		"selectFiles": "انقر لتحديد الملفات أو اسحب وأفلت",
+		"embedButton": "تضمين المستندات",
+		"embedding": "جارٍ التضمين...",
+		"removeFile": "إزالة الملف"
+	},
+	"embedMessages": {
+		"selectKnowledgeSource": "الرجاء اختيار مصدر معرفة",
+		"selectDocument": "الرجاء اختيار مستند واحد على الأقل",
+		"embedSuccess": "تم تضمين المستندات بنجاح",
+		"embedFailed": "فشل تضمين المستندات"
+	},
+	"breadcrumbs": {
+		"home": "الرئيسية",
+		"knowledgeStores": "مخازن المعرفة",
+		"loading": "جارٍ التحميل"
+	},
+	"detail": {
+		"knowledge": "المعرفة",
+		"embedDocuments": "تضمين المستندات",
+		"newKnowledgeCreated": "تم إنشاء مصدر معرفة جديد. يمكنك الآن تحديده لتضمين مستندات إضافية.",
+		"documentsDescription": "المستندات المضمنة حالياً في مصدر المعرفة هذا.",
+		"failedToLoadDocuments": "فشل تحميل المستندات."
+	}
+}

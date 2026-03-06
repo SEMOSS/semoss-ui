@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import { ScrollArea, Spinner, toast } from "@semoss/ui/next";
 import { WorkspaceForm } from "@/components";
@@ -12,6 +13,7 @@ import type { Workspace } from "@/types";
  * @component
  */
 export const EditWorkspacePage = observer(() => {
+	const { t } = useTranslation("workspace");
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 
@@ -22,40 +24,44 @@ export const EditWorkspacePage = observer(() => {
 			data: null,
 			onError: (_d, e) => {
 				toast.error(
-					`Failed to load workspace: ${e instanceof Error ? e.message : "Unknown error"}`,
+					t("edit.failedToLoad", {
+						error: e instanceof Error ? e.message : "Unknown error",
+					}),
 				);
 			},
 		},
 	);
 
 	// set the breadcrumbs
-	useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: "Workspace",
-			path: "/workspace",
-		},
-		{
-			name:
-				getWorkspace.status === "SUCCESS"
-					? getWorkspace.data.name
-					: "Loading",
-			path: `/workspace/${workspaceId}`,
-		},
-		{
-			name: "Edit",
-			path: `/workspace/${workspaceId}/edit`,
-		},
-	]);
+	useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: t("breadcrumbs.home"),
+				path: "/",
+			},
+			{
+				name: t("breadcrumbs.agent"),
+				path: "/agent",
+			},
+			{
+				name:
+					getWorkspace.status === "SUCCESS"
+						? getWorkspace.data.name
+						: t("breadcrumbs.loading"),
+				path: `/agent/${workspaceId}`,
+			},
+			{
+				name: t("breadcrumbs.edit"),
+				path: `/agent/${workspaceId}/edit`,
+			},
+		],
+	});
 
 	const handleClose = (shouldRefresh?: string) => {
 		if (shouldRefresh) {
-			navigate(`/workspace/${workspaceId}`);
+			navigate(`/agent/${workspaceId}`);
 		} else {
-			navigate(`/workspace/${workspaceId}`);
+			navigate(`/agent/${workspaceId}`);
 		}
 	};
 
@@ -73,10 +79,10 @@ export const EditWorkspacePage = observer(() => {
 				<div className="mx-auto flex h-full w-full max-w-[950px] flex-col gap-8 px-12 pt-8 pb-4">
 					<div>
 						<h1 className="font-semibold text-2xl">
-							Error Loading Workspace
+							{t("edit.errorTitle")}
 						</h1>
 						<p className="text-base text-muted-foreground">
-							Failed to load the workspace details
+							{t("edit.errorDescription")}
 						</p>
 					</div>
 				</div>
@@ -90,10 +96,10 @@ export const EditWorkspacePage = observer(() => {
 				<div className="flex flex-row gap-2">
 					<div className="space-y-2.5">
 						<div className="font-semibold text-2xl text-foreground leading-none">
-							Edit Workspace
+							{t("edit.title")}
 						</div>
 						<div className="text-base text-muted-foreground">
-							Update your workspace details
+							{t("edit.subtitle")}
 						</div>
 					</div>
 					<div className="flex-1" />

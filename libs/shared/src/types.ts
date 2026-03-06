@@ -83,5 +83,74 @@ export interface ThemeMap {
 			title: string;
 			content: string;
 		};
+
+		/**
+		 * The default settings for new rooms
+		 */
+		defaultRoomSettings?: {
+			model?: Engine;
+			temperature?: number;
+			tokenLength?: number;
+		};
+
+		/**
+		 * The number of tools that should be auto-executed at once
+		 */
+		toolAutoExecutionLimit?: number;
+
+		/**
+		 * The uploaded files that should be added to the file tool in the room
+		 */
+		allowedFileTypes?: string[];
+
+		/**
+		 * Default tools to show in the room
+		 */
+		defaultTools: {
+			/** Type of the mcp */
+			type:
+				| "PROJECT"
+				| "STORAGE"
+				| "DATABASE"
+				| "FUNCTION"
+				| "MODEL"
+				| "VECTOR";
+
+			/** Id of the mcp */
+			id: string;
+
+			/** Name of the mcp */
+			name: string;
+		}[];
 	};
+}
+
+export type Role = "OWNER" | "EDIT" | "READ_ONLY";
+
+/**
+ * User permission entry for adding/editing permissions
+ */
+export interface PostUser {
+	userid: string;
+	permission: Role;
+}
+
+/**
+ * User details with permission information
+ */
+export interface User {
+	date_added?: string;
+	name: string;
+	permission: Role;
+	id: string;
+	type?: string;
+	email?: string;
+}
+
+/**
+ * User access request for approval
+ */
+export interface UserAccessRequest {
+	id: string;
+	permission: Role;
 }

@@ -52,9 +52,18 @@ export const workspaceToApp = (
 /**
  * Convert the MCP into a platform url
  */
-export const mcpToPlatformUrl = (mcp: Pick<MCP, "type" | "id">): string => {
-	if (mcp.type === "PROJECT") {
-		return `${PLATFORM_URL}/#/app/${mcp.id}`;
+export const mcpToPlatformUrl = (
+	mcp:
+		| Pick<MCP, "type" | "id">
+		| {
+				engine_id: string;
+				engine_type: string;
+		  },
+): string => {
+	const id = "id" in mcp ? mcp.id : mcp.engine_id;
+	const type = "type" in mcp ? mcp.type : mcp.engine_type;
+	if (type === "PROJECT") {
+		return `${PLATFORM_URL}/#/app/${id}`;
 	}
-	return `${PLATFORM_URL}/#/engine/${mcp.id}`;
+	return `${PLATFORM_URL}/#/engine/${type.toLowerCase()}/${id}`;
 };
