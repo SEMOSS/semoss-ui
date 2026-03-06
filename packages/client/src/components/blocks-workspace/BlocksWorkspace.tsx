@@ -17,10 +17,7 @@ import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { useWorkspace } from "@/hooks";
 import { AppDetailPage } from "@/pages/app";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
-import {
-	TerminalPanel,
-	WorkspaceManager,
-} from "../../components/workspace";
+import { TerminalPanel, WorkspaceManager } from "../../components/workspace";
 import { DesignerContext } from "../../contexts";
 import { MCPJsonEditor } from "../shared";
 import { GraphPanel } from "../workspace/panels/GraphPanel";
