@@ -2,6 +2,10 @@ import { ClearRounded } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
+	getProjectUsers,
+	getProjectUsersNoCredentials,
+} from "@semoss/shared";
+import {
 	Autocomplete,
 	Box,
 	Button,
@@ -13,7 +17,13 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
+import {
+	addEngineUserPermissions,
+	editEngineUserPermissions,
+	getEngineUsers,
+	getUserEnginePermission,
+} from "@/api";
+import { usePixel, useSettings } from "@/hooks";
 import { permissionPriorityMapper } from "@/utility/general";
 import { MembersAddOverlayUser } from "./members-add-overlay-user";
 import type { SETTINGS_ROLE } from "./settings.types";
@@ -117,14 +127,9 @@ export const MemberDependencyOverlay = (
 		// type,
 		id,
 		open = false,
-		userPermission,
 		onClose = () => null,
-		user,
-		setAddModalUser,
 		onChange = () => null,
-		userData,
 	} = props;
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -137,12 +142,9 @@ export const MemberDependencyOverlay = (
 
 	/** Add Member State */
 	const [selectedMember, setSelectedMember] = useState<User | null>(null);
-	const [loading, setLoading] = useState(false);
 	const [users, setUsers] = useState<User[]>([]);
-	const [isScrollBottom, setIsScrollBottom] = useState(false);
 	const [search, setSearch] = useState<string>("");
 	const [offset, setOffset] = useState(0);
-	const [hasMore, setHasMore] = useState(true);
 	const [searchLoading, setSearchLoading] = useState(false);
 	const [renderedMembers, setRenderedMembers] = useState([]);
 
@@ -157,7 +159,6 @@ export const MemberDependencyOverlay = (
 			setRenderedMembers([]);
 			setSearch("");
 			setOffset(0);
-			setHasMore(true);
 		}
 	}, [open]);
 
@@ -189,7 +190,7 @@ export const MemberDependencyOverlay = (
 				try {
 					let users = [];
 					// Engine (DATABASE, STORAGE, MODEL, VECTOR, FUNCTION, etc.)
-					const result = await monolithStore.getEngineUsers(
+					const result = await getEngineUsers(
 						adminMode,
 						dep.engine_id,
 						"",
@@ -222,8 +223,6 @@ export const MemberDependencyOverlay = (
 	// debounce the input
 	const debouncedSearch = useDebouncedValue(search);
 
-	const [infiniteOn, setInfiniteOn] = useState(true);
-
 	const [pendingPermissions, setPendingPermissions] = useState<
 		Record<string, string>
 	>({});
@@ -241,7 +240,7 @@ export const MemberDependencyOverlay = (
 			await Promise.all(
 				allDependencies.map(async (dep) => {
 					try {
-						const res = await monolithStore.getUserEnginePermission(
+						const res = await getUserEnginePermission(
 							dep.engine_id,
 						);
 						perms[dep.engine_id] = res?.permission || "";
@@ -253,23 +252,7 @@ export const MemberDependencyOverlay = (
 			setLoggedInUserEnginePermissions(perms);
 		};
 		fetchPermissions();
-	}, [allDependencies, monolithStore]);
-
-	const nearBottom = (target: EventTarget | null) => {
-		if (
-			!target ||
-			typeof (target as unknown as { scrollHeight: number })
-				.scrollHeight !== "number"
-		)
-			return false;
-		const el = target as unknown as {
-			scrollHeight: number;
-			scrollTop: number;
-			clientHeight: number;
-		};
-		const diff = Math.round(el.scrollHeight - el.scrollTop);
-		return diff - 25 <= el.clientHeight;
-	};
+	}, [allDependencies]);
 
 	useEffect(() => {
 		if (!open) return;
@@ -281,26 +264,24 @@ export const MemberDependencyOverlay = (
 			try {
 				let all = [];
 				const [noCred, cred] = await Promise.all([
-					monolithStore.getProjectUsersNoCredentials(
-						adminMode,
+					getProjectUsersNoCredentials(
 						id,
+						adminMode,
+						debouncedSearch || "",
 						AUTOCOMPLETE_LIMIT,
 						offset,
-						debouncedSearch || "",
 					),
-					monolithStore.getProjectUsers(
-						adminMode,
+					getProjectUsers(
 						id,
+						adminMode,
 						debouncedSearch || "",
 						"", // permission
-						offset,
 						AUTOCOMPLETE_LIMIT,
+						offset,
 					),
 				]);
-				all = [...(noCred?.data || []), ...(cred?.members || [])];
+				all = [...(noCred || []), ...(cred?.members || [])];
 				if (!cancelled) {
-					if (all.length < AUTOCOMPLETE_LIMIT) setInfiniteOn(false);
-
 					if (
 						renderedMembers.length >= AUTOCOMPLETE_LIMIT &&
 						offset > 0
@@ -336,16 +317,12 @@ export const MemberDependencyOverlay = (
 				{!selectedMember && (
 					<Autocomplete
 						label="Search"
-						loading={loading}
+						loading={searchLoading}
 						multiple={false}
 						freeSolo={false}
 						filterOptions={(x) => x}
 						options={users}
 						includeInputInList={true}
-						ListboxProps={{
-							onScroll: ({ target }) =>
-								setIsScrollBottom(nearBottom(target)),
-						}}
 						value={selectedMember}
 						inputValue={search}
 						getOptionLabel={(option) =>
@@ -360,13 +337,12 @@ export const MemberDependencyOverlay = (
 							"id" in value &&
 							option.id === value.id
 						}
-						onInputChange={(event, newValue) => {
+						onInputChange={(_event, newValue) => {
 							setSearch(newValue || "");
 							setOffset(0);
 							setUsers([]);
-							setHasMore(true);
 						}}
-						onChange={(event, newValue) => {
+						onChange={(_event, newValue) => {
 							if (
 								typeof newValue === "object" &&
 								newValue !== null &&
@@ -835,20 +811,18 @@ export const MemberDependencyOverlay = (
 							let response;
 							if (userDependencies.includes(engineId)) {
 								// Update permission
-								response =
-									await monolithStore.editEngineUserPermissions(
-										adminMode,
-										engineId,
-										userObj,
-									);
+								response = await editEngineUserPermissions(
+									adminMode,
+									engineId,
+									userObj,
+								);
 							} else {
 								// Add user to engine
-								response =
-									await monolithStore.addEngineUserPermissions(
-										adminMode,
-										engineId,
-										userObj,
-									);
+								response = await addEngineUserPermissions(
+									adminMode,
+									engineId,
+									userObj,
+								);
 							}
 							if (response?.data?.success) {
 								// Only update local state for successful calls
