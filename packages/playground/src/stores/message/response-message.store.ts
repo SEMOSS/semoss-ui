@@ -400,13 +400,11 @@ downloadResponse = async (format: "word" | "pdf") => {
 						tool.status === "LOADING" ||
 						tool.status === "INITIAL"
 					) {
-						console.log("unfinished", tool);
 						return true;
 					}
 				}
 			}
 		}
-
 		return false;
 	}
 
@@ -499,7 +497,7 @@ downloadResponse = async (format: "word" | "pdf") => {
 	saveToolExecution = async (
 		tool: ToolStore,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled",
+		toolStatus: "success" | "error" | "cancelled" = "success",
 		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		const room = this.room;
