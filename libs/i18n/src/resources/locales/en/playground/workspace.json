@@ -112,6 +112,6 @@
 	},
 	"new": {
 		"title": "New Agent",
-		"subtitle": "Create a new agent to get started"
+		"subtitle": "Create an agent with custom instructions and access to tools and resources"
 	}
 }

@@ -202,9 +202,10 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	return (
 		<TooltipProvider>
 			<form onSubmit={onSubmit} className="flex w-full flex-col gap-6">
-				{/* Basic info: Name, Description, Tags, Favorite — always above tabs */}
+				{/* Basic info: Name + Tags on one row, Description below */}
 				<FieldGroup>
 					<div className="flex items-start gap-3">
+						{/* Name */}
 						<div className="flex-1">
 							<Field>
 								<FieldLabel htmlFor={nameId}>
@@ -222,6 +223,51 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 								/>
 							</Field>
 						</div>
+
+						{/* Tags — inline badge input */}
+						<div className="w-1/3 shrink-0">
+							<Field>
+								<FieldLabel htmlFor={tagInputId}>
+									Tags
+								</FieldLabel>
+								<div className="flex min-h-[38px] flex-wrap items-center gap-1.5 rounded-md border border-input px-2 py-1.5">
+									{tags.map((tag) => (
+										<Badge
+											key={tag}
+											variant="secondary"
+											className="gap-1 text-xs"
+										>
+											{tag}
+											<button
+												type="button"
+												onClick={() => removeTag(tag)}
+												className="ml-0.5 rounded-full hover:text-destructive"
+												aria-label={`Remove tag ${tag}`}
+											>
+												<X className="h-3 w-3" />
+											</button>
+										</Badge>
+									))}
+									<input
+										id={tagInputId}
+										className="min-w-[60px] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+										placeholder={
+											tags.length === 0
+												? "Add tags..."
+												: ""
+										}
+										value={tagInput}
+										disabled={isLoading}
+										onChange={(e) =>
+											setTagInput(e.target.value)
+										}
+										onKeyDown={handleTagKeyDown}
+										onBlur={addTag}
+									/>
+								</div>
+							</Field>
+						</div>
+
 						{/* Favorite toggle — only shown when editing */}
 						{!isNew && values?.workspace_id && (
 							<div className="mt-6 flex items-center gap-2">
@@ -276,56 +322,6 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 							data-testid="workspaceForm-description-txt"
 						/>
 					</Field>
-
-					{/* Tags */}
-					<Field>
-						<FieldLabel htmlFor={tagInputId}>Tags</FieldLabel>
-						<div className="flex flex-col gap-2">
-							<div className="flex gap-2">
-								<Input
-									id={tagInputId}
-									placeholder="Type a tag and press Enter"
-									value={tagInput}
-									disabled={isLoading}
-									onChange={(e) =>
-										setTagInput(e.target.value)
-									}
-									onKeyDown={handleTagKeyDown}
-									onBlur={addTag}
-								/>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									onClick={addTag}
-									disabled={isLoading || !tagInput.trim()}
-								>
-									Add
-								</Button>
-							</div>
-							{tags.length > 0 && (
-								<div className="flex flex-wrap gap-1">
-									{tags.map((tag) => (
-										<Badge
-											key={tag}
-											variant="secondary"
-											className="gap-1 text-sm"
-										>
-											{tag}
-											<button
-												type="button"
-												onClick={() => removeTag(tag)}
-												className="ml-1 rounded-full hover:text-destructive"
-												aria-label={`Remove tag ${tag}`}
-											>
-												<X className="h-3 w-3" />
-											</button>
-										</Badge>
-									))}
-								</div>
-							)}
-						</div>
-					</Field>
 				</FieldGroup>
 
 				{/* Tabs: Knowledge, Toolbox, Prompt, Membership */}
@@ -339,10 +335,20 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 							<TabsTrigger value="knowledge">
 								<BookOpenIcon />
 								{t("workspace:form.knowledgeLabel")}
+								{knowledge.length > 0 && (
+									<span className="ml-1 rounded-full bg-primary px-1.5 py-0.5 font-medium text-[10px] text-primary-foreground">
+										{knowledge.length}
+									</span>
+								)}
 							</TabsTrigger>
 							<TabsTrigger value="toolbox">
 								<HammerIcon />
 								{t("workspace:form.toolboxLabel")}
+								{toolbox.length > 0 && (
+									<span className="ml-1 rounded-full bg-primary px-1.5 py-0.5 font-medium text-[10px] text-primary-foreground">
+										{toolbox.length}
+									</span>
+								)}
 							</TabsTrigger>
 							<TabsTrigger value="prompt">
 								<FileTextIcon />
@@ -355,17 +361,29 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 								</TabsTrigger>
 							)}
 						</TabsList>
-						{tab === "membership" && !isNew && (
+						<div className="flex items-center gap-2">
+							{tab === "membership" && !isNew && (
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={() => setIsSharingModalOpen(true)}
+								>
+									<PlusIcon />
+									{t("workspace:sharing.title")}
+								</Button>
+							)}
 							<Button
-								type="button"
-								variant="outline"
+								disabled={isLoading || !name}
+								data-testid="workspaceForm-submit-btn"
+								type="submit"
 								size="sm"
-								onClick={() => setIsSharingModalOpen(true)}
 							>
-								<PlusIcon />
-								{t("workspace:sharing.title")}
+								{isNew
+									? t("workspace:actions.create")
+									: t("workspace:actions.save")}
 							</Button>
-						)}
+						</div>
 					</div>
 
 					{/* Bordered card wrapping all tab content */}
@@ -389,6 +407,19 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						)}
 
 						<TabsContent value="knowledge" className="p-4">
+							{knowledge.length > 0 && (
+								<div className="mb-3 flex justify-end">
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={() => setKnowledge([])}
+										className="text-muted-foreground text-xs"
+									>
+										Deselect all
+									</Button>
+								</div>
+							)}
 							<KnowledgeSelector
 								values={knowledge}
 								disabled={isLoading}
@@ -397,6 +428,19 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						</TabsContent>
 
 						<TabsContent value="toolbox" className="p-4">
+							{toolbox.length > 0 && (
+								<div className="mb-3 flex justify-end">
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={() => setToolbox([])}
+										className="text-muted-foreground text-xs"
+									>
+										Deselect all
+									</Button>
+								</div>
+							)}
 							<MCPSelector
 								type="TOOLBOX"
 								values={toolbox}
@@ -456,22 +500,13 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 					)}
 				</Tabs>
 
-				<div className="flex items-center justify-between">
+				<div className="flex items-center">
 					<Button
 						type="button"
 						variant="ghost"
 						onClick={() => onClose()}
 					>
 						{t("common:buttons.back")}
-					</Button>
-					<Button
-						disabled={isLoading || !name}
-						data-testid="workspaceForm-submit-btn"
-						type="submit"
-					>
-						{isNew
-							? t("workspace:actions.create")
-							: t("workspace:actions.save")}
 					</Button>
 				</div>
 			</form>
