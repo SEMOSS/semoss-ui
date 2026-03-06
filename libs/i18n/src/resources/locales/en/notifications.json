@@ -1,0 +1,10 @@
+{
+	"knowledge": {
+		"createSuccess": "Successfully created knowledge source \"{{name}}\"",
+		"createError": "Failed to create knowledge source"
+	},
+	"workspace": {
+		"saveError": "Failed to save agent",
+		"deleteError": "Failed to delete workspace"
+	}
+}

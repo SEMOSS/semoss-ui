@@ -1,0 +1,7 @@
+{
+	"required": "{{field}}は必須です",
+	"nameRequired": "ナレッジソースの名前を入力してください",
+	"embeddingRequired": "埋め込みエンジンを選択してください",
+	"filesRequired": "少なくとも1つのドキュメントを選択してください",
+	"descriptionRequired": "説明を入力してください"
+}

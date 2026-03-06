@@ -34,7 +34,7 @@ export interface ToolsDefaultViewProps {
 	toolResponse?: string;
 
 	/** Parameters that were executed */
-	executedParameters?: Record<string, unknown>;
+	toolParameters?: Record<string, unknown>;
 }
 
 interface FieldSchema {
@@ -52,7 +52,7 @@ interface FieldSchema {
 }
 
 export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
-	({ room, app, message, tool, toolResponse, executedParameters }) => {
+	({ room, app, message, tool, toolResponse, toolParameters }) => {
 		/*
 		 * Library hooks
 		 */
@@ -88,9 +88,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		 * State
 		 */
 		const [data, setData] = useState<Record<string, unknown>>(() => {
-			return toolResponse === undefined
-				? tool?.parameters
-				: executedParameters;
+			return toolParameters || {};
 		});
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
@@ -148,7 +146,6 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 				room.processTool(
 					m.id,
 					tool.id,
-					tool.name,
 					output,
 					success ? "success" : "error",
 					data,

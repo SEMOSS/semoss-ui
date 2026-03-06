@@ -1,5 +1,6 @@
 import { BookOpenIcon, CheckIcon } from "lucide-react";
 import React, { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Badge,
@@ -37,6 +38,7 @@ export const RoomInputMenuKnowledge: React.FC<RoomInputMenuKnowledgeProps> = ({
 	onSelect,
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
+	const { t } = useTranslation("room");
 	const [search, setSearch] = React.useState("");
 
 	const debouncedSearch = useDebouncedValue(search);
@@ -91,13 +93,15 @@ export const RoomInputMenuKnowledge: React.FC<RoomInputMenuKnowledgeProps> = ({
 		<DropdownMenuSub open={isOpen} onOpenChange={setIsOpen}>
 			<DropdownMenuSubTrigger>
 				<BookOpenIcon />
-				<span className="flex-1">Add Knowledge</span>
+				<span className="flex-1">
+					{t("menuKnowledge.addKnowledge")}
+				</span>
 				<Badge variant="outline">{Object.keys(knowledge).length}</Badge>
 			</DropdownMenuSubTrigger>
 			<DropdownMenuSubContent className="w-72 p-0">
 				<Command shouldFilter={false} className="w-full">
 					<CommandInput
-						placeholder="Search knowledge"
+						placeholder={t("menuKnowledge.searchPlaceholder")}
 						value={search}
 						onValueChange={setSearch}
 						autoFocus
@@ -108,7 +112,9 @@ export const RoomInputMenuKnowledge: React.FC<RoomInputMenuKnowledgeProps> = ({
 					>
 						{!getKnowledge.isLoading &&
 						getKnowledge.data.length === 0 ? (
-							<CommandEmpty>Not Found</CommandEmpty>
+							<CommandEmpty>
+								{t("menuKnowledge.notFound")}
+							</CommandEmpty>
 						) : null}
 
 						{!getKnowledge.isLoading &&

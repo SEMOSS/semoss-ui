@@ -3,7 +3,8 @@
   "version": "1.0.0-beta.1",
   "exports": {
     "./globals.css": "./src/styles/globals.css",
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./api": "./src/api/index.ts"
   },
   "license": "MIT",
   "dependencies": {

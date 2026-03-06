@@ -3,6 +3,7 @@
 
 import { FileIcon, XIcon } from "lucide-react";
 import { useId, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
@@ -26,6 +27,7 @@ export const EmbedDocumentsOverlay = ({
 	knowledgeId,
 	onClose,
 }: EmbedDocumentsOverlayProps) => {
+	const { t } = useTranslation(["knowledge", "common"]);
 	const { actions } = useInsight();
 	const fileInputId = useId();
 	const [files, setFiles] = useState<File[]>([]);
@@ -42,12 +44,12 @@ export const EmbedDocumentsOverlay = ({
 
 	const handleEmbed = async () => {
 		if (!knowledgeId) {
-			toast.error("Please select a knowledge source");
+			toast.error(t("embedMessages.selectKnowledgeSource"));
 			return;
 		}
 
 		if (files.length === 0) {
-			toast.error("Please select at least one document");
+			toast.error(t("embedMessages.selectDocument"));
 			return;
 		}
 
@@ -72,11 +74,11 @@ export const EmbedDocumentsOverlay = ({
 				filePaths=[${filePaths}]
 			);`);
 
-			toast.success("Documents embedded successfully");
+			toast.success(t("embedMessages.embedSuccess"));
 			setFiles([]);
 			onClose(true);
 		} catch (e) {
-			toast.error("Failed to embed documents");
+			toast.error(t("embedMessages.embedFailed"));
 			console.error(e);
 		} finally {
 			setIsEmbedding(false);
@@ -109,11 +111,9 @@ export const EmbedDocumentsOverlay = ({
 		<Dialog open={open} onOpenChange={() => onClose(false)}>
 			<DialogContent className="max-w-md">
 				<DialogHeader>
-					<DialogTitle>
-						Embed Documents into Existing Source
-					</DialogTitle>
+					<DialogTitle>{t("embedDocuments.title")}</DialogTitle>
 					<DialogDescription>
-						Upload documents to embed into this knowledge source.
+						{t("embedDocuments.description")}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -123,7 +123,7 @@ export const EmbedDocumentsOverlay = ({
 							htmlFor={fileInputId}
 							className="block mb-2 text-sm font-medium"
 						>
-							Documents
+							{t("embedDocuments.documents")}
 						</label>
 						<button
 							type="button"
@@ -151,7 +151,7 @@ export const EmbedDocumentsOverlay = ({
 								htmlFor={fileInputId}
 								className="text-sm hover:text-foreground cursor-pointer text-muted-foreground"
 							>
-								Click to select files or drag and drop
+								{t("embedDocuments.selectFiles")}
 							</label>
 						</button>
 
@@ -176,7 +176,9 @@ export const EmbedDocumentsOverlay = ({
 												}
 												disabled={isEmbedding}
 												className="rounded p-1 hover:bg-destructive/10 shrink-0"
-												aria-label="Remove file"
+												aria-label={t(
+													"embedDocuments.removeFile",
+												)}
 											>
 												<XIcon className="h-4 w-4" />
 											</button>
@@ -196,7 +198,7 @@ export const EmbedDocumentsOverlay = ({
 							}}
 							disabled={isEmbedding}
 						>
-							Cancel
+							{t("common:buttons.cancel")}
 						</Button>
 						<Button
 							onClick={handleEmbed}
@@ -205,10 +207,10 @@ export const EmbedDocumentsOverlay = ({
 							{isEmbedding ? (
 								<>
 									<Spinner className="mr-2 h-4 w-4" />
-									Embedding...
+									{t("embedDocuments.embedding")}
 								</>
 							) : (
-								"Embed Documents"
+								t("embedDocuments.embedButton")
 							)}
 						</Button>
 					</div>
