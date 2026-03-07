@@ -8,7 +8,7 @@ import {
 	UsersRound,
 	X,
 } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Env, post, useInsight } from "@semoss/sdk/react";
 import {
@@ -147,6 +147,15 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 			setIsTogglingFavorite(false);
 		}
 	};
+
+	const handleKnowledgeChange = useCallback(
+		(vals: MCPConfig[]) => setKnowledge(vals),
+		[],
+	);
+	const handleToolboxChange = useCallback(
+		(mcps: MCPConfig[]) => setToolbox(mcps),
+		[],
+	);
 
 	/**
 	 * Method that is called to create or update the workspace
@@ -423,7 +432,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 							<KnowledgeSelector
 								values={knowledge}
 								disabled={isLoading}
-								onChange={(vals) => setKnowledge(vals)}
+								onChange={handleKnowledgeChange}
 							/>
 						</TabsContent>
 
@@ -445,7 +454,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 								type="TOOLBOX"
 								values={toolbox}
 								disabled={isLoading}
-								onChange={(mcps) => setToolbox(mcps)}
+								onChange={handleToolboxChange}
 							/>
 						</TabsContent>
 

@@ -6,10 +6,6 @@ import {
 	ChevronDownIcon,
 	ChevronUpIcon,
 	DownloadIcon,
-	FileIcon,
-	FileImageIcon,
-	FileSpreadsheetIcon,
-	FileTextIcon,
 	FolderPlusIcon,
 	MessageSquarePlusIcon,
 } from "lucide-react";
@@ -54,6 +50,7 @@ import {
 import { EmbedDocumentsOverlay } from "@/components/knowledge/embed-documents-overlay";
 import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-overlay";
 import { useGlobalBreadcrumbs } from "@/hooks";
+import { formatFileSize, getFileIcon, parseSizeBytes } from "@/utility";
 
 type KnowledgeEngine = {
 	app_id: string;
@@ -81,47 +78,6 @@ type SearchUser = {
 	email: string;
 	type: string;
 	username: string;
-};
-
-const getFileIcon = (fileName: string) => {
-	const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
-	if (ext === "pdf")
-		return <FileTextIcon className="h-4 w-4 shrink-0 text-red-500" />;
-	if (ext === "doc" || ext === "docx")
-		return <FileTextIcon className="h-4 w-4 shrink-0 text-blue-500" />;
-	if (ext === "xls" || ext === "xlsx" || ext === "csv")
-		return (
-			<FileSpreadsheetIcon className="h-4 w-4 shrink-0 text-green-600" />
-		);
-	if (
-		ext === "png" ||
-		ext === "jpg" ||
-		ext === "jpeg" ||
-		ext === "gif" ||
-		ext === "webp" ||
-		ext === "svg"
-	)
-		return <FileImageIcon className="h-4 w-4 shrink-0 text-purple-500" />;
-	return <FileIcon className="h-4 w-4 shrink-0 text-muted-foreground" />;
-};
-
-const parseSizeBytes = (fileSize: string | number): number => {
-	const s = String(fileSize ?? "");
-	const match = s.match(/^([\d.]+)\s*(KB|MB|GB|B)?$/i);
-	if (!match) return 0;
-	const num = parseFloat(match[1]);
-	const unit = (match[2] ?? "B").toUpperCase();
-	if (unit === "GB") return num * 1024 * 1024 * 1024;
-	if (unit === "MB") return num * 1024 * 1024;
-	if (unit === "KB") return num * 1024;
-	return num;
-};
-
-const formatFileSize = (fileSize: string | number): string => {
-	const bytes = parseSizeBytes(fileSize);
-	if (bytes === 0) return String(fileSize);
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
 const formatDateTime = (dateStr: string): string => {
