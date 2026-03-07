@@ -6,6 +6,7 @@ import {
 import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight, usePixel } from "@semoss/sdk/react";
+import type { Role } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -52,16 +53,14 @@ interface ProjectDependency {
 	engine_name: string;
 	description?: string;
 	engine_discoverable?: boolean;
-	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	permission_name?: Role;
 	engine_global?: boolean;
 	access_permission?: number;
 	tags: string; // comma separated tags
 }
 
 type EffectivePermission =
-	| "READ_ONLY"
-	| "EDIT"
-	| "OWNER"
+	| Role
 	| "REQUESTED"
 	| "DISCOVERABLE"
 	| "FULLY_PRIVATE";
