@@ -9,6 +9,7 @@
   "license": "MIT",
   "dependencies": {
     "@monaco-editor/react": "^4.5.1",
+    "dompurify": "^3.0.0",
     "@mui/icons-material": "6.0.0",
     "@semoss/sdk": "workspace:*",
     "@semoss/ui": "workspace:*",
@@ -21,6 +22,7 @@
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@types/dompurify": "^3.0.0",
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.0",
     "typescript": "~5.5.2"
