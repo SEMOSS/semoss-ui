@@ -1,4 +1,3 @@
-import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Muted, Spinner } from "@semoss/ui/next";
@@ -62,23 +61,6 @@ export const FileHtmlViewer: React.FC<FileHtmlViewerProps> = ({
 				>
 					Source
 				</button>
-				<button
-					type="button"
-					disabled={getFile.status !== "SUCCESS"}
-					className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
-					title="Open in new tab"
-					onClick={() => {
-						if (getFile.status !== "SUCCESS") return;
-						const blob = new Blob([getFile.data], {
-							type: "text/html",
-						});
-						const url = URL.createObjectURL(blob);
-						window.open(url, "_blank");
-						setTimeout(() => URL.revokeObjectURL(url), 10000);
-					}}
-				>
-					<ExternalLink size={15} />
-				</button>
 			</div>
 
 			{/* Content area */}
@@ -103,6 +85,7 @@ export const FileHtmlViewer: React.FC<FileHtmlViewerProps> = ({
 								className="h-full w-full border-0"
 								srcDoc={getFile.data}
 								title={`Preview of ${path}`}
+								sandbox="allow-scripts"
 							/>
 						)}
 					</>
