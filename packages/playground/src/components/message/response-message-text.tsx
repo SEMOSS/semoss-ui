@@ -21,10 +21,10 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
-import type { ResponseMessageStore } from "@/stores";
+import type { ResponseMessageStore, RoomStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
 
-const createMarkdownComponents = (onRoomLink?: (path: string) => void) => ({
+const createMarkdownComponents = (room?: RoomStore) => ({
 	h1: ({ children, ...props }) => (
 		<H1 className="mt-5 font-semibold text-2xl text-inherit" {...props}>
 			{children}
@@ -67,13 +67,29 @@ const createMarkdownComponents = (onRoomLink?: (path: string) => void) => ({
 		</P>
 	),
 	a: ({ children, href, ...props }) => {
-		if (href?.startsWith("room://") && onRoomLink) {
+		if (href?.startsWith("room://") && room) {
 			const path = "/" + href.slice("room://".length);
+			const filename = path.split("/").filter(Boolean).pop() ?? path;
 			return (
 				<button
 					type="button"
 					className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
-					onClick={() => onRoomLink(path)}
+					onClick={() => {
+						room.addSidebarNode("FILE_EXPLORER", {
+							type: "tab",
+							name: "Files",
+							component: "room-file-explorer",
+							config: {},
+							enableClose: true,
+						});
+						room.addSidebarNode(`FILE--${path}`, {
+							type: "tab",
+							name: filename,
+							component: "room-file-editor",
+							config: { name: filename, path },
+							enableClose: true,
+						});
+					}}
 				>
 					{children}
 				</button>
@@ -177,18 +193,15 @@ interface ResponseMessageTextProps {
 
 	/** Is it the last part */
 	isLast: boolean;
-
-	/** Called when the user clicks a room:// file link */
-	onRoomLink?: (path: string) => void;
 }
 
 export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
-	({ message, part, isLast, onRoomLink }) => {
+	({ message, part, isLast }) => {
 		const { t } = useTranslation("chat");
 		const typewriter = useMarkdownTypewriter(part.text);
 		const components = useMemo(
-			() => createMarkdownComponents(onRoomLink),
-			[onRoomLink],
+			() => createMarkdownComponents(message.room),
+			[message.room],
 		);
 
 		useEffect(() => {
