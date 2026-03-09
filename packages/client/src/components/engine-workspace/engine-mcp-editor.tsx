@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
+import { useRootStore } from "@/hooks";
 import { MCPJsonEditor } from "../shared";
 
 interface EngineMcpEditorProps {
@@ -16,6 +17,7 @@ interface EngineMcpEditorProps {
 export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 	({ node, engine }) => {
 		const insight = useInsight();
+		const { insightStore } = useRootStore();
 		const config: {
 			name: string;
 			path: string;
@@ -28,6 +30,8 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 			| null
 		>(null);
 		const [isLoading, setIsLoading] = useState(false);
+
+		const canEnableToolDefinitionEnhancer = insightStore.defaultTextGenerationModel !== "";
 
 		const getFile = usePixel<string>(
 			`GetEngineAssets(filePath=["${config.path}"], engine=["${engine}"]);`,
@@ -97,7 +101,7 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 				setIsLoading(true);
 				// TODO: Replace model IDs with actual values when available - this will be implemented after model centraliation work is done
 				// Build the pixel command
-				const pixelCommand = `GenerateEngineMetadata(engine=["${engine}"], model=["4801422a-5c62-421e-a00c-05c6a9e15de8"], metaKeys=[["description"]], options=[{"additionalContext": ${context}, "tone": "neutral"}]);`;
+				const pixelCommand = `GenerateEngineMetadata(engine=["${engine}"], model=["${insightStore.defaultTextGenerationModel}"], metaKeys=[["description"]], options=[{"additionalContext": ${context}, "tone": "neutral"}]);`;
 
 				const { pixelReturn } = await insight.actions.run(pixelCommand);
 				const response = pixelReturn[0].output as Record<
@@ -133,6 +137,7 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 								initialData: data,
 								onSave: (data) => saveFile(data),
 								onOptimize: (data) => optimizeDesc(data),
+								enableToolEnhancer: canEnableToolDefinitionEnhancer,
 								path: config.path,
 								name: config.name,
 							}}
