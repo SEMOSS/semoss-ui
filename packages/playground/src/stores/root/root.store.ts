@@ -216,6 +216,16 @@ export class RootStore {
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||
 				[],
+			enableKnowledgeMCP:
+				theme?.enableKnowledgeMCP !== undefined
+					? theme.enableKnowledgeMCP
+					: this._store.theme.enableKnowledgeMCP,
+			defaultEmbedderId:
+				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
+			allowEmbeddingOptions:
+				theme?.allowEmbeddingOptions !== undefined
+					? theme.allowEmbeddingOptions
+					: this._store.theme.allowEmbeddingOptions,
 			defaultTools: [
 				...new Map(
 					[
