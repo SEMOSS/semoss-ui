@@ -104,6 +104,23 @@ export interface ThemeMap {
 		allowedFileTypes?: string[];
 
 		/**
+		 * Whether to run MakeEngineMCP after creating a new knowledge source.
+		 * Defaults to true when not set.
+		 */
+		enableKnowledgeMCP?: boolean;
+
+		/**
+		 * Default embedding engine UUID to use when allowEmbeddingOptions is false.
+		 */
+		defaultEmbedderId?: string;
+
+		/**
+		 * Whether to show the embedding model selector in the new knowledge form.
+		 * Defaults to true when not set.
+		 */
+		allowEmbeddingOptions?: boolean;
+
+		/**
 		 * Default tools to show in the room
 		 */
 		defaultTools: {
