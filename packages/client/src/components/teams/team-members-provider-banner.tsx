@@ -1,6 +1,11 @@
-import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
-import React from "react";
-import { Paper, Stack, Typography } from "@semoss/ui";
+import { Users } from "lucide-react";
+import {
+	Badge,
+	Card,
+	CardContent,
+	CardDescription,
+	CardTitle,
+} from "@semoss/ui/next";
 import AMAZON_S3 from "@/assets/loginProviders/Amazon_S3.png";
 import ADFS from "@/assets/loginProviders/adfs_microsoft_1.png";
 import Dropbox from "@/assets/loginProviders/dropbox.png";
@@ -52,34 +57,32 @@ export const TeamMembersProviderBanner = (
 	const imgsrc = TypeImageObject[lowercase];
 
 	return (
-		<Paper sx={{ width: "100%", padding: "16px" }}>
-			<Stack justifyContent={"space-between"} direction={"row"}>
-				<Stack>
-					<Typography variant={"h6"}>Members</Typography>
-					<Typography variant={"body2"} color="secondary">
+		<Card className="w-full">
+			<CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+				<div className="space-y-1">
+					<CardTitle>Members</CardTitle>
+					<CardDescription>
 						Members are managed by the external identity provider
-					</Typography>
-				</Stack>
-				<Stack alignItems={"center"}>
+					</CardDescription>
+				</div>
+				<div className="flex items-center gap-3">
 					{imgsrc ? (
 						<img
 							src={imgsrc}
-							style={{
-								height: "36px",
-								width: "36px",
-							}}
+							className="h-9 w-9"
+							alt={`${type} icon`}
 						/>
 					) : (
-						<PeopleAltIcon />
+						<Users className="h-8 w-8 text-muted-foreground" />
 					)}
-					<Typography variant={"caption"} color="secondary">
-						<em>
-							{type.charAt(0).toUpperCase() +
-								type.slice(1).toLowerCase()}
-						</em>
-					</Typography>
-				</Stack>
-			</Stack>
-		</Paper>
+					<Badge
+						variant="secondary"
+						className="rounded-full px-3 py-1 text-xs uppercase"
+					>
+						{type}
+					</Badge>
+				</div>
+			</CardContent>
+		</Card>
 	);
 };

@@ -726,7 +726,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 										}}
 									>
 										<StyledPublishedIcon />
-										<span className="text-[#0471F0]">
+										<span className="text-(--primary)">
 											Publish
 										</span>
 									</StyledRightButton>

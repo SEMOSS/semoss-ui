@@ -1,11 +1,4 @@
-import {
-	ArrowDown,
-	ArrowUp,
-	Pencil,
-	Plus,
-	Search as SearchIcon,
-	Trash2,
-} from "lucide-react";
+import { Pencil, Plus, Search as SearchIcon, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
@@ -38,8 +31,12 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { editEngineUserPermissions, type getUserEnginePermission } from "@/api";
-import FilteredIcon from "@/assets/img/FilteredIcon.png";
-import { useAPI, useRootStore, useSettings } from "@/hooks";
+import {
+	useAPI,
+	useRootStore,
+	useServerPagination,
+	useSettings,
+} from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
 import { MembersAddOverlay } from "./members-add-overlay";
@@ -123,28 +120,37 @@ export const MembersTable = (props: MembersTableProps) => {
 	const { adminMode } = useSettings();
 
 	/** Member Table States */
-	const [page, setPage] = useState<number>(0);
-	const [rowsPerPage, setRowsPerPage] = useState<number>(5);
 	const [search, setSearch] = useState<string>("");
 	const [isSearch, setIsSearch] = useState<boolean>(false);
 	const [permissionFilter, _setPermissionFilter] = useState<string>("");
 	const [selectedMembers, setSelectedMembers] = useState<
 		SETTINGS_PROVISIONED_USER[]
 	>([]);
-	/* Table Sorting */
-	const [nameOrder, setNameOrder] = useState<"asc" | "desc">("asc");
-	const [permissionOrder, setPermissionOrder] = useState<"asc" | "desc">(
-		"asc",
-	);
-
 	const [userData, setUserData] = useState<SETTINGS_PROVISIONED_USER>(
 		{} as SETTINGS_PROVISIONED_USER,
 	);
 	const [userPermission, setUserPermission] =
 		useState<SETTINGS_ROLE>("Read-Only");
+	const [totalMembers, setTotalMembers] = useState(0);
 
 	// debounce the input
 	const debouncedSearch = useDebouncedValue(search);
+
+	const {
+		page,
+		rowsPerPage,
+		setPage,
+		setRowsPerPage,
+		offset,
+		totalPages,
+		startRow,
+		endRow,
+		resetPage,
+	} = useServerPagination({
+		totalCount: totalMembers,
+		initialRowsPerPage: 5,
+		pageIndexBase: 0,
+	});
 
 	/** Delete Member */
 	const [deleteMembersModal, setDeleteMembersModal] =
@@ -170,7 +176,7 @@ export const MembersTable = (props: MembersTableProps) => {
 			debouncedSearch ? debouncedSearch : undefined,
 			permissionPriorityMapper(permissionFilter)?.permission,
 			rowsPerPage, // limit
-			(page + 1) * rowsPerPage - rowsPerPage, // offset
+			offset, // offset
 		];
 		getAllAuthorsApi = [
 			"getProjectUsers",
@@ -196,7 +202,7 @@ export const MembersTable = (props: MembersTableProps) => {
 			id,
 			debouncedSearch ? debouncedSearch : undefined,
 			permissionPriorityMapper(permissionFilter)?.permission,
-			(page + 1) * rowsPerPage - rowsPerPage, // offset
+			offset, // offset
 			rowsPerPage, // limit
 		];
 		getAllAuthorsApi = [
@@ -231,6 +237,14 @@ export const MembersTable = (props: MembersTableProps) => {
 	console.log(getMembers);
 
 	useEffect(() => {
+		if (getMembers.status !== "SUCCESS" || !getMembers.data) {
+			return;
+		}
+		const data = getMembers.data as GetMembersData;
+		setTotalMembers(data.totalMembers ?? data.members.length);
+	}, [getMembers.data, getMembers.status]);
+
+	useEffect(() => {
 		if (
 			allAuthorsResponse.status === "SUCCESS" &&
 			allAuthorsResponse.data
@@ -244,10 +258,12 @@ export const MembersTable = (props: MembersTableProps) => {
 		}
 	}, [allAuthorsResponse.status, allAuthorsResponse.data]);
 
-	//Below UseEffect has been added so that search supersedes pagination , when the user goes to a different page and searches any user the pagination is set 0 and the user is being displayed.
+	// Reset pagination when search changes.
 	useEffect(() => {
-		setPage(0);
-	}, [debouncedSearch]);
+		if (debouncedSearch !== undefined) {
+			resetPage();
+		}
+	}, [debouncedSearch, resetPage]);
 
 	/**
 	 * Sets the user details based on the current user in the members array.
@@ -255,12 +271,14 @@ export const MembersTable = (props: MembersTableProps) => {
 	 * Otherwise, it sets the user permission based on the user's permission in the members array.
 	 * @param members The array of members to set the user details from
 	 */
-	const setUserDetails = () => {
-		if (!userDetails.data) {
+	/**
+	 * Updates user details when userDetails API call succeeds.
+	 **/
+	useEffect(() => {
+		if (userDetails.status !== "SUCCESS" || !userDetails.data) {
 			return;
 		}
-
-		const userPermission =
+		const resolvedPermission =
 			type === "PROJECT"
 				? (userDetails.data as Awaited<
 						ReturnType<typeof getUserProjectPermission>
@@ -270,6 +288,7 @@ export const MembersTable = (props: MembersTableProps) => {
 							ReturnType<typeof getUserEnginePermission>
 						>
 					).permission;
+
 		if (adminMode) {
 			const adminPermissionPriority = "Author";
 			setUserPermission(
@@ -279,23 +298,15 @@ export const MembersTable = (props: MembersTableProps) => {
 		} else {
 			setUserPermission(
 				permissionPriorityMapper(
-					userPermission === "OWNER" ? "Author" : userPermission,
+					resolvedPermission === "OWNER"
+						? "Author"
+						: resolvedPermission,
 				)?.permission as SETTINGS_ROLE,
 			);
 		}
 
 		setUserData(userData);
-	};
-
-	/**
-	 * Updates user details when userDetails API call succeeds.
-	 **/
-	useEffect(() => {
-		if (userDetails.status !== "SUCCESS" || !userDetails.data) {
-			return;
-		}
-		setUserDetails();
-	}, [userDetails.status]);
+	}, [adminMode, type, userDetails.data, userDetails.status, userData]);
 
 	/**
 	 * Determines if the read-only option should be restricted for a given member.
@@ -420,10 +431,7 @@ export const MembersTable = (props: MembersTableProps) => {
 			(m) =>
 				permissionPriorityMapper(m.permission)?.permission === "Author",
 		);
-		if (
-			allAuthorsTotal > 0 &&
-			authorsToDelete.length >= allAuthorsTotal
-		) {
+		if (allAuthorsTotal > 0 && authorsToDelete.length >= allAuthorsTotal) {
 			toast.error(
 				`You cannot delete all the admins(Authors) from the table.`,
 			);
@@ -452,95 +460,19 @@ export const MembersTable = (props: MembersTableProps) => {
 		getMembers.status === "SUCCESS"
 			? (getMembers.data as GetMembersData).members
 			: [];
-	const totalMembers =
-		getMembers.status === "SUCCESS"
-			? (getMembers.data as GetMembersData).totalMembers
-			: 0;
 	const hasMembers =
-		getMembers.status === "SUCCESS" &&
-		(getMembers.data as GetMembersData).totalMembers > 0;
+		getMembers.status === "SUCCESS" && renderedMembers.length > 0;
 
-	/**
-	 * Sort Members
-	 *
-	 * @returns sorted members
-	 */
-	const sortedMembers = useMemo(() => {
-		/**
-		 *
-		 * @param permission
-		 * @returns order of the permission
-		 */
-		const getPermissionOrder = (permission: string): number => {
-			const permissionOrder = {
-				Author: 1,
-				Editor: 2,
-				"Read-Only": 3,
-			};
-			return (
-				permissionOrder[
-					permissionPriorityMapper(permission)?.permission
-				] || 0
-			);
-		};
-		return [...renderedMembers].sort((a, b) => {
-			// sort by permission
-			const permissionA = getPermissionOrder(a.permission);
-			const permissionB = getPermissionOrder(b.permission);
-			//A - B means A is before B
-			const permissionComparison =
-				permissionOrder === "asc"
-					? permissionA - permissionB
-					: permissionB - permissionA;
+	const avatarMembers = useMemo(() => {
+		return renderedMembers.slice(0, 5);
+	}, [renderedMembers]);
 
-			if (permissionComparison === 0) {
-				return nameOrder === "asc"
-					? a.name.localeCompare(b.name)
-					: b.name.localeCompare(a.name);
-			}
-			return permissionComparison;
-		});
-	}, [renderedMembers, nameOrder, permissionOrder]);
-
-	/**
-	 * Handle Table Sorting Logic for Names
-	 *
-	 */
-	const handleNameSort = () => {
-		setNameOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-	};
-	/**
-	 * Handle Table Sorting Logic for Permissions
-	 *
-	 */
-	const handlePermissionSort = () => {
-		setPermissionOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-	};
-
-	// Avatars rendered
-	const Avatars = useMemo(() => {
-		if (!renderedMembers.length) {
-			return [];
-		}
-
-		let i = 0;
-		const avatarList = [];
-		while (i < 5 && i < renderedMembers.length) {
-			avatarList.push(
-				<Avatar key={i} className="size-8">
-					<AvatarFallback>
-						{(renderedMembers[i].name || " ")
-							.charAt(0)
-							.toUpperCase()}
-					</AvatarFallback>
-				</Avatar>,
-			);
-
-			i++;
-		}
-
-		return avatarList;
-	}, [renderedMembers.length]);
+	const skeletonRows = useMemo(() => {
+		return Array.from(
+			{ length: rowsPerPage },
+			(_, idx) => `skeleton-${idx}`,
+		);
+	}, [rowsPerPage]);
 
 	const isLastAuthor = (user) => {
 		const authors = allAuthors.filter(
@@ -564,16 +496,28 @@ export const MembersTable = (props: MembersTableProps) => {
 							<H4 data-testid="permissions-title">Permissions</H4>
 						</div>
 						<div className="flex flex-1 items-start">
-							{Avatars.length > 0 ? (
+							{avatarMembers.length > 0 ? (
 								<div className="flex h-14 w-[130px] flex-col items-center justify-center gap-2.5 px-4 py-2.5">
 									<div
 										className="-space-x-2 flex"
 										data-testid="membersTable-avatarGroup"
 									>
-										{Avatars.slice(0, 4).map((el, idx) => {
-											// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-											return <div key={idx}>{el}</div>;
-										})}
+										{avatarMembers
+											.slice(0, 4)
+											.map((member) => (
+												<div key={member.id}>
+													<Avatar className="size-8">
+														<AvatarFallback>
+															{(
+																member.name ||
+																" "
+															)
+																.charAt(0)
+																.toUpperCase()}
+														</AvatarFallback>
+													</Avatar>
+												</div>
+											))}
 										{totalMembers > 4 && (
 											<Avatar className="size-8">
 												<AvatarFallback>
@@ -592,16 +536,6 @@ export const MembersTable = (props: MembersTableProps) => {
 								</div>
 							</div>
 						</div>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => {
-								//setIsSearch(!isSearch);
-							}}
-							data-testid="membersTable-filterIcon"
-						>
-							<img src={FilteredIcon} alt="Filter" />
-						</Button>
 						<div className="flex items-center">
 							{isSearch ? (
 								<Input
@@ -673,28 +607,25 @@ export const MembersTable = (props: MembersTableProps) => {
 						<div className="relative flex items-center justify-center">
 							<Table className="bg-background">
 								<TableBody>
-									{[...Array(rowsPerPage)].map(
-										(item, idx) => (
-											// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-											<TableRow key={idx}>
-												<TableCell className="w-12">
-													<Skeleton className="h-5 w-5" />
-												</TableCell>
-												<TableCell>
-													<Skeleton className="h-9 w-40" />
-												</TableCell>
-												<TableCell>
-													<Skeleton className="h-9 w-60" />
-												</TableCell>
-												<TableCell>
-													<Skeleton className="h-9 w-40" />
-												</TableCell>
-												<TableCell>
-													<Skeleton className="h-9 w-20" />
-												</TableCell>
-											</TableRow>
-										),
-									)}
+									{skeletonRows.map((rowKey) => (
+										<TableRow key={rowKey}>
+											<TableCell className="w-12">
+												<Skeleton className="h-5 w-5" />
+											</TableCell>
+											<TableCell>
+												<Skeleton className="h-9 w-40" />
+											</TableCell>
+											<TableCell>
+												<Skeleton className="h-9 w-60" />
+											</TableCell>
+											<TableCell>
+												<Skeleton className="h-9 w-40" />
+											</TableCell>
+											<TableCell>
+												<Skeleton className="h-9 w-20" />
+											</TableCell>
+										</TableRow>
+									))}
 								</TableBody>
 							</Table>
 						</div>
@@ -706,7 +637,7 @@ export const MembersTable = (props: MembersTableProps) => {
 										<TableHeader>
 											<TableRow>
 												<TableHead className="w-12">
-													<TableCell className="p-2 pr-0 pl-2">
+													<div className="p-2 pr-0 pl-2">
 														<Checkbox
 															disabled={
 																userPermission ===
@@ -733,42 +664,11 @@ export const MembersTable = (props: MembersTableProps) => {
 																}
 															}}
 														/>
-													</TableCell>
+													</div>
 												</TableHead>
+												<TableHead>Name</TableHead>
 												<TableHead>
-													<Button
-														variant="ghost"
-														size="sm"
-														onClick={() =>
-															handleNameSort()
-														}
-														className="h-8 gap-1"
-													>
-														Name
-														{nameOrder === "asc" ? (
-															<ArrowUp className="size-4" />
-														) : (
-															<ArrowDown className="size-4" />
-														)}
-													</Button>
-												</TableHead>
-												<TableHead>
-													<Button
-														variant="ghost"
-														size="sm"
-														onClick={() =>
-															handlePermissionSort()
-														}
-														className="h-8 gap-1"
-													>
-														Permission
-														{permissionOrder ===
-														"asc" ? (
-															<ArrowUp className="size-4" />
-														) : (
-															<ArrowDown className="size-4" />
-														)}
-													</Button>
+													Permission
 												</TableHead>
 												<TableHead>
 													Permission Date
@@ -790,8 +690,8 @@ export const MembersTable = (props: MembersTableProps) => {
 											</TableRow>
 										</TableHeader>
 										<TableBody>
-											{sortedMembers.map((_x, i) => {
-												const user = sortedMembers[i];
+											{renderedMembers.map((_x, i) => {
+												const user = renderedMembers[i];
 
 												let isSelected = false;
 
@@ -1142,6 +1042,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																onValueChange={(
 																	value,
 																) => {
+																	setPage(0);
 																	setRowsPerPage(
 																		parseInt(
 																			value,
@@ -1167,15 +1068,7 @@ export const MembersTable = (props: MembersTableProps) => {
 															</Select>
 														</div>
 														<div className="text-sm">
-															{page *
-																rowsPerPage +
-																1}
-															-
-															{Math.min(
-																(page + 1) *
-																	rowsPerPage,
-																totalMembers,
-															)}{" "}
+															{startRow}-{endRow}{" "}
 															of {totalMembers}
 														</div>
 														<div className="flex gap-1">
@@ -1219,10 +1112,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																onClick={() =>
 																	setPage(
 																		Math.min(
-																			Math.ceil(
-																				totalMembers /
-																					rowsPerPage,
-																			) -
+																			totalPages -
 																				1,
 																			page +
 																				1,
@@ -1231,10 +1121,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																}
 																disabled={
 																	page >=
-																		Math.ceil(
-																			totalMembers /
-																				rowsPerPage,
-																		) -
+																		totalPages -
 																			1 ||
 																	isLoading
 																}
@@ -1246,18 +1133,13 @@ export const MembersTable = (props: MembersTableProps) => {
 																size="icon-sm"
 																onClick={() =>
 																	setPage(
-																		Math.ceil(
-																			totalMembers /
-																				rowsPerPage,
-																		) - 1,
+																		totalPages -
+																			1,
 																	)
 																}
 																disabled={
 																	page >=
-																		Math.ceil(
-																			totalMembers /
-																				rowsPerPage,
-																		) -
+																		totalPages -
 																			1 ||
 																	isLoading
 																}
