@@ -241,11 +241,28 @@ export const TeamsSettingsPage = observer(() => {
 
 	// Build a URL-safe slug for a team id WITHOUT mutating case or removing characters (just encode)
 	const teamSlug = useCallback((id: string) => encodeURIComponent(id), []);
-	const handleTeamDelete = useCallback(() => {
+	const handleTeamDelete = useCallback(async () => {
 		setTotalTeamsAll((prev) => Math.max(prev - 1, 0));
 		setTotalTeamsFiltered((prev) => Math.max(prev - 1, 0));
 		setOffset((prev) => Math.max(prev - 1, 0));
-	}, []);
+
+		try {
+			const totalCountAll = await getTeamsCount(adminMode);
+			setTotalTeamsAll(totalCountAll);
+
+			if (debouncedSearch.length > 0) {
+				const totalCountFiltered = await getTeamsCount(
+					adminMode,
+					debouncedSearch,
+				);
+				setTotalTeamsFiltered(totalCountFiltered);
+			} else {
+				setTotalTeamsFiltered(totalCountAll);
+			}
+		} catch (error) {
+			console.error(error);
+		}
+	}, [adminMode, debouncedSearch]);
 
 	const visibleTeams = teams.length || 0;
 	const resultLabel =
