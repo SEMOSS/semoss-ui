@@ -73,6 +73,9 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 		 * @returns
 		 */
 		const submitForm = async () => {
+      let embeddingsResponse:
+			| Awaited<ReturnType<typeof actions.run>>
+			| undefined;
 			try {
 				if (!name.trim()) {
 					toast.error(t("validation:nameRequired"));
@@ -131,13 +134,13 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 					.map(({ fileLocation }) => `"${fileLocation}"`)
 					.join(", ");
 
-				await actions.run<
-					[
-						{
-							database_id: string;
-						},
-					]
-				>(`CreateEmbeddingsFromDocuments(
+			embeddingsResponse = await actions.run<
+				[
+					{
+						database_id: string;
+					},
+				]
+			>(`CreateEmbeddingsFromDocuments(
 				engine=["${engineId}"],
 				filePaths=[${filePaths}]
 			);`);
@@ -163,6 +166,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 					name: name,
 				});
 			} catch (e) {
+        console.log(embeddingsResponse?.pixelReturn[0]?.output);
 				toast.error(e.message);
 			} finally {
 				setIsLoading(false);
