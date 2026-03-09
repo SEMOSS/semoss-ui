@@ -1,5 +1,4 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
-import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
 	Button,
@@ -22,29 +21,107 @@ import {
 	getGroupsWithAccessToProject,
 } from "@/api/teams";
 import { AddTeamModal } from "@/components/teams/add-team-modal";
+import { useServerPagination } from "@/hooks";
 
 export const TeamsTable = ({ type, id }) => {
 	const [teams, setTeams] = useState<any[]>([]);
+	const [totalTeams, setTotalTeams] = useState(0);
+	const [isLoading, setIsLoading] = useState(false);
+	const [usesServerPagination, setUsesServerPagination] = useState(false);
+	const [addModal, setAddModal] = useState(false);
+	const {
+		page,
+		rowsPerPage,
+		setPage,
+		setRowsPerPage,
+		offset,
+		totalPages,
+		startRow,
+		endRow,
+	} = useServerPagination({
+		totalCount: totalTeams,
+		initialRowsPerPage: 5,
+		pageIndexBase: 0,
+	});
+
+	const parseGroupsResponse = (result: unknown) => {
+		if (Array.isArray(result)) {
+			return {
+				groups: result,
+				totalGroups: result.length,
+				hasTotal: false,
+			};
+		}
+		if (result && typeof result === "object") {
+			const payload = result as {
+				groups?: any[];
+				totalGroups?: number;
+			};
+			const groups = Array.isArray(payload.groups) ? payload.groups : [];
+			const hasTotal = typeof payload.totalGroups === "number";
+			return {
+				groups,
+				totalGroups: hasTotal ? payload.totalGroups : groups.length,
+				hasTotal,
+			};
+		}
+		return { groups: [], totalGroups: 0, hasTotal: false };
+	};
+
 	useEffect(() => {
 		if (!type || !id) return;
 		const fetchTeams = async () => {
+			setIsLoading(true);
 			try {
 				let data: any[] = [];
+				let total = 0;
+				let serverPaginated = false;
+				const limit = rowsPerPage;
+
 				if (type === "ENGINE") {
 					const result = await getGroupsWithAccessToEngine(
 						String(id),
-						100,
-						0,
+						limit,
+						offset,
 					);
-					data = Array.isArray(result) ? result : [];
+					const parsed = parseGroupsResponse(result);
+					if (parsed.hasTotal) {
+						data = parsed.groups;
+						total = parsed.totalGroups;
+						serverPaginated = true;
+					} else {
+						const fullResult = await getGroupsWithAccessToEngine(
+							String(id),
+							100,
+							0,
+						);
+						const fullParsed = parseGroupsResponse(fullResult);
+						data = fullParsed.groups;
+						total = fullParsed.totalGroups;
+					}
 				} else if (type === "PROJECT") {
 					const result = await getGroupsWithAccessToProject(
 						String(id),
-						100,
-						0,
+						limit,
+						offset,
 					);
-					data = Array.isArray(result) ? result : [];
+					const parsed = parseGroupsResponse(result);
+					if (parsed.hasTotal) {
+						data = parsed.groups;
+						total = parsed.totalGroups;
+						serverPaginated = true;
+					} else {
+						const fullResult = await getGroupsWithAccessToProject(
+							String(id),
+							100,
+							0,
+						);
+						const fullParsed = parseGroupsResponse(fullResult);
+						data = fullParsed.groups;
+						total = fullParsed.totalGroups;
+					}
 				}
+
 				const permissionMap = {
 					1: "Author",
 					2: "Editor",
@@ -59,46 +136,23 @@ export const TeamsTable = ({ type, id }) => {
 					dateAdded: team.DATEADDED,
 				}));
 				setTeams(mappedTeams);
+				setTotalTeams(total);
+				setUsesServerPagination(serverPaginated);
 			} catch (e) {
 				console.error(e);
 				setTeams([]);
+				setTotalTeams(0);
+				setUsesServerPagination(false);
+			} finally {
+				setIsLoading(false);
 			}
 		};
 		fetchTeams();
-	}, [type, id]);
-	const [addModal, setAddModal] = useState(false);
-	const [nameOrder, setNameOrder] = useState<"asc" | "desc">("asc");
-	const [permissionOrder, setPermissionOrder] = useState<"asc" | "desc">(
-		"asc",
-	);
-	const [page, setPage] = useState(0);
-	const [rowsPerPage, setRowsPerPage] = useState(5);
+	}, [id, page, rowsPerPage, type, offset]);
 
-	const handleNameSort = () => {
-		setNameOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-		setTeams((prevTeams) =>
-			[...prevTeams].sort((a, b) => {
-				const nameA = String(a.name);
-				const nameB = String(b.name);
-				return nameOrder === "asc"
-					? nameA.localeCompare(nameB)
-					: nameB.localeCompare(nameA);
-			}),
-		);
-	};
-
-	const handlePermissionSort = () => {
-		setPermissionOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-		setTeams((prevTeams) =>
-			[...prevTeams].sort((a, b) => {
-				const permA = String(a.permission);
-				const permB = String(b.permission);
-				return permissionOrder === "asc"
-					? permA.localeCompare(permB)
-					: permB.localeCompare(permA);
-			}),
-		);
-	};
+	const visibleTeams = usesServerPagination
+		? teams
+		: teams.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
 	return (
 		<div className="rounded-xl">
@@ -117,53 +171,46 @@ export const TeamsTable = ({ type, id }) => {
 					<TableHeader>
 						<TableRow>
 							<TableHead className="p-0">
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={handleNameSort}
-									className="h-full w-full justify-start gap-1 rounded-none px-4 py-3"
-								>
+								<div className="py-3 pr-4 pl-6 text-left">
 									Name
-									{nameOrder === "asc" ? (
-										<ArrowUp className="size-4" />
-									) : (
-										<ArrowDown className="size-4" />
-									)}
-								</Button>
+								</div>
 							</TableHead>
-							<TableHead>Group Type</TableHead>
+							<TableHead className="px-4">Group Type</TableHead>
 							<TableHead className="p-0">
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={handlePermissionSort}
-									className="h-full w-full justify-start gap-1 rounded-none px-4 py-3"
-								>
+								<div className="px-4 py-3 text-left">
 									Permission
-									{permissionOrder === "asc" ? (
-										<ArrowUp className="size-4" />
-									) : (
-										<ArrowDown className="size-4" />
-									)}
-								</Button>
+								</div>
 							</TableHead>
-							<TableHead>Permission Date</TableHead>
+							<TableHead className="px-4">
+								Permission Date
+							</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{teams
-							.slice(
-								page * rowsPerPage,
-								page * rowsPerPage + rowsPerPage,
-							)
-							.map((team) => (
+						{visibleTeams.length > 0 ? (
+							visibleTeams.map((team) => (
 								<TableRow key={team.id}>
-									<TableCell>{team.name}</TableCell>
-									<TableCell>{team.type}</TableCell>
-									<TableCell>{team.permission}</TableCell>
-									<TableCell>{team.dateAdded}</TableCell>
+									<TableCell className="pr-4 pl-6">
+										{team.name}
+									</TableCell>
+									<TableCell className="px-4">
+										{team.type}
+									</TableCell>
+									<TableCell className="px-4">
+										{team.permission}
+									</TableCell>
+									<TableCell className="px-4">
+										{team.dateAdded}
+									</TableCell>
 								</TableRow>
-							))}
+							))
+						) : (
+							<TableRow>
+								<TableCell colSpan={4} className="text-center">
+									No teams found
+								</TableCell>
+							</TableRow>
+						)}
 					</TableBody>
 					<TableFooter>
 						<TableRow>
@@ -179,7 +226,6 @@ export const TeamsTable = ({ type, id }) => {
 												setRowsPerPage(
 													parseInt(value, 10),
 												);
-												setPage(0);
 											}}
 										>
 											<SelectTrigger className="h-8 w-[70px]">
@@ -199,19 +245,14 @@ export const TeamsTable = ({ type, id }) => {
 										</Select>
 									</div>
 									<div className="text-sm">
-										{page * rowsPerPage + 1}-
-										{Math.min(
-											(page + 1) * rowsPerPage,
-											teams.length,
-										)}{" "}
-										of {teams.length}
+										{startRow}-{endRow} of {totalTeams}
 									</div>
 									<div className="flex gap-1">
 										<Button
 											variant="outline"
 											size="icon-sm"
 											onClick={() => setPage(0)}
-											disabled={page === 0}
+											disabled={page === 0 || isLoading}
 										>
 											{"<<"}
 										</Button>
@@ -221,7 +262,7 @@ export const TeamsTable = ({ type, id }) => {
 											onClick={() =>
 												setPage(Math.max(0, page - 1))
 											}
-											disabled={page === 0}
+											disabled={page === 0 || isLoading}
 										>
 											{"<"}
 										</Button>
@@ -231,20 +272,14 @@ export const TeamsTable = ({ type, id }) => {
 											onClick={() =>
 												setPage(
 													Math.min(
-														Math.ceil(
-															teams.length /
-																rowsPerPage,
-														) - 1,
+														totalPages - 1,
 														page + 1,
 													),
 												)
 											}
 											disabled={
-												page >=
-												Math.ceil(
-													teams.length / rowsPerPage,
-												) -
-													1
+												page >= totalPages - 1 ||
+												isLoading
 											}
 										>
 											{">"}
@@ -253,19 +288,11 @@ export const TeamsTable = ({ type, id }) => {
 											variant="outline"
 											size="icon-sm"
 											onClick={() =>
-												setPage(
-													Math.ceil(
-														teams.length /
-															rowsPerPage,
-													) - 1,
-												)
+												setPage(totalPages - 1)
 											}
 											disabled={
-												page >=
-												Math.ceil(
-													teams.length / rowsPerPage,
-												) -
-													1
+												page >= totalPages - 1 ||
+												isLoading
 											}
 										>
 											{">>"}

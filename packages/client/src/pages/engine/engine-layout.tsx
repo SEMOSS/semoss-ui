@@ -12,7 +12,7 @@ import { usePixel } from "@semoss/sdk/react";
 import { Spinner, Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { EngineHeader } from "@/components/engine";
 import { EngineContext } from "@/contexts";
-import { useAPI, useRootStore, useSettings } from "@/hooks";
+import { useAPI, useRootStore } from "@/hooks";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
 interface EngineLayoutProps {
@@ -29,8 +29,6 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	const resolvedPath = useResolvedPath("");
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
-	const { adminMode } = useSettings();
-	const isAdminContext = adminMode && configStore.store.user.admin;
 
 	// filter metakeys to the ones we want
 	const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -122,9 +120,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 
 	// get the user's role
 	const getUserEnginePermission = useAPI(
-		!isAdminContext && engineId
-			? ["getUserEnginePermission", engineId]
-			: null,
+		engineId ? ["getUserEnginePermission", engineId] : null,
 	);
 
 	// get the tabs based on permission and database type
@@ -135,17 +131,14 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		}
 
 		if (
-			!isAdminContext &&
-			(getUserEnginePermission.status !== "SUCCESS" ||
-				!getUserEnginePermission.data)
+			getUserEnginePermission.status !== "SUCCESS" ||
+			!getUserEnginePermission.data
 		) {
 			return [];
 		}
 
 		// check the permission
-		const permission = isAdminContext
-			? "OWNER"
-			: getUserEnginePermission.data.permission;
+		const permission = getUserEnginePermission.data.permission;
 
 		// get the routes based on permission
 		let filteredTabs = route.specific.filter((t) =>
@@ -167,7 +160,6 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		return filteredTabs;
 	}, [
 		route,
-		isAdminContext,
 		getUserEnginePermission.status,
 		getUserEnginePermission.data
 			? getUserEnginePermission.data.permission
@@ -198,16 +190,18 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		return -1;
 	}, [route, tabs, resolvedPath, pathname]);
 
+	// whether we're on the edit route for this engine
+	const isEdit = Boolean(
+		matchPath(`${resolvedPath.pathname}/edit`, pathname),
+	);
+
 	// if the engine isn't found, navigate to the Home Page
-	if (
-		!engineId ||
-		(!isAdminContext && getUserEnginePermission.status === "ERROR")
-	) {
+	if (!engineId || getUserEnginePermission.status === "ERROR") {
 		return <Navigate to={`${route.path}`} replace />;
 	}
 
 	// show a loading screen when it is pending
-	if (!isAdminContext && getUserEnginePermission.status !== "SUCCESS") {
+	if (getUserEnginePermission.status !== "SUCCESS") {
 		return (
 			<div>
 				<Spinner className="size-8" />
@@ -244,9 +238,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 				name: route.name,
 				active: {
 					id: engineId,
-					role: isAdminContext
-						? "OWNER"
-						: getUserEnginePermission.data.permission,
+					role: getUserEnginePermission.data.permission,
 					name:
 						(getEngineMetadata.data?.database_name as string) || "",
 					metadata: values,
@@ -260,43 +252,47 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 				},
 			}}
 		>
-			<div className="flex flex-col gap-4">
-				<EngineHeader />
-				<div className="flex flex-col rounded-lg bg-(--muted)">
-					{tabs.length > 0 && (
-						<div>
-							<Tabs
-								value={
-									activeTabIdx !== -1
-										? tabs[activeTabIdx].path
-										: undefined
-								}
-								className="gap-0 bg-transparent"
-							>
-								<div className="w-[80%]">
-									<TabsList className="gap-2">
-										{tabs.map((t, idx) => (
-											<TabsTrigger
-												key={t.path}
-												value={t.path}
-												onClick={() =>
-													navigate(`${t.path}`)
-												}
-												data-testid={`engineLayout-${t.name}-tab`}
-											>
-												{t.name}
-											</TabsTrigger>
-										))}
-									</TabsList>
-								</div>
-							</Tabs>
+			{!isEdit ? 
+				<div className="flex flex-col gap-4">
+					<EngineHeader />
+					<div className="flex flex-col rounded-lg bg-(--muted)">
+						{tabs.length > 0 && (
+							<div>
+								<Tabs
+									value={
+										activeTabIdx !== -1
+											? tabs[activeTabIdx].path
+											: undefined
+									}
+									className="gap-0 bg-transparent"
+								>
+									<div className="w-full overflow-x-auto md:w-[80%]">
+										<TabsList className="w-max flex-nowrap gap-2">
+											{tabs.map((t) => (
+												<TabsTrigger
+													key={t.path}
+													value={t.path}
+													onClick={() =>
+														navigate(`${t.path}`)
+													}
+													data-testid={`engineLayout-${t.name}-tab`}
+												>
+													{t.name}
+												</TabsTrigger>
+											))}
+										</TabsList>
+									</div>
+								</Tabs>
+							</div>
+						)}
+						<div className="w-full bg-(--card) p-4">
+							<Outlet />
 						</div>
-					)}
-					<div className="w-full bg-(--card) p-4">
-						<Outlet />
 					</div>
 				</div>
-			</div>
+			:
+				<Outlet />
+			}
 		</EngineContext.Provider>
 	);
 };
