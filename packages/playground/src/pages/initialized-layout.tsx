@@ -12,7 +12,7 @@ export const InitializedLayout = () => {
 
 	if (error) {
 		// Show an error page if there was an error during initialization
-		return <ErrorPage />;
+		return <ErrorPage isInitialized={isInitialized} />;
 	} else if (!isInitialized) {
 		// don't load anything if it is pending
 		return (

@@ -7,16 +7,20 @@ import {
 	SidebarTrigger,
 } from "@semoss/ui/next";
 import background from "@/assets/img/render-error-background.png";
+import { useRoot } from "@/hooks";
 
 export interface ErrorPageProps {
 	isInnerComponent?: boolean;
+	isInitialized?: boolean;
 }
 
 /**
  * Page displayed when a FE rendering error occurs
  */
-export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
+export const ErrorPage = ({ isInnerComponent = false, isInitialized }: ErrorPageProps) => {
 	const navigate = useNavigate();
+	const { root } = useRoot();
+	const theme = root.theme;
 
 	const content = (
 		<div className="max-w-md p-8 text-center">
@@ -70,13 +74,24 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 	}
 
 	return (
-		<div className="relative flex min-h-screen items-center justify-center overflow-hidden">
-			<img
-				src={background}
-				alt="Background"
-				className="absolute inset-0 h-full w-full object-cover"
-			/>
-			<div className="z-10">{content}</div>
-		</div>
+		<>
+			{!isInitialized ? 
+				<div className="relative flex min-h-screen items-center justify-center overflow-hidden">
+					<img
+						src={theme.images.landing}
+						alt="Background"
+						className="absolute inset-0 h-full w-full object-cover"
+					/>
+				</div> : 
+				<div className="relative flex min-h-screen items-center justify-center overflow-hidden">
+					<img
+						src={background}
+						alt="Background"
+						className="absolute inset-0 h-full w-full object-cover"
+					/>
+					<div className="z-10">{content}</div>
+				</div>
+			}
+		</>
 	);
 };
