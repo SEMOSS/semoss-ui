@@ -92,6 +92,8 @@ const getFileIcon = (fileName: string) => {
 		return <FileTextIcon className="h-4 w-4 shrink-0 text-red-500" />;
 	if (ext === "doc" || ext === "docx")
 		return <FileTextIcon className="h-4 w-4 shrink-0 text-blue-500" />;
+	if (ext === "ppt" || ext === "pptx")
+		return <FileTextIcon className="h-4 w-4 shrink-0 text-orange-500" />;
 	if (ext === "xls" || ext === "xlsx" || ext === "csv")
 		return (
 			<FileSpreadsheetIcon className="h-4 w-4 shrink-0 text-green-600" />
@@ -129,7 +131,7 @@ const formatFileSize = (fileSize: string | number): string => {
 
 const formatDateTime = (dateStr: string): string => {
 	const d = new Date(dateStr.replace(" ", "T"));
-	if (isNaN(d.getTime())) return dateStr;
+	if (Number.isNaN(d.getTime())) return dateStr;
 	return d.toLocaleString(undefined, {
 		month: "short",
 		day: "numeric",
@@ -174,7 +176,7 @@ export const KnowledgeDetailPage = observer(() => {
 
 	const getKnowledge = usePixel<KnowledgeEngine[]>(
 		knowledgeId
-			? `MyEngines(engine=["${knowledgeId}"], engineTypes=['VECTOR'], metaKeys=["description","tag"], userT=[true], limit=[1], offset=[0]);`
+			? `MyEngines(engine=["${knowledgeId}"], engineTypes=['VECTOR'], metaKeys=["DESCRIPTION","tag"], userT=[true], limit=[1], offset=[0]);`
 			: "",
 		{ data: [] },
 	);
@@ -182,12 +184,13 @@ export const KnowledgeDetailPage = observer(() => {
 	const knowledge =
 		getKnowledge.status === "SUCCESS" ? getKnowledge.data?.[0] : null;
 
+	console.log("knowledge object", knowledge);
+
 	const tags = useMemo(() => {
 		const raw = knowledge?.tag;
-		if (!raw) {
-			return [] as string[];
-		}
-		return Array.isArray(raw) ? raw : [raw];
+		if (!raw) return [] as string[];
+		if (Array.isArray(raw)) return raw;
+		return raw.split(/[|,]/).filter(Boolean);
 	}, [knowledge?.tag]);
 
 	useGlobalBreadcrumbs({

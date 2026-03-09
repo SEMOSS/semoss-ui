@@ -54,10 +54,12 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 			null,
 		);
 		const [files, setFiles] = useState<File[]>([]);
-		const [tag, setTag] = useState("");
 		const showEmbeddingOptions = root.theme.allowEmbeddingOptions !== false;
 		const defaultEmbedderId = root.theme.defaultEmbedderId ?? "";
 		const runMCP = root.theme.enableKnowledgeMCP !== false;
+
+		const [tagInput, setTagInput] = useState("");
+		const [tags, setTags] = useState<string[]>([]);
 
 		/**
 		 * Reset the form
@@ -114,7 +116,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 					]
 				>(`CreateVectorDatabaseEngine(
 				database=["${name}"],
-				conDetails=[{"VECTOR_TYPE": "FAISS", "EMBEDDER_ENGINE_ID": "${embedderId}","DESCRIPTION":"${description}","TAGS":""}]
+				conDetails=[{"VECTOR_TYPE": "FAISS", "EMBEDDER_ENGINE_ID": "${embedderId}","DESCRIPTION":"${description}","TAGS":"${tags.join("|")}"}]
 			);`);
 
 				const engineId =
@@ -152,9 +154,9 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 					>(`MakeEngineMCP("${engineId}");`);
 				}
 
-				if (tag.length > 0) {
+				if (tags.length > 0) {
 					await actions.run<[boolean]>(
-						`SetEngineMetadata(engine=["${engineId}"],meta=[{"tag":["${tag}"]}]);`,
+						`SetEngineMetadata(engine=["${engineId}"],meta=[{"tag":["${tags}"]}]);`,
 					);
 				}
 				// Success
@@ -172,6 +174,26 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 			} finally {
 				setIsLoading(false);
 			}
+		};
+
+		const _handleTagKeyDown = (
+			e: React.KeyboardEvent<HTMLInputElement>,
+		) => {
+			if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
+				e.preventDefault();
+				const newTag = tagInput.trim().replace(/,$/, "");
+				if (newTag && !tags.includes(newTag)) {
+					setTags((prev) => [...prev, newTag]);
+				}
+				setTagInput("");
+			}
+			if (e.key === "Backspace" && !tagInput && tags.length > 0) {
+				setTags((prev) => prev.slice(0, -1));
+			}
+		};
+
+		const _removeTag = (tagToRemove: string) => {
+			setTags((prev) => prev.filter((t) => t !== tagToRemove));
 		};
 
 		return (
@@ -224,14 +246,78 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 								/>
 							</Field>
 							<Field>
-								<FieldLabel>Tag</FieldLabel>
-								<Input
-									placeholder="e.g. MCP"
-									value={tag}
-									onChange={(e) => setTag(e.target.value)}
-									disabled={isLoading}
-								/>
+								<FieldLabel>Tags</FieldLabel>
+								<div
+									className={`flex min-h-[40px] flex-wrap gap-1 rounded-md border bg-background p-2 ${isLoading ? "pointer-events-none opacity-50" : ""}`}
+								>
+									{tags.map((t) => (
+										<span
+											key={t}
+											className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 font-medium text-secondary-foreground text-xs"
+										>
+											{t}
+											<button
+												type="button"
+												onClick={() =>
+													setTags((prev) =>
+														prev.filter(
+															(x) => x !== t,
+														),
+													)
+												}
+												className="leading-none hover:text-destructive"
+											>
+												×
+											</button>
+										</span>
+									))}
+									<input
+										placeholder={
+											tags.length === 0
+												? "e.g. MCP (Enter or comma to add)"
+												: ""
+										}
+										value={tagInput}
+										onChange={(e) =>
+											setTagInput(e.target.value)
+										}
+										onKeyDown={(e) => {
+											if (
+												(e.key === "Enter" ||
+													e.key === ",") &&
+												tagInput.trim()
+											) {
+												e.preventDefault();
+												const newTag = tagInput
+													.trim()
+													.replace(/,$/, "");
+												if (
+													newTag &&
+													!tags.includes(newTag)
+												) {
+													setTags((prev) => [
+														...prev,
+														newTag,
+													]);
+												}
+												setTagInput("");
+											}
+											if (
+												e.key === "Backspace" &&
+												!tagInput &&
+												tags.length > 0
+											) {
+												setTags((prev) =>
+													prev.slice(0, -1),
+												);
+											}
+										}}
+										disabled={isLoading}
+										className="min-w-[160px] flex-1 bg-transparent text-sm outline-none"
+									/>
+								</div>
 							</Field>
+
 							{showEmbeddingOptions && (
 								<Field>
 									<FieldLabel>

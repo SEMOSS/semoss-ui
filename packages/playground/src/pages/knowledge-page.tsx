@@ -1,5 +1,6 @@
 /* eslint-disable */
 /** biome-ignore-all lint/nursery/useSortedClasses: using existing Tailwind order in this file */
+
 import {
 	Bookmark,
 	ChevronDown,
@@ -58,6 +59,7 @@ type DocumentLibraryEngine = {
 	tag: string[];
 	dateCreated: string;
 	favorite: boolean;
+	database_global?: boolean | number;
 };
 
 type EngineAsset = {
@@ -70,8 +72,8 @@ type EngineAsset = {
 };
 
 const formatDateTime = (dateStr: string): string => {
-	const d = new Date(dateStr.replace(" ", "T") + "Z");
-	if (isNaN(d.getTime())) return dateStr;
+	const d = new Date(`${dateStr.replace(" ", "T")}Z`);
+	if (Number.isNaN(d.getTime())) return dateStr;
 	return d.toLocaleString(undefined, {
 		month: "short",
 		day: "numeric",
@@ -169,11 +171,14 @@ export const DocumentLibrary = () => {
 		data[0]?.forEach((item) => {
 			const itemTags = Array.isArray(item?.tag)
 				? item.tag
-				: item?.tag
-					? [item.tag]
+				: typeof item?.tag === "string" && item.tag
+					? item.tag.split(/[|,]/).filter(Boolean)
 					: [];
+
 			itemTags.forEach((tag) => {
-				if (tag) tags.add(String(tag));
+				if (tag) {
+					tags.add(String(tag));
+				}
 			});
 		});
 		return Array.from(tags).sort();
@@ -219,9 +224,10 @@ export const DocumentLibrary = () => {
 				app_name: item.app_name || item.tag || "",
 				tag: Array.isArray(item?.tag)
 					? item.tag
-					: item?.tag
-						? [item.tag]
+					: typeof item?.tag === "string" && item.tag
+						? item.tag.split(/[|,]/).filter(Boolean)
 						: [],
+
 				dateCreated: item.database_date_created || "",
 				favorite:
 					item.app_favorite === 1 || item.database_favorite === 1,
@@ -232,12 +238,8 @@ export const DocumentLibrary = () => {
 	const filteredItems = formatted
 		.filter((item) => {
 			if (libraryTab === "all") return true;
-			const lowerTags = (Array.isArray(item.tag) ? item.tag : [])
-				.filter(Boolean)
-				.map((t) => String(t).toLowerCase());
-			const isGlobal = lowerTags.includes("fda")
-				? true
-				: centers.some((c) => lowerTags.includes(c.toLowerCase()));
+
+			const isGlobal = item?.database_global === true;
 			return libraryTab === "global" ? isGlobal : !isGlobal;
 		})
 		.filter((item) => {
