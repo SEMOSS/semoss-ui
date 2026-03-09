@@ -925,7 +925,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 					}
 				}}
 			>
-				<DialogContent className="max-w-4xl">
+				<DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Add Apps</DialogTitle>
 						<DialogDescription>
