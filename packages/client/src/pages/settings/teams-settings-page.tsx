@@ -241,6 +241,11 @@ export const TeamsSettingsPage = observer(() => {
 
 	// Build a URL-safe slug for a team id WITHOUT mutating case or removing characters (just encode)
 	const teamSlug = useCallback((id: string) => encodeURIComponent(id), []);
+	const handleTeamDelete = useCallback(() => {
+		setTotalTeamsAll((prev) => Math.max(prev - 1, 0));
+		setTotalTeamsFiltered((prev) => Math.max(prev - 1, 0));
+		setOffset((prev) => Math.max(prev - 1, 0));
+	}, []);
 
 	const visibleTeams = teams.length || 0;
 	const resultLabel =
@@ -316,6 +321,7 @@ export const TeamsSettingsPage = observer(() => {
 									description={team.description}
 									dispatch={dispatch}
 									teams={teams}
+									onDelete={handleTeamDelete}
 									onClick={() =>
 										navigate(
 											`${teamSlug(team.type)}/${teamSlug(team.id)}`,
