@@ -356,8 +356,9 @@ export const LoginPage = observer(() => {
 				if (loginType === "native") {
 					await configStore
 						.login(data.USERNAME, data.PASSWORD)
-						.then(() => {
+						.then(async () => {
 							// noop
+							await configStore.initialize();
 						})
 						.catch((error) => {
 							setError(error.message);
@@ -485,7 +486,8 @@ export const LoginPage = observer(() => {
 
 		await configStore
 			.oauth(provider)
-			.then(() => {
+			.then(async () => {
+				await configStore.initialize();
 				// turn off loading
 				setIsLoading(false);
 

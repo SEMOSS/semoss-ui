@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
-import { Env, logout, runPixel } from "@semoss/sdk/react";
+import { Env, logout, logoutProvider, runPixel } from "@semoss/sdk/react";
 import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared";
 import { registerUser } from "@/api";
 import type { AppMetadata } from "@/components/app";
@@ -256,7 +256,6 @@ export class ConfigStore {
 		return this._store.config;
 	}
 
-
 	/**
 	 * Get the config
 	 */
@@ -511,7 +510,7 @@ export class ConfigStore {
 					};
 				}
 
-			    this._store.user.id = user.id || "";
+				this._store.user.id = user.id || "";
 				this._store.user.name = user.name || "";
 				this._store.user.email = user.email || "";
 				this._store.userEpoch = user.userEpoch;
@@ -748,6 +747,10 @@ export class ConfigStore {
 			console.error(error);
 			throw error;
 		}
+	}
+	
+	async logoutProvider(provider: string) {
+		await logoutProvider(provider);
 	}
 
 	/**
