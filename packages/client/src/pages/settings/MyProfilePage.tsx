@@ -33,7 +33,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	toast
+	toast,
 } from "@semoss/ui/next";
 import {
 	createUserAccessKey,
@@ -383,9 +383,7 @@ export const MyProfilePage = () => {
 			// Send the new default model selection to the backend
 			await setUserDefaultModel(modelType, selectedAppId);
 
-			toast.success(
-				`Default ${modelType} saved successfully`,
-			);
+			toast.success(`Default ${modelType} saved successfully`);
 		} catch (e) {
 			if (e instanceof Error) {
 				toast.error(e.message);
