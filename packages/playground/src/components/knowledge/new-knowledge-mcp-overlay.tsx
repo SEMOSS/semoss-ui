@@ -105,6 +105,38 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 					return;
 				}
 
+				const allowedExtensions = [
+					"pdf",
+					"doc",
+					"docx",
+					"txt",
+					"md",
+					"csv",
+					"ppt",
+					"pptx",
+				];
+				const rejectedFiles = files.filter((file) => {
+					const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+					return !allowedExtensions.includes(ext);
+				});
+
+				if (rejectedFiles.length > 0) {
+					rejectedFiles.forEach((file) => {
+						toast.error(
+							`${file.name} could not be added — unsupported file type`,
+						);
+					});
+
+					const validFiles = files.filter((file) => {
+						const ext =
+							file.name.split(".").pop()?.toLowerCase() ?? "";
+						return allowedExtensions.includes(ext);
+					});
+					if (validFiles.length === 0) return;
+					setFiles(validFiles);
+					return;
+				}
+
 				setIsLoading(true);
 
 				// create the base vector engine
