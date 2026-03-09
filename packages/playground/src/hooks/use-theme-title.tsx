@@ -2,6 +2,6 @@ import { useEffect } from "react";
 
 export function useThemeTitle (theme) {
     useEffect(() => {
-        if (theme?.tab?.title) document.title = theme.tab.title;
-    }, [theme?.tab?.title]);
+        if (theme?.name) document.title = theme.name;
+    }, [theme?.name]);
 }

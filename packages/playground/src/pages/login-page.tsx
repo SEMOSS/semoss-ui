@@ -24,9 +24,9 @@ export const LoginPage = observer(() => {
 	useThemeTitle(theme);
 
 	useEffect(() => {
-		const icon = theme?.tab?.icon;
+		const icon = theme?.images?.tabIcon;
 		if (icon) setFavicon(icon);
-	}, [theme?.tab?.icon]);
+	}, [theme?.images?.tabIcon]);
 
 	// navigate if already logged in
 	if (isAuthorized) {

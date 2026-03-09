@@ -51,9 +51,9 @@ export const MainLayout = observer(() => {
 	useThemeTitle(theme);
 
 	useEffect(() => {
-		const icon = theme?.tab?.icon;
+		const icon = theme?.images?.tabIcon;
 		if (icon) setFavicon(icon);
-	}, [theme?.tab?.icon]);
+	}, [theme?.images?.tabIcon]);
 
 	return (
 		<ChatContext.Provider

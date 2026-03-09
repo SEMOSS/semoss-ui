@@ -35,6 +35,7 @@ export interface ThemeMap {
 			logo: string;
 			login: string;
 			landing: string;
+			tabIcon: string;
 			workspace: string;
 		};
 
@@ -139,11 +140,6 @@ export interface ThemeMap {
 			/** Name of the mcp */
 			name: string;
 		}[];
-
-		tab: {
-			title: string;
-			icon: string;
-		}
 	};
 }
 
