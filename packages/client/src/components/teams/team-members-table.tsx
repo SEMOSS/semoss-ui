@@ -833,7 +833,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 					}
 				}}
 			>
-				<DialogContent className="max-w-3xl">
+				<DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Add Members</DialogTitle>
 						<DialogDescription>

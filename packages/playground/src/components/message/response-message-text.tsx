@@ -1,6 +1,6 @@
 import { CopyIcon, Quote, SkipForwardIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -21,10 +21,10 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
-import type { ResponseMessageStore } from "@/stores";
+import type { ResponseMessageStore, RoomStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
 
-const TEXT_MARKDOWN_COMPONENTS = {
+const createMarkdownComponents = (room?: RoomStore) => ({
 	h1: ({ children, ...props }) => (
 		<H1 className="mt-5 font-semibold text-2xl text-inherit" {...props}>
 			{children}
@@ -66,17 +66,47 @@ const TEXT_MARKDOWN_COMPONENTS = {
 			{children}
 		</P>
 	),
-	a: ({ children, href, ...props }) => (
-		<a
-			href={href}
-			className="font-medium text-base text-primary underline underline-offset-1"
-			target="_blank"
-			rel="noopener noreferrer"
-			{...props}
-		>
-			{children}
-		</a>
-	),
+	a: ({ children, href, ...props }) => {
+		if (href?.startsWith("room://") && room) {
+			const path = "/" + href.slice("room://".length);
+			const filename = path.split("/").filter(Boolean).pop() ?? path;
+			return (
+				<button
+					type="button"
+					className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
+					onClick={() => {
+						room.addSidebarNode("FILE_EXPLORER", {
+							type: "tab",
+							name: "Files",
+							component: "room-file-explorer",
+							config: {},
+							enableClose: true,
+						});
+						room.addSidebarNode(`FILE--${path}`, {
+							type: "tab",
+							name: filename,
+							component: "room-file-editor",
+							config: { name: filename, path },
+							enableClose: true,
+						});
+					}}
+				>
+					{children}
+				</button>
+			);
+		}
+		return (
+			<a
+				href={href}
+				className="font-medium text-base text-primary underline underline-offset-1"
+				target="_blank"
+				rel="noopener noreferrer"
+				{...props}
+			>
+				{children}
+			</a>
+		);
+	},
 	ul: ({ children, ...props }) => (
 		<ul
 			className="my-1 ml-4 list-disc text-base text-inherit [&>li]:mt-1"
@@ -152,7 +182,7 @@ const TEXT_MARKDOWN_COMPONENTS = {
 			<Table {...props} />
 		</ScrollArea>
 	),
-};
+});
 
 interface ResponseMessageTextProps {
 	/** Message to render */
@@ -169,6 +199,10 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 	({ message, part, isLast }) => {
 		const { t } = useTranslation("chat");
 		const typewriter = useMarkdownTypewriter(part.text);
+		const components = useMemo(
+			() => createMarkdownComponents(message.room),
+			[message.room],
+		);
 
 		useEffect(() => {
 			if (message.isThinking && isLast) {
@@ -185,8 +219,13 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		return (
 			<>
 				<Markdown
-					components={TEXT_MARKDOWN_COMPONENTS}
+					components={components}
 					className="[&>*:first-child]:mt-0"
+					urlTransform={(url) => {
+						if (url.startsWith("room://")) return url;
+						if (/^(https?:|mailto:|#)/.test(url)) return url;
+						return "";
+					}}
 				>
 					{typewriter.isTyping ? typewriter.rendered : part.text}
 				</Markdown>
