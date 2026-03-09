@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
 	Blocks,
 	DefaultBlocks,
@@ -14,6 +14,7 @@ import { runPixel } from "@semoss/sdk/react";
 import { LoadingScreen, useNotification } from "@semoss/ui";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
+import type { FlexLayout } from "@/components/flex-layout";
 import { useWorkspace } from "@/hooks";
 import { AppDetailPage } from "@/pages/app";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
@@ -275,6 +276,41 @@ export const BlocksWorkspace: React.FC = observer(() => {
 			});
 		}
 	}, [state]);
+
+	/**
+	 * set the designer's selected component to be the selected tab in the active tabset whenever the layout changes
+	 */
+	useLayoutEffect(() => {
+		const model = workspace.model;
+		if (!model || !designer) return;
+
+		const originalDoAction = model.doAction.bind(model);
+
+		model.doAction = (action: FlexLayout.Action) => {
+			const result = originalDoAction(action);
+
+			// Get the active tabset
+			const activeTabset =
+				model.getActiveTabset() as FlexLayout.TabSetNode;
+
+			// Get the selected tab of the active tabset
+			const selectedTab = activeTabset?.getChildren()[
+				activeTabset.getSelected()
+			] as FlexLayout.TabNode;
+
+			// If the selected tab is a designer component, update the designer's selected component
+			if (selectedTab?.getComponent() === "designer") {
+				designer.setSelected(selectedTab.getName());
+			}
+
+			return result;
+		};
+
+		// Clean up when the component is unmounted
+		return () => {
+			model.doAction = originalDoAction;
+		};
+	}, [workspace.model, designer]);
 
 	if (!state) {
 		return <LoadingScreen.Trigger />;
