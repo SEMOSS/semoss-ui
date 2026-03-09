@@ -147,15 +147,6 @@ const CATALOG_FIELD_CONFIG: Partial<Record<CatalogType, FieldConfig[]>> = {
 			defaultValue: "",
 			label: "Storage Path",
 			placeholder: "/path/to/storage",
-			topLevel: true,
-		},
-		{
-			key: "filePath",
-			type: "text",
-			defaultValue: "",
-			label: "File Path",
-			placeholder: "/path/to/file",
-			topLevel: true,
 		},
 		{ key: "includeStorageFileNames", type: "switch", defaultValue: false },
 		{
