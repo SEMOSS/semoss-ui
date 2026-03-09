@@ -205,7 +205,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 	const {
 		app,
 		background,
-		onAction = () => null,
+		onAction,
 		href = null,
 		isFavorite = false,
 		favorite,
@@ -272,16 +272,25 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 
 	// Handlers
 	const handleCardClick = useCallback(() => {
+		if (onAction) {
+			onAction();
+			return;
+		}
+
 		if (href) {
+			if (!href.startsWith("#")) {
+				window.location.assign(href);
+				return;
+			}
 			navigate(href.replace(/^#/, ""));
 		}
-	}, [href, navigate]);
+	}, [href, navigate, onAction]);
 
 	const handleOpenApp = useCallback(
 		(e: React.MouseEvent) => {
 			e.stopPropagation();
 			if (!href) {
-				onAction();
+				onAction?.();
 				return;
 			}
 			window.open(href, "_blank", "noopener,noreferrer");
