@@ -685,6 +685,15 @@ export class RoomStore {
 	};
 
 	/**
+	 * Download a file
+	 * @param fileKey - key
+	 */
+	download = async (fileKey: string) => {
+		// get the response
+		await download(this._insightID, fileKey);
+	};
+
+	/**
 	 * Sidebar
 	 */
 	/**
