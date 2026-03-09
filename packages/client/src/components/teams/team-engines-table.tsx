@@ -842,7 +842,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 					}
 				}}
 			>
-				<DialogContent className="max-w-4xl">
+				<DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Add Engines</DialogTitle>
 						<DialogDescription>
