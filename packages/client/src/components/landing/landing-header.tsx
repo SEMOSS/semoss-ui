@@ -1,3 +1,4 @@
+import { ClipboardListIcon } from "lucide-react";
 import {
 	Button,
 	Card,
@@ -35,18 +36,26 @@ const CARDS = [
 		type: "agent",
 		testId: "new-app-agent-btn",
 	},
+	{
+		title: "Form Builder",
+		description:
+			"Build CRUD forms step by step—connect a database, configure fields, and generate a ready-to-use app.",
+		image: null,
+		type: "form",
+		testId: "new-app-form-btn",
+	},
 ] as const;
 
 interface LandingHeaderProps {
 	/** Trigger creation of a new app */
-	onCreate: (type: "blocks" | "code" | "agent") => void;
+	onCreate: (type: "blocks" | "code" | "agent" | "form") => void;
 }
 
 export const LandingHeader: React.FC<LandingHeaderProps> = ({
 	onCreate = () => null,
 }) => {
 	return (
-		<div className="grid w-full grid-cols-1 gap-4 p-2 md:grid-cols-3">
+		<div className="grid w-full grid-cols-1 gap-4 p-2 md:grid-cols-2 lg:grid-cols-4">
 			{CARDS.map((card) => (
 				<Card
 					key={card.title}
@@ -71,11 +80,17 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 						</Button>
 					</CardFooter>
 					<div className="relative w-full overflow-hidden px-6">
-						<img
-							src={card.image}
-							alt={card.title}
-							className="aspect-video w-full object-cover"
-						/>
+						{card.image ? (
+							<img
+								src={card.image}
+								alt={card.title}
+								className="aspect-video w-full object-cover"
+							/>
+						) : (
+							<div className="flex aspect-video w-full items-center justify-center bg-muted">
+								<ClipboardListIcon className="size-12 text-muted-foreground" />
+							</div>
+						)}
 					</div>
 				</Card>
 			))}

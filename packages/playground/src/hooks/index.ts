@@ -5,3 +5,4 @@ export * from "./use-markdown-typewriter";
 export * from "./use-navbar";
 export * from "./use-pagination";
 export * from "./use-root";
+export * from "./use-theme-preset";

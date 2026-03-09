@@ -4,4 +4,183 @@
 
 @source "./**/*.{ts,tsx}";
 
+/* ── Keyframe definitions ───────────────────────────────────────── */
+
+@keyframes fade-in-up {
+	from {
+		opacity: 0;
+		transform: translateY(16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes twinkle {
+	0%, 100% { opacity: 0.3; }
+	50% { opacity: 1; }
+}
+
+@keyframes aurora-shift {
+	0% { background-position: 0% 50%; }
+	50% { background-position: 100% 50%; }
+	100% { background-position: 0% 50%; }
+}
+
+@keyframes warm-pulse {
+	0%, 100% {
+		opacity: 0.5;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 1;
+		transform: scale(1.08);
+	}
+}
+
+/* ── Entrance animation utilities ───────────────────────────────── */
+
+@utility animate-fade-in-up {
+	animation: fade-in-up 0.6s ease-out both;
+}
+
+@utility animate-fade-in-up-delay-1 {
+	animation: fade-in-up 0.6s ease-out 0.15s both;
+}
+
+@utility animate-fade-in-up-delay-2 {
+	animation: fade-in-up 0.6s ease-out 0.3s both;
+}
+
+/* ── Theme transition ───────────────────────────────────────────── */
+
+@layer base {
+	:root {
+		transition:
+			background-color 0.4s ease,
+			color 0.3s ease;
+	}
+
+	[data-sidebar] {
+		transition:
+			background-color 0.4s ease,
+			color 0.3s ease,
+			border-color 0.4s ease;
+	}
+}
+
+/* ── Ambient background effects ─────────────────────────────────── */
+
+@utility preset-bg-stars {
+	background-image:
+		radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,0.9) 50%, transparent 100%),
+		radial-gradient(1.5px 1.5px at 30% 65%, rgba(255,255,255,0.8) 50%, transparent 100%),
+		radial-gradient(2.5px 2.5px at 55% 15%, rgba(255,255,255,1) 50%, transparent 100%),
+		radial-gradient(1.5px 1.5px at 70% 80%, rgba(255,255,255,0.7) 50%, transparent 100%),
+		radial-gradient(2px 2px at 85% 40%, rgba(255,255,255,0.9) 50%, transparent 100%),
+		radial-gradient(2px 2px at 20% 85%, rgba(255,255,255,0.8) 50%, transparent 100%),
+		radial-gradient(1.5px 1.5px at 45% 50%, rgba(255,255,255,0.6) 50%, transparent 100%),
+		radial-gradient(2px 2px at 90% 10%, rgba(255,255,255,0.9) 50%, transparent 100%),
+		radial-gradient(1px 1px at 5% 50%, rgba(255,255,255,0.7) 50%, transparent 100%),
+		radial-gradient(2px 2px at 60% 90%, rgba(255,255,255,0.8) 50%, transparent 100%),
+		radial-gradient(1.5px 1.5px at 75% 25%, rgba(255,255,255,0.9) 50%, transparent 100%),
+		radial-gradient(1px 1px at 95% 70%, rgba(255,255,255,0.6) 50%, transparent 100%);
+	animation: twinkle 4s ease-in-out infinite alternate;
+}
+
+@utility preset-bg-aurora {
+	background: linear-gradient(
+		135deg,
+		rgba(99, 102, 241, 0.45) 0%,
+		rgba(139, 92, 246, 0.35) 25%,
+		rgba(59, 130, 246, 0.4) 50%,
+		rgba(16, 185, 129, 0.3) 75%,
+		rgba(99, 102, 241, 0.45) 100%
+	);
+	background-size: 300% 300%;
+	animation: aurora-shift 12s ease-in-out infinite;
+}
+
+@utility preset-bg-glow {
+	background: radial-gradient(
+		ellipse at 30% 80%,
+		rgba(251, 146, 60, 0.5) 0%,
+		rgba(234, 88, 12, 0.25) 40%,
+		transparent 70%
+	),
+	radial-gradient(
+		ellipse at 80% 20%,
+		rgba(245, 158, 11, 0.4) 0%,
+		rgba(234, 88, 12, 0.15) 40%,
+		transparent 70%
+	);
+	animation: warm-pulse 8s ease-in-out infinite;
+}
+
+/* ── Per-theme background gradients ─────────────────────────────── */
+
+@utility preset-gradient-midnight {
+	background:
+		radial-gradient(2px 2px at 8% 15%, rgba(255,255,255,0.9) 50%, transparent 100%),
+		radial-gradient(1.5px 1.5px at 22% 72%, rgba(255,255,255,0.7) 50%, transparent 100%),
+		radial-gradient(2.5px 2.5px at 50% 10%, rgba(255,255,255,1) 50%, transparent 100%),
+		radial-gradient(1.5px 1.5px at 65% 85%, rgba(255,255,255,0.6) 50%, transparent 100%),
+		radial-gradient(2px 2px at 80% 35%, rgba(255,255,255,0.8) 50%, transparent 100%),
+		radial-gradient(1px 1px at 15% 90%, rgba(255,255,255,0.5) 50%, transparent 100%),
+		radial-gradient(2px 2px at 40% 55%, rgba(255,255,255,0.7) 50%, transparent 100%),
+		radial-gradient(1.5px 1.5px at 92% 60%, rgba(255,255,255,0.8) 50%, transparent 100%),
+		radial-gradient(1px 1px at 70% 20%, rgba(255,255,255,0.6) 50%, transparent 100%),
+		radial-gradient(2px 2px at 35% 30%, rgba(255,255,255,0.9) 50%, transparent 100%),
+		radial-gradient(1px 1px at 88% 80%, rgba(255,255,255,0.5) 50%, transparent 100%),
+		radial-gradient(1.5px 1.5px at 5% 45%, rgba(255,255,255,0.7) 50%, transparent 100%),
+		linear-gradient(
+			160deg,
+			rgba(15, 15, 35, 1) 0%,
+			rgba(30, 20, 60, 1) 30%,
+			rgba(20, 30, 70, 1) 60%,
+			rgba(10, 10, 30, 1) 100%
+		);
+}
+
+@utility preset-gradient-sunset {
+	background: linear-gradient(
+		135deg,
+		rgba(255, 247, 237, 1) 0%,
+		rgba(255, 237, 213, 1) 30%,
+		rgba(254, 215, 170, 0.8) 60%,
+		rgba(255, 251, 245, 1) 100%
+	);
+}
+
+@utility preset-gradient-stone {
+	background: linear-gradient(
+		180deg,
+		rgba(245, 245, 244, 1) 0%,
+		rgba(231, 229, 228, 1) 50%,
+		rgba(214, 211, 209, 0.6) 100%
+	);
+}
+
+@utility preset-gradient-deloitte {
+	background: linear-gradient(
+		160deg,
+		rgba(240, 253, 244, 1) 0%,
+		rgba(220, 252, 231, 0.7) 40%,
+		rgba(187, 247, 208, 0.3) 70%,
+		rgba(255, 255, 255, 1) 100%
+	);
+}
+
+@utility preset-gradient-mhs {
+	background: linear-gradient(
+		180deg,
+		rgba(241, 245, 249, 1) 0%,
+		rgba(226, 232, 240, 1) 30%,
+		rgba(120, 0, 0, 0.15) 50%,
+		rgba(226, 232, 240, 1) 70%,
+		rgba(241, 245, 249, 1) 100%
+	);
+}
+
 

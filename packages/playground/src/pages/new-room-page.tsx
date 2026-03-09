@@ -26,7 +26,10 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import deloitteVideo from "@/assets/img/deloitte-theme.mp4";
+import earthVideo from "@/assets/img/earth.mp4";
 import landingImage from "@/assets/img/landing.png";
+import sunsetImage from "@/assets/img/sunset.jpg";
 import {
 	RoomInput,
 	RoomInputMenuKnowledge,
@@ -36,13 +39,29 @@ import {
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import {
+	useChat,
+	useGlobalBreadcrumbs,
+	useRoot,
+	useThemePreset,
+} from "@/hooks";
 import { RoomStore } from "@/stores";
 import type { MCPConfig, Workspace } from "@/types";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
 	: "";
+
+/** Map of video background keys to their imported asset URLs */
+const backgroundVideos: Record<string, string> = {
+	"deloitte-theme": deloitteVideo,
+	earth: earthVideo,
+};
+
+/** Map of per-theme background image overrides */
+const backgroundImages: Record<string, string> = {
+	sunset: sunsetImage,
+};
 
 /**
  * The page to create a new room
@@ -62,6 +81,7 @@ export const NewRoomPage = observer(() => {
 	});
 
 	const { chat } = useChat();
+	const { currentPreset } = useThemePreset();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 
@@ -297,22 +317,59 @@ export const NewRoomPage = observer(() => {
 		<div className="relative h-full w-full overflow-hidden">
 			<ResizablePanelGroup direction="horizontal">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
-					<img
-						src={root.theme.images.landing || landingImage}
-						alt="Background"
-						className="absolute inset-0 h-full w-full select-none object-cover"
+					{/* Layer 0: Background — video, gradient, or photo */}
+					{currentPreset.backgroundVideo ? (
+						<video
+							key={currentPreset.id}
+							autoPlay
+							loop
+							muted
+							playsInline
+							className="absolute inset-0 h-full w-full select-none object-cover"
+							src={
+								backgroundVideos[currentPreset.backgroundVideo]
+							}
+						/>
+					) : currentPreset.backgroundGradient ? (
+						<div
+							className={`absolute inset-0 ${currentPreset.backgroundGradient}`}
+						/>
+					) : (
+						<img
+							src={
+								backgroundImages[currentPreset.id] ||
+								root.theme.images.landing ||
+								landingImage
+							}
+							alt="Background"
+							className="absolute inset-0 h-full w-full select-none object-cover"
+						/>
+					)}
+
+					{/* Layer 1: Ambient effect (aurora / glow) — rendered above gradient, below overlay */}
+					{currentPreset.backgroundEffect ? (
+						<div
+							className={`pointer-events-none absolute inset-0 z-[1] ${currentPreset.backgroundEffect}`}
+						/>
+					) : null}
+
+					{/* Layer 2: Semi-transparent overlay to soften the background for readable content */}
+					<div
+						className={`absolute inset-0 z-[2] ${currentPreset.overlayClassName || "bg-background/60"}`}
 					/>
+
+					{/* Layer 3: Content */}
 					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
 						{root.theme.landing ? (
 							<div
-								className="mx-auto flex max-w-xl"
+								className="mx-auto flex max-w-xl animate-fade-in-up"
 								// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 								dangerouslySetInnerHTML={{
 									__html: root.theme.landing,
 								}}
 							/>
 						) : (
-							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
+							<div className="mx-auto flex max-w-xl animate-fade-in-up flex-col items-center gap-3">
 								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
 									{t("room:welcome")}
 								</div>
@@ -325,7 +382,7 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
-							className="max-h-64 min-h-48 bg-background"
+							className="max-h-64 min-h-48 animate-fade-in-up-delay-1 bg-background"
 							isLoading={isLoading}
 							model={chat.models.selected}
 							setModel={(m) => {

@@ -2,6 +2,7 @@ import { AppCatalogPage } from "./app-catalog-page";
 import { AppDetailPage } from "./app-detail-page";
 import { CreateAppPage } from "./create-app-page";
 import { EditAppPage } from "./edit-app-page";
+import { NewFormBuilderAppPage } from "./NewFormBuilderAppPage";
 import { NewPromptBuilderAppPage } from "./NewPromptBuilderAppPage";
 import { ViewAppPage } from "./ViewAppPage";
 
@@ -11,5 +12,6 @@ export {
 	ViewAppPage,
 	CreateAppPage,
 	EditAppPage,
+	NewFormBuilderAppPage,
 	NewPromptBuilderAppPage,
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { LanguagesIcon, LogOutIcon } from "lucide-react";
+import { LanguagesIcon, LogOutIcon, PaletteIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LANGUAGES, useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
@@ -20,7 +20,7 @@ import {
 	DropdownMenuTrigger,
 	useSidebar,
 } from "@semoss/ui/next";
-import { useChat } from "@/hooks";
+import { useChat, useThemePreset } from "@/hooks";
 import { toInitials } from "@/utility";
 
 export function NavUser() {
@@ -28,6 +28,7 @@ export function NavUser() {
 	const { isMobile } = useSidebar();
 	const { actions } = useInsight();
 	const { chat } = useChat();
+	const { presets, currentPreset, setPreset } = useThemePreset();
 
 	const navigate = useNavigate();
 
@@ -56,6 +57,25 @@ export function NavUser() {
 				align="end"
 				sideOffset={4}
 			>
+				<DropdownMenuSub>
+					<DropdownMenuSubTrigger>
+						<PaletteIcon />
+						{currentPreset.name}
+					</DropdownMenuSubTrigger>
+					<DropdownMenuPortal>
+						<DropdownMenuSubContent>
+							{presets.map((preset) => (
+								<DropdownMenuCheckboxItem
+									key={preset.id}
+									checked={currentPreset.id === preset.id}
+									onCheckedChange={() => setPreset(preset.id)}
+								>
+									{preset.name}
+								</DropdownMenuCheckboxItem>
+							))}
+						</DropdownMenuSubContent>
+					</DropdownMenuPortal>
+				</DropdownMenuSub>
 				<DropdownMenuSub>
 					<DropdownMenuSubTrigger>
 						<LanguagesIcon />

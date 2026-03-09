@@ -9,6 +9,7 @@ import {
 	AppDetailPage,
 	CreateAppPage,
 	EditAppPage,
+	NewFormBuilderAppPage,
 	NewPromptBuilderAppPage,
 	ViewAppPage,
 } from "./app";
@@ -45,6 +46,10 @@ export const Router = observer(() => {
 						<Route
 							path="new/prompt"
 							element={<NewPromptBuilderAppPage />}
+						/>
+						<Route
+							path="new/form"
+							element={<NewFormBuilderAppPage />}
 						/>
 						<Route path=":appId" element={<AppDetailPage />} />
 						<Route path=":appId/view/*" element={<ViewAppPage />} />
