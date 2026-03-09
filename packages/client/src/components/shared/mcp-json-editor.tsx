@@ -3,15 +3,11 @@ import {
 	CheckCircle,
 	ChevronDown,
 	ChevronUp,
-	Loader2,
 	Maximize2,
 	Minimize2,
 	RotateCcw,
 	Save,
 	Search,
-	Sparkles,
-	ThumbsDown,
-	ThumbsUp,
 	Trash2,
 	X,
 } from "lucide-react";
@@ -34,7 +30,6 @@ type MCPJsonEditorProps = {
 	dataMap: {
 		initialData: MCPJsonData;
 		onSave?: (data: MCPJsonData, path: string) => void;
-		onOptimize?: (data: string) => Promise<string>;
 		path: string;
 		name: string;
 	};
@@ -58,7 +53,6 @@ export type MCPTool = {
 		type: "object";
 	};
 	_type: string;
-	_meta: Record<string, unknown>;
 };
 
 export type MCPJsonData = {
@@ -122,30 +116,7 @@ interface FunctionCardProps {
 	jsonErrors: Record<string, string>;
 	showDelete?: boolean;
 	showRestore?: boolean;
-	onOptimizeDescription: (
-		toolIdx: number,
-		propKey: string | null,
-		currentDescription: string,
-	) => void;
 }
-
-interface OptimizationModalProps {
-	isOpen: boolean;
-	onClose: () => void;
-	currentDescription: string;
-	optimizedDescription: string | null;
-	onApprove: () => void;
-	onReject: () => void;
-	isLoading: boolean;
-	error: string | null;
-}
-
-// Utility function to clean tool context by removing unwanted fields
-const cleanToolContext = (tool: MCPTool): Omit<MCPTool, "_type" | "_meta"> => {
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const { _type, _meta, ...cleanedTool } = tool;
-	return cleanedTool;
-};
 
 // Custom hooks
 const useDebounce = <T,>(value: T, delay: number = 400): T => {
@@ -211,161 +182,6 @@ const useKeyboardShortcut = (
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [key, callback, ...deps]);
-};
-
-// Optimization Modal Component
-const OptimizationModal: React.FC<OptimizationModalProps> = ({
-	isOpen,
-	onClose,
-	currentDescription,
-	optimizedDescription,
-	onApprove,
-	onReject,
-	isLoading,
-	error,
-}) => {
-	if (!isOpen) return null;
-
-	const handleApprove = () => {
-		onApprove();
-		onClose();
-	};
-
-	const handleReject = () => {
-		onReject();
-		onClose();
-	};
-
-	return (
-		<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-			<div className="relative mx-4 w-full max-w-3xl overflow-hidden rounded-lg bg-card shadow-2xl">
-				{/* Header */}
-				<div className="flex items-center justify-between border-border border-b bg-secondary px-6 py-4">
-					<div className="flex items-center gap-3">
-						<div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-							<Sparkles className="h-5 w-5 text-primary" />
-						</div>
-						<div>
-							<h2 className="font-semibold text-foreground text-lg">
-								AI-Optimized Description
-							</h2>
-							<p className="text-muted-foreground text-sm">
-								Review and approve the enhanced version
-							</p>
-						</div>
-					</div>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						onClick={onClose}
-						className="text-muted-foreground hover:text-foreground"
-					>
-						<X size={20} />
-					</Button>
-				</div>
-
-				{/* Content */}
-				<div className="max-h-[70vh] overflow-y-auto p-6">
-					{isLoading && (
-						<div className="flex flex-col items-center justify-center py-12">
-							<Loader2 className="mb-4 h-12 w-12 animate-spin text-primary" />
-							<p className="font-medium text-foreground">
-								Optimizing your description...
-							</p>
-							<p className="mt-2 text-muted-foreground text-sm">
-								Our AI is analyzing and enhancing the content
-							</p>
-						</div>
-					)}
-
-					{error && !isLoading && (
-						<div className="flex flex-col items-center justify-center py-12">
-							<div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-								<AlertCircle className="h-6 w-6 text-destructive" />
-							</div>
-							<p className="font-medium text-destructive">
-								Optimization Failed
-							</p>
-							<p className="mt-2 text-center text-muted-foreground text-sm">
-								{error}
-							</p>
-						</div>
-					)}
-
-					{!isLoading && !error && optimizedDescription && (
-						<div className="space-y-6">
-							{/* Original Description */}
-							<div>
-								<Label className="mb-2 flex items-center gap-2 text-foreground text-sm">
-									<span>Original Description</span>
-									<Badge
-										variant="outline"
-										className="text-xs"
-									>
-										Current
-									</Badge>
-								</Label>
-								<div className="rounded-lg border border-border bg-muted p-4">
-									<p className="text-muted-foreground text-sm leading-relaxed">
-										{currentDescription || (
-											<span className="italic">
-												No description provided
-											</span>
-										)}
-									</p>
-								</div>
-							</div>
-
-							{/* Optimized Description */}
-							<div>
-								<Label className="mb-2 flex items-center gap-2 text-foreground text-sm">
-									<span>AI-Optimized Description</span>
-									<Badge color="success" className="text-xs">
-										Enhanced
-									</Badge>
-								</Label>
-								<div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
-									<p className="text-foreground text-sm leading-relaxed">
-										{optimizedDescription}
-									</p>
-								</div>
-							</div>
-						</div>
-					)}
-				</div>
-
-				{/* Footer */}
-				{!isLoading && !error && optimizedDescription && (
-					<div className="flex items-center justify-between border-border border-t bg-secondary px-6 py-4">
-						<Button
-							variant="outline"
-							onClick={handleReject}
-							className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
-						>
-							<ThumbsDown size={16} />
-							Reject
-						</Button>
-						<Button
-							color="primary"
-							onClick={handleApprove}
-							className="flex items-center gap-2"
-						>
-							<ThumbsUp size={16} />
-							Approve & Apply
-						</Button>
-					</div>
-				)}
-
-				{error && !isLoading && (
-					<div className="flex items-center justify-end border-border border-t bg-secondary px-6 py-4">
-						<Button variant="outline" onClick={onClose}>
-							Close
-						</Button>
-					</div>
-				)}
-			</div>
-		</div>
-	);
 };
 
 // EditorHeader Component
@@ -502,7 +318,6 @@ const FunctionCard = memo<FunctionCardProps>(
 		jsonErrors,
 		showDelete = true,
 		showRestore = true,
-		onOptimizeDescription,
 	}) => {
 		const handleHeaderClick = (e: React.MouseEvent) => {
 			// Prevent toggle when clicking on delete/restore buttons
@@ -515,7 +330,7 @@ const FunctionCard = memo<FunctionCardProps>(
 			}
 			onToggleExpand(tool.name);
 		};
-		console.log("TEsting >> ", window.location.hash.includes("app"));
+
 		return (
 			<Card className="mb-5 w-full gap-0 rounded-lg py-0 transition-all">
 				<button
@@ -593,44 +408,23 @@ const FunctionCard = memo<FunctionCardProps>(
 							<Label className="mb-1 block text-foreground text-sm">
 								Description:
 							</Label>
-							<div className="relative">
-								<Textarea
-									value={tool.description ?? ""}
-									onChange={(e) =>
-										onUpdateTool(actualIdx, {
-											description: e.target.value,
-										})
-									}
-									disabled={isDeleted}
-									rows={2}
-									style={{ height: "4rem" }}
-									className={`w-full resize-y overflow-y-auto px-2 py-1 pr-10 text-foreground text-sm ${
-										isDeleted
-											? "cursor-not-allowed bg-muted opacity-60"
-											: ""
-									}`}
-									placeholder="Describe function purpose and parameters..."
-								/>
-								<Button
-									hidden={window.location.hash.includes(
-										"app",
-									)}
-									variant="ghost"
-									size="icon-sm"
-									onClick={() =>
-										onOptimizeDescription(
-											actualIdx,
-											null,
-											tool.description ?? "",
-										)
-									}
-									disabled={isDeleted}
-									title="AI-Optimize Description"
-									className="absolute top-2 right-2 h-6 w-6 text-primary hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
-								>
-									<Sparkles size={14} />
-								</Button>
-							</div>
+							<Textarea
+								value={tool.description ?? ""}
+								onChange={(e) =>
+									onUpdateTool(actualIdx, {
+										description: e.target.value,
+									})
+								}
+								disabled={isDeleted}
+								rows={2}
+								style={{ height: "4rem" }}
+								className={`w-full resize-y overflow-y-auto px-2 py-1 text-foreground text-sm ${
+									isDeleted
+										? "cursor-not-allowed bg-muted opacity-60"
+										: ""
+								}`}
+								placeholder="Describe function purpose and parameters..."
+							/>
 						</div>
 
 						<div className="w-full overflow-x-auto">
@@ -708,55 +502,31 @@ const FunctionCard = memo<FunctionCardProps>(
 												/>
 											</div>
 											<div className="border-border border-r border-b bg-card px-2 py-2">
-												<div className="relative">
-													<Textarea
-														value={
-															p.description ?? ""
-														}
-														onChange={(e) =>
-															onUpdateToolProp(
-																actualIdx,
-																k,
-																{
-																	description:
-																		e.target
-																			.value,
-																},
-															)
-														}
-														disabled={isDeleted}
-														rows={2}
-														style={{
-															height: "3rem",
-														}}
-														className={`w-full resize-y overflow-y-auto px-1.5 py-1 pr-7 text-foreground text-xs ${
-															isDeleted
-																? "cursor-not-allowed bg-muted opacity-60"
-																: ""
-														}`}
-														placeholder="Parameter description..."
-													/>
-													<Button
-														hidden={window.location.hash.includes(
-															"app",
-														)}
-														variant="ghost"
-														size="icon-sm"
-														onClick={() =>
-															onOptimizeDescription(
-																actualIdx,
-																k,
-																p.description ??
-																	"",
-															)
-														}
-														disabled={isDeleted}
-														title="AI-Optimize Description"
-														className="absolute top-1 right-1 h-5 w-5 text-primary hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
-													>
-														<Sparkles size={12} />
-													</Button>
-												</div>
+												<Textarea
+													value={p.description ?? ""}
+													onChange={(e) =>
+														onUpdateToolProp(
+															actualIdx,
+															k,
+															{
+																description:
+																	e.target
+																		.value,
+															},
+														)
+													}
+													disabled={isDeleted}
+													rows={2}
+													style={{
+														height: "3rem",
+													}}
+													className={`w-full resize-y overflow-y-auto px-1.5 py-1 text-foreground text-xs ${
+														isDeleted
+															? "cursor-not-allowed bg-muted opacity-60"
+															: ""
+													}`}
+													placeholder="Parameter description..."
+												/>
 											</div>
 											<div className="flex items-center border-border border-r border-b bg-card px-2 py-2">
 												<select
@@ -959,7 +729,7 @@ FunctionCard.displayName = "FunctionCard";
 
 // Main MCPJsonEditor Component
 export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
-	const { initialData, onSave, onOptimize, path } = dataMap;
+	const { initialData, onSave, path } = dataMap;
 
 	const [data, setData] = useState<MCPJsonData>(initialData);
 	const [deletedTools, setDeletedTools] = useState<string[]>([]);
@@ -978,22 +748,6 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 	const [hasChanges, setHasChanges] = useState(false);
 	const [initialDataSnapshot, setInitialDataSnapshot] = useState<string>(
 		JSON.stringify(initialData),
-	);
-
-	// Optimization Modal State
-	const [isOptimizationModalOpen, setIsOptimizationModalOpen] =
-		useState(false);
-	const [optimizationContext, setOptimizationContext] = useState<{
-		toolIdx: number;
-		propKey: string | null;
-		currentDescription: string;
-	} | null>(null);
-	const [isOptimizationLoading, setIsOptimizationLoading] = useState(false);
-	const [optimizedDescription, setOptimizedDescription] = useState<
-		string | null
-	>(null);
-	const [optimizationError, setOptimizationError] = useState<string | null>(
-		null,
 	);
 
 	const debouncedSearch = useDebounce(searchQuery, 400);
@@ -1202,123 +956,6 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		[jsonTextValues],
 	);
 
-	// API call to GenerateEngineMetadata with cleaned context and dynamic system prompt
-	const callGenerateEngineMetadataAPI = async (
-		toolContext: MCPTool,
-		propKey: string | null,
-		propertyName?: string,
-	): Promise<string> => {
-		try {
-			// Clean the tool context by removing _type
-			const cleanedTool = cleanToolContext(toolContext);
-
-			// Create the additional context string
-			const additionalContext = JSON.stringify(cleanedTool, null, 2);
-
-			// Generate dynamic system prompt based on context
-			let systemPrompt = "";
-
-			if (propKey === null) {
-				// System prompt for tool's main description
-				systemPrompt = `You are an expert technical writer specializing in API and tool documentation. Generate a comprehensive, clear, and professional description for this MCP (Model Context Protocol) tool. The description should:
-
-				1. Explain the tool's primary purpose and functionality
-				2. Highlight key capabilities and use cases
-				3. Be concise yet informative (2-4 sentences)
-				4. Use professional, neutral tone
-				5. Focus on what the tool does, not implementation details
-
-				Context: The tool is part of an MCP server configuration and will be used by AI assistants to understand when and how to use this tool.`;
-			} else {
-				// System prompt for individual property description
-				systemPrompt = `You are an expert technical writer specializing in API parameter documentation. Generate a clear and precise description for the '${propertyName}' parameter of this MCP tool. The description should:
-
-				1. Explain what this parameter represents and its purpose
-				2. Clarify how it affects the tool's behavior
-				3. Include expected format or value constraints if relevant
-				4. Be concise (1-2 sentences)
-				5. Use professional, neutral tone
-				6. Focus on the parameter's role in the tool's operation
-
-				Context: This parameter is part of an MCP tool's input schema and will help users understand what value to provide and why it's needed.`;
-			}
-
-			// Combine system prompt with additional context
-			const contextWithPrompt = `${systemPrompt}\n\n=== TOOL CONTEXT ===\n${additionalContext}`;
-
-			return onOptimize(JSON.stringify(contextWithPrompt));
-		} catch (error) {
-			console.error("Error calling GenerateEngineMetadata API:", error);
-			throw new Error(
-				"Failed to optimize description. Please try again.",
-			);
-		}
-	};
-
-	const handleOptimizeDescription = useCallback(
-		async (
-			toolIdx: number,
-			propKey: string | null,
-			currentDescription: string,
-		) => {
-			const tool = data.tools[toolIdx];
-
-			setOptimizationContext({ toolIdx, propKey, currentDescription });
-			setIsOptimizationModalOpen(true);
-			setIsOptimizationLoading(true);
-			setOptimizedDescription(null);
-			setOptimizationError(null);
-
-			try {
-				// Pass property name for better context in system prompt
-				const propertyName = propKey || undefined;
-
-				// Call the GenerateEngineMetadata API with cleaned context
-				const optimized = await callGenerateEngineMetadataAPI(
-					tool,
-					propKey,
-					propertyName,
-				);
-				setOptimizedDescription(optimized);
-			} catch (error) {
-				console.error("Error optimizing description:", error);
-				setOptimizationError(
-					error instanceof Error
-						? error.message
-						: "Failed to optimize description. Please try again.",
-				);
-			} finally {
-				setIsOptimizationLoading(false);
-			}
-		},
-		[data.tools],
-	);
-
-	const handleApproveOptimization = useCallback(() => {
-		if (!optimizationContext || !optimizedDescription) return;
-
-		const { toolIdx, propKey } = optimizationContext;
-
-		if (propKey === null) {
-			// Update tool description
-			updateTool(toolIdx, { description: optimizedDescription });
-		} else {
-			// Update property description
-			updateToolProp(toolIdx, propKey, {
-				description: optimizedDescription,
-			});
-		}
-
-		setIsOptimizationModalOpen(false);
-		setOptimizationContext(null);
-		setOptimizedDescription(null);
-	}, [optimizationContext, optimizedDescription, updateTool, updateToolProp]);
-
-	const handleRejectOptimization = useCallback(() => {
-		// Simply close the modal without applying changes
-		console.log("User rejected the optimized description");
-	}, []);
-
 	const clearSearch = useCallback(() => {
 		setSearchQuery("");
 	}, []);
@@ -1366,6 +1003,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		}
 
 		setHasChanges(false);
+		// updatePanels(false);
 	}, [hasChanges, data, deletedTools, onSave, path]);
 
 	const visibleTools = useMemo(() => data.tools || [], [data.tools]);
@@ -1494,29 +1132,9 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 						jsonErrors={jsonErrors}
 						showDelete={true}
 						showRestore={true}
-						onOptimizeDescription={handleOptimizeDescription}
 					/>
 				);
 			})}
-
-			{/* Optimization Modal */}
-			<OptimizationModal
-				isOpen={isOptimizationModalOpen}
-				onClose={() => {
-					setIsOptimizationModalOpen(false);
-					setOptimizationContext(null);
-					setOptimizedDescription(null);
-					setOptimizationError(null);
-				}}
-				currentDescription={
-					optimizationContext?.currentDescription ?? ""
-				}
-				optimizedDescription={optimizedDescription}
-				onApprove={handleApproveOptimization}
-				onReject={handleRejectOptimization}
-				isLoading={isOptimizationLoading}
-				error={optimizationError}
-			/>
 		</div>
 	);
 };
