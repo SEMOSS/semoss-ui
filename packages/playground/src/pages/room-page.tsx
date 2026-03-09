@@ -161,7 +161,8 @@ export const RoomPage = observer(() => {
 							<ResizableHandle />
 							<ResizablePanel
 								className={"relative p-2"}
-								defaultSize={70}
+								defaultSize={50}
+								minSize={20}
 							>
 								<RoomSidebar room={room} />
 							</ResizablePanel>
