@@ -7,7 +7,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
-	Button,
+	Badge,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -78,7 +78,7 @@ export const ToolsPage = observer(() => {
 		return true;
 	});
 	return (
-		<div className="relative flex h-full w-full flex-col gap-4 overflow-hidden pl-2">
+		<div className="relative flex h-full w-full flex-col gap-4 overflow-hidden bg-background px-4">
 			<div>
 				<h1 className="mb-4 gap-4 pt-4 pl-2 font-bold text-4xl">
 					Tools

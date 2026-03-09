@@ -1,6 +1,6 @@
 import type React from "react";
 import { usePixel } from "@semoss/sdk/react";
-import { Card, CardContent, CardFooter } from "@semoss/ui/next";
+import { Badge, Card, CardContent, CardFooter } from "@semoss/ui/next";
 
 interface ToolCardProps {
 	tool: {
@@ -41,7 +41,7 @@ const ToolCard: React.FC<ToolCardProps> = ({ tool }) => {
 						key={mcpTool.name}
 						className="flex flex-col justify-between"
 					>
-						<CardContent className="flex flex-col gap-3 p-5">
+						<CardContent className="flex flex-col gap-3 p-6">
 							<div className="font-semibold text-base">
 								{mcpTool.title || mcpTool.name}
 							</div>
@@ -55,15 +55,13 @@ const ToolCard: React.FC<ToolCardProps> = ({ tool }) => {
 								App: {tool.project_name}
 							</div>
 
-							<div
-								className={`w-fit rounded-full border px-2.5 py-0.5 font-medium text-xs ${
-									tool.project_global
-										? "border-primary/30 bg-primary/4 text-primary"
-										: "text-muted-foreground"
-								}`}
+							<Badge
+								variant={
+									tool.project_global ? "default" : "outline"
+								}
 							>
 								{tool.project_global ? "Public" : "Private"}
-							</div>
+							</Badge>
 						</CardContent>
 
 						<CardFooter className="px-5 pt-0 pb-5">
