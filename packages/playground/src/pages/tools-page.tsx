@@ -4,13 +4,16 @@
 /** biome-ignore-all lint/correctness/noUnusedVariables: <explanation> */
 import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
+	Tabs,
+	TabsList,
+	TabsTrigger,
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
@@ -41,7 +44,7 @@ export const ToolsPage = observer(() => {
 	});
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
-	const [filter, setFilter] = useState<"All" | "Public" | "Private">("All");
+	const [filter, setFilter] = useState("all");
 
 	const getTools = useIteratorPixel<ToolItem[], ToolItem>(
 		(limit, offset) =>
@@ -60,7 +63,6 @@ export const ToolsPage = observer(() => {
 		},
 		[debouncedSearch],
 	);
-
 	const { setScroll } = useInfiniteScroll({
 		disabled: getTools.isLoading || !getTools.hasMore,
 		onNext: () => {
@@ -69,14 +71,16 @@ export const ToolsPage = observer(() => {
 	});
 
 	const filteredTools = getTools.data.filter((tool) => {
-		if (filter === "All") return true;
-		if (filter === "Public") return tool.project_global === true;
+		if (filter === "all") return true;
+		if (filter === "public") return tool.project_global === true;
+		if (filter === "private") return tool.project_global === false;
+
 		return true;
 	});
 	return (
 		<div className="relative flex h-full w-full flex-col gap-4 overflow-hidden pl-2">
 			<div>
-				<h1 className="mb-4 gap-4 pt-4 pl-2 font-bold text-5xl">
+				<h1 className="mb-4 gap-4 pt-4 pl-2 font-bold text-4xl">
 					Tools
 				</h1>
 				<p className="gap-4 pl-2 text-muted-foreground text-sm">
@@ -105,26 +109,16 @@ export const ToolsPage = observer(() => {
 				         
 				<div className="flex shrink-0 gap-2">
 					               
-					<Button
-						variant={filter === "All" ? "default" : "outline"}
-						onClick={() => setFilter("All")}
+					<Tabs
+						defaultValue="all"
+						onValueChange={(value) => setFilter(value)}
 					>
-						                     All Tools                
-					</Button>
-					               
-					<Button
-						variant={filter === "Public" ? "default" : "outline"}
-						onClick={() => setFilter("Public")}
-					>
-						                     Public                
-					</Button>
-					               
-					<Button
-						variant={filter === "Private" ? "default" : "outline"}
-						onClick={() => setFilter("Private")}
-					>
-						                    Private
-					</Button>
+						<TabsList>
+							<TabsTrigger value="all">All Tools</TabsTrigger>
+							<TabsTrigger value="public">Public</TabsTrigger>
+							<TabsTrigger value="private">Private</TabsTrigger>
+						</TabsList>
+					</Tabs>
 					         
 				</div>
 				   
