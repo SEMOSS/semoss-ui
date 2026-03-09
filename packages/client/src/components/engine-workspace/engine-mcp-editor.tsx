@@ -99,7 +99,6 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 		const optimizeDesc = async (context: string) => {
 			try {
 				setIsLoading(true);
-				// TODO: Replace model IDs with actual values when available - this will be implemented after model centraliation work is done
 				// Build the pixel command
 				const pixelCommand = `GenerateEngineMetadata(engine=["${engine}"], model=["${insightStore.defaultTextGenerationModel}"], metaKeys=[["description"]], options=[{"additionalContext": ${context}, "tone": "neutral"}]);`;
 
