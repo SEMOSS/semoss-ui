@@ -1,4 +1,3 @@
-//
 import {
 	ArrowLeftIcon,
 	ChevronDownIcon,

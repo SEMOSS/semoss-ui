@@ -1,4 +1,3 @@
-//
 import { FileIcon, XIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
