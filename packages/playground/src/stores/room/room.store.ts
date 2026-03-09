@@ -685,6 +685,15 @@ export class RoomStore {
 	};
 
 	/**
+	 * Download a file
+	 * @param fileKey - key
+	 */
+	download = async (fileKey: string) => {
+		// get the response
+		await download(this._insightID, fileKey);
+	};
+
+	/**
 	 * Sidebar
 	 */
 	/**
@@ -846,22 +855,24 @@ export class RoomStore {
 			// set the new files
 			uploaded = response.data;
 
-			// filter the uploaded files to only include allowed file types based on the theme configuration (if configured)
+			const normalizeExt = (value: string) =>
+				value.trim().toLowerCase().replace(/^\./, "");
+
 			mediaInputs = uploaded.filter((f) => {
 				const allowed = this._theme.allowedFileTypes;
 
 				// If not configured (or empty), allow all
-				if (!allowed || allowed.length === 0) {
-					return true;
-				}
+				if (!allowed || allowed.length === 0) return true;
 
-				// get the extension
-				const ext = f.fileName.split(".").pop();
-				if (allowed.indexOf(ext) > -1) {
-					return true;
-				}
+				const allowedSet = new Set(allowed.map(normalizeExt));
 
-				return false;
+				const rawExt = f.fileName.split(".").pop() ?? "";
+				const ext = normalizeExt(rawExt);
+
+				// If there's no extension, it's not allowed (when allow-list is configured)
+				if (!ext) return false;
+
+				return allowedSet.has(ext);
 			});
 		}
 
