@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import React, { type ReactNode, useMemo, useState } from "react";
+import React, { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -20,10 +20,13 @@ import { ChatContext, NavbarContext } from "@/contexts";
 import { useRoot } from "@/hooks";
 import { useNavbar } from "@/hooks/use-navbar";
 import { ChatStore } from "@/stores";
+import { useThemeTitle } from "@/hooks/use-theme-title";
+import { setFavicon } from "@/utility/utils";
 
 export const MainLayout = observer(() => {
 	const { actions, system } = useInsight();
 	const { root } = useRoot();
+	const theme = root.theme;
 	const [navbarActions, setNavbarActions] = useState<ReactNode | null>(null);
 
 	const [isSidebarOpen, setIsSidebarOpen] = useCacheState(
@@ -44,6 +47,13 @@ export const MainLayout = observer(() => {
 
 		return store;
 	}, [root.theme, actions, system.config.loginDetails]);
+
+	useThemeTitle(theme);
+
+	useEffect(() => {
+		const icon = theme?.tab?.icon;
+		if (icon) setFavicon(icon);
+	}, [theme?.tab?.icon]);
 
 	return (
 		<ChatContext.Provider

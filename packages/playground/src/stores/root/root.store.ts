@@ -77,6 +77,10 @@ export class RootStore {
 			},
 			allowedFileTypes: [],
 			defaultTools: [],
+			tab: {
+				title: "",
+				icon: ""
+			}
 		},
 	};
 
@@ -233,6 +237,10 @@ export class RootStore {
 					].map((tool) => [tool.id, tool]),
 				).values(),
 			],
+			tab: {
+				title: theme?.tab?.title || this._store.theme.tab.title,
+				icon: theme?.tab?.icon || this._store.theme.tab.icon,
+			}
 		};
 
 		// apply the theme to document root

@@ -139,6 +139,11 @@ export interface ThemeMap {
 			/** Name of the mcp */
 			name: string;
 		}[];
+
+		tab: {
+			title: string;
+			icon: string;
+		}
 	};
 }
 
