@@ -18,12 +18,11 @@
     }
   },
   "scripts": {
-    "start": "pnpm run storybook",
+    
     "dev": "rollup -w -c",
     "build": "rollup -c --environment NODE_ENV:production",
-    "build:dev": "rollup -c",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build:dev": "rollup -c"
+    
   },
   "keywords": [],
   "author": "",
@@ -70,6 +69,7 @@
     "deepmerge": "4.3.1",
     "lucide-react": "^0.545.0",
     "mui-phone-number": "3.0.3",
+    "radix-ui": "^1.4.3",
     "react-day-picker": "^9.12.0",
     "react-markdown": "9.0.1",
     "react-resizable-panels": "^3.0.6",
@@ -87,11 +87,7 @@
     "@rollup/plugin-node-resolve": "16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "12.1.4",
-    "@storybook/addon-docs": "9.0.16",
-    "@storybook/addon-links": "9.0.16",
-    "@storybook/addon-themes": "^9.0.16",
-    "@storybook/addon-webpack5-compiler-swc": "^3.0.0",
-    "@storybook/react-webpack5": "9.0.16",
+    
     "@tailwindcss/postcss": "^4.1.14",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
@@ -106,7 +102,7 @@
     "rollup": "4.44.2",
     "rollup-plugin-delete": "3.0.1",
     "rollup-plugin-postcss": "^4.0.2",
-    "storybook": "9.0.16",
+    
     "tailwindcss": "^4.1.14",
     "tslib": "2.5.3",
     "typescript": "~5.5.2"

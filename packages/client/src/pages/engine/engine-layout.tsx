@@ -12,7 +12,7 @@ import { usePixel } from "@semoss/sdk/react";
 import { Spinner, Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { EngineHeader } from "@/components/engine";
 import { EngineContext } from "@/contexts";
-import { useAPI, useRootStore, useSettings } from "@/hooks";
+import { useAPI, useRootStore } from "@/hooks";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
 interface EngineLayoutProps {
@@ -29,7 +29,6 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	const resolvedPath = useResolvedPath("");
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
-	const { adminMode } = useSettings();
 
 	// filter metakeys to the ones we want
 	const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -121,14 +120,17 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 
 	// get the user's role
 	const getUserEnginePermission = useAPI(
-		!adminMode && engineId ? ["getUserEnginePermission", engineId] : null,
+		engineId ? ["getUserEnginePermission", engineId] : null,
 	);
 
 	// get the tabs based on permission and database type
 	const tabs = useMemo(() => {
 		// must be valid
+		if (!route) {
+			return [];
+		}
+
 		if (
-			!route ||
 			getUserEnginePermission.status !== "SUCCESS" ||
 			!getUserEnginePermission.data
 		) {
@@ -258,9 +260,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 								}
 								className="gap-0 bg-transparent"
 							>
-								<div className="w-[80%]">
-									<TabsList className="gap-2">
-										{tabs.map((t, idx) => (
+								<div className="w-full overflow-x-auto md:w-[80%]">
+									<TabsList className="w-max flex-nowrap gap-2">
+										{tabs.map((t) => (
 											<TabsTrigger
 												key={t.path}
 												value={t.path}

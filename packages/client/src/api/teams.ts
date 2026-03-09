@@ -1,11 +1,24 @@
 import { Env, get, post } from "@semoss/sdk/react";
 
-export const getTeams = async (admin: boolean) => {
+export const getTeams = async (
+	admin: boolean,
+	searchTerm?: string,
+	limit?: number,
+	offset?: number,
+) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
 		url += "admin/";
 	}
 	url += "group/getGroups";
+	const params = new URLSearchParams();
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	if (limit !== undefined) params.set("limit", String(limit));
+	if (offset !== undefined) params.set("offset", String(offset));
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 	// get the response
 	const response = await get(url).catch((error) => {
 		throw Error(error);
@@ -15,6 +28,125 @@ export const getTeams = async (admin: boolean) => {
 		throw Error("No Response to get teams");
 	}
 	return response.data;
+};
+
+export const getGroupDetails = async (
+	admin: boolean,
+	groupId: string,
+	type?: string,
+) => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += "group/getGroupDetails";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (type) params.set("type", type);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
+	const response = await get(url).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) {
+		throw Error("No Response to get group details");
+	}
+	return response.data;
+};
+
+export const getTeamsCount = async (admin: boolean, searchTerm?: string) => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += "group/getNumGroups";
+	const params = new URLSearchParams();
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
+	const response = await get(url).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) {
+		throw Error("No Response to get team count");
+	}
+	return parseCount(response.data);
+};
+
+const parseCount = (value: unknown) => {
+	if (typeof value === "number") {
+		return Number.isFinite(value) ? value : 0;
+	}
+	if (typeof value === "string") {
+		const parsed = Number(value);
+		return Number.isFinite(parsed) ? parsed : 0;
+	}
+	if (value && typeof value === "object") {
+		const candidate =
+			(value as { count?: unknown }).count ??
+			(value as { numGroups?: unknown }).numGroups ??
+			(value as { numMembers?: unknown }).numMembers ??
+			(value as { numProjects?: unknown }).numProjects ??
+			(value as { numEngines?: unknown }).numEngines ??
+			(value as { total?: unknown }).total ??
+			(value as { value?: unknown }).value ??
+			(value as { data?: unknown }).data;
+		const parsed = Number(candidate);
+		return Number.isFinite(parsed) ? parsed : 0;
+	}
+	return 0;
+};
+
+export const getNumProjectsForGroup = async (
+	groupId: string,
+	groupType: string,
+	searchTerm?: string,
+) => {
+	let url = `${Env.MODULE}/api/auth/admin/`;
+	url += "group/getNumProjectsForGroup";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (groupType) params.set("groupType", groupType);
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
+	const response = await get(url).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) {
+		throw Error("No Response to get project count");
+	}
+	return parseCount(response.data);
+};
+
+export const getNumEnginesForGroup = async (
+	groupId: string,
+	groupType: string,
+	searchTerm?: string,
+) => {
+	let url = `${Env.MODULE}/api/auth/admin/`;
+	url += "group/getNumEnginesForGroup";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (groupType) params.set("groupType", groupType);
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
+	const response = await get(url).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) {
+		throw Error("No Response to get engine count");
+	}
+	return parseCount(response.data);
 };
 
 export const addTeam = async (
@@ -102,11 +234,16 @@ export const getTeamUsers = async (
 	searchTerm: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getGroupMembers?";
-	url += groupId ? `&groupId=${groupId}` : "";
-	url += limit ? `&limit=${limit}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
+	url += "group/getGroupMembers";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (limit) params.set("limit", String(limit));
+	if (offset) params.set("offset", String(offset));
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 	const response = await get(url).catch((error) => {
 		throw Error(error);
 	});
@@ -117,11 +254,19 @@ export const getTeamUsers = async (
 	return response.data;
 };
 
-export const getTeamUsersCount = async (groupId: string) => {
+export const getTeamUsersCount = async (
+	groupId: string,
+	searchTerm?: string,
+) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getNumMembersInGroup?";
-
-	url += groupId ? `groupId=${groupId}` : "";
+	url += "group/getNumMembersInGroup";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 	const response = await get(url).catch((error) => {
 		throw Error(error);
 	});
@@ -129,7 +274,7 @@ export const getTeamUsersCount = async (groupId: string) => {
 	if (!response) {
 		throw Error("No Response to get group member count");
 	}
-	return response.data;
+	return parseCount(response.data);
 };
 
 export const getNonTeamUsers = async (
@@ -139,11 +284,16 @@ export const getNonTeamUsers = async (
 	searchTerm: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getNonGroupMembers?";
-	url += groupId ? `&groupId=${groupId}` : "";
-	url += limit ? `&limit=${limit}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
+	url += "group/getNonGroupMembers";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (limit) params.set("limit", String(limit));
+	if (offset) params.set("offset", String(offset));
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 
 	const response = await get(url).catch((error) => {
 		throw Error(error);
@@ -212,14 +362,19 @@ export const getTeamProjects = async (
 	type?: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getProjectsForGroup?";
-	url += groupId ? `&groupId=${groupId}` : "";
-	url += groupType ? `&groupType=${groupType}` : "";
-	url += limit ? `&limit=${limit}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
-	url += onlyApps ? `&onlyApps=${onlyApps}` : "";
-	url += type ? `&type=${type}` : "";
+	url += "group/getProjectsForGroup";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (groupType) params.set("groupType", groupType);
+	if (limit) params.set("limit", String(limit));
+	if (offset) params.set("offset", String(offset));
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	if (onlyApps) params.set("onlyApps", String(onlyApps));
+	if (type) params.set("type", type);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 
 	const response = await get(url).catch((error) => {
 		throw Error(error);
@@ -239,12 +394,17 @@ export const getUnassignedTeamProjects = async (
 	searchTerm: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getAvailableProjectsForGroup?";
-	url += groupId ? `&groupId=${groupId}` : "";
-	url += groupType ? `&groupType=${groupType}` : "";
-	url += limit ? `&limit=${limit}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
+	url += "group/getAvailableProjectsForGroup";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (groupType) params.set("groupType", groupType);
+	if (limit) params.set("limit", String(limit));
+	if (offset) params.set("offset", String(offset));
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 	const response = await get(url).catch((error) => {
 		throw Error(error);
 	});
@@ -263,12 +423,17 @@ export const getTeamEngines = async (
 	searchTerm: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getEnginesForGroup?";
-	url += groupId ? `&groupId=${groupId}` : "";
-	url += groupType ? `&groupType=${groupType}` : "";
-	url += limit ? `&limit=${limit}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
+	url += "group/getEnginesForGroup";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (groupType) params.set("groupType", groupType);
+	if (limit) params.set("limit", String(limit));
+	if (offset) params.set("offset", String(offset));
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 
 	const response = await get(url).catch((error) => {
 		throw Error(error);
@@ -277,7 +442,7 @@ export const getTeamEngines = async (
 	if (!response) {
 		throw Error("No Response to get group members");
 	}
-	return response;
+	return response.data;
 };
 
 export const getUnassignedTeamEngines = async (
@@ -288,12 +453,17 @@ export const getUnassignedTeamEngines = async (
 	searchTerm: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getAvailableEnginesForGroup?";
-	url += groupId ? `&groupId=${groupId}` : "";
-	url += groupType ? `&groupType=${groupType}` : "";
-	url += limit ? `&limit=${limit}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
+	url += "group/getAvailableEnginesForGroup";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (groupType) params.set("groupType", groupType);
+	if (limit) params.set("limit", String(limit));
+	if (offset) params.set("offset", String(offset));
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 	const response = await get(url).catch((error) => {
 		throw Error(error);
 	});

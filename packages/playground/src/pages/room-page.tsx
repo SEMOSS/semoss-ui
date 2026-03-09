@@ -1,6 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
 	ResizableHandle,
@@ -13,13 +14,14 @@ import { RoomContent, RoomSidebar, SaveWorkspaceDialog } from "@/components";
 import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine } from "@/types";
-
 /**
  * The page for a room
  *
  * @component
  */
 export const RoomPage = observer(() => {
+	const { t } = useTranslation("workspace");
+
 	// set the get the room based on the params
 	const { roomId } = useParams();
 	const { chat } = useChat();
@@ -39,11 +41,11 @@ export const RoomPage = observer(() => {
 	const { setBreadcrumbs } = useGlobalBreadcrumbs({
 		breadcrumbs: [
 			{
-				name: "Home",
+				name: t("breadcrumbs.home"),
 				path: "/",
 			},
 			{
-				name: room?.metadata?.name || "Room",
+				name: room?.metadata?.name || t("breadcrumbs.room"),
 				path: `/room/${roomId}`,
 			},
 		],
@@ -73,11 +75,11 @@ export const RoomPage = observer(() => {
 				if (room.options.workspace)
 					setBreadcrumbs([
 						{
-							name: "Home",
+							name: t("breadcrumbs.home"),
 							path: "/",
 						},
 						{
-							name: "Agent",
+							name: t("breadcrumbs.agent"),
 							path: "/agent",
 						},
 						{
@@ -87,7 +89,7 @@ export const RoomPage = observer(() => {
 							path: `/agent/${room.options.workspace.workspace_id}`,
 						},
 						{
-							name: "Room",
+							name: t("breadcrumbs.room"),
 							path: `/room/${room.roomId}`,
 						},
 					]);
@@ -141,7 +143,11 @@ export const RoomPage = observer(() => {
 	}
 
 	return (
-		<InsightProvider key={roomId} options={{ insightId: room.insightId }}>
+		<InsightProvider
+			key={room.roomId}
+			options={{ insightId: room.insightId }}
+			destroyOnUnmount={false}
+		>
 			<div className="flex h-full w-full flex-col overflow-hidden">
 				<ResizablePanelGroup
 					direction="horizontal"
@@ -155,7 +161,8 @@ export const RoomPage = observer(() => {
 							<ResizableHandle />
 							<ResizablePanel
 								className={"relative p-2"}
-								defaultSize={70}
+								defaultSize={50}
+								minSize={20}
 							>
 								<RoomSidebar room={room} />
 							</ResizablePanel>
