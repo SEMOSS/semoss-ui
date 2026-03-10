@@ -1,5 +1,4 @@
-import { post } from "@semoss/sdk/react";
-
+const axios = require("axios");
 const fs = require("node:fs");
 const https = require("node:https");
 const ncp = require("ncp");
@@ -62,7 +61,7 @@ async function processGithubAssets(
 					headers.Authorization = `token ${accessToken}`;
 				}
 
-				const res = await post(apiUrl, { headers });
+				const res = await axios.get(apiUrl, { headers });
 				usedBranch = res.data.default_branch;
 			} catch (apiError) {
 				if (apiError.response?.status === 404) {
@@ -240,10 +239,12 @@ async function processGithubAssets(
 	}
 }
 
-// Helper to download private repositories
+// Helper to download private repositories using axios
 const downloadPrivateRepo = async (url, dest, accessToken) => {
 	try {
-		const response = await get(url, {
+		const response = await axios({
+			method: "GET",
+			url: url,
 			headers: {
 				Authorization: `token ${accessToken}`,
 				"User-Agent": "node.js",

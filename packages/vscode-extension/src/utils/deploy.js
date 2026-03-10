@@ -1,8 +1,6 @@
 const vscode = require("vscode");
 const fs = require("node:fs");
-
-import { post } from "@semoss/sdk/react";
-
+const axios = require("axios");
 const FormData = require("form-data");
 
 let SEMOSS_URL = "";
@@ -11,8 +9,8 @@ let encoded = "";
 let outputFilePath = "";
 
 /**
- * Helper function to get meaningful error messages from errors
- * @param {Error} error - The error
+ * Helper function to get meaningful error messages from axios errors
+ * @param {Error} error - The axios error
  * @returns {string} - A user-friendly error message
  */
 function getErrorMessage(error) {
@@ -69,7 +67,7 @@ async function deployProject(projectId, progressCallback) {
 				params.append("expression", "true");
 				params.append("insightId", "new");
 
-				response = await post(
+				response = await axios.post(
 					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
 					params,
 					{ headers },
@@ -106,7 +104,7 @@ async function deployProject(projectId, progressCallback) {
 				params.append("insightId", insightId);
 
 				console.log(`Deleting assets for project: ${projectId}`);
-				response = await post(
+				response = await axios.post(
 					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
 					params,
 					{ headers },
@@ -182,7 +180,7 @@ async function deployProject(projectId, progressCallback) {
 				console.log(
 					`Uploading file: ${outputFilePath} (${Math.round(stats.size / 1024)} KB) to project: ${projectId}`,
 				);
-				response = await post(
+				response = await axios.post(
 					`${SEMOSS_URL}/Monolith/api/uploadFile/baseUpload?insightId=${insightId}&projectId=${projectId}&path=version/assets/`,
 					formData,
 					{
@@ -237,7 +235,7 @@ async function deployProject(projectId, progressCallback) {
 				);
 				params.append("insightId", insightId);
 
-				response = await post(
+				response = await axios.post(
 					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
 					params,
 					{ headers },
@@ -275,7 +273,7 @@ async function deployProject(projectId, progressCallback) {
 				);
 				params.append("insightId", insightId);
 
-				response = await post(
+				response = await axios.post(
 					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
 					params,
 					{ headers },
@@ -307,7 +305,7 @@ async function deployProject(projectId, progressCallback) {
 				params.append("projectId", projectId);
 				params.append("hasPortal", true);
 
-				response = await post(
+				response = await axios.post(
 					`${SEMOSS_URL}/Monolith/api/auth/project/setProjectPortal`,
 					params,
 					{ headers },
@@ -340,7 +338,7 @@ async function deployProject(projectId, progressCallback) {
 				);
 				params.append("insightId", insightId);
 
-				response = await post(
+				response = await axios.post(
 					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
 					params,
 					{ headers },
