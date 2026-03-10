@@ -1,4 +1,3 @@
-import { toJS } from "mobx";
 import { useEffect } from "react";
 import { Controller } from "react-hook-form";
 import { useBlocks } from "@semoss/renderer";
@@ -16,10 +15,8 @@ export const ModifyVariableSelector = ({
 	setValue,
 }: ModifyVariableSelectorProps) => {
 	// TODO: FIX this blockId assign, inconsistent behavior
-	const { state } = useBlocks();
 
 	const { state } = useBlocks();
-	const variables = toJS(state.variables);
 
 	useEffect(() => {
 		setValue("payload.blockId", id);
