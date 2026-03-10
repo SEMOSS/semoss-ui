@@ -170,8 +170,13 @@ export const EditDependenciesModal = ({
 	}, [getEngines.status, getEngines.data]);
 
 	useEffect(() => {
-		setSelectedDeps(currentDependencies);
-	}, [currentDependencies]);
+		// Reset state when modal opens
+		if (isOpen) {
+			setSelectedDeps(currentDependencies);
+			setSearch("");
+			setOpen(false);
+		}
+	}, [isOpen, currentDependencies]);
 
 	return (
 		<Dialog
@@ -184,16 +189,7 @@ export const EditDependenciesModal = ({
 		>
 			<DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
 				<DialogHeader>
-					<div className="flex items-center justify-between">
-						<DialogTitle>Add and Edit Dependencies</DialogTitle>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							onClick={() => onClose(false)}
-						>
-							<X className="size-4" />
-						</Button>
-					</div>
+					<DialogTitle>Add and Edit Dependencies</DialogTitle>
 				</DialogHeader>
 
 				<div className="space-y-4">

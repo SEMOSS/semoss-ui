@@ -23,7 +23,7 @@ import {
 } from "@semoss/ui/next";
 import { AppDeleteModal } from "@/components/app";
 import { AddAppCloneModal } from "@/components/app/save-app/AddAppCloneModal";
-import { formatToDataTestId, removeUnderscores } from "@/utility";
+import { formatToDataTestId } from "@/utility";
 import type { AppMetadata } from "./app.types";
 
 interface AppTileCardProps {
@@ -377,7 +377,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 
 					<div className="min-w-0 flex-1">
 						<h3 className="truncate font-semibold text-sm">
-							{removeUnderscores(app.project_name)}
+							{app.project_name}
 						</h3>
 						<div className="mt-1 text-[11px] text-muted-foreground">
 							{updatedLine}
@@ -601,7 +601,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					{/* Content */}
 					<CardContent className="flex flex-1 flex-col gap-1.5 px-3 pt-1 pb-0.5">
 						<h3 className="mt-1 line-clamp-2 font-semibold text-sm leading-snug">
-							{removeUnderscores(app.project_name)}
+							{app.project_name}
 						</h3>
 						<div className="text-[11px] text-muted-foreground">
 							{updatedLine}
@@ -775,7 +775,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 				{/* Content */}
 				<CardContent className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-0">
 					<h3 className="line-clamp-2 min-h-[46px] font-semibold text-lg leading-snug">
-						{removeUnderscores(app.project_name)}
+						{app.project_name}
 					</h3>
 					<P className="line-clamp-2 min-h-[40px] text-muted-foreground text-sm">
 						{app.description || "No description available"}
