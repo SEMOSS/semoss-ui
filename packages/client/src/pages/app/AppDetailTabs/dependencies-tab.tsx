@@ -1,4 +1,4 @@
-import { Ban, Edit, Eye, Pencil, User } from "lucide-react";
+import { Ban, Edit, Eye, Pencil, TriangleAlert, User } from "lucide-react";
 import { Env } from "@semoss/sdk";
 import { Link } from "@semoss/ui";
 import {
@@ -10,6 +10,9 @@ import {
 	Muted,
 	P,
 	TabsContent,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { modelledDependency } from "@/components/app";
 import { EngineAccessButton } from "@/components/engine";
@@ -42,6 +45,8 @@ export const Dependencies = ({
 			) : (
 				dependencies.map((dep) => {
 					const permissionKey = dep.userPermission || "NONE";
+					const missingSubDependencies =
+						dep.can_view_dependencies === false;
 					return (
 						<div
 							key={dep.id}
@@ -55,19 +60,33 @@ export const Dependencies = ({
 											: `${Env.MODULE}/api/e-${dep.id}/image/download`
 									}
 									alt={dep.name}
-									className="h-12 w-12 flex-shrink-0 rounded-lg object-cover"
+									className="h-12 w-12 shrink-0 rounded-lg object-cover"
 								/>
 								<div className="flex min-w-0 flex-col">
-									<Link
-										href={
-											dep.type === "PROJECT"
-												? `./#/app/${dep.id}`
-												: `./#/engine/${dep.type}/${dep.id}`
-										}
-										//className="text-base text-primary"
-									>
-										<P className="truncate">{dep.name}</P>
-									</Link>
+									<div className="flex items-center gap-1.5">
+										<Link
+											href={
+												dep.type === "PROJECT"
+													? `./#/app/${dep.id}`
+													: `./#/engine/${dep.type}/${dep.id}`
+											}
+											//className="text-base text-primary"
+										>
+											<P className="truncate">
+												{dep.name}
+											</P>
+										</Link>
+										{missingSubDependencies && (
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<TriangleAlert className="size-4 shrink-0 text-amber-500" />
+												</TooltipTrigger>
+												<TooltipContent>
+													{`You don't have access to all dependencies of this ${dep.type.toLowerCase()}, so functionality may be limited. View its details page for more information.`}
+												</TooltipContent>
+											</Tooltip>
+										)}
+									</div>
 									<div className="flex items-center gap-1">
 										{PERMISSION_ICONS[permissionKey]}
 										<Muted className="text-xs">
@@ -77,7 +96,7 @@ export const Dependencies = ({
 										</Muted>
 									</div>
 								</div>
-								<div className="ml-auto flex flex-shrink-0 items-center gap-2">
+								<div className="ml-auto flex shrink-0 items-center gap-2">
 									{dep.isPublic && (
 										<Badge variant="outline">Public</Badge>
 									)}
