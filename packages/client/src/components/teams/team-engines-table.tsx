@@ -45,16 +45,7 @@ import {
 } from "@/api";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
 import type { ApiResponse } from "@/types";
-
-const colors = [
-	"#22A4FF",
-	"#FA3F20",
-	"#FA3F20",
-	"#FF9800",
-	"#FF9800",
-	"#22A4FF",
-	"#4CAF50",
-];
+import { useServerPagination } from "@/hooks";
 
 // maps for permissions,
 const permissionMapper = {
@@ -109,8 +100,9 @@ interface Engine {
 	engine_date_created: string;
 	permission: string;
 	type: string;
-	color?: string;
 }
+
+type EnginePermissionUpdate = Pick<Engine, "engineid" | "permission" | "type">;
 
 export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const { groupId, groupType } = props;
@@ -119,7 +111,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const AUTOCOMPLETE_OFFSET = 0;
 
 	/** Engine Table State */
-	const [enginesPage, setEnginesPage] = useState<number>(1);
 	const [selectedEngines, setSelectedEngines] = useState<Engine[]>([]);
 	const [count, setCount] = useState(0);
 
@@ -141,7 +132,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const [engines, setEngines] = useState<Engine[]>([]);
 	const [enginesCount, setEngineCount] = useState<number>(0);
 	const [totalEnginesAll, setTotalEnginesAll] = useState(0);
-	const [rowsPerPage, setRowsPerPage] = useState(5);
 	const [hasEngines, setHasEngines] = useState(false);
 
 	const [searchEngineInput, setSearchEngineInput] = useState<string>("");
@@ -154,6 +144,21 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const [searchFilter, setSearchFilter] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const isLoadingRef = useRef(false);
+
+	const {
+		page: enginesPage,
+		rowsPerPage,
+		setPage: setEnginesPage,
+		setRowsPerPage,
+		offset: pageOffset,
+		totalPages,
+		startRow,
+		endRow,
+	} = useServerPagination({
+		totalCount: enginesCount,
+		initialRowsPerPage: 5,
+		pageIndexBase: 1,
+	});
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -194,9 +199,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 						(val: Engine) => {
 							return {
 								...val,
-								color: colors[
-									Math.floor(Math.random() * colors.length)
-								],
 							};
 						},
 					);
@@ -223,13 +225,20 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			groupId,
 			groupType,
 			rowsPerPage,
-			enginesPage * rowsPerPage - rowsPerPage, // offset
+			pageOffset, // offset
 			debouncedSearch,
 		).then((data: unknown[]) => {
 			setEngines(data as Engine[]);
 			setHasEngines(data.length > 0);
 		});
-	}, [groupId, groupType, enginesPage, debouncedSearch, rowsPerPage]);
+	}, [
+		groupId,
+		groupType,
+		enginesPage,
+		debouncedSearch,
+		rowsPerPage,
+		pageOffset,
+	]);
 
 	useEffect(() => {
 		if (count >= 0) {
@@ -238,7 +247,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	}, [filterEngines, count]);
 
 	useEffect(() => {
-		if (!groupId) {
+		const refreshToken = count;
+		if (refreshToken < 0 || !groupId) {
 			return;
 		}
 		const trimmed = debouncedSearch.trim();
@@ -260,7 +270,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 					setEngineCount(0);
 				}
 			});
-	}, [groupId, groupType, debouncedSearch]);
+	}, [groupId, groupType, debouncedSearch, count]);
 
 	useEffect(() => {
 		if (!addEngineModal) {
@@ -286,8 +296,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			} else {
 				if (canCollect) {
 					getEngines(false, offset, searchEngineInput);
-				} else {
-					getEngines(true, offset, searchEngineInput);
 				}
 			}
 		}, 500);
@@ -342,7 +350,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			setSelectedNonCredentialedEngines([]);
 			toast.error(String(e));
 		} finally {
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 			setOffset(0);
 		}
 	};
@@ -369,7 +377,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			toast.error(String(e));
 		} finally {
 			setDeleteEngineModal(false);
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 		}
 	};
 
@@ -403,13 +411,13 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			}
 		} finally {
 			toast.success("Successfully removed engines");
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 			setDeleteEnginesModal(false);
 			setSelectedEngines([]);
 		}
 	};
 
-	const updateSelectedEngines = async (engine: Engine) => {
+	const updateSelectedEngines = async (engine: EnginePermissionUpdate) => {
 		try {
 			if (!engine.engineid) {
 				toast.warning("No permissions to change");
@@ -452,11 +460,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 		setSearchFilter(newInputValue);
 	};
 
-	const totalPages = Math.max(1, Math.ceil(enginesCount / rowsPerPage));
-	const startRow =
-		enginesCount === 0 ? 0 : (enginesPage - 1) * rowsPerPage + 1;
-	const endRow = Math.min(enginesPage * rowsPerPage, enginesCount);
-
 	const isAllSelected =
 		selectedEngines.length === engines.length && engines.length > 0;
 
@@ -489,20 +492,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									}}
 								/>
 							</InputGroup>
-							<div className="flex flex-wrap items-center gap-2">
-								{selectedEngines.length > 0 && (
-									<Button
-										variant="outline"
-										className="border-destructive text-destructive hover:bg-destructive/10"
-										onClick={() =>
-											setDeleteEnginesModal(true)
-										}
-									>
-										<Trash2 className="size-4" />
-										Delete Selected
-									</Button>
-								)}
+							<div className="flex items-center gap-2 sm:flex-nowrap">
 								<Button
+									className="shrink-0"
 									onClick={() => {
 										setAddEngineRole(undefined);
 										setOffset(0);
@@ -514,6 +506,18 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									<Plus className="size-4" />
 									Add Engines
 								</Button>
+								{selectedEngines.length > 0 && (
+									<Button
+										variant="outline"
+										className="whitespace-nowrap border-destructive text-destructive hover:bg-destructive/10"
+										onClick={() =>
+											setDeleteEnginesModal(true)
+										}
+									>
+										<Trash2 className="size-4" />
+										Delete Selected
+									</Button>
+								)}
 							</div>
 						</div>
 					</CardHeader>
@@ -522,8 +526,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead className="w-[45%]">
-											<div className="flex items-center gap-2">
+										<TableHead className="w-12">
+											<div className="flex justify-center">
 												<Checkbox
 													checked={isAllSelected}
 													onCheckedChange={() => {
@@ -538,9 +542,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 														}
 													}}
 												/>
-												<span>Name</span>
 											</div>
 										</TableHead>
+										<TableHead>Name</TableHead>
 										<TableHead className="w-[220px]">
 											Access
 										</TableHead>
@@ -566,8 +570,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 												<TableRow
 													key={`engine-${engine.engineid}-${i}`}
 												>
-													<TableCell>
-														<div className="flex items-start gap-3">
+													<TableCell className="w-12">
+														<div className="flex justify-center">
 															<Checkbox
 																checked={
 																	isSelected
@@ -595,15 +599,17 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 																	}
 																}}
 															/>
-															<div className="min-w-0">
-																<div className="truncate font-medium text-sm">
-																	{
-																		engine.engine_name
-																	}
-																</div>
-																<div className="text-muted-foreground text-xs">
-																	{`Engine ID: ${engine.engineid}`}
-																</div>
+														</div>
+													</TableCell>
+													<TableCell>
+														<div className="min-w-0">
+															<div className="truncate font-medium text-sm">
+																{
+																	engine.engine_name
+																}
+															</div>
+															<div className="text-muted-foreground text-xs">
+																{`Engine ID: ${engine.engineid}`}
 															</div>
 														</div>
 													</TableCell>
@@ -670,7 +676,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									) : (
 										<TableRow>
 											<TableCell
-												colSpan={4}
+												colSpan={5}
 												className="text-center"
 											>
 												No Engines found.
@@ -680,7 +686,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 								</TableBody>
 								<TableFooter>
 									<TableRow>
-										<TableCell colSpan={4}>
+										<TableCell colSpan={5}>
 											<div className="flex flex-wrap items-center justify-end gap-4">
 												<div className="flex items-center gap-2 text-sm">
 													<span>Rows per page:</span>
@@ -697,22 +703,14 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 																	10,
 																),
 															);
-															setEnginesPage(1);
 														}}
 													>
 														<SelectTrigger className="h-8 w-[70px]">
 															<SelectValue />
 														</SelectTrigger>
 														<SelectContent>
-															{[5, 10, 20]
-																.filter(
-																	(val) =>
-																		val <=
-																			enginesCount ||
-																		val ===
-																			5,
-																)
-																.map((val) => (
+															{[5, 10, 20].map(
+																(val) => (
 																	<SelectItem
 																		key={`rows-${val}`}
 																		value={String(
@@ -721,7 +719,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 																	>
 																		{val}
 																	</SelectItem>
-																))}
+																),
+															)}
 														</SelectContent>
 													</Select>
 												</div>
@@ -843,7 +842,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 					}
 				}}
 			>
-				<DialogContent className="max-w-4xl">
+				<DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Add Engines</DialogTitle>
 						<DialogDescription>
@@ -911,13 +910,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 												}}
 											/>
 											<Avatar className="h-8 w-8">
-												<AvatarFallback
-													style={{
-														backgroundColor:
-															engine.color,
-													}}
-													className="text-xs"
-												>
+												<AvatarFallback className="text-xs">
 													{engine.engine_name
 														? engine.engine_name[0]
 														: "E"}
@@ -981,7 +974,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									{permissionOptions.map((option) => (
 										<div
 											key={option.value}
-											className="flex items-start gap-3 rounded-md border bg-background p-3"
+											className="flex items-center gap-3 rounded-md border bg-background p-3"
 										>
 											<RadioGroupItem
 												value={option.value}
@@ -1034,9 +1027,17 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 					<DialogHeader>
 						<DialogTitle>Are you sure?</DialogTitle>
 						<DialogDescription>
-							{engineToDelete
-								? `This will remove ${engineToDelete.engine_name}.`
-								: "This will remove the selected engine."}
+							{engineToDelete ? (
+								<>
+									This will remove{" "}
+									<span className="font-medium text-foreground">
+										{engineToDelete.engine_name}
+									</span>
+									.
+								</>
+							) : (
+								"This will remove the selected engine."
+							)}
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>

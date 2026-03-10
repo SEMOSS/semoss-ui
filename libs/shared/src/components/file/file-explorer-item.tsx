@@ -104,7 +104,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				>
 					{renderIcon()}
 					<span className="flex-1 truncate text-sm">{item.name}</span>
-					<div className="flex flex-row items-center opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+					<div className="pointer-events-none flex flex-row items-center opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
 						{actions.map((a) => {
 							if (!a) {
 								return null;

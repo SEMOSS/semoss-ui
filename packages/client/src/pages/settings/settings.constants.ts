@@ -37,7 +37,7 @@ export const SETTINGS_ROUTES: {
 		path: "",
 		description: "View and edit settings for the application",
 		adminDescription:
-			"View and make changes to settings at the database, app, and insight level.  As an admin conduct queries on SEMOSS specific databases as well as view and edit existing social properties.",
+			"View and make changes to settings to engines and apps. As an admin, view and manage platform settings.",
 		icon: mdiCog,
 		history: [],
 	},
@@ -82,7 +82,7 @@ export const SETTINGS_ROUTES: {
 		title: "Function Settings",
 		path: "function/:id",
 		description:
-			"View member permissions, pending requests, and all other viewable settings pertaining to the database",
+			"View member permissions, pending requests, and all other viewable settings pertaining to the function",
 		icon: mdiDatabase,
 		history: ["function", "function/<id>"],
 	},
@@ -142,7 +142,7 @@ export const SETTINGS_ROUTES: {
 		title: "Vector Settings",
 		path: "vector/:id",
 		description:
-			"View member permissions, pending requests, and all other viewable settings pertaining to the vector",
+			"View member permissions, pending requests, and all other viewable settings pertaining to the vector database",
 		icon: mdiDatabase,
 		history: ["vector", "vector/<id>"],
 	},
@@ -198,7 +198,7 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Configuration",
 		path: "social-properties",
-		description: "Use this portal to change configuration settings.",
+		description: "Use this portal to change login configuration settings.",
 		icon: mdiTabletCellphone,
 		history: ["settings/"],
 		admin: true,
@@ -206,7 +206,7 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Admin Query",
 		path: "admin-query",
-		description: "Query on SEMOSS based databases",
+		description: "Query the platform databases directly. Use with caution.",
 		icon: mdiDatabaseSearch,
 		history: ["settings/"],
 		admin: true,
@@ -230,7 +230,7 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "View RDF Map",
 		path: "view-rdf-map",
-		description: "View RDF Map",
+		description: "See configuration details in the RDF Map of the instance",
 		icon: mdiClipboardTextOutline,
 		history: ["settings/"],
 		admin: true,

@@ -49,6 +49,7 @@ import codeApp3 from "@/assets/img/code_app_3.png";
 import codeApp4 from "@/assets/img/code_app_4.png";
 import codeApp5 from "@/assets/img/code_app_5.png";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
+import { useServerPagination } from "@/hooks";
 import type { ApiResponse } from "@/types";
 
 const colors = [
@@ -134,7 +135,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const AUTOCOMPLETE_OFFSET = 0;
 
 	/** Project Table State */
-	const [projectsPage, setProjectsPage] = useState<number>(1);
 	const [selectedProjects, setSelectedProojects] = useState<TeamProjects[]>(
 		[],
 	);
@@ -163,7 +163,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const [projects, setProjects] = useState<TeamProjects[]>([]);
 	const [projectCount, setProjectCount] = useState(0);
 	const [totalProjectsAll, setTotalProjectsAll] = useState(0);
-	const [rowsPerPage, setRowsPerPage] = useState(5);
 	const [hasProjects, setHasProject] = useState(false);
 
 	const [searchProjectInput, setSearchProjectInput] = useState<string>("");
@@ -180,6 +179,21 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const [searchFilter, setSearchFilter] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const isLoadingRef = useRef(false);
+
+	const {
+		page: projectsPage,
+		rowsPerPage,
+		setPage: setProjectsPage,
+		setRowsPerPage,
+		offset: pageOffset,
+		totalPages,
+		startRow,
+		endRow,
+	} = useServerPagination({
+		totalCount: projectCount,
+		initialRowsPerPage: 5,
+		pageIndexBase: 1,
+	});
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -249,14 +263,21 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			groupId,
 			groupType,
 			rowsPerPage,
-			projectsPage * rowsPerPage - rowsPerPage, // offset
+			pageOffset, // offset
 			debouncedSearch,
 			false,
 		).then((data: unknown[]) => {
 			setProjects(data as TeamProjects[]);
 			setHasProject(data.length > 0);
 		});
-	}, [groupId, groupType, projectsPage, debouncedSearch, rowsPerPage]);
+	}, [
+		groupId,
+		groupType,
+		projectsPage,
+		debouncedSearch,
+		rowsPerPage,
+		pageOffset,
+	]);
 
 	useEffect(() => {
 		if (count >= 0) {
@@ -265,7 +286,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	}, [filterProjects, count]);
 
 	useEffect(() => {
-		if (!groupId) {
+		const refreshToken = count;
+		if (refreshToken < 0 || !groupId) {
 			return;
 		}
 		const trimmed = debouncedSearch.trim();
@@ -287,7 +309,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 					setProjectCount(0);
 				}
 			});
-	}, [groupId, groupType, debouncedSearch]);
+	}, [groupId, groupType, debouncedSearch, count]);
 
 	useEffect(() => {
 		if (!addProjectModal) {
@@ -313,8 +335,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			} else {
 				if (canCollect) {
 					getProjects(false, offset, searchProjectInput);
-				} else {
-					getProjects(true, offset, searchProjectInput);
 				}
 			}
 		}, 500);
@@ -369,7 +389,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			setSelectedNonCredentialedProjects([]);
 			toast.error(String(e));
 		} finally {
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 			setOffset(0);
 		}
 	};
@@ -385,11 +405,10 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 						};
 				  }
 				| null = null;
-			response = await deleteProjectPermission(
-				groupId,
-				groupType,
-				project,
-			);
+			response = await deleteProjectPermission(groupId, groupType, {
+				projectid: project.projectid ?? project.project_id,
+				group_type: groupType,
+			});
 
 			if (!response) {
 				return;
@@ -400,7 +419,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			toast.error(String(e));
 		} finally {
 			setDeleteProjectModal(false);
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 		}
 	};
 
@@ -420,7 +439,12 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 					response = await deleteProjectPermission(
 						groupId,
 						groupType,
-						selectedProjects[i],
+						{
+							projectid:
+								selectedProjects[i].projectid ??
+								selectedProjects[i].project_id,
+							group_type: groupType,
+						},
 					);
 
 					if (!response) {
@@ -434,7 +458,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			}
 		} finally {
 			toast.success("Successfully removed apps");
-			setCount(count + 1);
+			setCount((prev) => prev + 1);
 			setDeleteProjectsModal(false);
 			setSelectedProojects([]);
 		}
@@ -506,11 +530,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 		[projectImageMap],
 	);
 
-	const totalPages = Math.max(1, Math.ceil(projectCount / rowsPerPage));
-	const startRow =
-		projectCount === 0 ? 0 : (projectsPage - 1) * rowsPerPage + 1;
-	const endRow = Math.min(projectsPage * rowsPerPage, projectCount);
-
 	const isAllSelected =
 		selectedProjects.length === projects.length && projects.length > 0;
 
@@ -543,20 +562,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									}}
 								/>
 							</InputGroup>
-							<div className="flex flex-wrap items-center gap-2">
-								{selectedProjects.length > 0 && (
-									<Button
-										variant="outline"
-										className="border-destructive text-destructive hover:bg-destructive/10"
-										onClick={() =>
-											setDeleteProjectsModal(true)
-										}
-									>
-										<Trash2 className="size-4" />
-										Delete Selected
-									</Button>
-								)}
+							<div className="flex items-center gap-2 sm:flex-nowrap">
 								<Button
+									className="shrink-0"
 									onClick={() => {
 										setAddProjectRole(undefined);
 										setOffset(0);
@@ -568,6 +576,18 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									<Plus className="size-4" />
 									Add Apps
 								</Button>
+								{selectedProjects.length > 0 && (
+									<Button
+										variant="outline"
+										className="whitespace-nowrap border-destructive text-destructive hover:bg-destructive/10"
+										onClick={() =>
+											setDeleteProjectsModal(true)
+										}
+									>
+										<Trash2 className="size-4" />
+										Delete Selected
+									</Button>
+								)}
 							</div>
 						</div>
 					</CardHeader>
@@ -576,8 +596,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead className="w-[45%]">
-											<div className="flex items-center gap-2">
+										<TableHead className="w-12">
+											<div className="flex justify-center">
 												<Checkbox
 													checked={isAllSelected}
 													onCheckedChange={() => {
@@ -592,9 +612,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 														}
 													}}
 												/>
-												<span>Name</span>
 											</div>
 										</TableHead>
+										<TableHead>Name</TableHead>
 										<TableHead className="w-[220px]">
 											Access
 										</TableHead>
@@ -616,7 +636,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 											const projectKey =
 												projectId ??
 												project.project_name ??
-												project.name;
+												project.project_portal_name;
 											const isSelected =
 												selectedProjects.some(
 													(value) =>
@@ -629,8 +649,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 												<TableRow
 													key={`project-${projectKey}`}
 												>
-													<TableCell>
-														<div className="flex items-start gap-3">
+													<TableCell className="w-12">
+														<div className="flex justify-center">
 															<Checkbox
 																checked={
 																	isSelected
@@ -660,15 +680,17 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 																	}
 																}}
 															/>
-															<div className="min-w-0">
-																<div className="truncate font-medium text-sm">
-																	{
-																		project.project_name
-																	}
-																</div>
-																<div className="text-muted-foreground text-xs">
-																	{`App ID: ${projectId}`}
-																</div>
+														</div>
+													</TableCell>
+													<TableCell>
+														<div className="min-w-0">
+															<div className="truncate font-medium text-sm">
+																{
+																	project.project_name
+																}
+															</div>
+															<div className="text-muted-foreground text-xs">
+																{`App ID: ${projectId}`}
 															</div>
 														</div>
 													</TableCell>
@@ -737,7 +759,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									) : (
 										<TableRow>
 											<TableCell
-												colSpan={4}
+												colSpan={5}
 												className="text-center"
 											>
 												No Apps found.
@@ -747,7 +769,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 								</TableBody>
 								<TableFooter>
 									<TableRow>
-										<TableCell colSpan={4}>
+										<TableCell colSpan={5}>
 											<div className="flex flex-wrap items-center justify-end gap-4">
 												<div className="flex items-center gap-2 text-sm">
 													<span>Rows per page:</span>
@@ -764,22 +786,14 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 																	10,
 																),
 															);
-															setProjectsPage(1);
 														}}
 													>
 														<SelectTrigger className="h-8 w-[70px]">
 															<SelectValue />
 														</SelectTrigger>
 														<SelectContent>
-															{[5, 10, 20]
-																.filter(
-																	(val) =>
-																		val <=
-																			projectCount ||
-																		val ===
-																			5,
-																)
-																.map((val) => (
+															{[5, 10, 20].map(
+																(val) => (
 																	<SelectItem
 																		key={`rows-${val}`}
 																		value={String(
@@ -788,7 +802,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 																	>
 																		{val}
 																	</SelectItem>
-																))}
+																),
+															)}
 														</SelectContent>
 													</Select>
 												</div>
@@ -910,7 +925,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 					}
 				}}
 			>
-				<DialogContent className="max-w-4xl">
+				<DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Add Apps</DialogTitle>
 						<DialogDescription>
@@ -1047,7 +1062,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									{permissionOptions.map((option) => (
 										<div
 											key={option.value}
-											className="flex items-start gap-3 rounded-md border bg-background p-3"
+											className="flex items-center gap-3 rounded-md border bg-background p-3"
 										>
 											<RadioGroupItem
 												value={option.value}
@@ -1100,9 +1115,17 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 					<DialogHeader>
 						<DialogTitle>Are you sure?</DialogTitle>
 						<DialogDescription>
-							{projectToDelete
-								? `This will remove ${projectToDelete.project_name}.`
-								: "This will remove the selected app."}
+							{projectToDelete ? (
+								<>
+									This will remove{" "}
+									<span className="font-medium text-foreground">
+										{projectToDelete.project_name}
+									</span>
+									.
+								</>
+							) : (
+								"This will remove the selected app."
+							)}
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>

@@ -35,7 +35,6 @@ import {
 	approveEngineUserAccessRequest,
 	denyEngineUserAccessRequest,
 } from "@/api";
-import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { usePixel, useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
 import type { SETTINGS_PENDING_USER, SETTINGS_ROLE } from "./settings.types";
@@ -344,16 +343,6 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 								data-testid="pending-members-search-btn"
 							>
 								<Search className="size-4" />
-							</Button>
-						</div>
-
-						<div className="flex items-center gap-2.5 p-2 px-2 py-[5px]">
-							<Button
-								variant="ghost"
-								size="icon"
-								data-testid="pending-members-filter-btn"
-							>
-								<img src={FilteredIcon} alt="Filter" />
 							</Button>
 						</div>
 

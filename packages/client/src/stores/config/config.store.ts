@@ -256,7 +256,6 @@ export class ConfigStore {
 		return this._store.config;
 	}
 
-
 	/**
 	 * Get the config
 	 */
@@ -511,7 +510,7 @@ export class ConfigStore {
 					};
 				}
 
-			    this._store.user.id = user.id || "";
+				this._store.user.id = user.id || "";
 				this._store.user.name = user.name || "";
 				this._store.user.email = user.email || "";
 				this._store.userEpoch = user.userEpoch;

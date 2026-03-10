@@ -1,14 +1,12 @@
-import { Close, DeleteRounded, MoreVert } from "@mui/icons-material";
+import { DeleteRounded, MoreVert } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Users } from "lucide-react";
 import {
-	Button,
 	Card,
 	IconButton,
 	Menu,
-	Modal,
 	Stack,
 	styled,
 	Typography,
@@ -32,6 +30,7 @@ import Siteminder from "@/assets/loginProviders/siteminder.png";
 import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
 import Twitter from "@/assets/loginProviders/x_twitter.png";
 import { AddTeamModal } from "./add-team-modal";
+import { TeamDeleteDialog } from "./team-delete-dialog";
 
 const TypeImageObject = {
 	native: AMAZON_S3,
@@ -106,17 +105,6 @@ const StyledMoreVert = styled(MoreVert, {
 	color: hover ? theme.palette.divider : theme.palette.text.secondary,
 }));
 
-const StyledDeleteModal = styled(Modal)({
-	"& .MuiPaper-root": {
-		width: "600px",
-	},
-});
-
-const StyledDeleteButton = styled(Button)({
-	fontWeight: 500,
-	padding: "6px 16px",
-});
-
 interface TeamCardProps {
 	/** ID of team */
 	id: string;
@@ -133,18 +121,14 @@ interface TeamCardProps {
 	/** databases to update */
 	teams;
 
+	/** Callback when this team is deleted */
+	onDelete?: () => void;
+
 	onClick?: (value: string) => void;
 }
 
-const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
-	width: "100%",
-	display: "flex",
-	justifyContent: "space-between",
-	marginTop: theme.spacing(2),
-}));
-
 export const TeamTileCard = (props: TeamCardProps) => {
-	const { id, description, type, dispatch, teams, onClick } = props;
+	const { id, description, type, dispatch, teams, onDelete, onClick } = props;
 	const notification = useNotification();
 
 	const [hover, setHover] = React.useState(false);
@@ -158,14 +142,22 @@ export const TeamTileCard = (props: TeamCardProps) => {
 		? description.replace(/['"]+/g, "")
 		: "No description available";
 
-	const deleteGroup = () => {
+	const deleteGroup = async () => {
 		try {
-			deleteTeam(id, type);
+			const response = await deleteTeam(id, type);
+			if (
+				typeof response === "boolean"
+					? response
+					: response?.data?.success === false
+			) {
+				throw new Error("Failed to delete team");
+			}
 			dispatch({
 				type: "field",
 				field: "teams",
 				value: [...teams.filter((val) => val.id !== id)],
 			});
+			onDelete?.();
 			notification.add({
 				color: "success",
 				message: "Successfully deleted team",
@@ -174,7 +166,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 			console.error(e);
 			notification.add({
 				color: "error",
-				message: e,
+				message: e instanceof Error ? e.message : String(e),
 			});
 		} finally {
 			setDeleteModal(false);
@@ -186,8 +178,8 @@ export const TeamTileCard = (props: TeamCardProps) => {
 		setAnchorEl(event.currentTarget);
 	};
 
-	const handleClose = (event) => {
-		event.stopPropagation();
+	const handleClose = (event?: React.SyntheticEvent) => {
+		event?.stopPropagation();
 		setAnchorEl(null);
 	};
 
@@ -311,39 +303,12 @@ export const TeamTileCard = (props: TeamCardProps) => {
 					</StyledCardDescription>
 				</Card.Content>
 			</StyledTileCard>
-			<StyledDeleteModal open={deleteModal}>
-				<StyledModalTitle>
-					<Typography sx={{ color: "#000000DE" }} variant="h6">
-						Delete Team
-					</Typography>
-					<IconButton onClick={() => setDeleteModal(false)}>
-						<Close />
-					</IconButton>
-				</StyledModalTitle>
-				<Modal.Content>
-					<Typography sx={{ color: "#000000DE" }} variant="body1">
-						Are you sure you want to delete this team: {id}
-					</Typography>
-				</Modal.Content>
-				<Modal.Actions
-					sx={{ marginBottom: "24px", paddingRight: "16px" }}
-				>
-					<Button
-						onClick={() => setDeleteModal(false)}
-						variant="text"
-						sx={{ color: "#212121" }}
-					>
-						Cancel
-					</Button>
-					<StyledDeleteButton
-						variant="contained"
-						color={"error"}
-						onClick={() => deleteGroup()}
-					>
-						Delete
-					</StyledDeleteButton>
-				</Modal.Actions>
-			</StyledDeleteModal>
+			<TeamDeleteDialog
+				open={deleteModal}
+				onOpenChange={setDeleteModal}
+				teamId={id}
+				onConfirm={deleteGroup}
+			/>
 			<AddTeamModal
 				open={editTeam}
 				isEdit={true}
