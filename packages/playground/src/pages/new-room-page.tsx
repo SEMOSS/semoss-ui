@@ -166,9 +166,7 @@ export const NewRoomPage = observer(() => {
 
 			const options = {
 				...tempRoomStore.options,
-				mcp: tempRoomStore.options.mcp.filter(
-					(mcp) => !mcp?.fromWorkspace,
-				),
+				mcp: tempRoomStore.options.mcp,
 			};
 
 			// add workspace id
@@ -251,7 +249,7 @@ export const NewRoomPage = observer(() => {
 		});
 	}, [mode, getWorkspace.status, getWorkspace.data, tempRoomStore]);
 
-	// // Handle knowledge vector engine from URL parameter
+	// Handle knowledge vector engine from URL parameter
 	useEffect(() => {
 		if (getKnowledge.status !== "SUCCESS" || !getKnowledge.data?.[0]) {
 			return;
@@ -447,17 +445,41 @@ export const NewRoomPage = observer(() => {
 							footer={
 								mode === "workspace" &&
 								getWorkspace.status === "SUCCESS" ? (
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<span>
-												<Badge
-													variant="secondary"
-													asChild
-												>
-													<a
-														target="_blank"
-														href={`${PLATFORM_URL}/#/app/${getWorkspace.data.workspace_id}`}
+									root.theme.showPlatformLinks !== false ? (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span>
+													<Badge
+														variant="secondary"
+														asChild
 													>
+														<a
+															target="_blank"
+															href={`${PLATFORM_URL}/#/app/${getWorkspace.data.workspace_id}`}
+														>
+															<ComputerIcon data-icon="inline-start" />
+															<div className="w-18 truncate">
+																{getWorkspace
+																	.data
+																	.name ||
+																	t(
+																		"room:menuWorkspace.selectAgent",
+																	)}
+															</div>
+															<ExternalLinkIcon data-icon="inline-end" />
+														</a>
+													</Badge>
+												</span>
+											</TooltipTrigger>
+											<TooltipContent>
+												Click to view agent details
+											</TooltipContent>
+										</Tooltip>
+									) : (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span>
+													<Badge variant="secondary">
 														<ComputerIcon data-icon="inline-start" />
 														<div className="w-18 truncate">
 															{getWorkspace.data
@@ -466,15 +488,17 @@ export const NewRoomPage = observer(() => {
 																	"room:menuWorkspace.selectAgent",
 																)}
 														</div>
-														<ExternalLinkIcon data-icon="inline-end" />
-													</a>
-												</Badge>
-											</span>
-										</TooltipTrigger>
-										<TooltipContent>
-											Click to view agent details
-										</TooltipContent>
-									</Tooltip>
+													</Badge>
+												</span>
+											</TooltipTrigger>
+											<TooltipContent>
+												{getWorkspace.data.name ||
+													t(
+														"room:menuWorkspace.selectAgent",
+													)}
+											</TooltipContent>
+										</Tooltip>
+									)
 								) : null
 							}
 						/>

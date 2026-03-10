@@ -99,34 +99,36 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			loading={getChildren.status === "LOADING"}
 			label={
 				<div
-					className="flex w-full flex-1 flex-row items-center gap-2"
+					className="group flex w-full flex-1 flex-row items-center gap-2"
 					title={`Path: ${item.path} Last Modified: ${item.lastModified}`}
 				>
 					{renderIcon()}
 					<span className="flex-1 truncate text-sm">{item.name}</span>
-					{actions.map((a) => {
-						if (!a) {
-							return null;
-						}
+					<div className="pointer-events-none flex flex-row items-center opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+						{actions.map((a) => {
+							if (!a) {
+								return null;
+							}
 
-						return (
-							<Tooltip key={a.name}>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										onClick={(e) => {
-											e.stopPropagation();
-											a.action(item);
-										}}
-									>
-										{a.icon}
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>{a.tooltip}</TooltipContent>
-							</Tooltip>
-						);
-					})}
+							return (
+								<Tooltip key={a.name}>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											onClick={(e) => {
+												e.stopPropagation();
+												a.action(item);
+											}}
+										>
+											{a.icon}
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>{a.tooltip}</TooltipContent>
+								</Tooltip>
+							);
+						})}
+					</div>
 					{secondaryActions.length > 0 && (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>

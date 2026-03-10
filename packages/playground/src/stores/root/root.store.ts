@@ -77,6 +77,7 @@ export class RootStore {
 			},
 			allowedFileTypes: [],
 			defaultTools: [],
+			showPlatformLinks: true,
 		},
 	};
 
@@ -215,6 +216,16 @@ export class RootStore {
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||
 				[],
+			enableKnowledgeMCP:
+				theme?.enableKnowledgeMCP !== undefined
+					? theme.enableKnowledgeMCP
+					: this._store.theme.enableKnowledgeMCP,
+			defaultEmbedderId:
+				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
+			allowEmbeddingOptions:
+				theme?.allowEmbeddingOptions !== undefined
+					? theme.allowEmbeddingOptions
+					: this._store.theme.allowEmbeddingOptions,
 			defaultTools: [
 				...new Map(
 					[
@@ -223,6 +234,10 @@ export class RootStore {
 					].map((tool) => [tool.id, tool]),
 				).values(),
 			],
+			showPlatformLinks:
+				theme?.showPlatformLinks !== undefined
+					? theme.showPlatformLinks
+					: this._store.theme.showPlatformLinks,
 		};
 
 		// apply the theme to document root
