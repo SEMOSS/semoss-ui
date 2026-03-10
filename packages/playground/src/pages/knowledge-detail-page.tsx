@@ -184,7 +184,7 @@ export const KnowledgeDetailPage = observer(() => {
 
 	const getKnowledge = usePixel<KnowledgeEngine[]>(
 		knowledgeId
-			? `MyEngines(engine=["${knowledgeId}"], engineTypes=['VECTOR'], metaKeys=["DESCRIPTION","tag"], userT=[true], limit=[1], offset=[0]);`
+			? `MyEngines(engine=["${knowledgeId}"], engineTypes=['VECTOR'], metaKeys=["description","tag"], userT=[true], limit=[1], offset=[0]);`
 			: "",
 		{ data: [] },
 	);
