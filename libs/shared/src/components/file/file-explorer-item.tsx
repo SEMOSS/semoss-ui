@@ -1,4 +1,5 @@
 import { Ellipsis, FileIcon, FolderIcon, FolderOpenIcon } from "lucide-react";
+import { useMemo } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -15,6 +16,129 @@ import {
 } from "@semoss/ui/next";
 import type { FileItem, FileMode } from "./file.types";
 import { FileExplorerMenuItem } from "./file-explorer-menu-item";
+
+interface StoragePathEntry {
+	Name?: string;
+	name?: string;
+	Path?: string;
+	path?: string;
+	IsDir?: boolean;
+	isDir?: boolean;
+	ModTime?: string;
+	lastModified?: string;
+	last_modified?: string;
+}
+
+const normalizeStoragePath = (value: string): string => {
+	if (!value || value === "/") {
+		return "/";
+	}
+
+	const normalized = value.replace(/^\/+/, "").replace(/\/+$/, "");
+	return normalized ? `/${normalized}` : "/";
+};
+
+const toAbsoluteStoragePath = (basePath: string, candidatePath: string) => {
+	if (!candidatePath) {
+		return normalizeStoragePath(basePath);
+	}
+
+	if (candidatePath.startsWith("/")) {
+		return normalizeStoragePath(candidatePath);
+	}
+
+	const normalizedBase = normalizeStoragePath(basePath);
+	const normalizedBaseWithoutSlash =
+		normalizedBase === "/" ? "" : normalizedBase.slice(1);
+
+	if (
+		normalizedBaseWithoutSlash &&
+		(candidatePath === normalizedBaseWithoutSlash ||
+			candidatePath.startsWith(`${normalizedBaseWithoutSlash}/`))
+	) {
+		return normalizeStoragePath(candidatePath);
+	}
+
+	if (normalizedBase === "/") {
+		return normalizeStoragePath(candidatePath);
+	}
+
+	return normalizeStoragePath(`${normalizedBase}/${candidatePath}`);
+};
+
+const mapStorageEntriesToFileItems = (
+	entries: unknown,
+	currentPath: string,
+): FileItem[] => {
+	if (!Array.isArray(entries)) {
+		return [];
+	}
+
+	const normalizedCurrentPath = normalizeStoragePath(currentPath);
+	const seenPaths = new Set<string>();
+
+	return entries.reduce<FileItem[]>((acc, entry) => {
+		if (typeof entry === "string") {
+			if (entry === "." || entry === "..") {
+				return acc;
+			}
+
+			const absolutePath = toAbsoluteStoragePath(currentPath, entry);
+
+			if (
+				absolutePath === normalizedCurrentPath ||
+				seenPaths.has(absolutePath)
+			) {
+				return acc;
+			}
+
+			const name = entry.split("/").filter(Boolean).pop() || entry;
+			const isDirectory = entry.endsWith("/");
+
+			acc.push({
+				name: name,
+				path: absolutePath,
+				type: isDirectory ? "directory" : undefined,
+			});
+			seenPaths.add(absolutePath);
+
+			return acc;
+		}
+
+		if (!entry || typeof entry !== "object") {
+			return acc;
+		}
+
+		const details = entry as StoragePathEntry;
+		const name = details.Name || details.name || "";
+		const candidatePath = details.Path || details.path || name;
+		const absolutePath = toAbsoluteStoragePath(currentPath, candidatePath);
+
+		if (
+			absolutePath === normalizedCurrentPath ||
+			seenPaths.has(absolutePath)
+		) {
+			return acc;
+		}
+
+		const fallbackName =
+			absolutePath.split("/").filter(Boolean).pop() || "/";
+		const isDirectory = details.IsDir || details.isDir;
+
+		acc.push({
+			name: name || fallbackName,
+			path: absolutePath,
+			type: isDirectory ? "directory" : undefined,
+			lastModified:
+				details.ModTime ||
+				details.lastModified ||
+				details.last_modified,
+		});
+		seenPaths.add(absolutePath);
+
+		return acc;
+	}, []);
+};
 
 interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
 	/** Mode of file editor */
@@ -70,16 +194,28 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			getChildrenPixel = `BrowseAppAssets(filePath=["${item.path}"], project=["${mode.app}"]);`;
 		} else if (mode.type === "ENGINE") {
 			getChildrenPixel = `BrowseEngineAssets(filePath=["${item.path}"], engine=["${mode.engine}"]);`;
+		} else if (mode.type === "STORAGE") {
+			getChildrenPixel = `ListStoragePathDetails(storage=["${mode.storage}"], storagePath=["${item.path}"]);`;
 		} else if (mode.type === "INSIGHT") {
 			getChildrenPixel = `BrowseInsightAssets(filePath=["${item.path}"]);`;
 		}
 	}
 
-	const getChildren = usePixel<FileItem[]>(
+	const getChildren = usePixel<unknown[]>(
 		getChildrenPixel,
-		{},
+		{
+			data: [],
+		},
 		insight.insightId,
 	);
+
+	const children = useMemo(() => {
+		if (mode.type === "STORAGE") {
+			return mapStorageEntriesToFileItems(getChildren.data, item.path);
+		}
+
+		return getChildren.data as FileItem[];
+	}, [mode.type, getChildren.data, item.path]);
 
 	const renderIcon = () => {
 		if (isDirectory) {
@@ -167,7 +303,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			{isDirectory ? (
 				<>
 					{getChildren.status === "SUCCESS" &&
-						getChildren.data.map((child) => (
+						children.map((child) => (
 							<ItemComponent
 								key={child.path}
 								mode={mode}
@@ -178,7 +314,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 							/>
 						))}
 					{getChildren.status === "SUCCESS" &&
-						getChildren.data.length === 0 && (
+						children.length === 0 && (
 							<Muted className="flex items-center justify-center py-2 text-xs">
 								Empty folder
 							</Muted>
