@@ -139,6 +139,12 @@ export interface ThemeMap {
 			/** Name of the mcp */
 			name: string;
 		}[];
+
+		/**
+		 * When false, hides external links that navigate users to the SEMOSS platform.
+		 * Defaults to true (links shown).
+		 */
+		showPlatformLinks?: boolean;
 	};
 }
 
