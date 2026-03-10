@@ -31,6 +31,7 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 	Muted,
+	Separator,
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
@@ -403,7 +404,6 @@ export const GlobalNav = observer(() => {
 				)}
 				{BUCKETS.map((bucket) => {
 					const rooms = bucketedRooms[bucket];
-
 					if (!open || rooms.length === 0) {
 						return null;
 					}
@@ -603,7 +603,8 @@ export const GlobalNav = observer(() => {
 				})}
 			</SidebarContent>
 			<SidebarFooter>
-				<SidebarMenu className="gap-2 px-2 pt-2">
+				<Separator className="group-data-[collapsible=icon]:hidden" />
+				<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
 					{root.theme.sidebar.footerItems.map((item) => (
 						<GlobalNavItem
 							key={item.path}
