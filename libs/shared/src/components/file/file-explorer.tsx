@@ -44,78 +44,28 @@ interface StoragePathEntry {
 	last_modified?: string;
 }
 
-const normalizeStoragePath = (value: string): string => {
-	if (!value || value === "/") {
-		return "/";
-	}
-
-	const normalized = value.replace(/^\/+/, "").replace(/\/+$/, "");
-	return normalized ? `/${normalized}` : "/";
-};
-
-const toAbsoluteStoragePath = (basePath: string, candidatePath: string) => {
-	if (!candidatePath) {
-		return normalizeStoragePath(basePath);
-	}
-
-	if (candidatePath.startsWith("/")) {
-		return normalizeStoragePath(candidatePath);
-	}
-
-	const normalizedBase = normalizeStoragePath(basePath);
-	const normalizedBaseWithoutSlash =
-		normalizedBase === "/" ? "" : normalizedBase.slice(1);
-
-	if (
-		normalizedBaseWithoutSlash &&
-		(candidatePath === normalizedBaseWithoutSlash ||
-			candidatePath.startsWith(`${normalizedBaseWithoutSlash}/`))
-	) {
-		return normalizeStoragePath(candidatePath);
-	}
-
-	if (normalizedBase === "/") {
-		return normalizeStoragePath(candidatePath);
-	}
-
-	return normalizeStoragePath(`${normalizedBase}/${candidatePath}`);
-};
-
-const mapStorageEntriesToFileItems = (
-	entries: unknown,
-	currentPath: string,
-): FileItem[] => {
+const mapStorageEntriesToFileItems = (entries: unknown): FileItem[] => {
 	if (!Array.isArray(entries)) {
 		return [];
 	}
 
-	const normalizedCurrentPath = normalizeStoragePath(currentPath);
-	const seenPaths = new Set<string>();
-
 	return entries.reduce<FileItem[]>((acc, entry) => {
 		if (typeof entry === "string") {
-			if (entry === "." || entry === "..") {
+			if (!entry) {
 				return acc;
 			}
 
-			const absolutePath = toAbsoluteStoragePath(currentPath, entry);
-
-			if (
-				absolutePath === normalizedCurrentPath ||
-				seenPaths.has(absolutePath)
-			) {
-				return acc;
-			}
-
-			const name = entry.split("/").filter(Boolean).pop() || entry;
+			const normalizedEntry = entry.replace(/\/+$/, "");
+			const name =
+				normalizedEntry.split("/").filter(Boolean).pop() ||
+				normalizedEntry;
 			const isDirectory = entry.endsWith("/");
 
 			acc.push({
 				name: name,
-				path: absolutePath,
+				path: entry,
 				type: isDirectory ? "directory" : undefined,
 			});
-			seenPaths.add(absolutePath);
 
 			return acc;
 		}
@@ -126,30 +76,22 @@ const mapStorageEntriesToFileItems = (
 
 		const details = entry as StoragePathEntry;
 		const name = details.Name || details.name || "";
-		const candidatePath = details.Path || details.path || name;
-		const absolutePath = toAbsoluteStoragePath(currentPath, candidatePath);
-
-		if (
-			absolutePath === normalizedCurrentPath ||
-			seenPaths.has(absolutePath)
-		) {
+		const path = details.Path || details.path || "";
+		if (!path) {
 			return acc;
 		}
-
-		const fallbackName =
-			absolutePath.split("/").filter(Boolean).pop() || "/";
+		const fallbackName = path.split("/").filter(Boolean).pop() || "/";
 		const isDirectory = details.IsDir || details.isDir;
 
 		acc.push({
 			name: name || fallbackName,
-			path: absolutePath,
+			path: path,
 			type: isDirectory ? "directory" : undefined,
 			lastModified:
 				details.ModTime ||
 				details.lastModified ||
 				details.last_modified,
 		});
-		seenPaths.add(absolutePath);
 
 		return acc;
 	}, []);
@@ -231,7 +173,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	const files = useMemo(() => {
 		const mappedFiles =
 			mode.type === "STORAGE"
-				? mapStorageEntriesToFileItems(getFiles.data, path)
+				? mapStorageEntriesToFileItems(getFiles.data)
 				: (getFiles.data as FileItem[]);
 
 		if (mode.type !== "STORAGE" || !debouncedSearch) {
@@ -242,7 +184,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		return mappedFiles.filter((item) =>
 			item.name.toLowerCase().includes(normalizedSearch),
 		);
-	}, [mode.type, getFiles.data, path, debouncedSearch]);
+	}, [mode.type, getFiles.data, debouncedSearch]);
 
 	/**
 	 * Upload a file to the path
@@ -368,15 +310,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 													.slice(index)
 													.reverse()
 													.join("/");
-												const nextPath =
-													mode.type === "STORAGE"
-														? normalizeStoragePath(
-																newPath,
-															)
-														: newPath;
 
 												setExpandedPaths([]);
-												setPath(nextPath);
+												setPath(newPath);
 												setSearch("");
 											}}
 										>

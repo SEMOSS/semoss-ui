@@ -29,78 +29,28 @@ interface StoragePathEntry {
 	last_modified?: string;
 }
 
-const normalizeStoragePath = (value: string): string => {
-	if (!value || value === "/") {
-		return "/";
-	}
-
-	const normalized = value.replace(/^\/+/, "").replace(/\/+$/, "");
-	return normalized ? `/${normalized}` : "/";
-};
-
-const toAbsoluteStoragePath = (basePath: string, candidatePath: string) => {
-	if (!candidatePath) {
-		return normalizeStoragePath(basePath);
-	}
-
-	if (candidatePath.startsWith("/")) {
-		return normalizeStoragePath(candidatePath);
-	}
-
-	const normalizedBase = normalizeStoragePath(basePath);
-	const normalizedBaseWithoutSlash =
-		normalizedBase === "/" ? "" : normalizedBase.slice(1);
-
-	if (
-		normalizedBaseWithoutSlash &&
-		(candidatePath === normalizedBaseWithoutSlash ||
-			candidatePath.startsWith(`${normalizedBaseWithoutSlash}/`))
-	) {
-		return normalizeStoragePath(candidatePath);
-	}
-
-	if (normalizedBase === "/") {
-		return normalizeStoragePath(candidatePath);
-	}
-
-	return normalizeStoragePath(`${normalizedBase}/${candidatePath}`);
-};
-
-const mapStorageEntriesToFileItems = (
-	entries: unknown,
-	currentPath: string,
-): FileItem[] => {
+const mapStorageEntriesToFileItems = (entries: unknown): FileItem[] => {
 	if (!Array.isArray(entries)) {
 		return [];
 	}
 
-	const normalizedCurrentPath = normalizeStoragePath(currentPath);
-	const seenPaths = new Set<string>();
-
 	return entries.reduce<FileItem[]>((acc, entry) => {
 		if (typeof entry === "string") {
-			if (entry === "." || entry === "..") {
+			if (!entry) {
 				return acc;
 			}
 
-			const absolutePath = toAbsoluteStoragePath(currentPath, entry);
-
-			if (
-				absolutePath === normalizedCurrentPath ||
-				seenPaths.has(absolutePath)
-			) {
-				return acc;
-			}
-
-			const name = entry.split("/").filter(Boolean).pop() || entry;
+			const normalizedEntry = entry.replace(/\/+$/, "");
+			const name =
+				normalizedEntry.split("/").filter(Boolean).pop() ||
+				normalizedEntry;
 			const isDirectory = entry.endsWith("/");
 
 			acc.push({
 				name: name,
-				path: absolutePath,
+				path: entry,
 				type: isDirectory ? "directory" : undefined,
 			});
-			seenPaths.add(absolutePath);
 
 			return acc;
 		}
@@ -111,30 +61,22 @@ const mapStorageEntriesToFileItems = (
 
 		const details = entry as StoragePathEntry;
 		const name = details.Name || details.name || "";
-		const candidatePath = details.Path || details.path || name;
-		const absolutePath = toAbsoluteStoragePath(currentPath, candidatePath);
-
-		if (
-			absolutePath === normalizedCurrentPath ||
-			seenPaths.has(absolutePath)
-		) {
+		const path = details.Path || details.path || "";
+		if (!path) {
 			return acc;
 		}
-
-		const fallbackName =
-			absolutePath.split("/").filter(Boolean).pop() || "/";
+		const fallbackName = path.split("/").filter(Boolean).pop() || "/";
 		const isDirectory = details.IsDir || details.isDir;
 
 		acc.push({
 			name: name || fallbackName,
-			path: absolutePath,
+			path: path,
 			type: isDirectory ? "directory" : undefined,
 			lastModified:
 				details.ModTime ||
 				details.lastModified ||
 				details.last_modified,
 		});
-		seenPaths.add(absolutePath);
 
 		return acc;
 	}, []);
@@ -211,11 +153,11 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 
 	const children = useMemo(() => {
 		if (mode.type === "STORAGE") {
-			return mapStorageEntriesToFileItems(getChildren.data, item.path);
+			return mapStorageEntriesToFileItems(getChildren.data);
 		}
 
 		return getChildren.data as FileItem[];
-	}, [mode.type, getChildren.data, item.path]);
+	}, [mode.type, getChildren.data]);
 
 	const renderIcon = () => {
 		if (isDirectory) {
