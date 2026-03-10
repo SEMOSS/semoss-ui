@@ -1,5 +1,3 @@
-import { ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
 import { Button, H3, P } from "@semoss/ui/next";
 
 interface BannerSectionProps {
@@ -53,10 +51,9 @@ export const BannerSection = (props: BannerSectionProps) => {
 				size="lg"
 				className="mt-auto rounded-xl"
 			>
-				<Link to={link.to} target="_blank" rel="noopener noreferrer">
+				<a href={link.to} target="_blank" rel="noopener noreferrer">
 					{link.label}
-					<ArrowRight className="text-primary-foreground" />
-				</Link>
+				</a>
 			</Button>
 		</div>
 	);
