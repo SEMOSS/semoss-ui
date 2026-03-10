@@ -85,10 +85,10 @@ export const EngineMetadataPage = observer(() => {
 					id: n.conceptualName,
 					type: "metamodel" as const,
 					data: {
-						name: n.conceptualName.replace(/_/g, " "),
+						name: n.conceptualName,
 						properties: n.propSet.map((p) => ({
 							id: `${n.conceptualName}__${p}`,
-							name: p.replace(/_/g, " "),
+							name: p,
 							type: "",
 						})),
 					},
@@ -582,9 +582,7 @@ Error ${e.message || "Unknown error"}
 							<TableHeader className="sticky top-0 bg-background">
 								<TableRow>
 									{getData.data.data.headers.map((h) => (
-										<TableHead key={h}>
-											{h.replace(/_/g, " ")}
-										</TableHead>
+										<TableHead key={h}>{h}</TableHead>
 									))}
 								</TableRow>
 							</TableHeader>
