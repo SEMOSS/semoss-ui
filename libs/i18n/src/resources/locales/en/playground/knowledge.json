@@ -27,7 +27,8 @@
 	"actions": {
 		"createSource": "Create Knowledge Library",
 		"viewDocuments": "View documents",
-		"newChat": "New Chat"
+		"newChat": "New Chat",
+		"action": "Actions"
 	},
 	"messages": {
 		"noDescription": "No description",

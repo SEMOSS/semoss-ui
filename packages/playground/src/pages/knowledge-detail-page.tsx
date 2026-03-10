@@ -10,6 +10,7 @@ import {
 	FolderPlusIcon,
 	Info,
 	MessageSquarePlusIcon,
+	PencilIcon,
 	Trash2,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -36,8 +37,12 @@ import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	Field,
+	FieldGroup,
+	FieldLabel,
 	ScrollArea,
 	Select,
 	SelectContent,
@@ -49,6 +54,7 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
+	Textarea,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -63,6 +69,8 @@ type KnowledgeEngine = {
 	app_name: string;
 	description?: string;
 	tag?: string[] | string;
+	permission?: number;
+	low_database_name?: string;
 };
 
 type VectorDocument = {
@@ -241,7 +249,14 @@ export const KnowledgeDetailPage = observer(() => {
 	const [selectedUser, setSelectedUser] = useState<SearchUser | null>(null);
 	const [selectedRole, setSelectedRole] = useState<string>("READ_ONLY");
 	const [removeTarget, setRemoveTarget] = useState<EngineUser | null>(null);
+	const [isEditOpen, setIsEditOpen] = useState(false);
+	const [editDescription, setEditDescription] = useState("");
+	const [editTagInput, setEditTagInput] = useState("");
+	const [editTags, setEditTags] = useState<string[]>([]);
+
 	const insight = useInsight();
+
+	const canEdit = knowledge?.permission === 1;
 	useEffect(() => {
 		if (!previewDoc) {
 			setPreviewBlobUrl(null);
@@ -476,6 +491,22 @@ export const KnowledgeDetailPage = observer(() => {
 							</Link>
 						</Button>
 
+						{canEdit && (
+							<Button
+								variant="outline"
+								onClick={() => {
+									setEditDescription(
+										knowledge?.description ?? "",
+									);
+									setEditTags(tags);
+									setIsEditOpen(true);
+								}}
+							>
+								<PencilIcon className="h-4 w-4" />
+								{t("knowledge:actions.action")}
+							</Button>
+						)}
+
 						<Button
 							variant="default"
 							onClick={() => setIsEmbedExistingOpen(true)}
@@ -497,6 +528,131 @@ export const KnowledgeDetailPage = observer(() => {
 						}
 					}}
 				/>
+
+				<Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+					<DialogContent className="w-full sm:max-w-4xl">
+						<DialogHeader>
+							<DialogTitle>Edit Knowledge Library</DialogTitle>
+						</DialogHeader>
+						<FieldGroup>
+							<Field>
+								<FieldLabel>Description</FieldLabel>
+								<Textarea
+									value={editDescription}
+									onChange={(e) =>
+										setEditDescription(e.target.value)
+									}
+									placeholder={t(
+										"knowledge:form.descriptionPlaceholder",
+									)}
+								/>
+							</Field>
+							<Field>
+								<FieldLabel>Tags</FieldLabel>
+								<div className="flex min-h-[40px] flex-wrap gap-1 rounded-md border p-2">
+									{editTags.map((t) => (
+										<span
+											key={t}
+											className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 font-medium text-secondary-foreground text-xs"
+										>
+											{t}
+											<button
+												type="button"
+												onClick={() =>
+													setEditTags((prev) =>
+														prev.filter(
+															(x) => x !== t,
+														),
+													)
+												}
+												className="hover:text-destructive"
+											>
+												×
+											</button>
+										</span>
+									))}
+									<input
+										value={editTagInput}
+										onChange={(e) =>
+											setEditTagInput(e.target.value)
+										}
+										onKeyDown={(e) => {
+											if (
+												(e.key === "Enter" ||
+													e.key === ",") &&
+												editTagInput.trim()
+											) {
+												e.preventDefault();
+												const newTag = editTagInput
+													.trim()
+													.replace(/,$/, "");
+												if (
+													newTag &&
+													!editTags.includes(newTag)
+												) {
+													setEditTags((prev) => [
+														...prev,
+														newTag,
+													]);
+												}
+												setEditTagInput("");
+											}
+											if (
+												e.key === "Backspace" &&
+												!editTagInput &&
+												editTags.length > 0
+											) {
+												setEditTags((prev) =>
+													prev.slice(0, -1),
+												);
+											}
+										}}
+										placeholder={
+											editTags.length === 0
+												? "Add tags..."
+												: ""
+										}
+										className="min-w-[120px] flex-1 bg-transparent text-sm outline-none"
+									/>
+								</div>
+							</Field>
+						</FieldGroup>
+						<DialogFooter>
+							<Button
+								variant="outline"
+								onClick={() => setIsEditOpen(false)}
+							>
+								Cancel
+							</Button>
+							<Button
+								onClick={async () => {
+									try {
+										const meta: Record<string, string> = {};
+										if (editDescription.trim()) {
+											meta["description"] =
+												editDescription;
+										}
+										meta["tag"] = editTags.join("|");
+
+										await insight.actions.run(
+											`SetDatabaseMetadata(database=["${knowledgeId}"], meta=[${JSON.stringify(meta)}])`,
+										);
+										setIsEditOpen(false);
+										toast.success(
+											"Knowledge library updated",
+										);
+										getKnowledge.refresh?.();
+									} catch (err) {
+										console.error("Save failed", err);
+										toast.error("Failed to save changes");
+									}
+								}}
+							>
+								Save
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
 
 				<EmbedDocumentsOverlay
 					open={isEmbedExistingOpen}
