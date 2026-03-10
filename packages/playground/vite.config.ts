@@ -14,20 +14,12 @@ export default defineConfig(({ mode }) => {
 	const MODULE = env.MODULE;
 	const ENDPOINT = env.ENDPOINT;
 
-	// Merge VITE_THEME from .env with theme.local.json overrides (local wins)
-	let mergedTheme: Record<string, unknown> = {};
-	try {
-		mergedTheme = JSON.parse(env.VITE_THEME || "{}");
-	} catch (_e) {}
-	const themeLocalPath = resolve(__dirname, "./theme.local.json");
-	if (existsSync(themeLocalPath)) {
-		try {
-			const localTheme = JSON.parse(
-				readFileSync(themeLocalPath, "utf-8"),
-			);
-			mergedTheme = { ...mergedTheme, ...localTheme };
-		} catch (_e) {}
-	}
+	// Load theme from theme.local.json if present, otherwise fall back to VITE_THEME in .env.local
+	const themeFile = resolve(__dirname, "theme.local.json");
+	const THEME = existsSync(themeFile)
+		? readFileSync(themeFile, "utf-8").trim()
+		: env.VITE_THEME || "{}";
+
 	return {
 		base: "./",
 		plugins: [
@@ -46,9 +38,7 @@ export default defineConfig(({ mode }) => {
 			"import.meta.env.SECRET_KEY": isProduction
 				? undefined
 				: JSON.stringify(env.SECRET_KEY),
-			"import.meta.env.VITE_THEME": JSON.stringify(
-				JSON.stringify(mergedTheme),
-			),
+			"import.meta.env.VITE_THEME": JSON.stringify(THEME),
 		},
 		build: {
 			minify: isProduction,
