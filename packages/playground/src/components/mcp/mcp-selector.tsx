@@ -231,21 +231,23 @@ const MCPSelectorInner: React.FC<MCPSelectorProps> = ({
 										}}
 									/>
 								</Field>
-								<div className="flex w-full flex-row justify-end px-4 pb-4">
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<a
-												target="_blank"
-												href={mcpToPlatformUrl(mcp)}
-											>
-												<SquareArrowOutUpRightIcon className="size-4" />
-											</a>
-										</TooltipTrigger>
-										<TooltipContent>
-											{t("selector.viewDetails")}
-										</TooltipContent>
-									</Tooltip>
-								</div>
+								{root.theme.showPlatformLinks !== false && (
+									<div className="flex w-full flex-row justify-end px-4 pb-4">
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<a
+													target="_blank"
+													href={mcpToPlatformUrl(mcp)}
+												>
+													<SquareArrowOutUpRightIcon className="size-4" />
+												</a>
+											</TooltipTrigger>
+											<TooltipContent>
+												{t("selector.viewDetails")}
+											</TooltipContent>
+										</Tooltip>
+									</div>
+								)}
 							</FieldLabel>
 						))}
 					</div>
