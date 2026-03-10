@@ -47,7 +47,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 		const fetchNotifications = async (limit: number, offset: number) => {
 			try {
 				// Construct the pixel command
-				const pixel = `FetchNotification(limit = "${limit}", offset = "${offset}")`;
+				const pixel = `FetchNotifications(limit = "${limit}", offset = "${offset}")`;
 
 				// Run the pixel command
 				const res = await runPixel(pixel);

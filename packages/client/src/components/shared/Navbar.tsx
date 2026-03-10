@@ -63,7 +63,7 @@ export const Navbar: React.FC = observer(() => {
 	useEffect(() => {
 		async function poll() {
 			try {
-				const pixel = `PollNotification()`;
+				const pixel = `PollNotifications()`;
 				const res = await runPixel(pixel);
 				const num = res.pixelReturn[0].output;
 				setHasUnread(num as number);
