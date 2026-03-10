@@ -1,4 +1,4 @@
-import { Bot, ChevronRight, Copy, Download } from "lucide-react";
+import { ChevronRight, Copy, Download, Hammer, Pencil } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -27,7 +27,8 @@ import BRAIN from "@/assets/img/BRAIN.png";
 import { useEngine, useRootStore } from "@/hooks";
 import { ENGINE_IMAGES } from "@/pages/import";
 import { formatToDataTestId } from "@/utility";
-import { EditEngineDetails, EngineAccessButton } from ".";
+import { EngineAccessButton } from ".";
+
 /**
  * Engine Header
  */
@@ -35,15 +36,18 @@ export const EngineHeader: React.FC = () => {
 	// get the engine information
 	const { name, active, type } = useEngine();
 
+	// navigation
+	const navigate = useNavigate();
+
 	// Service for Axios calls
 	const { monolithStore } = useRootStore();
-
-	const navigate = useNavigate();
 
 	const [openExportModal, setOpenExportModal] = useState(false);
 
 	// export loading state
 	const [exportLoading, setExportLoading] = useState(false);
+
+	const canEdit = active.role === "OWNER" || active.role === "EDITOR";
 
 	// mcp generation loading state
 	const [generatingMCP, setGeneratingMCP] = useState(false);
@@ -226,7 +230,7 @@ export const EngineHeader: React.FC = () => {
 								{generatingMCP ? (
 									<Spinner className="mr-2 size-4" />
 								) : (
-									<Bot className="mr-2 size-4" />
+									<Hammer className="mr-2 size-4" />
 								)}
 								{generatingMCP
 									? "Processing..."
@@ -261,7 +265,22 @@ export const EngineHeader: React.FC = () => {
 							Export
 						</Button>
 					)}
-					<EditEngineDetails />
+					{canEdit && (
+						<Button
+							variant="default"
+							onClick={() => {
+								navigate(
+									`/engine/${type.toLowerCase()}/${active.id}/edit`,
+								);
+							}}
+							data-testid={formatToDataTestId(
+								`editEngineDetails-${name}-edit-btn`,
+							)}
+						>
+							<Pencil className="size-4" />
+							Edit
+						</Button>
+					)}
 				</div>
 			</div>
 

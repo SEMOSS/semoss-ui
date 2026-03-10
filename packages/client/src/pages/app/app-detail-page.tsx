@@ -74,6 +74,7 @@ const modelDependencies = (
 		isDiscoverable: !!dep.engine_discoverable,
 		description: dep.description,
 		access_permission: dep.access_permission,
+		can_view_dependencies: dep.can_view_dependencies,
 	}));
 };
 
