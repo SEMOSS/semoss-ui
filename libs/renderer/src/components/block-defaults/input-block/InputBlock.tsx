@@ -210,8 +210,8 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
 			InputProps={{
 				startAdornment: (
 					<InputAdornment position="end">
-                        {data?.loading ? <StyledLoading size={20} /> : <></>}
-                    </InputAdornment>
+						{data?.loading ? <StyledLoading size={20} /> : null}
+					</InputAdornment>
 				),
 			}}
 			type={data.type}

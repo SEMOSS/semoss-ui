@@ -9,6 +9,7 @@ import { config as ContainerSettingsConfig } from "./block-settings/container-bl
 import { config as DividerSettingsConfig } from "./block-settings/divider-block";
 import { config as EchartVisualizationSettingsConfig } from "./block-settings/echart-visualization-block";
 import { config as FlipCardSettingsConfig } from "./block-settings/flip-card-block";
+import { config as FormSettingsConfig } from "./block-settings/form-block";
 import { config as GridSettingsConfig } from "./block-settings/grid-block";
 import { config as GridDynamicFrameSettingsConfig } from "./block-settings/grid-dynamic-frame-block";
 import { config as HTMLSettingsConfig } from "./block-settings/html-block";
@@ -51,6 +52,7 @@ export const BlockSettingsRegistry = {
 	chip: ChipSettingsConfig,
 	container: ContainerSettingsConfig,
 	calendarviewtext: CalendarViewSettingsConfig,
+	form: FormSettingsConfig,
 	divider: DividerSettingsConfig,
 	"e-chart": EchartVisualizationSettingsConfig,
 	"flip-card": FlipCardSettingsConfig,

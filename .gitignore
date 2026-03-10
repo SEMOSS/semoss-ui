@@ -1,4 +1,7 @@
 node_modules
+.nx
+.husky
+.turbo
 target
 .DS_Store
 dist
@@ -22,3 +25,9 @@ yarn-error.log
 *.tgz
 .vscode/.ropeproject
 .idea/
+
+# Personal dev files (local overrides, not for repo)
+packages/playground/theme.local.json
+
+# Ignore legacy
+packages/legacy

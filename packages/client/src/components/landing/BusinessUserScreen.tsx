@@ -1,16 +1,8 @@
-import { Search as SearchIcon } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import {
-	Box,
-	IconButton,
-	InputAdornment,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+import { Box, styled, Typography } from "@semoss/ui";
+import { PlatformSearch } from "@/components/shared";
 import BusinessUserImage from "../../assets/img/BusinessUserLanding.svg";
 import businessUsercheckgrid from "../../assets/img/businessUsercheckgrid.svg";
-import { Search } from "../shared";
 
 const StyledContainer = styled("div")(({ theme }) => ({
 	position: "absolute",
@@ -43,12 +35,6 @@ const ContentContainer = styled(Box)(({ theme }) => ({
 	borderRadius: theme.shape.borderRadius,
 	textAlign: "left",
 	marginTop: theme.spacing(6),
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	width: "100%",
-	background: theme.palette.common.white,
-	borderRadius: theme.shape.borderRadius * 2,
 }));
 
 const SliderTexts = styled(Box)(() => ({
@@ -93,8 +79,8 @@ export const BusinessUserScreen: React.FC = observer(() => {
 				<style>{keyframes}</style>
 				<SliderTexts>
 					<SliderText>
-						{subTitle.map((title, idx) => (
-							<GradientText variant="h2" key={idx}>
+						{subTitle.map((title) => (
+							<GradientText variant="h2" key={title}>
 								{title}
 							</GradientText>
 						))}
@@ -102,42 +88,7 @@ export const BusinessUserScreen: React.FC = observer(() => {
 				</SliderTexts>
 			</ContentContainer>
 			<Box sx={{ width: "100%", maxWidth: "60%", overflow: "auto" }}>
-				<Search
-					renderInput={(params) => (
-						<StyledTextField
-							{...params}
-							variant="outlined"
-							placeholder="Search"
-							sx={{
-								// Border color
-								"& .MuiOutlinedInput-root": {
-									"& fieldset": {
-										borderColor: "#C6BFFC",
-										boxShadow: "0px 0px 0px -1px #8D7BF8",
-										borderWidth: "initial",
-										borderRadius: "60px",
-									},
-									// '&:hover fieldset': {
-									//     borderColor: '#6C5DD3', // hover color
-									// },
-									// '&.Mui-focused fieldset': {
-									//     borderColor: '#6C5DD3', // focused color
-									// },
-								},
-							}}
-							InputProps={{
-								...params.InputProps,
-								startAdornment: (
-									<InputAdornment position="start">
-										<IconButton aria-label="Search">
-											<SearchIcon />
-										</IconButton>
-									</InputAdornment>
-								),
-							}}
-						/>
-					)}
-				/>
+				<PlatformSearch className="h-15 rounded-3xl border-[rgb(198,191,252)]" />
 			</Box>
 		</StyledContainer>
 	);

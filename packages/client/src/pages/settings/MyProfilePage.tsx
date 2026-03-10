@@ -5,7 +5,7 @@ import {
 	KeyboardArrowDown,
 	KeyboardArrowUp,
 } from "@mui/icons-material";
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
 	Alert,
@@ -14,6 +14,7 @@ import {
 	Collapse,
 	Grid,
 	IconButton,
+	LoadingScreen,
 	Modal,
 	Paper,
 	Stack,
@@ -23,45 +24,62 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
-import { useAPI, useRootStore } from "@/hooks";
+import {
+	Field,
+	FieldDescription,
+	FieldLabel,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	toast,
+} from "@semoss/ui/next";
+import {
+	createUserAccessKey,
+	deleteUserAccessKeys,
+	editMemberInfo,
+	setUserDefaultModel,
+} from "@/api/auth";
+import { useAPI, useRootStore, useSettings } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
+import { ChangePasswordModal } from "./ChangePasswordModal";
 
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
+const StyledAvatar = styled(Avatar)({
 	display: "flex",
 	alignContent: "center",
 	justifyContent: "center",
 	backgroundColor: "#975FE4",
-}));
+});
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
+const StyledPaper = styled(Paper)({
 	padding: "40px 30px 20px 50px",
-}));
+});
 
-const StyledAccessTokensPaper = styled(Paper)(({ theme }) => ({
+const StyledAccessTokensPaper = styled(Paper)({
 	padding: "40px 30px 20px 28px",
-}));
+});
 
-const HeaderCell = styled(Table.Cell)(({ theme }) => ({
+const HeaderCell = styled(Table.Cell)({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
-}));
+});
 
-const LeftHeaderCell = styled(Table.Cell)(({ theme }) => ({
+const LeftHeaderCell = styled(Table.Cell)({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
 	borderRadius: "20px 0 0 0",
 	textAlign: "center",
-}));
+});
 
-const RightHeaderCell = styled(Table.Cell)(({ theme }) => ({
+const RightHeaderCell = styled(Table.Cell)({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
 	borderRadius: "0 20px 0 0",
 	textAlign: "center",
-}));
+});
 
-const MessageDiv = styled("div")(({ theme }) => ({
+const MessageDiv = styled("div")({
 	textAlign: "center",
 	marginTop: "100px",
 	fontSize: "13px",
@@ -69,50 +87,50 @@ const MessageDiv = styled("div")(({ theme }) => ({
 	color: "#666",
 	width: "100%",
 	margin: "75px auto 85px",
-}));
+});
 
-const AvatarForm = styled("form")(({ theme }) => ({
+const AvatarForm = styled("form")({
 	paddingTop: "15px",
 	width: "750px",
-}));
+});
 
-const CurrentAvatarStack = styled(Stack)(({ theme }) => ({
+const CurrentAvatarStack = styled(Stack)({
 	alignItems: "center",
-}));
+});
 
-const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
+const StyledTableContainer = styled(Table.Container)({
 	marginTop: "20px",
-}));
+});
 
-const StyledGrid = styled(Grid)(({ theme }) => ({
+const StyledGrid = styled(Grid)({
 	marginBottom: "40px",
-}));
+});
 
-const MonolithGrid = styled(Grid)(({ theme }) => ({
+const MonolithGrid = styled(Grid)({
 	display: "flex",
 	alignItems: "center",
-}));
+});
 
-const StyledStack = styled(Stack)(({ theme }) => ({
+const StyledStack = styled(Stack)({
 	marginBottom: "15px",
-}));
+});
 
-const CopyGridItem = styled(Grid)(({ theme }) => ({
+const CopyGridItem = styled(Grid)({
 	padding: 0,
 	display: "flex",
 	justifyContent: "right",
-}));
+});
 
-const GridItem = styled(Grid)(({ theme }) => ({
+const GridItem = styled(Grid)({
 	padding: 0,
-}));
+});
 
-const CustomGridItem = styled(GridItem)(({ theme }) => ({
+const CustomGridItem = styled(GridItem)({
 	padding: 0,
 	zIndex: 8,
-}));
+});
 
-const StyledCodeBlock = styled("pre")(({ theme }) => ({
+const _StyledCodeBlock = styled("pre")(({ theme }) => ({
 	display: "flex",
 	alignItems: "center",
 	gap: theme.spacing(5),
@@ -149,12 +167,30 @@ const StyledCreatedKeyContainer = styled(Stack)(({ theme }) => ({
 	padding: theme.spacing(1),
 }));
 
+const StyledLink = styled("a")(({ theme }) => ({
+	textDecoration: "underline",
+	cursor: "pointer",
+	color: "#0471F0",
+	fontFamily: "Inter",
+	fontStyle: "normal",
+	fontWeight: 500,
+	fontSize: "16px",
+	lineHeight: "24px",
+	letterSpacing: "0.15px",
+}));
+
 interface CreateAccessKeyForm {
 	TOKENNAME: string;
 	TOKENDESCRIPTION?: string;
 	ACCESSKEY: string;
 	SECRETKEY: string;
 	PLACEHOLDER: string;
+}
+
+interface Engine {
+	app_id: string;
+	app_name: string;
+	app_subtype?: string;
 }
 
 interface EditUserInfoForm {
@@ -165,20 +201,41 @@ interface EditUserInfoForm {
 }
 
 export const MyProfilePage = () => {
+	const modelSelectId = useId();
 	const notification = useNotification();
-	const { configStore, monolithStore } = useRootStore();
-	const { email, id, name, admin, loggedIn } = configStore.store.user;
+	const { configStore, insightStore } = useRootStore();
+	const { email, id, name } = configStore.store.user;
+	const { isNative } = configStore.store;
+	const { adminMode } = useSettings();
 
 	// track the models
 	const [addModal, setAddModal] = useState(false);
 	const [profileImgModal, setProfileImgModal] = useState(false);
+	const [passwordModal, setPasswordModal] = useState(false);
+	const [editName, setEditName] = useState(name);
+	const [editEmail, setEditEmail] = useState(email);
 
 	// get the keys
 	const getUserAccessKeys = useAPI(["getUserAccessKeys"]);
 
+	// get the models
+	const getModals = useAPI(["getEngines", adminMode, "", "MODEL"]);
+
+	// track selected default text generation model
+	const [
+		selectedTextGenerationDefaultModel,
+		setSelectedTextGenerationDefaultModel,
+	] = useState<string>("");
+
+	// track selected default code generation model
+	const [
+		selectedCodeGenerationDefaultModel,
+		setSelectedCodeGenerationDefaultModel,
+	] = useState<string>("");
+
 	// NATIVE Login USERID must match Username
 	const logins = configStore.store.config.logins;
-	const nativeLogin = logins["NATIVE"];
+	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
 
 	const { control, reset, setValue, handleSubmit, watch } =
 		useForm<CreateAccessKeyForm>({
@@ -194,7 +251,6 @@ export const MyProfilePage = () => {
 	const {
 		control: userInfoControl,
 		reset: userInfoReset,
-		setValue: userInfoSetValue,
 		handleSubmit: userInfoHandleSubmit,
 		watch: userInfoWatch,
 	} = useForm<EditUserInfoForm>({
@@ -210,10 +266,42 @@ export const MyProfilePage = () => {
 	const SECRETKEY = watch("SECRETKEY");
 
 	// track if we can create a key
-	const isCreated = ACCESSKEY && SECRETKEY ? true : false;
+	const isCreated = !!(ACCESSKEY && SECRETKEY);
 
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
 	const [isPySdkOpen, setIsPySdkOpen] = useState(false);
+
+	const modals =
+		getModals.status === "SUCCESS" && Array.isArray(getModals.data)
+			? (getModals.data as unknown as Engine[]).filter(
+					(e) => e.app_subtype !== "EMBEDDED",
+				)
+			: [];
+
+	useEffect(() => {
+		if (insightStore.defaultTextGenerationModel && modals.length > 0) {
+			const matchingEngine = modals.find(
+				(e) => e.app_id === insightStore.defaultTextGenerationModel,
+			);
+			if (matchingEngine) {
+				setSelectedTextGenerationDefaultModel(matchingEngine.app_id);
+			}
+		}
+		if (insightStore.defaultCodeGenerationModel && modals.length > 0) {
+			const matchingCodeEngine = modals.find(
+				(e) => e.app_id === insightStore.defaultCodeGenerationModel,
+			);
+			if (matchingCodeEngine) {
+				setSelectedCodeGenerationDefaultModel(
+					matchingCodeEngine.app_id,
+				);
+			}
+		}
+	}, [
+		insightStore.defaultTextGenerationModel,
+		insightStore.defaultCodeGenerationModel,
+		modals,
+	]);
 
 	/**
 	 * Submit edit profile info
@@ -223,19 +311,26 @@ export const MyProfilePage = () => {
 			// need to confirm reactor for runQuery or monolithStore method for editing profile
 			console.log(data);
 
-			const userObj = {
+			const userObj: Record<string, unknown> = {
 				password: "",
 				id: nativeLogin,
 				email: email,
 				username: id,
 				name: data.NAME,
+				type: configStore.store.config.nativeRegistration
+					? "NATIVE"
+					: "CUSTOM",
+				admin: configStore.store.user?.admin || false,
 			};
 
-			data.USERID !== nativeLogin && (userObj["newId"] = data.USERID);
-			data.USERNAME !== id && (userObj["newUsername"] = data.USERNAME);
-			data.EMAIL !== email && (userObj["newEmail"] = data.EMAIL);
+			userObj.id =
+				data.USERID !== nativeLogin ? data.USERID : nativeLogin;
+			userObj.newUsername = data.USERNAME !== id ? data.USERNAME : null;
+			userObj.newEmail = data.EMAIL;
 
-			const response = await monolithStore.editMemberInfo(true, userObj);
+			const response = await editMemberInfo(false, userObj);
+			setEditName(data.NAME);
+			setEditEmail(data.EMAIL);
 
 			if (response.data) {
 				notification.add({
@@ -248,11 +343,53 @@ export const MyProfilePage = () => {
 					message: "Error editing profile information",
 				});
 			}
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
-				message: String(e),
+				message: "Error editing profile information",
 			});
+		}
+	};
+
+	/**
+	 * Handle selecting a default model
+	 */
+	const handleSelectModel = async (
+		selectedAppId: string,
+		modelType: string,
+	) => {
+		try {
+			if (modelType === "text-generation-model") {
+				setSelectedTextGenerationDefaultModel(selectedAppId);
+			} else if (modelType === "code-generation-model") {
+				setSelectedCodeGenerationDefaultModel(selectedAppId);
+			}
+
+			if (!selectedAppId) {
+				return;
+			}
+
+			// Find the selected engine
+			const selectedEngine = modals.find(
+				(e) => e.app_id === selectedAppId,
+			);
+			if (!selectedEngine) {
+				throw new Error("Selected model not found");
+			}
+
+			// Update the store's meta to reflect the new default model
+			insightStore.updateUserDefaultModel(modelType, selectedAppId);
+
+			// Send the new default model selection to the backend
+			await setUserDefaultModel(modelType, selectedAppId);
+
+			toast.success(`Default ${modelType} saved successfully`);
+		} catch (e) {
+			if (e instanceof Error) {
+				toast.error(e.message);
+			} else {
+				toast.error("Error saving default model");
+			}
 		}
 	};
 
@@ -262,7 +399,7 @@ export const MyProfilePage = () => {
 	 */
 	const createAccessKey = async (data: CreateAccessKeyForm) => {
 		try {
-			const output = await monolithStore.createUserAccessKey(
+			const output = await createUserAccessKey(
 				data.TOKENNAME,
 				data.TOKENDESCRIPTION || "",
 			);
@@ -292,8 +429,7 @@ export const MyProfilePage = () => {
 	 */
 	const deleteAccessKey = async (accessKey: string) => {
 		try {
-			const response =
-				await monolithStore.deleteUserAccessKeys(accessKey);
+			const response = await deleteUserAccessKeys(accessKey);
 
 			if (!response) {
 				throw new Error("Error deleting key");
@@ -349,7 +485,7 @@ export const MyProfilePage = () => {
 				color: "success",
 				message: "Successfully copied code",
 			});
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
 				message: "Unable to copy code",
@@ -366,15 +502,21 @@ export const MyProfilePage = () => {
 	const pySnippet = getSDKSnippet("py", ACCESSKEY, SECRETKEY);
 	const jsSnippet = getSDKSnippet("js", ACCESSKEY, SECRETKEY);
 
+	const watchedName = userInfoWatch("NAME");
+	const watchedEmail = userInfoWatch("EMAIL");
+
+	// Check if either Name or Email is changed
+	const isChanged = watchedName !== editName || watchedEmail !== editEmail;
+
 	return (
 		<Stack gap={3} className="my-profile-page">
 			<StyledPaper>
 				<StyledGrid container spacing={3}>
 					<GridItem sm={4}>
 						<Typography variant="h6">
-							{nativeLogin
-								? "Edit profile information Alan"
-								: "Profile Info ALan"}
+							{isNative
+								? "Edit profile information"
+								: "Profile Info"}
 						</Typography>
 					</GridItem>
 
@@ -398,7 +540,7 @@ export const MyProfilePage = () => {
 				<Grid container spacing={3}>
 					<GridItem sm={4}>{/* spacer */}</GridItem>
 					<GridItem sm={8}>
-						{nativeLogin ? (
+						{isNative ? (
 							<form
 								onSubmit={userInfoHandleSubmit(
 									profileEditSubmit,
@@ -425,7 +567,6 @@ export const MyProfilePage = () => {
 														maxLength: 255,
 													}}
 													fullWidth={true}
-													disabled={!admin}
 												></TextField>
 											);
 										}}
@@ -453,7 +594,7 @@ export const MyProfilePage = () => {
 														maxLength: 500,
 													}}
 													fullWidth={true}
-													disabled={!admin}
+													disabled
 												></TextField>
 											);
 										}}
@@ -480,7 +621,7 @@ export const MyProfilePage = () => {
 														maxLength: 500,
 													}}
 													fullWidth={true}
-													disabled={!admin}
+													disabled
 												></TextField>
 											);
 										}}
@@ -508,19 +649,38 @@ export const MyProfilePage = () => {
 														maxLength: 500,
 													}}
 													fullWidth={true}
-													disabled={!admin}
 												></TextField>
 											);
 										}}
 									/>
 								</StyledStack>
-
 								<Stack direction="row">
+									<StyledLink
+										onClick={() => setPasswordModal(true)}
+									>
+										Change Password
+									</StyledLink>
+								</Stack>
+
+								<Stack
+									direction="row"
+									sx={{ marginTop: "6px" }}
+								>
 									<Button
 										variant="contained"
 										color="primary"
 										type="submit"
-										disabled={!admin}
+										disabled={
+											!isChanged ||
+											!(
+												(watchedName ?? "")
+													.toString()
+													.trim().length > 0 &&
+												(watchedEmail ?? "")
+													.toString()
+													.trim().length > 0
+											)
+										}
 										data-testid={"myProfilePage-save-btn"}
 									>
 										Save
@@ -532,7 +692,7 @@ export const MyProfilePage = () => {
 										onClick={() => {
 											userInfoReset();
 										}}
-										disabled={!admin}
+										disabled={!isChanged}
 										data-testid={"myProfilePage-reset-btn"}
 									>
 										Reset
@@ -585,6 +745,7 @@ export const MyProfilePage = () => {
 												</StyledStack>
 											);
 										}
+										return null;
 									},
 								)}
 							</>
@@ -592,7 +753,106 @@ export const MyProfilePage = () => {
 					</GridItem>
 				</Grid>
 			</StyledPaper>
+			<StyledPaper>
+				<div className="-ml-5 -mt-5 mb-5">
+					<h2 className="mr-1 mb-6 font-semibold text-gray-900 text-xl">
+						Choose which AI model will be used by default for your
+						requests
+					</h2>
+					{getModals.status === "INITIAL" ||
+					getModals.status === "LOADING" ? (
+						<span className="font-medium text-gray-700 text-sm">
+							Loading models...
+						</span>
+					) : getModals.status === "ERROR" ? (
+						<span className="font-medium text-red-600 text-sm">
+							Error loading models
+						</span>
+					) : (
+						<div className="ml-3 grid grid-cols-1 gap-6 md:grid-cols-2">
+							<Field>
+								<FieldLabel htmlFor={modelSelectId}>
+									Text Generation Model
+								</FieldLabel>
+								<Select
+									value={selectedTextGenerationDefaultModel}
+									onValueChange={(value) =>
+										handleSelectModel(
+											value,
+											"text-generation-model",
+										)
+									}
+								>
+									<SelectTrigger
+										id={modelSelectId}
+										className="flex h-11 w-full items-center rounded-[7px] border border-black-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+										data-testid="myProfilePage-default-model-select"
+									>
+										<SelectValue placeholder="Select a model" />
+									</SelectTrigger>
+									<SelectContent className="max-h-[300px] overflow-y-auto rounded-[7px] border border-black-300 bg-white shadow-lg">
+										{modals.map((engine) => (
+											<SelectItem
+												key={engine.app_id}
+												value={engine.app_id}
+												data-testid={`myProfilePage-model-option-${engine.app_id}`}
+												className="cursor-pointer px-4 py-3 text-base text-gray-900"
+											>
+												<span>{engine.app_name}</span>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FieldDescription className="mt-2 text-gray-600 text-sm">
+									This text generation model will be used to
+									power AI-driven user requests
+								</FieldDescription>
+							</Field>
 
+							<Field>
+								<FieldLabel
+									htmlFor={`${modelSelectId}-secondary`}
+								>
+									Code Generation Model
+								</FieldLabel>
+								<Select
+									value={selectedCodeGenerationDefaultModel}
+									onValueChange={(value) =>
+										handleSelectModel(
+											value,
+											"code-generation-model",
+										)
+									}
+								>
+									<SelectTrigger
+										id={`${modelSelectId}-secondary`}
+										className="flex h-11 w-full items-center rounded-[7px] border border-black-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+										data-testid="myProfilePage-secondary-model-select"
+									>
+										<SelectValue placeholder="Select a model" />
+									</SelectTrigger>
+									<SelectContent className="max-h-[300px] overflow-y-auto rounded-[7px] border border-black-300 bg-white shadow-lg">
+										{modals.map((engine) => (
+											<SelectItem
+												key={`secondary-${engine.app_id}`}
+												value={engine.app_id}
+												data-testid={`myProfilePage-secondary-model-option-${engine.app_id}`}
+												className="cursor-pointer px-4 py-3 text-base text-gray-900"
+											>
+												<span>{engine.app_name}</span>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FieldDescription className="mt-2 text-gray-600 text-sm">
+									This code generation model will be used to
+									power AI-driven user requests
+								</FieldDescription>
+							</Field>
+						</div>
+					)}
+				</div>
+			</StyledPaper>
 			<StyledPaper>
 				<MonolithGrid container spacing={3}>
 					<CustomGridItem sm={11}>
@@ -689,7 +949,9 @@ export const MyProfilePage = () => {
 							getUserAccessKeys.data.length !== 0
 								? getUserAccessKeys.data.map((k, idx) => {
 										return (
-											<Table.Row key={idx}>
+											<Table.Row
+												key={`${k.TOKENNAME}-${idx}`}
+											>
 												<Table.Cell align={"left"}>
 													{k.TOKENNAME}
 												</Table.Cell>
@@ -1073,6 +1335,11 @@ export const MyProfilePage = () => {
 					</Stack>
 				</Modal.Content>
 			</Modal>
+
+			<ChangePasswordModal
+				open={passwordModal}
+				onClose={() => setPasswordModal(false)}
+			/>
 		</Stack>
 	);
 };

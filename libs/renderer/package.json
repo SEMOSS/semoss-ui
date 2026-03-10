@@ -17,7 +17,9 @@
         "build": "rollup -c --environment NODE_ENV:production",
         "build:dev": "rollup -c",
         "test": "vitest run",
-        "test:watch": "vitest --watch"
+        "test:ui": "vitest --ui",
+        "test:watch": "vitest --watch",
+        "test:coverage": "vitest --coverage --watch=false"
     },
     "keywords": [],
     "author": "",
@@ -26,10 +28,10 @@
         "@mui/x-data-grid": "^7.28.3",
         "@mui/x-date-pickers": "6.8.0",
         "dayjs": "1.11.8",
+        "echarts-wordcloud": "^2.1.0",
         "mermaid": "^10.9.1"
     },
     "devDependencies": {
-        "@monaco-editor/react": "^4.5.1",
         "@rollup/plugin-commonjs": "28.0.6",
         "@rollup/plugin-image": "^3.0.3",
         "@rollup/plugin-json": "^6.1.0",
@@ -44,7 +46,6 @@
         "dompurify": "^2.3.10",
         "echarts": "^5.5.1",
         "echarts-for-react": "^3.0.2",
-        "monaco-editor": "^0.45.0",
         "react": "18.3.1",
         "react-beautiful-dnd": "^13.1.1",
         "react-hook-form": "^7.34.2",
@@ -55,7 +56,11 @@
         "typescript": "~5.5.2",
         "vega": "^6.1.2",
         "vega-lite": "^6.2.0",
-        "vitest": "^3.2.4",
+        "vitest": "^4.0.0",
+        "@vitest/ui": "^4.0.0",
+        "@vitest/coverage-v8": "^4.0.0",
+        "@vitest/browser-playwright": "^4.0.0",
+        "@testing-library/user-event": "^14.4.3",
         "@vitejs/plugin-react": "^4.6.0"
     },
     "peerDependencies": {
@@ -64,6 +69,7 @@
         "@mui/icons-material": "6.0.0",
         "@mui/material": "6.0.0",
         "@semoss/sdk": "workspace:*",
+        "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",

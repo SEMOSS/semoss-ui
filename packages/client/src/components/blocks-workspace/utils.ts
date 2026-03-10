@@ -1,11 +1,26 @@
-import type { Variable } from "@semoss/renderer";
-import { type LLMResponse, runPixel } from "@semoss/sdk";
+import type { StateStore, Variable } from "@semoss/renderer";
+import { runPixel } from "@semoss/sdk";
 
 /**
  * Suggest variable renames using LLM
  */
+const rules = `I need you to look at the code that gets ran based on above snippet and come up with a valid variableName for it.
+ Rules for response:
+ - Do not return the same name as the current name
+ - Must start with letter or underscore can only contain letters, numbers and underscores
+ - and ensure it is valid python variable naming syntax.
+ - Should not be longer than 10 characters.
+ - Suggest a new name, only if the current name is not already intuitive."
+ - Please only return the ""variable_name""
+`;
+
+interface LLMResponse {
+	response?: string;
+	[key: string]: unknown;
+}
+
 export const suggestVariableRenames = async (
-	state: any,
+	state: StateStore,
 	agentModelEngine: string,
 	variableKey?: string,
 ): Promise<Record<string, string>> => {
@@ -13,8 +28,6 @@ export const suggestVariableRenames = async (
 	 * { previous_variable_name: suggested_variable_name, ..others }
 	 */
 	const keyHashmap: Record<string, string> = {};
-
-	console.log("state", state);
 
 	// Determine which variables to process
 	let variablesToProcess: [string, Variable][];
@@ -34,9 +47,7 @@ export const suggestVariableRenames = async (
 
 	const promises = variablesToProcess.map(
 		async ([key, value]: [string, Variable]) => {
-			console.log(`${key} value: `, value);
-
-			let prompt;
+			let prompt: string;
 
 			// Change prompts per variable
 
@@ -47,23 +58,19 @@ export const suggestVariableRenames = async (
  ${JSON.stringify({
 		widget: state.blocks[value.to!].widget,
 		data: state.blocks[value.to!].data,
- })}
- Based on this data structure would be a good variableName?
- Rules:
- - Please only return the ""variableName""
- - and ensure it is valid python variable naming format.
+ })},
+ the current variable name for this data structure is "${key}".
+ ${rules}
  `;
 			} else if (value.type === "cell") {
 				prompt = `
  I have this snippet of code:
  ${JSON.stringify(
 		state.queries[value.to!].cells[value.cellId!].parameters.code,
- )}
+ )},
+ the current variable name for this code is "${key}".
  I need you to look at the code that gets ran based on above snippet and come up with a valid variableName for it.
- Rules for response:
- - Please only return the ""variable_name""
- - and ensure it is valid python variable naming syntax.
- - Should not be longer than 10 characters
+ ${rules}
  `;
 			} else {
 				// Notebooks
@@ -79,10 +86,6 @@ export const suggestVariableRenames = async (
 				`LLM(engine=["${agentModelEngine}"], command = "<encode>${prompt}</encode>", paramValues=[{'max_completion_tokens':10,'temperature':0.3}]);`,
 			);
 
-			console.log("-----------------------");
-			console.log(`Variable name suggestions for ${key}`, resp);
-			console.log("-----------------------");
-
 			const output = resp.pixelReturn[0].output as LLMResponse;
 
 			if (output.response) {
@@ -92,8 +95,6 @@ export const suggestVariableRenames = async (
 	);
 
 	await Promise.all(promises);
-
-	console.log("keyHashmap", keyHashmap);
 
 	return keyHashmap;
 };

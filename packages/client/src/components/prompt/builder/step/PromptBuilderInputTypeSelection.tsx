@@ -109,8 +109,8 @@ export const PromptBuilderInputTypeSelection = (props: {
 					<Autocomplete
 						fullWidth
 						disableClearable
-                        multiple={false}
-						id="input-token-autocomplete"
+						multiple={false}
+						id={"input-token-autocomplete"}
 						options={INPUT_TYPES}
 						value={props.inputType}
 						getOptionLabel={(option) => INPUT_TYPE_DISPLAY[option]}
@@ -136,8 +136,8 @@ export const PromptBuilderInputTypeSelection = (props: {
 									fullWidth
 									disableClearable
 									size="small"
-									id="meta-autocomplete"
-                                    multiple={false}
+									id={"meta-autocomplete"}
+									multiple={false}
 									loading={getMetaSelectorLoading()}
 									options={getMetaSelectorOptions()}
 									value={props.inputTypeMeta ?? ""}
@@ -159,7 +159,6 @@ export const PromptBuilderInputTypeSelection = (props: {
 								/>
 								<Tooltip
 									title={
-										<React.Fragment>
 											<Typography variant="body2">
 												{
 													INPUT_TYPE_HELP_TEXT[
@@ -167,7 +166,6 @@ export const PromptBuilderInputTypeSelection = (props: {
 													]
 												}
 											</Typography>
-										</React.Fragment>
 									}
 									arrow
 								>

@@ -1,8 +1,8 @@
+import { toJS } from "mobx";
 import { useEffect } from "react";
 import { Controller } from "react-hook-form";
-import { Select, TextField } from "@semoss/ui";
-import {useBlocks} from "@semoss/renderer";
-import { toJS } from "mobx";
+import { useBlocks } from "@semoss/renderer";
+import { Select, Stack, TextField } from "@semoss/ui";
 
 interface ModifyVariableSelectorProps {
 	id: string;
@@ -16,6 +16,7 @@ export const ModifyVariableSelector = ({
 	setValue,
 }: ModifyVariableSelectorProps) => {
 	// TODO: FIX this blockId assign, inconsistent behavior
+	const { state } = useBlocks();
 
 	const { state } = useBlocks();
 	const variables = toJS(state.variables);
@@ -24,16 +25,21 @@ export const ModifyVariableSelector = ({
 		setValue("payload.blockId", id);
 	}, [id]);
 
-	let variableEntries: [string, any][] = [];
-    if (Array.isArray(variables)) {
-        variableEntries = variables.map((v, idx) => [v.id || v.name || `${idx}`, v]);
-    } else if (variables && typeof variables === "object") {
-        variableEntries = Object.entries(variables);
-    }
+	// get all primitive variables from state
+	const primitiveVarTypes = [
+		"string",
+		"number",
+		"boolean",
+		"array",
+		"object",
+		"json",
+	];
+	const primitiveVariables = Object.entries(state.variables)
+		?.filter(([_, v]) => primitiveVarTypes.includes(v.type))
+		?.map(([k]) => k);
 
 	return (
-		<>
-			Send hidden block id with event so it can parse iterator
+		<Stack>
 			<Controller
 				name="payload.variable"
 				control={control}
@@ -46,9 +52,12 @@ export const ModifyVariableSelector = ({
 							field.onChange(value);
 						}}
 					>
-						{variableEntries.map(([key, variable]) => (
-							<Select.Item key={key} value={key}>
-								{key}
+						{primitiveVariables?.map((type) => (
+							<Select.Item
+								key={`update-var--${type}`}
+								value={type}
+							>
+								{type}
 							</Select.Item>
 						))}
 					</Select>
@@ -61,6 +70,7 @@ export const ModifyVariableSelector = ({
 					<>
 						<TextField
 							label={"Update Value"}
+							value={field.value || ""}
 							onChange={(value) => {
 								field.onChange(value);
 							}}
@@ -68,6 +78,6 @@ export const ModifyVariableSelector = ({
 					</>
 				)}
 			/>
-		</>
+		</Stack>
 	);
 };

@@ -1,6 +1,6 @@
 import DeleteIcon from "@mui/icons-material/Delete";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { Box, IconButton, ListItemText, styled, Typography } from "@semoss/ui";
+import { Box, IconButton, List, styled, Typography } from "@semoss/ui";
 
 const StyledListItem = styled(Box)(({ theme }) => ({
 	display: "flex",
@@ -24,7 +24,7 @@ const SelectedItem = ({ file, setData }) => {
 	return file ? (
 		<Box>
 			<StyledListItem>
-				<ListItemText>{file.fileName}</ListItemText>
+				<List.ItemText>{file.fileName}</List.ItemText>
 				<IconButton
 					data-testid="remove-image"
 					edge="end"

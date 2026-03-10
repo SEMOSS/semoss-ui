@@ -29,7 +29,12 @@ export const config: BlockSettingsConfig = {
 				{
 					description: "Text",
 					render: ({ id }) => (
-						<QueryInputSettings id={id} label="Text" path="text" />
+						<QueryInputSettings
+							id={id}
+							label="Text"
+							path="text"
+							spellCheck={true}
+						/>
 					),
 				},
 				{
@@ -40,6 +45,17 @@ export const config: BlockSettingsConfig = {
 							label="Enable Typewriting Effect"
 							path="isStreaming"
 							description="This setting will enable the typewriting effect on the text"
+						/>
+					),
+				},
+				{
+					description: "Show Placeholder When Empty",
+					render: ({ id }) => (
+						<SwitchSettings
+							id={id}
+							label="Enable Loading Placeholder"
+							path="showPlaceholder"
+							description='If enabled, displays "Waiting for value..." when no text value is set.'
 						/>
 					),
 				},

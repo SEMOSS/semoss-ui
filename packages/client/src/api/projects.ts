@@ -1,5 +1,4 @@
 import { Env, get, post } from "@semoss/sdk/react";
-import type { Role } from "@/types";
 
 export const setProjectFavorite = async (
 	projectId: string,
@@ -7,7 +6,7 @@ export const setProjectFavorite = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/`;
 
-	const postData = {
+	const postData: Record<string, unknown> = {
 		projectId: projectId,
 		isFavorite: favorite,
 	};
@@ -15,11 +14,7 @@ export const setProjectFavorite = async (
 
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, processPostData(postData), {});
 	return response;
 };
 
@@ -32,25 +27,27 @@ export const addProject = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/addGroupProjectPermission";
-	const postData = {
+	let postData: Record<string, unknown> = {
 		groupId: groupId,
 		projectId: projectId,
 		permission: permission,
 	};
 	if (type) {
-		postData["type"] = type;
+		postData = {
+			...postData,
+			type: type,
+		};
 	}
 	if (endDate) {
-		postData["endDate"] = endDate;
+		postData = {
+			...postData,
+			endDate: endDate,
+		};
 	}
 
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, postData, {});
 	return response;
 };
 
@@ -66,25 +63,27 @@ export const editProjectPermisison = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/editGroupProjectPermission";
-	const postData = {
+	let postData: Record<string, unknown> = {
 		groupId: groupId,
 		projectId: project.projectid,
 		permission: project.permission,
 	};
 	if (groupType) {
-		postData["type"] = project.project_type;
+		postData = {
+			...postData,
+			type: project.project_type,
+		};
 	}
 	if (project.endDate) {
-		postData["endDate"] = project.endDate;
+		postData = {
+			...postData,
+			endDate: project.endDate,
+		};
 	}
 
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, postData, {});
 	return response;
 };
 
@@ -98,20 +97,19 @@ export const deleteProjectPermission = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/removeGroupProjectPermission";
-	const postData = {
+	let postData: Record<string, unknown> = {
 		groupId: groupId,
 		projectId: project.projectid,
 	};
 	if (groupType) {
-		postData["type"] = groupType;
+		postData = {
+			...postData,
+			type: groupType,
+		};
 	}
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, processPostData(postData), {});
 	return response;
 };
 
@@ -126,9 +124,9 @@ export const getProjects = async (
 		url += "admin/";
 	}
 	url += "project/getProjects?";
-	search ? (url += `&filterWord=${search}`) : "";
-	offset ? (url += `&offset=${offset}`) : "";
-	limit ? (url += `&limit=${limit}`) : "";
+	url += search ? `&filterWord=${search}` : "";
+	url += offset ? `&offset=${offset}` : "";
+	url += limit ? `&limit=${limit}` : "";
 	const response = await get<
 		{
 			project_global: boolean;
@@ -147,224 +145,6 @@ export const getProjects = async (
 	return response.data;
 };
 
-export const getUserProjectPermission = async (projectId: string) => {
-	const response = await get<{
-		permission: Role;
-	}>(
-		`${Env.MODULE}/api/auth/project/getUserProjectPermission?projectId=${projectId}`,
-	).catch((error) => {
-		throw Error(error);
-	});
-	// there was no response, that is an error
-	if (!response) {
-		throw Error("No Response to get permission");
-	}
-	return response.data;
-};
-
-export const getProjectUsers = async (
-	admin: boolean,
-	projectId: string,
-	user: string,
-	permission: string,
-	offset?: number,
-	limit?: number,
-	id?: string,
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	if (admin) {
-		url += "admin/";
-	}
-
-	url += "project/getProjectUsers?";
-	url += `projectId=${projectId}`;
-	user ? (url += `&userId=${user}`) : "";
-	permission ? (url += `&permission=${permission}`) : "";
-	offset ? (url += `&offset=${offset}`) : "";
-	limit ? (url += `&limit=${limit}`) : "";
-
-	// get the response
-	const response = await get<{
-		members: {
-			id: string;
-			name: string;
-			permission: string;
-		}[];
-		totalMembers: number;
-	}>(url).catch((error) => {
-		throw Error(error);
-	});
-	// there was no response, that is an error
-	if (!response) {
-		throw Error("No Response to get users associated with app");
-	}
-	return response.data;
-};
-
-export const getProjectUsersNoCredentials = async (
-	admin: boolean,
-	appId: string,
-	limit: number,
-	offset: number,
-	searchTerm: string,
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	if (admin) {
-		url += "admin/";
-	}
-	url += `project/getProjectUsersNoCredentials?projectId=${appId}&limit=${limit}&offset=${offset}&searchTerm=${searchTerm}`;
-	// get the response
-	const response = await get<
-		{
-			id: string;
-			email: string;
-			name: string;
-			type: string;
-			username: string;
-		}[]
-	>(url).catch((error) => {
-		throw Error(error);
-	});
-	// there was no response, that is an error
-	if (!response) {
-		throw Error("No Response to get non credentialed users");
-	}
-	return response;
-};
-
-export const approveProjectUserAccessRequest = async (
-	admin: boolean,
-	appId: string,
-	requests: string[],
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	const postData = {
-		projectId: appId,
-		requests: requests,
-	};
-	if (admin) {
-		url += "admin/";
-	}
-	url += "project/approveProjectUserAccessRequest";
-
-	const response = await post<{
-		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
-	return response;
-	// figure out whether we want to do .catch here
-};
-
-export const denyProjectUserAccessRequest = async (
-	admin: boolean,
-	projectId: string,
-	userIds: string[],
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-
-	const postData = {
-		projectId: projectId,
-		requestids: userIds,
-	};
-	if (admin) {
-		url += "admin/";
-	}
-	url += "project/denyProjectUserAccessRequest";
-
-	const response = await post<{
-		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
-	return response;
-	// figure out whether we want to do .catch here
-};
-
-export const addProjectUserPermissions = async (
-	admin: boolean,
-	appId: string,
-	users: string[],
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	const postData = {
-		projectId: appId,
-		userpermissions: users,
-	};
-	if (admin) {
-		url += "admin/";
-	}
-	url += "project/addProjectUserPermissions";
-
-	const response = await post<{
-		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
-	return response;
-	// figure out whether we want to do .catch here
-};
-
-export const editProjectUserPermissions = async (
-	admin: boolean,
-	appId: string,
-	users: string[],
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-
-	const postData = {
-		projectId: appId,
-		userpermissions: users,
-	};
-	if (admin) {
-		url += "admin/";
-	}
-	url += "project/editProjectUserPermissions";
-
-	const response = await post<{
-		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
-	return response;
-	// figure out whether we want to do .catch here
-};
-
-export const removeProjectUserPermissions = async (
-	admin: boolean,
-	appId: string,
-	users: string[],
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-
-	const postData = {
-		projectId: appId,
-		ids: users,
-	};
-	if (admin) {
-		url += "admin/";
-	}
-	url += "project/removeProjectUserPermissions";
-
-	const response = await post<{
-		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
-	return response;
-	// figure out whether we want to do .catch here
-};
-
 export const setProjectGlobal = async (admin, appId, global: boolean) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	const postData = {
@@ -378,11 +158,7 @@ export const setProjectGlobal = async (admin, appId, global: boolean) => {
 
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, postData, {});
 	return response;
 };
 
@@ -400,16 +176,12 @@ export const setProjectVisiblity = async (admin, appId, visible) => {
 
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, postData, {});
 	return response;
 };
 
 export const setProjectPortal = async (
-	admin: boolean,
+	_admin: boolean,
 	projectId: string,
 	hasPortal: boolean,
 	portalName?: string,
@@ -418,15 +190,77 @@ export const setProjectPortal = async (
 	// if (admin) {
 	//     url += 'admin/';
 	// }
-	url += `project/setProjectPortal?projectId=${encodeURIComponent(
-		projectId,
-	)}&hasPortal=${encodeURIComponent(hasPortal)}`;
+	url += `project/setProjectPortal`;
 
 	if (portalName) {
-		url += "&projectId=" + encodeURIComponent(portalName);
+		// url += "&projectId=" + encodeURIComponent(portalName);
 	}
+	const postData = {
+		projectId: projectId,
+		hasPortal: hasPortal,
+	};
 	const response = await post<{
 		success: boolean;
-	}>(url, null);
+	}>(url, processPostData(postData), {});
 	return response;
+};
+
+export const uploadImage = async (
+	files: File[],
+	projectId: string | null,
+	insightId?: string | null,
+) => {
+	const url = `${Env.MODULE}/api/images/projectImage/upload`,
+		fd: FormData = new FormData();
+
+	if (Array.isArray(files)) {
+		for (let i = 0; i < files.length; i++) {
+			fd.append("file", files[i]);
+		}
+	} else {
+		// pasted data
+		fd.append("file", files);
+	}
+
+	if (insightId) {
+		fd.append("insightId", insightId);
+	}
+
+	if (projectId) {
+		fd.append("projectId", projectId);
+	}
+
+	const response = await post<
+		{
+			app_id: string;
+			app_name: string;
+			message: string;
+		}[]
+	>(url, fd, {});
+
+	return response.data;
+};
+
+const processPostData = (data: Record<string, unknown>) => {
+	const postRecordData: Record<string, unknown> = {};
+	Object.keys(data).forEach((item) => {
+		postRecordData[item] = data[item];
+	});
+	return postRecordData;
+};
+
+export const updateProjectSmssProperties = async (
+	projectId: string,
+	smssProps: string,
+) => {
+	return await post<{
+		success: boolean;
+	}>(
+		`${Env.MODULE}/api/project-${projectId}/updateSmssFile`,
+		{
+			smss: smssProps,
+			engineId: projectId,
+		},
+		{},
+	);
 };

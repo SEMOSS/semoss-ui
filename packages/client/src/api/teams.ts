@@ -1,11 +1,24 @@
 import { Env, get, post } from "@semoss/sdk/react";
 
-export const getTeams = async (admin: boolean) => {
+export const getTeams = async (
+	admin: boolean,
+	searchTerm?: string,
+	limit?: number,
+	offset?: number,
+) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
 		url += "admin/";
 	}
 	url += "group/getGroups";
+	const params = new URLSearchParams();
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	if (limit !== undefined) params.set("limit", String(limit));
+	if (offset !== undefined) params.set("offset", String(offset));
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 	// get the response
 	const response = await get(url).catch((error) => {
 		throw Error(error);
@@ -17,6 +30,125 @@ export const getTeams = async (admin: boolean) => {
 	return response.data;
 };
 
+export const getGroupDetails = async (
+	admin: boolean,
+	groupId: string,
+	type?: string,
+) => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += "group/getGroupDetails";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (type) params.set("type", type);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
+	const response = await get(url).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) {
+		throw Error("No Response to get group details");
+	}
+	return response.data;
+};
+
+export const getTeamsCount = async (admin: boolean, searchTerm?: string) => {
+	let url = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		url += "admin/";
+	}
+	url += "group/getNumGroups";
+	const params = new URLSearchParams();
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
+	const response = await get(url).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) {
+		throw Error("No Response to get team count");
+	}
+	return parseCount(response.data);
+};
+
+const parseCount = (value: unknown) => {
+	if (typeof value === "number") {
+		return Number.isFinite(value) ? value : 0;
+	}
+	if (typeof value === "string") {
+		const parsed = Number(value);
+		return Number.isFinite(parsed) ? parsed : 0;
+	}
+	if (value && typeof value === "object") {
+		const candidate =
+			(value as { count?: unknown }).count ??
+			(value as { numGroups?: unknown }).numGroups ??
+			(value as { numMembers?: unknown }).numMembers ??
+			(value as { numProjects?: unknown }).numProjects ??
+			(value as { numEngines?: unknown }).numEngines ??
+			(value as { total?: unknown }).total ??
+			(value as { value?: unknown }).value ??
+			(value as { data?: unknown }).data;
+		const parsed = Number(candidate);
+		return Number.isFinite(parsed) ? parsed : 0;
+	}
+	return 0;
+};
+
+export const getNumProjectsForGroup = async (
+	groupId: string,
+	groupType: string,
+	searchTerm?: string,
+) => {
+	let url = `${Env.MODULE}/api/auth/admin/`;
+	url += "group/getNumProjectsForGroup";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (groupType) params.set("groupType", groupType);
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
+	const response = await get(url).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) {
+		throw Error("No Response to get project count");
+	}
+	return parseCount(response.data);
+};
+
+export const getNumEnginesForGroup = async (
+	groupId: string,
+	groupType: string,
+	searchTerm?: string,
+) => {
+	let url = `${Env.MODULE}/api/auth/admin/`;
+	url += "group/getNumEnginesForGroup";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (groupType) params.set("groupType", groupType);
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
+	const response = await get(url).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) {
+		throw Error("No Response to get engine count");
+	}
+	return parseCount(response.data);
+};
+
 export const addTeam = async (
 	groupId: string,
 	description: string,
@@ -26,22 +158,53 @@ export const addTeam = async (
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/addGroup";
 
-	const postData = {
+	let postData: Record<string, unknown> = {
 		groupId: groupId,
 		description: description,
 		isCustomGroup: isCustomGroup,
 	};
 
 	if (type) {
-		postData["type"] = type;
+		postData = {
+			...postData,
+			type: type,
+		};
 	}
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, postData, {});
+	return response;
+};
+
+/**
+ * @name editTeam
+ * @param groupId
+ * @param description
+ * @param type
+ * @returns
+ */
+export const editTeam = async (
+	groupId: string,
+	description: string,
+	type?: string,
+	previousTeamName?: string,
+	previousType?: string,
+) => {
+	let url = `${Env.MODULE}/api/auth/admin/`,
+		postData = {};
+
+	url += "group/editGroupDetails";
+
+	postData = {
+		groupId: previousTeamName,
+		newGroupId: groupId,
+		newDescription: description,
+		type: encodeURIComponent(previousType),
+		newType: encodeURIComponent(type),
+	};
+
+	const response = await post<{ success: boolean }>(url, postData, {});
+
 	return response;
 };
 
@@ -49,19 +212,18 @@ export const deleteTeam = async (groupid: string, type?: string) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/deleteGroup";
 
-	const postData = {
+	let postData: Record<string, unknown> = {
 		groupId: groupid,
 	};
 	if (type) {
-		postData["type"] = type;
+		postData = {
+			...postData,
+			type: type,
+		};
 	}
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, postData, {});
 	return response;
 };
 
@@ -72,11 +234,16 @@ export const getTeamUsers = async (
 	searchTerm: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getGroupMembers?";
-	groupId ? `groupId=${groupId}` : "";
-	limit ? `limit=${limit}` : "";
-	offset ? `offset=${offset}` : "";
-	searchTerm ? `searchTerm=${searchTerm}` : "";
+	url += "group/getGroupMembers";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (limit) params.set("limit", String(limit));
+	if (offset) params.set("offset", String(offset));
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 	const response = await get(url).catch((error) => {
 		throw Error(error);
 	});
@@ -87,11 +254,19 @@ export const getTeamUsers = async (
 	return response.data;
 };
 
-export const getTeamUsersCount = async (groupId: string) => {
+export const getTeamUsersCount = async (
+	groupId: string,
+	searchTerm?: string,
+) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getNumMembersInGroup?";
-
-	groupId ? `groupId=${groupId}` : "";
+	url += "group/getNumMembersInGroup";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 	const response = await get(url).catch((error) => {
 		throw Error(error);
 	});
@@ -99,7 +274,7 @@ export const getTeamUsersCount = async (groupId: string) => {
 	if (!response) {
 		throw Error("No Response to get group member count");
 	}
-	return response.data;
+	return parseCount(response.data);
 };
 
 export const getNonTeamUsers = async (
@@ -109,11 +284,16 @@ export const getNonTeamUsers = async (
 	searchTerm: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getNonGroupMembers?";
-	groupId ? `groupId=${groupId}` : "";
-	limit ? `limit=${limit}` : "";
-	offset ? `offset=${offset}` : "";
-	searchTerm ? `searchTerm=${searchTerm}` : "";
+	url += "group/getNonGroupMembers";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (limit) params.set("limit", String(limit));
+	if (offset) params.set("offset", String(offset));
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 
 	const response = await get(url).catch((error) => {
 		throw Error(error);
@@ -137,21 +317,20 @@ export const addTeamUser = async (
 		url += "admin/";
 	}
 	url += "group/addGroupMember";
-	const postData = {
+	let postData: Record<string, unknown> = {
 		groupId: groupId,
 		type: type,
 		userId: userId,
 	};
 	if (endDate) {
-		postData["endDate"] = endDate;
+		postData = {
+			...postData,
+			endDate: endDate,
+		};
 	}
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, postData, {});
 	return response;
 };
 
@@ -169,11 +348,7 @@ export const deleteTeamUser = async (user: {
 	};
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
+	}>(url, postData, {});
 	return response;
 };
 
@@ -187,14 +362,19 @@ export const getTeamProjects = async (
 	type?: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getProjectsForGroup?";
-	groupId ? `groupId=${groupId}` : "";
-	groupType ? `groupType=${groupType}` : "";
-	limit ? `limit=${limit}` : "";
-	offset ? `offset=${offset}` : "";
-	searchTerm ? `searchTerm=${searchTerm}` : "";
-	onlyApps ? `onlyApps=${onlyApps}` : "";
-	type ? `type=${type}` : "";
+	url += "group/getProjectsForGroup";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (groupType) params.set("groupType", groupType);
+	if (limit) params.set("limit", String(limit));
+	if (offset) params.set("offset", String(offset));
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	if (onlyApps) params.set("onlyApps", String(onlyApps));
+	if (type) params.set("type", type);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 
 	const response = await get(url).catch((error) => {
 		throw Error(error);
@@ -214,12 +394,17 @@ export const getUnassignedTeamProjects = async (
 	searchTerm: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getAvailableProjectsForGroup?";
-	groupId ? `groupId=${groupId}` : "";
-	groupType ? `groupType=${groupType}` : "";
-	limit ? `limit=${limit}` : "";
-	offset ? `offset=${offset}` : "";
-	searchTerm ? `searchTerm=${searchTerm}` : "";
+	url += "group/getAvailableProjectsForGroup";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (groupType) params.set("groupType", groupType);
+	if (limit) params.set("limit", String(limit));
+	if (offset) params.set("offset", String(offset));
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 	const response = await get(url).catch((error) => {
 		throw Error(error);
 	});
@@ -239,11 +424,16 @@ export const getTeamEngines = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/getEnginesForGroup";
-	groupId ? `groupId=${groupId}` : "";
-	groupType ? `groupType=${groupType}` : "";
-	limit ? `limit=${limit}` : "";
-	offset ? `offset=${offset}` : "";
-	searchTerm ? `searchTerm=${searchTerm}` : "";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (groupType) params.set("groupType", groupType);
+	if (limit) params.set("limit", String(limit));
+	if (offset) params.set("offset", String(offset));
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 
 	const response = await get(url).catch((error) => {
 		throw Error(error);
@@ -264,17 +454,63 @@ export const getUnassignedTeamEngines = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/getAvailableEnginesForGroup";
-	groupId ? `groupId=${groupId}` : "";
-	groupType ? `groupType=${groupType}` : "";
-	limit ? `limit=${limit}` : "";
-	offset ? `offset=${offset}` : "";
-	searchTerm ? `searchTerm=${searchTerm}` : "";
+	const params = new URLSearchParams();
+	if (groupId) params.set("groupId", groupId);
+	if (groupType) params.set("groupType", groupType);
+	if (limit) params.set("limit", String(limit));
+	if (offset) params.set("offset", String(offset));
+	if (searchTerm) params.set("searchTerm", searchTerm);
+	const query = params.toString();
+	if (query) {
+		url += `?${query}`;
+	}
 	const response = await get(url).catch((error) => {
 		throw Error(error);
 	});
 	// there was no response, that is an error
 	if (!response) {
 		throw Error("No Response to get group members");
+	}
+	return response.data;
+};
+// Get teams by engineId
+export const getGroupsWithAccessToEngine = async (
+	engineId: string,
+	limit?: number,
+	offset?: number,
+) => {
+	let url = `${Env.MODULE}/api/auth/group/engine/getGroupsWithAccessToEngine?`;
+	const params = [];
+	if (engineId) params.push(`engineId=${engineId}`);
+	if (typeof limit === "number") params.push(`limit=${limit}`);
+	if (typeof offset === "number") params.push(`offset=${offset}`);
+	url += params.join("&");
+	const response = await get(url).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) {
+		throw Error("No Response to get teams by engineId");
+	}
+	return response.data;
+};
+
+// Get teams by projectId (for apps)
+export const getGroupsWithAccessToProject = async (
+	projectId: string,
+	limit?: number,
+	offset?: number,
+) => {
+	let url = `${Env.MODULE}/api/auth/group/project/getGroupsWithAccessToProject?`;
+	const params = [];
+	if (projectId) params.push(`projectId=${projectId}`);
+	if (typeof limit === "number") params.push(`limit=${limit}`);
+	if (typeof offset === "number") params.push(`offset=${offset}`);
+	url += params.join("&");
+	const response = await get(url).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) {
+		throw Error("No Response to get teams by projectId");
 	}
 	return response.data;
 };

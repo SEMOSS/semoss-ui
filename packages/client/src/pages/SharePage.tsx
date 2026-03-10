@@ -3,11 +3,11 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Renderer } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
-import { styled, useNotification } from "@semoss/ui";
+import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared";
+import { LoadingScreen, styled, useNotification } from "@semoss/ui";
 import type { AppMetadata, AppType } from "@/components/app";
 import { CodeRenderer } from "@/components/code-workspace";
 import { PlatformMessages } from "@/components/shared";
-import { LoadingScreen } from "@/components/ui";
 import { useRootStore } from "@/hooks";
 
 const StyledViewport = styled("div")(() => ({
@@ -38,12 +38,8 @@ export const SharePage = observer(() => {
 			// clear the type
 			setType(null);
 
-			// check the permission
-			const getUserProjectPermission =
-				await monolithStore.getUserProjectPermission(appId);
-
 			// get the role and throw an error if it is missing
-			const role = getUserProjectPermission.permission;
+			const role = await getUserProjectLevelPermission(appId);
 			if (!role) {
 				throw new Error("Unauthorized");
 			}

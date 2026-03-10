@@ -100,6 +100,15 @@ interface AccordionSection {
 	};
 }
 
+// Define the type for droppedColumns
+interface DroppedColumns {
+    [key: string]: {
+        values: string[];
+        dataType: string[];
+    };
+}
+
+
 //data tab left section to show the data tab and the drag area for the selected columns
 export const FrameOperations = observer(
 	<D extends BlockDef = BlockDef>({
@@ -140,7 +149,6 @@ export const FrameOperations = observer(
 		// track the ref to debounce the input
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 		const [filteredColumns, setFilteredColumns] = useState([]);
-		const [temp, setTemp] = useState(true);
 		// using frameheaders hook to get the header details for the selected frame
 		const frameHeaders = useFrameHeaders(data.frame?.name);
 		// fetch custom details about headers like alias, header, etc and assign to the variable for using it whenever required
@@ -158,11 +166,6 @@ export const FrameOperations = observer(
 		useEffect(() => {
 			const filteredColumnsString = JSON.stringify(filteredColumns);
 			const columnsSelectorString = JSON.stringify(columnsSelector);
-			console.log(
-				filteredColumnsString,
-				columnsSelectorString,
-				"string comparision",
-			);
 			if (
 				columnsSelector.length > 0 &&
 				filteredColumnsString !== columnsSelectorString
@@ -170,10 +173,6 @@ export const FrameOperations = observer(
 				setFilteredColumns(columnsSelector);
 			}
 		}, [columnsSelector]);
-		//to be removed in the later part, when chart's data section is working fine
-		useEffect(() => {
-			console.log("what is this");
-		}, [storedColumns]);
 
 		useEffect(() => {
 			setDroppedColumns({});
@@ -198,12 +197,14 @@ export const FrameOperations = observer(
 						name: [],
 						pixelname: [],
 						pixelvalue: [],
+						pixeldataType: [],
 					},
 					["yAxis"]: {
 						...parsedValue["yAxis"],
-						name: "",
+						name: [],
 						pixelname: [],
 						pixelvalue: [],
+						pixeldataType: [],
 					},
 				};
 			} else if (data.variation === "echart-pie-chart") {
@@ -253,6 +254,13 @@ export const FrameOperations = observer(
 					},
 				};
 			} else if (data.variation === "echart-stack-chart") {
+				parsedValue = {
+					...parsedValue,
+					["_state"]: {
+						["fields"]: {},
+					},
+				};
+			} else if (data.variation === "echart-word-cloud") {
 				parsedValue = {
 					...parsedValue,
 					["_state"]: {
@@ -321,11 +329,14 @@ export const FrameOperations = observer(
 				) {
 					const dataTypeList = {};
 					["xAxis", "yAxis"].forEach((item) => {
-						dataTypeList[item] = columnsSelector
-							.filter((col) =>
-								parsedOption[item].pixelname.includes(col.name),
-							)
-							.map((col) => col.dataType);
+						const pixelDataType = parsedOption[item].pixeldataType;
+						if (Array.isArray(pixelDataType)) {
+							dataTypeList[item] = pixelDataType.flat();
+						} else if (pixelDataType) {
+							dataTypeList[item] = [pixelDataType];
+						} else {
+							dataTypeList[item] = [];
+						}
 					});
 					const tempStoredColumns = chart.map((item) => {
 						return {
@@ -384,38 +395,22 @@ export const FrameOperations = observer(
 				) {
 					const dataTypeList = {};
 					["Label", "Value"].forEach((item) => {
-						dataTypeList[item] = columnsSelector
-							.filter((col) =>
-								parsedOption["_state"]["fields"][item].includes(
-									col.name,
-								),
-							)
-							.map((col) => col.dataType);
+						const dataTypeKey = item === "Label" ? "labelDataType" : "valueDataType";
+						const pixelDataType = parsedOption["_state"]["fields"][dataTypeKey];
+						if (Array.isArray(pixelDataType)) {
+							dataTypeList[item] = pixelDataType.flat();
+						} else if (pixelDataType) {
+							dataTypeList[item] = [pixelDataType];
+						} else {
+							dataTypeList[item] = [];
+						}
 					});
 					const tempStoredColumns = chart.map((item) => {
 						return {
 							name: item.name,
 							label: item.label,
-							values: parsedOption["_state"]["fields"][
-								item.label
-							].filter(
-								(field) =>
-									field && Object.hasOwn(field, "name"),
-							).length
-								? parsedOption["_state"]["fields"][
-										item.label
-									]?.map((item) => item?.name || "")
-								: [],
-							selectors: parsedOption["_state"]["fields"][
-								item.label
-							].filter(
-								(field) =>
-									field && Object.hasOwn(field, "selector"),
-							).length
-								? parsedOption["_state"]["fields"][
-										item.label
-									]?.map((item) => item?.selector || "")
-								: [],
+							values: parsedOption["_state"]["fields"][item.label] || [],
+							selectors: parsedOption["_state"]["fields"][item.label] || [],
 							dataType: dataTypeList[item.label],
 						};
 					});
@@ -432,40 +427,22 @@ export const FrameOperations = observer(
 					Object.hasOwn(parsedOption["_state"]["fields"], "xAxis") &&
 					Object.hasOwn(parsedOption["_state"]["fields"], "yAxis")
 				) {
-					["xAxis", "yAxis", "tooltip"].forEach((item) => {
-						dataTypeList[item] = columnsSelector
-							.filter((col) =>
-								parsedOption["_state"]["fields"][item].includes(
-									col.name,
-								),
-							)
-							.map((col) => col.dataType);
+					["xAxis", "yAxis"].forEach((item) => {
+						const pixelDataType = parsedOption[item].dataType;
+						if (Array.isArray(pixelDataType)) {
+							dataTypeList[item] = pixelDataType.flat();
+						} else if (pixelDataType) {
+							dataTypeList[item] = [pixelDataType];
+						} else {
+							dataTypeList[item] = [];
+						}
 					});
 					const tempStoredColumns = chart.map((item) => {
 						return {
 							name: item.name,
 							label: item.label,
-							values: parsedOption["_state"]["fields"][
-								item.label
-							].some(
-								(valItem) =>
-									valItem && Object.hasOwn(valItem, "name"),
-							)
-								? parsedOption["_state"]["fields"][
-										item.label
-									].map((val) => val.name)
-								: [],
-							selectors: parsedOption["_state"]["fields"][
-								item.label
-							].some(
-								(valItem) =>
-									valItem &&
-									Object.hasOwn(valItem, "selector"),
-							)
-								? parsedOption["_state"]["fields"][
-										item.label
-									].map((selector) => selector.selector)
-								: [],
+							values: parsedOption["_state"]["fields"][item.label] || [],
+							selectors: parsedOption["_state"]["fields"][item.label] || [],
 							dataType: dataTypeList[item.label],
 						};
 					});
@@ -492,13 +469,15 @@ export const FrameOperations = observer(
 						"color",
 						"tooltip",
 					].forEach((item) => {
-						dataTypeList[item] = columnsSelector
-							.filter(
-								(col) =>
-									parsedJson["_state"]["fields"][item] ===
-									col.name,
-							)
-							.map((col) => col.dataType);
+						const dataTypeKey = `${item}DataType`;
+						dataTypeList[item] = parsedJson["_state"]["fields"][dataTypeKey] || 
+							columnsSelector
+								.filter((col) =>
+									parsedJson["_state"]["fields"][item]?.includes(
+										col.name,
+									),
+								)
+								.map((col) => col.dataType);
 						selectorList.push(
 							columnsSelector.find(
 								(col) =>
@@ -560,16 +539,18 @@ export const FrameOperations = observer(
 							dataTypeList[item] = [];
 							return;
 						}
-						dataTypeList[item] = columnsSelector
-							.filter((col) =>
-								parsedOption["_state"]["fields"][item].includes(
-									col.name,
-								),
-							)
-							.map((col) => col.dataType);
+						const dataTypeKey = `${item}DataType`;
+						dataTypeList[item] = parsedOption["_state"]["fields"][dataTypeKey] || 
+							columnsSelector
+								.filter((col) =>
+									parsedOption["_state"]["fields"][item]?.includes(
+										col.name,
+									),
+								)
+								.map((col) => col.dataType);
 						selectorList.push(
 							columnsSelector.find((col) =>
-								parsedOption["_state"]["fields"][item].includes(
+								parsedOption["_state"]["fields"][item]?.includes(
 									col.name,
 								),
 							)?.selector || "",
@@ -595,7 +576,6 @@ export const FrameOperations = observer(
 				if (
 					Object.hasOwn(parsedJson, "_state") &&
 					Object.hasOwn(parsedJson["_state"], "fields") &&
-					Object.hasOwn(parsedJson["_state"]["fields"], "label") &&
 					Object.hasOwn(parsedJson["_state"]["fields"], "XAxis") &&
 					Object.hasOwn(parsedJson["_state"]["fields"], "YAxis")
 				) {
@@ -603,19 +583,20 @@ export const FrameOperations = observer(
 					const selectorList = [];
 					["XAxis", "YAxis", "category", "tooltip"].forEach(
 						(item) => {
-							dataTypeList[item] =
-								columnsSelector
-									.filter((col) =>
-										parsedJson["_state"]["fields"][
-											item
-										].includes(col.name),
-									)
-									.map((col) => col.dataType) || [];
+						const dataTypeKey = `${item}DataType`;
+						dataTypeList[item] = parsedJson["_state"]["fields"][dataTypeKey] || 
+							columnsSelector
+								.filter((col) =>
+									parsedJson["_state"]["fields"][item]?.includes(	
+										col.name,
+									),
+								)
+								.map((col) => col.dataType);
 							selectorList.push(
 								columnsSelector.find((col) =>
 									parsedJson["_state"]["fields"][
 										item
-									].includes(col.name),
+									]?.includes(col.name),
 								)?.selector || "",
 							);
 						},
@@ -718,6 +699,41 @@ export const FrameOperations = observer(
 					setSelectedColumn((preVCol) => tempStoredColumns);
 				}
 			}
+			if (data.variation === "echart-word-cloud") {
+				const parsedOption = JSON.parse(computedValue) || {};
+				if (
+					Object.hasOwn(parsedOption, "_state") &&
+					Object.hasOwn(parsedOption["_state"], "fields") &&
+					Object.hasOwn(parsedOption["_state"]["fields"], "words") &&
+					Object.hasOwn(parsedOption["_state"]["fields"], "size")
+				) {
+					const dataTypeList = {};
+					["words", "size", "tooltip"].forEach((item) => {
+						if (parsedOption["_state"]["fields"][item]) {
+							dataTypeList[item] = columnsSelector
+								.filter((col) =>
+									parsedOption["_state"]["fields"][
+										item
+									]?.includes(col.name),
+								)
+								.map((col) => col.dataType);
+						}
+					});
+					const tempStoredColumns = chart.map((item) => {
+						const fieldValues =
+							parsedOption["_state"]["fields"][item.label] || [];
+						return {
+							name: item.name,
+							label: item.label,
+							values: fieldValues,
+							selectors: fieldValues,
+							dataType: dataTypeList[item.label],
+						};
+					});
+					tempStoredColumnsForDropped = tempStoredColumns;
+					setSelectedColumn((preVCol) => tempStoredColumns);
+				}
+			}
 			//run the dropped columns update when block is changed
 			if (Object.keys(tempStoredColumnsForDropped).length > 0) {
 				const dragAndDropColumns = getDraggedColumns(
@@ -734,7 +750,6 @@ export const FrameOperations = observer(
 		}, [computedValue]);
 		// get the dropped columns data for the chart is selected or block is changed
 		function getDraggedColumns(tempStoredColumns, chart) {
-			console.log(chart);
 			const droppedColumnsList = { ...droppedColumns };
 
 			tempStoredColumns.forEach((item, index) => {
@@ -756,7 +771,6 @@ export const FrameOperations = observer(
 				(item) => item?.values && item?.values.length > 0,
 			);
 			if (hasValues) {
-				// console.log("selected column to set with ", columnsValue);
 				setSelectedColumn(columnsValue);
 				handleStoreData(columnsValue);
 			}
@@ -797,6 +811,7 @@ export const FrameOperations = observer(
 							["name"]: firstColumn?.values || "",
 							["selector"]: firstColumn.selectors,
 							["width"]: undefined,
+							["dataType"]: firstColumn.dataType || "",
 						},
 					];
 					fieldsData = {
@@ -813,9 +828,10 @@ export const FrameOperations = observer(
 					columns[secondColumn?.label] = [];
 					secondColumn.values.forEach((item, index) => {
 						columns[secondColumn?.label].push({
-							["name"]: item,
+							["name"]: secondColumn.values[index] || "",
 							["selector"]: secondColumn.selectors[index],
 							["width"]: undefined,
+							["dataType"]: secondColumn.dataType || "",
 						});
 					});
 					fieldsData = {
@@ -840,7 +856,7 @@ export const FrameOperations = observer(
 				) {
 					const seriesIndex =
 						tempVal["series"].findIndex((item) =>
-							BAR_CHART_DATA.JSONVALUE.includes(item.type),
+							BAR_CHART_DATA.JSONVALUE?.includes(item.type),
 						) || 0;
 					let columnsmerged = [];
 					if (columns[firstColumn?.label]?.length) {
@@ -852,6 +868,8 @@ export const FrameOperations = observer(
 								columns[firstColumn?.label][0]?.name || [],
 							["pixelvalue"]:
 								columns[firstColumn?.label][0]?.selector || [],
+							["pixeldataType"]:
+								columns[firstColumn?.label][0]?.dataType || [],
 						};
 					} else {
 						tempVal["xAxis"] = {
@@ -859,6 +877,7 @@ export const FrameOperations = observer(
 							["name"]: [],
 							["pixelname"]: [],
 							["pixelvalue"]: [],
+							["pixeldataType"]: [],
 						};
 					}
 
@@ -871,11 +890,15 @@ export const FrameOperations = observer(
 						},
 					];
 					const pixelName = [],
-						pixelValue = [];
+						pixelValue = [],
+						pixeldataType = [];
+					const axisName = [];
 					columns[secondColumn?.label].forEach(
 						(columItem, columIndex) => {
 							pixelName.push(columItem?.name);
+							axisName.push(columItem?.name);
 							pixelValue.push(columItem?.selector);
+							pixeldataType.push(columItem?.dataType);
 							columnsmerged.push({
 								name: columItem?.name,
 								selector: columItem?.selector,
@@ -885,11 +908,10 @@ export const FrameOperations = observer(
 					if (columns[secondColumn?.label]?.length) {
 						tempVal[secondColumn?.label] = {
 							...tempVal[secondColumn?.label],
-							["name"]:
-								columns[secondColumn?.label][0]?.name ||
-								pixelName[0],
+							["name"]: axisName || pixelName[0],
 							["pixelname"]: pixelName,
 							["pixelvalue"]: pixelValue,
+							["pixeldataType"]: pixeldataType,
 						};
 					} else {
 						tempVal = {
@@ -899,6 +921,7 @@ export const FrameOperations = observer(
 								["name"]: "",
 								["pixelname"]: [],
 								["pixelvalue"]: [],
+								["pixeldataType"]: [],
 							},
 						};
 					}
@@ -940,7 +963,9 @@ export const FrameOperations = observer(
 				tempValue["_state"]["fields"] = {
 					...tempValue["_state"]["fields"],
 					Value: secondColumn?.values || [],
+					valueDataType: secondColumn?.dataType || [],
 					Label: firstColumn?.values || [],
+					labelDataType: firstColumn?.dataType || [],
 				};
 
 				// set the value
@@ -1082,10 +1107,12 @@ export const FrameOperations = observer(
 				tempValue["xAxis"] = {
 					...tempValue["xAxis"],
 					name: firstColumn?.values,
+					dataType: firstColumn?.dataType,
 				};
 				tempValue["yAxis"] = {
 					...tempValue["yAxis"],
 					name: secondColumn?.values,
+					dataType: secondColumn?.dataType,
 				};
 
 				tempValue["_state"] = {};
@@ -1094,7 +1121,9 @@ export const FrameOperations = observer(
 				tempValue["_state"]["fields"] = {
 					...tempValue["_state"]["fields"],
 					xAxis: firstColumn?.values,
+					xAxisDataType: firstColumn?.dataType,
 					yAxis: secondColumn?.values,
+					yAxisDataType: secondColumn?.dataType,
 					tooltip: columnsDrop[2]?.values
 						? columnsDrop[2]?.values
 						: [],
@@ -1106,6 +1135,7 @@ export const FrameOperations = observer(
 						seriesListToAdd[i] = {
 							...tempSeries[i],
 							name: secondColumn.values[i],
+							dataType: secondColumn.dataType[i],
 							type: "line",
 							data: tempSeries[i]?.data ?? [],
 							lineStyle: {
@@ -1135,26 +1165,22 @@ export const FrameOperations = observer(
 				setData("option", tempValue);
 			}
 			if (variation === "echart-world-map-chart") {
+				const tempValue = JSON.parse(computedValue);
 				if (firstColumn?.values) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
 							? tempValue["_state"]
 							: {};
+					tempValue["series"][0]["label"]["name"] = firstColumn?.values;
+
 					tempValue["_state"]["fields"] = {
 						...tempValue["_state"]["fields"],
 						label: firstColumn?.values?.[0],
 						labelDataType: firstColumn?.dataType?.[0],
-					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
+					};					
 				}
 				if (secondColumn?.values) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1165,13 +1191,8 @@ export const FrameOperations = observer(
 						Latitude: secondColumn?.values?.[0],
 						LatitudeDataType: secondColumn?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
 				if (columnsDrop[2]?.values.length > 0) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1182,13 +1203,8 @@ export const FrameOperations = observer(
 						Longitude: columnsDrop[2]?.values?.[0],
 						LongitudeDataType: columnsDrop[2]?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
 				if (columnsDrop[3]?.values.length > 0) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1199,13 +1215,8 @@ export const FrameOperations = observer(
 						size: columnsDrop[3]?.values?.[0],
 						sizeDataType: columnsDrop[3]?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
 				if (columnsDrop[4]?.values.length > 0) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1216,13 +1227,8 @@ export const FrameOperations = observer(
 						color: columnsDrop[4]?.values?.[0],
 						colorDataType: columnsDrop[4]?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
 				if (columnsDrop[5]?.values.length > 0) {
-					const tempValue = JSON.parse(computedValue);
-
 					tempValue["_state"] =
 						tempValue["_state"] &&
 						Object.keys(tempValue["_state"]).length > 0
@@ -1233,10 +1239,9 @@ export const FrameOperations = observer(
 						tooltip: columnsDrop[5]?.values?.[0],
 						tooltipDataType: columnsDrop[5]?.dataType?.[0],
 					};
-
-					setValue(JSON.stringify(tempValue));
-					setData("option", tempValue);
 				}
+				setValue(JSON.stringify(tempValue));
+				setData("option", tempValue);
 			}
 			if (variation == "echart-gantt-chart") {
 				let columnsToSet = [];
@@ -1283,7 +1288,6 @@ export const FrameOperations = observer(
 						}
 					}
 				}
-				// console.log('columnsValue', columnsValue, columnsDrop);
 				if (firstColumn?.values) {
 					columnsToSet.push(firstColumn?.values);
 					columnsObject["task"] = firstColumn?.values;
@@ -1493,10 +1497,9 @@ export const FrameOperations = observer(
 					columnsObj,
 					columnsToSet,
 				);
-				console.log(tooltip, columnsToSet, "tooltipIndexToSetTest");
 				const tooltipIndexToSet = tooltip.reduce((acc, item) => {
 					columnsToSet.forEach((colSetItem, colSetIndex) => {
-						if (colSetItem.includes(item)) {
+						if (colSetItem?.includes(item)) {
 							acc = [...acc, colSetIndex];
 						}
 					});
@@ -1514,6 +1517,40 @@ export const FrameOperations = observer(
 					setData("option", tempValue);
 				}
 				setData("columns", formattedArray);
+			}
+			if (variation === "echart-word-cloud") {
+				const fieldsData = {};
+				const parsedJson = JSON.parse(computedValue) || {};
+
+				// Initialize _state if it doesn't exist
+				if (!parsedJson._state) {
+					parsedJson._state = { fields: {} };
+				}
+				if (!parsedJson._state.fields) {
+					parsedJson._state.fields = {};
+				}
+
+				// Process each column type (words, size, tooltip)
+				columnsValue.forEach((column, index) => {
+					if (column?.values?.values?.length > 0) {
+						const columnValues = column.values.values;
+
+						// Store simple arrays like other chart types, not objects
+						fieldsData[column.label] = columnValues;
+					} else {
+						// Empty field for this column type
+						fieldsData[column.label] = [];
+					}
+				});
+
+				// Update the parsed JSON with the new fields data
+				parsedJson._state.fields = {
+					...parsedJson._state.fields,
+					...fieldsData,
+				};
+
+				setValue(JSON.stringify(parsedJson));
+				setData("option", parsedJson);
 			}
 			if (variation == "echart-dendrogram-chart") {
 				let columnsToPush = [];
@@ -1683,34 +1720,50 @@ export const FrameOperations = observer(
 			const dropId = destination.droppableId;
 
 			const updated = { ...droppedColumns };
-			if (!updated[dropId])
-				updated[dropId] = { values: [], dataType: [] };
-			const dropCol = filteredColumns.find(
-				(col) => col?.name === draggableId,
-			);
-			updated[dropId] = {
-				...updated[dropId],
-				values: [...updated[dropId]?.values, draggableId],
-				dataType: [...updated[dropId]?.dataType, dropCol?.dataType],
-			};
+			if (!updated[dropId]) updated[dropId] = { values: [], dataType: [] };
+		
+			const dropCol = filteredColumns.find((col) => col?.name === draggableId);
+		
+			// Extract the index from the dropId
+			const dropIndex = parseInt(dropId.split("-").pop(), 10);
+		
+			const isMultiLabel = chart[dropIndex]?.multiLabel;
+		
+			if (isMultiLabel) {
+				// Allow multiple values
+				if (!updated[dropId].values.includes(draggableId)) {
+					updated[dropId] = {
+						...updated[dropId],
+						values: [...updated[dropId]?.values, draggableId],
+						dataType: [...updated[dropId]?.dataType, dropCol?.dataType],
+					};
+				}
+			} else {
+				// Allow only one value
+				if (updated[dropId]?.values.length === 0) {
+					// If no value exists, set the first value
+					updated[dropId] = {
+						...updated[dropId],
+						values: [draggableId],
+						dataType: [dropCol?.dataType],
+					};
+				}
+			}
+		
 			setDroppedColumns(updated);
 		};
 		const deleteDroppedColumn = (columnName: string) => {
-			setDroppedColumns((prev) => {
-				const updated = { ...prev };
+			setDroppedColumns((prev: DroppedColumns) => {
+				const updated: DroppedColumns = { ...prev };
 				for (const key in updated) {
 					const index = updated[key]["values"].indexOf(columnName);
-					updated[key] = {
-						...updated[key],
-						values: [
-							...updated[key]["values"]?.slice(0, index),
-							...updated[key]["values"].slice(index + 1),
-						],
-						dataType: [
-							...updated[key]["dataType"]?.slice(0, index),
-							...updated[key]["dataType"].slice(index + 1),
-						],
-					};
+					if (index !== -1) {
+						updated[key] = {
+							...updated[key],
+							values: updated[key]["values"].filter((_, i) => i !== index),
+							dataType: updated[key]["dataType"].filter((_, i) => i !== index),
+						};
+					}
 				}
 				return updated;
 			});
@@ -1725,6 +1778,7 @@ export const FrameOperations = observer(
 			<>
 				{accordionSection.map((item, index) => (
 					<Accordion
+						key={item[accordionList[index]].title}
 						expanded={item[accordionList[index]].expanded}
 						onChange={(e) => {
 							const accordionSectionToUp = accordionSection;
@@ -1957,7 +2011,10 @@ export const FrameOperations = observer(
 																						...prev,
 																					};
 																				if (
-																					(e.target as HTMLInputElement).checked
+																					(
+																						e.target as HTMLInputElement
+																					)
+																						.checked
 																				) {
 																					// Add the column name if checked
 																					if (

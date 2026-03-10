@@ -12,7 +12,7 @@ import type { EchartVisualizationBlockDef } from "../..";
 import { CustomContextMenu } from "../../CustomContextMenu";
 
 const StyledChartContainer = styled("div")(() => ({
-	height: "inherit",
+	height: "100%",
 }));
 
 const StyledNoDataContainer = styled("div", {
@@ -32,7 +32,7 @@ interface PieProps {
 	/**
 	 *
 	 */
-	updateJson: (data: any, path: any) => void;
+	updateJson: (data, path) => void;
 }
 
 export const Pie = observer(({ id, updateJson }: PieProps) => {
@@ -194,7 +194,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 					/>
 				</StyledChartContainer>
 			);
-		} catch (e) {
+		} catch {
 			return (
 				<StyledNoDataContainer error>
 					There was an issue parsing your JSON.
@@ -211,6 +211,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 		return (
 			<StyledChartContainer>
 				<ReactECharts
+					key={JSON.stringify(resultData)}
 					option={resultData as EChartsOption}
 					onEvents={onClickChart}
 					style={{

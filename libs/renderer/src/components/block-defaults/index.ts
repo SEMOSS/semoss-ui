@@ -13,6 +13,10 @@ import {
 	type ButtonBlockDef,
 } from "./button-block";
 import {
+	config as CalendarViewBlockConfig,
+	type CalendarViewBlockDef,
+} from "./calendarview-block";
+import {
 	config as CheckboxBlockConfig,
 	type CheckboxBlockDef,
 } from "./checkbox-block";
@@ -33,6 +37,7 @@ import {
 	config as FlipCardBlockConfig,
 	type FlipCardBlockDef,
 } from "./flip-card-block";
+import { config as FormBlockConfig, type FormBlockDef } from "./form-block";
 import { config as GridBlockConfig, type GridBlockDef } from "./grid-block";
 import {
 	config as GridDynamicFrameBlockConfig,
@@ -118,7 +123,6 @@ import {
 	config as VisualizationFilterBlockConfig,
 	type VisualizationFilterBlockDef,
 } from "./visualization-filter-block";
-import {config as CalendarViewBlockConfig, CalendarViewBlockDef } from "./calendarview-block";
 
 export type DefaultBlockDefinitions =
 	| AccordionBlockDef
@@ -163,7 +167,8 @@ export type DefaultBlockDefinitions =
 	| VisualizationFilterBlockDef
 	| GridDynamicFrameBlockDef
 	| TabBlockDef
-	| CalendarViewBlockDef;
+	| CalendarViewBlockDef
+	| FormBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 	[AccordionBlockConfig.widget]: AccordionBlockConfig,
@@ -174,6 +179,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 	[CheckboxBlockConfig.widget]: CheckboxBlockConfig,
 	[ChipBlockConfig.widget]: ChipBlockConfig,
 	[ContainerBlockConfig.widget]: ContainerBlockConfig,
+	[FormBlockConfig.widget]: FormBlockConfig,
 	[DividerBlockConfig.widget]: DividerBlockConfig,
 	[EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
 	[FlipCardBlockConfig.widget]: FlipCardBlockConfig,
@@ -207,7 +213,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 	[VisualizationFilterBlockConfig.widget]: VisualizationFilterBlockConfig,
 	[GridDynamicFrameBlockConfig.widget]: GridDynamicFrameBlockConfig,
 	[TabBlockConfig.widget]: TabBlockConfig,
-    [CalendarViewBlockConfig.widget]: CalendarViewBlockConfig,
+	[CalendarViewBlockConfig.widget]: CalendarViewBlockConfig,
 };
 
 export {
@@ -251,4 +257,5 @@ export {
 	GridDynamicFrameBlockConfig,
 	TabBlockConfig,
     CalendarViewBlockConfig,
-};
+	FormBlockConfig
+}

@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
 	Blocks,
 	DefaultBlocks,
@@ -11,21 +11,16 @@ import {
 	StateStore,
 } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
-import { useNotification } from "@semoss/ui";
-import {
-	DesignerStore,
-	type WorkspaceOptions,
-	type WorkspaceStore,
-} from "@/stores";
-import { LoadingScreen } from "../../components/ui";
-import {
-	FileEditorPanel,
-	FileExplorerPanel,
-	SettingsPanel,
-	TerminalPanel,
-	Workspace,
-} from "../../components/workspace";
+import { LoadingScreen, useNotification } from "@semoss/ui";
+import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
+import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
+import type { FlexLayout } from "@/components/flex-layout";
+import { useWorkspace } from "@/hooks";
+import { AppDetailPage } from "@/pages/app";
+import { DesignerStore, type WorkspaceOptions } from "@/stores";
+import { TerminalPanel, WorkspaceManager } from "../../components/workspace";
 import { DesignerContext } from "../../contexts";
+import { MCPJsonEditor } from "../shared";
 import { GraphPanel } from "../workspace/panels/GraphPanel";
 import { BlocksWorkspaceActions } from "./BlocksWorkspaceActions";
 import { BlocksWorkspaceDev } from "./BlocksWorkspaceDev";
@@ -33,6 +28,7 @@ import { DEFAULT_MENU } from "./menus/default-menu";
 import {
 	BlocksMenuPanel,
 	DesignerPanel,
+	ExportButtonPanel,
 	LayersPanel,
 	NotebookExplorerPanel,
 	NotebookViewerPanel,
@@ -82,7 +78,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						type: "tab",
 						id: "filexplorer",
 						name: "Files",
-						component: "file-explorer",
+						component: "app-file-explorer",
 						config: {},
 						helpText: "Files",
 					},
@@ -98,9 +94,9 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						type: "tab",
 						id: "settings",
 						name: "Settings",
-						component: "settings",
+						component: "settingsPanel",
 						config: {},
-						maxWidth: 1,
+						// maxWidth: 1,
 						helpText: "Settings",
 						enableDrag: false,
 					},
@@ -111,6 +107,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 				location: "right",
 				size: BLOCK_SETTINGS_MIN_WIDTH,
 				minSize: BLOCK_SETTINGS_MIN_WIDTH,
+				selected: 0,
 				children: [
 					{
 						type: "tab",
@@ -121,6 +118,30 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 							className: "selected_block",
 						},
 						helpText: "Block Settings",
+					},
+					{
+						type: "tab",
+						id: "export-button",
+						name: "Export",
+						component: "export-button",
+						config: {},
+						helpText: "Export Tool",
+						enableDrag: false,
+					},
+				],
+			},
+			{
+				type: "border",
+				location: "bottom",
+				size: DEFAULT_BORDER_SIZE,
+				children: [
+					{
+						id: "terminal",
+						type: "tab",
+						name: "Terminal",
+						component: "terminal",
+						enableClose: false,
+						config: {},
 					},
 				],
 			},
@@ -147,22 +168,22 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						},
 					],
 				},
-				{
-					type: "tabset",
-					id: "settings-tabset",
-					weight: 0,
-					selected: 0,
-					enableMaximize: true,
-					enableTabStrip: false,
-					children: [
-						{
-							type: "tab",
-							name: "Settings",
-							component: "settingsPanel",
-							enableClose: false,
-						},
-					],
-				},
+				// {
+				// 	type: "tabset",
+				// 	id: "settings-tabset",
+				// 	weight: 0,
+				// 	selected: 0,
+				// 	enableMaximize: true,
+				// 	enableTabStrip: false,
+				// 	children: [
+				// 		{
+				// 			type: "tab",
+				// 			name: "Settings",
+				// 			component: "settingsPanel",
+				// 			enableClose: false,
+				// 		},
+				// 	],
+				// },
 			],
 		},
 	},
@@ -170,16 +191,11 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 
 const ACTIVE = "page-1";
 
-interface BlocksWorkspaceProps {
-	/** Workspace to render */
-	workspace: WorkspaceStore;
-}
-
 /**
  * Render the Blocks worksapce
  */
-export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
-	const { workspace } = props;
+export const BlocksWorkspace: React.FC = observer(() => {
+	const { workspace } = useWorkspace();
 	const notification = useNotification();
 	const [state, setState] = useState<StateStore>();
 
@@ -261,11 +277,46 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 		}
 	}, [state]);
 
+	/**
+	 * set the designer's selected component to be the selected tab in the active tabset whenever the layout changes
+	 */
+	useLayoutEffect(() => {
+		const model = workspace.model;
+		if (!model || !designer) return;
+
+		const originalDoAction = model.doAction.bind(model);
+
+		model.doAction = (action: FlexLayout.Action) => {
+			const result = originalDoAction(action);
+
+			// Get the active tabset
+			const activeTabset =
+				model.getActiveTabset() as FlexLayout.TabSetNode;
+
+			// Get the selected tab of the active tabset
+			const selectedTab = activeTabset?.getChildren()[
+				activeTabset.getSelected()
+			] as FlexLayout.TabNode;
+
+			// If the selected tab is a designer component, update the designer's selected component
+			if (selectedTab?.getComponent() === "designer") {
+				designer.setSelected(selectedTab.getName());
+			}
+
+			return result;
+		};
+
+		// Clean up when the component is unmounted
+		return () => {
+			model.doAction = originalDoAction;
+		};
+	}, [workspace.model, designer]);
+
 	if (!state) {
 		return <LoadingScreen.Trigger />;
 	}
 
-	const FACTORY: React.ComponentProps<typeof Workspace>["factory"] = (
+	const FACTORY: React.ComponentProps<typeof WorkspaceManager>["factory"] = (
 		node,
 		layout,
 	) => {
@@ -287,10 +338,18 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 					name={component}
 				/>
 			);
-		} else if (component === "file-explorer") {
-			return <FileExplorerPanel title={"Files"} layout={layout} />;
-		} else if (component === "file-editor") {
-			return <FileEditorPanel path={config.path} />;
+		} else if (component === "app-file-explorer") {
+			return (
+				<AppFileExplorer
+					node={node}
+					layout={layout}
+					app={workspace.appId}
+				/>
+			);
+		} else if (component === "app-file-editor") {
+			return <AppFileEditor node={node} app={workspace.appId} />;
+		} else if (component === "mcpJsonEditor") {
+			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "notebook-explorer") {
 			return <NotebookExplorerPanel title={"Notebook"} layout={layout} />;
 		} else if (component === "notebook-viewer") {
@@ -300,9 +359,9 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 		} else if (component === "graph") {
 			return <GraphPanel />;
 		} else if (component === "settingsPanel") {
-			return <SettingsPanel />;
-		} else if (component === "settings") {
-			return null;
+			return <AppDetailPage showNav={false} />;
+		} else if (component === "export-button") {
+			return <ExportButtonPanel />;
 		}
 		return <>{component}</>;
 	};
@@ -313,10 +372,9 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 					designer: designer,
 				}}
 			>
-				<Workspace
+				<WorkspaceManager
 					navbarActions={<BlocksWorkspaceActions />}
 					options={DEFAULT_OPTIONS}
-					workspace={workspace}
 					factory={FACTORY}
 				/>
 				<BlocksWorkspaceDev />

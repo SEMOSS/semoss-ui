@@ -1,22 +1,43 @@
 import { observer } from "mobx-react-lite";
-import { createElement } from "react";
+import { createElement, useEffect, useState } from "react";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { Help } from "@/components/help";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { SettingsContext } from "@/contexts";
+import { useRootStore } from "@/hooks";
+import { AuditLogsDashboard } from "../AuditLogsDashboard";
 import { ImportPage } from "../import";
-import { EngineIndexPage } from "./EngineIndexPage";
-import { EngineLayout } from "./EngineLayout";
 import { ENGINE_ROUTES } from "./engine.constants";
+import { EngineEditPage } from "./engine-edit-page";
+import { EngineIndexPage } from "./engine-index-page";
+import { EngineLayout } from "./engine-layout";
 
 export const EngineRouter = observer(() => {
+	const { configStore } = useRootStore();
+	const ADMIN_MODE_STORAGE_KEY = "semoss.adminMode";
+	const getStoredAdminMode = () => {
+		if (typeof window === "undefined") {
+			return false;
+		}
+		return window.localStorage.getItem(ADMIN_MODE_STORAGE_KEY) === "true";
+	};
+	const [adminMode, setAdminMode] = useState(getStoredAdminMode());
+
+	useEffect(() => {
+		if (!configStore.store.user.admin) {
+			setAdminMode(false);
+			return;
+		}
+		setAdminMode(getStoredAdminMode());
+	}, [configStore.store.user.admin]);
+
 	return (
 		<>
 			<NavbarLeft>
 				<NavbarHeader />
 			</NavbarLeft>
 
-			<SettingsContext.Provider value={{ adminMode: false }}>
+			<SettingsContext.Provider value={{ adminMode }}>
 				<Routes>
 					{ENGINE_ROUTES.map((r) => (
 						<Route key={r.path} path={r.path} element={<Outlet />}>
@@ -41,7 +62,17 @@ export const EngineRouter = observer(() => {
 										element={createElement(s.component, {})}
 									/>
 								))}
+								<Route
+									path="edit"
+									element={<EngineEditPage />}
+								/>
 							</Route>
+							<Route
+								path=":engineId/dashboard"
+								element={
+									<AuditLogsDashboard catalogName={r.name} />
+								}
+							/>
 							<Route
 								path="*"
 								element={<Navigate to="." replace />}

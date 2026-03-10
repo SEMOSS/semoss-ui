@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Box, Stack, Switch, styled, Typography } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
 import { StyledStepPaper } from "../../prompt.styled";
 import type { Builder, ConstraintSettings } from "../../prompt.types";
 

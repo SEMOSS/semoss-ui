@@ -178,3 +178,19 @@ export type Month =
 	| "December";
 
 export type JobTypes = "Custom Job" | "Send Email";
+
+export type MonthsDef = {
+	month: Month;
+	value: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+	days: 28 | 29 | 30 | 31;
+};
+
+export type DayOfWeekDef = {
+	day: DayOfWeek;
+	value: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+};
+
+export type CronValidation = {
+	error: boolean;
+	errorMessage: string | null;
+};

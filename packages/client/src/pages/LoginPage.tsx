@@ -284,7 +284,7 @@ export const LoginPage = observer(() => {
 			lower: /[a-z]/.test(password),
 			special: /[!@#$%^&*]/.test(password),
 		};
-	}
+	};
 
 	const passwordTooltipContent = (
 		<Box>
@@ -950,8 +950,13 @@ export const LoginPage = observer(() => {
 														rules={{
 															required:
 																"Password is required",
-															validate: (value) => {
-																const rules = regPasswordRules(value);
+															validate: (
+																value,
+															) => {
+																const rules =
+																	regPasswordRules(
+																		value,
+																	);
 																if (
 																	!rules.length
 																)

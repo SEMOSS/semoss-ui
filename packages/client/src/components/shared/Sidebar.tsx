@@ -2,6 +2,7 @@ import {
 	AccountCircleRounded,
 	Functions as FunctionsIcon,
 	GridView as GridViewIcon,
+	GppGoodRounded as GuardrailIcon,
 	Home as HomeIcon,
 	Inventory2Outlined,
 	MenuOpenRounded,
@@ -47,6 +48,7 @@ const CATALOG_ROUTES = [
 		icon: <Inventory2Outlined />,
 		route: "/engine/storage",
 	},
+	{ text: "Guardrail", icon: <GuardrailIcon />, route: "/engine/guardrail" },
 ];
 
 const StyledNavHeader = styled(Stack)(({ theme }) => ({
@@ -117,7 +119,7 @@ const StyledListItemButton = styled(List.ItemButton, {
 	backgroundColor: selected ? theme.palette.primary.selected : undefined,
 })) as unknown as typeof List.ItemButton;
 
-const StyledListItemIcon = styled(List.Icon)(() => ({
+const StyledListItemIcon = styled(List.ItemIcon)(() => ({
 	width: "28px",
 	minWidth: "auto",
 }));

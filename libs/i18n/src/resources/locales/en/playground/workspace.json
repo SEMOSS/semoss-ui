@@ -1,0 +1,118 @@
+{
+	"welcomeTitle": "Welcome to Agent Manager",
+	"welcomeDescription": "Explore custom AI agents designed to meet your unique needs and integrate seamlessly into your processes.",
+	"form": {
+		"nameLabel": "Name",
+		"descriptionLabel": "Description",
+		"instructionsLabel": "Instructions",
+		"knowledgeLabel": "Knowledge",
+		"toolboxLabel": "Toolbox"
+	},
+	"actions": {
+		"create": "Create",
+		"save": "Save",
+		"createAgent": "Create an Agent",
+		"edit": "Edit",
+		"delete": "Delete",
+		"newChat": "New Chat"
+	},
+	"card": {
+		"noDescription": "No description available",
+		"deleteConfirmTitle": "Are you sure?",
+		"deleteConfirmDescription": "This action is irreversible. This will permanently delete the {{name}} workspace."
+	},
+	"sharing": {
+		"title": "Add members",
+		"description": "Invite members to access and collaborate on this agent.",
+		"searchPlaceholder": "Search for a user...",
+		"searchUsers": "Search users...",
+		"noUsersFound": "No users found",
+		"hasAccess": "Has access",
+		"pendingInvite": "Pending invite",
+		"membersToAdd": "Members to add",
+		"emptyState": "Add users to share this workspace",
+		"buttonAdding": "Adding...",
+		"buttonAdd": "Add Members"
+	},
+	"members": {
+		"heading": "Who has access",
+		"you": "(You)",
+		"owner": "Owner",
+		"editor": "Editor",
+		"readOnly": "Read-only",
+		"removeAccess": "Remove access",
+		"removeSelfTitle": "Remove yourself from agent",
+		"removeSelfDescription": "You are about to remove your access to this agent. You will need to be re-invited to regain access. This action cannot be undone.",
+		"removeUserTitle": "Remove agent access",
+		"removeUserDescription": "Are you sure you want to remove {{name}}'s access to this agent? This action cannot be undone.",
+		"changePermissionTitle": "Change your permission",
+		"changePermissionDescription": "You are about to change your own permission from {{oldPermission}} to {{newPermission}}. This will affect what actions you can perform in this agent.",
+		"changePermissionButton": "Change permission"
+	},
+	"mcp": {
+		"noToolboxes": "No toolboxes found",
+		"noKnowledge": "No knowledge libraries found",
+		"accessRequested": "Access requested",
+		"requestAccess": "Request access",
+		"noAccess": "No access",
+		"requestAccessButton": "Request Access",
+		"noDescription": "No description available.",
+		"tooltipNoAccess": "You don't have access to this {{type}}. Please request access from the owner.",
+		"tooltipMissingDependencies": "You don't have access to all dependencies of this {{type}}, so functionality may be limited. Open in the platform for more information.",
+		"tooltipOpen": "Open this {{type}} in the platform",
+		"failedToLoad": "Failed to load workspace resources",
+		"requestedSuccess": "Requested access to {{name}}",
+		"requestedFailed": "Failed to request access"
+	},
+	"chat": {
+		"noChats": "No chats found",
+		"error": "Error:",
+		"selectRoom": "Select room"
+	},
+	"images": {
+		"agentIllustration": "Agent illustration"
+	},
+	"messages": {
+		"noResults": "No results found",
+		"userAlreadyAdded": "User already added",
+		"fetchUsersFailed": "Failed to fetch users",
+		"addAtLeastOne": "Please add at least one user",
+		"addMembersSuccess": "Successfully added {{count}} member",
+		"addMembersSuccess_plural": "Successfully added {{count}} members",
+		"addMembersFailed": "Failed to add members",
+		"permissionUpdated": "Permission updated successfully",
+		"permissionUpdateFailed": "Failed to update permission",
+		"userRemoved": "User removed successfully",
+		"userRemoveFailed": "Failed to remove user",
+		"fetchPermissionsFailed": "Failed to fetch user permissions"
+	},
+	"breadcrumbs": {
+		"home": "Home",
+		"agent": "Agent",
+		"loading": "Loading",
+		"edit": "Edit",
+		"new": "New",
+		"room": "Room"
+	},
+	"detail": {
+		"tabs": {
+			"myChats": "My Chats",
+			"knowledge": "Knowledge",
+			"toolbox": "Toolbox",
+			"members": "Members"
+		},
+		"failedToDelete": "Failed to delete agent",
+		"failedToLoad": "Failed to load agent: {{error}}"
+	},
+	"edit": {
+		"title": "Edit Agent",
+		"subtitle": "Update your agent details",
+		"errorTitle": "Error Loading Agent",
+		"errorDescription": "Failed to load the agent details",
+		"failedToLoad": "Failed to load workspace: {{error}}"
+	},
+	"new": {
+		"title": "New Agent",
+		"subtitle": "Create a new agent to get started"
+	}
+}

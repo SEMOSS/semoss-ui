@@ -1,5 +1,6 @@
 //Drag and Drop Data
 
+import TerminalRoundedIcon from "@mui/icons-material/TerminalRounded";
 //Add Storage
 import AMAZON_S3 from "@/assets/img/Amazon_S3.png";
 import Amazon_Titan from "@/assets/img/Amazon_Titan.png";
@@ -42,7 +43,6 @@ import GOOGLE_CLOUD from "@/assets/img/GOOGLE_CLOUD_STORAGE.png";
 import GOOGLE_DRIVE from "@/assets/img/GOOGLE_DRIVE.png";
 import GOOGLE_OCR from "@/assets/img/GOOGLE_OCR.png";
 import GOOGLE_SPEECH_TO_TEXT from "@/assets/img/GOOGLE_SPEECH_TO_TEXT.png";
-import GOOGLE from "@/assets/img/google.png";
 import H2_DB from "@/assets/img/H2_DB.png";
 import HIVE from "@/assets/img/HIVE.jpg";
 import IMPALA from "@/assets/img/IMPALA.png";
@@ -62,8 +62,10 @@ import NOTEBOOK from "@/assets/img/Notebook.svg";
 import NOTEBOOK_SELECTED from "@/assets/img/Notebook_Selected.svg";
 import ONEDRIVE from "@/assets/img/ONEDRIVE.png";
 //Commercial Models
-import OPEN_AI from "@/assets/img/OPEN_AI.png";
-import AZURE_OPEN_AI from "@/assets/img/OPEN_AI.png";
+import {
+	default as AZURE_OPEN_AI,
+	default as OPEN_AI,
+} from "@/assets/img/OPEN_AI.png";
 import OPEN_SEARCH from "@/assets/img/OPEN_SEARCH.png";
 import ORACLE from "@/assets/img/ORACLE.png";
 //Embedded Models
@@ -881,7 +883,7 @@ export const CONNECTION_OPTIONS = {
 							rules: { required: true },
 						},
 						{
-							fieldName: "MODEL",
+							fieldName: "DEPLOYMENT_NAME",
 							label: "Deployment Name",
 							defaultValue: "",
 							options: {
@@ -15560,6 +15562,15 @@ export const SIDEBAR_MENU = {
 		{
 			name: "Layers",
 			icon: { default: LAYERS, active: LAYERS_SELECTED },
+		},
+		{
+			name: "Terminal",
+			icon: {
+				default: NOTEBOOK,
+				active: NOTEBOOK_SELECTED,
+				component: TerminalRoundedIcon,
+				tooltip: "Terminal",
+			},
 		},
 	],
 };

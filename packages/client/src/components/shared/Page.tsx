@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { Container, styled } from "@semoss/ui";
+import { Help } from "@/components/help";
 import { Navbar } from "./Navbar";
 import { PlatformMessages } from "./PlatformMessages";
 import { Sidebar } from "./Sidebar";
@@ -46,12 +47,16 @@ export const Page: React.FC<PageProps> = observer(({ children }) => {
 			<StyledContent>
 				<Navbar />
 				<StyledInner id="home__content">
-					<StyledContainer sx={{ maxWidth: "1440px" }}>
+					<StyledContainer
+						sx={{ maxWidth: "1440px" }}
+						id="home__container"
+					>
 						{children}
 					</StyledContainer>
 				</StyledInner>
 			</StyledContent>
 			<PlatformMessages />
+			<Help />
 		</StyledPage>
 	);
 });

@@ -1,0 +1,113 @@
+.chat-input-container {
+    padding: 16px;
+    border-top: 1px solid var(--vscode-panel-border, #3c3c3c);
+    background-color: var(--vscode-editor-background, #1e1e1e);
+}
+
+.chat-input-form {
+    width: 100%;
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    background-color: var(--vscode-input-background, #3c3c3c);
+    border: 1px solid var(--vscode-input-border, #3c3c3c);
+    border-radius: 8px;
+    padding: 8px;
+    transition: border-color 0.2s ease;
+}
+
+.input-wrapper:focus-within {
+    border-color: var(--vscode-focusBorder, #007acc);
+}
+
+.chat-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--vscode-input-foreground, #cccccc);
+    font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+    font-size: 14px;
+    line-height: 1.4;
+    resize: none;
+    min-height: 20px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.chat-input::placeholder {
+    color: var(--vscode-input-placeholderForeground, #767676);
+}
+
+.chat-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.send-button {
+    background-color: var(--vscode-button-background, #0e639c);
+    border: none;
+    border-radius: 6px;
+    color: var(--vscode-button-foreground, #ffffff);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.send-button:hover:not(:disabled) {
+    background-color: var(--vscode-button-hoverBackground, #1177bb);
+}
+
+.send-button:disabled {
+    background-color: var(--vscode-button-secondaryBackground, #5a5a5a);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.send-icon {
+    font-size: 16px;
+    font-weight: bold;
+    transform: rotate(-45deg);
+}
+
+.loading-spinner {
+    font-size: 16px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .chat-input-container {
+        padding: 12px;
+    }
+    
+    .input-wrapper {
+        padding: 6px;
+    }
+    
+    .chat-input {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    .send-button {
+        width: 36px;
+        height: 36px;
+    }
+}

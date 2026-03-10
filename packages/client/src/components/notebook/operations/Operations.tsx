@@ -1,5 +1,4 @@
 import { observer } from "mobx-react-lite";
-import React from "react";
 import type { CellState } from "@semoss/renderer";
 import { DefaultOperation } from "./DefaultOperation";
 import { ErrorOperation } from "./ErrorOperation";
@@ -17,6 +16,14 @@ interface OperationProps {
 	 * Output used by the operation
 	 */
 	output: CellState["output"];
+
+	/**
+	 * cell Data on
+	 */
+	cellData?: {
+		cellId: string;
+		queryId: string;
+	};
 }
 
 /**
@@ -40,6 +47,7 @@ export const Operation = observer((props: OperationProps): JSX.Element => {
 						type: "NATIVE" | "PY" | "GRID" | "R";
 					}
 				}
+				cellData={props.cellData}
 			/>
 		);
 	} else if (operation === "FRAME_FILTER_CHANGE") {
@@ -51,6 +59,7 @@ export const Operation = observer((props: OperationProps): JSX.Element => {
 						type: "NATIVE" | "PY" | "GRID" | "R";
 					}
 				}
+				cellData={props.cellData}
 			/>
 		);
 	}

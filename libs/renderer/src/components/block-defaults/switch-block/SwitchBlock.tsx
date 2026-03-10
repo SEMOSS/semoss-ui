@@ -12,15 +12,15 @@ import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
 const StyledContainer = styled("div")(({ theme }) => ({
-	padding: "4px",
+	padding: theme.spacing(0.5),
 	display: "flex",
 	flexDirection: "column",
-	gap: "4px",
+	gap: theme.spacing(0.5),
 }));
 
 const StyledLabel = styled(Typography)(({ theme }) => ({
-	fontSize: "14px",
-	fontWeight: 500,
+	fontSize: theme.typography.subtitle2.fontSize,
+	fontWeight: theme.typography.subtitle2.fontWeight,
 }));
 
 export interface SwitchBlockDef extends BlockDef<"switch"> {
@@ -56,66 +56,60 @@ export interface SwitchBlockDef extends BlockDef<"switch"> {
 }
 
 export const SwitchBlock: BlockComponent = observer(({ id }) => {
-	try {
-		const { attrs, data, setData, listeners } =
-			useBlock<SwitchBlockDef>(id);
+	const { attrs, data, setData, listeners } = useBlock<SwitchBlockDef>(id);
 
-		useEffect(() => {
-			if (listeners.preProcess) {
-				listeners.preProcess();
-			}
-		}, []);
+	useEffect(() => {
+		if (listeners.preProcess) {
+			listeners.preProcess();
+		}
+	}, []);
 
-		const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-			setData("value", event.target.checked);
+	const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setData("value", event.target.checked);
 
-			listeners.onChange();
-		};
+		listeners.onChange();
+	};
 
-		const showLabel = data.label && data.label.trim() !== "";
-		const showHelperText = data.helperText && data.helperText.trim() !== "";
+	const showLabel = data.label && data.label.trim() !== "";
+	const showHelperText = data.helperText && data.helperText.trim() !== "";
 
-		return (
-			<StyledContainer {...attrs} style={data.style}>
-				<FormGroup>
-					{showLabel && !data.labelPlacement && (
-						<StyledLabel>{data.label}</StyledLabel>
-					)}
+	return (
+		<StyledContainer {...attrs} style={data.style}>
+			<FormGroup>
+				{showLabel && !data.labelPlacement && (
+					<StyledLabel>{data.label}</StyledLabel>
+				)}
 
-					{showLabel && data.labelPlacement ? (
-						<FormControlLabel
-							control={
-								<Switch
-									checked={data.value}
-									onChange={handleChange}
-									disabled={data.disabled}
-									color={data.color}
-									size={data.size}
-									required={data.required}
-								/>
-							}
-							label={data.label}
-							labelPlacement={data.labelPlacement}
-						/>
-					) : (
-						<Switch
-							checked={data.value}
-							onChange={handleChange}
-							disabled={data.disabled}
-							color={data.color}
-							size={data.size}
-							required={data.required}
-						/>
-					)}
+				{showLabel && data.labelPlacement ? (
+					<FormControlLabel
+						control={
+							<Switch
+								checked={data.value}
+								onChange={handleChange}
+								disabled={data.disabled}
+								color={data.color}
+								size={data.size}
+								required={data.required}
+							/>
+						}
+						label={data.label}
+						labelPlacement={data.labelPlacement}
+					/>
+				) : (
+					<Switch
+						checked={data.value}
+						onChange={handleChange}
+						disabled={data.disabled}
+						color={data.color}
+						size={data.size}
+						required={data.required}
+					/>
+				)}
 
-					{showHelperText && (
-						<FormHelperText>{data.helperText}</FormHelperText>
-					)}
-				</FormGroup>
-			</StyledContainer>
-		);
-	} catch (error) {
-		console.error("Error in SwitchBlock:", error);
-		return <div>Error loading Switch component</div>;
-	}
+				{showHelperText && (
+					<FormHelperText>{data.helperText}</FormHelperText>
+				)}
+			</FormGroup>
+		</StyledContainer>
+	);
 });
