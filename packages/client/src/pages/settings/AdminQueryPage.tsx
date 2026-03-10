@@ -406,12 +406,10 @@ export const AdminQueryPage = () => {
 		return null;
 	};
 
-	const outputPanel = useMemo(() => displayQueryOutput(), [
-		output,
-		lastQuery,
-		page,
-		rowsPerPage,
-	]);
+	const outputPanel = useMemo(
+		() => displayQueryOutput(),
+		[output, lastQuery, page, rowsPerPage],
+	);
 
 	return (
 		<StyledContainer>
