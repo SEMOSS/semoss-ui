@@ -14,7 +14,31 @@ export const EngineFileEditor: React.FC<EngineFileEditorProps> = observer(
 		const config: {
 			name: string;
 			path: string;
+			fileMode?: "ENGINE" | "INSIGHT";
+			insightId?: string;
 		} = node.getConfig();
+
+		if (config.fileMode === "INSIGHT" && config.insightId) {
+			return (
+				<FileEditor
+					mode={{
+						type: "INSIGHT",
+						insightId: config.insightId,
+					}}
+					path={config.path}
+					onChange={(_content, isModified) => {
+						const updated = isModified
+							? `${config.name}*`
+							: config.name;
+
+						// rename the tab
+						node.getModel().doAction(
+							FlexLayout.Actions.renameTab(node.getId(), updated),
+						);
+					}}
+				/>
+			);
+		}
 
 		return (
 			<FileEditor
