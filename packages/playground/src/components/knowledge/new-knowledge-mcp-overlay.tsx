@@ -104,13 +104,11 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 					toast.error(t("validation:descriptionRequired"));
 					return;
 				}
-
 				const allowedExtensions = [
 					"pdf",
 					"doc",
 					"docx",
 					"txt",
-					"md",
 					"csv",
 					"ppt",
 					"pptx",

@@ -31,6 +31,7 @@ import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 	InputGroup,
@@ -59,7 +60,7 @@ type DocumentLibraryEngine = {
 	tag: string[];
 	dateCreated: string;
 	favorite: boolean;
-	database_global?: boolean | number;
+	database_global: boolean;
 };
 
 type EngineAsset = {
@@ -99,6 +100,7 @@ export const DocumentLibrary = () => {
 	const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
+	const [assetsError, setAssetsError] = useState<string | null>(null);
 
 	const [isNewKnowledgeOpen, setIsNewKnowledgeOpen] = useState(false);
 	const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
@@ -106,7 +108,6 @@ export const DocumentLibrary = () => {
 		useState<DocumentLibraryEngine | null>(null);
 	const [engineAssets, setEngineAssets] = useState<EngineAsset[]>([]);
 	const [isLoadingAssets, setIsLoadingAssets] = useState(false);
-	const [assetsError, setAssetsError] = useState<string | null>(null);
 	const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
 	const { actions } = useInsight();
@@ -191,23 +192,15 @@ export const DocumentLibrary = () => {
 		setAssetsError(null);
 		setEngineAssets([]);
 		void actions
-			.run<
-				{ fileName: string; lastModified: string; fileSize: string }[]
-			>(`ListDocumentsInVectorDatabase(engine=["${selectedEngine.id}"]);`)
-			.then((result) => {
+			.run(
+				`ListDocumentsInVectorDatabase(engine=["${selectedEngine.id}"]);`,
+			)
+			.then((result: { pixelReturn?: { output?: unknown }[] }) => {
 				if (cancelled) return;
 				const output = result?.pixelReturn?.[0]?.output;
 				setEngineAssets(
 					Array.isArray(output) ? (output as EngineAsset[]) : [],
 				);
-			})
-			.catch((e) => {
-				if (cancelled) return;
-				setAssetsError(e instanceof Error ? e.message : String(e));
-			})
-			.finally(() => {
-				if (cancelled) return;
-				setIsLoadingAssets(false);
 			});
 		return () => {
 			cancelled = true;
@@ -227,10 +220,11 @@ export const DocumentLibrary = () => {
 					: typeof item?.tag === "string" && item.tag
 						? item.tag.split(/[|,]/).filter(Boolean)
 						: [],
-
 				dateCreated: item.database_date_created || "",
 				favorite:
 					item.app_favorite === 1 || item.database_favorite === 1,
+				database_global:
+					item.database_global === true || item.database_global === 1,
 			});
 			return acc;
 		}, []) || [];
@@ -238,8 +232,7 @@ export const DocumentLibrary = () => {
 	const filteredItems = formatted
 		.filter((item) => {
 			if (libraryTab === "all") return true;
-
-			const isGlobal = item?.database_global === true;
+			const isGlobal = !!item.database_global;
 			return libraryTab === "global" ? isGlobal : !isGlobal;
 		})
 		.filter((item) => {
@@ -398,7 +391,7 @@ export const DocumentLibrary = () => {
 					</DialogContent>
 				</Dialog>
 
-				{/* Delete confirmation dialog — uses only Dialog which we know works */}
+				{/* Delete confirmation dialog */}
 				<Dialog
 					open={!!deleteEngineId}
 					onOpenChange={(open) => {
@@ -414,23 +407,22 @@ export const DocumentLibrary = () => {
 								This action cannot be undone.
 							</DialogDescription>
 						</DialogHeader>
-						<div className="flex justify-end gap-2 pt-4">
+						<DialogFooter>
 							<Button
-								variant="outline"
+								variant="ghost"
 								disabled={isDeleting}
 								onClick={() => setDeleteEngineId(null)}
 							>
 								Cancel
 							</Button>
 							<Button
-								variant="outline"
+								variant="destructive"
 								disabled={isDeleting}
 								onClick={handleDeleteEngine}
-								className="border-red-500 text-red-500 hover:bg-red-50"
 							>
 								{isDeleting ? "Deleting..." : "Delete"}
 							</Button>
-						</div>
+						</DialogFooter>
 					</DialogContent>
 				</Dialog>
 
@@ -788,10 +780,10 @@ export const DocumentLibrary = () => {
 										</button>
 
 										{activeMenuId === item.id && (
-											<div className="absolute right-0 top-8 z-20 w-52 rounded-md border border-gray-200 bg-white shadow-lg">
+											<div className="absolute right-0 top-8 z-20 w-32 rounded-md border border-gray-200 bg-white shadow-lg">
 												<button
 													type="button"
-													className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md"
+													className="flex w-full items-center justify-center gap-2 px-2 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md"
 													onClick={() => {
 														setActiveMenuId(null);
 														setDeleteEngineId(
@@ -800,7 +792,9 @@ export const DocumentLibrary = () => {
 													}}
 												>
 													<Trash2 className="h-4 w-4" />
-													Delete Knowledge
+													{t(
+														"knowledge:embedDocuments.delete",
+													)}
 												</button>
 											</div>
 										)}

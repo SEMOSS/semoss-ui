@@ -28,7 +28,7 @@
 		"createSource": "Create Knowledge Library",
 		"viewDocuments": "View documents",
 		"newChat": "New Chat",
-		"action": "Actions"
+		"action": "Edit"
 	},
 	"messages": {
 		"noDescription": "No description",
@@ -47,7 +47,8 @@
 		"selectFiles": "Click to select files or drag and drop",
 		"embedButton": "Embed Documents",
 		"embedding": "Embedding...",
-		"removeFile": "Remove file"
+		"removeFile": "Remove file",
+		"delete": "Delete"
 	},
 	"embedMessages": {
 		"selectKnowledgeSource": "Please select a knowledge source",
