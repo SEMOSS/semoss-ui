@@ -20,6 +20,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { mcpToPlatformUrl } from "@/components";
+import { useRoot } from "@/hooks";
 import { toSentenceCase } from "@/utility";
 
 export interface WorkspaceMCPListProps {
@@ -72,6 +73,7 @@ export const WorkspaceMCPList = ({
 	search,
 }: WorkspaceMCPListProps) => {
 	const { t } = useTranslation("workspace");
+	const { root } = useRoot();
 	const { actions } = useInsight();
 
 	const getDependencies = usePixel<{
@@ -221,35 +223,37 @@ export const WorkspaceMCPList = ({
 										{m.engine_name}
 									</div>
 									<Tooltip>
-										<TooltipTrigger asChild>
-											{effectivePermission ===
-											"FULLY_PRIVATE" ? (
-												<AlertCircle className="size-4 shrink-0 cursor-help text-destructive" />
-											) : (
-												<Button
-													variant="ghost"
-													size="icon"
-													className={`-m-2 shrink-0 ${accessMissing || missingSubDependencies ? "w-auto px-2" : ""}`}
-													asChild
-												>
-													<a
-														target="_blank"
-														href={mcpToPlatformUrl(
-															m,
-														)}
-														className="flex items-center gap-1"
-													>
-														{(missingSubDependencies ||
-															accessMissing) && (
-															<TriangleAlert
-																className={`size-4 ${accessMissing ? "text-destructive" : "text-amber-500"}`}
-															/>
-														)}
-														<SquareArrowOutUpRightIcon className="size-4" />
-													</a>
-												</Button>
-											)}
-										</TooltipTrigger>
+										    <TooltipTrigger asChild>
+                        {effectivePermission === "FULLY_PRIVATE" ? (
+                            <AlertCircle className="size-4 shrink-0 cursor-help text-destructive" />
+                        ) : root.theme.showPlatformLinks !== false ? (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`-m-2 shrink-0 ${accessMissing || missingSubDependencies ? "w-auto px-2" : ""}`}
+                                asChild
+                            >
+                                <a
+                                    target="_blank"
+                                    href={mcpToPlatformUrl(m)}
+                                    className="flex items-center gap-1"
+                                >
+                                    {(missingSubDependencies || accessMissing) && (
+                                        <TriangleAlert
+                                            className={`size-4 ${accessMissing ? "text-destructive" : "text-amber-500"}`}
+                                        />
+                                    )}
+                                    <SquareArrowOutUpRightIcon className="size-4" />
+                                </a>
+                            </Button>
+                        ) : (missingSubDependencies || accessMissing) ? (
+                            <TriangleAlert
+                                className={`size-4 cursor-help ${accessMissing ? "text-destructive" : "text-amber-500"}`}
+                            />
+                        ) : (
+                            <span />
+                        )}
+                    </TooltipTrigger>
 										<TooltipContent>
 											{accessMissing
 												? t("mcp.tooltipNoAccess", {

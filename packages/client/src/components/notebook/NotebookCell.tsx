@@ -640,6 +640,7 @@ export const NotebookCell = observer(
 
 				const output = pixelReturn[0].output as {
 					tools: {
+						_type: string;
 						name: string;
 						title: string;
 						description: string;
@@ -665,6 +666,7 @@ export const NotebookCell = observer(
 
 				const tool = output.tools[0];
 				const toolName = tool.name;
+				const toolType = tool._type;
 				const properties = tool.inputSchema?.properties || {};
 
 				// Build parameters object from schema properties
@@ -686,6 +688,7 @@ export const NotebookCell = observer(
 								widget: cell.widget,
 								parameters: cell.parameters,
 							},
+							paramType: toolType,
 							params,
 						},
 					},

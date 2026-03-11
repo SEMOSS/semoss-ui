@@ -11,7 +11,12 @@ export type FileMode =
 			engine: string;
 	  }
 	| {
+			type: "STORAGE";
+			storage: string;
+	  }
+	| {
 			type: "INSIGHT";
+			insightId?: string;
 	  };
 
 /**
