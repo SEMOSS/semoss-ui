@@ -111,6 +111,17 @@ export const EngineHeader: React.FC = () => {
 		if (pixelReturn[0].operationType.includes("ERROR")) {
 			throw pixelReturn[0].output as string;
 		}
+
+		// add MCP tag to the engine if not already present
+		const existingTags = Array.isArray(active.metadata.tag)
+			? (active.metadata.tag as string[])
+			: [];
+
+		if (!existingTags.includes("MCP")) {
+			active.metadata.tag = [...existingTags, "MCP"];
+		} else {
+			active.metadata.tag = existingTags;
+		}
 	};
 
 	/**
@@ -325,8 +336,8 @@ export const EngineHeader: React.FC = () => {
 					</p>
 
 					<div className="flex flex-row flex-wrap gap-2">
-						{active.metadata.tag &&
-							(active.metadata.tag as string[]).map((tag) => {
+						{active.metadata?.tag &&
+							(active.metadata?.tag as string[]).map((tag) => {
 								if (tag === "") return null;
 								return (
 									<Badge
