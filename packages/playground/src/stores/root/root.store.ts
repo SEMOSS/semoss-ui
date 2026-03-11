@@ -56,6 +56,7 @@ export class RootStore {
 				logo: "",
 				login: "",
 				landing: "",
+				tabIcon: "",
 				workspace: "",
 			},
 			overrides: {
@@ -77,6 +78,7 @@ export class RootStore {
 			},
 			allowedFileTypes: [],
 			defaultTools: [],
+			showPlatformLinks: true,
 		},
 	};
 
@@ -233,6 +235,10 @@ export class RootStore {
 					].map((tool) => [tool.id, tool]),
 				).values(),
 			],
+			showPlatformLinks:
+				theme?.showPlatformLinks !== undefined
+					? theme.showPlatformLinks
+					: this._store.theme.showPlatformLinks,
 		};
 
 		// apply the theme to document root
