@@ -11,7 +11,7 @@ import {
 	TextField,
 } from "@semoss/ui";
 import { Badge } from "@semoss/ui/next";
-import { usePage } from "@/hooks";
+import { usePage, useRootStore } from "@/hooks";
 import { NotificationDrawer } from "../notifications/notification-drawer";
 import { PlatformSearch } from "./platform-search";
 
@@ -59,6 +59,7 @@ export const Navbar: React.FC = observer(() => {
 	const { page } = usePage();
 	const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
 	const [hasUnread, setHasUnread] = useState<number>(0);
+	const { configStore } = useRootStore();
 
 	useEffect(() => {
 		async function poll() {
@@ -132,22 +133,26 @@ export const Navbar: React.FC = observer(() => {
 				spacing={1}
 				flex={"1 1 0"}
 			>
-				<IconButton onClick={handleBellClick} color="secondary">
-					<NotificationIcon />
-					{typeof hasUnread === "number" && hasUnread > 0 && (
-						<Badge
-							variant="destructive"
-							className="-right-[0.5px] -top-[0.5px] absolute flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px]"
-						>
-							{hasUnread > 9 ? "9+" : hasUnread}
-						</Badge>
-					)}
-				</IconButton>
-				<NotificationDrawer
-					open={drawerOpen}
-					onClose={() => setDrawerOpen(false)}
-					data-testid="notification-drawer"
-				/>
+				{configStore?.config?.notificationEnabled && (
+					<>
+						<IconButton onClick={handleBellClick} color="secondary">
+							<NotificationIcon />
+							{typeof hasUnread === "number" && hasUnread > 0 && (
+								<Badge
+									variant="destructive"
+									className="-right-[0.5px] -top-[0.5px] absolute flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px]"
+								>
+									{hasUnread > 9 ? "9+" : hasUnread}
+								</Badge>
+							)}
+						</IconButton>
+						<NotificationDrawer
+							open={drawerOpen}
+							onClose={() => setDrawerOpen(false)}
+							data-testid="notification-drawer"
+						/>
+					</>
+				)}
 			</Stack>
 		</StyledNavbar>
 	);

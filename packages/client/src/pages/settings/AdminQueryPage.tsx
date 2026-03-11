@@ -154,6 +154,7 @@ interface TypeDbQuery {
 
 export const AdminQueryPage = () => {
 	const { monolithStore } = useRootStore();
+	const { configStore } = useRootStore();
 	const { adminMode } = useSettings();
 	const notification = useNotification();
 	const [output, setOutput] = useState<{
@@ -206,6 +207,10 @@ export const AdminQueryPage = () => {
 
 	if (!adminMode) {
 		return <Navigate to={"/settings"} />;
+	}
+
+	if (configStore.config.notificationEnabled) {
+		DATABASE_OPTIONS.push({ label: "Notification", value: "Notification" });
 	}
 
 	/**
