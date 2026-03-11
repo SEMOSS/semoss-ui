@@ -27,17 +27,18 @@
         "myPrompts": "My Prompts"
     },
     "details": {
-        "title": "Details",
+        "details": "Details",
         "context": "Context",
         "created": "Created:",
         "createdBy": "Created by:",
         "description": "Description",
+        "prompt": "Prompt",
         "name": "Name",
         "version": "Version:",
         "scope": "Scope:",
         "promptContext": "Prompt Context",
-        "intent": "Intent",
-        "tags": "Tags"
+        "tags": "Tags",
+        "title": "Title"
     },
     "error": {
         "error": "Error",

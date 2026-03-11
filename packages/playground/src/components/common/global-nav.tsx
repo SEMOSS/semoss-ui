@@ -611,7 +611,7 @@ export const GlobalNav = observer(() => {
 			<SidebarFooter>
 				<Separator className="group-data-[collapsible=icon]:hidden" />
 				<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
-					{root.theme.sidebar.footerItems.map((item) => (
+					{root.theme.sidebar.footerItems.map((item, index) => (
 						<GlobalNavItem
 							key={`footer-${index}`}
 							name={item.name}

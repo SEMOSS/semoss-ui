@@ -97,7 +97,7 @@ export const EditPromptModal = ({
 								className="font-medium text-sm"
 								htmlFor={nameId}
 							>
-								{t("promptLibrary:details.name")}
+								{t("promptLibrary:details.title")}
 							</label>
 							<input
 								id={nameId}
@@ -112,7 +112,7 @@ export const EditPromptModal = ({
 								className="mt-4 font-medium text-sm"
 								htmlFor={contentId}
 							>
-								{t("promptLibrary:details.description")}
+								{t("promptLibrary:details.prompt")}
 							</label>
 							<textarea
 								id={contentId}
