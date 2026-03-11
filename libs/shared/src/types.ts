@@ -150,10 +150,16 @@ export interface ThemeMap {
 		/**
 		 * Graceful error messages to show in the UI
 		 */
-		gracefulErrors: {
-			pattern: string;
-			errorKey: string;
-		}[];
+		gracefulErrors: (
+			| {
+					pattern: string;
+					errorKey: string;
+			  }
+			| {
+					pattern: string;
+					text: string;
+			  }
+		)[];
 	};
 }
 

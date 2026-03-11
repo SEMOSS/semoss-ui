@@ -48,7 +48,11 @@ export const useGracefulErrors = (
 			if (!errorMessage) return t("gracefulErrors.errorDefault");
 			for (const gracefulError of gracefulErrors) {
 				if (errorMessage.includes(gracefulError.pattern)) {
-					return t(`gracefulErrors.${gracefulError.errorKey}`);
+					if ("text" in gracefulError) {
+						return gracefulError.text;
+					} else {
+						return t(`gracefulErrors.${gracefulError.errorKey}`);
+					}
 				}
 			}
 			return errorMessage;
