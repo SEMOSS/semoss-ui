@@ -366,7 +366,7 @@ export const GlobalNav = observer(() => {
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					)}
-					{/* {root.theme.sidebar.headerItems.map((item) => (
+					{root.theme.sidebar.headerItems.map((item) => (
 						<GlobalNavItem
 							key={item.path}
 							name={item.name}
@@ -375,7 +375,7 @@ export const GlobalNav = observer(() => {
 							url={item.url}
 							embed={item.embed}
 						/>
-					))} */}
+					))}
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent
