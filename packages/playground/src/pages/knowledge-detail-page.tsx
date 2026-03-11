@@ -507,13 +507,15 @@ export const KnowledgeDetailPage = observer(() => {
 							</Button>
 						)}
 
-						<Button
-							variant="default"
-							onClick={() => setIsEmbedExistingOpen(true)}
-						>
-							<FolderPlusIcon />
-							{t("knowledge:detail.embedDocuments")}
-						</Button>
+						{canEdit && (
+							<Button
+								variant="default"
+								onClick={() => setIsEmbedExistingOpen(true)}
+							>
+								<FolderPlusIcon />
+								{t("knowledge:detail.embedDocuments")}
+							</Button>
+						)}
 					</div>
 				</div>
 
@@ -713,90 +715,92 @@ export const KnowledgeDetailPage = observer(() => {
 										<table className="w-full table-fixed text-sm">
 											<thead>
 												<tr className="border-b text-muted-foreground text-xs">
-													<th className="w-10 px-2 pb-2 text-center align-middle">
-														{selectedDocs.size >
-														0 ? (
-															<Tooltip>
-																<TooltipTrigger
-																	asChild
-																>
-																	<button
-																		type="button"
-																		className="flex h-6 w-6 cursor-pointer items-center justify-center rounded text-destructive hover:bg-destructive/10"
-																		onClick={async () => {
-																			const fileNames =
-																				Array.from(
-																					selectedDocs,
-																				);
-																			const fileNamesStr =
-																				fileNames
-																					.map(
-																						(
-																							f,
-																						) =>
-																							`"/schema/default/documents/${f}"`,
-																					)
-																					.join(
-																						", ",
+													{canEdit && (
+														<th className="w-10 px-2 pb-2 text-center align-middle">
+															{selectedDocs.size >
+															0 ? (
+																<Tooltip>
+																	<TooltipTrigger
+																		asChild
+																	>
+																		<button
+																			type="button"
+																			className="flex h-6 w-6 cursor-pointer items-center justify-center rounded text-destructive hover:bg-destructive/10"
+																			onClick={async () => {
+																				const fileNames =
+																					Array.from(
+																						selectedDocs,
 																					);
+																				const fileNamesStr =
+																					fileNames
+																						.map(
+																							(
+																								f,
+																							) =>
+																								`"/schema/default/documents/${f}"`,
+																						)
+																						.join(
+																							", ",
+																						);
 
-																			await insight.actions.run<
-																				[
-																					string,
-																				]
-																			>(
-																				`RemoveDocumentFromVectorDatabase(engine=["${knowledgeId}"], fileNames=[${fileNamesStr}]);`,
+																				await insight.actions.run<
+																					[
+																						string,
+																					]
+																				>(
+																					`RemoveDocumentFromVectorDatabase(engine=["${knowledgeId}"], fileNames=[${fileNamesStr}]);`,
+																				);
+																				setSelectedDocs(
+																					new Set(),
+																				);
+																				getDocuments.refresh();
+																			}}
+																		>
+																			<Trash2 className="h-4 w-4" />
+																		</button>
+																	</TooltipTrigger>
+																	<TooltipContent>
+																		Delete{" "}
+																		{
+																			selectedDocs.size
+																		}{" "}
+																		selected
+																	</TooltipContent>
+																</Tooltip>
+															) : (
+																<Checkbox
+																	checked={
+																		selectedDocs.size ===
+																			sortedDocuments.length &&
+																		sortedDocuments.length >
+																			0
+																	}
+																	onCheckedChange={(
+																		checked: boolean,
+																	) => {
+																		if (
+																			checked
+																		) {
+																			setSelectedDocs(
+																				new Set(
+																					sortedDocuments.map(
+																						(
+																							d,
+																						) =>
+																							d.fileName,
+																					),
+																				),
 																			);
+																		} else {
 																			setSelectedDocs(
 																				new Set(),
 																			);
-																			getDocuments.refresh();
-																		}}
-																	>
-																		<Trash2 className="h-4 w-4" />
-																	</button>
-																</TooltipTrigger>
-																<TooltipContent>
-																	Delete{" "}
-																	{
-																		selectedDocs.size
-																	}{" "}
-																	selected
-																</TooltipContent>
-															</Tooltip>
-														) : (
-															<Checkbox
-																checked={
-																	selectedDocs.size ===
-																		sortedDocuments.length &&
-																	sortedDocuments.length >
-																		0
-																}
-																onCheckedChange={(
-																	checked: boolean,
-																) => {
-																	if (
-																		checked
-																	) {
-																		setSelectedDocs(
-																			new Set(
-																				sortedDocuments.map(
-																					(
-																						d,
-																					) =>
-																						d.fileName,
-																				),
-																			),
-																		);
-																	} else {
-																		setSelectedDocs(
-																			new Set(),
-																		);
-																	}
-																}}
-															/>
-														)}
-													</th>
+																		}
+																	}}
+																/>
+															)}
+														</th>
+													)}
 
 													<th className="px-6 pb-2 text-left font-medium">
 														<button
@@ -880,39 +884,41 @@ export const KnowledgeDetailPage = observer(() => {
 														key={`${d.fileName}-${d.lastModified}`}
 														className="border-b transition last:border-0 hover:bg-muted/40"
 													>
-														<td className="px-2 py-2 text-center align-middle">
-															<Checkbox
-																checked={selectedDocs.has(
-																	d.fileName,
-																)}
-																onCheckedChange={(
-																	checked: boolean,
-																) => {
-																	setSelectedDocs(
-																		(
-																			prev,
-																		) => {
-																			const next =
-																				new Set(
-																					prev,
-																				);
-																			if (
-																				checked
-																			) {
-																				next.add(
-																					d.fileName,
-																				);
-																			} else {
-																				next.delete(
-																					d.fileName,
-																				);
-																			}
-																			return next;
-																		},
-																	);
-																}}
-															/>
-														</td>
+														{canEdit && (
+															<td className="px-2 py-2 text-center align-middle">
+																<Checkbox
+																	checked={selectedDocs.has(
+																		d.fileName,
+																	)}
+																	onCheckedChange={(
+																		checked: boolean,
+																	) => {
+																		setSelectedDocs(
+																			(
+																				prev,
+																			) => {
+																				const next =
+																					new Set(
+																						prev,
+																					);
+																				if (
+																					checked
+																				) {
+																					next.add(
+																						d.fileName,
+																					);
+																				} else {
+																					next.delete(
+																						d.fileName,
+																					);
+																				}
+																				return next;
+																			},
+																		);
+																	}}
+																/>
+															</td>
+														)}
 
 														<td className="whitespace-nowrap px-6 py-2">
 															<div className="flex min-w-0 items-center gap-2">
