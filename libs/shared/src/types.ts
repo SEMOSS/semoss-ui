@@ -35,6 +35,7 @@ export interface ThemeMap {
 			logo: string;
 			login: string;
 			landing: string;
+			tabIcon: string;
 			workspace: string;
 		};
 
@@ -139,6 +140,12 @@ export interface ThemeMap {
 			/** Name of the mcp */
 			name: string;
 		}[];
+
+		/**
+		 * When false, hides external links that navigate users to the SEMOSS platform.
+		 * Defaults to true (links shown).
+		 */
+		showPlatformLinks?: boolean;
 
 		/**
 		 * Graceful error messages to show in the UI

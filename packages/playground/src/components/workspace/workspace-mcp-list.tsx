@@ -20,6 +20,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { mcpToPlatformUrl } from "@/components";
+import { useRoot } from "@/hooks";
 import { toSentenceCase } from "@/utility";
 
 export interface WorkspaceMCPListProps {
@@ -72,6 +73,7 @@ export const WorkspaceMCPList = ({
 	search,
 }: WorkspaceMCPListProps) => {
 	const { t } = useTranslation("workspace");
+	const { root } = useRoot();
 	const { actions } = useInsight();
 
 	const getDependencies = usePixel<{
@@ -225,7 +227,8 @@ export const WorkspaceMCPList = ({
 											{effectivePermission ===
 											"FULLY_PRIVATE" ? (
 												<AlertCircle className="size-4 shrink-0 cursor-help text-destructive" />
-											) : (
+											) : root.theme.showPlatformLinks !==
+												false ? (
 												<Button
 													variant="ghost"
 													size="icon"
@@ -248,6 +251,13 @@ export const WorkspaceMCPList = ({
 														<SquareArrowOutUpRightIcon className="size-4" />
 													</a>
 												</Button>
+											) : missingSubDependencies ||
+												accessMissing ? (
+												<TriangleAlert
+													className={`size-4 cursor-help ${accessMissing ? "text-destructive" : "text-amber-500"}`}
+												/>
+											) : (
+												<span />
 											)}
 										</TooltipTrigger>
 										<TooltipContent>
