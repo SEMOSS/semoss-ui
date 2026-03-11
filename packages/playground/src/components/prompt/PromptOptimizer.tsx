@@ -64,13 +64,6 @@ export const PromptOptimizer: React.FC<PromptOptimizerProps> = observer(
 
 			//Build the context if it is there
 			let context = room?.options?.instructions || "";
-			console.log('=== DEBUG CONTEXT ===');
-			console.log('room exists:', !!room);
-			console.log('room.options exists:', !!room?.options);
-			console.log('instructions value:', room?.options?.instructions);
-			console.log('final context:', context);
-			console.log('context is empty:', context === "");
-			console.log('===================');
 
 				let optimizationPrompt = `Please optimize the following prompt to be more clear, specific, and effective while maintaining its original intent:
 				"${input}"
