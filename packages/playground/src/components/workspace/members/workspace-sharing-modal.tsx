@@ -90,58 +90,42 @@ export const WorkspaceSharingModal = ({
 	/**
 	 * Functions
 	 */
-	useEffect(() => {
-		let cancelled = false;
+	const fetchUsers = useCallback(async () => {
+		setIsLoadingDropdownUsers(true);
+		try {
+			const [usersIn, usersOut] = await Promise.all([
+				getProjectUsers(
+					workspaceId,
+					false,
+					debouncedSearch,
+					undefined,
+					5,
+					0,
+				),
+				getProjectUsersNoCredentials(
+					workspaceId,
+					false,
+					debouncedSearch,
+					5,
+					0,
+				),
+			]);
 
-		const fetchUsers = async () => {
-			setIsLoadingDropdownUsers(true);
-			try {
-				const [usersIn, usersOut] = await Promise.all([
-					getProjectUsers(
-						workspaceId,
-						false,
-						debouncedSearch,
-						undefined,
-						5,
-						0,
-					),
-					getProjectUsersNoCredentials(
-						workspaceId,
-						false,
-						debouncedSearch,
-						5,
-						0,
-					),
-				]);
-
-				if (!cancelled) {
-					setUsersInDropdown([
-						...usersOut,
-						...usersIn.members.map((member) => ({
-							...member,
-							inAgent: true,
-						})),
-					]);
-				}
-			} catch (error) {
-				if (!cancelled) {
-					toast.error(
-						t("workspace:messages.fetchUsersFailed") +
-							`: ${error instanceof Error ? error.message : "Unknown error"}`,
-					);
-				}
-			} finally {
-				if (!cancelled) {
-					setIsLoadingDropdownUsers(false);
-				}
-			}
-		};
-
-		fetchUsers();
-
-		return () => {
-			cancelled = true;
-		};
+			setUsersInDropdown([
+				...usersOut,
+				...usersIn.members.map((member) => ({
+					...member,
+					inAgent: true,
+				})),
+			]);
+		} catch (error) {
+			toast.error(
+				t("workspace:messages.fetchUsersFailed") +
+					`: ${error instanceof Error ? error.message : "Unknown error"}`,
+			);
+		} finally {
+			setIsLoadingDropdownUsers(false);
+		}
 	}, [debouncedSearch, workspaceId]);
 
 	/**
@@ -311,6 +295,16 @@ export const WorkspaceSharingModal = ({
 		handleClose(true);
 	};
 
+	/**
+	 * Effects
+	 */
+	useEffect(() => {
+		fetchUsers();
+	}, [fetchUsers]);
+
+	/**
+	 * Constants
+	 */
 	const showLoading = isLoadingDropdownUsers || search !== debouncedSearch;
 
 	return (
