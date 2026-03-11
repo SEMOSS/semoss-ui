@@ -20,6 +20,7 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
+import { useRoot } from "@/hooks";
 import type { App, Workspace } from "@/types";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
@@ -46,6 +47,7 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const { t } = useTranslation("room");
+	const { root } = useRoot();
 	const [search, setSearch] = React.useState("");
 
 	const debouncedSearch = useDebouncedValue(search);
@@ -136,31 +138,34 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 										<div className="w-full flex-1 truncate">
 											{w.project_name}
 										</div>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<div className="flex flex-row items-center justify-center">
-													<Button
-														className="size-4"
-														variant="link"
-														size="icon-sm"
-														onClick={(e) => {
-															e.stopPropagation();
-														}}
-														asChild
-													>
-														<a
-															target="_blank"
-															href={`${PLATFORM_URL}/#/app/${w.project_id}`}
+										{root.theme.showPlatformLinks !==
+											false && (
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<div className="flex flex-row items-center justify-center">
+														<Button
+															className="size-4"
+															variant="link"
+															size="icon-sm"
+															onClick={(e) => {
+																e.stopPropagation();
+															}}
+															asChild
 														>
-															<ExternalLinkIcon />
-														</a>
-													</Button>
-												</div>
-											</TooltipTrigger>
-											<TooltipContent>
-												Click to view agent details
-											</TooltipContent>
-										</Tooltip>
+															<a
+																target="_blank"
+																href={`${PLATFORM_URL}/#/app/${w.project_id}`}
+															>
+																<ExternalLinkIcon />
+															</a>
+														</Button>
+													</div>
+												</TooltipTrigger>
+												<TooltipContent>
+													Click to view agent details
+												</TooltipContent>
+											</Tooltip>
+										)}
 										<CheckIcon
 											className={`ml-auto ${workspace?.workspace_id === w.project_id ? "opacity-100" : "opacity-0"}`}
 										/>

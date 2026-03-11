@@ -1,7 +1,7 @@
 import type { OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
 import { Suspense, useRef, useState } from "react";
-import { download, useInsight, usePixel } from "@semoss/sdk/react";
+import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
 import {
 	MONACO_CONFIG,
@@ -32,6 +32,10 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 }) => {
 	const insight = useInsight();
 	const [isLoading, setIsLoading] = useState(false);
+	const targetInsightId =
+		mode.type === "INSIGHT"
+			? mode.insightId || insight.insightId
+			: insight.insightId;
 
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 	const wordWrapRef = useRef<boolean>(false);
@@ -41,11 +45,11 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		getFilePixel = `GetAppAssets(filePath=["${path}"], project=["${mode.app}"]);`;
 	} else if (mode.type === "ENGINE") {
 		getFilePixel = `GetEngineAssets(filePath=["${path}"], engine=["${mode.engine}"]);`;
-	} else if (mode.type === "INSIGHT") {
+	} else if (mode.type === "INSIGHT" && targetInsightId) {
 		getFilePixel = `GetInsightAssets(filePath=["${path}"]);`;
 	}
 
-	const getFile = usePixel<string>(getFilePixel, {}, insight.insightId);
+	const getFile = usePixel<string>(getFilePixel, {}, targetInsightId);
 
 	// get the language
 	const ext = path.split(".").pop()?.toLowerCase() || "";
@@ -230,7 +234,11 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 			}
 
 			// save it
-			await insight.actions.run(pixel);
+			if (mode.type === "INSIGHT" && targetInsightId) {
+				await runPixel(pixel, targetInsightId);
+			} else {
+				await insight.actions.run(pixel);
+			}
 
 			// Do not refresh the content as it can cause the cursor to jump, instead just trigger onChange with the new content and reset the modified state
 
@@ -268,13 +276,23 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 			}
 
 			// save it
-			const { pixelReturn } = await insight.actions.run<[string]>(pixel);
+			let pixelReturn: { output: string }[] = [];
+			if (mode.type === "INSIGHT" && targetInsightId) {
+				const response = await runPixel<[string]>(
+					pixel,
+					targetInsightId,
+				);
+				pixelReturn = response.pixelReturn;
+			} else {
+				const response = await insight.actions.run<[string]>(pixel);
+				pixelReturn = response.pixelReturn;
+			}
 
 			// get the file key
 			const fileKey = pixelReturn[0].output;
 
 			// download the file
-			await download(insight.insightId, fileKey);
+			await download(targetInsightId, fileKey);
 		} catch (e) {
 			toast.error("Error downloading file");
 

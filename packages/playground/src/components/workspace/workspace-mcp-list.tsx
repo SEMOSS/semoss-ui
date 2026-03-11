@@ -2,6 +2,7 @@ import {
 	AlertCircle,
 	ImageIcon,
 	SquareArrowOutUpRightIcon,
+	TriangleAlert,
 } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -19,6 +20,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { mcpToPlatformUrl } from "@/components";
+import { useRoot } from "@/hooks";
 import { toSentenceCase } from "@/utility";
 
 export interface WorkspaceMCPListProps {
@@ -48,12 +50,16 @@ interface ProjectDependency {
 		| "VECTOR";
 	engine_id: string;
 	engine_name: string;
+	engine_subtype?: string;
 	description?: string;
 	engine_discoverable?: boolean;
 	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
 	engine_global?: boolean;
-	access_permission?: number;
-	tags: string; // comma separated tags
+	access_permission?: number; // The permission level the user has requested, if any
+	tags?: string; // comma separated tags
+	can_view_dependencies?: boolean;
+	engine_date_created?: string;
+	dependencies?: string[]; // Array of dependency engine IDs
 }
 
 /**
@@ -67,9 +73,13 @@ export const WorkspaceMCPList = ({
 	search,
 }: WorkspaceMCPListProps) => {
 	const { t } = useTranslation("workspace");
+	const { root } = useRoot();
 	const { actions } = useInsight();
 
-	const getDependencies = usePixel<ProjectDependency[]>(
+	const getDependencies = usePixel<{
+		engines: ProjectDependency[];
+		dependencies: string[]; // Top-level dependency IDs
+	}>(
 		workspaceId
 			? `GetProjectDependencies(project=["${workspaceId}"]);`
 			: "",
@@ -85,12 +95,17 @@ export const WorkspaceMCPList = ({
 	);
 
 	const searchedMCP = useMemo(() => {
-		const dataWithType =
-			getDependencies.data?.filter((m) =>
-				type === "TOOLBOX"
-					? m.engine_type !== "VECTOR"
-					: m.engine_type === "VECTOR",
-			) || [];
+		// Filter engines to get only top-level dependencies
+		const topLevelIds = getDependencies.data?.dependencies || [];
+		const allEngines = getDependencies.data?.engines || [];
+		const topLevelDeps = allEngines.filter((engine) =>
+			topLevelIds.includes(engine.engine_id),
+		);
+		const dataWithType = topLevelDeps.filter((m) =>
+			type === "TOOLBOX"
+				? m.engine_type !== "VECTOR"
+				: m.engine_type === "VECTOR",
+		);
 		if (!search) {
 			return dataWithType;
 		}
@@ -185,10 +200,13 @@ export const WorkspaceMCPList = ({
 				{searchedMCP.map((m) => {
 					const { effectivePermission, label } =
 						getEffectivePermission(m);
+
 					const accessMissing =
 						effectivePermission === "REQUESTED" ||
 						effectivePermission === "DISCOVERABLE" ||
 						effectivePermission === "FULLY_PRIVATE";
+					const missingSubDependencies =
+						m.can_view_dependencies === false;
 					return (
 						<Card
 							key={m.engine_id}
@@ -205,32 +223,37 @@ export const WorkspaceMCPList = ({
 										{m.engine_name}
 									</div>
 									<Tooltip>
-										<TooltipTrigger asChild>
-											{effectivePermission ===
-											"FULLY_PRIVATE" ? (
-												<AlertCircle className="size-4 shrink-0 cursor-help text-destructive" />
-											) : (
-												<Button
-													variant="ghost"
-													size="icon"
-													className={`-m-2 shrink-0 ${
-														accessMissing
-															? "text-destructive"
-															: ""
-													}`}
-													asChild
-												>
-													<a
-														target="_blank"
-														href={mcpToPlatformUrl(
-															m,
-														)}
-													>
-														<SquareArrowOutUpRightIcon className="size-4" />
-													</a>
-												</Button>
-											)}
-										</TooltipTrigger>
+										    <TooltipTrigger asChild>
+                        {effectivePermission === "FULLY_PRIVATE" ? (
+                            <AlertCircle className="size-4 shrink-0 cursor-help text-destructive" />
+                        ) : root.theme.showPlatformLinks !== false ? (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`-m-2 shrink-0 ${accessMissing || missingSubDependencies ? "w-auto px-2" : ""}`}
+                                asChild
+                            >
+                                <a
+                                    target="_blank"
+                                    href={mcpToPlatformUrl(m)}
+                                    className="flex items-center gap-1"
+                                >
+                                    {(missingSubDependencies || accessMissing) && (
+                                        <TriangleAlert
+                                            className={`size-4 ${accessMissing ? "text-destructive" : "text-amber-500"}`}
+                                        />
+                                    )}
+                                    <SquareArrowOutUpRightIcon className="size-4" />
+                                </a>
+                            </Button>
+                        ) : (missingSubDependencies || accessMissing) ? (
+                            <TriangleAlert
+                                className={`size-4 cursor-help ${accessMissing ? "text-destructive" : "text-amber-500"}`}
+                            />
+                        ) : (
+                            <span />
+                        )}
+                    </TooltipTrigger>
 										<TooltipContent>
 											{accessMissing
 												? t("mcp.tooltipNoAccess", {
@@ -239,12 +262,24 @@ export const WorkspaceMCPList = ({
 																? "toolbox"
 																: "knowledge base",
 													})
-												: t("mcp.tooltipOpen", {
-														type:
-															type === "TOOLBOX"
-																? "toolbox"
-																: "knowledge base",
-													})}
+												: missingSubDependencies
+													? t(
+															"mcp.tooltipMissingDependencies",
+															{
+																type:
+																	type ===
+																	"TOOLBOX"
+																		? "toolbox"
+																		: "knowledge base",
+															},
+														)
+													: t("mcp.tooltipOpen", {
+															type:
+																type ===
+																"TOOLBOX"
+																	? "toolbox"
+																	: "knowledge base",
+														})}
 										</TooltipContent>
 									</Tooltip>
 								</div>
