@@ -35,6 +35,7 @@ export interface ThemeMap {
 			logo: string;
 			login: string;
 			landing: string;
+			tabIcon: string;
 			workspace: string;
 		};
 
