@@ -36,7 +36,7 @@ import {
 	denyEngineUserAccessRequest,
 } from "@/api";
 import { usePixel, useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
+import type { ALL_TYPES, ApiResponse } from "@/types";
 import type { SETTINGS_PENDING_USER, SETTINGS_ROLE } from "./settings.types";
 
 // maps for permissions,

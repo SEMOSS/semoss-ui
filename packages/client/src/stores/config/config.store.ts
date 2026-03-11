@@ -370,11 +370,11 @@ export class ConfigStore {
 			return;
 		}
 
+		// Set CSRF flag to true
+		Env.update({ CSRF: this.store.config.csrf });
+		
 		// get the user information
 		await this.getUser();
-
-		// Set CSRF flag to true before setGeneralReactors()
-		Env.update({ CSRF: this.store.config.csrf });
 
 		//set the reactors
 		await this.setGeneralReactors();
