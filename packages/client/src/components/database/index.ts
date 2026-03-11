@@ -1,4 +1,3 @@
-export * from "../engine/edit-engine-details";
 export * from "./ColumnDataTypeIcon";
 export * from "./database-statistics";
 export * from "./database-structure-browser";

@@ -1,4 +1,5 @@
 import { Ellipsis, FileIcon, FolderIcon, FolderOpenIcon } from "lucide-react";
+import { useMemo } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -15,6 +16,71 @@ import {
 } from "@semoss/ui/next";
 import type { FileItem, FileMode } from "./file.types";
 import { FileExplorerMenuItem } from "./file-explorer-menu-item";
+
+interface StoragePathEntry {
+	Name?: string;
+	name?: string;
+	Path?: string;
+	path?: string;
+	IsDir?: boolean;
+	isDir?: boolean;
+	ModTime?: string;
+	lastModified?: string;
+	last_modified?: string;
+}
+
+const mapStorageEntriesToFileItems = (entries: unknown): FileItem[] => {
+	if (!Array.isArray(entries)) {
+		return [];
+	}
+
+	return entries.reduce<FileItem[]>((acc, entry) => {
+		if (typeof entry === "string") {
+			if (!entry) {
+				return acc;
+			}
+
+			const normalizedEntry = entry.replace(/\/+$/, "");
+			const name =
+				normalizedEntry.split("/").filter(Boolean).pop() ||
+				normalizedEntry;
+			const isDirectory = entry.endsWith("/");
+
+			acc.push({
+				name: name,
+				path: entry,
+				type: isDirectory ? "directory" : undefined,
+			});
+
+			return acc;
+		}
+
+		if (!entry || typeof entry !== "object") {
+			return acc;
+		}
+
+		const details = entry as StoragePathEntry;
+		const name = details.Name || details.name || "";
+		const path = details.Path || details.path || "";
+		if (!path) {
+			return acc;
+		}
+		const fallbackName = path.split("/").filter(Boolean).pop() || "/";
+		const isDirectory = details.IsDir || details.isDir;
+
+		acc.push({
+			name: name || fallbackName,
+			path: path,
+			type: isDirectory ? "directory" : undefined,
+			lastModified:
+				details.ModTime ||
+				details.lastModified ||
+				details.last_modified,
+		});
+
+		return acc;
+	}, []);
+};
 
 interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
 	/** Mode of file editor */
@@ -70,16 +136,28 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			getChildrenPixel = `BrowseAppAssets(filePath=["${item.path}"], project=["${mode.app}"]);`;
 		} else if (mode.type === "ENGINE") {
 			getChildrenPixel = `BrowseEngineAssets(filePath=["${item.path}"], engine=["${mode.engine}"]);`;
+		} else if (mode.type === "STORAGE") {
+			getChildrenPixel = `ListStoragePathDetails(storage=["${mode.storage}"], storagePath=["${item.path}"]);`;
 		} else if (mode.type === "INSIGHT") {
 			getChildrenPixel = `BrowseInsightAssets(filePath=["${item.path}"]);`;
 		}
 	}
 
-	const getChildren = usePixel<FileItem[]>(
+	const getChildren = usePixel<unknown[]>(
 		getChildrenPixel,
-		{},
+		{
+			data: [],
+		},
 		insight.insightId,
 	);
+
+	const children = useMemo(() => {
+		if (mode.type === "STORAGE") {
+			return mapStorageEntriesToFileItems(getChildren.data);
+		}
+
+		return getChildren.data as FileItem[];
+	}, [mode.type, getChildren.data]);
 
 	const renderIcon = () => {
 		if (isDirectory) {
@@ -99,34 +177,36 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			loading={getChildren.status === "LOADING"}
 			label={
 				<div
-					className="flex w-full flex-1 flex-row items-center gap-2"
+					className="group flex w-full flex-1 flex-row items-center gap-2"
 					title={`Path: ${item.path} Last Modified: ${item.lastModified}`}
 				>
 					{renderIcon()}
 					<span className="flex-1 truncate text-sm">{item.name}</span>
-					{actions.map((a) => {
-						if (!a) {
-							return null;
-						}
+					<div className="pointer-events-none flex flex-row items-center opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+						{actions.map((a) => {
+							if (!a) {
+								return null;
+							}
 
-						return (
-							<Tooltip key={a.name}>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										onClick={(e) => {
-											e.stopPropagation();
-											a.action(item);
-										}}
-									>
-										{a.icon}
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>{a.tooltip}</TooltipContent>
-							</Tooltip>
-						);
-					})}
+							return (
+								<Tooltip key={a.name}>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											onClick={(e) => {
+												e.stopPropagation();
+												a.action(item);
+											}}
+										>
+											{a.icon}
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>{a.tooltip}</TooltipContent>
+								</Tooltip>
+							);
+						})}
+					</div>
 					{secondaryActions.length > 0 && (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
@@ -165,7 +245,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			{isDirectory ? (
 				<>
 					{getChildren.status === "SUCCESS" &&
-						getChildren.data.map((child) => (
+						children.map((child) => (
 							<ItemComponent
 								key={child.path}
 								mode={mode}
@@ -176,7 +256,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 							/>
 						))}
 					{getChildren.status === "SUCCESS" &&
-						getChildren.data.length === 0 && (
+						children.length === 0 && (
 							<Muted className="flex items-center justify-center py-2 text-xs">
 								Empty folder
 							</Muted>

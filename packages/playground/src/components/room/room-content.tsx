@@ -172,7 +172,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				room.processTool(
 					tool.message,
 					tool.id,
-					tool.name,
 					tool.response,
 					tool.tool_status,
 					tool.executedParameters,
@@ -285,7 +284,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 								return (
 									<React.Fragment key={m.key}>
-										{m.parent.modelId !== m.modelId && (
+										{(m.parent.modelId !== m.modelId ||
+											m.parent.parent === null) && (
 											<div className="relative flex flex-col items-center justify-center">
 												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
 													{m.ornaments.modelName}
@@ -333,7 +333,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							</div>
 						) : null}
 					</div>
-					{/* <ScrollBar orientation="horizontal"></ScrollBar> */}
 				</ScrollArea>
 
 				{showScrollup && (

@@ -1,5 +1,5 @@
 import { SearchIcon } from "lucide-react";
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import {
 	Badge,
 	Button,
@@ -48,6 +48,36 @@ export const PlatformSearch = ({ className }: PromptSearchProps) => {
 	const renderedCategories = CATEGORIES.filter(
 		(c) => isAll || selectedCategories[c.type],
 	);
+
+	// Add keyboard shortcut: Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// Check for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+			if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+				// Don't trigger if user is typing in an input/textarea
+				const target = e.target as HTMLElement;
+				if (
+					target.tagName === "INPUT" ||
+					target.tagName === "TEXTAREA" ||
+					target.isContentEditable
+				) {
+					return;
+				}
+
+				// Prevent default browser behavior
+				e.preventDefault();
+
+				// Toggle the search dialog
+				setOpen((prev) => !prev);
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, []);
 
 	return (
 		<>
