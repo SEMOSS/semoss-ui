@@ -122,6 +122,11 @@ export interface ThemeMap {
 		allowEmbeddingOptions?: boolean;
 
 		/**
+		 * Whether to show the max token and temperature in the settings.
+		 */
+		enableModelSettings?: boolean;
+
+		/**
 		 * Default tools to show in the room
 		 */
 		defaultTools: {

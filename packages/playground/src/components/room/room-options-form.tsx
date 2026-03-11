@@ -23,6 +23,7 @@ import {
 import { MCPOverlay } from "@/components";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
+import { useRoot } from "@/hooks";
 
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 
@@ -48,6 +49,8 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		onOptionsChange = () => null,
 	}) => {
 		const { t } = useTranslation(["room", "common"]);
+		const { root } = useRoot();
+		const showModelSettings = root.theme?.enableModelSettings;
 
 		/**
 		 * State
@@ -392,6 +395,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 						</FieldGroup>
 					</FieldSet>
 					<FieldSeparator />
+					{showModelSettings && 
 					<FieldSet>
 						<FieldGroup>
 							<Field>
@@ -433,7 +437,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 								/>
 							</Field>
 						</FieldGroup>
-					</FieldSet>
+					</FieldSet>}
 				</FieldGroup>
 			</form>
 		);

@@ -227,6 +227,10 @@ export class RootStore {
 				theme?.allowEmbeddingOptions !== undefined
 					? theme.allowEmbeddingOptions
 					: this._store.theme.allowEmbeddingOptions,
+			enableModelSettings:
+				theme?.enableModelSettings !== undefined
+					? theme.enableModelSettings
+					: this._store.theme.enableModelSettings,
 			defaultTools: [
 				...new Map(
 					[
