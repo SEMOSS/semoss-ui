@@ -56,6 +56,7 @@ export class RootStore {
 				logo: "",
 				login: "",
 				landing: "",
+				tabIcon: "",
 				workspace: "",
 			},
 			overrides: {
