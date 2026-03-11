@@ -5,17 +5,28 @@ import { LoginForm } from "@semoss/shared";
 import loginImage from "@/assets/img/login.svg";
 import { AppLogo } from "@/components";
 import { useRoot } from "@/hooks";
+import { useThemeTitle } from "@/hooks/use-theme-title";
+import { useEffect } from "react";
+import { setFavicon } from "@/utility";
 
 /**
  * LoginPage
  */
 export const LoginPage = observer(() => {
 	const { root } = useRoot();
+	const theme = root.theme;
 	const { isAuthorized } = useInsight();
 	const location = useLocation();
 
 	// get the path the user is coming from
 	const path = (location.state as { from: Location })?.from?.pathname || "/";
+
+	useThemeTitle(theme);
+
+	useEffect(() => {
+		const icon = theme?.images?.tabIcon;
+		if (icon) setFavicon(icon);
+	}, [theme?.images?.tabIcon]);
 
 	// navigate if already logged in
 	if (isAuthorized) {
