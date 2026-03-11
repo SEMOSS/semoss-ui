@@ -51,8 +51,7 @@
 	},
 	"content": {
 		"scrollToTop": "Ir al inicio",
-		"scrollToBottom": "Ir al final",
-		"errorDefault": "No se pudo procesar la solicitud. Verifica tu conexión, copia tu mensaje y actualiza la página."
+		"scrollToBottom": "Ir al final"
 	},
 	"inlineTool": {
 		"openInSidebar": "Abrir en barra lateral",
@@ -79,7 +78,7 @@
 	},
 	"menuWorkspace": {
 		"selectAgent": "Seleccionar agente",
-		"searchPlaceholder": "Buscar espacios de trabajo",
+		"searchPlaceholder": "Buscar agentes",
 		"notFound": "No encontrado"
 	},
 	"menuUpload": {
