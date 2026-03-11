@@ -1,7 +1,8 @@
 import { DeleteRounded, MoreVert } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Users } from "lucide-react";
-import React, { useState } from "react";
 import {
 	Card,
 	IconButton,
@@ -120,11 +121,14 @@ interface TeamCardProps {
 	/** databases to update */
 	teams;
 
+	/** Callback when this team is deleted */
+	onDelete?: () => void;
+
 	onClick?: (value: string) => void;
 }
 
 export const TeamTileCard = (props: TeamCardProps) => {
-	const { id, description, type, dispatch, teams, onClick } = props;
+	const { id, description, type, dispatch, teams, onDelete, onClick } = props;
 	const notification = useNotification();
 
 	const [hover, setHover] = React.useState(false);
@@ -153,6 +157,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 				field: "teams",
 				value: [...teams.filter((val) => val.id !== id)],
 			});
+			onDelete?.();
 			notification.add({
 				color: "success",
 				message: "Successfully deleted team",
