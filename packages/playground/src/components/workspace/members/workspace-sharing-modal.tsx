@@ -217,6 +217,10 @@ export const WorkspaceSharingModal = ({
 			setSearch("");
 			setSelectedPermission("READ_ONLY");
 			setStep("confirm-dependencies");
+			fetchUsers();
+
+			// Close modal with changes made
+			onClose(true);
 		} catch (error) {
 			toast.error(
 				t("workspace:messages.addMembersFailed") +

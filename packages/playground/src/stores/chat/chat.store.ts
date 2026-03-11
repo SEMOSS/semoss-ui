@@ -183,6 +183,9 @@ export class ChatStore {
 		// set the mode
 		room.setMode(mode);
 
+		// set default name
+		room.setMetadata({ name: prompt.substring(0, 15) });
+
 		// initialize the room
 		await room.initialize();
 
@@ -214,6 +217,9 @@ export class ChatStore {
 	 * @param roomId - Room to remove
 	 */
 	closeRoom = async (roomId: string): Promise<void> => {
+		const room = this._store.rooms[roomId];
+		const insightId = room?.insightId;
+
 		// wait for the pixel to run
 		await this._actions.run<[boolean]>(
 			`RemoveUserRoom(roomId=["${roomId}"]);`,
@@ -222,6 +228,18 @@ export class ChatStore {
 		// throw errors
 		if (this._error) {
 			throw new Error(this._error.message);
+		}
+
+		// only drop if the room was opened and has a real insightId
+		if (insightId && insightId !== "new") {
+			try {
+				await runPixel<[Record<string, unknown>]>(
+					"DropInsight()",
+					insightId,
+				);
+			} catch (e) {
+				console.warn(e);
+			}
 		}
 
 		runInAction(() => {

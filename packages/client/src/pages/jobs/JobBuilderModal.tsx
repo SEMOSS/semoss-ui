@@ -23,7 +23,7 @@ import { JobCustomFrequencyBuilder } from "./JobCustomFrequencyBuilder";
 import { JobStandardFrequencyBuilder } from "./JobStandardFrequencyBuilder";
 import { JobTypesBuilder } from "./JobTypesBuilder";
 import { JobTypeCustomJob, JobTypeSendEmail, timezones } from "./job.constants";
-import type { JobBuilder, Job } from "./job.types";
+import type { Job, JobBuilder } from "./job.types";
 import { getEncodeByJobType } from "./job.utils";
 
 const emptyBuilder: JobBuilder = {
@@ -87,7 +87,6 @@ export const JobBuilderModal = (props: {
 				(!isEditMode || job.id !== builder.id),
 		);
 	}, [builder.name, jobs, isEditMode, builder.id]);
-
 
 	useEffect(() => {
 		const builderToSet = initialBuilder ? initialBuilder : emptyBuilder;
