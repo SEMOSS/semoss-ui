@@ -16,7 +16,11 @@ import {
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
-import { ActionMessages, useBlocks } from "@semoss/renderer";
+import {
+	ActionMessages,
+	type SerializedState,
+	useBlocks,
+} from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk";
 import {
 	ButtonGroup,
@@ -37,7 +41,10 @@ import { useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from "@/utility";
+import { replaceInBlocks } from "@/utility/dependencyReplacer";
+import { getDependentBlocks } from "@/utility/dependencyScanner";
 import DuplicateIcon from "../../assets/img/Duplicate.svg";
+import { DependencyPromptModal } from "../blocks-workspace";
 import { AddVariableModal } from "./AddVariableModal";
 import { NotebookAddCell } from "./NotebookAddCell";
 import { NotebookCellConsole } from "./NotebookCellConsole";
@@ -294,6 +301,8 @@ export const NotebookCell = observer(
 		const [localCellPlayNumber, setLocalCellPlayNumber] = useState(null);
 
 		const [variableModal, setVariableModal] = useState(false);
+		const [dependentBlocksModal, setDependentBlocksModal] = useState(false);
+		const [dependentBlocks, setDependentBlocks] = useState([]);
 
 		const cardContentRef = useRef(null);
 		const cardActionsRef = useRef(null);
@@ -305,6 +314,18 @@ export const NotebookCell = observer(
 		const cell = query.getCell(cellId);
 
 		const variableName = state.getAlias(queryId, cellId);
+
+		const replacementCellOptions = useMemo(() => {
+			if (!state.queries) return [];
+			const allCellsList = [];
+			Object.keys(state.queries).forEach((queryId) => {
+				state.queries[queryId].list.forEach((cellId) => {
+					if (cellId === cell.id && queryId === cell.query.id) return;
+					allCellsList.push(`${queryId}--${cellId}`);
+				});
+			});
+			return allCellsList;
+		}, [state.queries, dependentBlocksModal === true]);
 
 		useEffect(() => {
 			if (cardContentRef.current) {
@@ -392,10 +413,43 @@ export const NotebookCell = observer(
 			}
 		};
 
-		const deleteCell = () => {
+		const handleReplaceCells = async (replacements: {
+			[blockId: string]: string;
+		}) => {
+			try {
+				workspace.setLoading(true);
+				const updatedStateJson = await replaceInBlocks(
+					state,
+					replacements,
+					{
+						queryId,
+						cellId,
+					},
+				);
+				const s = JSON.parse(
+					JSON.stringify(updatedStateJson),
+				) as SerializedState;
+				await state.dispatch({
+					message: ActionMessages.SET_STATE,
+					payload: {
+						state: s,
+					},
+				});
+				await dispatchDeleteCell();
+				notification.add({
+					color: "success",
+					message: "Successfully replaced cells",
+				});
+				workspace.setLoading(false);
+			} catch (e) {
+				console.error(e);
+				workspace.setLoading(false);
+			}
+		};
+
+		const dispatchDeleteCell = async () => {
 			try {
 				const currentCellIndex = query.list.indexOf(cell.id);
-
 				state.dispatch({
 					message: ActionMessages.DELETE_CELL,
 					payload: {
@@ -403,11 +457,27 @@ export const NotebookCell = observer(
 						cellId: cell.id,
 					},
 				});
-
 				notebook.selectCell(
 					queryId,
 					query.list[Math.max(currentCellIndex - 1, 0)],
 				);
+			} catch (e) {
+				console.error(e);
+			}
+		};
+		const deleteCell = async () => {
+			try {
+				const dependentBlocks = await getDependentBlocks(
+					state,
+					queryId,
+					cellId,
+				);
+				if (dependentBlocks.length > 0) {
+					setDependentBlocksModal(true);
+					setDependentBlocks(dependentBlocks);
+				} else {
+					dispatchDeleteCell();
+				}
 			} catch (e) {
 				console.error(e);
 			}
@@ -1140,6 +1210,17 @@ export const NotebookCell = observer(
 					onClose={() => {
 						setVariableModal(false);
 					}}
+				/>
+
+				<DependencyPromptModal
+					open={dependentBlocksModal}
+					onClose={() => {
+						setDependentBlocksModal(false);
+					}}
+					onDelete={() => dispatchDeleteCell()}
+					onReplace={handleReplaceCells}
+					dependents={dependentBlocks}
+					replacementOptions={replacementCellOptions}
 				/>
 			</StyledStack>
 		);
