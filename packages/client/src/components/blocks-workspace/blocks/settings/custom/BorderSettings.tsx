@@ -2,7 +2,6 @@ import { FormatColorFill } from "@mui/icons-material";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SketchPicker } from "react-color";
 import {
 	type Block,
 	type BlockDef,
@@ -279,16 +278,22 @@ export const BorderSettings = observer(
 								}}
 							>
 								<Box sx={{ borderRadius: 1 }}>
-									<SketchPicker
-										color={borderColorValue ?? "#FFFFFF"}
+									<TextField
+										fullWidth
+										type="color"
+										value={borderColorValue ?? "#FFFFFF"}
 										onChange={(color) => {
 											onChange(
 												borderSizeValue ?? "0px",
 												borderStyleValue ?? "solid",
-												color.hex ?? "#FFFFFF",
+												color.currentTarget.value ??
+													"#FFFFFF",
 											);
 										}}
-										width="90%"
+										size="small"
+										variant="outlined"
+										autoComplete="off"
+										data-testid={`colorSettings-Border Color-txt`}
 									/>
 								</Box>
 							</Box>
