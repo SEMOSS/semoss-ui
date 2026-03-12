@@ -2,7 +2,6 @@ import { FormatColorFill } from "@mui/icons-material";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { SketchPicker } from "react-color";
 import {
 	ActionMessages,
 	type Block,
@@ -12,7 +11,13 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { Box, ClickAwayListener, IconButton, Typography } from "@semoss/ui";
+import {
+	Box,
+	ClickAwayListener,
+	IconButton,
+	TextField,
+	Typography,
+} from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 
 interface StandardColorSettingProps<D extends BlockDef = BlockDef> {
@@ -141,10 +146,15 @@ export const StandardColorSettings = observer(
 							}}
 						>
 							<Box sx={{ borderRadius: 1 }}>
-								<SketchPicker
-									color={color}
+								<TextField
+									fullWidth
+									type="color"
+									value={color}
 									onChange={handleColorChange}
-									width="90%"
+									size="small"
+									variant="outlined"
+									autoComplete="off"
+									data-testid={`colorSettings-${label}-txt`}
 								/>
 							</Box>
 						</Box>
