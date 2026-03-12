@@ -178,7 +178,12 @@ export const post = async <O>(
 	}
 
 	if (!response.ok) {
-		const errorData = await response.json();
+		let errorData: Record<string, string> = {};
+		try {
+			errorData = await response.json();
+		} catch {
+			errorData = {};
+		}
 		const errorMessage =
 			errorData.message ||
 			errorData.error ||
