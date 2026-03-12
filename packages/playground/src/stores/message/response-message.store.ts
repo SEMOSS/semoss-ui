@@ -325,8 +325,10 @@ paramValues=[${JSON.stringify({
 			throw new Error(`Unsupported format: ${format}`);
 		}
 
-		// biome-ignore lint/suspicious/noExplicitAny: TODO
-		const resp = await this.room.runRoomPixel<any>(pixelCommand, false);
+		const resp = await this.room.runRoomPixel<[string]>(
+			pixelCommand,
+			false,
+		);
 
 		if (resp?.pixelReturn?.[0]) {
 			const { operationType, output } = resp.pixelReturn[0];
