@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
 	Blocks,
 	DefaultBlocks,
@@ -14,16 +14,14 @@ import { runPixel } from "@semoss/sdk/react";
 import { LoadingScreen, useNotification } from "@semoss/ui";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
+import type { FlexLayout } from "@/components/flex-layout";
 import { useWorkspace } from "@/hooks";
+import { AppDetailPage } from "@/pages/app";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
-import {
-	SettingsPanel,
-	TerminalPanel,
-	WorkspaceManager,
-} from "../../components/workspace";
+import { TerminalPanel, WorkspaceManager } from "../../components/workspace";
 import { DesignerContext } from "../../contexts";
+import { MCPJsonEditor } from "../shared";
 import { GraphPanel } from "../workspace/panels/GraphPanel";
-import { MCPJsonEditor } from "../workspace/panels/MCPJsonEditor";
 import { BlocksWorkspaceActions } from "./BlocksWorkspaceActions";
 import { BlocksWorkspaceDev } from "./BlocksWorkspaceDev";
 import { DEFAULT_MENU } from "./menus/default-menu";
@@ -35,7 +33,6 @@ import {
 	NotebookExplorerPanel,
 	NotebookViewerPanel,
 	SelectedBlockPanel,
-	SettingsNavPanel,
 	VariablesPanel,
 } from "./panels";
 
@@ -97,7 +94,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						type: "tab",
 						id: "settings",
 						name: "Settings",
-						component: "settings",
+						component: "settingsPanel",
 						config: {},
 						// maxWidth: 1,
 						helpText: "Settings",
@@ -280,6 +277,41 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		}
 	}, [state]);
 
+	/**
+	 * set the designer's selected component to be the selected tab in the active tabset whenever the layout changes
+	 */
+	useLayoutEffect(() => {
+		const model = workspace.model;
+		if (!model || !designer) return;
+
+		const originalDoAction = model.doAction.bind(model);
+
+		model.doAction = (action: FlexLayout.Action) => {
+			const result = originalDoAction(action);
+
+			// Get the active tabset
+			const activeTabset =
+				model.getActiveTabset() as FlexLayout.TabSetNode;
+
+			// Get the selected tab of the active tabset
+			const selectedTab = activeTabset?.getChildren()[
+				activeTabset.getSelected()
+			] as FlexLayout.TabNode;
+
+			// If the selected tab is a designer component, update the designer's selected component
+			if (selectedTab?.getComponent() === "designer") {
+				designer.setSelected(selectedTab.getName());
+			}
+
+			return result;
+		};
+
+		// Clean up when the component is unmounted
+		return () => {
+			model.doAction = originalDoAction;
+		};
+	}, [workspace.model, designer]);
+
 	if (!state) {
 		return <LoadingScreen.Trigger />;
 	}
@@ -327,9 +359,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "graph") {
 			return <GraphPanel />;
 		} else if (component === "settingsPanel") {
-			return <SettingsPanel value={config.value} />;
-		} else if (component === "settings") {
-			return <SettingsNavPanel />; // This is a placeholder for the settings tab, which is handled in the border layout
+			return <AppDetailPage showNav={false} />;
 		} else if (component === "export-button") {
 			return <ExportButtonPanel />;
 		}

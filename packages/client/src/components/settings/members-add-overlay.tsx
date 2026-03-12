@@ -1,7 +1,12 @@
-import type { AxiosResponse } from "axios";
 import { Edit, Eye, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
+import {
+	addProjectUserPermissions,
+	editProjectUserPermissions,
+	getProjectUsers,
+	getProjectUsersNoCredentials,
+} from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -40,17 +45,13 @@ import {
 } from "@semoss/ui/next";
 import {
 	addEngineUserPermissions,
-	addProjectUserPermissions,
 	editEngineUserPermissions,
-	editProjectUserPermissions,
 	getEngineUsers,
 	getEngineUsersNoCredentials,
-	getProjectUsers,
-	getProjectUsersNoCredentials,
 } from "@/api";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
 import { useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
+import type { ALL_TYPES, ApiResponse } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
 import { MembersAddOverlayUser } from "./members-add-overlay-user";
 import type { SETTINGS_ROLE } from "./settings.types";
@@ -205,22 +206,22 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				if (type === "PROJECT") {
 					const [noCred, cred] = await Promise.all([
 						getProjectUsersNoCredentials(
-							adminMode,
 							id,
+							adminMode,
+							debouncedSearch || "",
 							AUTOCOMPLETE_LIMIT,
 							offset,
-							debouncedSearch || "",
 						),
 						getProjectUsers(
-							adminMode,
 							id,
+							adminMode,
 							debouncedSearch || "",
 							"", // permission
-							offset,
 							AUTOCOMPLETE_LIMIT,
+							offset,
 						),
 					]);
-					all = [...(noCred?.data || []), ...(cred?.members || [])];
+					all = [...(noCred || []), ...(cred?.members || [])];
 				} else if (
 					type === "DATABASE" ||
 					type === "STORAGE" ||
@@ -336,7 +337,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| boolean
 				| {
 						response: Response;
 						data: {
@@ -359,18 +360,17 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				);
 			} else if (type === "PROJECT") {
 				response = await editProjectUserPermissions(
-					adminMode,
 					id,
 					requests,
+					adminMode,
 				);
 			}
 
-			if (!response) {
-				return;
-			}
-
-			// ignore if there is no response
-			if (response.data.success) {
+			if (
+				typeof response === "boolean"
+					? response
+					: response?.data?.success
+			) {
 				toast.success("Successfully updated user permissions");
 				success = true;
 				onChange();
@@ -436,13 +436,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
-				| {
-						response: Response;
-						data: {
-							success: boolean;
-						};
-				  }
+				| Awaited<ReturnType<typeof editEngineUserPermissions>>
+				| boolean
 				| null = null;
 			if (
 				type === "DATABASE" ||
@@ -459,18 +454,18 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				);
 			} else if (type === "PROJECT") {
 				response = await addProjectUserPermissions(
-					adminMode,
 					id,
 					requests as string[],
+					adminMode,
 				);
 			}
 
-			if (!response) {
-				return;
-			}
-
 			// ignore if there is no response
-			if (response.data.success) {
+			if (
+				typeof response === "boolean"
+					? response
+					: response?.data?.success
+			) {
 				toast.success("Successfully added member permissions");
 				success = true;
 			} else {
@@ -551,9 +546,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 											: `${selectedMembers.length} members selected`}
 								</Button>
 							</PopoverTrigger>
-							<PopoverContent
-								className="w-[600px] p-0"
-							>
+							<PopoverContent className="w-[600px] p-0">
 								<Command shouldFilter={false}>
 									<CommandInput
 										placeholder="Search users..."

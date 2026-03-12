@@ -1,0 +1,49 @@
+{
+	"messages": {
+		"placeholder": "Type a message...",
+		"sending": "Sending...",
+		"error": "Failed to send message"
+	},
+	"attachments": {
+		"addFile": "Add File",
+		"removeFile": "Remove File"
+	},
+	"response": {
+		"agent": "Agent",
+		"previousMessage": "Previous Message",
+		"nextMessage": "Next Message",
+		"rewriteMessage": "Rewrite Message",
+		"goodResponse": "Good response",
+		"poorResponse": "Poor response",
+		"copyResponse": "Copy Response",
+		"copyCode": "Copy Code",
+		"fastForwardToEnd": "Fast Forward to End",
+		"completeTools": "Please complete the tool(s) to proceed."
+	},
+	"input": {
+		"copyMessage": "Copy Message"
+	},
+	"plan": {
+		"heading": "Here is the plan that I have created. Feel free to modify it as needed.",
+		"fixStep": "Fix Step",
+		"edit": "Edit",
+		"delete": "Delete",
+		"addTask": "Add Task",
+		"confirmPlan": "Confirm Plan"
+	},
+	"tool": {
+		"failed": "Failed",
+		"cancelled": "Cancelled",
+		"completed": "Completed",
+		"ready": "Ready",
+		"autoExecute": "Auto-executing",
+		"cancel": "Cancel"
+	},
+	"notifications": {
+		"feedbackSuccess": "Thank you for the feedback!",
+		"rewriteSuccess": "Successfully rewrote message",
+		"copySuccess": "Successfully copied to clipboard",
+		"noCopyContent": "No content to copy",
+		"planStepRemoved": "Successfully removed step {{stepNumber}} from plan"
+	}
+}

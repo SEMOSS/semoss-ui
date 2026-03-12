@@ -1,5 +1,12 @@
-import { SearchIcon, SquareArrowOutUpRightIcon, XIcon } from "lucide-react";
+import {
+	PlusIcon,
+	SearchIcon,
+	SquareArrowOutUpRightIcon,
+	XIcon,
+} from "lucide-react";
+import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Badge,
@@ -23,7 +30,12 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { engineProjectToMCP, mcpToPlatformUrl } from "@/components";
+import {
+	engineProjectToMCP,
+	mcpToPlatformUrl,
+	NewKnowledgeOverlay,
+} from "@/components";
+import { useRoot } from "@/hooks";
 import type { App, Engine, MCP, MCPConfig } from "@/types";
 
 interface MCPSelectorProps {
@@ -41,17 +53,22 @@ interface MCPSelectorProps {
 }
 
 /**
- * Renders the MCPSelector component for selecting mcps within a workspace
+ * Renders the MCPSelector component for selecting mcps within an agent
  */
-export const MCPSelector: React.FC<MCPSelectorProps> = ({
+const MCPSelectorInner: React.FC<MCPSelectorProps> = ({
 	type,
 	values,
 	disabled,
 	onChange,
 }) => {
+	const { t } = useTranslation("mcp");
+	const { root } = useRoot();
 	const [search, setSearch] = useState<string>("");
+	const [isKnowledgeOverlayOpen, setIsKnowledgeOverlayOpen] = useState(false);
 
 	const debouncedSearch = useDebouncedValue(search);
+	const useMCPFilter =
+		type === "TOOLBOX" || root.theme.enableKnowledgeMCP !== false;
 
 	// track the selected one
 	const selected = values.reduce(
@@ -67,7 +84,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	 */
 	const getMCP = useIteratorPixel<(Engine | App)[], MCP>(
 		(limit, offset) =>
-			`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=${type === "TOOLBOX" ? `["PROJECT", "STORAGE", "DATABASE", "FUNCTION"]` : `["VECTOR"]`}, ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
+			`MyEngineProject (metaKeys = ["tag", "description"], ${useMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}type=${type === "TOOLBOX" ? `["PROJECT", "STORAGE", "DATABASE", "FUNCTION"]` : `["VECTOR"]`}, ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
 		(response) => {
 			// if its less than the limit, we know its the end
 			if (response.length < 25) {
@@ -82,7 +99,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 		{
 			limit: 25,
 		},
-		[debouncedSearch],
+		[debouncedSearch, useMCPFilter],
 	);
 
 	/**
@@ -120,7 +137,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 			<div className="flex w-full flex-row gap-2 border-border bg-primary-foreground p-4">
 				<InputGroup className="bg-background">
 					<InputGroupInput
-						placeholder="Search"
+						placeholder={t("selector.search")}
 						value={search}
 						disabled={disabled || getMCP.isLoading}
 						onChange={(e) => setSearch(e.target.value)}
@@ -129,6 +146,27 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 						<SearchIcon />
 					</InputGroupAddon>
 				</InputGroup>
+				{type === "KNOWLEDGE" && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={(event) => {
+									event.preventDefault();
+									event.stopPropagation();
+									setIsKnowledgeOverlayOpen(true);
+								}}
+								disabled={disabled}
+							>
+								<PlusIcon />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							{t("selector.createKnowledgeSource")}
+						</TooltipContent>
+					</Tooltip>
+				)}
 			</div>
 
 			<ScrollArea
@@ -143,15 +181,16 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 				{!getMCP.isLoading && getMCP.data.length === 0 && (
 					<div className="flex h-64 w-full items-center justify-center">
 						<Muted>
-							No {type === "TOOLBOX" ? "toolboxes" : "knowledge"}{" "}
-							found
+							{type === "TOOLBOX"
+								? t("selector.noToolboxesFound")
+								: t("selector.noKnowledgeFound")}
 						</Muted>
 					</div>
 				)}
 				{!getMCP.isLoading && getMCP.data.length !== 0 && (
 					<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
-						{getMCP.data.map((t) => (
-							<FieldLabel key={t.id} className="col-span-1">
+						{getMCP.data.map((mcp) => (
+							<FieldLabel key={mcp.id} className="col-span-1">
 								<Field
 									orientation="horizontal"
 									className="pb-2!"
@@ -159,16 +198,16 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 									<FieldContent>
 										<FieldTitle
 											className="line-clamp-1"
-											title={t.name}
+											title={mcp.name}
 										>
-											{t.name}
+											{mcp.name}
 										</FieldTitle>
-										{t.description && (
+										{mcp.description && (
 											<FieldDescription
 												className="line-clamp-2"
-												title={t.description}
+												title={mcp.description}
 											>
-												{t.description}
+												{mcp.description}
 											</FieldDescription>
 										)}
 									</FieldContent>
@@ -179,31 +218,36 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 											disabled ||
 											values.some(
 												(a) =>
-													a.id === t.id &&
+													a.id === mcp.id &&
 													a.fromWorkspace,
 											)
 										}
-										checked={Object.hasOwn(selected, t.id)}
+										checked={Object.hasOwn(
+											selected,
+											mcp.id,
+										)}
 										onCheckedChange={() => {
-											onSelect(t);
+											onSelect(mcp);
 										}}
 									/>
 								</Field>
-								<div className="flex w-full flex-row justify-end px-4 pb-4">
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<a
-												target="_blank"
-												href={mcpToPlatformUrl(t)}
-											>
-												<SquareArrowOutUpRightIcon className="size-4" />
-											</a>
-										</TooltipTrigger>
-										<TooltipContent>
-											View Details
-										</TooltipContent>
-									</Tooltip>
-								</div>
+								{root.theme.showPlatformLinks !== false && (
+									<div className="flex w-full flex-row justify-end px-4 pb-4">
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<a
+													target="_blank"
+													href={mcpToPlatformUrl(mcp)}
+												>
+													<SquareArrowOutUpRightIcon className="size-4" />
+												</a>
+											</TooltipTrigger>
+											<TooltipContent>
+												{t("selector.viewDetails")}
+											</TooltipContent>
+										</Tooltip>
+									</div>
+								)}
 							</FieldLabel>
 						))}
 					</div>
@@ -238,6 +282,23 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 					</div>
 				</ScrollArea>
 			)}
+			<NewKnowledgeOverlay
+				key={`${getMCP?.data?.length}`}
+				open={isKnowledgeOverlayOpen}
+				onClose={(knowledge) => {
+					// update it
+					if (knowledge) {
+						onChange([...values, knowledge]);
+						// refresh the list to show the newly created knowledge store selected
+						getMCP.reset();
+					}
+
+					// close the overlay
+					setIsKnowledgeOverlayOpen(false);
+				}}
+			/>
 		</div>
 	);
 };
+
+export const MCPSelector = observer(MCPSelectorInner);

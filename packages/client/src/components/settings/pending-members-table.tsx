@@ -1,16 +1,18 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-import type { AxiosResponse } from "axios";
 import {
 	AlertCircle,
 	Check,
 	ChevronDown,
 	ChevronUp,
-	Plus,
 	Search,
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+	approveProjectUserAccessRequest,
+	denyProjectUserAccessRequest,
+} from "@semoss/shared";
 import {
 	Button,
 	Checkbox,
@@ -20,7 +22,6 @@ import {
 	P,
 	RadioGroup,
 	RadioGroupItem,
-	Separator,
 	Spinner,
 	Table,
 	TableBody,
@@ -32,13 +33,10 @@ import {
 } from "@semoss/ui/next";
 import {
 	approveEngineUserAccessRequest,
-	approveProjectUserAccessRequest,
 	denyEngineUserAccessRequest,
-	denyProjectUserAccessRequest,
 } from "@/api";
-import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { usePixel, useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
+import type { ALL_TYPES, ApiResponse } from "@/types";
 import type { SETTINGS_PENDING_USER, SETTINGS_ROLE } from "./settings.types";
 
 // maps for permissions,
@@ -142,7 +140,10 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 				return;
 			}
 
-			let response = null;
+			let response:
+				| boolean
+				| Awaited<ReturnType<typeof approveEngineUserAccessRequest>>
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -158,18 +159,17 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 				);
 			} else if (type === "PROJECT") {
 				response = await approveProjectUserAccessRequest(
-					adminMode,
 					id,
 					requests,
+					adminMode,
 				);
 			}
 
-			// ignore if there is no response
-			if (!response) {
-				return;
-			}
-
-			if (response.data.success) {
+			if (
+				typeof response === "boolean"
+					? response
+					: response?.data?.success
+			) {
 				const updatedMembers = {
 					...selectedMembers,
 				} as Record<string, true>;
@@ -216,7 +216,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| boolean
 				| {
 						response: Response;
 						data: {
@@ -239,18 +239,17 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 				);
 			} else if (type === "PROJECT") {
 				response = await denyProjectUserAccessRequest(
-					adminMode,
 					id,
 					requests,
+					adminMode,
 				);
 			}
 
-			// ignore if there is no response
-			if (!response) {
-				return;
-			}
-
-			if (response.data.success) {
+			if (
+				typeof response === "boolean"
+					? response
+					: response?.data?.success
+			) {
 				const updatedMembers = {
 					...selectedMembers,
 				} as Record<string, true>;
@@ -344,16 +343,6 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 								data-testid="pending-members-search-btn"
 							>
 								<Search className="size-4" />
-							</Button>
-						</div>
-
-						<div className="flex items-center gap-2.5 p-2 px-2 py-[5px]">
-							<Button
-								variant="ghost"
-								size="icon"
-								data-testid="pending-members-filter-btn"
-							>
-								<img src={FilteredIcon} alt="Filter" />
 							</Button>
 						</div>
 

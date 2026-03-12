@@ -1,10 +1,8 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
 import { Env, logout, runPixel } from "@semoss/sdk/react";
-import {
-	getUserProjectPermission as getUserProjectLevelPermission,
-	registerUser,
-} from "@/api";
+import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared";
+import { registerUser } from "@/api";
 import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
 import {
@@ -30,6 +28,7 @@ interface ConfigStoreInterface {
 		name: string;
 		email: string;
 		admin: boolean;
+		meta: unknown;
 	};
 	/** Native mode */
 	isNative: boolean;
@@ -141,6 +140,11 @@ interface ConfigStoreInterface {
 		adminOnlyVectorDelete: boolean;
 		adminOnlyVectorSetDiscoverable: boolean;
 		adminOnlyVectorSetPublic: boolean;
+		adminOnlyGuardrailAdd: boolean;
+		adminOnlyGuardrailAddAccess: boolean;
+		adminOnlyGuardrailDelete: boolean;
+		adminOnlyGuardrailSetDiscoverable: boolean;
+		adminOnlyGuardrailSetPublic: boolean;
 
 		[key: string]: unknown;
 	};
@@ -163,6 +167,7 @@ export class ConfigStore {
 			name: "",
 			email: "",
 			admin: false,
+			meta: {},
 		},
 		config: {
 			databaseMetaKeys: [],
@@ -210,6 +215,11 @@ export class ConfigStore {
 			adminOnlyVectorDelete: false,
 			adminOnlyVectorSetDiscoverable: false,
 			adminOnlyVectorSetPublic: false,
+			adminOnlyGuardrailAdd: false,
+			adminOnlyGuardrailAddAccess: false,
+			adminOnlyGuardrailDelete: false,
+			adminOnlyGuardrailSetDiscoverable: false,
+			adminOnlyGuardrailSetPublic: false,
 		},
 	};
 	private _generalReactors: Array<string> = [];
@@ -323,6 +333,7 @@ export class ConfigStore {
 			MODEL: "Model",
 			STORAGE: "Storage",
 			VECTOR: "Vector",
+			GUARDRAIL: "Guardrail",
 		} as const;
 
 		const operationMap = {
@@ -359,11 +370,11 @@ export class ConfigStore {
 			return;
 		}
 
+		// Set CSRF flag to true
+		Env.update({ CSRF: this.store.config.csrf });
+		
 		// get the user information
 		await this.getUser();
-
-		// Set CSRF flag to true before setGeneralReactors()
-		Env.update({ CSRF: this.store.config.csrf });
 
 		//set the reactors
 		await this.setGeneralReactors();
@@ -434,6 +445,7 @@ export class ConfigStore {
 							email: string;
 							admin: boolean;
 							userEpoch: string;
+							meta: unknown;
 						};
 					},
 				]
@@ -457,6 +469,7 @@ export class ConfigStore {
 					email: "",
 					userEpoch: "",
 					admin: false,
+					meta: {},
 				};
 
 				// TODO: remove userEpoch from the backend
@@ -464,21 +477,48 @@ export class ConfigStore {
 					delete output.userEpoch;
 				}
 
+				// Helper function to extract first element from array values in meta
+				const transformMeta = (meta: unknown) => {
+					if (!meta || typeof meta !== "object") return null;
+					return Object.entries(meta).reduce(
+						(acc, [key, value]) => {
+							acc[key] = Array.isArray(value) ? value[0] : value;
+							return acc;
+						},
+						{} as Record<string, unknown>,
+					);
+				};
+
 				// get the user based on provider
 				if (output.SAML) {
-					user = output.SAML;
+					user = {
+						...output.SAML,
+						meta: transformMeta(output.SAML?.meta),
+					};
 				} else if (output.NATIVE) {
-					user = output.NATIVE;
+					user = {
+						...output.NATIVE,
+						meta: transformMeta(output.NATIVE?.meta),
+					};
 					this._store.isNative = true;
 				} else if (Object.keys(output).length > 0) {
 					// This is a hack...since we don't have a single user
-					user = output[Object.keys(output)[0]];
+					const firstKey = Object.keys(output)[0];
+					user = {
+						...output[firstKey],
+						meta: transformMeta(output[firstKey]?.meta),
+					};
 				}
 
 				this._store.user.id = user.id || "";
 				this._store.user.name = user.name || "";
 				this._store.user.email = user.email || "";
 				this._store.userEpoch = user.userEpoch;
+
+				// sync meta into insight store
+				this._root.insightStore.setUserDefaultModel(
+					(user.meta as Record<string, unknown>) || {},
+				);
 
 				this._store.user.admin = isAdmin;
 
@@ -487,7 +527,6 @@ export class ConfigStore {
 			});
 		} catch (error) {
 			console.error(error);
-
 			runInAction(() => {
 				// set the status as an error
 				this._store.status = "ERROR";
@@ -517,6 +556,7 @@ export class ConfigStore {
 				id: "",
 				name: "",
 				email: "",
+				meta: {},
 			};
 		});
 
@@ -542,6 +582,7 @@ export class ConfigStore {
 				id: "",
 				name: "",
 				email: "",
+				meta: {},
 			};
 		});
 
@@ -596,6 +637,7 @@ export class ConfigStore {
 				id: "",
 				name: "",
 				email: "",
+				meta: {},
 			};
 		});
 
@@ -643,6 +685,7 @@ export class ConfigStore {
 				id: "",
 				name: "",
 				email: "",
+				meta: {},
 			};
 		});
 
@@ -671,6 +714,7 @@ export class ConfigStore {
 				id: "",
 				name: "",
 				email: "",
+				meta: {},
 			};
 		});
 
@@ -695,6 +739,7 @@ export class ConfigStore {
 					id: "",
 					name: "",
 					email: "",
+					meta: {},
 				};
 				this._store.status = "MISSING AUTHENTICATION";
 			});
@@ -722,12 +767,8 @@ export class ConfigStore {
 	 * @param appId - id of app to load into the workspace
 	 */
 	async createWorkspace(appId: string, insightId: string = "new") {
-		// check the permission
-		const getUserProjectPermission =
-			await getUserProjectLevelPermission(appId);
-
 		// get the role and throw an error if it is missing
-		const role = getUserProjectPermission.permission;
+		const role = await getUserProjectLevelPermission(appId);
 		if (!role) {
 			throw new Error("Unauthorized");
 		}

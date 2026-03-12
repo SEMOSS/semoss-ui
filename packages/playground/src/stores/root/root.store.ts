@@ -56,6 +56,7 @@ export class RootStore {
 				logo: "",
 				login: "",
 				landing: "",
+				tabIcon: "",
 				workspace: "",
 			},
 			overrides: {
@@ -75,7 +76,9 @@ export class RootStore {
 				temperature: TEMPERATURE,
 				tokenLength: TOKEN_LENGTH,
 			},
+			allowedFileTypes: [],
 			defaultTools: [],
+			showPlatformLinks: true,
 		},
 	};
 
@@ -124,6 +127,13 @@ export class RootStore {
 	}
 
 	/**
+	 * Get the current navbar actions
+	 */
+	get navbarActions() {
+		return this._store.navbarActions;
+	}
+
+	/**
 	 * Set custom breadcrumbs
 	 */
 	setBreadcrumbs = (breadcrumbs: RootStore["breadcrumbs"]) => {
@@ -135,6 +145,20 @@ export class RootStore {
 	 */
 	clearBreadcrumbs = () => {
 		this._store.breadcrumbs = [];
+	};
+
+	/**
+	 * Set right-side navbar actions
+	 */
+	setNavbarActions = (actions: React.ReactNode | null) => {
+		this._store.navbarActions = actions;
+	};
+
+	/**
+	 * Clear right-side navbar actions
+	 */
+	clearNavbarActions = () => {
+		this._store.navbarActions = null;
 	};
 
 	/**
@@ -189,6 +213,20 @@ export class RootStore {
 			toolAutoExecutionLimit:
 				theme?.toolAutoExecutionLimit ||
 				this._store.theme.toolAutoExecutionLimit,
+			allowedFileTypes:
+				theme?.allowedFileTypes ||
+				this._store.theme.allowedFileTypes ||
+				[],
+			enableKnowledgeMCP:
+				theme?.enableKnowledgeMCP !== undefined
+					? theme.enableKnowledgeMCP
+					: this._store.theme.enableKnowledgeMCP,
+			defaultEmbedderId:
+				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
+			allowEmbeddingOptions:
+				theme?.allowEmbeddingOptions !== undefined
+					? theme.allowEmbeddingOptions
+					: this._store.theme.allowEmbeddingOptions,
 			defaultTools: [
 				...new Map(
 					[
@@ -197,6 +235,10 @@ export class RootStore {
 					].map((tool) => [tool.id, tool]),
 				).values(),
 			],
+			showPlatformLinks:
+				theme?.showPlatformLinks !== undefined
+					? theme.showPlatformLinks
+					: this._store.theme.showPlatformLinks,
 		};
 
 		// apply the theme to document root
