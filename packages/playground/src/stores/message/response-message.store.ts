@@ -226,7 +226,7 @@ paramValues=[${JSON.stringify({
 
 			const { output } = response.results[0];
 
-			// sync withe the results
+			// sync with the results
 			inputMessage.sync(output.inputMessage);
 			responseMessage.sync(output.responseMessage);
 
@@ -629,7 +629,9 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 			}
 		} catch (e) {
 			// set error status
-			tool.status = "ERROR";
+			runInAction(() => {
+				tool.status = "ERROR";
+			});
 
 			// remove as a child
 			this.removeChild(responseMessage);

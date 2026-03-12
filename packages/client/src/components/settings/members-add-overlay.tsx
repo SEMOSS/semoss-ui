@@ -51,7 +51,7 @@ import {
 } from "@/api";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
 import { useSettings } from "@/hooks";
-import type { ALL_TYPES, ApiResponse } from "@/types";
+import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
 import { MembersAddOverlayUser } from "./members-add-overlay-user";
 import type { SETTINGS_ROLE } from "./settings.types";

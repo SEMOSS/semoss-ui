@@ -51,8 +51,7 @@
 	},
 	"content": {
 		"scrollToTop": "انتقل إلى الأعلى",
-		"scrollToBottom": "انتقل إلى الأسفل",
-		"errorDefault": "غير قادر على معالجة الطلب. يرجى التحقق من اتصالك، ونسخ رسالتك، والتحديث."
+		"scrollToBottom": "انتقل إلى الأسفل"
 	},
 	"inlineTool": {
 		"openInSidebar": "فتح في الشريط الجانبي",
@@ -79,7 +78,7 @@
 	},
 	"menuWorkspace": {
 		"selectAgent": "اختر وكيل",
-		"searchPlaceholder": "البحث في مساحات العمل",
+		"searchPlaceholder": "البحث عن وكلاء",
 		"notFound": "غير موجود"
 	},
 	"menuUpload": {
