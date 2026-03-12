@@ -10,7 +10,7 @@ import {
 } from "@semoss/ui/next";
 import { removeEngineUserPermissions } from "@/api";
 import { useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
+import type { ALL_TYPES, ApiResponse } from "@/types";
 import type { SETTINGS_PROVISIONED_USER } from "./settings.types";
 
 interface MembersDeleteOverlayProps {
