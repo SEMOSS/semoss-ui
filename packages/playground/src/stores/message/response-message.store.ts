@@ -629,7 +629,9 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 			}
 		} catch (e) {
 			// set error status
-			tool.status = "ERROR";
+			runInAction(() => {
+				tool.status = "ERROR";
+			});
 
 			// remove as a child
 			this.removeChild(responseMessage);
