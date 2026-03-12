@@ -1,4 +1,4 @@
-import { Button, Stack, styled, Typography } from "@semoss/ui";
+import { Stack, Typography } from "@semoss/ui";
 import { type AppMetadata, AppTileCard } from "../app";
 
 const BUSINESS_INTELLIGENCE_APP: AppMetadata = {
@@ -53,15 +53,6 @@ const TERMINAL_APP: AppMetadata = {
 	description: "Execute commands and see a response",
 };
 
-const StyledSeeAllButton = styled(Button)(({ theme }) => ({
-	justifyContent: "flex-end",
-	color: theme.palette.text.primary,
-	fontWeight: 500,
-	"&.MuiButtonBase-root: hover": {
-		backgroundColor: "#F5F5F5",
-	},
-}));
-
 export const FanFavoritesSection = () => {
 	return (
 		<Stack gap={1}>
@@ -83,7 +74,7 @@ export const FanFavoritesSection = () => {
           See All
         </StyledSeeAllButton> */}
 			</Stack>
-			<Stack direction={"row"} gap={3}>
+			<Stack direction={"row"} gap={3} flexWrap={"wrap"}>
 				<AppTileCard
 					app={BUSINESS_INTELLIGENCE_APP}
 					background="#BADEFF"
