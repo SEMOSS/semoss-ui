@@ -10,7 +10,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
-import { SketchPicker } from "react-color";
 import {
 	type Block,
 	type BlockDef,
@@ -76,13 +75,6 @@ const StyledDeleteIcon = styled(Delete)(({}) => ({
 	height: "33px",
 	borderRadius: "20%",
 	display: "block",
-}));
-const StyledPicker = styled(SketchPicker)(({}) => ({
-	width: "97% !important",
-	margin: "10px",
-	boxShadow:
-		"rgba(0, 0, 0, 0) 0px 0px 0px 1px, rgba(0, 0, 0, 0) 0px 8px 16px !important",
-	padding: "0px !important",
 }));
 const StyledEmptyContainer = styled("div")(() => ({}));
 const StyledPaletteContainer = styled("div")(() => ({
@@ -877,12 +869,18 @@ export const ColorPalatteSettings = observer(
 				{/* show color palette when color palate button is pressed */}
 				{colorPalatteFlag && (
 					<StyledPaletteContainer>
-						<StyledPicker
+						<TextField
+							fullWidth
+							type="color"
+							value={color}
 							onChange={(newColor) => {
-								setColor(newColor.hex);
+								setColor(newColor.target.value);
 							}}
-							color={color}
-						></StyledPicker>
+							size="small"
+							variant="outlined"
+							autoComplete="off"
+							data-testid={`color-palette-settings-${editColorPalatte}`}
+						/>
 						<hr></hr>
 						<StyledButtonContainer>
 							<StyledButtonClose
@@ -948,12 +946,20 @@ export const ColorPalatteSettings = observer(
 							{index === editIndex && (
 								// Edit color palette when edit button is clicked
 								<StyledPaletteContainer>
-									<StyledPicker
+									<TextField
+										fullWidth
+										type="color"
+										value={editColor}
 										onChange={(newColor) => {
-											setEditColor(newColor.hex);
+											setColor(newColor.target.value);
 										}}
-										color={editColor}
-									></StyledPicker>
+										size="small"
+										variant="outlined"
+										autoComplete="off"
+										// data-testid={formatToDataTestId(
+										// 	`colorSettings-${label}-txt`,
+										// )}
+									/>
 									<hr></hr>
 									<StyledButtonContainer
 										style={{
