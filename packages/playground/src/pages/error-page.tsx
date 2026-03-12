@@ -4,7 +4,6 @@ import {
 	Button,
 	ResizablePanel,
 	ResizablePanelGroup,
-	SidebarTrigger,
 } from "@semoss/ui/next";
 import background from "@/assets/img/render-error-background.png";
 
@@ -52,10 +51,7 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 	if (isInnerComponent) {
 		return (
 			<div className="relative h-full w-full overflow-hidden">
-				<div className="absolute top-2 left-2 z-10 flex h-12.5 items-center px-4">
-					<SidebarTrigger />
-				</div>
-				<ResizablePanelGroup direction="horizontal">
+	<ResizablePanelGroup direction="horizontal">
 					<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 						<img
 							src={background}

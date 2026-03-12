@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { Skeleton } from "@semoss/ui/next";
-import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useRoot } from "@/hooks";
 import type { RootStore } from "@/stores";
 
 export const EmbedPage: React.FC = observer(() => {
@@ -30,18 +30,18 @@ export const EmbedPage: React.FC = observer(() => {
 		}
 	}
 
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{
-				name: t("breadcrumbs.home"),
-				path: "/",
-			},
-			{
-				name: isLoading ? t("breadcrumbs.loading") : matched.name,
-				path: `/embed/${path}`,
-			},
-		],
-	});
+	// useGlobalBreadcrumbs({
+	// 	breadcrumbs: [
+	// 		{
+	// 			name: t("breadcrumbs.home"),
+	// 			path: "/",
+	// 		},
+	// 		{
+	// 			name: isLoading ? t("breadcrumbs.loading") : matched.name,
+	// 			path: `/embed/${path}`,
+	// 		},
+	// 	],
+	// });
 
 	if (!matched) {
 		return <Navigate to="/" replace />;

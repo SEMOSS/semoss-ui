@@ -18,7 +18,7 @@ import {
 } from "@semoss/ui/next";
 import workspaceImage from "@/assets/img/workspace.png";
 import { WorkspaceCard } from "@/components";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useChat, useRoot } from "@/hooks";
 import type { App } from "@/types";
 
 /**
@@ -31,18 +31,18 @@ export const WorkspacePage = observer(() => {
 	const { root } = useRoot();
 	const navigate = useNavigate();
 	// set the breadcrumbs
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{
-				name: t("workspace:breadcrumbs.home"),
-				path: "/",
-			},
-			{
-				name: t("workspace:breadcrumbs.agent"),
-				path: "/agent",
-			},
-		],
-	});
+	// useGlobalBreadcrumbs({
+	// 	breadcrumbs: [
+	// 		{
+	// 			name: t("workspace:breadcrumbs.home"),
+	// 			path: "/",
+	// 		},
+	// 		{
+	// 			name: t("workspace:breadcrumbs.agent"),
+	// 			path: "/agent",
+	// 		},
+	// 	],
+	// });
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);

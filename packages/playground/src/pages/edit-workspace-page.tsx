@@ -4,7 +4,7 @@ import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import { ScrollArea, Spinner, toast } from "@semoss/ui/next";
 import { WorkspaceForm } from "@/components";
-import { useGlobalBreadcrumbs } from "@/hooks";
+// import { useGlobalBreadcrumbs } from "@/hooks";
 import type { Workspace } from "@/types";
 
 /**
@@ -33,29 +33,29 @@ export const EditWorkspacePage = observer(() => {
 	);
 
 	// set the breadcrumbs
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{
-				name: t("breadcrumbs.home"),
-				path: "/",
-			},
-			{
-				name: t("breadcrumbs.agent"),
-				path: "/agent",
-			},
-			{
-				name:
-					getWorkspace.status === "SUCCESS"
-						? getWorkspace.data.name
-						: t("breadcrumbs.loading"),
-				path: `/agent/${workspaceId}`,
-			},
-			{
-				name: t("breadcrumbs.edit"),
-				path: `/agent/${workspaceId}/edit`,
-			},
-		],
-	});
+	// useGlobalBreadcrumbs({
+	// 	breadcrumbs: [
+	// 		{
+	// 			name: t("breadcrumbs.home"),
+	// 			path: "/",
+	// 		},
+	// 		{
+	// 			name: t("breadcrumbs.agent"),
+	// 			path: "/agent",
+	// 		},
+	// 		{
+	// 			name:
+	// 				getWorkspace.status === "SUCCESS"
+	// 					? getWorkspace.data.name
+	// 					: t("breadcrumbs.loading"),
+	// 			path: `/agent/${workspaceId}`,
+	// 		},
+	// 		{
+	// 			name: t("breadcrumbs.edit"),
+	// 			path: `/agent/${workspaceId}/edit`,
+	// 		},
+	// 	],
+	// });
 
 	const handleClose = (shouldRefresh?: string) => {
 		if (shouldRefresh) {

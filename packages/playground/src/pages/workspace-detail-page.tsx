@@ -43,7 +43,7 @@ import {
 	WorkspaceMCPList,
 	WorkspaceMembersList,
 } from "@/components";
-import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useRoot } from "@/hooks";
 import { useChat } from "@/hooks/use-chat";
 import { usePagination } from "@/hooks/use-pagination";
 import type { Workspace } from "@/types";
@@ -96,25 +96,25 @@ export const WorkspaceDetailPage = observer(() => {
 	);
 
 	// set the breadcrumbs
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{
-				name: t("workspace:breadcrumbs.home"),
-				path: "/",
-			},
-			{
-				name: t("workspace:breadcrumbs.agent"),
-				path: "/agent",
-			},
-			{
-				name:
-					getWorkspace.status === "SUCCESS"
-						? getWorkspace.data.name
-						: t("workspace:breadcrumbs.loading"),
-				path: `/agent/${workspaceId}`,
-			},
-		],
-	});
+	// useGlobalBreadcrumbs({
+	// 	breadcrumbs: [
+	// 		{
+	// 			name: t("workspace:breadcrumbs.home"),
+	// 			path: "/",
+	// 		},
+	// 		{
+	// 			name: t("workspace:breadcrumbs.agent"),
+	// 			path: "/agent",
+	// 		},
+	// 		{
+	// 			name:
+	// 				getWorkspace.status === "SUCCESS"
+	// 					? getWorkspace.data.name
+	// 					: t("workspace:breadcrumbs.loading"),
+	// 			path: `/agent/${workspaceId}`,
+	// 		},
+	// 	],
+	// });
 
 	if (getWorkspace.status === "LOADING" || isLoading) {
 		return (

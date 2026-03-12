@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { ScrollArea } from "@semoss/ui/next";
 import { WorkspaceForm } from "@/components";
-import { useGlobalBreadcrumbs } from "@/hooks";
+// import { useGlobalBreadcrumbs } from "@/hooks";
 
 /**
  * Renders the NewWorkspacePage for creating new workspaces
@@ -15,30 +15,30 @@ export const NewWorkspacePage = observer(() => {
 	const navigate = useNavigate();
 
 	// set the breadcrumbs
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{
-				name: t("breadcrumbs.home"),
-				path: "/",
-			},
-			{
-				name: t("breadcrumbs.agent"),
-				path: "/agent",
-			},
-			{
-				name: t("breadcrumbs.new"),
-				path: "/agent/new",
-			},
-		],
-	});
+	// useGlobalBreadcrumbs({
+	// 	breadcrumbs: [
+	// 		{
+	// 			name: t("breadcrumbs.home"),
+	// 			path: "/",
+	// 		},
+	// 		{
+	// 			name: t("breadcrumbs.agent"),
+	// 			path: "/agent",
+	// 		},
+	// 		{
+	// 			name: t("breadcrumbs.new"),
+	// 			path: "/agent/new",
+	// 		},
+	// 	],
+	// });
 
-	const handleClose = (newWorkspaceId?: string) => {
-		if (newWorkspaceId) {
-			navigate(`/agent/${newWorkspaceId}`);
-		} else {
-			navigate("/agent");
-		}
-	};
+	// const handleClose = (newWorkspaceId?: string) => {
+	// 	if (newWorkspaceId) {
+	// 		navigate(`/agent/${newWorkspaceId}`);
+	// 	} else {
+	// 		navigate("/agent");
+	// 	}
+	// };
 
 	return (
 		<ScrollArea className="relative h-full w-full overflow-hidden">

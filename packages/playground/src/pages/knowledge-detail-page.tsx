@@ -53,7 +53,7 @@ import {
 } from "@semoss/ui/next";
 import { EmbedDocumentsOverlay } from "@/components/knowledge/embed-documents-overlay";
 import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-overlay";
-import { useGlobalBreadcrumbs } from "@/hooks";
+// import { useGlobalBreadcrumbs } from "@/hooks";
 
 type KnowledgeEngine = {
 	app_id: string;
@@ -187,22 +187,22 @@ export const KnowledgeDetailPage = observer(() => {
 		return Array.isArray(raw) ? raw : [raw];
 	}, [knowledge?.tag]);
 
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{ name: t("knowledge:breadcrumbs.home"), path: "/" },
-			{
-				name: t("knowledge:breadcrumbs.knowledgeStores"),
-				path: "/knowledge",
-			},
-			{
-				name:
-					getKnowledge.status === "SUCCESS"
-						? knowledge?.app_name || t("knowledge:detail.knowledge")
-						: t("knowledge:breadcrumbs.loading"),
-				path: `/knowledge/${knowledgeId}`,
-			},
-		],
-	});
+	// useGlobalBreadcrumbs({
+	// 	breadcrumbs: [
+	// 		{ name: t("knowledge:breadcrumbs.home"), path: "/" },
+	// 		{
+	// 			name: t("knowledge:breadcrumbs.knowledgeStores"),
+	// 			path: "/knowledge",
+	// 		},
+	// 		{
+	// 			name:
+	// 				getKnowledge.status === "SUCCESS"
+	// 					? knowledge?.app_name || t("knowledge:detail.knowledge")
+	// 					: t("knowledge:breadcrumbs.loading"),
+	// 			path: `/knowledge/${knowledgeId}`,
+	// 		},
+	// 	],
+	// });
 
 	const getDocuments = usePixel<VectorDocument[]>(
 		knowledgeId
