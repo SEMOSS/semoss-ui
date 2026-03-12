@@ -4,6 +4,7 @@ import {
 	SquareArrowOutUpRightIcon,
 	XIcon,
 } from "lucide-react";
+import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
@@ -54,7 +55,7 @@ interface MCPSelectorProps {
 /**
  * Renders the MCPSelector component for selecting mcps within an agent
  */
-export const MCPSelector: React.FC<MCPSelectorProps> = ({
+const MCPSelectorInner: React.FC<MCPSelectorProps> = ({
 	type,
 	values,
 	disabled,
@@ -66,6 +67,8 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	const [isKnowledgeOverlayOpen, setIsKnowledgeOverlayOpen] = useState(false);
 
 	const debouncedSearch = useDebouncedValue(search);
+	const useMCPFilter =
+		type === "TOOLBOX" || root.theme.enableKnowledgeMCP !== false;
 
 	// track the selected one
 	const selected = values.reduce(
@@ -81,7 +84,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	 */
 	const getMCP = useIteratorPixel<(Engine | App)[], MCP>(
 		(limit, offset) =>
-			`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=${type === "TOOLBOX" ? `["PROJECT", "STORAGE", "DATABASE", "FUNCTION"]` : `["VECTOR"]`}, ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
+			`MyEngineProject (metaKeys = ["tag", "description"], ${useMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}type=${type === "TOOLBOX" ? `["PROJECT", "STORAGE", "DATABASE", "FUNCTION"]` : `["VECTOR"]`}, ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
 		(response) => {
 			// if its less than the limit, we know its the end
 			if (response.length < 25) {
@@ -96,7 +99,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 		{
 			limit: 25,
 		},
-		[debouncedSearch],
+		[debouncedSearch, useMCPFilter],
 	);
 
 	/**
@@ -297,3 +300,5 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 		</div>
 	);
 };
+
+export const MCPSelector = observer(MCPSelectorInner);

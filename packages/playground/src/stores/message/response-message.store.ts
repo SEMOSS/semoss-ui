@@ -318,9 +318,9 @@ downloadResponse = async (format: "word" | "pdf") => {
 	let pixelCommand: string;
 
 	if (format === "word") {
-		pixelCommand = `ToDocx(html=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
+		pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
 	} else if (format === "pdf") {
-		pixelCommand = `ToPdf(html=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
+		pixelCommand = `ToPdf(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
 	} else {
 		throw new Error(`Unsupported format: ${format}`);
 	}
