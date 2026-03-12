@@ -142,7 +142,7 @@ export const Sidebar: React.FC = observer(() => {
 				</Link>
 
 				<Button
-					variant="outline"
+					variant="ghost"
 					size="icon-sm"
 					className="shrink-0 rounded-[7.5px] border border-border p-[3.75px] focus:outline-none focus-visible:border-transparent focus-visible:ring-0"
 					onClick={() => {
