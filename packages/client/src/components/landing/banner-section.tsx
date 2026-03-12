@@ -30,7 +30,7 @@ export const BannerSection = (props: BannerSectionProps) => {
 
 	return (
 		<div
-			className="flex h-[276px] w-full flex-col items-start rounded-[24px] px-[21px] py-[53px]"
+			className="flex min-h-[180px] w-full flex-col items-start rounded-[24px] px-4 py-8 md:min-h-[276px] md:px-[21px] md:py-[53px]"
 			style={{
 				background: `linear-gradient(
                     270deg, rgba(255,255,255,0.00) 19.7%,
@@ -42,7 +42,7 @@ export const BannerSection = (props: BannerSectionProps) => {
 			<H3 className="font-bold text-foreground leading-[133.4%]">
 				{tagline}
 			</H3>
-			<P className="w-3/4 py-6 font-normal font-sans text-[var(--muted-foreground)] text-base leading-normal tracking-normal">
+			<P className="w-full py-4 font-normal font-sans text-[var(--muted-foreground)] text-base leading-normal tracking-normal md:w-3/4 md:py-6">
 				{description}
 			</P>
 			<Button

@@ -62,7 +62,7 @@ export const DeveloperUserScreen = observer(() => {
 			/>
 			<div className="flex w-full flex-col gap-6">
 				<div className="flex grow flex-row gap-6">
-					<div className="flex w-full items-center justify-between">
+					<div className="flex w-full flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
 						<div className="flex flex-col gap-1">
 							<H4 className="font-bold text-foreground">
 								Get started with our tool
