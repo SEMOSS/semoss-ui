@@ -1,4 +1,3 @@
-import type { AxiosResponse } from "axios";
 import { Plus, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -45,6 +44,7 @@ import {
 	getUnassignedTeamEngines,
 } from "@/api";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
+import type { ApiResponse } from "@/types";
 import { useServerPagination } from "@/hooks";
 
 // maps for permissions,
@@ -318,7 +318,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 
 			for (let i = 0; i < requests.length; i++) {
 				let response:
-					| AxiosResponse<{ success: boolean }>
+					| ApiResponse<{ success: boolean }>
 					| {
 							response: Response;
 							data: {
@@ -358,7 +358,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const deleteEngine = async (engine: Engine) => {
 		try {
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {
@@ -386,7 +386,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			for (let i = 0; i < selectedEngines.length; i++) {
 				try {
 					let response:
-						| AxiosResponse<{ success: boolean }>
+						| ApiResponse<{ success: boolean }>
 						| {
 								response: Response;
 								data: {
@@ -425,7 +425,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {
