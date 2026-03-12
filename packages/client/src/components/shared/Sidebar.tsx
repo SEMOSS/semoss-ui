@@ -3,7 +3,7 @@
 import {
 	Archive,
 	Bolt,
-	BrainCircuit,
+	Bot,
 	CircleUserRound,
 	Database,
 	Home,
@@ -30,7 +30,7 @@ const CATALOG_ROUTES = [
 	},
 	{
 		text: "Model",
-		icon: <BrainCircuit className="size-4" />,
+		icon: <Bot className="size-4" />,
 		route: "/engine/model",
 	},
 	{
