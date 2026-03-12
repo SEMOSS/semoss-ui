@@ -192,6 +192,8 @@ export const FileTable = (props: FileTableProps) => {
 				".xlsx",
 				".json",
 				".xml",
+				".eml",
+				".msg",
 			].includes(extension);
 		});
 		setValue("PROJECT_UPLOAD", validFiles);
@@ -690,7 +692,7 @@ export const FileTable = (props: FileTableProps) => {
 										<input
 											ref={fileInputRef}
 											type="file"
-											accept=".pdf,.csv,.txt,.doc,.ppt,.docx,.pptx,.xlsx,.json,.xml"
+											accept=".pdf,.csv,.txt,.doc,.ppt,.docx,.pptx,.xlsx,.json,.xml,.eml,.msg"
 											className="hidden"
 											onChange={handleFileChange}
 											multiple={true}
@@ -724,7 +726,7 @@ export const FileTable = (props: FileTableProps) => {
 												<P className="text-muted-foreground text-sm">
 													Supports PDF, CSV, TXT, DOC,
 													PPT, DOCX, PPTX, XLSX, JSON,
-													XML
+													XML, EML, MSG
 												</P>
 											</div>
 										)}
