@@ -15,6 +15,7 @@ import { EngineQAPage } from "./engine-qa-page";
 import { EngineQueryDataPage } from "./engine-query-data-page";
 import { EngineSettingsPage } from "./engine-settingsPage";
 import { EngineSmssPage } from "./engine-smss-page";
+import { EngineStorageViewerPage } from "./engine-storage-viewer-page";
 import { EngineUsagePage } from "./engine-usage-page";
 
 export const ENGINE_ROUTES: {
@@ -257,6 +258,12 @@ export const ENGINE_ROUTES: {
 				path: "usage",
 				component: EngineUsagePage,
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Storage Viewer",
+				path: "storage-viewer",
+				component: EngineStorageViewerPage,
+				restrict: false,
 			},
 			{
 				name: "Access Control",
