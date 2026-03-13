@@ -308,7 +308,14 @@ export const NewRoomPage = observer(() => {
 								className="mx-auto flex max-w-xl"
 								// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 								dangerouslySetInnerHTML={{
-									__html: root.theme.landing,
+									__html:
+										root.theme?.altLandingKey &&
+										searchParams.has(
+											root.theme.altLandingKey,
+										) &&
+										root.theme.altLanding
+											? root.theme.altLanding
+											: root.theme.landing,
 								}}
 							/>
 						) : (

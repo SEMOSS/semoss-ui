@@ -64,6 +64,8 @@ export class RootStore {
 			},
 			footer: "",
 			landing: "",
+			altLandingKey: "",
+			altLanding: "",
 			sidebar: {
 				//workspaceAlias: "Workspace",
 				headerItems: [],
@@ -202,6 +204,9 @@ export class RootStore {
 			},
 			footer: theme?.footer || this._store.theme.footer,
 			landing: theme?.landing || this._store.theme.landing,
+			altLandingKey:
+				theme?.altLandingKey || this._store.theme.altLandingKey,
+			altLanding: theme?.altLanding || this._store.theme.altLanding,
 			sidebar: {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),
