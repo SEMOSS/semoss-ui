@@ -313,7 +313,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									<ContentEditable
 										ref={contentEditableRef}
 										className={cn(
-											`h-auto w-full overflow-y-auto rounded-md border border-input bg-transparent p-4 pb-14 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
+											`h-auto w-full overflow-y-auto rounded-md border border-input bg-background p-4 pb-14 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-card dark:aria-invalid:ring-destructive/40`,
 											isDragging
 												? "border-primary border-dashed"
 												: "hover:border-primary",
@@ -483,7 +483,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
 						<div className="flex flex-row items-center gap-1">
 							<EngineSelect
-								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+								className="h-8 w-48 gap-0.5 border-none bg-transparent px-2 py-1 text-xs shadow-none [&>svg]:hidden"
 								disabled={isLoading}
 								name={model?.app_name || ""}
 								value={model?.app_id || ""}

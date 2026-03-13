@@ -23,11 +23,13 @@ export const AppLogo: React.FC<AppLogoProps> = observer(({ full = false }) => {
 				<img
 					alt={t("images.logoAlt")}
 					src={root.theme.images.app || appImage}
+					className="dark:brightness-0 dark:invert"
 				/>
 			) : (
 				<img
 					alt={t("images.logoAlt")}
 					src={root.theme.images.logo || logoImage}
+					className="dark:brightness-0 dark:invert"
 				/>
 			)}
 		</div>

@@ -1,6 +1,12 @@
 "use client";
 
-import { LanguagesIcon, LogOutIcon } from "lucide-react";
+import {
+	LanguagesIcon,
+	LogOutIcon,
+	MonitorIcon,
+	MoonIcon,
+	SunIcon,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LANGUAGES, useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
@@ -19,6 +25,7 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 	useSidebar,
+	useTheme,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
 import { toInitials } from "@/utility";
@@ -28,6 +35,7 @@ export function NavUser() {
 	const { isMobile } = useSidebar();
 	const { actions } = useInsight();
 	const { chat } = useChat();
+	const { theme, setTheme } = useTheme();
 
 	const navigate = useNavigate();
 
@@ -56,6 +64,47 @@ export function NavUser() {
 				align="end"
 				sideOffset={4}
 			>
+				<DropdownMenuSub>
+					<DropdownMenuSubTrigger>
+						{theme === "dark" ? (
+							<MoonIcon />
+						) : theme === "system" ? (
+							<MonitorIcon />
+						) : (
+							<SunIcon />
+						)}
+						{theme === "dark"
+							? "Dark"
+							: theme === "system"
+								? "System"
+								: "Light"}
+					</DropdownMenuSubTrigger>
+					<DropdownMenuPortal>
+						<DropdownMenuSubContent>
+							<DropdownMenuCheckboxItem
+								checked={theme === "light"}
+								onCheckedChange={() => setTheme("light")}
+							>
+								<SunIcon />
+								Light
+							</DropdownMenuCheckboxItem>
+							<DropdownMenuCheckboxItem
+								checked={theme === "dark"}
+								onCheckedChange={() => setTheme("dark")}
+							>
+								<MoonIcon />
+								Dark
+							</DropdownMenuCheckboxItem>
+							<DropdownMenuCheckboxItem
+								checked={theme === "system"}
+								onCheckedChange={() => setTheme("system")}
+							>
+								<MonitorIcon />
+								System
+							</DropdownMenuCheckboxItem>
+						</DropdownMenuSubContent>
+					</DropdownMenuPortal>
+				</DropdownMenuSub>
 				<DropdownMenuSub>
 					<DropdownMenuSubTrigger>
 						<LanguagesIcon />

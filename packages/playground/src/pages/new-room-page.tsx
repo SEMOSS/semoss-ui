@@ -300,8 +300,9 @@ export const NewRoomPage = observer(() => {
 					<img
 						src={root.theme.images.landing || landingImage}
 						alt="Background"
-						className="absolute inset-0 h-full w-full select-none object-cover"
+						className="absolute inset-0 h-full w-full select-none object-cover dark:opacity-0"
 					/>
+					<div className="pointer-events-none absolute inset-0 hidden bg-background/60 dark:block" />
 					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
 						{root.theme.landing ? (
 							<div
@@ -500,7 +501,7 @@ export const NewRoomPage = observer(() => {
 							defaultSize={25}
 						>
 							<div
-								className={`relative h-full w-full overflow-hidden rounded-lg border border-input shadow-xs dark:bg-input/30`}
+								className={`relative h-full w-full overflow-hidden rounded-lg border border-input bg-background shadow-xs`}
 							>
 								<Tooltip>
 									<TooltipTrigger asChild>
