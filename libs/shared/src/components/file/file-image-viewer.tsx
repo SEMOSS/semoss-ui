@@ -29,17 +29,21 @@ export const FileImageViewer: React.FC<FileImageViewerProps> = ({
 }) => {
 	const insight = useInsight();
 	const ext = path.split(".").pop()?.toLowerCase() || "";
+	const targetInsightId =
+		mode.type === "INSIGHT"
+			? mode.insightId || insight.insightId
+			: insight.insightId;
 
 	let getFilePixel = "";
 	if (mode.type === "APP") {
 		getFilePixel = `GetAppAssetsBase64(filePath=["${path}"], project=["${mode.app}"]);`;
 	} else if (mode.type === "ENGINE") {
 		getFilePixel = `GetEngineAssetsBase64(filePath=["${path}"], engine=["${mode.engine}"]);`;
-	} else if (mode.type === "INSIGHT") {
+	} else if (mode.type === "INSIGHT" && targetInsightId) {
 		getFilePixel = `GetInsightAssetsBase64(filePath=["${path}"]);`;
 	}
 
-	const getFile = usePixel<string>(getFilePixel, {}, insight.insightId);
+	const getFile = usePixel<string>(getFilePixel, {}, targetInsightId);
 
 	return (
 		<div className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1">

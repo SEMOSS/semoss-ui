@@ -331,7 +331,6 @@ export class RoomStore {
 				}
 			}
 		}
-
 		return false;
 	}
 
@@ -847,22 +846,24 @@ export class RoomStore {
 			// set the new files
 			uploaded = response.data;
 
-			// filter the uploaded files to only include allowed file types based on the theme configuration (if configured)
+			const normalizeExt = (value: string) =>
+				value.trim().toLowerCase().replace(/^\./, "");
+
 			mediaInputs = uploaded.filter((f) => {
 				const allowed = this._theme.allowedFileTypes;
 
 				// If not configured (or empty), allow all
-				if (!allowed || allowed.length === 0) {
-					return true;
-				}
+				if (!allowed || allowed.length === 0) return true;
 
-				// get the extension
-				const ext = f.fileName.split(".").pop();
-				if (allowed.indexOf(ext) > -1) {
-					return true;
-				}
+				const allowedSet = new Set(allowed.map(normalizeExt));
 
-				return false;
+				const rawExt = f.fileName.split(".").pop() ?? "";
+				const ext = normalizeExt(rawExt);
+
+				// If there's no extension, it's not allowed (when allow-list is configured)
+				if (!ext) return false;
+
+				return allowedSet.has(ext);
 			});
 		}
 
@@ -923,7 +924,6 @@ export class RoomStore {
 	 * Process a tool call
 	 * @param messageId - id of the message
 	 * @param toolId - id of the tool
-	 * @param toolName - name of the tool
 	 * @param toolResponse - response from the tool
 	 * @param toolStatus - status of the tool execution
 	 * @param executedParameters - parameters used by the tool
@@ -931,9 +931,8 @@ export class RoomStore {
 	processTool = async (
 		messageId: string,
 		toolId: string,
-		toolName: string,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled",
+		toolStatus: "success" | "error" | "cancelled" = "success",
 		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {
@@ -1035,9 +1034,13 @@ export class RoomStore {
 				ReturnType<typeof getPixelJobStreaming>
 			>["message"][number],
 		) => void,
+		showLoading: boolean = true,
+		setErrorOnFail: boolean = true,
 	) => {
 		try {
-			this.setIsLoading(true);
+			if (showLoading) {
+				this.setIsLoading(true);
+			}
 
 			// Start async execution to get job ID
 			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
@@ -1093,10 +1096,18 @@ export class RoomStore {
 		} catch (e) {
 			console.error(e);
 
-			// show the error
-			this._store.error = e;
+			if (setErrorOnFail) {
+				// show the error
+				runInAction(() => {
+					this._store.error = e;
+				});
+			}
+
+			throw e;
 		} finally {
-			this.setIsLoading(false);
+			if (showLoading) {
+				this.setIsLoading(false);
+			}
 		}
 	};
 }

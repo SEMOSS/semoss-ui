@@ -2,12 +2,8 @@ import { observer } from "mobx-react-lite";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { useWorkspace } from "@/hooks";
-import { SettingsNavPanel } from "../../components/blocks-workspace/panels";
-import {
-	SettingsPanel,
-	TerminalPanel,
-	WorkspaceManager,
-} from "../../components/workspace";
+import { AppDetailPage } from "@/pages/app/app-detail-page";
+import { TerminalPanel, WorkspaceManager } from "../../components/workspace";
 import type { WorkspaceOptions } from "../../stores";
 import { MCPJsonEditor } from "../shared";
 import { CodeWorkspaceActions } from "./CodeWorkspaceActions";
@@ -41,7 +37,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						id: "settings",
 						type: "tab",
 						name: "Settings",
-						component: "settings",
+						component: "settingsPanel",
 						config: {},
 					},
 				],
@@ -113,9 +109,7 @@ export const CodeWorkspace: React.FC = observer(() => {
 		} else if (component === "renderer") {
 			return <RendererPanel />;
 		} else if (component === "settingsPanel") {
-			return <SettingsPanel value={config.value} />;
-		} else if (component === "settings") {
-			return <SettingsNavPanel />; // This is a placeholder for the settings tab, which is handled in the border layout
+			return <AppDetailPage showNav={false} />;
 		} else if (component === "terminal") {
 			return <TerminalPanel />;
 		}

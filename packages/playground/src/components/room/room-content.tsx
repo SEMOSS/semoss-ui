@@ -29,7 +29,7 @@ import {
 	RoomInputMenuToolbox,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useChat } from "@/hooks";
+import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
@@ -50,6 +50,7 @@ interface RoomContentProps {
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
+	const { getGracefulErrorMessage } = useGracefulErrors();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
 
@@ -172,7 +173,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				room.processTool(
 					tool.message,
 					tool.id,
-					tool.name,
 					tool.response,
 					tool.tool_status,
 					tool.executedParameters,
@@ -328,8 +328,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
 								<span>
-									{room.error.message ||
-										t("content.errorDefault")}
+									{getGracefulErrorMessage(room.error)}
 								</span>
 							</div>
 						) : null}

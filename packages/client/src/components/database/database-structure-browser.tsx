@@ -1,5 +1,3 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 import {
 	ChevronDown,
 	ChevronRight,
@@ -58,9 +56,13 @@ export const DatabaseStructureBrowser: React.FC<
 	onGenerateQuery,
 	generateSelectedColumnsQuery,
 }) => {
+	// "Expand All/Collapse All" button in sync with expand/collapse icons
+	const allExpanded =
+		searchedStructure.length > 0 &&
+		searchedStructure.every((t) => !!expandedTables[t.table]);
 	const handleTableHeaderClick = (
 		tableName: string,
-		event: React.MouseEvent,
+		event: React.SyntheticEvent,
 	) => {
 		event.preventDefault();
 		if (onTableClick) {
@@ -77,7 +79,7 @@ export const DatabaseStructureBrowser: React.FC<
 	const handleColumnClick = (
 		tableName: string,
 		columnName: string,
-		event: React.MouseEvent,
+		event: React.SyntheticEvent,
 	) => {
 		event.preventDefault();
 		event.stopPropagation();
@@ -196,7 +198,7 @@ export const DatabaseStructureBrowser: React.FC<
 					className="h-9 whitespace-nowrap font-medium text-xs"
 					data-testid="database-toggle-all-btn"
 				>
-					{toggleState ? "Collapse All" : "Expand All"}
+					{allExpanded ? "Collapse All" : "Expand All"}
 				</Button>
 			</div>
 
@@ -261,39 +263,44 @@ export const DatabaseStructureBrowser: React.FC<
 								>
 									{/* Table Header */}
 									<div
-										onClick={(e) =>
-											handleTableHeaderClick(
-												table.table,
-												e,
-											)
-										}
 										className={cn(
-											"group flex cursor-pointer items-center gap-3 px-3 py-2.5 transition-colors",
+											"group flex items-center gap-3 px-3 py-2.5 transition-colors",
 											"hover:bg-muted/50",
 											isExpanded &&
 												"border-border/40 border-b bg-muted/30",
 										)}
-										title="Click to select all columns"
 										data-testid={`database-table-header-${table.table}`}
 									>
-										<div className="flex size-8 items-center justify-center rounded-md bg-primary/10 transition-colors group-hover:bg-primary/20">
-											<Database className="size-4 text-primary" />
-										</div>
-										<div className="flex-1">
-											<p className="font-semibold text-foreground text-sm">
-												{table.table}
-											</p>
-											{tableHasSelectedColumns && (
-												<p className="text-primary text-xs">
-													{
-														getSelectedColumnsForTable(
-															table.table,
-														).length
-													}{" "}
-													selected
+										<button
+											type="button"
+											onClick={(e) =>
+												handleTableHeaderClick(
+													table.table,
+													e,
+												)
+											}
+											className="flex flex-1 items-center gap-3 text-left"
+											title="Click to select all columns"
+										>
+											<div className="flex size-8 items-center justify-center rounded-md bg-primary/10 transition-colors group-hover:bg-primary/20">
+												<Database className="size-4 text-primary" />
+											</div>
+											<div className="flex-1">
+												<p className="font-semibold text-foreground text-sm">
+													{table.table}
 												</p>
-											)}
-										</div>
+												{tableHasSelectedColumns && (
+													<p className="text-primary text-xs">
+														{
+															getSelectedColumnsForTable(
+																table.table,
+															).length
+														}{" "}
+														selected
+													</p>
+												)}
+											</div>
+										</button>
 										<Button
 											variant="ghost"
 											size="icon"
@@ -330,7 +337,8 @@ export const DatabaseStructureBrowser: React.FC<
 															column.column,
 														);
 													return (
-														<div
+														<button
+															type="button"
 															key={`${table.table}-${column.column}`}
 															onClick={(e) =>
 																handleColumnClick(
@@ -340,15 +348,17 @@ export const DatabaseStructureBrowser: React.FC<
 																)
 															}
 															className={cn(
-																"group flex cursor-pointer items-center gap-3 border-border/20 border-t px-3 py-2 transition-all duration-150",
+																"group flex w-full cursor-pointer items-center gap-3 border-border/20 border-t px-3 py-2 text-left transition-all duration-150",
 																"hover:bg-muted/50",
 																isSelected &&
 																	"bg-primary/10 hover:bg-primary/15",
 															)}
 															title={`Click to ${isSelected ? "deselect" : "select"} ${column.column} (${column.type})`}
+															aria-pressed={
+																isSelected
+															}
 															data-testid={`database-column-${table.table}-${column.column}`}
 														>
-															<div className="w-8" />
 															<div className="flex flex-1 items-center gap-2.5">
 																<DatabaseColumnIcon
 																	type={
@@ -357,7 +367,7 @@ export const DatabaseStructureBrowser: React.FC<
 																/>
 																<p
 																	className={cn(
-																		"text-sm transition-all",
+																		"text-left text-sm transition-all",
 																		isSelected
 																			? "font-semibold text-primary"
 																			: "font-normal text-foreground",
@@ -371,7 +381,7 @@ export const DatabaseStructureBrowser: React.FC<
 															{isSelected && (
 																<div className="size-2 rounded-full bg-primary" />
 															)}
-														</div>
+														</button>
 													);
 												},
 											)}

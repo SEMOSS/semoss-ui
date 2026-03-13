@@ -15,6 +15,7 @@ import { EngineQAPage } from "./engine-qa-page";
 import { EngineQueryDataPage } from "./engine-query-data-page";
 import { EngineSettingsPage } from "./engine-settingsPage";
 import { EngineSmssPage } from "./engine-smss-page";
+import { EngineStorageViewerPage } from "./engine-storage-viewer-page";
 import { EngineUsagePage } from "./engine-usage-page";
 
 export const ENGINE_ROUTES: {
@@ -66,7 +67,7 @@ export const ENGINE_ROUTES: {
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
@@ -75,16 +76,16 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
-			},
-			{
-				name: "Files",
-				path: "files",
-				component: EngineFileManagerPage,
-				restrict: ["OWNER", "EDIT", "READ_ONLY"],
 			},
 		],
 	},
@@ -103,16 +104,16 @@ export const ENGINE_ROUTES: {
 				restrict: false,
 			},
 			{
-				name: "Chat",
-				path: "chat",
-				component: EngineModelChatPage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
-			},
-			{
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Chat",
+				path: "chat",
+				component: EngineModelChatPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
@@ -121,16 +122,16 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
-			},
-			{
-				name: "Files",
-				path: "files",
-				component: EngineFileManagerPage,
-				restrict: ["OWNER", "EDIT", "READ_ONLY"],
 			},
 		],
 	},
@@ -149,22 +150,22 @@ export const ENGINE_ROUTES: {
 				restrict: false,
 			},
 			{
-				name: "Metadata",
-				path: "metadata",
-				component: EngineMetadataPage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
-			},
-			{
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Metadata",
+				path: "metadata",
+				component: EngineMetadataPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Query",
 				path: "query",
 				component: EngineQueryDataPage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
@@ -173,16 +174,16 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
-			},
-			{
-				name: "Files",
-				path: "files",
-				component: EngineFileManagerPage,
-				restrict: ["OWNER", "EDIT"],
 			},
 		],
 	},
@@ -204,19 +205,19 @@ export const ENGINE_ROUTES: {
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Documents",
 				path: "documents",
 				component: EngineFilePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Q&A",
 				path: "qa",
 				component: EngineQAPage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
@@ -225,16 +226,16 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
-			},
-			{
-				name: "Files",
-				path: "files",
-				component: EngineFileManagerPage,
-				restrict: ["OWNER", "EDIT"],
 			},
 		],
 	},
@@ -256,7 +257,13 @@ export const ENGINE_ROUTES: {
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Storage Viewer",
+				path: "storage-viewer",
+				component: EngineStorageViewerPage,
+				restrict: false,
 			},
 			{
 				name: "Access Control",
@@ -265,16 +272,16 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
-			},
-			{
-				name: "Files",
-				path: "files",
-				component: EngineFileManagerPage,
-				restrict: ["OWNER", "EDIT"],
 			},
 		],
 	},
@@ -296,7 +303,7 @@ export const ENGINE_ROUTES: {
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
@@ -305,16 +312,16 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
-			},
-			{
-				name: "Files",
-				path: "files",
-				component: EngineFileManagerPage,
-				restrict: ["OWNER", "EDIT"],
 			},
 		],
 	},
