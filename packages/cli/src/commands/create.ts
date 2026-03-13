@@ -4,7 +4,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Env, Insight } from "@semoss/sdk";
 import { DEFAULT_CONFIG } from "../constants.js";
-import type { Config } from "../types.js";
+import type { BatchConfig, Config } from "../types.js";
 import {
 	ensureSemossGitignore,
 	getCurrentContext,
@@ -43,6 +43,11 @@ create in specific directory
 			char: "f",
 			description: "Overwrite if directory exists",
 			default: false,
+		}),
+		allInstances: Flags.boolean({
+			description:
+				"Add app to all configured instances in global config (use --no-all-instances to skip)",
+			allowNo: true,
 		}),
 	};
 
@@ -152,6 +157,7 @@ create in specific directory
 							targetDir,
 							instanceName: context.instanceName,
 							instance: context.instance,
+							addToAllInstances: flags.allInstances,
 							logger,
 						});
 					} catch (error) {
@@ -237,6 +243,7 @@ create in specific directory
 		targetDir: string;
 		instanceName: string;
 		instance: import("../types.js").InstanceConfig;
+		addToAllInstances?: boolean;
 		logger: Logger;
 	}): Promise<void> {
 		const {
@@ -245,6 +252,7 @@ create in specific directory
 			targetDir,
 			instanceName,
 			instance,
+			addToAllInstances,
 			logger,
 		} = options;
 
@@ -277,9 +285,9 @@ create in specific directory
 		const newIndexFileContent = `<html><style>html {font-family: sans-serif; padding: 30px;}</style><h1>${appName}</h1><p>This is placeholder text for your new Application.</p><p>You can add new files and edit this text using the Code Editor.</p></html>`;
 
 		const saveIndexFilePixel = `
-			SaveAsset(fileName=["${newIndexFilePath}"], content=["<encode>${newIndexFileContent}</encode>"], space=["${appId}"]);
-			CommitAsset(filePath=["${newIndexFilePath}"], comment=["Initial index.html from create"], space=["${appId}"])
-		`;
+      SaveAsset(fileName=["${newIndexFilePath}"], content=["<encode>${newIndexFileContent}</encode>"], space=["${appId}"]);
+      CommitAsset(filePath=["${newIndexFilePath}"], comment=["Initial index.html from create"], space=["${appId}"])
+    `;
 
 		const { pixelReturn: saveReturn } =
 			await insight.actions.run(saveIndexFilePixel);
@@ -302,30 +310,84 @@ create in specific directory
 			);
 		}
 
+		// Register app in global config (credentials store)
+		const credentials = loadCredentials();
+		const instanceNames = Object.keys(credentials.instances || {});
+		const hasMultipleInstances = instanceNames.length > 1;
+		const shouldPromptForAllInstances =
+			hasMultipleInstances && addToAllInstances === undefined;
+		const shouldAddToAllInstances = hasMultipleInstances
+			? (addToAllInstances ??
+				(await ux.confirm(
+					"Add this app to all configured instances in your global config? (y/n)",
+				)))
+			: false;
+
+		if (shouldPromptForAllInstances && shouldAddToAllInstances) {
+			this.log("   ➕ Adding app to all configured instances");
+		}
+
+		const instancesToUpdate = shouldAddToAllInstances
+			? instanceNames
+			: [instanceName];
+
+		const batchInstances: Record<string, BatchConfig> = {};
+
+		for (const configuredInstanceName of instancesToUpdate) {
+			if (!credentials.instances[configuredInstanceName]) {
+				continue;
+			}
+
+			const currentInstance =
+				credentials.instances[configuredInstanceName];
+
+			if (!currentInstance.apps) {
+				currentInstance.apps = {};
+			}
+
+			credentials.instances[configuredInstanceName].apps[appId] = {
+				appId,
+				name: appName,
+				path: absolutePath,
+			};
+
+			// Extract module path from full module URL
+			// instance.endpoint is the base URL (e.g., https://semoss.example.com)
+			// instance.module is the full URL (e.g., https://semoss.example.com/Monolith)
+			let modulePath = "/Monolith";
+			let endpoint = currentInstance.endpoint || currentInstance.module;
+			if (currentInstance.module && currentInstance.endpoint) {
+				modulePath =
+					currentInstance.module.replace(
+						currentInstance.endpoint,
+						"",
+					) || "/Monolith";
+			} else if (currentInstance.module) {
+				// Parse module path from URL
+				try {
+					const url = new URL(currentInstance.module);
+					modulePath = url.pathname || "/Monolith";
+					endpoint = `${url.protocol}//${url.host}`;
+				} catch {
+					modulePath = "/Monolith";
+				}
+			}
+			batchInstances[configuredInstanceName] = {
+				module: modulePath,
+				app: appId,
+				accessKey: currentInstance.accessKey,
+				secretKey: currentInstance.secretKey,
+				endpoint: endpoint,
+			};
+		}
+
+		// Set as current app
+		credentials.currentApp = appId;
+		saveCredentials(credentials);
 		// Save smss.json in the new app directory
 		// Combine DEFAULT_CONFIG with global settings (deduplicated)
-		const creds = loadCredentials();
-		const globalTargets = creds.settings?.defaultTargets || [];
-		const globalIgnore = creds.settings?.globalIgnore || [];
-
-		// Extract module path from full module URL
-		// instance.endpoint is the base URL (e.g., https://semoss.example.com)
-		// instance.module is the full URL (e.g., https://semoss.example.com/Monolith)
-		let modulePath = "/Monolith";
-		let endpoint = instance.endpoint || instance.module;
-		if (instance.module && instance.endpoint) {
-			modulePath =
-				instance.module.replace(instance.endpoint, "") || "/Monolith";
-		} else if (instance.module) {
-			// Parse module path from URL
-			try {
-				const url = new URL(instance.module);
-				modulePath = url.pathname || "/Monolith";
-				endpoint = `${url.protocol}//${url.host}`;
-			} catch {
-				modulePath = "/Monolith";
-			}
-		}
+		const globalTargets = credentials.settings?.defaultTargets || [];
+		const globalIgnore = credentials.settings?.globalIgnore || [];
 
 		const localConfig: Config = {
 			...DEFAULT_CONFIG,
@@ -338,15 +400,7 @@ create in specific directory
 				new Set([...(DEFAULT_CONFIG.ignore || []), ...globalIgnore]),
 			),
 			deploy: {
-				batch: {
-					[instanceName]: {
-						module: modulePath,
-						app: appId,
-						accessKey: instance.accessKey,
-						secretKey: instance.secretKey,
-						endpoint: endpoint,
-					},
-				},
+				batch: batchInstances,
 			},
 		};
 		const configPath = path.join(absolutePath, "smss.json");
@@ -398,24 +452,6 @@ create in specific directory
 		} else {
 			fs.writeFileSync(envPath, `APP=${appId}\n`);
 		}
-
-		// Register app in global config (credentials store)
-		const credentials = loadCredentials();
-		if (credentials.instances[instanceName]) {
-			if (!credentials.instances[instanceName].apps) {
-				credentials.instances[instanceName].apps = {};
-			}
-
-			credentials.instances[instanceName].apps[appId] = {
-				appId,
-				name: appName,
-				path: absolutePath,
-			};
-		}
-
-		// Set as current app
-		credentials.currentApp = appId;
-		saveCredentials(credentials);
 
 		this.log(`   ✅ App initialized on server`);
 		this.log(`   📋 App ID: ${appId}\n`);

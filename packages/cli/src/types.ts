@@ -2,6 +2,14 @@
 // Legacy Config (smss.json) - For backward compatibility
 // ============================================================================
 
+export type BatchConfig = {
+	module: string;
+	app: string;
+	accessKey: string;
+	secretKey: string;
+	endpoint: string;
+};
+
 export type Config = {
 	/** Id of the app */
 	app: string;
@@ -17,7 +25,7 @@ export type Config = {
 	/** Deploy options */
 	deploy: {
 		/** Batch deployment configurations */
-		batch?: Record<string, unknown>;
+		batch?: Record<string, BatchConfig>;
 	};
 };
 

@@ -44,6 +44,10 @@ export const App: React.FC = () => {
 		dryRun: boolean;
 		targets: string[];
 	} | null>(null);
+	const [pendingCreateAction, setPendingCreateAction] = useState<{
+		step: "name" | "allInstances";
+		args: string[];
+	} | null>(null);
 
 	/** Get current git branch if in a git repository */
 	const getGitBranch = (): string | undefined => {
@@ -150,6 +154,53 @@ export const App: React.FC = () => {
 	};
 
 	const handleCommand = async (command: string) => {
+		if (pendingCreateAction) {
+			addEntry({ type: "command", content: command });
+			const response = command.trim();
+
+			if (pendingCreateAction.step === "name") {
+				if (!response) {
+					addEntry({
+						type: "info",
+						content: "App name is required. Please enter a name.",
+					});
+					return;
+				}
+
+				setPendingCreateAction({
+					step: "allInstances",
+					args: [...pendingCreateAction.args, "--name", response],
+				});
+				addEntry({
+					type: "info",
+					content:
+						"Create this app on all configured instances? (y/n)",
+				});
+				return;
+			}
+
+			const normalized = response.toLowerCase();
+			if (normalized === "y" || normalized === "yes") {
+				setPendingCreateAction(null);
+				await executeCreateCommand([
+					...pendingCreateAction.args,
+					"--all-instances",
+				]);
+			} else if (normalized === "n" || normalized === "no") {
+				setPendingCreateAction(null);
+				await executeCreateCommand([
+					...pendingCreateAction.args,
+					"--no-all-instances",
+				]);
+			} else {
+				addEntry({
+					type: "info",
+					content: "Please enter 'y' or 'n'",
+				});
+			}
+			return;
+		}
+
 		// Check if there's a pending confirmation
 		if (pendingAction) {
 			const response = command.toLowerCase().trim();
@@ -487,21 +538,21 @@ Built-in Commands:
   :theme [name]   List themes or switch to a theme
   :clear          Clear output history
   :exit           Exit interactive mode (or press Ctrl+C)
-
+ 
 Shell Commands:
   !<command>      Run a shell command (e.g., !ls, !dir, !git status)
-
+ 
 Pixel Commands:
   Enter any Pixel command directly (without colon prefix)
   Example: GetUserInfo();
   Example: MyProjects();
-
+ 
 Deploy Examples:
   :deploy                    Deploy current app
   :deploy --dry-run         Preview deployment
   :deploy --target=java     Deploy only java folder
   :deploy --rollback        Rollback to previous version
-
+ 
 Keyboard Shortcuts:
   ↑ / ↓              Navigate command history
   Shift+↑ / Shift+↓  Scroll output (also PgUp/PgDn)
@@ -765,7 +816,7 @@ Module:   ${instance?.module || "unknown"}
 App:      ${appInfo}${targetMsg}
 ${"─".repeat(50)}
 This action will replace the current deployment. Use --rollback to revert if needed.
-
+ 
 Proceed? (y/n)`;
 			addEntry({
 				type: "info",
@@ -1468,15 +1519,57 @@ Proceed? (y/n)`;
 	};
 
 	const handleCreateCommand = async (args: string[]) => {
-		if (args.length === 0) {
+		let hasName = false;
+		let hasAllInstancesFlag = false;
+
+		for (let index = 0; index < args.length; index++) {
+			const arg = args[index];
+
+			if (arg === "--all-instances" || arg === "--no-all-instances") {
+				hasAllInstancesFlag = true;
+			}
+
+			if (arg.startsWith("--name=") || arg.startsWith("-n=")) {
+				hasName = true;
+				continue;
+			}
+
+			if (arg === "--name" || arg === "-n") {
+				const nextArg = args[index + 1];
+				if (nextArg && !nextArg.startsWith("-")) {
+					hasName = true;
+				}
+			}
+		}
+
+		if (!hasName) {
+			setPendingCreateAction({
+				step: "name",
+				args,
+			});
 			addEntry({
 				type: "info",
-				content:
-					'Usage: :create --name="App Name" [--template=react|next]',
+				content: "What is the app name?",
 			});
 			return;
 		}
 
+		if (!hasAllInstancesFlag) {
+			setPendingCreateAction({
+				step: "allInstances",
+				args,
+			});
+			addEntry({
+				type: "info",
+				content: "Create this app on all configured instances? (y/n)",
+			});
+			return;
+		}
+
+		await executeCreateCommand(args);
+	};
+
+	const executeCreateCommand = async (args: string[]) => {
 		setLoading(true);
 		addEntry({
 			type: "loading",
@@ -1672,7 +1765,7 @@ Proceed? (y/n)`;
 						type: "success",
 						content: `
 ✨ You found the secret! ✨
-
+ 
 Crafted with care by Travon, Stella, and Parth
 `,
 					});

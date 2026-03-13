@@ -108,9 +108,9 @@ export default class Connect extends Command {
 			]);
 
 			const instanceName = flags.name || answers.name;
-			const module = flags.module || answers.module;
-			const accessKey = flags.accessKey || answers.accessKey;
-			const secretKey = flags.secretKey || answers.secretKey;
+			let module = flags.module || answers.module;
+			let accessKey = flags.accessKey || answers.accessKey;
+			let secretKey = flags.secretKey || answers.secretKey;
 			const isDefault = flags.default || answers.default;
 
 			logger.debug(`Connecting instance "${instanceName}" to ${module}`);
@@ -119,9 +119,16 @@ export default class Connect extends Command {
 			if (flags.test) {
 				let connectionSuccessful = false;
 				let shouldRetry = true;
+				let attemptCount = 0;
 
 				while (shouldRetry && !connectionSuccessful) {
-					this.log(chalk.cyan("\n🔌 Testing Connection"));
+					attemptCount++;
+
+					this.log(
+						chalk.cyan(
+							`\n🔌 Testing Connection (Attempt ${attemptCount})`,
+						),
+					);
 					this.log(chalk.dim("─".repeat(50)));
 					this.log(chalk.dim(`Server:     ${module}`));
 					this.log(
@@ -194,6 +201,23 @@ export default class Connect extends Command {
 
 						if (!retry) {
 							shouldRetry = false;
+							const { continueAnyway } = await inquirer.prompt([
+								{
+									type: "confirm",
+									name: "continueAnyway",
+									message:
+										"Save instance anyway without verification?",
+									default: false,
+								},
+							]);
+
+							if (!continueAnyway) {
+								this.log(
+									chalk.yellow("\n⚠️  Setup cancelled.\n"),
+								);
+								return;
+							}
+
 							this.log(
 								chalk.yellow(
 									"\n⚠️  Saving instance without connection verification.",
@@ -204,6 +228,60 @@ export default class Connect extends Command {
 									"You can test the connection later with: semoss status\n",
 								),
 							);
+						} else {
+							const { updateCredentials } = await inquirer.prompt(
+								[
+									{
+										type: "confirm",
+										name: "updateCredentials",
+										message:
+											"Would you like to update any values before retrying?",
+										default: true,
+									},
+								],
+							);
+
+							if (updateCredentials) {
+								const updates = await inquirer.prompt([
+									{
+										type: "input",
+										name: "module",
+										message: "Module URL:",
+										default: module,
+										validate: (input: string) => {
+											if (!input)
+												return "Module URL is required";
+											if (!input.startsWith("http")) {
+												return "URL must start with http:// or https://";
+											}
+											return true;
+										},
+									},
+									{
+										type: "input",
+										name: "accessKey",
+										message: "Access Key:",
+										default: accessKey,
+										validate: (input: string) =>
+											input
+												? true
+												: "Access Key is required",
+									},
+									{
+										type: "password",
+										name: "secretKey",
+										message:
+											"Secret Key (leave blank to keep current):",
+										mask: "*",
+									},
+								]);
+
+								module = updates.module;
+								accessKey = updates.accessKey;
+								if (updates.secretKey) {
+									secretKey = updates.secretKey;
+								}
+							}
 						}
 					}
 				}
