@@ -10,6 +10,7 @@ import {
 	MCP_EXECUTION_AUTO,
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
+	TOOL_OUTPUT_UNREADABLE_PROMPT,
 } from "@/constants";
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
@@ -226,7 +227,7 @@ paramValues=[${JSON.stringify({
 
 			const { output } = response.results[0];
 
-			// sync withe the results
+			// sync with the results
 			inputMessage.sync(output.inputMessage);
 			responseMessage.sync(output.responseMessage);
 
@@ -482,14 +483,8 @@ paramValues=[${JSON.stringify({
 				"success",
 				tool.parameters,
 			);
-		} catch (e) {
-			// mark the failure
-			await this.saveToolExecution(
-				tool,
-				e.toString(),
-				"error",
-				tool.parameters,
-			);
+		} catch {
+			// Failure handled by saveToolExecution, which will set the tool status to error and save the error response
 		}
 	};
 
@@ -504,12 +499,13 @@ paramValues=[${JSON.stringify({
 		toolResponse: string,
 		toolStatus: "success" | "error" | "cancelled" = "success",
 		executedParameters: Record<string, unknown>,
+		errorDuringSaving: boolean = false,
 	): Promise<void> => {
 		const room = this.room;
 
 		// wrap the message
 		if (toolStatus === "error") {
-			toolResponse = `${TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
+			toolResponse = `${errorDuringSaving ? TOOL_OUTPUT_UNREADABLE_PROMPT : TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
 		} else if (toolStatus === "cancelled") {
 			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
 		}
@@ -606,6 +602,8 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 						}
 					});
 				},
+				true,
+				toolStatus !== "success", // If the tool execution succeeds but saving it failed, we will try to save it again with an error status, so dont error the room yet
 			);
 
 			const { output } = response.results[0];
@@ -628,14 +626,33 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 				this.toolResponseMessage = null;
 			}
 		} catch (e) {
-			// set error status
-			tool.status = "ERROR";
+			if (toolStatus === "success") {
+				// Attempt to save the error response
 
-			// remove as a child
-			this.removeChild(responseMessage);
+				// set status back to loading so that the error response can be saved
+				runInAction(() => {
+					tool.status = "LOADING";
+				});
 
-			// clear it
-			this.toolResponseMessage = null;
+				await this.saveToolExecution(
+					tool,
+					`Failed to save tool response: ${e}`,
+					"error",
+					executedParameters,
+					true,
+				);
+			} else {
+				// set error status
+				runInAction(() => {
+					tool.status = "ERROR";
+				});
+
+				// remove as a child
+				this.removeChild(responseMessage);
+
+				// clear it
+				this.toolResponseMessage = null;
+			}
 
 			throw e;
 		} finally {

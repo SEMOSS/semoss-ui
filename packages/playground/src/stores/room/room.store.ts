@@ -1034,9 +1034,13 @@ export class RoomStore {
 				ReturnType<typeof getPixelJobStreaming>
 			>["message"][number],
 		) => void,
+		showLoading: boolean = true,
+		setErrorOnFail: boolean = true,
 	) => {
 		try {
-			this.setIsLoading(true);
+			if (showLoading) {
+				this.setIsLoading(true);
+			}
 
 			// Start async execution to get job ID
 			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
@@ -1092,10 +1096,18 @@ export class RoomStore {
 		} catch (e) {
 			console.error(e);
 
-			// show the error
-			this._store.error = e;
+			if (setErrorOnFail) {
+				// show the error
+				runInAction(() => {
+					this._store.error = e;
+				});
+			}
+
+			throw e;
 		} finally {
-			this.setIsLoading(false);
+			if (showLoading) {
+				this.setIsLoading(false);
+			}
 		}
 	};
 }

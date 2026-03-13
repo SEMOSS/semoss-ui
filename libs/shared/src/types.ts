@@ -146,6 +146,20 @@ export interface ThemeMap {
 		 * Defaults to true (links shown).
 		 */
 		showPlatformLinks?: boolean;
+
+		/**
+		 * Graceful error messages to show in the UI
+		 */
+		gracefulErrors: (
+			| {
+					pattern: string;
+					errorKey: string;
+			  }
+			| {
+					pattern: string;
+					text: string;
+			  }
+		)[];
 	};
 }
 
