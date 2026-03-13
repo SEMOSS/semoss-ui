@@ -4,7 +4,7 @@ import {
 	Close,
 	OpenInFullSharp,
 } from "@mui/icons-material";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Navigate } from "react-router-dom";
 import {
@@ -141,6 +141,10 @@ const StyledButton = styled(Button)({
 const DATABASE_OPTIONS = [
 	{ label: "Audit Logs", value: "AuditLogs" },
 	{ label: "Local Master Database", value: "LocalMasterDatabase" },
+	{
+		label: "Model Inference Logs Database",
+		value: "ModelInferenceLogsDatabase",
+	},
 	{ label: "Scheduler", value: "scheduler" },
 	{ label: "Security", value: "security" },
 	{ label: "Themes", value: "themes" },
@@ -199,10 +203,6 @@ export const AdminQueryPage = () => {
 	const selectedDatabase = watch("SELECTED_DATABASE");
 
 	const disableButton = !selectedDatabase || !query?.trim();
-	useEffect(() => {
-		setPage(0);
-		setRowsPerPage(10);
-	}, [output]);
 
 	if (!adminMode) {
 		return <Navigate to={"/settings"} />;
@@ -215,6 +215,8 @@ export const AdminQueryPage = () => {
 	const submitQuery = handleSubmit((data: TypeDbQuery) => {
 		const queryToRun = data.QUERY ?? "";
 		setLastQuery(queryToRun);
+		setPage(0);
+		setRowsPerPage(10);
 		const pixelString = `AdminSqlQuery(database=["${data.SELECTED_DATABASE}"], query=["<encode>${queryToRun.replaceAll("`", "")}</encode>"], commit=[true]);`;
 		monolithStore
 			.runQuery(pixelString)
@@ -406,10 +408,7 @@ export const AdminQueryPage = () => {
 		return null;
 	};
 
-	const outputPanel = useMemo(
-		() => displayQueryOutput(),
-		[output, lastQuery, page, rowsPerPage],
-	);
+	const outputPanel = displayQueryOutput();
 
 	return (
 		<StyledContainer>
