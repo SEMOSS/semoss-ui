@@ -372,7 +372,7 @@ export class ConfigStore {
 
 		// Set CSRF flag to true
 		Env.update({ CSRF: this.store.config.csrf });
-		
+
 		// get the user information
 		await this.getUser();
 

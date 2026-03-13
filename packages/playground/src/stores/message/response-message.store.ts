@@ -226,7 +226,7 @@ paramValues=[${JSON.stringify({
 
 			const { output } = response.results[0];
 
-			// sync withe the results
+			// sync with the results
 			inputMessage.sync(output.inputMessage);
 			responseMessage.sync(output.responseMessage);
 
@@ -303,42 +303,47 @@ paramValues=[${JSON.stringify({
 		}
 	};
 
-/**
- * Download the response as a Word or PDF document
- */
-downloadResponse = async (format: "word" | "pdf") => {
-	// Extract text from all TEXT parts
-	const text = this.parts
-		.filter(part => part.type === "TEXT")
-		.map(part => part.text)
-		.join("");
+	/**
+	 * Download the response as a Word or PDF document
+	 */
+	downloadResponse = async (format: "word" | "pdf") => {
+		// Extract text from all TEXT parts
+		const text = this.parts
+			.filter((part) => part.type === "TEXT")
+			.map((part) => part.text)
+			.join("");
 
-	if (!text) throw new Error("No content to download");
+		if (!text) throw new Error("No content to download");
 
-	let pixelCommand: string;
+		let pixelCommand: string;
 
-	if (format === "word") {
-		pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
-	} else if (format === "pdf") {
-		pixelCommand = `ToPdf(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
-	} else {
-		throw new Error(`Unsupported format: ${format}`);
-	}
-
-	const resp = await this.room.runRoomPixel<any>(pixelCommand, false);
-
-	if (resp?.pixelReturn?.[0]) {
-		const { operationType, output } = resp.pixelReturn[0];
-		
-		if (operationType?.includes("FILE_DOWNLOAD")) {
-			download(this.room.insightId, output);
+		if (format === "word") {
+			pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
+		} else if (format === "pdf") {
+			pixelCommand = `ToPdf(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
 		} else {
-			throw new Error(`Failed to generate ${format.toUpperCase()} file`);
+			throw new Error(`Unsupported format: ${format}`);
 		}
-	} else {
-		throw new Error("No response received from server");
-	}
-};
+
+		const resp = await this.room.runRoomPixel<[string]>(
+			pixelCommand,
+			false,
+		);
+
+		if (resp?.pixelReturn?.[0]) {
+			const { operationType, output } = resp.pixelReturn[0];
+
+			if (operationType?.includes("FILE_DOWNLOAD")) {
+				download(this.room.insightId, output);
+			} else {
+				throw new Error(
+					`Failed to generate ${format.toUpperCase()} file`,
+				);
+			}
+		} else {
+			throw new Error("No response received from server");
+		}
+	};
 
 	/**
 	 * Rewrite a message and generate a new sibling
@@ -624,7 +629,9 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 			}
 		} catch (e) {
 			// set error status
-			tool.status = "ERROR";
+			runInAction(() => {
+				tool.status = "ERROR";
+			});
 
 			// remove as a child
 			this.removeChild(responseMessage);
