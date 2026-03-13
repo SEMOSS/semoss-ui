@@ -685,15 +685,6 @@ export class RoomStore {
 	};
 
 	/**
-	 * Download a file
-	 * @param fileKey - key
-	 */
-	download = async (fileKey: string) => {
-		// get the response
-		await download(this._insightID, fileKey);
-	};
-
-	/**
 	 * Sidebar
 	 */
 	/**
@@ -1102,7 +1093,11 @@ export class RoomStore {
 			console.error(e);
 
 			// show the error
-			this._store.error = e;
+			runInAction(() => {
+				this._store.error = e;
+			});
+
+			throw e;
 		} finally {
 			this.setIsLoading(false);
 		}

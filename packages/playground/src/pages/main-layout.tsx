@@ -19,8 +19,8 @@ import { GlobalDialog } from "@/components/common/global-dialog";
 import { ChatContext, NavbarContext } from "@/contexts";
 import { useRoot } from "@/hooks";
 import { useNavbar } from "@/hooks/use-navbar";
-import { ChatStore } from "@/stores";
 import { useThemeTitle } from "@/hooks/use-theme-title";
+import { ChatStore } from "@/stores";
 import { setFavicon } from "@/utility/utils";
 
 export const MainLayout = observer(() => {
