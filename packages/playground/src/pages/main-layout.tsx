@@ -86,6 +86,11 @@ const MainLayoutContent = observer(
 		const { actions } = useNavbar();
 		const { theme: colorMode } = useTheme();
 
+		const isDark =
+			colorMode === "dark" ||
+			(colorMode === "system" &&
+				window.matchMedia("(prefers-color-scheme: dark)").matches);
+
 		return (
 			<SidebarProvider
 				open={isSidebarOpen}
@@ -104,7 +109,7 @@ const MainLayoutContent = observer(
 						data-testid="main-layout"
 						className="flex h-screen w-full flex-col overflow-hidden bg-background"
 						style={{
-							...(colorMode !== "dark" && {
+							...(!isDark && {
 								background:
 									"linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--base-secondary-background, #FFF)",
 							}),
