@@ -1,4 +1,3 @@
-import type { AxiosResponse } from "axios";
 import { Plus, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -50,6 +49,8 @@ import codeApp3 from "@/assets/img/code_app_3.png";
 import codeApp4 from "@/assets/img/code_app_4.png";
 import codeApp5 from "@/assets/img/code_app_5.png";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
+import { useServerPagination } from "@/hooks";
+import type { ApiResponse } from "@/types";
 
 const colors = [
 	"#22A4FF",
@@ -134,7 +135,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const AUTOCOMPLETE_OFFSET = 0;
 
 	/** Project Table State */
-	const [projectsPage, setProjectsPage] = useState<number>(1);
 	const [selectedProjects, setSelectedProojects] = useState<TeamProjects[]>(
 		[],
 	);
@@ -163,7 +163,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const [projects, setProjects] = useState<TeamProjects[]>([]);
 	const [projectCount, setProjectCount] = useState(0);
 	const [totalProjectsAll, setTotalProjectsAll] = useState(0);
-	const [rowsPerPage, setRowsPerPage] = useState(5);
 	const [hasProjects, setHasProject] = useState(false);
 
 	const [searchProjectInput, setSearchProjectInput] = useState<string>("");
@@ -180,6 +179,21 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const [searchFilter, setSearchFilter] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const isLoadingRef = useRef(false);
+
+	const {
+		page: projectsPage,
+		rowsPerPage,
+		setPage: setProjectsPage,
+		setRowsPerPage,
+		offset: pageOffset,
+		totalPages,
+		startRow,
+		endRow,
+	} = useServerPagination({
+		totalCount: projectCount,
+		initialRowsPerPage: 5,
+		pageIndexBase: 1,
+	});
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -249,14 +263,21 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			groupId,
 			groupType,
 			rowsPerPage,
-			projectsPage * rowsPerPage - rowsPerPage, // offset
+			pageOffset, // offset
 			debouncedSearch,
 			false,
 		).then((data: unknown[]) => {
 			setProjects(data as TeamProjects[]);
 			setHasProject(data.length > 0);
 		});
-	}, [groupId, groupType, projectsPage, debouncedSearch, rowsPerPage]);
+	}, [
+		groupId,
+		groupType,
+		projectsPage,
+		debouncedSearch,
+		rowsPerPage,
+		pageOffset,
+	]);
 
 	useEffect(() => {
 		if (count >= 0) {
@@ -314,8 +335,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			} else {
 				if (canCollect) {
 					getProjects(false, offset, searchProjectInput);
-				} else {
-					getProjects(true, offset, searchProjectInput);
 				}
 			}
 		}, 500);
@@ -338,7 +357,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 
 			for (let i = 0; i < requests.length; i++) {
 				let response:
-					| AxiosResponse<{ success: boolean }>
+					| ApiResponse<{ success: boolean }>
 					| {
 							response: Response;
 							data: {
@@ -378,7 +397,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const deleteProject = async (project: TeamProjects) => {
 		try {
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {
@@ -409,7 +428,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			for (let i = 0; i < selectedProjects.length; i++) {
 				try {
 					let response:
-						| AxiosResponse<{ success: boolean }>
+						| ApiResponse<{ success: boolean }>
 						| {
 								response: Response;
 								data: {
@@ -453,7 +472,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {
@@ -510,17 +529,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 		},
 		[projectImageMap],
 	);
-
-	const totalPages = Math.max(1, Math.ceil(projectCount / rowsPerPage));
-	const startRow =
-		projectCount === 0 ? 0 : (projectsPage - 1) * rowsPerPage + 1;
-	const endRow = Math.min(projectsPage * rowsPerPage, projectCount);
-
-	useEffect(() => {
-		if (projectsPage > totalPages) {
-			setProjectsPage(totalPages);
-		}
-	}, [projectsPage, totalPages]);
 
 	const isAllSelected =
 		selectedProjects.length === projects.length && projects.length > 0;
@@ -778,22 +786,14 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 																	10,
 																),
 															);
-															setProjectsPage(1);
 														}}
 													>
 														<SelectTrigger className="h-8 w-[70px]">
 															<SelectValue />
 														</SelectTrigger>
 														<SelectContent>
-															{[5, 10, 20]
-																.filter(
-																	(val) =>
-																		val <=
-																			projectCount ||
-																		val ===
-																			5,
-																)
-																.map((val) => (
+															{[5, 10, 20].map(
+																(val) => (
 																	<SelectItem
 																		key={`rows-${val}`}
 																		value={String(
@@ -802,7 +802,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 																	>
 																		{val}
 																	</SelectItem>
-																))}
+																),
+															)}
 														</SelectContent>
 													</Select>
 												</div>
@@ -924,7 +925,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 					}
 				}}
 			>
-				<DialogContent className="max-w-4xl">
+				<DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Add Apps</DialogTitle>
 						<DialogDescription>
@@ -1061,7 +1062,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									{permissionOptions.map((option) => (
 										<div
 											key={option.value}
-											className="flex items-start gap-3 rounded-md border bg-background p-3"
+											className="flex items-center gap-3 rounded-md border bg-background p-3"
 										>
 											<RadioGroupItem
 												value={option.value}

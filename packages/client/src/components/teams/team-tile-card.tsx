@@ -29,7 +29,7 @@ import Siteminder from "@/assets/loginProviders/siteminder.png";
 import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
 import Twitter from "@/assets/loginProviders/x_twitter.png";
 import { AddTeamModal } from "./add-team-modal";
-import { TeamDeleteDialog } from "./TeamDeleteDialog";
+import { TeamDeleteDialog } from "./team-delete-dialog";
 
 const TypeImageObject = {
 	native: AMAZON_S3,
@@ -120,11 +120,14 @@ interface TeamCardProps {
 	/** databases to update */
 	teams;
 
+	/** Callback when this team is deleted */
+	onDelete?: () => void;
+
 	onClick?: (value: string) => void;
 }
 
 export const TeamTileCard = (props: TeamCardProps) => {
-	const { id, description, type, dispatch, teams, onClick } = props;
+	const { id, description, type, dispatch, teams, onDelete, onClick } = props;
 	const notification = useNotification();
 
 	const [hover, setHover] = React.useState(false);
@@ -153,6 +156,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 				field: "teams",
 				value: [...teams.filter((val) => val.id !== id)],
 			});
+			onDelete?.();
 			notification.add({
 				color: "success",
 				message: "Successfully deleted team",

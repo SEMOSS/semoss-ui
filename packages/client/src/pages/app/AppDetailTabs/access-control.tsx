@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Box, Stack, styled, Typography } from "@semoss/ui";
+import { H2 } from "@semoss/ui/next";
 import {
 	MembersTable,
 	PendingMembersTable,
@@ -7,23 +7,6 @@ import {
 } from "@/components/settings";
 import { TeamsTable } from "@/components/settings/teams-table";
 import { SettingsContext } from "@/contexts";
-
-// Styled components
-const StyledBox = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(3),
-	width: "100%",
-}));
-
-const StyledSection = styled("section")(({ theme }) => ({
-	paddingBottom: theme.spacing(3),
-	width: "100%",
-}));
-
-const SectionHeading = styled(Typography)(({ theme }) => ({
-	fontSize: 20,
-	fontWeight: "500",
-	marginBottom: theme.spacing(1),
-}));
 
 // Component props
 interface AccessProps {
@@ -44,10 +27,12 @@ export const AccessControl = ({
 	const navigate = useNavigate();
 
 	return (
-		<StyledBox>
+		<div className="w-full">
 			{permission === "author" && (
-				<StyledSection>
-					<SectionHeading variant="h2">Access</SectionHeading>
+				<section className="w-full pb-6">
+					<H2 className="mb-2 font-medium text-xl">
+						Access Settings
+					</H2>
 					<SettingsContext.Provider value={{ adminMode: false }}>
 						<SettingsTiles
 							type="PROJECT"
@@ -59,25 +44,25 @@ export const AccessControl = ({
 							}}
 						/>
 					</SettingsContext.Provider>
-				</StyledSection>
+				</section>
 			)}
 
-			<StyledSection>
-				<SectionHeading variant="h2">Current Member</SectionHeading>
+			<section className="w-full pb-6">
+				<H2 className="mb-2 font-medium text-xl">Member Permissions</H2>
 				<SettingsContext.Provider value={{ adminMode: false }}>
-					<Stack direction="column" spacing={2}>
+					<div className="flex flex-col gap-4">
 						<PendingMembersTable type="PROJECT" id={appId} />
 						<MembersTable
 							type="PROJECT"
 							id={appId}
 							onChange={fetchUserSpecificData}
 						/>
-						<div style={{ marginTop: 24 }}>
+						<div className="mt-6">
 							<TeamsTable type="PROJECT" id={appId} />
 						</div>
-					</Stack>
+					</div>
 				</SettingsContext.Provider>
-			</StyledSection>
-		</StyledBox>
+			</section>
+		</div>
 	);
 };

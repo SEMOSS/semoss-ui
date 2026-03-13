@@ -6,7 +6,7 @@ import { Search, styled } from "@semoss/ui";
 import { Badge, Button, Card, CardContent, H3, H4, P } from "@semoss/ui/next";
 import { getTeams, getTeamsCount } from "@/api";
 import { AddTeamModal } from "@/components/teams/add-team-modal";
-import { TeamTileCard } from "@/components/teams/TeamTileCard";
+import { TeamTileCard } from "@/components/teams/team-tile-card";
 import { useSettings } from "@/hooks/useSettings";
 
 export interface DBMember {
@@ -241,6 +241,28 @@ export const TeamsSettingsPage = observer(() => {
 
 	// Build a URL-safe slug for a team id WITHOUT mutating case or removing characters (just encode)
 	const teamSlug = useCallback((id: string) => encodeURIComponent(id), []);
+	const handleTeamDelete = useCallback(async () => {
+		setTotalTeamsAll((prev) => Math.max(prev - 1, 0));
+		setTotalTeamsFiltered((prev) => Math.max(prev - 1, 0));
+		setOffset((prev) => Math.max(prev - 1, 0));
+
+		try {
+			const totalCountAll = await getTeamsCount(adminMode);
+			setTotalTeamsAll(totalCountAll);
+
+			if (debouncedSearch.length > 0) {
+				const totalCountFiltered = await getTeamsCount(
+					adminMode,
+					debouncedSearch,
+				);
+				setTotalTeamsFiltered(totalCountFiltered);
+			} else {
+				setTotalTeamsFiltered(totalCountAll);
+			}
+		} catch (error) {
+			console.error(error);
+		}
+	}, [adminMode, debouncedSearch]);
 
 	const visibleTeams = teams.length || 0;
 	const resultLabel =
@@ -316,6 +338,7 @@ export const TeamsSettingsPage = observer(() => {
 									description={team.description}
 									dispatch={dispatch}
 									teams={teams}
+									onDelete={handleTeamDelete}
 									onClick={() =>
 										navigate(
 											`${teamSlug(team.type)}/${teamSlug(team.id)}`,

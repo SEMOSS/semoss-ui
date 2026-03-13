@@ -6,6 +6,8 @@ import {
 	LockKeyhole,
 	Pencil,
 	RefreshCcw,
+	SquareArrowOutUpRight,
+	Wrench,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -22,6 +24,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 	Button,
+	H4,
 	Spinner,
 	Tabs,
 	TabsList,
@@ -29,6 +32,7 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import { uploadImage } from "@/api";
 import {
@@ -52,10 +56,10 @@ import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import type { Role } from "@/types";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
-import { AccessControl } from "./AppDetailTabs/AccessControl";
-import { Dependencies } from "./AppDetailTabs/Dependencies";
-import { Overview } from "./AppDetailTabs/Overview";
-import { SettingsTab } from "./AppDetailTabs/Settings";
+import { AccessControl } from "./AppDetailTabs/access-control";
+import { Dependencies } from "./AppDetailTabs/dependencies-tab";
+import { Overview } from "./AppDetailTabs/overview-tab";
+import { SettingsTab } from "./AppDetailTabs/settings-tab";
 import { AppFileManagerPage } from "./app-file-manager-page";
 
 const modelDependencies = (
@@ -70,10 +74,55 @@ const modelDependencies = (
 		isDiscoverable: !!dep.engine_discoverable,
 		description: dep.description,
 		access_permission: dep.access_permission,
+		can_view_dependencies: dep.can_view_dependencies,
 	}));
 };
 
-export const AppDetailPage = () => {
+interface AppDetailsProps {
+	showNav?: boolean;
+}
+
+interface MCPToolInputProperty {
+	title?: string;
+	description?: string;
+	type?: string;
+}
+
+interface MCPToolDefinition {
+	name: string;
+	title?: string;
+	description?: string;
+	inputSchema?: {
+		properties?: Record<string, MCPToolInputProperty>;
+		required?: string[];
+	};
+}
+
+interface MCPToolsPixelResponse {
+	pixelReturn?: {
+		operationType?: string[] | string;
+		output?:
+			| {
+					tools?: MCPToolDefinition[];
+			  }
+			| string;
+	}[];
+}
+
+const hasPixelError = (operationType?: string[] | string): boolean => {
+	if (Array.isArray(operationType)) {
+		return operationType.includes("ERROR");
+	}
+
+	if (typeof operationType === "string") {
+		return operationType.includes("ERROR");
+	}
+
+	return false;
+};
+
+export const AppDetailPage = (props: AppDetailsProps) => {
+	const { showNav = true } = props;
 	const { control, setValue, getValues, watch, handleSubmit } =
 		useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
 
@@ -95,6 +144,10 @@ export const AppDetailPage = () => {
 	const { appId } = useParams();
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
+	const [selectedTab, setSelectedTab] = useState("Overview");
+	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
+	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
+	const [mcpToolsError, setMcpToolsError] = useState("");
 
 	const emitMessage = useCallback(
 		(isError: boolean, message: string) => {
@@ -103,9 +156,8 @@ export const AppDetailPage = () => {
 				message,
 			});
 		},
-		[notification],
+		[notification.add],
 	);
-
 	const getPermission = useCallback(async () => {
 		const role = await getUserProjectPermission(appId);
 
@@ -134,6 +186,47 @@ export const AppDetailPage = () => {
 			fetchSimilarApps();
 		}
 	}, [fetchSimilarApps, getPermission, getValues]);
+
+	const fetchMcpTools = useCallback(
+		async (projectId: string) => {
+			setMcpToolsLoading(true);
+			setMcpToolsError("");
+
+			try {
+				const response = (await monolithStore.runQuery(
+					`GetMCPTools(project="${projectId}")`,
+				)) as MCPToolsPixelResponse;
+
+				const result = response?.pixelReturn?.[0];
+				if (hasPixelError(result?.operationType)) {
+					const errorMessage =
+						typeof result?.output === "string"
+							? result.output
+							: "Unable to load MCP tools for this app.";
+					setMcpTools([]);
+					setMcpToolsError(errorMessage);
+					return;
+				}
+
+				const output = result?.output;
+				const tools =
+					typeof output === "object" && output !== null
+						? output.tools
+						: undefined;
+				setMcpTools(Array.isArray(tools) ? tools : []);
+			} catch (error) {
+				const message =
+					error instanceof Error
+						? error.message
+						: "Unable to load MCP tools for this app.";
+				setMcpTools([]);
+				setMcpToolsError(message);
+			} finally {
+				setMcpToolsLoading(false);
+			}
+		},
+		[monolithStore],
+	);
 
 	const fetchAppData = useCallback(
 		async (id: string) => {
@@ -255,12 +348,22 @@ export const AppDetailPage = () => {
 
 	useEffect(() => {
 		setSelectedTab("Overview");
+		setMcpTools([]);
+		setMcpToolsError("");
 		setValue("appId", appId);
 		fetchUserSpecificData();
 		if (appId) {
 			fetchAppData(appId);
 		}
 	}, [appId, fetchAppData, fetchUserSpecificData, setValue]);
+
+	useEffect(() => {
+		if (selectedTab !== "MCP Usage" || !appId) {
+			return;
+		}
+
+		fetchMcpTools(appId);
+	}, [appId, fetchMcpTools, selectedTab]);
 	// This runs ONLY when `appId` changes — not when dependencies change
 	useEffect(() => {
 		if (appId) {
@@ -332,10 +435,7 @@ export const AppDetailPage = () => {
 				const modelled = modelDependencies(res.output);
 				setValue("dependencies", modelled);
 			} else {
-				notification.add({
-					color: "error",
-					message: res.output,
-				});
+				toast.error(res.output);
 			}
 		}
 		setIsEditDependenciesModalOpen(false);
@@ -365,11 +465,7 @@ export const AppDetailPage = () => {
 		}
 
 		if (Object.keys(meta).length === 0) {
-			notification.add({
-				color: "warning",
-				message: "Nothing to Save",
-			});
-
+			toast.info("Nothing to Save");
 			return;
 		}
 
@@ -385,11 +481,7 @@ export const AppDetailPage = () => {
 
 				// track the errors
 				if (operationType.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
-						message: output as string,
-					});
-
+					toast.error(output as string);
 					return;
 				}
 				// upload the image
@@ -410,41 +502,27 @@ export const AppDetailPage = () => {
 				}
 
 				// close it, refresh and succesfully message
-				notification.add({
-					color: "success",
-					message: additionalOutput[0].output,
-				});
-
+				toast.success(additionalOutput[0].output);
 				fetchAppData(appId);
 				handleCloseEditDetailsModal();
 			})
 			.catch((error) => {
-				notification.add({
-					color: "error",
-					message: error.message,
-				});
+				toast.error(error.message);
 			});
 	});
 
 	const handleAccessRequested = () => {
 		setResponseStatus(true);
 	};
-	const [selectedTab, setSelectedTab] = useState("Overview");
 	const handleCopyAppId = async () => {
 		if (!appId) return;
 
 		try {
 			await navigator.clipboard.writeText(appId);
-			notification.add({
-				color: "success",
-				message: "App ID copied to clipboard",
-			});
+			toast.success("App ID copied to clipboard");
 		} catch (error) {
 			console.error(error);
-			notification.add({
-				color: "error",
-				message: "Failed to copy App ID",
-			});
+			toast.error("Failed to copy App ID");
 		}
 	};
 
@@ -472,39 +550,54 @@ export const AppDetailPage = () => {
 	const visibleTabs = TABS_BY_PERMISSION[permission] || ["Overview"];
 
 	return (
-		<div>
-			<NavbarLeft>
-				<NavbarHeader />
-			</NavbarLeft>
-			<div className="flex w-full flex-col gap-4 p-4">
-				<div className="flex w-full flex-col items-start gap-2 p-0">
-					<Breadcrumb>
-						<BreadcrumbList>
-							<BreadcrumbItem>
-								<BreadcrumbLink asChild>
-									<Link to={"/app"} className="text-inherit">
-										App Catalog
-									</Link>
-								</BreadcrumbLink>
-							</BreadcrumbItem>
-							<BreadcrumbSeparator>
-								<ChevronRight />
-							</BreadcrumbSeparator>
-							<BreadcrumbItem>
-								<BreadcrumbPage>
-									<span
-										title={appInfo?.project_name}
-										className="inline-block max-w-[40ch] truncate text-ellipsis"
-									>
-										{appInfo?.project_name}
-									</span>
-								</BreadcrumbPage>
-							</BreadcrumbItem>
-						</BreadcrumbList>
-					</Breadcrumb>
+		<div className="w-full">
+			{showNav && (
+				<NavbarLeft>
+					<NavbarHeader />
+				</NavbarLeft>
+			)}
+			<div
+				className={`h-full w-full${
+					showNav ? "flex flex-col justify-center gap-4" : "m-2 p-5"
+				}`}
+			>
+				<div
+					className={`flex h-full w-full flex-col gap-3 ${
+						showNav ? "m-auto max-w-316" : ""
+					}`}
+				>
+					{showNav && (
+						<Breadcrumb>
+							<BreadcrumbList>
+								<BreadcrumbItem>
+									<BreadcrumbLink asChild>
+										<Link
+											to={"/app"}
+											className="text-inherit"
+										>
+											App Catalog
+										</Link>
+									</BreadcrumbLink>
+								</BreadcrumbItem>
+								<BreadcrumbSeparator>
+									<ChevronRight />
+								</BreadcrumbSeparator>
+								<BreadcrumbItem>
+									<BreadcrumbPage>
+										<span
+											title={appInfo?.project_name}
+											className="inline-block max-w-[40ch] truncate text-ellipsis"
+										>
+											{appInfo?.project_name}
+										</span>
+									</BreadcrumbPage>
+								</BreadcrumbItem>
+							</BreadcrumbList>
+						</Breadcrumb>
+					)}
 
 					<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
-						<div className="h-16 w-16 flex-shrink-0 rounded-lg bg-muted">
+						<div className="h-16 w-16 shrink-0 rounded-lg bg-muted">
 							<img
 								src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
 								alt={appInfo?.project_name || "App"}
@@ -514,7 +607,7 @@ export const AppDetailPage = () => {
 
 						<div className="flex min-w-0 flex-1 flex-col gap-1">
 							<h1
-								className="break-words font-semibold text-2xl text-foreground leading-normal md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]"
+								className="wrap-break-words font-semibold text-2xl text-foreground leading-normal md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]"
 								title={appInfo?.project_name}
 							>
 								{appInfo?.project_name}
@@ -551,7 +644,7 @@ export const AppDetailPage = () => {
 								<Button
 									disabled={exportLoading}
 									variant="ghost"
-									className="gap-2 text-(--primary) hover:bg-transparent hover:text-(--primary)"
+									className="gap-2 text-primary hover:bg-transparent hover:text-primary"
 									onClick={() => exportApp()}
 									data-testid={"appDetail-export-btn"}
 								>
@@ -604,6 +697,20 @@ export const AppDetailPage = () => {
 										Edit
 									</Button>
 								)}
+							{permission !== "discoverable" &&
+								permission !== "readOnly" &&
+								showNav && (
+									<Button
+										asChild
+										variant="outline"
+										data-testid="appDetail-edit-btn"
+									>
+										<Link to={`/app/${appId}/view`}>
+											<SquareArrowOutUpRight className="size-4" />
+											Open App
+										</Link>
+									</Button>
+								)}
 						</div>
 					</div>
 
@@ -614,14 +721,14 @@ export const AppDetailPage = () => {
 									"No description available"}
 							</p>
 							{tags?.length ? (
-								<div className="flex flex-row flex-wrap gap-2">
+								<div className="flex flex-row flex-wrap gap-2 pb-2">
 									{tags.map((tag) => {
 										if (!tag) return null;
 										return (
 											<Badge
 												key={`tag-${tag}-${tag}`}
 												variant="outline"
-												className="border-(--primary) text-(--primary)"
+												className="border-primary text-primary"
 											>
 												{tag}
 											</Badge>
@@ -654,7 +761,7 @@ export const AppDetailPage = () => {
 					</div>
 				</div>
 
-				<div className="flex flex-col rounded-lg bg-(--muted)">
+				<div className="flex flex-col rounded-lg bg-muted">
 					{visibleTabs.length > 0 && (
 						<Tabs
 							value={selectedTab}
@@ -688,11 +795,12 @@ export const AppDetailPage = () => {
 											Access Control
 										</TabsTrigger>
 									)}
-									{visibleTabs.includes("Files") && (
-										<TabsTrigger value="Files">
-											Files
-										</TabsTrigger>
-									)}
+									{visibleTabs.includes("Files") &&
+										showNav && (
+											<TabsTrigger value="Files">
+												Files
+											</TabsTrigger>
+										)}
 									{visibleTabs.includes("SMSS") && (
 										<TabsTrigger value="SMSS">
 											SMSS
@@ -702,7 +810,7 @@ export const AppDetailPage = () => {
 							</div>
 						</Tabs>
 					)}
-					<div className="w-full bg-(--card) p-3 md:p-4">
+					<div className="w-full bg-card p-3 md:p-4">
 						{selectedTab === "Overview" && (
 							<Overview appInfo={appInfo} />
 						)}
@@ -751,7 +859,160 @@ export const AppDetailPage = () => {
 									adminMode: false,
 								}}
 							>
-								<McpUsage id={appId} />
+								<div className="space-y-6">
+									<div className="rounded-2xl border border-base p-6 shadow-xs">
+										<div className="mb-4">
+											<H4>Available Tools</H4>
+											<p className="text-muted-foreground text-sm">
+												These MCP tools are currently
+												exposed by this app.
+											</p>
+										</div>
+
+										{mcpToolsLoading && (
+											<div className="flex items-center gap-2 text-muted-foreground text-sm">
+												<Spinner className="size-4" />
+												Loading tools...
+											</div>
+										)}
+
+										{!mcpToolsLoading &&
+											!!mcpToolsError && (
+												<div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
+													<p className="font-medium text-destructive text-sm">
+														Unable to load tools
+													</p>
+													<p className="mt-1 text-muted-foreground text-sm">
+														{mcpToolsError}
+													</p>
+												</div>
+											)}
+
+										{!mcpToolsLoading &&
+											!mcpToolsError &&
+											mcpTools.length === 0 && (
+												<div className="rounded-xl border border-base/70 border-dashed bg-muted/20 p-8 text-center">
+													<div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full bg-muted">
+														<Wrench className="size-5 text-muted-foreground" />
+													</div>
+													<p className="font-medium text-sm">
+														No tools available
+													</p>
+													<p className="mt-1 text-muted-foreground text-sm">
+														This app does not
+														currently expose MCP
+														tools.
+													</p>
+												</div>
+											)}
+
+										{!mcpToolsLoading &&
+											!mcpToolsError &&
+											mcpTools.length > 0 && (
+												<div className="space-y-3">
+													{mcpTools.map((tool) => {
+														const toolTitle =
+															tool.title ||
+															tool.name;
+														const inputProperties =
+															tool.inputSchema
+																?.properties ||
+															{};
+														const requiredInputs =
+															tool.inputSchema
+																?.required ||
+															[];
+														const inputEntries =
+															Object.entries(
+																inputProperties,
+															);
+
+														return (
+															<div
+																key={`${tool.name}-${toolTitle}`}
+																className="rounded-xl border border-base/80 p-4"
+															>
+																<div className="flex items-start gap-3">
+																	<Wrench className="mt-1 size-4 shrink-0 text-muted-foreground" />
+																	<div className="min-w-0 flex-1">
+																		<H4 className="leading-tight">
+																			{
+																				toolTitle
+																			}
+																		</H4>
+																		<p className="mt-1 whitespace-pre-line text-muted-foreground text-sm">
+																			{tool.description ||
+																				"No description available."}
+																		</p>
+																	</div>
+																</div>
+
+																{inputEntries.length >
+																	0 && (
+																	<details className="mt-3 rounded-lg border border-base/70 border-dashed bg-muted/20 p-3">
+																		<summary className="cursor-pointer font-medium text-sm">
+																			View
+																			input
+																			parameters{" "}
+																			(
+																			{
+																				inputEntries.length
+																			}
+																			)
+																		</summary>
+																		<div className="mt-3 space-y-2">
+																			{inputEntries.map(
+																				([
+																					inputName,
+																					inputConfig,
+																				]) => (
+																					<div
+																						key={`${tool.name}-${inputName}`}
+																						className="rounded-md bg-background p-3"
+																					>
+																						<div className="flex flex-wrap items-center gap-2">
+																							<code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+																								{
+																									inputName
+																								}
+																							</code>
+																							{inputConfig.type && (
+																								<Badge variant="outline">
+																									{
+																										inputConfig.type
+																									}
+																								</Badge>
+																							)}
+																							{requiredInputs.includes(
+																								inputName,
+																							) && (
+																								<Badge variant="secondary">
+																									Required
+																								</Badge>
+																							)}
+																						</div>
+																						{inputConfig.description && (
+																							<p className="mt-1 text-muted-foreground text-sm">
+																								{
+																									inputConfig.description
+																								}
+																							</p>
+																						)}
+																					</div>
+																				),
+																			)}
+																		</div>
+																	</details>
+																)}
+															</div>
+														);
+													})}
+												</div>
+											)}
+									</div>
+
+									<McpUsage id={appId} />
+								</div>
 							</SettingsContext.Provider>
 						)}
 						{selectedTab === "Settings" && (
@@ -771,7 +1032,7 @@ export const AppDetailPage = () => {
 								permission={permission}
 							/>
 						)}
-						{selectedTab === "Files" && (
+						{selectedTab === "Files" && showNav && (
 							<AppFileManagerPage appId={appId || ""} />
 						)}
 						{selectedTab === "SMSS" && (

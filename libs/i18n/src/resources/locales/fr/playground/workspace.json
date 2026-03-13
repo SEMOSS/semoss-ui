@@ -58,6 +58,7 @@
 		"requestAccessButton": "Demander l'Accès",
 		"noDescription": "Aucune description disponible.",
 		"tooltipNoAccess": "Vous n'avez pas accès à ce {{type}}. Veuillez demander l'accès au propriétaire.",
+		"tooltipMissingDependencies": "Vous n'avez pas accès à toutes les dépendances de ce {{type}}, la fonctionnalité peut donc être limitée. Ouvrez dans la plateforme pour plus d'informations.",
 		"tooltipOpen": "Ouvrir ce {{type}} dans la plateforme",
 		"failedToLoad": "Échec du chargement des ressources de l'espace de travail",
 		"requestedSuccess": "Accès demandé à {{name}}",

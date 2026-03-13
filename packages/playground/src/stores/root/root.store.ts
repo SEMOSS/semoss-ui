@@ -56,6 +56,7 @@ export class RootStore {
 				logo: "",
 				login: "",
 				landing: "",
+				tabIcon: "",
 				workspace: "",
 			},
 			overrides: {
@@ -77,6 +78,8 @@ export class RootStore {
 			},
 			allowedFileTypes: [],
 			defaultTools: [],
+			gracefulErrors: [],
+			showPlatformLinks: true,
 		},
 	};
 
@@ -215,6 +218,16 @@ export class RootStore {
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||
 				[],
+			enableKnowledgeMCP:
+				theme?.enableKnowledgeMCP !== undefined
+					? theme.enableKnowledgeMCP
+					: this._store.theme.enableKnowledgeMCP,
+			defaultEmbedderId:
+				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
+			allowEmbeddingOptions:
+				theme?.allowEmbeddingOptions !== undefined
+					? theme.allowEmbeddingOptions
+					: this._store.theme.allowEmbeddingOptions,
 			defaultTools: [
 				...new Map(
 					[
@@ -222,6 +235,14 @@ export class RootStore {
 						...(theme?.defaultTools || []),
 					].map((tool) => [tool.id, tool]),
 				).values(),
+			],
+			showPlatformLinks:
+				theme?.showPlatformLinks !== undefined
+					? theme.showPlatformLinks
+					: this._store.theme.showPlatformLinks,
+			gracefulErrors: [
+				...this._store.theme.gracefulErrors,
+				...(theme?.gracefulErrors || []),
 			],
 		};
 

@@ -1,7 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { Badge, H4, Markdown, P } from "@semoss/ui/next";
 import { useEngine, useRootStore } from "@/hooks";
-import { removeUnderscores } from "@/utility";
 
 export const EngineOverviewPage = observer(() => {
 	const { active } = useEngine();
@@ -62,7 +61,7 @@ export const EngineOverviewPage = observer(() => {
 						key={k.metakey}
 						className="mb-1 border-border border-b pb-2 last:mb-0 last:border-b-0"
 					>
-						<H4 className="mb-2">{removeUnderscores(k.metakey)}</H4>
+						<H4 className="mb-2">{k.metakey}</H4>
 						{k.display_options === "multi-checklist" ||
 						k.display_options === "multi-select" ||
 						k.display_options === "multi-typeahead" ||
