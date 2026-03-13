@@ -7,6 +7,7 @@ import {
 	SidebarTrigger,
 } from "@semoss/ui/next";
 import background from "@/assets/img/render-error-background.png";
+import backgroundDark from "@/assets/img/render-error-background-darkmode.jpg";
 
 export interface ErrorPageProps {
 	isInnerComponent?: boolean;
@@ -60,7 +61,12 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 						<img
 							src={background}
 							alt="Background"
-							className="absolute inset-0 h-full w-full object-cover"
+							className="absolute inset-0 h-full w-full object-cover dark:hidden"
+						/>
+						<img
+							src={backgroundDark}
+							alt="Background"
+							className="absolute inset-0 hidden h-full w-full object-cover dark:block"
 						/>
 						<div className="z-10">{content}</div>
 					</ResizablePanel>
@@ -74,7 +80,12 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 			<img
 				src={background}
 				alt="Background"
-				className="absolute inset-0 h-full w-full object-cover"
+				className="absolute inset-0 h-full w-full object-cover dark:hidden"
+			/>
+			<img
+				src={backgroundDark}
+				alt="Background"
+				className="absolute inset-0 hidden h-full w-full object-cover dark:block"
 			/>
 			<div className="z-10">{content}</div>
 		</div>

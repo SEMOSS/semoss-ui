@@ -27,6 +27,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import landingImage from "@/assets/img/landing.png";
+import landingDarkImage from "@/assets/img/landing-darkmode.png";
 import {
 	RoomInput,
 	RoomInputMenuKnowledge,
@@ -300,9 +301,13 @@ export const NewRoomPage = observer(() => {
 					<img
 						src={root.theme.images.landing || landingImage}
 						alt="Background"
-						className="absolute inset-0 h-full w-full select-none object-cover dark:opacity-0"
+						className="absolute inset-0 h-full w-full select-none object-cover dark:hidden"
 					/>
-					<div className="pointer-events-none absolute inset-0 hidden bg-background/60 dark:block" />
+					<img
+						src={landingDarkImage}
+						alt="Background"
+						className="absolute inset-0 hidden h-full w-full select-none object-cover dark:block"
+					/>
 					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
 						{root.theme.landing ? (
 							<div
