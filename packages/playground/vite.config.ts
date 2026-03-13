@@ -43,6 +43,19 @@ export default defineConfig(({ mode }) => {
 		build: {
 			minify: isProduction,
 			commonjsOptions: { transformMixedEsModules: true },
+			rollupOptions: {
+				output: {
+					manualChunks: {
+						"vendor-react": [
+							"react",
+							"react-dom",
+							"react-router-dom",
+						],
+						"vendor-mobx": ["mobx", "mobx-react-lite"],
+						"vendor-ui": ["@semoss/ui"],
+					},
+				},
+			},
 		},
 		optimizeDeps: {
 			esbuildOptions: {
