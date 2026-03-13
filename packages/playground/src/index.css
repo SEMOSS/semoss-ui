@@ -4,17 +4,5 @@
 
 @source "./**/*.{ts,tsx}";
 
-/* Ensure FlexLayout tab text is visible in dark mode */
-.dark .flexlayout__theme_smss .flexlayout__tab_button__content {
-	color: var(--foreground);
-}
-
-.dark .flexlayout__theme_smss .flexlayout__tab_button_trailing {
-	color: var(--foreground);
-}
-
-.dark .flexlayout__theme_smss .flexlayout__tab_button_leading {
-	color: var(--foreground);
-}
 
 
