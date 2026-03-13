@@ -31,3 +31,5 @@ packages/playground/theme.local.json
 
 # Ignore legacy
 packages/legacy
+# Claude Code
+.claude/
