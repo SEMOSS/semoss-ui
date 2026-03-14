@@ -1098,4 +1098,130 @@ export class RoomStore {
 			this.setIsLoading(false);
 		}
 	};
+	/**
+	 * Attach to an existing streaming job started by the portal.
+	 * Creates placeholder messages immediately, streams chunks into the response,
+	 * then syncs both with the final DB-backed data on completion.
+	 * @param jobId - job ID returned by AskPlayground (started by the portal new-room-page)
+	 * @param prompt - the user's original prompt text, used for the placeholder input message
+	 */
+	attachToStreamingJob = async (
+		jobId: string,
+		prompt: string,
+	): Promise<void> => {
+		try {
+			this.setIsLoading(true);
+
+			// Create placeholder messages and add them to the chain immediately
+			// so the user sees their prompt and streaming text right away.
+			const inputMessage = new InputMessageStore(this, {
+				io: "INPUT",
+				messageId: "ATTACH_PLACEHOLDER_INPUT",
+				visible: true,
+				platform_generated: true,
+				modelId: this._store.model?.app_id || "",
+				modelType: this._store.model?.app_type || "",
+				dateCreated: new Date().toISOString(),
+				parts: [{ type: "TEXT", text: prompt, uiText: prompt }],
+				tokens: 0,
+				ornaments: { modelName: this._store.model?.app_name || "" },
+			});
+
+			const responseMessage = new ResponseMessageStore(this, {
+				io: "OUTPUT",
+				messageId: "ATTACH_PLACEHOLDER_RESPONSE",
+				visible: true,
+				platform_generated: true,
+				modelId: this._store.model?.app_id || "",
+				modelType: this._store.model?.app_type || "",
+				dateCreated: new Date().toISOString(),
+				parts: [],
+				tokens: 0,
+				ornaments: { modelName: this._store.model?.app_name || "" },
+			} as ResponsePixelMessage);
+
+			runInAction(() => {
+				this._store.root.addChild(inputMessage);
+				inputMessage.addChild(responseMessage);
+				responseMessage.isThinking = true;
+			});
+
+			// Poll for streaming chunks and pipe them into the response placeholder
+			let isPolling = true;
+			const pollingInterval = 300;
+
+			while (isPolling) {
+				const response = await getPixelJobStreaming(jobId);
+
+				if (response?.message?.length > 0) {
+					for (const chunk of response.message) {
+						runInAction(() => {
+							if (
+								chunk.stream_type === "content" &&
+								chunk.data.content
+							) {
+								responseMessage.savePart({
+									type: "TEXT",
+									text: chunk.data.content,
+									uiText: chunk.data.content,
+								});
+							} else if (
+								chunk.stream_type === "thinking" &&
+								chunk.data.thinking
+							) {
+								responseMessage.savePart({
+									type: "THINKING",
+									thinking: chunk.data.thinking,
+								});
+							}
+						});
+					}
+				}
+
+				if (
+					response.status === "ProgressComplete" ||
+					response.status === "Complete"
+				) {
+					isPolling = false;
+				} else if (response.status === "Error") {
+					throw new Error("Streaming job encountered an error");
+				}
+
+				if (isPolling) {
+					await new Promise((resolve) =>
+						setTimeout(resolve, pollingInterval),
+					);
+				}
+			}
+
+			// Sync placeholders with the final DB-backed data
+			const result =
+				await getPixelAsyncResult<
+					[
+						{
+							inputMessage: InputPixelMessage;
+							responseMessage: ResponsePixelMessage;
+						},
+					]
+				>(jobId);
+
+			if (result.errors.length > 0) {
+				throw new Error(result.errors.join(""));
+			}
+
+			runInAction(() => {
+				inputMessage.sync(result.results[0].output.inputMessage);
+				responseMessage.sync(result.results[0].output.responseMessage);
+				responseMessage.isThinking = false;
+				responseMessage.continueToolExecution();
+			});
+		} catch (e) {
+			console.error(e);
+			runInAction(() => {
+				this._store.error = e;
+			});
+		} finally {
+			this.setIsLoading(false);
+		}
+	};
 }

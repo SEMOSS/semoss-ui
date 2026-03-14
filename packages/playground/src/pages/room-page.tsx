@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
@@ -24,6 +24,9 @@ export const RoomPage = observer(() => {
 
 	// set the get the room based on the params
 	const { roomId } = useParams();
+	const [searchParams] = useSearchParams();
+	const jobId = searchParams.get("jobId");
+	const prompt = searchParams.get("prompt") ?? "";
 	const { chat } = useChat();
 	// const { setBreadcrumbs } = useGlobalBreadcrumbs();
 	const navigate = useNavigate();
@@ -58,6 +61,11 @@ export const RoomPage = observer(() => {
 	useEffect(() => {
 		selectedModelRef.current = chat.models.selected;
 	}, [chat.models.selected]);
+
+	// Reset room state when roomId changes to prevent stale content flash
+	useEffect(() => {
+		setRoom(null);
+	}, [roomId]);
 
 	// load the room
 	useEffect(() => {
@@ -96,6 +104,11 @@ export const RoomPage = observer(() => {
 
 				// set the room
 				setRoom(room);
+
+				// If the portal provided a jobId, attach to the running streaming job
+				if (jobId) {
+					room.attachToStreamingJob(jobId, prompt);
+				}
 			} catch (e) {
 				// if it doesn't load successfully, go back to home
 				toast.error(e.message);
@@ -110,6 +123,8 @@ export const RoomPage = observer(() => {
 		chat.loadRoom,
 		chat.setSelectedModel,
 		setBreadcrumbs,
+		jobId,
+		prompt,
 	]);
 
 	const { setNavbarActions } = useGlobalBreadcrumbs({});
@@ -159,7 +174,7 @@ export const RoomPage = observer(() => {
 						textAlign: "center",
 					}}
 				>
-					✅ PLAYGROUND (localhost:5174) — iframe IS working
+					✅ PLAYGROUND (localhost:5174)
 				</div>
 				<ResizablePanelGroup
 					direction="horizontal"

@@ -95,17 +95,30 @@ const MainLayoutContent = observer(
 		const { actions } = useNavbar();
 		const navigate = useNavigate();
 
-		// Listen for SMSS_NEW_CHAT from a parent portal (beta app)
+		// Listen for messages from a parent portal (beta app)
 		useEffect(() => {
 			const handleMessage = (event: MessageEvent) => {
-				if (event.data?.type !== "SMSS_NEW_CHAT") return;
-				const { workspaceId, knowledgeId } = event.data.payload ?? {};
-				if (workspaceId) {
-					navigate(`/new?workspaceId=${workspaceId}`);
-				} else if (knowledgeId) {
-					navigate(`/new?knowledgeId=${knowledgeId}`);
-				} else {
-					navigate(`/new`);
+				if (event.data?.type === "SMSS_NEW_CHAT") {
+					const { workspaceId, knowledgeId } =
+						event.data.payload ?? {};
+					if (workspaceId) {
+						navigate(`/new?workspaceId=${workspaceId}`);
+					} else if (knowledgeId) {
+						navigate(`/new?knowledgeId=${knowledgeId}`);
+					} else {
+						navigate(`/new`);
+					}
+				} else if (event.data?.type === "SMSS_OPEN_ROOM") {
+					const { roomId, jobId, prompt } = event.data.payload ?? {};
+					if (roomId) {
+						const params = new URLSearchParams();
+						if (jobId) params.set("jobId", jobId);
+						if (prompt) params.set("prompt", prompt);
+						const qs = params.toString();
+						navigate(
+							qs ? `/room/${roomId}?${qs}` : `/room/${roomId}`,
+						);
+					}
 				}
 			};
 			window.addEventListener("message", handleMessage);

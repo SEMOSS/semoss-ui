@@ -183,6 +183,28 @@ export const NewRoomPage = observer(() => {
 
 			// go to the new room
 			navigate(`/room/${room.roomId}`);
+
+			// If running inside a portal iframe, notify the parent so it can update its URL
+			try {
+				if (window.self !== window.top) {
+					window.parent.postMessage(
+						{
+							type: "SMSS_ROOM_CREATED",
+							payload: { roomId: room.roomId },
+						},
+						"*",
+					);
+				}
+			} catch (_e) {
+				// cross-origin check threw — assume embedded and post anyway
+				window.parent.postMessage(
+					{
+						type: "SMSS_ROOM_CREATED",
+						payload: { roomId: room.roomId },
+					},
+					"*",
+				);
+			}
 		} catch (error) {
 			toast.error(
 				t("room:errors.createRoom", { message: error.message }),
@@ -305,7 +327,7 @@ export const NewRoomPage = observer(() => {
 					textAlign: "center",
 				}}
 			>
-				✅ PLAYGROUND (localhost:5174) — iframe IS working
+				✅ PLAYGROUND (localhost:5174)
 			</div>
 			<ResizablePanelGroup direction="horizontal">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
