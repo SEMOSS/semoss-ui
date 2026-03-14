@@ -295,6 +295,18 @@ export const NewRoomPage = observer(() => {
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
+			{/* DEV BANNER — remove before shipping */}
+			<div
+				style={{
+					background: "green",
+					color: "white",
+					fontWeight: "bold",
+					padding: "8px 16px",
+					textAlign: "center",
+				}}
+			>
+				✅ PLAYGROUND (localhost:5174) — iframe IS working
+			</div>
 			<ResizablePanelGroup direction="horizontal">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img

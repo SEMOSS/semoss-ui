@@ -149,6 +149,18 @@ export const RoomPage = observer(() => {
 			destroyOnUnmount={false}
 		>
 			<div className="flex h-full w-full flex-col overflow-hidden">
+				{/* DEV BANNER — remove before shipping */}
+				<div
+					style={{
+						background: "green",
+						color: "white",
+						fontWeight: "bold",
+						padding: "8px 16px",
+						textAlign: "center",
+					}}
+				>
+					✅ PLAYGROUND (localhost:5174) — iframe IS working
+				</div>
 				<ResizablePanelGroup
 					direction="horizontal"
 					className="w-full flex-1 overflow-hidden"

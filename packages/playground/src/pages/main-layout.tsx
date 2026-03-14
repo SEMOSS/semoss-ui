@@ -1,6 +1,16 @@
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useEffect, useMemo, useState } from "react";
-import { Link, Outlet } from "react-router-dom";
+
+// True when this app is running inside an iframe (e.g. embedded in the beta portal)
+const isEmbedded = (() => {
+	try {
+		return window.self !== window.top;
+	} catch (_e) {
+		return true;
+	}
+})();
+
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -19,8 +29,8 @@ import { GlobalDialog } from "@/components/common/global-dialog";
 import { ChatContext, NavbarContext } from "@/contexts";
 import { useRoot } from "@/hooks";
 import { useNavbar } from "@/hooks/use-navbar";
-import { ChatStore } from "@/stores";
 import { useThemeTitle } from "@/hooks/use-theme-title";
+import { ChatStore } from "@/stores";
 import { setFavicon } from "@/utility/utils";
 
 export const MainLayout = observer(() => {
@@ -83,6 +93,37 @@ const MainLayoutContent = observer(
 	}) => {
 		const { root } = useRoot();
 		const { actions } = useNavbar();
+		const navigate = useNavigate();
+
+		// Listen for SMSS_NEW_CHAT from a parent portal (beta app)
+		useEffect(() => {
+			const handleMessage = (event: MessageEvent) => {
+				if (event.data?.type !== "SMSS_NEW_CHAT") return;
+				const { workspaceId, knowledgeId } = event.data.payload ?? {};
+				if (workspaceId) {
+					navigate(`/new?workspaceId=${workspaceId}`);
+				} else if (knowledgeId) {
+					navigate(`/new?knowledgeId=${knowledgeId}`);
+				} else {
+					navigate(`/new`);
+				}
+			};
+			window.addEventListener("message", handleMessage);
+			// Tell the parent portal we're ready to receive messages
+			if (isEmbedded) {
+				window.parent.postMessage({ type: "SMSS_READY" }, "*");
+			}
+			return () => window.removeEventListener("message", handleMessage);
+		}, [navigate]);
+
+		// Embedded mode: skip sidebar, render only the page content
+		if (isEmbedded) {
+			return (
+				<div className="h-screen w-full overflow-hidden">
+					<Outlet />
+				</div>
+			);
+		}
 
 		return (
 			<SidebarProvider
