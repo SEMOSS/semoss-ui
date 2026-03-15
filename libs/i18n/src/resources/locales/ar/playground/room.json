@@ -47,7 +47,9 @@
 		"enterQuestion": "الرجاء إدخال سؤال",
 		"completeTool": "يرجى إكمال الأداة (الأدوات) للمتابعة",
 		"ask": "اسأل",
-		"errorProcessing": "خطأ في معالجة الدردشة"
+		"errorProcessing": "خطأ في معالجة الدردشة",
+		"pauseNextTool": "Pause before next tool call",
+		"pauseNextToolArmed": "Resume tool usage"
 	},
 	"content": {
 		"scrollToTop": "انتقل إلى الأعلى",

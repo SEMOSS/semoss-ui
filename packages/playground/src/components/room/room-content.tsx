@@ -446,6 +446,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					)}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={room.hasUnfinishedTools}
+					pauseNextTool={room.pauseNextTool}
+					onTogglePauseNextTool={
+						room.hasHadToolCalls
+							? () => room.setPauseNextTool(!room.pauseNextTool)
+							: undefined
+					}
 					footer={
 						<RoomContextChart
 							tokensUsed={room.tokensUsed}

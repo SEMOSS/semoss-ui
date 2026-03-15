@@ -47,7 +47,9 @@
 		"enterQuestion": "कृपया एक प्रश्न दर्ज करें",
 		"completeTool": "कृपया आगे बढ़ने के लिए टूल पूरा करें",
 		"ask": "पूछें",
-		"errorProcessing": "चैट प्रोसेस करने में त्रुटि"
+		"errorProcessing": "चैट प्रोसेस करने में त्रुटि",
+		"pauseNextTool": "Pause before next tool call",
+		"pauseNextToolArmed": "Resume tool usage"
 	},
 	"content": {
 		"scrollToTop": "शीर्ष पर स्क्रॉल करें",

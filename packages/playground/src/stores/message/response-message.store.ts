@@ -11,6 +11,7 @@ import {
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 	TOOL_OUTPUT_UNREADABLE_PROMPT,
+	TOOL_PAUSE_PROMPT,
 } from "@/constants";
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
@@ -439,7 +440,20 @@ paramValues=[${JSON.stringify({
 		const numToolsToRun = (toolLimit > 0 ? toolLimit : 5) - numRunningTools;
 		if (numToolsToRun > 0) {
 			toolsToRun.slice(0, numToolsToRun).forEach((tool) => {
-				this.runToolExecution(tool);
+				if (this.room.pauseNextTool) {
+					// One-shot intercept: clear the flag immediately, then send the check-in prompt
+					this.room.setPauseNextTool(false);
+					this.saveToolExecution(
+						tool,
+						"",
+						"cancelled",
+						tool.parameters,
+						false,
+						TOOL_PAUSE_PROMPT,
+					);
+				} else {
+					this.runToolExecution(tool);
+				}
 			});
 		}
 	};
@@ -500,6 +514,7 @@ paramValues=[${JSON.stringify({
 		toolStatus: "success" | "error" | "cancelled" = "success",
 		executedParameters: Record<string, unknown>,
 		errorDuringSaving: boolean = false,
+		cancelPromptOverride?: string,
 	): Promise<void> => {
 		const room = this.room;
 
@@ -507,7 +522,9 @@ paramValues=[${JSON.stringify({
 		if (toolStatus === "error") {
 			toolResponse = `${errorDuringSaving ? TOOL_OUTPUT_UNREADABLE_PROMPT : TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
 		} else if (toolStatus === "cancelled") {
-			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
+			const cancelPrompt =
+				cancelPromptOverride ?? TOOL_CANCELLATION_PROMPT;
+			toolResponse = `${cancelPrompt}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
 		}
 
 		// skip if the tool is already completed

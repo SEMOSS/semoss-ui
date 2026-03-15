@@ -47,7 +47,9 @@
 		"enterQuestion": "Please enter a question",
 		"completeTool": "Please complete the tool(s) to proceed",
 		"ask": "Ask",
-		"errorProcessing": "Error processing chat"
+		"errorProcessing": "Error processing chat",
+		"pauseNextTool": "Pause before next tool call",
+		"pauseNextToolArmed": "Resume tool usage"
 	},
 	"content": {
 		"scrollToTop": "Scroll to top",

@@ -37,6 +37,11 @@ export const TOOL_ERROR_PROMPT = `This tool execution failed due to an unexpecte
 3. If the error is unclear or complex, ask the user for guidance and suggest alternative approaches
 4. Always explain your reasoning before taking any corrective actions`;
 
+export const TOOL_PAUSE_PROMPT = `The user asked to pause before the next tool was invoked. You must check in before proceeding. You should:
+1. Briefly summarize what you were planning to do and why
+2. Ask the user how they would like to proceed
+3. Do not invoke any tool until the user explicitly tells you to continue`;
+
 export const TOOL_OUTPUT_UNREADABLE_PROMPT = `This tool was called and returned a response, but that response could not be read — likely because the output was too large to process or something went wrong when generating the next message. You should:
 1. Inform the user that the tool result was unavailable and briefly explain the likely cause
 2. Avoid acting on the tool output as if its contents are known

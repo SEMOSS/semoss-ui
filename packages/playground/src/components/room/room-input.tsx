@@ -13,6 +13,8 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
+	CirclePauseIcon,
+	CirclePlayIcon,
 	FileAudio2Icon,
 	FileIcon,
 	FileType2Icon,
@@ -72,6 +74,12 @@ interface RoomInputProps {
 	/** Has outstanding tools */
 	hasOutstandingTools?: boolean;
 
+	/** Whether the pause-on-next-tool flag is armed */
+	pauseNextTool?: boolean;
+
+	/** Toggle the pause-on-next-tool flag */
+	onTogglePauseNextTool?: () => void;
+
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
 }
@@ -85,6 +93,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		MenuComponent,
 		onPrompt = () => null,
 		hasOutstandingTools = false,
+		pauseNextTool = false,
+		onTogglePauseNextTool,
 		footer = null,
 	}) => {
 		const { t } = useTranslation("room");
@@ -99,6 +109,17 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 		const [isDragging, setIsDragging] = useState(false);
 		const [files, setFiles] = useState<File[]>([]);
+		const [justResumed, setJustResumed] = useState(false);
+		const prevPauseRef = useRef(pauseNextTool);
+
+		useEffect(() => {
+			if (prevPauseRef.current === true && pauseNextTool === false) {
+				setJustResumed(true);
+				const timer = setTimeout(() => setJustResumed(false), 2000);
+				return () => clearTimeout(timer);
+			}
+			prevPauseRef.current = pauseNextTool;
+		}, [pauseNextTool]);
 
 		const [canListen, setCanListen] = useState(false);
 		const [isListening, setIsListening] = useState(false);
@@ -313,7 +334,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									<ContentEditable
 										ref={contentEditableRef}
 										className={cn(
-											`h-auto w-full overflow-y-auto rounded-md border border-input bg-transparent p-4 pb-14 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
+											`h-auto w-full overflow-y-auto rounded-md border border-input bg-transparent p-4 pb-18 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
 											isDragging
 												? "border-primary border-dashed"
 												: "hover:border-primary",
@@ -439,8 +460,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							/>
 						)}
 					</LexicalComposer>
-					{!isLoading && (
-						<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
+					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
+						{!isLoading && (
 							<DropdownMenu
 								open={menuOpen}
 								onOpenChange={setMenuOpen}
@@ -477,9 +498,43 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									/>
 								</DropdownMenuContent>
 							</DropdownMenu>
-							{footer}
-						</div>
-					)}
+						)}
+						{onTogglePauseNextTool && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<button
+										type="button"
+										className={`inline-flex items-center gap-1 rounded border p-1.5 text-xs leading-none ${
+											justResumed
+												? "border-green-200 bg-green-50 text-green-600"
+												: pauseNextTool
+													? "border-transparent bg-transparent text-gray-400 hover:border-green-200 hover:bg-green-50 hover:text-green-600"
+													: "border-transparent bg-transparent text-gray-400 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500"
+										}`}
+										onClick={onTogglePauseNextTool}
+									>
+										{pauseNextTool ? (
+											<>
+												<CirclePlayIcon className="h-3.5 w-3.5" />
+												Resume Tools
+											</>
+										) : (
+											<>
+												<CirclePauseIcon className="h-3.5 w-3.5" />
+												Pause Tools
+											</>
+										)}
+									</button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{pauseNextTool
+										? t("input.pauseNextToolArmed")
+										: t("input.pauseNextTool")}
+								</TooltipContent>
+							</Tooltip>
+						)}
+						{footer}
+					</div>
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
 						<div className="flex flex-row items-center gap-1">
 							<EngineSelect
