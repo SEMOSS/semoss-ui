@@ -5,7 +5,7 @@ import {
 	KeyboardArrowDown,
 	KeyboardArrowUp,
 } from "@mui/icons-material";
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
 	Alert,
@@ -25,11 +25,23 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import {
+	Field,
+	FieldDescription,
+	FieldLabel,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	toast,
+} from "@semoss/ui/next";
+import {
 	createUserAccessKey,
 	deleteUserAccessKeys,
 	editMemberInfo,
+	setUserDefaultModel,
 } from "@/api/auth";
-import { useAPI, useRootStore } from "@/hooks";
+import { useAPI, useRootStore, useSettings } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./ChangePasswordModal";
 
@@ -175,6 +187,12 @@ interface CreateAccessKeyForm {
 	PLACEHOLDER: string;
 }
 
+interface Engine {
+	app_id: string;
+	app_name: string;
+	app_subtype?: string;
+}
+
 interface EditUserInfoForm {
 	NAME: string;
 	USERNAME: string;
@@ -183,10 +201,12 @@ interface EditUserInfoForm {
 }
 
 export const MyProfilePage = () => {
+	const modelSelectId = useId();
 	const notification = useNotification();
-	const { configStore } = useRootStore();
-	const { email, id, name} = configStore.store.user;
+	const { configStore, insightStore } = useRootStore();
+	const { email, id, name } = configStore.store.user;
 	const { isNative } = configStore.store;
+	const { adminMode } = useSettings();
 
 	// track the models
 	const [addModal, setAddModal] = useState(false);
@@ -197,6 +217,21 @@ export const MyProfilePage = () => {
 
 	// get the keys
 	const getUserAccessKeys = useAPI(["getUserAccessKeys"]);
+
+	// get the models
+	const getModals = useAPI(["getEngines", adminMode, "", "MODEL"]);
+
+	// track selected default text generation model
+	const [
+		selectedTextGenerationDefaultModel,
+		setSelectedTextGenerationDefaultModel,
+	] = useState<string>("");
+
+	// track selected default code generation model
+	const [
+		selectedCodeGenerationDefaultModel,
+		setSelectedCodeGenerationDefaultModel,
+	] = useState<string>("");
 
 	// NATIVE Login USERID must match Username
 	const logins = configStore.store.config.logins;
@@ -235,6 +270,38 @@ export const MyProfilePage = () => {
 
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
 	const [isPySdkOpen, setIsPySdkOpen] = useState(false);
+
+	const modals =
+		getModals.status === "SUCCESS" && Array.isArray(getModals.data)
+			? (getModals.data as unknown as Engine[]).filter(
+					(e) => e.app_subtype !== "EMBEDDED",
+				)
+			: [];
+
+	useEffect(() => {
+		if (insightStore.defaultTextGenerationModel && modals.length > 0) {
+			const matchingEngine = modals.find(
+				(e) => e.app_id === insightStore.defaultTextGenerationModel,
+			);
+			if (matchingEngine) {
+				setSelectedTextGenerationDefaultModel(matchingEngine.app_id);
+			}
+		}
+		if (insightStore.defaultCodeGenerationModel && modals.length > 0) {
+			const matchingCodeEngine = modals.find(
+				(e) => e.app_id === insightStore.defaultCodeGenerationModel,
+			);
+			if (matchingCodeEngine) {
+				setSelectedCodeGenerationDefaultModel(
+					matchingCodeEngine.app_id,
+				);
+			}
+		}
+	}, [
+		insightStore.defaultTextGenerationModel,
+		insightStore.defaultCodeGenerationModel,
+		modals,
+	]);
 
 	/**
 	 * Submit edit profile info
@@ -281,6 +348,48 @@ export const MyProfilePage = () => {
 				color: "error",
 				message: "Error editing profile information",
 			});
+		}
+	};
+
+	/**
+	 * Handle selecting a default model
+	 */
+	const handleSelectModel = async (
+		selectedAppId: string,
+		modelType: string,
+	) => {
+		try {
+			if (modelType === "text-generation-model") {
+				setSelectedTextGenerationDefaultModel(selectedAppId);
+			} else if (modelType === "code-generation-model") {
+				setSelectedCodeGenerationDefaultModel(selectedAppId);
+			}
+
+			if (!selectedAppId) {
+				return;
+			}
+
+			// Find the selected engine
+			const selectedEngine = modals.find(
+				(e) => e.app_id === selectedAppId,
+			);
+			if (!selectedEngine) {
+				throw new Error("Selected model not found");
+			}
+
+			// Update the store's meta to reflect the new default model
+			insightStore.updateUserDefaultModel(modelType, selectedAppId);
+
+			// Send the new default model selection to the backend
+			await setUserDefaultModel(modelType, selectedAppId);
+
+			toast.success(`Default ${modelType} saved successfully`);
+		} catch (e) {
+			if (e instanceof Error) {
+				toast.error(e.message);
+			} else {
+				toast.error("Error saving default model");
+			}
 		}
 	};
 
@@ -644,7 +753,106 @@ export const MyProfilePage = () => {
 					</GridItem>
 				</Grid>
 			</StyledPaper>
+			<StyledPaper>
+				<div className="-ml-5 -mt-5 mb-5">
+					<h2 className="mr-1 mb-6 font-semibold text-gray-900 text-xl">
+						Choose which AI model will be used by default for your
+						requests
+					</h2>
+					{getModals.status === "INITIAL" ||
+					getModals.status === "LOADING" ? (
+						<span className="font-medium text-gray-700 text-sm">
+							Loading models...
+						</span>
+					) : getModals.status === "ERROR" ? (
+						<span className="font-medium text-red-600 text-sm">
+							Error loading models
+						</span>
+					) : (
+						<div className="ml-3 grid grid-cols-1 gap-6 md:grid-cols-2">
+							<Field>
+								<FieldLabel htmlFor={modelSelectId}>
+									Text Generation Model
+								</FieldLabel>
+								<Select
+									value={selectedTextGenerationDefaultModel}
+									onValueChange={(value) =>
+										handleSelectModel(
+											value,
+											"text-generation-model",
+										)
+									}
+								>
+									<SelectTrigger
+										id={modelSelectId}
+										className="flex h-11 w-full items-center rounded-[7px] border border-black-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+										data-testid="myProfilePage-default-model-select"
+									>
+										<SelectValue placeholder="Select a model" />
+									</SelectTrigger>
+									<SelectContent className="max-h-[300px] overflow-y-auto rounded-[7px] border border-black-300 bg-white shadow-lg">
+										{modals.map((engine) => (
+											<SelectItem
+												key={engine.app_id}
+												value={engine.app_id}
+												data-testid={`myProfilePage-model-option-${engine.app_id}`}
+												className="cursor-pointer px-4 py-3 text-base text-gray-900"
+											>
+												<span>{engine.app_name}</span>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FieldDescription className="mt-2 text-gray-600 text-sm">
+									This text generation model will be used to
+									power AI-driven user requests
+								</FieldDescription>
+							</Field>
 
+							<Field>
+								<FieldLabel
+									htmlFor={`${modelSelectId}-secondary`}
+								>
+									Code Generation Model
+								</FieldLabel>
+								<Select
+									value={selectedCodeGenerationDefaultModel}
+									onValueChange={(value) =>
+										handleSelectModel(
+											value,
+											"code-generation-model",
+										)
+									}
+								>
+									<SelectTrigger
+										id={`${modelSelectId}-secondary`}
+										className="flex h-11 w-full items-center rounded-[7px] border border-black-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+										data-testid="myProfilePage-secondary-model-select"
+									>
+										<SelectValue placeholder="Select a model" />
+									</SelectTrigger>
+									<SelectContent className="max-h-[300px] overflow-y-auto rounded-[7px] border border-black-300 bg-white shadow-lg">
+										{modals.map((engine) => (
+											<SelectItem
+												key={`secondary-${engine.app_id}`}
+												value={engine.app_id}
+												data-testid={`myProfilePage-secondary-model-option-${engine.app_id}`}
+												className="cursor-pointer px-4 py-3 text-base text-gray-900"
+											>
+												<span>{engine.app_name}</span>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FieldDescription className="mt-2 text-gray-600 text-sm">
+									This code generation model will be used to
+									power AI-driven user requests
+								</FieldDescription>
+							</Field>
+						</div>
+					)}
+				</div>
+			</StyledPaper>
 			<StyledPaper>
 				<MonolithGrid container spacing={3}>
 					<CustomGridItem sm={11}>

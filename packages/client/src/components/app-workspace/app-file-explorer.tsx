@@ -218,38 +218,40 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 							actions={[
 								isDriverFile
 									? {
-										name: "Create",
-										icon: <HammerIcon />,
-										tooltip: "Create Toolbox",
-										action: async () => {
-											try {
-												await insight.actions.run(
-													`MakePythonMCP(project=["${app}"]);`,
-												);
+											name: "Create",
+											icon: <HammerIcon />,
+											tooltip: "Create Toolbox",
+											action: async () => {
+												try {
+													await insight.actions.run(
+														`MakePythonMCP(project=["${app}"]);`,
+													);
 
 													// refresh the explorer
-												refresh();
-												
+													refresh();
+
 													// add it
-													addMCPEditorTab("/mcp/py_mcp.json");
-											} catch (e) {
-												toast.error(e.message);
-												console.error(e);
-											}
-										},
-									}
+													addMCPEditorTab(
+														"/mcp/py_mcp.json",
+													);
+												} catch (e) {
+													toast.error(e.message);
+													console.error(e);
+												}
+											},
+										}
 									: null,
 								MCP.JSON_PATHS.some((f) =>
 									item.path.startsWith(f),
 								) && item.type !== "directory"
 									? {
-										name: "Edit",
-										icon: <PencilIcon />,
-										tooltip: "Edit Toolbox",
-										action: async (item) => {
-											addMCPEditorTab(item.path);
-										},
-									}
+											name: "Edit",
+											icon: <PencilIcon />,
+											tooltip: "Edit Toolbox",
+											action: async (item) => {
+												addMCPEditorTab(item.path);
+											},
+										}
 									: null,
 							]}
 							secondaryActions={[

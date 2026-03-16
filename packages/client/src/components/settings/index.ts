@@ -5,5 +5,5 @@ export * from "./members-table";
 export * from "./pending-members-table";
 export * from "./settings.types";
 export * from "./settings-tiles";
-export * from "./UserTable";
 export * from "./update-smss";
+export * from "./user-table";

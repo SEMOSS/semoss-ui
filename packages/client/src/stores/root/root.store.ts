@@ -1,4 +1,5 @@
 import { configure } from "mobx";
+import { Insight as InsightStore } from "@semoss/sdk";
 import { ConfigStore, MonolithStore } from "@/stores";
 
 configure({
@@ -14,10 +15,12 @@ export class RootStore {
 	 */
 	monolithStore: MonolithStore;
 	configStore: ConfigStore;
+	insightStore: InsightStore;
 
 	constructor() {
 		// create the stores
 		this.monolithStore = new MonolithStore(this);
 		this.configStore = new ConfigStore(this);
+		this.insightStore = new InsightStore();
 	}
 }

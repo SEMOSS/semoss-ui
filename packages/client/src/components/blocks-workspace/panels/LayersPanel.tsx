@@ -15,6 +15,7 @@ import { restrictToFirstScrollableAncestor } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import {
 	Add,
+	Check as CheckIcon,
 	ChevronRight,
 	ContentCopy,
 	Delete,
@@ -25,6 +26,7 @@ import {
 	Search,
 } from "@mui/icons-material/";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import { CircleCheck, Pencil } from "lucide-react";
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useRef, useState } from "react";
@@ -40,7 +42,6 @@ import {
 	Icon,
 	IconButton,
 	InputAdornment,
-	Menu,
 	Stack,
 	styled,
 	TextField,
@@ -48,12 +49,25 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import {
+	Button,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	Input,
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useDesigner, useWorkspace } from "@/hooks";
 import { getBlockElement } from "@/stores";
 import DuplicateIcon from "../../../assets/img/Duplicate.svg";
+import RenameIcon from "../../../assets/img/Rename.svg";
 import { BlockSettingsRegistry } from "../blocks";
 
 const customCollisionDetection = (args) => {
@@ -104,15 +118,13 @@ const StyledLabelContainer = styled("div", {
 	overflow: "hidden",
 }));
 
-const StyledLabelTitle = styled("div")(({ theme }) => ({
-	...theme.typography.body2,
+const StyledLabelTitle = styled(Typography)(({ theme }) => ({
 	overflow: "hidden",
 	textOverflow: "ellipsis",
 	whiteSpace: "nowrap",
 }));
 
-const StyledLabelSubtitleText = styled("div")(({ theme }) => ({
-	...theme.typography.caption,
+const StyledLabelSubtitleText = styled(Typography)(({ theme }) => ({
 	overflow: "hidden",
 	textOverflow: "ellipsis",
 	whiteSpace: "nowrap",
@@ -218,15 +230,6 @@ const StyledTypography = styled(Typography)(() => ({
 	lineHeight: "150%",
 	fontWeight: 500,
 	letterSpacing: "0.15px",
-}));
-
-const StyledPagesContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	height: "30%",
-	width: "100%",
-	minHeight: "120px",
-	overflow: "hidden",
 }));
 
 const StyledPageScroll = styled("div")(({ theme }) => ({
@@ -348,6 +351,13 @@ export const LayersPanel = observer(
 		const accordionRefs = useRef({});
 
 		const [_activeNode, setActiveNode] = useState<TreeNode | null>(null);
+		const [editingBlockId, setEditingBlockId] = useState<string | null>(
+			null,
+		);
+		const [editBlockId, setEditBlockId] = useState<string | null>(null);
+		const [rename, setRename] = useState(true);
+		const editableAreaRef = useRef<HTMLDivElement | null>(null);
+		const inputRef = useRef<HTMLInputElement>(null);
 
 		const sensors = useSensors(
 			useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -397,6 +407,29 @@ export const LayersPanel = observer(
 		}, [designer.selected]);
 
 		useEffect(() => {
+			const handleClickOutside = (event: MouseEvent) => {
+				if (
+					editableAreaRef.current &&
+					!editableAreaRef.current.contains(event.target as Node)
+				) {
+					const target = event.target as HTMLElement;
+
+					if (target.closest(".MuiOutlinedInput-root")) {
+						return;
+					}
+
+					setEditingBlockId(null);
+				}
+			};
+
+			document.addEventListener("mousedown", handleClickOutside);
+
+			return () => {
+				document.removeEventListener("mousedown", handleClickOutside);
+			};
+		}, []);
+
+		useEffect(() => {
 			const block = state.blocks[selectedPages];
 			if (block) {
 				handlePageSelection(block);
@@ -416,7 +449,9 @@ export const LayersPanel = observer(
 					if (!blk) return;
 					out.push(id);
 					for (const s in blk.slots) {
-						blk.slots[s]?.children?.forEach((cid: string) => visit(cid));
+						blk.slots[s]?.children?.forEach((cid: string) =>
+							visit(cid),
+						);
 					}
 				};
 				visit(rootId);
@@ -439,13 +474,26 @@ export const LayersPanel = observer(
 				}
 				// After expansion renders, scroll the matched item into view
 				setTimeout(() => {
-					const el = accordionRefs.current[matchId] as HTMLElement | null;
+					const el = accordionRefs.current[
+						matchId
+					] as HTMLElement | null;
 					if (el) {
 						scrollIntoView(el, { block: "center" });
 					}
 				}, 120);
 			}
 		}, [search, selectedPages]);
+
+		const handleRename = (id: string) => {
+			state.dispatch({
+				message: ActionMessages.SET_BLOCK_DATA,
+				payload: {
+					id: id,
+					path: "id",
+					value: editBlockId.trim(),
+				},
+			});
+		};
 
 		const handleDragStart = (event: DragStartEvent) => {
 			const { active } = event;
@@ -787,11 +835,16 @@ export const LayersPanel = observer(
 
 					const blockJson = {
 						widget: toJS(block.widget),
-						data: toJS(block.data),
+						data: (() => {
+							const data = toJS(block.data);
+							if (data.id) {
+								delete data.id; // Remove the id property if it exists
+							}
+							return data;
+						})(),
 						listeners: toJS(block.listeners),
 						slots: {},
 					};
-
 					// generate the slots
 					for (const slot in block.slots) {
 						if (block.slots[slot]) {
@@ -845,7 +898,29 @@ export const LayersPanel = observer(
 				renderBlock(newId);
 				handleMenuClose();
 			};
+			const handleRenameBlock = (id: string) => {
+				setEditingBlockId(id);
+				const block = state.blocks[id];
+				setEditBlockId(
+					(block?.data?.id as string)
+						? (block?.data?.id as string)
+						: (block?.id as string),
+				);
+			};
+			const handleValidation = (id: string) => {
+				if (!id) {
+					setRename(true);
+					return;
+				}
 
+				const blocks = Object.values(state.blocks);
+
+				const exists = blocks.some(
+					(block: any) => block.id === id || block?.data?.id === id,
+				);
+
+				setRename(exists);
+			};
 			return (
 				<>
 					<StyledTreeItemLabel>
@@ -855,20 +930,110 @@ export const LayersPanel = observer(
 						<StyledLabelContainer
 							search={
 								search
-									? [block.widget, block.id]
+									? [block.widget, block.id, block.data.id]
 											.join("")
 											.toLowerCase()
 											.indexOf(search.toLowerCase()) > -1
 									: false
 							}
 						>
-							<StyledLabelTitle>
+							<StyledLabelTitle variant="body2">
 								{block.widget.charAt(0).toUpperCase() +
 									block.widget.slice(1)}
 							</StyledLabelTitle>
-							<StyledLabelSubtitleText>
-								{variableName || block.id}
-							</StyledLabelSubtitleText>
+							<div ref={editableAreaRef}>
+								{editingBlockId === block.id ? ( // Check if the current block is being edited
+									<div className="flex flex-row items-center gap-1">
+										<div className="flex flex-row items-center gap-1">
+											<Input
+												ref={inputRef}
+												className="h-5 w-full max-w-xs rounded border border-primary px-1 font-normal font-sans text-muted-foreground text-sm tracking-normal shadow-none focus-visible:border-primary focus-visible:outline-none focus-visible:ring-0"
+												value={editBlockId}
+												onChange={(e) => {
+													const newVal =
+														e.target.value;
+													setEditBlockId(newVal);
+													handleValidation(newVal);
+													const cursorPosition =
+														e.target.selectionStart;
+													if (
+														inputRef.current &&
+														cursorPosition !== null
+													) {
+														requestAnimationFrame(
+															() => {
+																if (
+																	inputRef.current
+																) {
+																	inputRef.current.setSelectionRange(
+																		cursorPosition,
+																		cursorPosition,
+																	);
+																}
+															},
+														);
+													}
+												}}
+												onClick={(e) =>
+													e.stopPropagation()
+												}
+												onMouseDown={(e) => {
+													e.stopPropagation();
+												}}
+												autoFocus
+											/>
+										</div>
+										<TooltipProvider>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<span>
+														<Button
+															disabled={rename}
+															size="icon"
+															onMouseDown={(e) =>
+																e.stopPropagation()
+															}
+															className="h-6 w-6 bg-transparent p-0"
+															onClick={(e) => {
+																e.stopPropagation();
+																handleRename(
+																	block.id,
+																);
+																setRename(true);
+																setEditingBlockId(
+																	null,
+																);
+															}}
+															variant="secondary"
+														>
+															<CircleCheck
+																className={`h-4 w-4 ${
+																	rename
+																		? "text-muted-foreground"
+																		: "text-primary"
+																}`}
+															/>
+														</Button>
+													</span>
+												</TooltipTrigger>
+
+												{rename && (
+													<TooltipContent side="top">
+														Block name already
+														exists
+													</TooltipContent>
+												)}
+											</Tooltip>
+										</TooltipProvider>
+									</div>
+								) : (
+									<StyledLabelSubtitleText variant="caption">
+										{variableName ||
+											block.data.id ||
+											block.id}
+									</StyledLabelSubtitleText>
+								)}
+							</div>
 						</StyledLabelContainer>
 						{variableName ? (
 							<StyledTreeItemIconButton
@@ -909,52 +1074,58 @@ export const LayersPanel = observer(
 							<MoreVert fontSize="small" />
 						</IconButton>
 					</StyledTreeItemLabel>
-					<Menu
-						anchorEl={menuAnchorEl}
+					<DropdownMenu
 						open={Boolean(menuAnchorEl)}
-						onClose={handleMenuClose}
-						anchorOrigin={{
-							vertical: "bottom",
-							horizontal: "right",
-						}}
-						transformOrigin={{
-							vertical: "top",
-							horizontal: "right",
-						}}
-						sx={{
-							".MuiPopover-paper": {
-								borderRadius: "4px",
-								padding: "8px 0px",
-								boxShadow:
-									"0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
-							},
-						}}
+						onOpenChange={handleMenuClose}
 					>
-						<Menu.Item
-							value="duplicate"
-							sx={{ display: "flex" }}
-							onClick={(e: React.MouseEvent<HTMLElement>) =>
-								handleDuplicate(e, block.id)
-							}
+						<DropdownMenuTrigger asChild>
+							<div />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							align="end"
+							side="bottom"
+							className="rounded-md border bg-popover p-1 shadow-md"
 						>
-							<img
-								src={DuplicateIcon}
-								alt="Duplicate Icon"
-								style={{ marginRight: "8px" }}
-							/>{" "}
-							Duplicate
-						</Menu.Item>
-						<Menu.Item
-							value="delete"
-							sx={{ display: "flex" }}
-							onClick={() => handleDelete(block.id)}
-						>
-							<DeleteOutlineOutlinedIcon
-								style={{ color: "#757575", marginRight: "6px" }}
-							/>{" "}
-							Delete
-						</Menu.Item>
-					</Menu>
+							{!INPUT_BLOCK_TYPES.includes(block.widget) && (
+								<DropdownMenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										handleRenameBlock(block.id);
+										handleMenuClose();
+									}}
+									className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+								>
+									<Pencil className="relative left-1 mr-3 size-4" />
+									Rename
+								</DropdownMenuItem>
+							)}
+							<DropdownMenuItem
+								onClick={(e: React.MouseEvent<HTMLElement>) => {
+									e.stopPropagation();
+									handleDuplicate(e, block.id);
+									handleMenuClose();
+								}}
+								className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+							>
+								<img
+									src={DuplicateIcon}
+									alt="Duplicate Icon"
+									className="mr-2"
+								/>
+								Duplicate
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => {
+									handleDelete(block.id);
+									handleMenuClose();
+								}}
+								className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-outline text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+							>
+								<DeleteOutlineOutlinedIcon className="mr-1.5 size-4" />
+								Delete
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</>
 			);
 		};
@@ -1390,8 +1561,29 @@ export const LayersPanel = observer(
 						height: "100%",
 					}}
 				>
-					<Grid item xs={12} width={"100%"} sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
-						<Grid item xs={12} sx={{ display: "flex", flexDirection: "column", flex: "0 0 140px", minHeight: "80px", maxHeight: "230px", overflow: "hidden" }}>
+					<Grid
+						item
+						xs={12}
+						width={"100%"}
+						sx={{
+							display: "flex",
+							flexDirection: "column",
+							height: "100%",
+							minHeight: 0,
+						}}
+					>
+						<Grid
+							item
+							xs={12}
+							sx={{
+								display: "flex",
+								flexDirection: "column",
+								flex: "0 0 140px",
+								minHeight: "80px",
+								maxHeight: "230px",
+								overflow: "hidden",
+							}}
+						>
 							<StyledMenu>
 								<StyledMenuHeader>
 									<Stack
@@ -1434,7 +1626,17 @@ export const LayersPanel = observer(
 							</StyledMenu>
 						</Grid>
 						<Divider sx={{ margin: 0 }} />
-						<Grid item xs={12} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+						<Grid
+							item
+							xs={12}
+							sx={{
+								flex: 1,
+								display: "flex",
+								flexDirection: "column",
+								minHeight: 0,
+								overflow: "hidden",
+							}}
+						>
 							<DndContext
 								sensors={sensors}
 								collisionDetection={customCollisionDetection}
