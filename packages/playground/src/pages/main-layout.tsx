@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useEffect, useMemo, useState } from "react";
-import { Link, Outlet } from "react-router-dom";
+import { Link, matchPath, Outlet, useLocation } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -16,7 +16,7 @@ import {
 } from "@semoss/ui/next";
 import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
-import { ChatContext, NavbarContext } from "@/contexts";
+import { ChatContext, EmbedPreloadContext, NavbarContext } from "@/contexts";
 import { useRoot } from "@/hooks";
 import { useNavbar } from "@/hooks/use-navbar";
 import { useThemeTitle } from "@/hooks/use-theme-title";
@@ -83,88 +83,165 @@ const MainLayoutContent = observer(
 	}) => {
 		const { root } = useRoot();
 		const { actions } = useNavbar();
+		const { pathname } = useLocation();
+
+		// Collect sidebar items that should be embedded as iframes
+		const embedItems = useMemo(
+			() =>
+				[
+					...root.theme.sidebar.headerItems,
+					...root.theme.sidebar.footerItems,
+				].filter((item) => item.embed && item.url),
+			// eslint-disable-next-line react-hooks/exhaustive-deps
+			[root.theme.sidebar.headerItems, root.theme.sidebar.footerItems],
+		);
+
+		// Map of path → src; starts empty and is populated once the browser is idle
+		const [preloadedSrcs, setPreloadedSrcs] = useState<
+			Record<string, string>
+		>({});
+
+		useEffect(() => {
+			if (embedItems.length === 0) return;
+
+			// Defer loading until the browser has nothing urgent to do so we
+			// don't compete with the main app's initial render.
+			const schedule =
+				typeof requestIdleCallback === "function"
+					? requestIdleCallback
+					: (cb: () => void) => setTimeout(cb, 1);
+			const cancel =
+				typeof cancelIdleCallback === "function"
+					? cancelIdleCallback
+					: clearTimeout;
+
+			const id = schedule(() => {
+				setPreloadedSrcs(
+					Object.fromEntries(
+						embedItems.map((item) => [item.path, item.url]),
+					),
+				);
+			});
+
+			return () => cancel(id);
+		}, [embedItems]);
+
+		// The set of paths that have been pre-loaded; shared with EmbedPage so
+		// it can skip rendering its own duplicate iframe.
+		const preloadedPaths = useMemo(
+			() => new Set(Object.keys(preloadedSrcs)),
+			[preloadedSrcs],
+		);
 
 		return (
-			<SidebarProvider
-				open={isSidebarOpen}
-				onOpenChange={setIsSidebarOpen}
-				style={
-					{
-						"--sidebar-width": "19rem",
-						"--sidebar-width-mobile": "19rem",
-					} as React.CSSProperties
-				}
-			>
-				<GlobalNav />
-				<SidebarInset className="m-0! shadow-none">
-					<GlobalDialog />
-					<div
-						data-testid="main-layout"
-						className="flex h-screen w-full flex-col overflow-hidden"
-						style={{
-							background:
-								"linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--base-secondary-background, #FFF)",
-							...root.theme.overrides["main-layout"],
-						}}
-					>
-						<div className="flex h-12.5 w-full shrink-0 flex-row items-center px-4">
-							<div className="flex flex-row items-center justify-center gap-1.5">
-								<SidebarTrigger />
-								<Separator
-									orientation="vertical"
-									style={{ height: "17px" }}
-								/>
-								<Breadcrumb>
-									<BreadcrumbList>
-										{root.breadcrumbs.map(
-											(crumb, index) => {
-												const isLast =
-													index ===
-													root.breadcrumbs.length - 1;
+			<EmbedPreloadContext.Provider value={preloadedPaths}>
+				<SidebarProvider
+					open={isSidebarOpen}
+					onOpenChange={setIsSidebarOpen}
+					style={
+						{
+							"--sidebar-width": "19rem",
+							"--sidebar-width-mobile": "19rem",
+						} as React.CSSProperties
+					}
+				>
+					<GlobalNav />
+					<SidebarInset className="m-0! shadow-none">
+						<GlobalDialog />
+						<div
+							data-testid="main-layout"
+							className="flex h-screen w-full flex-col overflow-hidden"
+							style={{
+								background:
+									"linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--base-secondary-background, #FFF)",
+								...root.theme.overrides["main-layout"],
+							}}
+						>
+							<div className="flex h-12.5 w-full shrink-0 flex-row items-center px-4">
+								<div className="flex flex-row items-center justify-center gap-1.5">
+									<SidebarTrigger />
+									<Separator
+										orientation="vertical"
+										style={{ height: "17px" }}
+									/>
+									<Breadcrumb>
+										<BreadcrumbList>
+											{root.breadcrumbs.map(
+												(crumb, index) => {
+													const isLast =
+														index ===
+														root.breadcrumbs
+															.length - 1;
 
-												return (
-													<React.Fragment
-														key={crumb.path}
-													>
-														<BreadcrumbItem>
-															<BreadcrumbLink
-																className={
-																	isLast
-																		? "text-foreground"
-																		: ""
-																}
-																asChild
-															>
-																<Link
-																	to={`${crumb.path}`}
+													return (
+														<React.Fragment
+															key={crumb.path}
+														>
+															<BreadcrumbItem>
+																<BreadcrumbLink
+																	className={
+																		isLast
+																			? "text-foreground"
+																			: ""
+																	}
+																	asChild
 																>
-																	{crumb.name}
-																</Link>
-															</BreadcrumbLink>
-														</BreadcrumbItem>
-														{!isLast && (
-															<BreadcrumbSeparator />
-														)}
-													</React.Fragment>
-												);
-											},
-										)}
-									</BreadcrumbList>
-								</Breadcrumb>
+																	<Link
+																		to={`${crumb.path}`}
+																	>
+																		{
+																			crumb.name
+																		}
+																	</Link>
+																</BreadcrumbLink>
+															</BreadcrumbItem>
+															{!isLast && (
+																<BreadcrumbSeparator />
+															)}
+														</React.Fragment>
+													);
+												},
+											)}
+										</BreadcrumbList>
+									</Breadcrumb>
+								</div>
+								<div className="flex-1" />
+								<div className="flex items-center gap-2">
+									{actions ?? null}
+								</div>
 							</div>
-							<div className="flex-1" />
-							<div className="flex items-center gap-2">
-								{actions ?? null}
+							<Separator />
+							<div className="relative w-full flex-1 overflow-hidden">
+								<Outlet />
+								{embedItems.map((item) => {
+									const isActive = !!matchPath(
+										`/embed/${item.path}`,
+										pathname,
+									);
+									return (
+										<iframe
+											key={item.path}
+											src={
+												preloadedSrcs[item.path] ??
+												undefined
+											}
+											title={item.name}
+											className="absolute inset-0 h-full w-full border-none"
+											style={{
+												opacity: isActive ? 1 : 0,
+												pointerEvents: isActive
+													? "auto"
+													: "none",
+											}}
+										/>
+									);
+								})}
 							</div>
+							<GlobalFooter />
 						</div>
-						<Separator />
-						<div className="w-full flex-1 overflow-hidden">
-							<Outlet />
-						</div>
-						<GlobalFooter />
-					</div>
-				</SidebarInset>
-			</SidebarProvider>
+					</SidebarInset>
+				</SidebarProvider>
+			</EmbedPreloadContext.Provider>
 		);
 	},
 );

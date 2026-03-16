@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { Skeleton } from "@semoss/ui/next";
+import { useEmbedPreload } from "@/contexts";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RootStore } from "@/stores";
 
@@ -10,6 +11,7 @@ export const EmbedPage: React.FC = observer(() => {
 	const { t } = useTranslation("workspace");
 	const { path } = useParams();
 	const { root } = useRoot();
+	const preloadedPaths = useEmbedPreload();
 
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -45,6 +47,12 @@ export const EmbedPage: React.FC = observer(() => {
 
 	if (!matched) {
 		return <Navigate to="/" replace />;
+	}
+
+	// MainLayout has already pre-loaded this iframe and will show it on top —
+	// render nothing here to avoid running a duplicate instance of the app.
+	if (preloadedPaths.has(path)) {
+		return null;
 	}
 
 	return (
