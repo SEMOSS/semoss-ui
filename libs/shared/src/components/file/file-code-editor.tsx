@@ -1,8 +1,17 @@
 import type { OnMount } from "@monaco-editor/react";
+import { RefreshCwIcon, SaveIcon } from "lucide-react";
 import type * as monaco from "monaco-editor";
 import { Suspense, useRef, useState } from "react";
 import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
-import { Muted, Spinner, toast } from "@semoss/ui/next";
+import {
+	Button,
+	Muted,
+	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 import {
 	MONACO_CONFIG,
 	MONACO_EXT_LANGUAGE_MAPPING,
@@ -304,6 +313,35 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 	return (
 		<div className="relative flex h-full w-full flex-col items-center bg-background [&_.quick-input-widget]:mx-0!">
+			{/* Toolbar */}
+			<div className="flex w-full shrink-0 items-center justify-end gap-1 border-border border-b px-1.5 py-0.5">
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							disabled={isLoading || getFile.status !== "SUCCESS"}
+							onClick={() => getFile.refresh()}
+						>
+							<RefreshCwIcon className="size-3" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Refresh</TooltipContent>
+				</Tooltip>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							disabled={isLoading || getFile.status !== "SUCCESS"}
+							onClick={() => saveFile()}
+						>
+							<SaveIcon className="size-3" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Save (Ctrl+S)</TooltipContent>
+				</Tooltip>
+			</div>
 			<Suspense
 				fallback={
 					<div className="flex h-full w-full items-center justify-center">
