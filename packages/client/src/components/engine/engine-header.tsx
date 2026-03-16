@@ -133,7 +133,7 @@ export const EngineHeader: React.FC = () => {
 	 * @param {string} navigationPath - The path to navigate to.
 	 */
 	const handleMCPClick = async () => {
-		const navigationPath = `/engine/${type}/${active.id}/files?mcp=Generate`;
+		const navigationPath = `/engine/${type.toLowerCase()}/${active.id}/files?mcp=Generate`;
 		setGeneratingMCP(true);
 		try {
 			await generateMCP();
