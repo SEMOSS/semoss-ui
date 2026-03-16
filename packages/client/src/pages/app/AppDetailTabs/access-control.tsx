@@ -31,7 +31,9 @@ export const AccessControl = ({
 		<div className="w-full">
 			{permission === "author" && (
 				<section className="w-full pb-6">
-					<H2 className="mb-2 font-medium text-xl">Acess Settings</H2>
+					<H2 className="mb-2 font-medium text-xl">
+						Access Settings
+					</H2>
 					<SettingsContext.Provider value={{ adminMode: false }}>
 						<SettingsTiles
 							type="PROJECT"

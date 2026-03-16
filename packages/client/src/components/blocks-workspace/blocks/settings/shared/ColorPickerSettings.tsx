@@ -1,7 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
-import { SketchPicker } from "react-color";
 import {
 	type Block,
 	type BlockDef,
@@ -15,6 +14,7 @@ import {
 	OutlinedInput,
 	Popover,
 	styled,
+	TextField,
 	Typography,
 } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
@@ -33,21 +33,6 @@ interface ColorPickerSettingProps<D extends BlockDef = BlockDef> {
 	onChange: (color: string) => void;
 }
 
-const StyledSketchContainer = styled(SketchPicker)({
-	".custom-sketch-picker .flexbox-fix::before": {
-		marginLeft: "32px",
-		display: "block",
-		fontSize: "12px",
-		fontWeight: "bold",
-		color: "black",
-	},
-	".custom-sketch-picker .flexbox-fix:last-child div": {
-		width: "24px !important" /* Set the width of the color circle */,
-		height: "24px !important" /* Set the height of the color circle */,
-		borderRadius: "50% !important" /* Makes only preset colors circular */,
-		overflow: "hidden",
-	},
-});
 const StyledMainContainer = styled("div")({
 	display: "flex",
 	flexDirection: "column",
@@ -72,7 +57,8 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
 	}) => {
 		const [showPopover, setShowPopover] =
 			useState<HTMLButtonElement | null>(null); //show and hide the color picker
-		const [color, setColor] = useState(colorValue); //default color and state to maintain color value
+		const [_color, setColor] = useState(colorValue); //default color and state to maintain color value
+		// biome-ignore lint/suspicious/noExplicitAny: TODO
 		const { data, setData } = useBlockSettings<any>(id); //data to update the color of the chart
 		const [value, setValue] = useState<string | null>(null); //local state to store a copy of main state
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref to delay update of state
@@ -81,7 +67,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
 			"initial" | "updated"
 		>("initial");
 		const optionPathVal = "option";
-		const [optionValue, setOptionValue] = useState(data.option);
+		const [_optionValue, setOptionValue] = useState(data.option);
 		//get the latest value of state and store it in computedValue
 		const computedValue = useMemo(() => {
 			return computed(() => {
@@ -167,6 +153,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
 				<Typography variant="body2" color="secondary">
 					Select Colour
 				</Typography>
+				{/* biome-ignore lint/correctness/useUniqueElementIds: TODO */}
 				<OutlinedInput
 					size="small"
 					id="outlined-adornment-password"
@@ -208,15 +195,21 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
 						horizontal: "left",
 					}}
 				>
-					<StyledSketchContainer
+					<TextField
+						fullWidth
+						type="color"
+						value={value}
 						onChange={(newColor) => {
-							setColor(newColor.hex);
-							runStateUpdateCustom(newColor.hex);
-							onChange(newColor.hex);
+							setColor(newColor.target.value);
+							runStateUpdateCustom(newColor.target.value);
+							onChange(newColor.target.value);
 							setColorPickerState("updated");
 						}}
-						color={value}
-					></StyledSketchContainer>
+						size="small"
+						variant="outlined"
+						autoComplete="off"
+						data-testid={`colorSettings-Color Picker-txt`}
+					/>
 				</Popover>
 			</StyledMainContainer>
 		);
