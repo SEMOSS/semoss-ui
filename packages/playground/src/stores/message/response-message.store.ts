@@ -10,6 +10,7 @@ import {
 	MCP_EXECUTION_AUTO,
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
+	TOOL_OUTPUT_UNREADABLE_PROMPT,
 } from "@/constants";
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
@@ -226,7 +227,7 @@ paramValues=[${JSON.stringify({
 
 			const { output } = response.results[0];
 
-			// sync withe the results
+			// sync with the results
 			inputMessage.sync(output.inputMessage);
 			responseMessage.sync(output.responseMessage);
 
@@ -303,42 +304,47 @@ paramValues=[${JSON.stringify({
 		}
 	};
 
-/**
- * Download the response as a Word or PDF document
- */
-downloadResponse = async (format: "word" | "pdf") => {
-	// Extract text from all TEXT parts
-	const text = this.parts
-		.filter(part => part.type === "TEXT")
-		.map(part => part.text)
-		.join("");
+	/**
+	 * Download the response as a Word or PDF document
+	 */
+	downloadResponse = async (format: "word" | "pdf") => {
+		// Extract text from all TEXT parts
+		const text = this.parts
+			.filter((part) => part.type === "TEXT")
+			.map((part) => part.text)
+			.join("");
 
-	if (!text) throw new Error("No content to download");
+		if (!text) throw new Error("No content to download");
 
-	let pixelCommand: string;
+		let pixelCommand: string;
 
-	if (format === "word") {
-		pixelCommand = `ToDocx(html=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
-	} else if (format === "pdf") {
-		pixelCommand = `ToPdf(html=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
-	} else {
-		throw new Error(`Unsupported format: ${format}`);
-	}
-
-	const resp = await this.room.runRoomPixel<any>(pixelCommand, false);
-
-	if (resp?.pixelReturn?.[0]) {
-		const { operationType, output } = resp.pixelReturn[0];
-		
-		if (operationType?.includes("FILE_DOWNLOAD")) {
-			download(this.room.insightId, output);
+		if (format === "word") {
+			pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
+		} else if (format === "pdf") {
+			pixelCommand = `ToPdf(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
 		} else {
-			throw new Error(`Failed to generate ${format.toUpperCase()} file`);
+			throw new Error(`Unsupported format: ${format}`);
 		}
-	} else {
-		throw new Error("No response received from server");
-	}
-};
+
+		const resp = await this.room.runRoomPixel<[string]>(
+			pixelCommand,
+			false,
+		);
+
+		if (resp?.pixelReturn?.[0]) {
+			const { operationType, output } = resp.pixelReturn[0];
+
+			if (operationType?.includes("FILE_DOWNLOAD")) {
+				download(this.room.insightId, output);
+			} else {
+				throw new Error(
+					`Failed to generate ${format.toUpperCase()} file`,
+				);
+			}
+		} else {
+			throw new Error("No response received from server");
+		}
+	};
 
 	/**
 	 * Rewrite a message and generate a new sibling
@@ -477,14 +483,8 @@ downloadResponse = async (format: "word" | "pdf") => {
 				"success",
 				tool.parameters,
 			);
-		} catch (e) {
-			// mark the failure
-			await this.saveToolExecution(
-				tool,
-				e.toString(),
-				"error",
-				tool.parameters,
-			);
+		} catch {
+			// Failure handled by saveToolExecution, which will set the tool status to error and save the error response
 		}
 	};
 
@@ -499,12 +499,13 @@ downloadResponse = async (format: "word" | "pdf") => {
 		toolResponse: string,
 		toolStatus: "success" | "error" | "cancelled" = "success",
 		executedParameters: Record<string, unknown>,
+		errorDuringSaving: boolean = false,
 	): Promise<void> => {
 		const room = this.room;
 
 		// wrap the message
 		if (toolStatus === "error") {
-			toolResponse = `${TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
+			toolResponse = `${errorDuringSaving ? TOOL_OUTPUT_UNREADABLE_PROMPT : TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
 		} else if (toolStatus === "cancelled") {
 			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
 		}
@@ -601,6 +602,8 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 						}
 					});
 				},
+				true,
+				toolStatus !== "success", // If the tool execution succeeds but saving it failed, we will try to save it again with an error status, so dont error the room yet
 			);
 
 			const { output } = response.results[0];
@@ -623,14 +626,33 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 				this.toolResponseMessage = null;
 			}
 		} catch (e) {
-			// set error status
-			tool.status = "ERROR";
+			if (toolStatus === "success") {
+				// Attempt to save the error response
 
-			// remove as a child
-			this.removeChild(responseMessage);
+				// set status back to loading so that the error response can be saved
+				runInAction(() => {
+					tool.status = "LOADING";
+				});
 
-			// clear it
-			this.toolResponseMessage = null;
+				await this.saveToolExecution(
+					tool,
+					`Failed to save tool response: ${e}`,
+					"error",
+					executedParameters,
+					true,
+				);
+			} else {
+				// set error status
+				runInAction(() => {
+					tool.status = "ERROR";
+				});
+
+				// remove as a child
+				this.removeChild(responseMessage);
+
+				// clear it
+				this.toolResponseMessage = null;
+			}
 
 			throw e;
 		} finally {
