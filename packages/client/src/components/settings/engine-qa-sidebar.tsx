@@ -18,6 +18,16 @@ export interface Model {
 	database_id?: string;
 }
 
+interface EngineQASidebarProps {
+	modelOptions: Model[];
+	selectedModel: Model;
+	setSelectedModel: (model: Model) => void;
+	limit: number;
+	setLimit: (limit: number) => void;
+	temperature: number;
+	setTemperature: (temperature: number) => void;
+}
+
 export const EngineQASidebar = ({
 	modelOptions,
 	selectedModel,
@@ -26,7 +36,20 @@ export const EngineQASidebar = ({
 	setLimit,
 	temperature,
 	setTemperature,
-}) => {
+}: EngineQASidebarProps) => {
+	const getModelValue = (model: Model) =>
+		model.database_id ?? model.database_name ?? "";
+	const selectedModelValue = getModelValue(selectedModel);
+
+	const onModelChange = (value: string) => {
+		const nextModel = modelOptions.find(
+			(option) => getModelValue(option) === value,
+		);
+		if (nextModel) {
+			setSelectedModel(nextModel);
+		}
+	};
+
 	const limitTooltipText = `
 	This will change the amount of chunks pulled from 
 	a vector database. Pulling too many chunks can potentially cause your engine's
@@ -54,16 +77,31 @@ export const EngineQASidebar = ({
 			{/* Model Select */}
 			<p className="font-medium text-sm">Select Model:</p>
 
-			<Select value={selectedModel} onValueChange={setSelectedModel}>
-				<SelectTrigger>
-					<SelectValue placeholder="Select a model" />
+			<Select value={selectedModelValue} onValueChange={onModelChange}>
+				<SelectTrigger className="w-full min-w-0">
+					<SelectValue
+						placeholder="Select a model"
+						className="block max-w-full truncate"
+					/>
 				</SelectTrigger>
-				<SelectContent>
-					{modelOptions.map((option, i) => (
-						<SelectItem key={i} value={option}>
-							{option.database_name}
-						</SelectItem>
-					))}
+				<SelectContent className="max-w-[240px]">
+					{modelOptions.map((option) => {
+						const value = getModelValue(option);
+						if (!value) {
+							return null;
+						}
+
+						return (
+							<SelectItem key={value} value={value}>
+								<span
+									className="block max-w-full truncate"
+									title={option.database_name}
+								>
+									{option.database_name}
+								</span>
+							</SelectItem>
+						);
+					})}
 				</SelectContent>
 			</Select>
 
