@@ -33,10 +33,12 @@
 	},
 	"tool": {
 		"failed": "Failed",
+		"failedToExecute": "Failed to Execute",
 		"cancelled": "Cancelled",
 		"completed": "Completed",
 		"ready": "Ready",
 		"autoExecute": "Auto-executing",
+		"queued": "In queue to auto-execute",
 		"cancel": "Cancel"
 	},
 	"notifications": {
