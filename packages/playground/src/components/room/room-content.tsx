@@ -69,6 +69,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		// ask the room
 		await room.askMessage(prompt, files);
 
+		// re-sync room options from backend after message completes,
+		// preserving workspace MCPs that are only held in memory
+		await room.syncRoomOptions();
+
 		return true;
 	};
 
