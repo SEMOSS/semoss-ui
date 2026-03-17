@@ -87,6 +87,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			recordFeedback: action,
 			rewriteMessage: action,
 			hasUnfinishedTools: computed,
+			isOnlyAutoExecutionTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
 			toggleStoppedTools: action,
@@ -432,6 +433,30 @@ paramValues=[${JSON.stringify({
 	}
 
 	/**
+	 * Check if there are any unfinished tools
+	 */
+	get isOnlyAutoExecutionTools() {
+		let hasTools = false;
+		for (const part of this.parts) {
+			if (part.type === "TOOL_CALL") {
+				const tool = this.room.getTool(part.toolCall.id);
+				if (tool) {
+					hasTools = true;
+					if (
+						tool.json._meta.SMSS_MCP_EXECUTION !==
+						MCP_EXECUTION_AUTO
+					) {
+						// If we have any tools that are not auto execution, return false
+						return false;
+					}
+				}
+			}
+		}
+		// If we have tools and all of them are auto execution, return true. If we have no tools, return false
+		return hasTools;
+	}
+
+	/**
 	 * Run tools associated with the message
 	 */
 	continueToolExecution = () => {
@@ -660,6 +685,9 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 
 				// clear it
 				this.toolResponseMessage = null;
+
+				// turn off thinking
+				responseMessage.isThinking = false;
 			}
 		} catch (e) {
 			if (toolStatus === "success") {
@@ -688,14 +716,12 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 
 				// clear it
 				this.toolResponseMessage = null;
+
+				// turn off thinking
+				this.isThinking = false;
 			}
 
 			throw e;
-		} finally {
-			runInAction(() => {
-				// turn off thinking
-				responseMessage.isThinking = false;
-			});
 		}
 	};
 }

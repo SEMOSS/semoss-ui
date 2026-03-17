@@ -30,7 +30,7 @@ import {
 	RoomInputMenuUpload,
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
-import type { RoomStore } from "@/stores";
+import type { ResponseMessageStore, RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -270,19 +270,21 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	/**
 	 * Constants
 	 */
+	const tailAsResponse = room.tail as ResponseMessageStore;
+
 	const pauseToolInfo = ((): {
 		hasToolsPaused?: boolean;
 		togglePauseNextTool?: () => void;
 	} => {
-		const tail = room.tail;
 		if (
-			tail?.type === "OUTPUT" &&
-			(tail.isThinking || tail.hasUnfinishedTools)
+			tailAsResponse?.type === "OUTPUT" &&
+			(tailAsResponse.isThinking ||
+				tailAsResponse.isOnlyAutoExecutionTools)
 		) {
 			// Only applicable to response messages that are currently thinking
 			return {
-				hasToolsPaused: tail.hasStoppedTools,
-				togglePauseNextTool: tail.toggleStoppedTools,
+				hasToolsPaused: tailAsResponse.hasStoppedTools,
+				togglePauseNextTool: tailAsResponse.toggleStoppedTools,
 			};
 		} else {
 			return {};
@@ -408,7 +410,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
 				<RoomInput
 					className="max-h-56 min-h-24"
-					isLoading={room.isLoading}
+					isLoading={
+						room.isLoading ||
+						tailAsResponse.isOnlyAutoExecutionTools ||
+						tailAsResponse.isThinking
+					}
 					model={room.model}
 					setModel={(model) => {
 						room.setModel(model);
