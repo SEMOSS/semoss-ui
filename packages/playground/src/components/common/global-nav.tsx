@@ -330,6 +330,7 @@ export const GlobalNav = observer(() => {
 						<SidebarMenuButton
 							asChild
 							isActive={!!matchPath("/new", pathname)}
+							tooltip={"New Chat"}
 						>
 							<Link to={"/new"} aria-label={"New Chat"}>
 								<SquarePenIcon />
@@ -343,6 +344,7 @@ export const GlobalNav = observer(() => {
 							<SidebarMenuButton
 								asChild
 								isActive={!!matchPath("/agent", pathname)}
+								tooltip={"Agent"}
 							>
 								<Link to={"/agent"} aria-label={"agent"}>
 									<ComputerIcon />

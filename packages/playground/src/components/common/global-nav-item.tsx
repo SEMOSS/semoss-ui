@@ -37,6 +37,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 				<SidebarMenuButton
 					asChild
 					isActive={!!matchPath(`/embed/${path}`, pathname)}
+					tooltip={name}
 				>
 					<Link to={`/embed/${path}`} aria-label={name}>
 						{icon ? (
@@ -61,6 +62,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 				<SidebarMenuButton
 					asChild
 					isActive={!!matchPath(internalPath, pathname)}
+					tooltip={"Knowledge"}
 				>
 					<Link to={internalPath} aria-label={name}>
 						{icon ? (
