@@ -979,7 +979,7 @@ export class RoomStore {
 		messageId: string,
 		toolId: string,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
 		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {

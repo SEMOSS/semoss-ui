@@ -538,14 +538,17 @@ paramValues=[${JSON.stringify({
 		} else if (toolStatus === "cancelled") {
 			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
 		} else if (toolStatus === "paused") {
-			toolResponse = TOOL_PAUSE_PROMPT;
+			toolResponse = `${TOOL_PAUSE_PROMPT}${toolResponse ? `\n\nDetails: ${toolResponse}` : ""}`;
 		}
 
 		// skip if the tool is already completed
-		if (tool.status === "SUCCESS" || tool.status === "CANCELLED") {
-			// If this tool already has a response, this must be an outdated call, skip
-			return;
-		} else if (tool.status === "ERROR") {
+		if (
+			tool.status === "SUCCESS" ||
+			tool.status === "CANCELLED" ||
+			tool.status === "PAUSED" ||
+			tool.status === "ERROR"
+		) {
+			// this must be an outdated call, skip
 			return;
 		}
 
@@ -555,10 +558,12 @@ paramValues=[${JSON.stringify({
 			tool.parameters = executedParameters;
 			if (toolStatus === "success") {
 				tool.status = "SUCCESS";
-			} else if (toolStatus === "cancelled" || toolStatus === "paused") {
+			} else if (toolStatus === "cancelled") {
 				tool.status = "CANCELLED";
 			} else if (toolStatus === "error") {
 				tool.status = "ERROR";
+			} else if (toolStatus === "paused") {
+				tool.status = "PAUSED";
 			}
 		});
 
