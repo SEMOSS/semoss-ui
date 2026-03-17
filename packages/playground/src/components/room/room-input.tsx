@@ -515,8 +515,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								</TooltipTrigger>
 								<TooltipContent>
 									{hasToolsPaused
-										? t("input.pauseToolsTooltip")
-										: t("input.resumeToolsTooltip")}
+										? t("input.resumeToolsTooltip")
+										: t("input.pauseToolsTooltip")}
 								</TooltipContent>
 							</Tooltip>
 						)}

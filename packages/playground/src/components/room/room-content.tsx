@@ -30,7 +30,7 @@ import {
 	RoomInputMenuUpload,
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -267,6 +267,28 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [contentEle]);
 
+	/**
+	 * Constants
+	 */
+	const pauseToolInfo = ((): {
+		hasToolsPaused?: boolean;
+		togglePauseNextTool?: () => void;
+	} => {
+		const tail = room.tail;
+		if (
+			tail?.type === "OUTPUT" &&
+			(tail.isThinking || tail.hasUnfinishedTools)
+		) {
+			// Only applicable to response messages that are currently thinking
+			return {
+				hasToolsPaused: tail.hasStoppedTools,
+				togglePauseNextTool: tail.toggleStoppedTools,
+			};
+		} else {
+			return {};
+		}
+	})();
+
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
@@ -446,12 +468,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					)}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={room.hasUnfinishedTools}
-					hasToolsPaused={false}
-					togglePauseNextTool={() =>
-						(
-							room.tail as ResponseMessageStore
-						).toggleStoppedTools?.()
-					}
+					hasToolsPaused={pauseToolInfo.hasToolsPaused}
+					togglePauseNextTool={pauseToolInfo.togglePauseNextTool}
 					footer={
 						<RoomContextChart
 							tokensUsed={room.tokensUsed}
