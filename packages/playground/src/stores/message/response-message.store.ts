@@ -284,17 +284,29 @@ paramValues=[${JSON.stringify({
 	 * Toggle the stopped tools flag
 	 */
 	toggleStoppedTools = () => {
-		// TODO: allow cancellation of currently running tools when toggling from not stopped to stopped
-		// if (!this.hasStoppedTools) {
-		// 	// If we are currently running tools, then we want to stop them. So we should mark any loading or initial tools as paused
-		// 	for (const part of this.parts) {
-		// 		if (part.type === "TOOL_CALL") {
-		// 			const tool = this.room.getTool(part.toolCall.id);
-		// 			this.saveToolExecution(tool, "", "paused", tool.parameters, false);
-		// 		}
-		// 	}
-		// }
-		this.hasStoppedTools = !this.hasStoppedTools;
+		if (!this.hasStoppedTools) {
+			this.hasStoppedTools = true;
+			// If we are currently running tools, then we want to stop them. So we should mark any loading or initial tools as paused
+			for (const part of this.parts) {
+				if (part.type === "TOOL_CALL") {
+					const tool = this.room.getTool(part.toolCall.id);
+					if (tool.status === "LOADING") {
+						console.log(
+							`Marking tool ${tool.id} as paused due to user stopping tools`,
+						);
+						this.saveToolExecution(
+							tool,
+							"",
+							"paused",
+							tool.parameters,
+							false,
+						);
+					}
+				}
+			}
+		} else {
+			this.hasStoppedTools = false;
+		}
 	};
 
 	/**
