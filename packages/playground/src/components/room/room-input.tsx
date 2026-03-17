@@ -75,10 +75,10 @@ interface RoomInputProps {
 	hasOutstandingTools?: boolean;
 
 	/** Whether the pause-on-next-tool flag is armed */
-	pauseNextTool?: boolean;
+	hasToolsPaused?: boolean;
 
 	/** Toggle the pause-on-next-tool flag */
-	onTogglePauseNextTool?: () => void;
+	togglePauseNextTool?: () => void;
 
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
@@ -93,8 +93,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		MenuComponent,
 		onPrompt = () => null,
 		hasOutstandingTools = false,
-		pauseNextTool = false,
-		onTogglePauseNextTool,
+		hasToolsPaused = false,
+		togglePauseNextTool,
 		footer = null,
 	}) => {
 		const { t } = useTranslation("room");
@@ -109,17 +109,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 		const [isDragging, setIsDragging] = useState(false);
 		const [files, setFiles] = useState<File[]>([]);
-		const [justResumed, setJustResumed] = useState(false);
-		const prevPauseRef = useRef(pauseNextTool);
-
-		useEffect(() => {
-			if (prevPauseRef.current === true && pauseNextTool === false) {
-				setJustResumed(true);
-				const timer = setTimeout(() => setJustResumed(false), 2000);
-				return () => clearTimeout(timer);
-			}
-			prevPauseRef.current = pauseNextTool;
-		}, [pauseNextTool]);
 
 		const [canListen, setCanListen] = useState(false);
 		const [isListening, setIsListening] = useState(false);
@@ -499,37 +488,35 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								</DropdownMenuContent>
 							</DropdownMenu>
 						)}
-						{onTogglePauseNextTool && (
+						{togglePauseNextTool && (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<button
 										type="button"
 										className={`inline-flex items-center gap-1 rounded border p-1.5 text-xs leading-none ${
-											justResumed
-												? "border-green-200 bg-green-50 text-green-600"
-												: pauseNextTool
-													? "border-transparent bg-transparent text-gray-400 hover:border-green-200 hover:bg-green-50 hover:text-green-600"
-													: "border-transparent bg-transparent text-gray-400 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500"
+											hasToolsPaused
+												? "border-transparent bg-transparent text-gray-400 hover:border-green-200 hover:bg-green-50 hover:text-green-600"
+												: "border-transparent bg-transparent text-gray-400 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500"
 										}`}
-										onClick={onTogglePauseNextTool}
+										onClick={togglePauseNextTool}
 									>
-										{pauseNextTool ? (
+										{hasToolsPaused ? (
 											<>
 												<CirclePlayIcon className="h-3.5 w-3.5" />
-												Resume Tools
+												{t("input.resumeTools")}
 											</>
 										) : (
 											<>
 												<CirclePauseIcon className="h-3.5 w-3.5" />
-												Pause Tools
+												{t("input.pauseTools")}
 											</>
 										)}
 									</button>
 								</TooltipTrigger>
 								<TooltipContent>
-									{pauseNextTool
-										? t("input.pauseNextToolArmed")
-										: t("input.pauseNextTool")}
+									{hasToolsPaused
+										? t("input.pauseToolsTooltip")
+										: t("input.resumeToolsTooltip")}
 								</TooltipContent>
 							</Tooltip>
 						)}

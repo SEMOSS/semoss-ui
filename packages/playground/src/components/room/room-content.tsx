@@ -30,7 +30,7 @@ import {
 	RoomInputMenuUpload,
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
-import type { RoomStore } from "@/stores";
+import type { ResponseMessageStore, RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -446,11 +446,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					)}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={room.hasUnfinishedTools}
-					pauseNextTool={room.pauseNextTool}
-					onTogglePauseNextTool={
-						room.hasHadToolCalls
-							? () => room.setPauseNextTool(!room.pauseNextTool)
-							: undefined
+					hasToolsPaused={false}
+					togglePauseNextTool={() =>
+						(
+							room.tail as ResponseMessageStore
+						).toggleStoppedTools?.()
 					}
 					footer={
 						<RoomContextChart

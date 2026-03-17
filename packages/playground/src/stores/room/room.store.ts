@@ -51,12 +51,6 @@ interface RoomStoreInterface {
 	error?: Error | null;
 
 	/**
-	 * When true, the next auto-executing tool will be intercepted and
-	 * the model will be asked to check in. Cleared after one use.
-	 */
-	pauseNextTool: boolean;
-
-	/**
 	 *  Track the mode of the room.
 	 */
 	mode: "planning" | "executing" | "chat";
@@ -152,7 +146,6 @@ export class RoomStore {
 		roomId: "",
 		insightId: "new",
 		isLoading: false,
-		pauseNextTool: false,
 		mode: "chat",
 		metadata: {
 			name: "",
@@ -230,13 +223,6 @@ export class RoomStore {
 	 */
 	get isLoading() {
 		return this._store.isLoading;
-	}
-
-	/**
-	 * Whether the next auto-executing tool will be intercepted
-	 */
-	get pauseNextTool() {
-		return this._store.pauseNextTool;
 	}
 
 	/**
@@ -333,13 +319,6 @@ export class RoomStore {
 		return this._store.root;
 	}
 
-	/**
-	 * Indicator to check if the room is ready for the next message
-	 */
-	get hasHadToolCalls(): boolean {
-		return Object.keys(this._store.tools).length > 0;
-	}
-
 	get hasUnfinishedTools(): boolean {
 		if (this.tail instanceof ResponseMessageStore) {
 			for (const toolId in this._store.tools) {
@@ -415,13 +394,6 @@ export class RoomStore {
 	 */
 	setModel = (model: Engine) => {
 		this._store.model = model;
-	};
-
-	/**
-	 * Arm or disarm the pause-before-next-tool flag
-	 */
-	setPauseNextTool = (value: boolean) => {
-		this._store.pauseNextTool = value;
 	};
 
 	/**

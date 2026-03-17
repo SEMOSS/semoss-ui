@@ -65,6 +65,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		name: "",
 	};
 
+	/**
+	 * Whether the user has indicated to stop running tools
+	 */
+	hasStoppedTools: boolean = false;
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message: ResponsePixelMessage,
@@ -75,6 +80,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			isThinking: observable,
 			parts: observable,
 			feedback: observable,
+			hasStoppedTools: observable,
 			sync: action,
 			runMessage: action,
 			savePart: action,
@@ -83,6 +89,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			hasUnfinishedTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
+			toggleStoppedTools: action,
 		});
 
 		// sync the message (must be after makeObservable so sync action is registered)
@@ -273,6 +280,15 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
+	 * Toggle the stopped tools flag
+	 */
+	toggleStoppedTools = () => {
+		runInAction(() => {
+			this.hasStoppedTools = !this.hasStoppedTools;
+		});
+	};
+
+	/**
 	 * Record Feedback
 	 * @param rating
 	 * @param feedbackText
@@ -440,20 +456,7 @@ paramValues=[${JSON.stringify({
 		const numToolsToRun = (toolLimit > 0 ? toolLimit : 5) - numRunningTools;
 		if (numToolsToRun > 0) {
 			toolsToRun.slice(0, numToolsToRun).forEach((tool) => {
-				if (this.room.pauseNextTool) {
-					// One-shot intercept: clear the flag immediately, then send the check-in prompt
-					this.room.setPauseNextTool(false);
-					this.saveToolExecution(
-						tool,
-						"",
-						"cancelled",
-						tool.parameters,
-						false,
-						TOOL_PAUSE_PROMPT,
-					);
-				} else {
-					this.runToolExecution(tool);
-				}
+				this.runToolExecution(tool);
 			});
 		}
 	};
@@ -468,6 +471,18 @@ paramValues=[${JSON.stringify({
 			tool.json._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO
 		) {
 			// skip
+			return;
+		}
+
+		if (this.hasStoppedTools) {
+			// If the user has indicated to stop running tools, mark this tool as cancelled and save the response without running the tool
+			await this.saveToolExecution(
+				tool,
+				"",
+				"paused",
+				tool.parameters,
+				false,
+			);
 			return;
 		}
 
@@ -511,10 +526,9 @@ paramValues=[${JSON.stringify({
 	saveToolExecution = async (
 		tool: ToolStore,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
 		executedParameters: Record<string, unknown>,
 		errorDuringSaving: boolean = false,
-		cancelPromptOverride?: string,
 	): Promise<void> => {
 		const room = this.room;
 
@@ -522,9 +536,9 @@ paramValues=[${JSON.stringify({
 		if (toolStatus === "error") {
 			toolResponse = `${errorDuringSaving ? TOOL_OUTPUT_UNREADABLE_PROMPT : TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
 		} else if (toolStatus === "cancelled") {
-			const cancelPrompt =
-				cancelPromptOverride ?? TOOL_CANCELLATION_PROMPT;
-			toolResponse = `${cancelPrompt}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
+			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
+		} else if (toolStatus === "paused") {
+			toolResponse = TOOL_PAUSE_PROMPT;
 		}
 
 		// skip if the tool is already completed
@@ -541,7 +555,7 @@ paramValues=[${JSON.stringify({
 			tool.parameters = executedParameters;
 			if (toolStatus === "success") {
 				tool.status = "SUCCESS";
-			} else if (toolStatus === "cancelled") {
+			} else if (toolStatus === "cancelled" || toolStatus === "paused") {
 				tool.status = "CANCELLED";
 			} else if (toolStatus === "error") {
 				tool.status = "ERROR";

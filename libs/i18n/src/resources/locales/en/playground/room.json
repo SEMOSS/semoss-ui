@@ -48,8 +48,10 @@
 		"completeTool": "Please complete the tool(s) to proceed",
 		"ask": "Ask",
 		"errorProcessing": "Error processing chat",
-		"pauseNextTool": "Pause before next tool call",
-		"pauseNextToolArmed": "Resume tool usage"
+		"pauseTools": "Pause tools",
+		"pauseToolsTooltip": "Cancel all tool calls until after the next message",
+		"resumeTools": "Resume tools",
+		"resumeToolsTooltip": "Allow tool calls to proceed as normal"
 	},
 	"content": {
 		"scrollToTop": "Scroll to top",
