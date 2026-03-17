@@ -291,9 +291,6 @@ paramValues=[${JSON.stringify({
 				if (part.type === "TOOL_CALL") {
 					const tool = this.room.getTool(part.toolCall.id);
 					if (tool.status === "LOADING") {
-						console.log(
-							`Marking tool ${tool.id} as paused due to user stopping tools`,
-						);
 						this.saveToolExecution(
 							tool,
 							"",
