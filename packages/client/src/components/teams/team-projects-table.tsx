@@ -1,4 +1,3 @@
-import type { AxiosResponse } from "axios";
 import { Plus, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -51,6 +50,7 @@ import codeApp4 from "@/assets/img/code_app_4.png";
 import codeApp5 from "@/assets/img/code_app_5.png";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
 import { useServerPagination } from "@/hooks";
+import type { ApiResponse } from "@/types";
 
 const colors = [
 	"#22A4FF",
@@ -357,7 +357,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 
 			for (let i = 0; i < requests.length; i++) {
 				let response:
-					| AxiosResponse<{ success: boolean }>
+					| ApiResponse<{ success: boolean }>
 					| {
 							response: Response;
 							data: {
@@ -397,7 +397,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const deleteProject = async (project: TeamProjects) => {
 		try {
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {
@@ -428,7 +428,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			for (let i = 0; i < selectedProjects.length; i++) {
 				try {
 					let response:
-						| AxiosResponse<{ success: boolean }>
+						| ApiResponse<{ success: boolean }>
 						| {
 								response: Response;
 								data: {
@@ -472,7 +472,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			}
 
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {
