@@ -33,13 +33,14 @@
 	},
 	"tool": {
 		"failed": "Failed",
-		"failedToExecute": "Failed to Execute",
 		"cancelled": "Cancelled",
 		"completed": "Completed",
 		"ready": "Ready",
 		"autoExecute": "Auto-executing",
 		"queued": "In queue to auto-execute",
-		"cancel": "Cancel"
+		"cancel": "Cancel",
+		"groupLabel": "Executed",
+		"groupSuffix": "tool(s)"
 	},
 	"notifications": {
 		"feedbackSuccess": "Thank you for the feedback!",

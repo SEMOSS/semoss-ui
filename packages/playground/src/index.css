@@ -4,4 +4,44 @@
 
 @source "./**/*.{ts,tsx}";
 
+/* Shimmer/ghost text animation for loading text */
+@keyframes text-shimmer {
+	0% {
+		background-position: 200% center;
+	}
+	100% {
+		background-position: -200% center;
+	}
+}
+
+.animate-text-shimmer {
+	background: linear-gradient(
+		90deg,
+		var(--muted-foreground) 20%,
+		var(--foreground) 45%,
+		var(--muted-foreground) 70%
+	);
+	background-size: 200% auto;
+	-webkit-background-clip: text;
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
+	animation: text-shimmer 2.5s linear infinite;
+}
+
+/* Fade + height-collapse for completed tool cards before they join the group */
+@keyframes tool-complete-out {
+	0% {
+		opacity: 1;
+		grid-template-rows: 1fr;
+	}
+	60% {
+		opacity: 0;
+		grid-template-rows: 1fr;
+	}
+	100% {
+		opacity: 0;
+		grid-template-rows: 0fr;
+	}
+}
+
 

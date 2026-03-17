@@ -84,9 +84,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				? toolExecutionMessage
 				: variant === "queued"
 					? t("tool.queued")
-					: variant === "cancelled"
-						? t("tool.cancelled")
-						: tool.json.description;
+					: tool.json.description;
 
 		// Icon
 		let icon: React.ReactNode;
@@ -103,6 +101,10 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		const isPrimaryIcon = variant === "complete" || variant === "ready";
 		const isDimmed = variant === "error" || variant === "cancelled";
 
+		// Error and cancelled tools are never interactive, independent of visual state
+		const isButtonDisabled =
+			isDisabled || variant === "error" || variant === "cancelled";
+
 		return (
 			<div
 				className={cn(
@@ -110,15 +112,18 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					isDisabled && "opacity-50",
 					variant === "complete" ? "bg-sidebar" : "bg-background",
 					!isDisabled && isActive && "border-primary",
+					!isDisabled && variant === "ready" && "hover:bg-accent",
 				)}
 			>
 				{/* Clickable section: icon + text */}
 				<button
 					type="button"
-					disabled={isDisabled}
+					disabled={isButtonDisabled}
 					className={cn(
 						"flex min-w-0 flex-1 items-center gap-3 text-left",
-						isDisabled ? "cursor-not-allowed" : "cursor-pointer",
+						isButtonDisabled
+							? "cursor-not-allowed"
+							: "cursor-pointer",
 					)}
 					onClick={() => tool.openTool()}
 				>
@@ -140,14 +145,21 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						)}
 					>
 						<span
-							className="truncate font-medium text-foreground text-sm"
+							className={cn(
+								"truncate font-medium text-foreground text-sm",
+								variant === "loading" && "animate-text-shimmer",
+							)}
 							title={tool.json.title}
 						>
 							{tool.json.title}
 						</span>
 						{subtext && (
 							<span
-								className="truncate text-muted-foreground text-sm"
+								className={cn(
+									"truncate text-muted-foreground text-sm",
+									variant === "loading" &&
+										"animate-text-shimmer",
+								)}
 								title={subtext}
 							>
 								{subtext}
@@ -178,15 +190,16 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					</Button>
 				)}
 				{variant === "error" && (
-					<Button
-						type="button"
-						size="sm"
-						variant="destructive"
-						className="shrink-0"
-					>
+					<div className="flex shrink-0 items-center gap-2 rounded-md bg-destructive/10 px-3 py-1.5 font-medium text-destructive text-sm">
 						<XCircleIcon className="size-4" />
-						{t("tool.failedToExecute")}
-					</Button>
+						{t("tool.failed")}
+					</div>
+				)}
+				{variant === "cancelled" && (
+					<div className="flex shrink-0 items-center gap-2 rounded-md bg-muted px-3 py-1.5 font-medium text-muted-foreground text-sm">
+						<XCircleIcon className="size-4" />
+						{t("tool.cancelled")}
+					</div>
 				)}
 				{variant === "ready" && (
 					<Button

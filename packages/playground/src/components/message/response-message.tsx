@@ -37,6 +37,7 @@ import { RoomInlineTool } from "../room/room-inline-tool";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
+import { ResponseMessageToolGroup } from "./response-message-tool-group";
 
 interface ResponseMessageProps {
 	/** Room */
@@ -111,6 +112,25 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			{ value: "word", label: "Word Document", extension: ".docx" },
 			{ value: "pdf", label: "PDF Document", extension: ".pdf" },
 		];
+
+		// Pre-compute completed tools for grouping; track the first TOOL_CALL
+		// part index (regardless of completion) so the group always renders at
+		// the top of the tool list even when an auto-execute tool completes first.
+		const completedTools: ReturnType<typeof room.getTool>[] = [];
+		let firstToolPartIdx = -1;
+		message.parts.forEach((p, idx) => {
+			if (p.type !== "TOOL_CALL") return;
+			if (firstToolPartIdx === -1) firstToolPartIdx = idx;
+			const tool = room.getTool(p.toolCall.id);
+			if (!tool) return;
+			const isComplete =
+				tool.status !== "ERROR" &&
+				tool.status !== "CANCELLED" &&
+				(tool.status === "SUCCESS" || !!tool.response);
+			if (isComplete) {
+				completedTools.push(tool);
+			}
+		});
 
 		return (
 			<div>
@@ -192,6 +212,67 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									// if tool is not found, return null
 									if (!tool) {
 										return null;
+									}
+
+									const isComplete =
+										tool.status !== "ERROR" &&
+										tool.status !== "CANCELLED" &&
+										(tool.status === "SUCCESS" ||
+											!!tool.response);
+
+									// Completed tools not at the first tool
+									// position are already inside the group.
+									if (
+										isComplete &&
+										completedTools.length >= 1 &&
+										pIdx !== firstToolPartIdx
+									) {
+										return null;
+									}
+
+									// At the first tool call position, render
+									// the group so it always appears at the top
+									// of the tool list.
+									if (
+										pIdx === firstToolPartIdx &&
+										completedTools.length >= 1
+									) {
+										const group = (
+											<ResponseMessageToolGroup
+												key={`${key}-group`}
+												message={message}
+												tools={completedTools.filter(
+													(
+														t,
+													): t is NonNullable<
+														typeof t
+													> => t !== null,
+												)}
+											/>
+										);
+										// First tool is itself complete — only the group
+										if (isComplete) return group;
+										// First tool is still pending — group first, then the tool
+										return [
+											group,
+											<div
+												key={key}
+												className="flex flex-col gap-2"
+											>
+												<ResponseMessageTool
+													message={message}
+													tool={tool}
+												/>
+												{tool.display === "inline" &&
+													tool.isOpen && (
+														<RoomInlineTool
+															room={room}
+															message={message}
+															tool={tool}
+														/>
+													)}
+											</div>,
+										];
 									}
 
 									return (
