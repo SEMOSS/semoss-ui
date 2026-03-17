@@ -284,9 +284,17 @@ paramValues=[${JSON.stringify({
 	 * Toggle the stopped tools flag
 	 */
 	toggleStoppedTools = () => {
-		runInAction(() => {
-			this.hasStoppedTools = !this.hasStoppedTools;
-		});
+		// TODO: allow cancellation of currently running tools when toggling from not stopped to stopped
+		// if (!this.hasStoppedTools) {
+		// 	// If we are currently running tools, then we want to stop them. So we should mark any loading or initial tools as paused
+		// 	for (const part of this.parts) {
+		// 		if (part.type === "TOOL_CALL") {
+		// 			const tool = this.room.getTool(part.toolCall.id);
+		// 			this.saveToolExecution(tool, "", "paused", tool.parameters, false);
+		// 		}
+		// 	}
+		// }
+		this.hasStoppedTools = !this.hasStoppedTools;
 	};
 
 	/**
@@ -685,9 +693,6 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 
 				// clear it
 				this.toolResponseMessage = null;
-
-				// turn off thinking
-				responseMessage.isThinking = false;
 			}
 		} catch (e) {
 			if (toolStatus === "success") {
@@ -716,12 +721,26 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 
 				// clear it
 				this.toolResponseMessage = null;
-
-				// turn off thinking
-				this.isThinking = false;
 			}
 
 			throw e;
+		} finally {
+			// turn off thinking unless there are other tools still running
+			let hasOtherRunningTools = false;
+			for (const part of this.parts) {
+				if (part.type === "TOOL_CALL") {
+					const tool = this.room.getTool(part.toolCall.id);
+					if (tool && tool.status === "LOADING") {
+						hasOtherRunningTools = true;
+						break;
+					}
+				}
+			}
+			if (!hasOtherRunningTools) {
+				runInAction(() => {
+					responseMessage.isThinking = false;
+				});
+			}
 		}
 	};
 }

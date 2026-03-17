@@ -37,7 +37,7 @@ export const TOOL_ERROR_PROMPT = `This tool execution failed due to an unexpecte
 3. If the error is unclear or complex, ask the user for guidance and suggest alternative approaches
 4. Always explain your reasoning before taking any corrective actions`;
 
-export const TOOL_PAUSE_PROMPT = `The user asked to pause before the next tool was invoked. You must check in before proceeding. You should:
+export const TOOL_PAUSE_PROMPT = `The user intentionally paused this tool call before it was executed. This is not an error — they chose to hold the action and review before proceeding. You must check in before continuing. You should:
 1. Briefly summarize what you were planning to do and why
 2. Ask the user how they would like to proceed
 3. Do not invoke any tool until the user explicitly tells you to continue`;
