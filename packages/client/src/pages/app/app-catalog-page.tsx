@@ -2,7 +2,7 @@ import { Filter, LayoutGrid, List, Menu, Plus, Search, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { debounced, useIteratorPixel } from "@semoss/sdk/react";
+import { debounced, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -15,6 +15,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 	Spinner,
+	Switch,
 	Tabs,
 	TabsList,
 	TabsTrigger,
@@ -297,6 +298,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	const [inputValue, setInputValue] = useState("");
 	const [search, setSearch] = useState("");
 	const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+	const [createdByMeOnly, setCreatedByMeOnly] = useState(false);
 	const [updatedNewApps, setUpdatedNewApps] = useState<AppMetadata[]>([]);
 
 	const [filterBoxRefresh, setFilterBoxRefresh] = useState(false);
@@ -402,6 +404,24 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	const isBookmarkedMode = mode === "Bookmarked";
 	const pixel =
 		mode === "Discoverable" ? "MyDiscoverableProjects" : "MyProjects";
+
+	const getCreatedByMeApps = usePixel<{ createdProjects?: unknown }>(
+		createdByMeOnly && !isSystemMode ? "CreatedByMeApps();" : "",
+	);
+
+	const createdByMeProjectIdSet = useMemo(() => {
+		const createdProjects = getCreatedByMeApps.data?.createdProjects;
+
+		if (Array.isArray(createdProjects)) {
+			return new Set(createdProjects.map((id) => String(id)));
+		}
+
+		if (createdProjects != null && typeof createdProjects === "string") {
+			return new Set([createdProjects]);
+		}
+
+		return new Set<string>();
+	}, [getCreatedByMeApps.data]);
 
 	// Fetch apps with pagination
 	const getApps = useIteratorPixel<AppMetadata[], AppMetadata>(
@@ -658,12 +678,42 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		);
 	}, [search]);
 
+	const displayedFavoritedApps = useMemo(() => {
+		if (!createdByMeOnly || isSystemMode) {
+			return favoritedApps;
+		}
+
+		return favoritedApps.filter((app) =>
+			createdByMeProjectIdSet.has(app.project_id),
+		);
+	}, [
+		favoritedApps,
+		createdByMeOnly,
+		isSystemMode,
+		createdByMeProjectIdSet,
+	]);
+
 	// Apps to display (excluding favorited apps in non-bookmarked modes)
 	const displayedApps = useMemo(() => {
 		if (isBookmarkedMode) return [];
 
-		return apps.filter((app) => !isFavorited(app));
-	}, [apps, isBookmarkedMode, isFavorited]);
+		const nonFavoritedApps = apps.filter((app) => !isFavorited(app));
+
+		if (!createdByMeOnly || isSystemMode) {
+			return nonFavoritedApps;
+		}
+
+		return nonFavoritedApps.filter((app) =>
+			createdByMeProjectIdSet.has(app.project_id),
+		);
+	}, [
+		apps,
+		isBookmarkedMode,
+		isFavorited,
+		createdByMeOnly,
+		isSystemMode,
+		createdByMeProjectIdSet,
+	]);
 
 	return (
 		<>
@@ -776,6 +826,18 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								</Button>
 							</div>
 						</div>
+					</div>
+				</div>
+
+				<div className="flex justify-end">
+					<div className="flex items-center gap-2">
+						<P className="text-sm">Created by me</P>
+						<Switch
+							checked={createdByMeOnly}
+							onCheckedChange={setCreatedByMeOnly}
+							disabled={isSystemMode}
+							aria-label="Created by me"
+						/>
 					</div>
 				</div>
 
@@ -903,9 +965,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 					{/* Bookmarked Apps */}
 					{isBookmarkedMode &&
-						(favoritedApps.length > 0 ? (
+						(displayedFavoritedApps.length > 0 ? (
 							<div className={containerClass}>
-								{favoritedApps.map((app) => (
+								{displayedFavoritedApps.map((app) => (
 									<AppTileCard
 										key={app.project_id}
 										app={app}
@@ -1035,8 +1097,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 					{!isSystemMode &&
 						!isBookmarkedMode &&
 						!getApps.isLoading &&
-						displayedApps.length === 0 &&
-						apps.length === 0 && (
+						displayedApps.length === 0 && (
 							<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
 								<P>No apps found matching your search.</P>
 							</div>
