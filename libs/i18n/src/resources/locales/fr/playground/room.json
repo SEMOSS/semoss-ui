@@ -48,8 +48,10 @@
 		"completeTool": "Veuillez compléter le(s) outil(s) pour continuer",
 		"ask": "Demander",
 		"errorProcessing": "Erreur de traitement du chat",
-		"pauseNextTool": "Pause before next tool call",
-		"pauseNextToolArmed": "Resume tool usage"
+		"pauseTools": "Suspendre les outils",
+		"pauseToolsTooltip": "Annuler tous les appels d'outils jusqu'après le prochain message",
+		"resumeTools": "Reprendre les outils",
+		"resumeToolsTooltip": "Autoriser les appels d'outils à se dérouler normalement"
 	},
 	"content": {
 		"scrollToTop": "Défiler vers le haut",

@@ -48,8 +48,10 @@
 		"completeTool": "يرجى إكمال الأداة (الأدوات) للمتابعة",
 		"ask": "اسأل",
 		"errorProcessing": "خطأ في معالجة الدردشة",
-		"pauseNextTool": "Pause before next tool call",
-		"pauseNextToolArmed": "Resume tool usage"
+		"pauseTools": "إيقاف الأدوات مؤقتاً",
+		"pauseToolsTooltip": "إلغاء جميع استدعاءات الأدوات حتى بعد الرسالة التالية",
+		"resumeTools": "استئناف الأدوات",
+		"resumeToolsTooltip": "السماح لاستدعاءات الأدوات بالمتابعة بشكل طبيعي"
 	},
 	"content": {
 		"scrollToTop": "انتقل إلى الأعلى",

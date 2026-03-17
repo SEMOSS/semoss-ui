@@ -48,8 +48,10 @@
 		"completeTool": "続行するにはツールを完了してください",
 		"ask": "質問",
 		"errorProcessing": "チャットの処理中にエラーが発生しました",
-		"pauseNextTool": "Pause before next tool call",
-		"pauseNextToolArmed": "Resume tool usage"
+		"pauseTools": "ツールを一時停止",
+		"pauseToolsTooltip": "次のメッセージまですべてのツール呼び出しをキャンセル",
+		"resumeTools": "ツールを再開",
+		"resumeToolsTooltip": "ツール呼び出しを通常通り進める"
 	},
 	"content": {
 		"scrollToTop": "一番上にスクロール",
