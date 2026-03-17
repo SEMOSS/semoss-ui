@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
@@ -24,9 +24,6 @@ export const RoomPage = observer(() => {
 
 	// set the get the room based on the params
 	const { roomId } = useParams();
-	const [searchParams] = useSearchParams();
-	const jobId = searchParams.get("jobId");
-	const prompt = searchParams.get("prompt") ?? "";
 	const { chat } = useChat();
 	// const { setBreadcrumbs } = useGlobalBreadcrumbs();
 	const navigate = useNavigate();
@@ -104,11 +101,6 @@ export const RoomPage = observer(() => {
 
 				// set the room
 				setRoom(room);
-
-				// If the portal provided a jobId, attach to the running streaming job
-				if (jobId) {
-					room.attachToStreamingJob(jobId, prompt);
-				}
 			} catch (e) {
 				// if it doesn't load successfully, go back to home
 				toast.error(e.message);
@@ -123,8 +115,6 @@ export const RoomPage = observer(() => {
 		chat.loadRoom,
 		chat.setSelectedModel,
 		setBreadcrumbs,
-		jobId,
-		prompt,
 	]);
 
 	const { setNavbarActions } = useGlobalBreadcrumbs({});
@@ -164,18 +154,6 @@ export const RoomPage = observer(() => {
 			destroyOnUnmount={false}
 		>
 			<div className="flex h-full w-full flex-col overflow-hidden">
-				{/* DEV BANNER — remove before shipping */}
-				<div
-					style={{
-						background: "green",
-						color: "white",
-						fontWeight: "bold",
-						padding: "8px 16px",
-						textAlign: "center",
-					}}
-				>
-					✅ PLAYGROUND (localhost:5174)
-				</div>
 				<ResizablePanelGroup
 					direction="horizontal"
 					className="w-full flex-1 overflow-hidden"

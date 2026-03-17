@@ -1,16 +1,6 @@
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useEffect, useMemo, useState } from "react";
-
-// True when this app is running inside an iframe (e.g. embedded in the beta portal)
-const isEmbedded = (() => {
-	try {
-		return window.self !== window.top;
-	} catch (_e) {
-		return true;
-	}
-})();
-
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -94,6 +84,19 @@ const MainLayoutContent = observer(
 		const { root } = useRoot();
 		const { actions } = useNavbar();
 		const navigate = useNavigate();
+		const location = useLocation();
+
+		// Embed route detection
+		const isEmbedRoute = location.pathname.startsWith("/embed/");
+		const activeEmbedPath = isEmbedRoute
+			? location.pathname.slice("/embed/".length)
+			: null;
+
+		// All sidebar items with embed:true — iframes for these are kept alive
+		const embedItems = [
+			...root.theme.sidebar.headerItems,
+			...root.theme.sidebar.footerItems,
+		].filter((item) => item.embed);
 
 		// Listen for messages from a parent portal (beta app)
 		useEffect(() => {
@@ -122,21 +125,8 @@ const MainLayoutContent = observer(
 				}
 			};
 			window.addEventListener("message", handleMessage);
-			// Tell the parent portal we're ready to receive messages
-			if (isEmbedded) {
-				window.parent.postMessage({ type: "SMSS_READY" }, "*");
-			}
 			return () => window.removeEventListener("message", handleMessage);
 		}, [navigate]);
-
-		// Embedded mode: skip sidebar, render only the page content
-		if (isEmbedded) {
-			return (
-				<div className="h-screen w-full overflow-hidden">
-					<Outlet />
-				</div>
-			);
-		}
 
 		return (
 			<SidebarProvider
@@ -212,7 +202,30 @@ const MainLayoutContent = observer(
 							</div>
 						</div>
 						<Separator />
-						<div className="w-full flex-1 overflow-hidden">
+						{/* Preloaded embed iframes — mounted once, shown/hidden via CSS to avoid reload */}
+						{embedItems.map((item) => (
+							<div
+								key={item.path}
+								className="w-full flex-1 overflow-hidden"
+								style={{
+									display:
+										activeEmbedPath === item.path
+											? "block"
+											: "none",
+								}}
+							>
+								<iframe
+									className="h-full w-full border-none"
+									src={item.url}
+									title={item.name}
+								/>
+							</div>
+						))}
+						{/* Regular pages — hidden while an embed is active */}
+						<div
+							className="w-full flex-1 overflow-hidden"
+							style={{ display: isEmbedRoute ? "none" : "block" }}
+						>
 							<Outlet />
 						</div>
 						<GlobalFooter />

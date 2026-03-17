@@ -338,19 +338,20 @@ export const GlobalNav = observer(() => {
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 
-					{ENABLE_AGENT && (
-						<SidebarMenuItem>
-							<SidebarMenuButton
-								asChild
-								isActive={!!matchPath("/agent", pathname)}
-							>
-								<Link to={"/agent"} aria-label={"agent"}>
-									<ComputerIcon />
-									{t("agents")}
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-					)}
+					{ENABLE_AGENT &&
+						root.theme.sidebar.headerItems.length === 0 && (
+							<SidebarMenuItem>
+								<SidebarMenuButton
+									asChild
+									isActive={!!matchPath("/agent", pathname)}
+								>
+									<Link to={"/agent"} aria-label={"agent"}>
+										<ComputerIcon />
+										{t("agents")}
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+						)}
 					{root.theme.sidebar.headerItems.map((item) => (
 						<GlobalNavItem
 							key={item.path}
