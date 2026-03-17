@@ -89,8 +89,8 @@ const MainLayoutContent = observer(
 		const embedItems = useMemo(
 			() =>
 				[
-					...root.theme.sidebar.headerItems,
-					...root.theme.sidebar.footerItems,
+					...(root.theme.sidebar.headerItems ?? []),
+					...(root.theme.sidebar.footerItems ?? []),
 				].filter((item) => item.embed && item.url),
 			// eslint-disable-next-line react-hooks/exhaustive-deps
 			[root.theme.sidebar.headerItems, root.theme.sidebar.footerItems],
@@ -171,7 +171,8 @@ const MainLayoutContent = observer(
 													const isLast =
 														index ===
 														root.breadcrumbs
-															.length - 1;
+															.length -
+															1;
 
 													return (
 														<React.Fragment
