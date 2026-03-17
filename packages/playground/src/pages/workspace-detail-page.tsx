@@ -236,7 +236,7 @@ export const WorkspaceDetailPage = observer(() => {
 						</Button>
 					</div>
 					<div className="flex min-h-0 w-full flex-1 flex-col items-start overflow-hidden rounded-xl border border-border bg-card">
-						<div className="flex w-full flex-row gap-2 border-border border-b bg-primary-foreground p-4">
+						<div className="flex w-full flex-row gap-2 border-border border-b bg-secondary p-4">
 							<InputGroup className="bg-background">
 								<InputGroupInput
 									placeholder={t("common:buttons.search")}
@@ -312,7 +312,7 @@ export const WorkspaceDetailPage = observer(() => {
 						</TabsContent>
 
 						{tab === "members" && (
-							<div className="flex w-full flex-row items-center justify-end gap-2 border-border border-t bg-primary-foreground p-4">
+							<div className="flex w-full flex-row items-center justify-end gap-2 border-border border-t bg-secondary p-4">
 								<PaginationButtons {...pagination} />
 							</div>
 						)}
