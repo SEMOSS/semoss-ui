@@ -613,6 +613,56 @@ export class RoomStore {
 	};
 
 	/**
+	 * Fetch the latest room options from the backend and sync local state,
+	 * preserving any workspace MCPs that are currently loaded in memory.
+	 */
+	syncRoomOptions = async (): Promise<void> => {
+		try {
+			const response = await this.runRoomPixel<
+				[{ OPTIONS?: RoomStoreInterface["options"] }]
+			>(
+				`GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`,
+				false,
+				false,
+			);
+
+			const fetched = response.pixelReturn[0].output as {
+				OPTIONS?: RoomStoreInterface["options"];
+			};
+
+			if (!fetched?.OPTIONS) {
+				return;
+			}
+
+			// Preserve workspace MCPs that are already in local state
+			const workspaceMCPs = this._store.options.mcp.filter(
+				(mcp) => mcp?.fromWorkspace,
+			);
+
+			const freshRoomMCPs = (fetched.OPTIONS.mcp ?? []).filter(
+				(mcp) => !mcp?.fromWorkspace,
+			);
+
+			// Deduplicate: workspace MCPs take precedence
+			const workspaceIds = new Set(workspaceMCPs.map((m) => m.id));
+			const merged = [
+				...workspaceMCPs,
+				...freshRoomMCPs.filter((m) => !workspaceIds.has(m.id)),
+			];
+
+			runInAction(() => {
+				this.setOptions({
+					...fetched.OPTIONS,
+					mcp: merged,
+				});
+			});
+		} catch (e) {
+			// non-critical — swallow errors so the chat isn't disrupted
+			console.warn("Failed to sync room options:", e);
+		}
+	};
+
+	/**
 	 * UpdateRoomOptions
 	 * @param options - full set of new options
 	 */
@@ -846,22 +896,24 @@ export class RoomStore {
 			// set the new files
 			uploaded = response.data;
 
-			// filter the uploaded files to only include allowed file types based on the theme configuration (if configured)
+			const normalizeExt = (value: string) =>
+				value.trim().toLowerCase().replace(/^\./, "");
+
 			mediaInputs = uploaded.filter((f) => {
 				const allowed = this._theme.allowedFileTypes;
 
 				// If not configured (or empty), allow all
-				if (!allowed || allowed.length === 0) {
-					return true;
-				}
+				if (!allowed || allowed.length === 0) return true;
 
-				// get the extension
-				const ext = f.fileName.split(".").pop();
-				if (allowed.indexOf(ext) > -1) {
-					return true;
-				}
+				const allowedSet = new Set(allowed.map(normalizeExt));
 
-				return false;
+				const rawExt = f.fileName.split(".").pop() ?? "";
+				const ext = normalizeExt(rawExt);
+
+				// If there's no extension, it's not allowed (when allow-list is configured)
+				if (!ext) return false;
+
+				return allowedSet.has(ext);
 			});
 		}
 
@@ -1032,9 +1084,13 @@ export class RoomStore {
 				ReturnType<typeof getPixelJobStreaming>
 			>["message"][number],
 		) => void,
+		showLoading: boolean = true,
+		setErrorOnFail: boolean = true,
 	) => {
 		try {
-			this.setIsLoading(true);
+			if (showLoading) {
+				this.setIsLoading(true);
+			}
 
 			// Start async execution to get job ID
 			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
@@ -1090,10 +1146,18 @@ export class RoomStore {
 		} catch (e) {
 			console.error(e);
 
-			// show the error
-			this._store.error = e;
+			if (setErrorOnFail) {
+				// show the error
+				runInAction(() => {
+					this._store.error = e;
+				});
+			}
+
+			throw e;
 		} finally {
-			this.setIsLoading(false);
+			if (showLoading) {
+				this.setIsLoading(false);
+			}
 		}
 	};
 }
