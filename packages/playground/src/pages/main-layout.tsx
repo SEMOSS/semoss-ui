@@ -97,10 +97,11 @@ const MainLayoutContent = observer(
 			[root.theme.sidebar.headerItems, root.theme.sidebar.footerItems],
 		);
 
-		// Map of path → src; starts empty and is populated once the browser is idle
-		const [preloadedSrcs, setPreloadedSrcs] = useState<
-			Record<string, string>
-		>({});
+		// Map of path → src; derived immediately so iframes start loading right away.
+		const preloadedSrcs = useMemo(
+			() => Object.fromEntries(embedItems.map((item) => [item.path, item.url])),
+			[embedItems],
+		);
 
 		useEffect(() => {
 			const handleMessage = (event: MessageEvent) => {
@@ -130,31 +131,6 @@ const MainLayoutContent = observer(
 			window.addEventListener("message", handleMessage);
 			return () => window.removeEventListener("message", handleMessage);
 		}, [navigate]);
-
-		useEffect(() => {
-			if (embedItems.length === 0) return;
-
-			// Defer loading until the browser has nothing urgent to do so we
-			// don't compete with the main app's initial render.
-			const schedule =
-				typeof requestIdleCallback === "function"
-					? requestIdleCallback
-					: (cb: () => void) => setTimeout(cb, 1);
-			const cancel =
-				typeof cancelIdleCallback === "function"
-					? cancelIdleCallback
-					: clearTimeout;
-
-			const id = schedule(() => {
-				setPreloadedSrcs(
-					Object.fromEntries(
-						embedItems.map((item) => [item.path, item.url]),
-					),
-				);
-			});
-
-			return () => cancel(id);
-		}, [embedItems]);
 
 		// The set of paths that have been pre-loaded; shared with EmbedPage so
 		// it can skip rendering its own duplicate iframe.
@@ -257,6 +233,8 @@ const MainLayoutContent = observer(
 											}
 											title={item.name}
 											className="absolute inset-0 h-full w-full border-none"
+										// @ts-expect-error fetchpriority is not yet in React's typings
+										fetchpriority="high"
 											style={{
 												opacity: isActive ? 1 : 0,
 												pointerEvents: isActive
