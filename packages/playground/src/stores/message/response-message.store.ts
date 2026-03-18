@@ -87,7 +87,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			recordFeedback: action,
 			rewriteMessage: action,
 			hasUnfinishedTools: computed,
-			isOnlyAutoExecutionTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
 			toggleStoppedTools: action,
@@ -284,13 +283,24 @@ paramValues=[${JSON.stringify({
 	 * Toggle the stopped tools flag
 	 */
 	toggleStoppedTools = () => {
+		console.log(
+			"Toggling stopped tools. Currently hasStoppedTools:",
+			this.hasStoppedTools,
+			JSON.stringify(this.parts),
+		);
 		if (!this.hasStoppedTools) {
 			this.hasStoppedTools = true;
 			// If we are currently running tools, then we want to stop them. So we should mark any loading or initial tools as paused
 			for (const part of this.parts) {
 				if (part.type === "TOOL_CALL") {
 					const tool = this.room.getTool(part.toolCall.id);
-					if (tool.status === "LOADING") {
+					console.log(
+						`Checking tool ${tool?.json.name} with status ${tool?.status} for stopping`,
+					); // --- IGNORE ---
+					if (
+						tool.status === "LOADING" ||
+						tool.status === "INITIAL"
+					) {
 						this.saveToolExecution(
 							tool,
 							"",
@@ -447,30 +457,6 @@ paramValues=[${JSON.stringify({
 			}
 		}
 		return false;
-	}
-
-	/**
-	 * Check if there are any unfinished tools
-	 */
-	get isOnlyAutoExecutionTools() {
-		let hasTools = false;
-		for (const part of this.parts) {
-			if (part.type === "TOOL_CALL") {
-				const tool = this.room.getTool(part.toolCall.id);
-				if (tool) {
-					hasTools = true;
-					if (
-						tool.json._meta.SMSS_MCP_EXECUTION !==
-						MCP_EXECUTION_AUTO
-					) {
-						// If we have any tools that are not auto execution, return false
-						return false;
-					}
-				}
-			}
-		}
-		// If we have tools and all of them are auto execution, return true. If we have no tools, return false
-		return hasTools;
 	}
 
 	/**

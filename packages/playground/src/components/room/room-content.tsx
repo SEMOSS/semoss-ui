@@ -278,8 +278,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	} => {
 		if (
 			tailAsResponse?.type === "OUTPUT" &&
-			(tailAsResponse.isThinking ||
-				tailAsResponse.isOnlyAutoExecutionTools)
+			(tailAsResponse.isThinking || room.hasUnfinishedTools)
 		) {
 			// Only applicable to response messages that are currently thinking
 			return {
@@ -290,6 +289,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			return {};
 		}
 	})();
+
+	console.log(
+		JSON.stringify({
+			id: tailAsResponse.id,
+			type: tailAsResponse.type,
+			parentId: tailAsResponse.parent?.id,
+		}),
+	);
 
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
@@ -412,7 +419,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					className="max-h-56 min-h-24"
 					isLoading={
 						room.isLoading ||
-						tailAsResponse.isOnlyAutoExecutionTools ||
+						// room.hasUnfinishedTools ||
 						tailAsResponse.isThinking
 					}
 					model={room.model}

@@ -320,14 +320,29 @@ export class RoomStore {
 	}
 
 	get hasUnfinishedTools(): boolean {
-		if (this.tail instanceof ResponseMessageStore) {
-			for (const toolId in this._store.tools) {
-				const tool = this._store.tools[toolId];
-				if (tool.status === "INITIAL" || tool.status === "LOADING") {
-					return true;
+		let responseMessage: AbstractMessageStore = this.tail;
+		while (responseMessage) {
+			// if it is a response message, check if there are any tools that are not finished
+			if (
+				responseMessage instanceof ResponseMessageStore &&
+				responseMessage.id !== "STREAMING_TOOL_PLACEHOLDER_ID"
+			) {
+				for (const toolId in this._store.tools) {
+					const tool = this._store.tools[toolId];
+					if (
+						tool.status === "INITIAL" ||
+						tool.status === "LOADING"
+					) {
+						return true;
+					}
 				}
+				return false;
+			} else {
+				// if it is not a response message, move to the parent message
+				responseMessage = responseMessage.parent;
 			}
 		}
+		// if there are no response messages, return false
 		return false;
 	}
 
