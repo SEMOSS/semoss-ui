@@ -21,6 +21,18 @@ export const RootLayout = ({ children }) => {
 				)?.playground;
 			} catch (_e) {}
 
+			// in dev, let theme.local.json sidebar override the backend sidebar
+			if (import.meta.env.DEV) {
+				try {
+					const localSidebar = JSON.parse(
+						import.meta.env.VITE_THEME || "{}",
+					)?.playground?.sidebar;
+					if (localSidebar) {
+						theme = { ...theme, sidebar: localSidebar };
+					}
+				} catch (_e) {}
+			}
+
 			store.initialize(theme);
 
 			return store;

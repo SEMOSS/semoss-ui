@@ -12,6 +12,7 @@ dist
 *.rollup.cache
 tsconfig.tsbuildinfo
 .turbo
+*.zip
 
 # Ignore the generated files for vscode extension
 *.vsix
@@ -31,3 +32,6 @@ packages/playground/theme.local.json
 
 # Ignore legacy
 packages/legacy
+
+# portals
+portals
