@@ -418,6 +418,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				<RoomInput
 					className="max-h-56 min-h-24"
 					isLoading={showLoadingState}
+					hidePauseButton={!room.numberOfTools}
 					model={room.model}
 					setModel={(model) => {
 						room.setModel(model);

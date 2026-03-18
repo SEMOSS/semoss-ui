@@ -79,6 +79,9 @@ interface RoomInputProps {
 	/** Toggle the pause-on-next-tool flag */
 	toggleToolsPaused?: () => void;
 
+	/** Hide the pause-on-next-tool button */
+	hidePauseButton?: boolean;
+
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
 }
@@ -95,6 +98,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		hasToolsPaused = false,
 		toggleToolsPaused,
 		footer = null,
+		hidePauseButton = false,
 	}) => {
 		const { t } = useTranslation("room");
 		const { getGracefulErrorMessage } = useGracefulErrors();
@@ -546,7 +550,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										}
 										disabled={
 											isLoading
-												? hasToolsPaused
+												? hasToolsPaused ||
+													hidePauseButton
 												: isEmpty || hasOutstandingTools
 										}
 										onClick={() => {
@@ -558,7 +563,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										}}
 									>
 										{isLoading ? (
-											hasToolsPaused ? (
+											hasToolsPaused ||
+											hidePauseButton ? (
 												<Spinner />
 											) : (
 												<Square
@@ -575,7 +581,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							<TooltipContent>
 								{(() => {
 									if (isLoading) {
-										return hasToolsPaused
+										return hasToolsPaused || hidePauseButton
 											? t("input.thinkingTooltip")
 											: t("input.pauseToolsTooltip");
 									} else if (isEmpty) {
