@@ -50,7 +50,7 @@ const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
  * @component
  */
 export const NewRoomPage = observer(() => {
-	const { t } = useTranslation(["room", "workspace", "common"]);
+	const { t } = useTranslation(["room", "workspace", "common", "chat"]);
 	const { root } = useRoot();
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
@@ -184,6 +184,15 @@ export const NewRoomPage = observer(() => {
 			// go to the new room
 			navigate(`/room/${room.roomId}`);
 		} catch (error) {
+			if (
+				error.code !== undefined &&
+				(error.code === 403 || error.code === 302)
+			) {
+				// User is unauthorized, likely due to expired session. Prompt them to log in again.
+				toast.error(t("chat:gracefulErrors.inactivity"));
+				return;
+			}
+
 			toast.error(
 				t("room:errors.createRoom", { message: error.message }),
 			);
