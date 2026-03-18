@@ -7,10 +7,12 @@ import { DEFAULT_CONFIG } from "../constants.js";
 import type { BatchConfig, Config } from "../types.js";
 import {
 	ensureSemossGitignore,
+	exportAppFromInstance,
 	getCurrentContext,
 	initializeAndTestInsight,
 	loadCredentials,
 	saveCredentials,
+	uploadAppToServer,
 } from "../utils/index.js";
 import { Logger, setDefaultLogger } from "../utils/logger.js";
 
@@ -327,6 +329,12 @@ create in specific directory
 			this.log("   ➕ Adding app to all configured instances");
 		}
 
+		// if want to add to all instances, we should export the project we just uploaded and just upload it to the other instances.
+		let downloadResult: ArrayBuffer | undefined;
+		if (shouldAddToAllInstances) {
+			downloadResult = await exportAppFromInstance(instance, appId);
+		}
+
 		const instancesToUpdate = shouldAddToAllInstances
 			? instanceNames
 			: [instanceName];
@@ -340,6 +348,31 @@ create in specific directory
 
 			const currentInstance =
 				credentials.instances[configuredInstanceName];
+
+			// upload it to every instance except the one we created it on, for the one we created it on we can just link it without upload
+			if (configuredInstanceName !== instanceName) {
+				try {
+					await uploadAppToServer(currentInstance, downloadResult!);
+				} catch (error) {
+					logger.error(
+						`Failed to upload app to instance ${configuredInstanceName}: ${error}`,
+					);
+					this.log(
+						`⚠️  Warning: Failed to upload app to instance ${configuredInstanceName}: ${
+							error instanceof Error
+								? error.message
+								: String(error)
+						}`,
+					);
+					continue;
+				}
+				logger.debug(
+					`App "${appName}" uploaded to instance "${configuredInstanceName}"`,
+				);
+				this.log(
+					`   ✅ App uploaded to instance "${configuredInstanceName}"`,
+				);
+			}
 
 			if (!currentInstance.apps) {
 				currentInstance.apps = {};

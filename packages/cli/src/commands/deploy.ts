@@ -106,6 +106,12 @@ deploy java and python folders
 				"Number of backups to keep. Older backups are auto-pruned. Set to 0 to keep all.",
 			default: 5,
 		}),
+		useGlobal: Flags.boolean({
+			char: "g",
+			description:
+				"Use only global config (~/.config/semoss), skip local .env and smss.json",
+			default: false,
+		}),
 	};
 
 	private async loadConfig(
@@ -760,6 +766,8 @@ deploy java and python folders
 		// Get unified configuration from all sources (priority: .env.local > .env > smss.json > global)
 		const configResult = getConfiguration({
 			configPath: flags.config,
+			skipSmss: flags.useGlobal,
+			skipEnv: flags.useGlobal,
 		});
 
 		if (configResult.source !== "none") {
@@ -872,7 +880,13 @@ deploy java and python folders
 			}
 			this.log(`Module:   ${chalk.dim(configResult.module)}`);
 			this.log(`App:      ${appInfo}`);
+			this.log(`Deploy from: ${chalk.cyan(process.cwd())}`);
 			this.log(chalk.dim("─".repeat(50)));
+			this.log(
+				chalk.yellow(
+					"⚠️  Deploy uses your current directory. Make sure your terminal is in the correct project folder.",
+				),
+			);
 			this.log(
 				chalk.red(
 					"This action will replace the current deployment. Use --rollback to revert if needed.",

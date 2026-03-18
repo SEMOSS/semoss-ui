@@ -41,6 +41,12 @@ init (./src/commands/init.ts)
 			char: "t",
 			description: "Type of the project",
 		}),
+		useGlobal: Flags.boolean({
+			char: "g",
+			description:
+				"Use only global config (~/.config/semoss), skip local .env and smss.json",
+			default: false,
+		}),
 	};
 
 	public async run(): Promise<void> {
@@ -63,6 +69,8 @@ init (./src/commands/init.ts)
 			const configResult = getConfiguration({
 				configPath,
 				envPath: flags.env,
+				skipSmss: flags.useGlobal,
+				skipEnv: flags.useGlobal,
 			});
 
 			if (configResult.source !== "none") {

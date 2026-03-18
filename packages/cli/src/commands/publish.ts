@@ -26,6 +26,12 @@ export default class Publish extends Command {
 			description:
 				"Publish to multiple instances via batch config in smss.json. Use 'all' or comma-separated names (e.g., 'dev,prod')",
 		}),
+		useGlobal: Flags.boolean({
+			char: "g",
+			description:
+				"Use only global config (~/.config/semoss), skip local .env and smss.json",
+			default: false,
+		}),
 	};
 
 	async run(): Promise<void> {
@@ -131,6 +137,8 @@ export default class Publish extends Command {
 			const configResult = getConfiguration({
 				configPath: flags.config,
 				envPath: flags.env,
+				skipSmss: flags.useGlobal,
+				skipEnv: flags.useGlobal,
 			});
 
 			if (!configResult.isValid) {

@@ -1,7 +1,11 @@
-import { Box, Text, useInput } from "ink";
+import { Box, Text, useInput, useStdout } from "ink";
 import Spinner from "ink-spinner";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+	getCurrentInstance,
+	getCurrentInstanceName,
+} from "../../utils/config.js";
 
 export interface OutputEntry {
 	id: string;
@@ -15,24 +19,42 @@ interface OutputProps {
 	height?: number;
 }
 
-// ASCII art welcome screen - defined outside component to prevent re-creation
+const MOOSE_ART = [
+	"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢡⡀⠀⠀⠀",
+	"⠀⠀⢠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢷⡀⠀⠀",
+	"⠀⢰⠇⠀⠀⢀⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⢧⠀⠀⠸⣿⣦⠀",
+	"⢀⡿⠀⠀⠀⣼⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣆⠀⠀⠸⣧⠀⠀⣿⡹⣧",
+	"⢸⡇⠀⠀⢠⡏⠀⢀⡴⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢿⣦⡀⢻⡆⠀⢸⡇⣿",
+	"⣾⡇⠀⠀⢸⣧⡴⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠻⢿⣿⣦⣾⣧⣿",
+	"⢿⣿⣶⡶⢿⡏⠀⠀⠀⠀⠀⠀⢀⡆⠀⠀⠀⢀⠀⠀⠀⠀⢸⣿⣩⣿⡻⣿",
+	"⠘⢿⣿⣶⣬⣷⡀⠀⠀⠀⠀⠀⣾⠀⠀⠀⠀⢸⡆⠀⠀⢠⣾⣿⣿⣿⠿⠛",
+	"⠀⠀⠉⠛⠿⠿⣿⣷⣶⣤⣀⣼⣏⠀⠀⠀⠀⠈⣷⣀⣤⣾⣿⠿⠟⠉⠀⠀",
+	"⠀⠀⠀⠀⠀⠀⠀⠉⠻⢿⣿⣿⣿⣄⠀⠀⠀⢠⣿⣿⡿⠟⠉⣀⣤⣤⡀⠀",
+] as const;
+
 const ASCII_LOGO = [
-	"",
 	"   ███████╗███████╗███╗   ███╗ ██████╗ ███████╗███████╗",
 	"   ██╔════╝██╔════╝████╗ ████║██╔═══██╗██╔════╝██╔════╝",
 	"   ███████╗█████╗  ██╔████╔██║██║   ██║███████╗███████╗",
 	"   ╚════██║██╔══╝  ██║╚██╔╝██║██║   ██║╚════██║╚════██║",
 	"   ███████║███████╗██║ ╚═╝ ██║╚██████╔╝███████║███████║",
 	"   ╚══════╝╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚══════╝",
-	"",
-	"Semantic Open Source Software",
-	"",
-	"   Type :help for commands or enter a Pixel query",
-	"",
 ] as const;
 
 export const Output: React.FC<OutputProps> = ({ entries, height = 20 }) => {
 	const [scrollOffset, setScrollOffset] = useState(0);
+	const { stdout } = useStdout();
+	const termWidth = stdout?.columns ?? 80;
+
+	// Get context info for welcome screen
+	const contextInfo = useMemo(() => {
+		const instName = getCurrentInstanceName();
+		const inst = getCurrentInstance();
+		return {
+			instanceName: instName || undefined,
+			module: inst?.module || undefined,
+		};
+	}, []);
 
 	// Calculate total lines needed for all entries
 	const allLines: Array<{ entryId: string; line: string; type: string }> = [];
@@ -148,15 +170,46 @@ export const Output: React.FC<OutputProps> = ({ entries, height = 20 }) => {
 						justifyContent="center"
 						height={height - 2}
 					>
-						{ASCII_LOGO.map((line, index) => (
-							<Text
-								key={line}
-								color={index >= 8 ? "gray" : "cyan"}
-								dimColor={index >= 8}
-							>
-								{line}
+						{height >= 28 &&
+							MOOSE_ART.map((line) => (
+								<Text key={line} color="cyan">
+									{line}
+								</Text>
+							))}
+						{termWidth >= 62 ? (
+							ASCII_LOGO.map((line) => (
+								<Text key={line} color="cyan">
+									{line}
+								</Text>
+							))
+						) : (
+							<Text color="cyan" bold>
+								S E M O S S
 							</Text>
-						))}
+						)}
+						<Text> </Text>
+						<Text dimColor>Semantic Open Source Software</Text>
+						<Text> </Text>
+						{contextInfo.instanceName ? (
+							<Text>
+								<Text color="yellow">Instance: </Text>
+								<Text>{contextInfo.instanceName}</Text>
+								{contextInfo.module && (
+									<Text dimColor>
+										{" "}
+										({contextInfo.module})
+									</Text>
+								)}
+							</Text>
+						) : (
+							<Text dimColor>
+								No instance connected — run :connect
+							</Text>
+						)}
+						<Text> </Text>
+						<Text dimColor>
+							Type :help for commands or enter a Pixel query
+						</Text>
 					</Box>
 				) : visibleLines.length > 0 ? (
 					visibleLines.map((line, index) => renderLine(line, index))

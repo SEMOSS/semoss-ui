@@ -97,6 +97,12 @@ Output status as JSON for scripting
 			description: "Output status as JSON",
 			default: false,
 		}),
+		useGlobal: Flags.boolean({
+			char: "g",
+			description:
+				"Use only global config (~/.config/semoss), skip local .env and smss.json",
+			default: false,
+		}),
 	};
 
 	public async run(): Promise<void> {
@@ -117,6 +123,8 @@ Output status as JSON for scripting
 			const configResult = getConfiguration({
 				configPath: flags.config,
 				envPath: flags.env,
+				skipSmss: flags.useGlobal,
+				skipEnv: flags.useGlobal,
 			});
 
 			// Get available config sources for display

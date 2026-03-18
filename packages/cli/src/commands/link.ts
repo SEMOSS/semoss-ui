@@ -1,6 +1,7 @@
 import { Args, Command, Flags } from "@oclif/core";
 import chalk from "chalk";
 import { config as dotenvConfig } from "dotenv";
+import inquirer from "inquirer";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { Env, Insight } from "@semoss/sdk";
@@ -12,6 +13,7 @@ import {
 } from "../utils/config.js";
 import { withSuppressedErrors } from "../utils/errors.js";
 import { Logger, setDefaultLogger } from "../utils/logger.js";
+import { exportAppFromInstance, uploadAppToServer } from "../utils/server.js";
 
 /**
  * Load APP from .env.local or .env file
@@ -160,14 +162,101 @@ export default class Link extends Command {
 					} else {
 						this.log(
 							chalk.yellow(
-								`\n⚠️  App ID "${appId}" was not found on the server.`,
+								`\n⚠️  App ID "${appId}" was not found on instance "${instanceName}".`,
 							),
 						);
-						this.log(
-							chalk.dim(
-								"   The ID may be incorrect, or you may not have access.\n",
-							),
+
+						// Check other instances for this app
+						const credentials = loadCredentials();
+						const otherInstances = Object.entries(
+							credentials.instances,
+						).filter(
+							([name, inst]) =>
+								name !== instanceName && inst.apps?.[appId],
 						);
+
+						if (otherInstances.length > 0) {
+							const instanceChoices = otherInstances.map(
+								([name]) => name,
+							);
+
+							const { pullFrom } = await inquirer.prompt([
+								{
+									type: "list",
+									name: "pullFrom",
+									message:
+										"This app exists on other instances. Pull it from one and upload to the current instance?",
+									choices: [
+										...instanceChoices,
+										new inquirer.Separator(),
+										"Skip - link without transferring",
+									],
+								},
+							]);
+
+							if (
+								pullFrom !== "Skip - link without transferring"
+							) {
+								const sourceInstance =
+									credentials.instances[pullFrom];
+								this.log(
+									chalk.cyan(
+										`\n📦 Exporting app from "${pullFrom}"...`,
+									),
+								);
+
+								try {
+									const downloadResult =
+										await exportAppFromInstance(
+											sourceInstance,
+											appId,
+										);
+
+									this.log(
+										chalk.cyan(
+											`📤 Uploading app to "${instanceName}"...`,
+										),
+									);
+
+									await uploadAppToServer(
+										instance,
+										downloadResult,
+									);
+
+									this.log(
+										chalk.green(
+											`✅ App transferred successfully from "${pullFrom}" to "${instanceName}"`,
+										),
+									);
+
+									// Look up the name from the source instance's app registry
+									serverAppName =
+										sourceInstance.apps?.[appId]?.name ??
+										null;
+								} catch (transferError) {
+									this.log(
+										chalk.red(
+											`\n✗ Failed to transfer app: ${
+												transferError instanceof Error
+													? transferError.message
+													: String(transferError)
+											}`,
+										),
+									);
+									this.log(
+										chalk.dim(
+											"   Continuing with local-only link.",
+										),
+									);
+								}
+							}
+						} else {
+							this.log(
+								chalk.dim(
+									"   The ID may be incorrect, or you may not have access.\n",
+								),
+							);
+						}
 					}
 				}
 			} catch {

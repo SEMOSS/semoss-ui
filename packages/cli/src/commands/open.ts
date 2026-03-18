@@ -26,6 +26,12 @@ export default class Open extends Command {
 			description:
 				"Browser to use for opening the URL (e.g., chrome, firefox, edge). Overrides system default.",
 		}),
+		useGlobal: Flags.boolean({
+			char: "g",
+			description:
+				"Use only global config (~/.config/semoss), skip local .env and smss.json",
+			default: false,
+		}),
 	};
 
 	async run(): Promise<void> {
@@ -83,7 +89,11 @@ export default class Open extends Command {
 			}
 
 			// Use getConfiguration for non-batch mode
-			const configResult = getConfiguration({ envPath: flags.env });
+			const configResult = getConfiguration({
+				envPath: flags.env,
+				skipSmss: flags.useGlobal,
+				skipEnv: flags.useGlobal,
+			});
 
 			// Extract endpoint from module or use flag
 			const endpoint = flags.endpoint ?? configResult.module;

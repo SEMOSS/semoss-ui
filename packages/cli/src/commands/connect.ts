@@ -339,7 +339,17 @@ export default class Connect extends Command {
 
 			this.log(
 				chalk.dim(
-					`\n💡 Use ${chalk.cyan("semoss status")} to view current configuration`,
+					`\n💡 Use ${chalk.cyan("semoss link <appId>")} to link an app to this directory`,
+				),
+			);
+			this.log(
+				chalk.dim(
+					`   Use ${chalk.cyan("semoss apps")} to see available apps on this instance`,
+				),
+			);
+			this.log(
+				chalk.dim(
+					`   Use ${chalk.cyan("semoss status")} to view current configuration`,
 				),
 			);
 		} finally {
