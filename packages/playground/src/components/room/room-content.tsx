@@ -293,20 +293,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		return false;
 	})();
 
-	const pauseToolInfo = ((): {
-		hasToolsPaused?: boolean;
-		toggleToolsPaused?: () => void;
-	} => {
-		if (room.latestResponseMessage.isThinking || isAutoExecutingTools) {
-			// Only applicable to response messages that are currently thinking or executing
-			return {
-				hasToolsPaused: room.latestResponseMessage.isPaused,
-				toggleToolsPaused: room.latestResponseMessage.toggleIsPaused,
-			};
-		} else {
-			return {};
-		}
-	})();
+	const showLoadingState =
+		room.isLoading ||
+		room.latestResponseMessage.isThinking ||
+		isAutoExecutingTools;
 
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
@@ -427,11 +417,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
 				<RoomInput
 					className="max-h-56 min-h-24"
-					isLoading={
-						room.isLoading ||
-						isAutoExecutingTools ||
-						room.latestResponseMessage.isThinking
-					}
+					isLoading={showLoadingState}
 					model={room.model}
 					setModel={(model) => {
 						room.setModel(model);
@@ -493,8 +479,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools
 					}
-					hasToolsPaused={pauseToolInfo.hasToolsPaused}
-					toggleToolsPaused={pauseToolInfo.toggleToolsPaused}
+					hasToolsPaused={room.latestResponseMessage.isPaused}
+					toggleToolsPaused={
+						room.latestResponseMessage.toggleIsPaused
+					}
 					footer={
 						<RoomContextChart
 							tokensUsed={room.tokensUsed}

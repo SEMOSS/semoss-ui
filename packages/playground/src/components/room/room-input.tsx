@@ -449,7 +449,25 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						)}
 					</LexicalComposer>
 					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
-						{!isLoading && (
+						{isLoading ? (
+							!hasToolsPaused && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<button
+											type="button"
+											className={`inline-flex items-center gap-1 rounded border border-transparent bg-transparent p-1.5 text-gray-400 text-xs leading-none hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500`}
+											onClick={toggleToolsPaused}
+										>
+											<CirclePauseIcon className="h-3.5 w-3.5" />
+											{t("input.pauseTools")}
+										</button>
+									</TooltipTrigger>
+									<TooltipContent>
+										{t("input.pauseToolsTooltip")}
+									</TooltipContent>
+								</Tooltip>
+							)
+						) : (
 							<DropdownMenu
 								open={menuOpen}
 								onOpenChange={setMenuOpen}
@@ -486,23 +504,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									/>
 								</DropdownMenuContent>
 							</DropdownMenu>
-						)}
-						{toggleToolsPaused && !hasToolsPaused && (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<button
-										type="button"
-										className={`inline-flex items-center gap-1 rounded border border-transparent bg-transparent p-1.5 text-gray-400 text-xs leading-none hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500`}
-										onClick={toggleToolsPaused}
-									>
-										<CirclePauseIcon className="h-3.5 w-3.5" />
-										{t("input.pauseTools")}
-									</button>
-								</TooltipTrigger>
-								<TooltipContent>
-									{t("input.pauseToolsTooltip")}
-								</TooltipContent>
-							</Tooltip>
 						)}
 						{footer}
 					</div>
