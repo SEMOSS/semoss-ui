@@ -49,9 +49,7 @@
 		"ask": "पूछें",
 		"errorProcessing": "चैट प्रोसेस करने में त्रुटि",
 		"pauseTools": "टूल रोकें",
-		"pauseToolsTooltip": "अगले संदेश के बाद तक सभी टूल कॉल रद्द करें",
-		"resumeTools": "टूल फिर शुरू करें",
-		"resumeToolsTooltip": "टूल कॉल को सामान्य रूप से आगे बढ़ने दें"
+		"pauseToolsTooltip": "अगले संदेश के बाद तक सभी टूल निष्पादन रोकें"
 	},
 	"content": {
 		"scrollToTop": "शीर्ष पर स्क्रॉल करें",

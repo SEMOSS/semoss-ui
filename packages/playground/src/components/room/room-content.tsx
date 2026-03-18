@@ -297,10 +297,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		hasToolsPaused?: boolean;
 		toggleToolsPaused?: () => void;
 	} => {
-		if (
-			room.latestResponseMessage.isThinking ||
-			room.latestResponseMessage.hasUnfinishedTools
-		) {
+		if (room.latestResponseMessage.isThinking || isAutoExecutingTools) {
 			// Only applicable to response messages that are currently thinking or executing
 			return {
 				hasToolsPaused: room.latestResponseMessage.isPaused,

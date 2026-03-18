@@ -49,9 +49,7 @@
 		"ask": "Preguntar",
 		"errorProcessing": "Error al procesar el chat",
 		"pauseTools": "Pausar herramientas",
-		"pauseToolsTooltip": "Cancelar todas las llamadas a herramientas hasta después del siguiente mensaje",
-		"resumeTools": "Reanudar herramientas",
-		"resumeToolsTooltip": "Permitir que las llamadas a herramientas continúen con normalidad"
+		"pauseToolsTooltip": "Pausar toda la ejecución de herramientas hasta después del siguiente mensaje"
 	},
 	"content": {
 		"scrollToTop": "Ir al inicio",

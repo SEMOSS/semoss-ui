@@ -14,7 +14,6 @@ import {
 } from "lexical";
 import {
 	CirclePauseIcon,
-	CirclePlayIcon,
 	FileAudio2Icon,
 	FileIcon,
 	FileType2Icon,
@@ -488,35 +487,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								</DropdownMenuContent>
 							</DropdownMenu>
 						)}
-						{toggleToolsPaused && (
+						{toggleToolsPaused && !hasToolsPaused && (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<button
 										type="button"
-										className={`inline-flex items-center gap-1 rounded border p-1.5 text-xs leading-none ${
-											hasToolsPaused
-												? "border-transparent bg-transparent text-gray-400 hover:border-green-200 hover:bg-green-50 hover:text-green-600"
-												: "border-transparent bg-transparent text-gray-400 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500"
-										}`}
+										className={`inline-flex items-center gap-1 rounded border border-transparent bg-transparent p-1.5 text-gray-400 text-xs leading-none hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500`}
 										onClick={toggleToolsPaused}
 									>
-										{hasToolsPaused ? (
-											<>
-												<CirclePlayIcon className="h-3.5 w-3.5" />
-												{t("input.resumeTools")}
-											</>
-										) : (
-											<>
-												<CirclePauseIcon className="h-3.5 w-3.5" />
-												{t("input.pauseTools")}
-											</>
-										)}
+										<CirclePauseIcon className="h-3.5 w-3.5" />
+										{t("input.pauseTools")}
 									</button>
 								</TooltipTrigger>
 								<TooltipContent>
-									{hasToolsPaused
-										? t("input.resumeToolsTooltip")
-										: t("input.pauseToolsTooltip")}
+									{t("input.pauseToolsTooltip")}
 								</TooltipContent>
 							</Tooltip>
 						)}

@@ -49,9 +49,7 @@
 		"ask": "Demander",
 		"errorProcessing": "Erreur de traitement du chat",
 		"pauseTools": "Suspendre les outils",
-		"pauseToolsTooltip": "Annuler tous les appels d'outils jusqu'après le prochain message",
-		"resumeTools": "Reprendre les outils",
-		"resumeToolsTooltip": "Autoriser les appels d'outils à se dérouler normalement"
+		"pauseToolsTooltip": "Suspendre toute l'exécution des outils jusqu'après le prochain message"
 	},
 	"content": {
 		"scrollToTop": "Défiler vers le haut",

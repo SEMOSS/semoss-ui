@@ -49,9 +49,7 @@
 		"ask": "Ask",
 		"errorProcessing": "Error processing chat",
 		"pauseTools": "Pause tools",
-		"pauseToolsTooltip": "Cancel all tool calls until after the next message",
-		"resumeTools": "Resume tools",
-		"resumeToolsTooltip": "Allow tool calls to proceed as normal"
+		"pauseToolsTooltip": "Pause all tool execution until after the next message"
 	},
 	"content": {
 		"scrollToTop": "Scroll to top",

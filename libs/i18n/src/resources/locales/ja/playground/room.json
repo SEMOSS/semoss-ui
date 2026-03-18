@@ -49,9 +49,7 @@
 		"ask": "質問",
 		"errorProcessing": "チャットの処理中にエラーが発生しました",
 		"pauseTools": "ツールを一時停止",
-		"pauseToolsTooltip": "次のメッセージまですべてのツール呼び出しをキャンセル",
-		"resumeTools": "ツールを再開",
-		"resumeToolsTooltip": "ツール呼び出しを通常通り進める"
+		"pauseToolsTooltip": "次のメッセージの後まですべてのツール実行を一時停止"
 	},
 	"content": {
 		"scrollToTop": "一番上にスクロール",
