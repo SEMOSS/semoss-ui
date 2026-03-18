@@ -9,6 +9,7 @@ export interface Engine {
 export interface App {
 	project_id: string;
 	project_name: string;
+	project_display_name?: string;
 	description?: string;
 	project_date_created: string;
 	project_type: string;
