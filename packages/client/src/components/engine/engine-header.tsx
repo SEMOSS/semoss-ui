@@ -373,7 +373,19 @@ export const EngineHeader: React.FC = () => {
 							className="text-muted-foreground text-sm"
 							data-testid="DateAdded"
 						>
-							Updated {`on ${active.DATEADDED}`}
+							Updated{" "}
+								{active?.DATEADDED
+									? new Date(
+											active?.DATEADDED,
+										).toLocaleString("en-US", {
+											month: "long",
+											day: "2-digit",
+											year: "numeric",
+											hour: "numeric",
+											minute: "2-digit",
+											hour12: true,
+										})
+									: "N/A"}
 						</span>
 					)}
 				</div>
