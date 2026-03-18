@@ -39,6 +39,10 @@
 		"autoExecute": "Auto-executing",
 		"queued": "In queue to auto-execute",
 		"cancel": "Cancel",
+		"expand": "Expand",
+		"openInSidebar": "Open in sidebar",
+		"collapse": "Collapse",
+		"open": "Open",
 		"groupLabel": "Executed",
 		"groupSuffix": "tool(s)"
 	},

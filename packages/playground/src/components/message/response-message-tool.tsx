@@ -1,12 +1,25 @@
 import {
 	CheckIcon,
+	ChevronsLeftRightIcon,
+	ChevronsRightLeftIcon,
 	HammerIcon,
 	MoreHorizontalIcon,
+	PanelRightCloseIcon,
+	TvMinimalIcon,
 	XCircleIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
-import { Button, cn, Spinner } from "@semoss/ui/next";
+import {
+	Button,
+	cn,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+	Spinner,
+} from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
 
@@ -201,19 +214,80 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						{t("tool.cancelled")}
 					</div>
 				)}
-				{variant === "ready" && (
-					<Button
-						type="button"
-						size="icon"
-						variant="ghost"
-						className="shrink-0"
-						onClick={(e) => {
-							e.stopPropagation();
-							tool.openTool();
-						}}
-					>
-						<MoreHorizontalIcon className="size-4" />
-					</Button>
+				{(variant === "ready" || variant === "complete") && (
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								type="button"
+								size="icon"
+								variant="ghost"
+								className="shrink-0"
+								onClick={(e) => e.stopPropagation()}
+							>
+								<MoreHorizontalIcon className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem
+								onClick={() => {
+									if (
+										tool.isOpen &&
+										tool.display === "inline"
+									) {
+										tool.closeTool();
+									} else {
+										tool.openTool("inline");
+									}
+								}}
+							>
+								{tool.isOpen && tool.display === "inline" ? (
+									<ChevronsRightLeftIcon />
+								) : (
+									<ChevronsLeftRightIcon />
+								)}
+								{tool.isOpen && tool.display === "inline"
+									? t("tool.collapse")
+									: t("tool.open")}
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => {
+									tool.openTool("inline");
+									tool.setIsExpanded(true);
+								}}
+							>
+								<TvMinimalIcon />
+								{t("tool.expand")}
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => {
+									tool.openTool("sidebar");
+								}}
+							>
+								<PanelRightCloseIcon />
+								{t("tool.openInSidebar")}
+							</DropdownMenuItem>
+							{variant === "ready" && (
+								<>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										variant="destructive"
+										onClick={() => {
+											message.saveToolExecution(
+												tool,
+												"",
+												"cancelled",
+												{},
+											);
+											tool.closeTool();
+										}}
+									>
+										<XCircleIcon />
+										{t("tool.cancel")}
+									</DropdownMenuItem>
+								</>
+							)}
+						</DropdownMenuContent>
+					</DropdownMenu>
 				)}
 			</div>
 		);

@@ -5,7 +5,6 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -31,21 +30,20 @@ interface RoomInlineToolProps {
 export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 	({ room, message, tool }) => {
 		const { t } = useTranslation("room");
-		const [isMaximized, setIsMaximized] = useState(false);
 
 		return (
 			<div className="relative h-[60vh] w-full overflow-hidden">
 				{/* Backdrop for maximized state */}
 				<div
 					className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 ${
-						isMaximized
+						tool.isExpanded
 							? "pointer-events-auto opacity-100"
 							: "pointer-events-none hidden opacity-0"
 					}`}
 				/>
 
 				<div
-					className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
+					className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${tool.isExpanded ? "fixed inset-4 z-50" : "h-full w-full"}`}
 				>
 					<div className="flex h-12.5 w-full flex-row items-center justify-end gap-1.5 overflow-hidden border-b border-b-input pr-2">
 						<Tooltip>
@@ -58,7 +56,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 										e.stopPropagation();
 
 										// turn off maximized state
-										setIsMaximized(false);
+										tool.setIsExpanded(false);
 
 										// open the tool
 										tool.openTool("sidebar");
@@ -77,10 +75,10 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 									variant="ghost"
 									size="icon-sm"
 									onClick={() => {
-										setIsMaximized(!isMaximized);
+										tool.setIsExpanded(!tool.isExpanded);
 									}}
 								>
-									{isMaximized ? (
+									{tool.isExpanded ? (
 										<MonitorXIcon />
 									) : (
 										<TvMinimalIcon />
@@ -88,7 +86,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent>
-								{isMaximized
+								{tool.isExpanded
 									? t("inlineTool.minimize")
 									: t("inlineTool.maximize")}
 							</TooltipContent>
@@ -104,10 +102,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 									variant="ghost"
 									size="icon-sm"
 									onClick={() => {
-										// turn off maximized state when closing sidebar
-										setIsMaximized(false);
-
-										// close the tool
+										// close the tool (also resets isExpanded via store)
 										tool.closeTool();
 									}}
 								>

@@ -74,6 +74,11 @@ export class ToolStore {
 	isOpen: boolean = false;
 
 	/**
+	 * Track if the tool is expanded (fullscreen) in inline mode
+	 */
+	isExpanded: boolean = false;
+
+	/**
 	 * Display information for the tool
 	 */
 	display: "inline" | "sidebar" | "hidden" = "sidebar";
@@ -160,6 +165,13 @@ export class ToolStore {
 	};
 
 	/**
+	 * Set the isExpanded state
+	 */
+	setIsExpanded = (isExpanded: boolean) => {
+		this.isExpanded = isExpanded;
+	};
+
+	/**
 	 * Update the parameters of the tool
 	 */
 	openTool = (display?: "inline" | "sidebar" | "hidden") => {
@@ -209,6 +221,7 @@ export class ToolStore {
 	closeTool = () => {
 		// close it
 		this.isOpen = false;
+		this.isExpanded = false;
 
 		// close the previous location
 		if (this.display === "inline") {
