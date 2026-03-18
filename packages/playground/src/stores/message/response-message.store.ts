@@ -675,6 +675,14 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 				// create the response and link to the message
 				responseMessage.sync(output.responseMessage);
 
+				// edge case handling: it's possible that the user paused tools while this tool was running
+				// mark the new response as paused if that is the case
+				if (this.isPaused) {
+					runInAction(() => {
+						responseMessage.isPaused = true;
+					});
+				}
+
 				// start running tools if there are any
 				responseMessage.continueToolExecution();
 
