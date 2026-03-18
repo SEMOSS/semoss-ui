@@ -142,7 +142,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			tokens: 0,
 			ornaments: {
 				modelName:
-					room.model.database_display_name || room.model.app_name,
+					room.model.engine_display_name || room.model.app_name,
 			},
 		} as ResponsePixelMessage);
 
@@ -383,7 +383,7 @@ paramValues=[${JSON.stringify({
 			tokens: parentMessage.tokens,
 			ornaments: {
 				modelName:
-					room.model.database_display_name || room.model.app_name,
+					room.model.engine_display_name || room.model.app_name,
 			},
 		});
 
@@ -547,7 +547,7 @@ paramValues=[${JSON.stringify({
 				tokens: 0,
 				ornaments: {
 					modelName:
-						room.model.database_display_name || room.model.app_name,
+						room.model.engine_display_name || room.model.app_name,
 				},
 			} as ResponsePixelMessage);
 

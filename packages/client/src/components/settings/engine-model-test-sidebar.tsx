@@ -21,7 +21,7 @@ interface Model {
 }
 
 interface ModelInfo {
-	database_display_name?: string;
+	engine_display_name?: string;
 	database_name?: string;
 	tag?: string;
 	description?: string;
@@ -73,7 +73,7 @@ Default: 2000
 					setModelInfo(modelInfo);
 
 					const resolvedModelName =
-						modelInfo.database_display_name ||
+						modelInfo.engine_display_name ||
 						modelInfo.database_name ||
 						"";
 

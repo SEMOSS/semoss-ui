@@ -41,7 +41,7 @@ export interface Database {
 	app_type: string;
 	database_cost: string;
 	database_id: string;
-	database_display_name?: string;
+	engine_display_name?: string;
 	database_name: string;
 	database_type: string;
 	low_database_name: string;
@@ -526,8 +526,7 @@ export const EngineSettingsIndexPage = (
 					{databases.length
 						? databases.map((db, _i) => {
 								const engineName =
-									db.database_display_name ||
-									db.database_name;
+									db.engine_display_name || db.database_name;
 
 								return (
 									<Grid

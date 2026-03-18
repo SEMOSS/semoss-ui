@@ -462,7 +462,7 @@ export class RoomStore {
 					tokens: 0,
 					ornaments: {
 						modelName:
-							this._store.model?.database_display_name ||
+							this._store.model?.engine_display_name ||
 							this._store.model?.app_name ||
 							"",
 					},
@@ -485,7 +485,7 @@ export class RoomStore {
 					ornaments: {
 						PLAYGROUND_MESSAGE_TYPE: "COT",
 						modelName:
-							this._store.model?.database_display_name ||
+							this._store.model?.engine_display_name ||
 							this._store.model?.app_name ||
 							"",
 					},
@@ -957,7 +957,7 @@ export class RoomStore {
 			tokens: 0,
 			ornaments: {
 				modelName:
-					this.model.database_display_name || this.model.app_name,
+					this.model.engine_display_name || this.model.app_name,
 			},
 		});
 

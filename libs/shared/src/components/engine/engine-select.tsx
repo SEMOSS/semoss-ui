@@ -140,7 +140,7 @@ export const EngineSelect = ({
 						<CommandGroup>
 							{getEngines.data.map((engine) => {
 								const displayName =
-									engine.database_display_name ||
+									engine.engine_display_name ||
 									engine.app_name;
 
 								return (

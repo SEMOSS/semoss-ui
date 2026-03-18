@@ -36,7 +36,7 @@ interface Engine {
 	app_favorite: number;
 	database_cost: string;
 	database_id: string;
-	database_display_name?: string;
+	engine_display_name?: string;
 	database_name: string;
 	database_type: string;
 	low_database_name: string;
@@ -382,7 +382,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 										<div key={db.database_id}>
 											<EngineLandscapeCard
 												name={
-													db.database_display_name ||
+													db.engine_display_name ||
 													db.database_name
 												}
 												type={db.database_type}
@@ -454,7 +454,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 											<div key={db.database_id}>
 												<EngineLandscapeCard
 													name={
-														db.database_display_name ||
+														db.engine_display_name ||
 														db.database_name
 													}
 													type={db.database_type}

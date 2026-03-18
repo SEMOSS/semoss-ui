@@ -486,7 +486,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
 								disabled={isLoading}
 								name={
-									model?.database_display_name ||
+									model?.engine_display_name ||
 									model?.app_name ||
 									""
 								}
