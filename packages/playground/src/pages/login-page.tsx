@@ -3,7 +3,9 @@ import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { LoginForm } from "@semoss/shared";
+import { useTheme } from "@semoss/ui/next";
 import loginImage from "@/assets/img/login.svg";
+import loginImageDark from "@/assets/img/login-darkmode.png";
 import { AppLogo } from "@/components";
 import { useRoot } from "@/hooks";
 import { useThemeTitle } from "@/hooks/use-theme-title";
@@ -16,6 +18,14 @@ export const LoginPage = observer(() => {
 	const { root } = useRoot();
 	const theme = root.theme;
 	const { isAuthorized } = useInsight();
+	const { theme: colorMode } = useTheme();
+
+	// theme = dark or system matches dark
+	const isDark =
+		colorMode === "dark" ||
+		(colorMode === "system" &&
+			window.matchMedia("(prefers-color-scheme: dark)").matches); // gets system preference
+
 	const location = useLocation();
 
 	// get the path the user is coming from
@@ -31,6 +41,15 @@ export const LoginPage = observer(() => {
 	// navigate if already logged in
 	if (isAuthorized) {
 		return <Navigate to={path} replace />;
+	}
+
+	// handling the login image source based on theme
+	let src: string;
+
+	if (isDark) {
+		src = loginImageDark;
+	} else {
+		src = root.theme.images.login || loginImage;
 	}
 
 	return (
@@ -49,9 +68,9 @@ export const LoginPage = observer(() => {
 			</div>
 			<div className="relative hidden bg-muted lg:block">
 				<img
-					src={root.theme.images.login || loginImage}
+					src={src}
 					alt="Background"
-					className="absolute inset-0 h-full w-full select-none object-cover dark:brightness-[0.2] dark:grayscale"
+					className="absolute inset-0 h-full w-full select-none object-cover"
 				/>
 			</div>
 		</div>
