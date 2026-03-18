@@ -78,7 +78,7 @@ interface RoomInputProps {
 	hasToolsPaused?: boolean;
 
 	/** Toggle the pause-on-next-tool flag */
-	togglePauseNextTool?: () => void;
+	toggleToolsPaused?: () => void;
 
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
@@ -94,7 +94,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onPrompt = () => null,
 		hasOutstandingTools = false,
 		hasToolsPaused = false,
-		togglePauseNextTool,
+		toggleToolsPaused,
 		footer = null,
 	}) => {
 		const { t } = useTranslation("room");
@@ -488,7 +488,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								</DropdownMenuContent>
 							</DropdownMenu>
 						)}
-						{togglePauseNextTool && (
+						{toggleToolsPaused && (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<button
@@ -498,7 +498,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												? "border-transparent bg-transparent text-gray-400 hover:border-green-200 hover:bg-green-50 hover:text-green-600"
 												: "border-transparent bg-transparent text-gray-400 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500"
 										}`}
-										onClick={togglePauseNextTool}
+										onClick={toggleToolsPaused}
 									>
 										{hasToolsPaused ? (
 											<>

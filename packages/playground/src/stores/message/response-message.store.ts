@@ -66,9 +66,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	};
 
 	/**
-	 * Whether the user has indicated to stop running tools
+	 * Whether the user has indicated to pause running tools
 	 */
-	hasStoppedTools: boolean = false;
+	isPaused: boolean = false;
 
 	constructor(
 		room: AbstractMessageStore["room"],
@@ -80,7 +80,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			isThinking: observable,
 			parts: observable,
 			feedback: observable,
-			hasStoppedTools: observable,
+			isPaused: observable,
 			sync: action,
 			runMessage: action,
 			savePart: action,
@@ -89,7 +89,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			hasUnfinishedTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
-			toggleStoppedTools: action,
+			toggleIsPaused: action,
 		});
 
 		// sync the message (must be after makeObservable so sync action is registered)
@@ -282,21 +282,13 @@ paramValues=[${JSON.stringify({
 	/**
 	 * Toggle the stopped tools flag
 	 */
-	toggleStoppedTools = () => {
-		console.log(
-			"Toggling stopped tools. Currently hasStoppedTools:",
-			this.hasStoppedTools,
-			JSON.stringify(this.parts),
-		);
-		if (!this.hasStoppedTools) {
-			this.hasStoppedTools = true;
+	toggleIsPaused = () => {
+		if (!this.isPaused) {
+			this.isPaused = true;
 			// If we are currently running tools, then we want to stop them. So we should mark any loading or initial tools as paused
 			for (const part of this.parts) {
 				if (part.type === "TOOL_CALL") {
 					const tool = this.room.getTool(part.toolCall.id);
-					console.log(
-						`Checking tool ${tool?.json.name} with status ${tool?.status} for stopping`,
-					); // --- IGNORE ---
 					if (
 						tool.status === "LOADING" ||
 						tool.status === "INITIAL"
@@ -312,7 +304,7 @@ paramValues=[${JSON.stringify({
 				}
 			}
 		} else {
-			this.hasStoppedTools = false;
+			this.isPaused = false;
 		}
 	};
 
@@ -502,8 +494,8 @@ paramValues=[${JSON.stringify({
 			return;
 		}
 
-		if (this.hasStoppedTools) {
-			// If the user has indicated to stop running tools, mark this tool as cancelled and save the response without running the tool
+		if (this.isPaused) {
+			// If the user has indicated to pause running tools, mark this tool as cancelled and save the response without running the tool
 			await this.saveToolExecution(
 				tool,
 				"",

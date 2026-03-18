@@ -30,7 +30,7 @@ import {
 	RoomInputMenuUpload,
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -270,33 +270,25 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	/**
 	 * Constants
 	 */
-	const tailAsResponse = room.tail as ResponseMessageStore;
+	const latestResponseMessage = room.latestResponseMessage;
 
 	const pauseToolInfo = ((): {
 		hasToolsPaused?: boolean;
-		togglePauseNextTool?: () => void;
+		toggleToolsPaused?: () => void;
 	} => {
 		if (
-			tailAsResponse?.type === "OUTPUT" &&
-			(tailAsResponse.isThinking || room.hasUnfinishedTools)
+			latestResponseMessage ||
+			room.latestResponseMessage.hasUnfinishedTools
 		) {
-			// Only applicable to response messages that are currently thinking
+			// Only applicable to response messages that are currently thinking or executing
 			return {
-				hasToolsPaused: tailAsResponse.hasStoppedTools,
-				togglePauseNextTool: tailAsResponse.toggleStoppedTools,
+				hasToolsPaused: latestResponseMessage.isPaused,
+				toggleToolsPaused: latestResponseMessage.toggleIsPaused,
 			};
 		} else {
 			return {};
 		}
 	})();
-
-	console.log(
-		JSON.stringify({
-			id: tailAsResponse.id,
-			type: tailAsResponse.type,
-			parentId: tailAsResponse.parent?.id,
-		}),
-	);
 
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
@@ -420,7 +412,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					isLoading={
 						room.isLoading ||
 						// room.hasUnfinishedTools ||
-						tailAsResponse.isThinking
+						latestResponseMessage.isThinking
 					}
 					model={room.model}
 					setModel={(model) => {
@@ -480,9 +472,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						),
 					)}
 					onPrompt={handlePrompt}
-					hasOutstandingTools={room.hasUnfinishedTools}
+					hasOutstandingTools={
+						room.latestResponseMessage.hasUnfinishedTools
+					}
 					hasToolsPaused={pauseToolInfo.hasToolsPaused}
-					togglePauseNextTool={pauseToolInfo.togglePauseNextTool}
+					toggleToolsPaused={pauseToolInfo.toggleToolsPaused}
 					footer={
 						<RoomContextChart
 							tokensUsed={room.tokensUsed}

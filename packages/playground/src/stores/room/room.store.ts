@@ -319,31 +319,25 @@ export class RoomStore {
 		return this._store.root;
 	}
 
-	get hasUnfinishedTools(): boolean {
+	/**
+	 * Last response message - avoids INPUT_TOOL_EXEC and STREAMING_TOOL_PLACEHOLDER messages
+	 */
+	get latestResponseMessage(): ResponseMessageStore {
 		let responseMessage: AbstractMessageStore = this.tail;
 		while (responseMessage) {
-			// if it is a response message, check if there are any tools that are not finished
+			// if it is a REAL response message, return it
 			if (
 				responseMessage instanceof ResponseMessageStore &&
 				responseMessage.id !== "STREAMING_TOOL_PLACEHOLDER_ID"
 			) {
-				for (const toolId in this._store.tools) {
-					const tool = this._store.tools[toolId];
-					if (
-						tool.status === "INITIAL" ||
-						tool.status === "LOADING"
-					) {
-						return true;
-					}
-				}
-				return false;
+				return responseMessage;
 			} else {
 				// if it is not a response message, move to the parent message
 				responseMessage = responseMessage.parent;
 			}
 		}
-		// if there are no response messages, return false
-		return false;
+		// if there are no response messages, return null
+		return null;
 	}
 
 	/**
