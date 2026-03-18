@@ -84,6 +84,7 @@ export const MembersDeleteOverlay = (props: MembersDeleteOverlayProps) => {
 				type === "STORAGE" ||
 				type === "MODEL" ||
 				type === "VECTOR" ||
+				type === "GUARDRAIL" ||
 				type === "FUNCTION"
 			) {
 				response = await removeEngineUserPermissions(
