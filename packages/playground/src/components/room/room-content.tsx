@@ -270,20 +270,41 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	/**
 	 * Constants
 	 */
-	const latestResponseMessage = room.latestResponseMessage;
+	const isAutoExecutingTools = ((): boolean => {
+		// Check the latest response message for auto-executing tools
+		if (!room.latestResponseMessage) {
+			return false;
+		}
+
+		for (const part of room.latestResponseMessage.parts) {
+			if (
+				part.type === "TOOL_CALL" &&
+				part.toolCall._meta.SMSS_MCP_EXECUTION === "auto"
+			) {
+				const tool = room.getTool(part.toolCall.id);
+				if (
+					tool &&
+					(tool.status === "INITIAL" || tool.status === "LOADING")
+				) {
+					return true;
+				}
+			}
+		}
+		return false;
+	})();
 
 	const pauseToolInfo = ((): {
 		hasToolsPaused?: boolean;
 		toggleToolsPaused?: () => void;
 	} => {
 		if (
-			latestResponseMessage ||
+			room.latestResponseMessage.isThinking ||
 			room.latestResponseMessage.hasUnfinishedTools
 		) {
 			// Only applicable to response messages that are currently thinking or executing
 			return {
-				hasToolsPaused: latestResponseMessage.isPaused,
-				toggleToolsPaused: latestResponseMessage.toggleIsPaused,
+				hasToolsPaused: room.latestResponseMessage.isPaused,
+				toggleToolsPaused: room.latestResponseMessage.toggleIsPaused,
 			};
 		} else {
 			return {};
@@ -411,8 +432,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					className="max-h-56 min-h-24"
 					isLoading={
 						room.isLoading ||
-						// room.hasUnfinishedTools ||
-						latestResponseMessage.isThinking
+						isAutoExecutingTools ||
+						room.latestResponseMessage.isThinking
 					}
 					model={room.model}
 					setModel={(model) => {
