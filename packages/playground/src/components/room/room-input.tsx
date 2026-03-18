@@ -13,7 +13,6 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
-	CirclePauseIcon,
 	FileAudio2Icon,
 	FileIcon,
 	FileType2Icon,
@@ -22,6 +21,7 @@ import {
 	SendIcon,
 	SlidersHorizontalIcon,
 	SparklesIcon,
+	Square,
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -449,25 +449,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						)}
 					</LexicalComposer>
 					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
-						{isLoading ? (
-							!hasToolsPaused && (
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<button
-											type="button"
-											className={`inline-flex items-center gap-1 rounded border border-transparent bg-transparent p-1.5 text-gray-400 text-xs leading-none hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500`}
-											onClick={toggleToolsPaused}
-										>
-											<CirclePauseIcon className="h-3.5 w-3.5" />
-											{t("input.pauseTools")}
-										</button>
-									</TooltipTrigger>
-									<TooltipContent>
-										{t("input.pauseToolsTooltip")}
-									</TooltipContent>
-								</Tooltip>
-							)
-						) : (
+						{!isLoading && (
 							<DropdownMenu
 								open={menuOpen}
 								onOpenChange={setMenuOpen}
@@ -507,75 +489,95 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						)}
 						{footer}
 					</div>
-					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
-						<div className="flex flex-row items-center gap-1">
-							<EngineSelect
-								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-								disabled={isLoading}
-								name={model?.app_name || ""}
-								value={model?.app_id || ""}
-								engineTypes={["MODEL"]}
-								metaFilters={[{ tag: "text-generation" }]}
-								onChange={(v) => {
-									setModel(v);
-								}}
-								popoverContentProps={{
-									align: "start",
-								}}
-							/>
+					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-2">
+						<EngineSelect
+							className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+							disabled={isLoading}
+							name={model?.app_name || ""}
+							value={model?.app_id || ""}
+							engineTypes={["MODEL"]}
+							metaFilters={[{ tag: "text-generation" }]}
+							onChange={(v) => {
+								setModel(v);
+							}}
+							popoverContentProps={{
+								align: "start",
+							}}
+						/>
 
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										className="bg-background"
-										variant={"ghost"}
-										aria-label={t("input.recordLabel")}
-										size="icon-sm"
-										disabled={!canListen || isLoading}
-										onClick={() => {
-											if (isListening) {
-												recognitionRef.current?.stop();
-												editorRef.current?.focus();
-											} else {
-												recognitionRef.current?.start();
-											}
-										}}
-									>
-										<MicIcon
-											className={`${isListening ? "animate-pulse text-destructive" : ""}`}
-										/>
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>
-									{isListening
-										? t("input.stopRecording")
-										: t("input.record")}
-								</TooltipContent>
-							</Tooltip>
-						</div>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									className="bg-background"
+									variant={"ghost"}
+									aria-label={t("input.recordLabel")}
+									size="icon-sm"
+									disabled={!canListen || isLoading}
+									onClick={() => {
+										if (isListening) {
+											recognitionRef.current?.stop();
+											editorRef.current?.focus();
+										} else {
+											recognitionRef.current?.start();
+										}
+									}}
+								>
+									<MicIcon
+										className={`${isListening ? "animate-pulse text-destructive" : ""}`}
+									/>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								{isListening
+									? t("input.stopRecording")
+									: t("input.record")}
+							</TooltipContent>
+						</Tooltip>
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<span>
 									<Button
 										variant="default"
-										aria-label={t("input.askLabel")}
+										size="icon-sm"
+										aria-label={
+											isLoading
+												? t("input.pauseToolsTooltip")
+												: t("input.askLabel")
+										}
 										disabled={
-											isLoading ||
-											isEmpty ||
-											hasOutstandingTools
+											isLoading
+												? hasToolsPaused
+												: isEmpty || hasOutstandingTools
 										}
 										onClick={() => {
-											promptModel();
+											if (isLoading) {
+												toggleToolsPaused?.();
+											} else {
+												promptModel();
+											}
 										}}
 									>
-										{isLoading ? <Spinner /> : <SendIcon />}
+										{isLoading ? (
+											hasToolsPaused ? (
+												<Spinner />
+											) : (
+												<Square
+													className="size-3"
+													fill="currentColor"
+												/>
+											)
+										) : (
+											<SendIcon />
+										)}
 									</Button>
 								</span>
 							</TooltipTrigger>
 							<TooltipContent>
 								{(() => {
 									if (isLoading) {
-										return t("input.thinkingTooltip");
+										return hasToolsPaused
+											? t("input.thinkingTooltip")
+											: t("input.pauseToolsTooltip");
 									} else if (isEmpty) {
 										return t("input.enterQuestion");
 									} else if (hasOutstandingTools) {
