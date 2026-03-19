@@ -412,6 +412,12 @@ export const GlobalNav = observer(() => {
 											const name =
 												room.ROOM_NAME ||
 												t("messages.untitled");
+											const date = root.theme.sidebar
+												.chatHistoryDate
+												? dayjs(
+														room.DATE_CREATED,
+													).format("M/D/YYYY h:mm a")
+												: null;
 											const isFavorite =
 												room.PINNED || false;
 											const isEditing =
@@ -464,13 +470,22 @@ export const GlobalNav = observer(() => {
 																}
 															>
 																<Link
-																	className="inline-block flex-1 truncate"
+																	className={`flex h-auto flex-col items-start p-2 ${date ? "gap-0.5" : ""}`}
 																	to={`/room/${roomId}`}
 																	aria-label={
 																		"Select room"
 																	}
 																>
-																	{name}
+																	<span className="truncate font-medium text-sm leading-none">
+																		{name}
+																	</span>
+																	{date && (
+																		<span className="text-muted-foreground text-xs leading-none">
+																			{
+																				date
+																			}
+																		</span>
+																	)}
 																</Link>
 															</SidebarMenuButton>
 															<DropdownMenu

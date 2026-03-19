@@ -149,7 +149,7 @@ const createMarkdownComponents = (room?: RoomStore) => ({
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
-							className="absolute top-0 right-0 bg-background opacity-0 transition-opacity group-hover/response-markdown:opacity-100"
+							className="-ml-[120px] sticky top-0 right-0 z-10 float-right bg-background opacity-0 transition-opacity group-hover/response-markdown:opacity-100"
 							variant="ghost"
 							size="icon"
 							disabled={!code}
