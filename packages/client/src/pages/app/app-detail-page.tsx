@@ -7,6 +7,7 @@ import {
 	Pencil,
 	RefreshCcw,
 	SquareArrowOutUpRight,
+	Wrench,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -23,6 +24,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 	Button,
+	H4,
 	Spinner,
 	Tabs,
 	TabsList,
@@ -72,12 +74,52 @@ const modelDependencies = (
 		isDiscoverable: !!dep.engine_discoverable,
 		description: dep.description,
 		access_permission: dep.access_permission,
+		can_view_dependencies: dep.can_view_dependencies,
 	}));
 };
 
 interface AppDetailsProps {
 	showNav?: boolean;
 }
+
+interface MCPToolInputProperty {
+	title?: string;
+	description?: string;
+	type?: string;
+}
+
+interface MCPToolDefinition {
+	name: string;
+	title?: string;
+	description?: string;
+	inputSchema?: {
+		properties?: Record<string, MCPToolInputProperty>;
+		required?: string[];
+	};
+}
+
+interface MCPToolsPixelResponse {
+	pixelReturn?: {
+		operationType?: string[] | string;
+		output?:
+			| {
+					tools?: MCPToolDefinition[];
+			  }
+			| string;
+	}[];
+}
+
+const hasPixelError = (operationType?: string[] | string): boolean => {
+	if (Array.isArray(operationType)) {
+		return operationType.includes("ERROR");
+	}
+
+	if (typeof operationType === "string") {
+		return operationType.includes("ERROR");
+	}
+
+	return false;
+};
 
 export const AppDetailPage = (props: AppDetailsProps) => {
 	const { showNav = true } = props;
@@ -102,6 +144,10 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	const { appId } = useParams();
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
+	const [selectedTab, setSelectedTab] = useState("Overview");
+	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
+	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
+	const [mcpToolsError, setMcpToolsError] = useState("");
 
 	const emitMessage = useCallback(
 		(isError: boolean, message: string) => {
@@ -110,7 +156,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 				message,
 			});
 		},
-		[notification],
+		[notification.add],
 	);
 	const getPermission = useCallback(async () => {
 		const role = await getUserProjectPermission(appId);
@@ -140,6 +186,47 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			fetchSimilarApps();
 		}
 	}, [fetchSimilarApps, getPermission, getValues]);
+
+	const fetchMcpTools = useCallback(
+		async (projectId: string) => {
+			setMcpToolsLoading(true);
+			setMcpToolsError("");
+
+			try {
+				const response = (await monolithStore.runQuery(
+					`GetMCPTools(project="${projectId}")`,
+				)) as MCPToolsPixelResponse;
+
+				const result = response?.pixelReturn?.[0];
+				if (hasPixelError(result?.operationType)) {
+					const errorMessage =
+						typeof result?.output === "string"
+							? result.output
+							: "Unable to load MCP tools for this app.";
+					setMcpTools([]);
+					setMcpToolsError(errorMessage);
+					return;
+				}
+
+				const output = result?.output;
+				const tools =
+					typeof output === "object" && output !== null
+						? output.tools
+						: undefined;
+				setMcpTools(Array.isArray(tools) ? tools : []);
+			} catch (error) {
+				const message =
+					error instanceof Error
+						? error.message
+						: "Unable to load MCP tools for this app.";
+				setMcpTools([]);
+				setMcpToolsError(message);
+			} finally {
+				setMcpToolsLoading(false);
+			}
+		},
+		[monolithStore],
+	);
 
 	const fetchAppData = useCallback(
 		async (id: string) => {
@@ -261,12 +348,22 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 
 	useEffect(() => {
 		setSelectedTab("Overview");
+		setMcpTools([]);
+		setMcpToolsError("");
 		setValue("appId", appId);
 		fetchUserSpecificData();
 		if (appId) {
 			fetchAppData(appId);
 		}
 	}, [appId, fetchAppData, fetchUserSpecificData, setValue]);
+
+	useEffect(() => {
+		if (selectedTab !== "MCP Usage" || !appId) {
+			return;
+		}
+
+		fetchMcpTools(appId);
+	}, [appId, fetchMcpTools, selectedTab]);
 	// This runs ONLY when `appId` changes — not when dependencies change
 	useEffect(() => {
 		if (appId) {
@@ -417,7 +514,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	const handleAccessRequested = () => {
 		setResponseStatus(true);
 	};
-	const [selectedTab, setSelectedTab] = useState("Overview");
 	const handleCopyAppId = async () => {
 		if (!appId) return;
 
@@ -467,7 +563,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			>
 				<div
 					className={`flex h-full w-full flex-col gap-3 ${
-						showNav ? "m-auto max-w-[79rem]" : ""
+						showNav ? "m-auto max-w-316" : ""
 					}`}
 				>
 					{showNav && (
@@ -489,10 +585,14 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 								<BreadcrumbItem>
 									<BreadcrumbPage>
 										<span
-											title={appInfo?.project_name}
+											title={
+												appInfo?.project_display_name ||
+												appInfo?.project_name
+											}
 											className="inline-block max-w-[40ch] truncate text-ellipsis"
 										>
-											{appInfo?.project_name}
+											{appInfo?.project_display_name ||
+												appInfo?.project_name}
 										</span>
 									</BreadcrumbPage>
 								</BreadcrumbItem>
@@ -501,20 +601,28 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 					)}
 
 					<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
-						<div className="h-16 w-16 flex-shrink-0 rounded-lg bg-muted">
+						<div className="h-16 w-16 shrink-0 rounded-lg bg-muted">
 							<img
 								src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
-								alt={appInfo?.project_name || "App"}
+								alt={
+									appInfo?.project_display_name ||
+									appInfo?.project_name ||
+									"App"
+								}
 								className="size-full object-cover"
 							/>
 						</div>
 
 						<div className="flex min-w-0 flex-1 flex-col gap-1">
 							<h1
-								className="break-words font-semibold text-2xl text-foreground leading-normal md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]"
-								title={appInfo?.project_name}
+								className="wrap-break-words font-semibold text-2xl text-foreground leading-normal md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]"
+								title={
+									appInfo?.project_display_name ||
+									appInfo?.project_name
+								}
 							>
-								{appInfo?.project_name}
+								{appInfo?.project_display_name ||
+									appInfo?.project_name}
 							</h1>
 							{appId && (
 								<div className="flex items-center gap-1 text-muted-foreground text-sm">
@@ -548,7 +656,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 								<Button
 									disabled={exportLoading}
 									variant="ghost"
-									className="gap-2 text-(--primary) hover:bg-transparent hover:text-(--primary)"
+									className="gap-2 text-primary hover:bg-transparent hover:text-primary"
 									onClick={() => exportApp()}
 									data-testid={"appDetail-export-btn"}
 								>
@@ -632,7 +740,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 											<Badge
 												key={`tag-${tag}-${tag}`}
 												variant="outline"
-												className="border-(--primary) text-(--primary)"
+												className="border-primary text-primary"
 											>
 												{tag}
 											</Badge>
@@ -665,7 +773,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 					</div>
 				</div>
 
-				<div className="flex flex-col rounded-lg bg-(--muted)">
+				<div className="flex flex-col rounded-lg bg-muted">
 					{visibleTabs.length > 0 && (
 						<Tabs
 							value={selectedTab}
@@ -714,7 +822,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 							</div>
 						</Tabs>
 					)}
-					<div className="w-full bg-(--card) p-3 md:p-4">
+					<div className="w-full bg-card p-3 md:p-4">
 						{selectedTab === "Overview" && (
 							<Overview appInfo={appInfo} />
 						)}
@@ -763,7 +871,160 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 									adminMode: false,
 								}}
 							>
-								<McpUsage id={appId} />
+								<div className="space-y-6">
+									<div className="rounded-2xl border border-base p-6 shadow-xs">
+										<div className="mb-4">
+											<H4>Available Tools</H4>
+											<p className="text-muted-foreground text-sm">
+												These MCP tools are currently
+												exposed by this app.
+											</p>
+										</div>
+
+										{mcpToolsLoading && (
+											<div className="flex items-center gap-2 text-muted-foreground text-sm">
+												<Spinner className="size-4" />
+												Loading tools...
+											</div>
+										)}
+
+										{!mcpToolsLoading &&
+											!!mcpToolsError && (
+												<div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
+													<p className="font-medium text-destructive text-sm">
+														Unable to load tools
+													</p>
+													<p className="mt-1 text-muted-foreground text-sm">
+														{mcpToolsError}
+													</p>
+												</div>
+											)}
+
+										{!mcpToolsLoading &&
+											!mcpToolsError &&
+											mcpTools.length === 0 && (
+												<div className="rounded-xl border border-base/70 border-dashed bg-muted/20 p-8 text-center">
+													<div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full bg-muted">
+														<Wrench className="size-5 text-muted-foreground" />
+													</div>
+													<p className="font-medium text-sm">
+														No tools available
+													</p>
+													<p className="mt-1 text-muted-foreground text-sm">
+														This app does not
+														currently expose MCP
+														tools.
+													</p>
+												</div>
+											)}
+
+										{!mcpToolsLoading &&
+											!mcpToolsError &&
+											mcpTools.length > 0 && (
+												<div className="space-y-3">
+													{mcpTools.map((tool) => {
+														const toolTitle =
+															tool.title ||
+															tool.name;
+														const inputProperties =
+															tool.inputSchema
+																?.properties ||
+															{};
+														const requiredInputs =
+															tool.inputSchema
+																?.required ||
+															[];
+														const inputEntries =
+															Object.entries(
+																inputProperties,
+															);
+
+														return (
+															<div
+																key={`${tool.name}-${toolTitle}`}
+																className="rounded-xl border border-base/80 p-4"
+															>
+																<div className="flex items-start gap-3">
+																	<Wrench className="mt-1 size-4 shrink-0 text-muted-foreground" />
+																	<div className="min-w-0 flex-1">
+																		<H4 className="leading-tight">
+																			{
+																				toolTitle
+																			}
+																		</H4>
+																		<p className="mt-1 whitespace-pre-line text-muted-foreground text-sm">
+																			{tool.description ||
+																				"No description available."}
+																		</p>
+																	</div>
+																</div>
+
+																{inputEntries.length >
+																	0 && (
+																	<details className="mt-3 rounded-lg border border-base/70 border-dashed bg-muted/20 p-3">
+																		<summary className="cursor-pointer font-medium text-sm">
+																			View
+																			input
+																			parameters{" "}
+																			(
+																			{
+																				inputEntries.length
+																			}
+																			)
+																		</summary>
+																		<div className="mt-3 space-y-2">
+																			{inputEntries.map(
+																				([
+																					inputName,
+																					inputConfig,
+																				]) => (
+																					<div
+																						key={`${tool.name}-${inputName}`}
+																						className="rounded-md bg-background p-3"
+																					>
+																						<div className="flex flex-wrap items-center gap-2">
+																							<code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+																								{
+																									inputName
+																								}
+																							</code>
+																							{inputConfig.type && (
+																								<Badge variant="outline">
+																									{
+																										inputConfig.type
+																									}
+																								</Badge>
+																							)}
+																							{requiredInputs.includes(
+																								inputName,
+																							) && (
+																								<Badge variant="secondary">
+																									Required
+																								</Badge>
+																							)}
+																						</div>
+																						{inputConfig.description && (
+																							<p className="mt-1 text-muted-foreground text-sm">
+																								{
+																									inputConfig.description
+																								}
+																							</p>
+																						)}
+																					</div>
+																				),
+																			)}
+																		</div>
+																	</details>
+																)}
+															</div>
+														);
+													})}
+												</div>
+											)}
+									</div>
+
+									<McpUsage id={appId} />
+								</div>
 							</SettingsContext.Provider>
 						)}
 						{selectedTab === "Settings" && (

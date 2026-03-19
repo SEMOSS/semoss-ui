@@ -256,7 +256,6 @@ export class ConfigStore {
 		return this._store.config;
 	}
 
-
 	/**
 	 * Get the config
 	 */
@@ -371,11 +370,11 @@ export class ConfigStore {
 			return;
 		}
 
+		// Set CSRF flag to true
+		Env.update({ CSRF: this.store.config.csrf });
+
 		// get the user information
 		await this.getUser();
-
-		// Set CSRF flag to true before setGeneralReactors()
-		Env.update({ CSRF: this.store.config.csrf });
 
 		//set the reactors
 		await this.setGeneralReactors();
@@ -511,7 +510,7 @@ export class ConfigStore {
 					};
 				}
 
-			    this._store.user.id = user.id || "";
+				this._store.user.id = user.id || "";
 				this._store.user.name = user.name || "";
 				this._store.user.email = user.email || "";
 				this._store.userEpoch = user.userEpoch;

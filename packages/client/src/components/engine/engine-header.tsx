@@ -1,7 +1,7 @@
-import { ChevronRight, Copy, Download } from "lucide-react";
+import { ChevronRight, Copy, Download, Pencil } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
 	Badge,
 	Breadcrumb,
@@ -27,7 +27,7 @@ import BRAIN from "@/assets/img/BRAIN.png";
 import { useEngine, useRootStore } from "@/hooks";
 import { ENGINE_IMAGES } from "@/pages/import";
 import { formatToDataTestId } from "@/utility";
-import { EditEngineDetails, EngineAccessButton } from ".";
+import { EngineAccessButton } from ".";
 
 /**
  * Engine Header
@@ -36,6 +36,9 @@ export const EngineHeader: React.FC = () => {
 	// get the engine information
 	const { name, active, type } = useEngine();
 
+	// navigation
+	const navigate = useNavigate();
+
 	// Service for Axios calls
 	const { monolithStore } = useRootStore();
 
@@ -43,6 +46,8 @@ export const EngineHeader: React.FC = () => {
 
 	// export loading state
 	const [exportLoading, setExportLoading] = useState(false);
+
+	const canEdit = active.role === "OWNER" || active.role === "EDITOR";
 
 	const findDBImage = (appType: string, appSubType: string) => {
 		const obj = ENGINE_IMAGES[appType]?.find(
@@ -201,7 +206,22 @@ export const EngineHeader: React.FC = () => {
 							Export
 						</Button>
 					)}
-					<EditEngineDetails />
+					{canEdit && (
+						<Button
+							variant="default"
+							onClick={() => {
+								navigate(
+									`/engine/${type.toLowerCase()}/${active.id}/edit`,
+								);
+							}}
+							data-testid={formatToDataTestId(
+								`editEngineDetails-${name}-edit-btn`,
+							)}
+						>
+							<Pencil className="size-4" />
+							Edit
+						</Button>
+					)}
 				</div>
 			</div>
 
@@ -283,7 +303,19 @@ export const EngineHeader: React.FC = () => {
 							className="text-muted-foreground text-sm"
 							data-testid="DateAdded"
 						>
-							Updated {`on ${active.DATEADDED}`}
+							Updated{" "}
+								{active?.DATEADDED
+									? new Date(
+											active?.DATEADDED,
+										).toLocaleString("en-US", {
+											month: "long",
+											day: "2-digit",
+											year: "numeric",
+											hour: "numeric",
+											minute: "2-digit",
+											hour12: true,
+										})
+									: "N/A"}
 						</span>
 					)}
 				</div>

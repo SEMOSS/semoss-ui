@@ -138,33 +138,39 @@ export const EngineSelect = ({
 							)}
 						</CommandEmpty>
 						<CommandGroup>
-							{getEngines.data.map((engine) => (
-								<CommandItem
-									key={engine.app_id}
-									value={engine.app_id}
-									onSelect={() => {
-										onChange(engine);
-										setOpen(false);
-									}}
-								>
-									<CheckIcon
-										className={`mr-2 size-4 ${value === engine.app_id ? "opacity-100" : "opacity-0"}`}
-									/>
-									<div className="flex flex-1 flex-col truncate">
-										<span className="truncate">
-											{engine.app_name}
-										</span>
-										{engine.description && (
-											<span
-												title={engine.description}
-												className="truncate text-muted-foreground text-xs"
-											>
-												{engine.description}
+							{getEngines.data.map((engine) => {
+								const displayName =
+									engine.engine_display_name ||
+									engine.app_name;
+
+								return (
+									<CommandItem
+										key={engine.app_id}
+										value={engine.app_id}
+										onSelect={() => {
+											onChange(engine);
+											setOpen(false);
+										}}
+									>
+										<CheckIcon
+											className={`mr-2 size-4 ${value === engine.app_id ? "opacity-100" : "opacity-0"}`}
+										/>
+										<div className="flex flex-1 flex-col truncate">
+											<span className="truncate">
+												{displayName}
 											</span>
-										)}
-									</div>
-								</CommandItem>
-							))}
+											{engine.description && (
+												<span
+													title={engine.description}
+													className="truncate text-muted-foreground text-xs"
+												>
+													{engine.description}
+												</span>
+											)}
+										</div>
+									</CommandItem>
+								);
+							})}
 							{getEngines.isLoading &&
 								getEngines.data.length > 0 && (
 									<div className="flex items-center justify-center py-2">

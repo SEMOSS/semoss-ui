@@ -36,3 +36,9 @@ export const TOOL_ERROR_PROMPT = `This tool execution failed due to an unexpecte
 2. If the error cause is clear and you know how to fix it (e.g., incorrect parameter, missing dependency), you may attempt one corrective action
 3. If the error is unclear or complex, ask the user for guidance and suggest alternative approaches
 4. Always explain your reasoning before taking any corrective actions`;
+
+export const TOOL_OUTPUT_UNREADABLE_PROMPT = `This tool was called and returned a response, but that response could not be read — likely because the output was too large to process or something went wrong when generating the next message. You should:
+1. Inform the user that the tool result was unavailable and briefly explain the likely cause
+2. Avoid acting on the tool output as if its contents are known
+3. If the intent is clear, ask the user if they'd like you to try again or proceed a different way
+4. Do not repeat the tool call without user confirmation`;

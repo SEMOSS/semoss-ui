@@ -56,6 +56,7 @@ export class RootStore {
 				logo: "",
 				login: "",
 				landing: "",
+				tabIcon: "",
 				workspace: "",
 			},
 			overrides: {
@@ -65,6 +66,7 @@ export class RootStore {
 			landing: "",
 			sidebar: {
 				//workspaceAlias: "Workspace",
+				chatHistoryDate: false,
 				headerItems: [],
 				footerItems: [],
 			},
@@ -77,6 +79,8 @@ export class RootStore {
 			},
 			allowedFileTypes: [],
 			defaultTools: [],
+			gracefulErrors: [],
+			showPlatformLinks: true,
 		},
 	};
 
@@ -202,6 +206,10 @@ export class RootStore {
 			sidebar: {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),
+				chatHistoryDate:
+					theme?.sidebar?.chatHistoryDate !== undefined
+						? theme.sidebar.chatHistoryDate
+						: this._store.theme.sidebar.chatHistoryDate,
 			},
 			dialog: theme?.dialog || this._store.theme.dialog,
 			defaultRoomSettings: {
@@ -215,6 +223,16 @@ export class RootStore {
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||
 				[],
+			enableKnowledgeMCP:
+				theme?.enableKnowledgeMCP !== undefined
+					? theme.enableKnowledgeMCP
+					: this._store.theme.enableKnowledgeMCP,
+			defaultEmbedderId:
+				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
+			allowEmbeddingOptions:
+				theme?.allowEmbeddingOptions !== undefined
+					? theme.allowEmbeddingOptions
+					: this._store.theme.allowEmbeddingOptions,
 			defaultTools: [
 				...new Map(
 					[
@@ -222,6 +240,14 @@ export class RootStore {
 						...(theme?.defaultTools || []),
 					].map((tool) => [tool.id, tool]),
 				).values(),
+			],
+			showPlatformLinks:
+				theme?.showPlatformLinks !== undefined
+					? theme.showPlatformLinks
+					: this._store.theme.showPlatformLinks,
+			gracefulErrors: [
+				...this._store.theme.gracefulErrors,
+				...(theme?.gracefulErrors || []),
 			],
 		};
 
