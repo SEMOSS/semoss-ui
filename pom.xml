@@ -50,6 +50,18 @@
 	-->
 	<build>
 		<sourceDirectory>packages</sourceDirectory>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.13.0</version>
+				<configuration>
+					<excludes>
+						<exclude>cli/templates/**/*.java</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+		</plugins>
 	</build>
 	<profiles>
 		<profile>
