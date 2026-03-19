@@ -34,7 +34,6 @@ import {
 	type RoomStore,
 	type ToolStore,
 } from "@/stores";
-import { RoomInlineTool } from "../room/room-inline-tool";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
@@ -225,7 +224,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 														message={message}
 														tool={tool}
 													/>
-													{tool.display ===
+													{/* {tool.display ===
 														"inline" &&
 														tool.isOpen && (
 															<RoomInlineTool
@@ -235,7 +234,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 																}
 																tool={tool}
 															/>
-														)}
+														)} */}
 												</div>
 											)}
 										</Fragment>

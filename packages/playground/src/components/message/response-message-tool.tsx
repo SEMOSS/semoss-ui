@@ -23,6 +23,7 @@ import {
 } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
+import { RoomInlineTool } from "../room";
 
 interface ResponseMessageToolProps {
 	/** Message to render */
@@ -122,198 +123,215 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		return (
 			<div
 				className={cn(
-					"flex items-center gap-3 rounded-lg border border-border p-2",
+					"flex flex-col rounded-lg border border-border",
 					isDisabled && "opacity-50",
 					variant === "complete" ? "bg-sidebar" : "bg-background",
 					!isDisabled && isActive && "border-primary",
 					!isDisabled && variant === "ready" && "hover:bg-accent",
 				)}
 			>
-				{/* Clickable section: icon + text */}
-				<button
-					type="button"
-					disabled={isButtonDisabled}
-					className={cn(
-						"flex min-w-0 flex-1 items-center gap-3 text-left",
-						isButtonDisabled
-							? "cursor-not-allowed"
-							: "cursor-pointer",
-					)}
-					onClick={() => {
-						if (tool.isOpen) {
-							if (tool.display === "inline") {
-								// Clicks when inline should close
-								tool.closeTool();
+				{/* Top section: button + actions */}
+				<div className="flex items-center gap-3 pr-2">
+					{/* Clickable section: icon + text */}
+					<button
+						type="button"
+						disabled={isButtonDisabled}
+						className={cn(
+							"flex min-w-0 flex-1 items-center gap-3 p-2 pr-0 text-left",
+							isButtonDisabled
+								? "cursor-not-allowed"
+								: "cursor-pointer",
+						)}
+						onClick={() => {
+							if (tool.isOpen) {
+								if (tool.display === "inline") {
+									// Clicks when inline should close
+									tool.closeTool();
+								} else {
+									// if it's open in the sidebar, we want to move it to the front
+									tool.openTool("sidebar");
+								}
 							} else {
-								// if it's open in the sidebar, we want to move it to the front
-								tool.openTool("sidebar");
+								tool.openTool();
 							}
-						} else {
-							tool.openTool();
-						}
-					}}
-				>
-					<div
-						className={cn(
-							"flex size-9 shrink-0 items-center justify-center rounded-sm",
-							isPrimaryIcon
-								? "bg-primary/10 text-primary"
-								: "bg-muted text-muted-foreground",
-							isDimmed && "opacity-50",
-						)}
+						}}
 					>
-						{icon}
-					</div>
-					<div
-						className={cn(
-							"flex min-w-0 flex-1 flex-col",
-							isDimmed && "opacity-50",
-						)}
-					>
-						<span
+						<div
 							className={cn(
-								"truncate font-medium text-foreground text-sm",
-								variant === "loading" && "animate-text-shimmer",
+								"flex size-9 shrink-0 items-center justify-center rounded-sm",
+								isPrimaryIcon
+									? "bg-primary/10 text-primary"
+									: "bg-muted text-muted-foreground",
+								isDimmed && "opacity-50",
 							)}
-							title={tool.json.title}
 						>
-							{tool.json.title}
-						</span>
-						{subtext && (
+							{icon}
+						</div>
+						<div
+							className={cn(
+								"flex min-w-0 flex-1 flex-col",
+								isDimmed && "opacity-50",
+							)}
+						>
 							<span
 								className={cn(
-									"truncate text-muted-foreground text-sm",
+									"truncate font-medium text-foreground text-sm",
 									variant === "loading" &&
 										"animate-text-shimmer",
 								)}
-								title={subtext}
+								title={tool.json.title}
 							>
-								{subtext}
+								{tool.json.title}
 							</span>
-						)}
-					</div>
-				</button>
-
-				{/* Right-side actions */}
-				{(variant === "loading" || variant === "queued") && (
-					<Button
-						type="button"
-						size="sm"
-						variant="secondary"
-						className="shrink-0"
-						onClick={(e) => {
-							e.stopPropagation();
-							message.saveToolExecution(
-								tool,
-								"",
-								"cancelled",
-								{},
-							);
-							tool.closeTool();
-						}}
-					>
-						{t("tool.cancel")}
-					</Button>
-				)}
-				{variant === "error" && (
-					<div className="flex shrink-0 items-center gap-2 rounded-md bg-destructive/10 px-3 py-1.5 font-medium text-destructive text-sm">
-						<XCircleIcon className="size-4" />
-						{t("tool.failed")}
-					</div>
-				)}
-				{variant === "cancelled" && (
-					<div className="flex shrink-0 items-center gap-2 rounded-md bg-muted px-3 py-1.5 font-medium text-muted-foreground text-sm">
-						<XCircleIcon className="size-4" />
-						{t("tool.cancelled")}
-					</div>
-				)}
-				{(variant === "ready" || variant === "complete") && (
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								type="button"
-								size="icon"
-								variant="ghost"
-								className="shrink-0"
-								onClick={(e) => e.stopPropagation()}
-							>
-								<MoreHorizontalIcon className="size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem
-								onClick={() => {
-									if (
-										tool.isOpen &&
-										tool.display === "inline"
-									) {
-										tool.closeTool();
-									} else {
-										tool.openTool("inline");
-									}
-								}}
-							>
-								{tool.isOpen && tool.display === "inline" ? (
-									<ChevronsRightLeftIcon />
-								) : (
-									<ChevronsLeftRightIcon />
-								)}
-								{tool.isOpen && tool.display === "inline"
-									? t("tool.collapse")
-									: t("tool.openInline")}
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={() => {
-									tool.openTool("inline");
-									tool.setIsExpanded(true);
-								}}
-							>
-								<TvMinimalIcon />
-								{t("tool.expand")}
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={() => {
-									if (
-										tool.isOpen &&
-										tool.display === "sidebar"
-									) {
-										tool.closeTool();
-									} else {
-										tool.openTool("sidebar");
-									}
-								}}
-							>
-								{tool.isOpen && tool.display === "sidebar" ? (
-									<PanelRightOpenIcon />
-								) : (
-									<PanelRightCloseIcon />
-								)}
-								{tool.isOpen && tool.display === "sidebar"
-									? t("tool.closeInSidebar")
-									: t("tool.openInSidebar")}
-							</DropdownMenuItem>
-							{variant === "ready" && (
-								<>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										variant="destructive"
-										onClick={() => {
-											message.saveToolExecution(
-												tool,
-												"",
-												"cancelled",
-												{},
-											);
-											tool.closeTool();
-										}}
-									>
-										<XCircleIcon />
-										{t("tool.cancel")}
-									</DropdownMenuItem>
-								</>
+							{subtext && (
+								<span
+									className={cn(
+										"truncate text-muted-foreground text-sm",
+										variant === "loading" &&
+											"animate-text-shimmer",
+									)}
+									title={subtext}
+								>
+									{subtext}
+								</span>
 							)}
-						</DropdownMenuContent>
-					</DropdownMenu>
+						</div>
+					</button>
+
+					{/* Right-side actions */}
+					{(variant === "loading" || variant === "queued") && (
+						<Button
+							type="button"
+							size="sm"
+							variant="secondary"
+							className="shrink-0"
+							onClick={(e) => {
+								e.stopPropagation();
+								message.saveToolExecution(
+									tool,
+									"",
+									"cancelled",
+									{},
+								);
+								tool.closeTool();
+							}}
+						>
+							{t("tool.cancel")}
+						</Button>
+					)}
+					{variant === "error" && (
+						<div className="flex shrink-0 items-center gap-2 rounded-md bg-destructive/10 px-3 py-1.5 font-medium text-destructive text-sm">
+							<XCircleIcon className="size-4" />
+							{t("tool.failed")}
+						</div>
+					)}
+					{variant === "cancelled" && (
+						<div className="flex shrink-0 items-center gap-2 rounded-md bg-muted px-3 py-1.5 font-medium text-muted-foreground text-sm">
+							<XCircleIcon className="size-4" />
+							{t("tool.cancelled")}
+						</div>
+					)}
+					{(variant === "ready" || variant === "complete") && (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									type="button"
+									size="icon"
+									variant="ghost"
+									className="shrink-0"
+									onClick={(e) => e.stopPropagation()}
+								>
+									<MoreHorizontalIcon className="size-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem
+									onClick={() => {
+										if (
+											tool.isOpen &&
+											tool.display === "inline"
+										) {
+											tool.closeTool();
+										} else {
+											tool.openTool("inline");
+										}
+									}}
+								>
+									{tool.isOpen &&
+									tool.display === "inline" ? (
+										<ChevronsRightLeftIcon />
+									) : (
+										<ChevronsLeftRightIcon />
+									)}
+									{tool.isOpen && tool.display === "inline"
+										? t("tool.collapse")
+										: t("tool.openInline")}
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => {
+										tool.openTool("inline");
+										tool.setIsExpanded(true);
+									}}
+								>
+									<TvMinimalIcon />
+									{t("tool.expand")}
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => {
+										if (
+											tool.isOpen &&
+											tool.display === "sidebar"
+										) {
+											tool.closeTool();
+										} else {
+											tool.openTool("sidebar");
+										}
+									}}
+								>
+									{tool.isOpen &&
+									tool.display === "sidebar" ? (
+										<PanelRightOpenIcon />
+									) : (
+										<PanelRightCloseIcon />
+									)}
+									{tool.isOpen && tool.display === "sidebar"
+										? t("tool.closeInSidebar")
+										: t("tool.openInSidebar")}
+								</DropdownMenuItem>
+								{variant === "ready" && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											variant="destructive"
+											onClick={() => {
+												message.saveToolExecution(
+													tool,
+													"",
+													"cancelled",
+													{},
+												);
+												tool.closeTool();
+											}}
+										>
+											<XCircleIcon />
+											{t("tool.cancel")}
+										</DropdownMenuItem>
+									</>
+								)}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					)}
+				</div>
+
+				{/* MCP UI Area */}
+				{tool.isOpen && tool.display === "inline" && (
+					<div className="p-2 pt-0">
+						<RoomInlineTool
+							room={room}
+							message={message}
+							tool={tool}
+						/>
+					</div>
 				)}
 			</div>
 		);

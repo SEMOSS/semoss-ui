@@ -45,75 +45,79 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 				<div
 					className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${tool.isExpanded ? "fixed inset-4 z-50" : "h-full w-full"}`}
 				>
-					<div className="flex h-12.5 w-full flex-row items-center justify-end gap-1.5 overflow-hidden border-b border-b-input pr-2">
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									type="button"
-									size="icon-sm"
-									variant="ghost"
-									onClick={(e) => {
-										e.stopPropagation();
+					{tool.isExpanded && (
+						<div className="flex h-12.5 w-full flex-row items-center justify-end gap-1.5 overflow-hidden border-b border-b-input pr-2">
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										type="button"
+										size="icon-sm"
+										variant="ghost"
+										onClick={(e) => {
+											e.stopPropagation();
 
-										// turn off maximized state
-										tool.setIsExpanded(false);
+											// turn off maximized state
+											tool.setIsExpanded(false);
 
-										// open the tool
-										tool.openTool("sidebar");
-									}}
-								>
-									<PanelRightIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								{t("inlineTool.openInSidebar")}
-							</TooltipContent>
-						</Tooltip>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={() => {
-										tool.setIsExpanded(!tool.isExpanded);
-									}}
-								>
-									{tool.isExpanded ? (
-										<MonitorXIcon />
-									) : (
-										<TvMinimalIcon />
-									)}
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								{tool.isExpanded
-									? t("inlineTool.minimize")
-									: t("inlineTool.maximize")}
-							</TooltipContent>
-						</Tooltip>
-						<Separator
-							orientation="vertical"
-							style={{ height: "17px" }}
-						/>
+											// open the tool
+											tool.openTool("sidebar");
+										}}
+									>
+										<PanelRightIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{t("inlineTool.openInSidebar")}
+								</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										onClick={() => {
+											tool.setIsExpanded(
+												!tool.isExpanded,
+											);
+										}}
+									>
+										{tool.isExpanded ? (
+											<MonitorXIcon />
+										) : (
+											<TvMinimalIcon />
+										)}
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{tool.isExpanded
+										? t("inlineTool.minimize")
+										: t("inlineTool.maximize")}
+								</TooltipContent>
+							</Tooltip>
+							<Separator
+								orientation="vertical"
+								style={{ height: "17px" }}
+							/>
 
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={() => {
-										// close the tool (also resets isExpanded via store)
-										tool.closeTool();
-									}}
-								>
-									<XIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								{t("inlineTool.close")}
-							</TooltipContent>
-						</Tooltip>
-					</div>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										onClick={() => {
+											// close the tool (also resets isExpanded via store)
+											tool.closeTool();
+										}}
+									>
+										<XIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{t("inlineTool.close")}
+								</TooltipContent>
+							</Tooltip>
+						</div>
+					)}
 					<div className="w-full flex-1 overflow-hidden">
 						<ToolsView
 							room={room}
