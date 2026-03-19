@@ -474,7 +474,10 @@ export class RoomStore {
 					parts: [],
 					tokens: 0,
 					ornaments: {
-						modelName: this._store.model?.app_name || "",
+						modelName:
+							this._store.model?.engine_display_name ||
+							this._store.model?.app_name ||
+							"",
 					},
 				} as ResponsePixelMessage);
 			} else if (this.mode === "planning") {
@@ -494,7 +497,10 @@ export class RoomStore {
 					tokens: 0,
 					ornaments: {
 						PLAYGROUND_MESSAGE_TYPE: "COT",
-						modelName: this._store.model?.app_name || "",
+						modelName:
+							this._store.model?.engine_display_name ||
+							this._store.model?.app_name ||
+							"",
 					},
 				} as ResponsePixelMessage);
 			}
@@ -963,7 +969,8 @@ export class RoomStore {
 			parts: parts,
 			tokens: 0,
 			ornaments: {
-				modelName: this.model.app_name,
+				modelName:
+					this.model.engine_display_name || this.model.app_name,
 			},
 		});
 
