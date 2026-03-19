@@ -37,7 +37,8 @@
 		"completed": "Terminé",
 		"ready": "Prêt",
 		"autoExecute": "Cet outil est configuré pour s'exécuter automatiquement",
-		"cancel": "Annuler"
+		"cancel": "Annuler",
+		"closeInSidebar": "Fermer le panneau latéral"
 	},
 	"notifications": {
 		"feedbackSuccess": "Merci pour votre retour !",

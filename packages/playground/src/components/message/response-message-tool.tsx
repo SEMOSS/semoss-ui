@@ -5,6 +5,7 @@ import {
 	HammerIcon,
 	MoreHorizontalIcon,
 	PanelRightCloseIcon,
+	PanelRightOpenIcon,
 	TvMinimalIcon,
 	XCircleIcon,
 } from "lucide-react";
@@ -272,12 +273,24 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								onClick={() => {
-									tool.openTool("sidebar");
+									if (
+										tool.isOpen &&
+										tool.display === "sidebar"
+									) {
+										tool.closeTool();
+									} else {
+										tool.openTool("sidebar");
+									}
 								}}
-								// TODO: if already open in sidebar, this should close it instead of reopening
 							>
-								<PanelRightCloseIcon />
-								{t("tool.openInSidebar")}
+								{tool.isOpen && tool.display === "sidebar" ? (
+									<PanelRightOpenIcon />
+								) : (
+									<PanelRightCloseIcon />
+								)}
+								{tool.isOpen && tool.display === "sidebar"
+									? t("tool.closeInSidebar")
+									: t("tool.openInSidebar")}
 							</DropdownMenuItem>
 							{variant === "ready" && (
 								<>

@@ -37,7 +37,8 @@
 		"completed": "पूर्ण",
 		"ready": "तैयार",
 		"autoExecute": "यह टूल ऑटो-एक्ज़िक्यूट करने के लिए सेट है",
-		"cancel": "रद्द करें"
+		"cancel": "रद्द करें",
+		"closeInSidebar": "साइडबार बंद करें"
 	},
 	"notifications": {
 		"feedbackSuccess": "प्रतिक्रिया के लिए धन्यवाद!",

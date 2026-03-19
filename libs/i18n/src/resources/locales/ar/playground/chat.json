@@ -37,7 +37,8 @@
 		"completed": "مكتمل",
 		"ready": "جاهز",
 		"autoExecute": "هذه الأداة مضبوطة على التنفيذ التلقائي",
-		"cancel": "إلغاء"
+		"cancel": "إلغاء",
+		"closeInSidebar": "إغلاق الشريط الجانبي"
 	},
 	"notifications": {
 		"feedbackSuccess": "شكراً على الملاحظات!",

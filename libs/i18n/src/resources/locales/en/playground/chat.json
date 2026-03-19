@@ -41,6 +41,7 @@
 		"cancel": "Cancel",
 		"expand": "Expand",
 		"openInSidebar": "Open in sidebar",
+		"closeInSidebar": "Close sidebar",
 		"collapse": "Collapse",
 		"openInline": "Open in-line",
 		"groupLabel": "Executed",
