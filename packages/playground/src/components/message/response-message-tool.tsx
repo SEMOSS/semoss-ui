@@ -138,8 +138,19 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							? "cursor-not-allowed"
 							: "cursor-pointer",
 					)}
-					// TODO: if tool is already open this should do nothing if inline, move to front if sidebar, instead of reopening
-					onClick={() => tool.openTool()}
+					onClick={() => {
+						if (tool.isOpen) {
+							if (tool.display === "inline") {
+								// Clicks when inline should close
+								tool.closeTool();
+							} else {
+								// if it's open in the sidebar, we want to move it to the front
+								tool.openTool("sidebar");
+							}
+						} else {
+							tool.openTool();
+						}
+					}}
 				>
 					<div
 						className={cn(

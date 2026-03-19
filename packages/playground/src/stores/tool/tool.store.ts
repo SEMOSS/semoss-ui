@@ -176,10 +176,9 @@ export class ToolStore {
 	 */
 	openTool = (display?: "inline" | "sidebar" | "hidden") => {
 		if (this.isOpen) {
-			// already open in the requested location
-			if (this.display === display) {
-				return;
-			} else {
+			// Tool is already open. If the new display is the same or undefined, move to front
+			// if the new display is different, close and reopen in the new location
+			if (display !== undefined && display !== this.display) {
 				this.closeTool();
 			}
 		}

@@ -11,7 +11,7 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -210,7 +210,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									const tool = room.getTool(p.toolCall.id);
 									const isGrouped = getShouldGroupTool(tool);
 									return (
-										<>
+										<Fragment key={key}>
 											{pIdx === firstToolPartIdx &&
 												groupedTools.length >= 1 && (
 													<ResponseMessageToolGroup
@@ -220,10 +220,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 													/>
 												)}
 											{tool && !isGrouped && (
-												<div
-													key={key}
-													className="flex flex-col gap-2"
-												>
+												<div className="flex flex-col gap-2">
 													<ResponseMessageTool
 														message={message}
 														tool={tool}
@@ -241,7 +238,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 														)}
 												</div>
 											)}
-										</>
+										</Fragment>
 									);
 								}
 
