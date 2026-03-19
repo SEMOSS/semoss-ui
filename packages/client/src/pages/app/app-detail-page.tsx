@@ -594,10 +594,14 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 								<BreadcrumbItem>
 									<BreadcrumbPage>
 										<span
-											title={appInfo?.project_name}
+											title={
+												appInfo?.project_display_name ||
+												appInfo?.project_name
+											}
 											className="inline-block max-w-[40ch] truncate text-ellipsis"
 										>
-											{appInfo?.project_name}
+											{appInfo?.project_display_name ||
+												appInfo?.project_name}
 										</span>
 									</BreadcrumbPage>
 								</BreadcrumbItem>
@@ -609,7 +613,11 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 						<div className="h-16 w-16 shrink-0 rounded-lg bg-muted">
 							<img
 								src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
-								alt={appInfo?.project_name || "App"}
+								alt={
+									appInfo?.project_display_name ||
+									appInfo?.project_name ||
+									"App"
+								}
 								className="size-full object-cover"
 							/>
 						</div>
@@ -617,9 +625,13 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 						<div className="flex min-w-0 flex-1 flex-col gap-1">
 							<h1
 								className="wrap-break-words font-semibold text-2xl text-foreground leading-normal md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]"
-								title={appInfo?.project_name}
+								title={
+									appInfo?.project_display_name ||
+									appInfo?.project_name
+								}
 							>
-								{appInfo?.project_name}
+								{appInfo?.project_display_name ||
+									appInfo?.project_name}
 							</h1>
 							{appId && (
 								<div className="flex items-center gap-1 text-muted-foreground text-sm">
