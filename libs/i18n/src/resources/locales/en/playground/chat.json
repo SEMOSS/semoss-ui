@@ -42,7 +42,7 @@
 		"expand": "Expand",
 		"openInSidebar": "Open in sidebar",
 		"collapse": "Collapse",
-		"open": "Open",
+		"openInline": "Open in-line",
 		"groupLabel": "Executed",
 		"groupSuffix": "tool(s)"
 	},

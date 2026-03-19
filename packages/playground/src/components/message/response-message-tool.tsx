@@ -138,6 +138,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							? "cursor-not-allowed"
 							: "cursor-pointer",
 					)}
+					// TODO: if tool is already open this should do nothing if inline, move to front if sidebar, instead of reopening
 					onClick={() => tool.openTool()}
 				>
 					<div
@@ -182,7 +183,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				</button>
 
 				{/* Right-side actions */}
-				{variant === "loading" && (
+				{(variant === "loading" || variant === "queued") && (
 					<Button
 						type="button"
 						size="sm"
@@ -247,7 +248,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 								)}
 								{tool.isOpen && tool.display === "inline"
 									? t("tool.collapse")
-									: t("tool.open")}
+									: t("tool.openInline")}
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								onClick={() => {
@@ -262,6 +263,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 								onClick={() => {
 									tool.openTool("sidebar");
 								}}
+								// TODO: if already open in sidebar, this should close it instead of reopening
 							>
 								<PanelRightCloseIcon />
 								{t("tool.openInSidebar")}
