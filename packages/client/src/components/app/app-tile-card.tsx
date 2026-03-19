@@ -230,6 +230,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 	}, [isLoading]);
 
 	// Memoized values
+	const displayName = app.project_display_name || app.project_name;
 	const tags = useMemo(() => extractTags(app), [app]);
 	const updatedAgo = useMemo(
 		() =>
@@ -242,12 +243,12 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		? "Updated with platform"
 		: updatedAgo || "Updated date unavailable";
 	const gradient = useMemo(
-		() => generateGradient(app.project_name || appType || "App"),
-		[app.project_name, appType],
+		() => generateGradient(displayName || appType || "App"),
+		[displayName, appType],
 	);
 	const initials = useMemo(
-		() => buildInitials(app.project_name || appType || "App"),
-		[app.project_name, appType],
+		() => buildInitials(displayName || appType || "App"),
+		[displayName, appType],
 	);
 	const displayTags = systemApp ? ["SYSTEM"] : tags;
 
@@ -358,7 +359,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 			<div
 				className={`${cardWidthClass} flex items-center gap-3 px-4 py-2 transition-colors hover:bg-muted/40`}
 				data-testid={formatToDataTestId(
-					`appTileCard-${app.project_name}-row`,
+					`appTileCard-${displayName}-row`,
 				)}
 			>
 				<button
@@ -377,7 +378,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 
 					<div className="min-w-0 flex-1">
 						<h3 className="truncate font-semibold text-sm">
-							{app.project_name}
+							{displayName}
 						</h3>
 						<div className="mt-1 text-[11px] text-muted-foreground">
 							{updatedLine}
@@ -414,7 +415,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 						size="icon-sm"
 						onClick={handleOpenApp}
 						aria-label="Open app in new tab"
-						title={`Open ${app.project_name || "app"} in new tab`}
+						title={`Open ${displayName || "app"} in new tab`}
 					>
 						<ExternalLink className="size-4" />
 					</Button>
@@ -423,7 +424,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 							variant="ghost"
 							size="icon-sm"
 							aria-label="View app info"
-							title={`View info for ${app.project_name || "app"}`}
+							title={`View info for ${displayName || "app"}`}
 							asChild
 						>
 							<Link
@@ -440,8 +441,8 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 							size="icon-sm"
 							title={
 								isFavorite
-									? `Unbookmark ${app.project_name}`
-									: `Bookmark ${app.project_name}`
+									? `Unbookmark ${displayName}`
+									: `Bookmark ${displayName}`
 							}
 							onClick={handleFavoriteToggle}
 							aria-label={
@@ -516,7 +517,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					className="h-full cursor-pointer gap-2 overflow-hidden rounded-xl border bg-card p-0 shadow-sm transition-shadow hover:shadow-md"
 					onClick={handleCardClick}
 					data-testid={formatToDataTestId(
-						`appTileCard-${app.project_name}-tile`,
+						`appTileCard-${displayName}-tile`,
 					)}
 				>
 					{/* Header with gradient */}
@@ -537,8 +538,8 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 									className={headerActionClass}
 									title={
 										isFavorite
-											? `Unbookmark ${app.project_name}`
-											: `Bookmark ${app.project_name}`
+											? `Unbookmark ${displayName}`
+											: `Bookmark ${displayName}`
 									}
 									onClick={handleFavoriteToggle}
 									aria-label={
@@ -601,7 +602,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					{/* Content */}
 					<CardContent className="flex flex-1 flex-col gap-1.5 px-3 pt-1 pb-0.5">
 						<h3 className="mt-1 line-clamp-2 font-semibold text-sm leading-snug">
-							{app.project_name}
+							{displayName}
 						</h3>
 						<div className="text-[11px] text-muted-foreground">
 							{updatedLine}
@@ -642,7 +643,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 									showInfo ? "w-1/2 px-6" : "w-full px-6"
 								}
 								onClick={handleOpenApp}
-								title={`Open ${app.project_name || "app"} in new tab`}
+								title={`Open ${displayName || "app"} in new tab`}
 							>
 								Open
 								<ExternalLink className="size-4" />
@@ -653,7 +654,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 									size="sm"
 									className="w-1/2"
 									aria-label="View app info"
-									title={`View info for ${app.project_name || "app"}`}
+									title={`View info for ${displayName || "app"}`}
 									asChild
 								>
 									<Link
@@ -696,7 +697,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 				className="h-full cursor-pointer gap-3 overflow-hidden p-0"
 				onClick={handleCardClick}
 				data-testid={formatToDataTestId(
-					`appTileCard-${app.project_name}-tile`,
+					`appTileCard-${displayName}-tile`,
 				)}
 			>
 				{/* Header */}
@@ -714,8 +715,8 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 								size="icon-sm"
 								title={
 									isFavorite
-										? `Unbookmark ${app.project_name}`
-										: `Bookmark ${app.project_name}`
+										? `Unbookmark ${displayName}`
+										: `Bookmark ${displayName}`
 								}
 								onClick={handleFavoriteToggle}
 								aria-label={
@@ -775,7 +776,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 				{/* Content */}
 				<CardContent className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-0">
 					<h3 className="line-clamp-2 min-h-[46px] font-semibold text-lg leading-snug">
-						{app.project_name}
+						{displayName}
 					</h3>
 					<P className="line-clamp-2 min-h-[40px] text-muted-foreground text-sm">
 						{app.description || "No description available"}
