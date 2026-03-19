@@ -37,8 +37,15 @@
 		"completed": "完了",
 		"ready": "準備完了",
 		"autoExecute": "このツールは自動実行に設定されています",
+		"queued": "自動実行のキューに入っています",
 		"cancel": "キャンセル",
-		"closeInSidebar": "サイドバーを閉じる"
+		"expand": "展開",
+		"openInSidebar": "サイドバーで開く",
+		"closeInSidebar": "サイドバーを閉じる",
+		"collapse": "折りたたむ",
+		"openInline": "インラインで開く",
+		"groupLabel": "実行済み",
+		"groupSuffix": "ツール"
 	},
 	"notifications": {
 		"feedbackSuccess": "フィードバックをありがとうございます!",

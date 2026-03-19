@@ -37,8 +37,15 @@
 		"completed": "पूर्ण",
 		"ready": "तैयार",
 		"autoExecute": "यह टूल ऑटो-एक्ज़िक्यूट करने के लिए सेट है",
+		"queued": "ऑटो-एक्ज़िक्यूट की प्रतीक्षा में",
 		"cancel": "रद्द करें",
-		"closeInSidebar": "साइडबार बंद करें"
+		"expand": "विस्तार करें",
+		"openInSidebar": "साइडबार में खोलें",
+		"closeInSidebar": "साइडबार बंद करें",
+		"collapse": "संकुचित करें",
+		"openInline": "इनलाइन खोलें",
+		"groupLabel": "निष्पादित",
+		"groupSuffix": "टूल"
 	},
 	"notifications": {
 		"feedbackSuccess": "प्रतिक्रिया के लिए धन्यवाद!",
