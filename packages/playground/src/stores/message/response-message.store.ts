@@ -514,28 +514,37 @@ paramValues=[${JSON.stringify({
 		});
 
 		try {
-			// wait for the pixel to run
-			const response = await this.room.runRoomPixel<[unknown]>(
-				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
-				false,
-				false,
-			);
+			let output = "";
+			let toolError = false;
 
-			const rawOutput = response.pixelReturn[0].output;
-			const output =
-				typeof rawOutput === "string"
-					? rawOutput
-					: JSON.stringify(rawOutput);
+			try {
+				// wait for the pixel to run
+				const response = await this.room.runRoomPixel<[unknown]>(
+					`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+					false,
+					false,
+				);
+
+				const rawOutput = response.pixelReturn[0].output;
+				output =
+					typeof rawOutput === "string"
+						? rawOutput
+						: JSON.stringify(rawOutput);
+			} catch (e) {
+				// If RunMCPTool fails, we want to save the error message as the tool response, and set the tool status to error
+				output = e.message;
+				toolError = true;
+			}
 
 			// save the response
 			await this.saveToolExecution(
 				tool,
 				output,
-				"success",
+				toolError ? "error" : "success",
 				tool.parameters,
 			);
 		} catch {
-			// Failure handled by saveToolExecution, which will set the tool status to error and save the error response
+			// Error in AddPlaygroundToolExecution handled by saveToolExecution, which will set the tool status to error and save the error response
 		}
 	};
 
