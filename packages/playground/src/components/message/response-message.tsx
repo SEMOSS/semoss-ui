@@ -118,7 +118,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// part index (regardless of completion) so the group always renders at
 		// the top of the tool list even when an auto-execute tool completes first.
 		const getShouldGroupTool = (tool: ToolStore) => {
-			return tool.status === "SUCCESS";
+			return tool?.status === "SUCCESS";
 		};
 		const groupedTools: ToolStore[] = [];
 		let firstToolPartIdx = -1;
@@ -219,7 +219,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 														tools={groupedTools}
 													/>
 												)}
-											{!isGrouped && (
+											{tool && !isGrouped && (
 												<div
 													key={key}
 													className="flex flex-col gap-2"
