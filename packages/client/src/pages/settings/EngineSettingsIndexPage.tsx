@@ -41,6 +41,7 @@ export interface Database {
 	app_type: string;
 	database_cost: string;
 	database_id: string;
+	engine_display_name?: string;
 	database_name: string;
 	database_type: string;
 	low_database_name: string;
@@ -524,10 +525,13 @@ export const EngineSettingsIndexPage = (
 					) : null}
 					{databases.length
 						? databases.map((db, _i) => {
+								const engineName =
+									db.engine_display_name || db.database_name;
+
 								return (
 									<Grid
 										item
-										key={`${db.database_name}`}
+										key={`${db.database_id}`}
 										sm={view === "list" ? 12 : 12}
 										md={view === "list" ? 12 : 6}
 										lg={view === "list" ? 12 : 4}
@@ -535,7 +539,7 @@ export const EngineSettingsIndexPage = (
 									>
 										{view === "list" ? (
 											<EngineLandscapeCard
-												name={db.database_name}
+												name={engineName}
 												id={db.database_id}
 												tag={db.tag}
 												owner={db.database_created_by}
@@ -556,7 +560,7 @@ export const EngineSettingsIndexPage = (
 														`${db.database_id}`,
 														{
 															state: {
-																name: db.database_name,
+																name: engineName,
 																global: db.database_global,
 																permission:
 																	db.permission,
@@ -573,7 +577,7 @@ export const EngineSettingsIndexPage = (
 											/>
 										) : (
 											<EngineTileCard
-												name={db.database_name}
+												name={engineName}
 												id={db.database_id}
 												tag={db.tag}
 												owner={db.database_created_by}
@@ -594,7 +598,7 @@ export const EngineSettingsIndexPage = (
 														`${db.database_id}`,
 														{
 															state: {
-																name: db.database_name,
+																name: engineName,
 																global: db.database_global,
 																permission:
 																	db.permission,
