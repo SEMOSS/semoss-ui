@@ -1,12 +1,12 @@
 import "@testing-library/jest-dom";
-// import { render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-// import { Blocks } from "../../components/blocks";
-import type {
-	// CodeCell,
-	CodeCellDef,
+import { Blocks } from "../../components/blocks";
+import {
+	CodeCell,
+	type CodeCellDef,
 } from "../../components/cell-defaults/code-cell/CodeCell";
-import { type CellState, StateStore } from "../../store";
+import { type CellState, type Registry, StateStore } from "../../store";
 
 // Mock useBlocksPixel to avoid SDK interactions
 vi.mock("../../hooks/useBlocksPixel", () => ({
@@ -15,6 +15,22 @@ vi.mock("../../hooks/useBlocksPixel", () => ({
 		data: undefined,
 		refresh: vi.fn(),
 	}),
+}));
+
+// Mock runPixel to avoid network calls
+vi.mock("@semoss/sdk/react", () => ({
+	runPixel: vi.fn(() =>
+		Promise.resolve({
+			pixelReturn: [
+				{
+					output: {
+						response: "mock response",
+						someFunction: "value",
+					},
+				},
+			],
+		}),
+	),
 }));
 
 const createCodeCellStore = () => {
@@ -28,7 +44,7 @@ const createCodeCellStore = () => {
 					id: "query-1",
 					cells: [
 						{
-							id: "1",
+							id: "0",
 							widget: "query-import",
 							parameters: {
 								databaseId: "test-db",
@@ -41,9 +57,10 @@ const createCodeCellStore = () => {
 							},
 						},
 						{
-							id: "2",
+							id: "1",
 							widget: "code",
 							parameters: {
+								type: "py",
 								code: "print('test')",
 								targetCell: {
 									id: "1",
@@ -89,27 +106,24 @@ const createCodeCellStore = () => {
 		},
 	});
 
-	const codeCell = store.queries["query-1"].cells[
-		"2"
-	] as CellState<CodeCellDef>;
+	const codeCell = store.queries["query-1"]
+		.cells[1] as CellState<CodeCellDef>;
 	return { store, codeCell };
 };
 
 describe("CodeCell", () => {
-	// it("should render the CodeCell component", () => {
-	// 	const { store, codeCell } = createCodeCellStore();
+	it("should render the CodeCell component", () => {
+		const { store, codeCell } = createCodeCellStore();
 
-	// 	const { container } = render(
-	// 		<Blocks state={store} registry={{} as Registry}>
-	// 			<CodeCell cell={codeCell} isExpanded={true} />
-	// 		</Blocks>,
-	// 	);
+		const { container } = render(
+			<Blocks state={store} registry={{} as Registry}>
+				<CodeCell cell={codeCell} isExpanded={true} />
+			</Blocks>,
+		);
 
-	// 	console.log({container})
-
-	// 	expect(container).toBeDefined();
-	// 	expect(codeCell.widget).toBe("code");
-	// });
+		expect(container).toBeDefined();
+		expect(codeCell.widget).toBe("code");
+	});
 
 	it("should have code parameter set correctly", () => {
 		const { codeCell } = createCodeCellStore();
