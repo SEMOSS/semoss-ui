@@ -387,6 +387,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											}
 										}}
 									/>
+									<div
+										aria-hidden="true"
+										className="pointer-events-none absolute inset-x-px bottom-px z-10 h-12 rounded-b-md bg-background"
+									/>
 								</div>
 							}
 							ErrorBoundary={LexicalErrorBoundary}
