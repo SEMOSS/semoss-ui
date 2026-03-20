@@ -177,22 +177,14 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							)}
 						>
 							<span
-								className={cn(
-									"truncate font-medium text-foreground text-sm",
-									variant === "loading" &&
-										"animate-text-shimmer",
-								)}
+								className="truncate font-medium text-foreground text-sm"
 								title={tool.json.title}
 							>
 								{tool.json.title}
 							</span>
 							{subtext && (
 								<span
-									className={cn(
-										"truncate text-muted-foreground text-sm",
-										variant === "loading" &&
-											"animate-text-shimmer",
-									)}
+									className="truncate text-muted-foreground text-sm"
 									title={subtext}
 								>
 									{subtext}
