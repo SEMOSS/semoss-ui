@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Badge, cn } from "@semoss/ui/next";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
-import { RoomInlineTool } from "../room/room-inline-tool";
 import { ResponseMessageTool } from "./response-message-tool";
 
 interface ResponseMessageToolGroupProps {
@@ -70,14 +69,6 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 										message={message}
 										tool={tool}
 									/>
-									{tool.display === "inline" &&
-										tool.isOpen && (
-											<RoomInlineTool
-												room={tool.room}
-												message={message}
-												tool={tool}
-											/>
-										)}
 								</div>
 							))}
 						</div>
