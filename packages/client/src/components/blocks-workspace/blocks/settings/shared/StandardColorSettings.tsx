@@ -52,6 +52,7 @@ export const StandardColorSettings = observer(
 		const [color, setColor] = useState("#FFFFFF");
 		const [showPicker, setShowPicker] = useState(false);
 		const { state } = useBlocks();
+		// biome-ignore lint/suspicious/noExplicitAny: TODO
 		const { data, setData } = useBlockSettings<any>(id);
 
 		// get the value of the input (wrapped in usememo because of path prop)
@@ -79,6 +80,7 @@ export const StandardColorSettings = observer(
 		 *    (this is necessary because changing the color of the block can change its size)
 		 */
 		const handleColorChange = useCallback(
+			// biome-ignore lint/suspicious/noExplicitAny: TODO
 			(newColor: any) => {
 				// Get the hex color from the SketchPicker
 				const hexColor = newColor.hex;

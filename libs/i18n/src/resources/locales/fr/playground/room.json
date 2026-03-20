@@ -51,8 +51,7 @@
 	},
 	"content": {
 		"scrollToTop": "Défiler vers le haut",
-		"scrollToBottom": "Défiler vers le bas",
-		"errorDefault": "Impossible de traiter la demande. Veuillez vérifier votre connexion, copier votre message et actualiser la page."
+		"scrollToBottom": "Défiler vers le bas"
 	},
 	"inlineTool": {
 		"openInSidebar": "Ouvrir dans la barre latérale",
@@ -79,7 +78,7 @@
 	},
 	"menuWorkspace": {
 		"selectAgent": "Sélectionner un agent",
-		"searchPlaceholder": "Rechercher des espaces de travail",
+		"searchPlaceholder": "Rechercher des agents",
 		"notFound": "Non trouvé"
 	},
 	"menuUpload": {

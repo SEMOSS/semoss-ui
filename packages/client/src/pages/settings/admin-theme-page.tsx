@@ -205,6 +205,7 @@ export const AdminThemePage: React.FC = () => {
 					},
 					toolAutoExecutionLimit: null,
 					defaultTools: [],
+					gracefulErrors: [],
 				},
 			};
 

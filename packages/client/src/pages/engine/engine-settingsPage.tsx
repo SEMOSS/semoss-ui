@@ -22,7 +22,9 @@ export const EngineSettingsPage = () => {
 		>
 			<div className="flex w-full flex-col items-start gap-6 self-stretch">
 				<section className="w-full">
-					<H2 className="mb-2 font-medium text-xl">Acess Settings</H2>
+					<H2 className="mb-2 font-medium text-xl">
+						Access Settings
+					</H2>
 					<SettingsTiles
 						type={type}
 						id={active.id}

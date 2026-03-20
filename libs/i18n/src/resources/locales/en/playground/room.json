@@ -51,8 +51,7 @@
 	},
 	"content": {
 		"scrollToTop": "Scroll to top",
-		"scrollToBottom": "Scroll to bottom",
-		"errorDefault": "Unable to process request. Please check your connection, copy your message, and refresh."
+		"scrollToBottom": "Scroll to bottom"
 	},
 	"inlineTool": {
 		"openInSidebar": "Open in Sidebar",

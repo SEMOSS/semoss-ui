@@ -42,6 +42,7 @@ import {
 } from "@semoss/ui/next";
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
+import { useGracefulErrors } from "@/hooks";
 import type { Engine } from "@/types";
 
 interface RoomInputProps {
@@ -87,6 +88,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		footer = null,
 	}) => {
 		const { t } = useTranslation("room");
+		const { getGracefulErrorMessage } = useGracefulErrors();
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
 
@@ -229,7 +231,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				setFiles([]);
 			} catch (e) {
 				// throw the error
-				toast.error(e.message);
+				toast.error(getGracefulErrorMessage(e));
 
 				// keep the files
 				setFiles(userFiles);
@@ -239,8 +241,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					const root = $getRoot();
 					root.clear();
 
+					const paragraphNode = $createParagraphNode();
 					const textNode = $createTextNode(userInput);
-					root.append(textNode);
+					paragraphNode.append(textNode);
+					root.append(paragraphNode);
 				});
 			}
 		};
@@ -370,6 +374,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											}
 										}}
 									/>
+									<div
+										aria-hidden="true"
+										className="pointer-events-none absolute inset-x-px bottom-px z-10 h-12 rounded-b-md bg-background"
+									/>
 								</div>
 							}
 							ErrorBoundary={LexicalErrorBoundary}
@@ -481,7 +489,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							<EngineSelect
 								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
 								disabled={isLoading}
-								name={model?.app_name || ""}
+								name={
+									model?.engine_display_name ||
+									model?.app_name ||
+									""
+								}
 								value={model?.app_id || ""}
 								engineTypes={["MODEL"]}
 								metaFilters={[{ tag: "text-generation" }]}
