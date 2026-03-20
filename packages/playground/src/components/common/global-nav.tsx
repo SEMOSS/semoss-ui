@@ -410,9 +410,14 @@ export const GlobalNav = observer(() => {
 											t("messages.untitled");
 										const date = root.theme.sidebar
 											.chatHistoryDate
-											? dayjs(room.DATE_CREATED).format(
-													"M/D/YYYY h:mm a",
-												)
+											? new Date(room.DATE_CREATED).toLocaleString(undefined, {
+													month: "numeric",
+													day: "numeric",
+													year: "numeric",
+													hour: "numeric",
+													minute: "2-digit",
+													hour12: true,
+												})
 											: null;
 										const isFavorite = room.PINNED || false;
 										const isEditing =
@@ -464,13 +469,13 @@ export const GlobalNav = observer(() => {
 															}
 														>
 															<Link
-																className={`flex h-auto flex-col items-start p-2 ${date ? "gap-0.5" : ""}`}
+																className={`flex h-auto flex-col items-start p-2 ${date ? "gap-1" : ""}`}
 																to={`/room/${roomId}`}
 																aria-label={
 																	"Select room"
 																}
 															>
-																<span className="truncate font-medium text-sm leading-none">
+																<span className="truncate font-medium text-sm leading-tight">
 																	{name}
 																</span>
 																{date && (
