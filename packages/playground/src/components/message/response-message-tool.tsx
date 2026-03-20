@@ -117,8 +117,13 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		const isDimmed = variant === "error" || variant === "cancelled";
 
 		// Error and cancelled tools are never interactive, independent of visual state
+		// Auto executing tools that are loading or queued are also not interactive
 		const isButtonDisabled =
-			isDisabled || variant === "error" || variant === "cancelled";
+			isDisabled ||
+			variant === "error" ||
+			variant === "cancelled" ||
+			variant === "loading" ||
+			variant === "queued";
 
 		return (
 			<div
@@ -138,9 +143,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						disabled={isButtonDisabled}
 						className={cn(
 							"flex min-w-0 flex-1 items-center gap-3 p-2 pr-0 text-left",
-							isButtonDisabled
-								? "cursor-not-allowed"
-								: "cursor-pointer",
+							isButtonDisabled && "cursor-default",
 						)}
 						onClick={() => {
 							if (tool.isOpen) {
