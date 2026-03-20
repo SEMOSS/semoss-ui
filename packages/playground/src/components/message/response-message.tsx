@@ -95,7 +95,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		const downloadResponse = async (format: string) => {
 			setIsDownloading(true);
 			try {
-				await message.downloadResponse(format as "word" | "pdf");
+				await message.downloadResponse(
+					format as "word" | "pdf" | "whole",
+				);
 				toast.success(
 					`Response downloaded successfully as ${format.toUpperCase()}`,
 				);
@@ -110,6 +112,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		const downloadFormats = [
 			{ value: "word", label: "Word Document", extension: ".docx" },
 			{ value: "pdf", label: "PDF Document", extension: ".pdf" },
+			{ value: "whole", label: "Whole Chat (docx)", extension: ".docx" },
 		];
 
 		return (
