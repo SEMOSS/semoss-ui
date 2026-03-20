@@ -1,8 +1,8 @@
-import { Filter, LayoutGrid, List, Menu, Plus, Search, X } from "lucide-react";
+import { ArrowUpDown, Filter, LayoutGrid, List, Menu, Plus, Search, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { debounced, useIteratorPixel, usePixel } from "@semoss/sdk/react";
+import { debounced, runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -32,7 +32,9 @@ import { NavbarLeft } from "../../components/shared";
 
 type TabMode = "Bookmarked" | "Mine" | "Discoverable" | "System";
 type ViewMode = "grid" | "list";
+type SortOrder = "latest" | "oldest";
 const VIEW_STORAGE_KEY = "appCatalogViewMode";
+const SORT_STORAGE_KEY = "appCatalogSortOrder";
 
 interface AppCatalogState {
 	favoritedApps: AppMetadata[];
@@ -290,6 +292,13 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
 		return stored === "list" || stored === "grid" ? stored : "grid";
 	});
+	const [sort, setSort] = useState<SortOrder>(() => {
+		if (typeof window === "undefined") {
+			return "latest";
+		}
+		const stored = window.localStorage.getItem(SORT_STORAGE_KEY);
+		return stored === "latest" || stored === "oldest" ? stored : "latest";
+	});
 	const cardVariant = view === "list" ? "row" : "catalog";
 	const containerClass =
 		view === "list"
@@ -300,6 +309,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 	const [createdByMeOnly, setCreatedByMeOnly] = useState(false);
 	const [updatedNewApps, setUpdatedNewApps] = useState<AppMetadata[]>([]);
+	const hasAppliedInitialSort = useRef(false);
+	const [sortRequestCount, setSortRequestCount] = useState(0);
+	const isSorting = sortRequestCount > 0;
 
 	const [filterBoxRefresh, setFilterBoxRefresh] = useState(false);
 
@@ -363,6 +375,13 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		window.localStorage.setItem(VIEW_STORAGE_KEY, view);
 	}, [view]);
 
+	useEffect(() => {
+		if (typeof window === "undefined") {
+			return;
+		}
+		window.localStorage.setItem(SORT_STORAGE_KEY, sort);
+	}, [sort]);
+
 	const syncSearchParams = useCallback(
 		(filters: Record<string, unknown>) => {
 			const params = new URLSearchParams();
@@ -404,6 +423,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	const isBookmarkedMode = mode === "Bookmarked";
 	const pixel =
 		mode === "Discoverable" ? "MyDiscoverableProjects" : "MyProjects";
+	const sortDirectionLabel = sort === "latest" ? "desc" : "asc";
 
 	const getCreatedByMeApps = usePixel<{ createdProjects?: unknown }>(
 		createdByMeOnly && !isSystemMode ? "CreatedByMeApps();" : "",
@@ -524,6 +544,134 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		void metaFiltersKey;
 		resetScroll();
 	}, [mode, search, metaFiltersKey, resetScroll]);
+
+	const applySortWithReactor = useCallback(
+		async (
+			appsToSort: AppMetadata[],
+			direction: "asc" | "desc",
+		): Promise<AppMetadata[] | null> => {
+			if (!appsToSort.length) {
+				return appsToSort;
+			}
+
+			setSortRequestCount((count) => count + 1);
+			try {
+				const response = await runPixel<AppMetadata[]>(
+					`AppSort(apps=[${JSON.stringify(appsToSort)}], sortOrder=["${direction}"]);`,
+				);
+				const sortedApps = response?.pixelReturn?.[0]?.output;
+				return Array.isArray(sortedApps)
+					? (sortedApps as AppMetadata[])
+					: appsToSort;
+			} catch (err) {
+				console.error(err);
+				toast.error("Unable to sort apps");
+				return null;
+			} finally {
+				setSortRequestCount((count) => Math.max(0, count - 1));
+			}
+		},
+		[],
+	);
+
+	useEffect(() => {
+		if (hasAppliedInitialSort.current || isSystemMode) {
+			return;
+		}
+
+		const applyInitialDescendingSort = async () => {
+			if (isBookmarkedMode) {
+				if (getFavoritedApps.isLoading) {
+					return;
+				}
+
+				hasAppliedInitialSort.current = true;
+				setSort("latest");
+
+				if (!favoritedApps.length) {
+					return;
+				}
+
+				const sortedFavoritedApps = await applySortWithReactor(
+					favoritedApps,
+					"desc",
+				);
+				if (sortedFavoritedApps) {
+					dispatch({
+						type: "field",
+						field: "favoritedApps",
+						value: sortedFavoritedApps,
+					});
+				}
+				return;
+			}
+
+			if (getApps.isLoading) {
+				return;
+			}
+
+			hasAppliedInitialSort.current = true;
+			setSort("latest");
+
+			if (!apps.length) {
+				return;
+			}
+
+			const sortedApps = await applySortWithReactor(apps, "desc");
+			if (sortedApps) {
+				dispatch({ type: "field", field: "apps", value: sortedApps });
+			}
+		};
+
+		void applyInitialDescendingSort();
+	}, [
+		isSystemMode,
+		isBookmarkedMode,
+		getFavoritedApps.isLoading,
+		favoritedApps,
+		applySortWithReactor,
+		dispatch,
+		getApps.isLoading,
+		apps,
+	]);
+
+	const handleSortClick = useCallback(async () => {
+		if (isSystemMode) {
+			return;
+		}
+
+		const nextSort = sort === "latest" ? "oldest" : "latest";
+		const direction = nextSort === "latest" ? "desc" : "asc";
+		setSort(nextSort);
+
+		if (isBookmarkedMode) {
+			const sortedFavoritedApps = await applySortWithReactor(
+				favoritedApps,
+				direction,
+			);
+			if (sortedFavoritedApps) {
+				dispatch({
+					type: "field",
+					field: "favoritedApps",
+					value: sortedFavoritedApps,
+				});
+			}
+			return;
+		}
+
+		const sortedApps = await applySortWithReactor(apps, direction);
+		if (sortedApps) {
+			dispatch({ type: "field", field: "apps", value: sortedApps });
+		}
+	}, [
+		isSystemMode,
+		sort,
+		isBookmarkedMode,
+		favoritedApps,
+		applySortWithReactor,
+		apps,
+		dispatch,
+	]);
 
 	// Debounced search
 	const debouncedSetSearch = debounced(
@@ -797,6 +945,22 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									</PopoverContent>
 								</Popover>
 							)}
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={handleSortClick}
+								aria-label={`Sort by updated date ${sortDirectionLabel}`}
+								title={`Sort by updated date ${sortDirectionLabel}`}
+								disabled={isSystemMode || isSorting}
+								data-testid="appCatalogPage-sort-toggle-btn"
+							>
+								{isSorting ? (
+									<Spinner className="size-4" />
+								) : (
+									<ArrowUpDown className="size-4" />
+								)}
+								Date ({sortDirectionLabel})
+							</Button>
 							<div className="flex items-center gap-1">
 								<Button
 									variant={
