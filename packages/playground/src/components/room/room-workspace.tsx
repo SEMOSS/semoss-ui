@@ -126,7 +126,10 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 										<>
 											<ComputerIcon />
 											<span className="flex-1 truncate">
-												{mode.workspace?.project_name ||
+												{mode.workspace
+													?.project_display_name ||
+													mode.workspace
+														?.project_name ||
 													""}
 											</span>
 										</>
@@ -209,7 +212,8 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 														setOpen(false);
 													}}
 												>
-													{w.project_name}
+													{w.project_display_name ||
+														w.project_name}
 													<CheckIcon
 														className={`ml-auto ${mode.type === "workspace" && mode.workspace.project_id === w.project_id ? "opacity-100" : "opacity-0"}`}
 													/>

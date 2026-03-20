@@ -51,8 +51,7 @@
 	},
 	"content": {
 		"scrollToTop": "一番上にスクロール",
-		"scrollToBottom": "一番下にスクロール",
-		"errorDefault": "リクエストを処理できません。接続を確認し、メッセージをコピーしてから更新してください。"
+		"scrollToBottom": "一番下にスクロール"
 	},
 	"inlineTool": {
 		"openInSidebar": "サイドバーで開く",
@@ -79,7 +78,7 @@
 	},
 	"menuWorkspace": {
 		"selectAgent": "エージェントを選択",
-		"searchPlaceholder": "ワークスペースを検索",
+		"searchPlaceholder": "エージェントを検索",
 		"notFound": "見つかりません"
 	},
 	"menuUpload": {
