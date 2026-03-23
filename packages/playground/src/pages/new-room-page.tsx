@@ -556,7 +556,6 @@ export const NewRoomPage = observer(() => {
 								) : null
 							}
 						/>
-
 						{tempRoomStore.options.predefinedPrompts.length > 0 ? (
 							<div className="mx-auto flex w-full max-w-2xl flex-wrap justify-center gap-2">
 								{tempRoomStore.options.predefinedPrompts.map(
@@ -566,10 +565,10 @@ export const NewRoomPage = observer(() => {
 											variant="secondary"
 											disabled={isLoading}
 											onClick={() =>
-												createRoom(prompt.CONTEXT, [])
+												createRoom(prompt.context, [])
 											}
 										>
-											{prompt.TITLE}
+											{prompt.title}
 										</Button>
 									),
 								)}
