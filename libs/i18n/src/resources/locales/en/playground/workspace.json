@@ -6,7 +6,8 @@
 		"descriptionLabel": "Description",
 		"instructionsLabel": "Instructions",
 		"knowledgeLabel": "Knowledge",
-		"toolboxLabel": "Toolbox"
+		"toolboxLabel": "Toolbox",
+		"promptLibraryTagLabel": "Prompt Library Tag"
 	},
 	"actions": {
 		"create": "Create",

@@ -116,6 +116,11 @@ interface RoomStoreInterface {
 			workspace_id: string;
 			name?: string;
 		};
+
+		/**
+		 * Predefined prompts that can be used in the room
+		 */
+		predefinedPrompts: any[];
 	};
 
 	/**
@@ -155,6 +160,7 @@ export class RoomStore {
 		root: null,
 		tools: {},
 		options: {
+			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
 			tokenLength: TOKEN_LENGTH,

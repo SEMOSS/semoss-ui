@@ -38,7 +38,7 @@ import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
-import type { MCPConfig, Workspace } from "@/types";
+import type { MCPConfig, Prompt, Workspace } from "@/types";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -81,6 +81,7 @@ export const NewRoomPage = observer(() => {
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+	const [promptLibraryTag, setPromptLibraryTag] = useState<string>("");
 
 	const getWorkspace = usePixel<Workspace | null>(
 		mode === "workspace" && selectedWorkspaceId
@@ -102,6 +103,14 @@ export const NewRoomPage = observer(() => {
 		{ data: null },
 	);
 
+	const getPrompts = usePixel<Prompt[]>(
+		mode === "workspace" && selectedWorkspaceId && promptLibraryTag
+			? `ListPrompt(filters=['${promptLibraryTag}']);`
+			: null,
+		{
+			data: [],
+		},
+	);
 	// On initial load, set the default options from the theme using the temporary RoomStore
 	useEffect(() => {
 		tempRoomStore.setOptions({
@@ -112,6 +121,7 @@ export const NewRoomPage = observer(() => {
 			temperature:
 				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
 			workspace: null,
+			predefinedPrompts: [],
 		});
 	}, [tempRoomStore, root.theme]);
 
@@ -245,6 +255,7 @@ export const NewRoomPage = observer(() => {
 			}
 		}
 
+		setPromptLibraryTag(getWorkspace.data.prompt_library_tag || "");
 		tempRoomStore.setOptions({
 			...tempRoomStore.options,
 			instructions:
@@ -284,6 +295,31 @@ export const NewRoomPage = observer(() => {
 		});
 	}, [knowledgeId, getKnowledge.status, getKnowledge.data, tempRoomStore]);
 
+	// Handle prompts from URL parameter
+	useEffect(() => {
+		if (getPrompts.status !== "SUCCESS" || !getPrompts.data?.length) {
+			return;
+		}
+
+		// const selectedTags = prePromptTags
+		// 	.split(",")
+		// 	.map((tag) => tag.trim().toLowerCase())
+		// 	.filter(Boolean);
+
+		// const predefinedPrompts = selectedTags.length
+		// 	? getPrompts.data.filter((prompt) =>
+		// 		prompt.tags?.some((tag) =>
+		// 			selectedTags.includes(tag.toLowerCase()),
+		// 		),
+		// 	)
+		// 	: getPrompts.data;
+
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
+			predefinedPrompts: getPrompts.data,
+		});
+	}, [getPrompts.status, getPrompts.data, tempRoomStore]);
+
 	// Clear instructions and workspace MCPs when switching away from workspace mode
 	useEffect(() => {
 		if (mode !== "workspace") {
@@ -302,6 +338,8 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore,
 	]);
 
+	console.log("Temp Room Options:", tempRoomStore.options);
+	console.log(tempRoomStore.options.predefinedPrompts.length);
 	return (
 		<div className="relative h-full w-full overflow-hidden">
 			<ResizablePanelGroup direction="horizontal">
@@ -391,18 +429,27 @@ export const NewRoomPage = observer(() => {
 										<RoomInputMenuWorkspace
 											workspace={
 												mode === "workspace" &&
-												getWorkspace.status === "SUCCESS"
+												getWorkspace.status ===
+													"SUCCESS"
 													? getWorkspace.data
 													: null
 											}
 											onSelect={(workspace) => {
 												if (workspace) {
-													if (mode === "workspace" && selectedWorkspaceId === workspace.workspace_id) {
+													if (
+														mode === "workspace" &&
+														selectedWorkspaceId ===
+															workspace.workspace_id
+													) {
 														setMode("chat");
-														setSelectedWorkspaceId("");
+														setSelectedWorkspaceId(
+															"",
+														);
 													} else {
 														setMode("workspace");
-														setSelectedWorkspaceId(workspace.workspace_id);
+														setSelectedWorkspaceId(
+															workspace.workspace_id,
+														);
 													}
 												} else {
 													setMode("chat");
@@ -509,6 +556,25 @@ export const NewRoomPage = observer(() => {
 								) : null
 							}
 						/>
+
+						{tempRoomStore.options.predefinedPrompts.length > 0 ? (
+							<div className="mx-auto flex w-full max-w-2xl flex-wrap justify-center gap-2">
+								{tempRoomStore.options.predefinedPrompts.map(
+									(prompt) => (
+										<Button
+											key={prompt.ID}
+											variant="secondary"
+											disabled={isLoading}
+											onClick={() =>
+												createRoom(prompt.CONTEXT, [])
+											}
+										>
+											{prompt.TITLE}
+										</Button>
+									),
+								)}
+							</div>
+						) : null}
 					</div>
 				</ResizablePanel>
 				{isConfigurationOpen && (

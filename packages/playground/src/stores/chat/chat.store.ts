@@ -329,14 +329,21 @@ export class ChatStore {
 	 * Add a new workspace
 	 */
 	addWorkspace = async (
-		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
+		data: Pick<
+			Workspace,
+			| "name"
+			| "system_prompt"
+			| "description"
+			| "mcp"
+			| "prompt_library_tag"
+		>,
 	): Promise<string> => {
 		try {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)})`;
+			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)}, promptLibraryTag=${JSON.stringify(data.prompt_library_tag)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
@@ -355,14 +362,21 @@ export class ChatStore {
 	 */
 	editWorkspace = async (
 		workspaceId: string,
-		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
+		data: Pick<
+			Workspace,
+			| "name"
+			| "system_prompt"
+			| "description"
+			| "mcp"
+			| "prompt_library_tag"
+		>,
 	): Promise<string> => {
 		try {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)},name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)})`;
+			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)},name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)}, promptLibraryTag=${JSON.stringify(data.prompt_library_tag)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors

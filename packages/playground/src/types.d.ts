@@ -22,6 +22,7 @@ export interface Workspace {
 	description: string;
 	system_prompt: string;
 	mcp: MCPConfig[];
+	prompt_library_tag: string;
 }
 
 /**
