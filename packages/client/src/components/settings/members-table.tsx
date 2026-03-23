@@ -493,13 +493,13 @@ export const MembersTable = (props: MembersTableProps) => {
 		<div className="flex w-full shrink-0 flex-col items-start gap-[25px]">
 			<div className="flex flex-col items-start gap-5 self-stretch">
 				<div className="w-full rounded-xl border border-border">
-					<div className="flex items-center self-stretch rounded-t-xl bg-background shadow-[0px_-1px_0px_0px_rgba(0,0,0,0.12)_inset]">
+					<div className="flex flex-wrap items-center gap-y-1 self-stretch rounded-t-xl bg-background shadow-[0px_-1px_0px_0px_rgba(0,0,0,0.12)_inset]">
 						<div className="flex items-center gap-2.5 p-3 px-6 py-3">
 							<H4 data-testid="permissions-title">Permissions</H4>
 						</div>
 						<div className="flex flex-1 items-start">
 							{avatarMembers.length > 0 ? (
-								<div className="flex h-14 w-[130px] flex-col items-center justify-center gap-2.5 px-4 py-2.5">
+								<div className="flex h-14 flex-shrink-0 flex-col items-center justify-center gap-2.5 px-4 py-2.5">
 									<div
 										className="-space-x-2 flex"
 										data-testid="membersTable-avatarGroup"
@@ -543,7 +543,7 @@ export const MembersTable = (props: MembersTableProps) => {
 								<Input
 									autoFocus={true}
 									placeholder="Search Members"
-									className="h-8 w-[200px]"
+									className="h-8 w-[140px] sm:w-[200px]"
 									value={search}
 									data-testid={`membersTables-searchMembers-searchBar}`}
 									onChange={(e) => {

@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
 import { useEffect, useState } from "react";
 import {
 	Button,
@@ -23,8 +22,47 @@ import {
 import { AddTeamModal } from "@/components/teams/add-team-modal";
 import { useServerPagination } from "@/hooks";
 
+interface RawTeam {
+	ID: string;
+	TYPE: string;
+	PERMISSION: number | string;
+	DATEADDED: string;
+}
+
+interface TeamRow {
+	id: string | number;
+	name: string;
+	type: string;
+	permission: string;
+	dateAdded: string;
+}
+
+const parseGroupsResponse = (result: unknown) => {
+	if (Array.isArray(result)) {
+		return {
+			groups: result as RawTeam[],
+			totalGroups: result.length,
+			hasTotal: false,
+		};
+	}
+	if (result && typeof result === "object") {
+		const payload = result as {
+			groups?: RawTeam[];
+			totalGroups?: number;
+		};
+		const groups = Array.isArray(payload.groups) ? payload.groups : [];
+		const hasTotal = typeof payload.totalGroups === "number";
+		return {
+			groups,
+			totalGroups: hasTotal ? payload.totalGroups : groups.length,
+			hasTotal,
+		};
+	}
+	return { groups: [] as RawTeam[], totalGroups: 0, hasTotal: false };
+};
+
 export const TeamsTable = ({ type, id }) => {
-	const [teams, setTeams] = useState<any[]>([]);
+	const [teams, setTeams] = useState<TeamRow[]>([]);
 	const [totalTeams, setTotalTeams] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const [usesServerPagination, setUsesServerPagination] = useState(false);
@@ -44,36 +82,12 @@ export const TeamsTable = ({ type, id }) => {
 		pageIndexBase: 0,
 	});
 
-	const parseGroupsResponse = (result: unknown) => {
-		if (Array.isArray(result)) {
-			return {
-				groups: result,
-				totalGroups: result.length,
-				hasTotal: false,
-			};
-		}
-		if (result && typeof result === "object") {
-			const payload = result as {
-				groups?: any[];
-				totalGroups?: number;
-			};
-			const groups = Array.isArray(payload.groups) ? payload.groups : [];
-			const hasTotal = typeof payload.totalGroups === "number";
-			return {
-				groups,
-				totalGroups: hasTotal ? payload.totalGroups : groups.length,
-				hasTotal,
-			};
-		}
-		return { groups: [], totalGroups: 0, hasTotal: false };
-	};
-
 	useEffect(() => {
 		if (!type || !id) return;
 		const fetchTeams = async () => {
 			setIsLoading(true);
 			try {
-				let data: any[] = [];
+				let data: RawTeam[] = [];
 				let total = 0;
 				let serverPaginated = false;
 				const limit = rowsPerPage;
@@ -122,17 +136,18 @@ export const TeamsTable = ({ type, id }) => {
 					}
 				}
 
-				const permissionMap = {
-					1: "Author",
-					2: "Editor",
-					3: "Read-Only",
+				const permissionMap: Record<string, string> = {
+					"1": "Author",
+					"2": "Editor",
+					"3": "Read-Only",
 				};
-				const mappedTeams = data.map((team, idx) => ({
+				const mappedTeams: TeamRow[] = data.map((team, idx) => ({
 					id: team.ID || idx,
 					name: team.ID,
 					type: team.TYPE,
 					permission:
-						permissionMap[team.PERMISSION] || team.PERMISSION,
+						permissionMap[String(team.PERMISSION)] ||
+						String(team.PERMISSION),
 					dateAdded: team.DATEADDED,
 				}));
 				setTeams(mappedTeams);
@@ -148,7 +163,7 @@ export const TeamsTable = ({ type, id }) => {
 			}
 		};
 		fetchTeams();
-	}, [id, page, rowsPerPage, type, offset]);
+	}, [id, rowsPerPage, type, offset]);
 
 	const visibleTeams = usesServerPagination
 		? teams
@@ -167,142 +182,155 @@ export const TeamsTable = ({ type, id }) => {
 						<H4>Teams</H4>
 					</div>
 				</div>
-				<Table className="mb-[0.5px] rounded-b-xl bg-background">
-					<TableHeader>
-						<TableRow>
-							<TableHead className="p-0">
-								<div className="py-3 pr-4 pl-6 text-left">
-									Name
-								</div>
-							</TableHead>
-							<TableHead className="px-4">Group Type</TableHead>
-							<TableHead className="p-0">
-								<div className="px-4 py-3 text-left">
-									Permission
-								</div>
-							</TableHead>
-							<TableHead className="px-4">
-								Permission Date
-							</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{visibleTeams.length > 0 ? (
-							visibleTeams.map((team) => (
-								<TableRow key={team.id}>
-									<TableCell className="pr-4 pl-6">
-										{team.name}
-									</TableCell>
-									<TableCell className="px-4">
-										{team.type}
-									</TableCell>
-									<TableCell className="px-4">
-										{team.permission}
-									</TableCell>
-									<TableCell className="px-4">
-										{team.dateAdded}
+				<div className="overflow-x-auto">
+					<Table className="mb-[0.5px] rounded-b-xl bg-background">
+						<TableHeader>
+							<TableRow>
+								<TableHead className="p-0">
+									<div className="py-3 pr-4 pl-6 text-left">
+										Name
+									</div>
+								</TableHead>
+								<TableHead className="px-4">
+									Group Type
+								</TableHead>
+								<TableHead className="p-0">
+									<div className="px-4 py-3 text-left">
+										Permission
+									</div>
+								</TableHead>
+								<TableHead className="px-4">
+									Permission Date
+								</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{visibleTeams.length > 0 ? (
+								visibleTeams.map((team) => (
+									<TableRow key={team.id}>
+										<TableCell className="pr-4 pl-6">
+											{team.name}
+										</TableCell>
+										<TableCell className="px-4">
+											{team.type}
+										</TableCell>
+										<TableCell className="px-4">
+											{team.permission}
+										</TableCell>
+										<TableCell className="px-4">
+											{team.dateAdded}
+										</TableCell>
+									</TableRow>
+								))
+							) : (
+								<TableRow>
+									<TableCell
+										colSpan={4}
+										className="text-center"
+									>
+										No teams found
 									</TableCell>
 								</TableRow>
-							))
-						) : (
+							)}
+						</TableBody>
+						<TableFooter>
 							<TableRow>
-								<TableCell colSpan={4} className="text-center">
-									No teams found
+								<TableCell colSpan={4}>
+									<div className="flex items-center justify-end gap-4 px-2">
+										<div className="flex items-center gap-2">
+											<span className="text-sm">
+												Rows per page:
+											</span>
+											<Select
+												value={String(rowsPerPage)}
+												onValueChange={(value) => {
+													setRowsPerPage(
+														parseInt(value, 10),
+													);
+												}}
+											>
+												<SelectTrigger className="h-8 w-[70px]">
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="5">
+														5
+													</SelectItem>
+													<SelectItem value="10">
+														10
+													</SelectItem>
+													<SelectItem value="20">
+														20
+													</SelectItem>
+												</SelectContent>
+											</Select>
+										</div>
+										<div className="text-sm">
+											{startRow}-{endRow} of {totalTeams}
+										</div>
+										<div className="flex gap-1">
+											<Button
+												variant="outline"
+												size="icon-sm"
+												onClick={() => setPage(0)}
+												disabled={
+													page === 0 || isLoading
+												}
+											>
+												{"<<"}
+											</Button>
+											<Button
+												variant="outline"
+												size="icon-sm"
+												onClick={() =>
+													setPage(
+														Math.max(0, page - 1),
+													)
+												}
+												disabled={
+													page === 0 || isLoading
+												}
+											>
+												{"<"}
+											</Button>
+											<Button
+												variant="outline"
+												size="icon-sm"
+												onClick={() =>
+													setPage(
+														Math.min(
+															totalPages - 1,
+															page + 1,
+														),
+													)
+												}
+												disabled={
+													page >= totalPages - 1 ||
+													isLoading
+												}
+											>
+												{">"}
+											</Button>
+											<Button
+												variant="outline"
+												size="icon-sm"
+												onClick={() =>
+													setPage(totalPages - 1)
+												}
+												disabled={
+													page >= totalPages - 1 ||
+													isLoading
+												}
+											>
+												{">>"}
+											</Button>
+										</div>
+									</div>
 								</TableCell>
 							</TableRow>
-						)}
-					</TableBody>
-					<TableFooter>
-						<TableRow>
-							<TableCell colSpan={4}>
-								<div className="flex items-center justify-end gap-4 px-2">
-									<div className="flex items-center gap-2">
-										<span className="text-sm">
-											Rows per page:
-										</span>
-										<Select
-											value={String(rowsPerPage)}
-											onValueChange={(value) => {
-												setRowsPerPage(
-													parseInt(value, 10),
-												);
-											}}
-										>
-											<SelectTrigger className="h-8 w-[70px]">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="5">
-													5
-												</SelectItem>
-												<SelectItem value="10">
-													10
-												</SelectItem>
-												<SelectItem value="20">
-													20
-												</SelectItem>
-											</SelectContent>
-										</Select>
-									</div>
-									<div className="text-sm">
-										{startRow}-{endRow} of {totalTeams}
-									</div>
-									<div className="flex gap-1">
-										<Button
-											variant="outline"
-											size="icon-sm"
-											onClick={() => setPage(0)}
-											disabled={page === 0 || isLoading}
-										>
-											{"<<"}
-										</Button>
-										<Button
-											variant="outline"
-											size="icon-sm"
-											onClick={() =>
-												setPage(Math.max(0, page - 1))
-											}
-											disabled={page === 0 || isLoading}
-										>
-											{"<"}
-										</Button>
-										<Button
-											variant="outline"
-											size="icon-sm"
-											onClick={() =>
-												setPage(
-													Math.min(
-														totalPages - 1,
-														page + 1,
-													),
-												)
-											}
-											disabled={
-												page >= totalPages - 1 ||
-												isLoading
-											}
-										>
-											{">"}
-										</Button>
-										<Button
-											variant="outline"
-											size="icon-sm"
-											onClick={() =>
-												setPage(totalPages - 1)
-											}
-											disabled={
-												page >= totalPages - 1 ||
-												isLoading
-											}
-										>
-											{">>"}
-										</Button>
-									</div>
-								</div>
-							</TableCell>
-						</TableRow>
-					</TableFooter>
-				</Table>
+						</TableFooter>
+					</Table>
+				</div>
 			</div>
 		</div>
 	);

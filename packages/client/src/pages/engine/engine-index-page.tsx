@@ -278,7 +278,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		return (
 			<div className="flex flex-col gap-4">
 				<div className="flex flex-col gap-2">
-					<div className="flex flex-row items-center justify-between gap-8">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
 						<p className="font-semibold text-3xl leading-normal">
 							{route ? route.name : ""} Catalog
 						</p>
@@ -326,7 +326,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 					</InputGroup>
 				</div>
 
-				<div className="flex h-full gap-6 pt-2 pb-2">
+				<div className="flex flex-col gap-6 pt-2 pb-2 md:h-full md:flex-row">
 					<Filterbox
 						type={route.type}
 						onChange={(filters: Record<string, unknown>) => {
