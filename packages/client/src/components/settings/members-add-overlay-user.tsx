@@ -38,41 +38,38 @@ export const MembersAddOverlayUser = (props: MembersAddOverlayUserProps) => {
 			<Avatar className="h-8 w-8">
 				<AvatarFallback>{initials}</AvatarFallback>
 			</Avatar>
-			<div className="flex min-w-0 flex-col gap-0">
-				<P
-					className="max-w-[150px] truncate text-foreground"
-					title={`Name: ${name}`}
-				>
+			<div className="flex min-w-0 flex-col gap-0.5">
+				<P className="truncate text-foreground" title={name}>
 					{name || <>&nbsp;</>}
 				</P>
-				<div className="grid grid-cols-[auto_1fr_auto_1fr_auto_1fr] items-center gap-x-2 gap-y-0">
-					<P
-						className="whitespace-nowrap text-muted-foreground text-sm"
-						title={`User Id: ${id}`}
-					>
-						ID:
-					</P>
-					<P className="truncate text-foreground text-sm">
-						{id || <>&nbsp;</>}
-					</P>
-					<P
-						className="whitespace-nowrap text-muted-foreground text-sm"
+				<div className="flex flex-col gap-0 text-sm">
+					<div className="flex min-w-0 gap-1" title={`ID: ${id}`}>
+						<span className="shrink-0 text-muted-foreground">
+							ID:
+						</span>
+						<span className="truncate text-foreground">
+							{id || "—"}
+						</span>
+					</div>
+					<div
+						className="flex min-w-0 gap-1"
 						title={`Email: ${email}`}
 					>
-						Email:
-					</P>
-					<P className="truncate text-foreground text-sm">
-						{email || <>&nbsp;</>}
-					</P>
-					<P
-						className="whitespace-nowrap text-muted-foreground text-sm"
-						title={`Type: ${type}`}
-					>
-						Type:
-					</P>
-					<P className="truncate text-foreground text-sm">
-						{type || <>&nbsp;</>}
-					</P>
+						<span className="shrink-0 text-muted-foreground">
+							Email:
+						</span>
+						<span className="truncate text-foreground">
+							{email || "—"}
+						</span>
+					</div>
+					<div className="flex min-w-0 gap-1" title={`Type: ${type}`}>
+						<span className="shrink-0 text-muted-foreground">
+							Type:
+						</span>
+						<span className="truncate text-foreground">
+							{type || "—"}
+						</span>
+					</div>
 				</div>
 			</div>
 			{action}
