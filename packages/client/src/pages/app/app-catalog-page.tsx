@@ -658,12 +658,12 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		);
 	}, [search]);
 
-	// Apps to display (excluding favorited apps in non-bookmarked modes)
+	// Apps to display
 	const displayedApps = useMemo(() => {
 		if (isBookmarkedMode) return [];
 
-		return apps.filter((app) => !isFavorited(app));
-	}, [apps, isBookmarkedMode, isFavorited]);
+		return apps;
+	}, [apps, isBookmarkedMode]);
 
 	return (
 		<>
