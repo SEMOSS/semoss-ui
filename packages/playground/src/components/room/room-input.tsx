@@ -13,10 +13,11 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
-	FileAudio2Icon,
+	FileCodeIcon,
 	FileIcon,
-	FileType2Icon,
-	FileVideoCameraIcon,
+	FileImageIcon,
+	FileSpreadsheetIcon,
+	FileTextIcon,
 	MicIcon,
 	SendIcon,
 	SlidersHorizontalIcon,
@@ -249,38 +250,47 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 		};
 
-		/**
-		 * Get an image for the file
-		 */
-		const getFileImage = (file: File): React.ReactNode => {
-			if (file.type.startsWith("image/")) {
-				const imageUrl = URL.createObjectURL(file);
+		const getFileIcon = (file: File): React.ReactNode => {
+			const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+			if (ext === "pdf")
 				return (
-					<img
-						className="width-100"
-						src={imageUrl}
-						alt={file.name}
-						onLoad={() => URL.revokeObjectURL(imageUrl)}
-					/>
+					<FileTextIcon className="size-6 shrink-0 text-red-500" />
 				);
-			} else if (
-				file.type.includes("text") ||
-				file.type.includes("document")
-			) {
+			if (ext === "doc" || ext === "docx")
 				return (
-					<FileType2Icon className="size-6 text-muted-foreground" />
+					<FileTextIcon className="size-6 shrink-0 text-blue-500" />
 				);
-			} else if (file.type.includes("audio")) {
+			if (ext === "ppt" || ext === "pptx")
 				return (
-					<FileAudio2Icon className="size-6 text-muted-foreground" />
+					<FileTextIcon className="size-6 shrink-0 text-orange-500" />
 				);
-			} else if (file.type.includes("video")) {
+			if (ext === "xls" || ext === "xlsx" || ext === "csv")
 				return (
-					<FileVideoCameraIcon className="size-6 text-muted-foreground" />
+					<FileSpreadsheetIcon className="size-6 shrink-0 text-green-600" />
 				);
-			}
-
-			return <FileIcon className="size-6 text-muted-foreground" />;
+			if (
+				["png", "jpg", "jpeg", "gif", "webp", "svg", "img"].includes(
+					ext,
+				)
+			)
+				return (
+					<FileImageIcon className="size-6 shrink-0 text-purple-500" />
+				);
+			if (ext === "msg")
+				return (
+					<FileTextIcon className="size-6 shrink-0 text-blue-600" />
+				);
+			if (ext === "txt")
+				return (
+					<FileTextIcon className="size-6 shrink-0 text-gray-500" />
+				);
+			if (ext === "py")
+				return (
+					<FileCodeIcon className="size-6 shrink-0 text-yellow-500" />
+				);
+			return (
+				<FileIcon className="size-6 shrink-0 text-muted-foreground" />
+			);
 		};
 
 		return (
@@ -569,14 +579,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					</div>
 				</div>
 				{files.length > 0 ? (
-					<div className="flex flex-row items-center gap-2 pt-4">
+					<div className="flex flex-row items-center pt-4">
 						{files.map((f, fIdx) => {
 							const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
 							return (
 								<Tooltip key={fileKey}>
 									<TooltipTrigger asChild>
-										<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted">
-											{getFileImage(f)}
+										<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden">
+											{getFileIcon(f)}
 											<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
 												<Button
 													variant="ghost"
