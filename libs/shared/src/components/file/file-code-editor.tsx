@@ -459,6 +459,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 						language={language}
 						options={{
 							readOnly: getFile.status !== "SUCCESS",
+							accessibilitySupport: "off",
 						}}
 						onChange={(value) => {
 							onChange(value, value !== getFile.data);
