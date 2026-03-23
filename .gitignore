@@ -31,3 +31,8 @@ packages/playground/theme.local.json
 
 # Ignore legacy
 packages/legacy
+
+
+portals
+*.zip
+.vscode

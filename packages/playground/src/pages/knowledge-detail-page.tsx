@@ -189,6 +189,7 @@ export const KnowledgeDetailPage = observer(() => {
 		{ data: [] },
 	);
 
+
 	const knowledge =
 		getKnowledge.status === "SUCCESS" ? getKnowledge.data?.[0] : null;
 
@@ -256,7 +257,7 @@ export const KnowledgeDetailPage = observer(() => {
 
 	const insight = useInsight();
 
-	const canEdit = knowledge?.permission === 1;
+const canEdit = knowledge?.permission === 3 || knowledge?.permission === 2;
 	useEffect(() => {
 		if (!previewDoc) {
 			setPreviewBlobUrl(null);
@@ -423,6 +424,8 @@ export const KnowledgeDetailPage = observer(() => {
 			setDocSortDir("asc");
 		}
 	};
+
+	console.log('knowledge object', knowledge)
 
 	const handleDownload = async (fileName: string) => {
 		const { pixelReturn } = await insight.actions.run<[string]>(
