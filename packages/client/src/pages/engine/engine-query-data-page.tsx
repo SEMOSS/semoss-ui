@@ -24,7 +24,17 @@ export const EngineQueryDataPage = observer(() => {
 	const [isResizingHorizontal, setIsResizingHorizontal] = useState(false);
 	const [isResizingVertical, setIsResizingVertical] = useState(false);
 
+	const [isMobile, setIsMobile] = useState(
+		() => typeof window !== "undefined" && window.innerWidth < 768,
+	);
+
 	const containerRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleResize = () => setIsMobile(window.innerWidth < 768);
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
 
 	const handleRefresh = () => {
 		setRefreshMessage("Refreshing database structure...");
@@ -222,25 +232,31 @@ export const EngineQueryDataPage = observer(() => {
 			{/* Main Content Area */}
 			<div
 				className={cn(
-					"flex min-h-0 w-full flex-1 transition-opacity duration-500 ease-out",
+					"min-h-0 w-full flex-1 transition-opacity duration-500 ease-out",
+					isMobile ? "flex flex-col overflow-y-auto" : "flex",
 					isQueryResultsExpanded
 						? "pointer-events-none opacity-0"
 						: "opacity-100",
 				)}
-				style={{
-					height: isQueryResultsExpanded
-						? 0
-						: `calc(100% - ${bottomPanelHeight}px)`,
-				}}
+				style={
+					isMobile
+						? undefined
+						: {
+								height: isQueryResultsExpanded
+									? 0
+									: `calc(100% - ${bottomPanelHeight}px)`,
+							}
+				}
 				data-testid="engine-queryDataPage-content"
 			>
 				{/* Left Panel - Database Structure Browser */}
 				<div
 					className="flex flex-col transition-all duration-200"
-					style={{
-						width: `${leftPanelWidth}%`,
-						minWidth: "280px",
-					}}
+					style={
+						isMobile
+							? { width: "100%", height: "280px", flexShrink: 0 }
+							: { width: `${leftPanelWidth}%`, minWidth: "280px" }
+					}
 				>
 					<Card className="group flex h-[calc(100%-2rem)] flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/95 p-0 shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-primary/20 hover:shadow-xl">
 						<DatabaseStructureBrowser
@@ -270,19 +286,25 @@ export const EngineQueryDataPage = observer(() => {
 					</Card>
 				</div>
 
-				{/* Horizontal Resize Handle - Invisible */}
-				<button
-					type="button"
-					onMouseDown={handleHorizontalResizeStart}
-					className="w-2 flex-shrink-0 cursor-col-resize transition-colors hover:bg-primary/5"
-					data-testid="horizontal-resize-handle"
-					aria-label="Resize panels horizontally"
-				/>
+				{/* Horizontal Resize Handle - Desktop only */}
+				{!isMobile && (
+					<button
+						type="button"
+						onMouseDown={handleHorizontalResizeStart}
+						className="w-2 flex-shrink-0 cursor-col-resize transition-colors hover:bg-primary/5"
+						data-testid="horizontal-resize-handle"
+						aria-label="Resize panels horizontally"
+					/>
+				)}
 
 				{/* Right Panel - SQL Query Editor */}
 				<div
-					className="flex flex-1 flex-col transition-all duration-200"
-					style={{ minWidth: "400px" }}
+					className="flex flex-col transition-all duration-200"
+					style={
+						isMobile
+							? { width: "100%", height: "300px", flexShrink: 0 }
+							: { flex: 1, minWidth: "400px" }
+					}
 				>
 					<Card className="group flex h-[calc(100%-2rem)] flex-col overflow-hidden rounded-2xl p-0">
 						<SQLQueryEditor
@@ -308,12 +330,14 @@ export const EngineQueryDataPage = observer(() => {
 				style={{
 					height: isQueryResultsExpanded
 						? "100%"
-						: `${bottomPanelHeight}px`,
+						: isMobile
+							? "400px"
+							: `${bottomPanelHeight}px`,
 				}}
 				data-testid="query-results-wrapper"
 			>
-				{/* Vertical Resize Handle - Invisible */}
-				{!isQueryResultsExpanded && (
+				{/* Vertical Resize Handle - Desktop only */}
+				{!isQueryResultsExpanded && !isMobile && (
 					<button
 						type="button"
 						onMouseDown={handleVerticalResizeStart}
