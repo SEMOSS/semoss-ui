@@ -66,7 +66,7 @@ export const AppFileManagerPage: React.FC<AppFileManagerPageProps> = ({
 	}, [isMobile]);
 
 	return (
-		<div className="h-[60vh] w-full overflow-hidden">
+		<div className="h-[60vh] w-full overflow-hidden md:h-[calc(100vh-200px)]">
 			<InsightProvider>
 				<AppWorkspace app={appId || ""} model={model} />
 			</InsightProvider>

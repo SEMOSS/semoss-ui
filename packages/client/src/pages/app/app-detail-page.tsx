@@ -557,7 +557,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 				</NavbarLeft>
 			)}
 			<div
-				className={`h-full w-full${
+				className={`h-full w-full ${
 					showNav ? "flex flex-col justify-center gap-4" : "m-2 p-5"
 				}`}
 			>
