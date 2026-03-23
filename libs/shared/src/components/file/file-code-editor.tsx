@@ -471,7 +471,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				<div className="max-h-[140px] w-full shrink-0 overflow-y-auto border-border border-t bg-destructive/5">
 					{jsonErrors.map((err) => (
 						<button
-							key={i}
+							key={`${err.startLineNumber}-${err.startColumn}-${err.message}`}
 							type="button"
 							className="flex w-full items-start gap-2 px-3 py-1 text-left text-xs hover:bg-destructive/10"
 							onClick={() => {
