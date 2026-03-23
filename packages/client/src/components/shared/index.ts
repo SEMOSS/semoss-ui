@@ -1,3 +1,7 @@
+import {
+	type GuardrailConfig,
+	GuardrailConfigEditor,
+} from "./guardrail-config-editor";
 import { MCPJsonEditor } from "./mcp-json-editor";
 import { NavbarHeader } from "./NavbarHeader";
 import { NavbarLeft } from "./NavbarLeft";
@@ -13,4 +17,6 @@ export {
 	NavbarRight,
 	NavbarHeader,
 	MCPJsonEditor,
+	GuardrailConfigEditor,
 };
+export type { GuardrailConfig };
