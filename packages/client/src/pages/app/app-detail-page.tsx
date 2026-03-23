@@ -1023,7 +1023,13 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 											)}
 									</div>
 
-									<McpUsage id={appId} />
+									<McpUsage
+										id={appId}
+										name={
+											appInfo?.project_display_name ||
+											appInfo?.project_name
+										}
+									/>
 								</div>
 							</SettingsContext.Provider>
 						)}
