@@ -68,6 +68,7 @@ export class RootStore {
 			altLanding: "",
 			sidebar: {
 				//workspaceAlias: "Workspace",
+				chatHistoryDate: false,
 				headerItems: [],
 				footerItems: [],
 			},
@@ -210,6 +211,10 @@ export class RootStore {
 			sidebar: {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),
+				chatHistoryDate:
+					theme?.sidebar?.chatHistoryDate !== undefined
+						? theme.sidebar.chatHistoryDate
+						: this._store.theme.sidebar.chatHistoryDate,
 			},
 			dialog: theme?.dialog || this._store.theme.dialog,
 			defaultRoomSettings: {

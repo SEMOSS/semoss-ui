@@ -25,6 +25,7 @@ export interface AppMetadata {
 	project_reactors_compiled_date?: string;
 	project_reactors_compiled_user?: string;
 	project_reactors_compiled_user_type?: string;
+	project_display_name?: string;
 	project_favorite?: string;
 	user_permission?: number;
 	group_permission?: string;

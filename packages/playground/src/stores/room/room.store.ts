@@ -461,7 +461,10 @@ export class RoomStore {
 					parts: [],
 					tokens: 0,
 					ornaments: {
-						modelName: this._store.model?.app_name || "",
+						modelName:
+							this._store.model?.engine_display_name ||
+							this._store.model?.app_name ||
+							"",
 					},
 				} as ResponsePixelMessage);
 			} else if (this.mode === "planning") {
@@ -481,7 +484,10 @@ export class RoomStore {
 					tokens: 0,
 					ornaments: {
 						PLAYGROUND_MESSAGE_TYPE: "COT",
-						modelName: this._store.model?.app_name || "",
+						modelName:
+							this._store.model?.engine_display_name ||
+							this._store.model?.app_name ||
+							"",
 					},
 				} as ResponsePixelMessage);
 			}
@@ -609,6 +615,56 @@ export class RoomStore {
 				this.setIsLoading(false);
 			});
 			throw new Error(e.message || "Error initializing room");
+		}
+	};
+
+	/**
+	 * Fetch the latest room options from the backend and sync local state,
+	 * preserving any workspace MCPs that are currently loaded in memory.
+	 */
+	syncRoomOptions = async (): Promise<void> => {
+		try {
+			const response = await this.runRoomPixel<
+				[{ OPTIONS?: RoomStoreInterface["options"] }]
+			>(
+				`GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`,
+				false,
+				false,
+			);
+
+			const fetched = response.pixelReturn[0].output as {
+				OPTIONS?: RoomStoreInterface["options"];
+			};
+
+			if (!fetched?.OPTIONS) {
+				return;
+			}
+
+			// Preserve workspace MCPs that are already in local state
+			const workspaceMCPs = this._store.options.mcp.filter(
+				(mcp) => mcp?.fromWorkspace,
+			);
+
+			const freshRoomMCPs = (fetched.OPTIONS.mcp ?? []).filter(
+				(mcp) => !mcp?.fromWorkspace,
+			);
+
+			// Deduplicate: workspace MCPs take precedence
+			const workspaceIds = new Set(workspaceMCPs.map((m) => m.id));
+			const merged = [
+				...workspaceMCPs,
+				...freshRoomMCPs.filter((m) => !workspaceIds.has(m.id)),
+			];
+
+			runInAction(() => {
+				this.setOptions({
+					...fetched.OPTIONS,
+					mcp: merged,
+				});
+			});
+		} catch (e) {
+			// non-critical — swallow errors so the chat isn't disrupted
+			console.warn("Failed to sync room options:", e);
 		}
 	};
 
@@ -900,7 +956,8 @@ export class RoomStore {
 			parts: parts,
 			tokens: 0,
 			ornaments: {
-				modelName: this.model.app_name,
+				modelName:
+					this.model.engine_display_name || this.model.app_name,
 			},
 		});
 

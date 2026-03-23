@@ -11,10 +11,35 @@ export default defineConfig({
 	base: "./",
 	plugins: [react({ include: /\.(js|jsx|ts|tsx)$/ })],
 	resolve: {
-		alias: {
-			"@": resolve(__dirname, "./src"),
-			"@semoss/ui": resolve(__dirname, "../ui/src"),
-		},
+		alias: [
+			{
+				find: "@/lib/utils",
+				replacement: resolve(__dirname, "../ui/src/lib/utils.ts"),
+			},
+			{
+				find: "@/next",
+				replacement: resolve(__dirname, "../ui/src/next"),
+			},
+			{
+				find: "@/hooks/use-mobile",
+				replacement: resolve(__dirname, "../ui/src/hooks"),
+			},
+			{
+				find: "@",
+				replacement: resolve(__dirname, "./src"),
+			},
+			{
+				find: "@semoss/ui",
+				replacement: resolve(__dirname, "../ui/src"),
+			},
+			{
+				find: /^monaco-editor$/,
+				replacement: resolve(
+					__dirname,
+					"../shared/node_modules/monaco-editor/esm/vs/editor/editor.api",
+				),
+			},
+		],
 	},
 	build: {
 		minify: isProduction,
@@ -60,6 +85,8 @@ export default defineConfig({
 				},
 			},
 			external: ["@semoss/ui", "@semoss/sdk"],
+			//helps Vitest handle CommonJS/ES module interoperability
+			interopDefault: true,
 		},
 		browser: {
 			enabled: false,
