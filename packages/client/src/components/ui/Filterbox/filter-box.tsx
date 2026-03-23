@@ -598,7 +598,7 @@ export const Filterbox = (props: FilterboxProps) => {
 	);
 
 	return (
-		<div className="filterbox-scroll flex max-h-[calc(100vh-220px)] w-[352px] flex-col overflow-y-auto overflow-x-hidden bg-card shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
+		<div className="filterbox-scroll flex w-full flex-col overflow-y-auto overflow-x-hidden bg-card shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)] md:max-h-[calc(100vh-220px)] md:w-[352px]">
 			<div className="w-full">
 				{showHeader ? (
 					<Collapsible open={headerOpen} onOpenChange={setHeaderOpen}>
