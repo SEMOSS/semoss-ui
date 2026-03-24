@@ -461,7 +461,10 @@ export class RoomStore {
 					parts: [],
 					tokens: 0,
 					ornaments: {
-						modelName: this._store.model?.app_name || "",
+						modelName:
+							this._store.model?.engine_display_name ||
+							this._store.model?.app_name ||
+							"",
 					},
 				} as ResponsePixelMessage);
 			} else if (this.mode === "planning") {
@@ -481,7 +484,10 @@ export class RoomStore {
 					tokens: 0,
 					ornaments: {
 						PLAYGROUND_MESSAGE_TYPE: "COT",
-						modelName: this._store.model?.app_name || "",
+						modelName:
+							this._store.model?.engine_display_name ||
+							this._store.model?.app_name ||
+							"",
 					},
 				} as ResponsePixelMessage);
 			}
@@ -613,6 +619,56 @@ export class RoomStore {
 	};
 
 	/**
+	 * Fetch the latest room options from the backend and sync local state,
+	 * preserving any workspace MCPs that are currently loaded in memory.
+	 */
+	syncRoomOptions = async (): Promise<void> => {
+		try {
+			const response = await this.runRoomPixel<
+				[{ OPTIONS?: RoomStoreInterface["options"] }]
+			>(
+				`GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`,
+				false,
+				false,
+			);
+
+			const fetched = response.pixelReturn[0].output as {
+				OPTIONS?: RoomStoreInterface["options"];
+			};
+
+			if (!fetched?.OPTIONS) {
+				return;
+			}
+
+			// Preserve workspace MCPs that are already in local state
+			const workspaceMCPs = this._store.options.mcp.filter(
+				(mcp) => mcp?.fromWorkspace,
+			);
+
+			const freshRoomMCPs = (fetched.OPTIONS.mcp ?? []).filter(
+				(mcp) => !mcp?.fromWorkspace,
+			);
+
+			// Deduplicate: workspace MCPs take precedence
+			const workspaceIds = new Set(workspaceMCPs.map((m) => m.id));
+			const merged = [
+				...workspaceMCPs,
+				...freshRoomMCPs.filter((m) => !workspaceIds.has(m.id)),
+			];
+
+			runInAction(() => {
+				this.setOptions({
+					...fetched.OPTIONS,
+					mcp: merged,
+				});
+			});
+		} catch (e) {
+			// non-critical — swallow errors so the chat isn't disrupted
+			console.warn("Failed to sync room options:", e);
+		}
+	};
+
+	/**
 	 * UpdateRoomOptions
 	 * @param options - full set of new options
 	 */
@@ -682,15 +738,6 @@ export class RoomStore {
 
 		//get the tool based on the id
 		return this._store.tools[toolId] || null;
-	};
-
-	/**
-	 * Download a file
-	 * @param fileKey - key
-	 */
-	download = async (fileKey: string) => {
-		// get the response
-		await download(this._insightID, fileKey);
 	};
 
 	/**
@@ -909,7 +956,8 @@ export class RoomStore {
 			parts: parts,
 			tokens: 0,
 			ornaments: {
-				modelName: this.model.app_name,
+				modelName:
+					this.model.engine_display_name || this.model.app_name,
 			},
 		});
 
@@ -1043,9 +1091,13 @@ export class RoomStore {
 				ReturnType<typeof getPixelJobStreaming>
 			>["message"][number],
 		) => void,
+		showLoading: boolean = true,
+		setErrorOnFail: boolean = true,
 	) => {
 		try {
-			this.setIsLoading(true);
+			if (showLoading) {
+				this.setIsLoading(true);
+			}
 
 			// Start async execution to get job ID
 			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
@@ -1101,10 +1153,18 @@ export class RoomStore {
 		} catch (e) {
 			console.error(e);
 
-			// show the error
-			this._store.error = e;
+			if (setErrorOnFail) {
+				// show the error
+				runInAction(() => {
+					this._store.error = e;
+				});
+			}
+
+			throw e;
 		} finally {
-			this.setIsLoading(false);
+			if (showLoading) {
+				this.setIsLoading(false);
+			}
 		}
 	};
 }

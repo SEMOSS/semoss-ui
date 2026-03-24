@@ -1,4 +1,3 @@
-import type { AxiosResponse } from "axios";
 import { Search, Trash2, UserPlus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -42,6 +41,7 @@ import {
 	getTeamUsersCount,
 } from "@/api/teams";
 import { useServerPagination } from "@/hooks";
+import type { ApiResponse } from "@/types";
 
 interface MembersTableProps {
 	/**
@@ -350,7 +350,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 			for (let i = 0; i < requests.length; i++) {
 				let response:
-					| AxiosResponse<{ success: boolean }>
+					| ApiResponse<{ success: boolean }>
 					| {
 							response: Response;
 							data: {
@@ -391,7 +391,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const deleteUser = async (user: TeamMember) => {
 		try {
 			let response:
-				| AxiosResponse<{ success: boolean }>
+				| ApiResponse<{ success: boolean }>
 				| {
 						response: Response;
 						data: {
@@ -423,7 +423,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			for (let i = 0; i < selectedMembers.length; i++) {
 				try {
 					let response:
-						| AxiosResponse<{ success: boolean }>
+						| ApiResponse<{ success: boolean }>
 						| {
 								response: Response;
 								data: {
@@ -833,7 +833,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 					}
 				}}
 			>
-				<DialogContent className="max-w-3xl">
+				<DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Add Members</DialogTitle>
 						<DialogDescription>

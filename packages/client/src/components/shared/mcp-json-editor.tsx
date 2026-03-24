@@ -510,30 +510,20 @@ const FunctionCard = memo<FunctionCardProps>(
 		onOptimizeDescription,
 		enableToolEnhancer = false,
 	}) => {
-		const handleHeaderClick = (e: React.MouseEvent) => {
-			// Prevent toggle when clicking on delete/restore buttons
-			if (
-				(e.target as HTMLElement).closest(
-					'button[data-action="delete"], button[data-action="restore"]',
-				)
-			) {
-				return;
-			}
-			onToggleExpand(tool.name);
-		};
-
 		return (
 			<Card className="mb-5 w-full gap-0 rounded-lg py-0 transition-all">
-				<button
-					type="button"
-					onClick={handleHeaderClick}
-					className={`flex w-full cursor-pointer items-center justify-between p-2 text-left ${
+				<div
+					className={`flex w-full items-center justify-between ${
 						isDeleted ? "bg-muted" : "bg-secondary"
 					} ${
 						isExpanded ? "rounded-t-lg" : "rounded-lg"
 					} transition-colors hover:bg-accent`}
 				>
-					<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={() => onToggleExpand(tool.name)}
+						className="flex flex-1 cursor-pointer items-center gap-2 p-2 text-left"
+					>
 						<div className="rounded p-1">
 							{isExpanded ? (
 								<ChevronUp
@@ -556,17 +546,14 @@ const FunctionCard = memo<FunctionCardProps>(
 						>
 							{tool.title || tool.name}
 						</span>
-					</div>
-					<div className="flex gap-2">
+					</button>
+					<div className="flex gap-2 pr-2">
 						{!isDeleted && showDelete ? (
 							<Button
 								variant="ghost"
 								size="sm"
 								color="error"
-								onClick={(e) => {
-									e.stopPropagation();
-									onDelete(actualIdx);
-								}}
+								onClick={() => onDelete(actualIdx)}
 								data-action="delete"
 								className="flex items-center gap-1 text-destructive hover:bg-transparent hover:text-destructive/90"
 							>
@@ -577,10 +564,7 @@ const FunctionCard = memo<FunctionCardProps>(
 							<Button
 								variant="ghost"
 								size="sm"
-								onClick={(e) => {
-									e.stopPropagation();
-									onRestore(actualIdx);
-								}}
+								onClick={() => onRestore(actualIdx)}
 								data-action="restore"
 								className="flex items-center gap-1 text-destructive hover:bg-transparent hover:text-destructive/90"
 							>
@@ -591,7 +575,7 @@ const FunctionCard = memo<FunctionCardProps>(
 							</Button>
 						) : null}
 					</div>
-				</button>
+				</div>
 
 				{isExpanded && (
 					<div className="p-4">
@@ -659,7 +643,7 @@ const FunctionCard = memo<FunctionCardProps>(
 								style={{
 									display: "grid",
 									gridTemplateColumns:
-										"10% 13% 28% 11% 10% 28%",
+										"10% 13% 25% 12% 12% 28%",
 									fontSize: "0.813rem",
 								}}
 							>
@@ -824,41 +808,28 @@ const FunctionCard = memo<FunctionCardProps>(
 												</select>
 											</div>
 											<div className="flex items-center justify-center border-border border-r border-b bg-card px-2 py-2">
-												<label className="flex cursor-pointer items-center gap-2">
-													<input
-														type="checkbox"
-														checked={isRequired}
-														onChange={(e) =>
-															onRequiredToggle(
-																actualIdx,
-																k,
-																e.target
-																	.checked,
-															)
-														}
-														disabled={isDeleted}
-														className={`h-4 w-4 rounded border border-border text-primary accent-primary focus:ring-2 focus:ring-ring ${
-															isDeleted
-																? "cursor-not-allowed opacity-60"
-																: "cursor-pointer"
-														}`}
-													/>
-													<span
-														className={`text-xs ${
-															isRequired
-																? "font-semibold text-primary"
-																: "text-muted-foreground"
-														} ${
-															isDeleted
-																? "opacity-60"
-																: ""
-														}`}
-													>
-														{isRequired
+												<input
+													type="checkbox"
+													checked={isRequired}
+													onChange={(e) =>
+														onRequiredToggle(
+															actualIdx,
+															k,
+															e.target.checked,
+														)
+													}
+													disabled={isDeleted}
+													title={
+														isRequired
 															? "Required"
-															: "Optional"}
-													</span>
-												</label>
+															: "Optional"
+													}
+													className={`h-4 w-4 rounded border border-border text-primary accent-primary focus:ring-2 focus:ring-ring ${
+														isDeleted
+															? "cursor-not-allowed opacity-60"
+															: "cursor-pointer"
+													}`}
+												/>
 											</div>
 											{p.type === "array" ||
 											p.type === "object" ? (

@@ -3,10 +3,7 @@ import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { useWorkspace } from "@/hooks";
 import { AppDetailPage } from "@/pages/app/app-detail-page";
-import {
-	TerminalPanel,
-	WorkspaceManager,
-} from "../../components/workspace";
+import { TerminalPanel, WorkspaceManager } from "../../components/workspace";
 import type { WorkspaceOptions } from "../../stores";
 import { MCPJsonEditor } from "../shared";
 import { CodeWorkspaceActions } from "./CodeWorkspaceActions";
