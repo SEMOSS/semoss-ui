@@ -54,6 +54,13 @@ import { NavUser } from "./nav-user";
 
 const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
 
+let isIframed = false;
+try {
+	isIframed = window.self !== window.top;
+} catch {
+	isIframed = true;
+}
+
 /**
  * Renders a sidebar allowing users to navigate between pages
  *
@@ -313,55 +320,56 @@ export const GlobalNav = observer(() => {
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 				</SidebarMenu>
+				{root.theme.hideToolsInIframe && isIframed ? null : (
+					<SidebarMenu className="gap-2 p-2">
+						<InputGroup className="bg-background group-data-[collapsible=icon]:hidden">
+							<InputGroupInput
+								placeholder={t("search")}
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+							/>
+							<InputGroupAddon>
+								<Search />
+							</InputGroupAddon>
+						</InputGroup>
 
-				<SidebarMenu className="gap-2 p-2">
-					<InputGroup className="bg-background group-data-[collapsible=icon]:hidden">
-						<InputGroupInput
-							placeholder={t("search")}
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-						/>
-						<InputGroupAddon>
-							<Search />
-						</InputGroupAddon>
-					</InputGroup>
-
-					<SidebarMenuItem>
-						<SidebarMenuButton
-							asChild
-							isActive={!!matchPath("/new", pathname)}
-						>
-							<Link to={"/new"} aria-label={"New Chat"}>
-								<SquarePenIcon />
-								{t("new")}
-							</Link>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-
-					{ENABLE_AGENT && (
 						<SidebarMenuItem>
 							<SidebarMenuButton
 								asChild
-								isActive={!!matchPath("/agent", pathname)}
+								isActive={!!matchPath("/new", pathname)}
 							>
-								<Link to={"/agent"} aria-label={"agent"}>
-									<ComputerIcon />
-									{t("agents")}
+								<Link to={"/new"} aria-label={"New Chat"}>
+									<SquarePenIcon />
+									{t("new")}
 								</Link>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
-					)}
-					{root.theme.sidebar.headerItems.map((item) => (
-						<GlobalNavItem
-							key={item.path}
-							name={item.name}
-							icon={item.icon}
-							path={item.path}
-							url={item.url}
-							embed={item.embed}
-						/>
-					))}
-				</SidebarMenu>
+
+						{ENABLE_AGENT && (
+							<SidebarMenuItem>
+								<SidebarMenuButton
+									asChild
+									isActive={!!matchPath("/agent", pathname)}
+								>
+									<Link to={"/agent"} aria-label={"agent"}>
+										<ComputerIcon />
+										{t("agents")}
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+						)}
+						{root.theme.sidebar.headerItems.map((item) => (
+							<GlobalNavItem
+								key={item.path}
+								name={item.name}
+								icon={item.icon}
+								path={item.path}
+								url={item.url}
+								embed={item.embed}
+							/>
+						))}
+					</SidebarMenu>
+				)}
 			</SidebarHeader>
 			<SidebarContent
 				className="transition-all duration-200 ease-in-out"

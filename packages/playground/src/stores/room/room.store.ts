@@ -24,6 +24,7 @@ import type {
 	PixelMessageTextPart,
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
+	Prompt,
 	ResponsePixelMessage,
 	Workspace,
 } from "@/types";
@@ -120,7 +121,7 @@ interface RoomStoreInterface {
 		/**
 		 * Predefined prompts that can be used in the room
 		 */
-		predefinedPrompts: any[];
+		predefinedPrompts: Prompt[];
 	};
 
 	/**

@@ -7,7 +7,7 @@ import {
 	LIBRARY_PROMPT_TAG_TRAVEL,
 } from "../prompt.constants";
 
-const LIBRARY_CATEGORIES = [
+const _LIBRARY_CATEGORIES = [
 	"all",
 	LIBRARY_PROMPT_TAG_BUSINESS,
 	LIBRARY_PROMPT_TAG_COMMUNICATIONS,
@@ -70,8 +70,8 @@ export const PromptLibraryList = (props: PromptLibraryListProps) => {
 				const { output } = response.pixelReturn[0];
 				if (output.length > 0) {
 					const tagMap = { all: "" };
-					output.map((tag) => {
-						tagMap[tag.METAVALUE] = "";
+					output.forEach((tag) => {
+						tagMap[tag.metavalue] = "";
 					});
 					setPromptTags(Object.keys(tagMap));
 				}

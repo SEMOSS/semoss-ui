@@ -48,6 +48,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	const [name, setName] = useState<string>("");
 	const [description, setDescription] = useState<string>("");
 	const [promptLibraryTag, setPromptLibraryTag] = useState<string>("");
+	const [tagInput, setTagInput] = useState<string>("");
 	const [instructions, setInstructions] = useState<string>("");
 	const [toolbox, setToolbox] = useState<MCPConfig[]>([]);
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>([]);
@@ -144,16 +145,41 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 					<FieldLabel htmlFor={promptLibraryTagId}>
 						{t("workspace:form.promptLibraryTagLabel")}
 					</FieldLabel>
-					<Input
-						id={promptLibraryTagId}
-						placeholder={t(
-							"common:placeholders.enterPromptLibraryTag",
-						)}
-						value={promptLibraryTag}
-						disabled={isLoading}
-						onChange={(e) => setPromptLibraryTag(e.target.value)}
-						data-testid="workspaceForm-promptLibraryTag-txt"
-					/>
+					{promptLibraryTag ? (
+						<div className="flex flex-wrap gap-2">
+							<span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm">
+								{promptLibraryTag}
+								<button
+									type="button"
+									onClick={() => setPromptLibraryTag("")}
+									className="text-muted-foreground hover:text-foreground"
+								>
+									×
+								</button>
+							</span>
+						</div>
+					) : (
+						<Input
+							id={promptLibraryTagId}
+							placeholder={t(
+								"common:placeholders.enterPromptLibraryTag",
+							)}
+							value={tagInput}
+							disabled={isLoading}
+							onChange={(e) => setTagInput(e.target.value)}
+							data-testid="workspaceForm-promptLibraryTag-txt"
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									const value = tagInput.trim();
+									if (value) {
+										setPromptLibraryTag(value);
+										setTagInput("");
+									}
+								}
+							}}
+						/>
+					)}
 				</Field>
 			</FieldGroup>
 			<FieldSeparator />

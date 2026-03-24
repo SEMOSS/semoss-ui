@@ -105,7 +105,7 @@ export const NewRoomPage = observer(() => {
 
 	const getPrompts = usePixel<Prompt[]>(
 		mode === "workspace" && selectedWorkspaceId && promptLibraryTag
-			? `ListPrompt(filters=['${promptLibraryTag}']);`
+			? `ListPrompt(metaFilters=[{"tag": "${promptLibraryTag}"}]);`
 			: null,
 		{
 			data: [],
@@ -301,22 +301,20 @@ export const NewRoomPage = observer(() => {
 			return;
 		}
 
-		// const selectedTags = prePromptTags
-		// 	.split(",")
-		// 	.map((tag) => tag.trim().toLowerCase())
-		// 	.filter(Boolean);
-
-		// const predefinedPrompts = selectedTags.length
-		// 	? getPrompts.data.filter((prompt) =>
-		// 		prompt.tags?.some((tag) =>
-		// 			selectedTags.includes(tag.toLowerCase()),
-		// 		),
-		// 	)
-		// 	: getPrompts.data;
+		const prompts: Prompt[] = getPrompts.data.map((p) => ({
+			id: p.id,
+			title: p.title,
+			context: p.context,
+			tags: p.tags,
+			version: p.version,
+			intent: p.intent,
+			createdBy: p.created_by,
+			dateCreated: p.date_created,
+		}));
 
 		tempRoomStore.setOptions({
 			...tempRoomStore.options,
-			predefinedPrompts: getPrompts.data,
+			predefinedPrompts: prompts,
 		});
 	}, [getPrompts.status, getPrompts.data, tempRoomStore]);
 
@@ -338,8 +336,6 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore,
 	]);
 
-	console.log("Temp Room Options:", tempRoomStore.options);
-	console.log(tempRoomStore.options.predefinedPrompts.length);
 	return (
 		<div className="relative h-full w-full overflow-hidden">
 			<ResizablePanelGroup direction="horizontal">
@@ -557,21 +553,31 @@ export const NewRoomPage = observer(() => {
 							}
 						/>
 						{tempRoomStore.options.predefinedPrompts.length > 0 ? (
-							<div className="mx-auto flex w-full max-w-2xl flex-wrap justify-center gap-2">
-								{tempRoomStore.options.predefinedPrompts.map(
-									(prompt) => (
-										<Button
-											key={prompt.ID}
-											variant="secondary"
-											disabled={isLoading}
-											onClick={() =>
-												createRoom(prompt.context, [])
-											}
-										>
-											{prompt.title}
-										</Button>
-									),
-								)}
+							<div className="mx-auto flex w-full flex-wrap justify-center gap-2">
+								{[...tempRoomStore.options.predefinedPrompts]
+									.sort(
+										(a, b) =>
+											a.title.length - b.title.length,
+									)
+									.map((prompt) => {
+										console.log(prompt);
+										return (
+											<Button
+												key={prompt.id}
+												variant="outline"
+												className="h-10 gap-2 rounded-md border border-input px-6 py-2 shadow-xs"
+												disabled={isLoading}
+												onClick={() =>
+													createRoom(
+														prompt.context,
+														[],
+													)
+												}
+											>
+												{prompt.title}
+											</Button>
+										);
+									})}
 							</div>
 						) : null}
 					</div>

@@ -68,6 +68,11 @@ export interface ThemeMap {
 		altLandingKey?: string;
 
 		/**
+		 * Whether to hide tools in iframes (e.g. when the app is embedded in another platform). Defaults to false (tools shown).
+		 */
+		hideToolsInIframe?: boolean;
+
+		/**
 		 * Content to show in the sidebar
 		 */
 		sidebar: {

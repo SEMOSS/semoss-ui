@@ -42,8 +42,15 @@ import {
 } from "@semoss/ui/next";
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
-import { useGracefulErrors } from "@/hooks";
+import { useGracefulErrors, useRoot } from "@/hooks";
 import type { Engine } from "@/types";
+
+let isIframed = false;
+try {
+	isIframed = window.self !== window.top;
+} catch {
+	isIframed = true;
+}
 
 interface RoomInputProps {
 	/** Classes to override */
@@ -88,6 +95,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		footer = null,
 	}) => {
 		const { t } = useTranslation("room");
+		const { root } = useRoot();
 		const { getGracefulErrorMessage } = useGracefulErrors();
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
@@ -404,86 +412,90 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<AutoScrollOnPastePlugin
 							scrollContainerRef={contentEditableRef}
 						/>
-						{!isLoading && (
-							<MentionPlugin
-								trigger="/"
-								MenuComponent={({
-									isOpen,
-									onOpenChange,
-									menuPosition,
-									addToken,
-								}) => (
-									<DropdownMenu
-										open={isOpen}
-										onOpenChange={onOpenChange}
-									>
-										{/* Invisible trigger positioned at the cursor */}
-										<DropdownMenuTrigger
-											style={{
-												position: "fixed",
-												top: menuPosition.top,
-												left: menuPosition.left,
-												width: 0,
-												height: 0,
-											}}
-										/>
-										<DropdownMenuContent
-											align="start"
-											className="w-72"
+						{!isLoading &&
+							!root.theme.hideToolsInIframe &&
+							!isIframed && (
+								<MentionPlugin
+									trigger="/"
+									MenuComponent={({
+										isOpen,
+										onOpenChange,
+										menuPosition,
+										addToken,
+									}) => (
+										<DropdownMenu
+											open={isOpen}
+											onOpenChange={onOpenChange}
 										>
-											<MenuComponent
-												isOpen={isOpen}
-												onOpenChange={onOpenChange}
-												fileRef={fileRef}
-												addToken={addToken}
+											{/* Invisible trigger positioned at the cursor */}
+											<DropdownMenuTrigger
+												style={{
+													position: "fixed",
+													top: menuPosition.top,
+													left: menuPosition.left,
+													width: 0,
+													height: 0,
+												}}
 											/>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								)}
-							/>
-						)}
-					</LexicalComposer>
-					{!isLoading && (
-						<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
-							<DropdownMenu
-								open={menuOpen}
-								onOpenChange={setMenuOpen}
-							>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<DropdownMenuTrigger asChild>
-											<Button
-												className="bg-background"
-												variant="ghost"
-												size="icon-sm"
-												disabled={isLoading}
-												aria-label={t(
-													"input.openSettings",
-												)}
+											<DropdownMenuContent
+												align="start"
+												className="w-72"
 											>
-												<SlidersHorizontalIcon />
-											</Button>
-										</DropdownMenuTrigger>
-									</TooltipTrigger>
-									<TooltipContent>
-										{t("input.openSettings")}
-									</TooltipContent>
-								</Tooltip>
-								<DropdownMenuContent
-									align="start"
-									className="w-72"
+												<MenuComponent
+													isOpen={isOpen}
+													onOpenChange={onOpenChange}
+													fileRef={fileRef}
+													addToken={addToken}
+												/>
+											</DropdownMenuContent>
+										</DropdownMenu>
+									)}
+								/>
+							)}
+					</LexicalComposer>
+					{!isLoading &&
+						!root.theme.hideToolsInIframe &&
+						!isIframed && (
+							<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
+								<DropdownMenu
+									open={menuOpen}
+									onOpenChange={setMenuOpen}
 								>
-									<MenuComponent
-										isOpen={menuOpen}
-										onOpenChange={setMenuOpen}
-										fileRef={fileRef}
-										addToken={() => null}
-									/>
-								</DropdownMenuContent>
-							</DropdownMenu>
-							{footer}
-						</div>
-					)}
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<DropdownMenuTrigger asChild>
+												<Button
+													className="bg-background"
+													variant="ghost"
+													size="icon-sm"
+													disabled={isLoading}
+													aria-label={t(
+														"input.openSettings",
+													)}
+												>
+													<SlidersHorizontalIcon />
+												</Button>
+											</DropdownMenuTrigger>
+										</TooltipTrigger>
+										<TooltipContent>
+											{t("input.openSettings")}
+										</TooltipContent>
+									</Tooltip>
+									<DropdownMenuContent
+										align="start"
+										className="w-72"
+									>
+										<MenuComponent
+											isOpen={menuOpen}
+											onOpenChange={setMenuOpen}
+											fileRef={fileRef}
+											addToken={() => null}
+										/>
+									</DropdownMenuContent>
+								</DropdownMenu>
+								{footer}
+							</div>
+						)}
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
 						<div className="flex flex-row items-center gap-1">
 							<EngineSelect

@@ -208,6 +208,10 @@ export class RootStore {
 			altLandingKey:
 				theme?.altLandingKey || this._store.theme.altLandingKey,
 			altLanding: theme?.altLanding || this._store.theme.altLanding,
+			hideToolsInIframe:
+				theme?.hideToolsInIframe ||
+				this._store.theme?.hideToolsInIframe ||
+				false,
 			sidebar: {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),

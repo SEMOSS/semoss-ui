@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { Button, Grid, Stack, Typography, useNotification } from "@semoss/ui";
+import { Button, Grid, Stack, Typography } from "@semoss/ui";
 import { PromptLibraryList } from "@/components/prompt/library/PromptLibraryList";
 import { useRootStore } from "@/hooks";
 import { PromptLibraryCards } from "../../components/prompt/library/PromptLibraryCards";
@@ -32,16 +32,16 @@ export const PromptPage = observer(() => {
 			const { output } = response.pixelReturn[0];
 			if (output.length > 0) {
 				const promptArr = [];
-				output.map((prompt) => {
+				output.forEach((prompt) => {
 					promptArr.push({
-						context: prompt.CONTEXT ? prompt.CONTEXT : "",
-						created_by: prompt.CREATED_BY ? prompt.CREATED_BY : "",
-						date_created: prompt.DATE_CREATED
-							? prompt.DATE_CREATED
+						context: prompt.context ? prompt.context : "",
+						created_by: prompt.created_by ? prompt.created_by : "",
+						date_created: prompt.date_created
+							? prompt.date_created
 							: "",
-						id: prompt.ID ? prompt.ID : "",
-						intent: prompt.INTENT ? prompt.INTENT : "",
-						title: prompt.TITLE ? prompt.TITLE : "",
+						id: prompt.id ? prompt.id : "",
+						intent: prompt.intent ? prompt.intent : "",
+						title: prompt.title ? prompt.title : "",
 						tags: prompt.tags ? prompt.tags : [],
 					});
 				});
@@ -58,7 +58,7 @@ export const PromptPage = observer(() => {
 		return allPrompts.length > 0
 			? allPrompts
 					.filter((prompt) => {
-						if (filter == "all") {
+						if (filter === "all") {
 							return true;
 						} else {
 							return prompt.tags
