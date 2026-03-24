@@ -13,11 +13,20 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
+	ChevronLeftIcon,
+	ChevronRightIcon,
+	FileArchiveIcon,
+	FileAudioIcon,
+	FileBadgeIcon,
+	FileChartPieIcon,
 	FileCodeIcon,
 	FileIcon,
-	FileImageIcon,
+	FileJsonIcon,
 	FileSpreadsheetIcon,
+	FileTerminalIcon,
 	FileTextIcon,
+	FileTypeIcon,
+	FileVideoIcon,
 	MicIcon,
 	SendIcon,
 	SlidersHorizontalIcon,
@@ -26,7 +35,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -45,6 +54,52 @@ import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import { useGracefulErrors } from "@/hooks";
 import type { Engine } from "@/types";
+
+const IMAGE_EXTENSIONS = [
+	"png",
+	"jpg",
+	"jpeg",
+	"gif",
+	"webp",
+	"svg",
+	"img",
+];
+
+const isImageFile = (file: File): boolean => {
+	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+	return IMAGE_EXTENSIONS.includes(ext);
+};
+
+const ICON_CLASS = "size-8 shrink-0 text-muted-foreground";
+
+const getIconForExt = (ext: string) => {
+	if (["xls", "xlsx", "csv"].includes(ext)) return FileSpreadsheetIcon;
+	if (["py", "js", "ts", "tsx", "jsx", "java", "cpp", "c", "go", "rs"].includes(ext)) return FileCodeIcon;
+	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext)) return FileTerminalIcon;
+	if (ext === "json") return FileJsonIcon;
+	if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return FileArchiveIcon;
+	if (["ppt", "pptx"].includes(ext)) return FileChartPieIcon;
+	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext)) return FileAudioIcon;
+	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext)) return FileVideoIcon;
+	if (["html", "xml", "md", "mdx", "rtf"].includes(ext)) return FileTypeIcon;
+	if (ext === "pdf") return FileBadgeIcon;
+	if (["doc", "docx", "msg", "txt"].includes(ext)) return FileTextIcon;
+	return FileIcon;
+};
+
+const getFileIcon = (file: File): React.ReactNode => {
+	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+	const Icon = getIconForExt(ext);
+
+	return (
+		<div className="flex flex-col items-center gap-1">
+			<Icon className={ICON_CLASS} strokeWidth={1.25} />
+			<span className="max-w-16 truncate text-[10px] font-medium uppercase text-muted-foreground">
+				{ext}
+			</span>
+		</div>
+	);
+};
 
 interface RoomInputProps {
 	/** Classes to override */
@@ -250,47 +305,52 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 		};
 
-		const getFileIcon = (file: File): React.ReactNode => {
-			const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-			if (ext === "pdf")
-				return (
-					<FileTextIcon className="size-6 shrink-0 text-red-500" />
-				);
-			if (ext === "doc" || ext === "docx")
-				return (
-					<FileTextIcon className="size-6 shrink-0 text-blue-500" />
-				);
-			if (ext === "ppt" || ext === "pptx")
-				return (
-					<FileTextIcon className="size-6 shrink-0 text-orange-500" />
-				);
-			if (ext === "xls" || ext === "xlsx" || ext === "csv")
-				return (
-					<FileSpreadsheetIcon className="size-6 shrink-0 text-green-600" />
-				);
-			if (
-				["png", "jpg", "jpeg", "gif", "webp", "svg", "img"].includes(
-					ext,
-				)
-			)
-				return (
-					<FileImageIcon className="size-6 shrink-0 text-purple-500" />
-				);
-			if (ext === "msg")
-				return (
-					<FileTextIcon className="size-6 shrink-0 text-blue-600" />
-				);
-			if (ext === "txt")
-				return (
-					<FileTextIcon className="size-6 shrink-0 text-gray-500" />
-				);
-			if (ext === "py")
-				return (
-					<FileCodeIcon className="size-6 shrink-0 text-yellow-500" />
-				);
-			return (
-				<FileIcon className="size-6 shrink-0 text-muted-foreground" />
+		// Generate object URLs for image file previews
+		const imagePreviewUrls = useMemo(() => {
+			const urls = new Map<string, string>();
+			for (const f of files) {
+				if (isImageFile(f)) {
+					const key = `${f.name}-${f.size}-${f.lastModified}`;
+					urls.set(key, URL.createObjectURL(f));
+				}
+			}
+			return urls;
+		}, [files]);
+
+		// Cleanup object URLs on change
+		useEffect(() => {
+			return () => {
+				for (const url of imagePreviewUrls.values()) {
+					URL.revokeObjectURL(url);
+				}
+			};
+		}, [imagePreviewUrls]);
+
+		const filesScrollRef = useRef<HTMLDivElement>(null);
+		const [showScrollLeft, setShowScrollLeft] = useState(false);
+		const [showScrollRight, setShowScrollRight] = useState(false);
+
+		const updateScrollButtons = () => {
+			const el = filesScrollRef.current;
+			if (!el) return;
+			setShowScrollLeft(el.scrollLeft > 0);
+			setShowScrollRight(
+				el.scrollLeft + el.clientWidth < el.scrollWidth - 1,
 			);
+		};
+
+		useEffect(() => {
+			updateScrollButtons();
+		}, [files]);
+
+		const scrollFiles = (direction: "left" | "right") => {
+			const el = filesScrollRef.current;
+			if (!el) return;
+			const amount = 200;
+			el.scrollBy({
+				left: direction === "left" ? -amount : amount,
+				behavior: "smooth",
+			});
 		};
 
 		return (
@@ -579,38 +639,84 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					</div>
 				</div>
 				{files.length > 0 ? (
-					<div className="flex flex-row items-center pt-4">
-						{files.map((f, fIdx) => {
-							const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
-							return (
-								<Tooltip key={fileKey}>
-									<TooltipTrigger asChild>
-										<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden">
-											{getFileIcon(f)}
-											<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
-												<Button
-													variant="ghost"
-													size={"icon-sm"}
-													onClick={() => {
-														const updated = [
-															...files,
-														];
-
-														// remove it
-														updated.splice(fIdx, 1);
-
-														setFiles(updated);
-													}}
-												>
-													<XIcon />
-												</Button>
-											</div>
+					<div className="relative flex items-center pt-4">
+						{showScrollLeft && (
+							<Button
+								variant="outline"
+								size="icon-sm"
+								className="absolute left-0 z-20 rounded-full bg-background shadow-md"
+								onClick={() => scrollFiles("left")}
+								aria-label="Scroll left"
+							>
+								<ChevronLeftIcon className="size-4" />
+							</Button>
+						)}
+						<div
+							ref={filesScrollRef}
+							className="flex flex-row items-center gap-2 overflow-x-auto scroll-smooth px-1"
+							style={{ scrollbarWidth: "none" }}
+							onScroll={updateScrollButtons}
+						>
+							{files.map((f, fIdx) => {
+								const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
+								const previewUrl =
+									imagePreviewUrls.get(fileKey);
+								return (
+									<div
+										key={fileKey}
+										className="group relative shrink-0"
+									>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<div className="flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
+													{previewUrl ? (
+														<img
+															src={previewUrl}
+															alt={f.name}
+															className="size-full object-cover"
+														/>
+													) : (
+														getFileIcon(f)
+													)}
+												</div>
+											</TooltipTrigger>
+											<TooltipContent>
+												{f.name}
+											</TooltipContent>
+										</Tooltip>
+										<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
+											<Button
+												variant="ghost"
+												size={"icon-sm"}
+												onClick={() => {
+													const updated = [
+														...files,
+													];
+													updated.splice(
+														fIdx,
+														1,
+													);
+													setFiles(updated);
+												}}
+											>
+												<XIcon />
+											</Button>
 										</div>
-									</TooltipTrigger>
-									<TooltipContent>{f.name}</TooltipContent>
-								</Tooltip>
-							);
-						})}
+									</div>
+								);
+							})}
+						</div>
+						{showScrollRight && (
+							<Button
+								variant="outline"
+								size="icon-sm"
+								className="absolute right-0 z-20 rounded-full bg-background shadow-md"
+								onClick={() => scrollFiles("right")}
+								aria-label="Scroll right"
+							>
+								<ChevronRightIcon className="size-4" />
+							</Button>
+						)}
 					</div>
 				) : null}
 			</>
