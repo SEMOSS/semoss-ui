@@ -299,32 +299,31 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 		setRenderedMembers(updatedRenderedMembers);
 	};
 
+	const pendingCountLabel = `${renderedMembers.length} pending request${
+		renderedMembers.length === 1 ? "" : "s"
+	}`;
+
 	return (
 		<div className="flex w-full shrink-0 flex-col items-start gap-[25px] rounded-xl border border-border">
 			<div className="flex flex-col items-start gap-5 self-stretch">
 				<div className="w-full rounded-xl border border-border">
-					<div className="flex flex-wrap items-center gap-y-1 self-stretch rounded-xl bg-background">
-						<div className="flex items-center gap-2.5 p-3 px-6 py-3">
+					<div className="flex flex-wrap items-center gap-x-2 gap-y-1 self-stretch rounded-xl bg-background">
+						<div className="flex items-center gap-2.5 px-3 py-3 sm:px-6">
 							<H4 data-testid={"pendingMembers-section-title"}>
 								Pending Requests
 							</H4>
 						</div>
 
-						<div className="flex flex-1 items-start">
-							<div className="flex h-14 flex-col items-center justify-center gap-2.5 px-4 py-1.5">
-								<div className="flex items-start">
-									<div className="flex flex-row items-center justify-start gap-2">
-										<P data-testid="pending-requests-count">
-											{renderedMembers.length === 1
-												? `${renderedMembers.length} pending request`
-												: `${renderedMembers.length} pending requests`}
-										</P>
-										{renderedMembers.length > 0 && (
-											<AlertCircle className="size-5 text-orange-500" />
-										)}
-									</div>
-								</div>
-							</div>
+						<div className="flex min-w-0 flex-1 items-center px-2 py-2 sm:px-4">
+							<P
+								className="truncate font-medium text-muted-foreground text-sm"
+								data-testid="pending-requests-count"
+							>
+								{pendingCountLabel}
+							</P>
+							{renderedMembers.length > 0 && (
+								<AlertCircle className="ml-2 size-5 shrink-0 text-orange-500" />
+							)}
 						</div>
 
 						<div className="flex items-center">
