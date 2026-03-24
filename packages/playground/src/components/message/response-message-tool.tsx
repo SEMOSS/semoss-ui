@@ -2,6 +2,7 @@ import {
 	CheckIcon,
 	ChevronsLeftRightIcon,
 	ChevronsRightLeftIcon,
+	CirclePause,
 	HammerIcon,
 	MoreHorizontalIcon,
 	PanelRightCloseIcon,
@@ -77,12 +78,15 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			| "loading"
 			| "error"
 			| "queued"
-			| "cancelled";
+			| "cancelled"
+			| "paused";
 		let variant: Variant;
 		if (tool.status === "ERROR") {
 			variant = "error";
 		} else if (tool.status === "CANCELLED") {
 			variant = "cancelled";
+		} else if (tool.status === "PAUSED") {
+			variant = "paused";
 		} else if (tool.status === "SUCCESS" || tool.response) {
 			variant = "complete";
 		} else if (tool.status === "LOADING") {
@@ -109,12 +113,17 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			icon = <CheckIcon className="size-5" />;
 		} else if (variant === "cancelled") {
 			icon = <XCircleIcon className="size-5" />;
+		} else if (variant === "paused") {
+			icon = <CirclePause className="size-5" />;
 		} else {
 			icon = <HammerIcon className="size-5" />;
 		}
 
 		const isPrimaryIcon = variant === "complete" || variant === "ready";
-		const isDimmed = variant === "error" || variant === "cancelled";
+		const isDimmed =
+			variant === "error" ||
+			variant === "cancelled" ||
+			variant === "paused";
 
 		// Error and cancelled tools are never interactive, independent of visual state
 		// Auto executing tools that are loading or queued are also not interactive
@@ -123,6 +132,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			variant === "error" ||
 			variant === "cancelled" ||
 			variant === "loading" ||
+			variant === "paused" ||
 			variant === "queued";
 
 		return (
@@ -224,6 +234,12 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						<div className="flex shrink-0 items-center gap-2 rounded-md bg-muted px-3 py-1.5 font-medium text-muted-foreground text-sm">
 							<XCircleIcon className="size-4" />
 							{t("tool.cancelled")}
+						</div>
+					)}
+					{variant === "paused" && (
+						<div className="flex shrink-0 items-center gap-2 rounded-md bg-muted px-3 py-1.5 font-medium text-muted-foreground text-sm">
+							<XCircleIcon className="size-4" />
+							{t("tool.paused")}
 						</div>
 					)}
 					{(variant === "ready" || variant === "complete") && (

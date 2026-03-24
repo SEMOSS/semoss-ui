@@ -37,6 +37,7 @@
 		"completed": "完了",
 		"ready": "準備完了",
 		"autoExecute": "このツールは自動実行に設定されています",
+		"paused": "一時停止済み",
 		"queued": "自動実行のキューに入っています",
 		"cancel": "キャンセル",
 		"expand": "展開",

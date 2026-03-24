@@ -37,6 +37,7 @@
 		"completed": "Terminé",
 		"ready": "Prêt",
 		"autoExecute": "Cet outil est configuré pour s'exécuter automatiquement",
+		"paused": "En pause",
 		"queued": "En file d'attente pour l'exécution automatique",
 		"cancel": "Annuler",
 		"expand": "Développer",

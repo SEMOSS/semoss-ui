@@ -34,8 +34,13 @@ export class ToolStore {
 	/**
 	 * Status for the tool
 	 */
-	status: "INITIAL" | "LOADING" | "CANCELLED" | "SUCCESS" | "ERROR" =
-		"INITIAL";
+	status:
+		| "INITIAL"
+		| "LOADING"
+		| "CANCELLED"
+		| "SUCCESS"
+		| "ERROR"
+		| "PAUSED" = "INITIAL";
 
 	/**
 	 * Parameters for the tool
@@ -144,6 +149,8 @@ export class ToolStore {
 				this.status = "ERROR";
 			} else if (part.toolResult.toolStatus === "cancelled") {
 				this.status = "CANCELLED";
+			} else if (part.toolResult.toolStatus === "paused") {
+				this.status = "PAUSED";
 			} else {
 				this.status = "SUCCESS";
 			}
