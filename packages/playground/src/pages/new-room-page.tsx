@@ -559,6 +559,7 @@ export const NewRoomPage = observer(() => {
 										(a, b) =>
 											a.title.length - b.title.length,
 									)
+									.slice(0, 5)
 									.map((prompt) => {
 										console.log(prompt);
 										return (
