@@ -258,7 +258,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 			if (n.recipient_user_id === loggedInUser) return null;
 			let appPath: string;
 			let notificationSource: string;
-			notificationSource = n.notification_source.trim().toLowerCase();
+			notificationSource = n.notification_source?.trim()?.toLowerCase();
 			switch (notificationSource) {
 				case "app":
 					appPath = `/${notificationSource}/${n.catalog_id}?tab=accesscontrol`;
