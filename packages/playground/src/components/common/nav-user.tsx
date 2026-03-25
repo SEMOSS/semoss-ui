@@ -76,14 +76,14 @@ export function NavUser() {
 						{theme === "dark" ? (
 							<>
 								Dark
-								<span className="ml-1 rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+								<span className="ml-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
 									BETA
 								</span>
 							</>
 						) : theme === "system" ? (
 							<>
 								System
-								<span className="ml-1 rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+								<span className="ml-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
 									BETA
 								</span>
 							</>
@@ -106,7 +106,7 @@ export function NavUser() {
 							>
 								<MoonIcon />
 								Dark
-								<span className="ml-auto rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+								<span className="ml-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
 									BETA
 								</span>
 							</DropdownMenuCheckboxItem>
@@ -116,7 +116,7 @@ export function NavUser() {
 							>
 								<MonitorIcon />
 								System
-								<span className="ml-auto rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+								<span className="ml-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
 									BETA
 								</span>
 							</DropdownMenuCheckboxItem>
