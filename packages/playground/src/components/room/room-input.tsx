@@ -376,7 +376,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									/>
 									<div
 										aria-hidden="true"
-										className="pointer-events-none absolute inset-x-px bottom-px z-10 h-12 rounded-b-md bg-background"
+										className="pointer-events-none absolute inset-x-px bottom-px z-10 h-12 rounded-b-md"
 									/>
 								</div>
 							}
@@ -453,7 +453,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									<TooltipTrigger asChild>
 										<DropdownMenuTrigger asChild>
 											<Button
-												className="bg-background"
+												className=""
 												variant="ghost"
 												size="icon-sm"
 												disabled={isLoading}
@@ -508,7 +508,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
-										className="bg-background"
+										className=""
 										variant={"ghost"}
 										aria-label={t("input.recordLabel")}
 										size="icon-sm"
