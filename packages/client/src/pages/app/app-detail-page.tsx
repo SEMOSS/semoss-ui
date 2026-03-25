@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import { getUserProjectPermission } from "@semoss/shared";
 import { Modal, useNotification } from "@semoss/ui";
@@ -148,6 +148,8 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
 	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
 	const [mcpToolsError, setMcpToolsError] = useState("");
+	const [searchParams, setSearchParams] = useSearchParams();
+	const tab = searchParams.get("tab");
 
 	const emitMessage = useCallback(
 		(isError: boolean, message: string) => {
@@ -384,6 +386,13 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 				});
 		}
 	}, [appId, monolithStore]);
+
+	useEffect(() => {
+		if (tab === "accesscontrol") {
+			setSelectedTab("Access Control");
+			setSearchParams({});
+		}
+	}, [tab]);
 
 	const handleCloseChangeAccessModal = (refresh?: boolean) => {
 		if (refresh) {
