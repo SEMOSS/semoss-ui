@@ -107,6 +107,7 @@ interface GetMembersData {
 interface JsonType {
 	userid: string;
 	permission: string;
+	type?: string;
 	maxResponseTime?: number;
 	usageRestriction?: string;
 	usageFrequency?: string;
@@ -337,6 +338,7 @@ export const MembersTable = (props: MembersTableProps) => {
 				const json: JsonType = {
 					userid: m.id,
 					permission: quickUpdate ? quickUpdate : "OWNER",
+					type: m.type as string,
 				};
 
 				// FOR MODELS
