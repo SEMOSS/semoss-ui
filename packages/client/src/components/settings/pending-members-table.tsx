@@ -1,5 +1,3 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
 import {
 	AlertCircle,
 	Check,
@@ -131,6 +129,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 					requestid: mem.ID,
 					userid: mem.REQUEST_USERID,
 					permission: permissionMapper[mem.PERMISSION],
+					type: mem.REQUEST_TYPE as string,
 				};
 			});
 
@@ -301,39 +300,31 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 		setRenderedMembers(updatedRenderedMembers);
 	};
 
+	const pendingCountLabel = `${renderedMembers.length} pending request${
+		renderedMembers.length === 1 ? "" : "s"
+	}`;
+
 	return (
 		<div className="flex w-full shrink-0 flex-col items-start gap-[25px] rounded-xl border border-border">
 			<div className="flex flex-col items-start gap-5 self-stretch">
 				<div className="w-full rounded-xl border border-border">
-					<div
-						className="flex cursor-pointer items-center self-stretch rounded-xl bg-background"
-						onClick={() => {
-							if (renderedMembers.length > 0) {
-								setOpenTable(!openTable);
-							}
-						}}
-					>
-						<div className="flex items-center gap-2.5 p-3 px-6 py-3">
+					<div className="flex flex-wrap items-center gap-x-2 gap-y-1 self-stretch rounded-xl bg-background">
+						<div className="flex items-center gap-2.5 px-3 py-3 sm:px-6">
 							<H4 data-testid={"pendingMembers-section-title"}>
 								Pending Requests
 							</H4>
 						</div>
 
-						<div className="flex flex-1 items-start">
-							<div className="flex h-14 flex-col items-center justify-center gap-2.5 px-4 py-1.5">
-								<div className="flex items-start">
-									<div className="flex flex-row items-center justify-start gap-2">
-										<P data-testid="pending-requests-count">
-											{renderedMembers.length === 1
-												? `${renderedMembers.length} pending request`
-												: `${renderedMembers.length} pending requests`}
-										</P>
-										{renderedMembers.length > 0 && (
-											<AlertCircle className="size-5 text-orange-500" />
-										)}
-									</div>
-								</div>
-							</div>
+						<div className="flex min-w-0 flex-1 items-center px-2 py-2 sm:px-4">
+							<P
+								className="truncate font-medium text-muted-foreground text-sm"
+								data-testid="pending-requests-count"
+							>
+								{pendingCountLabel}
+							</P>
+							{renderedMembers.length > 0 && (
+								<AlertCircle className="ml-2 size-5 shrink-0 text-orange-500" />
+							)}
 						</div>
 
 						<div className="flex items-center">
@@ -413,232 +404,241 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 							) : (
 								<div>
 									{renderedMembers.length ? (
-										<Table className="mb-2 bg-background">
-											<TableHeader>
-												<TableRow className="bg-background">
-													<TableHead
-														className="w-12"
-														data-testid="pending-members-permission"
-													>
-														<Checkbox
-															checked={
-																Object.keys(
-																	selectedMembers,
-																).length ===
-																	renderedMembers.length &&
-																renderedMembers.length >
-																	0
-															}
-															onCheckedChange={() => {
-																if (
+										<div className="overflow-x-auto">
+											<Table className="mb-2 bg-background">
+												<TableHeader>
+													<TableRow className="bg-background">
+														<TableHead
+															className="w-12"
+															data-testid="pending-members-permission"
+														>
+															<Checkbox
+																checked={
 																	Object.keys(
 																		selectedMembers,
-																	).length !==
-																	renderedMembers.length
-																) {
-																	const updatedMembers =
-																		renderedMembers.reduce(
-																			(
-																				acc,
-																				val,
-																			) => {
-																				acc[
-																					val.ID
-																				] =
-																					val;
+																	).length ===
+																		renderedMembers.length &&
+																	renderedMembers.length >
+																		0
+																}
+																onCheckedChange={() => {
+																	if (
+																		Object.keys(
+																			selectedMembers,
+																		)
+																			.length !==
+																		renderedMembers.length
+																	) {
+																		const updatedMembers =
+																			renderedMembers.reduce(
+																				(
+																					acc,
+																					val,
+																				) => {
+																					acc[
+																						val.ID
+																					] =
+																						val;
 
-																				return acc;
-																			},
+																					return acc;
+																				},
+																				{},
+																			);
+
+																		setSelectedMembers(
+																			updatedMembers,
+																		);
+																	} else {
+																		setSelectedMembers(
 																			{},
 																		);
+																	}
+																}}
+																data-testid="select-all-pending-members-checkbox"
+															/>
+														</TableHead>
+														<TableHead>
+															ID
+														</TableHead>
+														<TableHead>
+															Name
+														</TableHead>
+														<TableHead>
+															Request Date
+														</TableHead>
+														<TableHead>
+															Permission
+														</TableHead>
+														<TableHead>
+															Actions
+														</TableHead>
+													</TableRow>
+												</TableHeader>
+												<TableBody>
+													{renderedMembers.map(
+														(member) => {
+															const isSelected =
+																!!selectedMembers[
+																	member.ID
+																];
 
-																	setSelectedMembers(
-																		updatedMembers,
-																	);
-																} else {
-																	setSelectedMembers(
-																		{},
-																	);
-																}
-															}}
-															data-testid="select-all-pending-members-checkbox"
-														/>
-													</TableHead>
-													<TableHead>ID</TableHead>
-													<TableHead>Name</TableHead>
-													<TableHead>
-														Request Date
-													</TableHead>
-													<TableHead>
-														Permission
-													</TableHead>
-													<TableHead>
-														Actions
-													</TableHead>
-												</TableRow>
-											</TableHeader>
-											<TableBody>
-												{renderedMembers.map(
-													(member) => {
-														const isSelected =
-															!!selectedMembers[
-																member.ID
-															];
-
-														return (
-															<TableRow
-																key={member.ID}
-																className="bg-background"
-															>
-																<TableCell>
-																	<Checkbox
-																		checked={
-																			isSelected
-																		}
-																		onCheckedChange={() => {
-																			// update selected members
-																			const updatedMembers =
-																				{
-																					...selectedMembers,
-																				} as Record<
-																					string,
-																					true
-																				>;
-
-																			if (
+															return (
+																<TableRow
+																	key={
+																		member.ID
+																	}
+																	className="bg-background"
+																>
+																	<TableCell>
+																		<Checkbox
+																			checked={
 																				isSelected
-																			) {
-																				delete updatedMembers[
-																					member
-																						.ID
-																				];
-																			} else {
-																				updatedMembers[
-																					member.ID
-																				] =
-																					true;
 																			}
+																			onCheckedChange={() => {
+																				// update selected members
+																				const updatedMembers =
+																					{
+																						...selectedMembers,
+																					} as Record<
+																						string,
+																						true
+																					>;
 
-																			setSelectedMembers(
-																				updatedMembers,
-																			);
-																		}}
-																	/>
-																</TableCell>
-																<TableCell>
-																	{
-																		member.REQUEST_USERID
-																	}
-																</TableCell>
-																<TableCell>
-																	{
-																		member.NAME
-																	}
-																</TableCell>
-																<TableCell>
-																	{
-																		member.REQUEST_TIMESTAMP
-																	}
-																</TableCell>
-																<TableCell>
-																	<RadioGroup
-																		value={
-																			member.PERMISSION
+																				if (
+																					isSelected
+																				) {
+																					delete updatedMembers[
+																						member
+																							.ID
+																					];
+																				} else {
+																					updatedMembers[
+																						member.ID
+																					] =
+																						true;
+																				}
+
+																				setSelectedMembers(
+																					updatedMembers,
+																				);
+																			}}
+																		/>
+																	</TableCell>
+																	<TableCell>
+																		{
+																			member.REQUEST_USERID
 																		}
-																		onValueChange={(
-																			val,
-																		) => {
-																			if (
-																				val
-																			) {
-																				updatePendingMemberPermission(
-																					member,
-																					val as SETTINGS_ROLE,
-																				);
+																	</TableCell>
+																	<TableCell>
+																		{
+																			member.NAME
+																		}
+																	</TableCell>
+																	<TableCell>
+																		{
+																			member.REQUEST_TIMESTAMP
+																		}
+																	</TableCell>
+																	<TableCell>
+																		<RadioGroup
+																			value={
+																				member.PERMISSION
 																			}
-																		}}
-																		className="flex flex-row gap-2"
-																	>
-																		<div className="flex items-center gap-2">
-																			<RadioGroupItem
-																				value="Author"
-																				id={`${member.ID}-author`}
-																				data-testid="author-radio"
-																			/>
-																			<label
-																				htmlFor={`${member.ID}-author`}
-																				className="text-sm"
-																			>
-																				Author
-																			</label>
-																		</div>
-																		<div className="flex items-center gap-2">
-																			<RadioGroupItem
-																				value="Editor"
-																				id={`${member.ID}-editor`}
-																				data-testid="editor-radio"
-																			/>
-																			<label
-																				htmlFor={`${member.ID}-editor`}
-																				className="text-sm"
-																			>
-																				Editor
-																			</label>
-																		</div>
-																		<div className="flex items-center gap-2">
-																			<RadioGroupItem
-																				value="Read-Only"
-																				id={`${member.ID}-readonly`}
-																				data-testid="read-only-radio"
-																			/>
-																			<label
-																				htmlFor={`${member.ID}-readonly`}
-																				className="text-sm"
-																			>
-																				Read-Only
-																			</label>
-																		</div>
-																	</RadioGroup>
-																</TableCell>
+																			onValueChange={(
+																				val,
+																			) => {
+																				if (
+																					val
+																				) {
+																					updatePendingMemberPermission(
+																						member,
+																						val as SETTINGS_ROLE,
+																					);
+																				}
+																			}}
+																			className="flex flex-row gap-2"
+																		>
+																			<div className="flex items-center gap-2">
+																				<RadioGroupItem
+																					value="Author"
+																					id={`${member.ID}-author`}
+																					data-testid="author-radio"
+																				/>
+																				<label
+																					htmlFor={`${member.ID}-author`}
+																					className="text-sm"
+																				>
+																					Author
+																				</label>
+																			</div>
+																			<div className="flex items-center gap-2">
+																				<RadioGroupItem
+																					value="Editor"
+																					id={`${member.ID}-editor`}
+																					data-testid="editor-radio"
+																				/>
+																				<label
+																					htmlFor={`${member.ID}-editor`}
+																					className="text-sm"
+																				>
+																					Editor
+																				</label>
+																			</div>
+																			<div className="flex items-center gap-2">
+																				<RadioGroupItem
+																					value="Read-Only"
+																					id={`${member.ID}-readonly`}
+																					data-testid="read-only-radio"
+																				/>
+																				<label
+																					htmlFor={`${member.ID}-readonly`}
+																					className="text-sm"
+																				>
+																					Read-Only
+																				</label>
+																			</div>
+																		</RadioGroup>
+																	</TableCell>
 
-																<TableCell>
-																	<div className="flex gap-1">
-																		<Button
-																			variant="ghost"
-																			size="icon"
-																			onClick={() => {
-																				approvePendingMembers(
-																					[
-																						member,
-																					],
-																				);
-																			}}
-																			data-testid="approve-pending-member-btn"
-																		>
-																			<Check className="size-4 text-green-600" />
-																		</Button>
-																		<Button
-																			variant="ghost"
-																			size="icon"
-																			onClick={() => {
-																				denyPendingMembers(
-																					[
-																						member,
-																					],
-																				);
-																			}}
-																			data-testid="deny-pending-member-btn"
-																		>
-																			<X className="size-4" />
-																		</Button>
-																	</div>
-																</TableCell>
-															</TableRow>
-														);
-													},
-												)}
-											</TableBody>
-										</Table>
+																	<TableCell>
+																		<div className="flex gap-1">
+																			<Button
+																				variant="ghost"
+																				size="icon"
+																				onClick={() => {
+																					approvePendingMembers(
+																						[
+																							member,
+																						],
+																					);
+																				}}
+																				data-testid="approve-pending-member-btn"
+																			>
+																				<Check className="size-4 text-green-600" />
+																			</Button>
+																			<Button
+																				variant="ghost"
+																				size="icon"
+																				onClick={() => {
+																					denyPendingMembers(
+																						[
+																							member,
+																						],
+																					);
+																				}}
+																				data-testid="deny-pending-member-btn"
+																			>
+																				<X className="size-4" />
+																			</Button>
+																		</div>
+																	</TableCell>
+																</TableRow>
+															);
+														},
+													)}
+												</TableBody>
+											</Table>
+										</div>
 									) : (
 										<div className="flex w-full flex-col items-center justify-center gap-2 px-2 px-6 py-2.5 py-2.5">
 											<P>No requests pending</P>

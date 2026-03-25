@@ -7,10 +7,11 @@ import {
 	LockKeyholeOpen,
 	MoreVertical,
 	Star,
+	Tag,
 	User,
 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import {
@@ -119,6 +120,10 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 
 	/** Menu toggle state */
 	const [open, setOpen] = useState(false);
+	/** Whether the row is wide enough to show full tag badges */
+	const [showFullTags, setShowFullTags] = useState(true);
+	const rowRef = useRef<HTMLDivElement>(null);
+
 	const formattedDate = new Date(date)
 		.toLocaleDateString("en-US", {
 			month: "short",
@@ -129,6 +134,17 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 
 	const navigate = useNavigate();
 
+	// Observe the row width and collapse tags when there isn't enough space
+	useEffect(() => {
+		const el = rowRef.current;
+		if (!el) return;
+		const observer = new ResizeObserver(([entry]) => {
+			setShowFullTags(entry.contentRect.width >= 480);
+		});
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, []);
+
 	const copyId = (id: string) => {
 		try {
 			navigator.clipboard.writeText(id);
@@ -137,82 +153,97 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 			toast.error(e.message);
 		}
 	};
+
+	const tagArray: string[] =
+		tag === undefined
+			? []
+			: Array.isArray(tag)
+				? tag.filter(Boolean)
+				: tag !== ""
+					? [tag]
+					: [];
+
 	return (
 		<Card
 			onClick={() => onClick(id)}
 			data-testId={formatToDataTestId(
 				`genericEngineCards-${type}-${name}`,
 			)}
-			className="flex h-[80px] flex-col items-start justify-center gap-4 rounded-lg border bg-card p-4 shadow-md hover:cursor-pointer"
+			className="flex h-auto min-h-[80px] flex-col items-start justify-center gap-4 overflow-hidden rounded-lg border bg-card p-4 shadow-md hover:cursor-pointer"
 		>
-			<div className="flex h-8 items-center gap-2.5 self-stretch">
-				<div className="flex size-8 items-center justify-center overflow-hidden rounded-lg bg-card">
+			<div ref={rowRef} className="flex w-full items-center gap-2.5">
+				{/* Engine icon — always visible */}
+				<div className="flex size-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-card">
 					<img
 						src={findDBImage(type, sub_type)}
 						alt={name}
 						className="size-full object-cover"
 					/>
 				</div>
-				<div className="flex flex-1 flex-row items-center justify-between gap-1.5">
-					<div className="flex flex-col justify-center">
-						<div className="flex flex-row items-center gap-2">
-							<P
-								className="max-w-[240px] truncate font-medium"
-								title={name}
-							>
-								{name}
-							</P>
 
-							{sub_type === "EMBEDDED" && (
-								<img
-									src={GOOGLE}
-									alt="Google"
-									className="size-5 shrink-0 object-cover"
-								/>
-							)}
-						</div>
-					</div>
-					<div className="flex min-w-0 max-w-[260px] flex-shrink-0 items-center gap-1.5 overflow-hidden">
-						{tag !== undefined &&
-							(Array.isArray(tag) ? (
-								<>
-									{tag.slice(0, 2).map((t, i) => (
-										<Badge
-											key={`${id}`}
-											variant="outline"
-											title={t}
-										>
-											<span className="max-w-[20ch] truncate px-2 font-semibold text-xs">
-												{t}
-											</span>
-										</Badge>
-									))}
-									{tag.length > 2 && (
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<span className="cursor-pointer whitespace-nowrap text-muted-foreground text-xs">
-													+{tag.length - 2}
-												</span>
-											</TooltipTrigger>
-											<TooltipContent>
-												<span className="max-w-[300px]">
-													{tag.slice(2).join(", ")}
-												</span>
-											</TooltipContent>
-										</Tooltip>
-									)}
-								</>
-							) : tag !== "" ? (
-								<Badge variant="outline" title={tag}>
+				{/* Name — takes all available space and truncates */}
+				<div className="flex min-w-0 flex-1 flex-row items-center gap-2">
+					<P className="truncate font-medium" title={name}>
+						{name}
+					</P>
+					{sub_type === "EMBEDDED" && (
+						<img
+							src={GOOGLE}
+							alt="Google"
+							className="size-5 flex-shrink-0 object-cover"
+						/>
+					)}
+				</div>
+
+				{/* Tags: full badges when wide, compact count badge when narrow */}
+				{tagArray.length > 0 &&
+					(showFullTags ? (
+						<div className="flex flex-shrink-0 items-center gap-1.5">
+							{tagArray.slice(0, 2).map((t) => (
+								<Badge key={t} variant="outline" title={t}>
 									<span className="max-w-[20ch] truncate px-2 font-semibold text-xs">
-										{tag}
+										{t}
 									</span>
 								</Badge>
-							) : null)}
-					</div>
-				</div>
-				<div className="flex flex-1 items-center justify-end gap-2">
-					<span className="text-foreground text-sm">
+							))}
+							{tagArray.length > 2 && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span className="cursor-pointer whitespace-nowrap text-muted-foreground text-xs">
+											+{tagArray.length - 2}
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										<span className="max-w-[300px]">
+											{tagArray.slice(2).join(", ")}
+										</span>
+									</TooltipContent>
+								</Tooltip>
+							)}
+						</div>
+					) : (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Badge
+									variant="outline"
+									className="flex flex-shrink-0 cursor-pointer items-center gap-1"
+									onClick={(e) => e.stopPropagation()}
+								>
+									<Tag className="size-3" />
+									{tagArray.length}
+								</Badge>
+							</TooltipTrigger>
+							<TooltipContent>
+								<span className="max-w-[300px]">
+									{tagArray.join(", ")}
+								</span>
+							</TooltipContent>
+						</Tooltip>
+					))}
+
+				{/* Date + actions — always visible, never pushed out */}
+				<div className="flex flex-shrink-0 items-center gap-2">
+					<span className="hidden text-foreground text-sm sm:inline">
 						{formattedDate}
 					</span>
 					<div className="flex flex-row items-center gap-1">
@@ -360,7 +391,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 					{tag !== undefined &&
 						(Array.isArray(tag) ? (
 							<>
-								{tag.slice(0, 2).map((t, i) => (
+								{tag.slice(0, 2).map((t, _i) => (
 									<Badge key={`${id}`} variant="secondary">
 										{t}
 									</Badge>
