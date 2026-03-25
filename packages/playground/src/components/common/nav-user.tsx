@@ -73,11 +73,23 @@ export function NavUser() {
 						) : (
 							<SunIcon />
 						)}
-						{theme === "dark"
-							? "Dark"
-							: theme === "system"
-								? "System"
-								: "Light"}
+						{theme === "dark" ? (
+							<>
+								Dark
+								<span className="ml-1 rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+									BETA
+								</span>
+							</>
+						) : theme === "system" ? (
+							<>
+								System
+								<span className="ml-1 rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+									BETA
+								</span>
+							</>
+						) : (
+							"Light"
+						)}
 					</DropdownMenuSubTrigger>
 					<DropdownMenuPortal>
 						<DropdownMenuSubContent>
@@ -94,6 +106,9 @@ export function NavUser() {
 							>
 								<MoonIcon />
 								Dark
+								<span className="ml-auto rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+									BETA
+								</span>
 							</DropdownMenuCheckboxItem>
 							<DropdownMenuCheckboxItem
 								checked={theme === "system"}
@@ -101,6 +116,9 @@ export function NavUser() {
 							>
 								<MonitorIcon />
 								System
+								<span className="ml-auto rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+									BETA
+								</span>
 							</DropdownMenuCheckboxItem>
 						</DropdownMenuSubContent>
 					</DropdownMenuPortal>
