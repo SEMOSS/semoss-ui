@@ -12,7 +12,8 @@
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "check": "biome check",
-    "fix": "biome check --write"
+    "fix": "biome check --write",
+    "package:dev":"pnpm run build:dev && node scripts/package-app.js"
   },
   "author": "",
   "license": "Apache-2.0",
@@ -33,5 +34,8 @@
   "engines": {
     "pnpm": "~10.13.0",
     "node": ">=24.4.0 <25"
+  },
+  "dependencies": {
+    "fs-extra":"^11.3.4"
   }
 }

@@ -28,3 +28,7 @@ yarn-error.log
 
 # Ignore legacy
 packages/legacy
+
+# Ignore portals
+portals/
+portals.zip
