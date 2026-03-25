@@ -6,7 +6,9 @@
 		"favorites": "Favoritos",
 		"today": "Hoy",
 		"yesterday": "Ayer",
+		"fewDaysAgo": "Hace unos días",
 		"lastWeek": "Última semana",
+		"thisMonth": "Este mes",
 		"lastMonth": "Último mes",
 		"older": "Más antiguo"
 	},
