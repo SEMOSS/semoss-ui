@@ -28,13 +28,17 @@ export const AccessControl = ({
 	const navigate = useNavigate();
 
 	return (
-		<div className="w-full">
-			{permission === "author" && (
-				<section className="w-full pb-6">
-					<H2 className="mb-2 font-medium text-xl">
-						Access Settings
-					</H2>
-					<SettingsContext.Provider value={{ adminMode: false }}>
+		<SettingsContext.Provider
+			value={{
+				adminMode: false,
+			}}
+		>
+			<div className="flex w-full flex-col items-start gap-6 self-stretch">
+				{permission === "author" && (
+					<section className="w-full">
+						<H2 className="mb-2 font-medium text-xl">
+							Access Settings
+						</H2>
 						<SettingsTiles
 							type="PROJECT"
 							direction="row"
@@ -44,13 +48,13 @@ export const AccessControl = ({
 								navigate("/settings/app");
 							}}
 						/>
-					</SettingsContext.Provider>
-				</section>
-			)}
+					</section>
+				)}
 
-			<section className="w-full pb-6">
-				<H2 className="mb-2 font-medium text-xl">Member Permissions</H2>
-				<SettingsContext.Provider value={{ adminMode: false }}>
+				<section className="w-full">
+					<H2 className="mb-2 font-medium text-xl">
+						Member Permissions
+					</H2>
 					<div className="flex flex-col gap-4">
 						<PendingMembersTable type="PROJECT" id={appId} />
 						<MembersTable
@@ -62,8 +66,8 @@ export const AccessControl = ({
 							<TeamsTable type="PROJECT" id={appId} />
 						</div>
 					</div>
-				</SettingsContext.Provider>
-			</section>
-		</div>
+				</section>
+			</div>
+		</SettingsContext.Provider>
 	);
 };

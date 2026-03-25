@@ -374,6 +374,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											}
 										}}
 									/>
+									<div
+										aria-hidden="true"
+										className="pointer-events-none absolute inset-x-px bottom-px z-10 h-12 rounded-b-md bg-background"
+									/>
 								</div>
 							}
 							ErrorBoundary={LexicalErrorBoundary}
@@ -485,7 +489,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							<EngineSelect
 								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
 								disabled={isLoading}
-								name={model?.app_name || ""}
+								name={
+									model?.engine_display_name ||
+									model?.app_name ||
+									""
+								}
 								value={model?.app_id || ""}
 								engineTypes={["MODEL"]}
 								metaFilters={[{ tag: "text-generation" }]}

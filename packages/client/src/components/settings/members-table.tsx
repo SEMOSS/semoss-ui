@@ -474,6 +474,10 @@ export const MembersTable = (props: MembersTableProps) => {
 		);
 	}, [rowsPerPage]);
 
+	const memberCountLabel = `${totalMembers} ${
+		totalMembers === 1 ? "member" : "members"
+	}`;
+
 	const isLastAuthor = (user) => {
 		const authors = allAuthors.filter(
 			(m) =>
@@ -491,13 +495,13 @@ export const MembersTable = (props: MembersTableProps) => {
 		<div className="flex w-full shrink-0 flex-col items-start gap-[25px]">
 			<div className="flex flex-col items-start gap-5 self-stretch">
 				<div className="w-full rounded-xl border border-border">
-					<div className="flex items-center self-stretch rounded-t-xl bg-background shadow-[0px_-1px_0px_0px_rgba(0,0,0,0.12)_inset]">
-						<div className="flex items-center gap-2.5 p-3 px-6 py-3">
+					<div className="flex flex-wrap items-center gap-x-2 gap-y-1 self-stretch rounded-t-xl bg-background shadow-[0px_-1px_0px_0px_rgba(0,0,0,0.12)_inset]">
+						<div className="flex items-center gap-2.5 px-3 py-3 sm:px-6">
 							<H4 data-testid="permissions-title">Permissions</H4>
 						</div>
-						<div className="flex flex-1 items-start">
+						<div className="flex min-w-0 flex-1 items-center px-2 py-2 sm:px-4">
 							{avatarMembers.length > 0 ? (
-								<div className="flex h-14 w-[130px] flex-col items-center justify-center gap-2.5 px-4 py-2.5">
+								<div className="mr-3 flex h-10 flex-shrink-0 flex-col items-center justify-center gap-2.5">
 									<div
 										className="-space-x-2 flex"
 										data-testid="membersTable-avatarGroup"
@@ -528,20 +532,19 @@ export const MembersTable = (props: MembersTableProps) => {
 									</div>
 								</div>
 							) : null}
-							<div className="flex h-14 flex-col items-center justify-center gap-2.5 px-4 py-1.5">
-								<div className="flex flex-col items-start">
-									<P data-testid="membersTable-memberCount">
-										{totalMembers} member
-									</P>
-								</div>
-							</div>
+							<P
+								className="truncate font-medium text-muted-foreground text-sm"
+								data-testid="membersTable-memberCount"
+							>
+								{memberCountLabel}
+							</P>
 						</div>
 						<div className="flex items-center">
 							{isSearch ? (
 								<Input
 									autoFocus={true}
 									placeholder="Search Members"
-									className="h-8 w-[200px]"
+									className="h-8 w-[140px] sm:w-[200px]"
 									value={search}
 									data-testid={`membersTables-searchMembers-searchBar}`}
 									onChange={(e) => {
@@ -1027,9 +1030,9 @@ export const MembersTable = (props: MembersTableProps) => {
 														type === "MODEL" ? 8 : 5
 													}
 												>
-													<div className="flex items-center justify-end gap-4 px-2">
+													<div className="flex flex-wrap items-center justify-end gap-3 px-2 sm:gap-4">
 														<div className="flex items-center gap-2">
-															<span className="text-sm">
+															<span className="text-muted-foreground text-sm">
 																Rows per page:
 															</span>
 															<Select
@@ -1067,7 +1070,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																</SelectContent>
 															</Select>
 														</div>
-														<div className="text-sm">
+														<div className="whitespace-nowrap text-muted-foreground text-sm">
 															{startRow}-{endRow}{" "}
 															of {totalMembers}
 														</div>

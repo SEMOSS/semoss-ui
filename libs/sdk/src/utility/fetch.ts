@@ -65,7 +65,11 @@ const interceptors: {
 	response: async ({ response }) => {
 		// TODO: maybe we shouldn't just throw unauthorized error for 302 and actually honor the redirect?
 		if (response.status === 302) {
-			throw new UnauthorizedError("Unauthorized");
+			throw new UnauthorizedError("Unauthorized", 302);
+		} else if (response.status === 403) {
+			// BE throws 403 when the session is expired or invalid, so we can use this to trigger a logout in the frontend
+			// TODO: maybe we should set isAuthorized to false in the insight store
+			throw new UnauthorizedError("Unauthorized", 403);
 		}
 	},
 };
@@ -178,7 +182,12 @@ export const post = async <O>(
 	}
 
 	if (!response.ok) {
-		const errorData = await response.json();
+		let errorData: Record<string, string> = {};
+		try {
+			errorData = await response.json();
+		} catch {
+			errorData = {};
+		}
 		const errorMessage =
 			errorData.message ||
 			errorData.error ||
