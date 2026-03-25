@@ -160,7 +160,6 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 			[notifications],
 		);
 		const unreadCount = unread.length;
-
 		const displayedNotifications = useMemo(() => {
 			switch (selectedTab) {
 				case "unread":
@@ -258,16 +257,18 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 			}
 			if (n.recipient_user_id === loggedInUser) return null;
 			let appPath: string;
-			switch (n.notification_source) {
+			let notificationSource: string;
+			notificationSource = n.notification_source?.trim()?.toLowerCase();
+			switch (notificationSource) {
 				case "app":
-					appPath = `/${n.notification_source}/${n.catalog_id}?tab=accesscontrol`;
+					appPath = `/${notificationSource}/${n.catalog_id}?tab=accesscontrol`;
 					break;
 				case "model":
 				case "database":
 				case "function":
 				case "storage":
 				case "vector":
-					appPath = `/engine/${n.notification_source}/${n.catalog_id}/access-control`;
+					appPath = `/engine/${notificationSource}/${n.catalog_id}/access-control`;
 					break;
 				default:
 					return null; // unsupported source
