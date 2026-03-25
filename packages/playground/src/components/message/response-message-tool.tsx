@@ -87,7 +87,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			variant = "cancelled";
 		} else if (tool.status === "PAUSED") {
 			variant = "paused";
-		} else if (tool.status === "SUCCESS" || tool.response) {
+		} else if (tool.status === "SUCCESS") {
 			variant = "complete";
 		} else if (tool.status === "LOADING") {
 			variant = "loading";

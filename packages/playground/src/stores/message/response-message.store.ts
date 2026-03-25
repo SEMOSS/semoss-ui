@@ -572,6 +572,8 @@ paramValues=[${JSON.stringify({
 			toolResponse = `${TOOL_PAUSE_PROMPT}${toolResponse ? `\n\nDetails: ${toolResponse}` : ""}`;
 		}
 
+		// Replace with a placeholder if the response is empty
+
 		// skip if the tool is already completed
 		if (
 			tool.status === "SUCCESS" ||
