@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
 import { MCPJsonEditor } from "../shared";
 
 interface EngineMcpEditorProps {
@@ -17,8 +16,6 @@ interface EngineMcpEditorProps {
 export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 	({ node, engine }) => {
 		const insight = useInsight();
-		const { insightStore } = useRootStore();
-		const modelId = insightStore.defaultTextGenerationModel;
 
 		const config: {
 			name: string;
@@ -128,8 +125,7 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 								onSave: (data) => saveFile(data),
 								path: config.path,
 								name: config.name,
-								engine: engine,
-								modelId: modelId ?? undefined,
+								resourceId: engine,
 							}}
 						/>
 					</div>

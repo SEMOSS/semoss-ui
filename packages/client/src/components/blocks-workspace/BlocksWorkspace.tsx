@@ -10,8 +10,9 @@ import {
 	STATE_VERSION,
 	StateStore,
 } from "@semoss/renderer";
-import { runPixel } from "@semoss/sdk/react";
+import { runPixel, useInsight } from "@semoss/sdk/react";
 import { LoadingScreen, useNotification } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import type { FlexLayout } from "@/components/flex-layout";
@@ -196,6 +197,7 @@ const ACTIVE = "page-1";
  */
 export const BlocksWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
+	const insight = useInsight();
 	const notification = useNotification();
 	const [state, setState] = useState<StateStore>();
 
@@ -349,7 +351,24 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "app-file-editor") {
 			return <AppFileEditor node={node} app={workspace.appId} />;
 		} else if (component === "mcpJsonEditor") {
-			return <MCPJsonEditor dataMap={config.data} />;
+			return (
+				<MCPJsonEditor
+					dataMap={{
+						...config.data,
+						onSave: async (data, path) => {
+							try {
+								await insight.actions.run(
+									`SaveAppAssets(project=["${workspace.appId}"], filePath=["${path}"], content=["<encode>${JSON.stringify(data, null, 2)}</encode>"]);`,
+								);
+								toast.success("Tool saved successfully");
+							} catch (e) {
+								toast.error(`Failed to save Tool: ${e}`);
+							}
+						},
+						resourceId: workspace.appId,
+					}}
+				/>
+			);
 		} else if (component === "notebook-explorer") {
 			return <NotebookExplorerPanel title={"Notebook"} layout={layout} />;
 		} else if (component === "notebook-viewer") {

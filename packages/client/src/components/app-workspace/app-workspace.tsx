@@ -7,12 +7,14 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
+import { useInsight } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import {
 	Button,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import { MCPJsonEditor } from "../shared";
 import { AppFileEditor } from "./app-file-editor";
@@ -28,6 +30,7 @@ interface AppWorkspaceProps {
 
 export const AppWorkspace: React.FC<AppWorkspaceProps> = observer(
 	({ app, model }) => {
+		const insight = useInsight();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const [isMaximized, setIsMaximized] = useState(false);
 
@@ -127,7 +130,20 @@ export const AppWorkspace: React.FC<AppWorkspaceProps> = observer(
 										};
 										return (
 											<MCPJsonEditor
-												dataMap={config.data}
+												dataMap={{
+													...config.data,
+													onSave: async (data, path) => {
+														try {
+															await insight.actions.run(
+																`SaveAppAssets(project=["${app}"], filePath=["${path}"], content=["<encode>${JSON.stringify(data, null, 2)}</encode>"]);`,
+															);
+															toast.success("Tool saved successfully");
+														} catch (e) {
+															toast.error(`Failed to save Tool: ${e}`);
+														}
+													},
+													resourceId: app,
+												}}
 											/>
 										);
 									}

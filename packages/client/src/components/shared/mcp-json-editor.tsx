@@ -31,6 +31,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { useRootStore } from "@/hooks";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,8 +63,7 @@ type MCPJsonEditorProps = {
 		onSave?: (data: MCPJsonData, path: string) => void;
 		path: string;
 		name: string;
-		engine: string;
-		modelId?: string;
+		resourceId: string;
 	};
 };
 
@@ -1078,8 +1078,10 @@ FunctionCard.displayName = "FunctionCard";
 // ─── Main MCPJsonEditor Component ─────────────────────────────────────────────
 
 export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
-	const { initialData, onSave, path, engine, modelId } = dataMap;
+	const { initialData, onSave, path, resourceId } = dataMap;
 	const insight = useInsight();
+	const {insightStore} = useRootStore();
+	const modelId = insightStore.defaultTextGenerationModel;
 	const enableToolEnhancer = !!modelId;
 	const [data, setData] = useState<MCPJsonData>(initialData);
 	const [deletedTools, setDeletedTools] = useState<string[]>([]);
@@ -1293,7 +1295,6 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		[jsonTextValues],
 	);
 
-	// ── Sparkle click — calls GenerateDescriptionForMcp directly ──────────────
 	const handleOptimizeDescription = useCallback(
 		async (toolIdx: number) => {
 			if (!modelId) return;
@@ -1304,9 +1305,9 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 			setIsDiffLoading(true);
 			setDiffResult(null);
 			setDiffError(null);
-
+			const resourceType = window.location.hash.includes('app')? "project" : "engine";
 			try {
-				const pixelCommand = `GenerateDescriptionForMcp(engine=["${engine}"], model=["${modelId}"], toolName="${tool.name}");`;
+				const pixelCommand = `GenerateDescriptionForMcp(${resourceType}=["${resourceId}"], model=["${modelId}"], toolName="${tool.name}");`;
 				const { pixelReturn } = await insight.actions.run(pixelCommand);
 				setDiffResult(pixelReturn[0].output as MCPDescriptionApiResponse);
 			} catch (err) {
@@ -1319,7 +1320,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				setIsDiffLoading(false);
 			}
 		},
-		[data.tools, engine, modelId, insight.actions],
+		[data.tools, resourceId, modelId, insight.actions],
 	);
 
 	// ── Apply selected diff fields ─────────────────────────────────────────────

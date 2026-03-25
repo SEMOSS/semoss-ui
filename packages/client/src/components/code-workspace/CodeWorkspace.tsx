@@ -1,4 +1,6 @@
 import { observer } from "mobx-react-lite";
+import { useInsight } from "@semoss/sdk/react";
+import { toast } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import { useWorkspace } from "@/hooks";
@@ -86,6 +88,8 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
  * Render the code workspace
  */
 export const CodeWorkspace: React.FC = observer(() => {
+	const insight = useInsight();
+
 	const FACTORY: React.ComponentProps<typeof WorkspaceManager>["factory"] = (
 		node,
 		layout,
@@ -105,7 +109,24 @@ export const CodeWorkspace: React.FC = observer(() => {
 		} else if (component === "app-file-editor") {
 			return <AppFileEditor node={node} app={workspace.appId} />;
 		} else if (component === "mcpJsonEditor") {
-			return <MCPJsonEditor dataMap={config.data} />;
+			return (
+				<MCPJsonEditor
+					dataMap={{
+						...config.data,
+						onSave: async (data, path) => {
+							try {
+								await insight.actions.run(
+									`SaveAppAssets(project=["${workspace.appId}"], filePath=["${path}"], content=["<encode>${JSON.stringify(data, null, 2)}</encode>"]);`,
+								);
+								toast.success("Tool saved successfully");
+							} catch (e) {
+								toast.error(`Failed to save Tool: ${e}`);
+							}
+						},
+						resourceId: workspace.appId,
+					}}
+				/>
+			);
 		} else if (component === "renderer") {
 			return <RendererPanel />;
 		} else if (component === "settingsPanel") {
