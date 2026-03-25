@@ -68,7 +68,9 @@ export const GlobalNav = observer(() => {
 		t("buckets.favorites"),
 		t("buckets.today"),
 		t("buckets.yesterday"),
+		t("buckets.fewDaysAgo"),
 		t("buckets.lastWeek"),
+		t("buckets.thisMonth"),
 		t("buckets.lastMonth"),
 		t("buckets.older"),
 	] as const;
@@ -205,7 +207,7 @@ export const GlobalNav = observer(() => {
 	 */
 	const bucketedRooms = getRooms.data.reduce(
 		(acc, val) => {
-			const d = dayjs(val.DATE_CREATED);
+			const d = dayjs(val.DATE_CREATED + "Z");
 
 			// Pinned rooms only go in Favorites bucket
 			if (val.PINNED) {
@@ -218,9 +220,13 @@ export const GlobalNav = observer(() => {
 				acc[t("buckets.today")].push(val);
 			} else if (systemDate.subtract(1, "day").isSame(d, "day")) {
 				acc[t("buckets.yesterday")].push(val);
-			} else if (systemDate.isSame(d, "week")) {
+			} else if (d.isAfter(systemDate.subtract(3, "day"))) {
+				acc[t("buckets.fewDaysAgo")].push(val);
+			} else if (d.isAfter(systemDate.subtract(7, "day"))) {
 				acc[t("buckets.lastWeek")].push(val);
 			} else if (systemDate.isSame(d, "month")) {
+				acc[t("buckets.thisMonth")].push(val);
+			} else if (systemDate.subtract(1, "month").isSame(d, "month")) {
 				acc[t("buckets.lastMonth")].push(val);
 			} else {
 				acc[t("buckets.older")].push(val);
@@ -232,7 +238,9 @@ export const GlobalNav = observer(() => {
 			[t("buckets.favorites")]: [],
 			[t("buckets.today")]: [],
 			[t("buckets.yesterday")]: [],
+			[t("buckets.fewDaysAgo")]: [],
 			[t("buckets.lastWeek")]: [],
+			[t("buckets.thisMonth")]: [],
 			[t("buckets.lastMonth")]: [],
 			[t("buckets.older")]: [],
 		} as Record<string, typeof getRooms.data>,
@@ -353,9 +361,9 @@ export const GlobalNav = observer(() => {
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					)}
-					{root.theme.sidebar.headerItems.map((item) => (
+					{root.theme.sidebar.headerItems.map((item, index) => (
 						<GlobalNavItem
-							key={item.path}
+							key={`header-${index}`}
 							name={item.name}
 							icon={item.icon}
 							path={item.path}
@@ -405,18 +413,29 @@ export const GlobalNav = observer(() => {
 							</SidebarGroupLabel>
 							<SidebarGroupContent>
 								<SidebarMenu>
-									{rooms.map((room) => {
+									{rooms.map((room, index) => {
 										const roomId = room.ROOM_ID;
 										const name =
 											room.ROOM_NAME ||
 											t("messages.untitled");
+										const date = root.theme.sidebar
+											.chatHistoryDate
+											? new Date(room.DATE_CREATED + 'Z').toLocaleString(undefined, {
+													month: "numeric",
+													day: "numeric",
+													year: "numeric",
+													hour: "numeric",
+													minute: "2-digit",
+													hour12: true,
+												})
+											: null;
 										const isFavorite = room.PINNED || false;
 										const isEditing =
 											editingRoomId === roomId;
 
 										return (
 											<SidebarMenuItem
-												key={roomId}
+												key={`${roomId}-${index}`}
 												className="group/room relative flex"
 											>
 												{isEditing ? (
@@ -460,13 +479,20 @@ export const GlobalNav = observer(() => {
 															}
 														>
 															<Link
-																className="inline-block flex-1 truncate"
+																className={`flex h-auto flex-col items-start p-2 ${date ? "gap-1" : ""}`}
 																to={`/room/${roomId}`}
 																aria-label={
 																	"Select room"
 																}
 															>
-																{name}
+																<span className="truncate font-medium text-sm leading-tight">
+																	{name}
+																</span>
+																{date && (
+																	<span className="text-muted-foreground text-xs leading-none">
+																		{date}
+																	</span>
+																)}
 															</Link>
 														</SidebarMenuButton>
 														<DropdownMenu

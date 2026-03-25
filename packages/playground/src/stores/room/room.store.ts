@@ -320,18 +320,31 @@ export class RoomStore {
 	}
 
 	/**
-	 * Indicator to check if the room is ready for the next message
+	 * Number of tools in this room
 	 */
-	get hasUnfinishedTools(): boolean {
-		if (this.tail instanceof ResponseMessageStore) {
-			for (const toolId in this._store.tools) {
-				const tool = this._store.tools[toolId];
-				if (tool.status === "INITIAL" || tool.status === "LOADING") {
-					return true;
-				}
+	get numberOfTools() {
+		return Object.keys(this._store.tools).length;
+	}
+
+	/**
+	 * Last response message - avoids INPUT_TOOL_EXEC and STREAMING_TOOL_PLACEHOLDER messages
+	 */
+	get latestResponseMessage(): ResponseMessageStore {
+		let responseMessage: AbstractMessageStore = this.tail;
+		while (responseMessage) {
+			// if it is a REAL response message, return it
+			if (
+				responseMessage instanceof ResponseMessageStore &&
+				responseMessage.id !== "STREAMING_TOOL_PLACEHOLDER_ID"
+			) {
+				return responseMessage;
+			} else {
+				// if it is not a response message, move to the parent message
+				responseMessage = responseMessage.parent;
 			}
 		}
-		return false;
+		// if there are no response messages, return null
+		return null;
 	}
 
 	/**
@@ -461,7 +474,10 @@ export class RoomStore {
 					parts: [],
 					tokens: 0,
 					ornaments: {
-						modelName: this._store.model?.app_name || "",
+						modelName:
+							this._store.model?.engine_display_name ||
+							this._store.model?.app_name ||
+							"",
 					},
 				} as ResponsePixelMessage);
 			} else if (this.mode === "planning") {
@@ -481,7 +497,10 @@ export class RoomStore {
 					tokens: 0,
 					ornaments: {
 						PLAYGROUND_MESSAGE_TYPE: "COT",
-						modelName: this._store.model?.app_name || "",
+						modelName:
+							this._store.model?.engine_display_name ||
+							this._store.model?.app_name ||
+							"",
 					},
 				} as ResponsePixelMessage);
 			}
@@ -950,7 +969,8 @@ export class RoomStore {
 			parts: parts,
 			tokens: 0,
 			ornaments: {
-				modelName: this.model.app_name,
+				modelName:
+					this.model.engine_display_name || this.model.app_name,
 			},
 		});
 
@@ -982,7 +1002,7 @@ export class RoomStore {
 		messageId: string,
 		toolId: string,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
 		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {

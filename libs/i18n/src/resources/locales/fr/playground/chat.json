@@ -37,7 +37,8 @@
 		"completed": "Terminé",
 		"ready": "Prêt",
 		"autoExecute": "Cet outil est configuré pour s'exécuter automatiquement",
-		"cancel": "Annuler"
+		"cancel": "Annuler",
+		"paused": "En pause"
 	},
 	"notifications": {
 		"feedbackSuccess": "Merci pour votre retour !",
