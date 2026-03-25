@@ -10,12 +10,11 @@ import {
 	Save,
 	Search,
 	Sparkles,
-	ThumbsDown,
-	ThumbsUp,
 	Trash2,
 	X,
 } from "lucide-react";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -33,14 +32,38 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface DescriptionDiff {
+	old: string;
+	new: string;
+}
+
+export interface MCPParameterDiff {
+	name: string;
+	old: string;
+	new: string;
+}
+
+export interface MCPDescriptionApiResponse {
+	tool_name: string;
+	function_description: DescriptionDiff;
+	parameters: MCPParameterDiff[];
+}
+
+interface DiffSelections {
+	functionDescription: boolean;
+	parameters: Record<string, boolean>;
+}
+
 type MCPJsonEditorProps = {
 	dataMap: {
 		initialData: MCPJsonData;
 		onSave?: (data: MCPJsonData, path: string) => void;
 		path: string;
 		name: string;
-		enableToolEnhancer?: boolean;
-		onOptimize?: (data: string) => Promise<string>;
+		engine: string;
+		modelId?: string;
 	};
 };
 
@@ -126,44 +149,27 @@ interface FunctionCardProps {
 	jsonErrors: Record<string, string>;
 	showDelete?: boolean;
 	showRestore?: boolean;
-	onOptimizeDescription: (
-		toolIdx: number,
-		propKey: string | null,
-		currentDescription: string,
-	) => void;
-	enableToolEnhancer?: boolean;
+	onOptimizeDescription: (toolIdx: number) => void;
+	enableToolEnhancer: boolean;
 }
 
-interface OptimizationModalProps {
+interface DiffModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	currentDescription: string;
-	optimizedDescription: string | null;
-	onApprove: () => void;
-	onReject: () => void;
+	toolName: string;
+	result: MCPDescriptionApiResponse | null;
 	isLoading: boolean;
 	error: string | null;
+	onApply: (selections: DiffSelections) => void;
 }
-
-// Utility function to clean tool context by removing unwanted fields
-const cleanToolContext = (tool: MCPTool): Omit<MCPTool, "_type" | "_meta"> => {
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const { _type, _meta, ...cleanedTool } = tool;
-	return cleanedTool;
-};
 
 // Custom hooks
 const useDebounce = <T,>(value: T, delay: number = 400): T => {
 	const [debouncedValue, setDebouncedValue] = useState(value);
-
 	useEffect(() => {
-		const timer = setTimeout(() => {
-			setDebouncedValue(value);
-		}, delay);
-
+		const timer = setTimeout(() => setDebouncedValue(value), delay);
 		return () => clearTimeout(timer);
 	}, [value, delay]);
-
 	return debouncedValue;
 };
 
@@ -218,32 +224,135 @@ const useKeyboardShortcut = (
 	}, [key, callback, ...deps]);
 };
 
-// Optimization Modal Component
-const OptimizationModal: React.FC<OptimizationModalProps> = ({
+// ─── DiffRow Sub-Component ────────────────────────────────────────────────────
+
+interface DiffRowProps {
+	label: string;
+	isToolLevel: boolean;
+	diffData: DescriptionDiff;
+	isSelected: boolean;
+	onToggle: () => void;
+}
+
+const DiffRow: React.FC<DiffRowProps> = ({
+	label,
+	isToolLevel,
+	diffData,
+	isSelected,
+	onToggle,
+}) => {
+	return (
+		<div
+			className={`rounded-lg border transition-all ${
+				isSelected
+					? "border-primary/40 bg-primary/5"
+					: "border-border bg-card opacity-70"
+			}`}
+			data-testid={`diff-row-${label}`}
+		>
+			<div className="flex items-center gap-3 border-border border-b px-4 py-2">
+				<input
+					type="checkbox"
+					checked={isSelected}
+					onChange={onToggle}
+					className="h-4 w-4 cursor-pointer rounded border-border accent-primary"
+					data-testid={`diff-row-checkbox-${label}`}
+				/>
+				{isToolLevel ? (
+					<span className="flex items-center gap-1.5 font-semibold text-foreground text-sm">
+						<Sparkles size={13} className="text-primary" />
+						{label}
+					</span>
+				) : (
+					<span className="flex items-center gap-1.5 font-medium text-foreground text-sm">
+						<span className="rounded bg-muted px-1.5 py-0.5 font-mono text-muted-foreground text-xs">
+							param
+						</span>
+						{label}
+					</span>
+				)}
+			</div>
+			<div className="grid grid-cols-2 divide-x divide-border">
+				<div className="p-3">
+					<p className="mb-1.5 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+						Current
+					</p>
+					<p className="text-muted-foreground text-sm leading-relaxed">
+						{diffData.old ? (
+							diffData.old
+						) : (
+							<span className="italic">No description</span>
+						)}
+					</p>
+				</div>
+				<div className="p-3">
+					<p className="mb-1.5 font-medium text-primary text-xs uppercase tracking-wide">
+						AI Generated
+					</p>
+					<p className="text-foreground text-sm leading-relaxed">
+						{diffData.new ? (
+							diffData.new
+						) : (
+							<span className="italic">No description</span>
+						)}
+					</p>
+				</div>
+			</div>
+		</div>
+	);
+};
+
+// ─── Diff Modal Component ─────────────────────────────────────────────────────
+
+const DiffModal: React.FC<DiffModalProps> = ({
 	isOpen,
 	onClose,
-	currentDescription,
-	optimizedDescription,
-	onApprove,
-	onReject,
+	toolName,
+	result,
 	isLoading,
 	error,
+	onApply,
 }) => {
+	const [selections, setSelections] = useState<DiffSelections>({
+		functionDescription: true,
+		parameters: {},
+	});
+
+	useEffect(() => {
+		if (result) {
+			const paramSelections: Record<string, boolean> = {};
+			(result.parameters || []).forEach((p) => {
+				paramSelections[p.name] = true;
+			});
+			setSelections({
+				functionDescription: true,
+				parameters: paramSelections,
+			});
+		}
+	}, [result]);
+
 	if (!isOpen) return null;
 
-	const handleApprove = () => {
-		onApprove();
-		onClose();
-	};
+	const paramNames = (result?.parameters || []).map((p) => p.name);
+	const allSelected =
+		selections.functionDescription &&
+		paramNames.every((n) => selections.parameters[n]);
+	const anySelected =
+		selections.functionDescription ||
+		paramNames.some((n) => selections.parameters[n]);
 
-	const handleReject = () => {
-		onReject();
-		onClose();
+	const handleToggleAll = () => {
+		const next = !allSelected;
+		const paramSelections: Record<string, boolean> = {};
+		paramNames.forEach((n) => {
+			paramSelections[n] = next;
+		});
+		setSelections({ functionDescription: next, parameters: paramSelections });
 	};
 
 	return (
-		<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-			<div className="relative mx-4 w-full max-w-3xl overflow-hidden rounded-lg bg-card shadow-2xl">
+		<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" data-testid="diff-modal">
+			<div className="relative mx-4 w-full max-w-4xl overflow-hidden rounded-lg bg-card shadow-2xl">
 				{/* Header */}
 				<div className="flex items-center justify-between border-border border-b bg-secondary px-6 py-4">
 					<div className="flex items-center gap-3">
@@ -252,10 +361,13 @@ const OptimizationModal: React.FC<OptimizationModalProps> = ({
 						</div>
 						<div>
 							<h2 className="font-semibold text-foreground text-lg">
-								AI-Optimized Description
+								AI Generated Descriptions
 							</h2>
 							<p className="text-muted-foreground text-sm">
-								Review and approve the enhanced version
+								Review and select descriptions to apply for{" "}
+								<span className="font-medium text-foreground">
+									{toolName}
+								</span>
 							</p>
 						</div>
 					</div>
@@ -264,6 +376,7 @@ const OptimizationModal: React.FC<OptimizationModalProps> = ({
 						size="icon-sm"
 						onClick={onClose}
 						className="text-muted-foreground hover:text-foreground"
+						data-testid="diff-modal-close"
 					>
 						<X size={20} />
 					</Button>
@@ -275,10 +388,11 @@ const OptimizationModal: React.FC<OptimizationModalProps> = ({
 						<div className="flex flex-col items-center justify-center py-12">
 							<Loader2 className="mb-4 h-12 w-12 animate-spin text-primary" />
 							<p className="font-medium text-foreground">
-								Optimizing your description...
+								Generating descriptions...
 							</p>
 							<p className="mt-2 text-muted-foreground text-sm">
-								Our AI is analyzing and enhancing the content
+								AI is analyzing the tool and crafting optimized
+								descriptions
 							</p>
 						</div>
 					)}
@@ -289,7 +403,7 @@ const OptimizationModal: React.FC<OptimizationModalProps> = ({
 								<AlertCircle className="h-6 w-6 text-destructive" />
 							</div>
 							<p className="font-medium text-destructive">
-								Optimization Failed
+								Generation Failed
 							</p>
 							<p className="mt-2 text-center text-muted-foreground text-sm">
 								{error}
@@ -297,73 +411,97 @@ const OptimizationModal: React.FC<OptimizationModalProps> = ({
 						</div>
 					)}
 
-					{!isLoading && !error && optimizedDescription && (
-						<div className="space-y-6">
-							{/* Original Description */}
-							<div>
-								<Label className="mb-2 flex items-center gap-2 text-foreground text-sm">
-									<span>Original Description</span>
-									<Badge
-										variant="outline"
-										className="text-xs"
-									>
-										Current
-									</Badge>
-								</Label>
-								<div className="rounded-lg border border-border bg-muted p-4">
-									<p className="text-muted-foreground text-sm leading-relaxed">
-										{currentDescription || (
-											<span className="italic">
-												No description provided
-											</span>
-										)}
-									</p>
-								</div>
+					{!isLoading && !error && result && (
+						<div className="space-y-4">
+							<div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-4 py-2">
+								<span className="text-muted-foreground text-sm">
+									Select the descriptions you want to apply
+								</span>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleToggleAll}
+									className="text-primary hover:bg-primary/10"
+									data-testid="diff-modal-toggle-all"
+								>
+									{allSelected ? "Deselect All" : "Select All"}
+								</Button>
 							</div>
 
-							{/* Optimized Description */}
-							<div>
-								<Label className="mb-2 flex items-center gap-2 text-foreground text-sm">
-									<span>AI-Optimized Description</span>
-									<Badge color="success" className="text-xs">
-										Enhanced
-									</Badge>
-								</Label>
-								<div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
-									<p className="text-foreground text-sm leading-relaxed">
-										{optimizedDescription}
-									</p>
-								</div>
-							</div>
+							{result.function_description && (
+								<DiffRow
+									label="Function Description"
+									isToolLevel={true}
+									diffData={result.function_description}
+									isSelected={selections.functionDescription}
+									onToggle={() =>
+										setSelections((prev) => ({
+											...prev,
+											functionDescription:
+												!prev.functionDescription,
+										}))
+									}
+								/>
+							)}
+
+							{(result.parameters || []).map((param) => (
+								<DiffRow
+									key={param.name}
+									label={param.name}
+									isToolLevel={false}
+									diffData={{
+										old: param.old,
+										new: param.new,
+									}}
+									isSelected={
+										selections.parameters[param.name] ??
+										true
+									}
+									onToggle={() =>
+										setSelections((prev) => ({
+											...prev,
+											parameters: {
+												...prev.parameters,
+												[param.name]:
+													!prev.parameters[
+														param.name
+													],
+											},
+										}))
+									}
+								/>
+							))}
 						</div>
 					)}
 				</div>
 
 				{/* Footer */}
-				{!isLoading && !error && optimizedDescription && (
+				{!isLoading && !error && result && (
 					<div className="flex items-center justify-between border-border border-t bg-secondary px-6 py-4">
 						<Button
 							variant="outline"
-							onClick={handleReject}
-							className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+							onClick={onClose}
+							className="text-muted-foreground hover:text-foreground"
+							data-testid="diff-modal-cancel"
 						>
-							<ThumbsDown size={16} />
-							Reject
+							Cancel
 						</Button>
 						<Button
 							color="primary"
-							onClick={handleApprove}
-							className="flex items-center gap-2"
+							disabled={!anySelected}
+							onClick={() => onApply(selections)}
+							className="flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+							data-testid="diff-modal-apply"
 						>
-							<ThumbsUp size={16} />
-							Approve & Apply
+							<CheckCircle size={16} />
+							Apply Selected
 						</Button>
 					</div>
 				)}
 
 				{error && !isLoading && (
 					<div className="flex items-center justify-end border-border border-t bg-secondary px-6 py-4">
-						<Button variant="outline" onClick={onClose}>
+						<Button variant="outline" onClick={onClose} data-testid="diff-modal-error-close">
 							Close
 						</Button>
 					</div>
@@ -391,7 +529,7 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
 	saveShortcut = "Ctrl+S / Cmd+S",
 }) => {
 	return (
-		<div className="sticky top-0 z-50 mb-6 rounded-lg border bg-card/95 p-4 shadow-sm backdrop-blur-sm">
+		<div className="sticky top-0 z-50 mb-6 rounded-lg border bg-card/95 p-4 shadow-sm backdrop-blur-sm" data-testid="editor-header">
 			{/* Top Row: Function Count, Actions */}
 			<div className="mb-3 flex items-center justify-between">
 				<div className="flex items-center gap-2">
@@ -416,7 +554,8 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
 							variant="outline"
 							size="sm"
 							onClick={onExpandAll}
-							className="flex items-center gap-1.5 border-border bg-background text-foreground hover:bg-accent hover:text-foreground"
+							className="flex items-center gap-1.5 border-border bg-background text-foreground hover:bg-accent"
+							data-testid="editor-header-expand-all"
 						>
 							{expandAll ? (
 								<Minimize2 size={14} />
@@ -435,7 +574,8 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
 							onClick={onSave}
 							disabled={!hasChanges}
 							title={saveShortcut}
-							className="flex items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+							className="flex items-center gap-1.5 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+							data-testid="editor-header-save"
 						>
 							<Save size={14} />
 							<span>Save</span>
@@ -443,7 +583,6 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
 					)}
 				</div>
 			</div>
-
 			{/* Search Bar */}
 			{showSearch && (
 				<InputGroup>
@@ -460,6 +599,7 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
 						onChange={(e) => onSearchChange?.(e.target.value)}
 						placeholder="Search functions by name, title, or description..."
 						className="text-foreground text-sm"
+						data-testid="editor-header-search"
 					/>
 					{searchQuery && (
 						<InputGroupAddon align="inline-end">
@@ -468,6 +608,7 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
 								variant="ghost"
 								onClick={onSearchClear}
 								className="text-muted-foreground transition-colors hover:text-foreground"
+								data-testid="editor-header-search-clear"
 							>
 								<X size={18} />
 							</InputGroupButton>
@@ -508,10 +649,10 @@ const FunctionCard = memo<FunctionCardProps>(
 		showDelete = true,
 		showRestore = true,
 		onOptimizeDescription,
-		enableToolEnhancer = false,
+		enableToolEnhancer,
 	}) => {
 		return (
-			<Card className="mb-5 w-full gap-0 rounded-lg py-0 transition-all">
+			<Card className="mb-5 w-full gap-0 rounded-lg py-0 transition-all" data-testid={`function-card-${tool.name}`}>
 				<div
 					className={`flex w-full items-center justify-between ${
 						isDeleted ? "bg-muted" : "bg-secondary"
@@ -523,6 +664,7 @@ const FunctionCard = memo<FunctionCardProps>(
 						type="button"
 						onClick={() => onToggleExpand(tool.name)}
 						className="flex flex-1 cursor-pointer items-center gap-2 p-2 text-left"
+						data-testid={`function-card-toggle-${tool.name}`}
 					>
 						<div className="rounded p-1">
 							{isExpanded ? (
@@ -554,8 +696,8 @@ const FunctionCard = memo<FunctionCardProps>(
 								size="sm"
 								color="error"
 								onClick={() => onDelete(actualIdx)}
-								data-action="delete"
 								className="flex items-center gap-1 text-destructive hover:bg-transparent hover:text-destructive/90"
+								data-testid={`function-card-delete-${tool.name}`}
 							>
 								<Trash2 size={14} />
 								<span className="hidden sm:inline">Delete</span>
@@ -565,13 +707,11 @@ const FunctionCard = memo<FunctionCardProps>(
 								variant="ghost"
 								size="sm"
 								onClick={() => onRestore(actualIdx)}
-								data-action="restore"
 								className="flex items-center gap-1 text-destructive hover:bg-transparent hover:text-destructive/90"
+								data-testid={`function-card-restore-${tool.name}`}
 							>
 								<RotateCcw size={14} />
-								<span className="hidden sm:inline">
-									Restore
-								</span>
+								<span className="hidden sm:inline">Restore</span>
 							</Button>
 						) : null}
 					</div>
@@ -580,34 +720,14 @@ const FunctionCard = memo<FunctionCardProps>(
 				{isExpanded && (
 					<div className="p-4">
 						<div className="mb-3">
-							<Label className="mb-1 block text-foreground text-sm">
-								Description:
-							</Label>
-							<div className="relative">
-								<Textarea
-									value={tool.description ?? ""}
-									onChange={(e) =>
-										onUpdateTool(actualIdx, {
-											description: e.target.value,
-										})
-									}
-									disabled={isDeleted}
-									rows={2}
-									style={{ height: "4rem" }}
-									className={`w-full resize-y overflow-y-auto px-2 py-1 pr-10 text-foreground text-sm ${
-										isDeleted
-											? "cursor-not-allowed bg-muted opacity-60"
-											: ""
-									}`}
-									placeholder="Describe function purpose and parameters..."
-								/>
+							<div className="mb-1 flex items-center justify-between">
+								<Label className="text-foreground text-sm">
+									Description:
+								</Label>
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<span className="absolute top-2 right-2 inline-flex">
+										<span className="inline-flex">
 											<Button
-												hidden={window.location.hash.includes(
-													"app",
-												)}
 												disabled={
 													isDeleted ||
 													!enableToolEnhancer
@@ -618,32 +738,49 @@ const FunctionCard = memo<FunctionCardProps>(
 												onClick={() =>
 													onOptimizeDescription(
 														actualIdx,
-														null,
-														tool.description ?? "",
 													)
 												}
+												data-testid={`function-card-optimize-${tool.name}`}
 											>
 												<Sparkles size={14} />
 											</Button>
 										</span>
 									</TooltipTrigger>
-
 									<TooltipContent>
 										{enableToolEnhancer
-											? "Generate AI-Optimized Description"
+											? "Generate AI descriptions for this tool and all its parameters"
 											: "Enable a text generation model in settings to unlock AI generated descriptions."}
 									</TooltipContent>
 								</Tooltip>
 							</div>
+							<Textarea
+								value={tool.description ?? ""}
+								onChange={(e) =>
+									onUpdateTool(actualIdx, {
+										description: e.target.value,
+									})
+								}
+								disabled={isDeleted}
+								rows={2}
+								style={{ height: "4rem" }}
+								className={`w-full resize-y overflow-y-auto px-2 py-1 text-foreground text-sm ${
+									isDeleted
+										? "cursor-not-allowed bg-muted opacity-60"
+										: ""
+								}`}
+								placeholder="Describe function purpose and parameters..."
+								data-testid={`function-card-description-${tool.name}`}
+							/>
 						</div>
 
+						{/* Properties Grid */}
 						<div className="w-full overflow-x-auto">
 							<div
 								className="min-w-full overflow-hidden rounded-lg border"
 								style={{
 									display: "grid",
 									gridTemplateColumns:
-										"10% 13% 25% 12% 12% 28%",
+										"10% 13% 27% 12% 12% 26%",
 									fontSize: "0.813rem",
 								}}
 							>
@@ -680,16 +817,17 @@ const FunctionCard = memo<FunctionCardProps>(
 
 									return (
 										<React.Fragment key={k}>
+											{/* Name */}
 											<div className="flex w-full items-center border-border border-r border-b bg-card px-2 py-2">
-												<div className="min-w-0 flex-1">
-													<span
-														className="block truncate text-foreground"
-														title={k}
-													>
-														{k}
-													</span>
-												</div>
+												<span
+													className="block truncate text-foreground"
+													title={k}
+												>
+													{k}
+												</span>
 											</div>
+
+											{/* Title */}
 											<div className="flex items-center border-border border-r border-b bg-card px-2 py-2">
 												<Input
 													value={p.title}
@@ -709,77 +847,39 @@ const FunctionCard = memo<FunctionCardProps>(
 															? "cursor-not-allowed bg-muted opacity-60"
 															: ""
 													}`}
+													data-testid={`prop-title-${tool.name}-${k}`}
 												/>
 											</div>
-											<div className="border-border border-r border-b bg-card px-2 py-2">
-												<div className="relative">
-													<Textarea
-														value={
-															p.description ?? ""
-														}
-														onChange={(e) =>
-															onUpdateToolProp(
-																actualIdx,
-																k,
-																{
-																	description:
-																		e.target
-																			.value,
-																},
-															)
-														}
-														disabled={isDeleted}
-														rows={2}
-														style={{
-															height: "3rem",
-														}}
-														className={`w-full resize-y overflow-y-auto px-1.5 py-1 pr-7 text-foreground text-xs ${
-															isDeleted
-																? "cursor-not-allowed bg-muted opacity-60"
-																: ""
-														}`}
-														placeholder="Parameter description..."
-													/>
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<span className="absolute top-2 right-2 inline-flex">
-																<Button
-																	hidden={window.location.hash.includes(
-																		"app",
-																	)}
-																	disabled={
-																		isDeleted ||
-																		!enableToolEnhancer
-																	}
-																	variant="ghost"
-																	size="icon-sm"
-																	className="h-6 w-6 text-primary hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
-																	onClick={() =>
-																		onOptimizeDescription(
-																			actualIdx,
-																			k,
-																			p.description ??
-																				"",
-																		)
-																	}
-																>
-																	<Sparkles
-																		size={
-																			12
-																		}
-																	/>
-																</Button>
-															</span>
-														</TooltipTrigger>
 
-														<TooltipContent>
-															{enableToolEnhancer
-																? "Generate AI-Optimized Description"
-																: "Enable a text generation model in settings to unlock AI generated descriptions."}
-														</TooltipContent>
-													</Tooltip>
-												</div>
+											{/* Description */}
+											<div className="border-border border-r border-b bg-card px-2 py-2">
+												<Textarea
+													value={p.description ?? ""}
+													onChange={(e) =>
+														onUpdateToolProp(
+															actualIdx,
+															k,
+															{
+																description:
+																	e.target
+																		.value,
+															},
+														)
+													}
+													disabled={isDeleted}
+													rows={2}
+													style={{ height: "3rem" }}
+													className={`w-full resize-y overflow-y-auto px-1.5 py-1 text-foreground text-xs ${
+														isDeleted
+															? "cursor-not-allowed bg-muted opacity-60"
+															: ""
+													}`}
+													placeholder="Parameter description..."
+													data-testid={`prop-description-${tool.name}-${k}`}
+												/>
 											</div>
+
+											{/* Type */}
 											<div className="flex items-center border-border border-r border-b bg-card px-2 py-2">
 												<select
 													value={p.type}
@@ -796,6 +896,7 @@ const FunctionCard = memo<FunctionCardProps>(
 															? "cursor-not-allowed opacity-60"
 															: ""
 													}`}
+													data-testid={`prop-type-${tool.name}-${k}`}
 												>
 													{TYPE_OPTIONS.map((opt) => (
 														<option
@@ -807,6 +908,8 @@ const FunctionCard = memo<FunctionCardProps>(
 													))}
 												</select>
 											</div>
+
+											{/* Required */}
 											<div className="flex items-center justify-center border-border border-r border-b bg-card px-2 py-2">
 												<input
 													type="checkbox"
@@ -824,13 +927,16 @@ const FunctionCard = memo<FunctionCardProps>(
 															? "Required"
 															: "Optional"
 													}
-													className={`h-4 w-4 rounded border border-border text-primary accent-primary focus:ring-2 focus:ring-ring ${
+													className={`h-4 w-4 rounded border-border accent-primary ${
 														isDeleted
 															? "cursor-not-allowed opacity-60"
 															: "cursor-pointer"
 													}`}
+													data-testid={`prop-required-${tool.name}-${k}`}
 												/>
 											</div>
+
+											{/* Default Value */}
 											{p.type === "array" ||
 											p.type === "object" ? (
 												<div className="border-border border-b bg-card px-2 py-2">
@@ -854,7 +960,7 @@ const FunctionCard = memo<FunctionCardProps>(
 														}}
 														className={`w-full resize-y overflow-y-auto px-1.5 py-1 font-mono text-foreground text-xs ${
 															hasError
-																? "border-destructive ring-destructive/20 focus:border-destructive"
+																? "border-destructive"
 																: "border-border"
 														} ${
 															isDeleted
@@ -866,6 +972,7 @@ const FunctionCard = memo<FunctionCardProps>(
 																? '["item1", "item2"]'
 																: '{"key": "value"}'
 														}
+														data-testid={`prop-default-${tool.name}-${k}`}
 													/>
 													{hasError && (
 														<div className="mt-1 flex items-start gap-1 text-destructive text-xs">
@@ -914,6 +1021,7 @@ const FunctionCard = memo<FunctionCardProps>(
 																	? "cursor-not-allowed opacity-60"
 																	: ""
 															}`}
+															data-testid={`prop-default-${tool.name}-${k}`}
 														>
 															<option value="true">
 																True
@@ -948,6 +1056,7 @@ const FunctionCard = memo<FunctionCardProps>(
 																	? "cursor-not-allowed bg-muted opacity-60"
 																	: ""
 															}`}
+															data-testid={`prop-default-${tool.name}-${k}`}
 														/>
 													)}
 												</div>
@@ -966,19 +1075,18 @@ const FunctionCard = memo<FunctionCardProps>(
 
 FunctionCard.displayName = "FunctionCard";
 
-// Main MCPJsonEditor Component
-export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
-	const { initialData, onSave, path, onOptimize, enableToolEnhancer } =
-		dataMap;
+// ─── Main MCPJsonEditor Component ─────────────────────────────────────────────
 
+export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
+	const { initialData, onSave, path, engine, modelId } = dataMap;
+	const insight = useInsight();
+	const enableToolEnhancer = !!modelId;
 	const [data, setData] = useState<MCPJsonData>(initialData);
 	const [deletedTools, setDeletedTools] = useState<string[]>([]);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [expandedCards, setExpandedCards] = useState<Set<string>>(
 		new Set<string>(
-			initialData.tools && initialData.tools.length > 0
-				? [initialData.tools[0].name]
-				: [],
+			initialData.tools?.length > 0 ? [initialData.tools[0].name] : [],
 		),
 	);
 	const [expandAll, setExpandAll] = useState(false);
@@ -989,46 +1097,46 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 	const [initialDataSnapshot, setInitialDataSnapshot] = useState<string>(
 		JSON.stringify(initialData),
 	);
-	// Optimization Modal State
-	const [isOptimizationModalOpen, setIsOptimizationModalOpen] =
-		useState(false);
-	const [optimizationContext, setOptimizationContext] = useState<{
-		toolIdx: number;
-		propKey: string | null;
-		currentDescription: string;
-	} | null>(null);
-	const [isOptimizationLoading, setIsOptimizationLoading] = useState(false);
-	const [optimizedDescription, setOptimizedDescription] = useState<
-		string | null
-	>(null);
-	const [optimizationError, setOptimizationError] = useState<string | null>(
-		null,
-	);
+
+	// ── Diff Modal State ───────────────────────────────────────────────────────
+	const [isDiffModalOpen, setIsDiffModalOpen] = useState(false);
+	const [diffToolIdx, setDiffToolIdx] = useState<number | null>(null);
+	const [isDiffLoading, setIsDiffLoading] = useState(false);
+	const [diffResult, setDiffResult] =
+		useState<MCPDescriptionApiResponse | null>(null);
+	const [diffError, setDiffError] = useState<string | null>(null);
 
 	const debouncedSearch = useDebounce(searchQuery, 400);
 	const { jsonErrors, validateJson, clearError } = useJsonValidation();
 
+	// ── Change tracking ────────────────────────────────────────────────────────
 	useEffect(() => {
-		const currentSnapshot = JSON.stringify(data);
 		const isModified =
-			currentSnapshot !== initialDataSnapshot || deletedTools.length > 0;
+			JSON.stringify(data) !== initialDataSnapshot ||
+			deletedTools.length > 0;
 		setHasChanges(isModified);
 	}, [data, deletedTools, initialDataSnapshot]);
 
-	useKeyboardShortcut("s", () => {
-		if (hasChanges) {
-			handleSave();
-		}
-	}, [hasChanges, data, deletedTools]);
+	useKeyboardShortcut(
+		"s",
+		() => {
+			if (hasChanges) handleSave();
+		},
+		[hasChanges, data, deletedTools],
+	);
 
-	const updateTool = useCallback((index: number, value: Partial<MCPTool>) => {
-		setData((d) => ({
-			...d,
-			tools: d.tools.map((t, i) =>
-				i === index ? { ...t, ...value } : t,
-			),
-		}));
-	}, []);
+	// ── Tool / Property updaters ───────────────────────────────────────────────
+	const updateTool = useCallback(
+		(index: number, value: Partial<MCPTool>) => {
+			setData((d) => ({
+				...d,
+				tools: d.tools.map((t, i) =>
+					i === index ? { ...t, ...value } : t,
+				),
+			}));
+		},
+		[],
+	);
 
 	const updateToolProp = useCallback(
 		(
@@ -1067,25 +1175,13 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 			setData((d) => ({
 				...d,
 				tools: d.tools.map((tool, i) => {
-					if (i !== toolIdx) {
-						return tool;
-					}
-
-					const currentRequired = tool.inputSchema.required || [];
-					let newRequired: string[];
-
-					if (isRequired) {
-						if (!currentRequired.includes(propKey)) {
-							newRequired = [...currentRequired, propKey];
-						} else {
-							newRequired = currentRequired;
-						}
-					} else {
-						newRequired = currentRequired.filter(
-							(key) => key !== propKey,
-						);
-					}
-
+					if (i !== toolIdx) return tool;
+					const current = tool.inputSchema.required || [];
+					const newRequired = isRequired
+						? current.includes(propKey)
+							? current
+							: [...current, propKey]
+						: current.filter((k) => k !== propKey);
 					return {
 						...tool,
 						inputSchema: {
@@ -1101,10 +1197,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 
 	const handleToolDelete = useCallback(
 		(toolIdx: number) => {
-			setDeletedTools((prev) => {
-				const toolName = data.tools[toolIdx].name;
-				return [...prev, toolName];
-			});
+			setDeletedTools((prev) => [...prev, data.tools[toolIdx].name]);
 		},
 		[data.tools],
 	);
@@ -1134,7 +1227,6 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				type: newType,
 				default: newDefault,
 			});
-
 			const textKey = `${toolIdx}-${propKey}`;
 			if (newType === "array" || newType === "object") {
 				setJsonTextValues((prev) => ({
@@ -1143,12 +1235,11 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				}));
 			} else {
 				setJsonTextValues((prev) => {
-					const newValues = { ...prev };
-					delete newValues[textKey];
-					return newValues;
+					const next = { ...prev };
+					delete next[textKey];
+					return next;
 				});
 			}
-
 			clearError(textKey);
 		},
 		[updateToolProp, clearError],
@@ -1162,11 +1253,9 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 			propType: string,
 		) => {
 			let validDefault: string | number | boolean = newDefault;
-			if (propType === "number") {
-				validDefault = Number(newDefault) || 0;
-			} else if (propType === "boolean") {
+			if (propType === "number") validDefault = Number(newDefault) || 0;
+			else if (propType === "boolean")
 				validDefault = newDefault === "true";
-			}
 			updateToolProp(toolIdx, propKey, { default: validDefault });
 		},
 		[updateToolProp],
@@ -1175,19 +1264,15 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 	const handleJsonTextChange = useCallback(
 		(toolIdx: number, propKey: string, newText: string) => {
 			const textKey = `${toolIdx}-${propKey}`;
-
-			setJsonTextValues((prev) => ({
-				...prev,
-				[textKey]: newText,
-			}));
-
+			setJsonTextValues((prev) => ({ ...prev, [textKey]: newText }));
 			const result = validateJson(textKey, newText);
 			if (result.valid) {
 				try {
-					const parsed = JSON.parse(newText);
-					updateToolProp(toolIdx, propKey, { default: parsed });
+					updateToolProp(toolIdx, propKey, {
+						default: JSON.parse(newText),
+					});
 				} catch {
-					// Should not happen as validateJson already checked
+					// noop
 				}
 			}
 		},
@@ -1197,11 +1282,8 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 	const getJsonTextValue = useCallback(
 		(toolIdx: number, propKey: string, defaultValue: unknown): string => {
 			const textKey = `${toolIdx}-${propKey}`;
-
-			if (jsonTextValues[textKey] !== undefined) {
+			if (jsonTextValues[textKey] !== undefined)
 				return jsonTextValues[textKey];
-			}
-
 			try {
 				return JSON.stringify(defaultValue, null, 2);
 			} catch {
@@ -1211,136 +1293,79 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		[jsonTextValues],
 	);
 
-	// API call to GenerateEngineMetadata with cleaned context and dynamic system prompt
-	const callGenerateEngineMetadataAPI = async (
-		toolContext: MCPTool,
-		propKey: string | null,
-		propertyName?: string,
-	): Promise<string> => {
-		try {
-			// Clean the tool context by removing _type
-			const cleanedTool = cleanToolContext(toolContext);
-
-			// Create the additional context string
-			const additionalContext = JSON.stringify(cleanedTool, null, 2);
-
-			// Generate dynamic system prompt based on context
-			let systemPrompt = "";
-
-			if (propKey === null) {
-				// System prompt for tool's main description
-				systemPrompt = `You are an expert technical writer specializing in API and tool documentation. Generate a comprehensive, clear, and professional description for this MCP (Model Context Protocol) tool. The description should:
-
-				1. Explain the tool's primary purpose and functionality
-				2. Highlight key capabilities and use cases
-				3. Be concise yet informative (2-4 sentences)
-				4. Use professional, neutral tone
-				5. Focus on what the tool does, not implementation details
-
-				Context: The tool is part of an MCP server configuration and will be used by AI assistants to understand when and how to use this tool.`;
-			} else {
-				// System prompt for individual property description
-				systemPrompt = `You are an expert technical writer specializing in API parameter documentation. Generate a clear and precise description for the '${propertyName}' parameter of this MCP tool. The description should:
-
-				1. Explain what this parameter represents and its purpose
-				2. Clarify how it affects the tool's behavior
-				3. Include expected format or value constraints if relevant
-				4. Be concise (1-2 sentences)
-				5. Use professional, neutral tone
-				6. Focus on the parameter's role in the tool's operation
-
-				Context: This parameter is part of an MCP tool's input schema and will help users understand what value to provide and why it's needed.`;
-			}
-
-			// Combine system prompt with additional context
-			const contextWithPrompt = `${systemPrompt}\n\n=== TOOL CONTEXT ===\n${additionalContext}`;
-
-			return onOptimize(JSON.stringify(contextWithPrompt));
-		} catch (error) {
-			console.error("Error calling GenerateEngineMetadata API:", error);
-			throw new Error(
-				"Failed to optimize description. Please try again.",
-			);
-		}
-	};
-
+	// ── Sparkle click — calls GenerateDescriptionForMcp directly ──────────────
 	const handleOptimizeDescription = useCallback(
-		async (
-			toolIdx: number,
-			propKey: string | null,
-			currentDescription: string,
-		) => {
-			const tool = data.tools[toolIdx];
+		async (toolIdx: number) => {
+			if (!modelId) return;
 
-			setOptimizationContext({ toolIdx, propKey, currentDescription });
-			setIsOptimizationModalOpen(true);
-			setIsOptimizationLoading(true);
-			setOptimizedDescription(null);
-			setOptimizationError(null);
+			const tool = data.tools[toolIdx];
+			setDiffToolIdx(toolIdx);
+			setIsDiffModalOpen(true);
+			setIsDiffLoading(true);
+			setDiffResult(null);
+			setDiffError(null);
 
 			try {
-				// Pass property name for better context in system prompt
-				const propertyName = propKey || undefined;
-
-				// Call the GenerateEngineMetadata API with cleaned context
-				const optimized = await callGenerateEngineMetadataAPI(
-					tool,
-					propKey,
-					propertyName,
-				);
-				setOptimizedDescription(optimized);
-			} catch (error) {
-				console.error("Error optimizing description:", error);
-				setOptimizationError(
-					error instanceof Error
-						? error.message
-						: "Failed to optimize description. Please try again.",
+				const pixelCommand = `GenerateDescriptionForMcp(engine=["${engine}"], model=["${modelId}"], toolName="${tool.name}");`;
+				const { pixelReturn } = await insight.actions.run(pixelCommand);
+				setDiffResult(pixelReturn[0].output as MCPDescriptionApiResponse);
+			} catch (err) {
+				setDiffError(
+					err instanceof Error
+						? err.message
+						: "Failed to generate descriptions. Please try again.",
 				);
 			} finally {
-				setIsOptimizationLoading(false);
+				setIsDiffLoading(false);
 			}
 		},
-		[data.tools],
+		[data.tools, engine, modelId, insight.actions],
 	);
 
-	const handleApproveOptimization = useCallback(() => {
-		if (!optimizationContext || !optimizedDescription) return;
+	// ── Apply selected diff fields ─────────────────────────────────────────────
+	const handleApplyDiff = useCallback(
+		(selections: DiffSelections) => {
+			if (diffToolIdx === null || !diffResult) return;
 
-		const { toolIdx, propKey } = optimizationContext;
+			if (
+				selections.functionDescription &&
+				diffResult.function_description?.new
+			) {
+				updateTool(diffToolIdx, {
+					description: diffResult.function_description.new,
+				});
+			}
 
-		if (propKey === null) {
-			// Update tool description
-			updateTool(toolIdx, { description: optimizedDescription });
-		} else {
-			// Update property description
-			updateToolProp(toolIdx, propKey, {
-				description: optimizedDescription,
+			(diffResult.parameters || []).forEach((param) => {
+				if (selections.parameters[param.name] && param.new) {
+					updateToolProp(diffToolIdx, param.name, {
+						description: param.new,
+					});
+				}
 			});
-		}
 
-		setIsOptimizationModalOpen(false);
-		setOptimizationContext(null);
-		setOptimizedDescription(null);
-	}, [optimizationContext, optimizedDescription, updateTool, updateToolProp]);
+			setIsDiffModalOpen(false);
+			setDiffToolIdx(null);
+			setDiffResult(null);
+		},
+		[diffToolIdx, diffResult, updateTool, updateToolProp],
+	);
 
-	const handleRejectOptimization = useCallback(() => {
-		// Simply close the modal without applying changes
-		console.log("User rejected the optimized description");
+	const closeDiffModal = useCallback(() => {
+		setIsDiffModalOpen(false);
+		setDiffToolIdx(null);
+		setDiffResult(null);
+		setDiffError(null);
 	}, []);
 
-	const clearSearch = useCallback(() => {
-		setSearchQuery("");
-	}, []);
+	// ── Search / expand helpers ────────────────────────────────────────────────
+	const clearSearch = useCallback(() => setSearchQuery(""), []);
 
 	const toggleCardExpand = useCallback((toolName: string) => {
 		setExpandedCards((prev) => {
-			const newSet = new Set(prev);
-			if (newSet.has(toolName)) {
-				newSet.delete(toolName);
-			} else {
-				newSet.add(toolName);
-			}
-			return newSet;
+			const next = new Set(prev);
+			next.has(toolName) ? next.delete(toolName) : next.add(toolName);
+			return next;
 		});
 	}, []);
 
@@ -1349,70 +1374,66 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 			setExpandedCards(new Set());
 			setExpandAll(false);
 		} else {
-			const allNames = new Set(
-				data.tools
-					.filter((t) => !deletedTools.includes(t.name))
-					.map((t) => t.name),
+			setExpandedCards(
+				new Set(
+					data.tools
+						.filter((t) => !deletedTools.includes(t.name))
+						.map((t) => t.name),
+				),
 			);
-			setExpandedCards(allNames);
 			setExpandAll(true);
 		}
 	}, [expandAll, data.tools, deletedTools]);
 
+	// ── Save ───────────────────────────────────────────────────────────────────
 	const handleSave = useCallback(() => {
 		if (hasChanges) {
 			const updatedData = {
 				...data,
-				tools: data.tools.filter((t) => !deletedTools.includes(t.name)),
+				tools: data.tools.filter(
+					(t) => !deletedTools.includes(t.name),
+				),
 			};
 			onSave?.(updatedData, path);
-
 			setInitialDataSnapshot(JSON.stringify(updatedData));
 			setDeletedTools([]);
 			setData(updatedData);
 		} else {
 			onSave?.(data, path);
 		}
-
 		setHasChanges(false);
-		// updatePanels(false);
 	}, [hasChanges, data, deletedTools, onSave, path]);
 
+	// ── Memos ──────────────────────────────────────────────────────────────────
 	const visibleTools = useMemo(() => data.tools || [], [data.tools]);
 
 	const filteredTools = useMemo(() => {
-		if (!debouncedSearch.trim()) {
-			return visibleTools;
-		}
-		const query = debouncedSearch.toLowerCase();
+		if (!debouncedSearch.trim()) return visibleTools;
+		const q = debouncedSearch.toLowerCase();
 		return visibleTools.filter(
-			(tool) =>
-				tool.name.toLowerCase().includes(query) ||
-				tool.title?.toLowerCase().includes(query) ||
-				tool.description?.toLowerCase().includes(query),
+			(t) =>
+				t.name.toLowerCase().includes(q) ||
+				t.title?.toLowerCase().includes(q) ||
+				t.description?.toLowerCase().includes(q),
 		);
 	}, [visibleTools, debouncedSearch]);
 
-	const isCardExpanded = useCallback(
-		(toolName: string) => {
-			return expandedCards.has(toolName);
-		},
-		[expandedCards],
+	const headerText = useMemo(
+		() =>
+			`${path
+				.split("/")
+				.pop()
+				?.replace(".json", "")
+				.toUpperCase()} JSON Editor`,
+		[path],
 	);
 
-	const isCardDeleted = useCallback(
-		(toolName: string) => {
-			return deletedTools.includes(toolName);
-		},
-		[deletedTools],
-	);
+	const activeDiffTool =
+		diffToolIdx !== null ? data.tools[diffToolIdx] : null;
 
-	const headerText = useMemo(() => {
-		return `${path.split("/").pop()?.replace(".json", "").toUpperCase()} JSON Editor`;
-	}, [path]);
-
+	// ── Render ─────────────────────────────────────────────────────────────────
 	return (
-		<div className="container-padding-x mx-auto w-full max-w-full py-3">
+		<div className="container-padding-x mx-auto w-full max-w-full py-3" data-testid="mcp-json-editor">
 			<div className="mb-6">
 				<h2 className="heading-md">{headerText}</h2>
 			</div>
@@ -1422,9 +1443,6 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				deletedCount={deletedTools.length}
 				searchQuery={searchQuery}
 				debouncedSearch={debouncedSearch}
-				showExpandAll={true}
-				showSave={true}
-				showSearch={true}
 				expandAll={expandAll}
 				hasChanges={hasChanges}
 				onExpandAll={handleExpandAll}
@@ -1433,15 +1451,14 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				onSearchClear={clearSearch}
 			/>
 
+			{/* Meta Section */}
 			<Card className="mb-5 w-full rounded-lg bg-secondary p-4">
-				<h3 className="font-semibold text-base text-foreground">
+				<h3 className="mb-3 font-semibold text-base text-foreground">
 					Meta Data
 				</h3>
 				<div
 					className="grid w-full gap-3"
-					style={{
-						gridTemplateColumns: `repeat(3, 1fr)`,
-					}}
+					style={{ gridTemplateColumns: "repeat(3, 1fr)" }}
 				>
 					{Object.entries(data._meta).map(([key, value]) => (
 						<div key={key} className="flex flex-col gap-1">
@@ -1463,6 +1480,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				</div>
 			</Card>
 
+			{/* Empty state */}
 			{filteredTools.length === 0 && (
 				<div className="py-12 text-center">
 					<Search
@@ -1477,20 +1495,18 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				</div>
 			)}
 
+			{/* Tool Cards */}
 			{filteredTools.map((tool) => {
 				const actualIdx = data.tools.findIndex(
 					(t) => t.name === tool.name,
 				);
-				const isExpanded = isCardExpanded(tool.name);
-				const isDeleted = isCardDeleted(tool.name);
-
 				return (
 					<FunctionCard
 						key={tool.name}
 						tool={tool}
 						actualIdx={actualIdx}
-						isExpanded={isExpanded}
-						isDeleted={isDeleted}
+						isExpanded={expandedCards.has(tool.name)}
+						isDeleted={deletedTools.includes(tool.name)}
 						onToggleExpand={toggleCardExpand}
 						onDelete={handleToolDelete}
 						onRestore={handleToolRestore}
@@ -1510,23 +1526,15 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				);
 			})}
 
-			{/* Optimization Modal */}
-			<OptimizationModal
-				isOpen={isOptimizationModalOpen}
-				onClose={() => {
-					setIsOptimizationModalOpen(false);
-					setOptimizationContext(null);
-					setOptimizedDescription(null);
-					setOptimizationError(null);
-				}}
-				currentDescription={
-					optimizationContext?.currentDescription ?? ""
-				}
-				optimizedDescription={optimizedDescription}
-				onApprove={handleApproveOptimization}
-				onReject={handleRejectOptimization}
-				isLoading={isOptimizationLoading}
-				error={optimizationError}
+			{/* Diff Modal */}
+			<DiffModal
+				isOpen={isDiffModalOpen}
+				onClose={closeDiffModal}
+				toolName={activeDiffTool?.title || activeDiffTool?.name || ""}
+				result={diffResult}
+				isLoading={isDiffLoading}
+				error={diffError}
+				onApply={handleApplyDiff}
 			/>
 		</div>
 	);

@@ -18,6 +18,8 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 	({ node, engine }) => {
 		const insight = useInsight();
 		const { insightStore } = useRootStore();
+		const modelId = insightStore.defaultTextGenerationModel;
+
 		const config: {
 			name: string;
 			path: string;
@@ -30,8 +32,6 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 			| null
 		>(null);
 		const [isLoading, setIsLoading] = useState(false);
-
-		const canEnableToolDefinitionEnhancer = insightStore.defaultTextGenerationModel !== "";
 
 		const getFile = usePixel<string>(
 			`GetEngineAssets(filePath=["${config.path}"], engine=["${engine}"]);`,
@@ -106,25 +106,6 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 			}
 		};
 
-		const optimizeDesc = async (context: string) => {
-			try {
-				setIsLoading(true);
-				// Build the pixel command
-				const pixelCommand = `GenerateEngineMetadata(engine=["${engine}"], model=["${insightStore.defaultTextGenerationModel}"], metaKeys=[["description"]], options=[{"additionalContext": ${context}, "tone": "neutral"}]);`;
-
-				const { pixelReturn } = await insight.actions.run(pixelCommand);
-				const response = pixelReturn[0].output as Record<
-					string,
-					Record<string, string>
-				>;
-				return response.generated_metadata.description;
-			} catch (e) {
-				console.error(e);
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
 		return (
 			<div className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1">
 				{(getFile.status === "LOADING" || isLoading) && (
@@ -145,10 +126,10 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 							dataMap={{
 								initialData: data,
 								onSave: (data) => saveFile(data),
-								onOptimize: (data) => optimizeDesc(data),
-								enableToolEnhancer: canEnableToolDefinitionEnhancer,
 								path: config.path,
 								name: config.name,
+								engine: engine,
+								modelId: modelId ?? undefined,
 							}}
 						/>
 					</div>
