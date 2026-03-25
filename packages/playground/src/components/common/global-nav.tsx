@@ -359,9 +359,9 @@ export const GlobalNav = observer(() => {
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					)}
-					{root.theme.sidebar.headerItems.map((item) => (
+					{root.theme.sidebar.headerItems.map((item, index) => (
 						<GlobalNavItem
-							key={item.path}
+							key={`header-${index}`}
 							name={item.name}
 							icon={item.icon}
 							path={item.path}
@@ -411,7 +411,7 @@ export const GlobalNav = observer(() => {
 							</SidebarGroupLabel>
 							<SidebarGroupContent>
 								<SidebarMenu>
-									{rooms.map((room) => {
+									{rooms.map((room, index) => {
 										const roomId = room.ROOM_ID;
 										const name =
 											room.ROOM_NAME ||
@@ -433,7 +433,7 @@ export const GlobalNav = observer(() => {
 
 										return (
 											<SidebarMenuItem
-												key={roomId}
+												key={`${roomId}-${index}`}
 												className="group/room relative flex"
 											>
 												{isEditing ? (
@@ -616,9 +616,9 @@ export const GlobalNav = observer(() => {
 			<SidebarFooter>
 				<Separator className="group-data-[collapsible=icon]:hidden" />
 				<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
-					{root.theme.sidebar.footerItems.map((item) => (
+					{root.theme.sidebar.footerItems.map((item, index) => (
 						<GlobalNavItem
-							key={item.path}
+							key={`footer-${index}`}
 							name={item.name}
 							icon={item.icon}
 							path={item.path}
