@@ -1,6 +1,7 @@
 import {
 	AlertTriangleIcon,
 	CheckIcon,
+	CirclePause,
 	HammerIcon,
 	XCircleIcon,
 } from "lucide-react";
@@ -62,6 +63,8 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			icon = <AlertTriangleIcon />;
 		} else if (tool.status === "CANCELLED") {
 			icon = <XCircleIcon />;
+		} else if (tool.status === "PAUSED") {
+			icon = <CirclePause />;
 		} else if (tool.response) {
 			icon = <CheckIcon />;
 		} else {
@@ -95,10 +98,12 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					>
 						<div
 							className={`flex size-6 flex-col items-center justify-center overflow-hidden rounded p-1 ${
-								tool.status === "ERROR" ||
-								tool.status === "CANCELLED"
+								tool.status === "ERROR"
 									? "bg-destructive/10 text-destructive"
-									: "bg-primary/10 text-primary"
+									: tool.status === "CANCELLED" ||
+											tool.status === "PAUSED"
+										? "bg-muted text-muted-foreground"
+										: "bg-primary/10 text-primary"
 							}`}
 						>
 							{icon}
@@ -138,19 +143,21 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							className="truncate text-muted-foreground text-xs"
 							title={tool.json.title}
 						>
-							{/* {tool.title} */}
 							{tool.status === "ERROR"
 								? t("tool.failed")
 								: tool.status === "CANCELLED"
 									? t("tool.cancelled")
-									: tool.response
-										? t("tool.completed")
-										: tool.json._meta.SMSS_MCP_EXECUTION ===
-												"ask"
-											? t("tool.ready")
-											: tool.status === "LOADING"
-												? toolExecutionMessage
-												: t("tool.autoExecute")}
+									: tool.status === "PAUSED"
+										? t("tool.paused")
+										: tool.response
+											? t("tool.completed")
+											: tool.json._meta
+														.SMSS_MCP_EXECUTION ===
+													"ask"
+												? t("tool.ready")
+												: tool.status === "LOADING"
+													? toolExecutionMessage
+													: t("tool.autoExecute")}
 						</div>
 					</div>
 				</div>
