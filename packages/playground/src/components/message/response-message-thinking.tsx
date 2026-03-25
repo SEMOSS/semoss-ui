@@ -113,9 +113,10 @@ interface ResponseMessageThinkingProps {
 
 export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 	observer(({ message, part, isLast }) => {
-		const [thinking, setThinking] = useState<string>("");
+		const [isOpen, setIsOpen] = useState(false);
 		const typewriter = useMarkdownTypewriter(part.thinking);
 		const previewRef = useRef<HTMLDivElement>(null);
+		const expandedRef = useRef<HTMLDivElement>(null);
 
 		useEffect(() => {
 			if (message.isThinking && isLast) {
@@ -129,26 +130,26 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 			}
 		}, [isLast, typewriter.skipToEnd]);
 
-		// Auto-scroll preview to bottom when content changes
+		// Auto-scroll expanded content to bottom when typing
+		// biome-ignore lint/correctness/useExhaustiveDependencies: need rendered to trigger on content changes
 		useEffect(() => {
-			if (previewRef.current && !thinking) {
-				previewRef.current.scrollTop = previewRef.current.scrollHeight;
+			if (expandedRef.current && isOpen && typewriter.isTyping) {
+				expandedRef.current.scrollTop =
+					expandedRef.current.scrollHeight;
 			}
-		}, [thinking]);
+		}, [isOpen, typewriter.rendered, typewriter.isTyping]);
 
 		if (!part.thinking) {
 			return null;
 		}
-
-		const isOpen = thinking === "thinking";
 
 		return (
 			<Accordion
 				type="single"
 				collapsible
 				className="mb-2 rounded-lg border border-border text-muted-foreground text-sm shadow-sm"
-				value={thinking}
-				onValueChange={(val) => setThinking(val || "")}
+				value={isOpen ? "thinking" : null}
+				onValueChange={(val) => setIsOpen(val === "thinking")}
 			>
 				<AccordionItem value="thinking" className="border-0">
 					<div className="p-3">
@@ -173,7 +174,10 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 							</div>
 						)}
 					</div>
-					<AccordionContent className="px-3 pt-0 pb-3">
+					<AccordionContent
+						ref={expandedRef}
+						className="max-h-96 overflow-y-auto px-3 pt-0 pb-3"
+					>
 						<Markdown
 							className="[&>*:first-child]:mt-0"
 							components={THINKING_MARKDOWN_COMPONENTS}
