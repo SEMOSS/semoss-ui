@@ -4,12 +4,13 @@ import {
 	MiniMap,
 	type Node,
 	ReactFlow,
+	type ReactFlowInstance,
 	useEdgesState,
 	useNodesState,
 } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@xyflow/react/dist/style.css";
-import { Button } from "@semoss/ui/next";
+import { Button, Input } from "@semoss/ui/next";
 import { MetamodelContext } from "@/contexts";
 import type { ColumnOption, Property } from "../import/database/MetamodelTypes";
 import {
@@ -33,6 +34,17 @@ const nodeTypes = {
 	metamodel: MetamodelNode,
 };
 
+const normalizeSearchValue = (value: string) =>
+	value.toLowerCase().replace(/[\s_]+/g, "");
+
+type SearchMatch = {
+	nodeId: string;
+	columnIndex: number | null;
+};
+
+const getSearchMatchKey = (match: SearchMatch | null) =>
+	match ? `${match.nodeId}:${match.columnIndex ?? "table"}` : null;
+
 export type MetamodelNodeType = Node<
 	React.ComponentProps<typeof MetamodelNode>["data"]
 >;
@@ -49,6 +61,23 @@ interface MetamodelProps {
 	dataSourceId?: number | string;
 	resetKey?: number;
 	columnOptions?: ColumnOption[];
+	autoFocusSelectedNode?: boolean;
+	highlightSearchTerm?: string;
+	showSearch?: boolean;
+	searchValue?: string;
+	onSearchValueChange?: (value: string) => void;
+	onSearchMatchChange?: (match: SearchMatch | null) => void;
+	searchInputTestId?: string;
+	onViewColumnMetadata?: (payload: {
+		nodeId: string;
+		tableName: string;
+		columnId: string;
+		name: string;
+		type: string;
+		physicalType?: string;
+		description?: string;
+		logicalNames?: string[];
+	}) => void;
 }
 
 // COMPONENT
@@ -66,6 +95,14 @@ export const Metamodel = (props: MetamodelProps) => {
 		dataSourceId,
 		resetKey,
 		columnOptions,
+		autoFocusSelectedNode = false,
+		highlightSearchTerm,
+		showSearch = true,
+		searchValue,
+		onSearchValueChange,
+		onSearchMatchChange,
+		searchInputTestId = "metamodel-search-input",
+		onViewColumnMetadata,
 	} = props;
 
 	// STATE
@@ -105,12 +142,17 @@ export const Metamodel = (props: MetamodelProps) => {
 	const [availableColumnNames, setAvailableColumnNames] = useState<
 		ColumnOption[]
 	>([]);
+	const [internalSearchTerm, setInternalSearchTerm] = useState("");
+	const [searchMatchIndex, setSearchMatchIndex] = useState(0);
 
 	// REFS
 
 	const isInitialMount = useRef<Record<string | number, boolean>>({});
 	const resetKeyRef = useRef<number | null>(null);
 	const currentDataSourceRef = useRef<string | number | null>(null);
+	const flowInstanceRef = useRef<ReactFlowInstance | null>(null);
+	const lastFocusedSearchMatchRef = useRef<string | null>(null);
+	const lastEmittedSearchMatchRef = useRef<string | null>(null);
 	const lastPropsRef = useRef<{ nodes: MetamodelNodeType[]; edges: Edge[] }>({
 		nodes: [],
 		edges: [],
@@ -164,14 +206,15 @@ export const Metamodel = (props: MetamodelProps) => {
 					isEditable: !!isEditable,
 					openEditForColumn: openEditForColumn,
 					openEditTable: openEditTable,
+					openViewColumnMetadata: onViewColumnMetadata,
 				},
 			})),
-		[isEditable, openEditForColumn, openEditTable],
+		[isEditable, onViewColumnMetadata, openEditForColumn, openEditTable],
 	);
 
 	const initialFlowNodes = useMemo<MetamodelNodeType[]>(
-		() => (isEditable ? injectIsAction(nodes) : nodes),
-		[isEditable, nodes, injectIsAction],
+		() => injectIsAction(nodes),
+		[nodes, injectIsAction],
 	);
 
 	// CUSTOM HOOKS
@@ -179,6 +222,52 @@ export const Metamodel = (props: MetamodelProps) => {
 	const [flowNodes, setFlowNodes, onFlowNodesChange] =
 		useNodesState(initialFlowNodes);
 	const [flowEdges, setFlowEdges, onFlowEdgesChange] = useEdgesState(edges);
+
+	const effectiveSearchTerm =
+		searchValue ?? highlightSearchTerm ?? internalSearchTerm;
+	const normalizedSearchTerm = normalizeSearchValue(
+		effectiveSearchTerm.trim(),
+	);
+	const searchMatches = useMemo<SearchMatch[]>(() => {
+		if (!normalizedSearchTerm || flowNodes.length === 0) {
+			return [];
+		}
+
+		const matches: SearchMatch[] = [];
+		for (const node of flowNodes) {
+			if (
+				normalizeSearchValue(node.data?.name || "").includes(
+					normalizedSearchTerm,
+				)
+			) {
+				matches.push({ nodeId: node.id, columnIndex: null });
+			}
+
+			const properties = node.data?.properties || [];
+			properties.forEach((property, index) => {
+				if (
+					normalizeSearchValue(property?.name || "").includes(
+						normalizedSearchTerm,
+					)
+				) {
+					matches.push({
+						nodeId: node.id,
+						columnIndex: index,
+					});
+				}
+			});
+		}
+
+		return matches;
+	}, [flowNodes, normalizedSearchTerm]);
+
+	const activeSearchMatch =
+		searchMatches.length > 0
+			? searchMatches[
+					Math.min(searchMatchIndex, searchMatches.length - 1)
+				]
+			: null;
+	const activeSearchMatchKey = getSearchMatchKey(activeSearchMatch);
 
 	// DATA MUTATION HANDLERS
 
@@ -271,7 +360,11 @@ export const Metamodel = (props: MetamodelProps) => {
 			});
 		},
 		[
-			columnToEdit, callback, closeEditModal, onMetaModelUpdate
+			columnToEdit,
+			callback,
+			closeEditModal,
+			onMetaModelUpdate,
+			setFlowNodes,
 		],
 	);
 
@@ -372,7 +465,7 @@ export const Metamodel = (props: MetamodelProps) => {
 				});
 			});
 		},
-		[availableColumnNames, callback, onMetaModelUpdate],
+		[availableColumnNames, callback, onMetaModelUpdate, setFlowNodes],
 	);
 
 	const updateData = useCallback((nodeData, action: string) => {
@@ -487,8 +580,9 @@ export const Metamodel = (props: MetamodelProps) => {
 
 	useEffect(() => {
 		if (!isEditable) {
-			setData({ nodes: nodes || [], edges: edges || [] });
-			setFlowNodes(nodes || []);
+			const processedNodes = injectIsAction(nodes || []);
+			setData({ nodes: processedNodes, edges: edges || [] });
+			setFlowNodes(processedNodes);
 			setFlowEdges(edges || []);
 			return;
 		}
@@ -589,8 +683,9 @@ export const Metamodel = (props: MetamodelProps) => {
 		isEditable,
 		dataSourceId,
 		injectIsAction,
-		nodeIdsEqual,
-		edgeIdsEqual,
+		flowNodes,
+		setFlowNodes,
+		setFlowEdges,
 		onMetaModelUpdate,
 		data.edges,
 	]);
@@ -603,27 +698,149 @@ export const Metamodel = (props: MetamodelProps) => {
 		}
 	}, [columnOptions, isEditable]);
 
+	useEffect(() => {
+		if (searchMatchIndex < searchMatches.length) {
+			return;
+		}
+
+		setSearchMatchIndex(0);
+	}, [searchMatchIndex, searchMatches.length]);
+
+	useEffect(() => {
+		if (lastEmittedSearchMatchRef.current !== activeSearchMatchKey) {
+			lastEmittedSearchMatchRef.current = activeSearchMatchKey;
+			onSearchMatchChange?.(activeSearchMatch);
+		}
+	}, [activeSearchMatch, activeSearchMatchKey, onSearchMatchChange]);
+
+	useEffect(() => {
+		if (!activeSearchMatch || !activeSearchMatchKey) {
+			lastFocusedSearchMatchRef.current = null;
+			return;
+		}
+
+		if (lastFocusedSearchMatchRef.current === activeSearchMatchKey) {
+			return;
+		}
+		lastFocusedSearchMatchRef.current = activeSearchMatchKey;
+
+		onSelectNodeId(activeSearchMatch.nodeId);
+
+		const flowInstance = flowInstanceRef.current;
+		if (!flowInstance) {
+			return;
+		}
+
+		const matchedNode = flowNodes.find(
+			(n) => n.id === activeSearchMatch.nodeId,
+		);
+		if (!matchedNode) {
+			return;
+		}
+
+		flowInstance.setCenter(
+			matchedNode.position.x + 180,
+			matchedNode.position.y + 120,
+			{
+				duration: 120,
+				zoom: flowInstance.getZoom(),
+			},
+		);
+	}, [activeSearchMatch, activeSearchMatchKey, flowNodes, onSelectNodeId]);
+
+	useEffect(() => {
+		if (!autoFocusSelectedNode || !selectedNode?.id) {
+			return;
+		}
+
+		const flowInstance = flowInstanceRef.current;
+		if (!flowInstance) {
+			return;
+		}
+
+		const selectedFlowNode = flowNodes.find(
+			(n) => n.id === selectedNode.id,
+		);
+		if (!selectedFlowNode) {
+			return;
+		}
+
+		flowInstance.setCenter(
+			selectedFlowNode.position.x + 180,
+			selectedFlowNode.position.y + 120,
+			{
+				duration: 120,
+				zoom: flowInstance.getZoom(),
+			},
+		);
+	}, [autoFocusSelectedNode, selectedNode?.id, flowNodes]);
+
 	return (
 		<MetamodelContext.Provider
 			value={{
 				selectedNodeId: selectedNode ? selectedNode.id : null,
 				onSelectNodeId: onSelectNodeId,
+				searchTerm: effectiveSearchTerm,
 				isInteractive: isInteractive,
 				updateData: updateData,
 			}}
 		>
 			<div className="relative h-full w-full">
+				{showSearch ? (
+					<div className="absolute top-3 left-3 z-20 w-[min(32rem,calc(100%-1.5rem))]">
+						<Input
+							value={effectiveSearchTerm}
+							onChange={(e) => {
+								const value = e.target.value;
+								if (onSearchValueChange) {
+									onSearchValueChange(value);
+								} else {
+									setInternalSearchTerm(value);
+								}
+								setSearchMatchIndex(0);
+							}}
+							onKeyDown={(e) => {
+								if (
+									e.key !== "Enter" ||
+									searchMatches.length === 0
+								) {
+									return;
+								}
+
+								e.preventDefault();
+								setSearchMatchIndex((current) => {
+									if (e.shiftKey) {
+										return (
+											(current -
+												1 +
+												searchMatches.length) %
+											searchMatches.length
+										);
+									}
+
+									return (current + 1) % searchMatches.length;
+								});
+							}}
+							className="bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85"
+							placeholder="Search table or column..."
+							data-testid={searchInputTestId}
+						/>
+					</div>
+				) : null}
 				<ReactFlow
 					nodes={flowNodes}
 					edges={flowEdges}
 					nodeTypes={nodeTypes}
 					edgeTypes={edgeTypes}
+					onInit={(instance) => {
+						flowInstanceRef.current = instance;
+					}}
 					fitView={true}
 					onNodesChange={onFlowNodesChange}
 					onEdgesChange={onFlowEdgesChange}
 					defaultViewport={{ x: 70, y: 50, zoom: 1 }}
 				>
-					<MiniMap />
+					<MiniMap pannable zoomable />
 					<Controls showInteractive={false} />
 				</ReactFlow>
 
