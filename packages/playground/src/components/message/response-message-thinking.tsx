@@ -111,6 +111,7 @@ interface ResponseMessageThinkingProps {
 export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 	observer(({ message, part, isLast }) => {
 		const [isExpanded, setIsExpanded] = useState(false);
+		const [isOverflowing, setIsOverflowing] = useState(false);
 		const typewriter = useMarkdownTypewriter(part.thinking);
 		const contentRef = useRef<HTMLDivElement>(null);
 		const hasUserScrolledRef = useRef(false); // Once true, never auto-scroll again
@@ -146,6 +147,13 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		// biome-ignore lint/correctness/useExhaustiveDependencies: need rendered to trigger on content changes
 		useEffect(() => {
 			if (!contentRef.current) return;
+
+			// Check whether content exceeds the collapsed cap so we know whether to show the fade.
+			setIsOverflowing(
+				contentRef.current.scrollHeight >
+					contentRef.current.clientHeight,
+			);
+
 			if (!isExpanded) return;
 
 			// Only auto-scroll if this component has observed a live stream start.
@@ -191,7 +199,11 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 						aria-label="Expand thinking"
 					/>
 				)}
-				<div className={isExpanded ? "p-3" : "p-3 pb-0"}>
+				<div
+					className={
+						isExpanded || !isOverflowing ? "p-3" : "p-3 pb-0"
+					}
+				>
 					{/* Header - clickable to expand/collapse when content overflows */}
 					<button
 						type="button"
@@ -218,13 +230,13 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 						ref={contentRef}
 						onScroll={isExpanded ? handleScroll : undefined}
 						className={`relative ${isExpanded ? "overflow-y-auto" : "overflow-hidden"} transition-[max-height] duration-300 ease-in-out ${
-							isExpanded ? "max-h-96" : "max-h-15"
+							isExpanded ? "max-h-96" : "max-h-16"
 						}`}
 					>
 						<Markdown components={THINKING_MARKDOWN_COMPONENTS}>
 							{displayedThinking}
 						</Markdown>
-						{!isExpanded && (
+						{!isExpanded && isOverflowing && (
 							<div className="pointer-events-none absolute right-0 bottom-0 left-0 h-5 bg-linear-to-t from-background to-transparent" />
 						)}
 					</div>
