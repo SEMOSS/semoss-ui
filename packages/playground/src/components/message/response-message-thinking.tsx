@@ -99,8 +99,6 @@ interface ResponseMessageThinkingProps {
 	isLast: boolean;
 }
 
-const COLLAPSED_HEIGHT = 96; // px - matches max-h-24 (6rem), ~3-4 lines
-
 /**
  * Displays AI thinking content with typewriter effect.
  *
@@ -115,7 +113,6 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		const [isExpanded, setIsExpanded] = useState(false);
 		const typewriter = useMarkdownTypewriter(part.thinking);
 		const contentRef = useRef<HTMLDivElement>(null);
-		const [showToggle, setShowToggle] = useState(false);
 		const hasUserScrolledRef = useRef(false); // Once true, never auto-scroll again
 		const isProgrammaticScrollRef = useRef(false);
 		const hasStartedLiveTypingRef = useRef(false);
@@ -144,16 +141,12 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 			typewriter.skipToEnd,
 		]);
 
-		// Track the actual displayed value (typewriter or fallback) so layout/scroll
-		// behaviors stay correct regardless of typing state transitions.
+		// Track the actual displayed value (typewriter or fallback) so auto-scroll
+		// behavior stays correct while actively streaming in expanded mode.
 		// biome-ignore lint/correctness/useExhaustiveDependencies: need rendered to trigger on content changes
 		useEffect(() => {
 			if (!contentRef.current) return;
-
-			// Check if content overflows to show/hide expand button
-			const isOverflowing =
-				contentRef.current.scrollHeight > COLLAPSED_HEIGHT;
-			setShowToggle(isOverflowing);
+			if (!isExpanded) return;
 
 			// Only auto-scroll if this component has observed a live stream start.
 			// Preloaded/historical streams should preserve the current scroll position.
@@ -174,7 +167,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 					isProgrammaticScrollRef.current = false;
 				});
 			}
-		}, [displayedThinking, message.isThinking]);
+		}, [displayedThinking, isExpanded, message.isThinking]);
 
 		// Detect manual scroll by user - disable auto-scroll permanently
 		const handleScroll = () => {
@@ -185,43 +178,55 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		if (!part.thinking) return null;
 
 		return (
-			<div className="mb-2 rounded-lg border border-border text-muted-foreground text-sm shadow-sm">
-				<div className="p-3">
+			<div
+				className={`relative mb-2 rounded-lg border border-border text-muted-foreground text-sm shadow-sm ${
+					isExpanded ? "" : "cursor-pointer"
+				}`}
+			>
+				{!isExpanded && (
+					<button
+						type="button"
+						className="absolute inset-0 z-10"
+						onClick={() => setIsExpanded(true)}
+						aria-label="Expand thinking"
+					/>
+				)}
+				<div className={isExpanded ? "p-3" : "p-3 pb-0"}>
 					{/* Header - clickable to expand/collapse when content overflows */}
 					<button
 						type="button"
 						onClick={() => setIsExpanded(!isExpanded)}
-						className="mb-2 flex w-full items-center justify-between text-left transition-colors hover:text-foreground disabled:cursor-default disabled:hover:text-muted-foreground"
-						disabled={!showToggle}
+						className="mb-2 flex w-full items-center justify-between text-left transition-colors hover:text-foreground"
 					>
 						<span className="font-medium">Thinking</span>
-						{showToggle && (
-							<span className="flex items-center gap-1 text-xs">
-								{isExpanded ? (
-									<>
-										Show less
-										<ChevronUp className="h-3 w-3" />
-									</>
-								) : (
-									<>
-										Show more
-										<ChevronDown className="h-3 w-3" />
-									</>
-								)}
-							</span>
-						)}
+						<span className="flex items-center gap-1 text-xs">
+							{isExpanded ? (
+								<>
+									Show less
+									<ChevronUp className="h-3 w-3" />
+								</>
+							) : (
+								<>
+									Show more
+									<ChevronDown className="h-3 w-3" />
+								</>
+							)}
+						</span>
 					</button>
 					{/* Content area - auto-scrolls to show new text, smooth transition between heights */}
 					<div
 						ref={contentRef}
-						onScroll={handleScroll}
-						className={`overflow-y-auto transition-[max-height] duration-300 ease-in-out ${
-							isExpanded ? "max-h-96" : "max-h-24"
+						onScroll={isExpanded ? handleScroll : undefined}
+						className={`relative ${isExpanded ? "overflow-y-auto" : "overflow-hidden"} transition-[max-height] duration-300 ease-in-out ${
+							isExpanded ? "max-h-96" : "max-h-15"
 						}`}
 					>
 						<Markdown components={THINKING_MARKDOWN_COMPONENTS}>
 							{displayedThinking}
 						</Markdown>
+						{!isExpanded && (
+							<div className="pointer-events-none absolute right-0 bottom-0 left-0 h-5 bg-linear-to-t from-background to-transparent" />
+						)}
 					</div>
 				</div>
 			</div>
