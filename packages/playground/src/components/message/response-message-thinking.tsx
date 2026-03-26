@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp, Quote } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
 	H1,
 	H2,
@@ -150,17 +150,23 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 			}
 		}, [isStreaming, typewriter.start, typewriter.skipToEnd]);
 
-		// Update overflow indicator and auto-scroll to bottom while streaming.
+		// Update overflow indicator synchronously before paint to avoid the
+		// false→true flash on initial render. Auto-scroll is kept in a
+		// separate useEffect since it doesn't need to block painting.
 		// biome-ignore lint/correctness/useExhaustiveDependencies: need displayedThinking to trigger on content changes
-		useEffect(() => {
+		useLayoutEffect(() => {
 			if (!contentRef.current) return;
-
 			setIsOverflowing(
 				contentRef.current.scrollHeight >
 					contentRef.current.clientHeight,
 			);
+		}, [displayedThinking, effectiveExpanded]);
 
+		// Auto-scroll to bottom while streaming (can happen after paint).
+		// biome-ignore lint/correctness/useExhaustiveDependencies: need displayedThinking to trigger on content changes
+		useEffect(() => {
 			if (
+				!contentRef.current ||
 				!effectiveExpanded ||
 				!isStreaming ||
 				hasUserScrolledRef.current
