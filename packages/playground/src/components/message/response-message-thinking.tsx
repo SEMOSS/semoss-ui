@@ -119,22 +119,31 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		const hasUserScrolledRef = useRef(false); // Once true, never auto-scroll again
 		const isProgrammaticScrollRef = useRef(false);
 
-		// Start typewriter on mount, skip to end when not the last part
+		// Render full content whenever typing is inactive so remount/final states
+		// never flash an empty thinking block while hook state catches up.
+		const displayedThinking = typewriter.isTyping
+			? typewriter.rendered
+			: part.thinking;
+
+		// Start typewriter only for the active thinking part; otherwise show full content.
 		useEffect(() => {
 			if (isLast && message.isThinking) {
 				typewriter.start();
-			} else if (!isLast && typewriter.isTyping) {
-				typewriter.skipToEnd();
+				return;
 			}
+
+			// Keep hook state aligned with fully available content for any
+			// non-streaming render path (older parts, completed thinking, remounts).
+			typewriter.skipToEnd();
 		}, [
 			isLast,
 			message.isThinking,
 			typewriter.start,
 			typewriter.skipToEnd,
-			typewriter.isTyping,
 		]);
 
-		// Handle content updates: check overflow and auto-scroll during typing
+		// Track the actual displayed value (typewriter or fallback) so layout/scroll
+		// behaviors stay correct regardless of typing state transitions.
 		// biome-ignore lint/correctness/useExhaustiveDependencies: need rendered to trigger on content changes
 		useEffect(() => {
 			if (!contentRef.current) return;
@@ -153,7 +162,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 					isProgrammaticScrollRef.current = false;
 				});
 			}
-		}, [typewriter.rendered]);
+		}, [displayedThinking]);
 
 		// Detect manual scroll by user - disable auto-scroll permanently
 		const handleScroll = () => {
@@ -199,7 +208,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 						}`}
 					>
 						<Markdown components={THINKING_MARKDOWN_COMPONENTS}>
-							{typewriter.rendered}
+							{displayedThinking}
 						</Markdown>
 					</div>
 				</div>
