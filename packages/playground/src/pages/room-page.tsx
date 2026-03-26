@@ -110,6 +110,7 @@ export const RoomPage = observer(() => {
 		chat.loadRoom,
 		chat.setSelectedModel,
 		setBreadcrumbs,
+		t,
 	]);
 
 	const { setNavbarActions } = useGlobalBreadcrumbs({});

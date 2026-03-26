@@ -39,17 +39,27 @@ export const EngineMcpEditor: React.FC<EngineMcpEditorProps> = observer(
 					};
 
 					try {
+						let parsed: unknown = null;
 						if (
 							fileContent &&
 							typeof fileContent === "string" &&
 							fileContent.trim()
 						) {
-							data = JSON.parse(fileContent);
-						} else {
-							console.warn(
-								"Empty, null, or non-string data received:",
-								fileContent,
-							);
+							parsed = JSON.parse(fileContent);
+						} else if (
+							fileContent &&
+							typeof fileContent === "object"
+						) {
+							parsed = fileContent;
+						}
+
+						if (parsed && typeof parsed === "object") {
+							const p = parsed as Record<string, unknown>;
+							data = {
+								_meta:
+									(p._meta as Record<string, string>) ?? {},
+								tools: (p.tools as typeof data.tools) ?? [],
+							};
 						}
 					} catch (e) {
 						console.error("Failed to parse JSON:", e);

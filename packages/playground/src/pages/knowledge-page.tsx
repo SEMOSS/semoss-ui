@@ -64,7 +64,7 @@ type EngineAsset = {
 };
 
 const formatDateTime = (dateStr: string): string => {
-	const d = new Date(dateStr.replace(" ", "T"));
+	const d = new Date(dateStr.replace(" ", "Z"));
 	if (isNaN(d.getTime())) return dateStr;
 	return d.toLocaleString(undefined, {
 		month: "short",

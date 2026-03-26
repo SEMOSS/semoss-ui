@@ -138,7 +138,9 @@ export const WorkspacePage = observer(() => {
 										key={w.project_id}
 										workspace={{
 											workspace_id: w.project_id,
-											name: w.project_name,
+											name:
+												w.project_display_name ||
+												w.project_name,
 											description: w.description,
 										}}
 										onDeleteClick={async () => {
