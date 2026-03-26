@@ -118,6 +118,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		const [showToggle, setShowToggle] = useState(false);
 		const hasUserScrolledRef = useRef(false); // Once true, never auto-scroll again
 		const isProgrammaticScrollRef = useRef(false);
+		const hasStartedLiveTypingRef = useRef(false);
 
 		// Render full content whenever typing is inactive so remount/final states
 		// never flash an empty thinking block while hook state catches up.
@@ -128,6 +129,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		// Start typewriter only for the active thinking part; otherwise show full content.
 		useEffect(() => {
 			if (isLast && message.isThinking) {
+				hasStartedLiveTypingRef.current = true;
 				typewriter.start();
 				return;
 			}
@@ -153,6 +155,16 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 				contentRef.current.scrollHeight > COLLAPSED_HEIGHT;
 			setShowToggle(isOverflowing);
 
+			// Only auto-scroll if this component has observed a live stream start.
+			// Preloaded/historical streams should preserve the current scroll position.
+			if (
+				!hasStartedLiveTypingRef.current ||
+				hasUserScrolledRef.current ||
+				!message.isThinking
+			) {
+				return;
+			}
+
 			// Auto-scroll to bottom until user manually scrolls once
 			if (!hasUserScrolledRef.current) {
 				isProgrammaticScrollRef.current = true;
@@ -162,7 +174,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 					isProgrammaticScrollRef.current = false;
 				});
 			}
-		}, [displayedThinking]);
+		}, [displayedThinking, message.isThinking]);
 
 		// Detect manual scroll by user - disable auto-scroll permanently
 		const handleScroll = () => {
