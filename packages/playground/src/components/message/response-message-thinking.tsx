@@ -117,6 +117,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		const contentRef = useRef<HTMLDivElement>(null);
 		const [showToggle, setShowToggle] = useState(false);
 		const hasUserScrolledRef = useRef(false); // Once true, never auto-scroll again
+		const isProgrammaticScrollRef = useRef(false);
 
 		// Start typewriter on mount, skip to end when not the last part
 		useEffect(() => {
@@ -145,13 +146,18 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 
 			// Auto-scroll to bottom until user manually scrolls once
 			if (!hasUserScrolledRef.current) {
+				isProgrammaticScrollRef.current = true;
 				contentRef.current.scrollTop = contentRef.current.scrollHeight;
+
+				requestAnimationFrame(() => {
+					isProgrammaticScrollRef.current = false;
+				});
 			}
 		}, [typewriter.rendered]);
 
 		// Detect manual scroll by user - disable auto-scroll permanently
 		const handleScroll = () => {
-			console.log("User scrolled, disabling auto-scroll");
+			if (isProgrammaticScrollRef.current) return;
 			hasUserScrolledRef.current = true;
 		};
 
