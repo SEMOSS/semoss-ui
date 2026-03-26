@@ -114,29 +114,27 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		const [isOverflowing, setIsOverflowing] = useState(false);
 		const typewriter = useMarkdownTypewriter(part.thinking);
 		const contentRef = useRef<HTMLDivElement>(null);
-		const hasUserScrolledRef = useRef(false); // Once true, never auto-scroll again
+		const hasUserScrolledRef = useRef(false);
 		const isProgrammaticScrollRef = useRef(false);
-		const hasStartedLiveTypingRef = useRef(false);
 
-		// Render full content whenever typing is inactive so remount/final states
-		// never flash an empty thinking block while hook state catches up.
 		const displayedThinking = typewriter.isTyping
 			? typewriter.rendered
 			: part.thinking;
-		// While actually still thinking, the card is always expanded and cannot be collapsed.
+		// While actively thinking, the card is always expanded and cannot be collapsed.
 		const effectiveExpanded = isLast ? true : isExpanded;
 
-		// Start typewriter only for the active thinking part; otherwise show full content.
+		// Control typewriter. When streaming ends, reset scroll to top so the
+		// completed card reads from the beginning when the user expands it.
 		useEffect(() => {
 			if (isLast && message.isThinking) {
-				hasStartedLiveTypingRef.current = true;
 				typewriter.start();
-				return;
+			} else {
+				typewriter.skipToEnd();
+				if (contentRef.current) {
+					contentRef.current.scrollTop = 0;
+				}
+				hasUserScrolledRef.current = false;
 			}
-
-			// Keep hook state aligned with fully available content for any
-			// non-streaming render path (older parts, completed thinking, remounts).
-			typewriter.skipToEnd();
 		}, [
 			isLast,
 			message.isThinking,
@@ -144,42 +142,35 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 			typewriter.skipToEnd,
 		]);
 
-		// Track the actual displayed value (typewriter or fallback) so auto-scroll
-		// behavior stays correct while actively streaming in expanded mode.
-		// biome-ignore lint/correctness/useExhaustiveDependencies: need rendered to trigger on content changes
+		// Update overflow indicator and auto-scroll to bottom while streaming.
+		// biome-ignore lint/correctness/useExhaustiveDependencies: need displayedThinking to trigger on content changes
 		useEffect(() => {
 			if (!contentRef.current) return;
 
-			// Check whether content exceeds the collapsed cap so we know whether to show the fade.
 			setIsOverflowing(
 				contentRef.current.scrollHeight >
 					contentRef.current.clientHeight,
 			);
 
-			if (!effectiveExpanded) return;
-
-			// Only auto-scroll if this component has observed a live stream start.
-			// Preloaded/historical streams should preserve the current scroll position.
-			if (
-				!hasStartedLiveTypingRef.current ||
-				hasUserScrolledRef.current ||
-				!isLast
-			) {
+			if (!effectiveExpanded || !isLast || hasUserScrolledRef.current) {
 				return;
 			}
 
-			// Auto-scroll to bottom until user manually scrolls once
-			if (!hasUserScrolledRef.current) {
-				isProgrammaticScrollRef.current = true;
-				contentRef.current.scrollTop = contentRef.current.scrollHeight;
-
-				requestAnimationFrame(() => {
-					isProgrammaticScrollRef.current = false;
-				});
-			}
+			isProgrammaticScrollRef.current = true;
+			contentRef.current.scrollTop = contentRef.current.scrollHeight;
+			requestAnimationFrame(() => {
+				isProgrammaticScrollRef.current = false;
+			});
 		}, [displayedThinking, effectiveExpanded, isLast]);
 
-		// Detect manual scroll by user - disable auto-scroll permanently
+		// Reset scroll to top whenever the card collapses.
+		useEffect(() => {
+			if (!effectiveExpanded && contentRef.current) {
+				contentRef.current.scrollTop = 0;
+			}
+		}, [effectiveExpanded]);
+
+		// Detect manual scroll by user — disable auto-scroll for this stream.
 		const handleScroll = () => {
 			if (isProgrammaticScrollRef.current) return;
 			hasUserScrolledRef.current = true;
