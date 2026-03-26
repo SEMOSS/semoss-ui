@@ -276,7 +276,9 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 										{displayedThinking}
 									</Markdown>
 								) : (
-									<div>{loadingMessage}</div>
+									<P className="mt-1 animate-pulse text-inherit text-sm">
+										{loadingMessage}
+									</P>
 								)}
 							</div>
 						</ScrollArea>
