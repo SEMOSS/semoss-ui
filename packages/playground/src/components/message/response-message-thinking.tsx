@@ -123,6 +123,8 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		const displayedThinking = typewriter.isTyping
 			? typewriter.rendered
 			: part.thinking;
+		// While actually still thinking, the card is always expanded and cannot be collapsed.
+		const effectiveExpanded = isLast ? true : isExpanded;
 
 		// Start typewriter only for the active thinking part; otherwise show full content.
 		useEffect(() => {
@@ -154,14 +156,14 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 					contentRef.current.clientHeight,
 			);
 
-			if (!isExpanded) return;
+			if (!effectiveExpanded) return;
 
 			// Only auto-scroll if this component has observed a live stream start.
 			// Preloaded/historical streams should preserve the current scroll position.
 			if (
 				!hasStartedLiveTypingRef.current ||
 				hasUserScrolledRef.current ||
-				!message.isThinking
+				!isLast
 			) {
 				return;
 			}
@@ -175,7 +177,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 					isProgrammaticScrollRef.current = false;
 				});
 			}
-		}, [displayedThinking, isExpanded, message.isThinking]);
+		}, [displayedThinking, effectiveExpanded, isLast]);
 
 		// Detect manual scroll by user - disable auto-scroll permanently
 		const handleScroll = () => {
@@ -188,10 +190,10 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		return (
 			<div
 				className={`relative mb-2 rounded-lg border border-border text-muted-foreground text-sm shadow-sm ${
-					isExpanded ? "" : "cursor-pointer"
+					effectiveExpanded ? "" : "cursor-pointer"
 				}`}
 			>
-				{!isExpanded && (
+				{!effectiveExpanded && (
 					<button
 						type="button"
 						className="absolute inset-0 z-10"
@@ -201,42 +203,50 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 				)}
 				<div
 					className={
-						isExpanded || !isOverflowing ? "p-3" : "p-3 pb-0"
+						effectiveExpanded || !isOverflowing ? "p-3" : "p-3 pb-0"
 					}
 				>
-					{/* Header - clickable to expand/collapse when content overflows */}
+					{/* Header - collapse disabled while actively thinking */}
 					<button
 						type="button"
-						onClick={() => setIsExpanded(!isExpanded)}
-						className="mb-2 flex w-full items-center justify-between text-left transition-colors hover:text-foreground"
+						onClick={() => !isLast && setIsExpanded(!isExpanded)}
+						disabled={isLast}
+						className="mb-2 flex w-full items-center justify-between text-left transition-colors enabled:hover:text-foreground disabled:cursor-default"
 					>
 						<span className="font-medium">Thinking</span>
-						<span className="flex items-center gap-1 text-xs">
-							{isExpanded ? (
-								<>
-									Show less
-									<ChevronUp className="h-3 w-3" />
-								</>
-							) : (
-								<>
-									Show more
-									<ChevronDown className="h-3 w-3" />
-								</>
-							)}
-						</span>
+						{!isLast && (
+							<span className="flex items-center gap-1 text-xs">
+								{isExpanded ? (
+									<>
+										Show less
+										<ChevronUp className="h-3 w-3" />
+									</>
+								) : (
+									<>
+										Show more
+										<ChevronDown className="h-3 w-3" />
+									</>
+								)}
+							</span>
+						)}
 					</button>
 					{/* Content area - auto-scrolls to show new text, smooth transition between heights */}
 					<div
 						ref={contentRef}
-						onScroll={isExpanded ? handleScroll : undefined}
-						className={`relative ${isExpanded ? "overflow-y-auto" : "overflow-hidden"} transition-[max-height] duration-300 ease-in-out ${
-							isExpanded ? "max-h-96" : "max-h-16"
+						onScroll={effectiveExpanded ? handleScroll : undefined}
+						className={`relative ${effectiveExpanded ? "overflow-y-auto" : "overflow-hidden"} transition-[max-height] duration-300 ease-in-out ${
+							// Smaller cap while actively streaming; full height when manually expanded
+							isLast
+								? "max-h-40"
+								: isExpanded
+									? "max-h-96"
+									: "max-h-16"
 						}`}
 					>
 						<Markdown components={THINKING_MARKDOWN_COMPONENTS}>
 							{displayedThinking}
 						</Markdown>
-						{!isExpanded && isOverflowing && (
+						{!effectiveExpanded && isOverflowing && (
 							<div className="pointer-events-none absolute right-0 bottom-0 left-0 h-5 bg-linear-to-t from-background to-transparent" />
 						)}
 					</div>
