@@ -10,6 +10,8 @@ import {
 	MCP_EXECUTION_AUTO,
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
+	TOOL_OUTPUT_UNREADABLE_PROMPT,
+	TOOL_PAUSE_PROMPT,
 } from "@/constants";
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
@@ -63,6 +65,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		name: "",
 	};
 
+	/**
+	 * Whether the user has indicated to pause running tools
+	 */
+	isPaused: boolean = false;
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message: ResponsePixelMessage,
@@ -73,6 +80,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			isThinking: observable,
 			parts: observable,
 			feedback: observable,
+			isPaused: observable,
 			sync: action,
 			runMessage: action,
 			savePart: action,
@@ -81,6 +89,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			hasUnfinishedTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
+			toggleIsPaused: action,
 		});
 
 		// sync the message (must be after makeObservable so sync action is registered)
@@ -140,7 +149,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			parts: [],
 			tokens: 0,
 			ornaments: {
-				modelName: room.model.app_name,
+				modelName:
+					room.model.engine_display_name || room.model.app_name,
 			},
 		} as ResponsePixelMessage);
 
@@ -271,6 +281,35 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
+	 * Toggle the stopped tools flag
+	 */
+	toggleIsPaused = () => {
+		if (!this.isPaused) {
+			this.isPaused = true;
+			// If we are currently running tools, then we want to stop them. So we should mark any loading or initial tools as paused
+			for (const part of this.parts) {
+				if (part.type === "TOOL_CALL") {
+					const tool = this.room.getTool(part.toolCall.id);
+					if (
+						tool.status === "LOADING" ||
+						tool.status === "INITIAL"
+					) {
+						this.saveToolExecution(
+							tool,
+							"",
+							"paused",
+							tool.parameters,
+							false,
+						);
+					}
+				}
+			}
+		} else {
+			this.isPaused = false;
+		}
+	};
+
+	/**
 	 * Record Feedback
 	 * @param rating
 	 * @param feedbackText
@@ -380,7 +419,8 @@ paramValues=[${JSON.stringify({
 			parts: parentMessage.parts,
 			tokens: parentMessage.tokens,
 			ornaments: {
-				modelName: room.model.app_name,
+				modelName:
+					room.model.engine_display_name || room.model.app_name,
 			},
 		});
 
@@ -456,40 +496,55 @@ paramValues=[${JSON.stringify({
 			return;
 		}
 
+		if (this.isPaused) {
+			// If the user has indicated to pause running tools, mark this tool as cancelled and save the response without running the tool
+			await this.saveToolExecution(
+				tool,
+				"",
+				"paused",
+				tool.parameters,
+				false,
+			);
+			return;
+		}
+
 		// mark as loading
 		runInAction(() => {
 			tool.status = "LOADING";
 		});
 
 		try {
-			// wait for the pixel to run
-			const response = await this.room.runRoomPixel<[unknown]>(
-				`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
-				false,
-				false,
-			);
+			let output = "";
+			let toolError = false;
 
-			const rawOutput = response.pixelReturn[0].output;
-			const output =
-				typeof rawOutput === "string"
-					? rawOutput
-					: JSON.stringify(rawOutput);
+			try {
+				// wait for the pixel to run
+				const response = await this.room.runRoomPixel<[unknown]>(
+					`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+					false,
+					false,
+				);
+
+				const rawOutput = response.pixelReturn[0].output;
+				output =
+					typeof rawOutput === "string"
+						? rawOutput
+						: JSON.stringify(rawOutput);
+			} catch (e) {
+				// If RunMCPTool fails, we want to save the error message as the tool response, and set the tool status to error
+				output = e.message;
+				toolError = true;
+			}
 
 			// save the response
 			await this.saveToolExecution(
 				tool,
 				output,
-				"success",
+				toolError ? "error" : "success",
 				tool.parameters,
 			);
-		} catch (e) {
-			// mark the failure
-			await this.saveToolExecution(
-				tool,
-				e.toString(),
-				"error",
-				tool.parameters,
-			);
+		} catch {
+			// Error in AddPlaygroundToolExecution handled by saveToolExecution, which will set the tool status to error and save the error response
 		}
 	};
 
@@ -502,23 +557,29 @@ paramValues=[${JSON.stringify({
 	saveToolExecution = async (
 		tool: ToolStore,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
 		executedParameters: Record<string, unknown>,
+		errorDuringSaving: boolean = false,
 	): Promise<void> => {
 		const room = this.room;
 
 		// wrap the message
 		if (toolStatus === "error") {
-			toolResponse = `${TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
+			toolResponse = `${errorDuringSaving ? TOOL_OUTPUT_UNREADABLE_PROMPT : TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
 		} else if (toolStatus === "cancelled") {
 			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
+		} else if (toolStatus === "paused") {
+			toolResponse = `${TOOL_PAUSE_PROMPT}${toolResponse ? `\n\nDetails: ${toolResponse}` : ""}`;
 		}
 
 		// skip if the tool is already completed
-		if (tool.status === "SUCCESS" || tool.status === "CANCELLED") {
-			// If this tool already has a response, this must be an outdated call, skip
-			return;
-		} else if (tool.status === "ERROR") {
+		if (
+			tool.status === "SUCCESS" ||
+			tool.status === "CANCELLED" ||
+			tool.status === "PAUSED" ||
+			tool.status === "ERROR"
+		) {
+			// this must be an outdated call, skip
 			return;
 		}
 
@@ -532,6 +593,8 @@ paramValues=[${JSON.stringify({
 				tool.status = "CANCELLED";
 			} else if (toolStatus === "error") {
 				tool.status = "ERROR";
+			} else if (toolStatus === "paused") {
+				tool.status = "PAUSED";
 			}
 		});
 
@@ -548,7 +611,8 @@ paramValues=[${JSON.stringify({
 				parts: [],
 				tokens: 0,
 				ornaments: {
-					modelName: room.model.app_name,
+					modelName:
+						room.model.engine_display_name || room.model.app_name,
 				},
 			} as ResponsePixelMessage);
 
@@ -606,6 +670,8 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 						}
 					});
 				},
+				true,
+				toolStatus !== "success", // If the tool execution succeeds but saving it failed, we will try to save it again with an error status, so dont error the room yet
 			);
 
 			const { output } = response.results[0];
@@ -621,6 +687,14 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 				// create the response and link to the message
 				responseMessage.sync(output.responseMessage);
 
+				// edge case handling: it's possible that the user paused tools while this tool was running
+				// mark the new response as paused if that is the case
+				if (this.isPaused) {
+					runInAction(() => {
+						responseMessage.isPaused = true;
+					});
+				}
+
 				// start running tools if there are any
 				responseMessage.continueToolExecution();
 
@@ -628,23 +702,52 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 				this.toolResponseMessage = null;
 			}
 		} catch (e) {
-			// set error status
-			runInAction(() => {
-				tool.status = "ERROR";
-			});
+			if (toolStatus === "success") {
+				// Attempt to save the error response
 
-			// remove as a child
-			this.removeChild(responseMessage);
+				// set status back to loading so that the error response can be saved
+				runInAction(() => {
+					tool.status = "LOADING";
+				});
 
-			// clear it
-			this.toolResponseMessage = null;
+				await this.saveToolExecution(
+					tool,
+					`Failed to save tool response: ${e}`,
+					"error",
+					executedParameters,
+					true,
+				);
+			} else {
+				// set error status
+				runInAction(() => {
+					tool.status = "ERROR";
+				});
+
+				// remove as a child
+				this.removeChild(responseMessage);
+
+				// clear it
+				this.toolResponseMessage = null;
+			}
 
 			throw e;
 		} finally {
-			runInAction(() => {
-				// turn off thinking
-				responseMessage.isThinking = false;
-			});
+			// turn off thinking unless there are other tools still running
+			let hasOtherRunningTools = false;
+			for (const part of this.parts) {
+				if (part.type === "TOOL_CALL") {
+					const tool = this.room.getTool(part.toolCall.id);
+					if (tool && tool.status === "LOADING") {
+						hasOtherRunningTools = true;
+						break;
+					}
+				}
+			}
+			if (!hasOtherRunningTools) {
+				runInAction(() => {
+					responseMessage.isThinking = false;
+				});
+			}
 		}
 	};
 }

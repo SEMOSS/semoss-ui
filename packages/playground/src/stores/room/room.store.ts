@@ -320,18 +320,31 @@ export class RoomStore {
 	}
 
 	/**
-	 * Indicator to check if the room is ready for the next message
+	 * Number of tools in this room
 	 */
-	get hasUnfinishedTools(): boolean {
-		if (this.tail instanceof ResponseMessageStore) {
-			for (const toolId in this._store.tools) {
-				const tool = this._store.tools[toolId];
-				if (tool.status === "INITIAL" || tool.status === "LOADING") {
-					return true;
-				}
+	get numberOfTools() {
+		return Object.keys(this._store.tools).length;
+	}
+
+	/**
+	 * Last response message - avoids INPUT_TOOL_EXEC and STREAMING_TOOL_PLACEHOLDER messages
+	 */
+	get latestResponseMessage(): ResponseMessageStore {
+		let responseMessage: AbstractMessageStore = this.tail;
+		while (responseMessage) {
+			// if it is a REAL response message, return it
+			if (
+				responseMessage instanceof ResponseMessageStore &&
+				responseMessage.id !== "STREAMING_TOOL_PLACEHOLDER_ID"
+			) {
+				return responseMessage;
+			} else {
+				// if it is not a response message, move to the parent message
+				responseMessage = responseMessage.parent;
 			}
 		}
-		return false;
+		// if there are no response messages, return null
+		return null;
 	}
 
 	/**
@@ -461,7 +474,10 @@ export class RoomStore {
 					parts: [],
 					tokens: 0,
 					ornaments: {
-						modelName: this._store.model?.app_name || "",
+						modelName:
+							this._store.model?.engine_display_name ||
+							this._store.model?.app_name ||
+							"",
 					},
 				} as ResponsePixelMessage);
 			} else if (this.mode === "planning") {
@@ -481,7 +497,10 @@ export class RoomStore {
 					tokens: 0,
 					ornaments: {
 						PLAYGROUND_MESSAGE_TYPE: "COT",
-						modelName: this._store.model?.app_name || "",
+						modelName:
+							this._store.model?.engine_display_name ||
+							this._store.model?.app_name ||
+							"",
 					},
 				} as ResponsePixelMessage);
 			}
@@ -609,6 +628,56 @@ export class RoomStore {
 				this.setIsLoading(false);
 			});
 			throw new Error(e.message || "Error initializing room");
+		}
+	};
+
+	/**
+	 * Fetch the latest room options from the backend and sync local state,
+	 * preserving any workspace MCPs that are currently loaded in memory.
+	 */
+	syncRoomOptions = async (): Promise<void> => {
+		try {
+			const response = await this.runRoomPixel<
+				[{ OPTIONS?: RoomStoreInterface["options"] }]
+			>(
+				`GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`,
+				false,
+				false,
+			);
+
+			const fetched = response.pixelReturn[0].output as {
+				OPTIONS?: RoomStoreInterface["options"];
+			};
+
+			if (!fetched?.OPTIONS) {
+				return;
+			}
+
+			// Preserve workspace MCPs that are already in local state
+			const workspaceMCPs = this._store.options.mcp.filter(
+				(mcp) => mcp?.fromWorkspace,
+			);
+
+			const freshRoomMCPs = (fetched.OPTIONS.mcp ?? []).filter(
+				(mcp) => !mcp?.fromWorkspace,
+			);
+
+			// Deduplicate: workspace MCPs take precedence
+			const workspaceIds = new Set(workspaceMCPs.map((m) => m.id));
+			const merged = [
+				...workspaceMCPs,
+				...freshRoomMCPs.filter((m) => !workspaceIds.has(m.id)),
+			];
+
+			runInAction(() => {
+				this.setOptions({
+					...fetched.OPTIONS,
+					mcp: merged,
+				});
+			});
+		} catch (e) {
+			// non-critical — swallow errors so the chat isn't disrupted
+			console.warn("Failed to sync room options:", e);
 		}
 	};
 
@@ -900,7 +969,8 @@ export class RoomStore {
 			parts: parts,
 			tokens: 0,
 			ornaments: {
-				modelName: this.model.app_name,
+				modelName:
+					this.model.engine_display_name || this.model.app_name,
 			},
 		});
 
@@ -932,7 +1002,7 @@ export class RoomStore {
 		messageId: string,
 		toolId: string,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
 		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {
@@ -1034,9 +1104,13 @@ export class RoomStore {
 				ReturnType<typeof getPixelJobStreaming>
 			>["message"][number],
 		) => void,
+		showLoading: boolean = true,
+		setErrorOnFail: boolean = true,
 	) => {
 		try {
-			this.setIsLoading(true);
+			if (showLoading) {
+				this.setIsLoading(true);
+			}
 
 			// Start async execution to get job ID
 			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
@@ -1092,14 +1166,18 @@ export class RoomStore {
 		} catch (e) {
 			console.error(e);
 
-			// show the error
-			runInAction(() => {
-				this._store.error = e;
-			});
+			if (setErrorOnFail) {
+				// show the error
+				runInAction(() => {
+					this._store.error = e;
+				});
+			}
 
 			throw e;
 		} finally {
-			this.setIsLoading(false);
+			if (showLoading) {
+				this.setIsLoading(false);
+			}
 		}
 	};
 }

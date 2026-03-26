@@ -244,7 +244,7 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
 						/>
 					)}
 					<StyledProjectName variant="body1">
-						{app.project_name}
+						{app.project_display_name || app.project_name}
 					</StyledProjectName>
 				</StyledImageContainer>
 				<StyledChipDiv>

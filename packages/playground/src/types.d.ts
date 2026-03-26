@@ -1,6 +1,7 @@
 export interface Engine {
 	app_id: string;
 	app_name: string;
+	engine_display_name?: string;
 	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
 	description?: string;
 }
@@ -8,6 +9,7 @@ export interface Engine {
 export interface App {
 	project_id: string;
 	project_name: string;
+	project_display_name?: string;
 	description?: string;
 	project_date_created: string;
 	project_type: string;
@@ -186,7 +188,7 @@ export interface PixelMessageToolResultPart {
 		toolName: string;
 		output: string;
 		toolParameterValues: Record<string, unknown>;
-		toolStatus: "success" | "error" | "cancelled";
+		toolStatus: "success" | "error" | "cancelled" | "paused";
 	};
 }
 

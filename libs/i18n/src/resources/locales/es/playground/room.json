@@ -47,7 +47,9 @@
 		"enterQuestion": "Por favor, ingresa una pregunta",
 		"completeTool": "Por favor, completa las herramientas para continuar",
 		"ask": "Preguntar",
-		"errorProcessing": "Error al procesar el chat"
+		"errorProcessing": "Error al procesar el chat",
+		"pauseTools": "Pausar herramientas",
+		"pauseToolsTooltip": "Pausar toda la ejecución de herramientas hasta después del siguiente mensaje"
 	},
 	"content": {
 		"scrollToTop": "Ir al inicio",

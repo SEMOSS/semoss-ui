@@ -164,24 +164,24 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 
 										// refresh the explorer
 										refresh();
-
-										// open the editor for the created file
-										addNode(
-											`ENGINE_MCP_EDITOR--/mcp/py_mcp.json`,
-											{
-												type: "tab",
-												name: `Toolbox Editor - py_mcp.json`,
-												component: "engine-mcp-editor",
-												config: {
-													name: "py_mcp.json",
-													path: "/mcp/py_mcp.json",
-												},
-												enableClose: true,
-											},
-										);
 									} catch (e) {
 										toast.error(`Error: ${e}`);
 									}
+
+									// open the editor for the created file (always, even if MakePythonMCP fails)
+									addNode(
+										`ENGINE_MCP_EDITOR--/mcp/py_mcp.json`,
+										{
+											type: "tab",
+											name: `Toolbox Editor - py_mcp.json`,
+											component: "engine-mcp-editor",
+											config: {
+												name: "py_mcp.json",
+												path: "/mcp/py_mcp.json",
+											},
+											enableClose: true,
+										},
+									);
 								},
 							});
 						}
