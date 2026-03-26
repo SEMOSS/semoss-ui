@@ -309,423 +309,443 @@ export const DocumentLibrary = () => {
 
 	return (
 		<TooltipProvider>
-			<div className="space-y-6 p-6">
-				<NewKnowledgeOverlay
-					open={isNewKnowledgeOpen}
-					onClose={(knowledge) => {
-						setIsNewKnowledgeOpen(false);
+			<div className="h-full w-full overflow-auto bg-secondary-background p-6">
+				<div className="space-y-6">
+					<NewKnowledgeOverlay
+						open={isNewKnowledgeOpen}
+						onClose={(knowledge) => {
+							setIsNewKnowledgeOpen(false);
 
-						// refresh list if a knowledge source was created
-						if (knowledge) {
-							void actions
-								.run(
-									`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"],  metaFilters=[{"tag":${JSON.stringify(
-										["FDA", ...centers],
-									)}}])`,
-								)
-								.then((result) => {
-									const pixelData = result?.pixelReturn?.[0];
-									if (!pixelData) {
-										return;
-									}
-									setData([pixelData.output]);
-								});
-						}
-					}}
-				/>
-
-				<Dialog
-					open={documentsModalOpen}
-					onOpenChange={(open) => {
-						setDocumentsModalOpen(open);
-						if (!open) {
-							setSelectedEngine(null);
-							setEngineAssets([]);
-							setAssetsError(null);
-							setIsLoadingAssets(false);
-						}
-					}}
-				>
-					<DialogContent className="max-w-2xl">
-						<DialogHeader>
-							<DialogTitle>
-								{t("knowledge:documents.title")}
-								{selectedEngine?.app_name
-									? `: ${selectedEngine.app_name}`
-									: ""}
-							</DialogTitle>
-							<DialogDescription>
-								{t("knowledge:documents.description")}
-							</DialogDescription>
-						</DialogHeader>
-
-						<div className="space-y-3">
-							{isLoadingAssets ? (
-								<div className="text-sm text-muted-foreground">
-									{t("knowledge:messages.loadingDocuments")}
-								</div>
-							) : assetsError ? (
-								<div className="text-sm text-destructive">
-									{assetsError}
-								</div>
-							) : documentFiles.length === 0 ? (
-								<div className="text-sm text-muted-foreground">
-									{t("knowledge:messages.noDocuments")}
-								</div>
-							) : (
-								<ul className="divide-y rounded-md border">
-									{documentFiles.map((f, idx) => (
-										<li
-											key={`${getDisplayPath(f) || getDisplayName(f)}-${idx}`}
-											className="flex items-center justify-between gap-3 px-3 py-2"
-										>
-											<div className="min-w-0">
-												<p className="truncate text-sm font-medium">
-													{getDisplayName(f)}
-												</p>
-												{getDisplayPath(f) ? (
-													<p className="truncate text-xs text-muted-foreground">
-														{getDisplayPath(f)}
-													</p>
-												) : null}
-											</div>
-										</li>
-									))}
-								</ul>
-							)}
-						</div>
-					</DialogContent>
-				</Dialog>
-
-				<Card className="rounded-xl border-border bg-card shadow-sm">
-					<CardHeader className="pb-3">
-						<CardTitle className="text-xl">
-							{t("knowledge:title")}{" "}
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon"
-										className="h-8 w-8 text-muted-foreground"
-									>
-										<Info className="h-4 w-4" />
-										<span className="sr-only">
-											{t("knowledge:aboutTitle")}
-										</span>
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent
-									side="right"
-									className="max-w-sm"
-								>
-									<div className="space-y-2">
-										<p className="font-medium">
-											{t(
-												"knowledge:whatIsKnowledgeStore",
-											)}
-										</p>
-										<p className="text-muted-foreground text-sm leading-relaxed">
-											{t("knowledge:ragDescription")}
-										</p>
-									</div>
-								</TooltipContent>
-							</Tooltip>
-						</CardTitle>
-						<CardDescription>
-							{t("knowledge:subtitle")}
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-3">
-						<Tabs
-							value={libraryTab}
-							onValueChange={(v) =>
-								setLibraryTab(v as "all" | "global" | "mine")
+							// refresh list if a knowledge source was created
+							if (knowledge) {
+								void actions
+									.run(
+										`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"],  metaFilters=[{"tag":${JSON.stringify(
+											["FDA", ...centers],
+										)}}])`,
+									)
+									.then((result) => {
+										const pixelData =
+											result?.pixelReturn?.[0];
+										if (!pixelData) {
+											return;
+										}
+										setData([pixelData.output]);
+									});
 							}
-						>
-							<TabsList>
-								<TabsTrigger value="all">
-									{t("knowledge:tabs.all")}
-								</TabsTrigger>
-								<TabsTrigger value="global">
-									{t("knowledge:tabs.global")}
-								</TabsTrigger>
-								<TabsTrigger value="mine">
-									{t("knowledge:tabs.mine")}
-								</TabsTrigger>
-							</TabsList>
-							<TabsContent value={libraryTab}>
-								<div className="flex w-full flex-col gap-3">
-									<div className="flex w-full flex-row flex-wrap items-center gap-2 items-bottom">
-										<InputGroup className="min-w-[220px] flex-1 bg-background">
-											<InputGroupInput
-												placeholder={t(
-													"common:buttons.search",
-												)}
-												value={search}
-												onChange={(e) =>
-													setSearch(e.target.value)
-												}
-											/>
-											<InputGroupAddon>
-												<Search />
-											</InputGroupAddon>
-										</InputGroup>
+						}}
+					/>
 
-										<Popover>
-											<PopoverTrigger asChild>
-												<Button
-													variant="outline"
-													size="sm"
-												>
-													{centerFilter.length === 0
-														? "Tags"
-														: `Tags (${centerFilter.length})`}
-													<ChevronDown className="ml-1 h-4 w-4" />
-												</Button>
-											</PopoverTrigger>
-											<PopoverContent
-												className="w-56 p-0"
-												align="start"
-											>
-												<Command>
-													<CommandInput placeholder="Search tags…" />
-													<CommandList className="max-h-[50vh]">
-														<CommandEmpty>
-															No tags found.
-														</CommandEmpty>
-														<CommandGroup>
-															{centers.map(
-																(center) => (
-																	<CommandItem
-																		key={
-																			center
-																		}
-																		onSelect={() =>
-																			setCenterFilter(
-																				(
-																					prev,
-																				) =>
-																					prev.includes(
-																						center,
-																					)
-																						? prev.filter(
-																								(
-																									c,
-																								) =>
-																									c !==
-																									center,
-																							)
-																						: [
-																								...prev,
-																								center,
-																							],
-																			)
-																		}
-																	>
-																		<Checkbox
-																			checked={centerFilter.includes(
-																				center,
-																			)}
-																			className="mr-2"
-																		/>
-																		{center}
-																	</CommandItem>
-																),
-															)}
-														</CommandGroup>
-													</CommandList>
-												</Command>
-											</PopoverContent>
-										</Popover>
+					<Dialog
+						open={documentsModalOpen}
+						onOpenChange={(open) => {
+							setDocumentsModalOpen(open);
+							if (!open) {
+								setSelectedEngine(null);
+								setEngineAssets([]);
+								setAssetsError(null);
+								setIsLoadingAssets(false);
+							}
+						}}
+					>
+						<DialogContent className="max-w-2xl">
+							<DialogHeader>
+								<DialogTitle>
+									{t("knowledge:documents.title")}
+									{selectedEngine?.app_name
+										? `: ${selectedEngine.app_name}`
+										: ""}
+								</DialogTitle>
+								<DialogDescription>
+									{t("knowledge:documents.description")}
+								</DialogDescription>
+							</DialogHeader>
 
-										<Button
-											variant={
-												showFavoritesOnly
-													? "secondary"
-													: "outline"
-											}
-											size="sm"
-											onClick={() =>
-												setShowFavoritesOnly((v) => !v)
-											}
-										>
-											<Bookmark
-												className={
-													showFavoritesOnly
-														? "h-4 w-4 fill-current"
-														: "h-4 w-4"
-												}
-											/>
-											Favorites
-										</Button>
-
-										<Popover>
-											<PopoverTrigger asChild>
-												<Button
-													variant="outline"
-													size="sm"
-												>
-													{sortBy === "name"
-														? "Sort: Name"
-														: "Sort: Date"}
-													<ChevronDown className="ml-1 h-4 w-4" />
-												</Button>
-											</PopoverTrigger>
-											<PopoverContent
-												className="w-44 p-1"
-												align="start"
-											>
-												<Button
-													variant={
-														sortBy === "name"
-															? "secondary"
-															: "ghost"
-													}
-													size="sm"
-													className="w-full justify-start"
-													onClick={() =>
-														setSortBy("name")
-													}
-												>
-													Name (A-Z)
-												</Button>
-												<Button
-													variant={
-														sortBy === "date"
-															? "secondary"
-															: "ghost"
-													}
-													size="sm"
-													className="w-full justify-start"
-													onClick={() =>
-														setSortBy("date")
-													}
-												>
-													Date (newest)
-												</Button>
-											</PopoverContent>
-										</Popover>
-
-										<Button
-											variant="default"
-											onClick={() =>
-												setIsNewKnowledgeOpen(true)
-											}
-										>
-											{t(
-												"knowledge:actions.createSource",
-											)}
-										</Button>
+							<div className="space-y-3">
+								{isLoadingAssets ? (
+									<div className="text-sm text-muted-foreground">
+										{t(
+											"knowledge:messages.loadingDocuments",
+										)}
 									</div>
-								</div>
-							</TabsContent>
-						</Tabs>
-					</CardContent>
-				</Card>
-
-				{filteredItems.length > 0 ? (
-					<div className="max-h-[70vh] overflow-y-auto pr-1">
-						<div className="flex flex-col gap-2 max-w-3xl">
-							{filteredItems.map((item, index) => (
-								<button
-									type="button"
-									key={item.app_name || item.id || index}
-									className="text-left w-full"
-									onClick={() =>
-										navigate(`/knowledge/${item.id}`)
-									}
-								>
-									<Card className="group transition hover:bg-muted/40">
-										<CardContent className="flex items-center gap-4 py-2">
-											<div className="min-w-0 flex-1">
-												<div className="flex min-w-0 items-center gap-2">
-													<p className="min-w-0 truncate text-sm font-medium">
-														{item.name}
+								) : assetsError ? (
+									<div className="text-sm text-destructive">
+										{assetsError}
+									</div>
+								) : documentFiles.length === 0 ? (
+									<div className="text-sm text-muted-foreground">
+										{t("knowledge:messages.noDocuments")}
+									</div>
+								) : (
+									<ul className="divide-y rounded-md border">
+										{documentFiles.map((f, idx) => (
+											<li
+												key={`${getDisplayPath(f) || getDisplayName(f)}-${idx}`}
+												className="flex items-center justify-between gap-3 px-3 py-2"
+											>
+												<div className="min-w-0">
+													<p className="truncate text-sm font-medium">
+														{getDisplayName(f)}
 													</p>
-													{item.tag.length > 0 && (
-														<div className="flex shrink-0 flex-wrap gap-1">
-															{item.tag.map(
-																(tag) => (
-																	<Badge
-																		key={
-																			tag
-																		}
-																		variant="secondary"
-																		className="text-xs"
-																	>
-																		{tag}
-																	</Badge>
-																),
-															)}
-														</div>
-													)}
+													{getDisplayPath(f) ? (
+														<p className="truncate text-xs text-muted-foreground">
+															{getDisplayPath(f)}
+														</p>
+													) : null}
 												</div>
-											</div>
-											{item.dateCreated && (
-												<p className="w-44 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
-													{formatDateTime(
-														item.dateCreated,
+											</li>
+										))}
+									</ul>
+								)}
+							</div>
+						</DialogContent>
+					</Dialog>
+
+					<Card className="rounded-xl border-border bg-card shadow-sm">
+						<CardHeader className="pb-3">
+							<CardTitle className="text-xl">
+								{t("knowledge:title")}{" "}
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											className="h-8 w-8 text-muted-foreground"
+										>
+											<Info className="h-4 w-4" />
+											<span className="sr-only">
+												{t("knowledge:aboutTitle")}
+											</span>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent
+										side="right"
+										className="max-w-sm"
+									>
+										<div className="space-y-2">
+											<p className="font-medium">
+												{t(
+													"knowledge:whatIsKnowledgeStore",
+												)}
+											</p>
+											<p className="text-muted-foreground text-sm leading-relaxed">
+												{t("knowledge:ragDescription")}
+											</p>
+										</div>
+									</TooltipContent>
+								</Tooltip>
+							</CardTitle>
+							<CardDescription>
+								{t("knowledge:subtitle")}
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-3">
+							<Tabs
+								value={libraryTab}
+								onValueChange={(v) =>
+									setLibraryTab(
+										v as "all" | "global" | "mine",
+									)
+								}
+							>
+								<TabsList>
+									<TabsTrigger value="all">
+										{t("knowledge:tabs.all")}
+									</TabsTrigger>
+									<TabsTrigger value="global">
+										{t("knowledge:tabs.global")}
+									</TabsTrigger>
+									<TabsTrigger value="mine">
+										{t("knowledge:tabs.mine")}
+									</TabsTrigger>
+								</TabsList>
+								<TabsContent value={libraryTab}>
+									<div className="flex w-full flex-col gap-3">
+										<div className="flex w-full flex-row flex-wrap items-center gap-2 items-bottom">
+											<InputGroup className="min-w-[220px] flex-1 bg-background">
+												<InputGroupInput
+													placeholder={t(
+														"common:buttons.search",
 													)}
-												</p>
-											)}
-											<div className="flex shrink-0 items-center gap-2">
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<Button
-															variant="ghost"
-															size="icon-sm"
-															onClick={(e) =>
-																toggleFavorite(
-																	e,
-																	item,
-																)
-															}
-															aria-label="Toggle favorite"
-														>
-															<Bookmark
-																className={`h-4 w-4 ${
-																	(favorites[
-																		item.id
-																	] ??
-																	item.favorite)
-																		? "fill-current text-primary"
-																		: "text-muted-foreground"
-																}`}
-															/>
-														</Button>
-													</TooltipTrigger>
-													<TooltipContent>
-														Favorite
-													</TooltipContent>
-												</Tooltip>
-												<Button
-													size="sm"
-													variant="outline"
-													onClick={(e) => {
-														e.stopPropagation();
-														navigate(
-															`/new?knowledgeId=${encodeURIComponent(item.id)}`,
-														);
-													}}
+													value={search}
+													onChange={(e) =>
+														setSearch(
+															e.target.value,
+														)
+													}
+												/>
+												<InputGroupAddon>
+													<Search />
+												</InputGroupAddon>
+											</InputGroup>
+
+											<Popover>
+												<PopoverTrigger asChild>
+													<Button
+														variant="outline"
+														size="sm"
+													>
+														{centerFilter.length ===
+														0
+															? "Tags"
+															: `Tags (${centerFilter.length})`}
+														<ChevronDown className="ml-1 h-4 w-4" />
+													</Button>
+												</PopoverTrigger>
+												<PopoverContent
+													className="w-56 p-0"
+													align="start"
 												>
-													{t(
-														"knowledge:actions.newChat",
-													)}
-												</Button>
-											</div>
-										</CardContent>
-									</Card>
-								</button>
-							))}
+													<Command>
+														<CommandInput placeholder="Search tags…" />
+														<CommandList className="max-h-[50vh]">
+															<CommandEmpty>
+																No tags found.
+															</CommandEmpty>
+															<CommandGroup>
+																{centers.map(
+																	(
+																		center,
+																	) => (
+																		<CommandItem
+																			key={
+																				center
+																			}
+																			onSelect={() =>
+																				setCenterFilter(
+																					(
+																						prev,
+																					) =>
+																						prev.includes(
+																							center,
+																						)
+																							? prev.filter(
+																									(
+																										c,
+																									) =>
+																										c !==
+																										center,
+																								)
+																							: [
+																									...prev,
+																									center,
+																								],
+																				)
+																			}
+																		>
+																			<Checkbox
+																				checked={centerFilter.includes(
+																					center,
+																				)}
+																				className="mr-2"
+																			/>
+																			{
+																				center
+																			}
+																		</CommandItem>
+																	),
+																)}
+															</CommandGroup>
+														</CommandList>
+													</Command>
+												</PopoverContent>
+											</Popover>
+
+											<Button
+												variant={
+													showFavoritesOnly
+														? "secondary"
+														: "outline"
+												}
+												size="sm"
+												onClick={() =>
+													setShowFavoritesOnly(
+														(v) => !v,
+													)
+												}
+											>
+												<Bookmark
+													className={
+														showFavoritesOnly
+															? "h-4 w-4 fill-current"
+															: "h-4 w-4"
+													}
+												/>
+												Favorites
+											</Button>
+
+											<Popover>
+												<PopoverTrigger asChild>
+													<Button
+														variant="outline"
+														size="sm"
+													>
+														{sortBy === "name"
+															? "Sort: Name"
+															: "Sort: Date"}
+														<ChevronDown className="ml-1 h-4 w-4" />
+													</Button>
+												</PopoverTrigger>
+												<PopoverContent
+													className="w-44 p-1"
+													align="start"
+												>
+													<Button
+														variant={
+															sortBy === "name"
+																? "secondary"
+																: "ghost"
+														}
+														size="sm"
+														className="w-full justify-start"
+														onClick={() =>
+															setSortBy("name")
+														}
+													>
+														Name (A-Z)
+													</Button>
+													<Button
+														variant={
+															sortBy === "date"
+																? "secondary"
+																: "ghost"
+														}
+														size="sm"
+														className="w-full justify-start"
+														onClick={() =>
+															setSortBy("date")
+														}
+													>
+														Date (newest)
+													</Button>
+												</PopoverContent>
+											</Popover>
+
+											<Button
+												variant="default"
+												onClick={() =>
+													setIsNewKnowledgeOpen(true)
+												}
+											>
+												{t(
+													"knowledge:actions.createSource",
+												)}
+											</Button>
+										</div>
+									</div>
+								</TabsContent>
+							</Tabs>
+						</CardContent>
+					</Card>
+
+					{filteredItems.length > 0 ? (
+						<div className="max-h-[70vh] overflow-y-auto pr-1">
+							<div className="flex max-w-3xl flex-col gap-2">
+								{filteredItems.map((item, index) => (
+									<button
+										type="button"
+										key={item.app_name || item.id || index}
+										className="text-left w-full"
+										onClick={() =>
+											navigate(`/knowledge/${item.id}`)
+										}
+									>
+										<Card className="group transition hover:bg-muted/40">
+											<CardContent className="flex items-center gap-4 py-2">
+												<div className="min-w-0 flex-1">
+													<div className="flex min-w-0 items-center gap-2">
+														<p className="min-w-0 truncate text-sm font-medium">
+															{item.name}
+														</p>
+														{item.tag.length >
+															0 && (
+															<div className="flex shrink-0 flex-wrap gap-1">
+																{item.tag.map(
+																	(tag) => (
+																		<Badge
+																			key={
+																				tag
+																			}
+																			variant="secondary"
+																			className="text-xs"
+																		>
+																			{
+																				tag
+																			}
+																		</Badge>
+																	),
+																)}
+															</div>
+														)}
+													</div>
+												</div>
+												{item.dateCreated && (
+													<p className="w-44 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+														{formatDateTime(
+															item.dateCreated,
+														)}
+													</p>
+												)}
+												<div className="flex shrink-0 items-center gap-2">
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Button
+																variant="ghost"
+																size="icon-sm"
+																onClick={(e) =>
+																	toggleFavorite(
+																		e,
+																		item,
+																	)
+																}
+																aria-label="Toggle favorite"
+															>
+																<Bookmark
+																	className={`h-4 w-4 ${
+																		(favorites[
+																			item
+																				.id
+																		] ??
+																		item.favorite)
+																			? "fill-current text-primary"
+																			: "text-muted-foreground"
+																	}`}
+																/>
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent>
+															Favorite
+														</TooltipContent>
+													</Tooltip>
+													<Button
+														size="sm"
+														variant="outline"
+														onClick={(e) => {
+															e.stopPropagation();
+															navigate(
+																`/new?knowledgeId=${encodeURIComponent(item.id)}`,
+															);
+														}}
+													>
+														{t(
+															"knowledge:actions.newChat",
+														)}
+													</Button>
+												</div>
+											</CardContent>
+										</Card>
+									</button>
+								))}
+							</div>
 						</div>
-					</div>
-				) : (
-					<div className="rounded-lg border border-dashed p-10 text-center">
-						<p className="text-muted-foreground">
-							{t("knowledge:messages.noLibrariesFound")}
-						</p>
-					</div>
-				)}
+					) : (
+						<div className="rounded-lg border border-dashed p-10 text-center">
+							<p className="text-muted-foreground">
+								{t("knowledge:messages.noLibrariesFound")}
+							</p>
+						</div>
+					)}
+				</div>
 			</div>
 		</TooltipProvider>
 	);

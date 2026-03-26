@@ -148,19 +148,21 @@ export const RoomPage = observer(() => {
 			options={{ insightId: room.insightId }}
 			destroyOnUnmount={false}
 		>
-			<div className="flex h-full w-full flex-col overflow-hidden">
+			<div className="flex h-full w-full flex-col overflow-hidden bg-secondary-background">
 				<ResizablePanelGroup
 					direction="horizontal"
-					className="w-full flex-1 overflow-hidden"
+					className="w-full flex-1 overflow-hidden bg-secondary-background"
 				>
-					<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
+					<ResizablePanel className="h-full w-full flex-1 overflow-hidden bg-secondary-background p-2">
 						<RoomContent room={room} />
 					</ResizablePanel>
 					{room.sidebar.isOpen && (
 						<>
 							<ResizableHandle />
 							<ResizablePanel
-								className={"relative p-2"}
+								className={
+									"relative bg-secondary-background p-2"
+								}
 								defaultSize={50}
 								minSize={20}
 							>

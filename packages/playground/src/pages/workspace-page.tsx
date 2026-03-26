@@ -82,7 +82,7 @@ export const WorkspacePage = observer(() => {
 	});
 
 	return (
-		<div className="relative h-full w-full overflow-hidden">
+		<div className="relative h-full w-full overflow-hidden bg-secondary-background">
 			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-12 px-12 pt-8 pb-4">
 				<div className="flex w-full rounded-lg bg-primary/10">
 					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">

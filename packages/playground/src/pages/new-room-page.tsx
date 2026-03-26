@@ -294,14 +294,15 @@ export const NewRoomPage = observer(() => {
 	]);
 
 	return (
-		<div className="relative h-full w-full overflow-hidden">
+		<div className="relative h-full w-full overflow-hidden bg-secondary-background">
 			<ResizablePanelGroup direction="horizontal">
-				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
+				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto bg-secondary-background p-2">
 					<img
 						src={root.theme.images.landing || landingImage}
 						alt="Background"
-						className="absolute inset-0 h-full w-full select-none object-cover"
+						className="absolute inset-0 h-full w-full select-none object-cover opacity-75 dark:opacity-55 dark:brightness-[0.6] dark:grayscale-[0.1]"
 					/>
+					<div className="absolute inset-0 bg-background/40 dark:bg-background/50" />
 					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
 						{root.theme.landing ? (
 							<div
@@ -496,7 +497,7 @@ export const NewRoomPage = observer(() => {
 					<>
 						<ResizableHandle />
 						<ResizablePanel
-							className="relative h-full w-full p-2"
+							className="relative h-full w-full bg-secondary-background p-2"
 							defaultSize={25}
 						>
 							<div

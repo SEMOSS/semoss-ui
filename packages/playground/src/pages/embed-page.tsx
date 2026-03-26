@@ -48,7 +48,7 @@ export const EmbedPage: React.FC = observer(() => {
 	}
 
 	return (
-		<div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
+		<div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-secondary-background">
 			{isLoading && <Skeleton className="h-full w-full" />}
 			{matched && (
 				<iframe

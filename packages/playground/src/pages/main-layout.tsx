@@ -13,8 +13,9 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 	useCacheState,
+	useTheme,
 } from "@semoss/ui/next";
-import { GlobalFooter, GlobalNav } from "@/components";
+import { GlobalFooter, GlobalNav, ThemeToggle } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
 import { ChatContext, NavbarContext } from "@/contexts";
 import { useRoot } from "@/hooks";
@@ -83,6 +84,15 @@ const MainLayoutContent = observer(
 	}) => {
 		const { root } = useRoot();
 		const { actions } = useNavbar();
+		const { theme } = useTheme();
+		const isDark =
+			theme === "dark" ||
+			(theme === "system" &&
+				document.documentElement.classList.contains("dark"));
+
+		const layoutBackground = isDark
+			? "linear-gradient(180deg, rgba(10, 10, 10, 1) 0%, rgba(23, 23, 23, 1) 62%, rgba(38, 38, 38, 1) 100%), var(--secondary-background, rgba(38, 38, 38, 1))"
+			: "linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--secondary-background, #FFF)";
 
 		return (
 			<SidebarProvider
@@ -102,12 +112,11 @@ const MainLayoutContent = observer(
 						data-testid="main-layout"
 						className="flex h-screen w-full flex-col overflow-hidden"
 						style={{
-							background:
-								"linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--base-secondary-background, #FFF)",
+							background: layoutBackground,
 							...root.theme.overrides["main-layout"],
 						}}
 					>
-						<div className="flex h-12.5 w-full shrink-0 flex-row items-center px-4">
+						<div className="flex h-12.5 w-full shrink-0 flex-row items-center border-border/60 border-b bg-background/75 px-4">
 							<div className="flex flex-row items-center justify-center gap-1.5">
 								<SidebarTrigger />
 								<Separator
@@ -155,9 +164,10 @@ const MainLayoutContent = observer(
 							<div className="flex-1" />
 							<div className="flex items-center gap-2">
 								{actions ?? null}
+								<ThemeToggle />
 							</div>
 						</div>
-						<Separator />
+						<Separator className="dark:bg-black/40" />
 						<div className="w-full flex-1 overflow-hidden">
 							<Outlet />
 						</div>

@@ -41,7 +41,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 					<Link to={`/embed/${path}`} aria-label={name}>
 						{icon ? (
 							<img
-								className="size-4 select-none"
+								className="size-4 select-none dark:invert"
 								src={icon}
 								alt={name}
 							/>
@@ -65,7 +65,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 					<Link to={internalPath} aria-label={name}>
 						{icon ? (
 							<img
-								className="size-4 select-none"
+								className="size-4 select-none dark:invert"
 								src={icon}
 								alt={name}
 							/>
@@ -88,7 +88,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 				>
 					{icon ? (
 						<img
-							className="size-4 select-none"
+							className="size-4 select-none dark:invert"
 							src={icon}
 							alt={name}
 						/>

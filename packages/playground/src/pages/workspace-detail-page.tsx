@@ -129,7 +129,7 @@ export const WorkspaceDetailPage = observer(() => {
 	}
 
 	return (
-		<div className="relative h-full w-full overflow-hidden">
+		<div className="relative h-full w-full overflow-hidden bg-secondary-background">
 			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4">
 				<div className="flex flex-row gap-2">
 					<div className="items-center text-2xl">
@@ -236,8 +236,8 @@ export const WorkspaceDetailPage = observer(() => {
 						</Button>
 					</div>
 					<div className="flex min-h-0 w-full flex-1 flex-col items-start overflow-hidden rounded-xl border border-border bg-card">
-						<div className="flex w-full flex-row gap-2 border-border border-b bg-primary-foreground p-4">
-							<InputGroup className="bg-background">
+						<div className="flex w-full flex-row gap-2 border-border border-b p-4">
+							<InputGroup>
 								<InputGroupInput
 									placeholder={t("common:buttons.search")}
 									value={search}

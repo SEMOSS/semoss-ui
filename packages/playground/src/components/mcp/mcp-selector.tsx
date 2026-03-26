@@ -134,8 +134,8 @@ const MCPSelectorInner: React.FC<MCPSelectorProps> = ({
 
 	return (
 		<div className="w-full overflow-hidden rounded-xl border-border bg-card shadow-sm">
-			<div className="flex w-full flex-row gap-2 border-border bg-primary-foreground p-4">
-				<InputGroup className="bg-background">
+			<div className="flex w-full flex-row gap-2 border-border bg-card p-4">
+				<InputGroup>
 					<InputGroupInput
 						placeholder={t("selector.search")}
 						value={search}

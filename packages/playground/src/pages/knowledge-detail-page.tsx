@@ -427,7 +427,7 @@ export const KnowledgeDetailPage = observer(() => {
 	}
 
 	return (
-		<div className="relative h-full w-full overflow-hidden">
+		<div className="relative h-full w-full overflow-hidden bg-secondary-background">
 			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4">
 				<div className="flex items-start gap-3">
 					<Button
