@@ -99,49 +99,68 @@ interface ResponseMessageThinkingProps {
 	isLast: boolean;
 }
 
+const COLLAPSED_HEIGHT = 96; // px - matches max-h-24 (6rem), ~3-4 lines
+
+/**
+ * Displays AI thinking content with typewriter effect.
+ *
+ * Features:
+ * - Shows collapsed preview (~3-4 lines) by default
+ * - Auto-scrolls to show newest content as it types
+ * - Expands to full view when user clicks (if content overflows)
+ * - Smooth CSS transitions for expand/collapse
+ */
 export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 	observer(({ message, part, isLast }) => {
 		const [isExpanded, setIsExpanded] = useState(false);
 		const typewriter = useMarkdownTypewriter(part.thinking);
 		const contentRef = useRef<HTMLDivElement>(null);
 		const [showToggle, setShowToggle] = useState(false);
+		const hasUserScrolledRef = useRef(false); // Once true, never auto-scroll again
 
+		// Start typewriter on mount, skip to end when not the last part
 		useEffect(() => {
-			if (message.isThinking && isLast) {
+			if (isLast && message.isThinking) {
 				typewriter.start();
-			}
-		}, [message.isThinking, typewriter.start, isLast]);
-
-		useEffect(() => {
-			if (!isLast) {
+			} else if (!isLast && typewriter.isTyping) {
 				typewriter.skipToEnd();
 			}
-		}, [isLast, typewriter.skipToEnd]);
+		}, [
+			isLast,
+			message.isThinking,
+			typewriter.start,
+			typewriter.skipToEnd,
+			typewriter.isTyping,
+		]);
 
-		// Check if content overflows to show toggle button
-		// biome-ignore lint/correctness/useExhaustiveDependencies: need to check overflow on content changes
-		useEffect(() => {
-			if (contentRef.current) {
-				const isOverflowing = contentRef.current.scrollHeight > 96; // 96px = ~4 lines
-				setShowToggle(isOverflowing);
-			}
-		}, [typewriter.rendered, part.thinking]);
-
-		// Auto-scroll to bottom when typing to show new content
+		// Handle content updates: check overflow and auto-scroll during typing
 		// biome-ignore lint/correctness/useExhaustiveDependencies: need rendered to trigger on content changes
 		useEffect(() => {
-			if (contentRef.current && typewriter.isTyping) {
+			if (!contentRef.current) return;
+
+			// Check if content overflows to show/hide expand button
+			const isOverflowing =
+				contentRef.current.scrollHeight > COLLAPSED_HEIGHT;
+			setShowToggle(isOverflowing);
+
+			// Auto-scroll to bottom until user manually scrolls once
+			if (!hasUserScrolledRef.current) {
 				contentRef.current.scrollTop = contentRef.current.scrollHeight;
 			}
-		}, [typewriter.rendered, typewriter.isTyping]);
+		}, [typewriter.rendered]);
 
-		if (!part.thinking) {
-			return null;
-		}
+		// Detect manual scroll by user - disable auto-scroll permanently
+		const handleScroll = () => {
+			console.log("User scrolled, disabling auto-scroll");
+			hasUserScrolledRef.current = true;
+		};
+
+		if (!part.thinking) return null;
 
 		return (
 			<div className="mb-2 rounded-lg border border-border text-muted-foreground text-sm shadow-sm">
 				<div className="p-3">
+					{/* Header - clickable to expand/collapse when content overflows */}
 					<button
 						type="button"
 						onClick={() => setIsExpanded(!isExpanded)}
@@ -165,19 +184,16 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 							</span>
 						)}
 					</button>
+					{/* Content area - auto-scrolls to show new text, smooth transition between heights */}
 					<div
 						ref={contentRef}
+						onScroll={handleScroll}
 						className={`overflow-y-auto transition-[max-height] duration-300 ease-in-out ${
 							isExpanded ? "max-h-96" : "max-h-24"
 						}`}
 					>
-						<Markdown
-							className="text-xs [&>*:first-child]:mt-0"
-							components={THINKING_MARKDOWN_COMPONENTS}
-						>
-							{typewriter.isTyping
-								? typewriter.rendered
-								: part.thinking}
+						<Markdown components={THINKING_MARKDOWN_COMPONENTS}>
+							{typewriter.rendered}
 						</Markdown>
 					</div>
 				</div>
