@@ -2,6 +2,7 @@ import { ChevronDown, ChevronUp, Quote } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { H1, H2, H3, H4, Markdown, P, Separator } from "@semoss/ui/next";
+import { useLoadingMessage } from "@/hooks";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageThinkingPart } from "@/types";
@@ -116,6 +117,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		const contentRef = useRef<HTMLDivElement>(null);
 		const hasUserScrolledRef = useRef(false);
 		const isProgrammaticScrollRef = useRef(false);
+		const { loadingMessage } = useLoadingMessage(isLast);
 
 		const displayedThinking = typewriter.isTyping
 			? typewriter.rendered
@@ -176,8 +178,6 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 			hasUserScrolledRef.current = true;
 		};
 
-		if (!part.thinking) return null;
-
 		return (
 			<div
 				className={`relative mb-2 rounded-lg border border-border text-muted-foreground text-sm shadow-sm ${
@@ -231,12 +231,16 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 								? "max-h-40"
 								: isExpanded
 									? "max-h-96"
-									: "max-h-16"
+									: "max-h-11.5"
 						}`}
 					>
-						<Markdown components={THINKING_MARKDOWN_COMPONENTS}>
-							{displayedThinking}
-						</Markdown>
+						{displayedThinking ? (
+							<Markdown components={THINKING_MARKDOWN_COMPONENTS}>
+								{displayedThinking}
+							</Markdown>
+						) : (
+							<div>{loadingMessage}</div>
+						)}
 						{!effectiveExpanded && isOverflowing && (
 							<div className="pointer-events-none absolute right-0 bottom-0 left-0 h-5 bg-linear-to-t from-background to-transparent" />
 						)}
