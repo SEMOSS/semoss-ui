@@ -47,7 +47,9 @@
 		"enterQuestion": "Veuillez entrer une question",
 		"completeTool": "Veuillez compléter le(s) outil(s) pour continuer",
 		"ask": "Demander",
-		"errorProcessing": "Erreur de traitement du chat"
+		"errorProcessing": "Erreur de traitement du chat",
+		"pauseTools": "Suspendre les outils",
+		"pauseToolsTooltip": "Suspendre toute l'exécution des outils jusqu'après le prochain message"
 	},
 	"content": {
 		"scrollToTop": "Défiler vers le haut",
