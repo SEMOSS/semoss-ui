@@ -264,7 +264,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 										: "24rem";
 								}
 							}}
-							type="scroll"
+							type="always"
 						>
 							<div className="pr-3">
 								{displayedThinking ? (
