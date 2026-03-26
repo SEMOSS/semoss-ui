@@ -99,7 +99,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 			setSingleNameVal(initialName ?? "");
 
 			const initialItems = (initialLogicalNames || [])
-				.filter((name) => name && name.trim())
+				.filter((name) => name?.trim())
 				.map((name) => {
 					idCounterRef.current += 1;
 					return {
@@ -248,6 +248,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
 			<DialogContent
 				className="max-w-[600px] p-0"
+				showCloseButton={false}
 				data-testid="edit-metamodel-modal"
 			>
 				{/* Header */}
@@ -294,14 +295,6 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 								data-testid="edit-metamodel-tab-logical-names"
 							>
 								Logical Names
-							</TabsTrigger>
-							<TabsTrigger
-								value="sample-instances"
-								disabled
-								className="relative rounded-none border-transparent border-b-2 bg-transparent px-4 py-3 font-medium text-muted-foreground/50 text-sm shadow-none data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
-								data-testid="edit-metamodel-tab-sample-instances"
-							>
-								Sample Instances
 							</TabsTrigger>
 						</TabsList>
 
@@ -425,17 +418,6 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 											{logicalNameError}
 										</P>
 									)}
-								</div>
-							</TabsContent>
-
-							<TabsContent
-								value="sample-instances"
-								className="m-0"
-							>
-								<div className="flex h-24 items-center justify-center rounded-md border border-border border-dashed">
-									<P className="text-muted-foreground text-sm">
-										Sample instances coming soon
-									</P>
 								</div>
 							</TabsContent>
 						</div>
