@@ -124,6 +124,8 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 			: part.thinking;
 		// While actively thinking, the card is always expanded and cannot be collapsed.
 		const effectiveExpanded = isStreaming ? true : isExpanded;
+		const canToggleExpansion =
+			!isStreaming && (isOverflowing || isExpanded);
 
 		// Control typewriter. When streaming ends, reset scroll to top so the
 		// completed card reads from the beginning when the user expands it.
@@ -180,10 +182,12 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		return (
 			<div
 				className={`relative mb-2 rounded-lg border border-border text-muted-foreground text-sm shadow-sm ${
-					effectiveExpanded ? "" : "cursor-pointer"
+					effectiveExpanded || !canToggleExpansion
+						? ""
+						: "cursor-pointer"
 				}`}
 			>
-				{!effectiveExpanded && (
+				{!effectiveExpanded && canToggleExpansion && (
 					<button
 						type="button"
 						className="absolute inset-0 z-10"
@@ -200,13 +204,13 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 					<button
 						type="button"
 						onClick={() =>
-							!isStreaming && setIsExpanded(!isExpanded)
+							canToggleExpansion && setIsExpanded(!isExpanded)
 						}
-						disabled={isStreaming}
+						disabled={!canToggleExpansion}
 						className="mb-2 flex w-full items-center justify-between text-left transition-colors enabled:hover:text-foreground disabled:cursor-default"
 					>
 						<span className="font-medium">Thinking</span>
-						{!isStreaming && (
+						{canToggleExpansion && (
 							<span className="flex items-center gap-1 text-xs">
 								{isExpanded ? (
 									<>
