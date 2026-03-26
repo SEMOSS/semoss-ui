@@ -1,12 +1,4 @@
-import { Cpu, HelpCircle } from "lucide-react";
-import {
-	HoverCard,
-	HoverCardContent,
-	HoverCardTrigger,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 
 export interface RoomContextChartProps {
 	tokensUsed?: number;
@@ -64,8 +56,8 @@ export const RoomContextChart = ({
 	const largeArc = angle > 180 ? 1 : 0;
 
 	return (
-		<HoverCard openDelay={10}>
-			<HoverCardTrigger asChild>
+		<Tooltip>
+			<TooltipTrigger asChild>
 				<div className="relative">
 					<div className="flex cursor-pointer items-center gap-2">
 						{/** biome-ignore lint/a11y/noSvgWithoutTitle: hover status is applied to provide description for interactive svg */}
@@ -104,52 +96,26 @@ export const RoomContextChart = ({
 						</svg>
 					</div>
 				</div>
-			</HoverCardTrigger>
+			</TooltipTrigger>
 
-			<HoverCardContent
+			<TooltipContent
 				side="top"
 				align="center"
-				className="w-70 border-gray-200 bg-white"
+				className="w-80 max-w-xs text-wrap"
 			>
-				<div className="flex flex-col gap-2">
-					{/* Header with Memory title and help icon */}
-					<div className="flex items-center gap-1.5">
-						<p className="font-semibold text-base text-card-foreground">
-							Memory
-						</p>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<HelpCircle className="h-3.5 w-3.5 shrink-0 cursor-help stroke-[2.5] text-muted-foreground" />
-							</TooltipTrigger>
-							<TooltipContent side="right" className="max-w-xs">
-								<p className="text-sm">
-									Memory refers to the context window
-									available for your conversation. Tokens
-									represent the smallest units of text that
-									the AI processes. As you use tokens in your
-									conversation, the available memory
-									decreases.
-								</p>
-							</TooltipContent>
-						</Tooltip>
-					</div>
-
-					{/* Tokens usage display section */}
-					<div className="flex w-full items-center justify-between font-medium text-muted-foreground text-sm">
-						{/* Left side: Icon and label */}
-						<div className="flex items-center gap-1.5">
-							<Cpu className="h-5 w-5" />
-							<p>Tokens used</p>
-						</div>
-						{/* Right side: Token count (used / max) */}
-						<p>
-							{formatTokens(tokensUsed)}
-							{" / "}
-							{formatTokens(tokensMax)}
-						</p>
-					</div>
+				<div className="w-full space-y-1">
+					<p className="w-full">
+						{`This chat is getting full. Starting a new conversation may
+						improve performance.`}
+					</p>
+					<p className="flex w-full items-baseline justify-between gap-3">
+						<span>Memory used:</span>
+						<span className="whitespace-nowrap text-right tabular-nums">
+							{`${formatTokens(tokensUsed)} / ${formatTokens(tokensMax)} tokens (${contextUsedPercent.toFixed(1)}%)`}
+						</span>
+					</p>
 				</div>
-			</HoverCardContent>
-		</HoverCard>
+			</TooltipContent>
+		</Tooltip>
 	);
 };
