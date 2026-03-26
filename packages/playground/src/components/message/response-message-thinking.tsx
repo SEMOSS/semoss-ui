@@ -1,7 +1,16 @@
 import { ChevronDown, ChevronUp, Quote } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
-import { H1, H2, H3, H4, Markdown, P, Separator } from "@semoss/ui/next";
+import {
+	H1,
+	H2,
+	H3,
+	H4,
+	Markdown,
+	P,
+	ScrollArea,
+	Separator,
+} from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore } from "@/stores";
@@ -114,7 +123,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		const [isExpanded, setIsExpanded] = useState(false);
 		const [isOverflowing, setIsOverflowing] = useState(false);
 		const typewriter = useMarkdownTypewriter(part.thinking);
-		const contentRef = useRef<HTMLDivElement>(null);
+		const contentRef = useRef<HTMLDivElement | null>(null);
 		const hasUserScrolledRef = useRef(false);
 		const isProgrammaticScrollRef = useRef(false);
 		const { loadingMessage } = useLoadingMessage(isStreaming);
@@ -123,7 +132,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 			? typewriter.rendered
 			: part.thinking;
 		// While actively thinking, the card is always expanded and cannot be collapsed.
-		const effectiveExpanded = isStreaming ? true : isExpanded;
+		const effectiveExpanded = isStreaming || isExpanded;
 		const canToggleExpansion =
 			!isStreaming && (isOverflowing || isExpanded);
 
@@ -166,18 +175,30 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 			});
 		}, [displayedThinking, effectiveExpanded, isStreaming]);
 
+		useEffect(() => {
+			if (!contentRef.current || !effectiveExpanded) return;
+
+			const currentContentRef = contentRef.current;
+			const handleScroll = () => {
+				if (isProgrammaticScrollRef.current) return;
+				hasUserScrolledRef.current = true;
+			};
+
+			currentContentRef.addEventListener("scroll", handleScroll, {
+				passive: true,
+			});
+
+			return () => {
+				currentContentRef.removeEventListener("scroll", handleScroll);
+			};
+		}, [effectiveExpanded]);
+
 		// Reset scroll to top whenever the card collapses.
 		useEffect(() => {
 			if (!effectiveExpanded && contentRef.current) {
 				contentRef.current.scrollTop = 0;
 			}
 		}, [effectiveExpanded]);
-
-		// Detect manual scroll by user — disable auto-scroll for this stream.
-		const handleScroll = () => {
-			if (isProgrammaticScrollRef.current) return;
-			hasUserScrolledRef.current = true;
-		};
 
 		return (
 			<div
@@ -226,30 +247,50 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 							</span>
 						)}
 					</button>
-					{/* Content area - auto-scrolls to show new text, smooth transition between heights */}
-					<div
-						ref={contentRef}
-						onScroll={effectiveExpanded ? handleScroll : undefined}
-						className={`relative ${effectiveExpanded ? "overflow-y-auto" : "overflow-hidden"} transition-[max-height] duration-300 ease-in-out ${
-							// Smaller cap while actively streaming; full height when manually expanded
-							isStreaming
-								? "max-h-40"
-								: isExpanded
-									? "max-h-96"
-									: "max-h-11.5"
-						}`}
-					>
-						{displayedThinking ? (
-							<Markdown components={THINKING_MARKDOWN_COMPONENTS}>
-								{displayedThinking}
-							</Markdown>
-						) : (
-							<div>{loadingMessage}</div>
-						)}
-						{!effectiveExpanded && isOverflowing && (
-							<div className="pointer-events-none absolute right-0 bottom-0 left-0 h-5 bg-linear-to-t from-background to-transparent" />
-						)}
-					</div>
+					{/* Content area: ScrollArea when expanded for styled scrollbar; plain clipped div when collapsed */}
+					{effectiveExpanded ? (
+						<ScrollArea
+							viewportRef={(ele) => {
+								contentRef.current = ele;
+								if (ele) {
+									ele.style.maxHeight = isStreaming
+										? "10rem"
+										: "24rem";
+								}
+							}}
+							type="scroll"
+						>
+							<div className="pr-3">
+								{displayedThinking ? (
+									<Markdown
+										components={
+											THINKING_MARKDOWN_COMPONENTS
+										}
+									>
+										{displayedThinking}
+									</Markdown>
+								) : (
+									<div>{loadingMessage}</div>
+								)}
+							</div>
+						</ScrollArea>
+					) : (
+						<div className="relative">
+							<div
+								ref={contentRef}
+								className="max-h-11.5 overflow-hidden"
+							>
+								<Markdown
+									components={THINKING_MARKDOWN_COMPONENTS}
+								>
+									{displayedThinking}
+								</Markdown>
+							</div>
+							{isOverflowing && (
+								<div className="pointer-events-none absolute right-0 bottom-0 left-0 h-5 bg-linear-to-t from-background to-transparent" />
+							)}
+						</div>
+					)}
 				</div>
 			</div>
 		);
