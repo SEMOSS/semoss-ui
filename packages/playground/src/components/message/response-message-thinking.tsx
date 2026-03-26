@@ -126,7 +126,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 		const contentRef = useRef<HTMLDivElement | null>(null);
 		const hasUserScrolledRef = useRef(false);
 		const isProgrammaticScrollRef = useRef(false);
-		const { loadingMessage } = useLoadingMessage(isStreaming);
+		const { loadingMessage } = useLoadingMessage(isStreaming, undefined, 1);
 
 		const displayedThinking = typewriter.isTyping
 			? typewriter.rendered
@@ -266,7 +266,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 							}}
 							type="always"
 						>
-							<div className="pr-3">
+							<div className="-mt-1 pr-3">
 								{displayedThinking ? (
 									<Markdown
 										components={
@@ -286,8 +286,9 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 						<div className="relative">
 							<div
 								ref={contentRef}
-								className="max-h-11.5 overflow-hidden"
+								className="-mt-1 max-h-11.5 overflow-hidden"
 							>
+								{/* don't need loadingMessage check here because loadingMessage only shows before streaming, so effectiveExpanded is true */}
 								<Markdown
 									components={THINKING_MARKDOWN_COMPONENTS}
 								>
