@@ -44,7 +44,7 @@ import { ModelTileCard } from "./model-tile-card";
 const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
 	const providerColors: Record<string, string> = {
 		OpenAI: "#79b8bd",
-		"Google Vertex AI": "#78a9c2",
+		"Google Gemini": "#78a9c2",
 		"Azure OpenAI": "#c78a85",
 		"AWS Bedrock": "#7f92c2",
 		"NVIDIA NIM": "#c6877f",
@@ -253,7 +253,7 @@ export const ModelImport: React.FC = () => {
 														"https://learn.microsoft.com/azure/ai-services/openai/concepts/models",
 													"AWS Bedrock":
 														"https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html",
-													"Google Vertex AI":
+													"Google Gemini":
 														"https://cloud.google.com/vertex-ai/docs/model-garden",
 													"NVIDIA NIM":
 														"https://build.nvidia.com/models",
