@@ -12,6 +12,7 @@ interface SQLQueryEditorProps {
 	handleEditorMount: (editor, monaco) => void;
 	executeQuery: () => void;
 	previewLoading: boolean;
+	onUserQueryInput?: (query: string) => void;
 }
 
 export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
@@ -21,6 +22,7 @@ export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
 	handleEditorMount,
 	executeQuery,
 	previewLoading,
+	onUserQueryInput,
 }) => {
 	const [copied, setCopied] = useState(false);
 
@@ -127,7 +129,11 @@ export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
 								cursorBlinking: "smooth",
 								smoothScrolling: true,
 							}}
-							onChange={(value) => setQuery(value || "")}
+							onChange={(value) => {
+								const nextQuery = value || "";
+								setQuery(nextQuery);
+								onUserQueryInput?.(nextQuery);
+							}}
 							onMount={handleEditorMount}
 						/>
 					</Suspense>
