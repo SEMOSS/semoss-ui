@@ -284,6 +284,10 @@ paramValues=[${JSON.stringify({
 				lastPart.text += part.text;
 				lastPart.uiText += part.uiText;
 			} else {
+				// delete any existing empty thinking part, as we have new text coming in
+				if (lastPart?.type === "THINKING" && !lastPart.thinking) {
+					this.parts.pop();
+				}
 				this.parts.push(part);
 			}
 		} else if (part.type === "THINKING") {
