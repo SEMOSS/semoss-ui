@@ -12,11 +12,13 @@ import {
 	useQueryEditor,
 	useQueryExecution,
 } from "@/hooks";
+import { hasTabularData } from "@/hooks/useDatabaseQueryExecution";
 
 export const EngineQueryDataPage = observer(() => {
 	const { active } = useEngine();
 	const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
 	const [isQueryResultsExpanded, setIsQueryResultsExpanded] = useState(false);
+	const [isUserModifiedQuery, setIsUserModifiedQuery] = useState(false);
 
 	// Resize states
 	const [leftPanelWidth, setLeftPanelWidth] = useState(32); // percentage
@@ -29,6 +31,7 @@ export const EngineQueryDataPage = observer(() => {
 	);
 
 	const containerRef = useRef<HTMLDivElement>(null);
+	const ignoreProgrammaticQueryValueRef = useRef<string | null>(null);
 
 	useEffect(() => {
 		const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -48,7 +51,6 @@ export const EngineQueryDataPage = observer(() => {
 		setSearchTerm,
 		searchedStructure,
 		expandedTables,
-		toggleState,
 		toggleTable,
 		toggleAllTables,
 		isLoading,
@@ -89,18 +91,52 @@ export const EngineQueryDataPage = observer(() => {
 	const clearQuery = () => {
 		clearQueryInternal();
 		setValue("");
+		setIsUserModifiedQuery(false);
 	};
+
+	const setQueryProgrammatically = useCallback(
+		(nextQuery: string) => {
+			ignoreProgrammaticQueryValueRef.current = nextQuery;
+			setQuery(nextQuery);
+			setValue(nextQuery);
+		},
+		[setQuery, setValue],
+	);
+
+	const setGeneratedQuery = useCallback(
+		(nextQuery: string) => {
+			setQueryProgrammatically(nextQuery);
+			setIsUserModifiedQuery(false);
+		},
+		[setQueryProgrammatically],
+	);
+
+	const appendQueryToken = useCallback(
+		(token: string) => {
+			const trimmedToken = token.trim();
+			if (!trimmedToken) {
+				return;
+			}
+
+			const shouldAddSpace = query.length > 0 && !/[\s(,]$/.test(query);
+			const nextQuery = shouldAddSpace
+				? `${query} ${trimmedToken}`
+				: `${query}${trimmedToken}`;
+
+			setQueryProgrammatically(nextQuery);
+		},
+		[query, setQueryProgrammatically],
+	);
 
 	const generateTableQuery = (tableName: string) => {
-		const sql = `SELECT * FROM ${tableName}`;
-		setQuery(sql);
-		setValue(sql);
-		clearColumnSelection();
-	};
+		if (!query.trim() || !isUserModifiedQuery) {
+			const sql = `SELECT * FROM ${tableName}`;
+			setGeneratedQuery(sql);
+			clearColumnSelection();
+			return;
+		}
 
-	const handleGenerateQuery = (generatedQuery: string) => {
-		setQuery(generatedQuery);
-		setValue(generatedQuery);
+		appendQueryToken(tableName);
 	};
 
 	const handleToggleColumnSelection = (
@@ -114,6 +150,43 @@ export const EngineQueryDataPage = observer(() => {
 		clearColumnSelection();
 		clearQuery();
 	};
+
+	const handleUserQueryInput = useCallback(
+		(nextQuery: string) => {
+			if (ignoreProgrammaticQueryValueRef.current === nextQuery) {
+				ignoreProgrammaticQueryValueRef.current = null;
+				return;
+			}
+
+			ignoreProgrammaticQueryValueRef.current = null;
+			setIsUserModifiedQuery(true);
+
+			if (
+				activeTable &&
+				selectedColumns[activeTable] &&
+				selectedColumns[activeTable].length > 0
+			) {
+				clearColumnSelection();
+			}
+		},
+		[activeTable, selectedColumns, clearColumnSelection],
+	);
+
+	const handleColumnNameInsert = useCallback(
+		(_tableName: string, columnName: string) => {
+			appendQueryToken(columnName);
+		},
+		[appendQueryToken],
+	);
+
+	const handleGenerateQuery = useCallback(
+		(generatedQuery: string) => {
+			setGeneratedQuery(generatedQuery);
+		},
+		[setGeneratedQuery],
+	);
+
+	const canAutoGenerateQuery = !query.trim() || !isUserModifiedQuery;
 
 	// Horizontal resize handlers
 	const handleHorizontalResizeStart = useCallback((e: React.MouseEvent) => {
@@ -176,6 +249,38 @@ export const EngineQueryDataPage = observer(() => {
 	const handleVerticalResizeEnd = useCallback(() => {
 		setIsResizingVertical(false);
 	}, []);
+
+	useEffect(() => {
+		if (
+			isMobile ||
+			isQueryResultsExpanded ||
+			isResizingVertical ||
+			previewLoading ||
+			!previewData ||
+			!hasTabularData(previewData)
+		) {
+			return;
+		}
+
+		const containerHeight =
+			containerRef.current?.getBoundingClientRect().height ??
+			window.innerHeight;
+		const targetHeight = Math.max(
+			320,
+			Math.min(520, containerHeight * 0.45),
+		);
+
+		if (bottomPanelHeight < targetHeight) {
+			setBottomPanelHeight(targetHeight);
+		}
+	}, [
+		isMobile,
+		isQueryResultsExpanded,
+		isResizingVertical,
+		previewLoading,
+		previewData,
+		bottomPanelHeight,
+	]);
 
 	// Mouse event listeners
 	useEffect(() => {
@@ -264,7 +369,6 @@ export const EngineQueryDataPage = observer(() => {
 							setSearchTerm={setSearchTerm}
 							searchedStructure={searchedStructure}
 							expandedTables={expandedTables}
-							toggleState={toggleState}
 							toggleTable={toggleTable}
 							toggleAllTables={toggleAllTables}
 							isLoading={isLoading}
@@ -278,10 +382,12 @@ export const EngineQueryDataPage = observer(() => {
 								handleToggleColumnSelection
 							}
 							onClearColumnSelection={handleClearColumnSelection}
+							onColumnNameInsert={handleColumnNameInsert}
 							onGenerateQuery={handleGenerateQuery}
 							generateSelectedColumnsQuery={
 								generateSelectedColumnsQuery
 							}
+							canAutoGenerateQuery={canAutoGenerateQuery}
 						/>
 					</Card>
 				</div>
@@ -314,6 +420,7 @@ export const EngineQueryDataPage = observer(() => {
 							handleEditorMount={handleEditorMount}
 							executeQuery={executeQuery}
 							previewLoading={previewLoading}
+							onUserQueryInput={handleUserQueryInput}
 						/>
 					</Card>
 				</div>
@@ -355,7 +462,12 @@ export const EngineQueryDataPage = observer(() => {
 							: "h-[calc(100%-0.5rem)]",
 					)}
 				>
-					<div className="mb-4 h-full">
+					<div
+						className={cn(
+							"h-full",
+							!isQueryResultsExpanded && "pb-4",
+						)}
+					>
 						<QueryResultsPanel
 							previewData={previewData}
 							previewLoading={previewLoading}

@@ -267,6 +267,37 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [contentEle]);
 
+	/**
+	 * Constants
+	 */
+	const isAutoExecutingTools = ((): boolean => {
+		// Check the latest response message for auto-executing tools
+		if (!room.latestResponseMessage) {
+			return false;
+		}
+
+		for (const part of room.latestResponseMessage.parts) {
+			if (
+				part.type === "TOOL_CALL" &&
+				part.toolCall._meta.SMSS_MCP_EXECUTION === "auto"
+			) {
+				const tool = room.getTool(part.toolCall.id);
+				if (
+					tool &&
+					(tool.status === "INITIAL" || tool.status === "LOADING")
+				) {
+					return true;
+				}
+			}
+		}
+		return false;
+	})();
+
+	const showLoadingState =
+		room.isLoading ||
+		room.latestResponseMessage.isThinking ||
+		isAutoExecutingTools;
+
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
@@ -386,7 +417,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
 				<RoomInput
 					className="max-h-56 min-h-24"
-					isLoading={room.isLoading}
+					isLoading={showLoadingState}
+					hidePauseButton={!room.numberOfTools}
 					model={room.model}
 					setModel={(model) => {
 						room.setModel(model);
@@ -445,7 +477,13 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						),
 					)}
 					onPrompt={handlePrompt}
-					hasOutstandingTools={room.hasUnfinishedTools}
+					hasOutstandingTools={
+						room.latestResponseMessage.hasUnfinishedTools
+					}
+					hasToolsPaused={room.latestResponseMessage.isPaused}
+					toggleToolsPaused={
+						room.latestResponseMessage.toggleIsPaused
+					}
 					footer={
 						<RoomContextChart
 							tokensUsed={room.tokensUsed}
