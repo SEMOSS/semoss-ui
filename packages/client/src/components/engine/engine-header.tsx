@@ -49,10 +49,16 @@ export const EngineHeader: React.FC = () => {
 
 	const canEdit = active.role === "OWNER" || active.role === "EDITOR";
 
+	const normalizeEngineKey = (value?: string) =>
+		(value || "").trim().replaceAll(" ", "_").toUpperCase();
+
 	const findDBImage = (appType: string, appSubType: string) => {
-		const obj = ENGINE_IMAGES[appType]?.find(
-			(ele) => ele.name === appSubType,
-		);
+		const typeKey = normalizeEngineKey(appType);
+		const subtypeKey = normalizeEngineKey(appSubType);
+		const images = ENGINE_IMAGES[typeKey] || [];
+		const obj = images.find((ele) => {
+			return normalizeEngineKey(ele.name) === subtypeKey;
+		});
 
 		if (!obj) {
 			return BRAIN;
@@ -118,14 +124,16 @@ export const EngineHeader: React.FC = () => {
 
 			<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
 				{/* Image placeholder - space for engine/database icon */}
-				<div className="h-16 w-16 flex-shrink-0 rounded-lg bg-muted">
+				<div className="h-16 w-16 flex-shrink-0 overflow-hidden bg-muted/30 p-2">
 					<img
 						src={findDBImage(
 							type,
-							active.metadata.database_subtype as string,
+							(active.database_subtype ||
+								(active.metadata
+									.database_subtype as string)) as string,
 						)}
 						alt={name}
-						className="size-full object-cover"
+						className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
 					/>
 				</div>
 
@@ -304,18 +312,19 @@ export const EngineHeader: React.FC = () => {
 							data-testid="DateAdded"
 						>
 							Updated{" "}
-								{active?.DATEADDED
-									? new Date(
-											active?.DATEADDED,
-										).toLocaleString("en-US", {
+							{active?.DATEADDED
+								? new Date(active?.DATEADDED).toLocaleString(
+										"en-US",
+										{
 											month: "long",
 											day: "2-digit",
 											year: "numeric",
 											hour: "numeric",
 											minute: "2-digit",
 											hour12: true,
-										})
-									: "N/A"}
+										},
+									)
+								: "N/A"}
 						</span>
 					)}
 				</div>

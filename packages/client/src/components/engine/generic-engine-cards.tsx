@@ -47,7 +47,14 @@ import { formatToDataTestId } from "@/utility";
  * @returns image link for associated engine
  */
 const findDBImage = (appType: string, appSubType: string) => {
-	const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name === appSubType);
+	const normalizeEngineKey = (value?: string) =>
+		(value || "").trim().replaceAll(" ", "_").toUpperCase();
+	const typeKey = normalizeEngineKey(appType);
+	const subtypeKey = normalizeEngineKey(appSubType);
+	const images = ENGINE_IMAGES[typeKey] || [];
+	const obj = images.find((ele) => {
+		return normalizeEngineKey(ele.name) === subtypeKey;
+	});
 
 	if (!obj) {
 		return BRAIN;
@@ -173,11 +180,11 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		>
 			<div ref={rowRef} className="flex w-full items-center gap-2.5">
 				{/* Engine icon — always visible */}
-				<div className="flex size-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-card">
+				<div className="flex size-10 flex-shrink-0 items-center justify-center overflow-hidden bg-muted/30 p-1">
 					<img
 						src={findDBImage(type, sub_type)}
 						alt={name}
-						className="size-full object-cover"
+						className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
 					/>
 				</div>
 

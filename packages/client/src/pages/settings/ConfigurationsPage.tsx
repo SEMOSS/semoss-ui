@@ -1,7 +1,6 @@
 import { KeyboardArrowDown } from "@mui/icons-material";
 import type React from "react";
 import {
-	lazy,
 	Suspense,
 	type SyntheticEvent,
 	useEffect,
@@ -26,7 +25,7 @@ import {
 } from "@semoss/ui";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
-import dropbox from "../../assets/img/dropbox.png";
+import dropbox from "../../assets/img/DROPBOX.png";
 import github from "../../assets/img/github.png";
 import google from "../../assets/img/google.png";
 import ms from "../../assets/img/ms.png";
@@ -73,7 +72,7 @@ const StyledAccordionContent = styled(Accordion.Content)({
 	padding: "12px 16px 16px 16px",
 });
 
-const StyledListButton = styled(Button)(({ theme }) => ({
+const StyledListButton = styled(Button)(() => ({
 	textTransform: "none",
 	width: "100%",
 	justifyContent: "left",
@@ -185,10 +184,10 @@ export const ConfigurationsPage = () => {
 
 		// Key is the label for each accordion, the value is an array of fields
 		const formattedProperties = {};
-		Object.entries(loginProperties.data).map((pr) => {
+		Object.entries(loginProperties.data).forEach((pr) => {
 			if (pr[0] === "cac") return; // angular js ui doesn't paint cac
 			const fields = [];
-			Object.entries(pr[1]).map((prop) => {
+			Object.entries(pr[1]).forEach((prop) => {
 				const fieldMap = {
 					label: prop[0],
 					value: prop[1],
@@ -249,7 +248,7 @@ export const ConfigurationsPage = () => {
 		index,
 	) => {
 		const socialPropsCopy = socialProps;
-		socialPropsCopy[fieldName][index]["value"] = value;
+		socialPropsCopy[fieldName][index].value = value;
 
 		dispatch({
 			type: "field",
@@ -286,9 +285,9 @@ export const ConfigurationsPage = () => {
 								}}
 							/>
 						</StyledBox>
-						{authentication.map((value, i) => {
+						{authentication.map((value) => {
 							return (
-								<StyledAccordionContent key={i}>
+								<StyledAccordionContent key={value}>
 									<StyledListButton
 										color="inherit"
 										onClick={() => {
@@ -301,7 +300,7 @@ export const ConfigurationsPage = () => {
 										<StyledImage
 											src={
 												SOCIAL[value]?.image ||
-												SOCIAL["native"].image
+												SOCIAL.native.image
 											}
 										/>
 										{SOCIAL[value]?.name ||
@@ -379,16 +378,14 @@ export const ConfigurationsPage = () => {
 	};
 
 	return (
-		<>
-			<Box>
-				<StyledToggleTabsGroup value={tabValue} onChange={onTabChange}>
-					<ToggleTabsGroup.Item label="Settings" />
-					<ToggleTabsGroup.Item disabled label="File Contents" />
-				</StyledToggleTabsGroup>
-				{customTogglePanel(settingsPage(), 0, tabValue)}
-				{customTogglePanel(fileContentsPage(), 1, tabValue)}
-			</Box>
-		</>
+		<Box>
+			<StyledToggleTabsGroup value={tabValue} onChange={onTabChange}>
+				<ToggleTabsGroup.Item label="Settings" />
+				<ToggleTabsGroup.Item disabled label="File Contents" />
+			</StyledToggleTabsGroup>
+			{customTogglePanel(settingsPage(), 0, tabValue)}
+			{customTogglePanel(fileContentsPage(), 1, tabValue)}
+		</Box>
 	);
 };
 
@@ -463,7 +460,7 @@ const SocialProperty = (props) => {
 
 			{fields.map((f, i) => {
 				return (
-					<StyledPropContainer key={i}>
+					<StyledPropContainer key={`${fieldName}-${f.label}`}>
 						<StyledKeyValue>
 							<StyledTextField
 								label="key"
@@ -492,39 +489,3 @@ const SocialProperty = (props) => {
 		</StyledForm>
 	);
 };
-
-{
-	/* <Table>
-<Table.Head>
-    <Table.Row>
-        <Table.Cell colSpan={1}>Property</Table.Cell>
-        <Table.Cell colSpan={1}>
-            {fieldName.charAt(0).toUpperCase() +
-                fieldName.slice(1)}{' '}
-            Value
-        </Table.Cell>
-    </Table.Row>
-</Table.Head>
-<Table.Body>
-    {fields.map((f, i) => {
-        return (
-            <Table.Row key={i}>
-                <Table.Cell colSpan={1}>{f.label}</Table.Cell>
-                <Table.Cell colSpan={1}>
-                    <Field
-                        name={f.label}
-                        control={control}
-                        rules={{ required: true }}
-                        options={{
-                            component: 'input',
-                        }}
-                        error="All properties must be provided with a value"
-                        description=""
-                    ></Field>
-                </Table.Cell>
-            </Table.Row>
-        );
-    })}
-</Table.Body>
-</Table> */
-}
