@@ -96,8 +96,8 @@ interface ResponseMessageThinkingProps {
 	/** Thinking to render */
 	part: PixelMessageThinkingPart;
 
-	/** Is it the last part */
-	isLast: boolean;
+	/** Is the message currently streaming */
+	isStreaming: boolean;
 }
 
 /**
@@ -110,25 +110,25 @@ interface ResponseMessageThinkingProps {
  * - Smooth CSS transitions for expand/collapse
  */
 export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
-	observer(({ message, part, isLast }) => {
+	observer(({ part, isStreaming }) => {
 		const [isExpanded, setIsExpanded] = useState(false);
 		const [isOverflowing, setIsOverflowing] = useState(false);
 		const typewriter = useMarkdownTypewriter(part.thinking);
 		const contentRef = useRef<HTMLDivElement>(null);
 		const hasUserScrolledRef = useRef(false);
 		const isProgrammaticScrollRef = useRef(false);
-		const { loadingMessage } = useLoadingMessage(isLast);
+		const { loadingMessage } = useLoadingMessage(isStreaming);
 
 		const displayedThinking = typewriter.isTyping
 			? typewriter.rendered
 			: part.thinking;
 		// While actively thinking, the card is always expanded and cannot be collapsed.
-		const effectiveExpanded = isLast ? true : isExpanded;
+		const effectiveExpanded = isStreaming ? true : isExpanded;
 
 		// Control typewriter. When streaming ends, reset scroll to top so the
 		// completed card reads from the beginning when the user expands it.
 		useEffect(() => {
-			if (isLast && message.isThinking) {
+			if (isStreaming) {
 				typewriter.start();
 			} else {
 				typewriter.skipToEnd();
@@ -137,12 +137,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 				}
 				hasUserScrolledRef.current = false;
 			}
-		}, [
-			isLast,
-			message.isThinking,
-			typewriter.start,
-			typewriter.skipToEnd,
-		]);
+		}, [isStreaming, typewriter.start, typewriter.skipToEnd]);
 
 		// Update overflow indicator and auto-scroll to bottom while streaming.
 		// biome-ignore lint/correctness/useExhaustiveDependencies: need displayedThinking to trigger on content changes
@@ -154,7 +149,11 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 					contentRef.current.clientHeight,
 			);
 
-			if (!effectiveExpanded || !isLast || hasUserScrolledRef.current) {
+			if (
+				!effectiveExpanded ||
+				!isStreaming ||
+				hasUserScrolledRef.current
+			) {
 				return;
 			}
 
@@ -163,7 +162,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 			requestAnimationFrame(() => {
 				isProgrammaticScrollRef.current = false;
 			});
-		}, [displayedThinking, effectiveExpanded, isLast]);
+		}, [displayedThinking, effectiveExpanded, isStreaming]);
 
 		// Reset scroll to top whenever the card collapses.
 		useEffect(() => {
@@ -200,12 +199,14 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 					{/* Header - collapse disabled while actively thinking */}
 					<button
 						type="button"
-						onClick={() => !isLast && setIsExpanded(!isExpanded)}
-						disabled={isLast}
+						onClick={() =>
+							!isStreaming && setIsExpanded(!isExpanded)
+						}
+						disabled={isStreaming}
 						className="mb-2 flex w-full items-center justify-between text-left transition-colors enabled:hover:text-foreground disabled:cursor-default"
 					>
 						<span className="font-medium">Thinking</span>
-						{!isLast && (
+						{!isStreaming && (
 							<span className="flex items-center gap-1 text-xs">
 								{isExpanded ? (
 									<>
@@ -227,7 +228,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 						onScroll={effectiveExpanded ? handleScroll : undefined}
 						className={`relative ${effectiveExpanded ? "overflow-y-auto" : "overflow-hidden"} transition-[max-height] duration-300 ease-in-out ${
 							// Smaller cap while actively streaming; full height when manually expanded
-							isLast
+							isStreaming
 								? "max-h-40"
 								: isExpanded
 									? "max-h-96"

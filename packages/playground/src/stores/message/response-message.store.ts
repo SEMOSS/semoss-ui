@@ -132,8 +132,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	};
 
 	/**
-	 * Run a new user message and receive a response with streaming
-	 * @param inputMessage - input message to send
+	 * Execute a user message and stream the AI response
+	 *
+	 * Creates a placeholder response message, sends the input to the AI model,
+	 * and streams back the response in real-time. After completion, automatically
+	 * initiates tool execution if the response contains tool calls.
+	 *
+	 * @param inputMessage - The user input message to send to the AI model
+	 * @returns Promise resolving to the pixel response containing input and output messages
 	 */
 	runMessage = async (inputMessage: InputMessageStore) => {
 		const room = this.room;
@@ -146,7 +152,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			platform_generated: true,
 			modelId: room.model.app_id,
 			dateCreated: new Date().toISOString(),
-			parts: [],
+			parts: [
+				{
+					type: "THINKING",
+					thinking: "",
+				},
+			],
 			tokens: 0,
 			ornaments: {
 				modelName:
@@ -258,8 +269,12 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Run a new user message and receive a response with streaming
-	 * @param inputMessage - input message to send
+	 * Append a message part during streaming
+	 *
+	 * Merges consecutive parts of the same type (TEXT or THINKING) or adds
+	 * a new part if the type differs from the last part.
+	 *
+	 * @param part - The message part to append (TEXT or THINKING)
 	 */
 	savePart = async (part: ResponsePixelMessage["parts"][number]) => {
 		const lastPart = this.parts[this.parts.length - 1];
@@ -608,7 +623,13 @@ paramValues=[${JSON.stringify({
 				platform_generated: true,
 				modelId: this.room.model.app_id,
 				dateCreated: new Date().toISOString(),
-				parts: [],
+				// Add blank thinking part for loading
+				parts: [
+					{
+						type: "THINKING",
+						thinking: "",
+					},
+				],
 				tokens: 0,
 				ornaments: {
 					modelName:

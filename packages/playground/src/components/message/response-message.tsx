@@ -183,7 +183,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											key={key}
 											message={message}
 											part={p}
-											isLast={isLast}
+											isStreaming={
+												isLast && message.isThinking
+											}
 										/>
 									);
 								} else if (p.type === "TOOL_CALL") {
