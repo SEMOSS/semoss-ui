@@ -4916,38 +4916,6 @@ export const CATEGORY_DESCRIPTIONS = {
 export const ENGINE_IMAGES = {
 	DATABASE: [
 		{
-			name: "ZIP",
-			icon: ZIP,
-		},
-		{
-			name: "CSV",
-			icon: CSV,
-		},
-		{
-			name: "EXCEL",
-			icon: EXCEL,
-		},
-		{
-			name: "TSV",
-			icon: TSV,
-		},
-		{
-			name: "SQLITE",
-			icon: SQLITE,
-		},
-		{
-			name: "H2_DB",
-			icon: H2_DB,
-		},
-		{
-			name: "NEO4J",
-			icon: NEO4J,
-		},
-		{
-			name: "TINKER",
-			icon: TINKER,
-		},
-		{
 			name: "ASTER_DB",
 			icon: ASTER,
 		},
@@ -4966,6 +4934,10 @@ export const ENGINE_IMAGES = {
 		{
 			name: "CLICKHOUSE",
 			icon: CLICKHOUSE,
+		},
+		{
+			name: "CSV",
+			icon: CSV,
 		},
 		{
 			name: "DATABRICKS",
@@ -4988,7 +4960,15 @@ export const ENGINE_IMAGES = {
 			icon: ELASTIC_SEARCH,
 		},
 		{
+			name: "EXCEL",
+			icon: EXCEL,
+		},
+		{
 			name: "H2",
+			icon: H2_DB,
+		},
+		{
+			name: "H2_DB",
 			icon: H2_DB,
 		},
 		{
@@ -5006,6 +4986,10 @@ export const ENGINE_IMAGES = {
 		{
 			name: "MYSQL",
 			icon: MYSQL,
+		},
+		{
+			name: "NEO4J",
+			icon: NEO4J,
 		},
 		{
 			name: "OPEN_SEARCH",
@@ -5048,6 +5032,10 @@ export const ENGINE_IMAGES = {
 			icon: SQLITE,
 		},
 		{
+			name: "SQLITE",
+			icon: SQLITE,
+		},
+		{
 			name: "TERADATA",
 			icon: TERADATA,
 		},
@@ -5056,8 +5044,20 @@ export const ENGINE_IMAGES = {
 			icon: TIBCO,
 		},
 		{
+			name: "TINKER",
+			icon: TINKER,
+		},
+		{
 			name: "TRINO",
 			icon: TRINO,
+		},
+		{
+			name: "TSV",
+			icon: TSV,
+		},
+		{
+			name: "ZIP",
+			icon: ZIP,
 		},
 	],
 };

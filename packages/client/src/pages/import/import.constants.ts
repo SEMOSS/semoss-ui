@@ -162,7 +162,7 @@ export type EngineFields = {
 			pixel?: string; // Pixel to populate options for select
 		};
 		disabled: boolean;
-		rules: Record<string, any>; // react hook form
+		rules: Record<string, unknown>; // react hook form
 		pixel?: string; // used to populate default value
 	}[];
 }[];
@@ -15142,8 +15142,44 @@ export const CONNECTION_OPTIONS = {
 export const ENGINE_IMAGES = {
 	MODEL: [
 		{
-			name: "OPEN_AI",
+			name: "AWS_TITAN_TEXT_EMBEDDINGS",
+			icon: Amazon_Titan,
+		},
+		{
+			name: "Azure Open AI",
+			icon: AZURE_OPEN_AI,
+		},
+		{
+			name: "Bert",
+			icon: BERT,
+		},
+		{
+			name: "Claude",
+			icon: CLAUDE,
+		},
+		{
+			name: "DALL E",
 			icon: OPEN_AI,
+		},
+		{
+			name: "Dolly",
+			icon: DOLLY,
+		},
+		{
+			name: "Eleuther GPTJ",
+			icon: ELEUTHER,
+		},
+		{
+			name: "Falcon",
+			icon: FALCON,
+		},
+		{
+			name: "Flan T5 Large",
+			icon: FLAN,
+		},
+		{
+			name: "Flan T5 XXL",
+			icon: FLAN,
 		},
 		{
 			name: "GPT-3.5",
@@ -15154,21 +15190,40 @@ export const ENGINE_IMAGES = {
 			icon: OPEN_AI,
 		},
 		{
-			name: "Text-Davinci",
+			name: "Guanaco",
+			icon: BRAIN,
+		},
+		{
+			name: "Llama2 13B",
+			icon: META,
+		},
+		{
+			name: "Llama2 70B",
+			icon: META,
+		},
+		{
+			name: "Llama2 7B",
+			icon: META,
+		},
+		{
+			name: "Mosaic ML",
+			icon: MOSAIC,
+		},
+		{
+			name: "NeMo",
+			icon: NEMO,
+		},
+		{
+			name: "NeMo",
+			icon: NEMO,
+		},
+		{
+			name: "OPEN_AI",
 			icon: OPEN_AI,
 		},
 		{
-			name: "DALL E",
-			icon: OPEN_AI,
-		},
-		{
-			name: "Azure Open AI",
-
-			icon: AZURE_OPEN_AI,
-		},
-		{
-			name: "Claude",
-			icon: CLAUDE,
+			name: "Orca",
+			icon: ORCA,
 		},
 		{
 			name: "Palm Bison",
@@ -15183,92 +15238,36 @@ export const ENGINE_IMAGES = {
 			icon: VERTEX,
 		},
 		{
-			name: "Wizard 13B",
-			icon: BRAIN,
-		},
-		{
-			name: "Llama2 7B",
-			icon: META,
-		},
-		{
-			name: "Llama2 13B",
-			icon: META,
-		},
-		{
-			name: "Llama2 70B",
-			icon: META,
-		},
-		{
-			name: "Falcon",
-			icon: FALCON,
-		},
-		{
-			name: "StableBeluga2",
-			icon: BRAIN,
-		},
-		{
-			name: "Guanaco",
-			icon: BRAIN,
-		},
-		{
-			name: "Vicuna",
-			icon: VICUNA,
-		},
-		{
-			name: "Mosaic ML",
-			icon: MOSAIC,
-		},
-		{
-			name: "Dolly",
-			icon: DOLLY,
+			name: "Replit Code Model",
+			icon: REPLIT,
 		},
 		{
 			name: "Replit code model – 3b",
 			icon: REPLIT,
 		},
 		{
-			name: "Flan T5 Large",
-			icon: FLAN,
-		},
-		{
-			name: "Flan T5 XXL",
-			icon: FLAN,
-		},
-		{
-			name: "Bert",
-			icon: BERT,
-		},
-		{
-			name: "Eleuther GPTJ",
-			icon: ELEUTHER,
-		},
-		{
-			name: "Wizard Coder",
+			name: "StableBeluga2",
 			icon: BRAIN,
-		},
-		{
-			name: "NeMo",
-			icon: NEMO,
-		},
-		{
-			name: "Orca",
-			icon: ORCA,
-		},
-		{
-			name: "AWS_TITAN_TEXT_EMBEDDINGS",
-			icon: Amazon_Titan,
 		},
 		{
 			name: "Stablity AI",
 			icon: STABILITY_AI,
 		},
 		{
-			name: "Replit Code Model",
-			icon: REPLIT,
+			name: "Text-Davinci",
+			icon: OPEN_AI,
 		},
 		{
-			name: "NeMo",
-			icon: NEMO,
+			name: "Vicuna",
+			icon: VICUNA,
+		},
+		{
+			name: "Wizard 13B",
+			icon: BRAIN,
+		},
+		{
+			name: "Wizard Coder",
+			icon: BRAIN,
 		},
 		{
 			name: "ZIP",
@@ -15276,18 +15275,6 @@ export const ENGINE_IMAGES = {
 		},
 	],
 	FUNCTION: [
-		{
-			name: "REST",
-			icon: RESTAPI,
-		},
-		{
-			name: "ZIP",
-			icon: ZIP,
-		},
-		{
-			name: "AZUREOCR",
-			icon: RESTAPI,
-		},
 		{
 			name: "AWS - Image Text Extraction",
 			icon: AWS_TEXTRACT,
@@ -15301,12 +15288,24 @@ export const ENGINE_IMAGES = {
 			icon: AWS_TRANSCRIBE,
 		},
 		{
-			name: "Google Speech To Text",
-			icon: GOOGLE_SPEECH_TO_TEXT,
+			name: "AZUREOCR",
+			icon: RESTAPI,
 		},
 		{
 			name: "Google OCR",
 			icon: GOOGLE_OCR,
+		},
+		{
+			name: "Google Speech To Text",
+			icon: GOOGLE_SPEECH_TO_TEXT,
+		},
+		{
+			name: "REST",
+			icon: RESTAPI,
+		},
+		{
+			name: "ZIP",
+			icon: ZIP,
 		},
 	],
 	VECTOR: [
@@ -15315,20 +15314,20 @@ export const ENGINE_IMAGES = {
 			icon: META,
 		},
 		{
-			name: "WEAVIATE",
-			icon: WEVIATE,
-		},
-		{
-			name: "PINECONE",
-			icon: PINECONE,
+			name: "OPEN_SEARCH",
+			icon: OPEN_SEARCH,
 		},
 		{
 			name: "PGVECTOR",
 			icon: POSTGRES,
 		},
 		{
-			name: "OPEN_SEARCH",
-			icon: OPEN_SEARCH,
+			name: "PINECONE",
+			icon: PINECONE,
+		},
+		{
+			name: "WEAVIATE",
+			icon: WEVIATE,
 		},
 		{
 			name: "ZIP",
@@ -15336,38 +15335,6 @@ export const ENGINE_IMAGES = {
 		},
 	],
 	DATABASE: [
-		{
-			name: "ZIP",
-			icon: ZIP,
-		},
-		{
-			name: "CSV",
-			icon: CSV,
-		},
-		{
-			name: "EXCEL",
-			icon: EXCEL,
-		},
-		{
-			name: "TSV",
-			icon: TSV,
-		},
-		{
-			name: "SQLITE",
-			icon: SQLITE,
-		},
-		{
-			name: "H2_DB",
-			icon: H2_DB,
-		},
-		{
-			name: "NEO4J",
-			icon: NEO4J,
-		},
-		{
-			name: "TINKER",
-			icon: TINKER,
-		},
 		{
 			name: "ASTER_DB",
 			icon: ASTER,
@@ -15387,6 +15354,10 @@ export const ENGINE_IMAGES = {
 		{
 			name: "CLICKHOUSE",
 			icon: CLICKHOUSE,
+		},
+		{
+			name: "CSV",
+			icon: CSV,
 		},
 		{
 			name: "DATABRICKS",
@@ -15409,7 +15380,15 @@ export const ENGINE_IMAGES = {
 			icon: ELASTIC_SEARCH,
 		},
 		{
+			name: "EXCEL",
+			icon: EXCEL,
+		},
+		{
 			name: "H2",
+			icon: H2_DB,
+		},
+		{
+			name: "H2_DB",
 			icon: H2_DB,
 		},
 		{
@@ -15427,6 +15406,10 @@ export const ENGINE_IMAGES = {
 		{
 			name: "MYSQL",
 			icon: MYSQL,
+		},
+		{
+			name: "NEO4J",
+			icon: NEO4J,
 		},
 		{
 			name: "OPEN_SEARCH",
@@ -15469,6 +15452,10 @@ export const ENGINE_IMAGES = {
 			icon: SQLITE,
 		},
 		{
+			name: "SQLITE",
+			icon: SQLITE,
+		},
+		{
 			name: "TERADATA",
 			icon: TERADATA,
 		},
@@ -15477,8 +15464,20 @@ export const ENGINE_IMAGES = {
 			icon: TIBCO,
 		},
 		{
+			name: "TINKER",
+			icon: TINKER,
+		},
+		{
 			name: "TRINO",
 			icon: TRINO,
+		},
+		{
+			name: "TSV",
+			icon: TSV,
+		},
+		{
+			name: "ZIP",
+			icon: ZIP,
 		},
 	],
 	STORAGE: [
@@ -15519,12 +15518,12 @@ export const ENGINE_IMAGES = {
 			icon: ONEDRIVE,
 		},
 		{
-			name: "NETWORK_FILE_SYSTEM",
-			icon: NETWORK_FILE_SYSTEM,
-		},
-		{
 			name: "MINIO",
 			icon: MINIO,
+		},
+		{
+			name: "NETWORK_FILE_SYSTEM",
+			icon: NETWORK_FILE_SYSTEM,
 		},
 		{
 			name: "SFTP",
