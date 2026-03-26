@@ -112,11 +112,7 @@ export const PromptPage = observer(() => {
 				) {
 					return false;
 				}
-				if (
-					mode === "Global Prompts" &&
-					(prompt.created_by === configStore.store.user.id ||
-						!prompt.global)
-				) {
+				if (mode === "Global Prompts" && !prompt.global) {
 					return false;
 				}
 				if (filter !== "all" && !prompt.tags?.includes(filter)) {
