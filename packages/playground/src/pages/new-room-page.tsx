@@ -81,7 +81,7 @@ export const NewRoomPage = observer(() => {
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
-	const [promptLibraryTag, setPromptLibraryTag] = useState<string>("");
+	const [prompts, setPrompts] = useState<string[]>([]);
 
 	const getWorkspace = usePixel<Workspace | null>(
 		mode === "workspace" && selectedWorkspaceId
@@ -104,8 +104,8 @@ export const NewRoomPage = observer(() => {
 	);
 
 	const getPrompts = usePixel<Prompt[]>(
-		mode === "workspace" && selectedWorkspaceId && promptLibraryTag
-			? `ListPrompt(metaFilters=[{"tag": "${promptLibraryTag}"}]);`
+		mode === "workspace" && selectedWorkspaceId && prompts.length > 0
+			? `ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )]);`
 			: null,
 		{
 			data: [],
@@ -255,7 +255,13 @@ export const NewRoomPage = observer(() => {
 			}
 		}
 
-		setPromptLibraryTag(getWorkspace.data.prompt_library_tag || "");
+		setPrompts(
+			Array.isArray(getWorkspace.data.prompts)
+				? getWorkspace.data.prompts.map((p) =>
+						typeof p === "string" ? p : p.id,
+					)
+				: [],
+		);
 		tempRoomStore.setOptions({
 			...tempRoomStore.options,
 			instructions:

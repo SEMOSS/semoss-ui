@@ -1,10 +1,7 @@
-import { Grid, styled, Typography } from "@semoss/ui";
 import type { Prompt, Token } from "../prompt.types";
 import { PromptCard } from "./PromptCard";
 
-const StyledTypography = styled(Typography)(() => ({
-	textTransform: "capitalize",
-}));
+type ViewMode = "grid" | "list";
 
 interface PromptLibraryCardsProps {
 	/**
@@ -18,6 +15,16 @@ interface PromptLibraryCardsProps {
 	filter: string;
 
 	/**
+	 * View mode - grid or list
+	 */
+	view?: ViewMode;
+
+	/**
+	 * Current user ID for ownership checks
+	 */
+	currentUserId?: string;
+
+	/**
 	 * TODO: Get rid of this and use onClick
 	 */
 	openUIBuilderForTemplate?: (
@@ -29,51 +36,61 @@ interface PromptLibraryCardsProps {
 
 	/**
 	 * TODO: Get rid of above and have onClick replace the functionality we had in Agent Builder
-	 *
-	 * TODO: The issue is the way this component is set up we specify Input Types.
-	 * And the reason for that is because we wanted to construct the app for them just off this click
-	 * MODIFICATIONS: When they click prompt we take them to step 2, to identify additional holes in the prompt, or simply stick with what we have
 	 */
 	onClick: (prompt: Prompt) => void;
+
+	/**
+	 * Callback when a prompt is deleted
+	 */
+	onDelete?: (prompt: Prompt) => void;
 }
 
 export const PromptLibraryCards = (props: PromptLibraryCardsProps) => {
-	const { prompts, filter, onClick } = props;
+	const {
+		prompts,
+		filter,
+		view = "grid",
+		currentUserId,
+		onClick,
+		onDelete,
+	} = props;
 
 	return (
-		<Grid container spacing={2}>
-			<Grid item xs={12}>
-				<StyledTypography variant="h6">
-					{`${filter} (${prompts.length})`}
-				</StyledTypography>
-			</Grid>
-			{Array.from(prompts, (prompt, i) => {
-				return (
-					<Grid item xs={4} key={i}>
+		<div className="flex flex-col gap-4">
+			<h4 className="font-semibold text-lg capitalize">
+				{`${filter} (${prompts.length})`}
+			</h4>
+			{view === "grid" ? (
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+					{prompts.map((prompt, i) => (
 						<PromptCard
+							key={prompt.id || i}
 							prompt={prompt}
+							variant="catalog"
+							isOwner={currentUserId === prompt.created_by}
+							onDelete={onDelete}
 							onClick={(p) => {
 								onClick(p);
 							}}
 						/>
-						{/* <PromptCardOld
-                            cardKey={`${i}`}
-                            title={prompt.title}
-                            tags={prompt.tags}
-                            tokens={prompt.inputs}
-                            inputTypes={prompt.inputTypes}
-                            openUIBuilderForTemplate={() => {
-                                props.openUIBuilderForTemplate(
-                                    prompt.title,
-                                    prompt.tags,
-                                    prompt.inputs,
-                                    prompt.inputTypes,
-                                );
-                            }}
-                        /> */}
-					</Grid>
-				);
-			})}
-		</Grid>
+					))}
+				</div>
+			) : (
+				<div className="flex flex-col divide-y rounded-lg border">
+					{prompts.map((prompt, i) => (
+						<PromptCard
+							key={prompt.id || i}
+							prompt={prompt}
+							variant="row"
+							isOwner={currentUserId === prompt.created_by}
+							onDelete={onDelete}
+							onClick={(p) => {
+								onClick(p);
+							}}
+						/>
+					))}
+				</div>
+			)}
+		</div>
 	);
 };

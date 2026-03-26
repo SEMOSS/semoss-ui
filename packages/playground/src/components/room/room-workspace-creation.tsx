@@ -65,7 +65,7 @@ export const SaveWorkspaceDialog = observer(
 					description,
 					system_prompt: systemPrompt,
 					mcp: mcps,
-					prompt_library_tag: "", // For now we don't support saving the prompt library tag, but we need to send something to satisfy the backend validation
+					prompts: [],
 				});
 
 				toast.success(t("workspace.publishSuccess"));

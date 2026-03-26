@@ -413,8 +413,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							scrollContainerRef={contentEditableRef}
 						/>
 						{!isLoading &&
-							!root.theme.hideToolsInIframe &&
-							!isIframed && (
+							!(root.theme.hideToolsInIframe && isIframed) && (
 								<MentionPlugin
 									trigger="/"
 									MenuComponent={({
@@ -454,8 +453,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							)}
 					</LexicalComposer>
 					{!isLoading &&
-						!root.theme.hideToolsInIframe &&
-						!isIframed && (
+						!(root.theme.hideToolsInIframe && isIframed) && (
 							<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
 								<DropdownMenu
 									open={menuOpen}

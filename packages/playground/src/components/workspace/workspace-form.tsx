@@ -10,7 +10,7 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { MCPSelector, NewKnowledgeOverlay } from "@/components";
+import { MCPSelector, NewKnowledgeOverlay, PromptSelector } from "@/components";
 import { useChat } from "@/hooks";
 import type { MCPConfig, Workspace } from "@/types";
 
@@ -40,15 +40,14 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	const nameId = useId();
 	const descriptionId = useId();
 	const instructionId = useId();
-	const promptLibraryTagId = useId();
+	const promptsId = useId();
 
 	/**
 	 * State
 	 */
 	const [name, setName] = useState<string>("");
 	const [description, setDescription] = useState<string>("");
-	const [promptLibraryTag, setPromptLibraryTag] = useState<string>("");
-	const [tagInput, setTagInput] = useState<string>("");
+	const [prompts, setPrompts] = useState<string[]>([]);
 	const [instructions, setInstructions] = useState<string>("");
 	const [toolbox, setToolbox] = useState<MCPConfig[]>([]);
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>([]);
@@ -65,7 +64,11 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	useEffect(() => {
 		setName(values?.name || "");
 		setDescription(values?.description || "");
-		setPromptLibraryTag(values?.prompt_library_tag || "");
+		setPrompts(
+			Array.isArray(values?.prompts)
+				? values.prompts.map((p) => (typeof p === "string" ? p : p.id))
+				: [],
+		);
 		setInstructions(values?.system_prompt || "");
 		setKnowledge(values?.mcp.filter((mcp) => mcp.type === "VECTOR") || []);
 		setToolbox(values?.mcp.filter((mcp) => mcp.type !== "VECTOR") || []);
@@ -85,7 +88,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 				name: name,
 				system_prompt: instructions,
 				description: description,
-				prompt_library_tag: promptLibraryTag,
+				prompts: prompts,
 				mcp: [...toolbox, ...knowledge],
 			};
 
@@ -142,44 +145,14 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 					/>
 				</Field>
 				<Field>
-					<FieldLabel htmlFor={promptLibraryTagId}>
-						{t("workspace:form.promptLibraryTagLabel")}
+					<FieldLabel htmlFor={promptsId}>
+						{t("workspace:form.promptsLabel")}
 					</FieldLabel>
-					{promptLibraryTag ? (
-						<div className="flex flex-wrap gap-2">
-							<span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm">
-								{promptLibraryTag}
-								<button
-									type="button"
-									onClick={() => setPromptLibraryTag("")}
-									className="text-muted-foreground hover:text-foreground"
-								>
-									×
-								</button>
-							</span>
-						</div>
-					) : (
-						<Input
-							id={promptLibraryTagId}
-							placeholder={t(
-								"common:placeholders.enterPromptLibraryTag",
-							)}
-							value={tagInput}
-							disabled={isLoading}
-							onChange={(e) => setTagInput(e.target.value)}
-							data-testid="workspaceForm-promptLibraryTag-txt"
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									e.preventDefault();
-									const value = tagInput.trim();
-									if (value) {
-										setPromptLibraryTag(value);
-										setTagInput("");
-									}
-								}
-							}}
-						/>
-					)}
+					<PromptSelector
+						values={prompts}
+						disabled={isLoading}
+						onChange={(values) => setPrompts(values)}
+					/>
 				</Field>
 			</FieldGroup>
 			<FieldSeparator />

@@ -331,11 +331,7 @@ export class ChatStore {
 	addWorkspace = async (
 		data: Pick<
 			Workspace,
-			| "name"
-			| "system_prompt"
-			| "description"
-			| "mcp"
-			| "prompt_library_tag"
+			"name" | "system_prompt" | "description" | "mcp" | "prompts"
 		>,
 	): Promise<string> => {
 		try {
@@ -343,7 +339,7 @@ export class ChatStore {
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)}, promptLibraryTag=${JSON.stringify(data.prompt_library_tag)})`;
+			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
@@ -364,11 +360,7 @@ export class ChatStore {
 		workspaceId: string,
 		data: Pick<
 			Workspace,
-			| "name"
-			| "system_prompt"
-			| "description"
-			| "mcp"
-			| "prompt_library_tag"
+			"name" | "system_prompt" | "description" | "mcp" | "prompts"
 		>,
 	): Promise<string> => {
 		try {
@@ -376,7 +368,7 @@ export class ChatStore {
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)},name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)}, promptLibraryTag=${JSON.stringify(data.prompt_library_tag)})`;
+			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)},name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
