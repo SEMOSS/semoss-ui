@@ -115,7 +115,6 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 	observer(({ message, part, isLast }) => {
 		const [isOpen, setIsOpen] = useState(false);
 		const typewriter = useMarkdownTypewriter(part.thinking);
-		const previewRef = useRef<HTMLDivElement>(null);
 		const expandedRef = useRef<HTMLDivElement>(null);
 
 		useEffect(() => {
@@ -157,10 +156,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 							<span className="font-medium">Thinking</span>
 						</AccordionTrigger>
 						{!isOpen && (
-							<div
-								ref={previewRef}
-								className="relative mt-2 max-h-12 overflow-hidden"
-							>
+							<div className="relative mt-2 max-h-12 overflow-hidden">
 								<Markdown
 									className="text-xs [&>*:first-child]:mt-0"
 									components={THINKING_MARKDOWN_COMPONENTS}
