@@ -1,19 +1,7 @@
-import { Quote } from "lucide-react";
+import { ChevronDown, ChevronUp, Quote } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
-import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-	H1,
-	H2,
-	H3,
-	H4,
-	Markdown,
-	P,
-	Separator,
-} from "@semoss/ui/next";
+import { H1, H2, H3, H4, Markdown, P, Separator } from "@semoss/ui/next";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageThinkingPart } from "@/types";
@@ -113,9 +101,10 @@ interface ResponseMessageThinkingProps {
 
 export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 	observer(({ message, part, isLast }) => {
-		const [isOpen, setIsOpen] = useState(false);
+		const [isExpanded, setIsExpanded] = useState(false);
 		const typewriter = useMarkdownTypewriter(part.thinking);
-		const expandedRef = useRef<HTMLDivElement>(null);
+		const contentRef = useRef<HTMLDivElement>(null);
+		const [showToggle, setShowToggle] = useState(false);
 
 		useEffect(() => {
 			if (message.isThinking && isLast) {
@@ -129,61 +118,69 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 			}
 		}, [isLast, typewriter.skipToEnd]);
 
-		// Auto-scroll expanded content to bottom when typing
+		// Check if content overflows to show toggle button
+		// biome-ignore lint/correctness/useExhaustiveDependencies: need to check overflow on content changes
+		useEffect(() => {
+			if (contentRef.current) {
+				const isOverflowing = contentRef.current.scrollHeight > 96; // 96px = ~4 lines
+				setShowToggle(isOverflowing);
+			}
+		}, [typewriter.rendered, part.thinking]);
+
+		// Auto-scroll to bottom when typing to show new content
 		// biome-ignore lint/correctness/useExhaustiveDependencies: need rendered to trigger on content changes
 		useEffect(() => {
-			if (expandedRef.current && isOpen && typewriter.isTyping) {
-				expandedRef.current.scrollTop =
-					expandedRef.current.scrollHeight;
+			if (contentRef.current && typewriter.isTyping) {
+				contentRef.current.scrollTop = contentRef.current.scrollHeight;
 			}
-		}, [isOpen, typewriter.rendered, typewriter.isTyping]);
+		}, [typewriter.rendered, typewriter.isTyping]);
 
 		if (!part.thinking) {
 			return null;
 		}
 
 		return (
-			<Accordion
-				type="single"
-				collapsible
-				className="mb-2 rounded-lg border border-border text-muted-foreground text-sm shadow-sm"
-				value={isOpen ? "thinking" : null}
-				onValueChange={(val) => setIsOpen(val === "thinking")}
-			>
-				<AccordionItem value="thinking" className="border-0">
-					<div className="p-3">
-						<AccordionTrigger className="p-0 hover:no-underline">
-							<span className="font-medium">Thinking</span>
-						</AccordionTrigger>
-						{!isOpen && (
-							<div className="relative mt-2 max-h-12 overflow-hidden">
-								<Markdown
-									className="text-xs [&>*:first-child]:mt-0"
-									components={THINKING_MARKDOWN_COMPONENTS}
-								>
-									{typewriter.isTyping
-										? typewriter.rendered
-										: part.thinking}
-								</Markdown>
-								{/* Fade overlay at bottom */}
-								<div className="pointer-events-none absolute right-0 bottom-0 left-0 h-6 bg-linear-to-t from-background to-transparent" />
-							</div>
+			<div className="mb-2 rounded-lg border border-border text-muted-foreground text-sm shadow-sm">
+				<div className="p-3">
+					<button
+						type="button"
+						onClick={() => setIsExpanded(!isExpanded)}
+						className="mb-2 flex w-full items-center justify-between text-left transition-colors hover:text-foreground disabled:cursor-default disabled:hover:text-muted-foreground"
+						disabled={!showToggle}
+					>
+						<span className="font-medium">Thinking</span>
+						{showToggle && (
+							<span className="flex items-center gap-1 text-xs">
+								{isExpanded ? (
+									<>
+										Show less
+										<ChevronUp className="h-3 w-3" />
+									</>
+								) : (
+									<>
+										Show more
+										<ChevronDown className="h-3 w-3" />
+									</>
+								)}
+							</span>
 						)}
-					</div>
-					<AccordionContent
-						ref={expandedRef}
-						className="max-h-96 overflow-y-auto px-3 pt-0 pb-3"
+					</button>
+					<div
+						ref={contentRef}
+						className={`overflow-y-auto transition-[max-height] duration-300 ease-in-out ${
+							isExpanded ? "max-h-96" : "max-h-24"
+						}`}
 					>
 						<Markdown
-							className="[&>*:first-child]:mt-0"
+							className="text-xs [&>*:first-child]:mt-0"
 							components={THINKING_MARKDOWN_COMPONENTS}
 						>
 							{typewriter.isTyping
 								? typewriter.rendered
 								: part.thinking}
 						</Markdown>
-					</AccordionContent>
-				</AccordionItem>
-			</Accordion>
+					</div>
+				</div>
+			</div>
 		);
 	});
