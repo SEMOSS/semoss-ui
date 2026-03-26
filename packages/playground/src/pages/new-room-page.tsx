@@ -314,7 +314,7 @@ export const NewRoomPage = observer(() => {
 						) : (
 							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
 								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-									{t("room:welcome")}
+									{t("room:welcome")}, {chat.user.name}
 								</div>
 								{root.theme.description ? (
 									<div className="text-center text-muted-foreground text-sm leading-normal">
