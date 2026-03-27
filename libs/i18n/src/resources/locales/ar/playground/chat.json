@@ -37,7 +37,16 @@
 		"completed": "مكتمل",
 		"ready": "جاهز",
 		"autoExecute": "هذه الأداة مضبوطة على التنفيذ التلقائي",
-		"cancel": "إلغاء"
+		"paused": "متوقف مؤقتاً",
+		"queued": "في قائمة الانتظار للتنفيذ التلقائي",
+		"cancel": "إلغاء",
+		"expand": "توسيع",
+		"openInSidebar": "فتح في الشريط الجانبي",
+		"closeInSidebar": "إغلاق الشريط الجانبي",
+		"collapse": "طي",
+		"openInline": "فتح في السطر",
+		"groupLabel": "مُنفَّذ",
+		"groupSuffix": "أداة"
 	},
 	"notifications": {
 		"feedbackSuccess": "شكراً على الملاحظات!",
