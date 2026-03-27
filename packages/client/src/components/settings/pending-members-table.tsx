@@ -129,6 +129,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 					requestid: mem.ID,
 					userid: mem.REQUEST_USERID,
 					permission: permissionMapper[mem.PERMISSION],
+					type: mem.REQUEST_TYPE as string,
 				};
 			});
 
