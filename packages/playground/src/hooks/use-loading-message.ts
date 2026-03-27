@@ -23,6 +23,7 @@ import { LOADING_MESSAGES } from "@/constants";
 export const useLoadingMessage = (
 	iterate: boolean,
 	initialOptions: string[] = [],
+	initialPosition: number = 0,
 ): {
 	loadingMessage: string;
 	setCustomOptions: Dispatch<SetStateAction<string[]>>;
@@ -41,8 +42,11 @@ export const useLoadingMessage = (
 		}
 
 		// Set the initial message (first custom option or first default message)
+		const initialMessages = customOptions.length
+			? customOptions
+			: LOADING_MESSAGES;
 		setLoadingMessage(
-			(customOptions.length ? customOptions : LOADING_MESSAGES)[0],
+			initialMessages[initialPosition % initialMessages.length],
 		);
 
 		let timeoutId: number | undefined;
@@ -87,7 +91,7 @@ export const useLoadingMessage = (
 				window.clearTimeout(timeoutId);
 			}
 		};
-	}, [iterate, customOptions]);
+	}, [iterate, customOptions, initialPosition]);
 
 	return {
 		loadingMessage,
