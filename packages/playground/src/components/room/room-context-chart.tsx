@@ -1,9 +1,24 @@
+import { useTranslation } from "@semoss/i18n";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 
 export interface RoomContextChartProps {
 	tokensUsed?: number;
 	tokensMax?: number;
 }
+
+/**
+ * Helper function to format token counts for display
+ * Converts large numbers to readable format (e.g., 1500 -> 1.5k, 2000000 -> 2.0m)
+ */
+const formatTokens = (tokens: number) => {
+	if (tokens >= 1000000) {
+		return `${(tokens / 1000000).toFixed(1)}M`;
+	}
+	if (tokens >= 1000) {
+		return `${(tokens / 1000).toFixed(1)}k`;
+	}
+	return tokens.toString();
+};
 
 /**
  * Renders a pie chart showing the percentage of context used.
@@ -14,6 +29,8 @@ export const RoomContextChart = ({
 	tokensUsed,
 	tokensMax,
 }: RoomContextChartProps) => {
+	const { t } = useTranslation("room");
+
 	// Calculate the percentage of context used
 	const contextUsedPercent =
 		tokensMax > 0 && tokensUsed !== undefined
@@ -23,20 +40,6 @@ export const RoomContextChart = ({
 	// Only show the chart when usage is above 12.5% to avoid clutter
 	if (contextUsedPercent === undefined || contextUsedPercent < 12.5)
 		return null;
-
-	/**
-	 * Helper function to format token counts for display
-	 * Converts large numbers to readable format (e.g., 1500 -> 1.5k, 2000000 -> 2.0m)
-	 */
-	const formatTokens = (tokens: number) => {
-		if (tokens >= 1000000) {
-			return `${(tokens / 1000000).toFixed(1)}M`;
-		}
-		if (tokens >= 1000) {
-			return `${(tokens / 1000).toFixed(1)}k`;
-		}
-		return tokens.toString();
-	};
 
 	/**
 	 * Constants
@@ -104,14 +107,15 @@ export const RoomContextChart = ({
 				className="w-80 max-w-xs text-wrap"
 			>
 				<div className="w-full space-y-1">
-					<p className="w-full">
-						{`This chat is getting full. Starting a new conversation may
-						improve performance.`}
-					</p>
+					<p className="w-full">{t("contextWindow.description")}</p>
 					<p className="flex w-full items-baseline justify-between gap-3">
-						<span>Memory used:</span>
+						<span>{t("contextWindow.memoryUsedTitle")}</span>
 						<span className="whitespace-nowrap text-right tabular-nums">
-							{`${formatTokens(tokensUsed)} / ${formatTokens(tokensMax)} tokens (${contextUsedPercent.toFixed(1)}%)`}
+							{t("contextWindow.memoryUsedValue", {
+								used: formatTokens(tokensUsed),
+								total: formatTokens(tokensMax),
+								percent: contextUsedPercent.toFixed(1),
+							})}
 						</span>
 					</p>
 				</div>

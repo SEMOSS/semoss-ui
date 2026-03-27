@@ -93,5 +93,10 @@
 	},
 	"errors": {
 		"createRoom": "حدث خطأ أثناء إنشاء الغرفة. الخطأ: {{message}}"
+	},
+	"contextWindow": {
+		"description": "هذه المحادثة تقترب من الامتلاء. قد يؤدي بدء محادثة جديدة إلى تحسين الأداء.",
+		"memoryUsedTitle": "الذاكرة المستخدمة:",
+		"memoryUsedValue": "{{used}} / {{total}} رمز ({{percent}}%)"
 	}
 }

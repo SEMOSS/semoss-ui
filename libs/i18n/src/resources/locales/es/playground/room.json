@@ -93,5 +93,10 @@
 	},
 	"errors": {
 		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}"
+	},
+	"contextWindow": {
+		"description": "Este chat se está llenando. Iniciar una nueva conversación puede mejorar el rendimiento.",
+		"memoryUsedTitle": "Memoria usada:",
+		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
 	}
 }

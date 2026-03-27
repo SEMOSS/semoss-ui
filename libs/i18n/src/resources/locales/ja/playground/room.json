@@ -93,5 +93,10 @@
 	},
 	"errors": {
 		"createRoom": "ルームの作成中にエラーが発生しました。エラー: {{message}}"
+	},
+	"contextWindow": {
+		"description": "このチャットはいっぱいになってきました。新しい会話を始めると、パフォーマンスが向上する場合があります。",
+		"memoryUsedTitle": "使用メモリ:",
+		"memoryUsedValue": "{{used}} / {{total}} トークン ({{percent}}%)"
 	}
 }

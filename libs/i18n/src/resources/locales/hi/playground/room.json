@@ -93,5 +93,10 @@
 	},
 	"errors": {
 		"createRoom": "रूम बनाते समय एक त्रुटि हुई। त्रुटि: {{message}}"
+	},
+	"contextWindow": {
+		"description": "यह चैट भर रही है। नई बातचीत शुरू करने से प्रदर्शन बेहतर हो सकता है।",
+		"memoryUsedTitle": "उपयोग की गई मेमोरी:",
+		"memoryUsedValue": "{{used}} / {{total}} टोकन ({{percent}}%)"
 	}
 }

@@ -93,5 +93,10 @@
 	},
 	"errors": {
 		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}"
+	},
+	"contextWindow": {
+		"description": "Ce chat est presque plein. Démarrer une nouvelle conversation peut améliorer les performances.",
+		"memoryUsedTitle": "Mémoire utilisée :",
+		"memoryUsedValue": "{{used}} / {{total}} jetons ({{percent}}%)"
 	}
 }
