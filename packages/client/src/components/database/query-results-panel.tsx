@@ -1,7 +1,7 @@
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Download, Loader2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Button, Card, cn, P } from "@semoss/ui/next";
+import { Button, Card, cn, P, toast } from "@semoss/ui/next";
 import type { QueryResult } from "@/hooks/useDatabaseQueryExecution";
 import { useQueryResults } from "@/hooks/useDatabaseQueryResults";
 
@@ -27,6 +27,26 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 
 		if (onExpandChange) {
 			onExpandChange(newExpandedState);
+		}
+	};
+
+	const handleExportClick = async () => {
+		try {
+			const headers = previewData?.output?.data?.headers || [];
+			const values = previewData?.output?.data?.values || [];
+			const csvContent = [headers, ...values]
+				.map((row) => row.join(","))
+				.join("\n");
+			const blob = new Blob([csvContent], { type: "text/csv" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = "query_results.csv";
+			a.click();
+			URL.revokeObjectURL(url);
+			toast.success("Results exported to CSV.");
+		} catch (error) {
+			toast.error(`Failed to export results: ${error}`);
 		}
 	};
 
@@ -69,26 +89,45 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 				>
 					Query Results
 				</h3>
-				{previewData && (
-					<Button
-						variant="outline"
-						size="icon"
-						onClick={handleExpandToggle}
-						title={isExpanded ? "Collapse Panel" : "Expand Panel"}
-						className={cn(
-							"size-7 rounded-lg border-border bg-card shadow-sm transition-all duration-200 hover:border-border hover:bg-muted",
-							"hover:shadow-md",
-						)}
-						data-testid="query-results-expand-btn"
-					>
-						<ChevronDown
+				<div className="flex items-center gap-2">
+					{previewData && (
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={handleExportClick}
+							title="Export to CSV"
 							className={cn(
-								"size-4 text-muted-foreground transition-transform duration-200 ease-in-out",
-								isExpanded && "rotate-180",
+								"size-7 rounded-lg border-border bg-card shadow-sm transition-all duration-200 hover:border-border hover:bg-muted",
+								"hover:shadow-md",
 							)}
-						/>
-					</Button>
-				)}
+							data-testid="query-results-export-btn"
+						>
+							<Download className="size-4 text-muted-foreground" />
+						</Button>
+					)}
+					{previewData && (
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={handleExpandToggle}
+							title={
+								isExpanded ? "Collapse Panel" : "Expand Panel"
+							}
+							className={cn(
+								"size-7 rounded-lg border-border bg-card shadow-sm transition-all duration-200 hover:border-border hover:bg-muted",
+								"hover:shadow-md",
+							)}
+							data-testid="query-results-expand-btn"
+						>
+							<ChevronDown
+								className={cn(
+									"size-4 text-muted-foreground transition-transform duration-200 ease-in-out",
+									isExpanded && "rotate-180",
+								)}
+							/>
+						</Button>
+					)}
+				</div>
 			</div>
 
 			{/* Results Content */}
