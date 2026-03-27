@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { IconButton, Stack, styled, Typography } from "@semoss/ui";
 import { usePage, useRootStore } from "@/hooks";
 
-const StyledNavbarHeader = styled(Stack)(({ theme }) => ({
+const StyledNavbarHeader = styled(Stack)(() => ({
 	position: "relative",
 	background: "transparent",
 	zIndex: 0,
@@ -24,7 +24,7 @@ const StyledNavbarHeaderLink = styled(Link)(({ theme }) => ({
 	},
 }));
 
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
+const StyledIconButton = styled(IconButton)(() => ({
 	borderRadius: "7.5px",
 	border: "0.938px solid #323232",
 }));
@@ -49,6 +49,7 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
 		>
 			<StyledIconButton
 				size="small"
+				onClick={() => page.openSidebar()}
 				onMouseOver={() => page.openSidebar()}
 			>
 				<MenuRounded fontSize="medium" />
@@ -61,7 +62,10 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
 					) : null}
 					<Typography
 						variant="subtitle1"
-						sx={{ fontWeight: 700 }}
+						sx={{
+							fontWeight: 700,
+							display: { xs: "none", sm: "block" },
+						}}
 						noWrap
 					>
 						{configStore.theme.landingPageName ||
