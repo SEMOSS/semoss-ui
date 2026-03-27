@@ -2,8 +2,8 @@
 
 import TerminalRoundedIcon from "@mui/icons-material/TerminalRounded";
 //Add Storage
-import AMAZON_S3 from "@/assets/img/Amazon_S3.png";
-import Amazon_Titan from "@/assets/img/Amazon_Titan.png";
+import AMAZON_S3 from "@/assets/img/AMAZON_S3.png";
+import AMAZON_TITAN from "@/assets/img/AMAZON_TITAN.png";
 //Connect to an External Database
 import ASTER from "@/assets/img/ASTER.png";
 import ATHENA from "@/assets/img/ATHENA.png";
@@ -11,95 +11,99 @@ import AWS_COMPREHEND from "@/assets/img/AWS_COMPREHEND.png";
 import AWS_POLLY from "@/assets/img/AWS_POLLY.png";
 import AWS_TEXTRACT from "@/assets/img/AWS_TEXTRACT.png";
 import AWS_TRANSCRIBE from "@/assets/img/AWS_TRANSCRIBE.png";
-import AZURE_BLOB from "@/assets/img/AZURE_BLOB.png";
+import AZURE_BLOB from "@/assets/img/AZURE_BLOB.svg";
 import AZURE_SPEECH_TO_TEXT from "@/assets/img/AZURE_SPEECH_TO_TEXT.png";
+import BEDROCK from "@/assets/img/BEDROCK.svg";
 import BERT from "@/assets/img/BERT.png";
 import BIGQUERY from "@/assets/img/BIGQUERY.png";
-import BLOCKS from "@/assets/img/Blocks.svg";
-import BLOCKS_SELECTED from "@/assets/img/Blocks_Selected.svg";
+import BLOCKS from "@/assets/img/BLOCKS.svg";
+import BLOCKS_SELECTED from "@/assets/img/BLOCKS_SELECTED.svg";
 //Local Models
 import BRAIN from "@/assets/img/BRAIN.png";
-import CASSANDRA from "@/assets/img/CASSANDRA.png";
+import CASSANDRA from "@/assets/img/CASSANDRA.svg";
 import CEPH from "@/assets/img/CEPH.png";
 import CHROMADB from "@/assets/img/CHROMADB.png";
-import CLAUDE from "@/assets/img/CLAUDE_AI.png";
+import CLAUDE from "@/assets/img/CLAUDE_AI.svg";
 import CLICKHOUSE from "@/assets/img/CLICKHOUSE.png";
 import CSV from "@/assets/img/CSV.svg";
 import DATABRICKS from "@/assets/img/DATABRICKS.png";
 import DATASTAX from "@/assets/img/DATASTAX.png";
 import DB2 from "@/assets/img/DB2.png";
 import DERBY from "@/assets/img/DERBY.png";
+import DETOXIFY from "@/assets/img/DETOXIFY.png";
 import DOLLY from "@/assets/img/DOLLY_AI.jpg";
 import DREAMHOST from "@/assets/img/DREAMHOST.png";
-import DROPBOX from "@/assets/img/dropbox.png";
+import DROPBOX from "@/assets/img/DROPBOX.png";
 import ELASTIC_SEARCH from "@/assets/img/ELASTIC_SEARCH.svg";
 import ELEUTHER from "@/assets/img/ELEUTHER_AI.png";
 import EXCEL from "@/assets/img/EXCEL.png";
 import FALCON from "@/assets/img/FALCON_AI.png";
-import FILES from "@/assets/img/Files.svg";
-import FILES_SELECTED from "@/assets/img/Files_Selected.svg";
+import FILES from "@/assets/img/FILES.svg";
+import FILES_SELECTED from "@/assets/img/FILES_SELECTED.svg";
 import FLAN from "@/assets/img/FLAN.jpg";
-import GOOGLE_CLOUD from "@/assets/img/GOOGLE_CLOUD_STORAGE.png";
+import GEMINI from "@/assets/img/GEMINI_COLOR.svg";
+import GLINER from "@/assets/img/GLINER.png";
+import GOOGLE_CLOUD from "@/assets/img/GOOGLE_CLOUD_STORAGE.svg";
 import GOOGLE_DRIVE from "@/assets/img/GOOGLE_DRIVE.png";
 import GOOGLE_OCR from "@/assets/img/GOOGLE_OCR.png";
 import GOOGLE_SPEECH_TO_TEXT from "@/assets/img/GOOGLE_SPEECH_TO_TEXT.png";
 import H2_DB from "@/assets/img/H2_DB.png";
 import HIVE from "@/assets/img/HIVE.jpg";
 import IMPALA from "@/assets/img/IMPALA.png";
-import LAYERS from "@/assets/img/Layers.svg";
-import LAYERS_SELECTED from "@/assets/img/Layers_Selected.svg";
+import LAYERS from "@/assets/img/LAYERS.svg";
+import LAYERS_SELECTED from "@/assets/img/LAYERS_SELECTED.svg";
 import LOCAL_FILE_SYSTEM from "@/assets/img/LOCAL_FILE_SYSTEM.png";
 import MARIA_DB from "@/assets/img/MARIA_DB.png";
-import META from "@/assets/img/META.png";
+import META from "@/assets/img/META_COLOR.svg";
 import MILVUS from "@/assets/img/MILVUS.png";
 import MINIO from "@/assets/img/MINIO.png";
 import MOSAIC from "@/assets/img/MOSAIC.png";
-import MYSQL from "@/assets/img/MYSQL.png";
+import MYSQL from "@/assets/img/MYSQL.svg";
 import NEMO from "@/assets/img/NEMO.png";
 import NEO4J from "@/assets/img/NEO4J.png";
 import NETWORK_FILE_SYSTEM from "@/assets/img/NETWORK_FILE_SYSTEM.png";
-import NOTEBOOK from "@/assets/img/Notebook.svg";
-import NOTEBOOK_SELECTED from "@/assets/img/Notebook_Selected.svg";
+import NOTEBOOK from "@/assets/img/NOTEBOOK.svg";
+import NOTEBOOK_SELECTED from "@/assets/img/NOTEBOOK_SELECTED.svg";
 import ONEDRIVE from "@/assets/img/ONEDRIVE.png";
 //Commercial Models
 import {
 	default as AZURE_OPEN_AI,
 	default as OPEN_AI,
-} from "@/assets/img/OPEN_AI.png";
+} from "@/assets/img/OPEN_AI.svg";
 import OPEN_SEARCH from "@/assets/img/OPEN_SEARCH.png";
-import ORACLE from "@/assets/img/ORACLE.png";
+import ORACLE from "@/assets/img/ORACLE.svg";
 //Embedded Models
 import ORCA from "@/assets/img/ORCA.png";
 import PHOENIX from "@/assets/img/PHOENIX.png";
 import PINECONE from "@/assets/img/PINECONE.png";
-import POSTGRES from "@/assets/img/POSTGRES.png";
+import POSTGRES from "@/assets/img/POSTGRES.svg";
+import PYTHON from "@/assets/img/PYTHON.svg";
 import REDSHIFT from "@/assets/img/REDSHIFT.png";
 import REPLIT from "@/assets/img/REPLIT_CODE.png";
 // Functions
-import RESTAPI from "@/assets/img/rest-api.svg";
+import REST_API from "@/assets/img/REST-API.svg";
 import SAP_HANA from "@/assets/img/SAP_HANA.png";
 import SEMOSS from "@/assets/img/SEMOSS_BLUE_LOGO.svg";
-import SETTINGS_SELECTED from "@/assets/img/Setting_Selected.svg";
+import SETTINGS_SELECTED from "@/assets/img/SETTING_SELECTED.svg";
 //Sidebar icons
-import SETTINGS from "@/assets/img/Settings.svg";
+import SETTINGS from "@/assets/img/SETTINGS.svg";
 import SFTP from "@/assets/img/SFTP.png";
 import SNOWFLAKE from "@/assets/img/SNOWFLAKE.png";
 import SQL_SERVER from "@/assets/img/SQL_SERVER.png";
-import SQLITE from "@/assets/img/SQLITE.png";
+import SQLITE from "@/assets/img/SQLITE.svg";
 import STABILITY_AI from "@/assets/img/STABILITY_AI.png";
 import TERADATA from "@/assets/img/TERADATA.png";
 import TIBCO from "@/assets/img/TIBCO.png";
 import TINKER from "@/assets/img/TINKER.png";
 import TRINO from "@/assets/img/TRINO.jpg";
 import TSV from "@/assets/img/TSV.svg";
-import VARIABLES from "@/assets/img/Variable.svg";
-import VARIABLES_SELECTED from "@/assets/img/Variables_Selected.svg";
-import VERTEX from "@/assets/img/VERTEX_AI.png";
+import VARIABLES from "@/assets/img/VARIABLE.svg";
+import VARIABLES_SELECTED from "@/assets/img/VARIABLES_SELECTED.svg";
 import VICUNA from "@/assets/img/VICUNA.jpg";
 import WEVIATE from "@/assets/img/WEVIATE.png";
 import ZIP from "@/assets/img/ZIP.png";
 //Vector
-import MICROSOFT from "@/assets/loginProviders/microsoft.png";
+import MICROSOFT from "@/assets/loginProviders/MICROSOFT.png";
 
 // TODO: Get rid of this and throw it into Connection Options
 export const stepsOne = [
@@ -162,7 +166,7 @@ export type EngineFields = {
 			pixel?: string; // Pixel to populate options for select
 		};
 		disabled: boolean;
-		rules: Record<string, any>; // react hook form
+		rules: Record<string, unknown>; // react hook form
 		pixel?: string; // used to populate default value
 	}[];
 }[];
@@ -1142,7 +1146,7 @@ export const CONNECTION_OPTIONS = {
 				{
 					name: "Claude",
 					disable: false,
-					icon: CLAUDE,
+					icon: BEDROCK,
 					fields: [
 						{
 							fieldName: "NAME",
@@ -1330,7 +1334,7 @@ export const CONNECTION_OPTIONS = {
 				{
 					name: "Palm Bison",
 					disable: false,
-					icon: VERTEX,
+					icon: GEMINI,
 					fields: [
 						{
 							fieldName: "NAME",
@@ -1508,7 +1512,7 @@ export const CONNECTION_OPTIONS = {
 				{
 					name: "Palm Chat Bison",
 					disable: false,
-					icon: VERTEX,
+					icon: GEMINI,
 					fields: [
 						{
 							fieldName: "NAME",
@@ -1686,7 +1690,7 @@ export const CONNECTION_OPTIONS = {
 				{
 					name: "Palm Code Bison",
 					disable: false,
-					icon: VERTEX,
+					icon: GEMINI,
 					fields: [
 						{
 							fieldName: "NAME",
@@ -1864,7 +1868,7 @@ export const CONNECTION_OPTIONS = {
 				{
 					name: "Gemini",
 					disable: false,
-					icon: VERTEX,
+					icon: GEMINI,
 					fields: [
 						{
 							fieldName: "NAME",
@@ -5273,7 +5277,7 @@ export const CONNECTION_OPTIONS = {
 			{
 				name: "AWS TITAN TEXT EMBEDDINGS",
 				disable: true,
-				icon: Amazon_Titan,
+				icon: AMAZON_TITAN,
 				fields: [
 					{
 						fieldName: "NAME",
@@ -6100,7 +6104,7 @@ export const CONNECTION_OPTIONS = {
 			{
 				name: "Azure Document Intelligence",
 				disable: false,
-				icon: RESTAPI,
+				icon: REST_API,
 				fields: [
 					{
 						fieldName: "FUNCTION_TYPE",
@@ -6413,7 +6417,7 @@ export const CONNECTION_OPTIONS = {
 			{
 				name: "REST",
 				disable: false,
-				icon: RESTAPI,
+				icon: REST_API,
 				fields: [
 					{
 						fieldName: "FUNCTION_TYPE",
@@ -15142,89 +15146,57 @@ export const CONNECTION_OPTIONS = {
 export const ENGINE_IMAGES = {
 	MODEL: [
 		{
+			name: "AZURE_OPEN_AI",
+			icon: AZURE_OPEN_AI,
+		},
+		{
+			name: "BEDROCK",
+			icon: BEDROCK,
+		},
+		{
 			name: "OPEN_AI",
 			icon: OPEN_AI,
 		},
 		{
-			name: "GPT-3.5",
-			icon: OPEN_AI,
+			name: "GEMINI",
+			icon: GEMINI,
 		},
 		{
-			name: "GPT-4",
-			icon: OPEN_AI,
+			name: "VERTEX",
+			icon: GEMINI,
 		},
+		// legacy
 		{
-			name: "Text-Davinci",
-			icon: OPEN_AI,
-		},
-		{
-			name: "DALL E",
-			icon: OPEN_AI,
+			name: "AWS_TITAN_TEXT_EMBEDDINGS",
+			icon: AMAZON_TITAN,
 		},
 		{
 			name: "Azure Open AI",
-
 			icon: AZURE_OPEN_AI,
+		},
+		{
+			name: "Bert",
+			icon: BERT,
 		},
 		{
 			name: "Claude",
 			icon: CLAUDE,
 		},
 		{
-			name: "Palm Bison",
-			icon: VERTEX,
-		},
-		{
-			name: "Palm Chat Bison",
-			icon: VERTEX,
-		},
-		{
-			name: "Palm Code Bison",
-			icon: VERTEX,
-		},
-		{
-			name: "Wizard 13B",
-			icon: BRAIN,
-		},
-		{
-			name: "Llama2 7B",
-			icon: META,
-		},
-		{
-			name: "Llama2 13B",
-			icon: META,
-		},
-		{
-			name: "Llama2 70B",
-			icon: META,
-		},
-		{
-			name: "Falcon",
-			icon: FALCON,
-		},
-		{
-			name: "StableBeluga2",
-			icon: BRAIN,
-		},
-		{
-			name: "Guanaco",
-			icon: BRAIN,
-		},
-		{
-			name: "Vicuna",
-			icon: VICUNA,
-		},
-		{
-			name: "Mosaic ML",
-			icon: MOSAIC,
+			name: "DALL E",
+			icon: OPEN_AI,
 		},
 		{
 			name: "Dolly",
 			icon: DOLLY,
 		},
 		{
-			name: "Replit code model – 3b",
-			icon: REPLIT,
+			name: "Eleuther GPTJ",
+			icon: ELEUTHER,
+		},
+		{
+			name: "Falcon",
+			icon: FALCON,
 		},
 		{
 			name: "Flan T5 Large",
@@ -15235,40 +15207,92 @@ export const ENGINE_IMAGES = {
 			icon: FLAN,
 		},
 		{
-			name: "Bert",
-			icon: BERT,
+			name: "GPT-3.5",
+			icon: OPEN_AI,
 		},
 		{
-			name: "Eleuther GPTJ",
-			icon: ELEUTHER,
+			name: "GPT-4",
+			icon: OPEN_AI,
 		},
 		{
-			name: "Wizard Coder",
+			name: "Guanaco",
 			icon: BRAIN,
+		},
+		{
+			name: "Llama2 13B",
+			icon: META,
+		},
+		{
+			name: "Llama2 70B",
+			icon: META,
+		},
+		{
+			name: "Llama2 7B",
+			icon: META,
+		},
+		{
+			name: "Mosaic ML",
+			icon: MOSAIC,
 		},
 		{
 			name: "NeMo",
 			icon: NEMO,
+		},
+		{
+			name: "NeMo",
+			icon: NEMO,
+		},
+		{
+			name: "OPEN_AI",
+			icon: OPEN_AI,
 		},
 		{
 			name: "Orca",
 			icon: ORCA,
 		},
 		{
-			name: "AWS_TITAN_TEXT_EMBEDDINGS",
-			icon: Amazon_Titan,
+			name: "Palm Bison",
+			icon: GEMINI,
 		},
 		{
-			name: "Stablity AI",
-			icon: STABILITY_AI,
+			name: "Palm Chat Bison",
+			icon: GEMINI,
+		},
+		{
+			name: "Palm Code Bison",
+			icon: GEMINI,
 		},
 		{
 			name: "Replit Code Model",
 			icon: REPLIT,
 		},
 		{
-			name: "NeMo",
-			icon: NEMO,
+			name: "Replit code model – 3b",
+			icon: REPLIT,
+		},
+		{
+			name: "StableBeluga2",
+			icon: BRAIN,
+		},
+		{
+			name: "Stablity AI",
+			icon: STABILITY_AI,
+		},
+		{
+			name: "Text-Davinci",
+			icon: OPEN_AI,
+		},
+		{
+			name: "Vicuna",
+			icon: VICUNA,
+		},
+		{
+			name: "Wizard 13B",
+			icon: BRAIN,
+		},
+		{
+			name: "Wizard Coder",
+			icon: BRAIN,
 		},
 		{
 			name: "ZIP",
@@ -15277,58 +15301,172 @@ export const ENGINE_IMAGES = {
 	],
 	FUNCTION: [
 		{
+			name: "AWS_POLLY",
+			icon: AWS_POLLY,
+		},
+		{
+			name: "AWS_TEXTRACT",
+			icon: AWS_TEXTRACT,
+		},
+		{
+			name: "AWS_TEXTRACT_CUSTOM_EMBEDDINGS",
+			icon: AWS_TEXTRACT,
+		},
+		{
+			name: "AWS_TRANSCRIBE",
+			icon: AWS_TRANSCRIBE,
+		},
+		{
+			name: "AWS_TRANSCRIBE_CUSTOM_EMBEDDINGS",
+			icon: AWS_TRANSCRIBE,
+		},
+		{
+			name: "AWS_Transcribe",
+			icon: AWS_TRANSCRIBE,
+		},
+		{
+			name: "AZURE_DOCUMENT_INTELLIGENCE_CUSTOM_EMBEDDINGS",
+			icon: REST_API,
+		},
+		{
+			name: "AZUREOCR",
+			icon: REST_API,
+		},
+		{
+			name: "GOOGLE_OCR",
+			icon: GOOGLE_OCR,
+		},
+		{
+			name: "GOOGLE_OCR_CUSTOM_EMBEDDINGS",
+			icon: GOOGLE_OCR,
+		},
+		{
+			name: "GOOGLE_SPEECH_TO_TEXT",
+			icon: GOOGLE_SPEECH_TO_TEXT,
+		},
+		{
+			name: "IMAGE_DESCRIPTION",
+			icon: BRAIN,
+		},
+		{
+			name: "LOCAL_PYTHON",
+			icon: PYTHON,
+		},
+		{
+			name: "LOCAL_PYTHON_CUSTOM_EMBEDDINGS",
+			icon: PYTHON,
+		},
+		{
+			name: "OPENAI_TRANSCRIBE",
+			icon: OPEN_AI,
+		},
+		{
 			name: "REST",
-			icon: RESTAPI,
+			icon: REST_API,
 		},
 		{
 			name: "ZIP",
 			icon: ZIP,
 		},
+	],
+	GUARDRAIL: [
 		{
-			name: "AZUREOCR",
-			icon: RESTAPI,
+			name: "DETOXIFY",
+			icon: DETOXIFY,
 		},
 		{
-			name: "AWS - Image Text Extraction",
-			icon: AWS_TEXTRACT,
+			name: "DETOXIFY",
+			icon: DETOXIFY,
 		},
 		{
-			name: "AWS POLLY",
-			icon: AWS_POLLY,
+			name: "EMBEDDED_DETOXIFY",
+			icon: DETOXIFY,
 		},
 		{
-			name: "AWS Transcribe",
-			icon: AWS_TRANSCRIBE,
+			name: "EMBEDDED_GLINER",
+			icon: GLINER,
 		},
 		{
-			name: "Google Speech To Text",
-			icon: GOOGLE_SPEECH_TO_TEXT,
+			name: "EMBEDDED_LAKERA_GUARD",
+			icon: BRAIN,
 		},
 		{
-			name: "Google OCR",
-			icon: GOOGLE_OCR,
+			name: "EMBEDDED_MICROSOFT_CONTENT_MODERATION",
+			icon: MICROSOFT,
+		},
+		{
+			name: "EMBEDDED_NVIDIA_NEMO",
+			icon: NEMO,
+		},
+		{
+			name: "EMBEDDED_OPENAI_MODERATION",
+			icon: OPEN_AI,
+		},
+		{
+			name: "EMBEDDED_PERSPECTIVE_API",
+			icon: BRAIN,
+		},
+		{
+			name: "EMBEDDED_PROMPTGUARD_META",
+			icon: META,
+		},
+		{
+			name: "EMBEDDED_REBUFF",
+			icon: BRAIN,
+		},
+		{
+			name: "GLINER",
+			icon: GLINER,
+		},
+		{
+			name: "GLINER",
+			icon: GLINER,
 		},
 	],
 	VECTOR: [
+		{
+			name: "AWS_S3",
+			icon: AMAZON_S3,
+		},
+		{
+			name: "AZURE_AI_SEARCH",
+			icon: MICROSOFT,
+		},
+		{
+			name: "CHROMA",
+			icon: CHROMADB,
+		},
+		{
+			name: "ELASTIC_SEARCH",
+			icon: ELASTIC_SEARCH,
+		},
 		{
 			name: "FAISS",
 			icon: META,
 		},
 		{
-			name: "WEAVIATE",
-			icon: WEVIATE,
+			name: "MILVUS",
+			icon: MILVUS,
 		},
 		{
-			name: "PINECONE",
-			icon: PINECONE,
+			name: "OPEN_SEARCH",
+			icon: OPEN_SEARCH,
 		},
 		{
 			name: "PGVECTOR",
 			icon: POSTGRES,
 		},
 		{
-			name: "OPEN_SEARCH",
-			icon: OPEN_SEARCH,
+			name: "PINECONE",
+			icon: PINECONE,
+		},
+		{
+			name: "PROXY",
+			icon: REST_API,
+		},
+		{
+			name: "WEAVIATE",
+			icon: WEVIATE,
 		},
 		{
 			name: "ZIP",
@@ -15336,38 +15474,6 @@ export const ENGINE_IMAGES = {
 		},
 	],
 	DATABASE: [
-		{
-			name: "ZIP",
-			icon: ZIP,
-		},
-		{
-			name: "CSV",
-			icon: CSV,
-		},
-		{
-			name: "EXCEL",
-			icon: EXCEL,
-		},
-		{
-			name: "TSV",
-			icon: TSV,
-		},
-		{
-			name: "SQLITE",
-			icon: SQLITE,
-		},
-		{
-			name: "H2_DB",
-			icon: H2_DB,
-		},
-		{
-			name: "NEO4J",
-			icon: NEO4J,
-		},
-		{
-			name: "TINKER",
-			icon: TINKER,
-		},
 		{
 			name: "ASTER_DB",
 			icon: ASTER,
@@ -15387,6 +15493,10 @@ export const ENGINE_IMAGES = {
 		{
 			name: "CLICKHOUSE",
 			icon: CLICKHOUSE,
+		},
+		{
+			name: "CSV",
+			icon: CSV,
 		},
 		{
 			name: "DATABRICKS",
@@ -15409,7 +15519,15 @@ export const ENGINE_IMAGES = {
 			icon: ELASTIC_SEARCH,
 		},
 		{
+			name: "EXCEL",
+			icon: EXCEL,
+		},
+		{
 			name: "H2",
+			icon: H2_DB,
+		},
+		{
+			name: "H2_DB",
 			icon: H2_DB,
 		},
 		{
@@ -15427,6 +15545,10 @@ export const ENGINE_IMAGES = {
 		{
 			name: "MYSQL",
 			icon: MYSQL,
+		},
+		{
+			name: "NEO4J",
+			icon: NEO4J,
 		},
 		{
 			name: "OPEN_SEARCH",
@@ -15469,6 +15591,10 @@ export const ENGINE_IMAGES = {
 			icon: SQLITE,
 		},
 		{
+			name: "SQLITE",
+			icon: SQLITE,
+		},
+		{
 			name: "TERADATA",
 			icon: TERADATA,
 		},
@@ -15477,13 +15603,29 @@ export const ENGINE_IMAGES = {
 			icon: TIBCO,
 		},
 		{
+			name: "TINKER",
+			icon: TINKER,
+		},
+		{
 			name: "TRINO",
 			icon: TRINO,
+		},
+		{
+			name: "TSV",
+			icon: TSV,
+		},
+		{
+			name: "ZIP",
+			icon: ZIP,
 		},
 	],
 	STORAGE: [
 		{
 			name: "AMAZON_S3",
+			icon: AMAZON_S3,
+		},
+		{
+			name: "AMAZON_S3_NATIVE",
 			icon: AMAZON_S3,
 		},
 		{
@@ -15497,6 +15639,10 @@ export const ENGINE_IMAGES = {
 		{
 			name: "DROPBOX",
 			icon: DROPBOX,
+		},
+		{
+			name: "GOOGLE_CLOUD_NATIVE_STORAGE",
+			icon: GOOGLE_CLOUD,
 		},
 		{
 			name: "GOOGLE_CLOUD_STORAGE",
@@ -15515,16 +15661,20 @@ export const ENGINE_IMAGES = {
 			icon: AZURE_BLOB,
 		},
 		{
+			name: "MICROSOFT_AZURE_NATIVE_BLOB_STORAGE",
+			icon: AZURE_BLOB,
+		},
+		{
 			name: "MICROSOFT_ONEDRIVE",
 			icon: ONEDRIVE,
 		},
 		{
-			name: "NETWORK_FILE_SYSTEM",
-			icon: NETWORK_FILE_SYSTEM,
-		},
-		{
 			name: "MINIO",
 			icon: MINIO,
+		},
+		{
+			name: "NETWORK_FILE_SYSTEM",
+			icon: NETWORK_FILE_SYSTEM,
 		},
 		{
 			name: "SFTP",
