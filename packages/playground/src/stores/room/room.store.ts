@@ -351,11 +351,15 @@ export class RoomStore {
 	 * Number of tokens used
 	 */
 	get tokensUsed() {
+		// INPUT_TEXT messages contain the count of all previously used tokens in the history
+		// RESPONSE messages contain the count of tokens used in that response, but not the previous tokens
+		// INPUT_TOOL_EXEC messages have tokens=0
+		// So, just sum up to a real INPUT message is the most reliable way to get the token count
 		let currMessage = this.tail as AbstractMessageStore;
 		let tokensUsed = 0;
 		while (currMessage) {
 			tokensUsed += currMessage.tokens;
-			if (currMessage.type === "INPUT") break;
+			if (currMessage.type === "INPUT" && currMessage.tokens) break;
 			currMessage = currMessage.parent;
 		}
 
