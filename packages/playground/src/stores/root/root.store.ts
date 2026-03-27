@@ -66,6 +66,7 @@ export class RootStore {
 			landing: "",
 			sidebar: {
 				//workspaceAlias: "Workspace",
+				chatHistoryDate: false,
 				headerItems: [],
 				footerItems: [],
 			},
@@ -78,6 +79,7 @@ export class RootStore {
 			},
 			allowedFileTypes: [],
 			defaultTools: [],
+			gracefulErrors: [],
 			showPlatformLinks: true,
 		},
 	};
@@ -204,6 +206,10 @@ export class RootStore {
 			sidebar: {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),
+				chatHistoryDate:
+					theme?.sidebar?.chatHistoryDate !== undefined
+						? theme.sidebar.chatHistoryDate
+						: this._store.theme.sidebar.chatHistoryDate,
 			},
 			dialog: theme?.dialog || this._store.theme.dialog,
 			defaultRoomSettings: {
@@ -239,6 +245,10 @@ export class RootStore {
 				theme?.showPlatformLinks !== undefined
 					? theme.showPlatformLinks
 					: this._store.theme.showPlatformLinks,
+			gracefulErrors: [
+				...this._store.theme.gracefulErrors,
+				...(theme?.gracefulErrors || []),
+			],
 		};
 
 		// apply the theme to document root

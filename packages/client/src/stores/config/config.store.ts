@@ -145,6 +145,7 @@ interface ConfigStoreInterface {
 		adminOnlyGuardrailDelete: boolean;
 		adminOnlyGuardrailSetDiscoverable: boolean;
 		adminOnlyGuardrailSetPublic: boolean;
+		notificationEnabled: boolean;
 
 		[key: string]: unknown;
 	};
@@ -220,6 +221,7 @@ export class ConfigStore {
 			adminOnlyGuardrailDelete: false,
 			adminOnlyGuardrailSetDiscoverable: false,
 			adminOnlyGuardrailSetPublic: false,
+			notificationEnabled: false,
 		},
 	};
 	private _generalReactors: Array<string> = [];
@@ -372,7 +374,7 @@ export class ConfigStore {
 
 		// Set CSRF flag to true
 		Env.update({ CSRF: this.store.config.csrf });
-		
+
 		// get the user information
 		await this.getUser();
 

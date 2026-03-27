@@ -51,6 +51,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	// get the metadata
 	const getEngineMetadata = usePixel<{
 		database_name?: string;
+		engine_display_name?: string;
 		database_discoverable?: boolean;
 		database_created_by?: string;
 		database_date_created?: string;
@@ -240,7 +241,10 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 					id: engineId,
 					role: getUserEnginePermission.data.permission,
 					name:
-						(getEngineMetadata.data?.database_name as string) || "",
+						(getEngineMetadata.data
+							?.engine_display_name as string) ||
+						(getEngineMetadata.data?.database_name as string) ||
+						"",
 					metadata: values,
 					database_subtype: getEngineMetadata.data?.database_subtype,
 					database_created_by:
@@ -252,7 +256,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 				},
 			}}
 		>
-			{!isEdit ? 
+			{!isEdit ? (
 				<div className="flex flex-col gap-4">
 					<EngineHeader />
 					<div className="flex flex-col rounded-lg bg-(--muted)">
@@ -290,9 +294,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 						</div>
 					</div>
 				</div>
-			:
+			) : (
 				<Outlet />
-			}
+			)}
 		</EngineContext.Provider>
 	);
 };

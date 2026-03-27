@@ -5,21 +5,22 @@ import {
 	CopyIcon,
 	DownloadIcon,
 	FileIcon,
+	Loader2Icon,
 	RefreshCwIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useTranslation} from "@semoss/i18n";
-import { useState } from 'react';
+import { Fragment, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
-	HoverCard,
 	Dialog,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
+	HoverCard,
 	HoverCardContent,
 	HoverCardTrigger,
 	Tooltip,
@@ -31,11 +32,12 @@ import {
 	InputMessageStore,
 	type ResponseMessageStore,
 	type RoomStore,
+	type ToolStore,
 } from "@/stores";
-import { RoomInlineTool } from "../room/room-inline-tool";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
+import { ResponseMessageToolGroup } from "./response-message-tool-group";
 
 interface ResponseMessageProps {
 	/** Room */
@@ -50,25 +52,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		const { t } = useTranslation("chat");
 
 		const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false);
+		const [isDownloading, setIsDownloading] = useState(false);
 
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
 		if (message.parent instanceof InputMessageStore) {
 			inputMessage = message.parent;
 		}
-
-		/**
-		 * Copy the text
-		 * @param text - text to copy
-		 */
-		const copyMessage = (text: string) => {
-			try {
-				navigator.clipboard.writeText(text);
-				toast.success("Successfully copied to clipboard");
-			} catch (e) {
-				toast.error(e.message);
-			}
-		};
 
 		/**
 		 * Record the feedback
@@ -100,25 +90,46 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		};
 
 		/**
-         * Download the response in specified format
-         * @param format - format to download (word, pdf)
-         */
-        const downloadResponse = async (format: string) => {
-            try {
-                await message.downloadResponse(format as "word" | "pdf");
-                toast.success(
-                    `Response downloaded successfully as ${format.toUpperCase()}`,
-                );
-                setIsDownloadDialogOpen(false);
-            } catch (e) {
-                toast.error(e.message || "Failed to download response");
-            }
-        };
+		 * Download the response in specified format
+		 * @param format - format to download (word, pdf)
+		 */
+		const downloadResponse = async (format: string) => {
+			setIsDownloading(true);
+			try {
+				await message.downloadResponse(format as "word" | "pdf");
+				toast.success(
+					`Response downloaded successfully as ${format.toUpperCase()}`,
+				);
+				setIsDownloadDialogOpen(false);
+			} catch (e) {
+				toast.error(e.message || "Failed to download response");
+			} finally {
+				setIsDownloading(false);
+			}
+		};
 
-        const downloadFormats = [
-            { value: "word", label: "Word Document", extension: ".docx" },
-            { value: "pdf", label: "PDF Document", extension: ".pdf" },
-        ];
+		const downloadFormats = [
+			{ value: "word", label: "Word Document", extension: ".docx" },
+			{ value: "pdf", label: "PDF Document", extension: ".pdf" },
+		];
+
+		// Pre-compute completed tools for grouping; track the first TOOL_CALL
+		// part index (regardless of completion) so the group always renders at
+		// the top of the tool list even when an auto-execute tool completes first.
+		const getShouldGroupTool = (tool: ToolStore) => {
+			return tool?.status === "SUCCESS";
+		};
+		const groupedTools: ToolStore[] = [];
+		let firstToolPartIdx = -1;
+		message.parts.forEach((p, idx) => {
+			if (p.type !== "TOOL_CALL") return;
+			if (firstToolPartIdx === -1) firstToolPartIdx = idx;
+			const tool = room.getTool(p.toolCall.id);
+			if (!tool) return;
+			if (getShouldGroupTool(tool)) {
+				groupedTools.push(tool);
+			}
+		});
 
 		return (
 			<div>
@@ -127,7 +138,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						<div className="mb-0 flex w-full flex-col gap-4 pr-3 sm:pr-10">
 							{message.parts.map((p, pIdx) => {
 								const key = `message-part-${pIdx}`;
-								const isLast = pIdx === message.parts.length - 1;
+								const isLast =
+									pIdx === message.parts.length - 1;
 
 								if (p.type === "TEXT") {
 									return (
@@ -155,9 +167,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 															component:
 																"room-file-editor",
 															config: {
-																name: p.mediaInfo
+																name: p
+																	.mediaInfo
 																	.fileName,
-																path: p.mediaInfo
+																path: p
+																	.mediaInfo
 																	.fileLocation,
 															},
 															enableClose: true,
@@ -172,7 +186,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 													<img
 														className="w-full"
 														src={`data:image/png;base64,${p.mediaInfo.base64Data}`}
-														alt={p.mediaInfo.fileName}
+														alt={
+															p.mediaInfo.fileName
+														}
 													/>
 												) : (
 													<FileIcon className="size-6 text-muted-foreground" />
@@ -186,35 +202,44 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											key={key}
 											message={message}
 											part={p}
-											isLast={isLast}
+											isStreaming={
+												isLast && message.isThinking
+											}
 										/>
 									);
 								} else if (p.type === "TOOL_CALL") {
 									const tool = room.getTool(p.toolCall.id);
-
-									// if tool is not found, return null
-									if (!tool) {
-										return null;
-									}
-
+									const isGrouped = getShouldGroupTool(tool);
 									return (
-										<div
-											key={key}
-											className="flex flex-col gap-2"
-										>
-											<ResponseMessageTool
-												message={message}
-												tool={tool}
-											/>
-											{tool.display === "inline" &&
-												tool.isOpen && (
-													<RoomInlineTool
-														room={room}
+										<Fragment key={key}>
+											{pIdx === firstToolPartIdx &&
+												groupedTools.length >= 1 && (
+													<ResponseMessageToolGroup
+														key={`${key}-group`}
+														message={message}
+														tools={groupedTools}
+													/>
+												)}
+											{tool && !isGrouped && (
+												<div className="flex flex-col gap-2">
+													<ResponseMessageTool
 														message={message}
 														tool={tool}
 													/>
-												)}
-										</div>
+													{/* {tool.display ===
+														"inline" &&
+														tool.isOpen && (
+															<RoomInlineTool
+																room={room}
+																message={
+																	message
+																}
+																tool={tool}
+															/>
+														)} */}
+												</div>
+											)}
+										</Fragment>
 									);
 								}
 
@@ -240,9 +265,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										<Button
 											variant="ghost"
 											size="icon"
-											disabled={!inputMessage.previousSibling}
+											disabled={
+												!inputMessage.previousSibling
+											}
 											onClick={() => {
-												if (!inputMessage.previousSibling) {
+												if (
+													!inputMessage.previousSibling
+												) {
 													return;
 												}
 
@@ -365,7 +394,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											.map((part) => {
 												if (part.type === "TEXT") {
 													return part.text;
-												} else if (part.type === "MEDIA") {
+												} else if (
+													part.type === "MEDIA"
+												) {
 													return `<${part.mediaInfo.fileName}?`;
 												} else if (
 													part.type === "TOOL_CALL"
@@ -379,7 +410,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 										if (!text) {
 											toast.warning(
-												t("notifications.noCopyContent"),
+												t(
+													"notifications.noCopyContent",
+												),
 											);
 											return;
 										}
@@ -409,7 +442,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									variant="ghost"
 									size="icon"
 									disabled={message.parts.length === 0}
-									onClick={() => setIsDownloadDialogOpen(true)}
+									onClick={() =>
+										setIsDownloadDialogOpen(true)
+									}
 								>
 									<DownloadIcon />
 								</Button>
@@ -438,16 +473,23 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									key={format.value}
 									variant="outline"
 									className="h-auto flex-col gap-1 p-4"
+									disabled={isDownloading}
 									onClick={() =>
 										downloadResponse(format.value)
 									}
 								>
-									<span className="font-medium">
-										{format.label}
-									</span>
-									<span className="text-muted-foreground text-xs">
-										{format.extension}
-									</span>
+									{isDownloading ? (
+										<Loader2Icon className="size-4 animate-spin" />
+									) : (
+										<>
+											<span className="font-medium">
+												{format.label}
+											</span>
+											<span className="text-muted-foreground text-xs">
+												{format.extension}
+											</span>
+										</>
+									)}
 								</Button>
 							))}
 						</div>

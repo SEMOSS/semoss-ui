@@ -267,6 +267,12 @@ export class ChatStore {
 		// initialize the room
 		await room.initialize();
 
+		// If the room has no messages or just the placeholder, it means it is a valid room but it is empty, so we can consider it as not found and throw an error
+		// This happens if CreateRoom succeeds but the first AskPlayground call fails
+		if (!room.tail || room.tail.id === "ROOT_PLACEHOLDER_ID") {
+			throw new Error("Room not found");
+		}
+
 		runInAction(() => {
 			// save it to the cache
 			this._store.rooms[roomId] = room;
