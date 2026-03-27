@@ -21,6 +21,7 @@ import {
 	SendIcon,
 	SlidersHorizontalIcon,
 	SparklesIcon,
+	Square,
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -79,6 +80,15 @@ interface RoomInputProps {
 	/** Has outstanding tools */
 	hasOutstandingTools?: boolean;
 
+	/** Whether the pause-on-next-tool flag is armed */
+	hasToolsPaused?: boolean;
+
+	/** Toggle the pause-on-next-tool flag */
+	toggleToolsPaused?: () => void;
+
+	/** Hide the pause-on-next-tool button */
+	hidePauseButton?: boolean;
+
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
 }
@@ -92,7 +102,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		MenuComponent,
 		onPrompt = () => null,
 		hasOutstandingTools = false,
+		hasToolsPaused = false,
+		toggleToolsPaused,
 		footer = null,
+		hidePauseButton = false,
 	}) => {
 		const { t } = useTranslation("room");
 		const { root } = useRoot();
@@ -321,7 +334,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									<ContentEditable
 										ref={contentEditableRef}
 										className={cn(
-											`h-auto w-full overflow-y-auto rounded-md border border-input bg-transparent p-4 pb-14 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
+											`h-auto w-full overflow-y-auto rounded-md border border-input bg-transparent p-4 pb-18 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
 											isDragging
 												? "border-primary border-dashed"
 												: "hover:border-primary",
@@ -452,9 +465,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								/>
 							)}
 					</LexicalComposer>
-					{!isLoading &&
-						!(root.theme.hideToolsInIframe && isIframed) && (
-							<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
+					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
+						{!isLoading &&
+							!(root.theme.hideToolsInIframe && isIframed) && (
 								<DropdownMenu
 									open={menuOpen}
 									onOpenChange={setMenuOpen}
@@ -491,82 +504,104 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										/>
 									</DropdownMenuContent>
 								</DropdownMenu>
-								{footer}
-							</div>
-						)}
-					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
-						<div className="flex flex-row items-center gap-1">
-							<EngineSelect
-								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-								disabled={isLoading}
-								name={
-									model?.engine_display_name ||
-									model?.app_name ||
-									""
-								}
-								value={model?.app_id || ""}
-								engineTypes={["MODEL"]}
-								metaFilters={[{ tag: "text-generation" }]}
-								onChange={(v) => {
-									setModel(v);
-								}}
-								popoverContentProps={{
-									align: "start",
-								}}
-							/>
+							)}
+						{footer}
+					</div>
+					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-2">
+						<EngineSelect
+							className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+							disabled={isLoading}
+							name={
+								model?.engine_display_name ||
+								model?.app_name ||
+								""
+							}
+							value={model?.app_id || ""}
+							engineTypes={["MODEL"]}
+							metaFilters={[{ tag: "text-generation" }]}
+							onChange={(v) => {
+								setModel(v);
+							}}
+							popoverContentProps={{
+								align: "start",
+							}}
+						/>
 
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										className="bg-background"
-										variant={"ghost"}
-										aria-label={t("input.recordLabel")}
-										size="icon-sm"
-										disabled={!canListen || isLoading}
-										onClick={() => {
-											if (isListening) {
-												recognitionRef.current?.stop();
-												editorRef.current?.focus();
-											} else {
-												recognitionRef.current?.start();
-											}
-										}}
-									>
-										<MicIcon
-											className={`${isListening ? "animate-pulse text-destructive" : ""}`}
-										/>
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>
-									{isListening
-										? t("input.stopRecording")
-										: t("input.record")}
-								</TooltipContent>
-							</Tooltip>
-						</div>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									className="bg-background"
+									variant={"ghost"}
+									aria-label={t("input.recordLabel")}
+									size="icon-sm"
+									disabled={!canListen || isLoading}
+									onClick={() => {
+										if (isListening) {
+											recognitionRef.current?.stop();
+											editorRef.current?.focus();
+										} else {
+											recognitionRef.current?.start();
+										}
+									}}
+								>
+									<MicIcon
+										className={`${isListening ? "animate-pulse text-destructive" : ""}`}
+									/>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								{isListening
+									? t("input.stopRecording")
+									: t("input.record")}
+							</TooltipContent>
+						</Tooltip>
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<span>
 									<Button
 										variant="default"
-										aria-label={t("input.askLabel")}
+										size="icon-sm"
+										aria-label={
+											isLoading
+												? t("input.pauseToolsTooltip")
+												: t("input.askLabel")
+										}
 										disabled={
-											isLoading ||
-											isEmpty ||
-											hasOutstandingTools
+											isLoading
+												? hasToolsPaused ||
+													hidePauseButton
+												: isEmpty || hasOutstandingTools
 										}
 										onClick={() => {
-											promptModel();
+											if (isLoading) {
+												toggleToolsPaused?.();
+											} else {
+												promptModel();
+											}
 										}}
 									>
-										{isLoading ? <Spinner /> : <SendIcon />}
+										{isLoading ? (
+											hasToolsPaused ||
+											hidePauseButton ? (
+												<Spinner />
+											) : (
+												<Square
+													className="size-3"
+													fill="currentColor"
+												/>
+											)
+										) : (
+											<SendIcon />
+										)}
 									</Button>
 								</span>
 							</TooltipTrigger>
 							<TooltipContent>
 								{(() => {
 									if (isLoading) {
-										return t("input.thinkingTooltip");
+										return hasToolsPaused || hidePauseButton
+											? t("input.thinkingTooltip")
+											: t("input.pauseToolsTooltip");
 									} else if (isEmpty) {
 										return t("input.enterQuestion");
 									} else if (hasOutstandingTools) {

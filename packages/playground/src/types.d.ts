@@ -190,7 +190,7 @@ export interface PixelMessageToolResultPart {
 		toolName: string;
 		output: string;
 		toolParameterValues: Record<string, unknown>;
-		toolStatus: "success" | "error" | "cancelled";
+		toolStatus: "success" | "error" | "cancelled" | "paused";
 	};
 }
 

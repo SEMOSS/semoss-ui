@@ -43,6 +43,7 @@ import type { MCPConfig, Prompt, Workspace } from "@/types";
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
 	: "";
+const ENABLE_PLAN = import.meta.env.VITE_ENABLE_PLAN === "true";
 
 /**
  * The page to create a new room
@@ -395,39 +396,43 @@ export const NewRoomPage = observer(() => {
 							MenuComponent={observer(
 								({ addToken, onOpenChange, fileRef }) => (
 									<>
-										<DropdownMenuItem
-											onSelect={() => {
-												setMode("chat");
-												onOpenChange(false);
-											}}
-										>
-											<MessageCircleIcon />
-											<span className="flex-1">
-												{t("room:modes.ask")}
-											</span>
-											{mode === "chat" ? (
-												<div className="px-1">
-													<CheckIcon />
-												</div>
-											) : null}
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onSelect={() => {
-												setMode("plan");
-												onOpenChange(false);
-											}}
-										>
-											<ListTodoIcon />
-											<span className="flex-1">
-												{t("room:modes.plan")}
-											</span>
+										{ENABLE_PLAN && (
+											<>
+												<DropdownMenuItem
+													onSelect={() => {
+														setMode("chat");
+														onOpenChange(false);
+													}}
+												>
+													<MessageCircleIcon />
+													<span className="flex-1">
+														{t("room:modes.ask")}
+													</span>
+													{mode === "chat" ? (
+														<div className="px-1">
+															<CheckIcon />
+														</div>
+													) : null}
+												</DropdownMenuItem>
+												<DropdownMenuItem
+													onSelect={() => {
+														setMode("plan");
+														onOpenChange(false);
+													}}
+												>
+													<ListTodoIcon />
+													<span className="flex-1">
+														{t("room:modes.plan")}
+													</span>
 
-											{mode === "plan" ? (
-												<div className="px-1">
-													<CheckIcon />
-												</div>
-											) : null}
-										</DropdownMenuItem>
+													{mode === "plan" ? (
+														<div className="px-1">
+															<CheckIcon />
+														</div>
+													) : null}
+												</DropdownMenuItem>
+											</>
+										)}
 										<RoomInputMenuWorkspace
 											workspace={
 												mode === "workspace" &&

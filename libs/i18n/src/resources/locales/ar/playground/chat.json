@@ -37,7 +37,8 @@
 		"completed": "مكتمل",
 		"ready": "جاهز",
 		"autoExecute": "هذه الأداة مضبوطة على التنفيذ التلقائي",
-		"cancel": "إلغاء"
+		"cancel": "إلغاء",
+		"paused": "متوقف مؤقتاً"
 	},
 	"notifications": {
 		"feedbackSuccess": "شكراً على الملاحظات!",

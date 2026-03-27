@@ -37,7 +37,8 @@
 		"completed": "Completed",
 		"ready": "Ready",
 		"autoExecute": "Auto-executing",
-		"cancel": "Cancel"
+		"cancel": "Cancel",
+		"paused": "Paused"
 	},
 	"notifications": {
 		"feedbackSuccess": "Thank you for the feedback!",
