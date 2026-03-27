@@ -445,7 +445,6 @@ export const EngineMetadataPage = observer(() => {
 	 */
 	const syncDatabase = async (tables: string[], views: string[]) => {
 		try {
-			console.log(tables, views);
 			// create the filters
 			const filters = JSON.stringify([...tables, ...views]);
 
@@ -487,9 +486,172 @@ export const EngineMetadataPage = observer(() => {
 				throw new Error(errors.join(""));
 			}
 
-			const output = pixelReturn[0]?.output;
+			const rawOutput = pixelReturn[0]?.output;
+			const output =
+				typeof rawOutput === "string"
+					? (() => {
+							try {
+								return JSON.parse(rawOutput) as {
+									positions?: Record<
+										string,
+										{
+											top?: number;
+											left?: number;
+										}
+									>;
+									tables?: unknown;
+									relationships?: unknown;
+									edges?: unknown;
+								};
+							} catch {
+								return {};
+							}
+						})()
+					: ((rawOutput as {
+							positions?: Record<
+								string,
+								{
+									top?: number;
+									left?: number;
+								}
+							>;
+							tables?: unknown;
+							relationships?: unknown;
+							edges?: unknown;
+						}) ?? {});
 
-			const newNodes = output.tables.map((table) => ({
+			const outputPositions =
+				output.positions && typeof output.positions === "object"
+					? output.positions
+					: {};
+
+			const rawTables = output.tables;
+			const outputTables = Array.isArray(rawTables)
+				? rawTables
+						.map((table) => {
+							if (!table || typeof table !== "object") {
+								return null;
+							}
+
+							const typedTable = table as {
+								table?: string;
+								conceptualName?: string;
+								name?: string;
+								columns?: unknown;
+								propSet?: unknown;
+								type?: unknown;
+							};
+							const tableName =
+								typedTable.table ??
+								typedTable.conceptualName ??
+								typedTable.name;
+							if (!tableName) {
+								return null;
+							}
+
+							const columns = Array.isArray(typedTable.columns)
+								? typedTable.columns
+								: Array.isArray(typedTable.propSet)
+									? typedTable.propSet
+									: [];
+
+							return {
+								table: String(tableName),
+								columns: columns.map((col) => String(col)),
+								type: Array.isArray(typedTable.type)
+									? typedTable.type.map((item) =>
+											String(item),
+										)
+									: [],
+							};
+						})
+						.filter(
+							(
+								table,
+							): table is {
+								table: string;
+								columns: string[];
+								type: string[];
+							} => table !== null,
+						)
+				: rawTables && typeof rawTables === "object"
+					? Object.entries(rawTables).map(([key, value]) => {
+							const tableName = key.includes(".")
+								? key.split(".")[0]
+								: key;
+							const columns = Array.isArray(value)
+								? value.map((col) => String(col))
+								: [];
+
+							return {
+								table: String(tableName),
+								columns: columns,
+								type: [] as string[],
+							};
+						})
+					: [];
+
+			const rawRelationships = Array.isArray(output.relationships)
+				? output.relationships
+				: Array.isArray(output.edges)
+					? output.edges
+					: [];
+			const outputRelationships = rawRelationships
+				.map((relationship) => {
+					if (!relationship || typeof relationship !== "object") {
+						return null;
+					}
+
+					return relationship as {
+						fromTable?: string;
+						toTable?: string;
+						relName?: string;
+						relation?: string;
+						fromCol?: string;
+						toCol?: string;
+						sourceColumn?: string;
+						targetColumn?: string;
+						source?: string;
+						target?: string;
+					};
+				})
+				.filter(
+					(
+						relationship,
+					): relationship is {
+						fromTable?: string;
+						toTable?: string;
+						relName?: string;
+						relation?: string;
+						fromCol?: string;
+						toCol?: string;
+						sourceColumn?: string;
+						targetColumn?: string;
+						source?: string;
+						target?: string;
+					} => relationship !== null,
+				);
+
+			const fallbackTableNames =
+				outputTables.length > 0
+					? []
+					: Array.from(
+							new Set([
+								...Object.keys(outputPositions),
+								...tables,
+								...views,
+							]),
+						);
+			const normalizedTables =
+				outputTables.length > 0
+					? outputTables
+					: fallbackTableNames.map((tableName) => ({
+							table: tableName,
+							columns: [],
+							type: [] as string[],
+						}));
+
+			const newNodes = normalizedTables.map((table) => ({
 				id: table.table,
 				type: "metamodel" as const,
 				data: {
@@ -500,10 +662,10 @@ export const EngineMetadataPage = observer(() => {
 						type: table.type?.[idx] || "",
 					})),
 				},
-				position: output.positions?.[table.table]
+				position: outputPositions?.[table.table]
 					? {
-							x: output.positions[table.table].left,
-							y: output.positions[table.table].top,
+							x: outputPositions[table.table].left ?? 0,
+							y: outputPositions[table.table].top ?? 0,
 						}
 					: { x: 0, y: 0 },
 			}));
@@ -521,34 +683,43 @@ export const EngineMetadataPage = observer(() => {
 				new Map<string, string[]>(),
 			);
 
-			const newEdges = output.relationships.map((rel, i) => {
-				const pairKey = `${rel.fromTable}->${rel.toTable}`;
-				const preservedRelName = existingRelationshipNamesByPair
-					.get(pairKey)
-					?.shift();
-				const relName =
-					rel.relName ??
-					rel.relation ??
-					(rel.fromCol && rel.toCol
-						? `${rel.fromCol}.${rel.toCol}`
-						: undefined) ??
-					(rel.sourceColumn && rel.targetColumn
-						? `${rel.sourceColumn}.${rel.targetColumn}`
-						: undefined) ??
-					preservedRelName ??
-					`${rel.fromTable}_${rel.toTable}`;
+			const newEdges = outputRelationships
+				.map((rel, i) => {
+					const fromTable = rel.fromTable ?? rel.source;
+					const toTable = rel.toTable ?? rel.target;
+					if (!fromTable || !toTable) {
+						return null;
+					}
 
-				return {
-					id: `${relName}-${i}`,
-					type: "floating" as const,
-					source: rel.fromTable,
-					target: rel.toTable,
-					relName: relName,
-				};
-			});
+					const pairKey = `${fromTable}->${toTable}`;
+					const preservedRelName = existingRelationshipNamesByPair
+						.get(pairKey)
+						?.shift();
+					const relName =
+						rel.relName ??
+						rel.relation ??
+						(rel.fromCol && rel.toCol
+							? `${rel.fromCol}.${rel.toCol}`
+							: undefined) ??
+						(rel.sourceColumn && rel.targetColumn
+							? `${rel.sourceColumn}.${rel.targetColumn}`
+							: undefined) ??
+						preservedRelName ??
+						`${fromTable}_${toTable}`;
+
+					return {
+						id: `${relName}-${i}`,
+						type: "floating" as const,
+						source: fromTable,
+						target: toTable,
+						relName: relName,
+					};
+				})
+				.filter((edge): edge is MetadataEdge => edge !== null);
 
 			setNodes(newNodes);
 			setEdges(newEdges);
+			setSelectedNode(newNodes[0] ?? null);
 
 			// set as modified
 			setIsModified(true);
@@ -726,6 +897,7 @@ Error ${e.message || "Unknown error"}
 								setSelectedNode(node);
 								setColumnPage(0);
 							}}
+							autoFocusSelectedNode={true}
 							onViewColumnMetadata={(payload) =>
 								openColumnDetailsModal({
 									tableName: payload.tableName,
@@ -1088,7 +1260,7 @@ Error ${e.message || "Unknown error"}
 							</div>
 						</Card>
 
-						<Card className="flex h-[560px] flex-col gap-0 overflow-hidden rounded-xl border border-border/70 bg-card py-0 shadow-sm xl:col-span-6">
+						<Card className="flex h-[600px] max-h-[72vh] min-h-[520px] flex-col gap-0 overflow-hidden rounded-xl border border-border/70 bg-card py-0 shadow-sm xl:col-span-6 xl:h-[680px]">
 							<div className="space-y-1 border-border/60 border-b px-4 py-3">
 								<P className="font-medium text-foreground text-sm">
 									Data
