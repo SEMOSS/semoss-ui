@@ -30,6 +30,7 @@ export const RoomContextChart = ({
 	tokensMax,
 }: RoomContextChartProps) => {
 	const { t } = useTranslation("room");
+	tokensUsed = 1100000;
 
 	// Calculate the percentage of context used
 	const contextUsedPercent =
@@ -40,6 +41,16 @@ export const RoomContextChart = ({
 	// Only show the chart when usage is above 12.5% to avoid clutter
 	if (contextUsedPercent === undefined || contextUsedPercent < 12.5)
 		return null;
+
+	// Pick the appropriate description based on usage tier
+	const descriptionKey =
+		contextUsedPercent >= 100
+			? "contextWindow.descriptionExceeded"
+			: contextUsedPercent < 50
+				? "contextWindow.descriptionLow"
+				: contextUsedPercent < 75
+					? "contextWindow.descriptionMedium"
+					: "contextWindow.descriptionHigh";
 
 	/**
 	 * Constants
@@ -107,7 +118,7 @@ export const RoomContextChart = ({
 				className="w-80 max-w-xs text-wrap"
 			>
 				<div className="w-full space-y-1">
-					<p className="w-full">{t("contextWindow.description")}</p>
+					<p className="w-full">{t(descriptionKey)}</p>
 					<p className="flex w-full items-baseline justify-between gap-3">
 						<span>{t("contextWindow.memoryUsedTitle")}</span>
 						<span className="whitespace-nowrap text-right tabular-nums">
