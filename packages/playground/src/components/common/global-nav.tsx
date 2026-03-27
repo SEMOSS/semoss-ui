@@ -617,7 +617,7 @@ export const GlobalNav = observer(() => {
 			</SidebarContent>
 			<SidebarFooter>
 				<Separator className="group-data-[collapsible=icon]:hidden" />
-				<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
+				<SidebarMenu className="gap-2 p-2 group-data-[collapsible=icon]:hidden">
 					{root.theme.sidebar.footerItems.map((item, index) => (
 						<GlobalNavItem
 							key={`footer-${item.name}-${index}`}
@@ -628,9 +628,7 @@ export const GlobalNav = observer(() => {
 							embed={item.embed}
 						/>
 					))}
-				</SidebarMenu>
-				<SidebarMenu className="gap-2 p-2">
-					<SidebarMenuItem>
+					<SidebarMenuItem className="">
 						<NavUser />
 					</SidebarMenuItem>
 				</SidebarMenu>
