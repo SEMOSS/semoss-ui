@@ -205,7 +205,7 @@ export const GlobalNav = observer(() => {
 	 */
 	const bucketedRooms = getRooms.data.reduce(
 		(acc, val) => {
-			const d = dayjs(val.DATE_CREATED + "Z");
+			const d = dayjs(`${val.DATE_CREATED}Z`);
 
 			// Pinned rooms only go in Favorites bucket
 			if (val.PINNED) {
@@ -361,7 +361,7 @@ export const GlobalNav = observer(() => {
 					)}
 					{root.theme.sidebar.headerItems.map((item, index) => (
 						<GlobalNavItem
-							key={`header-${index}`}
+							key={`header-${item.name}-${index}`}
 							name={item.name}
 							icon={item.icon}
 							path={item.path}
@@ -411,14 +411,16 @@ export const GlobalNav = observer(() => {
 							</SidebarGroupLabel>
 							<SidebarGroupContent>
 								<SidebarMenu>
-									{rooms.map((room, index) => {
+									{rooms.map((room) => {
 										const roomId = room.ROOM_ID;
 										const name =
 											room.ROOM_NAME ||
 											t("messages.untitled");
 										const date = root.theme.sidebar
 											.chatHistoryDate
-											? new Date(room.DATE_CREATED + 'Z').toLocaleString(undefined, {
+											? new Date(
+													`${room.DATE_CREATED}Z`,
+												).toLocaleString(undefined, {
 													month: "numeric",
 													day: "numeric",
 													year: "numeric",
@@ -433,7 +435,7 @@ export const GlobalNav = observer(() => {
 
 										return (
 											<SidebarMenuItem
-												key={`${roomId}-${index}`}
+												key={roomId}
 												className="group/room relative flex"
 											>
 												{isEditing ? (
@@ -618,7 +620,7 @@ export const GlobalNav = observer(() => {
 				<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
 					{root.theme.sidebar.footerItems.map((item, index) => (
 						<GlobalNavItem
-							key={`footer-${index}`}
+							key={`footer-${item.name}-${index}`}
 							name={item.name}
 							icon={item.icon}
 							path={item.path}
