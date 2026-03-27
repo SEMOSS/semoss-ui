@@ -1012,7 +1012,12 @@ export class RoomStore {
 			}
 
 			const tool = this._store.tools[toolId];
-			if (!tool || tool.response) {
+			if (
+				!tool ||
+				tool.status === "SUCCESS" ||
+				tool.status === "CANCELLED" ||
+				tool.status === "ERROR"
+			) {
 				return;
 			}
 
