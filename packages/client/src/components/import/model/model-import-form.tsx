@@ -191,7 +191,6 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		if (onComplete) onComplete(data);
 	};
 
-	
 	// Helper functions for file upload
 	const onFileUpload = (
 		files: File | File[],
@@ -295,7 +294,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 						/>
 					)}
 				/>
-		);
+			);
 		}
 
 		const validateFormField = async (
@@ -357,21 +356,21 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										id={f.key}
 										value={field.value ?? ""}
 										onChange={(v) => {
-										field.onChange(v);
-										if (f.rules?.custom_rules) {
-											if (
-												debounceTimeoutsRef.current[
-													f.key
-												]
-											) {
-												clearTimeout(
+											field.onChange(v);
+											if (f.rules?.custom_rules) {
+												if (
 													debounceTimeoutsRef.current[
 														f.key
-													],
-												);
-											}
-											debounceTimeoutsRef.current[f.key] =
-												setTimeout(async () => {
+													]
+												) {
+													clearTimeout(
+														debounceTimeoutsRef
+															.current[f.key],
+													);
+												}
+												debounceTimeoutsRef.current[
+													f.key
+												] = setTimeout(async () => {
 													const value =
 														v.target.value;
 													if (value === "") {
@@ -408,156 +407,171 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 														clearErrors(f.key);
 													}
 												}, 300);
-										}
-									}}
+											}
+										}}
 										disabled={f.disabled || isLockedModel}
 										autoComplete="off"
 										data-testId={formatToDataTestId(
 											`importForm-${f.label}-textField`,
 										)}
 									/>
-									<FieldDescription className={errors?.[f.key] ? "text-destructive" : ""}>
+									<FieldDescription
+										className={
+											errors?.[f.key]
+												? "text-destructive"
+												: ""
+										}
+									>
 										{getHelperText(errors?.[f.key], f)}
 									</FieldDescription>
 								</Field>
 							);
 						case "file-upload":
-						return (
-							<div
-								className="flex flex-col gap-2"
-								data-testid={`function-form-field-${f.key}`}
-							>
-								<P>
-									{f.label}
-									{f.required && (
-										<span className="text-destructive">
-											{" "}
-											*
-										</span>
-									)}
-								</P>
+							return (
 								<div
-									className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
-									onClick={() =>
-										fileInputRefs.current[f.key]?.click()
-									}
-									onDragOver={handleDragOver}
-									onDrop={(e) =>
-										handleDrop(
-											e,
-											field.onChange,
-											field.value,
-										)
-									}
+									className="flex flex-col gap-2"
+									data-testid={`function-form-field-${f.key}`}
 								>
-									<input
-										ref={(el) => {
-											fileInputRefs.current[f.key] = el;
-										}}
-										type="file"
-										accept={
-											(
-												f.options as {
-													extensions?: string[];
-												}
-											)?.extensions?.join(",") || "*"
+									<P>
+										{f.label}
+										{f.required && (
+											<span className="text-destructive">
+												{" "}
+												*
+											</span>
+										)}
+									</P>
+									<div
+										className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
+										onClick={() =>
+											fileInputRefs.current[
+												f.key
+											]?.click()
 										}
-										multiple={false}
-										className="hidden"
-										onChange={(e) =>
-											handleFileChange(
+										onDragOver={handleDragOver}
+										onDrop={(e) =>
+											handleDrop(
 												e,
 												field.onChange,
 												field.value,
 											)
 										}
-										disabled={f.disabled}
-										data-testid={`function-form-input-${f.key}`}
-									/>
-									<div className="text-center">
-										<P className="font-medium text-foreground">
-											Drop your file here or click to
-											browse
-										</P>
-										<P className="text-muted-foreground text-sm">
-											{(
-												f.options as {
-													extensions?: string[];
-												}
-											)?.extensions
-												? `Supports ${(f.options as { extensions?: string[] }).extensions.join(", ")} files`
-												: "All file types supported"}
-										</P>
-									</div>
-								</div>
-
-								{/* File List */}
-								{field.value &&
-									Array.isArray(field.value) &&
-									field.value.length > 0 && (
-										<div className="mt-2 flex flex-col gap-2">
-											<P className="font-medium text-foreground text-sm">
-												{field.value.length} file(s)
-												selected:
-											</P>
-											<div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
-												{field.value.map((file, index) => (
-													<div
-														key={`${file.name}-${index}`}
-														className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
-														data-testid={`uploaded-file-item-${index}`}
-													>
-														<div className="flex min-w-0 flex-1 items-center gap-2">
-															<div className="min-w-0 flex-1">
-																<P className="truncate text-foreground text-sm">
-																	{file.name}
-																</P>
-																<P className="text-muted-foreground text-xs">
-																	{(
-																		file.size /
-																		1024
-																	).toFixed(
-																		2,
-																	)}{" "}
-																	KB
-																</P>
-															</div>
-														</div>
-														<Button
-															type="button"
-															variant="ghost"
-															size="icon"
-															onClick={(e) => {
-																e.stopPropagation();
-																removeFile(
-																	index,
-																	field.onChange,
-																	field.value,
-																);
-															}}
-															className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
-															data-testid={`remove-file-btn-${index}`}
-														>
-															<X className="size-4" />
-														</Button>
-													</div>
-												))}
-											</div>
-										</div>
-									)}
-
-								{error && (
-									<P
-										className="text-destructive text-sm"
-										data-testid={`function-form-error-${f.key}`}
 									>
-										{error.message ||
-											(f.rules?.pattern?.message ??
-												f.helperText)}
-									</P>
-								)}
-							</div>
-						);
+										<input
+											ref={(el) => {
+												fileInputRefs.current[f.key] =
+													el;
+											}}
+											type="file"
+											accept={
+												(
+													f.options as {
+														extensions?: string[];
+													}
+												)?.extensions?.join(",") || "*"
+											}
+											multiple={false}
+											className="hidden"
+											onChange={(e) =>
+												handleFileChange(
+													e,
+													field.onChange,
+													field.value,
+												)
+											}
+											disabled={f.disabled}
+											data-testid={`function-form-input-${f.key}`}
+										/>
+										<div className="text-center">
+											<P className="font-medium text-foreground">
+												Drop your file here or click to
+												browse
+											</P>
+											<P className="text-muted-foreground text-sm">
+												{(
+													f.options as {
+														extensions?: string[];
+													}
+												)?.extensions
+													? `Supports ${(f.options as { extensions?: string[] }).extensions.join(", ")} files`
+													: "All file types supported"}
+											</P>
+										</div>
+									</div>
+
+									{/* File List */}
+									{field.value &&
+										Array.isArray(field.value) &&
+										field.value.length > 0 && (
+											<div className="mt-2 flex flex-col gap-2">
+												<P className="font-medium text-foreground text-sm">
+													{field.value.length} file(s)
+													selected:
+												</P>
+												<div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
+													{field.value.map(
+														(file, index) => (
+															<div
+																key={`${file.name}-${index}`}
+																className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
+																data-testid={`uploaded-file-item-${index}`}
+															>
+																<div className="flex min-w-0 flex-1 items-center gap-2">
+																	<div className="min-w-0 flex-1">
+																		<P className="truncate text-foreground text-sm">
+																			{
+																				file.name
+																			}
+																		</P>
+																		<P className="text-muted-foreground text-xs">
+																			{(
+																				file.size /
+																				1024
+																			).toFixed(
+																				2,
+																			)}{" "}
+																			KB
+																		</P>
+																	</div>
+																</div>
+																<Button
+																	type="button"
+																	variant="ghost"
+																	size="icon"
+																	onClick={(
+																		e,
+																	) => {
+																		e.stopPropagation();
+																		removeFile(
+																			index,
+																			field.onChange,
+																			field.value,
+																		);
+																	}}
+																	className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+																	data-testid={`remove-file-btn-${index}`}
+																>
+																	<X className="size-4" />
+																</Button>
+															</div>
+														),
+													)}
+												</div>
+											</div>
+										)}
+
+									{error && (
+										<P
+											className="text-destructive text-sm"
+											data-testid={`function-form-error-${f.key}`}
+										>
+											{error.message ||
+												(f.rules?.pattern?.message ??
+													f.helperText)}
+										</P>
+									)}
+								</div>
+							);
 						case "url":
 							return (
 								<Field>
@@ -769,7 +783,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		>
 			{Object.keys(grouped).map((category) => (
 				<div key={category} className="mb-4 flex flex-col gap-4">
-					<div className="flex items-start gap-4">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 						{/* Left: Category title + description */}
 						<div className="flex flex-1 flex-col gap-1">
 							<H4 data-testId={`model-importForm-category-title`}>
@@ -798,7 +812,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 						open={advancedOpen}
 						onOpenChange={setAdvancedOpen}
 					>
-						<div className="flex flex-row items-center justify-between">
+						<div className="flex flex-row items-center justify-between gap-2">
 							<H4 data-testId="model-advanced-settings-title">
 								Advanced Settings
 							</H4>
@@ -818,7 +832,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 						</div>
 						<CollapsibleContent>
 							<div className="mb-4 flex flex-col gap-4">
-								<div className="flex items-start gap-4">
+								<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 									{/* Left: Category title + description */}
 									<div className="flex flex-1 flex-col gap-1">
 										<Muted data-testId="model-advanced-settings-description">
@@ -836,11 +850,11 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 					</Collapsible>
 				</div>
 			)}
-			<div className="mt-4 flex justify-end gap-[16px]">
+			<div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
 				<Button
 					data-testId="model-importForm-connect-button"
 					variant="default"
-					className="flex w-[147px] items-center gap-2 px-4 py-2"
+					className="flex w-full items-center justify-center gap-2 px-4 py-2 sm:w-[147px]"
 					type="submit"
 					disabled={isLoading || !isValid || isValidDatabaseName}
 				>
