@@ -1,5 +1,4 @@
 import { CheckCircle, Error as ErrorIcon, Info } from "@mui/icons-material";
-import React from "react";
 import { Alert, Box, styled, Table, Typography } from "@semoss/ui";
 import {
 	getErrorMessage,
@@ -39,12 +38,16 @@ const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
 	paddingTop: 0,
 	overflow: "auto",
 	width: "100%",
+	height: "100%",
+	minHeight: 0,
 }));
 
 const StyledTable = styled(Table)(() => ({
 	border: "none",
 	display: "table",
-	width: "100%",
+	width: "max-content",
+	minWidth: "100%",
+	tableLayout: "fixed",
 }));
 
 const StyledTableHeader = styled(Table.Head)(() => ({
@@ -71,11 +74,7 @@ const StyledHeaderCell = styled(Table.Cell)(() => ({
 	backgroundColor: "#F5F9FE",
 }));
 
-const StyledTableBody = styled(Table.Body)<{ isExpanded: boolean }>(
-	({ isExpanded }) => ({
-		maxHeight: isExpanded ? "calc(100vh - 200px)" : "180px",
-	}),
-);
+const StyledTableBody = styled(Table.Body)(() => ({}));
 
 const StyledEmptyDataContainer = styled(Box)(({ theme }) => ({
 	padding: theme.spacing(3),
@@ -150,11 +149,11 @@ const StyledOperationTypography = styled(Typography)(() => ({
 	display: "block",
 }));
 
-const StyledSuccessTypography = styled(Typography)(({ theme }) => ({
+const StyledSuccessTypography = styled(Typography)(() => ({
 	fontWeight: 600,
 }));
 
-const StyledInfoTypography = styled(Typography)(({ theme }) => ({
+const StyledInfoTypography = styled(Typography)(() => ({
 	fontWeight: 600,
 }));
 
@@ -166,7 +165,7 @@ export function useQueryResults() {
 	const renderResults = (
 		previewData: QueryResult | null,
 		previewLimit: number,
-		isExpanded: boolean = false,
+		_isExpanded: boolean = false,
 	) => {
 		if (!previewData) {
 			return (
@@ -256,57 +255,68 @@ export function useQueryResults() {
 		}
 
 		if (hasTabularData(previewData)) {
+			const headers = previewData.output.data.headers || [];
+			const values = (previewData.output.data.values || []).slice(
+				0,
+				previewLimit,
+			);
+
 			return (
 				<StyledTableContainer data-testid="query-results-table-container">
 					<StyledTable
 						aria-label="sticky table"
 						data-testid="query-results-table"
 					>
-						{previewData.output.data.headers && (
+						{headers.length > 0 && (
 							<StyledTableHeader>
-								{previewData.output.data.headers.map(
-									(header: string, index: number) => (
-										<StyledHeaderCell key={index}>
-											{header}
-										</StyledHeaderCell>
-									),
-								)}
+								{headers.map((header: string) => (
+									<StyledHeaderCell key={`header-${header}`}>
+										{header}
+									</StyledHeaderCell>
+								))}
 							</StyledTableHeader>
 						)}
 
-						{previewData.output.data.values && (
-							<StyledTableBody
-								isExpanded={isExpanded}
-								data-testid="query-results-table-body"
-							>
-								{previewData.output.data.values.length === 0 ? (
+						{values && (
+							<StyledTableBody data-testid="query-results-table-body">
+								{values.length === 0 ? (
 									<StyledEmptyDataContainer>
 										<Typography variant="body2">
 											No data returned
 										</Typography>
 									</StyledEmptyDataContainer>
 								) : (
-									previewData.output.data.values.map(
-										(row: any[], rowIndex: number) => (
-											<StyledTableRow key={rowIndex}>
-												{row.map(
-													(
-														cell: any,
-														cellIndex: number,
-													) => (
+									values.map((row: unknown[]) => (
+										<StyledTableRow
+											key={`row-${headers
+												.map((header, columnIndex) => {
+													const cell =
+														row[columnIndex];
+													return `${header}:${String(cell ?? "(null)")}`;
+												})
+												.join("|")}`}
+										>
+											{headers.map(
+												(
+													header: string,
+													columnIndex: number,
+												) => {
+													const cell =
+														row[columnIndex];
+													return (
 														<StyledDataCell
-															key={cellIndex}
+															key={`${header}-${String(cell ?? "(null)")}`}
 														>
 															{cell !== null &&
 															cell !== undefined
 																? String(cell)
 																: "(null)"}
 														</StyledDataCell>
-													),
-												)}
-											</StyledTableRow>
-										),
-									)
+													);
+												},
+											)}
+										</StyledTableRow>
+									))
 								)}
 							</StyledTableBody>
 						)}
