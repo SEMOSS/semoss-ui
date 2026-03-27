@@ -967,7 +967,7 @@ export const DatabaseForm = ({
 								<RadioGroup
 									value={field.value || ""}
 									onValueChange={field.onChange}
-									className="flex flex-row gap-4"
+									className="flex flex-wrap gap-4"
 									data-testid={`database-form-input-${val.key}`}
 								>
 									{val.options.options.map((opt) => (
@@ -1372,7 +1372,7 @@ export const DatabaseForm = ({
 							key={category}
 							className="mb-4 flex flex-col gap-4"
 						>
-							<div className="flex items-start gap-4">
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 								<div className="flex flex-1 flex-col gap-1">
 									<H4 data-testid="database-importForm-category-title">
 										{category}
@@ -1401,7 +1401,7 @@ export const DatabaseForm = ({
 								open={openAdvanced}
 								onOpenChange={setOpenAdvanced}
 							>
-								<div className="flex flex-row items-center justify-between">
+								<div className="flex flex-row items-center justify-between gap-2">
 									<H4 data-testid="database-advanced-settings-title">
 										Advanced Settings
 									</H4>
@@ -1421,7 +1421,7 @@ export const DatabaseForm = ({
 								</div>
 								<CollapsibleContent>
 									<div className="mb-4 flex flex-col gap-4">
-										<div className="flex items-start gap-4">
+										<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 											<div className="flex flex-1 flex-col gap-1">
 												<Muted
 													data-testid="database-advanced-settings-description"
@@ -1443,10 +1443,11 @@ export const DatabaseForm = ({
 						</div>
 					)}
 
-					<div className="mt-4 flex justify-end">
+					<div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
 						<Button
 							data-testid="database-form-connect-button"
 							type="submit"
+							className="w-full sm:w-auto"
 							disabled={
 								loading ||
 								!formState.isValid ||

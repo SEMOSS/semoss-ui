@@ -42,13 +42,16 @@ import { ModelTileCard } from "./model-tile-card";
  * Helper component to display provider icon with fallback to initials
  */
 const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
-	const [imageError, setImageError] = useState(false);
+	const providerColors: Record<string, string> = {
+		OpenAI: "#79b8bd",
+		"Google Gemini": "#78a9c2",
+		"Azure OpenAI": "#c78a85",
+		"AWS Bedrock": "#7f92c2",
+		"NVIDIA NIM": "#c6877f",
+		"OpenAI-Compatible": "#ab84c8",
+		Embedded: "#c47cb3",
+	};
 
-	const providerImage = Custom_Model_Image.find(
-		(img) => img.name === provider,
-	)?.imgURL;
-
-	// Generate fallback initials
 	const getInitials = (name: string) => {
 		return name
 			.split(/[^A-Za-z0-9]+/)
@@ -58,36 +61,13 @@ const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
 			.toUpperCase();
 	};
 
-	// Generate gradient background based on provider name
-	const getGradient = (name: string) => {
-		let hash = 0;
-		for (let i = 0; i < name.length; i++) {
-			hash = (hash << 5) - hash + name.charCodeAt(i);
-			hash |= 0;
-		}
-		const base = Math.abs(hash) % 360;
-		const hue2 = (base + 35) % 360;
-		return `linear-gradient(135deg, hsl(${base} 45% 70%), hsl(${hue2} 40% 60%))`;
-	};
-
-	if (!providerImage || imageError) {
-		return (
-			<div
-				className="flex size-5 shrink-0 items-center justify-center rounded font-semibold text-[10px] text-white"
-				style={{ background: getGradient(provider) }}
-			>
-				{getInitials(provider)}
-			</div>
-		);
-	}
-
 	return (
-		<img
-			src={providerImage}
-			alt={`${provider} logo`}
-			className="size-5 shrink-0 rounded object-contain"
-			onError={() => setImageError(true)}
-		/>
+		<div
+			className="flex size-5 shrink-0 items-center justify-center rounded-[4px] font-semibold text-[10px] text-white"
+			style={{ backgroundColor: providerColors[provider] || "#8aa0b4" }}
+		>
+			{getInitials(provider)}
+		</div>
 	);
 };
 
@@ -203,7 +183,7 @@ export const ModelImport: React.FC = () => {
 				return (
 					<div className="flex flex-col">
 						{/* Search Bar and Upload Button */}
-						<div className="mt-3 mb-4 flex w-full items-start gap-2">
+						<div className="mt-3 mb-4 flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-start">
 							<InputGroup className="flex-1 border-b-2 border-none">
 								<InputGroupAddon>
 									<SearchIcon className="size-4 text-muted-foreground" />
@@ -222,7 +202,7 @@ export const ModelImport: React.FC = () => {
 								variant="outline"
 								onClick={() => handleFileUpload(true)}
 								data-testid="model-upload-file-button"
-								className="rounded-md"
+								className="w-full rounded-md sm:w-auto"
 							>
 								<UploadIcon className="size-5" />
 							</Button>
@@ -238,7 +218,7 @@ export const ModelImport: React.FC = () => {
 									}}
 									className="mt-1"
 								>
-									<TabsList>
+									<TabsList className="w-full flex-nowrap justify-start overflow-x-auto overflow-y-hidden sm:w-auto">
 										{importableModels.providers.map(
 											(provider) => (
 												<TabsTrigger
@@ -247,7 +227,7 @@ export const ModelImport: React.FC = () => {
 													data-testid={formatToDataTestId(
 														`connect-to-${provider.name}-tab`,
 													)}
-													className="flex h-[32px] items-center gap-2 px-2 py-1"
+													className="flex h-[32px] shrink-0 items-center gap-2 px-2 py-1"
 												>
 													<ProviderIcon
 														provider={provider.name}
@@ -262,64 +242,61 @@ export const ModelImport: React.FC = () => {
 
 									<TabsContent value={selectedProvider}>
 										{/* Models Grid */}
-										<div className="mt-1 grid grid-cols-6 gap-2">
-											<div>
-												{(() => {
-													const providerDocsLinkMap: Record<
-														string,
-														string
-													> = {
-														OpenAI: "https://platform.openai.com/docs/models",
-														"Azure OpenAI":
-															"https://learn.microsoft.com/azure/ai-services/openai/concepts/models",
-														"AWS Bedrock":
-															"https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html",
-														"Google Vertex AI":
-															"https://cloud.google.com/vertex-ai/docs/model-garden",
-														"NVIDIA NIM":
-															"https://build.nvidia.com/models",
-														"OpenAI-Compatible":
-															"https://platform.openai.com/docs/models",
-													};
+										<div className="mt-1 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+											{(() => {
+												const providerDocsLinkMap: Record<
+													string,
+													string
+												> = {
+													OpenAI: "https://platform.openai.com/docs/models",
+													"Azure OpenAI":
+														"https://learn.microsoft.com/azure/ai-services/openai/concepts/models",
+													"AWS Bedrock":
+														"https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html",
+													"Google Gemini":
+														"https://cloud.google.com/vertex-ai/docs/model-garden",
+													"NVIDIA NIM":
+														"https://build.nvidia.com/models",
+													"OpenAI-Compatible":
+														"https://platform.openai.com/docs/models",
+												};
 
-													const othersModel = {
-														name: "Others",
-														display: `Other ${selectedProvider} models`,
-														icon: selectedImage,
-														description: `Connect to any current or legacy ${selectedProvider} model not listed above by entering its name and credentials.`,
-														embedding: false,
-														disable: false,
-														link:
-															providerDocsLinkMap[
-																selectedProvider
-															] || undefined,
-													};
+												const othersModel = {
+													name: "Others",
+													display: `Other ${selectedProvider} models`,
+													icon: selectedImage,
+													description: `Connect to any current or legacy ${selectedProvider} model not listed above by entering its name and credentials.`,
+													embedding: false,
+													disable: false,
+													link:
+														providerDocsLinkMap[
+															selectedProvider
+														] || undefined,
+												};
 
-													return (
-														<ModelTileCard
-															model={othersModel}
-															onModelSelect={() => {
-																setSelectedModel(
-																	"",
-																);
-															}}
-														/>
-													);
-												})()}
-											</div>
-											{models.map((model) => (
-												<div key={model.name}>
+												return (
 													<ModelTileCard
-														model={model}
-														onModelSelect={(
-															selected,
-														) => {
+														model={othersModel}
+														onModelSelect={() => {
 															setSelectedModel(
-																selected.name,
+																"",
 															);
 														}}
 													/>
-												</div>
+												);
+											})()}
+											{models.map((model) => (
+												<ModelTileCard
+													key={model.name}
+													model={model}
+													onModelSelect={(
+														selected,
+													) => {
+														setSelectedModel(
+															selected.name,
+														);
+													}}
+												/>
 											))}
 										</div>
 									</TabsContent>
@@ -436,7 +413,7 @@ export const ModelImport: React.FC = () => {
 					onOpenChange={setIsFileUploadModalOpen}
 				>
 					<DialogContent
-						className="w-[600px]"
+						className="w-[calc(100vw-2rem)] max-w-[600px] sm:w-[600px]"
 						data-testid="model-zip-upload-modal"
 					>
 						<div className="flex h-full w-full flex-col gap-4">
@@ -482,7 +459,7 @@ export const ModelImport: React.FC = () => {
 									</div>
 								)}
 							</div>
-							<div className="flex flex-row justify-end gap-2">
+							<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 								<Button
 									size="sm"
 									variant="ghost"
@@ -490,7 +467,7 @@ export const ModelImport: React.FC = () => {
 										setIsFileUploadModalOpen(false)
 									}
 									data-testid="model-upload-close-button"
-									className="rounded-xl"
+									className="w-full rounded-xl sm:w-auto"
 								>
 									Close
 								</Button>
@@ -500,7 +477,7 @@ export const ModelImport: React.FC = () => {
 									disabled={!filedata || formLoading}
 									onClick={() => onSubmit(filedata)}
 									data-testid="model-upload-submit-button"
-									className="rounded-xl"
+									className="w-full rounded-xl sm:w-auto"
 								>
 									Upload
 								</Button>

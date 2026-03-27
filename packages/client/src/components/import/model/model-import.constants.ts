@@ -75,9 +75,9 @@ export const IMPORTABLE_MODELS = {
 			Credentials:
 				"Enter your OpenAI API key to securely authenticate and enable access to the OpenAI endpoints.",
 		},
-		"Google Vertex AI": {
+		"Google Gemini": {
 			General:
-				"Integrate with Google Vertex AI for scalable, production-ready machine learning workflows with Google Cloud infrastructure.",
+				"Integrate with Google Gemini for scalable, production-ready machine learning workflows with Google Cloud infrastructure.",
 			Settings:
 				"Set your project ID, model name, and region to correctly route API calls within your Vertex AI environment.",
 			Credentials:
@@ -359,7 +359,7 @@ export const IMPORTABLE_MODELS = {
 			],
 		},
 		{
-			name: "Google Vertex AI",
+			name: "Google Gemini",
 			types: [
 				{
 					model_types: ["llm"],
@@ -1689,7 +1689,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "gpt-5",
 			display: "GPT-5",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			description:
 				"Previous intelligent reasoning model for coding and agentic tasks with configurable reasoning effort.",
 			link: "https://platform.openai.com/docs/models/gpt-5",
@@ -1697,7 +1697,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "gpt-5.1",
 			display: "GPT-5.1",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			description:
 				"The best model for coding and agentic tasks with configurable reasoning effort.",
 			link: "https://platform.openai.com/docs/models/gpt-5.1",
@@ -1705,7 +1705,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "gpt-5-mini",
 			display: "GPT-5 Mini",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			description:
 				"A faster, cost-efficient GPT-5 variant optimized for well-defined tasks and precise prompts.",
 			link: "https://platform.openai.com/docs/models/gpt-5-mini",
@@ -1713,7 +1713,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "gpt-5-nano",
 			display: "GPT-5 nano",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			description:
 				"Fastest, most cost-efficient GPT-5 variant ideal for high-volume summarization and classification.",
 			link: "https://platform.openai.com/docs/models/gpt-5-nano",
@@ -1721,7 +1721,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "gpt-4",
 			display: "GPT 4",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			description:
 				"Older high-intelligence GPT model still available for Chat Completions.",
 			link: "https://platform.openai.com/docs/models/gpt-4",
@@ -1729,7 +1729,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "gpt-3.5-turbo",
 			display: "GPT 3.5 Turbo",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			description:
 				"Legacy GPT model for economical natural language and code generation across chat and non-chat tasks.",
 			link: "https://platform.openai.com/docs/models/gpt-3.5-turbo",
@@ -1737,14 +1737,14 @@ export const MODEL_VERSIONS = {
 		{
 			name: "gpt-4o",
 			display: "GPT-4o",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			description: "Fast, intelligent, flexible GPT model",
 			link: "https://platform.openai.com/docs/models/gpt-4o",
 		},
 		{
 			name: "dall-e-3",
 			display: "DALL E 3",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			description:
 				"Previous generation image model that creates new images from natural language prompts in specified sizes.",
 			link: "https://platform.openai.com/docs/models/dall-e-3",
@@ -1752,7 +1752,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "dall-e-2",
 			display: "DALL E 2",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			description:
 				"Earlier image generation model offering more granular prompt control and higher parallel request throughput.",
 			link: "https://platform.openai.com/docs/models/dall-e-2",
@@ -1760,7 +1760,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "text-embedding-3-large",
 			display: "text-embedding-3-large",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			embedding: true,
 			description:
 				"Most capable multilingual embedding model for semantic search, clustering, recommendations, anomaly detection, and classification.",
@@ -1769,7 +1769,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "text-embedding-3-small",
 			display: "text-embedding-3-small",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			embedding: true,
 			description:
 				"Smaller, cost-efficient embedding model for semantic similarity, search, and lightweight classification tasks.",
@@ -1778,7 +1778,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "gpt-audio",
 			display: "gpt-audio",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			audio: true,
 			disable: true,
 			description:
@@ -1788,7 +1788,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "gpt-image-1",
 			display: "GPT Image 1",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			image: true,
 			disable: true,
 			description:
@@ -1796,11 +1796,11 @@ export const MODEL_VERSIONS = {
 			link: "https://platform.openai.com/docs/models/gpt-image-1",
 		},
 	],
-	"Google Vertex AI": [
+	"Google Gemini": [
 		{
 			name: "gemini-2.5-pro",
 			display: "Gemini 2.5 Pro",
-			icon: "/src/assets/img/VERTEX_AI.png",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
 			link: "https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-2.5-pro",
 			description:
@@ -1809,7 +1809,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "gemini-pro",
 			display: "Gemini Pro",
-			icon: "/src/assets/img/VERTEX_AI.png",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
 			link: "https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-3-pro-preview",
 			description:
@@ -1818,7 +1818,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "gemini-ultra",
 			display: "Gemini Ultra",
-			icon: "/src/assets/img/VERTEX_AI.png",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
 			link: "https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-3-pro-preview",
 			description:
@@ -1827,7 +1827,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "gemma-2b",
 			display: "Gemma 2b",
-			icon: "/src/assets/img/VERTEX_AI.png",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
 			link: "https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemma",
 			description:
@@ -1836,7 +1836,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "llama-2-7b",
 			display: "Llama 2-7b",
-			icon: "/src/assets/img/VERTEX_AI.png",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
 			link: "https://console.cloud.google.com/vertex-ai/publishers/meta/model-garden/llama2",
 			description:
@@ -1845,7 +1845,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "llama-2-70b",
 			display: "Llama 2-70b",
-			icon: "/src/assets/img/VERTEX_AI.png",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
 			link: "https://console.cloud.google.com/vertex-ai/publishers/meta/model-garden/llama2",
 			description:
@@ -1854,7 +1854,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "text-bison",
 			display: "PaLM 2 Bison",
-			icon: "/src/assets/img/VERTEX_AI.png",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
 			description:
 				"PaLM 2-based model for high-quality text generation, summarization, and content creation.",
@@ -1862,7 +1862,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "text-bison-32k",
 			display: "PaLM 2 Bison (32k)",
-			icon: "/src/assets/img/VERTEX_AI.png",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
 			description:
 				"PaLM 2 Bison variant with extended 32k context window for long-form content and document processing.",
@@ -1870,7 +1870,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "code-bison",
 			display: "Code Generation Bison",
-			icon: "/src/assets/img/VERTEX_AI.png",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
 			description:
 				"PaLM 2-based model specialized for code generation, completion, and code understanding tasks.",
@@ -1878,7 +1878,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "mistral-7b",
 			display: "Mistral",
-			icon: "/src/assets/img/VERTEX_AI.png",
+			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
 			link: "https://console.cloud.google.com/vertex-ai/publishers/mistral-ai/model-garden/mistral",
 			description:
@@ -1889,7 +1889,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "azure-openai",
 			display: "Azure Open AI",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			embedding: false,
 			link: "https://learn.microsoft.com/azure/ai-services/openai/concepts/models",
 			description:
@@ -1898,7 +1898,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "azure-open-ai-ada-embedder",
 			display: "Azure Open AI ADA Embedding",
-			icon: "/src/assets/img/OPEN_AI.png",
+			icon: "/src/assets/img/OPEN_AI.svg",
 			embedding: true,
 			link: "https://learn.microsoft.com/azure/ai-services/openai/concepts/models#embeddings",
 			description:
@@ -1909,7 +1909,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "anthropic.claude-3-opus-20240229-v1:0",
 			display: "Claude 3 Opus",
-			icon: "/src/assets/img/CLAUDE_AI.png",
+			icon: "/src/assets/img/BEDROCK.svg",
 			embedding: false,
 			link: "https://docs.anthropic.com/en/docs/models-overview",
 			description:
@@ -1918,7 +1918,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "anthropic.claude-3-sonnet-20240229-v1:0",
 			display: "Claude 3 Sonnet",
-			icon: "/src/assets/img/CLAUDE_AI.png",
+			icon: "/src/assets/img/BEDROCK.svg",
 			embedding: false,
 			link: "https://docs.anthropic.com/en/docs/models-overview",
 			description:
@@ -1927,7 +1927,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "anthropic.claude-3-haiku-20240307-v1:0",
 			display: "Claude 3 Haiku",
-			icon: "/src/assets/img/CLAUDE_AI.png",
+			icon: "/src/assets/img/BEDROCK.svg",
 			embedding: false,
 			link: "https://docs.anthropic.com/en/docs/models-overview",
 			description:
@@ -1936,7 +1936,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "anthropic.claude-v2",
 			display: "Claude 2.0",
-			icon: "/src/assets/img/CLAUDE_AI.png",
+			icon: "/src/assets/img/BEDROCK.svg",
 			embedding: false,
 			link: "https://docs.anthropic.com/en/docs/models-overview",
 			description:
@@ -1946,7 +1946,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "ai21.j2-ultra-v1",
 			display: "Jurassic-2 Ultra",
-			icon: "/src/assets/img/CLAUDE_AI.png",
+			icon: "/src/assets/img/BEDROCK.svg",
 			embedding: false,
 			link: "https://docs.ai21.com/docs/jurassic-2-models",
 			description:
@@ -1955,7 +1955,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "ai21.j2-mid-v1",
 			display: "Jurassic-2 Mid",
-			icon: "/src/assets/img/CLAUDE_AI.png",
+			icon: "/src/assets/img/BEDROCK.svg",
 			embedding: false,
 			link: "https://docs.ai21.com/docs/jurassic-2-models",
 			description:
@@ -1965,7 +1965,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "amazon.titan-text-express-v1",
 			display: "Titan Text G1 Express",
-			icon: "/src/assets/img/CLAUDE_AI.png",
+			icon: "/src/assets/img/BEDROCK.svg",
 			embedding: false,
 			link: "https://docs.aws.amazon.com/bedrock/latest/userguide/titan-models.html",
 			description:
@@ -1974,7 +1974,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "amazon.titan-text-lite-v1",
 			display: "Titan Text Lite",
-			icon: "/src/assets/img/CLAUDE_AI.png",
+			icon: "/src/assets/img/BEDROCK.svg",
 			embedding: false,
 			link: "https://docs.aws.amazon.com/bedrock/latest/userguide/titan-models.html",
 			description:
@@ -1983,7 +1983,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "amazon.titan-embed-text-v1",
 			display: "Titan Embeddings (text)",
-			icon: "/src/assets/img/CLAUDE_AI.png",
+			icon: "/src/assets/img/BEDROCK.svg",
 			embedding: true,
 			link: "https://docs.aws.amazon.com/bedrock/latest/userguide/titan-embedding-models.html",
 			description:
@@ -2077,7 +2077,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "Llama2 7B",
 			display: "Llama2 7B",
-			icon: "/src/assets/img/META.png",
+			icon: "/src/assets/img/META_COLOR.svg",
 			embedding: false,
 			link: "https://huggingface.co/meta-llama/Llama-2-7b-hf",
 			description:
@@ -2086,7 +2086,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "Llama2 13B",
 			display: "Llama2 13B",
-			icon: "/src/assets/img/META.png",
+			icon: "/src/assets/img/META_COLOR.svg",
 			embedding: false,
 			link: "https://huggingface.co/meta-llama/Llama-2-13b-hf",
 			description:
@@ -2095,7 +2095,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "Llama2 70B",
 			display: "Llama2 70B",
-			icon: "/src/assets/img/META.png",
+			icon: "/src/assets/img/META_COLOR.svg",
 			embedding: false,
 			link: "https://huggingface.co/meta-llama/Llama-2-70b-hf",
 			description:
@@ -2173,7 +2173,7 @@ export const MODEL_VERSIONS = {
 		{
 			name: "AWS TITAN TEXT EMBEDDINGS",
 			display: "AWS TITAN TEXT EMBEDDINGS",
-			icon: "/src/assets/img/Amazon_Titan.png",
+			icon: "/src/assets/img/AMAZON_TITAN.png",
 			embedding: false,
 			disable: true,
 		},
@@ -2195,11 +2195,14 @@ export const MODEL_VERSIONS = {
 };
 
 export const Custom_Model_Image = [
-	{ name: "OpenAI", imgURL: "/src/assets/img/OPEN_AI.png" },
-	{ name: "Google Vertex AI", imgURL: "/src/assets/img/VERTEX_AI.png" },
-	{ name: "Azure OpenAI", imgURL: "/src/assets/img/OPEN_AI.png" },
-	{ name: "AWS Bedrock", imgURL: "/src/assets/img/CLAUDE_AI.png" },
+	{ name: "OpenAI", imgURL: "/src/assets/img/OPEN_AI.svg" },
+	{ name: "Google Gemini", imgURL: "/src/assets/img/GEMINI_COLOR.svg" },
+	{ name: "Azure OpenAI", imgURL: "/src/assets/img/OPEN_AI.svg" },
+	{ name: "AWS Bedrock", imgURL: "/src/assets/img/BEDROCK.svg" },
 	{ name: "NVIDIA NIM", imgURL: "/src/assets/img/NEMO.png" },
-	{ name: "OpenAI-Compatible", imgURL: "/src/assets/img/OPEN_AI.png" },
-	{ name: "Embedded", imgURL: "/src/assets/img/OPEN_AI.png" },
+	{
+		name: "OpenAI-Compatible",
+		imgURL: "/src/assets/img/HUGGINGFACE_COLOR.svg",
+	},
+	{ name: "Embedded", imgURL: "/src/assets/img/OPEN_AI.svg" },
 ];
