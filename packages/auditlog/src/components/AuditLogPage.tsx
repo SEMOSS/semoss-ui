@@ -1,240 +1,477 @@
-import { RotateCw } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+/** biome-ignore-all lint/nursery/useSortedClasses: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+
+import { Loader2, Moon, Radio, Sun } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import {
-	AuditLogFilter,
-	AuditLogsDataTable,
-	AuditLogsTimeline,
+	type AuditLog,
+	ChartPanel,
+	EventHistory,
+	FiltersRow,
+	parseArg,
 } from "@semoss/shared";
-import { useNotification } from "@semoss/ui";
-import { Button, Skeleton } from "@semoss/ui/next";
+import { Button } from "@semoss/ui/next";
 import { useUserRootStore } from "@/hooks/useUserRootStore";
-import type { EventData } from "./common/utility";
 
-/**
- * This component displays the audit logs.
- *
- * @param {string} catalogName - The name of the catalog.
- */
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-export const AuditLogPage = ({ catalogName }) => {
-	const { insightId } = useInsight(); // fetching insight id for access
-	const [logs, setLogs] = useState<EventData[]>([]);
-	const [page, setPage] = useState(0);
-	const [rowsPerPage, setRowsPerPage] = useState(10);
-	const [totalCount, setTotalCount] = useState(0);
-	const [loading, setLoading] = useState<boolean>(true);
+type EngineOption = { value: string; label: string };
+type EngineDetails = Record<string, EngineOption[]>;
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const ROWS_PER_PAGE = 10;
+
+const ENGINE_TYPES = [
+	"APP",
+	"MODEL",
+	"DATABASE",
+	"VECTOR",
+	"FUNCTION",
+	"STORAGE",
+	"PROJECT",
+];
+
+const INITIAL_ENGINE_DETAILS: EngineDetails = Object.fromEntries(
+	ENGINE_TYPES.map((t) => [t, []]),
+);
+
+const DASHBOARD_DURATIONS = [
+	{ label: "Today", value: "today", dateRangeType: "DAY", dateRangeValue: 1 },
+	{
+		label: "Last 7 Days",
+		value: "7days",
+		dateRangeType: "WEEK",
+		dateRangeValue: 1,
+	},
+	{
+		label: "Last 30 Days",
+		value: "30days",
+		dateRangeType: "MONTH",
+		dateRangeValue: 1,
+	},
+	{
+		label: "Custom",
+		value: "custom",
+		dateRangeType: "CUSTOM",
+		dateRangeValue: 1,
+	},
+] as const;
+
+type DurationValue = (typeof DASHBOARD_DURATIONS)[number]["value"];
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export const AuditLogPage = () => {
+	const { insightId } = useInsight();
 	const rootStore = useUserRootStore(insightId);
-	const notification = useNotification();
+	const userId = rootStore?.user?.id ?? "";
+
+	// ── UI state ──
+	const [dark, setDark] = useState(true);
+	const [chartTab, setChartTab] = useState<"bar" | "timeline">("timeline");
+	const [chartPage, setChartPage] = useState(0);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [selected, setSelected] = useState<AuditLog | null>(null);
+	const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
+	// ── Data state ──
+	const [logs, setLogs] = useState<AuditLog[]>([]);
+	const [totalCount, setTotalCount] = useState(0);
+	const [loading, setLoading] = useState(false);
+	const [page, setPage] = useState(0);
+	const [engineDetails, setEngineDetails] = useState<EngineDetails>({
+		...INITIAL_ENGINE_DETAILS,
+	});
+
+	// ── Filter state ──
+	const [engineType, setEngType] = useState("");
+	const [engineId, setEngId] = useState("");
+	const todayStr = new Date().toISOString().split("T")[0];
+	const [dateFrom, setDateFrom] = useState(todayStr);
+	const [dateTo, setDateTo] = useState(todayStr);
+	const [durationValue, setDurationValue] = useState<DurationValue>("today");
+
+	// Mutable ref so fetchLogs always reads the latest filter values
+	// without needing them as useCallback dependencies (avoids re-subscribing)
 	const filteredData = useRef({
 		engineType: "",
 		engineId: "",
-		dashboardDuration: "",
-		customDateRange: { from: null, to: null },
-		SelectedDuration: {
-			label: "",
-			value: "",
-			dateRangeType: "",
-			dateRangeValue: 1,
-		},
+		customDateRange: { from: new Date(), to: new Date() },
+		SelectedDuration:
+			DASHBOARD_DURATIONS[0] as (typeof DASHBOARD_DURATIONS)[number],
 	});
 
-	/**
-	 * Fetches audit logs from the API.
-	 *
-	 * @param {number} limit - The limit of the logs to fetch.
-	 * @param {number} offset - The offset of the logs to fetch.
-	 */
-	const fetchLogs = async (limit: number, offset: number) => {
-		setLoading(true);
-		try {
-			const date = new Date();
-			const yyyy = date.getFullYear();
-			const mm = String(date.getMonth() + 1).padStart(2, "0");
-			const dd = String(date.getDate()).padStart(2, "0");
-			const hh = String(date.getHours()).padStart(2, "0");
-			const min = String(date.getMinutes()).padStart(2, "0");
-			const ss = String(date.getSeconds()).padStart(2, "0");
-
-			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-			const catalogId = filteredData.current.engineId ?? null;
-			catalogName = filteredData.current.engineType;
-			console.log(catalogName, "catalogName");
-			const startDate = new Date(
-				filteredData.current?.customDateRange?.from?.setUTCHours(
-					0,
-					0,
-					0,
-					0,
-				),
-			);
-			const endDate = new Date(
-				filteredData.current?.customDateRange?.to?.setUTCHours(
-					23,
-					59,
-					59,
-					999,
-				),
-			);
-			const SelectedDuration = filteredData.current.SelectedDuration;
-			const response = await runPixel(
-				`AuditLogReport(paramValues=[{"userId": "${rootStore?.user?.id}","projectId" : "${catalogName === "APP" ? catalogId : ""}","engineId": "${catalogName === "APP" ? "" : catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}","dateRangeType": "${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue": ${SelectedDuration.dateRangeValue} ${SelectedDuration.dateRangeType === "CUSTOM" ? `,"startDate": "${startDate?.toISOString()}", "endDate": "${endDate?.toISOString()}"` : ""}}]);`,
-				insightId,
-			);
-			const responseData = response.pixelReturn[0].output as {
-				logs: EventData[];
-				totalCount: number;
-			};
-			if (responseData?.logs) {
-				const responseLogs =
-					responseData?.logs as unknown as EventData[];
-				setLogs((responseLogs as unknown as EventData[]) || []);
-				setTotalCount(responseData?.totalCount || 0);
-			}
-			if (!responseData?.logs) {
-				const responseLogs = responseData as unknown as EventData[];
-				setLogs((responseLogs as unknown as EventData[]) || []);
-				setTotalCount(responseLogs?.length || 0);
-			}
-		} catch (error) {
-			setLogs([]);
-			// notification.add({
-			// 	color: "error",
-			// 	message: `Error fetching logs: ${error}`,
-			// });
-			console.error("Error fetching logs:", error);
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	/**
-	 * Handles pagination change by updating page and rows per page state and fetching logs with the new offset.
-	 * @param {number} newPage - The new page number.
-	 * @param {number} newRowsPerPage - The new number of rows per page.
-	 */
-	const handlePaginationChange = (
-		newPage: number,
-		newRowsPerPage: number,
-	) => {
-		const offset = newPage * newRowsPerPage;
-		setPage(newPage);
-		setRowsPerPage(newRowsPerPage);
-		fetchLogs(newRowsPerPage, offset);
-	};
-	// biome-ignore lint/correctness/useExhaustiveDependencies: adding fetchLogs causes infinite rerender and based on rootStore user id, data has to be fetched
+	// ── Dark mode setup ──
 	useEffect(() => {
-		//By default engine type and id is required to show the logs
-		if (
-			!catalogName ||
-			!rootStore?.user?.id ||
-			!filteredData.current?.engineId
-		) {
-			setLogs([]);
-			setLoading(false);
-			return;
-		}
-		if (
-			catalogName &&
-			rootStore?.user?.id &&
-			filteredData.current?.engineId
-		) {
-			setLogs([]);
-			fetchLogs(rowsPerPage, page * rowsPerPage);
-		}
-		//override the parent css which has id = home__content
-		const contentElement = document.getElementById("home__container");
-		if (contentElement) {
-			contentElement.style.padding = "32px";
-			contentElement.style.maxWidth = "none";
-		}
+		document.documentElement.classList.add("dark");
+	}, []);
 
-		return () => {
-			if (contentElement) {
-				//restore the original styles
-				contentElement.style.padding = "";
-				contentElement.style.maxWidth = "";
+	useEffect(() => {
+		document.documentElement.classList.toggle("dark", dark);
+	}, [dark]);
+
+	const toggleDark = () => setDark((d) => !d);
+
+	// ── Debug: log filter changes ──
+	useEffect(() => {
+		console.log("Filters:", {
+			engineType,
+			engineId,
+			dateFrom,
+			dateTo,
+			duration: durationValue,
+		});
+	}, [engineType, engineId, dateFrom, dateTo, durationValue]);
+
+	const fetchLogs = useCallback(
+		async (limit: number, offset: number) => {
+			if (!insightId || !userId) return;
+			setLoading(true);
+			try {
+				const now = new Date();
+				const pad = (n: number) => String(n).padStart(2, "0");
+				const dateTime =
+					`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ` +
+					`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+				const {
+					engineType: eType,
+					engineId: eId,
+					customDateRange,
+					SelectedDuration,
+				} = filteredData.current;
+
+				const startDate = customDateRange.from
+					? new Date(
+							new Date(customDateRange.from).setUTCHours(
+								0,
+								0,
+								0,
+								0,
+							),
+						)
+					: null;
+				const endDate = customDateRange.to
+					? new Date(
+							new Date(customDateRange.to).setUTCHours(
+								23,
+								59,
+								59,
+								999,
+							),
+						)
+					: null;
+
+				const customPart =
+					SelectedDuration.dateRangeType === "CUSTOM" &&
+					startDate &&
+					endDate
+						? `,"startDate":"${startDate.toISOString()}","endDate":"${endDate.toISOString()}"`
+						: "";
+
+				const pixel =
+					`AuditLogReport(paramValues=[{` +
+					`"userId":"${userId}",` +
+					`"projectId":"${eType === "APP" ? eId : ""}",` +
+					`"engineId":"${eType === "APP" ? "" : eId}",` +
+					`"dateTime":"${dateTime}",` +
+					`"limit":"${limit}",` +
+					`"offset":"${offset}",` +
+					`"dateRangeType":"${SelectedDuration.dateRangeType || "DAY"}",` +
+					`"dateRangeValue":${SelectedDuration.dateRangeValue}` +
+					`${customPart}}]);`;
+
+				const response = await runPixel(pixel, insightId);
+				const data = response.pixelReturn[0].output;
+
+				let logsArray: AuditLog[] = [];
+				let count = 0;
+
+				if (Array.isArray(data)) {
+					logsArray = data as AuditLog[];
+					count = data.length;
+				} else if (
+					data &&
+					typeof data === "object" &&
+					"logs" in data &&
+					Array.isArray(data.logs)
+				) {
+					logsArray = data.logs as AuditLog[];
+					count =
+						("totalCount" in data
+							? (data as { totalCount: number }).totalCount
+							: null) ?? data.logs.length;
+				}
+
+				setLogs(logsArray);
+				setTotalCount(count);
+			} catch (err) {
+				console.error("Error fetching audit logs:", err);
+				setLogs([]);
+			} finally {
+				setLoading(false);
 			}
-		};
-	}, [catalogName, rowsPerPage, page, rootStore?.user?.id]);
+		},
+		[insightId, userId],
+	);
 
-	/**
-	 * Updates the filtered data state with the new filter data and fetches logs with the new offset.
-	 * @param {object} filterData - The new filter data.
-	 */
-	const updateLogs = (filterData) => {
-		filteredData.current = {
-			...filterData,
-		};
-		fetchLogs(rowsPerPage, page * rowsPerPage);
+	// Refetch when page changes
+	useEffect(() => {
+		fetchLogs(ROWS_PER_PAGE, page * ROWS_PER_PAGE);
+	}, [page, fetchLogs]);
+
+	const fetchEngineDetails = useCallback(
+		async (type: string) => {
+			if (!insightId || !type) return;
+			try {
+				const updated: EngineDetails = { ...INITIAL_ENGINE_DETAILS };
+
+				if (type === "APP") {
+					const resp = await runPixel(`MyProjects();`, insightId);
+					const data = resp.pixelReturn[0].output as Array<{
+						project_id: string;
+						project_name: string;
+					}>;
+					updated.APP = data.map((p) => ({
+						value: p.project_id,
+						label: p.project_name,
+					}));
+				} else {
+					const resp = await runPixel(`MyEngines();`, insightId);
+					const data = resp.pixelReturn[0].output as Array<{
+						database_id: string;
+						app_type: string;
+						app_name: string;
+					}>;
+					data.forEach((engine) => {
+						if (Object.hasOwn(updated, engine.app_type)) {
+							updated[engine.app_type] = [
+								...updated[engine.app_type],
+								{
+									value: engine.database_id,
+									label: engine.app_name,
+								},
+							];
+						}
+					});
+				}
+				setEngineDetails((prev) => ({ ...prev, ...updated }));
+			} catch (err) {
+				console.error("Error fetching engine details:", err);
+			}
+		},
+		[insightId],
+	);
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// Filter handlers (passed down to FiltersRow)
+	// ─────────────────────────────────────────────────────────────────────────
+
+	const handleEngineTypeChange = (type: string) => {
+		setEngType(type);
+		setEngId("");
+		setChartPage(0);
+		filteredData.current.engineType = type;
+		filteredData.current.engineId = "";
+		if (type) fetchEngineDetails(type);
+		setPage(0);
+		fetchLogs(ROWS_PER_PAGE, 0);
 	};
+
+	const handleEngineChange = (id: string) => {
+		setEngId(id);
+		setChartPage(0);
+		filteredData.current.engineId = id;
+		setPage(0);
+		fetchLogs(ROWS_PER_PAGE, 0);
+	};
+
+	const handleDateChange = (from: string, to: string, preset?: string) => {
+		setDateFrom(from);
+		setDateTo(to);
+		setChartPage(0);
+		const duration =
+			DASHBOARD_DURATIONS.find((d) => d.value === preset) ??
+			DASHBOARD_DURATIONS[0];
+		setDurationValue(duration.value);
+		filteredData.current.customDateRange = {
+			from: from ? new Date(from) : new Date(),
+			to: to ? new Date(to) : new Date(),
+		};
+		filteredData.current.SelectedDuration = duration;
+		setPage(0);
+		fetchLogs(ROWS_PER_PAGE, 0);
+	};
+
+	const clearFilters = () => {
+		setEngType("");
+		setEngId("");
+		setChartPage(0);
+		filteredData.current.engineType = "";
+		filteredData.current.engineId = "";
+		setPage(0);
+		fetchLogs(ROWS_PER_PAGE, 0);
+	};
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// Derived values
+	// ─────────────────────────────────────────────────────────────────────────
+
+	const engineNames = useMemo(
+		() => (engineType ? (engineDetails[engineType] ?? []) : []),
+		[engineType, engineDetails],
+	);
+
+	const hasFilters = !!(engineType || engineId);
+
+	const avgLat =
+		Array.isArray(logs) && logs.length > 0
+			? (logs.reduce((s, l) => s + l.latency, 0) / logs.length).toFixed(1)
+			: "0";
+	const successCount = logs.filter((l) => l.status).length;
+	const failCount = logs.length - successCount;
+	const successPct = logs.length
+		? Math.round((successCount / logs.length) * 100)
+		: 0;
+
+	const totalPages = Math.ceil(totalCount / ROWS_PER_PAGE);
+
+	const searchFiltered = useMemo(() => {
+		if (!searchQuery.trim()) return logs;
+		const q = searchQuery.toLowerCase();
+		return logs.filter(
+			(l) =>
+				l.methodName.toLowerCase().includes(q) ||
+				l.engineName.toLowerCase().includes(q) ||
+				l.engineType.toLowerCase().includes(q) ||
+				parseArg(l.request).toLowerCase().includes(q) ||
+				l.spanId.toLowerCase().includes(q) ||
+				l.sessionId.toLowerCase().includes(q),
+		);
+	}, [logs, searchQuery]);
+
+	const sessions = useMemo(() => {
+		const map = new Map<string, AuditLog[]>();
+		searchFiltered.forEach((l) => {
+			const arr = map.get(l.sessionId) ?? [];
+			arr.push(l);
+			map.set(l.sessionId, arr);
+		});
+		return Array.from(map.entries());
+	}, [searchFiltered]);
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// Render
+	// ─────────────────────────────────────────────────────────────────────────
+
 	return (
-		<div className="flex flex-col gap-4 px-8 py-8">
-			<div className="flex w-full items-center py-4">
-				<h6 className="font-medium text-xl leading-[1.6] tracking-normal">
-					{catalogName} Insight Dashboard
-				</h6>
-				<div className="ml-auto flex flex-row gap-4">
-					{/* Disabled for now */}
-					{/* <Select
-							variant="outlined"
-							size="small"
-							onChange={() => {}}
-							sx={{ minWidth: 120 }}
-							value={"Last 30 Days"}
+		<div className="h-screen flex flex-col bg-background overflow-hidden">
+			{/* ── Top Bar ── */}
+			<div className="flex-shrink-0 border-b border-border bg-card">
+				<div className="max-w-[1600px] mx-auto px-4 flex items-center justify-between h-10">
+					<div className="flex items-center gap-2 text-xs">
+						<span className="text-foreground font-medium">
+							Audit Logs
+						</span>
+						{loading && (
+							<Loader2
+								size={11}
+								className="text-muted-foreground animate-spin"
+							/>
+						)}
+					</div>
+					<div className="flex items-center gap-3">
+						<div className="flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-secondary">
+							<Radio size={10} className="text-success" />
+							<span className="text-[10px] text-muted-foreground">
+								Live
+							</span>
+						</div>
+						<Button
+							onClick={toggleDark}
+							className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-[10px] cursor-pointer hover:text-primary"
+							variant="ghost"
 						>
-							<Menu.Item value="Last 30 Days">
-								Last 30 Days
-							</Menu.Item>
-							<Menu.Item value="Last 90 Days">
-								Last 90 Days
-							</Menu.Item>
-							<Menu.Item value="Last Year">Last Year</Menu.Item>
-						</Select> */}
-					<AuditLogFilter
-						updateLogs={updateLogs}
-						insightId={insightId}
+							{dark ? (
+								<>
+									<Sun size={11} />
+									Light
+								</>
+							) : (
+								<>
+									<Moon size={11} />
+									Dark
+								</>
+							)}
+						</Button>
+					</div>
+				</div>
+				<div className="h-px bg-gradient-to-r from-transparent via-primary to-transparent opacity-40" />
+			</div>
+
+			{/* ── Main Content ── */}
+			<div className="flex-1 min-h-0 max-w-[1600px] mx-auto w-full px-4 py-2 flex flex-col gap-2">
+				{/* Row 1: Stats + Filters */}
+				<FiltersRow
+					// stat card values
+					totalCount={totalCount}
+					successPct={successPct}
+					failCount={failCount}
+					avgLat={avgLat}
+					// engine filter state
+					engineType={engineType}
+					engineId={engineId}
+					engineNames={engineNames}
+					hasFilters={hasFilters}
+					// date range state
+					dateFrom={dateFrom}
+					dateTo={dateTo}
+					// handlers
+					onEngineTypeChange={handleEngineTypeChange}
+					onEngineChange={handleEngineChange}
+					onDateChange={handleDateChange}
+					onClearFilters={clearFilters}
+				/>
+
+				{/* Row 2: Chart (65%) + Event History (35%) */}
+				<div className="flex-1 min-h-0 grid grid-cols-[65fr_35fr] gap-2">
+					{/* Left: Chart + Detail panel */}
+					<ChartPanel
+						logs={logs}
+						loading={loading}
+						dark={dark}
+						selected={selected}
+						chartTab={chartTab}
+						chartPage={chartPage}
+						onSelectLog={setSelected}
+						onSetChartTab={setChartTab}
+						onSetChartPage={setChartPage}
 					/>
-					<Button
-						variant="default"
-						onClick={() => {
-							if (
-								filteredData.current.engineId &&
-								filteredData.current.engineType
-							)
-								fetchLogs(rowsPerPage, page * rowsPerPage);
-							else {
-								notification.add({
-									color: "info",
-									message:
-										"Please select Engine Type and Engine to fetch logs",
-								});
-							}
-						}}
-					>
-						<RotateCw className="mr-2 h-4 w-4" />
-						Refresh
-					</Button>
+					{/* Right: Event History + pagination */}
+					<EventHistory
+						loading={loading}
+						logs={logs}
+						searchFiltered={searchFiltered}
+						sessions={sessions}
+						totalCount={totalCount}
+						totalPages={totalPages}
+						selected={selected}
+						hoveredIdx={hoveredIdx}
+						searchQuery={searchQuery}
+						page={page}
+						onSelectLog={setSelected}
+						onHoverLog={setHoveredIdx}
+						onSearchChange={setSearchQuery}
+						onPageChange={setPage}
+					/>
 				</div>
 			</div>
-			{loading ? (
-				<div className="flex flex-col gap-4">
-					<Skeleton className="h-[400px] w-full rounded-md" />{" "}
-					<Skeleton className="h-[400px] w-full rounded-md" />
-				</div>
-			) : (
-				<>
-					<AuditLogsTimeline logs={logs} />
-					<AuditLogsDataTable
-						logs={logs}
-						totalCount={totalCount}
-						page={page}
-						rowsPerPage={rowsPerPage}
-						onPaginationChange={handlePaginationChange}
-					/>
-				</>
-			)}
 		</div>
 	);
 };
+
+export default AuditLogPage;
