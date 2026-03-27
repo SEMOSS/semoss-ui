@@ -30,7 +30,6 @@ export const RoomContextChart = ({
 	tokensMax,
 }: RoomContextChartProps) => {
 	const { t } = useTranslation("room");
-	tokensUsed = 1100000;
 
 	// Calculate the percentage of context used
 	const contextUsedPercent =
