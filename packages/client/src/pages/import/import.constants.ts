@@ -11,7 +11,7 @@ import AWS_COMPREHEND from "@/assets/img/AWS_COMPREHEND.png";
 import AWS_POLLY from "@/assets/img/AWS_POLLY.png";
 import AWS_TEXTRACT from "@/assets/img/AWS_TEXTRACT.png";
 import AWS_TRANSCRIBE from "@/assets/img/AWS_TRANSCRIBE.png";
-import AZURE_BLOB from "@/assets/img/AZURE_BLOB.png";
+import AZURE_BLOB from "@/assets/img/AZURE_BLOB.svg";
 import AZURE_SPEECH_TO_TEXT from "@/assets/img/AZURE_SPEECH_TO_TEXT.png";
 import BEDROCK from "@/assets/img/BEDROCK.svg";
 import BERT from "@/assets/img/BERT.png";

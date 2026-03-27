@@ -1,5 +1,5 @@
 import AMAZON_S3 from "@/assets/img/AMAZON_S3.png";
-import AZURE_BLOB from "@/assets/img/AZURE_BLOB.png";
+import AZURE_BLOB from "@/assets/img/AZURE_BLOB.svg";
 import CEPH from "@/assets/img/CEPH.png";
 import DREAMHOST from "@/assets/img/DREAMHOST.png";
 import DROPBOX from "@/assets/img/DROPBOX.png";
