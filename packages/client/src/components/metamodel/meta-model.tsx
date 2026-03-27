@@ -579,11 +579,34 @@ export const Metamodel = (props: MetamodelProps) => {
 	}, [resetKey, dataSourceId]);
 
 	useEffect(() => {
+		if (isEditable) {
+			return;
+		}
+
+		const nextNodes = injectIsAction(nodes || []);
+		const nextEdges = edges || [];
+
+		setData((prev) => {
+			if (
+				nodeIdsEqual(prev.nodes || [], nextNodes) &&
+				edgeIdsEqual(prev.edges || [], nextEdges)
+			) {
+				return prev;
+			}
+
+			return { nodes: nextNodes, edges: nextEdges };
+		});
+
+		setFlowNodes((prev) =>
+			nodeIdsEqual(prev || [], nextNodes) ? prev : nextNodes,
+		);
+		setFlowEdges((prev) =>
+			edgeIdsEqual(prev || [], nextEdges) ? prev : nextEdges,
+		);
+	}, [nodes, edges, isEditable, injectIsAction, setFlowNodes, setFlowEdges]);
+
+	useEffect(() => {
 		if (!isEditable) {
-			const processedNodes = injectIsAction(nodes || []);
-			setData({ nodes: processedNodes, edges: edges || [] });
-			setFlowNodes(processedNodes);
-			setFlowEdges(edges || []);
 			return;
 		}
 

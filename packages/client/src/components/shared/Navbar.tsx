@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import {
-	Container,
 	IconButton,
 	InputAdornment,
 	Stack,
@@ -27,17 +26,42 @@ const StyledNavbar = styled("div")(({ theme }) => ({
 	flexDirection: "row",
 	alignItems: "center",
 	justifyContent: "space-between",
-	gap: 0,
+	gap: theme.spacing(2),
 	padding: theme.spacing(0, 4),
+	[theme.breakpoints.down("md")]: {
+		gap: theme.spacing(1.5),
+		padding: theme.spacing(0, 2),
+	},
+	[theme.breakpoints.down("sm")]: {
+		gap: theme.spacing(1),
+		padding: theme.spacing(0, 1),
+	},
 }));
 
-const StyledLeft = styled(Stack)({
-	minWidth: 0,
-});
+const StyledLeft = styled(Stack)(({ theme }) => ({
+	minWidth: theme.spacing(6),
+	overflow: "hidden",
+}));
 
-const StyledContainer = styled(Container)({
-	maxWidth: "720px",
-});
+const StyledRight = styled(Stack)(({ theme }) => ({
+	minWidth: theme.spacing(6),
+}));
+
+const StyledContainer = styled("div")(({ theme }) => ({
+	flex: "0 1 auto",
+	flexBasis: "clamp(220px, 44vw, 640px)",
+	minWidth: 0,
+	width: "100%",
+	maxWidth: "640px",
+	[theme.breakpoints.down("md")]: {
+		flexBasis: "clamp(180px, 42vw, 520px)",
+		maxWidth: "520px",
+	},
+	[theme.breakpoints.down("sm")]: {
+		flexBasis: "clamp(120px, 50vw, 320px)",
+		maxWidth: "320px",
+	},
+}));
 
 const StyledTextField = styled(TextField)(() => ({
 	width: "100%",
@@ -100,7 +124,7 @@ export const Navbar: React.FC = observer(() => {
 				spacing={1}
 				flex={"1 1 0"}
 			></StyledLeft>
-			<StyledContainer maxWidth={false}>
+			<StyledContainer>
 				{page.navbar?.search ? (
 					<PlatformSearch
 						renderInput={(params) => (
@@ -125,7 +149,7 @@ export const Navbar: React.FC = observer(() => {
 					<>&nbsp;</>
 				)}
 			</StyledContainer>
-			<Stack
+			<StyledRight
 				id={"navbar--right"}
 				direction="row"
 				alignItems={"center"}
@@ -153,7 +177,7 @@ export const Navbar: React.FC = observer(() => {
 						/>
 					</>
 				)}
-			</Stack>
+			</StyledRight>
 		</StyledNavbar>
 	);
 });

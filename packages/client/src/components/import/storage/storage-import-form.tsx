@@ -159,7 +159,10 @@ export const StorageForm = ({
 					f.key === key
 						? {
 								...f,
-								options: (Array.isArray(output) ? output : []).map((opt) => ({
+								options: (Array.isArray(output)
+									? output
+									: []
+								).map((opt) => ({
 									display: opt[f.optionRule.optionDisplay],
 									value: opt[f.optionRule.optionValue],
 								})),
@@ -444,7 +447,7 @@ export const StorageForm = ({
 								<RadioGroup
 									value={field.value || ""}
 									onValueChange={field.onChange}
-									className="flex flex-row gap-4"
+									className="flex flex-wrap gap-4"
 									data-testid={`storage-form-input-${val.key}`}
 								>
 									{val.options.options.map((opt) => (
@@ -610,28 +613,51 @@ export const StorageForm = ({
 								/>
 								{field.value && field.value.length > 0 && (
 									<div className="flex flex-wrap gap-2">
-										{field.value.map((tag, index) => (
-											<span
-												key={index}
-												className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm"
-											>
-												{tag}
-												<button
-													type="button"
-													onClick={() => {
-														const newTags =
-															field.value.filter(
-																(_, i) =>
-																	i !== index,
-															);
-														field.onChange(newTags);
-													}}
-													className="text-muted-foreground hover:text-foreground"
-												>
-													×
-												</button>
-											</span>
-										))}
+										{(() => {
+											const tagCounts = new Map<
+												string,
+												number
+											>();
+											return field.value.map(
+												(tag, index) => {
+													const nextCount =
+														(tagCounts.get(tag) ??
+															0) + 1;
+													tagCounts.set(
+														tag,
+														nextCount,
+													);
+													return (
+														<span
+															key={`${tag}-${nextCount}`}
+															className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm"
+														>
+															{tag}
+															<button
+																type="button"
+																onClick={() => {
+																	const newTags =
+																		field.value.filter(
+																			(
+																				_,
+																				i,
+																			) =>
+																				i !==
+																				index,
+																		);
+																	field.onChange(
+																		newTags,
+																	);
+																}}
+																className="text-muted-foreground hover:text-foreground"
+															>
+																×
+															</button>
+														</span>
+													);
+												},
+											);
+										})()}
 									</div>
 								)}
 								{error && (
@@ -692,7 +718,7 @@ export const StorageForm = ({
 
 			{Object.keys(grouped).map((category) => (
 				<div key={category} className="mb-4 flex flex-col gap-4">
-					<div className="flex items-start gap-4">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 						<div className="flex flex-1 flex-col gap-1">
 							<H4 data-testid="storage-importForm-category-title">
 								{category}
@@ -721,7 +747,7 @@ export const StorageForm = ({
 						open={openAdvanced}
 						onOpenChange={setOpenAdvanced}
 					>
-						<div className="flex flex-row items-center justify-between">
+						<div className="flex flex-row items-center justify-between gap-2">
 							<H4 data-testid="storage-form-advanced-header">
 								Advanced Settings
 							</H4>
@@ -741,7 +767,7 @@ export const StorageForm = ({
 						</div>
 						<CollapsibleContent>
 							<div className="mb-4 flex flex-col gap-4">
-								<div className="flex items-start gap-4">
+								<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 									<div className="flex flex-1 flex-col gap-1">
 										<Muted className="text-base">
 											Configure advanced storage settings
@@ -759,11 +785,12 @@ export const StorageForm = ({
 				</div>
 			)}
 
-			<div className="mt-4 flex justify-end">
+			<div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
 				<Button
 					data-testid="storage-form-submit"
 					type="submit"
 					disabled={!formState.isValid || isValidDatabaseName}
+					className="w-full sm:w-auto"
 				>
 					Connect
 				</Button>
