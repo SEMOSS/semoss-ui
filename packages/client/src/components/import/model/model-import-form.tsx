@@ -1,5 +1,5 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: legacy click handlers */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: legacy click handlers */
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -32,8 +32,6 @@ import { formatToDataTestId } from "@/utility";
 import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
 
 interface ModelImportFormProps {
-	/** Optional model name being configured */
-	name?: string;
 	/**
 	 * Fields to be rendered in the form
 	 */
@@ -54,7 +52,6 @@ interface ModelImportFormProps {
 
 export const ModelImportForm = (props: ModelImportFormProps) => {
 	const {
-		name,
 		fields,
 		advanced,
 		onComplete,
@@ -88,15 +85,8 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		mode: "onChange",
 		defaultValues: [...fields, ...advanced].reduce<Record<string, unknown>>(
 			(acc, f) => {
-				// if a name was supplied for the model, lock the MODEL field to that name
-				if (f.key === "MODEL" && name) {
-					acc[f.key] = name;
-				} else {
-					acc[f.key] =
-						f.default ??
-						f.value ??
-						(f.type === "boolean" ? false : "");
-				}
+				acc[f.key] =
+					f.default ?? f.value ?? (f.type === "boolean" ? false : "");
 				return acc;
 			},
 			{},
@@ -121,15 +111,11 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	useEffect(() => {
 		const defaults: Record<string, unknown> = {};
 		[...fields, ...advanced].forEach((f) => {
-			if (f.key === "MODEL" && name) {
-				defaults[f.key] = name;
-			} else {
-				defaults[f.key] =
-					f.default ?? f.value ?? (f.type === "boolean" ? false : "");
-			}
+			defaults[f.key] =
+				f.default ?? f.value ?? (f.type === "boolean" ? false : "");
 		});
 		reset(defaults);
-	}, [fields, advanced, reset, name]);
+	}, [fields, advanced, reset]);
 
 	const getHelperText = (error, val) => {
 		if (!error) return val.helperText || "";
@@ -266,10 +252,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 	const renderField = (f: FieldDefinition) => {
 		const defaultVal =
-			f.key === "MODEL" && name
-				? name
-				: (f.default ?? f.value ?? (f.type === "boolean" ? false : ""));
-		const isLockedModel = f.key === "MODEL" && !!name;
+			f.default ?? f.value ?? (f.type === "boolean" ? false : "");
 
 		if (f.type === "hidden") {
 			return (
@@ -341,7 +324,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 					formState: { errors },
 				}) => {
 					switch (f.type) {
-						case "text":
+						case "text": {
+							const isReadOnlyInitScript =
+								f.key === "INIT_MODEL_ENGINE" && !!f.disabled;
 							return (
 								<Field>
 									<FieldLabel htmlFor={f.key}>
@@ -409,7 +394,17 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 												}, 300);
 											}
 										}}
-										disabled={f.disabled || isLockedModel}
+										disabled={
+											isReadOnlyInitScript
+												? false
+												: f.disabled
+										}
+										readOnly={isReadOnlyInitScript}
+										className={
+											isReadOnlyInitScript
+												? "cursor-not-allowed overflow-x-auto whitespace-nowrap font-mono disabled:opacity-50"
+												: undefined
+										}
 										autoComplete="off"
 										data-testId={formatToDataTestId(
 											`importForm-${f.label}-textField`,
@@ -426,6 +421,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									</FieldDescription>
 								</Field>
 							);
+						}
 						case "file-upload":
 							return (
 								<div
@@ -590,7 +586,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										onChange={(e) =>
 											field.onChange(e.target.value)
 										}
-										disabled={f.disabled || isLockedModel}
+										disabled={f.disabled}
 										autoComplete="off"
 										data-testId={formatToDataTestId(
 											`model-importForm-${f.label}-url`,
@@ -616,7 +612,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										onChange={(e) =>
 											field.onChange(e.target.value)
 										}
-										disabled={f.disabled || isLockedModel}
+										disabled={f.disabled}
 										autoComplete="new-password"
 										data-testId={formatToDataTestId(
 											`model-importForm-${f.label}-password`,
@@ -647,7 +643,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										onChange={(e) =>
 											field.onChange(e.target.value)
 										}
-										disabled={f.disabled || isLockedModel}
+										disabled={f.disabled}
 										autoComplete="off"
 										data-testId={formatToDataTestId(
 											`model-importForm-${f.label}`,
@@ -694,7 +690,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 											field.onChange(e.target.value)
 										}
 										rows={4}
-										disabled={f.disabled || isLockedModel}
+										disabled={f.disabled}
 										autoComplete="off"
 										data-testId={formatToDataTestId(
 											`model-importForm-${f.label}-textarea`,
@@ -718,7 +714,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										onValueChange={(value) =>
 											field.onChange(value)
 										}
-										disabled={f.disabled || isLockedModel}
+										disabled={f.disabled}
 									>
 										<SelectTrigger
 											id={f.key}
@@ -756,7 +752,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 											field.onChange(checked);
 										}}
 										required={f.required}
-										disabled={f.disabled || isLockedModel}
+										disabled={f.disabled}
 									/>
 									<P
 										data-testId={formatToDataTestId(
