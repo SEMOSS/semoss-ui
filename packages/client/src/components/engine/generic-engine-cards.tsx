@@ -48,7 +48,10 @@ import { formatToDataTestId } from "@/utility";
  */
 const findDBImage = (appType: string, appSubType: string) => {
 	const normalizeEngineKey = (value?: string) =>
-		(value || "").trim().replaceAll(" ", "_").toUpperCase();
+		(value || "")
+			.trim()
+			.replace(/[^A-Za-z0-9]+/g, "_")
+			.toUpperCase();
 	const typeKey = normalizeEngineKey(appType);
 	const subtypeKey = normalizeEngineKey(appSubType);
 	const images = ENGINE_IMAGES[typeKey] || [];
