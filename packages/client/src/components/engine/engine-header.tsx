@@ -57,7 +57,9 @@ export const EngineHeader: React.FC = () => {
 
 	const findDBImage = (appType: string, appSubType: string) => {
 		const typeKey = normalizeEngineKey(appType);
-		const subtypeKey = normalizeEngineKey(appSubType);
+		const subtypeKeyRaw = normalizeEngineKey(appSubType);
+		const subtypeKey =
+			subtypeKeyRaw === "GUANACO" ? "HUGGINGFACE" : subtypeKeyRaw;
 		const images = ENGINE_IMAGES[typeKey] || [];
 		const obj = images.find((ele) => {
 			return normalizeEngineKey(ele.name) === subtypeKey;
