@@ -53,7 +53,9 @@ const findDBImage = (appType: string, appSubType: string) => {
 			.replace(/[^A-Za-z0-9]+/g, "_")
 			.toUpperCase();
 	const typeKey = normalizeEngineKey(appType);
-	const subtypeKey = normalizeEngineKey(appSubType);
+	const subtypeKeyRaw = normalizeEngineKey(appSubType);
+	const subtypeKey =
+		subtypeKeyRaw === "GUANACO" ? "HUGGINGFACE" : subtypeKeyRaw;
 	const images = ENGINE_IMAGES[typeKey] || [];
 	const obj = images.find((ele) => {
 		return normalizeEngineKey(ele.name) === subtypeKey;

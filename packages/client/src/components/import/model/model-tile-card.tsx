@@ -9,11 +9,8 @@ import {
 } from "@semoss/ui/next";
 import AZURE_OPEN_AI from "@/assets/img/AZURE_OPEN_AI.svg";
 import BEDROCK from "@/assets/img/BEDROCK.svg";
-import BERT from "@/assets/img/BERT.png";
 import BRAIN from "@/assets/img/BRAIN.png";
 import CLAUDE_AI from "@/assets/img/CLAUDE_AI.svg";
-import DOLLY_AI from "@/assets/img/DOLLY_AI.jpg";
-import ELEUTHER_AI from "@/assets/img/ELEUTHER_AI.png";
 import FALCON_AI from "@/assets/img/FALCON_AI.png";
 import FLAN from "@/assets/img/FLAN.jpg";
 import GEMINI_COLOR from "@/assets/img/GEMINI_COLOR.svg";
@@ -26,30 +23,30 @@ import ORCA from "@/assets/img/ORCA.png";
 import PERPLEXITY from "@/assets/img/PERPLEXITY.svg";
 import REPLIT_CODE from "@/assets/img/REPLIT_CODE.png";
 import STABILITY_AI from "@/assets/img/STABILITY_AI.png";
-import VICUNA from "@/assets/img/VICUNA.jpg";
 import { formatToDataTestId } from "@/utility";
 
 const MODEL_ICON_BY_FILE_NAME: Record<string, string> = {
+	// Stable provider/brand keys (keep alphabetical)
 	"AZURE_OPEN_AI.svg": AZURE_OPEN_AI,
 	"BEDROCK.svg": BEDROCK,
-	"BERT.png": BERT,
-	"BRAIN.png": BRAIN,
 	"CLAUDE_AI.svg": CLAUDE_AI,
-	"DOLLY_AI.jpg": DOLLY_AI,
-	"ELEUTHER_AI.png": ELEUTHER_AI,
-	"FALCON_AI.png": FALCON_AI,
-	"FLAN.jpg": FLAN,
 	"GEMINI_COLOR.svg": GEMINI_COLOR,
 	"HUGGINGFACE_COLOR.svg": HUGGINGFACE_COLOR,
 	"META_COLOR.svg": META_COLOR,
-	"MOSAIC.png": MOSAIC,
 	"NEMO.png": NEMO,
 	"OPEN_AI.svg": OPEN_AI,
-	"ORCA.png": ORCA,
 	"PERPLEXITY.svg": PERPLEXITY,
+
+	// Self-hosted / long-tail keys (keep alphabetical)
+	"FALCON_AI.png": FALCON_AI,
+	"FLAN.jpg": FLAN,
+	"MOSAIC.png": MOSAIC,
+	"ORCA.png": ORCA,
 	"REPLIT_CODE.png": REPLIT_CODE,
 	"STABILITY_AI.png": STABILITY_AI,
-	"VICUNA.jpg": VICUNA,
+
+	// Fallback/default
+	"BRAIN.png": BRAIN,
 };
 
 const resolveModelIcon = (icon?: string) => {

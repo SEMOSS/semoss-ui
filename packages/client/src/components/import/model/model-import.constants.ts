@@ -98,7 +98,7 @@ export interface ModelVersionDefinition {
 }
 
 export type ModelVersionsByProvider = Record<string, ModelVersionDefinition[]>;
-export const UNKNOWN_MODEL_BRAND = "GUANACO";
+export const UNKNOWN_MODEL_BRAND = "HUGGINGFACE";
 
 export const OTHER_MODEL_FORM_CONFIG_BY_PROVIDER: Record<
 	string,
@@ -2876,7 +2876,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			name: "other-embedded-model",
 			display: "Other Embedded Model",
 			icon: "/src/assets/img/BRAIN.png",
-			modelBrand: "GUANACO",
+			modelBrand: "HUGGINGFACE",
 			embedding: false,
 			description:
 				"Configure any embedded model not listed above by supplying its model name and custom init script.",
@@ -3379,7 +3379,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			name: "other-self-hosted-model",
 			display: "Other Self Hosted Model",
 			icon: "/src/assets/img/HUGGINGFACE_COLOR.svg",
-			modelBrand: "GUANACO",
+			modelBrand: "HUGGINGFACE",
 			embedding: false,
 			link: "https://platform.openai.com/docs/models",
 			description:
@@ -3390,7 +3390,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			name: "other-self-hosted-embedding-model",
 			display: "Other Self Hosted Embedding Model",
 			icon: "/src/assets/img/HUGGINGFACE_COLOR.svg",
-			modelBrand: "GUANACO",
+			modelBrand: "HUGGINGFACE",
 			embedding: true,
 			link: "https://platform.openai.com/docs/guides/embeddings",
 			description:
