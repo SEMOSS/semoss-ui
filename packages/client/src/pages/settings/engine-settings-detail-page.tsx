@@ -84,6 +84,7 @@ export const EngineSettingsUserDetailPage = (
 					type={type}
 					name={"engine"}
 					id={id}
+					direction="row"
 					onDelete={() => {
 						navigate("..", { relative: "path" });
 					}}
@@ -92,7 +93,7 @@ export const EngineSettingsUserDetailPage = (
 			<StyledContent>
 				<ToggleTabsGroup
 					value={view}
-					onChange={(e, v) => setView(v as VIEW)}
+					onChange={(_e, v) => setView(v as VIEW)}
 				>
 					<ToggleTabsGroup.Item label="Member" value={"CURRENT"} />
 					<ToggleTabsGroup.Item
@@ -133,6 +134,7 @@ export const EngineSettingsAdminDetailPage = (
 				type={type}
 				name={"engine"}
 				id={id}
+				direction="row"
 				onDelete={() => {
 					navigate("..", { relative: "path" });
 				}}
@@ -140,7 +142,7 @@ export const EngineSettingsAdminDetailPage = (
 			<StyledContent>
 				<ToggleTabsGroup
 					value={view}
-					onChange={(e, v) => setView(v as VIEW)}
+					onChange={(_e, v) => setView(v as VIEW)}
 				>
 					<ToggleTabsGroup.Item label="Member" value={"CURRENT"} />
 					<ToggleTabsGroup.Item

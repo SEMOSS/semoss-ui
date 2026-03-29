@@ -3,12 +3,6 @@ import { useEffect, useState } from "react";
 import {
 	Button,
 	Card,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	P,
 	Spinner,
 	Switch,
@@ -24,6 +18,7 @@ import {
 	setProjectVisiblity,
 } from "@/api";
 import databaseIcon from "@/assets/img/databaseIcon.png";
+import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
 import { formatToDataTestId } from "@/utility";
@@ -152,7 +147,26 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			setDiscoverable(data.project_discoverable);
 			setGlobal(data.project_global);
 		}
-	}, [engineInfo.status, engineInfo.data]);
+	}, [engineInfo.status, engineInfo.data, type]);
+
+	const isProjectType = type === "PROJECT";
+	const entityLabel = isProjectType ? "App" : "Engine";
+	const engineInfoObject =
+		engineInfo.data && typeof engineInfo.data === "object"
+			? (engineInfo.data as Record<string, unknown>)
+			: null;
+	const deleteTargetName =
+		([
+			engineInfoObject?.engine_display_name,
+			engineInfoObject?.engine_name,
+			engineInfoObject?.database_name,
+			engineInfoObject?.app_display_name,
+			engineInfoObject?.app_name,
+			engineInfoObject?.project_name,
+			name,
+		].find(
+			(value) => typeof value === "string" && value.trim().length > 0,
+		) as string | undefined) || name;
 
 	/**
 	 * Delete the item
@@ -468,37 +482,20 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							</Button>
 						}
 					/>
-					<Dialog open={deleteModal} onOpenChange={setDeleteModal}>
-						<DialogContent>
-							<DialogHeader>
-								<DialogTitle>Are you sure?</DialogTitle>
-								<DialogDescription>
-									This action is irreversable. This will
-									permanentely delete this {name}.
-								</DialogDescription>
-							</DialogHeader>
-							<DialogFooter>
-								<Button
-									variant="outline"
-									onClick={() => setDeleteModal(false)}
-									data-testid={formatToDataTestId(
-										`settingsTiles-${name}-confirmCancel-btn`,
-									)}
-								>
-									Cancel
-								</Button>
-								<Button
-									variant="destructive"
-									data-testid={formatToDataTestId(
-										`settingsTiles-${name}-confirmDelete-btn`,
-									)}
-									onClick={() => deleteWorkflow()}
-								>
-									Delete
-								</Button>
-							</DialogFooter>
-						</DialogContent>
-					</Dialog>
+					<DeleteEntityDialog
+						open={deleteModal}
+						onOpenChange={setDeleteModal}
+						entityType={entityLabel}
+						entityName={deleteTargetName}
+						entityId={id}
+						onConfirm={deleteWorkflow}
+						cancelButtonTestId={formatToDataTestId(
+							`settingsTiles-${name}-confirmCancel-btn`,
+						)}
+						confirmButtonTestId={formatToDataTestId(
+							`settingsTiles-${name}-confirmDelete-btn`,
+						)}
+					/>
 				</div>
 			</Card>
 		);
@@ -646,43 +643,20 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									</Button>
 								}
 							/>
-							<Dialog
+							<DeleteEntityDialog
 								open={deleteModal}
 								onOpenChange={setDeleteModal}
-							>
-								<DialogContent>
-									<DialogHeader>
-										<DialogTitle>Are you sure?</DialogTitle>
-										<DialogDescription>
-											This action is irreversable. This
-											will permanentely delete this {name}
-											.
-										</DialogDescription>
-									</DialogHeader>
-									<DialogFooter>
-										<Button
-											variant="outline"
-											onClick={() =>
-												setDeleteModal(false)
-											}
-											data-testid={formatToDataTestId(
-												`settingsTiles-${name}-confirmCancel-btn`,
-											)}
-										>
-											Cancel
-										</Button>
-										<Button
-											variant="destructive"
-											data-testid={formatToDataTestId(
-												`settingsTiles-${name}-confirmDelete-btn`,
-											)}
-											onClick={() => deleteWorkflow()}
-										>
-											Delete
-										</Button>
-									</DialogFooter>
-								</DialogContent>
-							</Dialog>
+								entityType={entityLabel}
+								entityName={deleteTargetName}
+								entityId={id}
+								onConfirm={deleteWorkflow}
+								cancelButtonTestId={formatToDataTestId(
+									`settingsTiles-${name}-confirmCancel-btn`,
+								)}
+								confirmButtonTestId={formatToDataTestId(
+									`settingsTiles-${name}-confirmDelete-btn`,
+								)}
+							/>
 						</>
 					) : null}
 				</div>
