@@ -582,23 +582,23 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 									<BreadcrumbLink asChild>
 										<Link
 											to={"/app"}
-											className="text-inherit"
+											className="inline-flex items-center text-inherit leading-none"
 										>
 											App Catalog
 										</Link>
 									</BreadcrumbLink>
 								</BreadcrumbItem>
-								<BreadcrumbSeparator>
+								<BreadcrumbSeparator className="inline-flex items-center [&>svg]:translate-y-[0.5px]">
 									<ChevronRight />
 								</BreadcrumbSeparator>
 								<BreadcrumbItem>
-									<BreadcrumbPage>
+									<BreadcrumbPage className="inline-flex items-center leading-none">
 										<span
 											title={
 												appInfo?.project_display_name ||
 												appInfo?.project_name
 											}
-											className="inline-block max-w-[40ch] truncate text-ellipsis"
+											className="inline-block max-w-[40ch] truncate text-ellipsis leading-none"
 										>
 											{appInfo?.project_display_name ||
 												appInfo?.project_name}
