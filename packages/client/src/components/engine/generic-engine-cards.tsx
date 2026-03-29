@@ -199,6 +199,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 
 	/** Whether the row is wide enough to show full tag badges */
 	const [showFullTags, setShowFullTags] = useState(true);
+	const [rowWidth, setRowWidth] = useState(0);
 	const rowRef = useRef<HTMLDivElement>(null);
 
 	const parsedDate = parseUtcDate(date);
@@ -220,6 +221,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		const el = rowRef.current;
 		if (!el) return;
 		const observer = new ResizeObserver(([entry]) => {
+			setRowWidth(entry.contentRect.width);
 			setShowFullTags(entry.contentRect.width >= 480);
 		});
 		observer.observe(el);
@@ -253,7 +255,10 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 			return null;
 		}
 
-		if (showFullTags) {
+		const compactVisibleCount =
+			rowWidth >= 430 ? 2 : rowWidth >= 360 ? 1 : 0;
+
+		if (showFullTags || tagArray.length <= 1) {
 			return (
 				<div className="flex min-w-0 flex-wrap items-center gap-1.5">
 					{tagArray.slice(0, 3).map((t) => (
@@ -277,9 +282,13 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 					{tagArray.length > 3 && (
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<span className="cursor-pointer whitespace-nowrap text-muted-foreground text-xs">
-									+{tagArray.length - 3}
-								</span>
+								<Badge
+									variant="outline"
+									className="flex cursor-pointer items-center gap-1"
+								>
+									<Tag className="size-3" />
+									{tagArray.length - 3}
+								</Badge>
 							</TooltipTrigger>
 							<TooltipContent>
 								<span className="max-w-[300px]">
@@ -288,6 +297,53 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							</TooltipContent>
 						</Tooltip>
 					)}
+				</div>
+			);
+		}
+
+		if (compactVisibleCount > 0) {
+			const visibleTags = tagArray.slice(0, compactVisibleCount);
+			const hiddenTags = tagArray.slice(compactVisibleCount);
+
+			return (
+				<div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">
+					{visibleTags.map((t) => (
+						<Badge
+							key={t}
+							variant="outline"
+							title={t}
+							className={compact ? "h-6" : undefined}
+						>
+							<span
+								className={
+									compact
+										? "max-w-[16ch] truncate px-1.5 font-semibold text-[11px]"
+										: "max-w-[16ch] truncate px-2 font-semibold text-xs"
+								}
+							>
+								{t}
+							</span>
+						</Badge>
+					))}
+					{hiddenTags.length > 0 ? (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Badge
+									variant="outline"
+									className="flex cursor-pointer items-center gap-1"
+									onClick={(e) => e.stopPropagation()}
+								>
+									<Tag className="size-3" />
+									{hiddenTags.length}
+								</Badge>
+							</TooltipTrigger>
+							<TooltipContent>
+								<span className="max-w-[300px]">
+									{hiddenTags.join(", ")}
+								</span>
+							</TooltipContent>
+						</Tooltip>
+					) : null}
 				</div>
 			);
 		}
@@ -652,9 +708,13 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 								{tag.length > 2 && (
 									<Tooltip>
 										<TooltipTrigger asChild>
-											<span className="cursor-pointer whitespace-nowrap text-muted-foreground text-xs">
-												+{tag.length - 2}
-											</span>
+											<Badge
+												variant="outline"
+												className="flex cursor-pointer items-center gap-1"
+											>
+												<Tag className="size-3" />
+												{tag.length - 2}
+											</Badge>
 										</TooltipTrigger>
 										<TooltipContent>
 											<span className="max-w-[300px]">

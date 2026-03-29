@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { styled, ToggleTabsGroup } from "@semoss/ui";
+import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import {
 	MembersTable,
 	PendingMembersTable,
@@ -9,24 +9,6 @@ import {
 } from "@/components/settings";
 import { useAPI, useSettings } from "@/hooks";
 import type { ALL_TYPES, Role } from "@/types";
-
-const StyledContainer = styled("div")(({ theme }) => ({
-	width: "100%",
-	display: "flex",
-	alignSelf: "stretch",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: theme.spacing(2),
-}));
-
-const StyledContent = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: theme.spacing(2),
-	flexShrink: "0",
-}));
 
 type VIEW = "CURRENT" | "PENDING";
 
@@ -78,7 +60,7 @@ export const EngineSettingsUserDetailPage = (
 	}
 
 	return (
-		<StyledContainer>
+		<div className="flex w-full flex-col gap-4 self-stretch pb-8">
 			{permission === "OWNER" ? (
 				<SettingsTiles
 					type={type}
@@ -90,18 +72,21 @@ export const EngineSettingsUserDetailPage = (
 					}}
 				/>
 			) : null}
-			<StyledContent>
-				<ToggleTabsGroup
+			<div className="flex w-full flex-col gap-4">
+				<Tabs
 					value={view}
-					onChange={(_e, v) => setView(v as VIEW)}
+					onValueChange={(value) => setView(value as VIEW)}
 				>
-					<ToggleTabsGroup.Item label="Member" value={"CURRENT"} />
-					<ToggleTabsGroup.Item
-						label="Pending Requests"
-						disabled={permission === "READ_ONLY"}
-						value={"PENDING"}
-					/>
-				</ToggleTabsGroup>
+					<TabsList className="w-fit max-w-full flex-wrap">
+						<TabsTrigger value={"CURRENT"}>Member</TabsTrigger>
+						<TabsTrigger
+							disabled={permission === "READ_ONLY"}
+							value={"PENDING"}
+						>
+							Pending Requests
+						</TabsTrigger>
+					</TabsList>
+				</Tabs>
 				{view === "CURRENT" && (
 					<MembersTable
 						type={type}
@@ -112,9 +97,9 @@ export const EngineSettingsUserDetailPage = (
 				{view === "PENDING" && (
 					<PendingMembersTable type={type} id={id} />
 				)}
-			</StyledContent>
+			</div>
 			{permission === "OWNER" ? <UpdateSMSS type={type} id={id} /> : null}
-		</StyledContainer>
+		</div>
 	);
 };
 
@@ -129,7 +114,7 @@ export const EngineSettingsAdminDetailPage = (
 	const [view, setView] = useState<VIEW>("CURRENT");
 
 	return (
-		<StyledContainer>
+		<div className="flex w-full flex-col gap-4 self-stretch pb-8">
 			<SettingsTiles
 				type={type}
 				name={"engine"}
@@ -139,24 +124,25 @@ export const EngineSettingsAdminDetailPage = (
 					navigate("..", { relative: "path" });
 				}}
 			/>
-			<StyledContent>
-				<ToggleTabsGroup
+			<div className="flex w-full flex-col gap-4">
+				<Tabs
 					value={view}
-					onChange={(_e, v) => setView(v as VIEW)}
+					onValueChange={(value) => setView(value as VIEW)}
 				>
-					<ToggleTabsGroup.Item label="Member" value={"CURRENT"} />
-					<ToggleTabsGroup.Item
-						label="Pending Requests"
-						value={"PENDING"}
-					/>
-				</ToggleTabsGroup>
+					<TabsList className="w-fit max-w-full flex-wrap">
+						<TabsTrigger value={"CURRENT"}>Member</TabsTrigger>
+						<TabsTrigger value={"PENDING"}>
+							Pending Requests
+						</TabsTrigger>
+					</TabsList>
+				</Tabs>
 				{view === "CURRENT" && <MembersTable type={type} id={id} />}
 				{view === "PENDING" && (
 					<PendingMembersTable type={type} id={id} />
 				)}
-			</StyledContent>
+			</div>
 			<UpdateSMSS type={type} id={id} />
-		</StyledContainer>
+		</div>
 	);
 };
 

@@ -198,6 +198,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
 	useEffect(() => {
 		if (!open) return;
+		if (user?.id) {
+			setSearchLoading(false);
+			return;
+		}
 
 		const cancelled = false;
 		setSearchLoading(true);
@@ -277,7 +281,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		};
 
 		fetchUsers();
-	}, [open, debouncedSearch, offset, adminMode, id, type]);
+	}, [open, user, debouncedSearch, offset, adminMode, id, type]);
 
 	const isLoading = searchLoading;
 

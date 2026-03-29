@@ -1,82 +1,23 @@
-import { ArrowDownward, ArrowUpward } from "@mui/icons-material";
+import { ArrowDown, ArrowUp, Search, X } from "lucide-react";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-	Backdrop,
-	CircularProgress,
-	Menu,
-	Search,
+	Button,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupButton,
+	InputGroupInput,
 	Select,
-	Stack,
-	styled,
-	ToggleButton,
-	ToggleButtonGroup,
-	Tooltip,
-	Typography,
-} from "@semoss/ui";
-import { toast } from "@semoss/ui/next";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Spinner,
+	toast,
+} from "@semoss/ui/next";
 import { EngineLandscapeCard } from "@/components/engine";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
-
-const StyledContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: theme.spacing(3),
-}));
-
-const StyledSearch = styled(Search)(({ theme }) => ({
-	flex: 1,
-	minWidth: 0,
-	width: "auto",
-	[theme.breakpoints.down("md")]: {
-		width: "100%",
-	},
-}));
-
-const StyledSearchbarContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	alignItems: "center",
-	gap: theme.spacing(2),
-	[theme.breakpoints.down("md")]: {
-		flexDirection: "column",
-		alignItems: "stretch",
-	},
-}));
-
-const StyledSortControls = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(1.5),
-	marginLeft: "auto",
-	[theme.breakpoints.down("md")]: {
-		width: "100%",
-		marginLeft: 0,
-	},
-}));
-
-const StyledSort = styled(Select)(({ theme }) => ({
-	width: "220px",
-	[theme.breakpoints.down("md")]: {
-		flex: 1,
-		width: "auto",
-	},
-}));
-
-const StyledSortOrder = styled(ToggleButtonGroup)(({ theme }) => ({
-	flexShrink: 0,
-	[theme.breakpoints.down("md")]: {
-		marginLeft: "auto",
-	},
-}));
-
-const StyledBackdrop = styled(Backdrop)({
-	backgroundColor: "rgba(255, 255, 255, 0.5)",
-	zIndex: 1501,
-});
 
 const initialState = {
 	projects: [],
@@ -135,7 +76,7 @@ export const ProjectSettingsPage = () => {
 	const [search, setSearch] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [sortKey, setSortKey] = useState("PROJECTNAME");
-	const [sortOrder, setSortOrder] = useState("ASC");
+	const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
 	const [canCollect, setCanCollect] = useState(true);
 	const [offset, setOffset] = useState(0);
 	const [isSearching, setIsSearching] = useState(false);
@@ -149,7 +90,7 @@ export const ProjectSettingsPage = () => {
 	const limit = 50;
 
 	// To focus when getting new results
-	const searchbarRef = useRef(null);
+	const searchbarRef = useRef<HTMLInputElement | null>(null);
 
 	useEffect(() => {
 		setIsSearching(true);
@@ -185,10 +126,10 @@ export const ProjectSettingsPage = () => {
 
 	const getProjects = usePixel<ProjectInterface[]>(
 		`
-		${projectPixelPrefix}(metaKeys = ${JSON.stringify(
+        ${projectPixelPrefix}(metaKeys = ${JSON.stringify(
 			metaKeys,
 		)}, filterWord=["${debouncedSearch}"], sort=[{"${sortKey}" : "${sortOrder}"}], limit=[${limit}], offset=[${offset}]);
-		`,
+        `,
 		{
 			data: [],
 		},
@@ -343,7 +284,7 @@ export const ProjectSettingsPage = () => {
 	 */
 	useEffect(() => {
 		const scrollElement = document.querySelector(
-			"#home__content",
+			'[data-home-content="true"]',
 		) as HTMLDivElement | null;
 
 		if (!scrollElement) {
@@ -387,97 +328,114 @@ export const ProjectSettingsPage = () => {
 
 	return (
 		<>
-			<StyledBackdrop
-				open={getProjects.status === "LOADING" || isSearching}
-			>
-				<Stack
-					direction={"column"}
-					alignItems={"center"}
-					justifyContent={"center"}
-					spacing={1}
-				>
-					<CircularProgress />
-					<Typography variant="body2">
-						{isSearching ? "Searching" : "Loading"}
-					</Typography>
-					<Typography variant="caption">Projects</Typography>
-				</Stack>
-			</StyledBackdrop>
-			<StyledContainer>
-				<StyledSearchbarContainer>
-					<StyledSearch
-						value={search}
-						onChange={(e) => {
-							setSearch(e.target.value);
-						}}
-						placeholder="Project"
-						size="small"
-						onClear={() => setSearch("")}
-						ref={searchbarRef}
-					/>
-					<StyledSortControls>
-						<StyledSort
-							size={"small"}
-							value={sortKey}
-							onChange={(e) => setSortKey(e.target.value)}
-							label={"Sort By"}
-						>
-							<Menu.Item value="PROJECTNAME">Name</Menu.Item>
-							<Menu.Item value="DATECREATED">
-								Date Created
-							</Menu.Item>
-							<Menu.Item value="DATELASTEDITED">
-								Date Last Edited
-							</Menu.Item>
-						</StyledSort>
+			{(getProjects.status === "LOADING" || isSearching) && (
+				<div className="fixed inset-0 z-[1501] flex items-center justify-center bg-white/50">
+					<div className="flex flex-col items-center gap-1">
+						<Spinner />
+						<p className="text-sm">
+							{isSearching ? "Searching" : "Loading"}
+						</p>
+						<p className="text-muted-foreground text-xs">
+							Projects
+						</p>
+					</div>
+				</div>
+			)}
+			<div className="flex w-full flex-col items-start gap-6 pb-8">
+				<div className="flex w-full min-w-0 flex-wrap items-end gap-2 sm:flex-nowrap">
+					<InputGroup className="h-10 min-w-[140px] flex-[1_1_auto]">
+						<InputGroupAddon>
+							<Search className="size-4" />
+						</InputGroupAddon>
+						<InputGroupInput
+							ref={searchbarRef}
+							className="h-10"
+							value={search}
+							onChange={(e) => {
+								setSearch(e.target.value);
+							}}
+							placeholder="Project"
+						/>
+						{search ? (
+							<InputGroupAddon align="inline-end">
+								<InputGroupButton
+									size="icon-xs"
+									variant="ghost"
+									onClick={() => setSearch("")}
+									aria-label="Clear search"
+								>
+									<X className="size-4" />
+								</InputGroupButton>
+							</InputGroupAddon>
+						) : null}
+					</InputGroup>
 
-						<StyledSortOrder
-							size={"small"}
-							value={sortOrder}
-							color="primary"
-						>
-							<ToggleButton
-								onClick={(_e, v) => {
-									setSortOrder(v);
-								}}
-								value={"DESC"}
-								aria-label={"Descending Order"}
-								data-testid={"projectSettingsPage-desc-btn"}
+					<div className="flex w-auto shrink-0 items-center gap-1">
+						<div className="w-[136px] sm:w-[148px]">
+							<Select
+								value={sortKey}
+								onValueChange={(value) => setSortKey(value)}
 							>
-								<Tooltip title={"Descending Order"}>
-									<ArrowDownward />
-								</Tooltip>
-							</ToggleButton>
-							<ToggleButton
-								onClick={(_e, v) => {
-									setSortOrder(v);
-								}}
-								value={"ASC"}
-								aria-label={"Ascending Order"}
-								data-testid={"projectSettingsPage-asc-btn"}
+								<SelectTrigger
+									className="h-9 w-full"
+									aria-label="Sort By"
+								>
+									<SelectValue placeholder="Sort By" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="PROJECTNAME">
+										Name
+									</SelectItem>
+									<SelectItem value="DATECREATED">
+										Date Created
+									</SelectItem>
+									<SelectItem value="DATELASTEDITED">
+										Date Last Edited
+									</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+
+						<div className="flex shrink-0 items-center gap-1">
+							<Button
+								variant={
+									sortOrder === "ASC" ? "default" : "outline"
+								}
+								size="icon-sm"
+								className="h-9 w-9"
+								title="Ascending Order"
+								aria-label="Ascending Order"
+								data-testid="projectSettingsPage-asc-btn"
+								onClick={() => setSortOrder("ASC")}
 							>
-								<Tooltip title={"Ascending Order"}>
-									<ArrowUpward />
-								</Tooltip>
-							</ToggleButton>
-						</StyledSortOrder>
-					</StyledSortControls>
-				</StyledSearchbarContainer>
-				<Stack spacing={2} sx={{ width: "100%" }}>
+								<ArrowUp className="size-4" />
+							</Button>
+							<Button
+								variant={
+									sortOrder === "DESC" ? "default" : "outline"
+								}
+								size="icon-sm"
+								className="h-9 w-9"
+								title="Descending Order"
+								aria-label="Descending Order"
+								data-testid="projectSettingsPage-desc-btn"
+								onClick={() => setSortOrder("DESC")}
+							>
+								<ArrowDown className="size-4" />
+							</Button>
+						</div>
+					</div>
+				</div>
+
+				<div className="flex w-full flex-col gap-2">
 					{projects.length === 0 &&
 					getProjects.status === "SUCCESS" &&
 					debouncedSearch ? (
-						<div>
-							<Typography
-								variant="body1"
-								sx={{ textAlign: "center", py: 4 }}
-							>
-								No projects found matching &quot;
-								{debouncedSearch}
-								&quot;
-							</Typography>
+						<div className="py-4 text-center text-muted-foreground text-sm">
+							No projects found matching "{debouncedSearch}"
 						</div>
 					) : null}
+
 					{projects.length
 						? projects.map((project) => {
 								const projectId = getProjectId(project);
@@ -540,9 +498,14 @@ export const ProjectSettingsPage = () => {
 									</div>
 								);
 							})
-						: "No apps to choose from"}
-				</Stack>
-			</StyledContainer>
+						: getProjects.status === "SUCCESS" &&
+							!debouncedSearch && (
+								<div className="py-4 text-muted-foreground text-sm">
+									No apps to choose from
+								</div>
+							)}
+				</div>
+			</div>
 			<DeleteEntityDialog
 				open={Boolean(appToDelete)}
 				onOpenChange={(open) => {

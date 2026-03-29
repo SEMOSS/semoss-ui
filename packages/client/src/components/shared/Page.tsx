@@ -46,10 +46,15 @@ export const Page: React.FC<PageProps> = observer(({ children }) => {
 			<Sidebar />
 			<StyledContent>
 				<Navbar />
-				<StyledInner id="home__content">
+				<StyledInner data-home-content="true">
 					<StyledContainer
-						sx={{ maxWidth: "1440px" }}
-						id="home__container"
+						maxWidth={false}
+						sx={{
+							maxWidth: "1500px",
+							mx: "auto",
+							px: { xs: 2, sm: 3, md: 4 },
+						}}
+						data-home-container="true"
 					>
 						{children}
 					</StyledContainer>

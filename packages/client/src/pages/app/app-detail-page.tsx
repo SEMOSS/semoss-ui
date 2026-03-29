@@ -572,7 +572,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			>
 				<div
 					className={`flex h-full w-full flex-col gap-3 ${
-						showNav ? "m-auto max-w-316" : ""
+						showNav ? "mx-auto w-full" : ""
 					}`}
 				>
 					{showNav && (

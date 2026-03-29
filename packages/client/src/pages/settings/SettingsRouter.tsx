@@ -2,8 +2,8 @@ import { observer } from "mobx-react-lite";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { JobsPage } from "../jobs/JobsPage";
 import { AdminQueryPage } from "./AdminQueryPage";
-import { AppSettingsDetailPage } from "./AppSettingsDetailPage";
 import { AdminThemePage } from "./admin-theme-page";
+import { AppSettingsDetailsPage } from "./app-settings-details-page";
 import { ConfigurationsPage } from "./ConfigurationsPage";
 import { EngineSettingsDetailPage } from "./engine-settings-detail-page";
 import { EngineSettingsIndexPage } from "./engine-settings-index-page";
@@ -23,7 +23,7 @@ import { TeamsSettingsPage } from "./teams-settings-page";
 const SETTINGS_COMPONETS = {
 	"": SettingsIndexPage,
 	app: ProjectSettingsPage,
-	"app/:id": AppSettingsDetailPage,
+	"app/:id": AppSettingsDetailsPage,
 	insight: InsightSettingsPage,
 	"insight/:id/:projectId": InsightSettingsDetailPage,
 	members: MemberSettingsPage,
