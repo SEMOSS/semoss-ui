@@ -1,10 +1,4 @@
-import {
-	Add,
-	ContentCopyOutlined,
-	Delete,
-	KeyboardArrowDown,
-	KeyboardArrowUp,
-} from "@mui/icons-material";
+import { ChevronDown, ChevronUp, Copy, Plus, Trash2 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -866,7 +860,7 @@ export const MyProfilePage = () => {
 							}}
 							data-testid={"myProfilePage-js-copy-btn"}
 						>
-							<ContentCopyOutlined />
+							<Copy />
 						</IconButton>
 					</CopyGridItem>
 				</MonolithGrid>
@@ -893,7 +887,7 @@ export const MyProfilePage = () => {
 							}}
 							data-testid={"myProfilePage-py-copy-btn"}
 						>
-							<ContentCopyOutlined />
+							<Copy />
 						</IconButton>
 					</CopyGridItem>
 				</MonolithGrid>
@@ -912,7 +906,7 @@ export const MyProfilePage = () => {
 
 					<Button
 						variant="contained"
-						startIcon={<Add />}
+						startIcon={<Plus />}
 						onClick={() => {
 							setAddModal(true);
 						}}
@@ -977,7 +971,7 @@ export const MyProfilePage = () => {
 															"myProfilePage-access-key-copy-btn"
 														}
 													>
-														<ContentCopyOutlined />
+														<Copy />
 													</IconButton>
 													<IconButton
 														title="Delete"
@@ -990,7 +984,7 @@ export const MyProfilePage = () => {
 															"myProfilePage-access-key-delete-btn"
 														}
 													>
-														<Delete />
+														<Trash2 />
 													</IconButton>
 												</Table.Cell>
 											</Table.Row>
@@ -1104,9 +1098,7 @@ export const MyProfilePage = () => {
 													size={"medium"}
 													variant="outlined"
 													startIcon={
-														<ContentCopyOutlined
-															color={"inherit"}
-														/>
+														<Copy size={16} />
 													}
 													onClick={() =>
 														copy(ACCESSKEY)
@@ -1131,9 +1123,7 @@ export const MyProfilePage = () => {
 													size={"medium"}
 													variant="outlined"
 													startIcon={
-														<ContentCopyOutlined
-															color={"inherit"}
-														/>
+														<Copy size={16} />
 													}
 													onClick={() =>
 														copy(SECRETKEY)
@@ -1172,9 +1162,9 @@ export const MyProfilePage = () => {
 													}
 												>
 													{isJsSdkOpen ? (
-														<KeyboardArrowUp />
+														<ChevronUp />
 													) : (
-														<KeyboardArrowDown />
+														<ChevronDown />
 													)}
 												</IconButton>
 											</Stack>
@@ -1188,11 +1178,7 @@ export const MyProfilePage = () => {
 														size={"medium"}
 														variant="outlined"
 														startIcon={
-															<ContentCopyOutlined
-																color={
-																	"inherit"
-																}
-															/>
+															<Copy size={16} />
 														}
 														onClick={() =>
 															copy(jsSnippet)
@@ -1232,9 +1218,9 @@ export const MyProfilePage = () => {
 													}
 												>
 													{isPySdkOpen ? (
-														<KeyboardArrowUp />
+														<ChevronUp />
 													) : (
-														<KeyboardArrowDown />
+														<ChevronDown />
 													)}
 												</IconButton>
 											</Stack>
@@ -1247,11 +1233,7 @@ export const MyProfilePage = () => {
 														size={"medium"}
 														variant="outlined"
 														startIcon={
-															<ContentCopyOutlined
-																color={
-																	"inherit"
-																}
-															/>
+															<Copy size={16} />
 														}
 														onClick={() =>
 															copy(pySnippet)
