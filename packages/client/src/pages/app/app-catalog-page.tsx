@@ -41,6 +41,13 @@ import { NavbarLeft } from "../../components/shared";
 
 type TabMode = "Bookmarked" | "Mine" | "Discoverable" | "System";
 type ViewMode = "grid" | "list";
+type CloneRefreshState = {
+	mode: TabMode;
+	source: "apps" | "favoritedApps";
+	targetCount: number;
+	scrollTop: number;
+	hasResetStarted: boolean;
+};
 
 interface AppCatalogState {
 	favoritedApps: AppMetadata[];
@@ -305,6 +312,8 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	>("PROJECTNAME");
 	const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
 	const [updatedNewApps, setUpdatedNewApps] = useState<AppMetadata[]>([]);
+	const [cloneRefreshState, setCloneRefreshState] =
+		useState<CloneRefreshState | null>(null);
 
 	const [filterBoxRefresh, setFilterBoxRefresh] = useState(false);
 
@@ -506,6 +515,88 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		void sortOrder;
 		resetScroll();
 	}, [mode, search, metaFiltersKey, sortKey, sortOrder, resetScroll]);
+
+	const handleCloneComplete = useCallback(() => {
+		if (isSystemMode) {
+			return;
+		}
+
+		const scrollEle = document.querySelector(
+			'[data-home-content="true"]',
+		) as HTMLDivElement | null;
+
+		const nextRefreshState: CloneRefreshState = {
+			mode,
+			source: isBookmarkedMode ? "favoritedApps" : "apps",
+			targetCount: isBookmarkedMode ? favoritedApps.length : apps.length,
+			scrollTop: scrollEle?.scrollTop ?? 0,
+			hasResetStarted: false,
+		};
+
+		setCloneRefreshState(nextRefreshState);
+		resetScroll();
+
+		if (isBookmarkedMode) {
+			getFavoritedApps.reset();
+			return;
+		}
+
+		getApps.reset();
+	}, [
+		apps.length,
+		favoritedApps.length,
+		getApps,
+		getFavoritedApps,
+		isBookmarkedMode,
+		isSystemMode,
+		mode,
+		resetScroll,
+	]);
+
+	useEffect(() => {
+		if (!cloneRefreshState) return;
+
+		if (cloneRefreshState.mode !== mode) {
+			setCloneRefreshState(null);
+			return;
+		}
+
+		const source =
+			cloneRefreshState.source === "favoritedApps"
+				? getFavoritedApps
+				: getApps;
+		const loadedCount = Array.isArray(source.data) ? source.data.length : 0;
+
+		if (!cloneRefreshState.hasResetStarted) {
+			if (source.isLoading || loadedCount === 0) {
+				setCloneRefreshState((prev) =>
+					prev ? { ...prev, hasResetStarted: true } : prev,
+				);
+			}
+			return;
+		}
+
+		if (source.isLoading) {
+			return;
+		}
+
+		if (loadedCount < cloneRefreshState.targetCount && source.hasMore) {
+			source.next();
+			return;
+		}
+
+		const scrollEle = document.querySelector(
+			'[data-home-content="true"]',
+		) as HTMLDivElement | null;
+
+		if (scrollEle) {
+			requestAnimationFrame(() => {
+				scrollEle.scrollTop = cloneRefreshState.scrollTop;
+			});
+		}
+
+		setCloneRefreshState(null);
+	}, [cloneRefreshState, mode, getApps, getFavoritedApps]);
 
 	// Debounced search
 	const debouncedSetSearch = debounced(
@@ -917,6 +1008,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 													toggleFavorite(app)
 												}
 												onDelete={() => removeApp(app)}
+												onCloneComplete={
+													handleCloneComplete
+												}
 												isDiscoverable={false}
 												isLoading={false}
 												showSkeleton={false}
@@ -1011,6 +1105,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 													toggleFavorite(app)
 												}
 												onDelete={() => removeApp(app)}
+												onCloneComplete={
+													handleCloneComplete
+												}
 												isLoading={false}
 												showSkeleton={false}
 											/>

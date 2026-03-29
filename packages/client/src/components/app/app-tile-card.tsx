@@ -24,7 +24,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { AppDeleteModal } from "@/components/app";
-import { AddAppCloneModal } from "@/components/app/save-app/AddAppCloneModal";
+import { AddAppCloneModal } from "@/components/app/save-app/add-app-clone-modal";
 import { formatToDataTestId } from "@/utility";
 import type { AppMetadata } from "./app.types";
 
@@ -43,6 +43,7 @@ interface AppTileCardProps {
 	showSkeleton?: boolean;
 	layout?: "fixed" | "responsive";
 	variant?: "classic" | "catalog" | "row";
+	onCloneComplete?: (appId?: string) => void;
 }
 
 /**
@@ -266,6 +267,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		showSkeleton = false,
 		layout = "fixed",
 		variant = "classic",
+		onCloneComplete,
 	} = props;
 
 	const navigate = useNavigate();
@@ -643,6 +645,16 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		setIsCloneModalOpen(true);
 	}, []);
 
+	const handleCloneModalClose = useCallback(
+		(clonedAppId?: string) => {
+			setIsCloneModalOpen(false);
+			if (clonedAppId) {
+				onCloneComplete?.(clonedAppId);
+			}
+		},
+		[onCloneComplete],
+	);
+
 	const handleDelete = useCallback((e: React.MouseEvent) => {
 		e.stopPropagation();
 		setIsDeleteModalOpen(true);
@@ -911,17 +923,12 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 											>
 												View Dashboard
 											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={handleCopyId}
-											>
-												Copy App ID
-											</DropdownMenuItem>
 											{canEdit && (
 												<>
 													<DropdownMenuItem
 														onClick={handleClone}
 													>
-														Clone This App
+														Clone App
 													</DropdownMenuItem>
 													<DropdownMenuItem
 														onClick={handleDelete}
@@ -949,7 +956,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					<AddAppCloneModal
 						open={isCloneModalOpen}
 						appId={app.project_id}
-						handleClose={() => setIsCloneModalOpen(false)}
+						handleClose={handleCloneModalClose}
 					/>
 				)}
 			</div>
@@ -1032,17 +1039,12 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										>
 											View Dashboard
 										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={handleCopyId}
-										>
-											Copy App ID
-										</DropdownMenuItem>
 										{canEdit && (
 											<>
 												<DropdownMenuItem
 													onClick={handleClone}
 												>
-													Clone This App
+													Clone App
 												</DropdownMenuItem>
 												<DropdownMenuItem
 													onClick={handleDelete}
@@ -1189,7 +1191,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					<AddAppCloneModal
 						open={isCloneModalOpen}
 						appId={app.project_id}
-						handleClose={() => setIsCloneModalOpen(false)}
+						handleClose={handleCloneModalClose}
 					/>
 				)}
 			</div>
@@ -1259,15 +1261,12 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 									>
 										View Dashboard
 									</DropdownMenuItem>
-									<DropdownMenuItem onClick={handleCopyId}>
-										Copy App ID
-									</DropdownMenuItem>
 									{canEdit && (
 										<>
 											<DropdownMenuItem
 												onClick={handleClone}
 											>
-												Clone This App
+												Clone App
 											</DropdownMenuItem>
 											<DropdownMenuItem
 												onClick={handleDelete}
@@ -1347,7 +1346,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 				<AddAppCloneModal
 					open={isCloneModalOpen}
 					appId={app.project_id}
-					handleClose={() => setIsCloneModalOpen(false)}
+					handleClose={handleCloneModalClose}
 				/>
 			)}
 		</div>
