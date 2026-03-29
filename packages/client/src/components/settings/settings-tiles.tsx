@@ -1,4 +1,4 @@
-import { EyeOff, LockKeyhole } from "lucide-react";
+import { EyeOff, LockKeyhole, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
 	Button,
@@ -17,7 +17,6 @@ import {
 	setProjectGlobal,
 	setProjectVisiblity,
 } from "@/api";
-import databaseIcon from "@/assets/img/databaseIcon.png";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
@@ -454,14 +453,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 					)}
 					<AlertTile
 						setBounds={direction === "column"}
-						icon={
-							<img
-								src={databaseIcon}
-								alt="Database Icon"
-								className="mt-0.5 h-[22px] w-[22px]"
-								data-testid="database-icon"
-							/>
-						}
+						icon={<Trash2 className="mt-0.5 h-[22px] w-[22px]" />}
 						title={`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
 						description={`Delete ${name} from catalog.`}
 						action={
@@ -617,11 +609,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							<AlertTile
 								setBounds={direction === "column"}
 								icon={
-									<img
-										src={databaseIcon}
-										alt="Database Icon"
-										className="mt-0.5 h-[18px] w-[18px]"
-									/>
+									<Trash2 className="mt-0.5 h-[18px] w-[18px]" />
 								}
 								title={`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
 								description={`Delete ${name} from catalog.`}

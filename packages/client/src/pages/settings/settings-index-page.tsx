@@ -143,7 +143,7 @@ export const SettingsIndexPage = () => {
 								</CardTitle>
 							</CardHeader>
 							<CardContent className="pb-2">
-								<p className="line-clamp-2 text-base text-foreground">
+								<p className="line-clamp-2 text-foreground text-sm">
 									{c.description}
 								</p>
 							</CardContent>

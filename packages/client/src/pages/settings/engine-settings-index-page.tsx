@@ -1,20 +1,20 @@
-import { ArrowDownward, ArrowUpward } from "@mui/icons-material";
+import { ArrowDown, ArrowUp, Search, X } from "lucide-react";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-	Backdrop,
-	CircularProgress,
-	Menu,
-	Search,
+	Button,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupButton,
+	InputGroupInput,
 	Select,
-	Stack,
-	styled,
-	ToggleButton,
-	ToggleButtonGroup,
-	Tooltip,
-	Typography,
-} from "@semoss/ui";
-import { toast } from "@semoss/ui/next";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Spinner,
+	toast,
+} from "@semoss/ui/next";
 import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard } from "@/components/engine";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
@@ -51,60 +51,6 @@ export interface Database {
 	hasUpvoted?: boolean;
 	engine_date_created?: string;
 }
-
-const StyledContainer = styled("div")({
-	display: "flex",
-	width: "100%",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: "24px",
-});
-
-const StyledSearchbarContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	alignItems: "center",
-	gap: theme.spacing(2),
-	[theme.breakpoints.down("md")]: {
-		flexDirection: "column",
-		alignItems: "stretch",
-	},
-}));
-
-const StyledSearchbar = styled(Search)(({ theme }) => ({
-	flex: 1,
-	minWidth: 0,
-	width: "auto",
-	[theme.breakpoints.down("md")]: {
-		width: "100%",
-	},
-}));
-
-const StyledSortControls = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(1.5),
-	marginLeft: "auto",
-	[theme.breakpoints.down("md")]: {
-		width: "100%",
-		marginLeft: 0,
-	},
-}));
-
-const StyledSort = styled(Select)(({ theme }) => ({
-	width: "220px",
-	[theme.breakpoints.down("md")]: {
-		flex: 1,
-		width: "auto",
-	},
-}));
-
-const StyledSortOrder = styled(ToggleButtonGroup)(({ theme }) => ({
-	flexShrink: 0,
-	[theme.breakpoints.down("md")]: {
-		marginLeft: "auto",
-	},
-}));
 
 const initialState = {
 	databases: [],
@@ -162,7 +108,7 @@ export const EngineSettingsIndexPage = (
 	const [search, setSearch] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [sort, setSort] = useState("ENGINENAME");
-	const [sortOrder, setSortOrder] = useState("ASC");
+	const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
 	const [canCollect, setCanCollect] = useState(true);
 	const [offset, setOffset] = useState(0);
 	const [isSearching, setIsSearching] = useState(false);
@@ -176,7 +122,7 @@ export const EngineSettingsIndexPage = (
 	const limit = 50;
 
 	// To focus when getting new results
-	const searchbarRef = useRef(null);
+	const searchbarRef = useRef<HTMLInputElement | null>(null);
 
 	useEffect(() => {
 		setIsSearching(true);
@@ -359,10 +305,9 @@ export const EngineSettingsIndexPage = (
 		}
 
 		monolithStore.runQuery(pixelString).then((response) => {
-			const type = response.pixelReturn[0].operationType;
-			const _pixelResponse = response.pixelReturn[0].output;
+			const operationType = response.pixelReturn[0].operationType;
 
-			if (type.indexOf("ERROR") === -1) {
+			if (operationType.indexOf("ERROR") === -1) {
 				const newDatabases = [];
 
 				databases.forEach((database) => {
@@ -432,7 +377,7 @@ export const EngineSettingsIndexPage = (
 	 */
 	useEffect(() => {
 		const scrollElement = document.querySelector(
-			"#home__content",
+			'[data-home-content="true"]',
 		) as HTMLDivElement | null;
 
 		if (!scrollElement) {
@@ -475,112 +420,130 @@ export const EngineSettingsIndexPage = (
 		};
 	}, []);
 
+	const entityLabel =
+		type === "DATABASE"
+			? "Databases"
+			: type === "MODEL"
+				? "Models"
+				: type === "VECTOR"
+					? "Vectors"
+					: "Engines";
+
 	return (
 		<>
-			<Backdrop
-				open={getEngines.status === "LOADING" || isSearching}
-				sx={{
-					backgroundColor: "rgba(255, 255, 255, 0.5)",
-					zIndex: 1501,
-				}}
-			>
-				<Stack
-					direction={"column"}
-					alignItems={"center"}
-					justifyContent={"center"}
-					spacing={1}
-				>
-					<CircularProgress />
-					<Typography variant="body2">
-						{isSearching ? "Searching" : "Loading"}
-					</Typography>
-					<Typography variant="caption">
-						{type === "DATABASE"
-							? "Databases"
-							: type === "MODEL"
-								? "Models"
-								: type === "VECTOR"
-									? "Vectors"
-									: "Engines"}
-					</Typography>
-				</Stack>
-			</Backdrop>
-			<StyledContainer>
-				<StyledSearchbarContainer>
-					<StyledSearchbar
-						value={search}
-						onChange={(e) => {
-							setSearch(e.target.value);
-						}}
-						size="small"
-						onClear={() => setSearch("")}
-						inputRef={searchbarRef}
-					/>
-					<StyledSortControls>
-						<StyledSort
-							size={"small"}
-							value={sort}
-							onChange={(e) => setSort(e.target.value)}
-							label={"Sort By"}
-						>
-							<Menu.Item value="ENGINENAME">Name</Menu.Item>
-							<Menu.Item value="DATECREATED">
-								Date Created
-							</Menu.Item>
-							{/* <Menu.Item value="Views">Views</Menu.Item>
-                        <Menu.Item value="Trending">Trending</Menu.Item>
-                        <Menu.Item value="Upvotes">Upvotes</Menu.Item> */}
-						</StyledSort>
+			{(getEngines.status === "LOADING" || isSearching) && (
+				<div className="fixed inset-0 z-[1501] flex items-center justify-center bg-white/50">
+					<div className="flex flex-col items-center gap-1">
+						<Spinner />
+						<p className="text-sm">
+							{isSearching ? "Searching" : "Loading"}
+						</p>
+						<p className="text-muted-foreground text-xs">
+							{entityLabel}
+						</p>
+					</div>
+				</div>
+			)}
+			<div className="flex w-full flex-col items-start gap-6 pb-8">
+				<div className="flex w-full min-w-0 flex-wrap items-end gap-2 sm:flex-nowrap">
+					<InputGroup className="h-10 min-w-[140px] flex-[1_1_auto]">
+						<InputGroupAddon>
+							<Search className="size-4" />
+						</InputGroupAddon>
+						<InputGroupInput
+							ref={searchbarRef}
+							className="h-10"
+							value={search}
+							onChange={(e) => {
+								setSearch(e.target.value);
+							}}
+							placeholder="Search"
+						/>
+						{search ? (
+							<InputGroupAddon align="inline-end">
+								<InputGroupButton
+									size="icon-xs"
+									variant="ghost"
+									onClick={() => setSearch("")}
+									aria-label="Clear search"
+								>
+									<X className="size-4" />
+								</InputGroupButton>
+							</InputGroupAddon>
+						) : null}
+					</InputGroup>
 
-						<StyledSortOrder
-							size={"small"}
-							value={sortOrder}
-							color="primary"
-						>
-							<ToggleButton
-								onClick={(_e, v) => setSortOrder(v)}
-								value={"DESC"}
-								aria-label={"Descending Order"}
+					<div className="flex w-auto shrink-0 items-center gap-1">
+						<div className="w-[136px] sm:w-[148px]">
+							<Select
+								value={sort}
+								onValueChange={(value) => setSort(value)}
 							>
-								<Tooltip title={"Descending Order"}>
-									<ArrowDownward />
-								</Tooltip>
-							</ToggleButton>
-							<ToggleButton
-								onClick={(_e, v) => setSortOrder(v)}
-								value={"ASC"}
-								aria-label={"Ascending Order"}
+								<SelectTrigger
+									className="h-9 w-full"
+									aria-label="Sort By"
+								>
+									<SelectValue placeholder="Sort By" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="ENGINENAME">
+										Name
+									</SelectItem>
+									<SelectItem value="DATECREATED">
+										Date Created
+									</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+
+						<div className="flex shrink-0 items-center gap-1">
+							<Button
+								variant={
+									sortOrder === "ASC" ? "default" : "outline"
+								}
+								size="icon-sm"
+								className="h-9 w-9"
+								title="Ascending Order"
+								aria-label="Ascending Order"
+								onClick={() => setSortOrder("ASC")}
 							>
-								<Tooltip title={"Ascending Order"}>
-									<ArrowUpward />
-								</Tooltip>
-							</ToggleButton>
-						</StyledSortOrder>
-					</StyledSortControls>
-				</StyledSearchbarContainer>
-				<Stack spacing={2} sx={{ width: "100%" }}>
+								<ArrowUp className="size-4" />
+							</Button>
+							<Button
+								variant={
+									sortOrder === "DESC" ? "default" : "outline"
+								}
+								size="icon-sm"
+								className="h-9 w-9"
+								title="Descending Order"
+								aria-label="Descending Order"
+								onClick={() => setSortOrder("DESC")}
+							>
+								<ArrowDown className="size-4" />
+							</Button>
+						</div>
+					</div>
+				</div>
+
+				<div className="flex w-full flex-col gap-2">
 					{databases.length === 0 &&
 					getEngines.status === "SUCCESS" &&
 					debouncedSearch ? (
-						<div>
-							<Typography
-								variant="body1"
-								sx={{ textAlign: "center", py: 4 }}
-							>
-								No{" "}
-								{type === "DATABASE"
-									? "databases"
-									: type === "MODEL"
-										? "models"
-										: type === "VECTOR"
-											? "vectors"
-											: "engines"}{" "}
-								found matching &quot;{debouncedSearch}&quot;
-							</Typography>
+						<div className="py-4 text-center text-muted-foreground text-sm">
+							No{" "}
+							{type === "DATABASE"
+								? "databases"
+								: type === "MODEL"
+									? "models"
+									: type === "VECTOR"
+										? "vectors"
+										: "engines"}{" "}
+							found matching "{debouncedSearch}"
 						</div>
 					) : null}
+
 					{databases.length
-						? databases.map((db, _i) => {
+						? databases.map((db) => {
 								const engineName =
 									db.engine_display_name || db.engine_name;
 								const rowType = db.engine_type || type;
@@ -620,10 +583,10 @@ export const EngineSettingsIndexPage = (
 														}
 													: undefined
 											}
-											favorite={(_val) => {
+											favorite={() => {
 												favoriteDb(db);
 											}}
-											onClick={(_id) => {
+											onClick={() => {
 												navigate(`${db.engine_id}`, {
 													state: {
 														name: engineName,
@@ -633,19 +596,24 @@ export const EngineSettingsIndexPage = (
 													},
 												});
 											}}
-											upvote={(_val) => {
+											upvote={() => {
 												upvoteDb(db);
 											}}
-											global={(_val) => {
+											global={() => {
 												setDbGlobal(db);
 											}}
 										/>
 									</div>
 								);
 							})
-						: null}
-				</Stack>
-			</StyledContainer>
+						: getEngines.status === "SUCCESS" &&
+							!debouncedSearch && (
+								<div className="py-4 text-muted-foreground text-sm">
+									No engines to show
+								</div>
+							)}
+				</div>
+			</div>
 			<DeleteEntityDialog
 				open={Boolean(engineToDelete)}
 				onOpenChange={(open) => {

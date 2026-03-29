@@ -51,6 +51,7 @@ export interface FilterboxProps {
 	onfilterBoxRefreshCompleted?: () => void;
 	applyOnMount?: boolean;
 	showHeader?: boolean;
+	hideHeaderToggleFrom?: "md" | "lg";
 }
 
 const initialState = {
@@ -80,6 +81,7 @@ export const Filterbox = (props: FilterboxProps) => {
 		onfilterBoxRefreshCompleted = () => {},
 		applyOnMount = true,
 		showHeader = true,
+		hideHeaderToggleFrom,
 	} = props;
 	const { configStore } = useRootStore();
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -88,6 +90,7 @@ export const Filterbox = (props: FilterboxProps) => {
 	const { filterSearch } = state;
 	const [showCollapsible, setShowCollapsible] = useState({});
 	const [headerOpen, setHeaderOpen] = useState(true);
+	const [isDesktopFilterLayout, setIsDesktopFilterLayout] = useState(false);
 
 	const list =
 		type === "PROJECT"
@@ -168,6 +171,45 @@ export const Filterbox = (props: FilterboxProps) => {
 					}) ;`
 			: "",
 	);
+
+	useEffect(() => {
+		if (!hideHeaderToggleFrom || typeof window === "undefined") {
+			setIsDesktopFilterLayout(false);
+			return;
+		}
+
+		const query =
+			hideHeaderToggleFrom === "md"
+				? "(min-width: 768px)"
+				: "(min-width: 1024px)";
+		const mediaQuery = window.matchMedia(query);
+		const updateMatch = (event: MediaQueryListEvent | MediaQueryList) => {
+			setIsDesktopFilterLayout(event.matches);
+		};
+
+		updateMatch(mediaQuery);
+
+		if (mediaQuery.addEventListener) {
+			mediaQuery.addEventListener("change", updateMatch);
+		} else {
+			mediaQuery.addListener(updateMatch);
+		}
+
+		return () => {
+			if (mediaQuery.removeEventListener) {
+				mediaQuery.removeEventListener("change", updateMatch);
+			} else {
+				mediaQuery.removeListener(updateMatch);
+			}
+		};
+	}, [hideHeaderToggleFrom]);
+
+	useEffect(() => {
+		if (isDesktopFilterLayout) {
+			setHeaderOpen(true);
+		}
+	}, [isDesktopFilterLayout]);
+
 	//Refresh the pixel call, if any tagrefresh is needed
 	useEffect(() => {
 		if (!filterBoxRefresh) {
@@ -601,29 +643,49 @@ export const Filterbox = (props: FilterboxProps) => {
 		<div className="filterbox-scroll flex w-full flex-col overflow-y-auto overflow-x-hidden bg-card shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)] md:max-h-[calc(100vh-220px)] md:w-[352px]">
 			<div className="w-full">
 				{showHeader ? (
-					<Collapsible open={headerOpen} onOpenChange={setHeaderOpen}>
-						<div className="flex items-center justify-between p-4">
+					<Collapsible
+						open={
+							hideHeaderToggleFrom && isDesktopFilterLayout
+								? true
+								: headerOpen
+						}
+						onOpenChange={
+							hideHeaderToggleFrom && isDesktopFilterLayout
+								? undefined
+								: setHeaderOpen
+						}
+					>
+						<div
+							className={`flex items-center p-4 ${
+								hideHeaderToggleFrom && isDesktopFilterLayout
+									? "justify-start"
+									: "justify-between"
+							}`}
+						>
 							<h6 className="flex-1 font-semibold text-lg">
 								Filter By
 							</h6>
-							<CollapsibleTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={() => setHeaderOpen(!headerOpen)}
-									aria-label={
-										headerOpen
-											? "Collapse filters"
-											: "Expand filters"
-									}
-								>
-									{headerOpen ? (
-										<ChevronUp className="size-4" />
-									) : (
-										<ChevronDown className="size-4" />
-									)}
-								</Button>
-							</CollapsibleTrigger>
+							{!(
+								hideHeaderToggleFrom && isDesktopFilterLayout
+							) ? (
+								<CollapsibleTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										aria-label={
+											headerOpen
+												? "Collapse filters"
+												: "Expand filters"
+										}
+									>
+										{headerOpen ? (
+											<ChevronUp className="size-4" />
+										) : (
+											<ChevronDown className="size-4" />
+										)}
+									</Button>
+								</CollapsibleTrigger>
+							) : null}
 						</div>
 						<CollapsibleContent>{filterBody}</CollapsibleContent>
 					</Collapsible>

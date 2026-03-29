@@ -299,7 +299,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 */
 		useEffect(() => {
 			const scrollEle = document.querySelector(
-				"#home__content",
+				'[data-home-content="true"]',
 			) as HTMLDivElement;
 
 			setScroll(scrollEle);
@@ -384,8 +384,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						</p>
 					</div>
 
-					<div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-2">
-						<InputGroup className="min-w-0 border-b-2 border-none lg:max-w-[980px] lg:flex-1">
+					<div className="flex w-full min-w-0 flex-wrap items-end gap-2 md:flex-nowrap">
+						<InputGroup className="min-w-[110px] flex-[1_1_auto] border-b-2 border-none">
 							<InputGroupAddon>
 								<SearchIcon className="size-4 text-muted-foreground" />
 							</InputGroupAddon>
@@ -396,17 +396,17 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 								data-testid="search-bar"
 							/>
 						</InputGroup>
-						<div className="flex w-full items-end justify-between gap-2 lg:w-auto lg:flex-none">
-							<div className="w-full sm:w-[180px] lg:w-[170px]">
-								<p className="mb-1 text-muted-foreground text-xs">
-									Sort By
-								</p>
+						<div className="flex w-auto shrink-0 items-center gap-1">
+							<div className="w-[136px] sm:w-[148px]">
 								<Select
 									value={sort}
 									onValueChange={handleSortChange}
 								>
-									<SelectTrigger className="h-10 w-full">
-										<SelectValue placeholder="Sort By" />
+									<SelectTrigger
+										className="h-9 w-full"
+										aria-label="Sort By"
+									>
+										<SelectValue placeholder="Name" />
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="ENGINENAME">
@@ -418,7 +418,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 									</SelectContent>
 								</Select>
 							</div>
-							<div className="flex shrink-0 items-center gap-1 lg:self-end">
+							<div className="flex shrink-0 items-center gap-1">
 								<Button
 									variant={
 										sortOrder === "ASC"
@@ -426,7 +426,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 											: "outline"
 									}
 									size="icon-sm"
-									className="h-10 w-10"
+									className="h-9 w-9"
 									title="Ascending Order"
 									aria-label="Ascending Order"
 									onClick={() => handleSortOrderChange("ASC")}
@@ -440,7 +440,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 											: "outline"
 									}
 									size="icon-sm"
-									className="h-10 w-10"
+									className="h-9 w-9"
 									title="Descending Order"
 									aria-label="Descending Order"
 									onClick={() =>
@@ -455,13 +455,16 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				</div>
 
 				<div className="flex flex-col gap-6 pt-2 pb-2 md:h-full md:flex-row">
-					<Filterbox
-						type={route.type}
-						onChange={(filters: Record<string, unknown>) => {
-							setMetaFilters(filters);
-						}}
-						filteredCatalogIds={[]}
-					/>
+					<div className="md:sticky md:top-4 md:self-start">
+						<Filterbox
+							type={route.type}
+							onChange={(filters: Record<string, unknown>) => {
+								setMetaFilters(filters);
+							}}
+							filteredCatalogIds={[]}
+							hideHeaderToggleFrom="md"
+						/>
+					</div>
 					<div className="flex h-full w-full flex-1 flex-col gap-6">
 						<div className="flex flex-row items-center justify-between">
 							<Tabs
