@@ -496,6 +496,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					isOpen={isDeleteModalOpen}
 					onClose={() => setIsDeleteModalOpen(false)}
 					appId={app.project_id}
+					appName={displayName}
 					onDelete={onDelete}
 				/>
 				{isCloneModalOpen && (
@@ -677,6 +678,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					isOpen={isDeleteModalOpen}
 					onClose={() => setIsDeleteModalOpen(false)}
 					appId={app.project_id}
+					appName={displayName}
 					onDelete={onDelete}
 				/>
 				{isCloneModalOpen && (
@@ -831,6 +833,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 				isOpen={isDeleteModalOpen}
 				onClose={() => setIsDeleteModalOpen(false)}
 				appId={app.project_id}
+				appName={displayName}
 				onDelete={onDelete}
 			/>
 			{isCloneModalOpen && (

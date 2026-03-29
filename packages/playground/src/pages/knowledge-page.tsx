@@ -48,7 +48,7 @@ type DocumentLibraryEngine = {
 	subheader: string;
 	description: string;
 	id: string;
-	app_name: string;
+	engine_name: string;
 	tag: string[];
 	dateCreated: string;
 	favorite: boolean;
@@ -64,8 +64,8 @@ type EngineAsset = {
 };
 
 const formatDateTime = (dateStr: string): string => {
-	const d = new Date(dateStr.replace(" ", "Z"));
-	if (isNaN(d.getTime())) return dateStr;
+	const d = new Date(`${dateStr.replace(" ", "T")}Z`);
+	if (Number.isNaN(d.getTime())) return dateStr;
 	return d.toLocaleString(undefined, {
 		month: "short",
 		day: "numeric",
@@ -185,21 +185,24 @@ export const DocumentLibrary = () => {
 
 	const formatted: DocumentLibraryEngine[] =
 		data[0]?.reduce((acc, item) => {
-			const name = item?.app_name || item?.tag || "Untitled";
+			const name =
+				item?.engine_display_name ||
+				item?.engine_name ||
+				item?.tag ||
+				"Untitled";
 			acc.push({
 				name,
-				subheader: item.database_name || "",
+				subheader: item.engine_name || "",
 				description: item.description || "",
-				id: item.app_id || "",
-				app_name: item.app_name || item.tag || "",
+				id: item.engine_id || "",
+				engine_name: item.engine_name || item.tag || "",
 				tag: Array.isArray(item?.tag)
 					? item.tag
 					: item?.tag
 						? [item.tag]
 						: [],
-				dateCreated: item.database_date_created || "",
-				favorite:
-					item.app_favorite === 1 || item.database_favorite === 1,
+				dateCreated: item.engine_date_created || "",
+				favorite: item.engine_favorite === 1,
 			});
 
 			return acc;
@@ -350,8 +353,8 @@ export const DocumentLibrary = () => {
 						<DialogHeader>
 							<DialogTitle>
 								{t("knowledge:documents.title")}
-								{selectedEngine?.app_name
-									? `: ${selectedEngine.app_name}`
+								{selectedEngine?.engine_name
+									? `: ${selectedEngine.engine_name}`
 									: ""}
 							</DialogTitle>
 							<DialogDescription>
@@ -629,7 +632,7 @@ export const DocumentLibrary = () => {
 							{filteredItems.map((item, index) => (
 								<button
 									type="button"
-									key={item.app_name || item.id || index}
+									key={item.engine_name || item.id || index}
 									className="text-left w-full"
 									onClick={() =>
 										navigate(`/knowledge/${item.id}`)

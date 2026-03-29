@@ -11,7 +11,7 @@ interface PlatformSearchEngineProps {
 	name: string;
 
 	/** Types of engines to pre-filter on */
-	type: Engine["app_type"];
+	type: Engine["engine_type"];
 
 	/** Search to filter on */
 	search: string;
@@ -60,14 +60,17 @@ export const PlatformSearchEngine = ({
 	return (
 		<CommandGroup heading={name}>
 			{getEngines.data.map((engine) => {
+				const engineId = engine.engine_id;
+				const engineName =
+					engine.engine_display_name || engine.engine_name;
 				return (
 					<CommandItem
-						key={engine.app_id}
-						value={engine.app_id}
+						key={engineId}
+						value={engineId}
 						onSelect={() => {
 							// manually navigate since it doesn't propagate with a link
 							navigate(
-								`/engine/${type.toLowerCase()}/${engine.app_id}`,
+								`/engine/${type.toLowerCase()}/${engineId}`,
 							);
 
 							// close it
@@ -75,12 +78,12 @@ export const PlatformSearchEngine = ({
 						}}
 					>
 						<img
-							src={`${Env.MODULE}/api/e-${engine.app_id}/image/download`}
-							alt={`${engine.app_name} icon`}
+							src={`${Env.MODULE}/api/e-${engineId}/image/download`}
+							alt={`${engineName} icon`}
 							className="size-8 object-contain"
 						/>
 						<div className="flex flex-1 flex-col truncate">
-							<span>{engine.app_name}</span>
+							<span>{engineName}</span>
 							{engine.description && (
 								<span className="text-muted-foreground text-xs">
 									{engine.description}
@@ -90,7 +93,7 @@ export const PlatformSearchEngine = ({
 						<a
 							className=""
 							target="_blank"
-							href={`./#/engine/${type.toLowerCase()}/${engine.app_id}`}
+							href={`./#/engine/${type.toLowerCase()}/${engineId}`}
 							onClick={(e) => {
 								e.stopPropagation();
 							}}
