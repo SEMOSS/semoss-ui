@@ -1,14 +1,8 @@
-import { EyeOff, LockKeyhole } from "lucide-react";
+import { EyeOff, LockKeyhole, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
 	Button,
 	Card,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	P,
 	Spinner,
 	Switch,
@@ -23,7 +17,7 @@ import {
 	setProjectGlobal,
 	setProjectVisiblity,
 } from "@/api";
-import databaseIcon from "@/assets/img/databaseIcon.png";
+import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
 import { formatToDataTestId } from "@/utility";
@@ -152,7 +146,26 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			setDiscoverable(data.project_discoverable);
 			setGlobal(data.project_global);
 		}
-	}, [engineInfo.status, engineInfo.data]);
+	}, [engineInfo.status, engineInfo.data, type]);
+
+	const isProjectType = type === "PROJECT";
+	const entityLabel = isProjectType ? "App" : "Engine";
+	const engineInfoObject =
+		engineInfo.data && typeof engineInfo.data === "object"
+			? (engineInfo.data as Record<string, unknown>)
+			: null;
+	const deleteTargetName =
+		([
+			engineInfoObject?.engine_display_name,
+			engineInfoObject?.engine_name,
+			engineInfoObject?.database_name,
+			engineInfoObject?.app_display_name,
+			engineInfoObject?.app_name,
+			engineInfoObject?.project_name,
+			name,
+		].find(
+			(value) => typeof value === "string" && value.trim().length > 0,
+		) as string | undefined) || name;
 
 	/**
 	 * Delete the item
@@ -440,14 +453,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 					)}
 					<AlertTile
 						setBounds={direction === "column"}
-						icon={
-							<img
-								src={databaseIcon}
-								alt="Database Icon"
-								className="mt-0.5 h-[22px] w-[22px]"
-								data-testid="database-icon"
-							/>
-						}
+						icon={<Trash2 className="mt-0.5 h-[22px] w-[22px]" />}
 						title={`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
 						description={`Delete ${name} from catalog.`}
 						action={
@@ -468,37 +474,20 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							</Button>
 						}
 					/>
-					<Dialog open={deleteModal} onOpenChange={setDeleteModal}>
-						<DialogContent>
-							<DialogHeader>
-								<DialogTitle>Are you sure?</DialogTitle>
-								<DialogDescription>
-									This action is irreversable. This will
-									permanentely delete this {name}.
-								</DialogDescription>
-							</DialogHeader>
-							<DialogFooter>
-								<Button
-									variant="outline"
-									onClick={() => setDeleteModal(false)}
-									data-testid={formatToDataTestId(
-										`settingsTiles-${name}-confirmCancel-btn`,
-									)}
-								>
-									Cancel
-								</Button>
-								<Button
-									variant="destructive"
-									data-testid={formatToDataTestId(
-										`settingsTiles-${name}-confirmDelete-btn`,
-									)}
-									onClick={() => deleteWorkflow()}
-								>
-									Delete
-								</Button>
-							</DialogFooter>
-						</DialogContent>
-					</Dialog>
+					<DeleteEntityDialog
+						open={deleteModal}
+						onOpenChange={setDeleteModal}
+						entityType={entityLabel}
+						entityName={deleteTargetName}
+						entityId={id}
+						onConfirm={deleteWorkflow}
+						cancelButtonTestId={formatToDataTestId(
+							`settingsTiles-${name}-confirmCancel-btn`,
+						)}
+						confirmButtonTestId={formatToDataTestId(
+							`settingsTiles-${name}-confirmDelete-btn`,
+						)}
+					/>
 				</div>
 			</Card>
 		);
@@ -620,11 +609,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							<AlertTile
 								setBounds={direction === "column"}
 								icon={
-									<img
-										src={databaseIcon}
-										alt="Database Icon"
-										className="mt-0.5 h-[18px] w-[18px]"
-									/>
+									<Trash2 className="mt-0.5 h-[18px] w-[18px]" />
 								}
 								title={`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
 								description={`Delete ${name} from catalog.`}
@@ -646,43 +631,20 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									</Button>
 								}
 							/>
-							<Dialog
+							<DeleteEntityDialog
 								open={deleteModal}
 								onOpenChange={setDeleteModal}
-							>
-								<DialogContent>
-									<DialogHeader>
-										<DialogTitle>Are you sure?</DialogTitle>
-										<DialogDescription>
-											This action is irreversable. This
-											will permanentely delete this {name}
-											.
-										</DialogDescription>
-									</DialogHeader>
-									<DialogFooter>
-										<Button
-											variant="outline"
-											onClick={() =>
-												setDeleteModal(false)
-											}
-											data-testid={formatToDataTestId(
-												`settingsTiles-${name}-confirmCancel-btn`,
-											)}
-										>
-											Cancel
-										</Button>
-										<Button
-											variant="destructive"
-											data-testid={formatToDataTestId(
-												`settingsTiles-${name}-confirmDelete-btn`,
-											)}
-											onClick={() => deleteWorkflow()}
-										>
-											Delete
-										</Button>
-									</DialogFooter>
-								</DialogContent>
-							</Dialog>
+								entityType={entityLabel}
+								entityName={deleteTargetName}
+								entityId={id}
+								onConfirm={deleteWorkflow}
+								cancelButtonTestId={formatToDataTestId(
+									`settingsTiles-${name}-confirmCancel-btn`,
+								)}
+								confirmButtonTestId={formatToDataTestId(
+									`settingsTiles-${name}-confirmDelete-btn`,
+								)}
+							/>
 						</>
 					) : null}
 				</div>

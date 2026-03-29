@@ -123,6 +123,29 @@ export const SettingsLayout = observer(() => {
 
 		return null;
 	}, [pathname]);
+	const isSettingsIndexRoute = matchedRoute?.path === "";
+	const hasPrivacyCenterThemeContent = useMemo(() => {
+		const theme = configStore.theme as Record<string, unknown>;
+		const order = Array.isArray(theme.cookiePolicyOrderReact)
+			? theme.cookiePolicyOrderReact
+			: [];
+		const policies =
+			theme.cookiePoliciesReact &&
+			typeof theme.cookiePoliciesReact === "object"
+				? (theme.cookiePoliciesReact as Record<string, string>)
+				: {};
+		const body =
+			typeof theme.cookiePolicyModalBodyReact === "string"
+				? theme.cookiePolicyModalBodyReact.trim()
+				: "";
+
+		return (
+			(order.length > 0 && Object.keys(policies).length > 0) ||
+			body.length > 0
+		);
+	}, [configStore.theme]);
+	const showPrivacyCenter =
+		isSettingsIndexRoute && hasPrivacyCenterThemeContent;
 
 	const isTeamPermissionsDetail =
 		matchedRoute?.path === "team-permissions/:type/:id";
@@ -141,6 +164,12 @@ export const SettingsLayout = observer(() => {
 			setAdminMode(true);
 		}
 	}, [configStore.store.user.admin, matchedRoute?.admin, adminMode]);
+
+	useEffect(() => {
+		if (!showPrivacyCenter && privacyCenterOpen) {
+			setPrivacyCenterOpen(false);
+		}
+	}, [showPrivacyCenter, privacyCenterOpen]);
 
 	// persist admin mode for admins
 	useEffect(() => {
@@ -314,17 +343,19 @@ export const SettingsLayout = observer(() => {
 								)}
 
 								<StyledAdminActionButtons>
-									<Button
-										variant="text"
-										onClick={() =>
-											setPrivacyCenterOpen(true)
-										}
-										data-testid={
-											"settingsLayout-privacy-btn"
-										}
-									>
-										Privacy Center
-									</Button>
+									{showPrivacyCenter && (
+										<Button
+											variant="text"
+											onClick={() =>
+												setPrivacyCenterOpen(true)
+											}
+											data-testid={
+												"settingsLayout-privacy-btn"
+											}
+										>
+											Privacy Center
+										</Button>
+									)}
 
 									{configStore.store.user.admin && (
 										<StyledChip
@@ -426,7 +457,7 @@ export const SettingsLayout = observer(() => {
 					<Outlet />
 
 					<PrivacyPreferenceCenterModal
-						isOpen={privacyCenterOpen}
+						isOpen={showPrivacyCenter && privacyCenterOpen}
 						onClose={() => setPrivacyCenterOpen(false)}
 					/>
 					<AddTeamModal
