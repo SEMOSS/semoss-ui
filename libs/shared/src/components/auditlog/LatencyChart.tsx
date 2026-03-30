@@ -215,7 +215,7 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 			{/* ── Tooltip ── */}
 			{tooltip && (
 				<div
-					className="pointer-events-none absolute z-50 rounded border px-2.5 py-2 text-[10px] leading-snug"
+					className="pointer-events-none absolute z-50 max-w-xs rounded border px-2.5 py-2 text-[10px] leading-snug"
 					style={{
 						left: tooltip.x + 12,
 						top: Math.max(0, tooltip.y - 52),
@@ -248,7 +248,7 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 								: "hsl(0,84%,60%)",
 						}}
 					>
-						{tooltip.log.status ? "OK" : "FAIL"}
+						{tooltip.log.status ? "OKk" : "FAIL"}
 					</div>
 				</div>
 			)}
