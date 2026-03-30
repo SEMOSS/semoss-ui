@@ -348,18 +348,34 @@ export class RoomStore {
 	}
 
 	/**
-	 * Number of tokens used
+	 * Total tokens used in the current conversation.
+	 *
+	 * How token counts work across message types:
+	 * - INPUT messages have a cumulative count covering all prior exchanges.
+	 * - RESPONSE messages have only the incremental count for that turn.
+	 * - INPUT_TOOL_EXEC messages are also cumulative, but their count stays 0
+	 *   until all tool results for the preceding response have come in.
+	 *
+	 * We never create INPUT_TOOL_EXEC messages, so mid-conversation the chain can look like:
+	 *   INPUT → RESPONSE → RESPONSE(cumulative proxy) → RESPONSE(incremental) → ...
+	 * saveToolExecution() in response-message.store stamps the server's cumulative input
+	 * token count onto the parent RESPONSE so the math still works here. See that file.
+	 *
+	 * To get the total: walk back from tail and add up the two most-recent messages
+	 * with non-zero tokens — one incremental, one cumulative (INPUT or proxy RESPONSE).
 	 */
 	get tokensUsed() {
-		// INPUT_TEXT messages contain the count of all previously used tokens in the history
-		// RESPONSE messages contain the count of tokens used in that response, but not the previous tokens
-		// INPUT_TOOL_EXEC messages have tokens=0
-		// So, just sum up to a real INPUT message is the most reliable way to get the token count
 		let currMessage = this.tail as AbstractMessageStore;
 		let tokensUsed = 0;
 		while (currMessage) {
-			tokensUsed += currMessage.tokens;
-			if (currMessage.type === "INPUT" && currMessage.tokens) break;
+			if (currMessage.tokens) {
+				if (tokensUsed) {
+					tokensUsed += currMessage.tokens;
+					break;
+				} else {
+					tokensUsed += currMessage.tokens;
+				}
+			}
 			currMessage = currMessage.parent;
 		}
 
