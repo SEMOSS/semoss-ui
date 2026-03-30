@@ -110,7 +110,9 @@ export const VectorForm = ({
 
 		monolithStore.runQuery(pixel).then(async (response) => {
 			const pixelOutput = response.pixelReturn[0].output as {
-					database_id: string;
+					engine_id?: string;
+					// engine_id is the current key; database_id is the legacy fallback
+					database_id?: string;
 				},
 				operationType = response.pixelReturn[0].operationType;
 
@@ -135,7 +137,7 @@ export const VectorForm = ({
 						setLoading(false);
 						return;
 					}
-					const pixelExpressions = `CreateEmbeddingsFromDocuments(filePaths=["${uploadedFiles[0].fileLocation}"], engine=["${pixelOutput.database_id}"])`;
+					const pixelExpressions = `CreateEmbeddingsFromDocuments(filePaths=["${uploadedFiles[0].fileLocation}"], engine=["${pixelOutput.engine_id || pixelOutput.database_id}"])`;
 					const response =
 						await monolithStore.runQuery(pixelExpressions);
 					const { output, operationType } = response.pixelReturn[0];
@@ -150,7 +152,9 @@ export const VectorForm = ({
 					return;
 				}
 			}
-			navigate(`/engine/vector/${pixelOutput.database_id}`);
+			navigate(
+				`/engine/vector/${pixelOutput.engine_id || pixelOutput.database_id}`,
+			);
 			setLoading(false);
 		});
 	};

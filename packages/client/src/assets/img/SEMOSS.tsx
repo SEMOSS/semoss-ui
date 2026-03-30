@@ -9,9 +9,10 @@ export const SEMOSS = (props: IconProps) => {
 			xmlns="http://www.w3.org/2000/svg"
 			width={width}
 			height={height}
-			viewBox={`0 0 ${width} ${height}`}
+			viewBox="0 0 40 46"
 			fill="none"
 		>
+			<title>SEMOSS</title>
 			<path
 				d="M6.62227 17.9757V25.6121H10.8904V17.9757C14.6899 17.0309 17.5126 13.6272 17.5126 9.58311C17.5126 4.8127 13.5846 0.93103 8.75537 0.93103C3.92613 0.93103 0 4.8127 0 9.58311C0 13.6272 2.82273 17.0309 6.62227 17.9757Z"
 				fill="#0471F0"

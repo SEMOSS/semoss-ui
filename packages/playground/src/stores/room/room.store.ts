@@ -351,11 +351,15 @@ export class RoomStore {
 	 * Number of tokens used
 	 */
 	get tokensUsed() {
+		// INPUT_TEXT messages contain the count of all previously used tokens in the history
+		// RESPONSE messages contain the count of tokens used in that response, but not the previous tokens
+		// INPUT_TOOL_EXEC messages have tokens=0
+		// So, just sum up to a real INPUT message is the most reliable way to get the token count
 		let currMessage = this.tail as AbstractMessageStore;
 		let tokensUsed = 0;
 		while (currMessage) {
 			tokensUsed += currMessage.tokens;
-			if (currMessage.type === "INPUT") break;
+			if (currMessage.type === "INPUT" && currMessage.tokens) break;
 			currMessage = currMessage.parent;
 		}
 
@@ -469,14 +473,14 @@ export class RoomStore {
 					messageId: "ROOT_PLACEHOLDER_ID",
 					visible: false,
 					platform_generated: true,
-					modelId: this._store.model?.app_id || "",
+					modelId: this._store.model?.engine_id || "",
 					dateCreated: new Date().toISOString(),
 					parts: [],
 					tokens: 0,
 					ornaments: {
 						modelName:
 							this._store.model?.engine_display_name ||
-							this._store.model?.app_name ||
+							this._store.model?.engine_name ||
 							"",
 					},
 				} as ResponsePixelMessage);
@@ -486,7 +490,7 @@ export class RoomStore {
 					messageId: "ROOT_PLACEHOLDER_ID",
 					visible: false,
 					platform_generated: true,
-					modelId: this._store.model?.app_id || "",
+					modelId: this._store.model?.engine_id || "",
 					dateCreated: new Date().toISOString(),
 					parts: [
 						{
@@ -499,7 +503,7 @@ export class RoomStore {
 						PLAYGROUND_MESSAGE_TYPE: "COT",
 						modelName:
 							this._store.model?.engine_display_name ||
-							this._store.model?.app_name ||
+							this._store.model?.engine_name ||
 							"",
 					},
 				} as ResponsePixelMessage);
@@ -517,7 +521,7 @@ export class RoomStore {
 			> = {};
 
 			// store the last model
-			let activeModelId = this._store.model?.app_id;
+			let activeModelId = this._store.model?.engine_id;
 
 			// This is done as seperate loops because of linking
 			for (const pixelMessage of messageOutput) {
@@ -690,7 +694,7 @@ export class RoomStore {
 			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
 			const optionsToSave = {
 				...options,
-				modelId: this._store.model.app_id,
+				modelId: this._store.model.engine_id,
 				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
 			};
 
@@ -963,14 +967,14 @@ export class RoomStore {
 			messageId: "ASK_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
-			modelId: this.model?.app_id,
-			modelType: this.model?.app_type,
+			modelId: this.model?.engine_id,
+			modelType: this.model?.engine_type,
 			dateCreated: new Date().toISOString(),
 			parts: parts,
 			tokens: 0,
 			ornaments: {
 				modelName:
-					this.model.engine_display_name || this.model.app_name,
+					this.model.engine_display_name || this.model.engine_name,
 			},
 		});
 
@@ -1012,7 +1016,12 @@ export class RoomStore {
 			}
 
 			const tool = this._store.tools[toolId];
-			if (!tool || tool.response) {
+			if (
+				!tool ||
+				tool.status === "SUCCESS" ||
+				tool.status === "CANCELLED" ||
+				tool.status === "ERROR"
+			) {
 				return;
 			}
 
