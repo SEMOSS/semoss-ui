@@ -206,8 +206,10 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 			setLogs([]);
 			fetchLogs(rowsPerPage, page * rowsPerPage);
 		}
-		//override the parent css which has id = home__content
-		const contentElement = document.getElementById("home__container");
+		// override the parent css container used by Page
+		const contentElement = document.querySelector(
+			'[data-home-container="true"]',
+		) as HTMLElement | null;
 		if (contentElement) {
 			contentElement.style.padding = "32px";
 			contentElement.style.maxWidth = "none";
