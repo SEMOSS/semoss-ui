@@ -103,111 +103,113 @@ export const FiltersRow = ({
 	}, [engineType, engineNames, engineId, onEngineChange]);
 
 	return (
-		<div className="flex flex-shrink-0 items-stretch gap-2">
-			{/* ── Stat Cards ── */}
-			<div className="flex flex-1 gap-2">
-				{statCards.map((s) => (
-					<div
-						key={s.label}
-						className="min-w-0 flex-1 rounded-lg border border-border bg-card px-3 py-1.5"
-					>
-						<div className="flex items-center gap-1.5">
-							<s.icon
-								size={10}
-								className="flex-shrink-0 text-muted-foreground"
-							/>
-							<span className="truncate text-[9px] text-muted-foreground uppercase tracking-widest">
-								{s.label}
-							</span>
-						</div>
-						<p
-							className={`font-semibold text-lg leading-tight ${
-								s.accent ?? "text-foreground"
-							}`}
+		<div className="w-full overflow-x-auto">
+			<div className="flex flex-shrink-0 items-stretch gap-2">
+				{/* ── Stat Cards ── */}
+				<div className="flex flex-1 gap-2">
+					{statCards.map((s) => (
+						<div
+							key={s.label}
+							className="min-w-0 flex-1 rounded-lg border border-border bg-card px-3 py-1.5"
 						>
-							{s.value}
-						</p>
-					</div>
-				))}
-			</div>
+							<div className="flex items-center gap-1.5">
+								<s.icon
+									size={10}
+									className="flex-shrink-0 text-muted-foreground"
+								/>
+								<span className="truncate text-[9px] text-muted-foreground uppercase tracking-widest">
+									{s.label}
+								</span>
+							</div>
+							<p
+								className={`font-semibold text-lg leading-tight ${
+									s.accent ?? "text-foreground"
+								}`}
+							>
+								{s.value}
+							</p>
+						</div>
+					))}
+				</div>
 
-			{/* ── Filters ── */}
-			<div className="flex flex-shrink-0 items-center gap-2 rounded-lg border border-border bg-card px-3">
-				<Filter size={11} className="text-muted-foreground" />
+				{/* ── Filters ── */}
+				<div className="flex flex-shrink-0 items-center gap-2 rounded-lg border border-border bg-card px-3">
+					<Filter size={11} className="text-muted-foreground" />
 
-				{/* ── Engine Type ── */}
-				<span className="text-[9px] text-muted-foreground uppercase tracking-widest">
-					Catalogue
-				</span>
+					{/* ── Engine Type ── */}
+					<span className="text-[9px] text-muted-foreground uppercase tracking-widest">
+						Catalogue
+					</span>
 
-				<Select
-					value={engineType || "APP"}
-					onValueChange={onEngineTypeChange}
-				>
-					<SelectTrigger className="h-7 w-[110px] border-0 bg-transparent px-1 text-xs shadow-none">
-						<SelectValue placeholder="Select" />
-					</SelectTrigger>
-					<SelectContent>
-						{ENGINE_TYPES.map((t) => (
-							<SelectItem key={t} value={t}>
-								{t}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+					<Select
+						value={engineType || "APP"}
+						onValueChange={onEngineTypeChange}
+					>
+						<SelectTrigger className="h-7 w-[110px] border-0 bg-transparent px-1 text-xs shadow-none">
+							<SelectValue placeholder="Select" />
+						</SelectTrigger>
+						<SelectContent>
+							{ENGINE_TYPES.map((t) => (
+								<SelectItem key={t} value={t}>
+									{t}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 
-				<div className="h-4 w-px bg-border" />
+					<div className="h-4 w-px bg-border" />
 
-				{/* ── Engine Name ── */}
-				<span className="text-[9px] text-muted-foreground uppercase tracking-widest">
-					Name
-				</span>
+					{/* ── Engine Name ── */}
+					<span className="text-[9px] text-muted-foreground uppercase tracking-widest">
+						Name
+					</span>
 
-				<Select
-					value={engineId || engineNames?.[0]?.value}
-					onValueChange={onEngineChange}
-					disabled={!engineType}
-				>
-					<SelectTrigger className="h-7 w-[160px] border-0 bg-transparent px-1 text-xs shadow-none">
-						<SelectValue placeholder="Select" />
-					</SelectTrigger>
-					<SelectContent>
-						{engineNames.map((n) => (
-							<SelectItem key={n.value} value={n.value}>
-								{n.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-				<div className="h-4 w-px bg-border" />
-				<span className="text-[9px] text-muted-foreground uppercase tracking-widest">
-					User
-				</span>
+					<Select
+						value={engineId || engineNames?.[0]?.value}
+						onValueChange={onEngineChange}
+						disabled={!engineType}
+					>
+						<SelectTrigger className="h-7 w-[160px] border-0 bg-transparent px-1 text-xs shadow-none">
+							<SelectValue placeholder="Select" />
+						</SelectTrigger>
+						<SelectContent>
+							{engineNames.map((n) => (
+								<SelectItem key={n.value} value={n.value}>
+									{n.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					<div className="h-4 w-px bg-border" />
+					<span className="text-[9px] text-muted-foreground uppercase tracking-widest">
+						User
+					</span>
 
-				<Select
-					value={engineId || engineNames?.[0]?.value}
-					onValueChange={onEngineChange}
-					disabled={!engineType}
-				>
-					<SelectTrigger className="h-7 w-[160px] border-0 bg-transparent px-1 text-xs shadow-none">
-						<SelectValue placeholder="Select" />
-					</SelectTrigger>
-					<SelectContent>
-						{engineNames.map((n) => (
-							<SelectItem key={n.value} value={n.value}>
-								{n.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-				<div className="h-4 w-px bg-border" />
+					<Select
+						value={engineId || engineNames?.[0]?.value}
+						onValueChange={onEngineChange}
+						disabled={!engineType}
+					>
+						<SelectTrigger className="h-7 w-[160px] border-0 bg-transparent px-1 text-xs shadow-none">
+							<SelectValue placeholder="Select" />
+						</SelectTrigger>
+						<SelectContent>
+							{engineNames.map((n) => (
+								<SelectItem key={n.value} value={n.value}>
+									{n.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					<div className="h-4 w-px bg-border" />
 
-				{/* ── Date Range ── */}
-				<DateRangeFilter
-					dateFrom={dateFrom}
-					dateTo={dateTo}
-					onChange={onDateChange}
-				/>
+					{/* ── Date Range ── */}
+					<DateRangeFilter
+						dateFrom={dateFrom}
+						dateTo={dateTo}
+						onChange={onDateChange}
+					/>
+				</div>
 			</div>
 		</div>
 	);
