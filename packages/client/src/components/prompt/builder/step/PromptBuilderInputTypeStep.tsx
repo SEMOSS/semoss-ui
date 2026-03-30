@@ -42,7 +42,7 @@ export const PromptBuilderInputTypeStep = (props: {
 		display: {},
 	});
 
-	const myVectorDbs = usePixel<{ app_id: string; app_name: string }[]>(
+	const myVectorDbs = usePixel<{ engine_id: string; engine_name: string }[]>(
 		`MyEngines(engineTypes=['VECTOR']);`,
 	);
 	useMemo(() => {
@@ -53,8 +53,8 @@ export const PromptBuilderInputTypeStep = (props: {
 		const vectorDbIds: string[] = [];
 		const vectorDbDisplay = {};
 		myVectorDbs.data.forEach((vector) => {
-			vectorDbIds.push(vector.app_id);
-			vectorDbDisplay[vector.app_id] = vector.app_name;
+			vectorDbIds.push(vector.engine_id);
+			vectorDbDisplay[vector.engine_id] = vector.engine_name;
 		});
 		setCfgLibraryVectorDbs({
 			loading: false,
@@ -63,7 +63,7 @@ export const PromptBuilderInputTypeStep = (props: {
 		});
 	}, [myVectorDbs.status, myVectorDbs.data]);
 
-	const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
+	const myDbs = usePixel<{ engine_id: string; engine_name: string }[]>(
 		`MyEngines(engineTypes=['DATABASE']);`,
 	);
 	useMemo(() => {
@@ -74,8 +74,8 @@ export const PromptBuilderInputTypeStep = (props: {
 		const dbIds: string[] = [];
 		const dbDisplay = {};
 		myDbs.data.forEach((vector) => {
-			dbIds.push(vector.app_id);
-			dbDisplay[vector.app_id] = vector.app_name;
+			dbIds.push(vector.engine_id);
+			dbDisplay[vector.engine_id] = vector.engine_name;
 		});
 		setCfgLibraryDatabases({
 			loading: false,
