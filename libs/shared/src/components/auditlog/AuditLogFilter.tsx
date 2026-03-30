@@ -82,19 +82,19 @@ export const AuditLogFilter = (props) => {
 				const responseData = response.pixelReturn[0].output;
 				let enginesDropdown = (
 					responseData as Array<{
-						database_id: string;
-						app_type: string;
-						app_name: string;
+						engine_id: string;
+						engine_type: string;
+						engine_name: string;
 					}>
 				).reduce(
 					(acc, engine) => {
-						// Only accept known app_types
-						if (Object.hasOwn(acc, engine.app_type)) {
-							acc[engine.app_type] = [
-								...acc[engine.app_type],
+						// Only accept known engine types
+						if (Object.hasOwn(acc, engine.engine_type)) {
+							acc[engine.engine_type] = [
+								...acc[engine.engine_type],
 								{
-									value: engine.database_id,
-									label: engine.app_name,
+									value: engine.engine_id,
+									label: engine.engine_name,
 								},
 							];
 						}
@@ -116,7 +116,7 @@ export const AuditLogFilter = (props) => {
 					}>
 				).reduce(
 					(acc, engine) => {
-						// Only accept known app_types
+						// Only accept known engine types
 						if (Object.hasOwn(acc, "APP")) {
 							acc.APP = [
 								...acc.APP,
