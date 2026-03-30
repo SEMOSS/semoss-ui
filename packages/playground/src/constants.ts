@@ -11,16 +11,17 @@ export const MCP_DISPLAY_SIDEBAR = "sidebar";
 export const MCP_DISPLAY_HIDDEN = "hidden";
 
 export const LOADING_MESSAGES = [
-	"Thinking...",
-	"Processing...",
-	"Still thinking...",
-	"Hold tight...",
-	"Hang tight...",
-	"Almost there...",
-	"One sec...",
-	"On it...",
-	"Working...",
-	"Nearly ready...",
+	"Thinking through it...",
+	"Working on that...",
+	"Processing your request...",
+	"Checking the details...",
+	"Gathering context...",
+	"Making progress...",
+	"Preparing the result...",
+	"Finalizing...",
+	"Almost done...",
+	"One moment...",
+	"Still working...",
 ] as const;
 
 export const TOOL_CANCELLATION_PROMPT = `The user chose not to execute this tool. This could be for various reasons (wrong parameters, unnecessary step, privacy concerns, timing, manual preference, etc.). You should:
