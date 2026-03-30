@@ -473,14 +473,14 @@ export class RoomStore {
 					messageId: "ROOT_PLACEHOLDER_ID",
 					visible: false,
 					platform_generated: true,
-					modelId: this._store.model?.app_id || "",
+					modelId: this._store.model?.engine_id || "",
 					dateCreated: new Date().toISOString(),
 					parts: [],
 					tokens: 0,
 					ornaments: {
 						modelName:
 							this._store.model?.engine_display_name ||
-							this._store.model?.app_name ||
+							this._store.model?.engine_name ||
 							"",
 					},
 				} as ResponsePixelMessage);
@@ -490,7 +490,7 @@ export class RoomStore {
 					messageId: "ROOT_PLACEHOLDER_ID",
 					visible: false,
 					platform_generated: true,
-					modelId: this._store.model?.app_id || "",
+					modelId: this._store.model?.engine_id || "",
 					dateCreated: new Date().toISOString(),
 					parts: [
 						{
@@ -503,7 +503,7 @@ export class RoomStore {
 						PLAYGROUND_MESSAGE_TYPE: "COT",
 						modelName:
 							this._store.model?.engine_display_name ||
-							this._store.model?.app_name ||
+							this._store.model?.engine_name ||
 							"",
 					},
 				} as ResponsePixelMessage);
@@ -521,7 +521,7 @@ export class RoomStore {
 			> = {};
 
 			// store the last model
-			let activeModelId = this._store.model?.app_id;
+			let activeModelId = this._store.model?.engine_id;
 
 			// This is done as seperate loops because of linking
 			for (const pixelMessage of messageOutput) {
@@ -694,7 +694,7 @@ export class RoomStore {
 			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
 			const optionsToSave = {
 				...options,
-				modelId: this._store.model.app_id,
+				modelId: this._store.model.engine_id,
 				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
 			};
 
@@ -967,14 +967,14 @@ export class RoomStore {
 			messageId: "ASK_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
-			modelId: this.model?.app_id,
-			modelType: this.model?.app_type,
+			modelId: this.model?.engine_id,
+			modelType: this.model?.engine_type,
 			dateCreated: new Date().toISOString(),
 			parts: parts,
 			tokens: 0,
 			ornaments: {
 				modelName:
-					this.model.engine_display_name || this.model.app_name,
+					this.model.engine_display_name || this.model.engine_name,
 			},
 		});
 

@@ -1,36 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { styled, ToggleTabsGroup } from "@semoss/ui";
+import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { AppSettings } from "@/components/app";
 import {
 	MembersTable,
 	PendingMembersTable,
 	SettingsTiles,
+	UpdateSMSS,
 } from "@/components/settings";
 import { useAPI, useSettings } from "@/hooks";
 import type { Role } from "@/types";
 
-const StyledContainer = styled("div")(({ theme }) => ({
-	width: "100%",
-	display: "flex",
-	alignSelf: "stretch",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: theme.spacing(2),
-}));
-
-const StyledContent = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: theme.spacing(2),
-	flexShrink: "0",
-}));
-
 type VIEW = "CURRENT" | "PENDING" | "APP";
 
-export const AppSettingsUserDetailPage = () => {
+const AppSettingsUserDetailPage = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
 
@@ -63,7 +46,7 @@ export const AppSettingsUserDetailPage = () => {
 	}
 
 	return (
-		<StyledContainer>
+		<div className="flex w-full flex-col gap-4 self-stretch pb-8">
 			{permission === "OWNER" ? (
 				<SettingsTiles
 					type={"PROJECT"}
@@ -75,23 +58,27 @@ export const AppSettingsUserDetailPage = () => {
 					}}
 				/>
 			) : null}
-			<StyledContent>
-				<ToggleTabsGroup
+			<div className="flex w-full flex-col gap-4">
+				<Tabs
 					value={view}
-					onChange={(e, v) => setView(v as VIEW)}
+					onValueChange={(val) => setView(val as VIEW)}
 				>
-					<ToggleTabsGroup.Item label="Member" value={"CURRENT"} />
-					<ToggleTabsGroup.Item
-						label="Pending Requests"
-						disabled={permission === "READ_ONLY"}
-						value={"PENDING"}
-					/>
-					<ToggleTabsGroup.Item
-						label="Data Apps"
-						disabled={permission === "READ_ONLY"}
-						value={"APP"}
-					/>
-				</ToggleTabsGroup>
+					<TabsList className="w-fit max-w-full flex-wrap">
+						<TabsTrigger value={"CURRENT"}>Member</TabsTrigger>
+						<TabsTrigger
+							disabled={permission === "READ_ONLY"}
+							value={"PENDING"}
+						>
+							Pending Requests
+						</TabsTrigger>
+						<TabsTrigger
+							disabled={permission === "READ_ONLY"}
+							value={"APP"}
+						>
+							Data Apps
+						</TabsTrigger>
+					</TabsList>
+				</Tabs>
 				{view === "CURRENT" && (
 					<MembersTable
 						id={id}
@@ -103,19 +90,22 @@ export const AppSettingsUserDetailPage = () => {
 					<PendingMembersTable id={id} type={"PROJECT"} />
 				)}
 				{view === "APP" && <AppSettings id={id} />}
-			</StyledContent>
-		</StyledContainer>
+			</div>
+			{permission === "OWNER" ? (
+				<UpdateSMSS type={"PROJECT"} id={id} />
+			) : null}
+		</div>
 	);
 };
 
-export const AppSettingsAdminDetailPage = () => {
+const AppSettingsAdminDetailPage = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
 
 	const [view, setView] = useState<VIEW>("CURRENT");
 
 	return (
-		<StyledContainer>
+		<div className="flex w-full flex-col gap-4 self-stretch pb-8">
 			<SettingsTiles
 				type={"PROJECT"}
 				name={"app"}
@@ -125,18 +115,19 @@ export const AppSettingsAdminDetailPage = () => {
 					navigate("/settings/app");
 				}}
 			/>
-			<StyledContent>
-				<ToggleTabsGroup
+			<div className="flex w-full flex-col gap-4">
+				<Tabs
 					value={view}
-					onChange={(e, v) => setView(v as VIEW)}
+					onValueChange={(val) => setView(val as VIEW)}
 				>
-					<ToggleTabsGroup.Item label="Member" value={"CURRENT"} />
-					<ToggleTabsGroup.Item
-						label="Pending Requests"
-						value={"PENDING"}
-					/>
-					<ToggleTabsGroup.Item label="Data Apps" value={"APP"} />
-				</ToggleTabsGroup>
+					<TabsList className="w-fit max-w-full flex-wrap">
+						<TabsTrigger value={"CURRENT"}>Member</TabsTrigger>
+						<TabsTrigger value={"PENDING"}>
+							Pending Requests
+						</TabsTrigger>
+						<TabsTrigger value={"APP"}>Data Apps</TabsTrigger>
+					</TabsList>
+				</Tabs>
 				{view === "CURRENT" && (
 					<MembersTable id={id} type={"PROJECT"} />
 				)}
@@ -144,12 +135,13 @@ export const AppSettingsAdminDetailPage = () => {
 					<PendingMembersTable id={id} type={"PROJECT"} />
 				)}
 				{view === "APP" && <AppSettings id={id} />}
-			</StyledContent>
-		</StyledContainer>
+			</div>
+			<UpdateSMSS type={"PROJECT"} id={id} />
+		</div>
 	);
 };
 
-export const AppSettingsDetailPage = () => {
+export const AppSettingsDetailsPage = () => {
 	const { adminMode } = useSettings();
 
 	return (

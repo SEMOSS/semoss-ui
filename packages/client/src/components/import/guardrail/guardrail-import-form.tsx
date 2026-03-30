@@ -203,9 +203,14 @@ export const GuardrailForm = ({
 				return;
 			}
 			toast.success("Successfully added new guardrail to catalog");
-			navigate(
-				`/engine/guardrail/${(pixelOutput as { database_id: string }).database_id}`,
-			);
+			{
+				// engine_id is the current key; database_id is the legacy fallback
+				const o = pixelOutput as {
+					engine_id?: string;
+					database_id?: string;
+				};
+				navigate(`/engine/guardrail/${o.engine_id || o.database_id}`);
+			}
 			setLoading(false);
 		});
 	};

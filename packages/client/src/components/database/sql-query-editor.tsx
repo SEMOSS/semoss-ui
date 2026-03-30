@@ -3,7 +3,7 @@ import type React from "react";
 import { Suspense, useState } from "react";
 import { MonacoEditor } from "@semoss/shared";
 import { Button, cn, P } from "@semoss/ui/next";
-import { QueryActions } from "./QueryActions";
+import { QueryActions } from "./query-actions";
 
 interface SQLQueryEditorProps {
 	query: string;
@@ -64,25 +64,27 @@ export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
 			</div>
 
 			{/* Editor Container */}
-			<div className="relative m-2 flex flex-1 flex-col overflow-hidden rounded-2xl border-2 border-primary/40 bg-muted/30 shadow-lg transition-all duration-300 hover:border-primary/60 hover:shadow-xl">
+			<div className="group/query-editor relative m-2 flex flex-1 flex-col overflow-hidden rounded-2xl border-2 border-primary/40 bg-muted/30 shadow-lg transition-all duration-300 hover:border-primary/60 hover:shadow-xl">
 				{/* Copy Button */}
 				{query && (
-					<Button
-						variant="secondary"
-						size="icon"
-						onClick={handleCopyQuery}
-						title={copied ? "Copied!" : "Copy query"}
-						className={cn(
-							"absolute top-3 right-3 z-10 size-8 shadow-md transition-all duration-200 hover:scale-105",
-						)}
-						data-testid="query-copy-btn"
-					>
-						{copied ? (
-							<Check className="size-4" />
-						) : (
-							<Copy className="size-4" />
-						)}
-					</Button>
+					<div className="pointer-events-none absolute top-3 right-3 z-10 opacity-0 transition-opacity group-focus-within/query-editor:pointer-events-auto group-focus-within/query-editor:opacity-100 group-hover/query-editor:pointer-events-auto group-hover/query-editor:opacity-100">
+						<Button
+							variant="secondary"
+							size="icon"
+							onClick={handleCopyQuery}
+							title={copied ? "Copied!" : "Copy query"}
+							className={cn(
+								"size-8 bg-background/80 shadow-md backdrop-blur-sm transition-all duration-200 hover:scale-105",
+							)}
+							data-testid="query-copy-btn"
+						>
+							{copied ? (
+								<Check className="size-4" />
+							) : (
+								<Copy className="size-4" />
+							)}
+						</Button>
+					</div>
 				)}
 
 				{/* Monaco Editor */}
@@ -105,6 +107,8 @@ export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
 							language="sql"
 							options={{
 								scrollbar: {
+									horizontal: "hidden",
+									horizontalScrollbarSize: 0,
 									alwaysConsumeMouseWheel: false,
 								},
 								readOnly: false,
@@ -119,6 +123,7 @@ export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
 								folding: false,
 								lineNumbersMinChars: 3,
 								wordWrap: "on",
+								wrappingStrategy: "advanced",
 								tabSize: 4,
 								quickSuggestions: true,
 								suggestOnTriggerCharacters: true,

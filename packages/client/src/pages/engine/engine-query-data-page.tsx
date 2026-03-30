@@ -21,9 +21,7 @@ export const EngineQueryDataPage = observer(() => {
 	const [isUserModifiedQuery, setIsUserModifiedQuery] = useState(false);
 
 	// Resize states
-	const [leftPanelWidth, setLeftPanelWidth] = useState(32); // percentage
 	const [bottomPanelHeight, setBottomPanelHeight] = useState(300); // pixels
-	const [isResizingHorizontal, setIsResizingHorizontal] = useState(false);
 	const [isResizingVertical, setIsResizingVertical] = useState(false);
 
 	const [isMobile, setIsMobile] = useState(
@@ -188,36 +186,6 @@ export const EngineQueryDataPage = observer(() => {
 
 	const canAutoGenerateQuery = !query.trim() || !isUserModifiedQuery;
 
-	// Horizontal resize handlers
-	const handleHorizontalResizeStart = useCallback((e: React.MouseEvent) => {
-		e.preventDefault();
-		setIsResizingHorizontal(true);
-	}, []);
-
-	const handleHorizontalResize = useCallback(
-		(e: MouseEvent) => {
-			if (!isResizingHorizontal || !containerRef.current) return;
-
-			const container = containerRef.current;
-			const containerRect = container.getBoundingClientRect();
-			const containerWidth = containerRect.width;
-
-			// Calculate new left panel width percentage
-			const newWidth =
-				((e.clientX - containerRect.left) / containerWidth) * 100;
-
-			// Constrain between 20% and 60%
-			const constrainedWidth = Math.max(20, Math.min(60, newWidth));
-
-			setLeftPanelWidth(constrainedWidth);
-		},
-		[isResizingHorizontal],
-	);
-
-	const handleHorizontalResizeEnd = useCallback(() => {
-		setIsResizingHorizontal(false);
-	}, []);
-
 	// Vertical resize handlers
 	const handleVerticalResizeStart = useCallback((e: React.MouseEvent) => {
 		e.preventDefault();
@@ -282,33 +250,6 @@ export const EngineQueryDataPage = observer(() => {
 		bottomPanelHeight,
 	]);
 
-	// Mouse event listeners
-	useEffect(() => {
-		if (isResizingHorizontal) {
-			document.addEventListener("mousemove", handleHorizontalResize);
-			document.addEventListener("mouseup", handleHorizontalResizeEnd);
-			document.body.style.cursor = "col-resize";
-			document.body.style.userSelect = "none";
-
-			return () => {
-				document.removeEventListener(
-					"mousemove",
-					handleHorizontalResize,
-				);
-				document.removeEventListener(
-					"mouseup",
-					handleHorizontalResizeEnd,
-				);
-				document.body.style.cursor = "";
-				document.body.style.userSelect = "";
-			};
-		}
-	}, [
-		isResizingHorizontal,
-		handleHorizontalResize,
-		handleHorizontalResizeEnd,
-	]);
-
 	useEffect(() => {
 		if (isResizingVertical) {
 			document.addEventListener("mousemove", handleVerticalResize);
@@ -360,7 +301,7 @@ export const EngineQueryDataPage = observer(() => {
 					style={
 						isMobile
 							? { width: "100%", height: "280px", flexShrink: 0 }
-							: { width: `${leftPanelWidth}%`, minWidth: "280px" }
+							: { width: "32%", minWidth: "280px" }
 					}
 				>
 					<Card className="group flex h-[calc(100%-2rem)] flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/95 p-0 shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-primary/20 hover:shadow-xl">
@@ -391,17 +332,6 @@ export const EngineQueryDataPage = observer(() => {
 						/>
 					</Card>
 				</div>
-
-				{/* Horizontal Resize Handle - Desktop only */}
-				{!isMobile && (
-					<button
-						type="button"
-						onMouseDown={handleHorizontalResizeStart}
-						className="w-2 flex-shrink-0 cursor-col-resize transition-colors hover:bg-primary/5"
-						data-testid="horizontal-resize-handle"
-						aria-label="Resize panels horizontally"
-					/>
-				)}
 
 				{/* Right Panel - SQL Query Editor */}
 				<div
