@@ -1,4 +1,3 @@
-import { ActionMessages } from "@semoss/renderer";
 import LANDINGPAGE from "@/assets/img/query.jpeg";
 import type { Template } from "./templates.types";
 
@@ -296,7 +295,7 @@ export const RowToNotebookTemplate: Template = {
 						whiteSpace: "pre-line",
 						textOverflow: "ellipsis",
 					},
-					text: "$data--1.database_name",
+					text: "$data--1.engine_name",
 					variant: "p",
 					show: "true",
 					loading: false,
@@ -324,7 +323,7 @@ export const RowToNotebookTemplate: Template = {
 						whiteSpace: "pre-line",
 						textOverflow: "ellipsis",
 					},
-					text: "$data--1.database_id",
+					text: "$data--1.engine_id",
 					variant: "p",
 					show: "true",
 					loading: false,
@@ -352,7 +351,7 @@ export const RowToNotebookTemplate: Template = {
 						whiteSpace: "pre-line",
 						textOverflow: "ellipsis",
 					},
-					text: "$data--1.database_subtype",
+					text: "$data--1.engine_subtype",
 					variant: "p",
 					show: "true",
 					loading: false,
@@ -439,7 +438,7 @@ export const RowToNotebookTemplate: Template = {
 									destinationType: "",
 									destination: "",
 									variable: "row-id",
-									value: "$data--1.database_name",
+									value: "$data--1.engine_name",
 									blockId: "button--2",
 								},
 							},

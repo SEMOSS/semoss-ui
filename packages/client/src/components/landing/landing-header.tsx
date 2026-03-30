@@ -49,10 +49,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 	return (
 		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
 			{CARDS.map((card) => (
-				<Card
-					key={card.title}
-					className="relative mx-auto w-full max-w-sm gap-2"
-				>
+				<Card key={card.title} className="relative h-full w-full gap-2">
 					<CardHeader>
 						<CardTitle>{card.title}</CardTitle>
 						<CardDescription className="line-clamp-3 h-15">
@@ -76,8 +73,12 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 							</span>
 						</Button>
 					</CardFooter>
-					<div className="relative w-full overflow-hidden px-6">
-						<img src={card.image} alt={card.title} />
+					<div className="relative mt-1 w-full px-6 pb-5">
+						<img
+							src={card.image}
+							alt={card.title}
+							className="mx-auto h-auto max-h-[180px] w-full max-w-[460px] object-contain"
+						/>
 					</div>
 				</Card>
 			))}

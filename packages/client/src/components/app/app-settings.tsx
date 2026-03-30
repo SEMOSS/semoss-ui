@@ -1,12 +1,13 @@
 import {
-	Cached,
-	InsertLink,
-	Person,
-	Publish,
-	PublishedWithChanges,
-	ToggleOff,
-} from "@mui/icons-material";
-import { ChevronDown, ChevronUp } from "lucide-react";
+	RefreshCw as Cached,
+	ChevronDown,
+	ChevronUp,
+	Link2 as InsertLink,
+	User as Person,
+	Upload as Publish,
+	BadgeCheck as PublishedWithChanges,
+	ToggleLeft as ToggleOff,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {

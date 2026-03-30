@@ -1,4 +1,4 @@
-import { KeyboardArrowDown } from "@mui/icons-material";
+import { ChevronDown } from "lucide-react";
 import type React from "react";
 import {
 	Suspense,
@@ -271,7 +271,9 @@ export const ConfigurationsPage = () => {
 			<StyledConfigurationsOptionsAccordion>
 				<div>
 					<StyledAccordion>
-						<Accordion.Trigger expandIcon={<KeyboardArrowDown />}>
+						<Accordion.Trigger
+							expandIcon={<ChevronDown size={18} />}
+						>
 							<Typography variant="body1">
 								Authentication
 							</Typography>
