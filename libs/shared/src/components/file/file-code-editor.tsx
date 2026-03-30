@@ -1,5 +1,5 @@
 import type { OnMount } from "@monaco-editor/react";
-import { RefreshCwIcon, SaveIcon } from "lucide-react";
+import { DownloadIcon, RefreshCwIcon, SaveIcon } from "lucide-react";
 import type * as monaco from "monaco-editor";
 import { Suspense, useRef, useState } from "react";
 import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
@@ -340,6 +340,19 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>Save (Ctrl+S)</TooltipContent>
+				</Tooltip>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							disabled={isLoading || getFile.status !== "SUCCESS"}
+							onClick={() => downloadFile()}
+						>
+							<DownloadIcon className="size-3" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Download (Ctrl+D)</TooltipContent>
 				</Tooltip>
 			</div>
 			<Suspense
