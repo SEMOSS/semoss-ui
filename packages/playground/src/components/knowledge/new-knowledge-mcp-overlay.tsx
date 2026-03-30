@@ -83,13 +83,13 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 				}
 
 				let embedderId = showEmbeddingOptions
-					? embeddingEngine?.app_id
+					? embeddingEngine?.engine_id
 					: defaultEmbedderId;
 				if (!embedderId && !showEmbeddingOptions) {
 					const res = await actions.run<[Engine[]]>(
 						`MyEngines(engineTypes=["MODEL"], metaFilters=[{"tag":"embeddings"}], limit=[1], offset=[0]);`,
 					);
-					embedderId = res.pixelReturn[0].output[0]?.app_id;
+					embedderId = res.pixelReturn[0].output[0]?.engine_id;
 				}
 				if (!embedderId) {
 					toast.error(t("validation:embeddingRequired"));
@@ -112,7 +112,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 				const createVectorEngine = await actions.run<
 					[
 						{
-							database_id: string;
+							engine_id: string;
 						},
 					]
 				>(`CreateVectorDatabaseEngine(
@@ -121,7 +121,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 			);`);
 
 				const engineId =
-					createVectorEngine.pixelReturn[0].output.database_id;
+					createVectorEngine.pixelReturn[0].output.engine_id;
 				if (!engineId) {
 					throw new Error(t("notifications:knowledge.createError"));
 				}
@@ -137,7 +137,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 				embeddingsResponse = await actions.run<
 					[
 						{
-							database_id: string;
+							engine_id: string;
 						},
 					]
 				>(`CreateEmbeddingsFromDocuments(
@@ -229,8 +229,12 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 										{t("knowledge:form.embeddingLabel")}
 									</FieldLabel>
 									<EngineSelect
-										name={embeddingEngine?.app_name || ""}
-										value={embeddingEngine?.app_id || ""}
+										name={
+											embeddingEngine?.engine_display_name ||
+											embeddingEngine?.engine_name ||
+											""
+										}
+										value={embeddingEngine?.engine_id || ""}
 										engineTypes={["MODEL"]}
 										metaFilters={[{ tag: "embeddings" }]}
 										onChange={(e) => setEmbeddingEngine(e)}

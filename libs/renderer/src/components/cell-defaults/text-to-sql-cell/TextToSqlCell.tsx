@@ -194,28 +194,8 @@ const StyledExpandMore = styled(ExpandMore)(({ theme }) => ({
 }));
 
 interface Model {
-	database_date_created: string;
-	app_type: string;
-	app_subtype: string;
-	database_name: string;
-	low_database_name: string;
-	database_favorite: number;
-	permission: number;
-	database_type: string;
-	app_name: string;
-	database_id: string;
-	database_cost: string;
-	domain: string;
-	database_discoverable: boolean;
-	user_permission: number;
-	tag: string[];
-	database_global: boolean;
-	database_created_by: string;
-	app_favorite: number;
-	app_id: string;
-	database_subtype: string;
-	database_created_by_type: string;
-	app_cost: string;
+	engine_name: string;
+	engine_id: string;
 }
 interface MetaModel {
 	edges: string[];
@@ -285,7 +265,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
 	/**
 	 * Fetches the list of databases from the user's engine list
 	 */
-	const dbsList = usePixel<{ app_id: string; app_name: string }[]>(
+	const dbsList = usePixel<{ engine_id: string; engine_name: string }[]>(
 		`MyEngines(engineTypes=['DATABASE']);`,
 	);
 	/**
@@ -299,9 +279,9 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
 		}
 
 		// Prepare database IDs and display mapping
-		const dbIds = dbsList.data?.map((db) => db.app_id);
+		const dbIds = dbsList.data?.map((db) => db.engine_id);
 		const dbDisplay = Object.fromEntries(
-			dbsList.data?.map((db) => [db.app_id, db.app_name]),
+			dbsList.data?.map((db) => [db.engine_id, db.engine_name]),
 		);
 
 		setCfgLibraryDatabases({
@@ -337,7 +317,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
 		setModelDetail({
 			loading: false,
 			modelData: modelsData as Model[],
-			selectedModel: modelsData?.[0]?.app_id,
+			selectedModel: modelsData?.[0]?.engine_id,
 		});
 	};
 	/**
@@ -602,6 +582,9 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
 											viewBox="0 0 20 20"
 											fill="none"
 										>
+											<title>
+												Natural language query icon
+											</title>
 											<path
 												d="M2.08594 4.58594C2.08594 5.2776 2.64427 5.83594 3.33594 5.83594H6.2526V14.5859C6.2526 15.2776 6.81094 15.8359 7.5026 15.8359C8.19427 15.8359 8.7526 15.2776 8.7526 14.5859V5.83594H11.6693C12.3609 5.83594 12.9193 5.2776 12.9193 4.58594C12.9193 3.89427 12.3609 3.33594 11.6693 3.33594H3.33594C2.64427 3.33594 2.08594 3.89427 2.08594 4.58594ZM16.6693 7.5026H11.6693C10.9776 7.5026 10.4193 8.06094 10.4193 8.7526C10.4193 9.44427 10.9776 10.0026 11.6693 10.0026H12.9193V14.5859C12.9193 15.2776 13.4776 15.8359 14.1693 15.8359C14.8609 15.8359 15.4193 15.2776 15.4193 14.5859V10.0026H16.6693C17.3609 10.0026 17.9193 9.44427 17.9193 8.7526C17.9193 8.06094 17.3609 7.5026 16.6693 7.5026Z"
 												fill={"#0000008A"}
@@ -669,9 +652,9 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
 									modelDetail.modelData.map((model, key) => (
 										<StyledSelectItem
 											key={
-												model.database_id?.split("-")
+												model.engine_id?.split("-")
 													?.length > 0
-													? model.database_id
+													? model.engine_id
 															.split("-")
 															.reverse()
 															.slice(0, 2)
@@ -679,9 +662,9 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
 													: key
 											}
 											data-testid={`model-user-item-${cell.id}-${key}`}
-											value={model.database_id}
+											value={model.engine_id}
 										>
-											{model.app_name}
+											{model.engine_name}
 										</StyledSelectItem>
 									))}
 							</StyledModelSelect>
