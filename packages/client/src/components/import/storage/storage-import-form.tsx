@@ -80,16 +80,22 @@ export const StorageForm = ({
 		const pixel = `CreateStorageEngine(storage=["${formData.NAME}"],storageDetails=[${JSON.stringify(formData)}])`;
 
 		monolithStore.runQuery(pixel).then(async (response) => {
-			const pixelOutput = response.pixelReturn[0].output,
+			const pixelOutput = response.pixelReturn[0].output as {
+					engine_id?: string;
+					// engine_id is the current key; database_id is the legacy fallback
+					database_id?: string;
+				},
 				operationType = response.pixelReturn[0].operationType;
 
 			if (operationType.indexOf("ERROR") > -1) {
-				toast.error(pixelOutput as string);
+				toast.error(pixelOutput as unknown as string);
 				setLoading(false);
 				return;
 			}
 			toast.success(`Successfully added new storage to catalog`);
-			navigate(`/engine/storage/${pixelOutput.database_id}`);
+			navigate(
+				`/engine/storage/${pixelOutput.engine_id || pixelOutput.database_id}`,
+			);
 			setLoading(false);
 		});
 	};

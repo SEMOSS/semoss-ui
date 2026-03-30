@@ -136,9 +136,14 @@ export const FunctionForm = ({
 			}
 			toast.success("Successfully added function database to catalog");
 
-			navigate(
-				`/engine/function/${(pixelOutput as { database_id: string }).database_id}`,
-			);
+			{
+				// engine_id is the current key; database_id is the legacy fallback
+				const o = pixelOutput as {
+					engine_id?: string;
+					database_id?: string;
+				};
+				navigate(`/engine/function/${o.engine_id || o.database_id}`);
+			}
 			setLoading(false);
 		});
 	};

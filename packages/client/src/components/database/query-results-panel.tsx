@@ -147,8 +147,8 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 				)}
 			</div>
 
-			{/* Footer - Only shown when expanded */}
-			{isExpanded && (
+			{/* Footer */}
+			{previewData && !previewLoading && (
 				<div
 					className="flex flex-shrink-0 items-center justify-between border-border/50 border-t bg-muted/30 px-4 py-2.5 text-muted-foreground text-xs"
 					data-testid="query-results-footer"
