@@ -30,7 +30,7 @@ export const MainLayout = observer(() => {
 	const [navbarActions, setNavbarActions] = useState<ReactNode | null>(null);
 
 	const [isSidebarOpen, setIsSidebarOpen] = useCacheState(
-		theme?.sidebar?.expandedByDefault ?? false,
+		theme.sidebar.expandedByDefault,
 		`sidebar--isOpen`,
 	);
 

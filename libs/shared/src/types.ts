@@ -61,7 +61,7 @@ export interface ThemeMap {
 		 * Content to show in the sidebar
 		 */
 		sidebar: {
-			expandedByDefault?: boolean;
+			expandedByDefault: boolean;
 			chatHistoryDate: boolean;
 			headerItems: {
 				name: string;
