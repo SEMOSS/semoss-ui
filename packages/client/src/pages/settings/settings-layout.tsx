@@ -1,33 +1,31 @@
-import {
-	AdminPanelSettingsOutlined,
-	ContentCopyOutlined,
-} from "@mui/icons-material";
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Copy, MoreVertical, Pencil, ShieldCheck, Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
-	Link,
 	matchPath,
 	Outlet,
+	Link as RouterLink,
 	useLocation,
 	useNavigate,
 	useParams,
 } from "react-router-dom";
 import {
-	Breadcrumbs,
+	Badge,
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 	Button,
-	Chip,
-	IconButton,
-	Stack,
-	styled,
-	Tooltip,
-	Typography,
-} from "@semoss/ui";
-import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
+	P,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { deleteTeam, getGroupDetails } from "@/api";
@@ -37,54 +35,6 @@ import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
-
-const StyledHeader = styled("div")(() => ({
-	display: "flex",
-	justifyContent: "space-between",
-}));
-
-const StyledAdminHeader = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "row",
-	justifyContent: "space-between",
-	alignItems: "center",
-}));
-
-const StyledAdminActionButtons = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(1),
-}));
-
-const StyledId = styled(Typography)(({ theme }) => ({
-	color: theme.palette.secondary.dark,
-}));
-
-const StyledChip = styled(Chip, {
-	shouldForwardProp: (prop) => prop !== "adminMode",
-})<{ adminMode: boolean }>(({ theme, adminMode }) => ({
-	backgroundColor: `${
-		adminMode ? "rgba(46, 125, 50, .15)" : theme.palette.success
-	}`,
-	"&&:hover": {
-		backgroundColor: `${
-			adminMode ? "rgba(46, 125, 50, .25)" : theme.palette.grey[300]
-		}`,
-	},
-}));
-
-const IdContainer = styled("span")(() => ({
-	display: "flex",
-	alignItems: "center",
-}));
-
-const StyledAdminContainer = styled("div")(({ theme }) => ({
-	top: theme.spacing(1),
-	right: theme.spacing(1),
-	zIndex: 1,
-}));
-
-// StyledLink removed (unused)
 
 export const SettingsLayout = observer(() => {
 	const { configStore } = useRootStore();
@@ -268,84 +218,97 @@ export const SettingsLayout = observer(() => {
 					adminMode: adminMode,
 				}}
 			>
-				<Stack direction="column" gap={2}>
-					<Stack>
+				<div className="flex flex-col gap-2">
+					<div className="flex flex-col gap-2">
 						{matchedRoute.path && (
-							<StyledHeader>
-								<Breadcrumbs separator="/">
-									<Breadcrumbs.Item
-										//@ts-expect-error: TODO FIX Type
-										as={Link}
-										to={`..`}
-										underline="none"
-										color="inherit"
-										variant="body1"
-									>
-										Settings
-									</Breadcrumbs.Item>
-									{matchedRoute.history.map((link, idx) => {
-										return (
-											<Breadcrumbs.Item
-												//@ts-expect-error: TODO FIX Type
-												as={Link}
-												key={idx + link}
-												to={link.replace("<id>", id)}
-												underline="none"
-												color={
+							<div className="flex justify-between">
+								<Breadcrumb>
+									<BreadcrumbList>
+										<BreadcrumbItem>
+											<BreadcrumbLink asChild>
+												<RouterLink to={`..`}>
+													Settings
+												</RouterLink>
+											</BreadcrumbLink>
+										</BreadcrumbItem>
+										{matchedRoute.history.map(
+											(link, idx) => {
+												const isLastItem =
 													matchedRoute.history
 														.length -
 														1 ===
-													idx
-														? "text.disabled"
-														: "inherit"
-												}
-												variant="body1"
-												state={{ ...state }}
-											>
-												{link.includes("<id>")
+													idx;
+												const label = link.includes(
+													"<id>",
+												)
 													? id
-													: matchedRoute.title}
-											</Breadcrumbs.Item>
-										);
-									})}
-								</Breadcrumbs>
-							</StyledHeader>
+													: matchedRoute.title;
+												const to = link.replace(
+													"<id>",
+													id ?? "",
+												);
+
+												return (
+													<Fragment key={idx + link}>
+														<BreadcrumbSeparator />
+														<BreadcrumbItem>
+															{isLastItem ? (
+																<BreadcrumbPage>
+																	{label}
+																</BreadcrumbPage>
+															) : (
+																<BreadcrumbLink
+																	asChild
+																>
+																	<RouterLink
+																		to={to}
+																		state={{
+																			...state,
+																		}}
+																	>
+																		{label}
+																	</RouterLink>
+																</BreadcrumbLink>
+															)}
+														</BreadcrumbItem>
+													</Fragment>
+												);
+											},
+										)}
+									</BreadcrumbList>
+								</Breadcrumb>
+							</div>
 						)}
-						<StyledAdminContainer>
-							<StyledAdminHeader>
+						<div className="z-[1]">
+							<div className="flex flex-row items-center justify-between">
 								{isTeamPermissionsDetail && id ? (
-									<Stack
-										direction="row"
-										spacing={1}
-										alignItems="center"
-									>
-										<Typography variant="h4">
+									<div className="flex flex-row items-center gap-2">
+										<h1 className="font-semibold text-2xl leading-normal">
 											{id}
-										</Typography>
+										</h1>
 										{type ? (
-											<Chip
-												size="small"
-												label={String(
-													type,
-												).toUpperCase()}
-												variant="outlined"
-											/>
+											<Badge
+												variant="outline"
+												className="uppercase"
+											>
+												{String(type).toUpperCase()}
+											</Badge>
 										) : null}
-									</Stack>
+									</div>
 								) : (
-									<Typography variant="h4">
+									<h1 className="font-semibold text-2xl leading-normal">
 										{matchedRoute.history.length < 2
 											? matchedRoute.title
 											: state
 												? state.name
 												: matchedRoute.title}
-									</Typography>
+									</h1>
 								)}
 
-								<StyledAdminActionButtons>
+								<div className="flex items-center gap-2">
 									{showPrivacyCenter && (
 										<Button
-											variant="text"
+											variant="ghost"
 											onClick={() =>
 												setPrivacyCenterOpen(true)
 											}
@@ -358,63 +321,65 @@ export const SettingsLayout = observer(() => {
 									)}
 
 									{configStore.store.user.admin && (
-										<StyledChip
-											adminMode={adminMode}
-											size="medium"
-											clickable
-											icon={
-												<AdminPanelSettingsOutlined
-													color={
-														adminMode
-															? "success"
-															: "disabled"
-													}
-												/>
-											}
-											label={
+										<Button
+											variant="outline"
+											size="sm"
+											className={`h-8 rounded-full px-3 ${
 												adminMode
-													? "Admin On"
-													: "Admin Off"
-											}
+													? "border-green-700/30 bg-green-700/10 text-green-800 hover:bg-green-700/20"
+													: "border-border bg-muted text-foreground hover:bg-muted/80"
+											}`}
 											onClick={() =>
 												setAdminMode(!adminMode)
 											}
-										/>
+										>
+											<ShieldCheck className="size-4" />
+											{adminMode
+												? "Admin On"
+												: "Admin Off"}
+										</Button>
 									)}
-								</StyledAdminActionButtons>
-							</StyledAdminHeader>
-						</StyledAdminContainer>
+								</div>
+							</div>
+						</div>
 						{id ? (
-							<IdContainer>
-								<StyledId variant={"subtitle2"}>{id}</StyledId>
-								<IconButton
-									size="small"
-									onClick={() => {
-										copy(id);
-									}}
-									data-testid={"settingsLayout-copy-btn"}
-								>
-									<Tooltip title={`Copy ID`}>
-										<ContentCopyOutlined fontSize="inherit" />
-									</Tooltip>
-								</IconButton>
-							</IdContainer>
+							<div className="flex items-center gap-1">
+								<span className="text-muted-foreground text-sm">
+									{id}
+								</span>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											onClick={() => {
+												copy(id);
+											}}
+											data-testid={
+												"settingsLayout-copy-btn"
+											}
+										>
+											<Copy className="size-4" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Copy ID</TooltipContent>
+								</Tooltip>
+							</div>
 						) : null}
 						{isTeamPermissionsDetail ? (
 							<>
 								<div className="flex w-full items-start justify-between gap-3">
-									<Typography variant="body1">
-										{descriptionText}
-									</Typography>
+									<P>{descriptionText}</P>
 									{teamId && teamType ? (
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
-												<IconButton
-													size="small"
+												<Button
+													variant="ghost"
+													size="icon-sm"
 													aria-label="Team actions"
 												>
 													<MoreVertical className="size-4" />
-												</IconButton>
+												</Button>
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end">
 												<DropdownMenuItem
@@ -441,19 +406,14 @@ export const SettingsLayout = observer(() => {
 										</DropdownMenu>
 									) : null}
 								</div>
-								<Typography
-									variant="body2"
-									color="textSecondary"
-								>
+								<P className="text-muted-foreground text-sm">
 									{teamDescriptionText}
-								</Typography>
+								</P>
 							</>
 						) : (
-							<Typography variant="body1">
-								{descriptionText}
-							</Typography>
+							<P>{descriptionText}</P>
 						)}
-					</Stack>
+					</div>
 					<Outlet />
 
 					<PrivacyPreferenceCenterModal
@@ -485,7 +445,7 @@ export const SettingsLayout = observer(() => {
 						onConfirm={handleDelete}
 						isLoading={isDeleting}
 					/>
-				</Stack>
+				</div>
 			</SettingsContext.Provider>
 		</>
 	);

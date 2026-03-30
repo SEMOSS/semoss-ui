@@ -2934,6 +2934,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			display: "Gemini 3.1 Pro Preview",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-1-pro",
 			description:
 				"Advanced intelligence model for complex problem-solving and agentic capabilities.",
 			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
@@ -2943,6 +2944,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			display: "Gemini 3 Flash Preview",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-flash",
 			description:
 				"High-performance model with pro-level intelligence at lower latency and cost.",
 			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
@@ -2952,6 +2954,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			display: "Gemini 3.1 Flash Lite Preview",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-1-flash-lite",
 			description:
 				"Optimized preview model for high-volume, cost-sensitive tasks.",
 			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
@@ -2961,6 +2964,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			display: "Gemini 3 Pro Image Preview",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-pro-image",
 			image: true,
 			description:
 				"High-fidelity image generation model with reasoning capabilities.",
@@ -2971,6 +2975,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			display: "Gemini 3.1 Flash Image Preview",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-1-flash-image",
 			image: true,
 			description:
 				"High-efficiency visual creation model for fast image generation workflows.",
@@ -2981,6 +2986,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			display: "Gemini 2.5 Pro",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-pro",
 			description:
 				"High-capability model for complex reasoning and coding with a large context window.",
 			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
@@ -2990,6 +2996,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			display: "Gemini 2.5 Flash",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash",
 			description:
 				"Fast and capable model balancing intelligence and speed.",
 			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
@@ -2999,6 +3006,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			display: "Gemini 2.5 Flash Lite",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash-lite",
 			description: "Optimized Gemini model for high-throughput tasks.",
 			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
 		},
@@ -3007,6 +3015,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			display: "Gemini 2.0 Flash 001",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-0-flash",
 			description:
 				"Multimodal general-purpose model for broad production use.",
 			formConfig: withModelTokenLimits(undefined, 8192, 1048576),
@@ -3016,6 +3025,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			display: "Gemini 2.5 Flash Image",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			embedding: false,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash-image",
 			image: true,
 			description:
 				"Production-ready image model for fast, high-quality asset generation.",
@@ -3027,7 +3037,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
 			modelBrand: "GEMINI",
 			embedding: false,
-			link: "https://cloud.google.com/vertex-ai/docs/model-garden",
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models",
 			description:
 				"Configure any Vertex-hosted Gemini or partner model not listed above with a custom model ID and init script.",
 			formConfig: OTHER_MODEL_FORM_CONFIG_BY_PROVIDER["Google Gemini"],

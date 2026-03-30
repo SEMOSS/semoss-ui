@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { JobsPage } from "../jobs/JobsPage";
-import { AdminQueryPage } from "./AdminQueryPage";
+import { AdminQueryPage } from "./admin-query-page";
 import { AdminThemePage } from "./admin-theme-page";
 import { AppSettingsDetailsPage } from "./app-settings-details-page";
 import { ConfigurationsPage } from "./ConfigurationsPage";

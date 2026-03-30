@@ -131,12 +131,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			type === "FUNCTION"
 		) {
 			const data = engineInfo.data as {
-				database_global: boolean;
-				database_discoverable: boolean;
+				engine_global: boolean;
+				engine_discoverable: boolean;
 			};
 
-			setDiscoverable(data.database_discoverable);
-			setGlobal(data.database_global);
+			setDiscoverable(data.engine_discoverable);
+			setGlobal(data.engine_global);
 		} else if (type === "PROJECT") {
 			const data = engineInfo.data as {
 				project_global: boolean;
@@ -154,18 +154,21 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		engineInfo.data && typeof engineInfo.data === "object"
 			? (engineInfo.data as Record<string, unknown>)
 			: null;
-	const deleteTargetName =
-		([
-			engineInfoObject?.engine_display_name,
-			engineInfoObject?.engine_name,
-			engineInfoObject?.database_name,
-			engineInfoObject?.app_display_name,
-			engineInfoObject?.app_name,
-			engineInfoObject?.project_name,
-			name,
-		].find(
-			(value) => typeof value === "string" && value.trim().length > 0,
-		) as string | undefined) || name;
+	const deleteTargetNameCandidate = (
+		isProjectType
+			? [
+					engineInfoObject?.app_display_name,
+					engineInfoObject?.app_name,
+					engineInfoObject?.project_name,
+				]
+			: [
+					engineInfoObject?.engine_display_name,
+					engineInfoObject?.engine_name,
+				]
+	).find((value) => typeof value === "string" && value.trim().length > 0) as
+		| string
+		| undefined;
+	const deleteTargetName = deleteTargetNameCandidate || name;
 
 	/**
 	 * Delete the item

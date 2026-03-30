@@ -233,7 +233,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 				<Button
 					type="button"
 					variant="link"
-					className="mt-2 flex justify-end p-0 text-sm"
+					className="mt-2 ml-auto h-auto w-fit self-end p-0 text-sm"
 					onClick={(e) => {
 						e.stopPropagation();
 						window.open(
