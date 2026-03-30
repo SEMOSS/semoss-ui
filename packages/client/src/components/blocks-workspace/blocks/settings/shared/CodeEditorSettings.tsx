@@ -2,7 +2,7 @@
 
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
 	BLOCK_TYPE_INPUT,
 	type Block,
@@ -44,14 +44,16 @@ export const CodeEditorSettings = observer(
 		const [language, setLanguage] = useState("");
 		const [LLMLoading, setLLMLoading] = useState(false);
 		const [modelId, setModelId] = useState<string>("");
-		const myModels = usePixel<{ app_id: string; app_name: string }[]>(`
+		const myModels = usePixel<
+			{ engine_id: string; engine_name: string }[]
+		>(`
             MyEngines(engineTypes=['MODEL']);
         `);
 		const notification = useNotification();
 		const wordWrapRef = useRef(true);
 
-		const [models, setModels] = useState<
-			{ app_id: string; app_name: string }[]
+		const [_models, setModels] = useState<
+			{ engine_id: string; engine_name: string }[]
 		>([]);
 
 		const modelIdRef = useRef("");
@@ -69,11 +71,11 @@ export const CodeEditorSettings = observer(
 				const v = getValueByPath(data, path);
 
 				// determine and set language type
-				if (path == "html") {
+				if (path === "html") {
 					setLanguage("html");
-				} else if (path == "specJson") {
+				} else if (path === "specJson") {
 					setLanguage("json");
-				} else if (path == "text") {
+				} else if (path === "text") {
 					setLanguage("plaintext");
 				}
 
@@ -103,12 +105,14 @@ export const CodeEditorSettings = observer(
 
 			setModels(
 				myModels.data.map((d) => ({
-					app_name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
-					app_id: d?.app_id,
+					engine_name: d.engine_name
+						? d.engine_name.replace(/_/g, " ")
+						: "",
+					engine_id: d?.engine_id,
 				})),
 			);
 
-			setModelId(myModels.data[0]?.app_id);
+			setModelId(myModels.data[0]?.engine_id);
 		}, [myModels.status, myModels.data]);
 
 		/**
@@ -142,7 +146,7 @@ export const CodeEditorSettings = observer(
 				const res = await runPixel(pixel);
 				setLLMLoading(false);
 
-				const LLMResponse = res.pixelReturn[0].output["response"];
+				const LLMResponse = res.pixelReturn[0].output.response;
 				let trimmedStarterCode = LLMResponse;
 				trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
 
@@ -283,8 +287,8 @@ export const CodeEditorSettings = observer(
 					const replaceRangeEndBuffer =
 						followingTwoCharacters === "}}"
 							? 2
-							: followingTwoCharacters == "} " ||
-									followingTwoCharacters == "}"
+							: followingTwoCharacters === "} " ||
+									followingTwoCharacters === "}"
 								? 1
 								: 0;
 
@@ -380,10 +384,9 @@ export const CodeEditorSettings = observer(
 
 		return (
 			<>
-				{LLMLoading && (
+				{LLMLoading &&
 					// <LoadingScreen.Trigger description="Generating..." />
-					<>Loading...</>
-				)}
+					"Loading..."}
 				<Suspense fallback={<>...</>}>
 					<MonacoEditor
 						width="100%"

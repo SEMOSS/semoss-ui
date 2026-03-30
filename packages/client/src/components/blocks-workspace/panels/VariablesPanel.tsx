@@ -351,34 +351,34 @@ export const VariablesPanel = observer(
 			useState<HTMLElement | null>(null);
 		const [engines, setEngines] = useState<{
 			models: {
-				app_id: string;
-				app_name: string;
-				app_type: string;
-				app_subtype: string;
+				engine_id: string;
+				engine_name: string;
+				engine_type: string;
+				engine_subtype: string;
 			}[];
 			databases: {
-				app_id: string;
-				app_name: string;
-				app_type: string;
-				app_subtype: string;
+				engine_id: string;
+				engine_name: string;
+				engine_type: string;
+				engine_subtype: string;
 			}[];
 			storages: {
-				app_id: string;
-				app_name: string;
-				app_type: string;
-				app_subtype: string;
+				engine_id: string;
+				engine_name: string;
+				engine_type: string;
+				engine_subtype: string;
 			}[];
 			functions: {
-				app_id: string;
-				app_name: string;
-				app_type: string;
-				app_subtype: string;
+				engine_id: string;
+				engine_name: string;
+				engine_type: string;
+				engine_subtype: string;
 			}[];
 			vectors: {
-				app_id: string;
-				app_name: string;
-				app_type: string;
-				app_subtype: string;
+				engine_id: string;
+				engine_name: string;
+				engine_type: string;
+				engine_subtype: string;
 			}[];
 		}>({
 			models: [],
@@ -421,7 +421,7 @@ export const VariablesPanel = observer(
 		const [selectedChanges, setSelectedChanges] = useState<
 			Record<string, boolean>
 		>({});
-		const [isProcessing, setIsProcessing] = useState(false);
+		const [isProcessing, _setIsProcessing] = useState(false);
 
 		const [llmLoad, setLLMLoad] = useState<boolean>(false);
 
@@ -431,10 +431,10 @@ export const VariablesPanel = observer(
 		const getEngines =
 			usePixel<
 				{
-					app_id: string;
-					app_name: string;
-					app_type: string;
-					app_subtype: string;
+					engine_id: string;
+					engine_name: string;
+					engine_type: string;
+					engine_subtype: string;
 				}[]
 			>(`MyEngines();`);
 
@@ -452,24 +452,28 @@ export const VariablesPanel = observer(
 				return;
 			}
 			const cleanedEngines = getEngines.data.map((d) => ({
-				app_name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
-				app_id: d.app_id,
-				app_type: d.app_type,
-				app_subtype: d.app_subtype,
+				engine_name: d.engine_name
+					? d.engine_name.replace(/_/g, " ")
+					: "",
+				engine_id: d.engine_id,
+				engine_type: d.engine_type,
+				engine_subtype: d.engine_subtype,
 			}));
 
 			const newEngines = {
-				models: cleanedEngines.filter((e) => e.app_type === "MODEL"),
+				models: cleanedEngines.filter((e) => e.engine_type === "MODEL"),
 				databases: cleanedEngines.filter(
-					(e) => e.app_type === "DATABASE",
+					(e) => e.engine_type === "DATABASE",
 				),
 				storages: cleanedEngines.filter(
-					(e) => e.app_type === "STORAGE",
+					(e) => e.engine_type === "STORAGE",
 				),
 				functions: cleanedEngines.filter(
-					(e) => e.app_type === "FUNCTION",
+					(e) => e.engine_type === "FUNCTION",
 				),
-				vectors: cleanedEngines.filter((e) => e.app_type === "VECTOR"),
+				vectors: cleanedEngines.filter(
+					(e) => e.engine_type === "VECTOR",
+				),
 			};
 
 			setEngines(newEngines);
@@ -560,9 +564,13 @@ export const VariablesPanel = observer(
 
 				if (Object.keys(changesToApply).length > 0) {
 					// TODO: Refactor this and go off of cell and variable class functions
-					const success = await (state as any).applyVariableRenames(
-						changesToApply,
-					);
+					await (
+						state as {
+							applyVariableRenames: (
+								changes: Record<string, string>,
+							) => Promise<unknown>;
+						}
+					).applyVariableRenames(changesToApply);
 					// if (success) {
 					setIsRenameModalOpen(false);
 					setSuggestedChanges({});
