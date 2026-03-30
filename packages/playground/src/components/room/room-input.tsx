@@ -496,36 +496,35 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							}}
 						/>
 
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									className="bg-background"
-									variant={"ghost"}
-									aria-label={t("input.recordLabel")}
-									size="icon-sm"
-									disabled={!canListen || isLoading}
-									onClick={() => {
-										if (isListening) {
-											recognitionRef.current?.stop();
-											editorRef.current?.focus();
-										} else {
-											recognitionRef.current?.start();
-										}
-									}}
-								>
-									<MicIcon
-										className={`${isListening ? "animate-pulse text-destructive" : ""}`}
-									/>
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								{isListening
-									? t("input.stopRecording")
-									: t("input.record")}
-							</TooltipContent>
-						</Tooltip>
-
-						<div className="flex flex-row items-center gap-1">
+						<div className="flex flex-row items-center">
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										className="bg-background"
+										variant={"ghost"}
+										aria-label={t("input.recordLabel")}
+										size="icon-sm"
+										disabled={!canListen || isLoading}
+										onClick={() => {
+											if (isListening) {
+												recognitionRef.current?.stop();
+												editorRef.current?.focus();
+											} else {
+												recognitionRef.current?.start();
+											}
+										}}
+									>
+										<MicIcon
+											className={`${isListening ? "animate-pulse text-destructive" : ""}`}
+										/>
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{isListening
+										? t("input.stopRecording")
+										: t("input.record")}
+								</TooltipContent>
+							</Tooltip>
 							<PromptOptimizer
 								input={inputText}
 								setInput={setInputFromOptimizer}
@@ -535,6 +534,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								modelId={model?.app_id || undefined}
 								room={room}
 							/>
+						</div>
 
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -597,7 +597,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							</Tooltip>
 						</div>
 					</div>
-				</div>
+				{/* </div> */}
 
 				{files.length > 0 ? (
 					<div className="flex flex-row items-center gap-2 pt-4">
