@@ -35,8 +35,5 @@
   "engines": {
     "pnpm": "~10.13.0",
     "node": ">=24.4.0 <25"
-  },
-  "dependencies": {
-    "fs-extra": "^11.3.4"
   }
 }
