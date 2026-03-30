@@ -182,9 +182,11 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		return (
 			// px-3 because applying padding on this div was clipping the shadow of the textareas
 			// so we apply px-1 to the inner divs instead
-			<div className="flex h-full w-full flex-col space-y-4 overflow-auto px-3 py-4">
+			<div className="flex h-full w-full flex-col space-y-4 overflow-auto px-3 py-4 text-foreground">
 				<div className="space-y-2 px-1">
-					<h2 className="font-semibold text-2xl">{title}</h2>
+					<h2 className="font-semibold text-2xl text-foreground">
+						{title}
+					</h2>
 					{!!description && (
 						<p className="text-muted-foreground">{description}</p>
 					)}
