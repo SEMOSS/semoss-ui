@@ -14,7 +14,7 @@ import {
   import { Spinner } from "@semoss/ui/next";
   import { Table as TableUI } from "@semoss/ui";
   
-  import { HistoryRow } from "./HistoryRow";
+  import { HistoryRow } from "./history-row";
   import type { HistoryJob } from "./job.types";
   
   export const JobHistory = (props: {

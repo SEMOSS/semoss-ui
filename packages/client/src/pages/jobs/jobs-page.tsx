@@ -29,10 +29,10 @@ import {
   import type { GridRowSelectionModel } from "@mui/x-data-grid";
   import { debounced, runPixel } from "@semoss/sdk/react";
   
-  import { JobCard } from "./JobCard";
-  import { JobHistory } from "./JobHistory";
-  import { JobsTable } from "./JobsTable";
-  import { DeleteJobModal } from "./DeleteJobModal";
+  import { JobCard } from "./job-card";
+  import { JobHistory } from "./job-history";
+  import { JobsTable } from "./jobs-table";
+  import { DeleteJobModal } from "./delete-job-modal";
   import type {
 	HistoryJob,
 	HistoryPaginationProps,

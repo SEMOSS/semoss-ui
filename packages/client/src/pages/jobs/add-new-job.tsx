@@ -14,9 +14,9 @@ import {
 	RadioGroupItem,
 } from "@semoss/ui/next"; // Updated imports
 import { useSettings } from "@/hooks";
-import { AddPixelModal } from "./AddPixelModal";
-import { JobDetailsModel } from "./JobDetailsModel";
-import { JobTimeZoneModel } from "./JobTimeZoneModel";
+import { AddPixelModal } from "./add-pixel-modal";
+import { JobDetailsModel } from "./job-details-model";
+import { JobTimeZoneModel } from "./job-timeZone-model";
 import type { JobBuilder } from "./job.types";
 import { getEncodeByJobType } from "./job.utils";
 
