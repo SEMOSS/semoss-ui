@@ -1,35 +1,39 @@
 import {
-	Add,
-	Bedtime,
-	Delete,
-	DeleteOutline,
-	ErrorRounded,
-	Pause,
-	PlayArrowSharp,
-} from "@mui/icons-material";
-import AlarmOnIcon from "@mui/icons-material/AlarmOn";
-import FilterAltIcon from "@mui/icons-material/FilterAlt";
-import SearchIcon from "@mui/icons-material/Search";
-import type { GridRowSelectionModel } from "@mui/x-data-grid";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
-import { debounced, runPixel } from "@semoss/sdk/react";
-import {
-	Box,
 	Button,
-	Search,
-	Stack,
-	styled,
+	Input,
 	Tabs,
-	ToggleTabsGroup,
-	useNotification,
-} from "@semoss/ui";
-import { useRootStore, useSettings } from "@/hooks";
-import { DeleteJobModal } from "./DeleteJobModal";
-import { JobCard } from "./JobCard";
-import { JobHistory } from "./JobHistory";
-import { JobsTable } from "./JobsTable";
-import type {
+	TabsList,
+	TabsTrigger,
+	Field,
+	FieldContent,
+	Alert,
+	AlertDescription,
+	AlertTitle,
+  } from "@semoss/ui/next";
+  
+  import {
+	Play,
+	Pause,
+	Trash,
+	Plus,
+	Search,
+	Filter,
+	AlarmClock,
+	Moon,
+	AlertCircle,
+  } from "lucide-react";
+  
+  import { useState, useEffect, useMemo, useRef } from "react";
+  import { Navigate, useNavigate } from "react-router-dom";
+  import { useRootStore, useSettings } from "@/hooks";
+  import type { GridRowSelectionModel } from "@mui/x-data-grid";
+  import { debounced, runPixel } from "@semoss/sdk/react";
+  
+  import { JobCard } from "./JobCard";
+  import { JobHistory } from "./JobHistory";
+  import { JobsTable } from "./JobsTable";
+  import { DeleteJobModal } from "./DeleteJobModal";
+  import type {
 	HistoryJob,
 	HistoryPaginationProps,
 	Job,
@@ -43,66 +47,48 @@ import {
 	convertTimetoDate,
 } from "./job.utils";
 
-const StyledBox = styled(Box)(({ theme }) => ({
-	borderRadius: theme.spacing(1),
-	backgroundColor: theme.palette.background.paper,
-	padding: theme.spacing(2),
-}));
-
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
-	border: "1px",
-	minHeight: "42px",
-	borderRadius: theme.shape.borderRadius,
-	alignItems: "center",
-	padding: "0px 3px",
-}));
-
-const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
-	height: "38px",
-	padding: "8px 11px",
-}));
-
-export function JobsPage() {
+type OutputType = {
+    failed?: string[];
+    success?: string[];
+};
+  
+  export function JobsPage() {
 	const { monolithStore } = useRootStore();
-	const notification = useNotification();
+	const { adminMode } = useSettings();
+	const navigate = useNavigate();
 
-	const jobsTabs = ["All", "Active", "Inactive"];
-	const historyTabs = ["All", "Success", "Failed"];
-	const tables = ["Jobs", "History"];
-
+	const [notification, setNotification] = useState<{
+        type: "success" | "error" | "warning";
+        message: string;
+    } | null>(null);
+  
 	const [searchValue, setSearchValue] = useState("");
-
-	const [selectedJobTab, setSelectedJobTab] = useState(jobsTabs[0]);
-	const [selectedHistoryTab, setSelectedHistoryTab] = useState(
-		historyTabs[0],
-	);
-	const [selectedTable, setSelectedTable] = useState(tables[0]);
-	const [failedJobCount, setFailedJobCount] = useState<number>(0);
-
-	const [jobs, setJobs] = useState<Job[]>([]);
-	const [jobsLoading, setJobsLoading] = useState<boolean>(false);
-
-	const [jobToDelete, setJobToDelete] = useState<Job>(null);
-
-	const [jobsToDelete, setJobsToDelete] = useState<Job[]>([]);
-	const [deleteMutliple, setDeleteMultiple] = useState<boolean>(false);
-
-	const [rowSelectionModel, setRowSelectionModel] =
-		useState<GridRowSelectionModel>([]);
-
-	const [history, setHistory] = useState<HistoryJob[]>([]);
-	const [historyLoading, setHistoryLoading] = useState<boolean>(false);
-	const [historySearch, setHistorySearch] = useState("");
-	const [historySearchBuffer, setHistorySearchBuffer] = useState("");
+	const [selectedTable, setSelectedTable] = useState("Jobs");
+	const [selectedJobTab, setSelectedJobTab] = useState("All");
+	const [selectedHistoryTab, setSelectedHistoryTab] = useState("All");
 	const [historyPage, setHistoryPage] = useState<number>(0);
 	const [historyRowsPerPage, setHistoryRowsPerPage] = useState<number>(5);
 	const [historyCount, setHistoryCount] = useState<number>(-1);
-	const { adminMode } = useSettings();
-	const searchRef = useRef(null);
-	const navigate = useNavigate();
+	const [historySearchBuffer, setHistorySearchBuffer] = useState("");
+	const [historySearch, setHistorySearch] = useState("");
+  
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [filterOpen, setFilterOpen] = useState(false);
-
+  
+	const searchRef = useRef(null);
+  
+	const [jobs, setJobs] = useState<any[]>([]);
+	const [history, setHistory] = useState<any[]>([]);
+	const [jobsLoading, setJobsLoading] = useState(false);
+	const [historyLoading, setHistoryLoading] = useState(false);
+  
+	const [failedJobCount, setFailedJobCount] = useState(0);
+	const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>([]);
+  
+	const [jobToDelete, setJobToDelete] = useState(null);
+	const [jobsToDelete, setJobsToDelete] = useState<any[]>([]);
+	const [deleteMultiple, setDeleteMultiple] = useState(false);
+  
 	const getJobs = () => {
 		setJobsLoading(true);
 		const pixel = "META|ListAllJobs()";
@@ -112,8 +98,8 @@ export function JobsPage() {
 				const type = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
+					setNotification({
+						type: "error",
 						message:
 							"Something went wrong. Jobs could not be retrieved.",
 					});
@@ -122,12 +108,9 @@ export function JobsPage() {
 						response.pixelReturn[0].output;
 					const jobs: Job[] = [];
 					Object.values(pixelJobs).forEach((job) => {
-						// Job group is undefined for jobs made in the old ui
 						if (!job.jobGroup || job.jobGroup === "undefined") {
-							// skip jobs made on the old ui since they aren't backwards compatable
 							return;
 						}
-						// ui state is a legacy construct, this may not exist
 						let uiState: JobUIState;
 						try {
 							if (job.uiState) {
@@ -202,24 +185,22 @@ export function JobsPage() {
 			.runQuery(pixel)
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType;
-				const output = response.pixelReturn[0].output;
-				// Expecting output to have { success: string[], failed: string[] }
+				const output = response.pixelReturn[0].output as OutputType;
 				const failedIds = output?.failed || [];
 
 				if (type.indexOf("ERROR") === -1) {
 					if (failedIds.length === 0) {
-						notification.add({
-							color: "success",
+						setNotification({
+							type: "success",
 							message: `Successfully deleted all selected jobs`,
 						});
 					} else {
-						// Map failed job IDs to job names
 						const failedJobNames = jobs
 							.filter((job) => failedIds.includes(job.id))
 							.map((job) => job.name)
 							.join(", ");
-						notification.add({
-							color: "warning",
+						setNotification({
+							type: "warning",
 							message: `Some jobs were deleted successfully, but the following jobs could not be deleted: ${failedJobNames}`,
 						});
 					}
@@ -236,8 +217,8 @@ export function JobsPage() {
 				}
 			})
 			.catch((error) => {
-				notification.add({
-					color: "error",
+				setNotification({
+					type: "error",
 					message: error.message,
 				});
 			});
@@ -251,8 +232,8 @@ export function JobsPage() {
 		try {
 			await runPixel(pixel);
 		} catch (_e) {
-			notification.add({
-				color: "error",
+			setNotification({
+				type: "error",
 				message: "Unable to pause jobs.",
 			});
 		} finally {
@@ -268,8 +249,8 @@ export function JobsPage() {
 		try {
 			await runPixel(pixel);
 		} catch (_e) {
-			notification.add({
-				color: "error",
+			setNotification({
+				type: "error",
 				message: "Unable to resume jobs.",
 			});
 		} finally {
@@ -307,13 +288,12 @@ export function JobsPage() {
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType[0];
 				if (type.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
+					setNotification({
+						type: "error",
 						message:
 							"Something went wrong. Job history could not be retrieved.",
 					});
 				} else {
-					// map the headers
 					const historyData: HistoryJob[] = [];
 					const output = response.pixelReturn[0].output;
 					const headers = {};
@@ -332,7 +312,6 @@ export function JobsPage() {
 						valueIdx < valueLen;
 						valueIdx++
 					) {
-						// Excluding the jobs that have not ran even once from history
 						if (
 							output["data"].values[valueIdx][
 								headers["SUCCESS"]
@@ -380,7 +359,6 @@ export function JobsPage() {
 											],
 										)
 									: "",
-								// TODO: validate return type/value
 								success: Object.hasOwn(headers, "SUCCESS")
 									? JSON.stringify(
 											output["data"].values[valueIdx][
@@ -388,13 +366,11 @@ export function JobsPage() {
 											],
 										) === "true"
 									: false,
-								// appName: Object.prototype.hasOwnProperty.call(headers, 'APP_NAME') ? output['data'].values[valueIdx][headers.APP_NAME] : '',
 								jobTags: Object.hasOwn(headers, "JOB_TAG")
 									? output["data"].values[valueIdx][
 											headers["JOB_TAG"]
 										].split(",")
 									: [],
-								// capture the latest record based on the IS_LATEST field stored
 								isLatest: Object.hasOwn(headers, "IS_LATEST")
 									? JSON.stringify(
 											output["data"].values[valueIdx][
@@ -402,7 +378,6 @@ export function JobsPage() {
 											],
 										) === "true"
 									: false,
-								//capture scheduler output
 								schedulerOutput: Object.hasOwn(
 									headers,
 									"SCHEDULER_OUTPUT",
@@ -496,8 +471,8 @@ export function JobsPage() {
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType[0];
 				if (type.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
+					setNotification({
+						type: "error",
 						message:
 							"Something went wrong. Failed job history could not be retrieved.",
 					});
@@ -539,16 +514,14 @@ export function JobsPage() {
 		} else if (selectedHistoryTab === "Failed") {
 			return searchedHistory.filter((job) => job.success === false);
 		}
-		return searchedHistory; // "All" case
+		return searchedHistory;
 	}, [history, searchValue, selectedHistoryTab]);
 
-	// Create debounced version of getHistory function for search
 	const debouncedGetHistory = debounced(() => {
 		getHistory({ search: historySearchBuffer });
 	}, 400);
 
 	useEffect(() => {
-		// initial render
 		getJobs();
 		getHistory({ reload: true });
 		getFailedJobCount();
@@ -581,322 +554,304 @@ export function JobsPage() {
 		);
 		setJobsToDelete(rowsToBeDeleted);
 	};
+  
 	if (!adminMode) {
-		return <Navigate to={"/settings"} />;
+	  return <Navigate to="/settings" />;
 	}
-
+  
 	return (
-		<Stack spacing={2}>
-			<hr style={{ border: "1px solid #E0E0E0" }} />
-			<Stack direction="row" spacing={3}>
-				<JobCard
-					title="Active Jobs"
-					icon={<AlarmOnIcon fontSize="medium" />}
-					count={
-						jobs.filter((job) => {
-							return job.isActive;
-						}).length
-					}
-					avatarColor={["#C6E4BF", "#66BB6A", "#6D7E6A"]}
-					iconColor="#FFFFFF"
-				/>
-				<JobCard
-					title="Inactive Jobs"
-					icon={<AlarmOnIcon fontSize="medium" />}
-					count={
-						jobs.filter((job) => {
-							return !job.isActive;
-						}).length
-					}
-					avatarColor={["#FFF59D", "#FBC02D"]}
-					iconColor="#FFFFFF"
-				/>
-				<JobCard
-					title="Failed"
-					icon={<AlarmOnIcon fontSize="medium" />}
-					count={failedJobCount}
-					avatarColor={["#FFCCBC", "#E64A19"]}
-					iconColor="#FFFFFF"
-				/>
-			</Stack>
-			<StyledBox>
-				<Stack
-					direction="row"
-					width="100%"
-					justifyContent="space-between"
-				>
-					<StyledToggleTabsGroup
-						value={selectedTable}
-						onChange={(_, value: string) => {
-							setSelectedTable(value);
-						}}
-						color="primary"
+	  <div className="flex flex-col gap-6">
+		{notification && (
+			<Alert
+			variant={notification.type === "error" ? "destructive" : "default"}
+			className="mb-4"
+			>
+			<AlertTitle>
+				{notification.type === "error" ? "Error" : "Success"}
+			</AlertTitle>
+			<AlertDescription>{notification.message}</AlertDescription>
+			</Alert>
+		)}
+  
+		<hr className="border-gray-200" />
+  
+		<div className="flex gap-4 w-1/2">
+		  <JobCard
+			title="Active Jobs"
+			icon={<AlarmClock />}
+			count={jobs.filter((j) => j.isActive).length}
+			avatarColor={["#C6E4BF", "#66BB6A", "#6D7E6A"]}
+			iconColor="#fff"
+		  />
+  
+		  <JobCard
+			title="Inactive Jobs"
+			icon={<Moon />}
+			count={jobs.filter((j) => !j.isActive).length}
+			avatarColor={["#FFF59D", "#FBC02D"]}
+			iconColor="#fff"
+		  />
+  
+		  <JobCard
+			title="Failed"
+			icon={<AlertCircle />}
+			count={failedJobCount}
+			avatarColor={["#FFCCBC", "#E64A19"]}
+			iconColor="#fff"
+		  />
+		</div>
+  
+		<Field className="border rounded-lg p-4">
+		  <FieldContent className="flex flex-col gap-4">
+  
+			<div className="flex justify-between items-center">
+  
+			<Tabs value={selectedTable} onValueChange={setSelectedTable}>
+				<TabsList className="border border-blue-500 rounded-lg flex items-center bg-white">
+					<TabsTrigger
+						value="Jobs"
+						className={`px-4 py-2 text-sm font-medium  ${
+							selectedTable === "Jobs"
+							? "!bg-blue-100 text-blue-500"
+							: "!bg-white text-blue-500"
+						}`}
 					>
-						<StyledToggleTabsGroupItem
-							label="Jobs"
-							value={"Jobs"}
-							data-testid={`jobsSettingsPage-jobs-btn`}
-						/>
-						<StyledToggleTabsGroupItem
-							label="History"
-							value={"History"}
-							data-testid={`jobsSettingsPage-history-btn`}
-						/>
-					</StyledToggleTabsGroup>
-					<Stack direction="row" spacing={2}>
-						{selectedTable === "Jobs" && (
-							<>
-								<span>
-									<Button
-										disabled={
-											selectedActiveJobs.length === 0
-										}
-										variant="outlined"
-										startIcon={<Pause />}
-										size="medium"
-										onClick={() => pauseJobs()}
-										data-testid={"jobsPage-pause-btn"}
-									>
-										Pause
-									</Button>
-								</span>
-								<span>
-									<Button
-										disabled={
-											selectedPausedJobs.length === 0
-										}
-										variant="outlined"
-										startIcon={<PlayArrowSharp />}
-										size="medium"
-										onClick={() => resumeJobs()}
-										data-testid={"jobsPage-resume-btn"}
-									>
-										Resume
-									</Button>
-								</span>
-								<span>
-									<Button
-										disabled={
-											rowSelectionModel.length === 0
-										}
-										variant="outlined"
-										startIcon={<DeleteOutline />}
-										size="medium"
-										onClick={() => deleteMutlipleJobs()}
-										data-testid={"jobsPage-delete-btn"}
-									>
-										Delete
-									</Button>
-								</span>
-								<span>
-									<Button
-										size="medium"
-										variant="contained"
-										startIcon={<Add />}
-										onClick={() =>
-											navigate("/settings/add-new-job")
-										}
-										data-testid={"jobsPage-add-btn"}
-									>
-										Add New
-									</Button>
-								</span>
-							</>
-						)}
-						{rowSelectionModel.length > 1 ? (
-							<span>
-								<Button
-									disabled={false}
-									variant="contained"
-									startIcon={<Delete />}
-									size="medium"
-									onClick={() => deleteMutlipleJobs()}
-								>
-									Delete Selected
-								</Button>
-							</span>
-						) : (
-							""
-						)}
-					</Stack>
-				</Stack>
-				<Stack
-					border={"1px solid #E0E0E0"}
-					borderRadius="8px 8px 0 0"
-					mt={2}
-					flex={1}
-					direction="row"
-					justifyContent="space-between"
-					alignItems="center"
-					spacing={2}
-					padding={1}
-					sx={{ position: "relative" }}
-				>
-					{selectedTable === "Jobs" && (
-						<Tabs
-							value={selectedJobTab}
-							onChange={(_, value: string) => {
-								setSelectedJobTab(value);
-							}}
-							color="primary"
-						>
-							<Tabs.Item value="All" label="All" />
-							<Tabs.Item value="Active" label="Active" />
-							<Tabs.Item value="Inactive" label="Inactive" />
-						</Tabs>
-					)}
-					{selectedTable === "History" && (
-						<Tabs
-							value={selectedHistoryTab}
-							onChange={(_, value: string) => {
-								setSelectedHistoryTab(value);
-							}}
-							color="primary"
-						>
-							<Tabs.Item value="All" label="All" />
-							<Tabs.Item value="Success" label="Success" />
-							<Tabs.Item value="Failed" label="Failed" />
-						</Tabs>
-					)}
-					<Stack direction="row" spacing={2} alignItems="center">
-						{!searchOpen && (
-							<SearchIcon
-								color="action"
-								onClick={() => {
-									setSearchOpen(!searchOpen);
-								}}
-							/>
-						)}
-						{searchOpen && (
-							<div ref={searchRef}>
-								<Search
-									size="small"
-									value={searchValue}
-									onChange={(e) =>
-										setSearchValue(e.target.value)
-									}
-								/>
-							</div>
-						)}
-						<FilterAltIcon
-							color="action"
-							onClick={() => {
-								setFilterOpen(!filterOpen);
-							}}
-						/>
-						{filterOpen && (
-							<Box
-								sx={{
-									position: "absolute",
-									top: "100%",
-									right: 0,
-									zIndex: 1000,
-									backgroundColor: "background.paper",
-									border: "1px solid #E0E0E0",
-									borderRadius: 1,
-									padding: 2,
-									minWidth: 200,
-									boxShadow: 2,
-								}}
-							>
-								<Stack spacing={1}>
-									<Button
-										variant={
-											selectedJobTab === "Active"
-												? "contained"
-												: "outlined"
-										}
-										size="small"
-										fullWidth
-										onClick={() => {
-											setSelectedTable("Jobs");
-											setSelectedJobTab("Active");
-											setFilterOpen(false);
-										}}
-										startIcon={<AlarmOnIcon />}
-									>
-										Active Jobs (
-										{
-											jobs.filter((job) => job.isActive)
-												.length
-										}
-										)
-									</Button>
-									<Button
-										variant={
-											selectedJobTab === "Inactive"
-												? "contained"
-												: "outlined"
-										}
-										size="small"
-										fullWidth
-										onClick={() => {
-											setSelectedTable("Jobs");
-											setSelectedJobTab("Inactive");
-											setFilterOpen(false);
-										}}
-										startIcon={<Bedtime />}
-									>
-										Inactive Jobs (
-										{
-											jobs.filter((job) => !job.isActive)
-												.length
-										}
-										)
-									</Button>
-									<Button
-										variant="outlined"
-										size="small"
-										fullWidth
-										onClick={() => {
-											setSelectedTable("History");
-											setSelectedHistoryTab("Failed");
-											setFilterOpen(false);
-										}}
-										startIcon={<ErrorRounded />}
-									>
-										Failed Jobs ({failedJobCount})
-									</Button>
-								</Stack>
-							</Box>
-						)}
-					</Stack>
-				</Stack>
+						Jobs
+					</TabsTrigger>
+					<div className="w-px h-9 bg-blue-500 mx-2"></div>
+					<TabsTrigger
+						value="History"
+						className={`px-4 py-2 text-sm font-medium  ${
+							selectedTable === "History"
+							? "!bg-blue-100 text-blue-500"
+							: "!bg-white text-blue-500"
+						}`}
+					>
+						History
+					</TabsTrigger>
+				</TabsList>
+			</Tabs>
+  
+			  <div className="flex items-center gap-2">
+  
 				{selectedTable === "Jobs" && (
-					<JobsTable
-						jobs={filteredJobs}
-						jobsLoading={jobsLoading}
-						rowSelectionModel={rowSelectionModel}
-						setRowSelectionModel={setRowSelectionModel}
-						getHistory={() => getHistory({ reload: true })}
-						showDeleteJobModal={(job: Job) => setJobToDelete(job)}
-						getFailedJobCount={getFailedJobCount}
-					/>
+				  <>
+					<Button
+					  variant="outline"
+					  size="sm"
+					  disabled={!rowSelectionModel.length}
+					  onClick={() => pauseJobs()}
+					>
+					  <Pause className="w-4 h-4 mr-1" /> Pause
+					</Button>
+  
+					<Button
+					  variant="outline"
+					  size="sm"
+					  disabled={!rowSelectionModel.length}
+					  onClick={() => resumeJobs()}
+					>
+					  <Play className="w-4 h-4 mr-1" /> Resume
+					</Button>
+  
+					<Button
+					  variant="outline"
+					  size="sm"
+					  disabled={!rowSelectionModel.length}
+					  onClick={() => deleteMutlipleJobs()}
+					>
+					  <Trash className="w-4 h-4 mr-1" /> Delete
+					</Button>
+  
+					<Button
+					  size="sm"
+					  onClick={() => navigate("/settings/add-new-job")}
+					>
+					  <Plus className="w-4 h-4 mr-1" /> Add New
+					</Button>
+				  </>
 				)}
-				{selectedTable === "History" && (
-					<JobHistory
-						history={filteredHistory}
-						historyLoading={historyLoading}
-						historyCount={historyCount}
-						historyPage={historyPage}
-						historyRowsPerPage={historyRowsPerPage}
-						onPageChange={(page) => getHistory({ page })}
-						onRowsPerPageChange={(rowsPerPage) =>
-							getHistory({ rowsPerPage })
-						}
-						onSearchChange={setHistorySearchBuffer}
-					/>
+			  </div>
+			</div>
+  
+			<div className="relative flex justify-between items-center border rounded-t-lg p-2 w-full">
+  
+			  {selectedTable === "Jobs" && (
+				<Tabs value={selectedJobTab} onValueChange={setSelectedJobTab} className="w-full">
+					<TabsList className="flex gap-4 !w-1/2  bg-white border-none">
+					<TabsTrigger
+						value="All"
+						className={`text-sm font-medium ${
+						selectedJobTab === "All" ? "text-blue-500" : "text-gray-500"
+						}`}
+					>
+						All
+					</TabsTrigger>
+					<TabsTrigger
+						value="Active"
+						className={`text-sm font-medium ${
+						selectedJobTab === "Active" ? "text-blue-500" : "text-gray-500"
+						}`}
+					>
+						Active
+					</TabsTrigger>
+					<TabsTrigger
+						value="Inactive"
+						className={`text-sm font-medium ${
+						selectedJobTab === "Inactive" ? "text-blue-500" : "text-gray-500"
+						}`}
+					>
+						Inactive
+					</TabsTrigger>
+					</TabsList>
+				</Tabs>
+			)}
+  
+			{selectedTable === "History" && (
+				<Tabs value={selectedHistoryTab} onValueChange={setSelectedHistoryTab} className="w-full">
+					<TabsList className="flex gap-4 !w-1/2  bg-white border-none">
+					<TabsTrigger
+						value="All"
+						className={`text-sm font-medium ${
+						selectedHistoryTab === "All" ? "text-blue-500" : "text-gray-500"
+						}`}
+					>
+						All
+					</TabsTrigger>
+					<TabsTrigger
+						value="Success"
+						className={`text-sm font-medium ${
+						selectedHistoryTab === "Success" ? "text-blue-500" : "text-gray-500"
+						}`}
+					>
+						Success
+					</TabsTrigger>
+					<TabsTrigger
+						value="Failed"
+						className={`text-sm font-medium ${
+						selectedHistoryTab === "Failed" ? "text-blue-500" : "text-gray-500"
+						}`}
+					>
+						Failed
+					</TabsTrigger>
+					</TabsList>
+				</Tabs>
+			)}
+  
+			  <div className="flex items-center gap-2">
+  
+				{!searchOpen && (
+				  <Search
+					className="w-4 h-4 cursor-pointer"
+					onClick={() => setSearchOpen(true)}
+				  />
 				)}
-			</StyledBox>
-			<DeleteJobModal
-				job={deleteMutliple ? jobsToDelete : [jobToDelete]}
+  
+				{searchOpen && (
+				  <div ref={searchRef}>
+					<Input
+					  value={searchValue}
+					  onChange={(e) => setSearchValue(e.target.value)}
+					  placeholder="Search..."
+					  className="w-48"
+					/>
+				  </div>
+				)}
+  
+				<Filter
+				  className="w-4 h-4 cursor-pointer"
+				  onClick={() => setFilterOpen(!filterOpen)}
+				/>
+  
+				{filterOpen && (
+				  <div className="absolute right-0 top-full mt-2 w-52 border rounded-md bg-white shadow-md p-2 z-50">
+  
+					<Button
+					  variant="outline"
+					  size="sm"
+					  className="w-full justify-start"
+					  onClick={() => {
+						setSelectedTable("Jobs");
+						setSelectedJobTab("Active");
+						setFilterOpen(false);
+					  }}
+					>
+					  <AlarmClock className="w-4 h-4 mr-2" />
+					  Active Jobs
+					</Button>
+  
+					<Button
+					  variant="outline"
+					  size="sm"
+					  className="w-full justify-start mt-1"
+					  onClick={() => {
+						setSelectedTable("Jobs");
+						setSelectedJobTab("Inactive");
+						setFilterOpen(false);
+					  }}
+					>
+					  <Moon className="w-4 h-4 mr-2" />
+					  Inactive Jobs
+					</Button>
+  
+					<Button
+					  variant="outline"
+					  size="sm"
+					  className="w-full justify-start mt-1"
+					  onClick={() => {
+						setSelectedTable("History");
+						setSelectedHistoryTab("Failed");
+						setFilterOpen(false);
+					  }}
+					>
+					  <AlertCircle className="w-4 h-4 mr-2" />
+					  Failed Jobs ({failedJobCount})
+					</Button>
+				  </div>
+				)}
+  
+			  </div>
+			</div>
+  
+			{selectedTable === "Jobs" && (
+			  <JobsTable
+				jobs={filteredJobs}
+				jobsLoading={jobsLoading}
+				rowSelectionModel={rowSelectionModel}
+				setRowSelectionModel={setRowSelectionModel}
+				getHistory={() => getHistory({ reload: true })}
+				showDeleteJobModal={(job: Job) => setJobToDelete(job)}
+				getFailedJobCount={getFailedJobCount}
+			  />
+			)}
+  
+			{selectedTable === "History" && (
+			  <JobHistory
+				history={filteredHistory}
+				historyLoading={historyLoading}
+				historyCount={historyCount}
+				historyPage={historyPage}
+				historyRowsPerPage={historyRowsPerPage}
+				onPageChange={(page) => getHistory({ page })}
+					onRowsPerPageChange={(rowsPerPage) =>
+					getHistory({ rowsPerPage })
+				}
+				onSearchChange={setHistorySearchBuffer}
+			  />
+			)}
+  
+		  </FieldContent>
+		</Field>
+  
+		<DeleteJobModal
+				job={deleteMultiple ? jobsToDelete : [jobToDelete]}
 				isOpen={
-					deleteMutliple
+					deleteMultiple
 						? jobsToDelete && jobsToDelete.length !== 0
 						: jobToDelete !== null
 				}
 				close={
-					deleteMutliple
+					deleteMultiple
 						? () => {
 								setJobsToDelete([]);
 								setDeleteMultiple(false);
@@ -907,6 +862,6 @@ export function JobsPage() {
 				}
 				deleteJob={deleteJob}
 			/>
-		</Stack>
+	  </div>
 	);
-}
+  }
