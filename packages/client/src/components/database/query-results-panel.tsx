@@ -1,6 +1,7 @@
 import { ChevronDown, Download, Loader2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { download, runPixel } from "@semoss/sdk/react";
 import { Button, Card, cn, P, toast } from "@semoss/ui/next";
 import type { QueryResult } from "@/hooks/useDatabaseQueryExecution";
 import { useQueryResults } from "@/hooks/useDatabaseQueryResults";
@@ -10,12 +11,14 @@ interface QueryResultsPanelProps {
 	previewLoading: boolean;
 	clearResults: () => void;
 	onExpandChange?: (expanded: boolean) => void;
+	pixelQuery?: string;
 }
 
 export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 	previewData,
 	previewLoading,
 	onExpandChange,
+	pixelQuery,
 }) => {
 	const previewLimit = 50;
 	const renderResults = useQueryResults();
@@ -30,21 +33,22 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 		}
 	};
 
-	const handleExportClick = async () => {
+	const handleExportToCsvClick = async () => {
+		const pixelToCsv = `${pixelQuery?.replace(/;$/, "")} | ToCsv();`;
+
 		try {
-			const headers = previewData?.output?.data?.headers || [];
-			const values = previewData?.output?.data?.values || [];
-			const csvContent = [headers, ...values]
-				.map((row) => row.join(","))
-				.join("\n");
-			const blob = new Blob([csvContent], { type: "text/csv" });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = "query_results.csv";
-			a.click();
-			URL.revokeObjectURL(url);
-			toast.success("Results exported to CSV.");
+			const response = await runPixel(pixelToCsv);
+			const firstResult = response?.pixelReturn?.[0];
+
+			if (firstResult?.operationType?.includes("FILE_DOWNLOAD")) {
+				await download(
+					response.insightId,
+					firstResult.output as string,
+				);
+				toast.success("Results exported to CSV");
+			} else {
+				toast.error("Unexpected response from export");
+			}
 		} catch (error) {
 			toast.error(`Failed to export results: ${error}`);
 		}
@@ -94,8 +98,8 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 						<Button
 							variant="outline"
 							size="icon"
-							onClick={handleExportClick}
-							title="Export to CSV"
+							onClick={handleExportToCsvClick}
+							title="Export Results to CSV"
 							className={cn(
 								"size-7 rounded-lg border-border bg-card shadow-sm transition-all duration-200 hover:border-border hover:bg-muted",
 								"hover:shadow-md",
