@@ -1,12 +1,12 @@
 import CHROMADB from "@/assets/img/CHROMADB.png";
 import ELASTIC_SEARCH from "@/assets/img/ELASTIC_SEARCH.svg";
-import META from "@/assets/img/META.png";
+import META from "@/assets/img/META_COLOR.svg";
 import MILVUS from "@/assets/img/MILVUS.png";
 import OPEN_SEARCH from "@/assets/img/OPEN_SEARCH.png";
 import PINECONE from "@/assets/img/PINECONE.png";
-import POSTGRES from "@/assets/img/POSTGRES.png";
+import POSTGRES from "@/assets/img/POSTGRES.svg";
 import WEVIATE from "@/assets/img/WEVIATE.png";
-import MICROSOFT from "@/assets/loginProviders/microsoft.png";
+import MICROSOFT from "@/assets/loginProviders/MICROSOFT.png";
 
 export type FieldType =
 	| "text"
@@ -103,8 +103,8 @@ export const VECTOR_CONNECTIONS = {
 					options: [],
 					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-						optionDisplay: "database_name",
-						optionValue: "database_id",
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
 					},
 					disabled: false,
 					required: true,
@@ -439,8 +439,8 @@ export const VECTOR_CONNECTIONS = {
 					options: [],
 					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-						optionDisplay: "database_name",
-						optionValue: "database_id",
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
 					},
 					disabled: false,
 					required: true,
@@ -680,8 +680,8 @@ export const VECTOR_CONNECTIONS = {
 					options: [],
 					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-						optionDisplay: "database_name",
-						optionValue: "database_id",
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
 					},
 					disabled: false,
 					required: true,
@@ -940,8 +940,8 @@ export const VECTOR_CONNECTIONS = {
 					component: "select",
 					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-						optionDisplay: "database_name",
-						optionValue: "database_id",
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
 					},
 					disabled: false,
 					required: true,
@@ -1171,8 +1171,8 @@ export const VECTOR_CONNECTIONS = {
 					options: [],
 					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-						optionDisplay: "database_name",
-						optionValue: "database_id",
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
 					},
 					disabled: false,
 					required: true,
@@ -1430,8 +1430,8 @@ export const VECTOR_CONNECTIONS = {
 					options: [],
 					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-						optionDisplay: "database_name",
-						optionValue: "database_id",
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
 					},
 					disabled: false,
 					required: true,
@@ -1754,8 +1754,8 @@ export const VECTOR_CONNECTIONS = {
 					options: [],
 					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-						optionDisplay: "database_name",
-						optionValue: "database_id",
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
 					},
 					disabled: false,
 					required: true,
@@ -2026,8 +2026,8 @@ export const VECTOR_CONNECTIONS = {
 					options: [],
 					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-						optionDisplay: "database_name",
-						optionValue: "database_id",
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
 					},
 					disabled: false,
 					required: true,
@@ -2262,8 +2262,8 @@ export const VECTOR_CONNECTIONS = {
 					options: [],
 					optionRule: {
 						pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-						optionDisplay: "database_name",
-						optionValue: "database_id",
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
 					},
 					disabled: false,
 					required: true,

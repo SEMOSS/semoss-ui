@@ -5,7 +5,7 @@ import AWS_TRANSCRIBE from "@/assets/img/AWS_TRANSCRIBE.png";
 import AZURE_SPEECH_TO_TEXT from "@/assets/img/AZURE_SPEECH_TO_TEXT.png";
 import GOOGLE_OCR from "@/assets/img/GOOGLE_OCR.png";
 import GOOGLE_SPEECH_TO_TEXT from "@/assets/img/GOOGLE_SPEECH_TO_TEXT.png";
-import RESTAPI from "@/assets/img/rest-api.svg";
+import RESTAPI from "@/assets/img/REST-API.svg";
 
 export const FUNCTION_CONNECTIONS = {
 	description: {

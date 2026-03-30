@@ -57,7 +57,7 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 				"flex flex-col gap-3 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-lg transition-all duration-200",
 				isExpanded
 					? "h-full min-h-full flex-1"
-					: "h-[300px] min-h-[300px]",
+					: "h-full min-h-[200px]",
 			)}
 			data-testid="query-results-panel"
 		>
@@ -108,8 +108,8 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 				)}
 			</div>
 
-			{/* Footer - Only shown when expanded */}
-			{isExpanded && (
+			{/* Footer */}
+			{previewData && !previewLoading && (
 				<div
 					className="flex flex-shrink-0 items-center justify-between border-border/50 border-t bg-muted/30 px-4 py-2.5 text-muted-foreground text-xs"
 					data-testid="query-results-footer"
